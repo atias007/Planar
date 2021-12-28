@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Planner.CLI": {
+      "commandName": "Project",
+      "commandLineArgs": "job runninginfo NON_CLUSTERED637750883122993425"
+    }
+  }
+}

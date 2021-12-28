@@ -1,0 +1,31 @@
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Warning",
+        "Microsoft.EntityFrameworkCore.Database.Command": "Warning"
+      }
+    },
+    "WriteTo": [
+      {
+        "Name": "MSSqlServer",
+        "Args": {
+          "connectionString": "",
+          "tableName": "Trace",
+          "columnOptionsSection": {
+            "addStandardColumns": [ "LogEvent" ],
+            "removeStandardColumns": [ "MessageTemplate", "Properties" ],
+            "logEvent": {
+              "excludeStandardColumns": true
+            }
+          }
+        }
+      },
+      {
+        "Name": "Console"
+      }
+    ],
+    "Enrich": [ "FromLogContext" ]
+  }
+}

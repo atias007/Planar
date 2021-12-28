@@ -1,0 +1,28 @@
+try
+            {
+                await Task.Run(() =>
+                {
+                    if (File.Exists(t.Assembly) == false)
+                    {
+                        _logger.LogError($"Initialize: File {t.Assembly} could not be found");
+                    }
+                    else
+                    {
+                        try
+                        {
+                            var assembly = Assembly.LoadFrom(t.Assembly);
+                            var type = assembly.GetType(t.ClassName);
+                            _logger.LogInformation($"Initialize: Load class {t.ClassName} from assembly {t.Assembly}");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, $"Initialize: Class {t.ClassName} from assembly {t.Assembly} could not be loaded");
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Initialize: Fail to LoadAssemblies");
+                throw;
+            }

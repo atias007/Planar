@@ -1,0 +1,35 @@
+{
+  "WorkingHours": {
+    "Sunday": {
+      "StartTime": "08:00",
+      "EndTime": "20:00"
+    },
+    "Monday": {
+      "StartTime": "08:00",
+      "EndTime": "20:00"
+    },
+    "Tuesday": {
+      "StartTime": "08:00",
+      "EndTime": "20:00"
+    },
+    "Wednesday": {
+      "StartTime": "08:00",
+      "EndTime": "20:00"
+    },
+    "Thursday": {
+      "StartTime": "08:00",
+      "EndTime": "20:00"
+    },
+    "Friday": {
+      "StartTime": "08:00",
+      "EndTime": "14:00"
+    },
+    "HolidayEve": {
+      "StartTime": "08:00",
+      "EndTime": "14:00"
+    },
+    "Saturday": null,
+    "Holiday": null,
+    "Sabbaton": null
+  }
+}

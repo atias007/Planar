@@ -1,0 +1,12 @@
+- check option to kill running job (https://newbedev.com/is-it-possible-to-kill-a-current-running-quartz-job)
+- add to base test to retrieve information & exception
+
+
+
+
+
+
+-----------------------------------------DONE-----------------------------------------
+- clean the Planner.Common project
+- check the Result property of iexecutionjobcontext. should be usefull for save information & exception & progress
+

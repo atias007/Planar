@@ -1,0 +1,19 @@
+- OS Independed
+- Cluster
+- Data Persistance
+- CLI module
+- API module
+- Live Tracking
+- Calendars support
+- Retry machanism
+- Recovery machanism
+- Monitoring & Alerts
+- Trace & Logs
+- Global Parameters
+- Inject running date & time
+
+- Plugins
+  > Calendars
+  > Alert hooks
+  > Listeners
+

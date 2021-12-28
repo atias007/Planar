@@ -1,0 +1,1 @@
+﻿nuget push -Source CustomsCloud_NugetPackages -ApiKey AzureDevOps R:\CustomsCloud\WorkerJobs\Planner\Planner.Client.Test\bin\Release\net5.0\publish\Planner.Client.Test.1.0.0.nupkg
