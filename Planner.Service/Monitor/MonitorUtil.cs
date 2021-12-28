@@ -70,7 +70,9 @@ namespace Planner.Service.Monitor
                         else
                         {
                             var details = GetMonitorDetails(action, context, jobException);
-                            var hookTask = hook.Handle(details)
+                            var hookType = ServiceUtil.MonitorHooks[action.Hook];
+                            var logger = Global.GetLogger(hookType);
+                            var hookTask = hook.Handle(details, logger)
                             .ContinueWith(t =>
                             {
                                 if (t.Exception != null)

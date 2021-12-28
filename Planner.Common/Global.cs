@@ -30,6 +30,14 @@ namespace Planner.Common
             return logger;
         }
 
+        public static ILogger GetLogger(Type type)
+        {
+            Type generic = typeof(ILogger<>);
+            var loggerType = generic.MakeGenericType(type);
+            var logger = ServiceProvider.GetService(loggerType) as ILogger;
+            return logger;
+        }
+
         public static void Clear()
         {
             Parameters = null;

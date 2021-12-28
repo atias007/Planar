@@ -33,17 +33,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planner.API.Common", "Planner.API.Common\Planner.API.Common.csproj", "{A0B58A23-181D-4BFA-A9DA-0652DBDDF7A3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planner.Client", "Planner.Client\Planner.Client.csproj", "{C786A9DF-6325-451F-94DC-141F62AE6DCE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planner.Client", "Planner.Client\Planner.Client.csproj", "{C786A9DF-6325-451F-94DC-141F62AE6DCE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planner.MonitorHook", "Planner.MonitorHook\Planner.MonitorHook.csproj", "{05F951DD-BD8C-4D4D-AE76-01F920A02680}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planner.MonitorHook", "Planner.MonitorHook\Planner.MonitorHook.csproj", "{05F951DD-BD8C-4D4D-AE76-01F920A02680}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planner.Client.Test", "Planner.Client.Test\Planner.Client.Test.csproj", "{2D7C6E55-016D-4C43-8CD8-56CC50B22CE3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planner.Client.Test", "Planner.Client.Test\Planner.Client.Test.csproj", "{2D7C6E55-016D-4C43-8CD8-56CC50B22CE3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MonitorHooks", "MonitorHooks", "{54DA8D37-F640-4C45-910E-8074F4D30FEE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planner.HttpMonitorHook", "Planner.HttpMonitorHook\Planner.HttpMonitorHook.csproj", "{20B4B3DD-D4C6-4EE6-96D3-9E95CABFAA5B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planner.HttpMonitorHook", "Planner.HttpMonitorHook\Planner.HttpMonitorHook.csproj", "{20B4B3DD-D4C6-4EE6-96D3-9E95CABFAA5B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planner.TeamsMonitorHook", "Planner.TeamsMonitorHook\Planner.TeamsMonitorHook.csproj", "{C6A913AE-C44C-4DA9-B431-ABACA4B135B8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planner.TeamsMonitorHook", "Planner.TeamsMonitorHook\Planner.TeamsMonitorHook.csproj", "{C6A913AE-C44C-4DA9-B431-ABACA4B135B8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -112,6 +112,7 @@ Global
 		{02B629A8-83FE-4D17-8BD8-A386FDF075D8} = {8877FB52-2C70-41FB-8119-13C99EF673E1}
 		{8324A2CF-51E8-445C-976A-173E096B19E7} = {E4B60197-60EA-4593-9085-37B34CD99CCD}
 		{55F06EF8-6C9E-47AB-A5A6-E416E9575A4B} = {8877FB52-2C70-41FB-8119-13C99EF673E1}
+		{05F951DD-BD8C-4D4D-AE76-01F920A02680} = {54DA8D37-F640-4C45-910E-8074F4D30FEE}
 		{20B4B3DD-D4C6-4EE6-96D3-9E95CABFAA5B} = {54DA8D37-F640-4C45-910E-8074F4D30FEE}
 		{C6A913AE-C44C-4DA9-B431-ABACA4B135B8} = {54DA8D37-F640-4C45-910E-8074F4D30FEE}
 	EndGlobalSection
