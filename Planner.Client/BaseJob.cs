@@ -191,7 +191,6 @@ namespace Planner.Client
         {
             lock (Locker)
             {
-                if (value < 0) { value = 0; }
                 if (value > 100) { value = 100; }
                 Metadata.Progress = value;
             }

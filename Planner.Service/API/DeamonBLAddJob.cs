@@ -31,6 +31,11 @@ namespace Planner.Service.API
         public async Task<AddJobResponse> AddJob(AddJobRequest request)
         {
             var metadata = GetJobMetadata(request.Yaml);
+            if(metadata == null)
+            {
+                throw new PlannerValidationException("Fail to read yml data");
+            }
+
             var jobKey = await ValidateJobMetadata(metadata);
 
             await BuildGlobalParameters(metadata.GlobalParameters);
@@ -41,7 +46,7 @@ namespace Planner.Service.API
                 .WithDescription(metadata.Description)
                 .RequestRecovery();
 
-            if (metadata == null || metadata.Durable.GetValueOrDefault())
+            if (metadata.Durable.GetValueOrDefault())
             {
                 jobBuilder = jobBuilder.StoreDurably(true);
             }
@@ -210,7 +215,7 @@ namespace Planner.Service.API
 
             // Data
             if (jobTrigger.TriggerData == null) { jobTrigger.TriggerData = new Dictionary<string, string>(); }
-            if (jobTrigger.TriggerData?.Count > 0)
+            if (jobTrigger.TriggerData.Count > 0)
             {
                 trigger = trigger.UsingJobData(new JobDataMap(jobTrigger.TriggerData));
             }
