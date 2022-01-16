@@ -22,7 +22,10 @@ namespace Planner.CLI.Actions
             var message = string.Empty;
             if (request.Quiet)
             {
-                var all = result?.Result.SimpleTriggers.Select(t => t.Id).Union(result.Result?.CronTriggers.Select(c => c.Id));
+                var all = result?.Result?.SimpleTriggers
+                    .Select(t => t.Id)
+                    .Union(result.Result.CronTriggers.Select(c => c.Id));
+
                 message = string.Join('\n', all);
                 response = new ActionResponse(result, message);
             }

@@ -118,31 +118,5 @@ namespace Planner.Test
             var serializer = new SerializerBuilder().Build();
             var yml = serializer.Serialize(dic);
         }
-
-        [Test]
-        public void TestSerializeException()
-        {
-            int a = 1, b = 0;
-            try
-            {
-                var c = a / b;
-            }
-            catch (Exception ex)
-            {
-                var myEx = new MyException("fail....", ex);
-                var json = JsonConvert.SerializeObject(myEx);
-                var myEx2 = JsonConvert.DeserializeObject<MyException>(json);
-
-                using (Stream s = new MemoryStream())
-                {
-                    BinaryFormatter formatter = new BinaryFormatter();
-                    formatter.Serialize(s, myEx);
-                    s.Position = 0; // Reset stream position
-                    var exx = (MyException)formatter.Deserialize(s);
-                }
-
-                throw;
-            }
-        }
     }
 }

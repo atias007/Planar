@@ -247,7 +247,7 @@ namespace Planner.CLI.Actions
             if (runResult.Success == false) { return new ActionResponse(runResult); }
             Console.WriteLine();
             var sleepTime = 2000;
-            while (runResult.Success && runResult.Result != null)
+            while (runResult.Result != null)
             {
                 Console.CursorTop -= 1;
                 var span = DateTime.Now.Subtract(invokeDate);

@@ -22,9 +22,9 @@ namespace Planner.Common
                 {
                     lock (Locker)
                     {
-                        if (_instance == null)
+                        if (_instance == null) //-V3054
                         {
-                            if (_instanceCreator == null)
+                            if (_instanceCreator == null) //-V3054
                             {
                                 _instance = Activator.CreateInstance<T>();
                             }

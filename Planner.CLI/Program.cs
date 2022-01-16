@@ -127,10 +127,17 @@ namespace Planner.CLI
 
         private static void HandleException(Exception ex)
         {
+            if(ex == null) { return;}
+
             var finaleException = ex;
             if (ex is AggregateException exception)
             {
                 finaleException = exception.InnerExceptions.LastOrDefault();
+            }
+
+            if(finaleException == null)
+            {
+                finaleException = ex;
             }
 
             if (finaleException.InnerException != null)
@@ -140,7 +147,7 @@ namespace Planner.CLI
 
             if (string.IsNullOrEmpty(finaleException.Message) == false)
             {
-                AnsiConsole.MarkupLine($"[red]error: {Markup.Escape(finaleException?.Message)}[/]");
+                AnsiConsole.MarkupLine($"[red]error: {Markup.Escape(finaleException.Message)}[/]");
             }
         }
 
@@ -171,7 +178,7 @@ namespace Planner.CLI
             {
                 WriteResult(response.Response);
             }
-            else if (response != null && response.Response.Success)
+            else if (response.Response.Success) //-V3022
             {
                 WriteInfo(response.Message);
             }

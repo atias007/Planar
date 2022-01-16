@@ -646,7 +646,7 @@ namespace Planner.Service.Calendars.Hebrew
         {
             this.IsShabat = date.DayOfWeek == DayOfWeek.Saturday;
             this.IsHoliday = this.IsShabat;
-            this.IsShabat = this.IsShabat;
+            this.IsSabbaton = this.IsShabat;
             this.IsLeapYear = IsLeapYearInner(date.Year);
 
             IsEvent = true;
@@ -1118,7 +1118,7 @@ namespace Planner.Service.Calendars.Hebrew
                     throw new ArgumentException("Year can not be null or empty");
 
                 const string val = "א' תשרי ";
-                if (!value.Contains("\"") && val.Length > 1)
+                if (!value.Contains("\"") && value.Length > 1)
                 {
                     value = val.Substring(0, value.Length - 1) + "\"" + value[value.Length - 1];
                 }
