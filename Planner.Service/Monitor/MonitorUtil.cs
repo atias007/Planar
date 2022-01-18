@@ -172,7 +172,9 @@ namespace Planner.Service.Monitor
         private static async Task<List<MonitorAction>> LoadMonitor()
         {
             var dal = MainService.Resolve<DataLayer>();
-            return await dal.GetMonitorData();
+            var allHooks = await dal.GetMonitorData();
+            var activeHooks = allHooks.Where(a => a.Active == true).ToList();
+            return activeHooks;
         }
     }
 }

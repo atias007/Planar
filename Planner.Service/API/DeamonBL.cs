@@ -208,9 +208,8 @@ namespace Planner.Service.API
 
             if (job != null)
             {
-                var metadata = JobExecutionMetadata.GetInstance(job);
-                information = metadata.Information;
-                exceptions = metadata.GetExceptionsText();
+                information = JobExecutionMetadataUtil.GetInformation(job);
+                exceptions = JobExecutionMetadataUtil.GetExceptionsText(job);
             }
 
             var obj = new { Information = information, Exceptions = exceptions };
@@ -817,7 +816,7 @@ namespace Planner.Service.API
             target.DataMap = ServiceUtil.ConvertJobDataMapToDictionary(source.MergedJobDataMap);
             target.TriggerId = Convert.ToString(Convert.ToString(source.Get(Consts.TriggerId)));
 
-            var metadata = JobExecutionMetadata.GetInstance(source);
+            var metadata = JobExecutionMetadataUtil.GetInstance(source);
             target.EffectedRows = metadata.EffectedRows;
             target.Progress = metadata.Progress;
         }

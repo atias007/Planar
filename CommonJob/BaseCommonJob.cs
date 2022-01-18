@@ -81,7 +81,7 @@ namespace CommonJob
         {
             try
             {
-                JobExecutionMetadata.GetInstance(context).Progress = 100;
+                JobExecutionMetadataUtil.SetProgress(context, 100);
             }
             catch (Exception ex)
             {

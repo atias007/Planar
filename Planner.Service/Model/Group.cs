@@ -22,15 +22,15 @@ namespace Planner.Service.Model
         [Required]
         [StringLength(50)]
         public string Name { get; set; }
-        [StringLength(50)]
+        [StringLength(500)]
         public string Reference1 { get; set; }
-        [StringLength(50)]
+        [StringLength(500)]
         public string Reference2 { get; set; }
-        [StringLength(50)]
+        [StringLength(500)]
         public string Reference3 { get; set; }
-        [StringLength(50)]
+        [StringLength(500)]
         public string Reference4 { get; set; }
-        [StringLength(50)]
+        [StringLength(500)]
         public string Reference5 { get; set; }
 
         [InverseProperty(nameof(MonitorAction.Group))]

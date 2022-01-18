@@ -1,7 +1,6 @@
 ﻿using Quartz;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planner.Client
@@ -13,14 +12,6 @@ namespace Planner.Client
         private bool? _isNowOverrideValueExists;
         private DateTime? _nowOverrideValue;
         private Dictionary<string, string> JobSettings { get; set; } = new();
-
-        private JobExecutionMetadata Metadata
-        {
-            get
-            {
-                return JobExecutionMetadata.GetInstance(_context);
-            }
-        }
 
         public Task Execute(IJobExecutionContext context)
         {
@@ -47,7 +38,7 @@ namespace Planner.Client
         {
             lock (Locker)
             {
-                Metadata.AddAggragateException(ex);
+                JobExecutionMetadataUtil.AddAggragateException(_context, ex);
             }
         }
 
@@ -59,17 +50,16 @@ namespace Planner.Client
 
             lock (Locker)
             {
-                Metadata.AppendInformation(info);
+                JobExecutionMetadataUtil.AppendInformation(_context, info);
             }
         }
 
         protected void CheckAggragateException()
         {
-            var metadata = Metadata;
-
-            if (metadata.Exceptions.Any())
+            var text = JobExecutionMetadataUtil.GetExceptionsText(_context);
+            if (string.IsNullOrEmpty(text) == false)
             {
-                var ex = new AggregateException("There was some errors aggragete at the job", Metadata.Exceptions);
+                var ex = new PlannerJobAggragateException(text);
                 throw ex;
             }
         }
@@ -103,7 +93,7 @@ namespace Planner.Client
 
         protected int? GetEffectedRows()
         {
-            return Metadata.EffectedRows;
+            return JobExecutionMetadataUtil.GetEffectedRows(_context);
         }
 
         protected string GetSetting(string key)
@@ -143,7 +133,7 @@ namespace Planner.Client
         {
             lock (Locker)
             {
-                Metadata.EffectedRows = Metadata.EffectedRows.GetValueOrDefault() + delta;
+                JobExecutionMetadataUtil.IncreaseEffectedRows(_context, delta);
             }
         }
 
@@ -183,7 +173,7 @@ namespace Planner.Client
         {
             lock (Locker)
             {
-                Metadata.EffectedRows = value;
+                JobExecutionMetadataUtil.SetEffectedRows(_context, value);
             }
         }
 
@@ -192,7 +182,7 @@ namespace Planner.Client
             lock (Locker)
             {
                 if (value > 100) { value = 100; }
-                Metadata.Progress = value;
+                JobExecutionMetadataUtil.SetProgress(_context, value);
             }
         }
 
@@ -205,7 +195,7 @@ namespace Planner.Client
                 if (percentage > 1) { percentage = 1; }
                 var value = Convert.ToByte(percentage * 100);
 
-                Metadata.Progress = value;
+                JobExecutionMetadataUtil.SetProgress(_context, value);
             }
         }
     }

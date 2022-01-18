@@ -1,0 +1,12 @@
+﻿job type: PlannerJob
+name: test_agg_ex
+description: test aggragate exceptions
+properties:
+  JobPath: C:\Users\tsahi_a\source\repos\Planner\TestAggEx\bin\debug\net5.0\
+  FileName: TestAggEx.dll
+  TypeName: TestAggEx.MyJob
+simple triggers:
+- name: every-hour-trigger
+  interval: 01:00:00
+  misfire behaviour: 2
+

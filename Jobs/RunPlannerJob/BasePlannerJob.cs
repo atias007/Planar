@@ -61,6 +61,12 @@ namespace RunPlannerJob
             {
                 SetJobRunningProperty("Fail", true);
                 var message = $"FireInstanceId {context.FireInstanceId} throw exception with message {ex.Message}";
+
+                if (ex is PlannerJobAggragateException)
+                {
+                    throw new JobExecutionException(message);
+                }
+
                 throw new JobExecutionException(message, ex);
             }
             finally

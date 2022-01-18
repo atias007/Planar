@@ -67,9 +67,8 @@ namespace Planner.Service
                 if (job.JobRunTime.TotalSeconds > AppSettings.PersistRunningJobsSpan.TotalSeconds)
                 {
                     _logger.LogInformation($"Persist information for job {job.JobDetail.Key.Group}.{job.JobDetail.Key.Name}");
-                    var metadata = JobExecutionMetadata.GetInstance(job);
-                    var information = metadata.Information;
-                    var exceptions = metadata.GetExceptionsText();
+                    var information = JobExecutionMetadataUtil.GetInformation(job);
+                    var exceptions = JobExecutionMetadataUtil.GetExceptionsText(job);
 
                     if (string.IsNullOrEmpty(information) && string.IsNullOrEmpty(exceptions)) { break; }
 

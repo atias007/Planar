@@ -76,7 +76,7 @@ namespace Planner.Service.JobListener
                 var endDate = context.FireTimeUtc.ToLocalTime().DateTime.Add(context.JobRunTime);
                 var status = jobException == null ? StatusMembers.Success : StatusMembers.Fail;
 
-                var metadata = JobExecutionMetadata.GetInstance(context);
+                var metadata = JobExecutionMetadataUtil.GetInstance(context);
                 var log = new DbJobInstanceLog
                 {
                     InstanceId = context.FireInstanceId,
@@ -84,7 +84,7 @@ namespace Planner.Service.JobListener
                     EndDate = endDate,
                     Exception = jobException?.ToString(),
                     EffectedRows = metadata.EffectedRows,
-                    Information = metadata.Information,
+                    Information = metadata.Information.ToString(),
                     Status = (int)status,
                     StatusTitle = status.ToString(),
                     IsStopped = context.CancellationToken.IsCancellationRequested
