@@ -200,18 +200,6 @@ namespace Planner.Service
         {
             try
             {
-                var maxConcurrency = configuration.GetValue<int?>(Consts.MaxConcurrencyVariableKey);
-                if (maxConcurrency == null)
-                {
-                    maxConcurrency = configuration.GetValue<int?>("MaxConcurrency").Value;
-                }
-
-                if (maxConcurrency < 1)
-                {
-                    _logger.LogWarning($"MaxConcurrency value {maxConcurrency} is invalid. Set MaxConcurrency to 1");
-                    maxConcurrency = 1;
-                }
-
                 var result = new NameValueCollection
                 {
                     { "quartz.scheduler.instanceName", "PlannerScheduler" },
@@ -222,7 +210,7 @@ namespace Planner.Service
                     { "quartz.dataSource.myDS.connectionString", AppSettings.DatabaseConnectionString },
                     { "quartz.dataSource.myDS.provider", "SqlServer" },
                     { "quartz.serializer.type", "json" },
-                    { "quartz.threadPool.maxConcurrency", maxConcurrency.ToString() }
+                    { "quartz.threadPool.maxConcurrency", AppSettings.MaxConcurrency.ToString() }
                 };
 
                 return result;

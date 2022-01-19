@@ -1,6 +1,8 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Planner.Service.Exceptions;
 using System;
+using System.Text;
 
 namespace Planner.Service
 {
@@ -14,51 +16,87 @@ namespace Planner.Service
 
         public static void Initialize(IConfiguration configuration)
         {
+            InitializeConnectionString(configuration);
+            InitializeMaxConcurrency(configuration);
+            InitializePersistanceSpan(configuration);
+        }
+
+        private static void InitializePersistanceSpan(IConfiguration configuration)
+        {
+            // Environment Variable
+            var prsistanceSpan = configuration.GetValue<TimeSpan?>(Consts.PersistRunningJobsSpanVariableKey);
+            if (prsistanceSpan == null)
+            {
+                // AppSettings
+                prsistanceSpan = configuration.GetValue<TimeSpan?>(nameof(PersistRunningJobsSpan));
+            }
+
+            if (prsistanceSpan == null)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine($"WARNING: PersistRunningJobsSpan settings is null. Set to default value {Consts.PersistRunningJobsSpanDefaultValue}");
+                Console.ResetColor();
+                prsistanceSpan = Consts.PersistRunningJobsSpanDefaultValue;
+            }
+
+            if (prsistanceSpan.GetValueOrDefault() == TimeSpan.Zero)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine($"WARNING: PersistRunningJobsSpan settings is Zero (00:00:00). Set to default value {Consts.PersistRunningJobsSpanDefaultValue}");
+                Console.ResetColor();
+                prsistanceSpan = Consts.PersistRunningJobsSpanDefaultValue;
+            }
+
+            PersistRunningJobsSpan = prsistanceSpan.GetValueOrDefault();
+        }
+
+        private static void InitializeMaxConcurrency(IConfiguration configuration)
+        {
+            // Environment Variable
             var maxConcurrency = configuration.GetValue<int?>(Consts.MaxConcurrencyVariableKey);
             if (maxConcurrency == null)
             {
-                maxConcurrency = configuration.GetValue<int?>(nameof(MaxConcurrency)).Value;
+                // AppSettings
+                maxConcurrency = configuration.GetValue<int?>(nameof(MaxConcurrency));
+            }
+
+            if (maxConcurrency == null)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine($"WARNING: MaxConcurrency settings is null. Set to default value {Consts.MaxConcurrencyDefaultValue}");
+                Console.ResetColor();
+                maxConcurrency = Consts.MaxConcurrencyDefaultValue;
             }
 
             if (maxConcurrency < 1)
             {
-                maxConcurrency = 1;
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine($"WARNING: MaxConcurrency settings is less then 1 ({maxConcurrency}). Set to default value {Consts.MaxConcurrencyDefaultValue}");
+                Console.ResetColor();
+                maxConcurrency = Consts.MaxConcurrencyDefaultValue;
             }
 
             MaxConcurrency = maxConcurrency.GetValueOrDefault();
+        }
 
-            // ------------------------------------------------------------------- //
-
+        private static void InitializeConnectionString(IConfiguration configuration)
+        {
+            // Environment Variable
             var connectionString = configuration.GetValue<string>(Consts.ConnectionStringVariableKey);
-
             if (string.IsNullOrEmpty(connectionString))
             {
-                connectionString = configuration.GetSection("DatabaseConnectionString")?.Value;
+                // AppSettings
+                connectionString = configuration.GetValue<string>("DatabaseConnectionString");
             }
 
             if (string.IsNullOrEmpty(connectionString))
             {
-                throw new ApplicationException("Database connection string could not be initialized\r\nMissing key 'DatabaseConnectionString' or value is empty in appsettings.json file and there is no environment variable 'PLANNER_DBCONNSTR'");
+                throw new AppSettingsException("ERROR: Database connection string could not be initialized\r\nMissing key 'DatabaseConnectionString' or value is empty in appsettings.json file and there is no environment variable 'PLANNER_DBCONNSTR'");
             }
 
             CheckConnectionString(connectionString);
 
             DatabaseConnectionString = connectionString;
-
-            // ----
-
-            var prsistanceSpan = configuration.GetValue<TimeSpan?>(Consts.PersistRunningJobsSpanVariableKey);
-            if (prsistanceSpan == null)
-            {
-                prsistanceSpan = configuration.GetValue<TimeSpan?>(nameof(PersistRunningJobsSpan)).Value;
-            }
-
-            if (prsistanceSpan.GetValueOrDefault() == TimeSpan.Zero)
-            {
-                prsistanceSpan = TimeSpan.FromMinutes(5);
-            }
-
-            PersistRunningJobsSpan = prsistanceSpan.GetValueOrDefault();
         }
 
         private static void CheckConnectionString(string connectionString)
@@ -70,7 +108,15 @@ namespace Planner.Service
             }
             catch (Exception ex)
             {
-                throw new ApplicationException($"Fail to open connection to database using connection string '{connectionString}'", ex);
+                var sb = new StringBuilder();
+                var seperator = string.Empty.PadLeft(80, '-');
+                sb.AppendLine("Fail to open connection to database using connection string");
+                sb.AppendLine(seperator);
+                sb.AppendLine(connectionString);
+                sb.AppendLine(seperator);
+                sb.AppendLine("Exception message:");
+                sb.AppendLine(ex.Message);
+                throw new AppSettingsException(sb.ToString());
             }
         }
     }

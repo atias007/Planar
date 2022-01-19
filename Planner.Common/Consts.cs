@@ -1,4 +1,6 @@
-﻿internal sealed class Consts
+﻿using System;
+
+internal sealed class Consts
 {
     public const string ConstPrefix = "__";
     public const string QuartzPrefix = "QRTZ_";
@@ -18,6 +20,8 @@
     public const string ConnectionStringVariableKey = "PLANNER_DBCONNSTRING";
     public const string MaxConcurrencyVariableKey = "PLANNER_MAXCONCURRENCY";
     public const string PersistRunningJobsSpanVariableKey = "PLANNER_PERSISTSPAN";
+    public const int MaxConcurrencyDefaultValue = 10;
+    public static readonly TimeSpan PersistRunningJobsSpanDefaultValue = TimeSpan.FromMinutes(5);
     public const string ProductionEnvironment = "Production";
     public const string RecoveringJobsGroup = "RECOVERING_JOBS";
 }
