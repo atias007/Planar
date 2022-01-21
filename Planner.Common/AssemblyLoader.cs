@@ -32,9 +32,9 @@ namespace Planner.Common
 
         private static Assembly LoadAssemblyFile(string filename)
         {
-            //using var stream = File.OpenRead(filename);
-            //var result = AssemblyLoadContext.Default.LoadFromStream(stream);
-            var result = AssemblyLoadContext.Default.LoadFromAssemblyPath(filename);
+            using var stream = File.OpenRead(filename);
+            var result = AssemblyLoadContext.Default.LoadFromStream(stream);
+            //var result = AssemblyLoadContext.Default.LoadFromAssemblyPath(filename);
             return result;
         }
 

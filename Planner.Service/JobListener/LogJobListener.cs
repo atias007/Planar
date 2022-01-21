@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planner.API.Common.Entities;
 using Planner.Service.JobListener.Base;
+using Planner.Service.Monitor;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -21,6 +22,7 @@ namespace Planner.Service.JobListener
             try
             {
                 await DAL.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto);
+                await MonitorUtil.Scan(MonitorEvents.ExecutionVetoed, context, null, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -61,6 +63,7 @@ namespace Planner.Service.JobListener
                 if (log.InstanceId.Length > 250) { log.InstanceId = log.InstanceId[0..250]; }
 
                 await DAL.CreateJobInstanceLog(log);
+                await MonitorUtil.Scan(MonitorEvents.ExecutionStart, context, null, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -91,11 +94,26 @@ namespace Planner.Service.JobListener
                 };
 
                 await DAL.UpdateAutomationTaskCallLog(log);
+                await MonitorJobWasExecuted(context, jobException, cancellationToken);
             }
             catch (Exception ex)
             {
                 Logger.Log(LogLevel.Critical, ex, $"Error handle '{nameof(JobWasExecuted)}' at '{nameof(LogJobListener)}'");
             }
+        }
+
+        private static async Task MonitorJobWasExecuted(IJobExecutionContext context, JobExecutionException jobException, CancellationToken cancellationToken)
+        {
+            var task1 = MonitorUtil.Scan(MonitorEvents.ExecutionEnd, context, jobException, cancellationToken);
+
+            var @event =
+                jobException == null ?
+                MonitorEvents.ExecutionSuccess :
+                MonitorEvents.ExecutionFail;
+
+            var task2 = MonitorUtil.Scan(@event, context, jobException, cancellationToken);
+
+            await Task.WhenAll(task1, task2);
         }
 
         private static string GetJobDataForLogging(JobDataMap data)
