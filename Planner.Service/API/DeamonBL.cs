@@ -703,6 +703,24 @@ namespace Planner.Service.API
             return new BaseResponse<List<string>>(ServiceUtil.MonitorHooks.Keys.ToList());
         }
 
+        public async Task<BaseResponse<List<MonitorItem>>> GetMonitorItems(GetMonitorItemsRequest request)
+        {
+            var items = await _dal.GetMonitorItems(request);
+            var result = items.Select(m => new MonitorItem
+            {
+                Active = m.Active.GetValueOrDefault(),
+                EventTitle = ((MonitorEvents)m.EventId).ToString(),
+                GroupName = m.Group.Name,
+                Hook = m.Hook,
+                Id = m.Id,
+                Job = string.IsNullOrEmpty(m.JobGroup) ? $"Id: {m.JobId}" : $"Group: {m.JobGroup}",
+                Title = m.Title
+            })
+            .ToList();
+
+            return new BaseResponse<List<MonitorItem>>(result);
+        }
+
         #region Private
 
         private static GlobalParameter GetGlobalParameter(GlobalParameterData request)

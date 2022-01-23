@@ -431,5 +431,21 @@ namespace Planner.Service.Data
         {
             return await _context.Groups.AnyAsync(g => g.Id == groupId);
         }
+
+        public async Task<List<MonitorAction>> GetMonitorItems(GetMonitorItemsRequest request)
+        {
+            var query = _context.MonitorActions.AsQueryable();
+            if (string.IsNullOrEmpty(request.JobIdOrJobGroup) == false)
+            {
+                query = query.Where(m => m.JobId == request.JobIdOrJobGroup || m.JobGroup == request.JobIdOrJobGroup);
+            }
+
+            query = query.OrderByDescending(m => m.Active)
+                .ThenBy(m => m.JobGroup)
+                .ThenBy(m => m.JobId);
+
+            var result = await query.Include(m => m.Group).ToListAsync();
+            return result;
+        }
     }
 }

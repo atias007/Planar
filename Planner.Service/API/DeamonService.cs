@@ -927,6 +927,21 @@ namespace Planner.Service.API
                 return result;
             }
         }
+
+        public BaseResponse<List<MonitorItem>> GetMonitorItems(GetMonitorItemsRequest request)
+        {
+            try
+            {
+                InitializeService(nameof(GetMonitorItems));
+                var result = BL.GetMonitorItems(request).Result;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var result = HandleException<BaseResponse<List<MonitorItem>>>(ex, nameof(GetMonitorItems));
+                return result;
+            }
+        }
     }
 }
 
