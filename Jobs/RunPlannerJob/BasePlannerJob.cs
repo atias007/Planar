@@ -5,6 +5,7 @@ using Planner.Common;
 using Quartz;
 using System;
 using System.IO;
+using System.Runtime.Loader;
 using System.Threading.Tasks;
 
 namespace RunPlannerJob
@@ -18,6 +19,8 @@ namespace RunPlannerJob
 
         public override async Task Execute(IJobExecutionContext context)
         {
+            AssemblyLoadContext assemblyContext = null;
+
             try
             {
                 MapProperties(context);
@@ -25,7 +28,8 @@ namespace RunPlannerJob
                 Validate();
 
                 var assemblyFilename = Path.Combine(JobPath, FileName);
-                var assembly = AssemblyLoader.LoadFromAssemblyPath(assemblyFilename);
+                assemblyContext = AssemblyLoader.CreateAssemblyLoadContext(context.FireInstanceId, true);
+                var assembly = AssemblyLoader.LoadFromAssemblyPath(assemblyFilename, assemblyContext);
                 var type = assembly.GetType(TypeName);
 
                 if (type == null)
@@ -72,6 +76,7 @@ namespace RunPlannerJob
             finally
             {
                 FinalizeJob(context);
+                assemblyContext?.Unload();
             }
         }
 
