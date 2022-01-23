@@ -49,7 +49,8 @@ namespace Planner.Common
 
         private static void LoadReferencedAssemblies(Assembly assembly, AssemblyLoadContext context, string fileName, string directory)
         {
-            var filesInDirectory = Directory.GetFiles(directory)
+            const string filePattern = "*.dll";
+            var filesInDirectory = Directory.GetFiles(directory, filePattern)
                 .Where(x => x != fileName)
                 .Select(x => new KeyValuePair<string, string>(Path.GetFileNameWithoutExtension(x), x))
                 .ToDictionary(k => k.Key, v => v.Value);
