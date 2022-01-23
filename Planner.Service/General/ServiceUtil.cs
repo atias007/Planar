@@ -1,22 +1,34 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planner.Common;
 using Planner.MonitorHook;
+using Planner.Service.Monitor;
 using Quartz;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Loader;
 
 namespace Planner.Service.General
 {
     internal static class ServiceUtil
     {
-        internal static Dictionary<string, Type> MonitorHooks { get; private set; } = new();
+        internal static Dictionary<string, MonitorHookFactory> MonitorHooks { get; private set; } = new();
 
         internal static string GenerateId()
         {
             var id = Path.GetRandomFileName().Replace(".", string.Empty);
             return id;
+        }
+
+        private static void ClearMonitorHooks()
+        {
+            MonitorHooks.Clear();
+            var contexts = AssemblyLoadContext.All.Where(c => c.IsCollectible && c.Name.StartsWith("MonitorHook_"));
+            foreach (var c in contexts)
+            {
+                c.Unload();
+            }
         }
 
         internal static void LoadMonitorHooks<T>(ILogger<T> logger)
@@ -30,25 +42,36 @@ namespace Planner.Service.General
                 return;
             }
 
-            MonitorHooks.Clear();
+            ClearMonitorHooks();
             var directories = Directory.GetDirectories(path);
             foreach (var dir in directories)
             {
+                var folder = Path.GetDirectoryName(dir);
+                var assemblyContext = AssemblyLoader.CreateAssemblyLoadContext($"MonitorHook_{folder}", true);
                 var files = Directory.GetFiles(dir, "*.dll");
+                var hasHook = false;
+
                 foreach (var f in files)
                 {
-                    var assembly = AssemblyLoader.LoadFromAssemblyPath(f);
+                    var assembly = AssemblyLoader.LoadFromAssemblyPath(f, assemblyContext);
                     var types = assembly.GetTypes().Where(t => t.IsInterface == false && t.IsAbstract == false);
                     foreach (var t in types)
                     {
                         var isHook = typeof(IMonitorHook).IsAssignableFrom(t);
                         if (isHook)
                         {
+                            hasHook = true;
                             var name = new DirectoryInfo(dir).Name;
-                            MonitorHooks.Add(name, t);
+                            var hook = new MonitorHookFactory { Name = name, Type = t, AssemblyContext = assemblyContext };
+                            MonitorHooks.Add(name, hook);
                             logger.LogInformation($"Add MonitorHook '{name}' from type '{t.FullName}'");
                         }
                     }
+                }
+
+                if (hasHook == false)
+                {
+                    assemblyContext.Unload();
                 }
             }
         }

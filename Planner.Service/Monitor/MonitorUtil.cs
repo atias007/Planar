@@ -62,17 +62,17 @@ namespace Planner.Service.Monitor
                 {
                     try
                     {
-                        var hook = GetMonitorHook(action.Hook);
-                        if (hook == null)
+                        var hookInstance = GetMonitorHookInstance(action.Hook);
+                        if (hookInstance == null)
                         {
                             logger.LogWarning($"Hook '{action.Hook}' in monitor item id: {action.Id}, title: '{action.Title}' is not exists in service");
                         }
                         else
                         {
                             var details = GetMonitorDetails(action, context, jobException);
-                            var hookType = ServiceUtil.MonitorHooks[action.Hook];
+                            var hookType = ServiceUtil.MonitorHooks[action.Hook]?.Type;
                             var logger = Global.GetLogger(hookType);
-                            var hookTask = hook.Handle(details, logger)
+                            var hookTask = hookInstance.Handle(details, logger)
                             .ContinueWith(t =>
                             {
                                 if (t.Exception != null)
@@ -104,12 +104,13 @@ namespace Planner.Service.Monitor
             await task;
         }
 
-        private static IMonitorHook GetMonitorHook(string hook)
+        private static IMonitorHook GetMonitorHookInstance(string hook)
         {
             var result = ServiceUtil.MonitorHooks[hook];
             if (result == null) { return null; }
+            if (result.Type == null) { return null; }
 
-            var instance = Activator.CreateInstance(result) as IMonitorHook;
+            var instance = Activator.CreateInstance(result.Type) as IMonitorHook;
             return instance;
         }
 
