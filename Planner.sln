@@ -45,7 +45,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planner.HttpMonitorHook", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planner.TeamsMonitorHook", "Planner.TeamsMonitorHook\Planner.TeamsMonitorHook.csproj", "{C6A913AE-C44C-4DA9-B431-ABACA4B135B8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestAggEx", "TestAggEx\TestAggEx.csproj", "{8E25D607-7B89-4869-96EE-EE263453FA3E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestAggEx", "TestAggEx\TestAggEx.csproj", "{8E25D607-7B89-4869-96EE-EE263453FA3E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

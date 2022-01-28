@@ -21,6 +21,8 @@ namespace Planner.Service.JobListener
         {
             try
             {
+                if (context.JobDetail.Key.Group == Consts.PlannerSystemGroup) { return; }
+
                 await DAL.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto);
                 await MonitorUtil.Scan(MonitorEvents.ExecutionVetoed, context, null, cancellationToken);
             }
@@ -34,6 +36,8 @@ namespace Planner.Service.JobListener
         {
             try
             {
+                if (context.JobDetail.Key.Group == Consts.PlannerSystemGroup) { return; }
+
                 string data = GetJobDataForLogging(context.MergedJobDataMap);
 
                 var log = new DbJobInstanceLog
@@ -75,6 +79,8 @@ namespace Planner.Service.JobListener
         {
             try
             {
+                if (context.JobDetail.Key.Group == Consts.PlannerSystemGroup) { return; }
+
                 var duration = context.JobRunTime.TotalMilliseconds;
                 var endDate = context.FireTimeUtc.ToLocalTime().DateTime.Add(context.JobRunTime);
                 var status = jobException == null ? StatusMembers.Success : StatusMembers.Fail;

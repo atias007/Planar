@@ -75,7 +75,12 @@ namespace Planner.Service.API
                 result.Add(details);
             }
 
-            var response = new GetAllJobsResponse(result.OrderBy(r => r.Name).ToList());
+            result = result
+                .OrderBy(r => r.Group)
+                .ThenBy(r => r.Name)
+                .ToList();
+
+            var response = new GetAllJobsResponse(result);
             return response;
         }
 

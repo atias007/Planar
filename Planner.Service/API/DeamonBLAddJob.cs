@@ -31,7 +31,7 @@ namespace Planner.Service.API
         public async Task<AddJobResponse> AddJob(AddJobRequest request)
         {
             var metadata = GetJobMetadata(request.Yaml);
-            if(metadata == null)
+            if (metadata == null)
             {
                 throw new PlannerValidationException("Fail to read yml data");
             }
@@ -281,14 +281,6 @@ namespace Planner.Service.API
 
             if (string.IsNullOrEmpty(metadata.Name)) throw new PlannerValidationException("job name is mandatory");
             if (string.IsNullOrEmpty(metadata.JobType)) throw new PlannerValidationException("job type is mandatory");
-            metadata.SimpleTriggers?.ForEach(t =>
-            {
-                if (string.IsNullOrEmpty(t.Name)) throw new PlannerValidationException("trigger name is mandatory");
-            });
-            metadata.CronTriggers?.ForEach(t =>
-            {
-                if (string.IsNullOrEmpty(t.Name)) throw new PlannerValidationException("trigger name is mandatory");
-            });
 
             #endregion Mandatory
 
@@ -297,16 +289,6 @@ namespace Planner.Service.API
             var regex = new Regex(nameRegex);
             if (IsRegexMatch(regex, metadata.Name) == false) throw new PlannerValidationException($"job name '{metadata.Name}' is invalid. use only alphanumeric, dashes & underscore");
             if (IsRegexMatch(regex, metadata.Group) == false) throw new PlannerValidationException($"job group '{metadata.Group}' is invalid. use only alphanumeric, dashes & underscore");
-            metadata.SimpleTriggers?.ForEach(t =>
-            {
-                if (IsRegexMatch(regex, t.Name) == false) throw new PlannerValidationException($"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
-                if (IsRegexMatch(regex, t.Group) == false) throw new PlannerValidationException($"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
-            });
-            metadata.CronTriggers?.ForEach(t =>
-            {
-                if (IsRegexMatch(regex, t.Name) == false) throw new PlannerValidationException($"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
-                if (IsRegexMatch(regex, t.Group) == false) throw new PlannerValidationException($"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
-            });
 
             #endregion Valid Name & Group
 
@@ -315,18 +297,10 @@ namespace Planner.Service.API
             if (metadata.Name.Length > 50) throw new PlannerValidationException("job name length is invalid. max length is 50");
             if (metadata.Group?.Length > 50) throw new PlannerValidationException("job group length is invalid. max length is 50");
             if (metadata.Description?.Length > 100) throw new PlannerValidationException("job description length is invalid. max length is 100");
-            metadata.SimpleTriggers?.ForEach(t =>
-            {
-                if (t.Name.Length > 50) throw new PlannerValidationException("trigger name length is invalid. max length is 50");
-                if (t.Group?.Length > 50) throw new PlannerValidationException("trigger group length is invalid. max length is 50");
-            });
-            metadata.CronTriggers?.ForEach(t =>
-            {
-                if (t.Name.Length > 50) throw new PlannerValidationException("trigger name length is invalid. max length is 50");
-                if (t.Group?.Length > 50) throw new PlannerValidationException("trigger group length is invalid. max length is 50");
-            });
 
             #endregion Max Chars
+
+            if (Consts.PreserveGroupNames.Contains(metadata.Group)) { throw new PlannerValidationException($"job group group '{metadata.Group}' is invalid (preserved value)"); }
 
             ValidateTriggerMetadata(metadata);
 
@@ -409,11 +383,11 @@ namespace Planner.Service.API
 
             metadata.SimpleTriggers?.ForEach(t =>
             {
-                if (t.Group == Consts.RetryTriggerGroup) { throw new PlannerValidationException($"simple trigger group '{Consts.RetryTriggerGroup}' is invalid (preserved value)"); }
+                if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new PlannerValidationException($"simple trigger group '{t.Group}' is invalid (preserved value)"); }
             });
             metadata.CronTriggers?.ForEach(t =>
             {
-                if (t.Group == Consts.RetryTriggerGroup) { throw new PlannerValidationException($"cron trigger group '{Consts.RetryTriggerGroup}' is invalid (preserved value)"); }
+                if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new PlannerValidationException($"cron trigger group '{t.Group}' is invalid (preserved value)"); }
             });
 
             #endregion Preserve Words

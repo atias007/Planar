@@ -8,6 +8,7 @@ using Planner.Service.Data;
 using Planner.Service.General;
 using Planner.Service.JobListener;
 using Planner.Service.Monitor;
+using Planner.Service.SystemJobs;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Impl.Matchers;
@@ -15,7 +16,6 @@ using Quartz.Logging;
 using Quartz.Simpl;
 using System;
 using System.Collections.Specialized;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -86,6 +86,8 @@ namespace Planner.Service
 
             AddMonitorHooks();
 
+            await ScheduleSystemJobs();
+
             await StartScheduler();
         }
 
@@ -99,6 +101,11 @@ namespace Planner.Service
             var prms = await dal.GetAllGlobalParameter();
             var dict = prms.ToDictionary(p => p.ParamKey, p => p.ParamValue);
             Global.Parameters = dict;
+        }
+
+        public static async Task ScheduleSystemJobs()
+        {
+            await PersistDataJob.Schedule(Scheduler);
         }
 
         private async Task SetQuartzLogProvider()
@@ -137,7 +144,6 @@ namespace Planner.Service
             try
             {
                 _logger.LogInformation("Initialize: AddJobListeners");
-
                 _scheduler.ListenerManager.AddJobListener(new LogJobListener(), GroupMatcher<JobKey>.AnyGroup());
                 _scheduler.ListenerManager.AddTriggerListener(new RetryTriggerListener(), GroupMatcher<TriggerKey>.AnyGroup());
                 await Task.CompletedTask;

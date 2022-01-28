@@ -50,8 +50,7 @@ namespace Planner.Service
                         .AddTransient<DeamonBL>()
                         .AddTransient<MainService>()
                         .AddScoped<IPlannerCommand, DeamonService>()
-                        .AddHostedService<MainService>()
-                        .AddHostedService<PersistDataService>();
+                        .AddHostedService<MainService>();
                 })
                 .UseSerilog((context, config) => ConfigureSerilog(config));
 
