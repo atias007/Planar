@@ -8,7 +8,7 @@ internal sealed class Consts
     public const string RetrySpan = "__Job_Retry_Span";
     public const int MaxRetries = 3;
 
-    public const string RetryTriggerGroup = "RetryTrigger";
+    public const string RetryTriggerGroup = "__RetryTrigger";
     public const string PlannerSystemGroup = "__System";
     public static readonly string[] PreserveGroupNames = new string[] { RetryTriggerGroup, PlannerSystemGroup };
 

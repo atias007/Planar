@@ -276,13 +276,31 @@ namespace Planner.Service.API
         public static async Task<bool> RemoveJob(JobOrTriggerKey request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateSystemJob(jobKey);
             var result = await Scheduler.DeleteJob(jobKey);
             return result;
+        }
+
+        private static void ValidateSystemJob(JobKey jobKey)
+        {
+            if (jobKey.Group == Consts.PlannerSystemGroup)
+            {
+                throw new PlannerValidationException($"Forbidden: this is system job and it should not be modified or deleted");
+            }
+        }
+
+        private static void ValidateSystemTrigger(TriggerKey triggerKey)
+        {
+            if (triggerKey.Group == Consts.PlannerSystemGroup)
+            {
+                throw new PlannerValidationException($"Forbidden: this is system trigger and it should not be modified or deleted");
+            }
         }
 
         public static async Task<BaseResponse> RemoveJobData(RemoveJobDataRequest request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateSystemJob(jobKey);
             var info = await Scheduler.GetJobDetail(jobKey);
             await ValidateJobNotRunning(jobKey);
             await Scheduler.PauseJob(jobKey);
@@ -318,6 +336,7 @@ namespace Planner.Service.API
         public static async Task<BaseResponse> UpsertJobProperty(UpsertJobPropertyRequest request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateSystemJob(jobKey);
             await ValidateJobNotRunning(jobKey);
             await Scheduler.PauseJob(jobKey);
             var info = await Scheduler.GetJobDetail(jobKey);
@@ -380,6 +399,7 @@ namespace Planner.Service.API
         public static async Task<BaseResponse> UpsertJobData(JobDataRequest request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateSystemJob(jobKey);
             var info = await Scheduler.GetJobDetail(jobKey);
             if (info != null)
             {
@@ -421,9 +441,10 @@ namespace Planner.Service.API
 
         public static async Task<BaseResponse> RemoveTrigger(JobOrTriggerKey request)
         {
-            var key = await TriggerKeyHelper.GetTriggerKey(request);
-            await Scheduler.PauseTrigger(key);
-            var success = await Scheduler.UnscheduleJob(key);
+            var triggerKey = await TriggerKeyHelper.GetTriggerKey(request);
+            ValidateSystemTrigger(triggerKey);
+            await Scheduler.PauseTrigger(triggerKey);
+            var success = await Scheduler.UnscheduleJob(triggerKey);
             if (success == false)
             {
                 throw new ApplicationException("Fail to remove trigger");
