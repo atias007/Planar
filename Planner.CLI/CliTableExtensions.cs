@@ -112,5 +112,15 @@ namespace Planner.CLI
 
             return new List<Table> { table, table2 };
         }
+
+        public static Table GetTable(BaseResponse<List<MonitorItem>> response)
+        {
+            if (response.Success == false) return null;
+            var data = response.Result;
+            var table = new Table();
+            table.AddColumns("Id", "Title", "Event", "Job", "Group", "Hook", "Active");
+            data.ForEach(r => table.AddRow(CliTableFormat.GetBooleanMarkup(r.Active, r.Id), r.Title.EscapeMarkup(), r.EventTitle.EscapeMarkup(), r.Job.EscapeMarkup(), r.GroupName.EscapeMarkup(), r.Hook.EscapeMarkup(), CliTableFormat.GetBooleanMarkup(r.Active)));
+            return table;
+        }
     }
 }
