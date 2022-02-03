@@ -942,6 +942,21 @@ namespace Planner.Service.API
                 return result;
             }
         }
+
+        public BaseResponse<MonitorActionMedatada> GetMonitorActionMedatada()
+        {
+            try
+            {
+                InitializeService(nameof(GetMonitorActionMedatada));
+                var result = DeamonBL.GetMonitorActionMedatada();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var result = HandleException<BaseResponse<MonitorActionMedatada>>(ex, nameof(GetMonitorActionMedatada));
+                return result;
+            }
+        }
     }
 }
 

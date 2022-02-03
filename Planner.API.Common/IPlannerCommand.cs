@@ -157,6 +157,8 @@ namespace Planner.API.Common
 
         BaseResponse<List<MonitorItem>> GetMonitorItems(GetMonitorItemsRequest request);
 
+        BaseResponse<MonitorActionMedatada> GetMonitorActionMedatada();
+
         #endregion Monitor
     }
 }

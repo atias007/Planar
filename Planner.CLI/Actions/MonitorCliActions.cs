@@ -35,7 +35,7 @@ namespace Planner.CLI.Actions
         [Action("add")]
         public static async Task<ActionResponse> AddMonitorHooks()
         {
-            var hookTask = await Proxy.InvokeAsync(x => x.GetMonitorHooks());
+            var data = await Proxy.InvokeAsync(x => x.GetMonitorActionMedatada());
 
             var title = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Title: [/]")
                 .Validate(title =>
@@ -54,7 +54,8 @@ namespace Planner.CLI.Actions
 
             var hookPrompt = new TextPrompt<string>("[turquoise2]  > Hook: [/]")
                 .InvalidChoiceMessage("[red]That's not a valid hook[/]");
-            hookTask.Result?.ForEach(h => hookPrompt.AddChoice(h));
+
+            data.Result.Hooks.ForEach(h => hookPrompt.AddChoice(h));
             var hook = AnsiConsole.Prompt(hookPrompt);
 
             //var result = await Proxy.InvokeAsync(x => x.GetMonitorHooks());

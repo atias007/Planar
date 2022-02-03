@@ -747,6 +747,18 @@ namespace Planner.Service.API
             return new BaseResponse<List<MonitorItem>>(result);
         }
 
+        public async Task<BaseResponse<MonitorActionMedatada>> GetMonitorActionMedatada()
+        {
+            var result = new MonitorActionMedatada();
+
+            result.Hooks = ServiceUtil.MonitorHooks.Keys
+                .Select((k, i) => new { k, i })
+                .ToDictionary(i => i.i, k => k.k);
+
+            var response = new BaseResponse<MonitorActionMedatada>(result);
+            return await Task.FromResult(response);
+        }
+
         #region Private
 
         private static GlobalParameter GetGlobalParameter(GlobalParameterData request)
