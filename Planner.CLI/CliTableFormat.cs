@@ -65,6 +65,15 @@ namespace Planner.CLI
             };
         }
 
+        public static string GetBooleanMarkup(bool value, object display = null)
+        {
+            if (display == null) { display = value; }
+
+            return value ?
+                $"[green]{display}[/]" :
+                $"[red]{display}[/]";
+        }
+
         public static string GetLevelMarkup(string level)
         {
             return level switch

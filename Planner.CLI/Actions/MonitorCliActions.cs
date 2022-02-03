@@ -1,4 +1,6 @@
-﻿using Planner.CLI.Attributes;
+﻿using Planner.API.Common.Entities;
+using Planner.CLI.Attributes;
+using Planner.CLI.Entities;
 using Spectre.Console;
 using System.Threading.Tasks;
 
@@ -19,6 +21,15 @@ namespace Planner.CLI.Actions
         {
             var result = await Proxy.InvokeAsync(x => x.GetMonitorHooks());
             return new ActionResponse(result, serializeObj: result.Result);
+        }
+
+        [Action("ls")]
+        public static async Task<ActionResponse> GetMonitorItems(CliGetMonitorItemsRequest request)
+        {
+            var prm = JsonMapper.Map<GetMonitorItemsRequest, CliGetMonitorItemsRequest>(request);
+            var result = await Proxy.InvokeAsync(x => x.GetMonitorItems(prm));
+            var table = CliTableExtensions.GetTable(result);
+            return new ActionResponse(result, table);
         }
 
         [Action("add")]
