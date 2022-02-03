@@ -1,4 +1,5 @@
 ﻿using Planner.CLI.Attributes;
+using Spectre.Console;
 using System.Threading.Tasks;
 
 namespace Planner.CLI.Actions
@@ -18,6 +19,21 @@ namespace Planner.CLI.Actions
         {
             var result = await Proxy.InvokeAsync(x => x.GetMonitorHooks());
             return new ActionResponse(result, serializeObj: result.Result);
+        }
+
+        [Action("add")]
+        public static async Task<ActionResponse> AddMonitorHooks()
+        {
+            var title = AnsiConsole.Ask<string>($"[turquoise2]  > Title: [/]");
+            var jobId = AnsiConsole.Ask<string>($"[turquoise2]  > Job id: [/]");
+            var jobGroup = AnsiConsole.Ask<string>($"[turquoise2]  > Job group: [/]");
+            var monitorEvent = AnsiConsole.Ask<int>($"[turquoise2]  > Monitor event: [/]");
+            var monitorEventArgs = AnsiConsole.Ask<int>($"[turquoise2]  > Monitor event argument: [/]");
+            var groupId = AnsiConsole.Ask<int>($"[turquoise2]  > Distribution group: [/]");
+            var hook = AnsiConsole.Ask<int>($"[turquoise2]  > Hook: [/]");
+
+            //var result = await Proxy.InvokeAsync(x => x.GetMonitorHooks());
+            return await Task.FromResult(new ActionResponse(null));
         }
     }
 }
