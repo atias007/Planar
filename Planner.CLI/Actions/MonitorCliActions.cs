@@ -35,13 +35,27 @@ namespace Planner.CLI.Actions
         [Action("add")]
         public static async Task<ActionResponse> AddMonitorHooks()
         {
-            var title = AnsiConsole.Ask<string>($"[turquoise2]  > Title: [/]");
-            var jobId = AnsiConsole.Ask<string>($"[turquoise2]  > Job id: [/]");
-            var jobGroup = AnsiConsole.Ask<string>($"[turquoise2]  > Job group: [/]");
-            var monitorEvent = AnsiConsole.Ask<int>($"[turquoise2]  > Monitor event: [/]");
-            var monitorEventArgs = AnsiConsole.Ask<int>($"[turquoise2]  > Monitor event argument: [/]");
-            var groupId = AnsiConsole.Ask<int>($"[turquoise2]  > Distribution group: [/]");
-            var hook = AnsiConsole.Ask<int>($"[turquoise2]  > Hook: [/]");
+            var hookTask = await Proxy.InvokeAsync(x => x.GetMonitorHooks());
+
+            var title = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Title: [/]")
+                .Validate(title =>
+                {
+                    if (string.IsNullOrWhiteSpace(title)) { return ValidationResult.Error("[red]Title is required field[/]"); }
+                    if (title.Length > 50) { return ValidationResult.Error("[red]Title limited to 50 chars maximum[/]"); }
+                    if (title.Length < 5) { return ValidationResult.Error("[red]Title must have at least 5 chars[/]"); }
+                    return ValidationResult.Success();
+                }));
+
+            var jobId = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Job id: [/]").AllowEmpty());
+            var jobGroup = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Job group: [/]").AllowEmpty());
+            var monitorEvent = AnsiConsole.Ask<int>("[turquoise2]  > Monitor event: [/]");
+            var monitorEventArgs = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Monitor event argument: [/]").AllowEmpty());
+            var groupId = AnsiConsole.Ask<int>("[turquoise2]  > Distribution group: [/]");
+
+            var hookPrompt = new TextPrompt<string>("[turquoise2]  > Hook: [/]")
+                .InvalidChoiceMessage("[red]That's not a valid hook[/]");
+            hookTask.Result?.ForEach(h => hookPrompt.AddChoice(h));
+            var hook = AnsiConsole.Prompt(hookPrompt);
 
             //var result = await Proxy.InvokeAsync(x => x.GetMonitorHooks());
             return await Task.FromResult(new ActionResponse(null));

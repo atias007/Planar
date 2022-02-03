@@ -9,6 +9,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Planner.Client" Version="1.0.3" />
+    <ProjectReference Include="..\Planner.Client\Planner.Client.csproj" />
   </ItemGroup>
 </Project>
