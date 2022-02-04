@@ -2,6 +2,8 @@
 using Planner.CLI.Attributes;
 using Planner.CLI.Entities;
 using Spectre.Console;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Planner.CLI.Actions
@@ -36,7 +38,12 @@ namespace Planner.CLI.Actions
         public static async Task<ActionResponse> AddMonitorHooks()
         {
             var data = await Proxy.InvokeAsync(x => x.GetMonitorActionMedatada());
+            if (data.Success == false)
+            {
+                throw new ApplicationException(data.ErrorDescription);
+            }
 
+            // === Title ===
             var title = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Title: [/]")
                 .Validate(title =>
                 {
@@ -46,16 +53,39 @@ namespace Planner.CLI.Actions
                     return ValidationResult.Success();
                 }));
 
+            // === JobId ===
+            if (data.Result.Jobs != null && data.Result.Jobs.Count > 0)
+            {
+                var table = CliTableExtensions.GetTable(data.Result.Jobs, "Description");
+                AnsiConsole.Write(table);
+            }
             var jobId = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Job id: [/]").AllowEmpty());
-            var jobGroup = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Job group: [/]").AllowEmpty());
-            var monitorEvent = AnsiConsole.Ask<int>("[turquoise2]  > Monitor event: [/]");
+
+            // === JobGroup ===
+            if (data.Result.JobGroups != null && data.Result.JobGroups.Count > 0)
+            {
+                var table = CliTableExtensions.GetTable(data.Result.JobGroups, "Job Group");
+                AnsiConsole.Write(table);
+            }
+            var jobGroup = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Job group name: [/]").AllowEmpty());
+
+            // === Event ===
+            var evenTtable = CliTableExtensions.GetTable(data.Result.Events, "Event Name");
+            AnsiConsole.Write(evenTtable);
+            var monitorEvent = AnsiConsole.Ask<int>("[turquoise2]  > Monitor event id: [/]");
+
+            // === EventArguments ===
             var monitorEventArgs = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Monitor event argument: [/]").AllowEmpty());
-            var groupId = AnsiConsole.Ask<int>("[turquoise2]  > Distribution group: [/]");
 
-            var hookPrompt = new TextPrompt<string>("[turquoise2]  > Hook: [/]")
-                .InvalidChoiceMessage("[red]That's not a valid hook[/]");
+            // === Distribution Group ===
+            var groupsTable = CliTableExtensions.GetTable(data.Result.Groups, "Group Name");
+            AnsiConsole.Write(groupsTable);
+            var groupId = AnsiConsole.Ask<int>("[turquoise2]  > Distribution group id: [/]");
 
-            data.Result.Hooks.ForEach(h => hookPrompt.AddChoice(h));
+            // === Hook ===
+            var hooksTable = CliTableExtensions.GetTable(data.Result.Hooks, "Name");
+            AnsiConsole.Write(hooksTable);
+            var hookPrompt = new TextPrompt<int>("[turquoise2]  > Hook id: [/]");
             var hook = AnsiConsole.Prompt(hookPrompt);
 
             //var result = await Proxy.InvokeAsync(x => x.GetMonitorHooks());

@@ -948,7 +948,7 @@ namespace Planner.Service.API
             try
             {
                 InitializeService(nameof(GetMonitorActionMedatada));
-                var result = DeamonBL.GetMonitorActionMedatada();
+                var result = BL.GetMonitorActionMedatada().Result;
                 return result;
             }
             catch (Exception ex)

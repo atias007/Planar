@@ -642,7 +642,7 @@ namespace Planner.Service.API
 
         public async Task<BaseResponse<string>> GetGroups()
         {
-            return await GetBaseResponse(_dal.GetGrousp);
+            return await GetBaseResponse(_dal.GetGroups);
         }
 
         public async Task<BaseResponse> RemoveGroup(GetByIdRequest request)
@@ -749,11 +749,35 @@ namespace Planner.Service.API
 
         public async Task<BaseResponse<MonitorActionMedatada>> GetMonitorActionMedatada()
         {
-            var result = new MonitorActionMedatada();
+            var result = new MonitorActionMedatada
+            {
+                Hooks = ServiceUtil.MonitorHooks.Keys
+                    .Select((k, i) => new { k, i })
+                    .ToDictionary(i => i.i + 1, k => k.k),
+                Groups = await _dal.GetGroupsName(),
+                Events = Enum.GetValues(typeof(MonitorEvents))
+                    .Cast<MonitorEvents>()
+                    .ToDictionary(k => (int)k, v => v.ToString()),
+            };
 
-            result.Hooks = ServiceUtil.MonitorHooks.Keys
-                .Select((k, i) => new { k, i })
-                .ToDictionary(i => i.i, k => k.k);
+            var groups = (await Scheduler.GetJobGroupNames())
+                .Where(g => g != Consts.PlannerSystemGroup)
+                .ToList();
+
+            if (groups.Count <= 20)
+            {
+                result.JobGroups = groups.ToList();
+            }
+
+            var allKeys = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+            if (allKeys.Count <= 20)
+            {
+                var jobs = allKeys
+                    .ToList()
+                    .Select(async key => await Scheduler.GetJobDetail(key));
+
+                result.Jobs = jobs.ToDictionary(d => Convert.ToString(d.Result.JobDataMap[Consts.JobId]), d => d.Result.Description);
+            }
 
             var response = new BaseResponse<MonitorActionMedatada>(result);
             return await Task.FromResult(response);

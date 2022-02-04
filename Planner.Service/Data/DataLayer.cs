@@ -375,13 +375,23 @@ namespace Planner.Service.Data
             return result;
         }
 
-        public async Task<object> GetGrousp()
+        public async Task<object> GetGroups()
         {
             var result = await _context.Groups
                 .Include(g => g.UsersToGroups)
                 .Select(g => new { g.Id, g.Name, UsersCount = g.UsersToGroups.Count })
                 .OrderBy(g => g.Name)
                 .ToListAsync();
+
+            return result;
+        }
+
+        public async Task<Dictionary<int, string>> GetGroupsName()
+        {
+            var result = await _context.Groups
+                .Select(g => new { g.Id, g.Name })
+                .OrderBy(g => g.Name)
+                .ToDictionaryAsync(k => k.Id, v => v.Name);
 
             return result;
         }

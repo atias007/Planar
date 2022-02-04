@@ -1,6 +1,7 @@
 ﻿using Planner.API.Common.Entities;
 using Planner.CLI.Entities;
 using Spectre.Console;
+using System;
 using System.Collections.Generic;
 using YamlDotNet.Serialization;
 
@@ -34,7 +35,7 @@ namespace Planner.CLI
 
             var table = new Table();
             table.AddColumns("Id", "JobId", "Key (Group.Name)", "TriggerId", "Status", "StartDate", "Duration", "EffectedRows");
-            response.Result.ForEach(r => table.AddRow($"{r.Id}", r.JobId, $"{r.JobGroup}.{r.JobName}".EscapeMarkup(), CliTableFormat.GetTriggerIdMarkup(r.TriggerId), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatNumber(r.Duration), CliTableFormat.FromatNumber(r.EffectedRows)));
+            response.Result.ForEach(r => table.AddRow($"{r.Id}", r.JobId, $"{r.JobGroup}.{r.JobName}".EscapeMarkup(), CliTableFormat.GetTriggerIdMarkup(r.TriggerId), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FromatNumber(r.EffectedRows)));
             return table;
         }
 
@@ -120,6 +121,30 @@ namespace Planner.CLI
             var table = new Table();
             table.AddColumns("Id", "Title", "Event", "Job", "Group", "Hook", "Active");
             data.ForEach(r => table.AddRow(CliTableFormat.GetBooleanMarkup(r.Active, r.Id), r.Title.EscapeMarkup(), r.EventTitle.EscapeMarkup(), r.Job.EscapeMarkup(), r.GroupName.EscapeMarkup(), r.Hook.EscapeMarkup(), CliTableFormat.GetBooleanMarkup(r.Active)));
+            return table;
+        }
+
+        public static Table GetTable<TKey>(Dictionary<TKey, string> dictionary, string titleColumnHeader)
+        {
+            var table = new Table();
+            table.AddColumns("Id", titleColumnHeader);
+            foreach (var item in dictionary)
+            {
+                table.AddRow(Convert.ToString(item.Key).EscapeMarkup(), item.Value.EscapeMarkup());
+            }
+
+            return table;
+        }
+
+        public static Table GetTable<T>(List<T> list, string columnHeader)
+        {
+            var table = new Table();
+            table.AddColumns(columnHeader);
+            foreach (var item in list)
+            {
+                table.AddRow(Convert.ToString(item).EscapeMarkup());
+            }
+
             return table;
         }
     }

@@ -6,7 +6,7 @@ namespace Planner.API.Common.Entities
     {
         public Dictionary<string, string> Jobs { get; set; }
 
-        public Dictionary<int, string> JobGroups { get; set; }
+        public List<string> JobGroups { get; set; }
 
         public Dictionary<int, string> Events { get; set; }
 
