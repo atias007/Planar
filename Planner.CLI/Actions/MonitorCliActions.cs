@@ -1,4 +1,9 @@
-﻿using Planner.CLI.Attributes;
+﻿using Planner.API.Common.Entities;
+using Planner.CLI.Attributes;
+using Planner.CLI.Entities;
+using Spectre.Console;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Planner.CLI.Actions
@@ -18,6 +23,73 @@ namespace Planner.CLI.Actions
         {
             var result = await Proxy.InvokeAsync(x => x.GetMonitorHooks());
             return new ActionResponse(result, serializeObj: result.Result);
+        }
+
+        [Action("ls")]
+        public static async Task<ActionResponse> GetMonitorItems(CliGetMonitorItemsRequest request)
+        {
+            var prm = JsonMapper.Map<GetMonitorItemsRequest, CliGetMonitorItemsRequest>(request);
+            var result = await Proxy.InvokeAsync(x => x.GetMonitorItems(prm));
+            var table = CliTableExtensions.GetTable(result);
+            return new ActionResponse(result, table);
+        }
+
+        [Action("add")]
+        public static async Task<ActionResponse> AddMonitorHooks()
+        {
+            var data = await Proxy.InvokeAsync(x => x.GetMonitorActionMedatada());
+            if (data.Success == false)
+            {
+                throw new ApplicationException(data.ErrorDescription);
+            }
+
+            // === Title ===
+            var title = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Title: [/]")
+                .Validate(title =>
+                {
+                    if (string.IsNullOrWhiteSpace(title)) { return ValidationResult.Error("[red]Title is required field[/]"); }
+                    if (title.Length > 50) { return ValidationResult.Error("[red]Title limited to 50 chars maximum[/]"); }
+                    if (title.Length < 5) { return ValidationResult.Error("[red]Title must have at least 5 chars[/]"); }
+                    return ValidationResult.Success();
+                }));
+
+            // === JobId ===
+            if (data.Result.Jobs != null && data.Result.Jobs.Count > 0)
+            {
+                var table = CliTableExtensions.GetTable(data.Result.Jobs, "Description");
+                AnsiConsole.Write(table);
+            }
+            var jobId = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Job id: [/]").AllowEmpty());
+
+            // === JobGroup ===
+            if (data.Result.JobGroups != null && data.Result.JobGroups.Count > 0)
+            {
+                var table = CliTableExtensions.GetTable(data.Result.JobGroups, "Job Group");
+                AnsiConsole.Write(table);
+            }
+            var jobGroup = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Job group name: [/]").AllowEmpty());
+
+            // === Event ===
+            var evenTtable = CliTableExtensions.GetTable(data.Result.Events, "Event Name");
+            AnsiConsole.Write(evenTtable);
+            var monitorEvent = AnsiConsole.Ask<int>("[turquoise2]  > Monitor event id: [/]");
+
+            // === EventArguments ===
+            var monitorEventArgs = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Monitor event argument: [/]").AllowEmpty());
+
+            // === Distribution Group ===
+            var groupsTable = CliTableExtensions.GetTable(data.Result.Groups, "Group Name");
+            AnsiConsole.Write(groupsTable);
+            var groupId = AnsiConsole.Ask<int>("[turquoise2]  > Distribution group id: [/]");
+
+            // === Hook ===
+            var hooksTable = CliTableExtensions.GetTable(data.Result.Hooks, "Name");
+            AnsiConsole.Write(hooksTable);
+            var hookPrompt = new TextPrompt<int>("[turquoise2]  > Hook id: [/]");
+            var hook = AnsiConsole.Prompt(hookPrompt);
+
+            //var result = await Proxy.InvokeAsync(x => x.GetMonitorHooks());
+            return await Task.FromResult(new ActionResponse(null));
         }
 
         [Action("events")]

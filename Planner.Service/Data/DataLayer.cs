@@ -375,13 +375,23 @@ namespace Planner.Service.Data
             return result;
         }
 
-        public async Task<object> GetGrousp()
+        public async Task<object> GetGroups()
         {
             var result = await _context.Groups
                 .Include(g => g.UsersToGroups)
                 .Select(g => new { g.Id, g.Name, UsersCount = g.UsersToGroups.Count })
                 .OrderBy(g => g.Name)
                 .ToListAsync();
+
+            return result;
+        }
+
+        public async Task<Dictionary<int, string>> GetGroupsName()
+        {
+            var result = await _context.Groups
+                .Select(g => new { g.Id, g.Name })
+                .OrderBy(g => g.Name)
+                .ToDictionaryAsync(k => k.Id, v => v.Name);
 
             return result;
         }
@@ -430,6 +440,22 @@ namespace Planner.Service.Data
         public async Task<bool> IsGroupExists(int groupId)
         {
             return await _context.Groups.AnyAsync(g => g.Id == groupId);
+        }
+
+        public async Task<List<MonitorAction>> GetMonitorItems(GetMonitorItemsRequest request)
+        {
+            var query = _context.MonitorActions.AsQueryable();
+            if (string.IsNullOrEmpty(request.JobIdOrJobGroup) == false)
+            {
+                query = query.Where(m => m.JobId == request.JobIdOrJobGroup || m.JobGroup == request.JobIdOrJobGroup);
+            }
+
+            query = query.OrderByDescending(m => m.Active)
+                .ThenBy(m => m.JobGroup)
+                .ThenBy(m => m.JobId);
+
+            var result = await query.Include(m => m.Group).ToListAsync();
+            return result;
         }
 
         public async Task<List<MonitorAction>> GetMonitorActions()

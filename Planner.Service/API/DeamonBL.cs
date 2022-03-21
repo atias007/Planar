@@ -75,7 +75,12 @@ namespace Planner.Service.API
                 result.Add(details);
             }
 
-            var response = new GetAllJobsResponse(result.OrderBy(r => r.Name).ToList());
+            result = result
+                .OrderBy(r => r.Group)
+                .ThenBy(r => r.Name)
+                .ToList();
+
+            var response = new GetAllJobsResponse(result);
             return response;
         }
 
@@ -208,9 +213,8 @@ namespace Planner.Service.API
 
             if (job != null)
             {
-                var metadata = JobExecutionMetadata.GetInstance(job);
-                information = metadata.Information;
-                exceptions = metadata.GetExceptionsText();
+                information = JobExecutionMetadataUtil.GetInformation(job);
+                exceptions = JobExecutionMetadataUtil.GetExceptionsText(job);
             }
 
             var obj = new { Information = information, Exceptions = exceptions };
@@ -272,13 +276,31 @@ namespace Planner.Service.API
         public static async Task<bool> RemoveJob(JobOrTriggerKey request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateSystemJob(jobKey);
             var result = await Scheduler.DeleteJob(jobKey);
             return result;
+        }
+
+        private static void ValidateSystemJob(JobKey jobKey)
+        {
+            if (jobKey.Group == Consts.PlannerSystemGroup)
+            {
+                throw new PlannerValidationException($"Forbidden: this is system job and it should not be modified or deleted");
+            }
+        }
+
+        private static void ValidateSystemTrigger(TriggerKey triggerKey)
+        {
+            if (triggerKey.Group == Consts.PlannerSystemGroup)
+            {
+                throw new PlannerValidationException($"Forbidden: this is system trigger and it should not be modified or deleted");
+            }
         }
 
         public static async Task<BaseResponse> RemoveJobData(RemoveJobDataRequest request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateSystemJob(jobKey);
             var info = await Scheduler.GetJobDetail(jobKey);
             await ValidateJobNotRunning(jobKey);
             await Scheduler.PauseJob(jobKey);
@@ -314,6 +336,7 @@ namespace Planner.Service.API
         public static async Task<BaseResponse> UpsertJobProperty(UpsertJobPropertyRequest request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateSystemJob(jobKey);
             await ValidateJobNotRunning(jobKey);
             await Scheduler.PauseJob(jobKey);
             var info = await Scheduler.GetJobDetail(jobKey);
@@ -376,6 +399,7 @@ namespace Planner.Service.API
         public static async Task<BaseResponse> UpsertJobData(JobDataRequest request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateSystemJob(jobKey);
             var info = await Scheduler.GetJobDetail(jobKey);
             if (info != null)
             {
@@ -417,9 +441,10 @@ namespace Planner.Service.API
 
         public static async Task<BaseResponse> RemoveTrigger(JobOrTriggerKey request)
         {
-            var key = await TriggerKeyHelper.GetTriggerKey(request);
-            await Scheduler.PauseTrigger(key);
-            var success = await Scheduler.UnscheduleJob(key);
+            var triggerKey = await TriggerKeyHelper.GetTriggerKey(request);
+            ValidateSystemTrigger(triggerKey);
+            await Scheduler.PauseTrigger(triggerKey);
+            var success = await Scheduler.UnscheduleJob(triggerKey);
             if (success == false)
             {
                 throw new ApplicationException("Fail to remove trigger");
@@ -617,7 +642,7 @@ namespace Planner.Service.API
 
         public async Task<BaseResponse<string>> GetGroups()
         {
-            return await GetBaseResponse(_dal.GetGrousp);
+            return await GetBaseResponse(_dal.GetGroups);
         }
 
         public async Task<BaseResponse> RemoveGroup(GetByIdRequest request)
@@ -702,6 +727,60 @@ namespace Planner.Service.API
         public static BaseResponse<List<string>> GetMonitorHooks()
         {
             return new BaseResponse<List<string>>(ServiceUtil.MonitorHooks.Keys.ToList());
+        }
+
+        public async Task<BaseResponse<List<MonitorItem>>> GetMonitorItems(GetMonitorItemsRequest request)
+        {
+            var items = await _dal.GetMonitorItems(request);
+            var result = items.Select(m => new MonitorItem
+            {
+                Active = m.Active.GetValueOrDefault(),
+                EventTitle = ((MonitorEvents)m.EventId).ToString(),
+                GroupName = m.Group.Name,
+                Hook = m.Hook,
+                Id = m.Id,
+                Job = string.IsNullOrEmpty(m.JobGroup) ? $"Id: {m.JobId}" : $"Group: {m.JobGroup}",
+                Title = m.Title
+            })
+            .ToList();
+
+            return new BaseResponse<List<MonitorItem>>(result);
+        }
+
+        public async Task<BaseResponse<MonitorActionMedatada>> GetMonitorActionMedatada()
+        {
+            var result = new MonitorActionMedatada
+            {
+                Hooks = ServiceUtil.MonitorHooks.Keys
+                    .Select((k, i) => new { k, i })
+                    .ToDictionary(i => i.i + 1, k => k.k),
+                Groups = await _dal.GetGroupsName(),
+                Events = Enum.GetValues(typeof(MonitorEvents))
+                    .Cast<MonitorEvents>()
+                    .ToDictionary(k => (int)k, v => v.ToString()),
+            };
+
+            var groups = (await Scheduler.GetJobGroupNames())
+                .Where(g => g != Consts.PlannerSystemGroup)
+                .ToList();
+
+            if (groups.Count <= 20)
+            {
+                result.JobGroups = groups.ToList();
+            }
+
+            var allKeys = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+            if (allKeys.Count <= 20)
+            {
+                var jobs = allKeys
+                    .ToList()
+                    .Select(async key => await Scheduler.GetJobDetail(key));
+
+                result.Jobs = jobs.ToDictionary(d => Convert.ToString(d.Result.JobDataMap[Consts.JobId]), d => d.Result.Description);
+            }
+
+            var response = new BaseResponse<MonitorActionMedatada>(result);
+            return await Task.FromResult(response);
         }
 
         public static BaseResponse<List<string>> GetMonitorEvents()
@@ -850,7 +929,7 @@ namespace Planner.Service.API
             target.DataMap = ServiceUtil.ConvertJobDataMapToDictionary(source.MergedJobDataMap);
             target.TriggerId = Convert.ToString(Convert.ToString(source.Get(Consts.TriggerId)));
 
-            var metadata = JobExecutionMetadata.GetInstance(source);
+            var metadata = JobExecutionMetadataUtil.GetInstance(source);
             target.EffectedRows = metadata.EffectedRows;
             target.Progress = metadata.Progress;
         }

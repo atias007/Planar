@@ -21,7 +21,10 @@ namespace Planner.Service.JobListener
         {
             try
             {
+                if (context.JobDetail.Key.Group == Consts.PlannerSystemGroup) { return; }
+
                 await DAL.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto);
+                await MonitorUtil.Scan(MonitorEvents.ExecutionVetoed, context, null, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -37,6 +40,8 @@ namespace Planner.Service.JobListener
         {
             try
             {
+                if (context.JobDetail.Key.Group == Consts.PlannerSystemGroup) { return; }
+
                 string data = GetJobDataForLogging(context.MergedJobDataMap);
 
                 var log = new DbJobInstanceLog
@@ -56,7 +61,7 @@ namespace Planner.Service.JobListener
                 };
 
                 if (log.TriggerId == null) { log.TriggerId = Consts.ManualTriggerId; }
-                if (log.Data.Length > 4000) { log.Data = log.Data[0..4000]; }
+                if (log.Data?.Length > 4000) { log.Data = log.Data[0..4000]; }
                 if (log.JobId?.Length > 20) { log.JobId = log.JobId[0..20]; }
                 if (log.JobName.Length > 50) { log.JobName = log.JobName[0..50]; }
                 if (log.JobGroup.Length > 50) { log.JobGroup = log.JobGroup[0..50]; }
@@ -66,6 +71,7 @@ namespace Planner.Service.JobListener
                 if (log.InstanceId.Length > 250) { log.InstanceId = log.InstanceId[0..250]; }
 
                 await DAL.CreateJobInstanceLog(log);
+                await MonitorUtil.Scan(MonitorEvents.ExecutionStart, context, null, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -81,11 +87,13 @@ namespace Planner.Service.JobListener
         {
             try
             {
+                if (context.JobDetail.Key.Group == Consts.PlannerSystemGroup) { return; }
+
                 var duration = context.JobRunTime.TotalMilliseconds;
                 var endDate = context.FireTimeUtc.ToLocalTime().DateTime.Add(context.JobRunTime);
                 var status = jobException == null ? StatusMembers.Success : StatusMembers.Fail;
 
-                var metadata = JobExecutionMetadata.GetInstance(context);
+                var metadata = JobExecutionMetadataUtil.GetInstance(context);
                 var log = new DbJobInstanceLog
                 {
                     InstanceId = context.FireInstanceId,
@@ -93,13 +101,14 @@ namespace Planner.Service.JobListener
                     EndDate = endDate,
                     Exception = jobException?.ToString(),
                     EffectedRows = metadata.EffectedRows,
-                    Information = metadata.Information,
+                    Information = metadata.Information.ToString(),
                     Status = (int)status,
                     StatusTitle = status.ToString(),
                     IsStopped = context.CancellationToken.IsCancellationRequested
                 };
 
                 await DAL.UpdateAutomationTaskCallLog(log);
+                await MonitorJobWasExecuted(context, jobException, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -117,6 +126,20 @@ namespace Planner.Service.JobListener
                     await MonitorUtil.Scan(MonitorEvents.ExecutionFail, context, jobException, cancellationToken);
                 }
             }
+        }
+
+        private static async Task MonitorJobWasExecuted(IJobExecutionContext context, JobExecutionException jobException, CancellationToken cancellationToken)
+        {
+            var task1 = MonitorUtil.Scan(MonitorEvents.ExecutionEnd, context, jobException, cancellationToken);
+
+            var @event =
+                jobException == null ?
+                MonitorEvents.ExecutionSuccess :
+                MonitorEvents.ExecutionFail;
+
+            var task2 = MonitorUtil.Scan(@event, context, jobException, cancellationToken);
+
+            await Task.WhenAll(task1, task2);
         }
 
         private static string GetJobDataForLogging(JobDataMap data)

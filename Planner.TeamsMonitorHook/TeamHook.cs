@@ -20,23 +20,12 @@ namespace Planner.TeamsMonitorHook
             if (valid == false) { return; }
 
             var message = GetMessageText(monitorDetails);
-            await Task.WhenAll(new Task[]
-            {
-                SendMessageToChannel(monitorDetails.Group.Reference1, message),
-                SendMessageToChannel(monitorDetails.Group.Reference2, message),
-                SendMessageToChannel(monitorDetails.Group.Reference3, message),
-                SendMessageToChannel(monitorDetails.Group.Reference4, message),
-                SendMessageToChannel(monitorDetails.Group.Reference5, message)
-            });
+            await SendMessageToChannel(monitorDetails.Group.Reference1, message);
         }
 
         private bool ValidateGroup(IMonitorGroup group)
         {
-            if (string.IsNullOrEmpty(group.Reference1) &&
-                string.IsNullOrEmpty(group.Reference2) &&
-                string.IsNullOrEmpty(group.Reference3) &&
-                string.IsNullOrEmpty(group.Reference4) &&
-                string.IsNullOrEmpty(group.Reference5))
+            if (string.IsNullOrEmpty(group.Reference1))
             {
                 _logger.LogError($"Group {group.Name} is invalid for Teams monitor hook. All reference fields are empty. At least 1 reference field should have teams channel url");
                 return false;
@@ -73,7 +62,16 @@ namespace Planner.TeamsMonitorHook
         private string GetMessageText(IMonitorDetails details)
         {
             var sb = new StringBuilder();
-            sb.AppendLine($"Planner job '{details.JobGroup}.{details.JobName}' alert event {details.EventTitle}  ");
+            sb.AppendLine($"Job: {details.JobGroup}.{details.JobName}  ");
+            sb.AppendLine($"Event: {details.EventTitle}  ");
+
+            if (details.EventId == 6)
+            {
+                var status = details.Exception == null ? "Success" : "Fail";
+                sb.AppendLine($"Status: {status}  ");
+            }
+
+            sb.AppendLine($"JobDescription: {details.JobDescription}  ");
             sb.AppendLine($"FireTime: {details.FireTime:g}  ");
             sb.AppendLine($"JobRunTime: {details.JobRunTime:hh\\:mm\\:ss}  ");
             sb.AppendLine($"FireInstanceId: {details.FireInstanceId}");

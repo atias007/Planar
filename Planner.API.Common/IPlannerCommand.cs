@@ -155,6 +155,10 @@ namespace Planner.API.Common
 
         BaseResponse<List<string>> GetMonitorHooks();
 
+        BaseResponse<List<MonitorItem>> GetMonitorItems(GetMonitorItemsRequest request);
+
+        BaseResponse<MonitorActionMedatada> GetMonitorActionMedatada();
+
         BaseResponse<List<string>> GetMonitorEvents();
 
         BaseResponse<List<ApiMonitorAction>> GetMonitorActions();

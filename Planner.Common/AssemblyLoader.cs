@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyModel;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -9,49 +10,63 @@ namespace Planner.Common
 {
     public static class AssemblyLoader
     {
-        public static Assembly LoadFromAssemblyPath(string assemblyFullPath)
+        public static Assembly LoadFromAssemblyPath(string assemblyFullPath, AssemblyLoadContext context = null)
         {
             var fileNameWithOutExtension = Path.GetFileNameWithoutExtension(assemblyFullPath);
-            var fileName = Path.GetFileName(assemblyFullPath);
-            var directory = Path.GetDirectoryName(assemblyFullPath);
 
             var inCompileLibraries = DependencyContext.Default.CompileLibraries.Any(l => l.Name.Equals(fileNameWithOutExtension, StringComparison.OrdinalIgnoreCase));
             var inRuntimeLibraries = DependencyContext.Default.RuntimeLibraries.Any(l => l.Name.Equals(fileNameWithOutExtension, StringComparison.OrdinalIgnoreCase));
 
             var assembly = (inCompileLibraries || inRuntimeLibraries)
                 ? Assembly.Load(new AssemblyName(fileNameWithOutExtension))
-                : LoadAssemblyFile(assemblyFullPath);
+                : LoadAssemblyFile(assemblyFullPath, context);
 
             if (assembly != null)
             {
-                LoadReferencedAssemblies(assembly, fileName, directory);
+                var fileName = Path.GetFileName(assemblyFullPath);
+                var directory = Path.GetDirectoryName(assemblyFullPath);
+                LoadReferencedAssemblies(assembly, context, fileName, directory);
             }
 
             return assembly;
         }
 
-        private static Assembly LoadAssemblyFile(string filename)
+        public static AssemblyLoadContext CreateAssemblyLoadContext(string name, bool enableUnload = false)
         {
+            var context = new AssemblyLoadContext(name, enableUnload);
+            return context;
+        }
+
+        private static Assembly LoadAssemblyFile(string filename, AssemblyLoadContext context)
+        {
+            if (context == null) { context = AssemblyLoadContext.Default; }
+
             using var stream = File.OpenRead(filename);
-            var result = AssemblyLoadContext.Default.LoadFromStream(stream);
+            var result = context.LoadFromStream(stream);
+            // var result = AssemblyLoadContext.Default.LoadFromAssemblyPath(filename);
             return result;
         }
 
-        private static void LoadReferencedAssemblies(Assembly assembly, string fileName, string directory)
+        private static void LoadReferencedAssemblies(Assembly assembly, AssemblyLoadContext context, string fileName, string directory)
         {
-            var filesInDirectory = Directory.GetFiles(directory).Where(x => x != fileName).Select(x => Path.GetFileNameWithoutExtension(x)).ToList();
+            const string filePattern = "*.dll";
+            var filesInDirectory = Directory.GetFiles(directory, filePattern)
+                .Where(x => x != fileName)
+                .Select(x => new KeyValuePair<string, string>(Path.GetFileNameWithoutExtension(x), x))
+                .ToDictionary(k => k.Key, v => v.Value);
+
             var references = assembly.GetReferencedAssemblies();
 
             foreach (var reference in references)
             {
-                if (filesInDirectory.Contains(reference.Name))
+                if (filesInDirectory.ContainsKey(reference.Name))
                 {
-                    var loadFileName = reference.Name + ".dll";
-                    var path = Path.Combine(directory, loadFileName);
-                    var loadedAssembly = AssemblyLoadContext.Default.LoadFromAssemblyPath(path);
+                    var path = filesInDirectory[reference.Name];
+                    var loadFileName = Path.GetFileName(path);
+                    var loadedAssembly = LoadAssemblyFile(path, context);
                     if (loadedAssembly != null)
                     {
-                        LoadReferencedAssemblies(loadedAssembly, loadFileName, directory);
+                        LoadReferencedAssemblies(loadedAssembly, context, loadFileName, directory);
                     }
                 }
             }

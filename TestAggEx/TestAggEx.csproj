@@ -2,15 +2,16 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
-    <Version>1.0.5</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\Planner.Common\Consts.cs" Link="Consts.cs" />
+    <ProjectReference Include="..\Planner.Client\Planner.Client.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Planner.Client\Planner.Client.csproj" />
+    <None Update="JobFile.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

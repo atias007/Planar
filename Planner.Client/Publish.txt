@@ -1,1 +1,1 @@
-﻿nuget push -Source CustomsCloud_NugetPackages -ApiKey AzureDevOps R:\CustomsCloud\WorkerJobs\Planner\Planner.Client\bin\Release\net5.0\publish\Planner.Client.1.0.3.nupkg
+﻿nuget push -Source CustomClouds -ApiKey AzureDevOps %USERPROFILE%\Source\Repos\Planner\Planner.Client\bin\Release\net5.0\publish\Planner.Client.1.0.5.nupkg

@@ -7,6 +7,7 @@ using Planner.API.Common;
 using Planner.Common;
 using Planner.Service.API;
 using Planner.Service.Data;
+using Planner.Service.Exceptions;
 using Quartz;
 using Serilog;
 using System;
@@ -41,7 +42,7 @@ namespace Planner.Service
                         Debugger.Break();
                     });
 
-                    AppSettings.Initialize(configuration);
+                    InitializeAppSettings(configuration);
 
                     services.AddDbContext<PlannerContext>(o => o.UseSqlServer(AppSettings.DatabaseConnectionString), ServiceLifetime.Transient)
                         .AddSingleton<IConfiguration>(configuration)
@@ -49,12 +50,35 @@ namespace Planner.Service
                         .AddTransient<DeamonBL>()
                         .AddTransient<MainService>()
                         .AddScoped<IPlannerCommand, DeamonService>()
-                        .AddHostedService<MainService>()
-                        .AddHostedService<PersistDataService>();
+                        .AddHostedService<MainService>();
                 })
                 .UseSerilog((context, config) => ConfigureSerilog(config));
 
             return builder.Build();
+        }
+
+        private static void InitializeAppSettings(IConfiguration configuration)
+        {
+            try
+            {
+                AppSettings.Initialize(configuration);
+            }
+            catch (AppSettingsException ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(ex.Message);
+                Console.ReadLine();
+                Environment.Exit(-1);
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(string.Empty.PadLeft(80, '-'));
+                Console.WriteLine(ex.ToString());
+                Console.ReadLine();
+                Environment.Exit(-1);
+            }
         }
 
         private static void ConfigureSerilog(LoggerConfiguration loggerConfig)

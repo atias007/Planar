@@ -3,12 +3,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Planner.Common;
-using Planner.MonitorHook;
 using Planner.Service.Calendars.Hebrew;
 using Planner.Service.Data;
 using Planner.Service.General;
 using Planner.Service.JobListener;
 using Planner.Service.Monitor;
+using Planner.Service.SystemJobs;
 using Quartz;
 using Quartz.Impl;
 using Quartz.Impl.Matchers;
@@ -16,7 +16,6 @@ using Quartz.Logging;
 using Quartz.Simpl;
 using System;
 using System.Collections.Specialized;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -87,6 +86,8 @@ namespace Planner.Service
 
             AddMonitorHooks();
 
+            await ScheduleSystemJobs();
+
             await StartScheduler();
         }
 
@@ -100,6 +101,11 @@ namespace Planner.Service
             var prms = await dal.GetAllGlobalParameter();
             var dict = prms.ToDictionary(p => p.ParamKey, p => p.ParamValue);
             Global.Parameters = dict;
+        }
+
+        public static async Task ScheduleSystemJobs()
+        {
+            await PersistDataJob.Schedule(Scheduler);
         }
 
         private async Task SetQuartzLogProvider()
@@ -138,7 +144,6 @@ namespace Planner.Service
             try
             {
                 _logger.LogInformation("Initialize: AddJobListeners");
-
                 _scheduler.ListenerManager.AddJobListener(new LogJobListener(), GroupMatcher<JobKey>.AnyGroup());
                 _scheduler.ListenerManager.AddTriggerListener(new RetryTriggerListener(), GroupMatcher<TriggerKey>.AnyGroup());
                 await Task.CompletedTask;
@@ -200,18 +205,6 @@ namespace Planner.Service
         {
             try
             {
-                var maxConcurrency = configuration.GetValue<int?>(Consts.MaxConcurrencyVariableKey);
-                if (maxConcurrency == null)
-                {
-                    maxConcurrency = configuration.GetValue<int?>("MaxConcurrency").Value;
-                }
-
-                if (maxConcurrency < 1)
-                {
-                    _logger.LogWarning($"MaxConcurrency value {maxConcurrency} is invalid. Set MaxConcurrency to 1");
-                    maxConcurrency = 1;
-                }
-
                 var result = new NameValueCollection
                 {
                     { "quartz.scheduler.instanceName", "PlannerScheduler" },
@@ -222,7 +215,7 @@ namespace Planner.Service
                     { "quartz.dataSource.myDS.connectionString", AppSettings.DatabaseConnectionString },
                     { "quartz.dataSource.myDS.provider", "SqlServer" },
                     { "quartz.serializer.type", "json" },
-                    { "quartz.threadPool.maxConcurrency", maxConcurrency.ToString() }
+                    { "quartz.threadPool.maxConcurrency", AppSettings.MaxConcurrency.ToString() }
                 };
 
                 return result;

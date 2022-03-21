@@ -928,6 +928,36 @@ namespace Planner.Service.API
             }
         }
 
+        public BaseResponse<List<MonitorItem>> GetMonitorItems(GetMonitorItemsRequest request)
+        {
+            try
+            {
+                InitializeService(nameof(GetMonitorItems));
+                var result = BL.GetMonitorItems(request).Result;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var result = HandleException<BaseResponse<List<MonitorItem>>>(ex, nameof(GetMonitorItems));
+                return result;
+            }
+        }
+
+        public BaseResponse<MonitorActionMedatada> GetMonitorActionMedatada()
+        {
+            try
+            {
+                InitializeService(nameof(GetMonitorActionMedatada));
+                var result = BL.GetMonitorActionMedatada().Result;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var result = HandleException<BaseResponse<MonitorActionMedatada>>(ex, nameof(GetMonitorActionMedatada));
+                return result;
+            }
+        }
+
         public BaseResponse<List<string>> GetMonitorEvents()
         {
             try

@@ -5,6 +5,7 @@ using Planner.Common;
 using Quartz;
 using System;
 using System.IO;
+using System.Runtime.Loader;
 using System.Threading.Tasks;
 
 namespace RunPlannerJob
@@ -18,6 +19,8 @@ namespace RunPlannerJob
 
         public override async Task Execute(IJobExecutionContext context)
         {
+            AssemblyLoadContext assemblyContext = null;
+
             try
             {
                 MapProperties(context);
@@ -25,7 +28,8 @@ namespace RunPlannerJob
                 Validate();
 
                 var assemblyFilename = Path.Combine(JobPath, FileName);
-                var assembly = AssemblyLoader.LoadFromAssemblyPath(assemblyFilename);
+                assemblyContext = AssemblyLoader.CreateAssemblyLoadContext(context.FireInstanceId, true);
+                var assembly = AssemblyLoader.LoadFromAssemblyPath(assemblyFilename, assemblyContext);
                 var type = assembly.GetType(TypeName);
 
                 if (type == null)
@@ -61,11 +65,18 @@ namespace RunPlannerJob
             {
                 SetJobRunningProperty("Fail", true);
                 var message = $"FireInstanceId {context.FireInstanceId} throw exception with message {ex.Message}";
+
+                if (ex is PlannerJobAggragateException)
+                {
+                    throw new JobExecutionException(message);
+                }
+
                 throw new JobExecutionException(message, ex);
             }
             finally
             {
                 FinalizeJob(context);
+                assemblyContext?.Unload();
             }
         }
 

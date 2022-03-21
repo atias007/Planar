@@ -19,6 +19,8 @@ namespace Planner.Service.JobListener
         {
             try
             {
+                if (context.JobDetail.Key.Group == Consts.PlannerSystemGroup) { return; }
+
                 if (context.JobInstance is ICommonJob job && job.GetJobRunningProperty<bool>("Fail") == false) { return; }
                 if (trigger.JobDataMap.Contains(Consts.RetrySpan) == false) { return; }
                 var span = GetRetrySpan(trigger);
@@ -69,6 +71,7 @@ namespace Planner.Service.JobListener
         {
             try
             {
+                if (context.JobDetail.Key.Group == Consts.PlannerSystemGroup) { return; }
                 if (trigger.JobDataMap.Contains(Consts.RetrySpan) == false) { return; }
                 var span = GetRetrySpan(trigger);
                 if (span == null) { return; }

@@ -45,6 +45,37 @@ namespace Planner.CLI
             {
                 return string.Empty;
             }
+            
+        }
+
+        public static string FromatDuration(int? number)
+        {
+            if (number.HasValue)
+            {
+                var value = number.Value;
+
+                if (value < 1000)
+                {
+                    return $"{number} ms";
+                }
+
+                var span = TimeSpan.FromMilliseconds(number.Value);
+                if (span.TotalSeconds < 60)
+                {
+                    return $"{span:ss\\.fff} sec";
+                }
+
+                if (span.TotalMinutes < 60)
+                {
+                    return $"{span:mm\\:ss}";
+                }
+
+                return $"{span:hh\\:mm\\:ss}";
+            }
+            else
+            {
+                return string.Empty;
+            }
         }
 
         public static string FromatNumber(int number)
@@ -63,6 +94,15 @@ namespace Planner.CLI
                 StatusMembers.Veto => $"[aqua]{statusEnum}[/]",
                 _ => $"[silver]{statusEnum}[/]",
             };
+        }
+
+        public static string GetBooleanMarkup(bool value, object display = null)
+        {
+            if (display == null) { display = value; }
+
+            return value ?
+                $"[green]{display}[/]" :
+                $"[red]{display}[/]";
         }
 
         public static string GetLevelMarkup(string level)
