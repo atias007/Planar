@@ -431,5 +431,42 @@ namespace Planner.Service.Data
         {
             return await _context.Groups.AnyAsync(g => g.Id == groupId);
         }
+
+        public async Task<List<MonitorAction>> GetMonitorActions()
+        {
+            return await _context.MonitorActions
+                .Include(i => i.Group)
+                .OrderByDescending(d => d.Active)
+                .ThenBy(d => d.JobId)
+                .ToListAsync();
+        }
+
+        public async Task<int> CountFailsInRowForJob(object parameters)
+        {
+            using (var conn = _context.Database.GetDbConnection())
+            {
+                var cmd = new CommandDefinition(
+                    commandText: "dbo.CountFailsInRowForJob",
+                    commandType: CommandType.StoredProcedure,
+                    parameters: parameters);
+
+                var data = await conn.QuerySingleAsync<int>(cmd);
+                return data;
+            }
+        }
+
+        public async Task<int> CountFailsInHourForJob(object parameters)
+        {
+            using (var conn = _context.Database.GetDbConnection())
+            {
+                var cmd = new CommandDefinition(
+                    commandText: "dbo.CountFailsInHourForJob",
+                    commandType: CommandType.StoredProcedure,
+                    parameters: parameters);
+
+                var data = await conn.QuerySingleAsync<int>(cmd);
+                return data;
+            }
+        }
     }
 }

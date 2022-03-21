@@ -1,0 +1,20 @@
+﻿job type: PlannerJob
+name: test1
+description: long running task test
+job data:
+  Message: This is long running task
+  Value: 100.1
+  MaxId: 100
+global parameters:
+  ParamKey1: ParamValue1
+  ParamKey2: ParamValue2
+  ParamKey3: ParamValue3
+properties:
+  JobPath: R:\Temp\Task1
+  FileName: TestAction.dll
+  TypeName: TestAction.ActionJob
+simple triggers:
+- name: every-minute-trigger
+  interval: 00:05:00
+  misfire behaviour: 2
+

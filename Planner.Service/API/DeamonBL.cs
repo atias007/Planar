@@ -704,6 +704,39 @@ namespace Planner.Service.API
             return new BaseResponse<List<string>>(ServiceUtil.MonitorHooks.Keys.ToList());
         }
 
+        public static BaseResponse<List<string>> GetMonitorEvents()
+        {
+            var result =
+                Enum.GetValues(typeof(MonitorEvents))
+                .Cast<MonitorEvents>()
+                .Select(e => e.ToString())
+                .ToList();
+
+            return new BaseResponse<List<string>>(result);
+        }
+
+        public async Task<BaseResponse<List<ApiMonitorAction>>> GetMonitorActions()
+        {
+            var data = await _dal.GetMonitorActions();
+            var result = data.Select(d => new ApiMonitorAction
+            {
+                Active = d.Active,
+                EventArgument = d.EventArgument,
+                EventId = d.EventId,
+                EventName = ((MonitorEvents)d.EventId).ToString(),
+                GroupId = d.GroupId,
+                GroupName = d.Group.Name,
+                Hook = d.Hook,
+                JobGroup = d.JobGroup,
+                JobId = d.JobId,
+                Job = string.IsNullOrEmpty(d.JobId) ? $"JobGroup: {d.JobGroup}" : d.JobId,
+                Title = d.Title,
+                Id = d.Id
+            }).ToList();
+
+            return new BaseResponse<List<ApiMonitorAction>>(result);
+        }
+
         #region Private
 
         private static GlobalParameter GetGlobalParameter(GlobalParameterData request)

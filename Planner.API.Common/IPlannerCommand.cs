@@ -155,6 +155,10 @@ namespace Planner.API.Common
 
         BaseResponse<List<string>> GetMonitorHooks();
 
+        BaseResponse<List<string>> GetMonitorEvents();
+
+        BaseResponse<List<ApiMonitorAction>> GetMonitorActions();
+
         #endregion Monitor
     }
 }

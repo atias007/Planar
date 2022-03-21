@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planner.API.Common.Entities;
 using Planner.Service.JobListener.Base;
+using Planner.Service.Monitor;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -25,6 +26,10 @@ namespace Planner.Service.JobListener
             catch (Exception ex)
             {
                 Logger.Log(LogLevel.Critical, ex, $"Error handle '{nameof(JobExecutionVetoed)}' at '{nameof(LogJobListener)}'");
+            }
+            finally
+            {
+                await MonitorUtil.Scan(MonitorEvents.ExecutionVetoed, context, null, cancellationToken);
             }
         }
 
@@ -66,6 +71,10 @@ namespace Planner.Service.JobListener
             {
                 Logger.Log(LogLevel.Critical, ex, $"Error handle '{nameof(JobToBeExecuted)}' at '{nameof(LogJobListener)}'");
             }
+            finally
+            {
+                await MonitorUtil.Scan(MonitorEvents.ExecutionStart, context, null, cancellationToken);
+            }
         }
 
         public async Task JobWasExecuted(IJobExecutionContext context, JobExecutionException jobException, CancellationToken cancellationToken = default)
@@ -95,6 +104,18 @@ namespace Planner.Service.JobListener
             catch (Exception ex)
             {
                 Logger.Log(LogLevel.Critical, ex, $"Error handle '{nameof(JobWasExecuted)}' at '{nameof(LogJobListener)}'");
+            }
+            finally
+            {
+                await MonitorUtil.Scan(MonitorEvents.ExecutionEnd, context, jobException, cancellationToken);
+                if (jobException == null)
+                {
+                    await MonitorUtil.Scan(MonitorEvents.ExecutionSuccess, context, jobException, cancellationToken);
+                }
+                else
+                {
+                    await MonitorUtil.Scan(MonitorEvents.ExecutionFail, context, jobException, cancellationToken);
+                }
             }
         }
 

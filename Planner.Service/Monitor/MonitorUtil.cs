@@ -16,6 +16,7 @@ namespace Planner.Service.Monitor
     public class MonitorUtil
     {
         private static readonly LazySingleton<List<MonitorAction>> _monitorData = new(() => { return LoadMonitor().Result; });
+        private static ILogger<MonitorUtil> _logger = Global.GetLogger<MonitorUtil>();
 
         public static void Load()
         {
@@ -51,43 +52,73 @@ namespace Planner.Service.Monitor
             }
         }
 
+        public static DataLayer DAL
+        {
+            get
+            {
+                try
+                {
+                    return Global.ServiceProvider.GetService(typeof(DataLayer)) as DataLayer;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogCritical(ex, "Error initialize DataLayer at BaseJobListenerWithDataLayer");
+                    throw;
+                }
+            }
+        }
+
         public static async Task Scan(MonitorEvents @event, IJobExecutionContext context, JobExecutionException jobException = default, CancellationToken cancellationToken = default)
         {
             var task = Task.Run(() =>
             {
-                var logger = Global.GetLogger<MonitorUtil>();
+                List<MonitorAction> items;
                 var hookTasks = new List<Task>();
-                var items = LoadMonitorItems(@event, context);
+
+                try
+                {
+                    items = LoadMonitorItems(@event, context);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Fail to handle monitor item(s) --> LoadMonitorItems");
+                    return;
+                }
+
                 Parallel.ForEach(items, action =>
                 {
                     try
                     {
-                        var hook = GetMonitorHook(action.Hook);
-                        if (hook == null)
+                        var toBeContinue = Analyze(@event, action).Result;
+                        if (toBeContinue)
                         {
-                            logger.LogWarning($"Hook '{action.Hook}' in monitor item id: {action.Id}, title: '{action.Title}' is not exists in service");
-                        }
-                        else
-                        {
-                            var details = GetMonitorDetails(action, context, jobException);
-                            var hookType = ServiceUtil.MonitorHooks[action.Hook];
-                            var logger = Global.GetLogger(hookType);
-                            var hookTask = hook.Handle(details, logger)
-                            .ContinueWith(t =>
+                            var hook = GetMonitorHook(action.Hook);
+                            if (hook == null)
                             {
-                                if (t.Exception != null)
+                                _logger.LogWarning($"Hook '{action.Hook}' in monitor item id: {action.Id}, title: '{action.Title}' is not exists in service");
+                            }
+                            else
+                            {
+                                var details = GetMonitorDetails(action, context, jobException);
+                                var hookType = ServiceUtil.MonitorHooks[action.Hook];
+                                var logger = Global.GetLogger(hookType);
+                                var hookTask = hook.Handle(details, logger)
+                                .ContinueWith(t =>
                                 {
-                                    logger.LogError(t.Exception, $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook '{action.Hook}'");
-                                }
-                            });
+                                    if (t.Exception != null)
+                                    {
+                                        logger.LogError(t.Exception, $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook '{action.Hook}'");
+                                    }
+                                });
 
-                            logger.LogInformation($"Monitor item id: {action.Id}, title: '{action.Title}' start to handle with hook '{action.Hook}'");
-                            hookTasks.Add(hookTask);
+                                logger.LogInformation($"Monitor item id: {action.Id}, title: '{action.Title}' start to handle with hook '{action.Hook}'");
+                                hookTasks.Add(hookTask);
+                            }
                         }
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError(ex, $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook '{action.Hook}'");
+                        _logger.LogError(ex, $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook '{action.Hook}'");
                     }
                 });
 
@@ -97,7 +128,7 @@ namespace Planner.Service.Monitor
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "Fail to handle monitor item(s)");
+                    _logger.LogError(ex, "Fail to handle monitor item(s)");
                 }
             }, cancellationToken);
 
@@ -173,6 +204,43 @@ namespace Planner.Service.Monitor
         {
             var dal = MainService.Resolve<DataLayer>();
             return await dal.GetMonitorData();
+        }
+
+        private static async Task<bool> Analyze(MonitorEvents @event, MonitorAction action)
+        {
+            switch (@event)
+            {
+                case MonitorEvents.ExecutionVetoed:
+                case MonitorEvents.ExecutionRetry:
+                case MonitorEvents.ExecutionFail:
+                case MonitorEvents.ExecutionSuccess:
+                case MonitorEvents.ExecutionStart:
+                case MonitorEvents.ExecutionEnd:
+                default:
+                    return true;
+
+                case MonitorEvents.ExecutionFailnTimesInRow:
+                    var args1 = action.EventArgument.GetValueOrDefault();
+                    if (args1 < 2 || string.IsNullOrEmpty(action.JobId))
+                    {
+                        _logger.LogWarning($"Monitor action {action.Id} - {action.Title} has invalid argument ({action.EventArgument}) or missing job id");
+                        return false;
+                    }
+
+                    var count1 = await DAL.CountFailsInRowForJob(new { action.JobId, Total = args1 });
+                    return count1 == args1;
+
+                case MonitorEvents.ExecutionFailnTimesInHour:
+                    var args2 = action.EventArgument.GetValueOrDefault();
+                    if (args2 < 2 || string.IsNullOrEmpty(action.JobId))
+                    {
+                        _logger.LogWarning($"Monitor action {action.Id} - {action.Title} has invalid argument ({action.EventArgument}) or missing job id");
+                        return false;
+                    }
+
+                    var count2 = await DAL.CountFailsInHourForJob(new { action.JobId });
+                    return args2 >= count2;
+            }
         }
     }
 }

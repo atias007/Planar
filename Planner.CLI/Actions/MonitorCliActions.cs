@@ -19,5 +19,20 @@ namespace Planner.CLI.Actions
             var result = await Proxy.InvokeAsync(x => x.GetMonitorHooks());
             return new ActionResponse(result, serializeObj: result.Result);
         }
+
+        [Action("events")]
+        public static async Task<ActionResponse> GetMonitorEvents()
+        {
+            var result = await Proxy.InvokeAsync(x => x.GetMonitorEvents());
+            return new ActionResponse(result, serializeObj: result.Result);
+        }
+
+        [Action("actions")]
+        public static async Task<ActionResponse> GetMonitorActions()
+        {
+            var result = await Proxy.InvokeAsync(x => x.GetMonitorActions());
+            var table = CliTableExtensions.GetTable(result);
+            return new ActionResponse(result, table);
+        }
     }
 }

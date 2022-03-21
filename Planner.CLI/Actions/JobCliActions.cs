@@ -18,8 +18,14 @@ namespace Planner.CLI.Actions
         public static async Task<ActionResponse> AddJob(CliAddJobRequest request)
         {
             if (request.Filename == ".") { request.Filename = "JobFile.yml"; }
-            var yml = File.ReadAllText(request.Filename);
-            var prm = new AddJobRequest { Yaml = yml };
+            var fi = new FileInfo(request.Filename);
+            if (fi.Exists == false)
+            {
+                throw new ApplicationException($"filename '{fi.FullName}' not exists");
+            }
+
+            var yml = File.ReadAllText(fi.FullName);
+            var prm = new AddJobRequest { Yaml = yml, Path = fi.Directory.FullName };
             var result = await Proxy.InvokeAsync(x => x.AddJob(prm));
             return new ActionResponse(result, result.Result);
         }

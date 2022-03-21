@@ -140,7 +140,6 @@ namespace Planner.Service
                 _logger.LogInformation("Initialize: AddJobListeners");
 
                 _scheduler.ListenerManager.AddJobListener(new LogJobListener(), GroupMatcher<JobKey>.AnyGroup());
-                _scheduler.ListenerManager.AddJobListener(new MonitorJobListener(), GroupMatcher<JobKey>.AnyGroup());
                 _scheduler.ListenerManager.AddTriggerListener(new RetryTriggerListener(), GroupMatcher<TriggerKey>.AnyGroup());
                 await Task.CompletedTask;
             }

@@ -927,6 +927,36 @@ namespace Planner.Service.API
                 return result;
             }
         }
+
+        public BaseResponse<List<string>> GetMonitorEvents()
+        {
+            try
+            {
+                InitializeService(nameof(GetMonitorEvents));
+                var result = DeamonBL.GetMonitorEvents();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var result = HandleException<BaseResponse<List<string>>>(ex, nameof(GetMonitorEvents));
+                return result;
+            }
+        }
+
+        public BaseResponse<List<ApiMonitorAction>> GetMonitorActions()
+        {
+            try
+            {
+                InitializeService(nameof(GetMonitorActions));
+                var result = BL.GetMonitorActions().Result;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var result = HandleException<BaseResponse<List<ApiMonitorAction>>>(ex, nameof(GetMonitorActions));
+                return result;
+            }
+        }
     }
 }
 

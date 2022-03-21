@@ -7,5 +7,9 @@ namespace Planner.API.Common.Entities
         [Trim]
         [Required]
         public string Yaml { get; set; }
+
+        [Trim]
+        [Required]
+        public string Path { get; set; }
     }
 }

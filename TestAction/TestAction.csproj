@@ -11,4 +11,10 @@
   <ItemGroup>
     <PackageReference Include="Planner.Client" Version="1.0.3" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="JobFile.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

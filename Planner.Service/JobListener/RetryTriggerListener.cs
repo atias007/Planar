@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Planner.Common;
 using Planner.Service.General;
 using Planner.Service.JobListener.Base;
+using Planner.Service.Monitor;
 using Quartz;
 using System;
 using System.Threading;
@@ -18,8 +19,7 @@ namespace Planner.Service.JobListener
         {
             try
             {
-                var job = context.JobInstance as ICommonJob;
-                if (job != null && job.GetJobRunningProperty<bool>("Fail") == false) { return; }
+                if (context.JobInstance is ICommonJob job && job.GetJobRunningProperty<bool>("Fail") == false) { return; }
                 if (trigger.JobDataMap.Contains(Consts.RetrySpan) == false) { return; }
                 var span = GetRetrySpan(trigger);
                 if (span == null) { return; }
@@ -58,6 +58,10 @@ namespace Planner.Service.JobListener
             catch (Exception ex)
             {
                 Logger.Log(LogLevel.Critical, ex, $"Error handle '{nameof(TriggerComplete)}' at '{nameof(RetryTriggerListener)}'");
+            }
+            finally
+            {
+                await MonitorUtil.Scan(MonitorEvents.ExecutionRetry, context, cancellationToken: cancellationToken);
             }
         }
 

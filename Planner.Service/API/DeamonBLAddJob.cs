@@ -9,12 +9,15 @@ using Quartz;
 using RunPlannerJob;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
+using Microsoft.Extensions.Logging;
 using YamlDotNet.Serialization.NamingConventions;
+using System.IO.Compression;
 
 namespace Planner.Service.API
 {
@@ -31,8 +34,9 @@ namespace Planner.Service.API
         public async Task<AddJobResponse> AddJob(AddJobRequest request)
         {
             var metadata = GetJobMetadata(request.Yaml);
+            AddPathRelativeFolder(metadata, request.Path);
             var jobKey = await ValidateJobMetadata(metadata);
-
+            ExtractJobPackage(request.Path);
             await BuildGlobalParameters(metadata.GlobalParameters);
 
             var jobType = GetJobType(metadata);
@@ -51,6 +55,36 @@ namespace Planner.Service.API
             var id = BuildJobData(metadata, job);
             await BuildTriggers(Scheduler, job, metadata);
             return new AddJobResponse { Result = id };
+        }
+
+        private void ExtractJobPackage(string path)
+        {
+            try
+            {
+                var dirInfo = new DirectoryInfo(path);
+                var files = dirInfo.GetFiles("*.nupkg").Concat(dirInfo.GetFiles("*.zip")).ToArray();
+
+                if (files.Length == 0)
+                {
+                    _logger.LogInformation($"No nuget/zip packge found in directory '{dirInfo.FullName}' when add new job file");
+                    return;
+                }
+
+                if (files.Length > 1)
+                {
+                    _logger.LogInformation($"More then 1 nuget/zip packge fount in directory '{dirInfo.FullName}' when add new job file. Found {files.Length} files");
+                    return;
+                }
+
+                var package = files[0];
+                _logger.LogInformation($"Extract nuget/zip package '{package.FullName}'");
+                ZipFile.ExtractToDirectory(package.FullName, package.Directory.FullName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Fail to extract nuget/zip package. Error: {ex.Message}", ex);
+                throw;
+            }
         }
 
         private static async Task BuildTriggers(IScheduler scheduler, IJobDetail quartzJob, JobMetadata job)
@@ -421,6 +455,36 @@ namespace Planner.Service.API
                             .Build();
             var metadata = deserializer.Deserialize<JobMetadata>(yaml);
             return metadata;
+        }
+
+        private static void AddPathRelativeFolder(JobMetadata metadata, string basePath)
+        {
+            const string pathField = "JobPath";
+            if (metadata.Properties != null)
+            {
+                if (metadata.Properties.ContainsKey(pathField))
+                {
+                    var path = metadata.Properties[pathField];
+                    if (string.IsNullOrEmpty(path) == false)
+                    {
+                        path = path.Trim();
+                        if (path.Length > 0)
+                        {
+                            if (path == "." || path == @"\" || path == "/") { path = $"{basePath}"; }
+                            else if (path[0] == '.')
+                            {
+                                path = $"{basePath}{path[1..]}";
+                            }
+                            else if (path[0] == '/' || path[0] == '\\')
+                            {
+                                path = @$"{basePath}\{path[1..]}";
+                            }
+                        }
+                    }
+
+                    metadata.Properties[pathField] = path;
+                }
+            }
         }
 
         private static Type GetJobType(JobMetadata job)
