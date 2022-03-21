@@ -257,19 +257,15 @@ namespace DatabaseMigrations
             }
 
             var json = JObject.Parse(File.ReadAllText(settingsFile));
-            var connections = json["ConnectionStrings"];
-            var connectionString = JsonConvert.DeserializeObject<Dictionary<string, string>>(connections.ToString())
-                .Where(item => item.Key.StartsWith(ModuleName))
-                .FirstOrDefault();
+            var connectionString = json["DatabaseConnectionString"].ToString();
 
-            if (string.IsNullOrEmpty(connectionString.Value))
+            if (string.IsNullOrEmpty(connectionString))
             {
                 WriteError($"Could not found connection string with name start with '{ModuleName}'");
                 AssertStatus();
             }
 
-            Console.WriteLine($" [x] Run with '{connectionString.Key}' connection string");
-            return connectionString.Value;
+            return connectionString;
         }
 
         private static RunningEnvironment GetRunningEnvironment(string[] args)
@@ -324,8 +320,6 @@ namespace DatabaseMigrations
                         "Validate",
                         "List Scripts",
                         "Demo Execute",
-                        "Send For Approval",
-                        "Pull Request Ready",
                         "Execute"
                     }));
             }
