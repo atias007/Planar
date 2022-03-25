@@ -38,7 +38,7 @@ namespace Planner.Service.Calendars.Hebrew
             }
             catch (Exception ex)
             {
-                Logger.LogCritical(ex, $"Fail to invoke IsTimeIncluded with DateTimeOffset={timeUtc}");
+                Logger.LogCritical(ex, "Fail to invoke IsTimeIncluded with DateTimeOffset={@timeUtc}", timeUtc);
                 throw;
             }
         }

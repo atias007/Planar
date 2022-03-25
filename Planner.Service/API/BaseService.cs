@@ -50,21 +50,21 @@ namespace Planner.Service.API
 
         private void LogException(Exception ex, string method)
         {
-            var message = $"API method '{method}' -> fail: {ex.Message} ";
+            var message = "API method {@method} fail: {@message}";
 
             if (ex is PlannerValidationException || ex is ValidationException)
             {
-                _loggger.Warning(message);
+                _loggger.Warning(message, method, ex.Message);
             }
             else
             {
-                _loggger.Error(ex, message);
+                _loggger.Error(ex, message, method, ex.Message);
             }
         }
 
         protected void InitializeService(string method)
         {
-            _loggger.Information($"AutomationService: {method} invoked");
+            _loggger.Information("API method {@method} invoked", method);
         }
 
         protected void ValidateEntity<T>(T entity)

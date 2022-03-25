@@ -987,6 +987,21 @@ namespace Planner.Service.API
                 return result;
             }
         }
+
+        public BaseResponse AddMonitor(AddMonitorRequest request)
+        {
+            try
+            {
+                InitializeService(nameof(AddMonitor));
+                var result = BL.AddMonitor(request).Result;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var result = HandleException<BaseResponse>(ex, nameof(AddMonitor));
+                return result;
+            }
+        }
     }
 }
 

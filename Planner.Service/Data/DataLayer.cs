@@ -467,6 +467,12 @@ namespace Planner.Service.Data
                 .ToListAsync();
         }
 
+        public async Task AddMonitor(MonitorAction request)
+        {
+            await _context.MonitorActions.AddAsync(request);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<int> CountFailsInRowForJob(object parameters)
         {
             using (var conn = _context.Database.GetDbConnection())

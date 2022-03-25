@@ -61,13 +61,17 @@ namespace Planner.CLI.Actions
             }
             var jobId = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Job id: [/]").AllowEmpty());
 
+            int jobGroup;
             // === JobGroup ===
-            if (data.Result.JobGroups != null && data.Result.JobGroups.Count > 0)
+            if (string.IsNullOrEmpty(jobId))
             {
-                var table = CliTableExtensions.GetTable(data.Result.JobGroups, "Job Group");
-                AnsiConsole.Write(table);
+                if (data.Result.JobGroups != null && data.Result.JobGroups.Count > 0)
+                {
+                    var table = CliTableExtensions.GetTable(data.Result.JobGroups, "Job Group");
+                    AnsiConsole.Write(table);
+                }
+                jobGroup = AnsiConsole.Prompt(new TextPrompt<int>("[turquoise2]  > Job group id: [/]").AllowEmpty());
             }
-            var jobGroup = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Job group name: [/]").AllowEmpty());
 
             // === Event ===
             var evenTtable = CliTableExtensions.GetTable(data.Result.Events, "Event Name");
@@ -75,7 +79,10 @@ namespace Planner.CLI.Actions
             var monitorEvent = AnsiConsole.Ask<int>("[turquoise2]  > Monitor event id: [/]");
 
             // === EventArguments ===
-            var monitorEventArgs = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Monitor event argument: [/]").AllowEmpty());
+            var monitorEventArgs =
+                monitorEvent >= 10 ?
+                AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Monitor event argument: [/]").AllowEmpty()) :
+                null;
 
             // === Distribution Group ===
             var groupsTable = CliTableExtensions.GetTable(data.Result.Groups, "Group Name");
@@ -86,10 +93,21 @@ namespace Planner.CLI.Actions
             var hooksTable = CliTableExtensions.GetTable(data.Result.Hooks, "Name");
             AnsiConsole.Write(hooksTable);
             var hookPrompt = new TextPrompt<int>("[turquoise2]  > Hook id: [/]");
-            var hook = AnsiConsole.Prompt(hookPrompt);
+            var hookId = AnsiConsole.Prompt(hookPrompt);
+            var hookName = data.Result.Hooks[hookId];
 
-            //var result = await Proxy.InvokeAsync(x => x.GetMonitorHooks());
-            return await Task.FromResult(new ActionResponse(null));
+            var monitor = new AddMonitorRequest
+            {
+                EventArguments = monitorEventArgs,
+                GroupId = groupId,
+                Hook = hookName,
+                JobId = jobId,
+                MonitorEvent = monitorEvent,
+                Title = title
+            };
+
+            var result = await Proxy.InvokeAsync(x => x.AddMonitor(monitor));
+            return new ActionResponse(result);
         }
 
         [Action("events")]

@@ -180,7 +180,7 @@ namespace Planner.Service
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, $"Initialize: Fail to AddMonitorHooks {ex.Message}");
+                _logger.LogCritical(ex, "Initialize: Fail to AddMonitorHooks");
                 throw;
             }
         }

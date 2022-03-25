@@ -6,7 +6,7 @@
         public string Title { get; set; }
         public int EventId { get; set; }
         public string EventName { get; set; }
-        public int? EventArgument { get; set; }
+        public string EventArgument { get; set; }
         public string JobId { get; set; }
         public string Job { get; set; }
         public string JobGroup { get; set; }

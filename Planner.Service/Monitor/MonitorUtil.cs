@@ -41,7 +41,7 @@ namespace Planner.Service.Monitor
             }
 
             var missingHooks = Hooks.Where(h => ServiceUtil.MonitorHooks.Keys.Contains(h) == false).ToList();
-            missingHooks.ForEach(h => logger.LogWarning($"Monitor with hook '{h}' is invalid. Missing hook in service"));
+            missingHooks.ForEach(h => logger.LogWarning("Monitor with hook '{@h}' is invalid. Missing hook in service", h));
         }
 
         public static int Count
@@ -68,7 +68,7 @@ namespace Planner.Service.Monitor
             }
         }
 
-        public static async Task Scan(MonitorEvents @event, IJobExecutionContext context, JobExecutionException jobException = default, CancellationToken cancellationToken = default)
+        internal static async Task Scan(MonitorEvents @event, IJobExecutionContext context, JobExecutionException jobException = default, CancellationToken cancellationToken = default)
         {
             var task = Task.Run(() =>
             {
@@ -95,7 +95,7 @@ namespace Planner.Service.Monitor
                             var hookInstance = GetMonitorHookInstance(action.Hook);
                             if (hookInstance == null)
                             {
-                                _logger.LogWarning($"Hook '{action.Hook}' in monitor item id: {action.Id}, title: '{action.Title}' is not exists in service");
+                                _logger.LogWarning("Hook {@Hook} in monitor item id: {@Id}, title: '{@Title}' is not exists in service", action.Hook, action.Id, action.Title);
                             }
                             else
                             {
@@ -107,18 +107,18 @@ namespace Planner.Service.Monitor
                                 {
                                     if (t.Exception != null)
                                     {
-                                        logger.LogError(t.Exception, $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook '{action.Hook}'");
+                                        logger.LogError(t.Exception, "Fail to handle monitor item id: {@Id}, title: '{@Title}' with hook {@Hook}", action.Id, action.Title, action.Hook);
                                     }
                                 });
 
-                                logger.LogInformation($"Monitor item id: {action.Id}, title: '{action.Title}' start to handle with hook '{action.Hook}'");
+                                logger.LogInformation("Monitor item id: {@Id}, title: '{@Title}' start to handle with hook {@Hook}", action.Id, action.Title, action.Hook);
                                 hookTasks.Add(hookTask);
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook '{action.Hook}'");
+                        _logger.LogError(ex, "Fail to handle monitor item id: {@Id}, title: '{@Title}' with hook {@Hook}", action.Id, action.Title, action.Hook);
                     }
                 });
 
@@ -221,10 +221,11 @@ namespace Planner.Service.Monitor
                     return true;
 
                 case MonitorEvents.ExecutionFailnTimesInRow:
-                    var args1 = action.EventArgument.GetValueOrDefault();
+
+                    _ = int.TryParse(action.EventArgument, out var args1);
                     if (args1 < 2 || string.IsNullOrEmpty(action.JobId))
                     {
-                        _logger.LogWarning($"Monitor action {action.Id} - {action.Title} has invalid argument ({action.EventArgument}) or missing job id");
+                        _logger.LogWarning("Monitor action {@Id}, Title '{@Title}' has invalid argument ({@EventArgument}) or missing job id", action.Id, action.Title, action.EventArgument);
                         return false;
                     }
 
@@ -232,10 +233,10 @@ namespace Planner.Service.Monitor
                     return count1 == args1;
 
                 case MonitorEvents.ExecutionFailnTimesInHour:
-                    var args2 = action.EventArgument.GetValueOrDefault();
+                    _ = int.TryParse(action.EventArgument, out var args2);
                     if (args2 < 2 || string.IsNullOrEmpty(action.JobId))
                     {
-                        _logger.LogWarning($"Monitor action {action.Id} - {action.Title} has invalid argument ({action.EventArgument}) or missing job id");
+                        _logger.LogWarning("Monitor action {@Id}, Title '{@Title}' has invalid argument ({@EventArgument}) or missing job id", action.Id, action.Title, action.EventArgument);
                         return false;
                     }
 

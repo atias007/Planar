@@ -64,7 +64,7 @@ namespace Planner.Service.General
                             var name = new DirectoryInfo(dir).Name;
                             var hook = new MonitorHookFactory { Name = name, Type = t, AssemblyContext = assemblyContext };
                             MonitorHooks.Add(name, hook);
-                            logger.LogInformation($"Add MonitorHook '{name}' from type '{t.FullName}'");
+                            logger.LogInformation("Add MonitorHook '{@name}' from type '{@FullName}'", name, t.FullName);
                         }
                     }
                 }

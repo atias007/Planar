@@ -5,6 +5,7 @@
     <TargetFramework>net5.0</TargetFramework>
     <AssemblyName>Planner</AssemblyName>
     <Version>1.0.2</Version>
+    <StartupObject>Planner.CLI.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>

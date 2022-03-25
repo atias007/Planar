@@ -1,6 +1,6 @@
 ﻿namespace Planner
 {
-    public enum MonitorEvents
+    internal enum MonitorEvents
     {
         ExecutionVetoed = 1,
         ExecutionRetry = 2,
@@ -8,7 +8,7 @@
         ExecutionSuccess = 4,
         ExecutionStart = 5,
         ExecutionEnd = 6,
-        ExecutionFailnTimesInRow = 7,
-        ExecutionFailnTimesInHour = 8
+        ExecutionFailnTimesInRow = 10,
+        ExecutionFailnTimesInHour = 11
     }
 }

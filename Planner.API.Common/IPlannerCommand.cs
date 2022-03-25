@@ -163,6 +163,8 @@ namespace Planner.API.Common
 
         BaseResponse<List<ApiMonitorAction>> GetMonitorActions();
 
+        BaseResponse AddMonitor(AddMonitorRequest request);
+
         #endregion Monitor
     }
 }

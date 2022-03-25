@@ -42,9 +42,8 @@ namespace Planner.Service.Calendars
             }
             else
             {
-                var msg = $"{name} settings file '{filename}' could not be found";
-                Logger.LogError(msg);
-                throw new ApplicationException(msg);
+                Logger.LogError("{@name} settings file '{@filename}' could not be found", name, filename);
+                throw new ApplicationException($"{name} settings file '{filename}' could not be found");
             }
         }
 

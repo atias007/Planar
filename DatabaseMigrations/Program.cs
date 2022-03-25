@@ -1,9 +1,7 @@
 ﻿using DbUp;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Spectre.Console;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -16,104 +14,14 @@ namespace DatabaseMigrations
 {
     internal class Program
     {
-        private static Assembly _assembly;
-
-        private static void Main(string[] args)
-        {
-            _assembly = Assembly.GetExecutingAssembly();
-            Run(args);
-        }
+        private static readonly string ProjectPath = new DirectoryInfo(Path.Combine(RunningPath, "..", "..", "..")).FullName;
 
         private static Status _status = Status.Success;
 
-        private static void Run(string[] args)
-        {
-            var mode = GetRunningMode(args);
-
-            if (mode == RunningMode.Validate)
-            {
-                Validate(_assembly, mode);
-                AssertStatus();
-            }
-            else if (mode == RunningMode.AddScript)
-            {
-                AddScript();
-                AssertStatus();
-            }
-
-            var environment = GetRunningEnvironment(args);
-            var connectionString = GetConnectionString(environment);
-
-            var builder =
-                DeployChanges.To
-                    .SqlDatabase(connectionString)
-                    .WithScriptsEmbeddedInAssembly(_assembly)
-                    .LogToConsole()
-                    .LogScriptOutput();
-
-            if (mode == RunningMode.ListScripts)
-            {
-                Console.WriteLine();
-
-                builder.Build().GetScriptsToExecute()
-                    .ForEach(s =>
-                    {
-                        WriteInfo(s.Name);
-                    });
-
-                AssertStatus();
-            }
-
-            switch (mode)
-            {
-                case RunningMode.DemoExecute:
-                    Validate(_assembly, mode);
-                    if (_status == Status.Error)
-                    {
-                        AssertStatus();
-                    }
-
-                    _status = Status.Success;
-                    builder.WithTransactionAlwaysRollback();
-                    break;
-
-                case RunningMode.PullRequestReady:
-                    Validate(_assembly, mode);
-                    if (_status != Status.Success)
-                    {
-                        AssertStatus();
-                    }
-
-                    _status = Status.Success;
-                    builder.WithTransactionAlwaysRollback();
-                    break;
-
-                case RunningMode.Execute:
-                    Validate(_assembly, mode);
-                    if (_status != Status.Success)
-                    {
-                        AssertStatus();
-                    }
-
-                    builder.WithTransaction();
-                    break;
-            }
-
-            var upgrader = builder.Build();
-
-            var result = upgrader.PerformUpgrade();
-
-            if (!result.Successful)
-            {
-                WriteError(result.Error.ToString());
-            }
-
-            AssertStatus();
-        }
+        public static string ModuleName { get; set; }
 
         private static string RunningPath => AppContext.BaseDirectory;
-        private static string ModuleName => new DirectoryInfo(Path.Combine(RunningPath, "..", "..", "..", "..")).Name;
-        private static readonly string ProjectPath = new DirectoryInfo(Path.Combine(RunningPath, "..", "..", "..")).FullName;
+
         private static string ScriptsPath => Path.Combine(ProjectPath, "Scripts");
 
         private static void AddScript()
@@ -339,7 +247,104 @@ namespace DatabaseMigrations
             return mode;
         }
 
-        private static void Validate(Assembly assembly, RunningMode mode)
+        private static void Main(string[] args)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            ModuleName = "Planner";
+            Run(assembly, args);
+        }
+
+        private static void Run(Assembly assembly, string[] args)
+        {
+            if (string.IsNullOrEmpty(ModuleName))
+            {
+                ModuleName = new DirectoryInfo(Path.Combine(RunningPath, "..", "..", "..", "..")).Name;
+            }
+
+            var mode = GetRunningMode(args);
+
+            if (mode == RunningMode.Validate)
+            {
+                Validate(assembly);
+                AssertStatus();
+            }
+            else if (mode == RunningMode.AddScript)
+            {
+                AddScript();
+                AssertStatus();
+            }
+
+            var environment = GetRunningEnvironment(args);
+            var connectionString = GetConnectionString(environment);
+
+            var builder =
+                DeployChanges.To
+                    .SqlDatabase(connectionString)
+                    .WithScriptsEmbeddedInAssembly(assembly)
+                    .LogToConsole()
+                    .LogScriptOutput();
+
+            if (mode == RunningMode.ListScripts)
+            {
+                Console.WriteLine();
+
+                builder.Build().GetScriptsToExecute()
+                    .ForEach(s =>
+                    {
+                        WriteInfo(s.Name);
+                    });
+
+                AssertStatus();
+            }
+
+            switch (mode)
+            {
+                case RunningMode.DemoExecute:
+                    Validate(assembly);
+                    if (_status == Status.Error)
+                    {
+                        AssertStatus();
+                    }
+
+                    _status = Status.Success;
+                    builder.WithTransactionAlwaysRollback();
+                    break;
+
+                case RunningMode.PullRequestReady:
+                    Validate(assembly);
+                    if (_status != Status.Success)
+                    {
+                        AssertStatus();
+                    }
+
+                    _status = Status.Success;
+                    builder.WithTransactionAlwaysRollback();
+                    break;
+
+                case RunningMode.Execute:
+                    Validate(assembly);
+                    if (_status != Status.Success)
+                    {
+                        AssertStatus();
+                    }
+
+                    builder.WithTransaction();
+                    break;
+            }
+
+            var upgrader = builder.Build();
+
+            var result = upgrader.PerformUpgrade();
+
+            if (!result.Successful)
+            {
+                WriteError(result.Error.ToString());
+            }
+
+            AssertStatus();
+        }
+
+        private static void Validate(Assembly assembly)
         {
             ValidateAllSqlFiles();
             ValidateAllEbbdedResource(assembly);
@@ -396,21 +401,6 @@ namespace DatabaseMigrations
                 {
                     WriteError($"{f.Name} is not .sql file");
                 });
-            }
-        }
-
-        private static IEnumerable<string> GetNotApprovedFiles()
-        {
-            const string approvePattern = @"approved by [\w]";
-            var files = Directory.GetFiles(ProjectPath, "*.sql", SearchOption.AllDirectories);
-            foreach (var f in files)
-            {
-                var content = File.ReadAllText(f);
-                var regex = new Regex(approvePattern);
-                if (regex.IsMatch(content) == false)
-                {
-                    yield return f;
-                }
             }
         }
 

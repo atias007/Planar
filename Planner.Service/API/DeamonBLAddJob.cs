@@ -71,23 +71,23 @@ namespace Planner.Service.API
 
                 if (files.Length == 0)
                 {
-                    _logger.LogInformation($"No nuget/zip packge found in directory '{dirInfo.FullName}' when add new job file");
+                    _logger.LogInformation("No nuget/zip packge found in directory '{@FullName}' when add new job file", dirInfo.FullName);
                     return;
                 }
 
                 if (files.Length > 1)
                 {
-                    _logger.LogInformation($"More then 1 nuget/zip packge fount in directory '{dirInfo.FullName}' when add new job file. Found {files.Length} files");
+                    _logger.LogInformation("More then 1 nuget/zip packge fount in directory '{@FullName}' when add new job file. Found {@Length} files", dirInfo.FullName, files.Length);
                     return;
                 }
 
                 var package = files[0];
-                _logger.LogInformation($"Extract nuget/zip package '{package.FullName}'");
+                _logger.LogInformation("Extract nuget/zip package '{@FullName}'", package.FullName);
                 ZipFile.ExtractToDirectory(package.FullName, package.Directory.FullName);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Fail to extract nuget/zip package. Error: {ex.Message}", ex);
+                _logger.LogError(ex, "Fail to extract nuget/zip package: {@Message}", ex.Message);
                 throw;
             }
         }

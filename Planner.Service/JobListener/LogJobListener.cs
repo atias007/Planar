@@ -28,7 +28,8 @@ namespace Planner.Service.JobListener
             }
             catch (Exception ex)
             {
-                Logger.Log(LogLevel.Critical, ex, $"Error handle '{nameof(JobExecutionVetoed)}' at '{nameof(LogJobListener)}'");
+                var source = nameof(JobExecutionVetoed);
+                Logger.LogCritical(ex, "Error handle {@source}: {@Message} ", source, ex.Message);
             }
             finally
             {
@@ -75,7 +76,8 @@ namespace Planner.Service.JobListener
             }
             catch (Exception ex)
             {
-                Logger.Log(LogLevel.Critical, ex, $"Error handle '{nameof(JobToBeExecuted)}' at '{nameof(LogJobListener)}'");
+                var source = nameof(JobToBeExecuted);
+                Logger.LogCritical(ex, "Error handle {@source}: {@Message} ", source, ex.Message);
             }
             finally
             {
@@ -112,7 +114,8 @@ namespace Planner.Service.JobListener
             }
             catch (Exception ex)
             {
-                Logger.Log(LogLevel.Critical, ex, $"Error handle '{nameof(JobWasExecuted)}' at '{nameof(LogJobListener)}'");
+                var source = nameof(JobWasExecuted);
+                Logger.LogCritical(ex, "Error handle {@source}: {@Message} ", source, ex.Message);
             }
             finally
             {

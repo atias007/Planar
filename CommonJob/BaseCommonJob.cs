@@ -72,7 +72,8 @@ namespace CommonJob
             }
             catch (Exception ex)
             {
-                Logger.Instance.LogError($"Fail at {nameof(BaseCommonJob<TInstance>)}.{nameof(MapProperties)} with job {context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}", ex);
+                var source = nameof(MapProperties);
+                Logger.Instance.LogError(ex, "Fail at {@source} with job {@Group}.{@Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
                 throw;
             }
         }
@@ -85,7 +86,8 @@ namespace CommonJob
             }
             catch (Exception ex)
             {
-                Logger.Instance.LogError($"Fail at {nameof(BaseCommonJob<TInstance>)}.{nameof(FinalizeJob)} with job {context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}", ex);
+                var source = nameof(FinalizeJob);
+                Logger.Instance.LogError(ex, "Fail at {@source} with job {@Group}.{@Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
                 throw;
             }
         }
@@ -117,7 +119,8 @@ namespace CommonJob
             }
             catch (Exception ex)
             {
-                Logger.Instance.LogError($"Fail at {nameof(BaseCommonJob<TInstance>)}.{nameof(MapJobInstanceProperties)} with job {context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}", ex);
+                var source = nameof(MapJobInstanceProperties);
+                Logger.Instance.LogError(ex, "Fail at {@source} with job {@Group}.{@Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
                 throw;
             }
         }
@@ -151,7 +154,8 @@ namespace CommonJob
             }
             catch (Exception ex)
             {
-                Logger.Instance.LogError($"Fail at {nameof(BaseCommonJob<TInstance>)}.{nameof(LoadJobSettings)}", ex);
+                var source = nameof(LoadJobSettings);
+                Logger.Instance.LogError(ex, "Fail at {@source}", source);
                 throw;
             }
         }

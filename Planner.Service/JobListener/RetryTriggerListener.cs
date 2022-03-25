@@ -29,7 +29,8 @@ namespace Planner.Service.JobListener
                 var numTries = trigger.JobDataMap.GetIntValue(Consts.RetryCounter);
                 if (numTries > Consts.MaxRetries)
                 {
-                    Logger.Log(LogLevel.Error, $"Job with key {context.JobDetail.Key.Group}.{context.JobDetail.Key.Name} fail and retry for {Consts.MaxRetries} times but failed each time.");
+                    var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
+                    Logger.LogError("Job with key {@key} fail and retry for {@MaxRetries} times but failed each time", key, Consts.MaxRetries);
                     return;
                 }
 
@@ -48,18 +49,21 @@ namespace Planner.Service.JobListener
 
                 if (numTries > 1)
                 {
-                    Logger.Log(LogLevel.Warning, $"Retry no. {numTries} of job with key {context.JobDetail.Key.Group}.{context.JobDetail.Key.Name} was fail. Retry again at {start}.");
+                    var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
+                    Logger.LogWarning("Retry no. {@numTries} of job with key {@key} was fail. Retry again at {@start}", numTries, key, start);
                 }
                 else
                 {
-                    Logger.Log(LogLevel.Warning, $"Job with key {context.JobDetail.Key.Group}.{context.JobDetail.Key.Name} was fail. Retry again at {start}.");
+                    var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
+                    Logger.LogWarning("Job with key {@key} was fail. Retry again at {@start}", key, start);
                 }
 
                 await context.Scheduler.ScheduleJob(retryTrigger, cancellationToken);
             }
             catch (Exception ex)
             {
-                Logger.Log(LogLevel.Critical, ex, $"Error handle '{nameof(TriggerComplete)}' at '{nameof(RetryTriggerListener)}'");
+                var source = nameof(TriggerComplete);
+                Logger.LogCritical(ex, "Error handle {@source}: {@Message}", source, ex.Message);
             }
             finally
             {
@@ -87,7 +91,8 @@ namespace Planner.Service.JobListener
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, $"Error handle '{nameof(TriggerFired)}' at '{nameof(RetryTriggerListener)}'", ex);
+                var source = nameof(TriggerFired);
+                Logger.LogError(ex, "Error handle {@source}: {@Message}", source, ex.Message);
             }
         }
 

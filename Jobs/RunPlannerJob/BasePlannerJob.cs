@@ -97,7 +97,8 @@ namespace RunPlannerJob
             }
             catch (Exception ex)
             {
-                Logger.Instance.LogError($"Fail at {nameof(BasePlannerJob<T>)}.{nameof(Validate)}", ex);
+                var source = nameof(Validate);
+                Logger.Instance.LogError(ex, "Fail at {@source}", source);
                 throw;
             }
         }

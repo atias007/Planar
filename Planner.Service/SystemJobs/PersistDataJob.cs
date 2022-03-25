@@ -32,7 +32,7 @@ namespace Planner.Service.SystemJobs
             }
             catch (Exception ex)
             {
-                _logger.LogError("Fail to persist data", ex);
+                _logger.LogError(ex, "Fail to persist data {@message}", ex.Message);
                 return Task.CompletedTask;
             }
         }
@@ -102,7 +102,7 @@ namespace Planner.Service.SystemJobs
             {
                 if (job.JobRunTime.TotalSeconds > AppSettings.PersistRunningJobsSpan.TotalSeconds)
                 {
-                    _logger.LogInformation($"Persist information for job {job.JobDetail.Key.Group}.{job.JobDetail.Key.Name}");
+                    _logger.LogInformation("Persist information for job {@Group}.{@Name}", job.JobDetail.Key.Group, job.JobDetail.Key.Name);
                     var information = JobExecutionMetadataUtil.GetInformation(job);
                     var exceptions = JobExecutionMetadataUtil.GetExceptionsText(job);
 

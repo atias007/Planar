@@ -816,6 +816,73 @@ namespace Planner.Service.API
             return new BaseResponse<List<ApiMonitorAction>>(result);
         }
 
+        public async Task<BaseResponse> AddMonitor(AddMonitorRequest request)
+        {
+            var monitor = new MonitorAction
+            {
+                Active = true,
+                EventArgument = string.IsNullOrEmpty(request.EventArguments) ? null : request.EventArguments,
+                EventId = request.MonitorEvent,
+                GroupId = request.GroupId,
+                Hook = request.Hook,
+                JobGroup = string.IsNullOrEmpty(request.JobGroup) ? null : request.JobGroup,
+                JobId = request.JobId,
+                Title = request.Title,
+            };
+
+            var eventExists = Enum.IsDefined(typeof(MonitorEvents), request.MonitorEvent);
+            if (eventExists == false)
+            {
+                throw new PlannerValidationException($"Monitor event {request.MonitorEvent} does not exists");
+            }
+
+            if (string.IsNullOrEmpty(request.JobId) && string.IsNullOrEmpty(request.JobGroup))
+            {
+                throw new PlannerValidationException("Job id and Job group name are both missing. to add monitor please supply one of them");
+            }
+
+            if (string.IsNullOrEmpty(request.JobId) == false && string.IsNullOrEmpty(request.JobGroup) == false)
+            {
+                throw new PlannerValidationException("Job id and Job group name are both has value. to add monitor please supply only one of them");
+            }
+
+            if (string.IsNullOrEmpty(request.JobId) == false)
+            {
+                await JobKeyHelper.GetJobKey(new JobOrTriggerKey { Id = request.JobId });
+            }
+
+            var existsGroup = await _dal.IsGroupExists(request.GroupId);
+            if (existsGroup == false)
+            {
+                throw new PlannerValidationException($"Group id {request.GroupId} does not exists");
+            }
+
+            var existsHook = ServiceUtil.MonitorHooks.ContainsKey(request.Hook);
+            if (existsHook == false)
+            {
+                throw new PlannerValidationException($"Hook {request.Hook} does not exists");
+            }
+
+            if (string.IsNullOrEmpty(request.Title))
+            {
+                throw new PlannerValidationException("Title is null or empty");
+            }
+
+            if (request.Title?.Length > 50)
+            {
+                throw new PlannerValidationException($"Title lenght is {request.Title.Length}. Max lenght should be 50");
+            }
+
+            if (request.EventArguments?.Length > 50)
+            {
+                throw new PlannerValidationException($"Event arguments lenght is {request.EventArguments.Length}. Max lenght should be 50");
+            }
+
+            await _dal.AddMonitor(monitor);
+
+            return BaseResponse.Empty;
+        }
+
         #region Private
 
         private static GlobalParameter GetGlobalParameter(GlobalParameterData request)

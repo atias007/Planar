@@ -27,7 +27,7 @@ namespace Planner.TeamsMonitorHook
         {
             if (string.IsNullOrEmpty(group.Reference1))
             {
-                _logger.LogError($"Group {group.Name} is invalid for Teams monitor hook. All reference fields are empty. At least 1 reference field should have teams channel url");
+                _logger.LogError("Group {@Name} is invalid for Teams monitor hook. All reference fields are empty. At least 1 reference field should have teams channel url", group.Name);
                 return false;
             }
 
@@ -50,12 +50,12 @@ namespace Planner.TeamsMonitorHook
                 var response = await httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode == false)
                 {
-                    _logger.LogError($"Send message to url '{url}' fail with status code {response.StatusCode}");
+                    _logger.LogError("Send message to url '{@url}' fail with status code {response.StatusCode}", url);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Send message to url '{url}' fail with error: {ex.Message}");
+                _logger.LogError(ex, "Send message to url '{@url}' fail with error: {@Message}", url, ex.Message);
             }
         }
 
