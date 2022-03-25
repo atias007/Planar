@@ -26,10 +26,10 @@ namespace Planner.CLI.Actions
         }
 
         [Action("ls")]
-        public static async Task<ActionResponse> GetMonitorItems(CliGetMonitorItemsRequest request)
+        public static async Task<ActionResponse> GetMonitorActions(CliGetMonitorActionsRequest request)
         {
-            var prm = JsonMapper.Map<GetMonitorItemsRequest, CliGetMonitorItemsRequest>(request);
-            var result = await Proxy.InvokeAsync(x => x.GetMonitorItems(prm));
+            var prm = JsonMapper.Map<GetMonitorActionsRequest, CliGetMonitorActionsRequest>(request);
+            var result = await Proxy.InvokeAsync(x => x.GetMonitorActions(prm));
             var table = CliTableExtensions.GetTable(result);
             return new ActionResponse(result, table);
         }
@@ -117,12 +117,13 @@ namespace Planner.CLI.Actions
             return new ActionResponse(result, serializeObj: result.Result);
         }
 
-        [Action("actions")]
-        public static async Task<ActionResponse> GetMonitorActions()
+        [Action("remove")]
+        [Action("delete")]
+        public static async Task<ActionResponse> DeleteMonitor(CliGetByIdRequest request)
         {
-            var result = await Proxy.InvokeAsync(x => x.GetMonitorActions());
-            var table = CliTableExtensions.GetTable(result);
-            return new ActionResponse(result, table);
+            var prm = JsonMapper.Map<GetByIdRequest, CliGetByIdRequest>(request);
+            var result = await Proxy.InvokeAsync(x => x.DeleteMonitor(prm));
+            return new ActionResponse(result);
         }
     }
 }

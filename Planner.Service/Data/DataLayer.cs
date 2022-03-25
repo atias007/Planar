@@ -442,7 +442,7 @@ namespace Planner.Service.Data
             return await _context.Groups.AnyAsync(g => g.Id == groupId);
         }
 
-        public async Task<List<MonitorAction>> GetMonitorItems(GetMonitorItemsRequest request)
+        public async Task<List<MonitorAction>> GetMonitorActions(GetMonitorActionsRequest request)
         {
             var query = _context.MonitorActions.AsQueryable();
             if (string.IsNullOrEmpty(request.JobIdOrJobGroup) == false)
@@ -489,16 +489,20 @@ namespace Planner.Service.Data
 
         public async Task<int> CountFailsInHourForJob(object parameters)
         {
-            using (var conn = _context.Database.GetDbConnection())
-            {
-                var cmd = new CommandDefinition(
-                    commandText: "dbo.CountFailsInHourForJob",
-                    commandType: CommandType.StoredProcedure,
-                    parameters: parameters);
+            using var conn = _context.Database.GetDbConnection();
+            var cmd = new CommandDefinition(
+                commandText: "dbo.CountFailsInHourForJob",
+                commandType: CommandType.StoredProcedure,
+                parameters: parameters);
 
-                var data = await conn.QuerySingleAsync<int>(cmd);
-                return data;
-            }
+            var data = await conn.QuerySingleAsync<int>(cmd);
+            return data;
+        }
+
+        public async Task DeleteMonitor(MonitorAction request)
+        {
+            var entity = _context.MonitorActions.Remove(request);
+            await _context.SaveChangesAsync();
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace Planner.API.Common.Entities
 {
-    public class GetMonitorItemsRequest
+    public class GetMonitorActionsRequest
     {
         public string JobIdOrJobGroup { get; set; }
     }

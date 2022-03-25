@@ -928,17 +928,17 @@ namespace Planner.Service.API
             }
         }
 
-        public BaseResponse<List<MonitorItem>> GetMonitorItems(GetMonitorItemsRequest request)
+        public BaseResponse<List<MonitorItem>> GetMonitorActions(GetMonitorActionsRequest request)
         {
             try
             {
-                InitializeService(nameof(GetMonitorItems));
-                var result = BL.GetMonitorItems(request).Result;
+                InitializeService(nameof(GetMonitorActions));
+                var result = BL.GetMonitorActions(request).Result;
                 return result;
             }
             catch (Exception ex)
             {
-                var result = HandleException<BaseResponse<List<MonitorItem>>>(ex, nameof(GetMonitorItems));
+                var result = HandleException<BaseResponse<List<MonitorItem>>>(ex, nameof(GetMonitorActions));
                 return result;
             }
         }
@@ -973,21 +973,6 @@ namespace Planner.Service.API
             }
         }
 
-        public BaseResponse<List<ApiMonitorAction>> GetMonitorActions()
-        {
-            try
-            {
-                InitializeService(nameof(GetMonitorActions));
-                var result = BL.GetMonitorActions().Result;
-                return result;
-            }
-            catch (Exception ex)
-            {
-                var result = HandleException<BaseResponse<List<ApiMonitorAction>>>(ex, nameof(GetMonitorActions));
-                return result;
-            }
-        }
-
         public BaseResponse AddMonitor(AddMonitorRequest request)
         {
             try
@@ -999,6 +984,21 @@ namespace Planner.Service.API
             catch (Exception ex)
             {
                 var result = HandleException<BaseResponse>(ex, nameof(AddMonitor));
+                return result;
+            }
+        }
+
+        public BaseResponse DeleteMonitor(GetByIdRequest request)
+        {
+            try
+            {
+                InitializeService(nameof(DeleteMonitor));
+                var result = BL.DeleteMonitor(request).Result;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var result = HandleException<BaseResponse>(ex, nameof(DeleteMonitor));
                 return result;
             }
         }

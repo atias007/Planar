@@ -3,5 +3,9 @@ planner monitor <command> [<options>]
 
 the options for <command> and [<options>] parameters of monitor module:
 
-reload
+ls|list         [<job id | job group name>]
+add             <follow wizard>
+remove|delete   <id>
+events
 hooks
+reload

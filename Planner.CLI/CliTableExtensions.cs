@@ -59,15 +59,6 @@ namespace Planner.CLI
             return table;
         }
 
-        public static Table GetTable(BaseResponse<List<ApiMonitorAction>> response)
-        {
-            if (response.Success == false) return null;
-            var table = new Table();
-            table.AddColumns("Id", "Job", "Title", "EventName", "GroupName", "Hook", "Active");
-            response.Result.ForEach(r => table.AddRow($"{r.Id}", r.Job.EscapeMarkup(), r.Title.EscapeMarkup(), r.EventName.EscapeMarkup(), r.GroupName.EscapeMarkup(), r.Hook.EscapeMarkup(), $"{r.Active}"));
-            return table;
-        }
-
         public static Table GetTable(BaseResponse response, List<UserRowDetails> data)
         {
             if (response.Success == false) return null;

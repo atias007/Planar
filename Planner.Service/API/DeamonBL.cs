@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planner.API.Common.Entities;
@@ -729,9 +730,9 @@ namespace Planner.Service.API
             return new BaseResponse<List<string>>(ServiceUtil.MonitorHooks.Keys.ToList());
         }
 
-        public async Task<BaseResponse<List<MonitorItem>>> GetMonitorItems(GetMonitorItemsRequest request)
+        public async Task<BaseResponse<List<MonitorItem>>> GetMonitorActions(GetMonitorActionsRequest request)
         {
-            var items = await _dal.GetMonitorItems(request);
+            var items = await _dal.GetMonitorActions(request);
             var result = items.Select(m => new MonitorItem
             {
                 Active = m.Active.GetValueOrDefault(),
@@ -792,28 +793,6 @@ namespace Planner.Service.API
                 .ToList();
 
             return new BaseResponse<List<string>>(result);
-        }
-
-        public async Task<BaseResponse<List<ApiMonitorAction>>> GetMonitorActions()
-        {
-            var data = await _dal.GetMonitorActions();
-            var result = data.Select(d => new ApiMonitorAction
-            {
-                Active = d.Active,
-                EventArgument = d.EventArgument,
-                EventId = d.EventId,
-                EventName = ((MonitorEvents)d.EventId).ToString(),
-                GroupId = d.GroupId,
-                GroupName = d.Group.Name,
-                Hook = d.Hook,
-                JobGroup = d.JobGroup,
-                JobId = d.JobId,
-                Job = string.IsNullOrEmpty(d.JobId) ? $"JobGroup: {d.JobGroup}" : d.JobId,
-                Title = d.Title,
-                Id = d.Id
-            }).ToList();
-
-            return new BaseResponse<List<ApiMonitorAction>>(result);
         }
 
         public async Task<BaseResponse> AddMonitor(AddMonitorRequest request)
@@ -881,6 +860,26 @@ namespace Planner.Service.API
             await _dal.AddMonitor(monitor);
 
             return BaseResponse.Empty;
+        }
+
+        public async Task<BaseResponse> DeleteMonitor(GetByIdRequest request)
+        {
+            if (request.Id <= 0)
+            {
+                throw new PlannerValidationException("Id parameter must be greater then 0");
+            }
+
+            var monitor = new MonitorAction { Id = request.Id };
+
+            try
+            {
+                await _dal.DeleteMonitor(monitor);
+                return BaseResponse.Empty;
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                throw new PlannerValidationException($"Monitor with id {request.Id} could not be found", ex);
+            }
         }
 
         #region Private
