@@ -92,7 +92,7 @@ namespace RunPlannerJob
 
                 if (File.Exists(assemblyFilename) == false)
                 {
-                    throw new ApplicationException($"Assembly file name '{assemblyFilename}' could not be found");
+                    throw new ApplicationException($"Assembly filename '{assemblyFilename}' could not be found");
                 }
             }
             catch (Exception ex)

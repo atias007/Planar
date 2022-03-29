@@ -89,5 +89,10 @@ namespace Planner.TeamsMonitorHook
             if (ex.InnerException == null) { return ex; }
             return GetMostInnerException(ex.InnerException);
         }
+
+        public Task Test(IMonitorDetails monitorDetails, ILogger logger)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

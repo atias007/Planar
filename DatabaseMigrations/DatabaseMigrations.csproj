@@ -9,13 +9,10 @@
     <PackageReference Include="Spectre.Console" Version="0.43.0" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Scripts\" />
+    <None Remove="Scripts\Planner_0001 - Create all.sql" />
   </ItemGroup>
   <ItemGroup>
-    <None Remove="Scripts\Planner_0001 - Test Script A.sql" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Scripts\Planner_0001 - Test Script A.sql" />
+    <EmbeddedResource Include="Scripts\Planner_0001 - Create all.sql" />
   </ItemGroup>
   <ItemGroup>
     <None Update="appsettings.Local.json">

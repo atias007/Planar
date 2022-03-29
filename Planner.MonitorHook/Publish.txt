@@ -1,1 +1,1 @@
-﻿nuget push -Source CustomsCloud_NugetPackages -ApiKey AzureDevOps R:\Planner\Planner.MonitorHook\bin\Release\net5.0\publish\Planner.MonitorHook.1.0.2.nupkg
+﻿dotnet nuget push bin\Release\net5.0\publish\Planner.MonitorHook.1.0.3.nupkg --api-key oy2ppb2houxq7qml2hmqrntz6g6cvzqetlcyvj5tj2exii --source https://api.nuget.org/v3/index.json

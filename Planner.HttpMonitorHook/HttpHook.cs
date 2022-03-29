@@ -14,5 +14,10 @@ namespace Planner.HttpMonitorHook
             var json = JsonConvert.SerializeObject(monitorDetails);
             return File.WriteAllTextAsync($@"C:\temp\{DateTime.Now.Ticks}.txt", json);
         }
+
+        public Task Test(IMonitorDetails monitorDetails, ILogger logger)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

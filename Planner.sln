@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31005.135
+# Visual Studio Version 17
+VisualStudioVersion = 17.1.32319.34
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestAction", "TestAction\TestAction.csproj", "{58D92AE9-7D0F-4206-9AEA-2D5B40A9E96F}"
 EndProject
@@ -48,6 +48,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestAggEx", "TestAggEx\TestAggEx.csproj", "{8E25D607-7B89-4869-96EE-EE263453FA3E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatabaseMigrations", "DatabaseMigrations\DatabaseMigrations.csproj", "{9FA5D8F5-0927-4149-896A-675D9373128B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RunPowerShellJob", "RunPowerShellJob\RunPowerShellJob.csproj", "{1B54F392-8C57-4F88-BC76-9072B338ED17}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -115,6 +117,10 @@ Global
 		{9FA5D8F5-0927-4149-896A-675D9373128B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9FA5D8F5-0927-4149-896A-675D9373128B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9FA5D8F5-0927-4149-896A-675D9373128B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B54F392-8C57-4F88-BC76-9072B338ED17}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B54F392-8C57-4F88-BC76-9072B338ED17}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B54F392-8C57-4F88-BC76-9072B338ED17}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B54F392-8C57-4F88-BC76-9072B338ED17}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -128,6 +134,7 @@ Global
 		{20B4B3DD-D4C6-4EE6-96D3-9E95CABFAA5B} = {54DA8D37-F640-4C45-910E-8074F4D30FEE}
 		{C6A913AE-C44C-4DA9-B431-ABACA4B135B8} = {54DA8D37-F640-4C45-910E-8074F4D30FEE}
 		{8E25D607-7B89-4869-96EE-EE263453FA3E} = {E4B60197-60EA-4593-9085-37B34CD99CCD}
+		{1B54F392-8C57-4F88-BC76-9072B338ED17} = {8877FB52-2C70-41FB-8119-13C99EF673E1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E379E82B-7E36-4F72-8191-C425A6FA97CD}
