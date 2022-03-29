@@ -3,7 +3,6 @@ using Planner.CLI.Attributes;
 using Planner.CLI.Entities;
 using Spectre.Console;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Planner.CLI.Actions

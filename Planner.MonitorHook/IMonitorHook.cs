@@ -6,5 +6,7 @@ namespace Planner.MonitorHook
     public interface IMonitorHook
     {
         Task Handle(IMonitorDetails monitorDetails, ILogger logger);
+
+        Task Test(IMonitorDetails monitorDetails, ILogger logger);
     }
 }
