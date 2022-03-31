@@ -50,16 +50,7 @@ namespace RunPlannerJob
             catch (JobExecutionException ex)
             {
                 SetJobRunningProperty("Fail", true);
-                var message = $"FireInstanceId {context.FireInstanceId} throw JobExecutionException with message {ex.Message}";
-                var jobException = new JobExecutionException(ex)
-                {
-                    RefireImmediately = ex.RefireImmediately,
-                    Source = ex.Source,
-                    UnscheduleAllTriggers = ex.UnscheduleAllTriggers,
-                    UnscheduleFiringTrigger = ex.UnscheduleFiringTrigger,
-                };
-
-                throw jobException;
+                ThrowJobExecutingException(ex, context);
             }
             catch (Exception ex)
             {

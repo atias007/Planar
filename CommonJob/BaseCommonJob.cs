@@ -27,6 +27,20 @@ namespace CommonJob
             _jobRunningProperties.Add(key, json);
         }
 
+        public void ThrowJobExecutingException(JobExecutionException ex, IJobExecutionContext context)
+        {
+            var message = $"FireInstanceId {context.FireInstanceId} throw JobExecutionException with message {ex.Message}";
+            var jobException = new JobExecutionException(message, ex)
+            {
+                RefireImmediately = ex.RefireImmediately,
+                Source = ex.Source,
+                UnscheduleAllTriggers = ex.UnscheduleAllTriggers,
+                UnscheduleFiringTrigger = ex.UnscheduleFiringTrigger,
+            };
+
+            throw jobException;
+        }
+
         public bool ContainsJobRunningProperty(string key)
         {
             var result = _jobRunningProperties.ContainsKey(key);

@@ -6,6 +6,7 @@ using System.Management.Automation;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Extensions.Logging;
+using Planner;
 
 namespace RunPowerShellJob
 {
@@ -17,16 +18,37 @@ namespace RunPowerShellJob
 
         public override async Task Execute(IJobExecutionContext context)
         {
-            using PowerShell ps = PowerShell.Create();
-            ps.AddScript("Get-Service -DisplayName ");
-            var output = await ps.InvokeAsync();
-            foreach (PSObject obj in output)
+            var counter = 0;
+            try
             {
-                if (obj != null)
+                foreach (var acript in _scripts)
                 {
-                    Console.Write(obj.Properties["Status"].Value.ToString() + " - ");
-                    Console.WriteLine(obj.Properties["DisplayName"].Value.ToString());
+                    using PowerShell ps = PowerShell.Create();
+                    ps.AddScript(acript);
+                    var output = await ps.InvokeAsync();
+                    foreach (PSObject obj in output)
+                    {
+                        if (obj != null)
+                        {
+                            JobExecutionMetadataUtil.AppendInformation(context, obj.ToString());
+                        }
+                    }
+
+                    JobExecutionMetadataUtil.IncreaseEffectedRows(context, 1);
+                    counter++;
+                    var value = Convert.ToByte(Math.Floor(100 * (counter * 1.0 / _scripts.Count)));
+                    JobExecutionMetadataUtil.SetProgress(context, value);
                 }
+            }
+            catch (JobExecutionException ex)
+            {
+                SetJobRunningProperty("Fail", true);
+                ThrowJobExecutingException(ex, context);
+            }
+            finally
+            {
+                SetJobRunningProperty("Fail", true);
+                FinalizeJob(context);
             }
         }
 
