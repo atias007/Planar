@@ -2,7 +2,7 @@
 
 namespace Planner.Service.Exceptions
 {
-    internal class AppSettingsException : Exception
+    public class AppSettingsException : Exception
     {
         public AppSettingsException(string message) : base(message)
         {

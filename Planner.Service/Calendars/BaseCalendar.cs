@@ -30,7 +30,7 @@ namespace Planner.Service.Calendars
         {
             var parts = GetType().FullName.Split('.');
             var name = parts[^1].Replace("Settings", string.Empty);
-            var file = $"Settings\\{name}.json";
+            var file = $@"Data\Calendars\{parts[^2]}\{name}.json";
             var path = AppDomain.CurrentDomain.BaseDirectory;
             var filename = Path.Combine(path, file);
 

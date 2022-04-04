@@ -49,7 +49,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestAggEx", "TestAggEx\Test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatabaseMigrations", "DatabaseMigrations\DatabaseMigrations.csproj", "{9FA5D8F5-0927-4149-896A-675D9373128B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RunPowerShellJob", "RunPowerShellJob\RunPowerShellJob.csproj", "{1B54F392-8C57-4F88-BC76-9072B338ED17}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RunPowerShellJob", "RunPowerShellJob\RunPowerShellJob.csproj", "{1B54F392-8C57-4F88-BC76-9072B338ED17}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planner", "Planner\Planner.csproj", "{EF74149D-ECDD-4680-8C68-C335A873020A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -121,6 +123,10 @@ Global
 		{1B54F392-8C57-4F88-BC76-9072B338ED17}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1B54F392-8C57-4F88-BC76-9072B338ED17}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1B54F392-8C57-4F88-BC76-9072B338ED17}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EF74149D-ECDD-4680-8C68-C335A873020A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EF74149D-ECDD-4680-8C68-C335A873020A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EF74149D-ECDD-4680-8C68-C335A873020A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EF74149D-ECDD-4680-8C68-C335A873020A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
