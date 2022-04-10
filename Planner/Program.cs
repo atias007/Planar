@@ -8,6 +8,7 @@ using Planner.Service;
 using Serilog;
 using System;
 using System.Diagnostics;
+using System.IO;
 
 namespace Planner
 {
@@ -37,9 +38,12 @@ namespace Planner
 
                     webBuilder.ConfigureAppConfiguration(builder =>
                     {
+                        var file1 = Path.Combine(FolderConsts.Data, FolderConsts.Settings, "appsettings.json");
+                        var file2 = Path.Combine(FolderConsts.Data, FolderConsts.Settings, $"appsettings.{Global.Environment}.json");
+
                         builder
-                        .AddJsonFile(@"Data\Settings\appsettings.json", false, true)
-                        .AddJsonFile(@$"Data\Settings\appsettings.{Global.Environment}.json", true, true)
+                        .AddJsonFile(file1, false, true)
+                        .AddJsonFile(file2, true, true)
                         .AddCommandLine(args)
                         .AddEnvironmentVariables();
                     });
@@ -57,8 +61,9 @@ namespace Planner
 
         private static void ConfigureSerilog(LoggerConfiguration loggerConfig)
         {
+            var file = Path.Combine(FolderConsts.Data, FolderConsts.Settings, "Serilog.json");
             var configuration = new ConfigurationBuilder()
-                        .AddJsonFile(@"Data\Settings\Serilog.json")
+                        .AddJsonFile(file)
                         .AddEnvironmentVariables()
                         .Build();
 
