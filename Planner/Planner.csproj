@@ -1,44 +1,44 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
-  <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
-    <UserSecretsId>aa268b80-a337-47b8-aa26-8733fac0c1af</UserSecretsId>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net5.0</TargetFramework>
+		<UserSecretsId>aa268b80-a337-47b8-aa26-8733fac0c1af</UserSecretsId>
+		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Content Remove="Data\Settings\AppSettings.json" />
-    <Content Remove="Data\Settings\HebrewCalendar.json" />
-    <Content Remove="Data\Settings\Serilog.json" />
-  </ItemGroup>
+	<ItemGroup>
+		<Content Remove="Data\Settings\AppSettings.json" />
+		<Content Remove="Data\Settings\HebrewCalendar.json" />
+		<Content Remove="Data\Settings\Serilog.json" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="..\Planner.Common\Consts.cs" Link="Consts.cs" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Include="..\Planner.Common\Consts.cs" Link="Consts.cs" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="JKang.IpcServiceFramework.Hosting.NamedPipe" Version="3.1.0" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.0" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.15.0" />
-    <PackageReference Include="Serilog" Version="2.10.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="JKang.IpcServiceFramework.Hosting.NamedPipe" Version="3.1.0" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.0" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.15.0" />
+		<PackageReference Include="Serilog" Version="2.10.0" />
+		<PackageReference Include="Serilog.AspNetCore" Version="5.0.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.3.0" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <None Include="Data\Settings\AppSettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Data\Calendars\Hebrew\HebrewCalendar.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="Data\Settings\Serilog.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+	<ItemGroup>
+		<None Include="Data\Settings\AppSettings.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Include="Data\Calendars\Hebrew\HebrewCalendar.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Include="Data\Settings\Serilog.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Planner.API.Common\Planner.API.Common.csproj" />
-    <ProjectReference Include="..\Planner.Service\Planner.Service.csproj" />
-  </ItemGroup>
-
+	<ItemGroup>
+		<ProjectReference Include="..\Planner.API.Common\Planner.API.Common.csproj" />
+		<ProjectReference Include="..\Planner.Service\Planner.Service.csproj" />
+	</ItemGroup>
 </Project>

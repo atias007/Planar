@@ -14,7 +14,7 @@ namespace Planner.CLI.Actions
         [Action("stop")]
         public static async Task<ActionResponse> StopScheduler(CliStopScheduler request)
         {
-            var prm = new API.Common.Entities.StopSchedulerRequest
+            var prm = new StopSchedulerRequest
             {
                 WaitJobsToComplete = !request.Force
             };

@@ -2,7 +2,7 @@
   "profiles": {
     "Planner.CLI": {
       "commandName": "Project",
-      "commandLineArgs": "monitor actions"
+      "commandLineArgs": "service stop"
     }
   }
 }

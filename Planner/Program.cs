@@ -1,10 +1,12 @@
 using JKang.IpcServiceFramework.Hosting;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Planner.API.Common;
 using Planner.Common;
 using Planner.Service;
+using Planner.Service.Exceptions;
 using Serilog;
 using System;
 using System.Diagnostics;
@@ -32,9 +34,15 @@ namespace Planner
                 })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
+                    InitializeAppSettings();
+
                     webBuilder.UseStartup<Startup>();
 
-                    webBuilder.UseUrls("http://localhost:2306", "https://localhost:2307");
+                    webBuilder.UseKestrel(opts =>
+                    {
+                        opts.ListenLocalhost(2306);
+                        opts.ListenLocalhost(2610, opts => opts.UseHttps());
+                    });
 
                     webBuilder.ConfigureAppConfiguration(builder =>
                     {
@@ -85,6 +93,36 @@ namespace Planner
             }
 
             loggerConfig.ReadFrom.Configuration(configuration);
+        }
+
+        private static void InitializeAppSettings()
+        {
+            var configBuilder = new ConfigurationBuilder();
+            configBuilder
+                .AddJsonFile(@"Data\Settings\appsettings.json", false, true)
+                .AddJsonFile(@$"Data\Settings\appsettings.{Global.Environment}.json", true, true)
+                .AddEnvironmentVariables();
+
+            try
+            {
+                AppSettings.Initialize(configBuilder.Build());
+            }
+            catch (AppSettingsException ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(ex.Message);
+                Console.ReadLine();
+                Environment.Exit(-1);
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(string.Empty.PadLeft(80, '-'));
+                Console.WriteLine(ex.ToString());
+                Console.ReadLine();
+                Environment.Exit(-1);
+            }
         }
     }
 }

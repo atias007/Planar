@@ -1,9 +1,12 @@
 {
   "Serilog": {
     "MinimumLevel": {
-      "Default": "Information",
+      "Default": "Debug",
       "Override": {
-        "Microsoft": "Warning",
+        "Microsoft": "Information",
+        "System": "Information",
+        "Microsoft.Hosting.Lifetime": "Information",
+        "Microsoft.AspNetCore": "Warning",
         "Microsoft.EntityFrameworkCore.Database.Command": "Warning"
       }
     },
