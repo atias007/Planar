@@ -10,7 +10,9 @@ using Planner.Service;
 using Planner.Service.API;
 using Planner.Service.Data;
 using Planner.Service.Exceptions;
+using Serilog;
 using System;
+using System.Net;
 
 namespace Planner
 {
@@ -19,7 +21,6 @@ namespace Planner
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
-            InitializeAppSettings(configuration);
         }
 
         public IConfiguration Configuration { get; }
@@ -31,6 +32,12 @@ namespace Planner
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Planner", Version = "v1" });
+            });
+
+            services.AddHttpsRedirection(options =>
+            {
+                options.RedirectStatusCode = (int)HttpStatusCode.TemporaryRedirect;
+                options.HttpsPort = 2610;
             });
 
             services.AddDbContext<PlannerContext>(o => o.UseSqlServer(AppSettings.DatabaseConnectionString),
@@ -54,6 +61,8 @@ namespace Planner
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Planner v1"));
             }
 
+            app.UseSerilogRequestLogging();
+
             app.UseHttpsRedirection();
 
             app.UseRouting();
@@ -64,30 +73,6 @@ namespace Planner
             {
                 endpoints.MapControllers();
             });
-        }
-
-        private static void InitializeAppSettings(IConfiguration configuration)
-        {
-            try
-            {
-                AppSettings.Initialize(configuration);
-            }
-            catch (AppSettingsException ex)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(ex.Message);
-                Console.ReadLine();
-                Environment.Exit(-1);
-            }
-            catch (Exception ex)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(ex.Message);
-                Console.WriteLine(string.Empty.PadLeft(80, '-'));
-                Console.WriteLine(ex.ToString());
-                Console.ReadLine();
-                Environment.Exit(-1);
-            }
         }
     }
 }
