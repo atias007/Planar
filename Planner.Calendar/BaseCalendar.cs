@@ -1,28 +1,25 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Planner.Common;
 using Quartz.Impl.Calendar;
 using System;
-using System.Collections.Generic;
 using System.IO;
 
-namespace Planner.Service.Calendars
+namespace Planner.Calendar
 {
     public abstract class BaseCalendar<T> : BaseCalendar
     {
-        private readonly Singleton<ILogger<T>> _logger = new(GetLogger);
-        private readonly Dictionary<long, bool> _cache = new();
+        private readonly ILogger _logger;
 
-        private static ILogger<T> GetLogger()
+        public BaseCalendar(ILogger logger)
         {
-            return Global.ServiceProvider?.GetService(typeof(ILogger<T>)) as ILogger<T>;
+            _logger = logger;
         }
 
-        protected ILogger<T> Logger
+        protected ILogger Logger
         {
             get
             {
-                return _logger.Instance;
+                return _logger;
             }
         }
 
@@ -30,7 +27,7 @@ namespace Planner.Service.Calendars
         {
             var parts = GetType().FullName.Split('.');
             var name = parts[^1].Replace("Settings", string.Empty);
-            var file = $@"Data\Calendars\{parts[^2]}\{name}.json";
+            var file = Path.Combine(FolderConsts.Data, FolderConsts.Calendars, $"{parts[^2]}", $"{name}.json");
             var path = AppDomain.CurrentDomain.BaseDirectory;
             var filename = Path.Combine(path, file);
 
@@ -44,23 +41,6 @@ namespace Planner.Service.Calendars
             {
                 Logger.LogError("{@name} settings file '{@filename}' could not be found", name, filename);
                 throw new ApplicationException($"{name} settings file '{filename}' could not be found");
-            }
-        }
-
-        protected void AddCache(DateTimeOffset date, bool result)
-        {
-            _cache.TryAdd(date.Ticks, result);
-        }
-
-        protected bool? GetCache(DateTimeOffset date)
-        {
-            if (_cache.TryGetValue(date.Ticks, out var result))
-            {
-                return result;
-            }
-            else
-            {
-                return null;
             }
         }
     }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 
-namespace Planner.Service.Calendars.Hebrew
+namespace Planner.Calendar.Hebrew
 {
     #region Enums
 
@@ -206,6 +206,7 @@ namespace Planner.Service.Calendars.Hebrew
                     if (match)
                         result.Add(info);
                 }
+
                 startDate = startDate.AddDays(1);
             }
 
@@ -1120,7 +1121,7 @@ namespace Planner.Service.Calendars.Hebrew
                 const string val = "א' תשרי ";
                 if (!value.Contains("\"") && value.Length > 1)
                 {
-                    value = val.Substring(0, value.Length - 1) + "\"" + value[value.Length - 1];
+                    value = val.Substring(0, value.Length - 1) + "\"" + value[^1];
                 }
 
                 var dateString = val + value;

@@ -19,12 +19,20 @@ internal sealed class Consts
     public const string NowOverrideValue = "__Now_Override_Value";
 
     public const string ManualTriggerId = "Manual";
-    public const string EnvironmentVariableKey = "PLANNER_ENVIRONMENT";
-    public const string ConnectionStringVariableKey = "PLANNER_DBCONNSTRING";
-    public const string MaxConcurrencyVariableKey = "PLANNER_MAXCONCURRENCY";
-    public const string PersistRunningJobsSpanVariableKey = "PLANNER_PERSISTSPAN";
+
     public const int MaxConcurrencyDefaultValue = 10;
     public static readonly TimeSpan PersistRunningJobsSpanDefaultValue = TimeSpan.FromMinutes(5);
     public const string ProductionEnvironment = "Production";
     public const string RecoveringJobsGroup = "RECOVERING_JOBS";
+
+    /// ---------------------------- Environments Variables ----------------------------
+    public const string EnvironmentVariableKey = "PLANNER_ENVIRONMENT";
+
+    public const string ConnectionStringVariableKey = "PLANNER_DBCONNSTRING";
+    public const string MaxConcurrencyVariableKey = "PLANNER_MAXCONCURRENCY";
+    public const string PersistRunningJobsSpanVariableKey = "PLANNER_PERSISTSPAN";
+
+    public const string HttpPortVariableKey = "PLANNER_HTTPPORT";
+    public const string HttpsPortVariableKey = "PLANNER_HTTPSPORT";
+    public const string UseHttpsRedirectVariableKey = "PLANNER_HTTPSREDIRECT";
 }

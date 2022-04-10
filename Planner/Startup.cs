@@ -9,9 +9,7 @@ using Planner.API.Common;
 using Planner.Service;
 using Planner.Service.API;
 using Planner.Service.Data;
-using Planner.Service.Exceptions;
 using Serilog;
-using System;
 using System.Net;
 
 namespace Planner
@@ -34,11 +32,14 @@ namespace Planner
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Planner", Version = "v1" });
             });
 
-            services.AddHttpsRedirection(options =>
+            if (AppSettings.UseHttpsRedirect)
             {
-                options.RedirectStatusCode = (int)HttpStatusCode.TemporaryRedirect;
-                options.HttpsPort = 2610;
-            });
+                services.AddHttpsRedirection(options =>
+                {
+                    options.RedirectStatusCode = (int)HttpStatusCode.TemporaryRedirect;
+                    options.HttpsPort = 2610;
+                });
+            }
 
             services.AddDbContext<PlannerContext>(o => o.UseSqlServer(AppSettings.DatabaseConnectionString),
                 contextLifetime: ServiceLifetime.Transient,
@@ -63,7 +64,10 @@ namespace Planner
 
             app.UseSerilogRequestLogging();
 
-            app.UseHttpsRedirection();
+            if (AppSettings.UseHttpsRedirect)
+            {
+                app.UseHttpsRedirection();
+            }
 
             app.UseRouting();
 

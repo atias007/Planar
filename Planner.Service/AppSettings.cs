@@ -14,11 +14,18 @@ namespace Planner.Service
 
         public static TimeSpan PersistRunningJobsSpan { get; set; }
 
+        public static int HttpPort { get; set; }
+
+        public static int HttpsPort { get; set; }
+
+        public static bool UseHttpsRedirect { get; set; }
+
         public static void Initialize(IConfiguration configuration)
         {
             InitializeConnectionString(configuration);
             InitializeMaxConcurrency(configuration);
             InitializePersistanceSpan(configuration);
+            InitializePorts(configuration);
         }
 
         private static void InitializePersistanceSpan(IConfiguration configuration)
@@ -118,6 +125,54 @@ namespace Planner.Service
                 sb.AppendLine(ex.Message);
                 throw new AppSettingsException(sb.ToString());
             }
+        }
+
+        private static void InitializePorts(IConfiguration configuration)
+        {
+            // Environment Variable
+            var httpPort = configuration.GetValue<int?>(Consts.HttpPortVariableKey);
+            if (httpPort == null)
+            {
+                // AppSettings
+                httpPort = configuration.GetValue<int?>("HttpPort");
+            }
+
+            if (httpPort == null)
+            {
+                httpPort = 2306;
+            }
+
+            HttpPort = httpPort.GetValueOrDefault();
+
+            // Environment Variable
+            var httpsPort = configuration.GetValue<int?>(Consts.HttpsPortVariableKey);
+            if (httpsPort == null)
+            {
+                // AppSettings
+                httpsPort = configuration.GetValue<int?>("HttpsPort");
+            }
+
+            if (httpsPort == null)
+            {
+                httpsPort = 2610;
+            }
+
+            HttpsPort = httpsPort.GetValueOrDefault();
+
+            // Environment Variable
+            var useHttpsRedirect = configuration.GetValue<bool?>(Consts.UseHttpsRedirectVariableKey);
+            if (useHttpsRedirect == null)
+            {
+                // AppSettings
+                useHttpsRedirect = configuration.GetValue<bool?>("UseHttpsRedirect");
+            }
+
+            if (useHttpsRedirect == null)
+            {
+                useHttpsRedirect = true;
+            }
+
+            UseHttpsRedirect = useHttpsRedirect.GetValueOrDefault();
         }
     }
 }

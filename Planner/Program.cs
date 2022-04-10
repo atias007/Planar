@@ -40,8 +40,8 @@ namespace Planner
 
                     webBuilder.UseKestrel(opts =>
                     {
-                        opts.ListenLocalhost(2306);
-                        opts.ListenLocalhost(2610, opts => opts.UseHttps());
+                        opts.ListenLocalhost(AppSettings.HttpPort);
+                        opts.ListenLocalhost(AppSettings.HttpsPort, opts => opts.UseHttps());
                     });
 
                     webBuilder.ConfigureAppConfiguration(builder =>

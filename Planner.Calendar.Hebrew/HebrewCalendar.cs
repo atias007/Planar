@@ -3,15 +3,17 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Quartz;
 using System;
+using System.Collections.Generic;
 
-namespace Planner.Service.Calendars.Hebrew
+namespace Planner.Calendar.Hebrew
 {
     [Serializable]
     public class HebrewCalendar : BaseCalendar<HebrewCalendar>
     {
         private static HebrewCalendarSettings _settings;
+        private readonly Dictionary<long, bool> _cache = new();
 
-        public HebrewCalendar()
+        public HebrewCalendar(ILogger logger) : base(logger)
         {
             if (_settings == null)
             {
@@ -101,13 +103,37 @@ namespace Planner.Service.Calendars.Hebrew
 
             return result;
         }
+
+        protected void AddCache(DateTimeOffset date, bool result)
+        {
+            _cache.TryAdd(date.Ticks, result);
+        }
+
+        protected bool? GetCache(DateTimeOffset date)
+        {
+            if (_cache.TryGetValue(date.Ticks, out var result))
+            {
+                return result;
+            }
+            else
+            {
+                return null;
+            }
+        }
     }
 
     public class CustomCalendarSerializer : CalendarSerializer<HebrewCalendar>
     {
+        private readonly ILogger _logger;
+
+        public CustomCalendarSerializer(ILogger logger)
+        {
+            _logger = logger;
+        }
+
         protected override HebrewCalendar Create(JObject source)
         {
-            return new HebrewCalendar();
+            return new HebrewCalendar(_logger);
         }
 
         protected override void SerializeFields(JsonWriter writer, HebrewCalendar calendar)

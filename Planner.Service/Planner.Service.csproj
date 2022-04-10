@@ -49,6 +49,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Jobs\RunPlannerJob\RunPlannerJob.csproj" />
     <ProjectReference Include="..\Planner.API.Common\Planner.API.Common.csproj" />
+    <ProjectReference Include="..\Planner.Calendar.Hebrew\Planner.Calendar.Hebrew.csproj" />
     <ProjectReference Include="..\Planner.Common\Planner.Common.csproj" />
     <ProjectReference Include="..\Planner.MonitorHook\Planner.MonitorHook.csproj" />
   </ItemGroup>

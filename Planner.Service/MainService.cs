@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Planner.Common;
-using Planner.Service.Calendars.Hebrew;
+using Planner.Calendar.Hebrew;
 using Planner.Service.Data;
 using Planner.Service.General;
 using Planner.Service.JobListener;
@@ -161,7 +161,7 @@ namespace Planner.Service
             {
                 _logger.LogInformation("Initialize: AddCalendars");
 
-                await _scheduler.AddCalendar(nameof(HebrewCalendar), new HebrewCalendar(), true, true);
+                await _scheduler.AddCalendar(nameof(HebrewCalendar), new HebrewCalendar(_logger), true, true);
             }
             catch (Exception ex)
             {
@@ -233,7 +233,7 @@ namespace Planner.Service
             {
                 _logger.LogInformation("Initialize: AddCalendarSerializer");
 
-                JsonObjectSerializer.AddCalendarSerializer<HebrewCalendar>(new CustomCalendarSerializer());
+                JsonObjectSerializer.AddCalendarSerializer<HebrewCalendar>(new CustomCalendarSerializer(_logger));
                 await Task.CompletedTask;
             }
             catch (Exception ex)

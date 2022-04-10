@@ -1,14 +1,13 @@
-﻿using Planner.Common;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace Planner.Service.Calendars.Hebrew
+namespace Planner.Calendar.Hebrew
 {
     public class HebrewCalendarSettings
     {
-        private readonly Singleton<List<PropertyInfo>> _properties = new(() => GetProperties());
+        private static readonly List<PropertyInfo> _properties = GetProperties();
 
         public WorkingHours WorkingHours { get; set; }
 
@@ -20,7 +19,7 @@ namespace Planner.Service.Calendars.Hebrew
         public DayScope GetDayScope(DayOfWeek dow)
         {
             var caption = dow.ToString();
-            var dayPropertyInfo = _properties.Instance.First(p => p.Name == caption);
+            var dayPropertyInfo = _properties.First(p => p.Name == caption);
             var scope = dayPropertyInfo.GetValue(WorkingHours) as DayScope;
             return scope;
         }
