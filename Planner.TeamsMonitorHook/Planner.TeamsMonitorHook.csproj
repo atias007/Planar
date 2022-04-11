@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Planner.HttpMonitorHook\Planner.HttpMonitorHook.csproj" />
+    <ProjectReference Include="..\Planner.MonitorHook\Planner.MonitorHook.csproj" />
   </ItemGroup>
 
 </Project>

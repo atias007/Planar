@@ -16,6 +16,7 @@
     <Compile Include="..\Planner.Client\JobExecutionMetadata.cs" Link="General\JobExecutionMetadata.cs" />
     <Compile Include="..\Planner.CLI\JsonMapper.cs" Link="General\JsonMapper.cs" />
     <Compile Include="..\Planner.Common\Consts.cs" Link="General\Consts.cs" />
+    <Compile Include="..\Planner\FolderConsts.cs" Link="General\FolderConsts.cs" />
   </ItemGroup>
 
   <ItemGroup>

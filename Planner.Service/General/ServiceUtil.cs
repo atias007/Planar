@@ -3,6 +3,7 @@ using Planner.Common;
 using Planner.MonitorHook;
 using Planner.Service.Monitor;
 using Quartz;
+using Quartz.Impl.Calendar;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -34,7 +35,7 @@ namespace Planner.Service.General
         internal static void LoadMonitorHooks<T>(ILogger<T> logger)
         {
             var path = AppDomain.CurrentDomain.BaseDirectory;
-            path = Path.Combine(path, "MonitorHooks");
+            path = Path.Combine(path, FolderConsts.Data, "MonitorHooks");
 
             if (Directory.Exists(path) == false)
             {

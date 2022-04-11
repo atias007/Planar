@@ -1,6 +1,5 @@
 using JKang.IpcServiceFramework.Hosting;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Planner.API.Common;
@@ -97,10 +96,13 @@ namespace Planner
 
         private static void InitializeAppSettings()
         {
+            var file1 = Path.Combine(FolderConsts.Data, FolderConsts.Settings, "appsettings.json");
+            var file2 = Path.Combine(FolderConsts.Data, FolderConsts.Settings, $"appsettings.{Global.Environment}.json");
+
             var configBuilder = new ConfigurationBuilder();
             configBuilder
-                .AddJsonFile(@"Data\Settings\appsettings.json", false, true)
-                .AddJsonFile(@$"Data\Settings\appsettings.{Global.Environment}.json", true, true)
+                .AddJsonFile(file1, false, true)
+                .AddJsonFile(file2, true, true)
                 .AddEnvironmentVariables();
 
             try

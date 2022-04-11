@@ -41,4 +41,9 @@
 		<ProjectReference Include="..\Planner.API.Common\Planner.API.Common.csproj" />
 		<ProjectReference Include="..\Planner.Service\Planner.Service.csproj" />
 	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Data\MonitorHooks\Http\" />
+	  <Folder Include="Data\MonitorHooks\Teams\" />
+	</ItemGroup>
 </Project>
