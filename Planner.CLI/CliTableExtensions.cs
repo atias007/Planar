@@ -69,10 +69,8 @@ namespace Planner.CLI
             return table;
         }
 
-        public static Table GetTable(BaseResponse response, List<GroupRowDetails> data)
+        public static Table GetTable(List<GroupRowDetails> data)
         {
-            if (response.Success == false) return null;
-
             var table = new Table();
             table.AddColumns("Id", "Name");
             data.ForEach(r => table.AddRow($"{r.Id}", r.Name.EscapeMarkup()));

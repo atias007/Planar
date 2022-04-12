@@ -419,16 +419,16 @@ namespace DatabaseMigrations
             Console.ResetColor();
         }
 
-        private static void WriteWarning(string text)
-        {
-            Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine($"      --> {text}");
-            Console.ResetColor();
+        ////private static void WriteWarning(string text)
+        ////{
+        ////    Console.ForegroundColor = ConsoleColor.DarkYellow;
+        ////    Console.WriteLine($"      --> {text}");
+        ////    Console.ResetColor();
 
-            if (_status != Status.Error)
-            {
-                _status = Status.Warning;
-            }
-        }
+        ////    if (_status != Status.Error)
+        ////    {
+        ////        _status = Status.Warning;
+        ////    }
+        ////}
     }
 }

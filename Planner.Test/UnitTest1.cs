@@ -102,7 +102,7 @@ namespace Planner.Test
                 .Build();
 
             //yml contains a string containing your YAML
-            var plan = deserializer.Deserialize<JobMetadata>(yaml);
+            _ = deserializer.Deserialize<JobMetadata>(yaml);
         }
 
         [Test]
@@ -116,7 +116,7 @@ namespace Planner.Test
             };
 
             var serializer = new SerializerBuilder().Build();
-            var yml = serializer.Serialize(dic);
+            _ = serializer.Serialize(dic);
         }
     }
 }

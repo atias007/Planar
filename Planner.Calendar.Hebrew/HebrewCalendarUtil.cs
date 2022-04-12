@@ -189,7 +189,7 @@ namespace Planner.Calendar.Hebrew
             if (filter.Year == null) filter.Year = DateTime.Now.Year;
 
             var result = new List<HebrewEventInfo>();
-            var startDate = new DateTime(filter.Year.Value, filter.Month.HasValue ? filter.Month.Value : 1, 1);
+            var startDate = new DateTime(filter.Year.Value, filter.Month ?? 1, 1);
 
             while (startDate.Year == filter.Year.Value && (filter.Month == null || startDate.Month == filter.Month.Value))
             {
@@ -632,7 +632,7 @@ namespace Planner.Calendar.Hebrew
 
         private static readonly int[] LeapYears = new[] { 0, 3, 6, 8, 11, 14, 17 };
 
-        private bool IsLeapYearInner(int year)
+        private static bool IsLeapYearInner(int year)
         {
             var modYear = year % 19;
             var result = LeapYears.Contains(modYear);
@@ -1121,12 +1121,11 @@ namespace Planner.Calendar.Hebrew
                 const string val = "א' תשרי ";
                 if (!value.Contains("\"") && value.Length > 1)
                 {
-                    value = val.Substring(0, value.Length - 1) + "\"" + value[^1];
+                    value = val[..(value.Length - 1)] + "\"" + value[^1];
                 }
 
                 var dateString = val + value;
-                DateTime result;
-                if (!DateTime.TryParse(dateString, _ci, DateTimeStyles.None, out result))
+                if (!DateTime.TryParse(dateString, _ci, DateTimeStyles.None, out DateTime _))
                 {
                     throw new ArgumentException("Year is not valid hebrew year");
                 }

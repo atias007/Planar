@@ -23,7 +23,6 @@ namespace Planner.Controllers
         {
             try
             {
-                InitializeService();
                 var response = new GetServiceInfoResponse
                 {
                     InStandbyMode = Scheduler.InStandbyMode,
@@ -46,7 +45,6 @@ namespace Planner.Controllers
         [HttpGet("calendars")]
         public async Task<ActionResult<List<string>>> GetCalendars()
         {
-            InitializeService();
             var list = (await Scheduler.GetCalendarNames()).ToList();
             return Ok(list);
         }

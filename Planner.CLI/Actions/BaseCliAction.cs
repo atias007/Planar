@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using Planner.API.Common;
 using Planner.API.Common.Entities;
 using Planner.CLI.Attributes;
+using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
@@ -25,6 +26,19 @@ namespace Planner.CLI.Actions
             var jtoken = JsonConvert.DeserializeObject<JToken>(result.Result);
             var entity = ConvertJTokenToObject(jtoken);
             return new ActionResponse(result, serializeObj: entity);
+        }
+
+        protected static async Task<CliActionResponse> ExecuteEntity(RestRequest request)
+        {
+            var result = await RestProxy.Invoke(request);
+            if (result.IsSuccessful)
+            {
+                var jtoken = JsonConvert.DeserializeObject<JToken>(result.Content);
+                var entity = ConvertJTokenToObject(jtoken);
+                return new CliActionResponse(result, serializeObj: entity);
+            }
+
+            return new CliActionResponse(result);
         }
 
         protected static async Task<ActionResponse> Execute(Expression<Func<IPlannerCommand, BaseResponse>> exp)

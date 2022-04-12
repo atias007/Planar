@@ -185,16 +185,14 @@ namespace Planner.Service.Data
 
         public async Task<List<JobInstanceLogRow>> GetLastHistoryCallForJob(object parameters)
         {
-            using (var conn = _context.Database.GetDbConnection())
-            {
-                var cmd = new CommandDefinition(
-                    commandText: "dbo.GetLastHistoryCallForJob",
-                    commandType: CommandType.StoredProcedure,
-                    parameters: parameters);
+            using var conn = _context.Database.GetDbConnection();
+            var cmd = new CommandDefinition(
+                commandText: "dbo.GetLastHistoryCallForJob",
+                commandType: CommandType.StoredProcedure,
+                parameters: parameters);
 
-                var data = await conn.QueryAsync<JobInstanceLogRow>(cmd);
-                return data.ToList();
-            }
+            var data = await conn.QueryAsync<JobInstanceLogRow>(cmd);
+            return data.ToList();
         }
 
         public async Task<List<JobInstanceLogRow>> GetHistory(GetHistoryRequest request)
@@ -363,7 +361,7 @@ namespace Planner.Service.Data
             await _context.SaveChangesAsync();
         }
 
-        public async Task<object> GetGroup(int id)
+        public async Task<object> GetGroupWithUsers(int id)
         {
             var result = await _context.Groups.FindAsync(id);
             result.Users = await _context.UsersToGroups
@@ -372,6 +370,12 @@ namespace Planner.Service.Data
                 .Select(ug => ug.User)
                 .ToListAsync();
 
+            return result;
+        }
+
+        public async Task<object> GetGroup(int id)
+        {
+            var result = await _context.Groups.FindAsync(id);
             return result;
         }
 
@@ -475,16 +479,14 @@ namespace Planner.Service.Data
 
         public async Task<int> CountFailsInRowForJob(object parameters)
         {
-            using (var conn = _context.Database.GetDbConnection())
-            {
-                var cmd = new CommandDefinition(
-                    commandText: "dbo.CountFailsInRowForJob",
-                    commandType: CommandType.StoredProcedure,
-                    parameters: parameters);
+            using var conn = _context.Database.GetDbConnection();
+            var cmd = new CommandDefinition(
+                commandText: "dbo.CountFailsInRowForJob",
+                commandType: CommandType.StoredProcedure,
+                parameters: parameters);
 
-                var data = await conn.QuerySingleAsync<int>(cmd);
-                return data;
-            }
+            var data = await conn.QuerySingleAsync<int>(cmd);
+            return data;
         }
 
         public async Task<int> CountFailsInHourForJob(object parameters)
@@ -501,7 +503,7 @@ namespace Planner.Service.Data
 
         public async Task DeleteMonitor(MonitorAction request)
         {
-            var entity = _context.MonitorActions.Remove(request);
+            _context.MonitorActions.Remove(request);
             await _context.SaveChangesAsync();
         }
     }

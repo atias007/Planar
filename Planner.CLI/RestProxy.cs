@@ -8,13 +8,13 @@ namespace Planner.CLI
     {
         private const string baseUrl = "http://localhost:2306";
 
-        public static async Task<TResponse> Invoke<TResponse>(RestRequest request)
+        public static async Task<RestResponse<TResponse>> Invoke<TResponse>(RestRequest request)
         {
             var client = new RestClient(baseUrl);
             var response = await client.ExecuteAsync<TResponse>(request);
             if (response.IsSuccessful)
             {
-                return response.Data;
+                return response;
             }
             else
             {
@@ -22,15 +22,11 @@ namespace Planner.CLI
             }
         }
 
-        public static async Task Invoke(RestRequest request)
+        public static async Task<RestResponse> Invoke(RestRequest request)
         {
             var client = new RestClient(baseUrl);
             var response = await client.ExecuteAsync(request);
-            if (response.IsSuccessful == false)
-
-            {
-                throw new Exception("To be implemented");
-            }
+            return response;
         }
     }
 }

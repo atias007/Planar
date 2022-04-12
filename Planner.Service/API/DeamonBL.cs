@@ -585,9 +585,11 @@ namespace Planner.Service.API
             var entity = DeserializeObject<UpdateEntityRecord>(request);
             await new UpdateEntityRecordValidator().ValidateAndThrowAsync(entity);
 
-            if ((await _dal.GetUser(entity.Id)) is not User existsUser)
+            // if ((await _dal.GetUser(entity.Id)) is not User existsUser)
+            if ((await _dal.GetUser(0)) is not User existsUser)
             {
-                throw new PlannerValidationException($"User with id {entity.Id} could not be found");
+                throw new PlannerValidationException($"User with id {0} could not be found");
+                // throw new PlannerValidationException($"User with id {entity.Id} could not be found");
             }
 
             var properties = typeof(User).GetProperties(BindingFlags.Public | BindingFlags.Instance);
@@ -620,96 +622,6 @@ namespace Planner.Service.API
         {
             var password = await _dal.GetPassword(request.Id);
             return new BaseResponse<string>(password);
-        }
-
-        public async Task<BaseResponse> AddGroup(string request)
-        {
-            var entity = DeserializeObject<UpsertGroupRecord>(request);
-
-            var group = new Group
-            {
-                Id = entity.Id,
-                Name = entity.Name
-            };
-
-            await _dal.AddGroup(group);
-            return BaseResponse.Empty;
-        }
-
-        public async Task<BaseResponse<string>> GetGroupById(GetByIdRequest request)
-        {
-            return await GetBaseResponse(() => _dal.GetGroup(request.Id));
-        }
-
-        public async Task<BaseResponse<string>> GetGroups()
-        {
-            return await GetBaseResponse(_dal.GetGroups);
-        }
-
-        public async Task<BaseResponse> RemoveGroup(GetByIdRequest request)
-        {
-            var group = new Group { Id = request.Id };
-            return await GetBaseResponse(() => _dal.RemoveGroup(group));
-        }
-
-        public async Task<BaseResponse> UpdateGroup(string request)
-        {
-            var entity = DeserializeObject<UpdateEntityRecord>(request);
-            await new UpdateEntityRecordValidator().ValidateAndThrowAsync(entity);
-
-            if (await _dal.GetGroup(entity.Id) is not Group existsGroup)
-            {
-                throw new PlannerValidationException($"Group with id {entity.Id} could not be found");
-            }
-
-            var properties = typeof(Group).GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            var prop = properties.FirstOrDefault(p => p.Name == entity.PropertyName);
-            if (prop == null)
-            {
-                throw new PlannerValidationException($"PropertyName '{entity.PropertyName}' could not be found in Group entity");
-            }
-
-            try
-            {
-                var stringValue = entity.PropertyValue;
-                if (stringValue.ToLower() == "[null]") { stringValue = null; }
-                var value = Convert.ChangeType(stringValue, prop.PropertyType);
-                prop.SetValue(existsGroup, value);
-            }
-            catch (Exception ex)
-            {
-                throw new PlannerValidationException($"PropertyValue '{entity.PropertyValue}' could not be set to PropertyName '{entity.PropertyName}' ({ex.Message})");
-            }
-
-            await new GroupValidator().ValidateAndThrowAsync(existsGroup);
-
-            await _dal.UpdateGroup(existsGroup);
-
-            return BaseResponse.Empty;
-        }
-
-        public async Task<BaseResponse> AddUserToGroup(string request)
-        {
-            var entity = DeserializeObject<AddUserToGroupRecord>(request);
-
-            if (await _dal.IsUserExists(entity.UserId) == false) { throw new PlannerValidationException($"UserId {entity.UserId} is not exists"); }
-            if (await _dal.IsGroupExists(entity.GroupId) == false) { throw new PlannerValidationException($"GroupId {entity.GroupId} is not exists"); }
-            if (await _dal.IsUserExistsInGroup(entity.UserId, entity.GroupId)) { throw new PlannerValidationException($"UserId {entity.UserId} already in GroupId {entity.GroupId}"); }
-
-            await _dal.AddUserToGroup(entity.UserId, entity.GroupId);
-            return BaseResponse.Empty;
-        }
-
-        public async Task<BaseResponse> RemoveUserFromGroup(string request)
-        {
-            var entity = DeserializeObject<AddUserToGroupRecord>(request);
-
-            if (await _dal.IsUserExists(entity.UserId) == false) { throw new PlannerValidationException($"UserId {entity.UserId} is not exists"); }
-            if (await _dal.IsGroupExists(entity.GroupId) == false) { throw new PlannerValidationException($"GroupId {entity.GroupId} is not exists"); }
-            if (await _dal.IsUserExistsInGroup(entity.UserId, entity.GroupId) == false) { throw new PlannerValidationException($"UserId {entity.UserId} is not exists in GroupId {entity.GroupId}"); }
-
-            await _dal.RemoveUserFromGroup(entity.UserId, entity.GroupId);
-            return BaseResponse.Empty;
         }
 
         public BaseResponse<string> ReloadMonitor()

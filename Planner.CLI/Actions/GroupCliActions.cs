@@ -2,6 +2,7 @@
 using Planner.API.Common.Entities;
 using Planner.CLI.Attributes;
 using Planner.CLI.Entities;
+using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -12,59 +13,80 @@ namespace Planner.CLI.Actions
     public class GroupCliActions : BaseCliAction<GroupCliActions>
     {
         [Action("add")]
-        public static async Task<ActionResponse> AddGroup(CliAddGroupRequest request)
+        public static async Task<CliActionResponse> AddGroup(CliAddGroupRequest request)
         {
-            var prm = SerializeObject(request);
-            var result = await Proxy.InvokeAsync(x => x.AddGroup(prm));
-            return new ActionResponse(result);
+            var restRequest = new RestRequest("group", Method.Post)
+                .AddBody(request);
+            var result = await RestProxy.Invoke<int>(restRequest);
+            return new CliActionResponse(result);
         }
 
         [Action("get")]
-        public static async Task<ActionResponse> GetGroupById(CliGetByIdRequest request)
+        public static async Task<CliActionResponse> GetGroupById(CliGetByIdRequest request)
         {
-            var prm = JsonMapper.Map<GetByIdRequest, CliGetByIdRequest>(request);
-            return await ExecuteEntity(x => x.GetGroupById(prm));
+            var restRequest = new RestRequest("group/{id}", Method.Get)
+                .AddParameter("id", request.Id, ParameterType.UrlSegment);
+
+            return await ExecuteEntity(restRequest);
         }
 
         [Action("ls")]
         [Action("list")]
-        public static async Task<ActionResponse> GetGroups()
+        public static async Task<CliActionResponse> GetGroups()
         {
-            var result = await Proxy.InvokeAsync(x => x.GetGroups());
-            var response = JsonConvert.DeserializeObject<List<GroupRowDetails>>(result.Result);
-            var table = CliTableExtensions.GetTable(result, response);
-            return new ActionResponse(result, table);
+            var restRequest = new RestRequest("group", Method.Get);
+            var result = await RestProxy.Invoke<List<GroupRowDetails>>(restRequest);
+
+            if (result.IsSuccessful)
+            {
+                var table = CliTableExtensions.GetTable(result.Data);
+                return new CliActionResponse(result, table);
+            }
+
+            return new CliActionResponse(result);
         }
 
         [Action("remove")]
         [Action("delete")]
-        public static async Task<ActionResponse> RemoveGroupById(CliGetByIdRequest request)
+        public static async Task<CliActionResponse> RemoveGroupById(CliGetByIdRequest request)
         {
-            var prm = JsonMapper.Map<GetByIdRequest, CliGetByIdRequest>(request);
-            var result = await Proxy.InvokeAsync(x => x.RemoveGroup(prm));
-            return new ActionResponse(result);
+            var restRequest = new RestRequest("group/{id}", Method.Delete)
+                .AddParameter("id", request.Id, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke(restRequest);
+            return new CliActionResponse(result);
         }
 
         [Action("update")]
-        public static async Task<ActionResponse> UpdateGroup(CliUpdateEntityRequest request)
+        public static async Task<CliActionResponse> UpdateGroup(CliUpdateEntityRequest request)
         {
-            var prm = SerializeObject(request);
-            var result = await Proxy.InvokeAsync(x => x.UpdateGroup(prm));
-            return new ActionResponse(result);
+            var restRequest = new RestRequest("group/{id}", Method.Patch)
+               .AddParameter("id", request.Id, ParameterType.UrlSegment)
+               .AddBody(request);
+
+            var result = await RestProxy.Invoke(restRequest);
+            return new CliActionResponse(result);
         }
 
         [Action("join")]
-        public static async Task<ActionResponse> AddUserToGroup(CliUserToGroupRequest request)
+        public static async Task<CliActionResponse> AddUserToGroup(CliUserToGroupRequest request)
         {
-            var prm = SerializeObject(request);
-            return await Execute(x => x.AddUserToGroup(prm));
+            var restRequest = new RestRequest("group/{id}/user", Method.Post)
+               .AddParameter("id", request.GroupId, ParameterType.UrlSegment)
+               .AddBody(request);
+
+            var result = await RestProxy.Invoke(restRequest);
+            return new CliActionResponse(result);
         }
 
         [Action("exclude")]
-        public static async Task<ActionResponse> RemoveUserFromGroup(CliUserToGroupRequest request)
+        public static async Task<CliActionResponse> RemoveUserFromGroup(CliUserToGroupRequest request)
         {
-            var prm = SerializeObject(request);
-            return await Execute(x => x.RemoveUserFromGroup(prm));
+            var restRequest = new RestRequest("group/{id}/user/{userId}", Method.Delete)
+               .AddParameter("id", request.GroupId, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke(restRequest);
+            return new CliActionResponse(result);
         }
     }
 }

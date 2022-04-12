@@ -5,6 +5,7 @@ using Planner.API.Common.Entities;
 using Planner.CLI.Actions;
 using Planner.CLI.Entities;
 using Planner.CLI.Exceptions;
+using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
@@ -70,12 +71,19 @@ namespace Planner.CLI
             BaseCliAction.Proxy = clientFactory.CreateClient("client1");
         }
 
+        // TODO: remove method && ActionResponse class
         private static void HandleCommand(string[] args, IEnumerable<CliActionMetadata> cliActions)
         {
             try
             {
                 var action = CliArgumentsUtil.ValidateArgs(ref args, cliActions);
                 var cliArgument = new CliArgumentsUtil(args);
+
+                if (cliArgument.Module == "service" || cliArgument.Module == "group")
+                {
+                    HandleCliCommand(args, cliActions);
+                    return;
+                }
 
                 var console = Activator.CreateInstance(action.Method.DeclaringType);
                 ActionResponse response;
@@ -84,7 +92,7 @@ namespace Planner.CLI
                 {
                     try
                     {
-                        response = (action.Method.Invoke(console, null) as Task<ActionResponse>).Result;
+                        response = (action.Method.Invoke(console, null) as Task<ActionResponse>)?.Result;
                     }
                     catch (Exception ex)
                     {
@@ -125,9 +133,64 @@ namespace Planner.CLI
             }
         }
 
+        private static void HandleCliCommand(string[] args, IEnumerable<CliActionMetadata> cliActions)
+        {
+            try
+            {
+                var action = CliArgumentsUtil.ValidateArgs(ref args, cliActions);
+                var cliArgument = new CliArgumentsUtil(args);
+
+                var console = Activator.CreateInstance(action.Method.DeclaringType);
+                CliActionResponse response;
+
+                if (action.RequestType == null)
+                {
+                    try
+                    {
+                        response = (action.Method.Invoke(console, null) as Task<CliActionResponse>)?.Result;
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new PlannerServiceException(ex);
+                    }
+                }
+                else
+                {
+                    var param = cliArgument.GetRequest(action.RequestType, action);
+                    var itMode = param is IIterative itParam && itParam.Iterative;
+
+                    if (itMode)
+                    {
+                        var name = $"{action.Method.DeclaringType.Name}.{action.Method.Name}";
+                        switch (name)
+                        {
+                            case "JobCliActions.GetRunningJobs":
+                                CliIterativeActions.InvokeGetRunnings((CliGetRunningJobsRequest)param).Wait();
+                                break;
+
+                            default:
+                                break;
+                        }
+
+                        response = null;
+                    }
+                    else
+                    {
+                        response = InvokeCliAction(action, console, param);
+                    }
+                }
+
+                HandleCliResponse(response);
+            }
+            catch (Exception ex)
+            {
+                HandleException(ex);
+            }
+        }
+
         private static void HandleException(Exception ex)
         {
-            if(ex == null) { return;}
+            if (ex == null) { return; }
 
             var finaleException = ex;
             if (ex is AggregateException exception)
@@ -135,7 +198,7 @@ namespace Planner.CLI
                 finaleException = exception.InnerExceptions.LastOrDefault();
             }
 
-            if(finaleException == null)
+            if (finaleException == null)
             {
                 finaleException = ex;
             }
@@ -151,12 +214,14 @@ namespace Planner.CLI
             }
         }
 
+        // TODO: to be deleted
         private static ActionResponse InvokeAction(CliActionMetadata action, object console, object param)
         {
             ActionResponse response;
             try
             {
-                response = (action.Method.Invoke(console, new[] { param }) as Task<ActionResponse>).Result;
+                var result = action.Method.Invoke(console, new[] { param });
+                response = (result as Task<ActionResponse>).Result;
             }
             catch (Exception ex)
             {
@@ -166,6 +231,22 @@ namespace Planner.CLI
             return response;
         }
 
+        private static CliActionResponse InvokeCliAction(CliActionMetadata action, object console, object param)
+        {
+            CliActionResponse response;
+            try
+            {
+                response = (action.Method.Invoke(console, new[] { param }) as Task<CliActionResponse>).Result;
+            }
+            catch (Exception ex)
+            {
+                throw new PlannerServiceException(ex);
+            }
+
+            return response;
+        }
+
+        // TODO: to be deleted
         private static void HandleResponse(ActionResponse response)
         {
             if (response == null) return;
@@ -184,6 +265,24 @@ namespace Planner.CLI
             }
         }
 
+        private static void HandleCliResponse(CliActionResponse response)
+        {
+            if (response == null) return;
+
+            if (response.Tables != null)
+            {
+                response.Tables.ForEach(t => AnsiConsole.Write(t));
+            }
+            else if (!(string.IsNullOrEmpty(response.Message) == false && response.Response.IsSuccessful))
+            {
+                WriteCliResult(response.Response);
+            }
+            else if (response.Response.IsSuccessful) //-V3022
+            {
+                WriteInfo(response.Message);
+            }
+        }
+
         private static void WriteInfo(string message)
         {
             if (string.IsNullOrEmpty(message) == false) { message = message.Trim(); }
@@ -193,6 +292,7 @@ namespace Planner.CLI
             AnsiConsole.WriteLine(message);
         }
 
+        // TODO: to be deleted
         private static void WriteResult(BaseResponse result)
         {
             if (result != null)
@@ -206,6 +306,28 @@ namespace Planner.CLI
                     else
                     {
                         AnsiConsole.Markup($"[red]error: {result.ErrorDescription}[/]");
+                    }
+                }
+            }
+        }
+
+        private static void WriteCliResult(RestResponse result)
+        {
+            if (result != null)
+            {
+                if (result.IsSuccessful == false)
+                {
+                    if (string.IsNullOrEmpty(result.ErrorMessage) == false)
+                    {
+                        AnsiConsole.Markup($"[red]error: {result.ErrorMessage}[/]");
+                    }
+                    else if (string.IsNullOrEmpty(result.ErrorException?.Message) == false)
+                    {
+                        AnsiConsole.Markup($"[red]error: {result.ErrorException?.Message}[/]");
+                    }
+                    else
+                    {
+                        AnsiConsole.Markup($"[red]error: general error ({result.StatusDescription})[/]");
                     }
                 }
             }

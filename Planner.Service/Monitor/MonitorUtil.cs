@@ -16,7 +16,7 @@ namespace Planner.Service.Monitor
     public class MonitorUtil
     {
         private static readonly LazySingleton<List<MonitorAction>> _monitorData = new(() => { return LoadMonitor().Result; });
-        private static ILogger<MonitorUtil> _logger = Global.GetLogger<MonitorUtil>();
+        private static readonly ILogger<MonitorUtil> _logger = Global.GetLogger<MonitorUtil>();
 
         public static void Load()
         {

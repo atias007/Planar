@@ -12,7 +12,7 @@ namespace Planner.CLI.Actions
     public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     {
         [Action("stop")]
-        public static async Task<ActionResponse> StopScheduler(CliStopScheduler request)
+        public static async Task<CliActionResponse> StopScheduler(CliStopScheduler request)
         {
             var prm = new StopSchedulerRequest
             {
@@ -24,32 +24,36 @@ namespace Planner.CLI.Actions
 
             await RestProxy.Invoke(restRequest);
 
-            return ActionResponse.Empty;
+            return CliActionResponse.Empty;
         }
 
         [Action("isalive")]
-        public static async Task<ActionResponse> IsAlive()
+        public static async Task<CliActionResponse> IsAlive()
         {
             var restRequest = new RestRequest("service", Method.Get);
             var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest);
-            var message = (result.IsStarted && result.IsShutdown == false && result.InStandbyMode == false).ToString().ToLower();
-            return new ActionResponse(result, message);
+            var message =
+                result.IsSuccessful ?
+                (result.Data.IsStarted && result.Data.IsShutdown == false && result.Data.InStandbyMode == false).ToString().ToLower() :
+                string.Empty;
+
+            return new CliActionResponse(result, message);
         }
 
         [Action("env")]
-        public static async Task<ActionResponse> GetEnvironment()
+        public static async Task<CliActionResponse> GetEnvironment()
         {
             var restRequest = new RestRequest("service", Method.Get);
             var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest);
-            return new ActionResponse(result, result.Environment);
+            return new CliActionResponse(result, result.Data?.Environment);
         }
 
         [Action("calendars")]
-        public static async Task<ActionResponse> GetAllCalendars()
+        public static async Task<CliActionResponse> GetAllCalendars()
         {
             var restRequest = new RestRequest("service/calendars", Method.Get);
             var result = await RestProxy.Invoke<List<string>>(restRequest);
-            return new ActionResponse(BaseResponse.Empty, serializeObj: result);
+            return new CliActionResponse(result, serializeObj: result.Data);
         }
     }
 }

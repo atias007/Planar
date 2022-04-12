@@ -131,24 +131,6 @@ namespace Planner.API.Common
 
         #endregion User
 
-        #region Group
-
-        BaseResponse AddGroup(string request);
-
-        BaseResponse<string> GetGroupById(GetByIdRequest request);
-
-        BaseResponse<string> GetGroups();
-
-        BaseResponse RemoveGroup(GetByIdRequest request);
-
-        BaseResponse UpdateGroup(string request);
-
-        BaseResponse AddUserToGroup(string request);
-
-        BaseResponse RemoveUserFromGroup(string request);
-
-        #endregion Group
-
         #region Monitor
 
         BaseResponse<string> ReloadMonitor();
