@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Planner.Service;
 using Planner.Service.API;
 using System.Threading.Tasks;
 
