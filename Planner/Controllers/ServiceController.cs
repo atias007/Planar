@@ -21,25 +21,17 @@ namespace Planner.Controllers
         [HttpGet]
         public ActionResult<GetServiceInfoResponse> GetServiceInfo()
         {
-            try
+            var response = new GetServiceInfoResponse
             {
-                var response = new GetServiceInfoResponse
-                {
-                    InStandbyMode = Scheduler.InStandbyMode,
-                    IsShutdown = Scheduler.IsShutdown,
-                    IsStarted = Scheduler.IsStarted,
-                    SchedulerInstanceId = Scheduler.SchedulerInstanceId,
-                    SchedulerName = Scheduler.SchedulerName,
-                    Environment = Global.Environment,
-                };
+                InStandbyMode = Scheduler.InStandbyMode,
+                IsShutdown = Scheduler.IsShutdown,
+                IsStarted = Scheduler.IsStarted,
+                SchedulerInstanceId = Scheduler.SchedulerInstanceId,
+                SchedulerName = Scheduler.SchedulerName,
+                Environment = Global.Environment,
+            };
 
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                HandleException(ex);
-                throw;
-            }
+            return Ok(response);
         }
 
         [HttpGet("calendars")]

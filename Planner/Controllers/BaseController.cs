@@ -5,7 +5,6 @@ using Planner.Service;
 using Planner.Service.Exceptions;
 using Quartz;
 using System;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
 namespace Planner.Controllers
@@ -19,30 +18,6 @@ namespace Planner.Controllers
             _loggger = logger;
         }
 
-        protected void HandleException(Exception ex)
-        {
-            HandleException<BaseResponse>(ex);
-        }
-
-        protected void HandleException<T>(Exception ex)
-        {
-            if (ex is AggregateException aggex)
-            {
-                foreach (var item in aggex.InnerExceptions)
-                {
-                    LogException(item);
-                    //result.ErrorDescription += $"{item.Message}\r\n";
-                }
-
-                //result.ErrorDescription = result.ErrorDescription.Trim();
-            }
-            else
-            {
-                LogException(ex);
-                //result.ErrorDescription = ex.Message;
-            }
-        }
-
         protected static IScheduler Scheduler
         {
             get
@@ -51,25 +26,20 @@ namespace Planner.Controllers
             }
         }
 
-        private void LogException(Exception ex)
-        {
-            var message = "API path {@path} fail: {@message}";
-            var path = HttpContext.Request.Path.Value;
+        ////private void LogException(Exception ex)
+        ////{
+        ////    var message = "API path {@path} fail: {@message}";
+        ////    var path = HttpContext.Request.Path.Value;
 
-            if (ex is PlannerValidationException || ex is ValidationException)
-            {
-                _loggger.LogWarning(message, path, ex.Message);
-            }
-            else
-            {
-                _loggger.LogError(ex, message, path, ex.Message);
-            }
-        }
-
-        protected void InitializeService()
-        {
-            _loggger.LogInformation("API path {@method} invoked", HttpContext.Request.Path.Value);
-        }
+        ////    if (ex is PlannerValidationException || ex is ValidationException)
+        ////    {
+        ////        _loggger.LogWarning(message, path, ex.Message);
+        ////    }
+        ////    else
+        ////    {
+        ////        _loggger.LogError(ex, message, path, ex.Message);
+        ////    }
+        ////}
 
         protected void ValidateEntity<T>(T entity)
             where T : class
