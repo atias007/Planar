@@ -1,8 +1,8 @@
-﻿job type: PlannerJob
+﻿job type: PlanarJob
 name: test_agg_ex
 description: test aggragate exceptions
 properties:
-  JobPath: C:\Users\tsahi_a\source\repos\Planner\TestAggEx\bin\debug\net5.0\
+  JobPath: C:\Users\tsahi_a\source\repos\Planar\TestAggEx\bin\debug\net5.0\
   FileName: TestAggEx.dll
   TypeName: TestAggEx.MyJob
 simple triggers:

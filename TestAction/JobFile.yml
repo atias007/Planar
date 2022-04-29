@@ -1,4 +1,4 @@
-﻿job type: PlannerJob
+﻿job type: PlanarJob
 name: test1
 description: long running task test
 job data:

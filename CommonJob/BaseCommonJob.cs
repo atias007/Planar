@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
-using Planner;
-using Planner.Client;
-using Planner.Common;
+using Planar;
+using Planar.Common;
+using Planar.Job;
 using Quartz;
 using System;
 using System.Collections.Generic;

@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "Planar.Service": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "Planar_ENVIRONMENT": "Development"
+      }
+    },
+    "Docker": {
+      "commandName": "Docker"
+    }
+  }
+}

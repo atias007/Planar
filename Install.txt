@@ -1,1 +1,1 @@
-sc create CustomsCloud.Planner binPath=C:\Workers\Planner\Planner.Service.exe start=auto
+sc create CustomsCloud.Planar binPath=C:\Workers\Planar\Planar.Service.exe start=auto

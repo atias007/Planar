@@ -1,8 +1,0 @@
-{
-  "profiles": {
-    "Planner.CLI": {
-      "commandName": "Project",
-      "commandLineArgs": "group get 1"
-    }
-  }
-}

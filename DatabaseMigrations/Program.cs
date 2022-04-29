@@ -250,7 +250,7 @@ namespace DatabaseMigrations
         private static void Main(string[] args)
         {
             var assembly = Assembly.GetExecutingAssembly();
-            ModuleName = "Planner";
+            ModuleName = "Planar";
             Run(assembly, args);
         }
 

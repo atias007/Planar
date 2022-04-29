@@ -1,16 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\Planner.Client\JobExecutionMetadata.cs" Link="JobExecutionMetadata.cs" />
-    <Compile Include="..\Planner.Common\Consts.cs" Link="Consts.cs" />
+    <Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
+    <Compile Include="..\Planar.Job\JobExecutionMetadata.cs" Link="JobExecutionMetadata.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Planner.Client\Planner.Client.csproj" />
-    <ProjectReference Include="..\Planner.Common\Planner.Common.csproj" />
+    <ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
+    <ProjectReference Include="..\Planar.Job\Planar.Job.csproj" />
   </ItemGroup>
 </Project>

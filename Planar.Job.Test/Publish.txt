@@ -1,0 +1,1 @@
+﻿nuget push -Source CustomClouds -ApiKey AzureDevOps %USERPROFILE%\Source\Repos\Planar\Planar.Client.Test\bin\Release\net5.0\publish\Planar.Client.Test.1.0.5.nupkg

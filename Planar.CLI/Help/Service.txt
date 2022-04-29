@@ -1,0 +1,9 @@
+﻿Planar command line format:
+Planar service <command> [<options>]
+
+the options for <command> and [<options>] parameters of service module:
+
+isalive
+stop         [-f|--force]
+env      
+calendars

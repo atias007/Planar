@@ -1,0 +1,49 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+    <AssemblyName>Planar</AssemblyName>
+    <Version>1.0.2</Version>
+    <StartupObject>Planar.CLI.Program</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Help\History.txt" />
+    <None Remove="Help\Job.txt" />
+    <None Remove="Help\Modules.txt" />
+    <None Remove="Help\Monitor.txt" />
+    <None Remove="Help\Param.txt" />
+    <None Remove="Help\Service.txt" />
+    <None Remove="Help\Trace.txt" />
+    <None Remove="Help\Trigger.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Help\History.txt" />
+    <EmbeddedResource Include="Help\Monitor.txt" />
+    <EmbeddedResource Include="Help\Trigger.txt" />
+    <EmbeddedResource Include="Help\Service.txt" />
+    <EmbeddedResource Include="Help\Param.txt" />
+    <EmbeddedResource Include="Help\Trace.txt" />
+    <EmbeddedResource Include="Help\Job.txt" />
+    <EmbeddedResource Include="Help\Modules.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JKang.IpcServiceFramework.Client.NamedPipe" Version="3.1.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="RestSharp" Version="107.3.0" />
+    <PackageReference Include="Spectre.Console" Version="0.44.0" />
+    <PackageReference Include="YamlDotNet" Version="11.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Planar.API.Common\Planar.API.Common.csproj" />
+  </ItemGroup>
+</Project>

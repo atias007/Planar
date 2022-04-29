@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Planar.CLI": {
+      "commandName": "Project",
+      "commandLineArgs": "history last"
+    }
+  }
+}

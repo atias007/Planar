@@ -7,6 +7,6 @@
 
 
 -----------------------------------------DONE-----------------------------------------
-- clean the Planner.Common project
+- clean the Planar.Common project
 - check the Result property of iexecutionjobcontext. should be usefull for save information & exception & progress
 
