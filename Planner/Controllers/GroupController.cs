@@ -7,61 +7,58 @@ namespace Planner.Controllers
 {
     [ApiController]
     [Route("group")]
-    public class GroupController : BaseController
+    public class GroupController : BaseController<GroupController, GroupServiceDomain>
     {
-        private readonly ServiceDomain _bl;
-
-        public GroupController(ILogger<GroupController> logger, ServiceDomain bl) : base(logger)
+        public GroupController(ILogger<GroupController> logger, GroupServiceDomain bl) : base(logger, bl)
         {
-            _bl = bl;
         }
 
         [HttpPost]
         public async Task<IActionResult> AddGroup(UpsertGroupRecord request)
         {
-            var id = await _bl.AddGroup(request);
+            var id = await BusinesLayer.AddGroup(request);
             return CreatedAtAction("GetGroup", new { id }, id);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetGroup([FromRoute] int id)
         {
-            var result = await _bl.GetGroupById(id);
+            var result = await BusinesLayer.GetGroupById(id);
             return Ok(result);
         }
 
         [HttpGet]
         public async Task<IActionResult> GetGroups()
         {
-            var result = await _bl.GetGroups();
+            var result = await BusinesLayer.GetGroups();
             return Ok(result);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteGroup([FromRoute] int id)
         {
-            await _bl.DeleteGroup(id);
+            await BusinesLayer.DeleteGroup(id);
             return NoContent();
         }
 
         [HttpPatch("{id}")]
         public async Task<IActionResult> UpdateGroup([FromRoute] int id, [FromBody] UpdateEntityRecord request)
         {
-            await _bl.UpdateGroup(id, request);
+            await BusinesLayer.UpdateGroup(id, request);
             return NoContent();
         }
 
         [HttpPost("{id}/user")]
         public async Task<IActionResult> AddUserToGroup([FromRoute] int id, [FromBody] UserToGroupRecord request)
         {
-            await _bl.AddUserToGroup(id, request);
+            await BusinesLayer.AddUserToGroup(id, request);
             return CreatedAtAction("GetGroup", new { id }, id);
         }
 
         [HttpDelete("{id}/user/{userId}")]
         public async Task<IActionResult> RemoveUserFromGroup([FromRoute] int id, [FromRoute] int userId)
         {
-            await _bl.RemoveUserFromGroup(id, userId);
+            await BusinesLayer.RemoveUserFromGroup(id, userId);
             return NoContent();
         }
     }

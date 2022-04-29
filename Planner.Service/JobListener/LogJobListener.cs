@@ -109,7 +109,7 @@ namespace Planner.Service.JobListener
                     IsStopped = context.CancellationToken.IsCancellationRequested
                 };
 
-                await DAL.UpdateAutomationTaskCallLog(log);
+                await DAL.UpdateHistoryJobRunLog(log);
                 await MonitorJobWasExecuted(context, jobException, cancellationToken);
             }
             catch (Exception ex)

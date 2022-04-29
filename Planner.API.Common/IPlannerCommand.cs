@@ -5,16 +5,6 @@ namespace Planner.API.Common
 {
     public interface IPlannerCommand
     {
-        #region Service
-
-        GetServiceInfoResponse GetServiceInfo();
-
-        BaseResponse StopScheduler(StopSchedulerRequest request);
-
-        BaseResponse<List<string>> GetAllCalendars();
-
-        #endregion Service
-
         #region Job
 
         BaseResponse InvokeJob(InvokeJobRequest request);
@@ -96,24 +86,6 @@ namespace Planner.API.Common
         BaseResponse FlushGlobalParameter();
 
         #endregion Parameters
-
-        #region History
-
-        public BaseResponse<LastInstanceId> GetLastInstanceId(GetLastInstanceIdRequest request);
-
-        public HistoryCallForJobResponse GetHistory(GetHistoryRequest request);
-
-        public HistoryCallForJobResponse GetLastHistoryCallForJob(GetLastHistoryCallForJobRequest request);
-
-        public BaseResponse<JobInstanceLog> GetHistoryById(GetByIdRequest request);
-
-        public BaseResponse<HistoryFieldData> GetHistoryDataById(GetByIdRequest request);
-
-        public BaseResponse<HistoryFieldData> GetHistoryInformationById(GetByIdRequest request);
-
-        public BaseResponse<HistoryFieldData> GetHistoryExceptionById(GetByIdRequest request);
-
-        #endregion History
 
         #region User
 

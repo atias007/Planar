@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Planner.API.Common.Entities;
 using Planner.Service;
 using Planner.Service.Exceptions;
 using Quartz;
@@ -9,13 +8,15 @@ using System.Linq;
 
 namespace Planner.Controllers
 {
-    public class BaseController : ControllerBase
+    public class BaseController<TController, TBusinesLayer> : ControllerBase
     {
-        protected ILogger _loggger;
+        protected readonly ILogger<TController> _loggger;
+        protected readonly TBusinesLayer _businesLayer;
 
-        public BaseController(ILogger logger)
+        public BaseController(ILogger<TController> logger, TBusinesLayer businesLayer)
         {
             _loggger = logger;
+            _businesLayer = businesLayer;
         }
 
         protected static IScheduler Scheduler
@@ -25,6 +26,10 @@ namespace Planner.Controllers
                 return MainService.Scheduler;
             }
         }
+
+        protected ILogger<TController> Logger => _loggger;
+
+        protected TBusinesLayer BusinesLayer => _businesLayer;
 
         ////private void LogException(Exception ex)
         ////{

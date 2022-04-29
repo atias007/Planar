@@ -12,9 +12,9 @@ namespace Planner.Controllers
 {
     [ApiController]
     [Route("service")]
-    public class ServiceController : BaseController
+    public class ServiceController : BaseController<ServiceController, null>
     {
-        public ServiceController(ILogger<ServiceController> logger) : base(logger)
+        public ServiceController(ILogger<ServiceController> logger) : base(logger, null)
         {
         }
 

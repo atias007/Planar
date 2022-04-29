@@ -28,7 +28,7 @@ namespace Planner.Service.Data
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateAutomationTaskCallLog(DbJobInstanceLog log)
+        public async Task UpdateHistoryJobRunLog(DbJobInstanceLog log)
         {
             var paramInstanceId = new SqlParameter("@InstanceId", log.InstanceId);
             var paramStatus = new SqlParameter("@Status", log.Status);

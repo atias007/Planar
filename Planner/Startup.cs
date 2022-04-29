@@ -48,7 +48,7 @@ namespace Planner
             services.AddTransient<DataLayer>();
             services.AddTransient<DeamonBL>();
             services.AddTransient<MainService>();
-            services.AddScoped<ServiceDomain>();
+            services.AddScoped<GroupServiceDomain>();
             services.AddScoped<IPlannerCommand, DeamonService>();
             services.AddHostedService<MainService>();
         }

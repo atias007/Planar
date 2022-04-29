@@ -485,51 +485,10 @@ namespace Planner.Service.API
             return new BaseResponse<LastInstanceId>(result);
         }
 
-        public async Task<HistoryCallForJobResponse> GetHistory(GetHistoryRequest request)
-        {
-            if (request.Rows.GetValueOrDefault() == 0) { request.Rows = 50; }
-            var result = await _dal.GetHistory(request);
-            return new HistoryCallForJobResponse(result);
-        }
-
-        public async Task<BaseResponse<JobInstanceLog>> GetHistoryById(GetByIdRequest request)
-        {
-            var result = await _dal.GetHistoryById(request.Id);
-            var response = JsonMapper.Map<JobInstanceLog, DbJobInstanceLog>(result);
-            return new BaseResponse<JobInstanceLog>(response);
-        }
-
         public async Task<BaseResponse<GetTestStatusResponse>> GetTestStatus(GetByIdRequest request)
         {
             var result = await _dal.GetTestStatus(request.Id);
             return new BaseResponse<GetTestStatusResponse>(result);
-        }
-
-        public async Task<BaseResponse<HistoryFieldData>> GetHistoryDataById(GetByIdRequest request)
-        {
-            var result = await _dal.GetHistoryDataById(request.Id);
-            var response = new HistoryFieldData { Data = result };
-            return new BaseResponse<HistoryFieldData>(response);
-        }
-
-        public async Task<BaseResponse<HistoryFieldData>> GetHistoryInformationById(GetByIdRequest request)
-        {
-            var result = await _dal.GetHistoryInformationById(request.Id);
-            var response = new HistoryFieldData { Data = result };
-            return new BaseResponse<HistoryFieldData>(response);
-        }
-
-        public async Task<BaseResponse<HistoryFieldData>> GetHistoryExceptionById(GetByIdRequest request)
-        {
-            var result = await _dal.GetHistoryExceptionById(request.Id);
-            var response = new HistoryFieldData { Data = result };
-            return new BaseResponse<HistoryFieldData>(response);
-        }
-
-        public async Task<HistoryCallForJobResponse> GetLastHistoryCallForJob(GetLastHistoryCallForJobRequest request)
-        {
-            var result = (await _dal.GetLastHistoryCallForJob(request)).ToList();
-            return new HistoryCallForJobResponse(result);
         }
 
         public async Task<BaseResponse<AddUserResponse>> AddUser(AddUserRequest request)

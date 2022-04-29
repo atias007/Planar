@@ -11,15 +11,10 @@ using System.Threading.Tasks;
 
 namespace Planner.Service.API
 {
-    public class ServiceDomain : BaseBL
+    public class GroupServiceDomain : BaseBL<GroupServiceDomain>
     {
-        private readonly DataLayer _dal;
-        private readonly ILogger<DeamonBL> _logger;
-
-        public ServiceDomain(DataLayer dal, ILogger<DeamonBL> logger)
+        public GroupServiceDomain(DataLayer dataLayer, ILogger<GroupServiceDomain> logger) : base(dataLayer, logger)
         {
-            _dal = dal ?? throw new NullReferenceException(nameof(dal));
-            _logger = logger ?? throw new NullReferenceException(nameof(logger));
         }
 
         public async Task<int> AddGroup(UpsertGroupRecord request)
@@ -30,31 +25,31 @@ namespace Planner.Service.API
                 Name = request.Name
             };
 
-            await _dal.AddGroup(group);
+            await DataLayer.AddGroup(group);
             return group.Id;
         }
 
         public async Task<object> GetGroupById(int id)
         {
-            return await _dal.GetGroupWithUsers(id);
+            return await DataLayer.GetGroupWithUsers(id);
         }
 
         public async Task<object> GetGroups()
         {
-            return await _dal.GetGroups();
+            return await DataLayer.GetGroups();
         }
 
         public async Task DeleteGroup(int id)
         {
             var group = new Group { Id = id };
-            await _dal.RemoveGroup(group);
+            await DataLayer.RemoveGroup(group);
         }
 
         public async Task UpdateGroup(int id, UpdateEntityRecord request)
         {
             await new UpdateEntityRecordValidator().ValidateAndThrowAsync(request);
 
-            if (await _dal.GetGroup(id) is not Group existsGroup)
+            if (await DataLayer.GetGroup(id) is not Group existsGroup)
             {
                 throw new PlannerValidationException($"Group with id {id} could not be found");
             }
@@ -80,25 +75,25 @@ namespace Planner.Service.API
 
             await new GroupValidator().ValidateAndThrowAsync(existsGroup);
 
-            await _dal.UpdateGroup(existsGroup);
+            await DataLayer.UpdateGroup(existsGroup);
         }
 
         public async Task AddUserToGroup(int groupId, UserToGroupRecord request)
         {
-            if (await _dal.IsUserExists(request.UserId) == false) { throw new PlannerValidationException($"UserId {request.UserId} is not exists"); }
-            if (await _dal.IsGroupExists(groupId) == false) { throw new PlannerValidationException($"GroupId {groupId} is not exists"); }
-            if (await _dal.IsUserExistsInGroup(request.UserId, groupId)) { throw new PlannerValidationException($"UserId {request.UserId} already in GroupId {groupId}"); }
+            if (await DataLayer.IsUserExists(request.UserId) == false) { throw new PlannerValidationException($"UserId {request.UserId} is not exists"); }
+            if (await DataLayer.IsGroupExists(groupId) == false) { throw new PlannerValidationException($"GroupId {groupId} is not exists"); }
+            if (await DataLayer.IsUserExistsInGroup(request.UserId, groupId)) { throw new PlannerValidationException($"UserId {request.UserId} already in GroupId {groupId}"); }
 
-            await _dal.AddUserToGroup(request.UserId, groupId);
+            await DataLayer.AddUserToGroup(request.UserId, groupId);
         }
 
         public async Task RemoveUserFromGroup(int groupId, int userId)
         {
-            if (await _dal.IsUserExists(userId) == false) { throw new PlannerValidationException($"UserId {userId} is not exists"); }
-            if (await _dal.IsGroupExists(groupId) == false) { throw new PlannerValidationException($"GroupId {groupId} is not exists"); }
-            if (await _dal.IsUserExistsInGroup(userId, groupId) == false) { throw new PlannerValidationException($"UserId {userId} is not exists in GroupId {groupId}"); }
+            if (await DataLayer.IsUserExists(userId) == false) { throw new PlannerValidationException($"UserId {userId} is not exists"); }
+            if (await DataLayer.IsGroupExists(groupId) == false) { throw new PlannerValidationException($"GroupId {groupId} is not exists"); }
+            if (await DataLayer.IsUserExistsInGroup(userId, groupId) == false) { throw new PlannerValidationException($"UserId {userId} is not exists in GroupId {groupId}"); }
 
-            await _dal.RemoveUserFromGroup(userId, groupId);
+            await DataLayer.RemoveUserFromGroup(userId, groupId);
         }
     }
 }

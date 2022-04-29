@@ -517,36 +517,6 @@ namespace Planner.Service.API
             }
         }
 
-        public HistoryCallForJobResponse GetHistory(GetHistoryRequest request)
-        {
-            try
-            {
-                InitializeService(nameof(GetHistory));
-                var result = BL.GetHistory(request).Result;
-                return result;
-            }
-            catch (Exception ex)
-            {
-                var result = HandleException<HistoryCallForJobResponse>(ex, nameof(GetHistory));
-                return result;
-            }
-        }
-
-        public BaseResponse<JobInstanceLog> GetHistoryById(GetByIdRequest request)
-        {
-            try
-            {
-                InitializeService(nameof(GetHistoryById));
-                var result = BL.GetHistoryById(request).Result;
-                return result;
-            }
-            catch (Exception ex)
-            {
-                var result = HandleException<BaseResponse<JobInstanceLog>>(ex, nameof(GetHistoryById));
-                return result;
-            }
-        }
-
         public BaseResponse<RunningJobDetails> GetRunningJob(FireInstanceIdRequest request)
         {
             try
@@ -573,66 +543,6 @@ namespace Planner.Service.API
             catch (Exception ex)
             {
                 var result = HandleException<BaseResponse<GetTestStatusResponse>>(ex, nameof(GetTestStatus));
-                return result;
-            }
-        }
-
-        public BaseResponse<HistoryFieldData> GetHistoryDataById(GetByIdRequest request)
-        {
-            try
-            {
-                InitializeService(nameof(GetHistoryDataById));
-                var result = BL.GetHistoryDataById(request).Result;
-                return result;
-            }
-            catch (Exception ex)
-            {
-                var result = HandleException<BaseResponse<HistoryFieldData>>(ex, nameof(GetHistoryDataById));
-                return result;
-            }
-        }
-
-        public BaseResponse<HistoryFieldData> GetHistoryInformationById(GetByIdRequest request)
-        {
-            try
-            {
-                InitializeService(nameof(GetHistoryInformationById));
-                var result = BL.GetHistoryInformationById(request).Result;
-                return result;
-            }
-            catch (Exception ex)
-            {
-                var result = HandleException<BaseResponse<HistoryFieldData>>(ex, nameof(GetHistoryInformationById));
-                return result;
-            }
-        }
-
-        public BaseResponse<HistoryFieldData> GetHistoryExceptionById(GetByIdRequest request)
-        {
-            try
-            {
-                InitializeService(nameof(GetHistoryInformationById));
-                var result = BL.GetHistoryExceptionById(request).Result;
-                return result;
-            }
-            catch (Exception ex)
-            {
-                var result = HandleException<BaseResponse<HistoryFieldData>>(ex, nameof(GetHistoryInformationById));
-                return result;
-            };
-        }
-
-        public HistoryCallForJobResponse GetLastHistoryCallForJob(GetLastHistoryCallForJobRequest request)
-        {
-            try
-            {
-                InitializeService(nameof(GetLastHistoryCallForJob));
-                var result = BL.GetLastHistoryCallForJob(request).Result;
-                return result;
-            }
-            catch (Exception ex)
-            {
-                var result = HandleException<HistoryCallForJobResponse>(ex, nameof(GetLastHistoryCallForJob));
                 return result;
             }
         }
