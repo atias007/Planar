@@ -18,7 +18,7 @@ namespace Planar.Common
             var inRuntimeLibraries = DependencyContext.Default.RuntimeLibraries.Any(l => l.Name.Equals(fileNameWithOutExtension, StringComparison.OrdinalIgnoreCase));
 
             var assembly = (inCompileLibraries || inRuntimeLibraries)
-                ? Assembly.Load(new AssemblyName(fileNameWithOutExtension))
+                ? context.LoadFromAssemblyName(new AssemblyName(fileNameWithOutExtension))
                 : LoadAssemblyFile(assemblyFullPath, context);
 
             if (assembly != null)

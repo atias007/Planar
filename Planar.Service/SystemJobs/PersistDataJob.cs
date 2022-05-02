@@ -103,8 +103,8 @@ namespace Planar.Service.SystemJobs
                 if (job.JobRunTime.TotalSeconds > AppSettings.PersistRunningJobsSpan.TotalSeconds)
                 {
                     _logger.LogInformation("Persist information for job {@Group}.{@Name}", job.JobDetail.Key.Group, job.JobDetail.Key.Name);
-                    var information = JobExecutionMetadataUtil.GetInformation(job);
-                    var exceptions = JobExecutionMetadataUtil.GetExceptionsText(job);
+                    var information = JobExecutionMetadataUtil.GetInstance(job).GetInformation();
+                    var exceptions = JobExecutionMetadataUtil.GetInstance(job).GetExceptionsText();
 
                     if (string.IsNullOrEmpty(information) && string.IsNullOrEmpty(exceptions)) { break; }
 

@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Planar.MonitorHook;
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Planar.TeamsMonitorHook
@@ -43,19 +43,19 @@ namespace Planar.TeamsMonitorHook
                 using var httpClient = new HttpClient();
                 using var request = new HttpRequestMessage(new HttpMethod("POST"), url);
                 var tempObject = new { text = message };
-                var json = JsonConvert.SerializeObject(tempObject);
+                var json = JsonSerializer.Serialize(tempObject);
                 request.Content = new StringContent(json);
                 request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
 
                 var response = await httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode == false)
                 {
-                    _logger.LogError("Send message to url '{@url}' fail with status code {response.StatusCode}", url);
+                    _logger.LogError("Send message to url '{Url}' fail with status code {StatusCode}", url, response.StatusCode);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Send message to url '{@url}' fail with error: {@Message}", url, ex.Message);
+                _logger.LogError(ex, "Send message to url '{Url}' fail with error: {Message}", url, ex.Message);
             }
         }
 

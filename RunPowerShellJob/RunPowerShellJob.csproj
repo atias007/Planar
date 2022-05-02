@@ -5,10 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\Planar.Job\JobExecutionMetadata.cs" Link="JobExecutionMetadata.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="System.Management.Automation" Version="7.1.7" />
   </ItemGroup>
 

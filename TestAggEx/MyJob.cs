@@ -1,5 +1,4 @@
 ﻿using Planar.Job;
-using Quartz;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,7 +7,7 @@ namespace TestAggEx
 {
     public class MyJob : BaseJob
     {
-        public override Task ExecuteJob(IJobExecutionContext context)
+        public override Task ExecuteJob(JobExecutionContext context)
         {
             for (int i = 0; i < 10; i++)
             {

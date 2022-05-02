@@ -1,5 +1,5 @@
-﻿using Planar.Job;
-using Quartz;
+﻿using Planar;
+using Planar.Job;
 using System;
 using System.Threading.Tasks;
 
@@ -13,7 +13,7 @@ namespace TestAction
 
         public int MaxId { get; set; }
 
-        public override async Task ExecuteJob(IJobExecutionContext context)
+        public override async Task ExecuteJob(JobExecutionContext context)
         {
             if (Value == 100.1)
             {
@@ -44,7 +44,11 @@ namespace TestAction
             }
 
             var greetings = GetSetting("JobSet1");
-            AppendInformation($"[x] Greetings from ActionJob ({greetings})! [{Now():dd/MM/yyyy HH:mm}] {Message}, {Value:N1}, MaxId: {MaxId}");
+            AppendInformation($"[x] Greetings from ActionJob ({greetings})! [{Now():dd/MM/yyyy HH:mm}] {Message}, {Value:N1}, MaxId: {MaxId}, state: {context.State}");
+
+            var method = context.State.GetType().GetMethod("SendMessage");
+            method.Invoke(context.State, new object[] { "Hiiii" });
+
             PutJobData(nameof(MaxId), ++MaxId);
         }
     }

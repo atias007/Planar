@@ -6,7 +6,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="BaseJobTest.cs" />
+    <Compile Remove="MockJobDetails.cs" />
+    <Compile Remove="MockJobExecutionContext.cs" />
+    <Compile Remove="MockTrigger.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="BaseJobTest.cs" />
+    <None Include="MockJobDetails.cs" />
+    <None Include="MockJobExecutionContext.cs" />
+    <None Include="MockTrigger.cs" />
   </ItemGroup>
 
   <ItemGroup>

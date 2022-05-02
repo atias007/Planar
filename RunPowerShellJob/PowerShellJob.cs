@@ -30,14 +30,18 @@ namespace RunPowerShellJob
                     {
                         if (obj != null)
                         {
-                            JobExecutionMetadataUtil.AppendInformation(context, obj.ToString());
+                            // TODO: to be implement
+                            // JobExecutionMetadataUtil.AppendInformation(context, obj.ToString());
                         }
                     }
 
-                    JobExecutionMetadataUtil.IncreaseEffectedRows(context, 1);
+                    // TODO: to be implement
+                    // JobExecutionMetadataUtil.IncreaseEffectedRows(context, 1);
                     counter++;
                     var value = Convert.ToByte(Math.Floor(100 * (counter * 1.0 / _scripts.Count)));
-                    JobExecutionMetadataUtil.SetProgress(context, value);
+
+                    // TODO: to be implement
+                    // JobExecutionMetadataUtil.SetProgress(context, value);
                 }
             }
             catch (JobExecutionException ex)

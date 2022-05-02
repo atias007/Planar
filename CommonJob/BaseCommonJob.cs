@@ -1,7 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using Planar;
 using Planar.Common;
-using Planar.Job;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -96,7 +94,8 @@ namespace CommonJob
         {
             try
             {
-                JobExecutionMetadataUtil.SetProgress(context, 100);
+                // TODO: to be implement
+                // JobExecutionMetadataUtil.SetProgress(context, 100);
             }
             catch (Exception ex)
             {
@@ -139,11 +138,11 @@ namespace CommonJob
             }
         }
 
-        protected void LoadJobSettings(BaseJob instance)
+        protected Dictionary<string, string> LoadJobSettings()
         {
             try
             {
-                if (string.IsNullOrEmpty(JobPath)) return;
+                if (string.IsNullOrEmpty(JobPath)) return null;
 
                 // Load job global parameters
                 var final = Global.Parameters;
@@ -164,7 +163,8 @@ namespace CommonJob
                         final.Add(item.Key, item.Value);
                     }
                 }
-                instance.LoadJobSettings(final);
+
+                return final;
             }
             catch (Exception ex)
             {

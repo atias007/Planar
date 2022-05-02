@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Planar.MonitorHook;
 using System;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Planar.HttpMonitorHook
@@ -11,7 +11,7 @@ namespace Planar.HttpMonitorHook
     {
         public Task Handle(IMonitorDetails monitorDetails, ILogger logger)
         {
-            var json = JsonConvert.SerializeObject(monitorDetails);
+            var json = JsonSerializer.Serialize(monitorDetails);
             return File.WriteAllTextAsync($@"C:\temp\{DateTime.Now.Ticks}.txt", json);
         }
 

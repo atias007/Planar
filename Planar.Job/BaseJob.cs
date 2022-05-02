@@ -1,44 +1,47 @@
-﻿using Quartz;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Planar.Job
 {
-    public abstract class BaseJob : IJob
+    public abstract class BaseJob
     {
         private readonly object Locker = new();
-        private IJobExecutionContext _context;
+        private JobExecutionMetadata _metadata;
+        private JobExecutionContext _context;
         private bool? _isNowOverrideValueExists;
         private DateTime? _nowOverrideValue;
         private Dictionary<string, string> JobSettings { get; set; } = new();
 
-        public Task Execute(IJobExecutionContext context)
+        public Task Execute(string context, string settings, ref object state)
         {
-            _context = context;
-            return ExecuteJob(context)
+            _metadata = new JobExecutionMetadata();
+
+            // TODO: check for deserialize error
+            _context = JsonSerializer.Deserialize<JobExecutionContext>(context);
+            _context.State = state;
+
+            // TODO: check for deserialize error
+            if (settings != null)
+            {
+                JobSettings = JsonSerializer.Deserialize<Dictionary<string, string>>(settings);
+            }
+
+            return ExecuteJob(_context)
                 .ContinueWith(t =>
                 {
-                    _context = null;
                     if (t.Exception != null) { throw t.Exception; }
                 });
         }
 
-        public abstract Task ExecuteJob(IJobExecutionContext context);
-
-        public void LoadJobSettings(Dictionary<string, string> settings)
-        {
-            if (settings != null)
-            {
-                JobSettings = settings;
-            }
-        }
+        public abstract Task ExecuteJob(JobExecutionContext context);
 
         protected void AddAggragateException(Exception ex)
         {
             lock (Locker)
             {
-                JobExecutionMetadataUtil.AddAggragateException(_context, ex);
+                _metadata.Exceptions.Add(new ExceptionDto(ex));
             }
         }
 
@@ -50,13 +53,13 @@ namespace Planar.Job
 
             lock (Locker)
             {
-                JobExecutionMetadataUtil.AppendInformation(_context, info);
+                _metadata.Information.AppendLine(info);
             }
         }
 
         protected void CheckAggragateException()
         {
-            var text = JobExecutionMetadataUtil.GetExceptionsText(_context);
+            var text = _metadata.GetExceptionsText();
             if (string.IsNullOrEmpty(text) == false)
             {
                 var ex = new PlanarJobAggragateException(text);
@@ -66,22 +69,24 @@ namespace Planar.Job
 
         protected bool CheckIfStopRequest()
         {
-            return _context.CancellationToken.IsCancellationRequested;
+            // TODO: to be implement
+            return false; // _context.CancellationToken.IsCancellationRequested;
         }
 
         protected void FailOnStopRequest(Action stopHandle = default)
         {
-            if (stopHandle != default)
-            {
-                stopHandle.Invoke();
-            }
+            // TODO: to be implement
+            ////if (stopHandle != default)
+            ////{
+            ////    stopHandle.Invoke();
+            ////}
 
-            _context.CancellationToken.ThrowIfCancellationRequested();
+            ////_context.CancellationToken.ThrowIfCancellationRequested();
         }
 
         protected T GetData<T>(string key)
         {
-            var value = _context.MergedJobDataMap.Get(key);
+            var value = _context.MergeData.GetValueOrDefault(key);
             var result = (T)Convert.ChangeType(value, typeof(T));
             return result;
         }
@@ -93,7 +98,7 @@ namespace Planar.Job
 
         protected int? GetEffectedRows()
         {
-            return JobExecutionMetadataUtil.GetEffectedRows(_context);
+            return _metadata.EffectedRows;
         }
 
         protected string GetSetting(string key)
@@ -133,7 +138,7 @@ namespace Planar.Job
         {
             lock (Locker)
             {
-                JobExecutionMetadataUtil.IncreaseEffectedRows(_context, delta);
+                _metadata.EffectedRows = _metadata.EffectedRows.GetValueOrDefault() + delta;
             }
         }
 
@@ -141,8 +146,8 @@ namespace Planar.Job
         {
             if (_isNowOverrideValueExists == null)
             {
-                _isNowOverrideValueExists = _context.MergedJobDataMap.ContainsKey(Consts.NowOverrideValue);
-                var value = Convert.ToString(_context.MergedJobDataMap[Consts.NowOverrideValue]);
+                _isNowOverrideValueExists = _context.MergeData.ContainsKey(Consts.NowOverrideValue);
+                var value = Convert.ToString(_context.MergeData.GetValueOrDefault(Consts.NowOverrideValue));
                 if (DateTime.TryParse(value, out DateTime dateValue))
                 {
                     _nowOverrideValue = dateValue;
@@ -161,19 +166,21 @@ namespace Planar.Job
 
         protected void PutJobData(string key, object value)
         {
-            _context.JobDetail.JobDataMap.Put(key, value);
+            _context.MergeData[key] = Convert.ToString(value);
+            // _context.JobDetail.JobDataMap.Put(key, value);
         }
 
         protected void PutTriggerData(string key, object value)
         {
-            _context.Trigger.JobDataMap.Put(key, value);
+            _context.MergeData[key] = Convert.ToString(value);
+            // _context.Trigger.JobDataMap.Put(key, value);
         }
 
         protected void SetEffectedRows(int value)
         {
             lock (Locker)
             {
-                JobExecutionMetadataUtil.SetEffectedRows(_context, value);
+                _metadata.EffectedRows = value;
             }
         }
 
@@ -182,7 +189,7 @@ namespace Planar.Job
             lock (Locker)
             {
                 if (value > 100) { value = 100; }
-                JobExecutionMetadataUtil.SetProgress(_context, value);
+                _metadata.Progress = value;
             }
         }
 
@@ -195,7 +202,7 @@ namespace Planar.Job
                 if (percentage > 1) { percentage = 1; }
                 var value = Convert.ToByte(percentage * 100);
 
-                JobExecutionMetadataUtil.SetProgress(_context, value);
+                _metadata.Progress = value;
             }
         }
     }

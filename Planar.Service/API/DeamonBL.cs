@@ -214,8 +214,9 @@ namespace Planar.Service.API
 
             if (job != null)
             {
-                information = JobExecutionMetadataUtil.GetInformation(job);
-                exceptions = JobExecutionMetadataUtil.GetExceptionsText(job);
+                // TODO: to be implement
+                // information = JobExecutionMetadataUtil.GetInformation(job);
+                // exceptions = JobExecutionMetadataUtil.GetExceptionsText(job);
             }
 
             var obj = new { Information = information, Exceptions = exceptions };
@@ -866,9 +867,10 @@ namespace Planar.Service.API
             target.DataMap = ServiceUtil.ConvertJobDataMapToDictionary(source.MergedJobDataMap);
             target.TriggerId = Convert.ToString(Convert.ToString(source.Get(Consts.TriggerId)));
 
-            var metadata = JobExecutionMetadataUtil.GetInstance(source);
-            target.EffectedRows = metadata.EffectedRows;
-            target.Progress = metadata.Progress;
+            // TODO: to be implement
+            // var metadata = JobExecutionMetadataUtil.GetInstance(source);
+            // target.EffectedRows = metadata.EffectedRows;
+            // target.Progress = metadata.Progress;
         }
 
         private static void MapJobRowDetails(IJobDetail source, JobRowDetails target)

@@ -1,12 +1,14 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.Logging;
-using Planar.Job;
 using Planar.Common;
 using Quartz;
 using System;
 using System.IO;
 using System.Runtime.Loader;
 using System.Threading.Tasks;
+using System.Text.Json;
+using Planar;
+using System.Linq;
 
 namespace RunPlanarJob
 {
@@ -17,12 +19,16 @@ namespace RunPlanarJob
 
         public string TypeName { get; set; }
 
+        private MessageBroker _broker;
+
         public override async Task Execute(IJobExecutionContext context)
         {
             AssemblyLoadContext assemblyContext = null;
 
             try
             {
+                _broker = new MessageBroker(context);
+
                 MapProperties(context);
 
                 Validate();
@@ -37,15 +43,19 @@ namespace RunPlanarJob
                     throw new ApplicationException($"Type {TypeName} could not be found at assembly '{assemblyFilename}'");
                 }
 
-                if (Activator.CreateInstance(type) is not BaseJob instance)
-                {
-                    throw new ApplicationException($"Fail to create instance of job {type.FullName}");
-                }
+                var instance = assembly.CreateInstance(TypeName);
 
-                LoadJobSettings(instance);
+                // TODO: check that instance has execute function which accept 2 strings and return system.Task
+                var method = type.GetMethod("Execute");
                 MapJobInstanceProperties(context, type, instance);
 
-                await instance.Execute(context);
+                var settings = LoadJobSettings();
+                var settingsJson = JsonSerializer.Serialize(settings);
+                var mapContext = MapContext(context);
+                var contextJson = JsonSerializer.Serialize(mapContext);
+
+                var result = method.Invoke(instance, new object[] { contextJson, settingsJson, _broker }) as Task;
+                await result;
             }
             catch (JobExecutionException ex)
             {
@@ -57,10 +67,11 @@ namespace RunPlanarJob
                 SetJobRunningProperty("Fail", true);
                 var message = $"FireInstanceId {context.FireInstanceId} throw exception with message {ex.Message}";
 
-                if (ex is PlanarJobAggragateException)
-                {
-                    throw new JobExecutionException(message);
-                }
+                //// TODO: to be implement
+                ////if (ex is PlanarJobAggragateException)
+                ////{
+                ////    throw new JobExecutionException(message);
+                ////}
 
                 throw new JobExecutionException(message, ex);
             }
@@ -69,6 +80,16 @@ namespace RunPlanarJob
                 FinalizeJob(context);
                 assemblyContext?.Unload();
             }
+        }
+
+        private static JobExecutionContext MapContext(IJobExecutionContext context)
+        {
+            var result = new JobExecutionContext
+            {
+                MergeData = context.MergedJobDataMap.ToDictionary(k => k.Key, v => Convert.ToString(v.Value))
+            };
+
+            return result;
         }
 
         private new void Validate()
