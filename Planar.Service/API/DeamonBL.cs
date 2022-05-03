@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using CommonJob;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -180,13 +181,13 @@ namespace Planar.Service.API
         {
             var result = new List<RunningJobDetails>();
 
-            foreach (var job in await Scheduler.GetCurrentlyExecutingJobs())
+            foreach (var context in await Scheduler.GetCurrentlyExecutingJobs())
             {
-                if (string.IsNullOrEmpty(request.FireInstanceId) || request.FireInstanceId == job.FireInstanceId)
+                if (string.IsNullOrEmpty(request.FireInstanceId) || request.FireInstanceId == context.FireInstanceId)
                 {
                     var details = new RunningJobDetails();
-                    MapJobRowDetails(job.JobDetail, details);
-                    MapJobExecutionContext(job, details);
+                    MapJobRowDetails(context.JobDetail, details);
+                    MapJobExecutionContext(context, details);
                     result.Add(details);
                 }
             }
@@ -208,15 +209,17 @@ namespace Planar.Service.API
 
         public static async Task<BaseResponse<string>> GetRunningInfo(FireInstanceIdRequest request)
         {
-            var job = (await Scheduler.GetCurrentlyExecutingJobs()).FirstOrDefault(j => j.FireInstanceId == request.FireInstanceId);
+            var context = (await Scheduler.GetCurrentlyExecutingJobs()).FirstOrDefault(j => j.FireInstanceId == request.FireInstanceId);
             var information = string.Empty;
             var exceptions = string.Empty;
 
-            if (job != null)
+            if (context != null)
             {
-                // TODO: to be implement
-                // information = JobExecutionMetadataUtil.GetInformation(job);
-                // exceptions = JobExecutionMetadataUtil.GetExceptionsText(job);
+                if (context.Result is JobExecutionMetadata metadata)
+                {
+                    information = metadata.GetInformation();
+                    exceptions = metadata.GetExceptionsText();
+                }
             }
 
             var obj = new { Information = information, Exceptions = exceptions };
@@ -867,10 +870,11 @@ namespace Planar.Service.API
             target.DataMap = ServiceUtil.ConvertJobDataMapToDictionary(source.MergedJobDataMap);
             target.TriggerId = Convert.ToString(Convert.ToString(source.Get(Consts.TriggerId)));
 
-            // TODO: to be implement
-            // var metadata = JobExecutionMetadataUtil.GetInstance(source);
-            // target.EffectedRows = metadata.EffectedRows;
-            // target.Progress = metadata.Progress;
+            if (source.Result is JobExecutionMetadata metadata)
+            {
+                target.EffectedRows = metadata.EffectedRows;
+                target.Progress = metadata.Progress;
+            }
         }
 
         private static void MapJobRowDetails(IJobDetail source, JobRowDetails target)

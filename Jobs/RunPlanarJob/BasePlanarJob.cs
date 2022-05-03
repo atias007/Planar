@@ -65,11 +65,10 @@ namespace RunPlanarJob
                 SetJobRunningProperty("Fail", true);
                 var message = $"FireInstanceId {context.FireInstanceId} throw exception with message {ex.Message}";
 
-                //// TODO: to be implement
-                ////if (ex is PlanarJobAggragateException)
-                ////{
-                ////    throw new JobExecutionException(message);
-                ////}
+                if (ex.GetType().Name == "PlanarJobAggragateException")
+                {
+                    throw new JobExecutionException(message);
+                }
 
                 throw new JobExecutionException(message, ex);
             }

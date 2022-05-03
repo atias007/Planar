@@ -1,4 +1,4 @@
-﻿namespace RunPlanarJob.MessageBrokerEntities
+﻿namespace CommonJob.MessageBrokerEntities
 {
     internal class KeyValueItem
     {

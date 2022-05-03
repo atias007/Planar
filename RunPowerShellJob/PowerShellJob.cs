@@ -21,6 +21,8 @@ namespace RunPowerShellJob
             var counter = 0;
             try
             {
+                var metadata = JobExecutionMetadata.GetInstance(context);
+
                 foreach (var acript in _scripts)
                 {
                     using PowerShell ps = PowerShell.Create();
@@ -30,18 +32,15 @@ namespace RunPowerShellJob
                     {
                         if (obj != null)
                         {
-                            // TODO: to be implement
-                            // JobExecutionMetadataUtil.AppendInformation(context, obj.ToString());
+                            metadata.Information.AppendLine(obj.ToString());
                         }
                     }
 
-                    // TODO: to be implement
-                    // JobExecutionMetadataUtil.IncreaseEffectedRows(context, 1);
+                    metadata.EffectedRows = metadata.EffectedRows.GetValueOrDefault() + 1;
                     counter++;
                     var value = Convert.ToByte(Math.Floor(100 * (counter * 1.0 / _scripts.Count)));
 
-                    // TODO: to be implement
-                    // JobExecutionMetadataUtil.SetProgress(context, value);
+                    metadata.Progress = value;
                 }
             }
             catch (JobExecutionException ex)

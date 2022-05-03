@@ -6,6 +6,11 @@
 
   <ItemGroup>
     <Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
+    <Compile Include="..\Planar.Job\ExceptionDto.cs" Link="ExceptionDto.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
   </ItemGroup>
 
   <ItemGroup>

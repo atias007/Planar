@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -57,8 +56,6 @@ namespace Planar.Job
             var text = _messageBroker.Publish(MessageBrokerChannels.CheckIfStopRequest);
             _ = bool.TryParse(text, out var stop);
             return stop;
-            // TODO: to be implement
-            // TODO: _context.CancellationToken.IsCancellationRequested;
         }
 
         protected void FailOnStopRequest(Action stopHandle = default)
@@ -69,8 +66,6 @@ namespace Planar.Job
             }
 
             _messageBroker.Publish(MessageBrokerChannels.FailOnStopRequest);
-            // TODO: to be implement
-            ////_context.CancellationToken.ThrowIfCancellationRequested();
         }
 
         protected T GetData<T>(string key)
@@ -138,8 +133,6 @@ namespace Planar.Job
         protected void IncreaseEffectedRows(int delta = 1)
         {
             _messageBroker.Publish(MessageBrokerChannels.IncreaseEffectedRows, delta);
-
-            // TODO: _metadata.EffectedRows = _metadata.EffectedRows.GetValueOrDefault() + delta;
         }
 
         protected DateTime Now()
@@ -174,7 +167,6 @@ namespace Planar.Job
         {
             var message = new { Key = key, Value = value };
             _messageBroker.Publish(MessageBrokerChannels.PutTriggerData, message);
-            // TODO:  _context.JobDetail.JobDataMap.Put(key, value);
         }
 
         protected void SetEffectedRows(int value)

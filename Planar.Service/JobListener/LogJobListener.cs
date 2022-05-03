@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using CommonJob;
+using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.General;
 using Planar.Service.JobListener.Base;
@@ -96,15 +97,16 @@ namespace Planar.Service.JobListener
                 var endDate = context.FireTimeUtc.ToLocalTime().DateTime.Add(context.JobRunTime);
                 var status = jobException == null ? StatusMembers.Success : StatusMembers.Fail;
 
-                var metadata = JobExecutionMetadataUtil.GetInstance(context);
+                var metadata = context.Result as JobExecutionMetadata;
+
                 var log = new DbJobInstanceLog
                 {
                     InstanceId = context.FireInstanceId,
                     Duration = Convert.ToInt32(duration),
                     EndDate = endDate,
                     Exception = jobException?.ToString(),
-                    EffectedRows = metadata.EffectedRows,
-                    Information = metadata.Information.ToString(),
+                    EffectedRows = metadata?.EffectedRows,
+                    Information = metadata?.Information.ToString(),
                     Status = (int)status,
                     StatusTitle = status.ToString(),
                     IsStopped = context.CancellationToken.IsCancellationRequested

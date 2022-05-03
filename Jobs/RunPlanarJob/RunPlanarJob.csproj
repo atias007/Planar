@@ -9,10 +9,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\CommonJob\CommonJob.csproj" />
   </ItemGroup>
 </Project>

@@ -94,8 +94,8 @@ namespace CommonJob
         {
             try
             {
-                // TODO: to be implement
-                // JobExecutionMetadataUtil.SetProgress(context, 100);
+                var metadata = JobExecutionMetadata.GetInstance(context);
+                metadata.Progress = 100;
             }
             catch (Exception ex)
             {

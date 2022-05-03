@@ -8,6 +8,7 @@ using System;
 using System.Threading.Tasks;
 using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
 using Planar.Service.General;
+using CommonJob;
 
 namespace Planar.Service.SystemJobs
 {
@@ -98,19 +99,24 @@ namespace Planar.Service.SystemJobs
         private async Task DoWork()
         {
             var runningJobs = await MainService.Scheduler.GetCurrentlyExecutingJobs();
-            foreach (var job in runningJobs)
+            foreach (var context in runningJobs)
             {
-                if (job.JobRunTime.TotalSeconds > AppSettings.PersistRunningJobsSpan.TotalSeconds)
+                if (context.JobRunTime.TotalSeconds > AppSettings.PersistRunningJobsSpan.TotalSeconds)
                 {
-                    _logger.LogInformation("Persist information for job {@Group}.{@Name}", job.JobDetail.Key.Group, job.JobDetail.Key.Name);
-                    var information = JobExecutionMetadataUtil.GetInstance(job).GetInformation();
-                    var exceptions = JobExecutionMetadataUtil.GetInstance(job).GetExceptionsText();
+                    _logger.LogInformation("Persist information for job {@Group}.{@Name}", context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+                    if (context.Result is not JobExecutionMetadata metadata)
+                    {
+                        continue;
+                    }
+
+                    var information = metadata.GetInformation();
+                    var exceptions = metadata.GetExceptionsText();
 
                     if (string.IsNullOrEmpty(information) && string.IsNullOrEmpty(exceptions)) { break; }
 
                     var log = new DbJobInstanceLog
                     {
-                        InstanceId = job.FireInstanceId,
+                        InstanceId = context.FireInstanceId,
                         Information = information,
                         Exception = exceptions
                     };
