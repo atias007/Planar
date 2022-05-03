@@ -44,10 +44,7 @@ namespace TestAction
             }
 
             var greetings = GetSetting("JobSet1");
-            AppendInformation($"[x] Greetings from ActionJob ({greetings})! [{Now():dd/MM/yyyy HH:mm}] {Message}, {Value:N1}, MaxId: {MaxId}, state: {context.State}");
-
-            var method = context.State.GetType().GetMethod("SendMessage");
-            method.Invoke(context.State, new object[] { "Hiiii" });
+            AppendInformation($"[x] Greetings from ActionJob ({greetings})! [{Now():dd/MM/yyyy HH:mm}] {Message}, {Value:N1}, MaxId: {MaxId}");
 
             PutJobData(nameof(MaxId), ++MaxId);
         }

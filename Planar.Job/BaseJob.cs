@@ -7,26 +7,16 @@ namespace Planar.Job
 {
     public abstract class BaseJob
     {
-        private readonly object Locker = new();
-        private JobExecutionMetadata _metadata;
         private JobExecutionContext _context;
+        private MessageBroker _messageBroker;
         private bool? _isNowOverrideValueExists;
         private DateTime? _nowOverrideValue;
-        private Dictionary<string, string> JobSettings { get; set; } = new();
 
-        public Task Execute(string context, string settings, ref object state)
+        public Task Execute(string context, ref object messageBroker)
         {
-            _metadata = new JobExecutionMetadata();
-
             // TODO: check for deserialize error
             _context = JsonSerializer.Deserialize<JobExecutionContext>(context);
-            _context.State = state;
-
-            // TODO: check for deserialize error
-            if (settings != null)
-            {
-                JobSettings = JsonSerializer.Deserialize<Dictionary<string, string>>(settings);
-            }
+            _messageBroker = new MessageBroker(messageBroker);
 
             return ExecuteJob(_context)
                 .ContinueWith(t =>
@@ -39,10 +29,8 @@ namespace Planar.Job
 
         protected void AddAggragateException(Exception ex)
         {
-            lock (Locker)
-            {
-                _metadata.Exceptions.Add(new ExceptionDto(ex));
-            }
+            var message = new ExceptionDto(ex);
+            _messageBroker.Publish(MessageBrokerChannels.AddAggragateException, message);
         }
 
         protected void AppendInformation(string info)
@@ -51,15 +39,12 @@ namespace Planar.Job
             Console.Out.WriteLineAsync(info);
             Console.ForegroundColor = ConsoleColor.White;
 
-            lock (Locker)
-            {
-                _metadata.Information.AppendLine(info);
-            }
+            _messageBroker.Publish(MessageBrokerChannels.AppendInformation, info);
         }
 
         protected void CheckAggragateException()
         {
-            var text = _metadata.GetExceptionsText();
+            var text = _messageBroker.Publish(MessageBrokerChannels.GetExceptionsText);
             if (string.IsNullOrEmpty(text) == false)
             {
                 var ex = new PlanarJobAggragateException(text);
@@ -69,24 +54,28 @@ namespace Planar.Job
 
         protected bool CheckIfStopRequest()
         {
+            var text = _messageBroker.Publish(MessageBrokerChannels.CheckIfStopRequest);
+            _ = bool.TryParse(text, out var stop);
+            return stop;
             // TODO: to be implement
-            return false; // _context.CancellationToken.IsCancellationRequested;
+            // TODO: _context.CancellationToken.IsCancellationRequested;
         }
 
         protected void FailOnStopRequest(Action stopHandle = default)
         {
-            // TODO: to be implement
-            ////if (stopHandle != default)
-            ////{
-            ////    stopHandle.Invoke();
-            ////}
+            if (stopHandle != default)
+            {
+                stopHandle.Invoke();
+            }
 
+            _messageBroker.Publish(MessageBrokerChannels.FailOnStopRequest);
+            // TODO: to be implement
             ////_context.CancellationToken.ThrowIfCancellationRequested();
         }
 
         protected T GetData<T>(string key)
         {
-            var value = _context.MergeData.GetValueOrDefault(key);
+            var value = _messageBroker.Publish(MessageBrokerChannels.GetData, key);
             var result = (T)Convert.ChangeType(value, typeof(T));
             return result;
         }
@@ -96,16 +85,30 @@ namespace Planar.Job
             return GetData<string>(key);
         }
 
+        protected bool IsDataExists(string key)
+        {
+            var text = _messageBroker.Publish(MessageBrokerChannels.DataContainsKey, key);
+            _ = bool.TryParse(text, out var result);
+            return result;
+        }
+
         protected int? GetEffectedRows()
         {
-            return _metadata.EffectedRows;
+            var text = _messageBroker.Publish(MessageBrokerChannels.GetEffectedRows);
+            _ = int.TryParse(text, out var rows);
+            return rows;
         }
 
         protected string GetSetting(string key)
         {
-            if (JobSettings.ContainsKey(key))
+            if (_context.JobSettings.ContainsKey(key) == false)
             {
-                return JobSettings[key];
+                throw new ApplicationException($"Key '{key}' could not found in job settings");
+            }
+
+            if (_context.JobSettings.ContainsKey(key))
+            {
+                return _context.JobSettings[key];
             }
             else
             {
@@ -115,39 +118,36 @@ namespace Planar.Job
 
         protected T GetSetting<T>(string key)
         {
-            if (JobSettings.ContainsKey(key))
+            if (_context.JobSettings.ContainsKey(key) == false)
             {
-                var result = JobSettings[key];
-
-                try
-                {
-                    return (T)Convert.ChangeType(result, typeof(T));
-                }
-                catch (Exception ex)
-                {
-                    throw new ApplicationException($"Fail to convert job settings '{result}' to type {typeof(T).Name}", ex);
-                }
+                throw new ApplicationException($"Key '{key}' could not found in job settings");
             }
-            else
+
+            var result = _context.JobSettings[key];
+
+            try
             {
-                return default;
+                return (T)Convert.ChangeType(result, typeof(T));
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException($"Fail to convert job settings '{result}' to type {typeof(T).Name}", ex);
             }
         }
 
         protected void IncreaseEffectedRows(int delta = 1)
         {
-            lock (Locker)
-            {
-                _metadata.EffectedRows = _metadata.EffectedRows.GetValueOrDefault() + delta;
-            }
+            _messageBroker.Publish(MessageBrokerChannels.IncreaseEffectedRows, delta);
+
+            // TODO: _metadata.EffectedRows = _metadata.EffectedRows.GetValueOrDefault() + delta;
         }
 
         protected DateTime Now()
         {
             if (_isNowOverrideValueExists == null)
             {
-                _isNowOverrideValueExists = _context.MergeData.ContainsKey(Consts.NowOverrideValue);
-                var value = Convert.ToString(_context.MergeData.GetValueOrDefault(Consts.NowOverrideValue));
+                _isNowOverrideValueExists = IsDataExists(Consts.NowOverrideValue);
+                var value = GetData(Consts.NowOverrideValue);
                 if (DateTime.TryParse(value, out DateTime dateValue))
                 {
                     _nowOverrideValue = dateValue;
@@ -166,44 +166,34 @@ namespace Planar.Job
 
         protected void PutJobData(string key, object value)
         {
-            _context.MergeData[key] = Convert.ToString(value);
-            // _context.JobDetail.JobDataMap.Put(key, value);
+            var message = new { Key = key, Value = value };
+            _messageBroker.Publish(MessageBrokerChannels.PutJobData, message);
         }
 
         protected void PutTriggerData(string key, object value)
         {
-            _context.MergeData[key] = Convert.ToString(value);
-            // _context.Trigger.JobDataMap.Put(key, value);
+            var message = new { Key = key, Value = value };
+            _messageBroker.Publish(MessageBrokerChannels.PutTriggerData, message);
+            // TODO:  _context.JobDetail.JobDataMap.Put(key, value);
         }
 
         protected void SetEffectedRows(int value)
         {
-            lock (Locker)
-            {
-                _metadata.EffectedRows = value;
-            }
+            _messageBroker.Publish(MessageBrokerChannels.SetEffectedRows, value);
         }
 
         protected void UpdateProgress(byte value)
         {
-            lock (Locker)
-            {
-                if (value > 100) { value = 100; }
-                _metadata.Progress = value;
-            }
+            if (value > 100) { value = 100; }
+            if (value < 0) { value = 0; }
+            _messageBroker.Publish(MessageBrokerChannels.UpdateProgress, value);
         }
 
         protected void UpdateProgress(int current, int total)
         {
-            lock (Locker)
-            {
-                var percentage = 1.0 * current / total;
-                if (percentage < 0) { percentage = 0; }
-                if (percentage > 1) { percentage = 1; }
-                var value = Convert.ToByte(percentage * 100);
-
-                _metadata.Progress = value;
-            }
+            var percentage = 1.0 * current / total;
+            var value = Convert.ToByte(percentage * 100);
+            UpdateProgress(value);
         }
     }
 }

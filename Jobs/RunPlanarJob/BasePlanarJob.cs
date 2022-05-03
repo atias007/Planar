@@ -49,12 +49,10 @@ namespace RunPlanarJob
                 var method = type.GetMethod("Execute");
                 MapJobInstanceProperties(context, type, instance);
 
-                var settings = LoadJobSettings();
-                var settingsJson = JsonSerializer.Serialize(settings);
                 var mapContext = MapContext(context);
                 var contextJson = JsonSerializer.Serialize(mapContext);
 
-                var result = method.Invoke(instance, new object[] { contextJson, settingsJson, _broker }) as Task;
+                var result = method.Invoke(instance, new object[] { contextJson, _broker }) as Task;
                 await result;
             }
             catch (JobExecutionException ex)
@@ -82,11 +80,14 @@ namespace RunPlanarJob
             }
         }
 
-        private static JobExecutionContext MapContext(IJobExecutionContext context)
+        private JobExecutionContext MapContext(IJobExecutionContext context)
         {
+            var settings = LoadJobSettings();
+            var mergeData = context.MergedJobDataMap.ToDictionary(k => k.Key, v => Convert.ToString(v.Value));
             var result = new JobExecutionContext
             {
-                MergeData = context.MergedJobDataMap.ToDictionary(k => k.Key, v => Convert.ToString(v.Value))
+                JobSettings = settings,
+                FireInstanceId = context.FireInstanceId,
             };
 
             return result;

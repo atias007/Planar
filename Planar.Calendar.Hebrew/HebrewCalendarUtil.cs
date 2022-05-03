@@ -74,7 +74,9 @@ namespace Planar.Calendar.Hebrew
 
     public enum HebrewMonth
     {
+#pragma warning disable CA1707 // Identifiers should not contain underscores
         תשרי, חשוון, כסלו, טבת, שבט, אדר_ב, אדר, ניסן, אייר, סיון, תמוז, אב, אלול
+#pragma warning restore CA1707 // Identifiers should not contain underscores
     }
 
     public enum HebrewDay

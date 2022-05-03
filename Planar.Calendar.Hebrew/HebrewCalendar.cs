@@ -21,11 +21,11 @@ namespace Planar.Calendar.Hebrew
             }
         }
 
-        public override bool IsTimeIncluded(DateTimeOffset timeUtc)
+        public override bool IsTimeIncluded(DateTimeOffset timeStampUtc)
         {
             try
             {
-                var cache = GetCache(timeUtc);
+                var cache = GetCache(timeStampUtc);
                 if (cache.HasValue) { return cache.Value; }
             }
             catch (Exception ex)
@@ -36,11 +36,11 @@ namespace Planar.Calendar.Hebrew
 
             try
             {
-                return IsWorkingDateTime(timeUtc.DateTime);
+                return IsWorkingDateTime(timeStampUtc.DateTime);
             }
             catch (Exception ex)
             {
-                Logger.LogCritical(ex, "Fail to invoke IsTimeIncluded with DateTimeOffset={@timeUtc}", timeUtc);
+                Logger.LogCritical(ex, "Fail to invoke IsTimeIncluded with DateTimeOffset={@timeUtc}", timeStampUtc);
                 throw;
             }
         }

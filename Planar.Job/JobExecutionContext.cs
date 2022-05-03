@@ -4,8 +4,8 @@ namespace Planar
 {
     public class JobExecutionContext
     {
-        public Dictionary<string, string> MergeData { get; set; }
+        public Dictionary<string, string> JobSettings { get; set; }
 
-        public object State { get; set; }
+        public string FireInstanceId { get; set; }
     }
 }
