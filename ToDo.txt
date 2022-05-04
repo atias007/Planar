@@ -2,6 +2,7 @@
 - add to base test to retrieve information & exception
 - add monitor event when user pause / delete / add job
 - add monitor event when retry
+- planner stop with job id (not only instance id)
 
 
 

@@ -48,8 +48,9 @@ namespace Planar
             services.AddTransient<DataLayer>();
             services.AddTransient<DeamonBL>();
             services.AddTransient<MainService>();
-            services.AddScoped<GroupServiceDomain>();
-            services.AddScoped<HistoryServiceDomain>();
+            services.AddScoped<GroupDomain>();
+            services.AddScoped<HistoryDomain>();
+            services.AddScoped<JobDomain>();
             services.AddScoped<ServiceDomain>();
             services.AddScoped<IPlanarCommand, DeamonService>();
             services.AddHostedService<MainService>();

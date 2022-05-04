@@ -18,6 +18,11 @@ namespace Planar.Service.API.Helpers
             }
         }
 
+        public static async Task<JobKey> GetJobKey(string id)
+        {
+            return await GetJobKey(new JobOrTriggerKey { Id = id });
+        }
+
         public static async Task<JobKey> GetJobKey(JobOrTriggerKey key)
         {
             JobKey result;

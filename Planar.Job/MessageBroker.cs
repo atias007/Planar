@@ -29,10 +29,13 @@ namespace Planar.Job
 
         public MessageBroker(object instance)
         {
-            // TODO: check for null instance
             Instance = instance;
             _method = instance.GetType().GetMethod("Publish");
-            // TODO: check for null _method
+
+            if (_method == null)
+            {
+                throw new ApplicationException("MessageBroker does not contains 'Publish' method");
+            }
         }
 
         public string Publish(MessageBrokerChannels channel)

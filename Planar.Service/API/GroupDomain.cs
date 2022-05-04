@@ -11,9 +11,9 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class GroupServiceDomain : BaseBL<GroupServiceDomain>
+    public class GroupDomain : BaseBL<GroupDomain>
     {
-        public GroupServiceDomain(DataLayer dataLayer, ILogger<GroupServiceDomain> logger) : base(dataLayer, logger)
+        public GroupDomain(ILogger<GroupDomain> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
         {
         }
 

@@ -1,16 +1,42 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar.API.Common.Entities;
 using Planar.Service.Data;
+using Quartz;
 using System;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public abstract class BaseBL
+    public abstract class BaseBL<TBusinesLayer>
     {
-        public BaseBL()
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<TBusinesLayer> _logger;
+        private readonly DataLayer _dataLayer;
+
+        public BaseBL(ILogger<TBusinesLayer> logger, IServiceProvider serviceProvider)
         {
+            _logger = logger ?? throw new NullReferenceException(nameof(logger));
+            _serviceProvider = serviceProvider ?? throw new NullReferenceException(nameof(serviceProvider));
+            _dataLayer = serviceProvider.GetRequiredService<DataLayer>();
+        }
+
+        protected static IScheduler Scheduler
+        {
+            get
+            {
+                return MainService.Scheduler;
+            }
+        }
+
+        protected DataLayer DataLayer => _dataLayer;
+
+        protected ILogger<TBusinesLayer> Logger => _logger;
+
+        protected T Resolve<T>()
+        {
+            return _serviceProvider.GetRequiredService<T>();
         }
 
         protected static async Task<BaseResponse<string>> GetBaseResponse(Func<Task<object>> func)
@@ -39,21 +65,5 @@ namespace Planar.Service.API
             var entity = JsonConvert.SerializeObject(obj);
             return entity;
         }
-    }
-
-    public abstract class BaseBL<T> : BaseBL
-    {
-        private readonly DataLayer _dataLayer;
-        private readonly ILogger<T> _logger;
-
-        public BaseBL(DataLayer dataLayer, ILogger<T> logger)
-        {
-            _dataLayer = dataLayer ?? throw new NullReferenceException(nameof(dataLayer));
-            _logger = logger ?? throw new NullReferenceException(nameof(logger));
-        }
-
-        protected DataLayer DataLayer => _dataLayer;
-
-        protected ILogger<T> Logger => _logger;
     }
 }

@@ -8,7 +8,7 @@ namespace TestAggEx
 {
     public class MyJob : BaseJob
     {
-        public override Task ExecuteJob(JobExecutionContext context)
+        public override Task ExecuteJob(IJobExecutionContext context)
         {
             for (int i = 0; i < 10; i++)
             {

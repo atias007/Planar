@@ -13,8 +13,20 @@ namespace Planar.Job
 
         public Task Execute(string context, ref object messageBroker)
         {
-            // TODO: check for deserialize error
-            _context = JsonSerializer.Deserialize<JobExecutionContext>(context);
+            try
+            {
+                _context = JsonSerializer.Deserialize<JobExecutionContext>(context);
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Fail to deserialize job execution context at BaseJob.Execute(string, ref object)", ex);
+            }
+
+            if (messageBroker == null)
+            {
+                throw new ApplicationException("MessageBroker at BaseJob.Execute(string, ref object) is null");
+            }
+
             _messageBroker = new MessageBroker(messageBroker);
 
             return ExecuteJob(_context)
@@ -24,7 +36,7 @@ namespace Planar.Job
                 });
         }
 
-        public abstract Task ExecuteJob(JobExecutionContext context);
+        public abstract Task ExecuteJob(IJobExecutionContext context);
 
         protected void AddAggragateException(Exception ex)
         {

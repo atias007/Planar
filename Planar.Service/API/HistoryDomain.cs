@@ -1,15 +1,16 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.Data;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class HistoryServiceDomain : BaseBL<HistoryServiceDomain>
+    public class HistoryDomain : BaseBL<HistoryDomain>
     {
-        public HistoryServiceDomain(DataLayer dataLayer, ILogger<HistoryServiceDomain> logger) : base(dataLayer, logger)
+        public HistoryDomain(ILogger<HistoryDomain> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
         {
         }
 

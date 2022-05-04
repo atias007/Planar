@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -9,9 +10,9 @@ namespace Planar.Controllers
 {
     [ApiController]
     [Route("history")]
-    public class HistoryController : BaseController<HistoryController, HistoryServiceDomain>
+    public class HistoryController : BaseController<HistoryController, HistoryDomain>
     {
-        public HistoryController(ILogger<HistoryController> logger, HistoryServiceDomain bl) : base(logger, bl)
+        public HistoryController(ILogger<HistoryController> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
         {
         }
 

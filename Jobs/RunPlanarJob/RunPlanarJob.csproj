@@ -5,10 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\..\Planar.Job\JobExecutionContext.cs" Link="JobExecutionContext.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\CommonJob\CommonJob.csproj" />
   </ItemGroup>
 </Project>

@@ -76,7 +76,7 @@ namespace Planar.Service
 
             await AddCalendarSerializer();
 
-            var quartzConfig = LoadQuartzConfiguration(_config);
+            var quartzConfig = LoadQuartzConfiguration();
 
             await InitializeScheduler(quartzConfig);
 
@@ -201,7 +201,7 @@ namespace Planar.Service
             }
         }
 
-        private NameValueCollection LoadQuartzConfiguration(IConfiguration configuration)
+        private NameValueCollection LoadQuartzConfiguration()
         {
             try
             {

@@ -13,7 +13,7 @@ namespace TestAction
 
         public int MaxId { get; set; }
 
-        public override async Task ExecuteJob(JobExecutionContext context)
+        public override async Task ExecuteJob(IJobExecutionContext context)
         {
             if (Value == 100.1)
             {

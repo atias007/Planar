@@ -103,22 +103,6 @@ namespace Planar.Service.API
             }
         }
 
-        public BaseResponse<bool> RemoveJob(JobOrTriggerKey request)
-        {
-            try
-            {
-                InitializeService(nameof(RemoveJob));
-                ValidateEntity(request);
-                var result = DeamonBL.RemoveJob(request).Result;
-                return new BaseResponse<bool>(result);
-            }
-            catch (Exception ex)
-            {
-                var result = HandleException<BaseResponse<bool>>(ex, nameof(RemoveJob));
-                return result;
-            }
-        }
-
         public BaseResponse ResumeJob(JobOrTriggerKey request)
         {
             try
@@ -194,21 +178,6 @@ namespace Planar.Service.API
             catch (Exception ex)
             {
                 var result = HandleException<BaseResponse<TriggerRowDetails>>(ex, nameof(GetTriggerDetails));
-                return result;
-            }
-        }
-
-        public GetAllJobsResponse GetAllJobs()
-        {
-            try
-            {
-                InitializeService(nameof(GetAllJobs));
-                var result = DeamonBL.GetAllJobs().Result;
-                return result;
-            }
-            catch (Exception ex)
-            {
-                var result = HandleException<GetAllJobsResponse>(ex, nameof(GetAllJobs));
                 return result;
             }
         }
@@ -803,6 +772,16 @@ namespace Planar.Service.API
                 var result = HandleException<BaseResponse>(ex, nameof(DeleteMonitor));
                 return result;
             }
+        }
+
+        public BaseResponse<bool> RemoveJob(JobOrTriggerKey request)
+        {
+            throw new NotImplementedException();
+        }
+
+        public GetAllJobsResponse GetAllJobs()
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Planar
+namespace RunPlanarJob
 {
-    public class JobExecutionContext : IJobExecutionContext
+    internal class JobExecutionContext
     {
         public Dictionary<string, string> JobSettings { get; set; }
 

@@ -26,7 +26,7 @@ using JobInstanceLog = Planar.API.Common.Entities.JobInstanceLog;
 
 namespace Planar.Service.API
 {
-    public partial class DeamonBL : BaseBL
+    public partial class DeamonBL : OldBaseBL
     {
         private readonly DataLayer _dal;
         private readonly ILogger<DeamonBL> _logger;

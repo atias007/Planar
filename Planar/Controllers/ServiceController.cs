@@ -15,7 +15,7 @@ namespace Planar.Controllers
     [Route("service")]
     public class ServiceController : BaseController<ServiceController, ServiceDomain>
     {
-        public ServiceController(ILogger<ServiceController> logger) : base(logger, null)
+        public ServiceController(ILogger<ServiceController> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
         {
         }
 
