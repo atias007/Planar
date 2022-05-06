@@ -1,6 +1,7 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
@@ -104,6 +105,199 @@ namespace Planar.Service.API
             {
                 await Scheduler.TriggerJob(jobKey);
             }
+        }
+
+        public async Task PauseAll()
+        {
+            await Scheduler.PauseAll();
+        }
+
+        public async Task Pause(JobOrTriggerKey request)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(request);
+            await Scheduler.PauseJob(jobKey);
+        }
+
+        public async Task ResumeAll()
+        {
+            await Scheduler.ResumeAll();
+        }
+
+        public async Task Resume(JobOrTriggerKey request)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(request);
+            await Scheduler.ResumeJob(jobKey);
+        }
+
+        public async Task Stop(FireInstanceIdRequest request)
+        {
+            var result = await Scheduler.Interrupt(request.FireInstanceId);
+            if (result == false)
+            {
+                throw new PlanarValidationException($"Fail to stop running job with FireInstanceId {request.FireInstanceId}");
+            }
+        }
+
+        public async Task<Dictionary<string, string>> GetSettings(string id)
+        {
+            var result = new Dictionary<string, string>();
+            var jobkey = await JobKeyHelper.GetJobKey(id);
+            var details = await Scheduler.GetJobDetail(jobkey);
+            var json = details?.JobDataMap[Consts.JobTypeProperties] as string;
+
+            if (string.IsNullOrEmpty(json)) return result;
+            var list = DeserializeObject<Dictionary<string, string>>(json);
+            if (list == null) return result;
+            if (list.ContainsKey("JobPath") == false) return result;
+            var jobPath = list["JobPath"];
+
+            var parameters = Global.Parameters;
+            var settings = CommonUtil.LoadJobSettings(jobPath);
+            result = parameters.Merge(settings);
+
+            return result;
+        }
+
+        public async Task<List<RunningJobDetails>> GetRunning(string instanceId)
+        {
+            var result = new List<RunningJobDetails>();
+
+            foreach (var context in await Scheduler.GetCurrentlyExecutingJobs())
+            {
+                if (string.IsNullOrEmpty(instanceId) || instanceId == context.FireInstanceId)
+                {
+                    var details = new RunningJobDetails();
+                    MapJobRowDetails(context.JobDetail, details);
+                    MapJobExecutionContext(context, details);
+                    result.Add(details);
+                }
+            }
+
+            var response = result.OrderBy(r => r.Name).ToList();
+            return response;
+        }
+
+        public async Task<GetRunningInfoResponse> GetRunningInfo(string instanceId)
+        {
+            var context = (await Scheduler.GetCurrentlyExecutingJobs()).FirstOrDefault(j => j.FireInstanceId == instanceId);
+            var information = string.Empty;
+            var exceptions = string.Empty;
+
+            if (context != null)
+            {
+                if (context.Result is JobExecutionMetadata metadata)
+                {
+                    information = metadata.GetInformation();
+                    exceptions = metadata.GetExceptionsText();
+                }
+            }
+
+            var response = new GetRunningInfoResponse { Information = information, Exceptions = exceptions };
+            return response;
+        }
+
+        public async Task<GetTestStatusResponse> GetTestStatus(int id)
+        {
+            var result = await DataLayer.GetTestStatus(id);
+            return result;
+        }
+
+        public async Task RemoveData(string id, string key)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(id);
+            ValidateSystemJob(jobKey);
+            var info = await Scheduler.GetJobDetail(jobKey);
+            await ValidateJobNotRunning(jobKey);
+            await Scheduler.PauseJob(jobKey);
+
+            if (info != null && info.JobDataMap.ContainsKey(key))
+            {
+                info.JobDataMap.Remove(key);
+            }
+            else
+            {
+                throw new PlanarValidationException($"Data with Key '{key}' could not found in job '{id}' (Name '{jobKey.Name}' and Group '{jobKey.Group}')");
+            }
+
+            var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+            await Scheduler.ScheduleJob(info, triggers, true);
+            await Scheduler.ResumeJob(jobKey);
+        }
+
+        public async Task<BaseResponse> ClearData(string id)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(id);
+            var info = await Scheduler.GetJobDetail(jobKey);
+            await ValidateJobNotRunning(jobKey);
+            await Scheduler.PauseJob(jobKey);
+
+            if (info != null)
+            {
+                info.JobDataMap.Clear();
+                var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+                await Scheduler.ScheduleJob(info, triggers, true);
+            }
+
+            await Scheduler.ResumeJob(jobKey);
+
+            return BaseResponse.Empty;
+        }
+
+        public async Task<LastInstanceId> GetLastInstanceId(string id, DateTime invokeDate)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(id);
+            var result = await DataLayer.GetLastInstanceId(jobKey, invokeDate);
+            return result;
+        }
+
+        public async Task UpsertProperty(UpsertJobPropertyRequest request)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateSystemJob(jobKey);
+            await ValidateJobNotRunning(jobKey);
+            await Scheduler.PauseJob(jobKey);
+            var info = await Scheduler.GetJobDetail(jobKey);
+            var propertiesJson = Convert.ToString(info.JobDataMap[Consts.JobTypeProperties]);
+            Dictionary<string, string> properties;
+            if (string.IsNullOrEmpty(propertiesJson))
+            {
+                properties = new Dictionary<string, string>();
+            }
+            else
+            {
+                try
+                {
+                    properties = DeserializeObject<Dictionary<string, string>>(propertiesJson);
+                }
+                catch
+                {
+                    properties = new Dictionary<string, string>();
+                }
+            }
+
+            if (properties.ContainsKey(request.PropertyKey))
+            {
+                properties[request.PropertyKey] = request.PropertyValue;
+            }
+            else
+            {
+                properties.Add(request.PropertyKey, request.PropertyValue);
+            }
+
+            propertiesJson = SerializeObject(properties);
+
+            if (info.JobDataMap.ContainsKey(Consts.JobTypeProperties))
+            {
+                info.JobDataMap.Put(Consts.JobTypeProperties, propertiesJson);
+            }
+            else
+            {
+                info.JobDataMap.Add(Consts.JobTypeProperties, propertiesJson);
+            }
+
+            var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+            await Scheduler.ScheduleJob(info, triggers, true);
+            await Scheduler.ResumeJob(jobKey);
         }
 
         private static async Task ValidateJobNotRunning(JobKey jobKey)

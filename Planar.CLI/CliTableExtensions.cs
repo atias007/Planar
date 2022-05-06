@@ -1,6 +1,6 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Entities;
-using RestSharp;
+
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
@@ -10,23 +10,19 @@ namespace Planar.CLI
 {
     public static class CliTableExtensions
     {
-        public static Table GetTable(this GetAllJobsResponse response)
+        public static Table GetTable(List<JobRowDetails> response)
         {
-            if (response.Success == false) return null;
-
             var table = new Table();
             table.AddColumns("JobId", "Key (Group.Name)", "Description");
-            response.Result.ForEach(r => table.AddRow(r.Id, $"{r.Group}.{r.Name}".EscapeMarkup(), r.Description.EscapeMarkup()));
+            response.ForEach(r => table.AddRow(r.Id, $"{r.Group}.{r.Name}".EscapeMarkup(), r.Description.EscapeMarkup()));
             return table;
         }
 
-        public static Table GetTable(this GetRunningJobsResponse response)
+        public static Table GetTable(List<RunningJobDetails> response)
         {
-            if (response.Success == false) return null;
-
             var table = new Table();
             table.AddColumns("FireInstanceId", "JobId", "Key (Group.Name)", "Progress", "EffectedRows", "RunTime");
-            response.Result.ForEach(r => table.AddRow(CliTableFormat.GetFireInstanceIdMarkup(r.FireInstanceId), $"{r.Id}", $"{r.Group}.{r.Name}".EscapeMarkup(), CliTableFormat.GetProgressMarkup(r.Progress), $"{r.EffectedRows}", CliTableFormat.FormatTimeSpan(r.RunTime)));
+            response.ForEach(r => table.AddRow(CliTableFormat.GetFireInstanceIdMarkup(r.FireInstanceId), $"{r.Id}", $"{r.Group}.{r.Name}".EscapeMarkup(), CliTableFormat.GetProgressMarkup(r.Progress), $"{r.EffectedRows}", CliTableFormat.FormatTimeSpan(r.RunTime)));
             return table;
         }
 
@@ -76,35 +72,33 @@ namespace Planar.CLI
             return table;
         }
 
-        public static List<Table> GetTable(BaseResponse<JobDetails> response)
+        public static List<Table> GetTable(JobDetails response)
         {
-            if (response.Success == false) return null;
-            var data = response.Result;
             var table = new Table();
             table.AddColumns("Property Name", "Value");
-            table.AddRow(nameof(data.Id), data.Id.EscapeMarkup());
-            table.AddRow(nameof(data.Group), data.Group.EscapeMarkup());
-            table.AddRow(nameof(data.Name), data.Name.EscapeMarkup());
-            table.AddRow(nameof(data.Description), data.Description.EscapeMarkup());
-            table.AddRow(nameof(data.Durable), data.Durable.ToString());
-            table.AddRow(nameof(data.RequestsRecovery), data.RequestsRecovery.ToString());
-            table.AddRow(nameof(data.ConcurrentExecution), data.ConcurrentExecution.ToString());
+            table.AddRow(nameof(response.Id), response.Id.EscapeMarkup());
+            table.AddRow(nameof(response.Group), response.Group.EscapeMarkup());
+            table.AddRow(nameof(response.Name), response.Name.EscapeMarkup());
+            table.AddRow(nameof(response.Description), response.Description.EscapeMarkup());
+            table.AddRow(nameof(response.Durable), response.Durable.ToString());
+            table.AddRow(nameof(response.RequestsRecovery), response.RequestsRecovery.ToString());
+            table.AddRow(nameof(response.ConcurrentExecution), response.ConcurrentExecution.ToString());
 
             var properties =
-                data.Properties?.Count == 0 ?
+                response.Properties?.Count == 0 ?
                 null :
-                new Serializer().Serialize(data.Properties);
-            table.AddRow(nameof(data.Properties), properties.EscapeMarkup());
+                new Serializer().Serialize(response.Properties);
+            table.AddRow(nameof(response.Properties), properties.EscapeMarkup());
 
             var dataMap =
-                data.DataMap?.Count == 0 ?
+                response.DataMap?.Count == 0 ?
                 null :
-                new Serializer().Serialize(data.DataMap);
-            table.AddRow(nameof(data.DataMap), dataMap.EscapeMarkup());
+                new Serializer().Serialize(response.DataMap);
+            table.AddRow(nameof(response.DataMap), dataMap.EscapeMarkup());
 
             var response2 = new BaseResponse<TriggerRowDetails> { Result = new TriggerRowDetails() };
-            response2.Result.SimpleTriggers = data.SimpleTriggers;
-            response2.Result.CronTriggers = data.CronTriggers;
+            response2.Result.SimpleTriggers = response.SimpleTriggers;
+            response2.Result.CronTriggers = response.CronTriggers;
 
             var table2 = GetTable(response2);
 

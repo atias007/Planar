@@ -17,10 +17,10 @@ namespace Planar.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<string>> Add([FromBody] AddJobRequest request)
+        public async Task<ActionResult<JobId>> Add([FromBody] AddJobRequest request)
         {
             var result = await BusinesLayer.Add(request);
-            return CreatedAtAction(nameof(Get), new { result }, result);
+            return CreatedAtAction(nameof(Get), result, result);
         }
 
         [HttpGet]
@@ -59,81 +59,94 @@ namespace Planar.Controllers
         }
 
         [HttpPost("pause")]
-        public IActionResult Pause([FromBody] JobOrTriggerKey request)
+        public async Task<IActionResult> Pause([FromBody] JobOrTriggerKey request)
         {
-            return Ok();
-        }
-
-        [HttpPost("resume")]
-        public IActionResult Resume([FromBody] JobOrTriggerKey request)
-        {
-            return Ok();
-        }
-
-        [HttpPost("stop")]
-        public IActionResult Stop([FromBody] FireInstanceIdRequest request)
-        {
-            return Ok();
+            await BusinesLayer.Pause(request);
+            return Accepted();
         }
 
         [HttpPost("pauseAll")]
-        public IActionResult PauseAll()
+        public async Task<IActionResult> PauseAll()
         {
-            return Ok();
+            await BusinesLayer.PauseAll();
+            return Accepted();
+        }
+
+        [HttpPost("resume")]
+        public async Task<IActionResult> Resume([FromBody] JobOrTriggerKey request)
+        {
+            await BusinesLayer.Resume(request);
+            return Accepted();
         }
 
         [HttpPost("resumeAll")]
-        public IActionResult ResumeAll()
+        public async Task<IActionResult> ResumeAll()
         {
-            return Ok();
+            await BusinesLayer.ResumeAll();
+            return Accepted();
+        }
+
+        [HttpPost("stop")]
+        public async Task<IActionResult> Stop([FromBody] FireInstanceIdRequest request)
+        {
+            await BusinesLayer.Stop(request);
+            return Accepted();
         }
 
         [HttpGet("{id}/settings")]
-        public ActionResult<Dictionary<string, string>> GetSettings([FromRoute] string id)
+        public async Task<ActionResult<Dictionary<string, string>>> GetSettings([FromRoute] string id)
         {
-            return Ok();
+            var result = await BusinesLayer.GetSettings(id);
+            return Ok(result);
         }
 
         [HttpGet("running/{instanceId}")]
-        public ActionResult<List<RunningJobDetails>> GetRunning([FromRoute] string instanceId)
+        public async Task<ActionResult<List<RunningJobDetails>>> GetRunning([FromRoute] string instanceId)
         {
-            return Ok();
+            var result = await BusinesLayer.GetRunning(instanceId);
+            return Ok(result);
         }
 
         [HttpGet("runningInfo/{instanceId}")]
-        public ActionResult<object> GetRunningInfo([FromRoute] string instanceId)
+        public async Task<ActionResult<GetRunningInfoResponse>> GetRunningInfo([FromRoute] string instanceId)
         {
-            return Ok();
+            var result = await BusinesLayer.GetRunningInfo(instanceId);
+            return Ok(result);
         }
 
         [HttpGet("testStatus/{id}")]
-        public ActionResult<GetTestStatusResponse> GetTestStatus([FromRoute] int id)
+        public async Task<ActionResult<GetTestStatusResponse>> GetTestStatus([FromRoute] int id)
         {
-            return Ok();
+            var result = await BusinesLayer.GetTestStatus(id);
+            return Ok(result);
         }
 
         [HttpDelete("{id}/data/{key}")]
-        public IActionResult RemoveData([FromRoute] string id, [FromRoute] string key)
+        public async Task<IActionResult> RemoveData([FromRoute] string id, [FromRoute] string key)
         {
-            return Ok();
+            await BusinesLayer.RemoveData(id, key);
+            return NoContent();
         }
 
         [HttpDelete("{id}/allData")]
-        public IActionResult ClearData([FromRoute] string id)
+        public async Task<IActionResult> ClearData([FromRoute] string id)
         {
-            return Ok();
+            await BusinesLayer.ClearData(id);
+            return NoContent();
         }
 
         [HttpPut("property")]
-        public IActionResult UpsertProperty([FromBody] UpsertJobPropertyRequest request)
+        public async Task<IActionResult> UpsertProperty([FromBody] UpsertJobPropertyRequest request)
         {
-            return Ok();
+            await BusinesLayer.UpsertProperty(request);
+            return CreatedAtAction(nameof(Get), new { request.Id }, request.Id);
         }
 
         [HttpGet("{id}/lastInstanceId")]
-        public IActionResult GetLastInstanceId([FromBody] UpsertJobPropertyRequest request, [FromQuery] DateTime invokeDate)
+        public async Task<IActionResult> GetLastInstanceId([FromRoute] string id, [FromQuery] DateTime invokeDate)
         {
-            return Ok();
+            var result = await BusinesLayer.GetLastInstanceId(id, invokeDate);
+            return Ok(result);
         }
     }
 }

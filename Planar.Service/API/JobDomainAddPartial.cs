@@ -32,7 +32,7 @@ namespace Planar.Service.API
             Cron
         }
 
-        public async Task<AddJobResponse> Add(AddJobRequest request)
+        public async Task<JobId> Add(AddJobRequest request)
         {
             var metadata = GetJobMetadata(request.Yaml);
             if (metadata == null)
@@ -60,7 +60,7 @@ namespace Planar.Service.API
 
             var id = BuildJobData(metadata, job);
             await BuildTriggers(Scheduler, job, metadata);
-            return new AddJobResponse { Result = id };
+            return new JobId { Id = id };
         }
 
         private void ExtractJobPackage(string path)
