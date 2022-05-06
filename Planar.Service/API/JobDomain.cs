@@ -377,7 +377,7 @@ namespace Planar.Service.API
             var result = new SimpleTriggerDetails();
             MapTriggerDetails(source, result);
             result.RepeatCount = source.RepeatCount;
-            result.RepeatInterval = source.RepeatInterval;
+            result.RepeatInterval = $"{source.RepeatInterval:hh\\:mm\\:ss}";
             result.TimesTriggered = source.TimesTriggered;
             return result;
         }
@@ -408,9 +408,9 @@ namespace Planar.Service.API
             target.State = Scheduler.GetTriggerState(source.Key).Result.ToString();
             target.Id = Convert.ToString(source.JobDataMap[Consts.TriggerId]);
 
-            if (source.Key.Group == Consts.RecoveringJobsGroup)
+            if (string.IsNullOrEmpty(target.Id) && source.Key.Group == Consts.RecoveringJobsGroup)
             {
-                target.Id = string.Empty.PadLeft(11, '-');
+                target.Id = Consts.RecoveringJobsGroup;
             }
         }
 
@@ -425,16 +425,21 @@ namespace Planar.Service.API
         private static void MapJobExecutionContext(IJobExecutionContext source, RunningJobDetails target)
         {
             target.FireInstanceId = source.FireInstanceId;
-            target.NextFireTime = source.NextFireTimeUtc.HasValue ? source.NextFireTimeUtc.Value.DateTime : (DateTime?)null;
-            target.PreviousFireTime = source.PreviousFireTimeUtc.HasValue ? source.PreviousFireTimeUtc.Value.DateTime : (DateTime?)null;
-            target.ScheduledFireTime = source.ScheduledFireTimeUtc.HasValue ? source.ScheduledFireTimeUtc.Value.DateTime : (DateTime?)null;
+            target.NextFireTime = source.NextFireTimeUtc.HasValue ? source.NextFireTimeUtc.Value.DateTime : null;
+            target.PreviousFireTime = source.PreviousFireTimeUtc.HasValue ? source.PreviousFireTimeUtc.Value.DateTime : null;
+            target.ScheduledFireTime = source.ScheduledFireTimeUtc.HasValue ? source.ScheduledFireTimeUtc.Value.DateTime : null;
             target.FireTime = source.FireTimeUtc.DateTime;
-            target.RunTime = source.JobRunTime;
+            target.RunTime = $"{source.JobRunTime:hh\\:mm\\:ss}";
             target.RefireCount = source.RefireCount;
             target.TriggerGroup = source.Trigger.Key.Group;
             target.TriggerName = source.Trigger.Key.Name;
             target.DataMap = ServiceUtil.ConvertJobDataMapToDictionary(source.MergedJobDataMap);
             target.TriggerId = Convert.ToString(Convert.ToString(source.Get(Consts.TriggerId)));
+
+            if (string.IsNullOrEmpty(target.TriggerId) && target.TriggerGroup == Consts.RecoveringJobsGroup)
+            {
+                target.TriggerId = Consts.RecoveringJobsGroup;
+            }
 
             if (source.Result is JobExecutionMetadata metadata)
             {

@@ -18,7 +18,7 @@ namespace Planar.CLI
             if (response.IsSuccessful)
             {
                 var ids = data.Select(r => r.Id).ToList();
-                var table = result.Tables.First();
+                var table = CliTableExtensions.GetTable(result.Item1);
                 await AnsiConsole.Live(table).StartAsync(async ctx =>
                 {
                     ctx.Refresh();
@@ -51,7 +51,7 @@ namespace Planar.CLI
                             {
                                 table.UpdateCell(i, 3, $"[gold3_1]{item.Progress}%[/]");
                                 table.UpdateCell(i, 4, item.EffectedRows.ToString());
-                                table.UpdateCell(i, 5, CliTableFormat.FormatTimeSpan(item.RunTime));
+                                table.UpdateCell(i, 5, item.RunTime);
                             }
                         }
 

@@ -9,7 +9,7 @@ namespace Planar.API.Common.Entities
         public int RepeatCount { get; set; }
 
         [YamlMember(Order = 98)]
-        public TimeSpan RepeatInterval { get; set; }
+        public string RepeatInterval { get; set; }
 
         [YamlMember(Order = 96)]
         public int TimesTriggered { get; set; }
