@@ -9,10 +9,5 @@ namespace Planar.CLI.Exceptions
             : base(string.Empty, innerException)
         {
         }
-
-        public PlanarServiceException(BaseResponse response)
-            : base($"({response.ErrorCode}) {response.ErrorDescription}")
-        {
-        }
     }
 }

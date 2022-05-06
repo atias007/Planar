@@ -1,5 +1,4 @@
-﻿using Planar.API.Common.Entities;
-using Planar.CLI.Actions;
+﻿using Planar.CLI.Actions;
 using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
 using Spectre.Console;
@@ -12,10 +11,13 @@ namespace Planar.CLI
     {
         public static async Task InvokeGetRunnings(CliGetRunningJobsRequest param)
         {
-            var result = await JobCliActions.GetRunningJobs(param);
-            if (result.Response.Success)
+            var result = await JobCliActions.GetRunningJobsInner(param);
+            var data = result.Item1;
+            var response = result.Item2;
+
+            if (response.IsSuccessful)
             {
-                var ids = (result.Response as GetRunningJobsResponse).Result.Select(r => r.Id).ToList();
+                var ids = data.Select(r => r.Id).ToList();
                 var table = result.Tables.First();
                 await AnsiConsole.Live(table).StartAsync(async ctx =>
                 {
@@ -26,18 +28,19 @@ namespace Planar.CLI
                     var counter = 0;
                     while (counter < 1000)
                     {
-                        var refreshResult = await JobCliActions.GetRunningJobs(param);
+                        var refreshResult = await JobCliActions.GetRunningJobsInner(param);
+                        var refreshData = refreshResult.Item1;
+                        var refreshResponse = refreshResult.Item2;
 
-                        if (refreshResult.Response.Success == false)
+                        if (refreshResponse.IsSuccessful == false)
                         {
-                            throw new PlanarServiceException(refreshResult.Response);
+                            throw new PlanarServiceException(null); // TODO: set restsharp response error text
                         }
 
-                        var respone = refreshResult.Response as GetRunningJobsResponse;
                         for (int i = 0; i < table.Rows.Count; i++)
                         {
                             var id = ids[i];
-                            var item = respone.Result.FirstOrDefault(r => r.Id == id.ToString());
+                            var item = refreshData.FirstOrDefault(r => r.Id == id.ToString());
                             if (item == null || item.Progress == 100)
                             {
                                 table.UpdateCell(i, 3, $"[green]completed[/]");
@@ -54,7 +57,7 @@ namespace Planar.CLI
 
                         ctx.Refresh();
 
-                        if (respone.Result.All(r => r.Progress == 100)) { break; }
+                        if (refreshData.All(r => r.Progress == 100)) { break; }
                         await Task.Delay(2000);
                         counter++;
                     }

@@ -4,6 +4,7 @@ using Planar.API.Common.Entities;
 using Planar.Service.API;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -101,9 +102,16 @@ namespace Planar.Controllers
         }
 
         [HttpGet("running/{instanceId}")]
-        public async Task<ActionResult<List<RunningJobDetails>>> GetRunning([FromRoute] string instanceId)
+        public async Task<ActionResult<RunningJobDetails>> GetAllRunning([FromRoute] string instanceId)
         {
             var result = await BusinesLayer.GetRunning(instanceId);
+            return Ok(result.FirstOrDefault());
+        }
+
+        [HttpGet("running")]
+        public async Task<ActionResult<List<RunningJobDetails>>> GetRunning()
+        {
+            var result = await BusinesLayer.GetRunning(null);
             return Ok(result);
         }
 
@@ -143,7 +151,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}/lastInstanceId")]
-        public async Task<IActionResult> GetLastInstanceId([FromRoute] string id, [FromQuery] DateTime invokeDate)
+        public async Task<ActionResult<LastInstanceId>> GetLastInstanceId([FromRoute] string id, [FromQuery] DateTime invokeDate)
         {
             var result = await BusinesLayer.GetLastInstanceId(id, invokeDate);
             return Ok(result);
