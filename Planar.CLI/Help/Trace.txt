@@ -1,7 +1,6 @@
-﻿Planar command line format:
-Planar Trace <command> [<options>]
+﻿usage: planar trace <command> [<options>]
 
-the options for <command> and [<options>] parameters of Trace module:
+the options for <command> and [<options>] parameters of trace module:
 
 ls|list     [-r|--rows] <rows> [-d|--desc] [-f|--from] <from date> [-t|--to] <to date> 
             [-l|--level] <Verbose|Debug|Information|Warning|Error|Fatal>

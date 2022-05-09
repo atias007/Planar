@@ -1,5 +1,4 @@
-﻿Planar command line format:
-Planar trigger <command> [<options>]
+﻿usage: planar trigger <command> [<options>]
 
 the options for <command> and [<options>] parameters of trigger module:
 

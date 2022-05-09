@@ -44,6 +44,11 @@
 
 	<ItemGroup>
 	  <Folder Include="Data\MonitorHooks\Http\" />
-	  <Folder Include="Data\MonitorHooks\Teams\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Update="Data\MonitorHooks\Teams\readme.md">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 </Project>

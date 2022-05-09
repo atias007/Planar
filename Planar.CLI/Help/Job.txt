@@ -1,5 +1,4 @@
-﻿Planar command line format:
-Planar job <command> [<options>]
+﻿usage: planar job <command> [<options>]
 
 the options for <command> and [<options>] parameters of job module:
 
@@ -18,6 +17,6 @@ resumeall
 resume          <job id>
 data            <job id> <upsert|remove|clear> [<key>] [<value>]
 test            <job id> [-n|--now <now_value:"dd/mm/yyyy hh:mm">]
-upsertprop      <job id> <key> <value>
+updateprop      <job id> <key> <value>
 
 *** <job id> represent job hash id or job key <[group.]name>

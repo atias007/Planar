@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.Loader;
 
 namespace Planar.Service.General
@@ -51,6 +52,7 @@ namespace Planar.Service.General
                 var assemblyContext = AssemblyLoader.CreateAssemblyLoadContext($"MonitorHook_{folder}", true);
                 var files = Directory.GetFiles(dir, "*.dll");
                 var hasHook = false;
+                var interfaceName = typeof(IMonitorHook).FullName;
 
                 foreach (var f in files)
                 {
@@ -58,7 +60,7 @@ namespace Planar.Service.General
                     var types = assembly.GetTypes().Where(t => t.IsInterface == false && t.IsAbstract == false);
                     foreach (var t in types)
                     {
-                        var isHook = typeof(IMonitorHook).IsAssignableFrom(t);
+                        var isHook = t.GetInterfaces().Any(i => i.FullName == interfaceName);
                         if (isHook)
                         {
                             hasHook = true;

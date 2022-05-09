@@ -6,8 +6,6 @@ using Planar.Service.JobListener.Base;
 using Planar.Service.Monitor;
 using Quartz;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
@@ -152,16 +150,8 @@ namespace Planar.Service.JobListener
         {
             if (data.Count == 0) return null;
 
-            var items = new Dictionary<string, string>();
-            foreach (var item in data)
-            {
-                items.Add(item.Key, Convert.ToString(item.Value));
-            }
-
-            var final = items
-                .Where(i => i.Key.StartsWith(Consts.QuartzPrefix) == false && i.Key.StartsWith(Consts.ConstPrefix) == false)
-                .ToDictionary(i => i.Key, i => i.Value);
-            var yml = new SerializerBuilder().Build().Serialize(final);
+            var items = ServiceUtil.ConvertJobDataMapToDictionary(data);
+            var yml = new SerializerBuilder().Build().Serialize(items);
             return yml;
         }
     }

@@ -144,9 +144,9 @@ namespace Planar.Controllers
         }
 
         [HttpPut("property")]
-        public async Task<IActionResult> UpsertProperty([FromBody] UpsertJobPropertyRequest request)
+        public async Task<IActionResult> UpdateProperty([FromBody] UpsertJobPropertyRequest request)
         {
-            await BusinesLayer.UpsertProperty(request);
+            await BusinesLayer.UpdateProperty(request);
             return CreatedAtAction(nameof(Get), new { request.Id }, request.Id);
         }
 

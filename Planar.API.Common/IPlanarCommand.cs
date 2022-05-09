@@ -5,50 +5,6 @@ namespace Planar.API.Common
 {
     public interface IPlanarCommand
     {
-        #region Job
-
-        BaseResponse InvokeJob(InvokeJobRequest request);
-
-        AddJobResponse AddJob(AddJobRequest request);
-
-        BaseResponse PauseJob(JobOrTriggerKey request);
-
-        BaseResponse ResumeJob(JobOrTriggerKey request);
-
-        BaseResponse<bool> RemoveJob(JobOrTriggerKey request);
-
-        BaseResponse<JobDetails> GetJobDetails(JobOrTriggerKey request);
-
-        BaseResponse<Dictionary<string, string>> GetJobSettings(JobOrTriggerKey request);
-
-        GetAllJobsResponse GetAllJobs();
-
-        GetRunningJobsResponse GetRunningJobs(FireInstanceIdRequest request);
-
-        BaseResponse StopRunningJob(FireInstanceIdRequest request);
-
-        BaseResponse UpsertJobData(JobDataRequest request);
-
-        BaseResponse RemoveJobData(RemoveJobDataRequest request);
-
-        BaseResponse ClearJobData(JobOrTriggerKey request);
-
-        BaseResponse PauseAll();
-
-        BaseResponse ResumeAll();
-
-        BaseResponse<RunningJobDetails> GetRunningJob(FireInstanceIdRequest request);
-
-        BaseResponse<string> GetRunningInfo(FireInstanceIdRequest request);
-
-        BaseResponse<GetTestStatusResponse> GetTestStatus(GetByIdRequest request);
-
-        BaseResponse UpsertJobProperty(UpsertJobPropertyRequest request);
-
-        BaseResponse<LastInstanceId> GetLastInstanceId(GetLastInstanceIdRequest request);
-
-        #endregion Job
-
         #region Trigger
 
         BaseResponse<TriggerRowDetails> GetTriggersDetails(JobOrTriggerKey request);
@@ -104,23 +60,5 @@ namespace Planar.API.Common
         BaseResponse<string> GetUserPassword(GetByIdRequest request);
 
         #endregion User
-
-        #region Monitor
-
-        BaseResponse<string> ReloadMonitor();
-
-        BaseResponse<List<string>> GetMonitorHooks();
-
-        BaseResponse<List<MonitorItem>> GetMonitorActions(GetMonitorActionsRequest request);
-
-        BaseResponse<MonitorActionMedatada> GetMonitorActionMedatada();
-
-        BaseResponse<List<string>> GetMonitorEvents();
-
-        BaseResponse AddMonitor(AddMonitorRequest request);
-
-        BaseResponse DeleteMonitor(GetByIdRequest request);
-
-        #endregion Monitor
     }
 }

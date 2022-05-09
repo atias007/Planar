@@ -1,5 +1,4 @@
-﻿Planar command line format:
-Planar history <command> [<options>]
+﻿usage: planar history <command> [<options>]
 
 the options for <command> and [<options>] parameters of history module:
 

@@ -5,6 +5,7 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -270,9 +271,12 @@ namespace Planar.CLI.Actions
 
         private static async Task<RestResponse<LastInstanceId>> GetLastInstanceId(string id, DateTime invokeDate)
         {
+            // UTC
+            var dateParameter = invokeDate.ToString("s", CultureInfo.InvariantCulture);
+
             var restRequest = new RestRequest("job/{id}/lastInstanceId", Method.Get)
                 .AddParameter("id", id, ParameterType.UrlSegment)
-                .AddParameter("invokeDate", invokeDate, ParameterType.QueryString);
+                .AddParameter("invokeDate", dateParameter, ParameterType.QueryString);
             var result = await RestProxy.Invoke<LastInstanceId>(restRequest);
             return result;
         }
@@ -281,7 +285,7 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> TestJob(CliInvokeJobRequest request)
         {
             // (1) Invoke job
-            var invokeDate = DateTime.Now;
+            var invokeDate = DateTime.Now.AddSeconds(-1);
             AnsiConsole.MarkupLine(" [gold3_1][[x]][/] Invoke job...");
             var result = await InvokeJobInner(request);
             if (result.IsSuccessful == false)
@@ -386,7 +390,7 @@ namespace Planar.CLI.Actions
             return CliActionResponse.Empty;
         }
 
-        [Action("upsertprop")]
+        [Action("updateprop")]
         public static async Task<CliActionResponse> UpsertJobProperty(CliUpsertJobPropertyRequest request)
         {
             var restRequest = new RestRequest("job/property", Method.Post)

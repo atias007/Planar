@@ -1,5 +1,4 @@
-﻿Planar command line format:
-Planar monitor <command> [<options>]
+﻿usage: planar monitor <command> [<options>]
 
 the options for <command> and [<options>] parameters of monitor module:
 

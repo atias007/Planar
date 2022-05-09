@@ -674,8 +674,8 @@ namespace Planar.Service.API
             try
             {
                 InitializeService(nameof(ReloadMonitor));
-                var result = BL.ReloadMonitor();
-                return result;
+                // var result = BL.Reload();
+                return null;
             }
             catch (Exception ex)
             {

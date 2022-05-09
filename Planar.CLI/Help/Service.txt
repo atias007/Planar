@@ -1,5 +1,4 @@
-﻿Planar command line format:
-Planar service <command> [<options>]
+﻿usage: planar service <command> [<options>]
 
 the options for <command> and [<options>] parameters of service module:
 

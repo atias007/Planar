@@ -587,19 +587,6 @@ namespace Planar.Service.API
             return new BaseResponse<string>(password);
         }
 
-        public BaseResponse<string> ReloadMonitor()
-        {
-            var sb = new StringBuilder();
-
-            ServiceUtil.LoadMonitorHooks(_logger);
-            sb.AppendLine($"{ServiceUtil.MonitorHooks.Count} monitor hooks loaded");
-            MonitorUtil.Load();
-            sb.AppendLine($"{MonitorUtil.Count} monitor items loaded");
-            MonitorUtil.Validate(_logger);
-
-            return new BaseResponse<string>(sb.ToString());
-        }
-
         public static BaseResponse<List<string>> GetMonitorHooks()
         {
             return new BaseResponse<List<string>>(ServiceUtil.MonitorHooks.Keys.ToList());
@@ -607,7 +594,7 @@ namespace Planar.Service.API
 
         public async Task<BaseResponse<List<MonitorItem>>> GetMonitorActions(GetMonitorActionsRequest request)
         {
-            var items = await _dal.GetMonitorActions(request);
+            var items = await _dal.GetMonitorActions("");
             var result = items.Select(m => new MonitorItem
             {
                 Active = m.Active.GetValueOrDefault(),

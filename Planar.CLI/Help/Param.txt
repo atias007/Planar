@@ -1,5 +1,4 @@
-﻿Planar command line format:
-Planar param <command> [<options>]
+﻿usage: planar param <command> [<options>]
 
 the options for <command> and [<options>] parameters of param module:
 

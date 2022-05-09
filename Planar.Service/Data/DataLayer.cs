@@ -446,12 +446,12 @@ namespace Planar.Service.Data
             return await _context.Groups.AnyAsync(g => g.Id == groupId);
         }
 
-        public async Task<List<MonitorAction>> GetMonitorActions(GetMonitorActionsRequest request)
+        public async Task<List<MonitorAction>> GetMonitorActions(string jobOrGroupId)
         {
             var query = _context.MonitorActions.AsQueryable();
-            if (string.IsNullOrEmpty(request.JobIdOrJobGroup) == false)
+            if (string.IsNullOrEmpty(jobOrGroupId) == false)
             {
-                query = query.Where(m => m.JobId == request.JobIdOrJobGroup || m.JobGroup == request.JobIdOrJobGroup);
+                query = query.Where(m => m.JobId == jobOrGroupId || m.JobGroup == jobOrGroupId);
             }
 
             query = query.OrderByDescending(m => m.Active)

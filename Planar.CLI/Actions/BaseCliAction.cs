@@ -132,11 +132,12 @@ namespace Planar.CLI.Actions
         [Action("help")]
         [Action("--help")]
         [Action("-h")]
-        public static async Task<ActionResponse> ShowHelp()
+        public static async Task<CliActionResponse> ShowHelp()
         {
             var name = typeof(T).Name.Replace("CliActions", string.Empty);
             var help = GetHelpResource(name);
-            var result = new ActionResponse(BaseResponse.Empty, help);
+            var response = new RestResponse { IsSuccessful = true };
+            var result = new CliActionResponse(response, help);
             return await Task.FromResult(result);
         }
 

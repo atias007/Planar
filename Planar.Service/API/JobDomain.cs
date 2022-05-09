@@ -20,6 +20,40 @@ namespace Planar.Service.API
         {
         }
 
+        public async Task<BaseResponse> ClearData(string id)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(id);
+            var info = await Scheduler.GetJobDetail(jobKey);
+            await ValidateJobNotRunning(jobKey);
+            await Scheduler.PauseJob(jobKey);
+
+            if (info != null)
+            {
+                info.JobDataMap.Clear();
+                var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+                await Scheduler.ScheduleJob(info, triggers, true);
+            }
+
+            await Scheduler.ResumeJob(jobKey);
+
+            return BaseResponse.Empty;
+        }
+
+        public async Task<JobDetails> Get(string id)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(id);
+            var info = await Scheduler.GetJobDetail(jobKey);
+
+            var result = new JobDetails();
+            MapJobDetails(info, result);
+
+            var triggers = await GetTriggersDetails(jobKey);
+            result.SimpleTriggers = triggers.SimpleTriggers;
+            result.CronTriggers = triggers.CronTriggers;
+
+            return result;
+        }
+
         public async Task<List<JobRowDetails>> GetAll()
         {
             var result = new List<JobRowDetails>();
@@ -41,120 +75,10 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<JobDetails> Get(string id)
+        public async Task<LastInstanceId> GetLastInstanceId(string id, DateTime invokeDate)
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
-            var info = await Scheduler.GetJobDetail(jobKey);
-
-            var result = new JobDetails();
-            MapJobDetails(info, result);
-
-            var triggers = await GetTriggersDetails(jobKey);
-            result.SimpleTriggers = triggers.SimpleTriggers;
-            result.CronTriggers = triggers.CronTriggers;
-
-            return result;
-        }
-
-        public async Task Remove(string id)
-        {
-            var jobKey = await JobKeyHelper.GetJobKey(id);
-            ValidateSystemJob(jobKey);
-            await Scheduler.DeleteJob(jobKey);
-        }
-
-        public async Task UpsertData(JobDataRequest request)
-        {
-            var jobKey = await JobKeyHelper.GetJobKey(request);
-            ValidateSystemJob(jobKey);
-            var info = await Scheduler.GetJobDetail(jobKey);
-            if (info != null)
-            {
-                await ValidateJobNotRunning(jobKey);
-                await Scheduler.PauseJob(jobKey);
-
-                if (info.JobDataMap.ContainsKey(request.DataKey))
-                {
-                    info.JobDataMap.Put(request.DataKey, request.DataValue);
-                }
-                else
-                {
-                    info.JobDataMap.Add(request.DataKey, request.DataValue);
-                }
-
-                var triggers = await Scheduler.GetTriggersOfJob(jobKey);
-                await Scheduler.ScheduleJob(info, triggers, true);
-                await Scheduler.ResumeJob(jobKey);
-            }
-        }
-
-        public async Task Invoke(InvokeJobRequest request)
-        {
-            var jobKey = await JobKeyHelper.GetJobKey(request);
-
-            if (request.NowOverrideValue.HasValue)
-            {
-                var job = await Scheduler.GetJobDetail(jobKey);
-                if (job != null)
-                {
-                    job.JobDataMap.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value);
-                    await Scheduler.TriggerJob(jobKey, job.JobDataMap);
-                }
-            }
-            else
-            {
-                await Scheduler.TriggerJob(jobKey);
-            }
-        }
-
-        public async Task PauseAll()
-        {
-            await Scheduler.PauseAll();
-        }
-
-        public async Task Pause(JobOrTriggerKey request)
-        {
-            var jobKey = await JobKeyHelper.GetJobKey(request);
-            await Scheduler.PauseJob(jobKey);
-        }
-
-        public async Task ResumeAll()
-        {
-            await Scheduler.ResumeAll();
-        }
-
-        public async Task Resume(JobOrTriggerKey request)
-        {
-            var jobKey = await JobKeyHelper.GetJobKey(request);
-            await Scheduler.ResumeJob(jobKey);
-        }
-
-        public async Task Stop(FireInstanceIdRequest request)
-        {
-            var result = await Scheduler.Interrupt(request.FireInstanceId);
-            if (result == false)
-            {
-                throw new PlanarValidationException($"Fail to stop running job with FireInstanceId {request.FireInstanceId}");
-            }
-        }
-
-        public async Task<Dictionary<string, string>> GetSettings(string id)
-        {
-            var result = new Dictionary<string, string>();
-            var jobkey = await JobKeyHelper.GetJobKey(id);
-            var details = await Scheduler.GetJobDetail(jobkey);
-            var json = details?.JobDataMap[Consts.JobTypeProperties] as string;
-
-            if (string.IsNullOrEmpty(json)) return result;
-            var list = DeserializeObject<Dictionary<string, string>>(json);
-            if (list == null) return result;
-            if (list.ContainsKey("JobPath") == false) return result;
-            var jobPath = list["JobPath"];
-
-            var parameters = Global.Parameters;
-            var settings = CommonUtil.LoadJobSettings(jobPath);
-            result = parameters.Merge(settings);
-
+            var result = await DataLayer.GetLastInstanceId(jobKey, invokeDate);
             return result;
         }
 
@@ -196,68 +120,159 @@ namespace Planar.Service.API
             return response;
         }
 
+        public async Task<Dictionary<string, string>> GetSettings(string id)
+        {
+            var result = new Dictionary<string, string>();
+            var jobkey = await JobKeyHelper.GetJobKey(id);
+            var details = await Scheduler.GetJobDetail(jobkey);
+            var json = details?.JobDataMap[Consts.JobTypeProperties] as string;
+
+            if (string.IsNullOrEmpty(json)) return result;
+            var list = DeserializeObject<Dictionary<string, string>>(json);
+            if (list == null) return result;
+            if (list.ContainsKey("JobPath") == false) return result;
+            var jobPath = list["JobPath"];
+
+            var parameters = Global.Parameters;
+            var settings = CommonUtil.LoadJobSettings(jobPath);
+            result = parameters.Merge(settings);
+
+            return result;
+        }
+
         public async Task<GetTestStatusResponse> GetTestStatus(int id)
         {
             var result = await DataLayer.GetTestStatus(id);
             return result;
         }
 
+        public async Task Invoke(InvokeJobRequest request)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(request);
+
+            if (request.NowOverrideValue.HasValue)
+            {
+                var job = await Scheduler.GetJobDetail(jobKey);
+                if (job != null)
+                {
+                    job.JobDataMap.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value);
+                    await Scheduler.TriggerJob(jobKey, job.JobDataMap);
+                }
+            }
+            else
+            {
+                await Scheduler.TriggerJob(jobKey);
+            }
+        }
+
+        public async Task Pause(JobOrTriggerKey request)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(request);
+            await Scheduler.PauseJob(jobKey);
+        }
+
+        public async Task PauseAll()
+        {
+            await Scheduler.PauseAll();
+        }
+
+        public async Task Remove(string id)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(id);
+            ValidateSystemJob(jobKey);
+            await Scheduler.DeleteJob(jobKey);
+        }
+
         public async Task RemoveData(string id, string key)
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
             ValidateSystemJob(jobKey);
+            ValidateSystemDataKey(key);
             var info = await Scheduler.GetJobDetail(jobKey);
             await ValidateJobNotRunning(jobKey);
+            ValidateDataKeyExists(info, key, id);
             await Scheduler.PauseJob(jobKey);
+            info.JobDataMap.Remove(key);
+            var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+            await Scheduler.ScheduleJob(info, triggers, true);
+            await Scheduler.ResumeJob(jobKey);
+        }
 
-            if (info != null && info.JobDataMap.ContainsKey(key))
+        public async Task Resume(JobOrTriggerKey request)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(request);
+            await Scheduler.ResumeJob(jobKey);
+        }
+
+        public async Task ResumeAll()
+        {
+            await Scheduler.ResumeAll();
+        }
+
+        public async Task Stop(FireInstanceIdRequest request)
+        {
+            var result = await Scheduler.Interrupt(request.FireInstanceId);
+            if (result == false)
             {
-                info.JobDataMap.Remove(key);
+                throw new PlanarValidationException($"Fail to stop running job with FireInstanceId {request.FireInstanceId}");
+            }
+        }
+
+        public async Task UpdateProperty(UpsertJobPropertyRequest request)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateSystemJob(jobKey);
+            await ValidateJobNotRunning(jobKey);
+
+            await Scheduler.PauseJob(jobKey);
+            var info = await Scheduler.GetJobDetail(jobKey);
+            var properties = GetJobProperties(info);
+
+            if (properties.ContainsKey(request.PropertyKey))
+            {
+                properties[request.PropertyKey] = request.PropertyValue;
             }
             else
             {
-                throw new PlanarValidationException($"Data with Key '{key}' could not found in job '{id}' (Name '{jobKey.Name}' and Group '{jobKey.Group}')");
+                throw new PlanarValidationException($"Property {request.PropertyKey} could not be found in job {request.Id}");
             }
+
+            SetJobProperties(info, properties);
 
             var triggers = await Scheduler.GetTriggersOfJob(jobKey);
             await Scheduler.ScheduleJob(info, triggers, true);
             await Scheduler.ResumeJob(jobKey);
         }
 
-        public async Task<BaseResponse> ClearData(string id)
-        {
-            var jobKey = await JobKeyHelper.GetJobKey(id);
-            var info = await Scheduler.GetJobDetail(jobKey);
-            await ValidateJobNotRunning(jobKey);
-            await Scheduler.PauseJob(jobKey);
-
-            if (info != null)
-            {
-                info.JobDataMap.Clear();
-                var triggers = await Scheduler.GetTriggersOfJob(jobKey);
-                await Scheduler.ScheduleJob(info, triggers, true);
-            }
-
-            await Scheduler.ResumeJob(jobKey);
-
-            return BaseResponse.Empty;
-        }
-
-        public async Task<LastInstanceId> GetLastInstanceId(string id, DateTime invokeDate)
-        {
-            var jobKey = await JobKeyHelper.GetJobKey(id);
-            var result = await DataLayer.GetLastInstanceId(jobKey, invokeDate);
-            return result;
-        }
-
-        public async Task UpsertProperty(UpsertJobPropertyRequest request)
+        public async Task UpsertData(JobDataRequest request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
             ValidateSystemJob(jobKey);
-            await ValidateJobNotRunning(jobKey);
-            await Scheduler.PauseJob(jobKey);
+            ValidateSystemDataKey(request.DataKey);
             var info = await Scheduler.GetJobDetail(jobKey);
-            var propertiesJson = Convert.ToString(info.JobDataMap[Consts.JobTypeProperties]);
+            if (info != null)
+            {
+                await ValidateJobNotRunning(jobKey);
+                await Scheduler.PauseJob(jobKey);
+
+                if (info.JobDataMap.ContainsKey(request.DataKey))
+                {
+                    info.JobDataMap.Put(request.DataKey, request.DataValue);
+                }
+                else
+                {
+                    info.JobDataMap.Add(request.DataKey, request.DataValue);
+                }
+
+                var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+                await Scheduler.ScheduleJob(info, triggers, true);
+                await Scheduler.ResumeJob(jobKey);
+            }
+        }
+
+        private static Dictionary<string, string> GetJobProperties(IJobDetail job)
+        {
+            var propertiesJson = Convert.ToString(job.JobDataMap[Consts.JobTypeProperties]);
             Dictionary<string, string> properties;
             if (string.IsNullOrEmpty(propertiesJson))
             {
@@ -275,54 +290,38 @@ namespace Planar.Service.API
                 }
             }
 
-            if (properties.ContainsKey(request.PropertyKey))
-            {
-                properties[request.PropertyKey] = request.PropertyValue;
-            }
-            else
-            {
-                properties.Add(request.PropertyKey, request.PropertyValue);
-            }
+            return properties;
+        }
 
-            propertiesJson = SerializeObject(properties);
-
-            if (info.JobDataMap.ContainsKey(Consts.JobTypeProperties))
-            {
-                info.JobDataMap.Put(Consts.JobTypeProperties, propertiesJson);
-            }
-            else
-            {
-                info.JobDataMap.Add(Consts.JobTypeProperties, propertiesJson);
-            }
-
+        private static async Task<TriggerRowDetails> GetTriggersDetails(JobKey jobKey)
+        {
+            var result = new TriggerRowDetails();
             var triggers = await Scheduler.GetTriggersOfJob(jobKey);
-            await Scheduler.ScheduleJob(info, triggers, true);
-            await Scheduler.ResumeJob(jobKey);
-        }
 
-        private static async Task ValidateJobNotRunning(JobKey jobKey)
-        {
-            var allRunning = await Scheduler.GetCurrentlyExecutingJobs();
-            if (allRunning.AsQueryable().Any(c => c.JobDetail.Key.Name == jobKey.Name && c.JobDetail.Key.Group == jobKey.Group))
+            foreach (var t in triggers)
             {
-                throw new PlanarValidationException($"job with name: {jobKey.Name} and group: {jobKey.Group} is currently running");
+                if (t is ISimpleTrigger t1)
+                {
+                    result.SimpleTriggers.Add(MapSimpleTriggerDetails(t1));
+                }
+                else
+                {
+                    if (t is ICronTrigger t2)
+                    {
+                        result.CronTriggers.Add(MapCronTriggerDetails(t2));
+                    }
+                }
             }
+
+            return result;
         }
 
-        private static void MapJobRowDetails(IJobDetail source, JobRowDetails target)
+        private static CronTriggerDetails MapCronTriggerDetails(ICronTrigger source)
         {
-            target.Id = Convert.ToString(source.JobDataMap[Consts.JobId]);
-            target.Name = source.Key.Name;
-            target.Group = source.Key.Group;
-            target.Description = source.Description;
-        }
-
-        private static void ValidateSystemJob(JobKey jobKey)
-        {
-            if (jobKey.Group == Consts.PlanarSystemGroup)
-            {
-                throw new PlanarValidationException($"Forbidden: this is system job and it should not be modified or deleted");
-            }
+            var result = new CronTriggerDetails();
+            MapTriggerDetails(source, result);
+            result.CronExpression = source.CronExpressionString;
+            return result;
         }
 
         private static void MapJobDetails(IJobDetail source, JobDetails target, JobDataMap dataMap = null)
@@ -349,27 +348,38 @@ namespace Planar.Service.API
             }
         }
 
-        private static async Task<TriggerRowDetails> GetTriggersDetails(JobKey jobKey)
+        private static void MapJobExecutionContext(IJobExecutionContext source, RunningJobDetails target)
         {
-            var result = new TriggerRowDetails();
-            var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+            target.FireInstanceId = source.FireInstanceId;
+            target.NextFireTime = source.NextFireTimeUtc.HasValue ? source.NextFireTimeUtc.Value.DateTime : null;
+            target.PreviousFireTime = source.PreviousFireTimeUtc.HasValue ? source.PreviousFireTimeUtc.Value.DateTime : null;
+            target.ScheduledFireTime = source.ScheduledFireTimeUtc.HasValue ? source.ScheduledFireTimeUtc.Value.DateTime : null;
+            target.FireTime = source.FireTimeUtc.DateTime;
+            target.RunTime = $"{source.JobRunTime:hh\\:mm\\:ss}";
+            target.RefireCount = source.RefireCount;
+            target.TriggerGroup = source.Trigger.Key.Group;
+            target.TriggerName = source.Trigger.Key.Name;
+            target.DataMap = ServiceUtil.ConvertJobDataMapToDictionary(source.MergedJobDataMap);
+            target.TriggerId = Convert.ToString(Convert.ToString(source.Get(Consts.TriggerId)));
 
-            foreach (var t in triggers)
+            if (string.IsNullOrEmpty(target.TriggerId) && target.TriggerGroup == Consts.RecoveringJobsGroup)
             {
-                if (t is ISimpleTrigger t1)
-                {
-                    result.SimpleTriggers.Add(MapSimpleTriggerDetails(t1));
-                }
-                else
-                {
-                    if (t is ICronTrigger t2)
-                    {
-                        result.CronTriggers.Add(MapCronTriggerDetails(t2));
-                    }
-                }
+                target.TriggerId = Consts.RecoveringJobsGroup;
             }
 
-            return result;
+            if (source.Result is JobExecutionMetadata metadata)
+            {
+                target.EffectedRows = metadata.EffectedRows;
+                target.Progress = metadata.Progress;
+            }
+        }
+
+        private static void MapJobRowDetails(IJobDetail source, JobRowDetails target)
+        {
+            target.Id = Convert.ToString(source.JobDataMap[Consts.JobId]);
+            target.Name = source.Key.Name;
+            target.Group = source.Key.Group;
+            target.Description = source.Description;
         }
 
         private static SimpleTriggerDetails MapSimpleTriggerDetails(ISimpleTrigger source)
@@ -414,37 +424,50 @@ namespace Planar.Service.API
             }
         }
 
-        private static CronTriggerDetails MapCronTriggerDetails(ICronTrigger source)
+        private static void SetJobProperties(IJobDetail job, Dictionary<string, string> properties)
         {
-            var result = new CronTriggerDetails();
-            MapTriggerDetails(source, result);
-            result.CronExpression = source.CronExpressionString;
-            return result;
+            var propertiesJson = SerializeObject(properties);
+
+            if (job.JobDataMap.ContainsKey(Consts.JobTypeProperties))
+            {
+                job.JobDataMap.Put(Consts.JobTypeProperties, propertiesJson);
+            }
+            else
+            {
+                job.JobDataMap.Add(Consts.JobTypeProperties, propertiesJson);
+            }
         }
 
-        private static void MapJobExecutionContext(IJobExecutionContext source, RunningJobDetails target)
+        private static void ValidateDataKeyExists(IJobDetail details, string key, string jobId)
         {
-            target.FireInstanceId = source.FireInstanceId;
-            target.NextFireTime = source.NextFireTimeUtc.HasValue ? source.NextFireTimeUtc.Value.DateTime : null;
-            target.PreviousFireTime = source.PreviousFireTimeUtc.HasValue ? source.PreviousFireTimeUtc.Value.DateTime : null;
-            target.ScheduledFireTime = source.ScheduledFireTimeUtc.HasValue ? source.ScheduledFireTimeUtc.Value.DateTime : null;
-            target.FireTime = source.FireTimeUtc.DateTime;
-            target.RunTime = $"{source.JobRunTime:hh\\:mm\\:ss}";
-            target.RefireCount = source.RefireCount;
-            target.TriggerGroup = source.Trigger.Key.Group;
-            target.TriggerName = source.Trigger.Key.Name;
-            target.DataMap = ServiceUtil.ConvertJobDataMapToDictionary(source.MergedJobDataMap);
-            target.TriggerId = Convert.ToString(Convert.ToString(source.Get(Consts.TriggerId)));
-
-            if (string.IsNullOrEmpty(target.TriggerId) && target.TriggerGroup == Consts.RecoveringJobsGroup)
+            if (details == null || details.JobDataMap.ContainsKey(key) == false)
             {
-                target.TriggerId = Consts.RecoveringJobsGroup;
+                throw new PlanarValidationException($"Data with Key '{key}' could not found in job '{jobId}' (Name '{details.Key.Name}' and Group '{details.Key.Group}')");
             }
+        }
 
-            if (source.Result is JobExecutionMetadata metadata)
+        private static async Task ValidateJobNotRunning(JobKey jobKey)
+        {
+            var allRunning = await Scheduler.GetCurrentlyExecutingJobs();
+            if (allRunning.AsQueryable().Any(c => c.JobDetail.Key.Name == jobKey.Name && c.JobDetail.Key.Group == jobKey.Group))
             {
-                target.EffectedRows = metadata.EffectedRows;
-                target.Progress = metadata.Progress;
+                throw new PlanarValidationException($"job with name: {jobKey.Name} and group: {jobKey.Group} is currently running");
+            }
+        }
+
+        private static void ValidateSystemDataKey(string key)
+        {
+            if (key.StartsWith(Consts.ConstPrefix))
+            {
+                throw new PlanarValidationException($"Forbidden: this is system data key and it should not be modified");
+            }
+        }
+
+        private static void ValidateSystemJob(JobKey jobKey)
+        {
+            if (jobKey.Group == Consts.PlanarSystemGroup)
+            {
+                throw new PlanarValidationException($"Forbidden: this is system job and it should not be modified");
             }
         }
     }

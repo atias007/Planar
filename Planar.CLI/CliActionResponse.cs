@@ -16,10 +16,10 @@ namespace Planar.CLI
             Response = response;
         }
 
-        public CliActionResponse(RestResponse response, string mesage)
+        public CliActionResponse(RestResponse response, string message)
             : this(response)
         {
-            Message = mesage;
+            Message = message;
         }
 
         public CliActionResponse(RestResponse response, object serializeObj = null)
