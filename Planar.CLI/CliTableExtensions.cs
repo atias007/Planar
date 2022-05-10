@@ -37,13 +37,11 @@ namespace Planar.CLI
             return table;
         }
 
-        public static Table GetTable(this GetTraceResponse response)
+        public static Table GetTable(List<LogDetails> response)
         {
-            if (response.Success == false) return null;
-
             var table = new Table();
             table.AddColumns("Id", "Message", "Level", "TimeStamp");
-            response.Result.ForEach(r => table.AddRow($"{r.Id}", r.Message.EscapeMarkup(), CliTableFormat.GetLevelMarkup(r.Level), CliTableFormat.FormatDateTime(r.TimeStamp)));
+            response.ForEach(r => table.AddRow($"{r.Id}", r.Message.EscapeMarkup(), CliTableFormat.GetLevelMarkup(r.Level), CliTableFormat.FormatDateTime(r.TimeStamp)));
             return table;
         }
 

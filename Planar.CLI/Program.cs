@@ -79,7 +79,7 @@ namespace Planar.CLI
                 var action = CliArgumentsUtil.ValidateArgs(ref args, cliActions);
                 var cliArgument = new CliArgumentsUtil(args);
 
-                if (cliArgument.Module == "service" || cliArgument.Module == "group" || cliArgument.Module == "history" || cliArgument.Module == "job" || cliArgument.Module == "monitor")
+                if (cliArgument.Module == "service" || cliArgument.Module == "group" || cliArgument.Module == "history" || cliArgument.Module == "job" || cliArgument.Module == "monitor" || cliArgument.Module == "param" || cliArgument.Module == "trace")
                 {
                     HandleCliCommand(args, cliActions);
                     return;

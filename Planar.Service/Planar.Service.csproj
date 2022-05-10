@@ -8,8 +8,11 @@
 
   <ItemGroup>
     <Compile Remove="Classes\**" />
+    <Compile Remove="MonitorHooks\**" />
     <EmbeddedResource Remove="Classes\**" />
+    <EmbeddedResource Remove="MonitorHooks\**" />
     <None Remove="Classes\**" />
+    <None Remove="MonitorHooks\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -51,9 +54,5 @@
     <ProjectReference Include="..\Planar.Calendar.Hebrew\Planar.Calendar.Hebrew.csproj" />
     <ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
     <ProjectReference Include="..\Planar.MonitorHook\Planar.MonitorHook.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="MonitorHooks\" />
   </ItemGroup>
 </Project>

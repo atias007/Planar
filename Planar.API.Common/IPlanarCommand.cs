@@ -31,20 +31,6 @@ namespace Planar.API.Common
 
         #endregion Trace
 
-        #region Parameters
-
-        BaseResponse UpsertGlobalParameter(GlobalParameterData request);
-
-        BaseResponse RemoveGlobalParameter(GlobalParameterKey request);
-
-        BaseResponse<string> GetGlobalParameter(GlobalParameterKey request);
-
-        GetAllGlobalParametersResponse GetAllGlobalParameters();
-
-        BaseResponse FlushGlobalParameter();
-
-        #endregion Parameters
-
         #region User
 
         BaseResponse<AddUserResponse> AddUser(AddUserRequest request);

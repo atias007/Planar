@@ -6,3 +6,4 @@ ls|list
 get           <key>
 add|upsert    <key> <value>
 remove        <key>
+flush

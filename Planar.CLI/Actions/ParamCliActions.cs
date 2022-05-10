@@ -1,7 +1,8 @@
-﻿using Planar.API.Common.Entities;
-using Planar.CLI.Attributes;
+﻿using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
+using RestSharp;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
@@ -10,36 +11,48 @@ namespace Planar.CLI.Actions
     public class ParamCliActions : BaseCliAction<ParamCliActions>
     {
         [Action("get")]
-        public static async Task<ActionResponse> GetParameter(CliParameterKeyRequest request)
+        public static async Task<CliActionResponse> GetParameter(CliParameterKeyRequest request)
         {
-            var prm = JsonMapper.Map<GlobalParameterKey, CliParameterKeyRequest>(request);
-            var result = await Proxy.InvokeAsync(x => x.GetGlobalParameter(prm));
-            return new ActionResponse(result, result.Result);
+            var restRequest = new RestRequest("parameters/{key}", Method.Get)
+                .AddParameter("key", request.Key, ParameterType.UrlSegment);
+            var result = await RestProxy.Invoke<string>(restRequest);
+            return new CliActionResponse(result, message: result.Data);
         }
 
         [Action("ls")]
         [Action("list")]
-        public static async Task<ActionResponse> GetAllParameter()
+        public static async Task<CliActionResponse> GetAllParameter()
         {
-            var result = await Proxy.InvokeAsync(x => x.GetAllGlobalParameters());
-            return new ActionResponse(result, serializeObj: result.Result);
+            var restRequest = new RestRequest("parameters", Method.Get);
+            var result = await RestProxy.Invoke<Dictionary<string, string>>(restRequest);
+            return new CliActionResponse(result, serializeObj: result.Data);
         }
 
         [Action("upsert")]
         [Action("add")]
-        public static async Task<ActionResponse> UpsertParameter(CliParameterRequest request)
+        public static async Task<CliActionResponse> Upsert(CliParameterRequest request)
         {
-            var prm = JsonMapper.Map<GlobalParameterData, CliParameterRequest>(request);
-            var result = await Proxy.InvokeAsync(x => x.UpsertGlobalParameter(prm));
-            return new ActionResponse(result);
+            var restRequest = new RestRequest("parameters", Method.Post)
+                .AddBody(request);
+            var result = await RestProxy.Invoke(restRequest);
+            return new CliActionResponse(result);
+        }
+
+        [Action("flush")]
+        public static async Task<CliActionResponse> Flush()
+        {
+            var restRequest = new RestRequest("parameters/flush", Method.Post);
+            var result = await RestProxy.Invoke(restRequest);
+            return new CliActionResponse(result);
         }
 
         [Action("remove")]
-        public static async Task<ActionResponse> RemoveParameter(CliParameterKeyRequest request)
+        public static async Task<CliActionResponse> RemoveParameter(CliParameterKeyRequest request)
         {
-            var prm = JsonMapper.Map<GlobalParameterKey, CliParameterKeyRequest>(request);
-            var result = await Proxy.InvokeAsync(x => x.RemoveGlobalParameter(prm));
-            return new ActionResponse(result);
+            var restRequest = new RestRequest("parameters/{key}", Method.Delete)
+                .AddParameter("key", request.Key, ParameterType.UrlSegment);
+            var result = await RestProxy.Invoke(restRequest);
+            return new CliActionResponse(result);
         }
     }
 }

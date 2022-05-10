@@ -3,6 +3,8 @@ using Planar.API.Common.Entities;
 using Planar.Service.Data;
 using Planar.Service.Model;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -13,7 +15,32 @@ namespace Planar.Service.API
         {
         }
 
-        public async Task UpsertGlobalParameter(GlobalParameterData request)
+        public async Task Delete(string key)
+        {
+            await DataLayer.RemoveGlobalParameter(key);
+        }
+
+        public async Task Flush()
+        {
+            await MainService.LoadGlobalParameters();
+        }
+
+        public async Task<string> Get(string key)
+        {
+            var data = await DataLayer.GetGlobalParameter(key);
+            return data?.ParamValue;
+        }
+
+        public async Task<Dictionary<string, string>> GetAll()
+        {
+            var data = (await DataLayer.GetAllGlobalParameter())
+                .Select(p => GetGlobalParameterData(p))
+                .ToDictionary(p => p.Key, p => p.Value);
+
+            return data;
+        }
+
+        public async Task Upsert(GlobalParameterData request)
         {
             var exists = await DataLayer.IsGlobalParameterExists(request.Key);
             var data = GetGlobalParameter(request);
@@ -33,6 +60,17 @@ namespace Planar.Service.API
             {
                 ParamKey = request.Key,
                 ParamValue = request.Value
+            };
+
+            return result;
+        }
+
+        private static GlobalParameterData GetGlobalParameterData(GlobalParameter data)
+        {
+            var result = new GlobalParameterData
+            {
+                Key = data.ParamKey,
+                Value = data.ParamValue
             };
 
             return result;

@@ -297,7 +297,7 @@ namespace Planar.Service.API
                 var parametersDomain = Resolve<ParametersDomain>();
                 foreach (var p in parameters)
                 {
-                    await parametersDomain.UpsertGlobalParameter(new GlobalParameterData { Key = p.Key, Value = p.Value });
+                    await parametersDomain.Upsert(new GlobalParameterData { Key = p.Key, Value = p.Value });
                 };
             }
         }

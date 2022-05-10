@@ -2,7 +2,7 @@
   "profiles": {
     "Planar.CLI": {
       "commandName": "Project",
-      "commandLineArgs": " monitor ls 2a1ed1r1g4g"
+      "commandLineArgs": "trace prop 9694"
     }
   }
 }
