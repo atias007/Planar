@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar.Common;
-using Planar.MonitorHook;
 using Planar.Service.Monitor;
 using Quartz;
 using Quartz.Impl.Calendar;
@@ -52,7 +51,7 @@ namespace Planar.Service.General
                 var assemblyContext = AssemblyLoader.CreateAssemblyLoadContext($"MonitorHook_{folder}", true);
                 var files = Directory.GetFiles(dir, "*.dll");
                 var hasHook = false;
-                var interfaceName = typeof(IMonitorHook).FullName;
+                const string baseClassName = "Planar.MonitorHook.BaseMonitorHook";
 
                 foreach (var f in files)
                 {
@@ -60,7 +59,7 @@ namespace Planar.Service.General
                     var types = assembly.GetTypes().Where(t => t.IsInterface == false && t.IsAbstract == false);
                     foreach (var t in types)
                     {
-                        var isHook = t.GetInterfaces().Any(i => i.FullName == interfaceName);
+                        var isHook = t.BaseType.FullName == baseClassName;
                         if (isHook)
                         {
                             hasHook = true;

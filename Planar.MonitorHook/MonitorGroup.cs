@@ -1,8 +1,6 @@
-﻿using Planar.Service.Model;
-
-namespace Planar.Service.Monitor
+﻿namespace Planar.MonitorHook
 {
-    public class MonitorGroup
+    public class MonitorGroup : IMonitorGroup
     {
         public MonitorGroup(Group group)
         {

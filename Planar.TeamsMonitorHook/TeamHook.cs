@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Planar.MonitorHook;
+﻿using Planar.MonitorHook;
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -9,13 +8,10 @@ using System.Threading.Tasks;
 
 namespace Planar.TeamsMonitorHook
 {
-    public class TeamHook : IMonitorHook
+    public class TeamHook : BaseMonitorHook
     {
-        private ILogger _logger;
-
-        public async Task Handle(IMonitorDetails monitorDetails, ILogger logger)
+        public override async Task Handle(IMonitorDetails monitorDetails)
         {
-            _logger = logger;
             var valid = ValidateGroup(monitorDetails.Group);
             if (valid == false) { return; }
 
@@ -27,7 +23,8 @@ namespace Planar.TeamsMonitorHook
         {
             if (string.IsNullOrEmpty(group.Reference1))
             {
-                _logger.LogError("Group {@Name} is invalid for Teams monitor hook. All reference fields are empty. At least 1 reference field should have teams channel url", group.Name);
+                // TODO: implement with message broker
+                // _logger.LogError("Group {Name} is invalid for Teams monitor hook. All reference fields are empty. At least 1 reference field should have teams channel url", group.Name);
                 return false;
             }
 
@@ -50,12 +47,14 @@ namespace Planar.TeamsMonitorHook
                 var response = await httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode == false)
                 {
-                    _logger.LogError("Send message to url '{Url}' fail with status code {StatusCode}", url, response.StatusCode);
+                    // TODO: implement with message broker
+                    // _logger.LogError("Send message to url '{Url}' fail with status code {StatusCode}", url, response.StatusCode);
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Send message to url '{Url}' fail with error: {Message}", url, ex.Message);
+                // TODO: implement with message broker
+                // _logger.LogError(ex, "Send message to url '{Url}' fail with error: {Message}", url, ex.Message);
             }
         }
 
@@ -90,7 +89,7 @@ namespace Planar.TeamsMonitorHook
             return GetMostInnerException(ex.InnerException);
         }
 
-        public Task Test(IMonitorDetails monitorDetails, ILogger logger)
+        public override Task Test(IMonitorDetails monitorDetails)
         {
             throw new NotImplementedException();
         }

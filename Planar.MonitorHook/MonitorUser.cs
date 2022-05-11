@@ -1,8 +1,6 @@
-﻿using Planar.Service.Model;
-
-namespace Planar.Service.Monitor
+﻿namespace Planar.MonitorHook
 {
-    public partial class MonitorUser
+    public partial class MonitorUser : IMonitorUser
     {
         public MonitorUser(User user)
         {

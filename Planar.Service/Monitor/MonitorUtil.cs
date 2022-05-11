@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar.Common;
-using Planar.MonitorHook;
 using Planar.Service.Data;
 using Planar.Service.General;
 using Planar.Service.Model;
@@ -8,6 +7,7 @@ using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -72,6 +72,11 @@ namespace Planar.Service.Monitor
         {
             var task = Task.Run(() =>
             {
+                if (context.JobDetail.Key.Group.StartsWith(Consts.PlanarSystemGroup))
+                {
+                    return;
+                }
+
                 List<MonitorAction> items;
                 var hookTasks = new List<Task>();
 
@@ -102,23 +107,23 @@ namespace Planar.Service.Monitor
                                 var details = GetMonitorDetails(action, context, jobException);
                                 var hookType = ServiceUtil.MonitorHooks[action.Hook]?.Type;
                                 var logger = Global.GetLogger(hookType);
-                                var hookTask = hookInstance.Handle(details, logger)
+                                var hookTask = hookInstance.Handle(details)
                                 .ContinueWith(t =>
                                 {
                                     if (t.Exception != null)
                                     {
-                                        logger.LogError(t.Exception, "Fail to handle monitor item id: {@Id}, title: '{@Title}' with hook {@Hook}", action.Id, action.Title, action.Hook);
+                                        logger.LogError(t.Exception, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
                                     }
                                 });
 
-                                logger.LogInformation("Monitor item id: {@Id}, title: '{@Title}' start to handle with hook {@Hook}", action.Id, action.Title, action.Hook);
+                                logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle with hook {Hook}", action.Id, action.Title, action.Hook);
                                 hookTasks.Add(hookTask);
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Fail to handle monitor item id: {@Id}, title: '{@Title}' with hook {@Hook}", action.Id, action.Title, action.Hook);
+                        _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
                     }
                 });
 
@@ -135,14 +140,16 @@ namespace Planar.Service.Monitor
             await task;
         }
 
-        private static IMonitorHook GetMonitorHookInstance(string hook)
+        private static HookInstance GetMonitorHookInstance(string hook)
         {
-            var result = ServiceUtil.MonitorHooks[hook];
-            if (result == null) { return null; }
-            if (result.Type == null) { return null; }
+            var factory = ServiceUtil.MonitorHooks[hook];
+            if (factory == null) { return null; }
+            if (factory.Type == null) { return null; }
 
-            var instance = Activator.CreateInstance(result.Type) as IMonitorHook;
-            return instance;
+            var instance = Activator.CreateInstance(factory.Type);
+            var method = instance.GetType().GetMethod("ExecuteHandle", BindingFlags.NonPublic | BindingFlags.Instance);
+            var result = new HookInstance { Instance = instance, Method = method };
+            return result;
         }
 
         private static MonitorDetails GetMonitorDetails(MonitorAction action, IJobExecutionContext context, Exception exception)

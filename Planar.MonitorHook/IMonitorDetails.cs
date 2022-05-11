@@ -16,7 +16,7 @@ namespace Planar.MonitorHook
         string JobId { get; set; }
         string JobName { get; set; }
         TimeSpan JobRunTime { get; set; }
-        SortedDictionary<string, string> MergedJobDataMap { get; set; }
+        Dictionary<string, string> MergedJobDataMap { get; set; }
         string MonitorTitle { get; set; }
         bool Recovering { get; set; }
         string TriggerDescription { get; set; }
@@ -25,6 +25,6 @@ namespace Planar.MonitorHook
         string TriggerName { get; set; }
         Exception Exception { get; set; }
         IMonitorGroup Group { get; set; }
-        List<IMonitorUser> Users { get; set; }
+        IEnumerable<IMonitorUser> Users { get; set; }
     }
 }

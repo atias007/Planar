@@ -7,6 +7,7 @@ using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
 using RestSharp;
 using Spectre.Console;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -36,18 +37,20 @@ namespace Planar.CLI
 
             if (args.Length == 0)
             {
+                AnsiConsole.Write(new FigletText("Planar")
+                    .LeftAligned()
+                    .Color(Color.SteelBlue1));
+
                 var versionString = Assembly.GetEntryAssembly()
                                         ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
                                         ?.InformationalVersion
                                         .ToString();
 
+                Console.WriteLine($"planar cli v{versionString}");
                 Console.WriteLine("-------------------------");
-                Console.WriteLine($"Planar v{versionString}");
-                Console.WriteLine("-------------------------");
-                Console.WriteLine("Planar command line format:");
-                Console.WriteLine("Planar <module> <command> [<options>]");
+                Console.WriteLine("usage: planar <module> <command> [<options>]");
                 Console.WriteLine();
-                Console.WriteLine("type 'Planar <module> --help' to see all avalible commands and options");
+                Console.WriteLine("use 'planar <module> --help' to see all avalible commands and options");
 
                 using Stream stream = typeof(Program).Assembly.GetManifestResourceStream("Planar.CLI.Help.Modules.txt");
                 using StreamReader reader = new(stream);

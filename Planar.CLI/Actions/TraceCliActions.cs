@@ -42,7 +42,8 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("trace/{id}/properties", Method.Get)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
             var result = await RestProxy.Invoke<string>(restRequest);
-            return new CliActionResponse(result, message: result.Data);
+            var data = Util.BeautifyJson(result.Data);
+            return new CliActionResponse(result, message: data);
         }
     }
 }

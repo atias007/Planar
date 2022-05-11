@@ -11,7 +11,7 @@ namespace Planar.Job
         private bool? _isNowOverrideValueExists;
         private DateTime? _nowOverrideValue;
 
-        public Task Execute(string context, ref object messageBroker)
+        internal Task Execute(string context, ref object messageBroker)
         {
             try
             {

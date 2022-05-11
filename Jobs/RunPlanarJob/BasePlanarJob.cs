@@ -37,10 +37,13 @@ namespace RunPlanarJob
                 var assemblyFilename = Path.Combine(JobPath, FileName);
                 assemblyContext = AssemblyLoader.CreateAssemblyLoadContext(context.FireInstanceId, true);
                 var assembly = AssemblyLoader.LoadFromAssemblyPath(assemblyFilename, assemblyContext);
+
+                // TODO: validate the type and the method variables
                 var type = assembly.GetType(TypeName);
                 Validate(type);
 
-                var method = type.GetMethod("Execute");
+                // TODO: validate the type ang the method variables
+                var method = type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance);
                 var instance = assembly.CreateInstance(TypeName);
 
                 MapJobInstanceProperties(context, type, instance);
@@ -131,7 +134,7 @@ namespace RunPlanarJob
                 throw new ApplicationException($"Type '{TypeName}' from assembly '{assemblyFilename}' not inherit 'Planar.Job.BaseJob' type");
             }
 
-            var method = type.GetMethod("Execute");
+            var method = type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance);
             if (method == null)
             {
                 var assemblyFilename = Path.Combine(JobPath, FileName);
