@@ -22,7 +22,7 @@ namespace CommonJob
 
         public string Details { get; set; }
 
-        private JobExecutionContext MapContext(IJobExecutionContext context, Dictionary<string, string> settings)
+        private static JobExecutionContext MapContext(IJobExecutionContext context, Dictionary<string, string> settings)
         {
             var mergeData = context.MergedJobDataMap.ToDictionary(k => k.Key, v => Convert.ToString(v.Value));
             var result = new JobExecutionContext

@@ -594,7 +594,7 @@ namespace Planar.Service.API
 
         public async Task<BaseResponse<List<MonitorItem>>> GetMonitorActions(GetMonitorActionsRequest request)
         {
-            var items = await _dal.GetMonitorActions("");
+            var items = await _dal.GetMonitorActions(request.JobIdOrJobGroup);
             var result = items.Select(m => new MonitorItem
             {
                 Active = m.Active.GetValueOrDefault(),
