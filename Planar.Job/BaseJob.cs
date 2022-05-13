@@ -11,11 +11,14 @@ namespace Planar.Job
         private bool? _isNowOverrideValueExists;
         private DateTime? _nowOverrideValue;
 
-        internal Task Execute(string context, ref object messageBroker)
+        internal Task Execute(ref object messageBroker)
         {
+            // TODO: check for null instance
+            _messageBroker = new MessageBroker(messageBroker);
+
             try
             {
-                _context = JsonSerializer.Deserialize<JobExecutionContext>(context);
+                _context = JsonSerializer.Deserialize<JobExecutionContext>(_messageBroker.Details);
             }
             catch (Exception ex)
             {

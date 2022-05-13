@@ -3,17 +3,41 @@ using Newtonsoft.Json;
 using Planar;
 using Quartz;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace CommonJob
 {
-    public class MessageBroker
+    public class JobMessageBroker
     {
         private readonly IJobExecutionContext _context;
         private static readonly object Locker = new();
 
-        public MessageBroker(IJobExecutionContext context)
+        public JobMessageBroker(IJobExecutionContext context, Dictionary<string, string> settings)
         {
             _context = context;
+            var mapContext = MapContext(context, settings);
+            Details = JsonConvert.SerializeObject(mapContext);
+        }
+
+        public string Details { get; set; }
+
+        private JobExecutionContext MapContext(IJobExecutionContext context, Dictionary<string, string> settings)
+        {
+            var mergeData = context.MergedJobDataMap.ToDictionary(k => k.Key, v => Convert.ToString(v.Value));
+            var result = new JobExecutionContext
+            {
+                JobSettings = settings,
+                FireInstanceId = context.FireInstanceId,
+                FireTime = context.FireTimeUtc,
+                NextFireTime = context.NextFireTimeUtc,
+                PreviousFireTime = context.PreviousFireTimeUtc,
+                Recovering = context.Recovering,
+                RefireCount = context.RefireCount,
+                ScheduledFireTime = context.ScheduledFireTimeUtc
+            };
+
+            return result;
         }
 
         public string Publish(string channel, string message)

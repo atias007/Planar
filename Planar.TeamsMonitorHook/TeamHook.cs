@@ -23,8 +23,7 @@ namespace Planar.TeamsMonitorHook
         {
             if (string.IsNullOrEmpty(group.Reference1))
             {
-                // TODO: implement with message broker
-                // _logger.LogError("Group {Name} is invalid for Teams monitor hook. All reference fields are empty. At least 1 reference field should have teams channel url", group.Name);
+                LogError(null, "Group {Name} is invalid for Teams monitor hook. All reference fields are empty. At least 1 reference field should have teams channel url", group.Name);
                 return false;
             }
 
@@ -47,14 +46,12 @@ namespace Planar.TeamsMonitorHook
                 var response = await httpClient.SendAsync(request);
                 if (response.IsSuccessStatusCode == false)
                 {
-                    // TODO: implement with message broker
-                    // _logger.LogError("Send message to url '{Url}' fail with status code {StatusCode}", url, response.StatusCode);
+                    LogError(null, "Send message to url '{Url}' fail with status code {StatusCode}", url, response.StatusCode);
                 }
             }
             catch (Exception ex)
             {
-                // TODO: implement with message broker
-                // _logger.LogError(ex, "Send message to url '{Url}' fail with error: {Message}", url, ex.Message);
+                LogError(ex, "Send message to url '{Url}' fail with error: {Message}", url, ex.Message);
             }
         }
 

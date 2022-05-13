@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Logging;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -10,15 +10,10 @@ namespace Planar.Service.Monitor
 
         public MethodInfo Method { get; set; }
 
-        public Task Handle(MonitorDetails details)
+        public Task Handle(MonitorDetails details, ILogger<MonitorUtil> logger)
         {
-            var users = JsonConvert.SerializeObject(details.Users);
-            var group = JsonConvert.SerializeObject(details.Group);
-            details.Users = null;
-            details.Group = null;
-            var json = JsonConvert.SerializeObject(details);
-
-            var result = Method.Invoke(Instance, new object[] { json, users, group });
+            var messageBroker = new MonitorMessageBroker(logger, details);
+            var result = Method.Invoke(Instance, new object[] { messageBroker });
             return result as Task;
         }
     }

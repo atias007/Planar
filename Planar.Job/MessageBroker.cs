@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
 
@@ -29,6 +30,8 @@ namespace Planar.Job
 
         public MessageBroker(object instance)
         {
+            // TODO: check for null instance
+
             Instance = instance;
             _method = instance.GetType().GetMethod("Publish");
 
@@ -36,7 +39,11 @@ namespace Planar.Job
             {
                 throw new ApplicationException("MessageBroker does not contains 'Publish' method");
             }
+
+            Details = GetProperty<string>(instance.GetType(), nameof(Details));
         }
+
+        public string Details { get; set; }
 
         public string Publish(MessageBrokerChannels channel)
         {
@@ -65,6 +72,19 @@ namespace Planar.Job
                 var result = _method.Invoke(Instance, new object[] { channel.ToString(), message });
                 return Convert.ToString(result);
             }
+        }
+
+        private T GetProperty<T>(Type type, string name)
+        {
+            var prop = type.GetProperty(name);
+            if (prop == null)
+            {
+                throw new ApplicationException($"MessageBroker does not contains '{name}' property");
+            }
+
+            var value = prop.GetValue(Instance);
+            var result = (T)Convert.ChangeType(value, typeof(T), CultureInfo.InvariantCulture);
+            return result;
         }
     }
 }

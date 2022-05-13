@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace RunPlanarJob
+namespace CommonJob
 {
     internal class JobExecutionContext
     {

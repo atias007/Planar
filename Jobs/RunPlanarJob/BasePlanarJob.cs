@@ -4,12 +4,9 @@ using Planar.Common;
 using Quartz;
 using System;
 using System.IO;
+using System.Reflection;
 using System.Runtime.Loader;
 using System.Threading.Tasks;
-using System.Text.Json;
-using Planar;
-using System.Linq;
-using System.Reflection;
 
 namespace RunPlanarJob
 {
@@ -20,7 +17,7 @@ namespace RunPlanarJob
 
         public string TypeName { get; set; }
 
-        private MessageBroker _broker;
+        private JobMessageBroker _broker;
 
         public override async Task Execute(IJobExecutionContext context)
         {
@@ -28,8 +25,6 @@ namespace RunPlanarJob
 
             try
             {
-                _broker = new MessageBroker(context);
-
                 MapProperties(context);
 
                 Validate();
@@ -38,19 +33,17 @@ namespace RunPlanarJob
                 assemblyContext = AssemblyLoader.CreateAssemblyLoadContext(context.FireInstanceId, true);
                 var assembly = AssemblyLoader.LoadFromAssemblyPath(assemblyFilename, assemblyContext);
 
-                // TODO: validate the type and the method variables
                 var type = assembly.GetType(TypeName);
                 Validate(type);
 
-                // TODO: validate the type ang the method variables
                 var method = type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance);
                 var instance = assembly.CreateInstance(TypeName);
 
                 MapJobInstanceProperties(context, type, instance);
-                var mapContext = MapContext(context);
 
-                var contextJson = JsonSerializer.Serialize(mapContext);
-                var result = method.Invoke(instance, new object[] { contextJson, _broker }) as Task;
+                var settings = LoadJobSettings();
+                _broker = new JobMessageBroker(context, settings);
+                var result = method.Invoke(instance, new object[] { _broker }) as Task;
                 await result;
             }
             catch (JobExecutionException ex)
@@ -75,25 +68,6 @@ namespace RunPlanarJob
                 FinalizeJob(context);
                 assemblyContext?.Unload();
             }
-        }
-
-        private JobExecutionContext MapContext(IJobExecutionContext context)
-        {
-            var settings = LoadJobSettings();
-            var mergeData = context.MergedJobDataMap.ToDictionary(k => k.Key, v => Convert.ToString(v.Value));
-            var result = new JobExecutionContext
-            {
-                JobSettings = settings,
-                FireInstanceId = context.FireInstanceId,
-                FireTime = context.FireTimeUtc,
-                NextFireTime = context.NextFireTimeUtc,
-                PreviousFireTime = context.PreviousFireTimeUtc,
-                Recovering = context.Recovering,
-                RefireCount = context.RefireCount,
-                ScheduledFireTime = context.ScheduledFireTimeUtc
-            };
-
-            return result;
         }
 
         private new void Validate()
@@ -148,19 +122,13 @@ namespace RunPlanarJob
             }
 
             var parameters = method.GetParameters();
-            if (parameters?.Length != 2)
+            if (parameters?.Length != 1)
             {
                 var assemblyFilename = Path.Combine(JobPath, FileName);
-                throw new ApplicationException($"Method 'Execute' at type '{TypeName}' from assembly '{assemblyFilename}' must have only 2 parameters (current parameters count {parameters?.Length})");
+                throw new ApplicationException($"Method 'Execute' at type '{TypeName}' from assembly '{assemblyFilename}' must have only 1 parameters (current parameters count {parameters?.Length})");
             }
 
-            if (parameters[0].ParameterType != typeof(string))
-            {
-                var assemblyFilename = Path.Combine(JobPath, FileName);
-                throw new ApplicationException($"First parameter in method 'Execute' at type '{TypeName}' from assembly '{assemblyFilename}' must be string. (current type '{parameters[0].ParameterType.Name}')");
-            }
-
-            if (parameters[1].ParameterType.ToString().StartsWith("System.Object") == false)
+            if (parameters[0].ParameterType.ToString().StartsWith("System.Object") == false)
             {
                 var assemblyFilename = Path.Combine(JobPath, FileName);
                 throw new ApplicationException($"Second parameter in method 'Execute' at type '{TypeName}' from assembly '{assemblyFilename}' must be object. (current type '{parameters[1].ParameterType.Name}')");

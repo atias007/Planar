@@ -107,7 +107,7 @@ namespace Planar.Service.Monitor
                                 var details = GetMonitorDetails(action, context, jobException);
                                 var hookType = ServiceUtil.MonitorHooks[action.Hook]?.Type;
                                 var logger = Global.GetLogger(hookType);
-                                var hookTask = hookInstance.Handle(details)
+                                var hookTask = hookInstance.Handle(details, _logger)
                                 .ContinueWith(t =>
                                 {
                                     if (t.Exception != null)
