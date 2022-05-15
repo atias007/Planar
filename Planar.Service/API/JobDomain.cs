@@ -360,9 +360,9 @@ namespace Planar.Service.API
             target.TriggerGroup = source.Trigger.Key.Group;
             target.TriggerName = source.Trigger.Key.Name;
             target.DataMap = ServiceUtil.ConvertJobDataMapToDictionary(source.MergedJobDataMap);
-            target.TriggerId = Convert.ToString(Convert.ToString(source.Get(Consts.TriggerId)));
+            target.TriggerId = TriggerKeyHelper.GetTriggerId(source);
 
-            if (string.IsNullOrEmpty(target.TriggerId) && target.TriggerGroup == Consts.RecoveringJobsGroup)
+            if (target.TriggerGroup == Consts.RecoveringJobsGroup)
             {
                 target.TriggerId = Consts.RecoveringJobsGroup;
             }
@@ -376,7 +376,7 @@ namespace Planar.Service.API
 
         private static void MapJobRowDetails(IJobDetail source, JobRowDetails target)
         {
-            target.Id = Convert.ToString(source.JobDataMap[Consts.JobId]);
+            target.Id = JobKeyHelper.GetJobId(source);
             target.Name = source.Key.Name;
             target.Group = source.Key.Group;
             target.Description = source.Description;
@@ -416,9 +416,9 @@ namespace Planar.Service.API
                 .Where(s => s.Key.StartsWith(Consts.ConstPrefix) == false && s.Key.StartsWith(Consts.QuartzPrefix) == false)
                 .ToDictionary(k => k.Key, v => Convert.ToString(v.Value));
             target.State = Scheduler.GetTriggerState(source.Key).Result.ToString();
-            target.Id = Convert.ToString(source.JobDataMap[Consts.TriggerId]);
+            target.Id = TriggerKeyHelper.GetTriggerId(source);
 
-            if (string.IsNullOrEmpty(target.Id) && source.Key.Group == Consts.RecoveringJobsGroup)
+            if (source.Key.Group == Consts.RecoveringJobsGroup)
             {
                 target.Id = Consts.RecoveringJobsGroup;
             }

@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar.Common;
 
-namespace Planar.Service.JobListener.Base
+namespace Planar.Service.List.Base
 {
     public class BaseListener<T>
     {

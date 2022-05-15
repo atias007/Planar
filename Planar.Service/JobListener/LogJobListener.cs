@@ -1,8 +1,9 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
+using Planar.Service.API.Helpers;
 using Planar.Service.General;
-using Planar.Service.JobListener.Base;
+using Planar.Service.List.Base;
 using Planar.Service.Monitor;
 using Quartz;
 using System;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
 
-namespace Planar.Service.JobListener
+namespace Planar.Service.List
 {
     public class LogJobListener : BaseJobListenerWithDataLayer<LogJobListener>, IJobListener
     {
@@ -51,10 +52,10 @@ namespace Planar.Service.JobListener
                     StartDate = context.FireTimeUtc.ToLocalTime().DateTime,
                     Status = (int)StatusMembers.Running,
                     StatusTitle = StatusMembers.Running.ToString(),
-                    JobId = context.JobDetail.JobDataMap.GetString(Consts.JobId),
+                    JobId = JobKeyHelper.GetJobId(context.JobDetail),
                     JobName = context.JobDetail.Key.Name,
                     JobGroup = context.JobDetail.Key.Group,
-                    TriggerId = context.Trigger.JobDataMap.GetString(Consts.TriggerId),
+                    TriggerId = TriggerKeyHelper.GetTriggerId(context.Trigger),
                     TriggerName = context.Trigger.Key.Name,
                     TriggerGroup = context.Trigger.Key.Group,
                     Retry = context.Trigger.Key.Group == Consts.RetryTriggerGroup
@@ -75,6 +76,7 @@ namespace Planar.Service.JobListener
             catch (Exception ex)
             {
                 var source = nameof(JobToBeExecuted);
+
                 Logger.LogCritical(ex, "Error handle {@source}: {@Message} ", source, ex.Message);
             }
             finally

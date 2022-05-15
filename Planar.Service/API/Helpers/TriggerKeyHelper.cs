@@ -26,7 +26,7 @@ namespace Planar.Service.API.Helpers
             }
             else
             {
-                result = await GetTriggerKeyById(key.Id);
+                result = await GetTriggerKey(key.Id);
                 if (result == null)
                 {
                     result = GetTriggerKeyByKey(key.Id);
@@ -41,24 +41,42 @@ namespace Planar.Service.API.Helpers
             return result;
         }
 
-        private static async Task<TriggerKey> GetTriggerKeyById(string triggerId)
+        public static async Task<TriggerKey> GetTriggerKey(string triggerId)
         {
             TriggerKey result = null;
             var keys = await Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
             foreach (var k in keys)
             {
                 var triggerDetails = await Scheduler.GetTrigger(k);
-                if (triggerDetails != null && triggerDetails.JobDataMap.TryGetValue(Consts.TriggerId, out var id))
+                var id = GetTriggerId(triggerDetails);
+                if (id == triggerId)
                 {
-                    if (Convert.ToString(id) == triggerId)
-                    {
-                        result = k;
-                        break;
-                    }
+                    result = k;
+                    break;
                 }
             }
 
             return result;
+        }
+
+        public static string GetTriggerId(ITrigger trigger)
+        {
+            if (trigger == null)
+            {
+                throw new NullReferenceException("trigger is null at TriggerKeyHelper.GetTriggerId(ITrigger)");
+            }
+
+            if (trigger.JobDataMap.TryGetValue(Consts.TriggerId, out var id))
+            {
+                return Convert.ToString(id);
+            }
+
+            return null;
+        }
+
+        public static string GetTriggerId(IJobExecutionContext context)
+        {
+            return GetTriggerId(context.Trigger);
         }
 
         private static TriggerKey GetTriggerKeyByKey(string key)

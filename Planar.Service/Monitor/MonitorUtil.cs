@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar.Common;
+using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.General;
 using Planar.Service.Model;
@@ -165,7 +166,7 @@ namespace Planar.Service.Monitor
                 Group = new MonitorGroup(action.Group),
                 JobDescription = context.JobDetail.Description,
                 JobGroup = context.JobDetail.Key.Group,
-                JobId = Convert.ToString(context.JobDetail.JobDataMap.Get(Consts.JobId)),
+                JobId = JobKeyHelper.GetJobId(context.JobDetail),
                 JobName = context.JobDetail.Key.Name,
                 JobRunTime = context.JobRunTime,
                 MergedJobDataMap = ServiceUtil.ConvertJobDataMapToDictionary(context.MergedJobDataMap),
@@ -173,7 +174,7 @@ namespace Planar.Service.Monitor
                 Recovering = context.JobDetail.RequestsRecovery,
                 TriggerDescription = context.Trigger.Description,
                 TriggerGroup = context.Trigger.Key.Group,
-                TriggerId = Convert.ToString(context.Trigger.JobDataMap.Get(Consts.TriggerId)),
+                TriggerId = TriggerKeyHelper.GetTriggerId(context.Trigger),
                 TriggerName = context.Trigger.Key.Name,
                 Exception = exception,
             };
@@ -196,7 +197,7 @@ namespace Planar.Service.Monitor
                 string.Compare(m.JobGroup, context.JobDetail.Key.Group, true) == 0 &&
                 string.IsNullOrEmpty(m.JobId));
 
-            var jobId = Convert.ToString(context.JobDetail.JobDataMap[Consts.JobId]);
+            var jobId = JobKeyHelper.GetJobId(context.JobDetail);
             var jobIdItems = eventItems.Where(m =>
                 string.IsNullOrEmpty(m.JobGroup) &&
                 string.IsNullOrEmpty(m.JobId) == false &&

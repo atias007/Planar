@@ -1,7 +1,4 @@
-﻿using JKang.IpcServiceFramework.Client;
-using Microsoft.Extensions.DependencyInjection;
-using Planar.API.Common;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.CLI.Actions;
 using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
@@ -59,19 +56,8 @@ namespace Planar.CLI
             }
             else
             {
-                LoadNetPipeProxy();
                 HandleCommand(args, cliActions);
             }
-        }
-
-        private static void LoadNetPipeProxy()
-        {
-            var serviceProvider = new ServiceCollection()
-                  .AddNamedPipeIpcClient<IPlanarCommand>("client1", (a, b) => { b.ConnectionTimeout = 10000; b.PipeName = "pipeinternal"; })
-                  .BuildServiceProvider();
-
-            var clientFactory = serviceProvider.GetRequiredService<IIpcClientFactory<IPlanarCommand>>();
-            BaseCliAction.Proxy = clientFactory.CreateClient("client1");
         }
 
         // TODO: remove method && ActionResponse class
@@ -82,7 +68,7 @@ namespace Planar.CLI
                 var action = CliArgumentsUtil.ValidateArgs(ref args, cliActions);
                 var cliArgument = new CliArgumentsUtil(args);
 
-                if (cliArgument.Module == "service" || cliArgument.Module == "group" || cliArgument.Module == "history" || cliArgument.Module == "job" || cliArgument.Module == "monitor" || cliArgument.Module == "param" || cliArgument.Module == "trace")
+                if (cliArgument.Module == "service" || cliArgument.Module == "group" || cliArgument.Module == "history" || cliArgument.Module == "job" || cliArgument.Module == "monitor" || cliArgument.Module == "param" || cliArgument.Module == "trace" || cliArgument.Module == "trigger")
                 {
                     HandleCliCommand(args, cliActions);
                     return;

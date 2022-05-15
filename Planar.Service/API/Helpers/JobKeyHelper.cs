@@ -44,6 +44,26 @@ namespace Planar.Service.API.Helpers
             return result;
         }
 
+        public static string GetJobId(IJobDetail job)
+        {
+            if (job == null)
+            {
+                throw new NullReferenceException("job is null at JobKeyHelper.GetJobId(IJobDetail)");
+            }
+
+            if (job.JobDataMap.TryGetValue(Consts.JobId, out var id))
+            {
+                return Convert.ToString(id);
+            }
+
+            return null;
+        }
+
+        public static string GetJobId(IJobExecutionContext context)
+        {
+            return GetJobId(context.JobDetail);
+        }
+
         private static async Task ValidateJobExists(JobKey jobKey)
         {
             var exists = await Scheduler.GetJobDetail(jobKey);
@@ -68,9 +88,10 @@ namespace Planar.Service.API.Helpers
             foreach (var k in keys)
             {
                 var jobDetails = await Scheduler.GetJobDetail(k);
-                if (jobDetails != null && jobDetails.JobDataMap.TryGetValue(Consts.JobId, out var id))
+                if (jobDetails != null)
                 {
-                    if (Convert.ToString(id) == jobId)
+                    var id = GetJobId(jobDetails);
+                    if (id == jobId)
                     {
                         result = k;
                         break;

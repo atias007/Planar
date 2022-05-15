@@ -1,8 +1,5 @@
-﻿using JKang.IpcServiceFramework.Client;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Planar.API.Common;
-using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using RestSharp;
 using Spectre.Console;
@@ -10,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -18,16 +14,6 @@ namespace Planar.CLI.Actions
 {
     public class BaseCliAction
     {
-        public static IIpcClient<IPlanarCommand> Proxy { get; set; }
-
-        protected static async Task<ActionResponse> ExecuteEntity(Expression<Func<IPlanarCommand, BaseResponse<string>>> exp)
-        {
-            var result = await Proxy.InvokeAsync(exp);
-            var jtoken = JsonConvert.DeserializeObject<JToken>(result.Result);
-            var entity = ConvertJTokenToObject(jtoken);
-            return new ActionResponse(result, serializeObj: entity);
-        }
-
         protected static async Task<CliActionResponse> ExecuteEntity(RestRequest request)
         {
             var result = await RestProxy.Invoke(request);
@@ -39,27 +25,6 @@ namespace Planar.CLI.Actions
             }
 
             return new CliActionResponse(result);
-        }
-
-        protected static async Task<ActionResponse> Execute(Expression<Func<IPlanarCommand, BaseResponse>> exp)
-        {
-            var result = await Proxy.InvokeAsync(exp);
-            return new ActionResponse(result);
-        }
-
-        protected static string SerializeObject(object obj)
-        {
-            return JsonConvert.SerializeObject(obj);
-        }
-
-        protected static T DeserializeObject<T>(string json)
-        {
-            return JsonConvert.DeserializeObject<T>(json);
-        }
-
-        protected static object DeserializeObject(string json)
-        {
-            return JsonConvert.DeserializeObject(json);
         }
 
         private static object ConvertJTokenToObject(JToken token)

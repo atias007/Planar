@@ -26,11 +26,6 @@ namespace Planar
         {
             var result = Host.CreateDefaultBuilder(args)
                 .UseWindowsService()
-                .ConfigureIpcHost(builder =>
-                {
-                    // configure IPC endpoints
-                    builder.AddNamedPipeEndpoint<IPlanarCommand>(pipeName: "pipeinternal");
-                })
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     InitializeAppSettings();

@@ -3,7 +3,7 @@ using Planar.Common;
 using Planar.Service.Data;
 using System;
 
-namespace Planar.Service.JobListener.Base
+namespace Planar.Service.List.Base
 {
     public class BaseJobListenerWithDataLayer<T> : BaseListener<T>
     {

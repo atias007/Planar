@@ -55,7 +55,7 @@ namespace Planar
             services.AddScoped<ServiceDomain>();
             services.AddScoped<MonitorDomain>();
             services.AddScoped<TraceDomain>();
-            services.AddScoped<IPlanarCommand, DeamonService>();
+            services.AddScoped<TriggerDomain>();
             services.AddHostedService<MainService>();
         }
 

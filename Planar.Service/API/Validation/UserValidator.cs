@@ -7,7 +7,7 @@ namespace Planar.Service.API.Validation
     {
         public UpdateEntityRecordValidator()
         {
-            // RuleFor(u => u.Id).GreaterThan(0);
+            RuleFor(u => u.Id).GreaterThan(0);
             RuleFor(u => u.PropertyName).NotEmpty();
             RuleFor(u => u.PropertyValue).NotEmpty();
         }

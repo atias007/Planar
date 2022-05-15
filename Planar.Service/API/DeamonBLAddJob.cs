@@ -92,7 +92,7 @@ namespace Planar.Service.API
             }
         }
 
-        private static async Task BuildTriggers(IScheduler scheduler, IJobDetail quartzJob, JobMetadata job)
+        public static async Task BuildTriggers(IScheduler scheduler, IJobDetail quartzJob, JobMetadata job)
         {
             var quartzTriggers1 = BuildTriggerWithSimpleSchedule(job.SimpleTriggers);
             var quartzTriggers2 = BuildTriggerWithCronSchedule(job.CronTriggers);
@@ -103,7 +103,7 @@ namespace Planar.Service.API
             await scheduler.ScheduleJob(quartzJob, allTriggers, true);
         }
 
-        private static IEnumerable<ITrigger> BuildTriggerWithCronSchedule(List<JobCronTriggerMetadata> triggers)
+        public static IEnumerable<ITrigger> BuildTriggerWithCronSchedule(List<JobCronTriggerMetadata> triggers)
         {
             if (triggers.IsNullOrEmpty()) return null;
 
@@ -118,7 +118,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        private static IEnumerable<ITrigger> BuildTriggerWithSimpleSchedule(List<JobSimpleTriggerMetadata> triggers)
+        public static IEnumerable<ITrigger> BuildTriggerWithSimpleSchedule(List<JobSimpleTriggerMetadata> triggers)
         {
             if (triggers.IsNullOrEmpty()) return null;
 

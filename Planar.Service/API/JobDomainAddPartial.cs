@@ -104,7 +104,7 @@ namespace Planar.Service.API
             await scheduler.ScheduleJob(quartzJob, allTriggers, true);
         }
 
-        private static IEnumerable<ITrigger> BuildTriggerWithCronSchedule(List<JobCronTriggerMetadata> triggers)
+        public static IEnumerable<ITrigger> BuildTriggerWithCronSchedule(List<JobCronTriggerMetadata> triggers)
         {
             if (triggers.IsNullOrEmpty()) return null;
 
@@ -119,7 +119,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        private static IEnumerable<ITrigger> BuildTriggerWithSimpleSchedule(List<JobSimpleTriggerMetadata> triggers)
+        public static IEnumerable<ITrigger> BuildTriggerWithSimpleSchedule(List<JobSimpleTriggerMetadata> triggers)
         {
             if (triggers.IsNullOrEmpty()) return null;
 
@@ -362,7 +362,7 @@ namespace Planar.Service.API
             }
         }
 
-        private static void ValidateTriggerMetadata(JobMetadata metadata)
+        public static void ValidateTriggerMetadata(JobMetadata metadata)
         {
             #region Trim
 
@@ -439,7 +439,7 @@ namespace Planar.Service.API
             #endregion Preserve Words
         }
 
-        private static JobMetadata GetJobMetadata(string yaml)
+        public static JobMetadata GetJobMetadata(string yaml)
         {
             var deserializer = new DeserializerBuilder()
                             .WithNamingConvention(CamelCaseNamingConvention.Instance)

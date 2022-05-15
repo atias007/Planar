@@ -301,7 +301,7 @@ namespace Planar.Service.Data
             return result.Entity;
         }
 
-        public async Task<object> GetUser(int id)
+        public async Task<User> GetUser(int id)
         {
             var result = await _context.Users.FindAsync(id);
             result.Groups = await _context.UsersToGroups
@@ -329,17 +329,17 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<object> GetUsers()
+        public async Task<List<UserRow>> GetUsers()
         {
             var result = await _context.Users
-                .Select(u => new
+                .Select(u => new UserRow
                 {
-                    u.EmailAddress1,
-                    u.FirstName,
-                    u.Id,
-                    u.LastName,
-                    u.PhoneNumber1,
-                    u.Username
+                    EmailAddress1 = u.EmailAddress1,
+                    FirstName = u.FirstName,
+                    Id = u.Id,
+                    LastName = u.LastName,
+                    PhoneNumber1 = u.PhoneNumber1,
+                    Username = u.Username
                 })
                 .OrderBy(u => u.FirstName)
                 .ThenBy(u => u.LastName)

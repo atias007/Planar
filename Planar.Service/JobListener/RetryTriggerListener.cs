@@ -1,15 +1,16 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
+using Planar.Service.API.Helpers;
 using Planar.Service.General;
-using Planar.Service.JobListener.Base;
+using Planar.Service.List.Base;
 using Planar.Service.Monitor;
 using Quartz;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Planar.Service.JobListener
+namespace Planar.Service.List
 {
     public class RetryTriggerListener : BaseListener<RetryTriggerListener>, ITriggerListener
     {
@@ -34,7 +35,7 @@ namespace Planar.Service.JobListener
                     return;
                 }
 
-                var id = Convert.ToString(trigger.JobDataMap[Consts.TriggerId]);
+                var id = TriggerKeyHelper.GetTriggerId(trigger);
                 var name = string.IsNullOrEmpty(id) ? Guid.NewGuid().ToString().Replace("-", string.Empty) : id;
                 var start = DateTime.Now.AddSeconds(span.Value.TotalSeconds);
                 var retryTrigger = TriggerBuilder

@@ -45,13 +45,12 @@ namespace Planar.CLI
             return table;
         }
 
-        public static Table GetTable(BaseResponse<TriggerRowDetails> response)
+        public static Table GetTable(TriggerRowDetails response)
         {
-            if (response.Success == false) return null;
             var table = new Table();
             table.AddColumns("TriggerId", "Key (Group.Name)", "State", "NextFireTime", "Interval/Cron");
-            response.Result.SimpleTriggers.ForEach(r => table.AddRow($"{r.Id}", $"{r.Group}.{r.Name}".EscapeMarkup(), r.State, CliTableFormat.FormatDateTime(r.NextFireTime), r.RepeatInterval));
-            response.Result.CronTriggers.ForEach(r => table.AddRow($"{r.Id}", $"{r.Group}.{r.Name}".EscapeMarkup(), r.State, CliTableFormat.FormatDateTime(r.NextFireTime), r.CronExpression.EscapeMarkup()));
+            response.SimpleTriggers.ForEach(r => table.AddRow($"{r.Id}", $"{r.Group}.{r.Name}".EscapeMarkup(), r.State, CliTableFormat.FormatDateTime(r.NextFireTime), r.RepeatInterval));
+            response.CronTriggers.ForEach(r => table.AddRow($"{r.Id}", $"{r.Group}.{r.Name}".EscapeMarkup(), r.State, CliTableFormat.FormatDateTime(r.NextFireTime), r.CronExpression.EscapeMarkup()));
             return table;
         }
 
@@ -105,9 +104,11 @@ namespace Planar.CLI
 
             table.AddRow("Data", dataMap.EscapeMarkup());
 
-            var response2 = new BaseResponse<TriggerRowDetails> { Result = new TriggerRowDetails() };
-            response2.Result.SimpleTriggers = response.SimpleTriggers;
-            response2.Result.CronTriggers = response.CronTriggers;
+            var response2 = new TriggerRowDetails
+            {
+                SimpleTriggers = response.SimpleTriggers,
+                CronTriggers = response.CronTriggers
+            };
 
             var table2 = GetTable(response2);
 

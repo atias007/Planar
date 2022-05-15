@@ -87,7 +87,7 @@ namespace Planar.Service.API
                     .ToList()
                     .Select(async key => await Scheduler.GetJobDetail(key));
 
-                result.Jobs = jobs.ToDictionary(d => Convert.ToString(d.Result.JobDataMap[Consts.JobId]), d => d.Result.Description);
+                result.Jobs = jobs.ToDictionary(d => JobKeyHelper.GetJobId(d.Result), d => d.Result.Description);
             }
 
             return result;
