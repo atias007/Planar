@@ -39,21 +39,6 @@ namespace Planar.Service.API
             return _serviceProvider.GetRequiredService<T>();
         }
 
-        protected static async Task<BaseResponse<string>> GetBaseResponse(Func<Task<object>> func)
-        {
-            var entity = await func();
-            var json = JsonConvert.SerializeObject(entity);
-            var result = new BaseResponse<string>(json);
-            return result;
-        }
-
-        protected static async Task<BaseResponse> GetBaseResponse(Func<Task> func)
-        {
-            await func();
-            var result = BaseResponse.Empty;
-            return result;
-        }
-
         protected static T DeserializeObject<T>(string json)
         {
             var entity = JsonConvert.DeserializeObject<T>(json);

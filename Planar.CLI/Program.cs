@@ -56,69 +56,7 @@ namespace Planar.CLI
             }
             else
             {
-                HandleCommand(args, cliActions);
-            }
-        }
-
-        // TODO: remove method && ActionResponse class
-        private static void HandleCommand(string[] args, IEnumerable<CliActionMetadata> cliActions)
-        {
-            try
-            {
-                var action = CliArgumentsUtil.ValidateArgs(ref args, cliActions);
-                var cliArgument = new CliArgumentsUtil(args);
-
-                if (cliArgument.Module == "service" || cliArgument.Module == "group" || cliArgument.Module == "history" || cliArgument.Module == "job" || cliArgument.Module == "monitor" || cliArgument.Module == "param" || cliArgument.Module == "trace" || cliArgument.Module == "trigger")
-                {
-                    HandleCliCommand(args, cliActions);
-                    return;
-                }
-
-                var console = Activator.CreateInstance(action.Method.DeclaringType);
-                ActionResponse response;
-
-                if (action.RequestType == null)
-                {
-                    try
-                    {
-                        response = (action.Method.Invoke(console, null) as Task<ActionResponse>)?.Result;
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new PlanarServiceException(ex);
-                    }
-                }
-                else
-                {
-                    var param = cliArgument.GetRequest(action.RequestType, action);
-                    var itMode = param is IIterative itParam && itParam.Iterative;
-
-                    if (itMode)
-                    {
-                        var name = $"{action.Method.DeclaringType.Name}.{action.Method.Name}";
-                        switch (name)
-                        {
-                            case "JobCliActions.GetRunningJobs":
-                                CliIterativeActions.InvokeGetRunnings((CliGetRunningJobsRequest)param).Wait();
-                                break;
-
-                            default:
-                                break;
-                        }
-
-                        response = null;
-                    }
-                    else
-                    {
-                        response = InvokeAction(action, console, param);
-                    }
-                }
-
-                HandleResponse(response);
-            }
-            catch (Exception ex)
-            {
-                HandleException(ex);
+                HandleCliCommand(args, cliActions);
             }
         }
 
@@ -203,23 +141,6 @@ namespace Planar.CLI
             }
         }
 
-        // TODO: to be deleted
-        private static ActionResponse InvokeAction(CliActionMetadata action, object console, object param)
-        {
-            ActionResponse response;
-            try
-            {
-                var result = action.Method.Invoke(console, new[] { param });
-                response = (result as Task<ActionResponse>).Result;
-            }
-            catch (Exception ex)
-            {
-                throw new PlanarServiceException(ex);
-            }
-
-            return response;
-        }
-
         private static CliActionResponse InvokeCliAction(CliActionMetadata action, object console, object param)
         {
             CliActionResponse response;
@@ -233,25 +154,6 @@ namespace Planar.CLI
             }
 
             return response;
-        }
-
-        // TODO: to be deleted
-        private static void HandleResponse(ActionResponse response)
-        {
-            if (response == null) return;
-
-            if (response.Tables != null)
-            {
-                response.Tables.ForEach(t => AnsiConsole.Write(t));
-            }
-            else if (!(string.IsNullOrEmpty(response.Message) == false && response.Response.Success))
-            {
-                WriteResult(response.Response);
-            }
-            else if (response.Response.Success) //-V3022
-            {
-                WriteInfo(response.Message);
-            }
         }
 
         private static void HandleCliResponse(CliActionResponse response)
@@ -279,25 +181,6 @@ namespace Planar.CLI
             if (string.IsNullOrEmpty(message)) return;
 
             AnsiConsole.WriteLine(message);
-        }
-
-        // TODO: to be deleted
-        private static void WriteResult(BaseResponse result)
-        {
-            if (result != null)
-            {
-                if (result.Success == false)
-                {
-                    if (result.ErrorCode > 0)
-                    {
-                        AnsiConsole.Markup($"[red]error: ({result.ErrorCode}) {result.ErrorDescription}[/]");
-                    }
-                    else
-                    {
-                        AnsiConsole.Markup($"[red]error: {result.ErrorDescription}[/]");
-                    }
-                }
-            }
         }
 
         private static void WriteCliResult(RestResponse result)

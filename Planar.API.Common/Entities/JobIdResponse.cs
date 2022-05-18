@@ -1,6 +1,6 @@
 ﻿namespace Planar.API.Common.Entities
 {
-    public class JobId
+    public class JobIdResponse
     {
         public string Id { get; set; }
     }

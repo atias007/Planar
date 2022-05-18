@@ -54,10 +54,8 @@ namespace Planar.CLI
             return table;
         }
 
-        public static Table GetTable(BaseResponse response, List<UserRowDetails> data)
+        public static Table GetTable(List<UserRowDetails> data)
         {
-            if (response.Success == false) return null;
-
             var table = new Table();
             table.AddColumns("Id", "FirstName", "LastName", "Username", "EmailAddress1", "PhoneNumber1");
             data.ForEach(r => table.AddRow($"{r.Id}", r.FirstName.EscapeMarkup(), r.LastName.EscapeMarkup(), r.Username.EscapeMarkup(), r.EmailAddress1.EscapeMarkup(), r.PhoneNumber1.EscapeMarkup()));

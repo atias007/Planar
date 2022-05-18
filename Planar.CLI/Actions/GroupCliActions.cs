@@ -11,7 +11,7 @@ namespace Planar.CLI.Actions
     public class GroupCliActions : BaseCliAction<GroupCliActions>
     {
         [Action("add")]
-        public static async Task<CliActionResponse> AddGroup(CliAddGroupRequest request)
+        public static async Task<CliActionResponse> Add(CliAddGroupRequest request)
         {
             var restRequest = new RestRequest("group", Method.Post)
                 .AddBody(request);
@@ -20,7 +20,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("get")]
-        public static async Task<CliActionResponse> GetGroupById(CliGetByIdRequest request)
+        public static async Task<CliActionResponse> GetById(CliGetByIdRequest request)
         {
             var restRequest = new RestRequest("group/{id}", Method.Get)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
@@ -30,7 +30,7 @@ namespace Planar.CLI.Actions
 
         [Action("ls")]
         [Action("list")]
-        public static async Task<CliActionResponse> GetGroups()
+        public static async Task<CliActionResponse> Get()
         {
             var restRequest = new RestRequest("group", Method.Get);
             var result = await RestProxy.Invoke<List<GroupRowDetails>>(restRequest);
@@ -46,7 +46,7 @@ namespace Planar.CLI.Actions
 
         [Action("remove")]
         [Action("delete")]
-        public static async Task<CliActionResponse> RemoveGroupById(CliGetByIdRequest request)
+        public static async Task<CliActionResponse> RemoveById(CliGetByIdRequest request)
         {
             var restRequest = new RestRequest("group/{id}", Method.Delete)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
@@ -56,7 +56,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("update")]
-        public static async Task<CliActionResponse> UpdateGroup(CliUpdateEntityRequest request)
+        public static async Task<CliActionResponse> Update(CliUpdateEntityRequest request)
         {
             var restRequest = new RestRequest("group/{id}", Method.Patch)
                .AddParameter("id", request.Id, ParameterType.UrlSegment)

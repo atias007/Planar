@@ -20,7 +20,7 @@ namespace Planar.Service.API
         {
         }
 
-        public async Task<BaseResponse> ClearData(string id)
+        public async Task ClearData(string id)
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
             var info = await Scheduler.GetJobDetail(jobKey);
@@ -35,8 +35,6 @@ namespace Planar.Service.API
             }
 
             await Scheduler.ResumeJob(jobKey);
-
-            return BaseResponse.Empty;
         }
 
         public async Task<JobDetails> Get(string id)

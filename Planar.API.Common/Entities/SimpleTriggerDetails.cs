@@ -1,5 +1,4 @@
-﻿using System;
-using YamlDotNet.Serialization;
+﻿using YamlDotNet.Serialization;
 
 namespace Planar.API.Common.Entities
 {

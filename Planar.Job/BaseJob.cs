@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -10,6 +12,7 @@ namespace Planar.Job
         private MessageBroker _messageBroker;
         private bool? _isNowOverrideValueExists;
         private DateTime? _nowOverrideValue;
+        private IServiceProvider _provider;
 
         internal Task Execute(ref object messageBroker)
         {
@@ -32,6 +35,12 @@ namespace Planar.Job
 
             _messageBroker = new MessageBroker(messageBroker);
 
+            var services = new ServiceCollection();
+            var configuration = GetConfiguration(_context);
+            services.AddSingleton(configuration);
+            RegisterServices(services);
+            _provider = services.BuildServiceProvider();
+
             return ExecuteJob(_context)
                 .ContinueWith(t =>
                 {
@@ -39,7 +48,25 @@ namespace Planar.Job
                 });
         }
 
+        protected IServiceProvider ServiceProvider
+        {
+            get
+            {
+                return _provider;
+            }
+        }
+
+        private static IConfiguration GetConfiguration(JobExecutionContext context)
+        {
+            var builder = new ConfigurationBuilder();
+            builder.AddInMemoryCollection(context.JobSettings);
+            var result = builder.Build();
+            return result;
+        }
+
         public abstract Task ExecuteJob(IJobExecutionContext context);
+
+        public abstract void RegisterServices(IServiceCollection services);
 
         protected void AddAggragateException(Exception ex)
         {

@@ -46,7 +46,6 @@ namespace Planar
                 optionsLifetime: ServiceLifetime.Singleton
             );
             services.AddTransient<DataLayer>();
-            services.AddTransient<DeamonBL>();
             services.AddTransient<MainService>();
             services.AddScoped<GroupDomain>();
             services.AddScoped<HistoryDomain>();

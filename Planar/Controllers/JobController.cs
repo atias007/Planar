@@ -18,7 +18,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<JobId>> Add([FromBody] AddJobRequest request)
+        public async Task<ActionResult<JobIdResponse>> Add([FromBody] AddJobRequest request)
         {
             var result = await BusinesLayer.Add(request);
             return CreatedAtAction(nameof(Get), result, result);

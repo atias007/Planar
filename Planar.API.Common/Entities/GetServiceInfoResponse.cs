@@ -1,6 +1,6 @@
 ﻿namespace Planar.API.Common.Entities
 {
-    public class GetServiceInfoResponse : BaseResponse
+    public class GetServiceInfoResponse
     {
         public bool InStandbyMode { get; set; }
 
