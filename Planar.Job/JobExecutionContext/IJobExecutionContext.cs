@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Planar.Job;
+using System;
 using System.Collections.Generic;
 
 namespace Planar
@@ -21,13 +22,13 @@ namespace Planar
 
         // Calendar
 
-        // JobDetails
+        IJobDetail JobDetails { get; }
 
         // TriggerDetails
 
-        // MergedJobDataMap
+        Dictionary<string, string> MergedJobDataMap { get; }
 
-        // RecoveringTriggerKey
+        Key RecoveringTriggerKey { get; }
 
         Dictionary<string, string> JobSettings { get; }
     }

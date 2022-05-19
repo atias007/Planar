@@ -1,4 +1,5 @@
-﻿using Planar;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Planar;
 using Planar.Job;
 using System;
 using System.Threading.Tasks;
@@ -47,6 +48,10 @@ namespace TestAction
             AppendInformation($"[x] Greetings from ActionJob ({greetings})! [{Now():dd/MM/yyyy HH:mm}] {Message}, {Value:N1}, MaxId: {MaxId}");
 
             PutJobData(nameof(MaxId), ++MaxId);
+        }
+
+        public override void RegisterServices(IServiceCollection services)
+        {
         }
     }
 }

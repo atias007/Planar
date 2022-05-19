@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Planar
+namespace CommonJob
 {
-    public class JobExecutionContext : IJobExecutionContext
+    internal class JobExecutionContext
     {
         public Dictionary<string, string> JobSettings { get; set; }
+
+        public Dictionary<string, string> MergedJobDataMap { get; set; }
 
         public string FireInstanceId { get; set; }
 
@@ -20,5 +22,9 @@ namespace Planar
         public bool Recovering { get; set; }
 
         public int RefireCount { get; set; }
+
+        public JobDetail JobDetails { get; set; }
+
+        public Key RecoveringTriggerKey { get; set; }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Planar;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Planar;
 using Planar.Job;
 using System;
 using System.Threading;
@@ -34,6 +35,10 @@ namespace TestAggEx
             CheckAggragateException();
 
             return Task.CompletedTask;
+        }
+
+        public override void RegisterServices(IServiceCollection services)
+        {
         }
     }
 }

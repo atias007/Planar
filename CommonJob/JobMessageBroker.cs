@@ -24,20 +24,46 @@ namespace CommonJob
 
         private static JobExecutionContext MapContext(IJobExecutionContext context, Dictionary<string, string> settings)
         {
-            var mergeData = context.MergedJobDataMap.ToDictionary(k => k.Key, v => Convert.ToString(v.Value));
+            var mergeData = ConvertDataMapTodictionary(context.MergedJobDataMap);
             var result = new JobExecutionContext
             {
                 JobSettings = settings,
+                MergedJobDataMap = mergeData,
                 FireInstanceId = context.FireInstanceId,
                 FireTime = context.FireTimeUtc,
                 NextFireTime = context.NextFireTimeUtc,
                 PreviousFireTime = context.PreviousFireTimeUtc,
                 Recovering = context.Recovering,
                 RefireCount = context.RefireCount,
-                ScheduledFireTime = context.ScheduledFireTimeUtc
+                ScheduledFireTime = context.ScheduledFireTimeUtc,
+                JobDetails = new JobDetail
+                {
+                    ConcurrentExecutionDisallowed = context.JobDetail.ConcurrentExecutionDisallowed,
+                    Description = context.JobDetail.Description,
+                    Durable = context.JobDetail.Durable,
+                    JobDataMap = ConvertDataMapTodictionary(context.JobDetail.JobDataMap),
+                    JobType = context.JobDetail.JobType,
+                    Key = new Key
+                    {
+                        Name = context.JobDetail.Key.Name,
+                        Group = context.JobDetail.Key.Group
+                    },
+                    PersistJobDataAfterExecution = context.JobDetail.PersistJobDataAfterExecution,
+                    RequestsRecovery = context.JobDetail.RequestsRecovery
+                },
+                RecoveringTriggerKey = new Key
+                {
+                    Name = context.RecoveringTriggerKey.Name,
+                    Group = context.RecoveringTriggerKey.Group
+                }
             };
 
             return result;
+        }
+
+        private static Dictionary<string, string> ConvertDataMapTodictionary(JobDataMap map)
+        {
+            return map.ToDictionary(k => k.Key, v => Convert.ToString(v.Value));
         }
 
         public string Publish(string channel, string message)
