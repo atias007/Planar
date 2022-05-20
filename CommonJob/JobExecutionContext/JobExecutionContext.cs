@@ -26,5 +26,7 @@ namespace CommonJob
         public JobDetail JobDetails { get; set; }
 
         public Key RecoveringTriggerKey { get; set; }
+
+        public string Environment { get; set; }
     }
 }

@@ -17,11 +17,27 @@ namespace Planar.CLI.Actions
         protected static async Task<CliActionResponse> ExecuteEntity(RestRequest request)
         {
             var result = await RestProxy.Invoke(request);
+            return new CliActionResponse(result);
+        }
+
+        protected static async Task<CliActionResponse> ExecuteEntity<T>(RestRequest request)
+        {
+            var result = await RestProxy.Invoke<T>(request);
             if (result.IsSuccessful)
             {
-                var jtoken = JsonConvert.DeserializeObject<JToken>(result.Content);
-                var entity = ConvertJTokenToObject(jtoken);
-                return new CliActionResponse(result, serializeObj: entity);
+                return new CliActionResponse(result, serializeObj: result.Content);
+            }
+
+            return new CliActionResponse(result);
+        }
+
+        protected static async Task<CliActionResponse> ExecuteEntity<T>(RestRequest request, Func<T, Table> tableFunc)
+        {
+            var result = await RestProxy.Invoke<T>(request);
+            if (result.IsSuccessful)
+            {
+                var table = tableFunc.Invoke(result.Data);
+                return new CliActionResponse(result, table);
             }
 
             return new CliActionResponse(result);

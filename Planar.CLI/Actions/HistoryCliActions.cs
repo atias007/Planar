@@ -49,7 +49,7 @@ namespace Planar.CLI.Actions
             restRequest.AddQueryParameter("ascending", request.Ascending);
 
             var result = await RestProxy.Invoke<List<JobInstanceLogRow>>(restRequest);
-            var table = result.Data.GetTable();
+            var table = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, table);
         }
 
@@ -90,7 +90,7 @@ namespace Planar.CLI.Actions
                 .AddQueryParameter("lastDays", request.LastDays);
 
             var result = await RestProxy.Invoke<List<JobInstanceLogRow>>(restRequest);
-            var table = result.Data.GetTable();
+            var table = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, table);
         }
     }

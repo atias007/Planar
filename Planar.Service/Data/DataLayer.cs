@@ -304,6 +304,7 @@ namespace Planar.Service.Data
         public async Task<User> GetUser(int id)
         {
             var result = await _context.Users.FindAsync(id);
+
             result.Groups = await _context.UsersToGroups
                 .Include(ug => ug.Group)
                 .Where(ug => ug.UserId == id)

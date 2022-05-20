@@ -16,7 +16,32 @@ namespace Planar.Job
 
         internal Task Execute(ref object messageBroker)
         {
-            // TODO: check for null instance
+            InitializeMessageBroker(messageBroker);
+            InitializeDepedencyInjection();
+
+            return ExecuteJob(_context)
+                .ContinueWith(t =>
+                {
+                    if (t.Exception != null) { throw t.Exception; }
+                });
+        }
+
+        private void InitializeDepedencyInjection()
+        {
+            var services = new ServiceCollection();
+            var configuration = GetConfiguration(_context);
+            services.AddSingleton(configuration);
+            RegisterServices(services);
+            _provider = services.BuildServiceProvider();
+        }
+
+        private void InitializeMessageBroker(object messageBroker)
+        {
+            if (messageBroker == null)
+            {
+                throw new ApplicationException("MessageBroker at BaseJob.Execute(string, ref object) is null");
+            }
+
             _messageBroker = new MessageBroker(messageBroker);
 
             try
@@ -28,24 +53,7 @@ namespace Planar.Job
                 throw new ApplicationException("Fail to deserialize job execution context at BaseJob.Execute(string, ref object)", ex);
             }
 
-            if (messageBroker == null)
-            {
-                throw new ApplicationException("MessageBroker at BaseJob.Execute(string, ref object) is null");
-            }
-
             _messageBroker = new MessageBroker(messageBroker);
-
-            var services = new ServiceCollection();
-            var configuration = GetConfiguration(_context);
-            services.AddSingleton(configuration);
-            RegisterServices(services);
-            _provider = services.BuildServiceProvider();
-
-            return ExecuteJob(_context)
-                .ContinueWith(t =>
-                {
-                    if (t.Exception != null) { throw t.Exception; }
-                });
         }
 
         protected IServiceProvider ServiceProvider
@@ -56,10 +64,19 @@ namespace Planar.Job
             }
         }
 
-        private static IConfiguration GetConfiguration(JobExecutionContext context)
+        protected IConfiguration Configuration
+        {
+            get
+            {
+                return _provider.GetRequiredService<IConfiguration>();
+            }
+        }
+
+        private IConfiguration GetConfiguration(JobExecutionContext context)
         {
             var builder = new ConfigurationBuilder();
             builder.AddInMemoryCollection(context.JobSettings);
+            Configure(builder);
             var result = builder.Build();
             return result;
         }
@@ -67,6 +84,8 @@ namespace Planar.Job
         public abstract Task ExecuteJob(IJobExecutionContext context);
 
         public abstract void RegisterServices(IServiceCollection services);
+
+        public abstract void Configure(IConfigurationBuilder configurationBuilder);
 
         protected void AddAggragateException(Exception ex)
         {
@@ -136,41 +155,41 @@ namespace Planar.Job
             return rows;
         }
 
-        protected string GetSetting(string key)
-        {
-            if (_context.JobSettings.ContainsKey(key) == false)
-            {
-                throw new ApplicationException($"Key '{key}' could not found in job settings");
-            }
+        ////protected string GetSetting(string key)
+        ////{
+        ////    if (_context.JobSettings.ContainsKey(key) == false)
+        ////    {
+        ////        throw new ApplicationException($"Key '{key}' could not found in job settings");
+        ////    }
 
-            if (_context.JobSettings.ContainsKey(key))
-            {
-                return _context.JobSettings[key];
-            }
-            else
-            {
-                return null;
-            }
-        }
+        ////    if (_context.JobSettings.ContainsKey(key))
+        ////    {
+        ////        return _context.JobSettings[key];
+        ////    }
+        ////    else
+        ////    {
+        ////        return null;
+        ////    }
+        ////}
 
-        protected T GetSetting<T>(string key)
-        {
-            if (_context.JobSettings.ContainsKey(key) == false)
-            {
-                throw new ApplicationException($"Key '{key}' could not found in job settings");
-            }
+        ////protected T GetSetting<T>(string key)
+        ////{
+        ////    if (_context.JobSettings.ContainsKey(key) == false)
+        ////    {
+        ////        throw new ApplicationException($"Key '{key}' could not found in job settings");
+        ////    }
 
-            var result = _context.JobSettings[key];
+        ////    var result = _context.JobSettings[key];
 
-            try
-            {
-                return (T)Convert.ChangeType(result, typeof(T));
-            }
-            catch (Exception ex)
-            {
-                throw new ApplicationException($"Fail to convert job settings '{result}' to type {typeof(T).Name}", ex);
-            }
-        }
+        ////    try
+        ////    {
+        ////        return (T)Convert.ChangeType(result, typeof(T));
+        ////    }
+        ////    catch (Exception ex)
+        ////    {
+        ////        throw new ApplicationException($"Fail to convert job settings '{result}' to type {typeof(T).Name}", ex);
+        ////    }
+        ////}
 
         protected void IncreaseEffectedRows(int delta = 1)
         {

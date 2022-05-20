@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Planar;
 using Planar.Job;
 using System;
@@ -9,6 +10,10 @@ namespace TestAggEx
 {
     public class MyJob : BaseJob
     {
+        public override void Configure(IConfigurationBuilder configurationBuilder)
+        {
+        }
+
         public override Task ExecuteJob(IJobExecutionContext context)
         {
             for (int i = 0; i < 10; i++)

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Planar.CLI.Entities
+﻿namespace Planar.CLI.Entities
 {
     public record UserRowDetails(int Id, string FirstName, string LastName, string Username, string EmailAddress1, string PhoneNumber1);
 

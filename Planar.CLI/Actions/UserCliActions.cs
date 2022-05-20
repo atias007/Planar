@@ -1,7 +1,7 @@
-﻿using Newtonsoft.Json;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
+using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -11,55 +11,60 @@ namespace Planar.CLI.Actions
     [Module("user")]
     public class UserCliActions : BaseCliAction<UserCliActions>
     {
-        ////[Action("add")]
-        ////public static async Task<ActionResponse> AddUser()
-        ////{
-        ////    var prm = CollectDataFromCli<AddUserRequest>();
-        ////    var result = await Proxy.InvokeAsync(x => x.AddUser(prm));
-        ////    return new ActionResponse(result, serializeObj: result.Result);
-        ////}
+        [Action("add")]
+        public static async Task<CliActionResponse> AddUser()
+        {
+            var prm = CollectDataFromCli<AddUserRequest>();
+            var restRequest = new RestRequest("user", Method.Post)
+                .AddBody(prm);
 
-        ////[Action("get")]
-        ////public static async Task<ActionResponse> GetUserById(CliGetByIdRequest request)
-        ////{
-        ////    var prm = JsonMapper.Map<GetByIdRequest, CliGetByIdRequest>(request);
+            return await ExecuteEntity<AddUserResponse>(restRequest);
+        }
 
-        ////    return await ExecuteEntity(x => x.GetUser(prm));
-        ////}
+        [Action("get/{id}")]
+        public static async Task<CliActionResponse> GetUserById(int id)
+        {
+            var restRequest = new RestRequest("user/{id}", Method.Get)
+                .AddParameter("id", id, ParameterType.UrlSegment);
 
-        ////[Action("ls")]
-        ////[Action("list")]
-        ////public static async Task<ActionResponse> GetUsers()
-        ////{
-        ////    var result = await Proxy.InvokeAsync(x => x.GetUsers());
-        ////    var response = JsonConvert.DeserializeObject<List<UserRowDetails>>(result.Result);
-        ////    var table = CliTableExtensions.GetTable(result, response);
-        ////    return new ActionResponse(result, table);
-        ////}
+            return await ExecuteEntity<CliUser>(restRequest);
+        }
 
-        ////[Action("remove")]
-        ////[Action("delete")]
-        ////public static async Task<ActionResponse> RemoveUserById(CliGetByIdRequest request)
-        ////{
-        ////    var prm = JsonMapper.Map<GetByIdRequest, CliGetByIdRequest>(request);
-        ////    var result = await Proxy.InvokeAsync(x => x.RemoveUser(prm));
-        ////    return new ActionResponse(result);
-        ////}
+        [Action("ls")]
+        [Action("list")]
+        public static async Task<CliActionResponse> GetUsers()
+        {
+            var restRequest = new RestRequest("user", Method.Get);
+            return await ExecuteEntity<List<UserRowDetails>>(restRequest, CliTableExtensions.GetTable);
+        }
 
-        ////[Action("update")]
-        ////public static async Task<ActionResponse> UpdateUser(CliUpdateEntityRequest request)
-        ////{
-        ////    var prm = JsonConvert.SerializeObject(request);
-        ////    var result = await Proxy.InvokeAsync(x => x.UpdateUser(prm));
-        ////    return new ActionResponse(result);
-        ////}
+        [Action("remove")]
+        [Action("delete")]
+        public static async Task<CliActionResponse> RemoveUserById(int id)
+        {
+            var restRequest = new RestRequest("user/{id}", Method.Delete)
+                .AddParameter("id", id, ParameterType.UrlSegment);
 
-        ////[Action("password")]
-        ////public static async Task<ActionResponse> GetUserPassword(CliGetByIdRequest request)
-        ////{
-        ////    var prm = JsonMapper.Map<GetByIdRequest, CliGetByIdRequest>(request);
-        ////    var result = await Proxy.InvokeAsync(x => x.GetUserPassword(prm));
-        ////    return new ActionResponse(result, serializeObj: result.Result);
-        ////}
+            return await ExecuteEntity(restRequest);
+        }
+
+        [Action("update")]
+        public static async Task<CliActionResponse> UpdateUser(CliUpdateEntityRequest request)
+        {
+            var restRequest = new RestRequest("user/{id}", Method.Patch)
+                .AddParameter("id", request.Id, ParameterType.UrlSegment)
+                .AddBody(request);
+
+            return await ExecuteEntity(restRequest);
+        }
+
+        [Action("password")]
+        public static async Task<CliActionResponse> GetUserPassword(int id)
+        {
+            var restRequest = new RestRequest("user/{id}/password", Method.Get)
+                .AddParameter("id", id, ParameterType.UrlSegment);
+
+            return await ExecuteEntity<string>(restRequest);
+        }
     }
 }

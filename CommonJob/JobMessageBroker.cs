@@ -1,6 +1,7 @@
 ﻿using CommonJob.MessageBrokerEntities;
 using Newtonsoft.Json;
 using Planar;
+using Planar.Common;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -55,7 +56,8 @@ namespace CommonJob
                 {
                     Name = context.RecoveringTriggerKey.Name,
                     Group = context.RecoveringTriggerKey.Group
-                }
+                },
+                Environment = Global.Environment
             };
 
             return result;

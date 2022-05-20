@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Planar;
 using Planar.Job;
 using System;
@@ -13,6 +14,10 @@ namespace TestAction
         public double Value { get; set; }
 
         public int MaxId { get; set; }
+
+        public override void Configure(IConfigurationBuilder configurationBuilder)
+        {
+        }
 
         public override async Task ExecuteJob(IJobExecutionContext context)
         {
@@ -44,7 +49,7 @@ namespace TestAction
                 SetEffectedRows(DateTime.Now.Second);
             }
 
-            var greetings = GetSetting("JobSet1");
+            var greetings = Configuration.GetValue<string>("JobSet1");
             AppendInformation($"[x] Greetings from ActionJob ({greetings})! [{Now():dd/MM/yyyy HH:mm}] {Message}, {Value:N1}, MaxId: {MaxId}");
 
             PutJobData(nameof(MaxId), ++MaxId);

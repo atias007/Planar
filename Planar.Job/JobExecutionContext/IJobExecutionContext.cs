@@ -20,16 +20,16 @@ namespace Planar
 
         int RefireCount { get; }
 
-        // Calendar
+        // TODO: Calendar
 
         IJobDetail JobDetails { get; }
 
-        // TriggerDetails
+        // TODO: TriggerDetails
 
         Dictionary<string, string> MergedJobDataMap { get; }
 
         Key RecoveringTriggerKey { get; }
 
-        Dictionary<string, string> JobSettings { get; }
+        string Environment { get; }
     }
 }
