@@ -305,11 +305,14 @@ namespace Planar.Service.Data
         {
             var result = await _context.Users.FindAsync(id);
 
-            result.Groups = await _context.UsersToGroups
-                .Include(ug => ug.Group)
-                .Where(ug => ug.UserId == id)
-                .Select(ug => ug.Group)
-                .ToListAsync();
+            if (result != null)
+            {
+                result.Groups = await _context.UsersToGroups
+                    .Include(ug => ug.Group)
+                    .Where(ug => ug.UserId == id)
+                    .Select(ug => ug.Group)
+                    .ToListAsync();
+            }
 
             return result;
         }

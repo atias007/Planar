@@ -9,8 +9,7 @@ namespace Planar.Job
         string Description { get; }
         bool Durable { get; }
         Dictionary<string, string> JobDataMap { get; }
-        Type JobType { get; }
-        Key Key { get; }
+        IKey Key { get; }
         bool PersistJobDataAfterExecution { get; }
         bool RequestsRecovery { get; }
     }

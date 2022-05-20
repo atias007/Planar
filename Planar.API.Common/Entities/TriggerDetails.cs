@@ -49,7 +49,7 @@ namespace Planar.API.Common.Entities
         public DateTime? FinalFire { get; set; }
 
         [YamlMember(Order = 99)]
-        public Dictionary<string, string> DataMap { get; set; }
+        public SortedDictionary<string, string> DataMap { get; set; }
 
         [YamlMember(Order = 100)]
         public string State { get; set; }

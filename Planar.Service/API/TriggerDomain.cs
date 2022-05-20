@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.Model.Metadata;
@@ -146,10 +147,7 @@ namespace Planar.Service.API
             target.NextFireTime = source.GetNextFireTimeUtc()?.LocalDateTime;
             target.PreviousFireTime = source.GetPreviousFireTimeUtc()?.LocalDateTime;
             target.Priority = source.Priority;
-            target.DataMap = source.JobDataMap
-                .AsEnumerable()
-                .Where(s => s.Key.StartsWith(Consts.ConstPrefix) == false && s.Key.StartsWith(Consts.QuartzPrefix) == false)
-                .ToDictionary(k => k.Key, v => Convert.ToString(v.Value));
+            target.DataMap = Global.ConvertDataMapToDictionary(source.JobDataMap);
             target.State = Scheduler.GetTriggerState(source.Key).Result.ToString();
             target.Id = TriggerKeyHelper.GetTriggerId(source);
 

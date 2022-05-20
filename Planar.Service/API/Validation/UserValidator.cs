@@ -34,11 +34,11 @@ namespace Planar.Service.API.Validation
             RuleFor(u => u.PhoneNumber1).Length(9, 50).Must(ValidationUtil.IsValidNumeric).WithMessage("Invalid numeric value");
             RuleFor(u => u.PhoneNumber2).Length(9, 50).Must(ValidationUtil.IsValidNumeric).WithMessage("Invalid numeric value");
             RuleFor(u => u.PhoneNumber3).Length(9, 50).Must(ValidationUtil.IsValidNumeric).WithMessage("Invalid numeric value");
-            RuleFor(u => u.Reference1).Length(0, 50);
-            RuleFor(u => u.Reference2).Length(0, 50);
-            RuleFor(u => u.Reference3).Length(0, 50);
-            RuleFor(u => u.Reference4).Length(0, 50);
-            RuleFor(u => u.Reference5).Length(0, 50);
+            RuleFor(u => u.Reference1).Length(0, 500);
+            RuleFor(u => u.Reference2).Length(0, 500);
+            RuleFor(u => u.Reference3).Length(0, 500);
+            RuleFor(u => u.Reference4).Length(0, 500);
+            RuleFor(u => u.Reference5).Length(0, 500);
         }
     }
 

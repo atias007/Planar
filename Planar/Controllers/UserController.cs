@@ -25,7 +25,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> Get([FromQuery] int id)
+        public async Task<ActionResult<User>> Get([FromRoute] int id)
         {
             var result = await BusinesLayer.Get(id);
             return Ok(result);
@@ -39,7 +39,7 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete([FromQuery] int id)
+        public async Task<ActionResult> Delete([FromRoute] int id)
         {
             await BusinesLayer.Delete(id);
             return NoContent();
@@ -53,7 +53,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}/password")]
-        public async Task<ActionResult<string>> GetPassword([FromQuery] int id)
+        public async Task<ActionResult<string>> GetPassword([FromRoute] int id)
         {
             var result = await BusinesLayer.GetPassword(id);
             return Ok(result);

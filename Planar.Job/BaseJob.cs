@@ -46,7 +46,16 @@ namespace Planar.Job
 
             try
             {
-                _context = JsonSerializer.Deserialize<JobExecutionContext>(_messageBroker.Details);
+                var options = new JsonSerializerOptions
+                {
+                    Converters =
+                    {
+                        new TypeMappingConverter<IJobDetail, JobDetail>(),
+                        new TypeMappingConverter<ITriggerDetail, TriggerDetail>(),
+                        new TypeMappingConverter<IKey, Key>()
+                    }
+                };
+                _context = JsonSerializer.Deserialize<JobExecutionContext>(_messageBroker.Details, options);
             }
             catch (Exception ex)
             {

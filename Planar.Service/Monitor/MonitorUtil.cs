@@ -169,7 +169,7 @@ namespace Planar.Service.Monitor
                 JobId = JobKeyHelper.GetJobId(context.JobDetail),
                 JobName = context.JobDetail.Key.Name,
                 JobRunTime = context.JobRunTime,
-                MergedJobDataMap = ServiceUtil.ConvertJobDataMapToDictionary(context.MergedJobDataMap),
+                MergedJobDataMap = Global.ConvertDataMapToDictionary(context.MergedJobDataMap),
                 MonitorTitle = action.Title,
                 Recovering = context.JobDetail.RequestsRecovery,
                 TriggerDescription = context.Trigger.Description,

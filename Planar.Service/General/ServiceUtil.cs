@@ -77,20 +77,5 @@ namespace Planar.Service.General
                 }
             }
         }
-
-        internal static SortedDictionary<string, string> ConvertJobDataMapToDictionary(JobDataMap dataMap)
-        {
-            if (dataMap == null) { return null; }
-
-            var result = new Dictionary<string, string>(dataMap.Count);
-            var arr = new KeyValuePair<string, object>[dataMap.Count];
-            dataMap.CopyTo(arr, 0);
-            foreach (var item in arr.Where(a => a.Key.StartsWith(Consts.ConstPrefix) == false && a.Key.StartsWith(Consts.QuartzPrefix) == false))
-            {
-                result.Add(item.Key, Convert.ToString(item.Value));
-            }
-
-            return new SortedDictionary<string, string>(result);
-        }
     }
 }

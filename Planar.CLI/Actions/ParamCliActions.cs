@@ -24,8 +24,7 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> GetAllParameter()
         {
             var restRequest = new RestRequest("parameters", Method.Get);
-            var result = await RestProxy.Invoke<Dictionary<string, string>>(restRequest);
-            return new CliActionResponse(result, serializeObj: result.Data);
+            return await ExecuteEntity<Dictionary<string, string>>(restRequest);
         }
 
         [Action("upsert")]
@@ -34,16 +33,15 @@ namespace Planar.CLI.Actions
         {
             var restRequest = new RestRequest("parameters", Method.Post)
                 .AddBody(request);
-            var result = await RestProxy.Invoke(restRequest);
-            return new CliActionResponse(result);
+
+            return await Execute(restRequest);
         }
 
         [Action("flush")]
         public static async Task<CliActionResponse> Flush()
         {
             var restRequest = new RestRequest("parameters/flush", Method.Post);
-            var result = await RestProxy.Invoke(restRequest);
-            return new CliActionResponse(result);
+            return await Execute(restRequest);
         }
 
         [Action("remove")]
@@ -51,8 +49,7 @@ namespace Planar.CLI.Actions
         {
             var restRequest = new RestRequest("parameters/{key}", Method.Delete)
                 .AddParameter("key", request.Key, ParameterType.UrlSegment);
-            var result = await RestProxy.Invoke(restRequest);
-            return new CliActionResponse(result);
+            return await Execute(restRequest);
         }
     }
 }

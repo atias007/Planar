@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Help\group.txt" />
     <None Remove="Help\History.txt" />
     <None Remove="Help\Job.txt" />
     <None Remove="Help\Modules.txt" />
@@ -17,6 +18,7 @@
     <None Remove="Help\Service.txt" />
     <None Remove="Help\Trace.txt" />
     <None Remove="Help\Trigger.txt" />
+    <None Remove="Help\User.txt" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +28,8 @@
   <ItemGroup>
     <EmbeddedResource Include="Help\History.txt" />
     <EmbeddedResource Include="Help\Monitor.txt" />
+    <EmbeddedResource Include="Help\Group.txt" />
+    <EmbeddedResource Include="Help\User.txt" />
     <EmbeddedResource Include="Help\Trigger.txt" />
     <EmbeddedResource Include="Help\Service.txt" />
     <EmbeddedResource Include="Help\Param.txt" />

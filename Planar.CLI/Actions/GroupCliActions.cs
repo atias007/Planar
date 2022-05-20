@@ -25,7 +25,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("group/{id}", Method.Get)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
-            return await ExecuteEntity(restRequest);
+            return await Execute(restRequest);
         }
 
         [Action("ls")]

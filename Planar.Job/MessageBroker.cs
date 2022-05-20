@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace Planar.Job
 {
-    public enum MessageBrokerChannels
+    internal enum MessageBrokerChannels
     {
         AddAggragateException,
         AppendInformation,

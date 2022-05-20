@@ -21,11 +21,11 @@ namespace Planar.CLI.Actions
             return await ExecuteEntity<AddUserResponse>(restRequest);
         }
 
-        [Action("get/{id}")]
-        public static async Task<CliActionResponse> GetUserById(int id)
+        [Action("get")]
+        public static async Task<CliActionResponse> GetUserById(CliGetByIdRequest request)
         {
             var restRequest = new RestRequest("user/{id}", Method.Get)
-                .AddParameter("id", id, ParameterType.UrlSegment);
+                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
             return await ExecuteEntity<CliUser>(restRequest);
         }
@@ -35,17 +35,17 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> GetUsers()
         {
             var restRequest = new RestRequest("user", Method.Get);
-            return await ExecuteEntity<List<UserRowDetails>>(restRequest, CliTableExtensions.GetTable);
+            return await ExecuteTable<List<UserRowDetails>>(restRequest, CliTableExtensions.GetTable);
         }
 
         [Action("remove")]
         [Action("delete")]
-        public static async Task<CliActionResponse> RemoveUserById(int id)
+        public static async Task<CliActionResponse> RemoveUserById(CliGetByIdRequest request)
         {
             var restRequest = new RestRequest("user/{id}", Method.Delete)
-                .AddParameter("id", id, ParameterType.UrlSegment);
+                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
-            return await ExecuteEntity(restRequest);
+            return await Execute(restRequest);
         }
 
         [Action("update")]
@@ -55,14 +55,14 @@ namespace Planar.CLI.Actions
                 .AddParameter("id", request.Id, ParameterType.UrlSegment)
                 .AddBody(request);
 
-            return await ExecuteEntity(restRequest);
+            return await Execute(restRequest);
         }
 
         [Action("password")]
-        public static async Task<CliActionResponse> GetUserPassword(int id)
+        public static async Task<CliActionResponse> GetUserPassword(CliUpdateEntityRequest request)
         {
             var restRequest = new RestRequest("user/{id}/password", Method.Get)
-                .AddParameter("id", id, ParameterType.UrlSegment);
+                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
             return await ExecuteEntity<string>(restRequest);
         }

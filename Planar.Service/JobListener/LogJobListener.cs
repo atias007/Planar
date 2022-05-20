@@ -1,6 +1,7 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.General;
 using Planar.Service.List.Base;
@@ -139,7 +140,7 @@ namespace Planar.Service.List
         {
             if (data.Count == 0) return null;
 
-            var items = ServiceUtil.ConvertJobDataMapToDictionary(data);
+            var items = Global.ConvertDataMapToDictionary(data);
             var yml = new SerializerBuilder().Build().Serialize(items);
             return yml;
         }

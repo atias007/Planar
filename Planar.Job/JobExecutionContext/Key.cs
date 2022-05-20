@@ -1,6 +1,6 @@
 ﻿namespace Planar.Job
 {
-    public class Key
+    internal class Key : IKey
     {
         public string Name { get; set; }
         public string Group { get; set; }

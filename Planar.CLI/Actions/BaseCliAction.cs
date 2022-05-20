@@ -14,7 +14,7 @@ namespace Planar.CLI.Actions
 {
     public class BaseCliAction
     {
-        protected static async Task<CliActionResponse> ExecuteEntity(RestRequest request)
+        protected static async Task<CliActionResponse> Execute(RestRequest request)
         {
             var result = await RestProxy.Invoke(request);
             return new CliActionResponse(result);
@@ -25,13 +25,13 @@ namespace Planar.CLI.Actions
             var result = await RestProxy.Invoke<T>(request);
             if (result.IsSuccessful)
             {
-                return new CliActionResponse(result, serializeObj: result.Content);
+                return new CliActionResponse(result, serializeObj: result.Data);
             }
 
             return new CliActionResponse(result);
         }
 
-        protected static async Task<CliActionResponse> ExecuteEntity<T>(RestRequest request, Func<T, Table> tableFunc)
+        protected static async Task<CliActionResponse> ExecuteTable<T>(RestRequest request, Func<T, Table> tableFunc)
         {
             var result = await RestProxy.Invoke<T>(request);
             if (result.IsSuccessful)

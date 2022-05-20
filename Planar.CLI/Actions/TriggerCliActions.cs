@@ -78,8 +78,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("trigger/{triggerId}", Method.Delete)
                 .AddParameter("triggerId", request.Id, ParameterType.UrlSegment);
 
-            var result = await RestProxy.Invoke(restRequest);
-            return new CliActionResponse(result);
+            return await Execute(restRequest);
         }
 
         [Action("pause")]
@@ -88,8 +87,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("trigger/pause", Method.Post)
                 .AddBody(request);
 
-            var result = await RestProxy.Invoke(restRequest);
-            return new CliActionResponse(result);
+            return await Execute(restRequest);
         }
 
         [Action("resume")]
@@ -98,8 +96,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("trigger/resume", Method.Post)
                 .AddBody(request);
 
-            var result = await RestProxy.Invoke(restRequest);
-            return new CliActionResponse(result);
+            return await Execute(restRequest);
         }
 
         [Action("upsert")]
@@ -113,8 +110,7 @@ namespace Planar.CLI.Actions
             prm.Yaml = yml;
 
             var restRequest = new RestRequest("trigger", Method.Post).AddBody(prm);
-            var result = await RestProxy.Invoke(restRequest);
-            return new CliActionResponse(result);
+            return await Execute(restRequest);
         }
     }
 }

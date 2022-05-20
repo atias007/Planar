@@ -7,7 +7,7 @@ namespace CommonJob
     {
         public Dictionary<string, string> JobSettings { get; set; }
 
-        public Dictionary<string, string> MergedJobDataMap { get; set; }
+        public SortedDictionary<string, string> MergedJobDataMap { get; set; }
 
         public string FireInstanceId { get; set; }
 
@@ -25,7 +25,7 @@ namespace CommonJob
 
         public JobDetail JobDetails { get; set; }
 
-        public Key RecoveringTriggerKey { get; set; }
+        public TriggerDetail TriggerDetails { get; set; }
 
         public string Environment { get; set; }
     }

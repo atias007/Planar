@@ -40,6 +40,7 @@ namespace Planar.Service.API
                 Password = password
             };
 
+            await new AddUserValidator().ValidateAndThrowAsync(user);
             var result = await DataLayer.AddUser(user);
             var response = new AddUserResponse
             {
@@ -52,7 +53,9 @@ namespace Planar.Service.API
 
         public async Task<User> Get(int id)
         {
-            return await DataLayer.GetUser(id);
+            var result = await DataLayer.GetUser(id);
+            result.Password = string.Empty.PadLeft(15, '*');
+            return result;
         }
 
         public async Task<List<UserRow>> GetAll()

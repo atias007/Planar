@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Planar.Job
 {
-    public class JobDetail : IJobDetail
+    internal class JobDetail : IJobDetail
     {
-        public Key Key { get; set; }
+        public IKey Key { get; set; }
 
         public string Description { get; set; }
-
-        public Type JobType { get; set; }
 
         public Dictionary<string, string> JobDataMap { get; set; }
 

@@ -333,7 +333,7 @@ namespace Planar.Service.API
             target.ConcurrentExecution = !source.ConcurrentExecutionDisallowed;
             target.Durable = source.Durable;
             target.RequestsRecovery = source.RequestsRecovery;
-            target.DataMap = ServiceUtil.ConvertJobDataMapToDictionary(dataMap);
+            target.DataMap = Global.ConvertDataMapToDictionary(dataMap);
 
             if (dataMap.ContainsKey(Consts.JobTypeProperties))
             {
@@ -357,7 +357,7 @@ namespace Planar.Service.API
             target.RefireCount = source.RefireCount;
             target.TriggerGroup = source.Trigger.Key.Group;
             target.TriggerName = source.Trigger.Key.Name;
-            target.DataMap = ServiceUtil.ConvertJobDataMapToDictionary(source.MergedJobDataMap);
+            target.DataMap = Global.ConvertDataMapToDictionary(source.MergedJobDataMap);
             target.TriggerId = TriggerKeyHelper.GetTriggerId(source);
 
             if (target.TriggerGroup == Consts.RecoveringJobsGroup)
@@ -409,10 +409,7 @@ namespace Planar.Service.API
             target.NextFireTime = source.GetNextFireTimeUtc()?.LocalDateTime;
             target.PreviousFireTime = source.GetPreviousFireTimeUtc()?.LocalDateTime;
             target.Priority = source.Priority;
-            target.DataMap = source.JobDataMap
-                .AsEnumerable()
-                .Where(s => s.Key.StartsWith(Consts.ConstPrefix) == false && s.Key.StartsWith(Consts.QuartzPrefix) == false)
-                .ToDictionary(k => k.Key, v => Convert.ToString(v.Value));
+            target.DataMap = Global.ConvertDataMapToDictionary(source.JobDataMap);
             target.State = Scheduler.GetTriggerState(source.Key).Result.ToString();
             target.Id = TriggerKeyHelper.GetTriggerId(source);
 

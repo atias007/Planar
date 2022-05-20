@@ -5,7 +5,6 @@ using Planar.Common;
 using Quartz;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace CommonJob
 {
@@ -25,11 +24,10 @@ namespace CommonJob
 
         private static JobExecutionContext MapContext(IJobExecutionContext context, Dictionary<string, string> settings)
         {
-            var mergeData = ConvertDataMapTodictionary(context.MergedJobDataMap);
             var result = new JobExecutionContext
             {
                 JobSettings = settings,
-                MergedJobDataMap = mergeData,
+                MergedJobDataMap = Global.ConvertDataMapToDictionary(context.MergedJobDataMap),
                 FireInstanceId = context.FireInstanceId,
                 FireTime = context.FireTimeUtc,
                 NextFireTime = context.NextFireTimeUtc,
@@ -42,8 +40,7 @@ namespace CommonJob
                     ConcurrentExecutionDisallowed = context.JobDetail.ConcurrentExecutionDisallowed,
                     Description = context.JobDetail.Description,
                     Durable = context.JobDetail.Durable,
-                    JobDataMap = ConvertDataMapTodictionary(context.JobDetail.JobDataMap),
-                    JobType = context.JobDetail.JobType,
+                    JobDataMap = Global.ConvertDataMapToDictionary(context.JobDetail.JobDataMap),
                     Key = new Key
                     {
                         Name = context.JobDetail.Key.Name,
@@ -52,20 +49,27 @@ namespace CommonJob
                     PersistJobDataAfterExecution = context.JobDetail.PersistJobDataAfterExecution,
                     RequestsRecovery = context.JobDetail.RequestsRecovery
                 },
-                RecoveringTriggerKey = new Key
+                TriggerDetails = new TriggerDetail
                 {
-                    Name = context.RecoveringTriggerKey.Name,
-                    Group = context.RecoveringTriggerKey.Group
+                    CalendarName = context.Trigger.CalendarName,
+                    Description = context.Trigger.Description,
+                    EndTime = context.Trigger.EndTimeUtc,
+                    FinalFireTime = context.Trigger.FinalFireTimeUtc,
+                    HasMillisecondPrecision = context.Trigger.HasMillisecondPrecision,
+                    Key = new Key
+                    {
+                        Name = context.Trigger.Key.Name,
+                        Group = context.Trigger.Key.Group
+                    },
+                    MisfireInstruction = context.Trigger.MisfireInstruction,
+                    Priority = context.Trigger.Priority,
+                    StartTime = context.Trigger.StartTimeUtc,
+                    TriggerDataMap = Global.ConvertDataMapToDictionary(context.Trigger.JobDataMap)
                 },
                 Environment = Global.Environment
             };
 
             return result;
-        }
-
-        private static Dictionary<string, string> ConvertDataMapTodictionary(JobDataMap map)
-        {
-            return map.ToDictionary(k => k.Key, v => Convert.ToString(v.Value));
         }
 
         public string Publish(string channel, string message)

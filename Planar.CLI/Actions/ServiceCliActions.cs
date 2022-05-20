@@ -22,9 +22,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("service/stop", Method.Post)
                 .AddBody(prm);
 
-            await RestProxy.Invoke(restRequest);
-
-            return CliActionResponse.Empty;
+            return await Execute(restRequest);
         }
 
         [Action("isalive")]
@@ -45,15 +43,14 @@ namespace Planar.CLI.Actions
         {
             var restRequest = new RestRequest("service", Method.Get);
             var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest);
-            return new CliActionResponse(result, result.Data?.Environment);
+            return new CliActionResponse(result, message: result.Data?.Environment);
         }
 
         [Action("calendars")]
         public static async Task<CliActionResponse> GetAllCalendars()
         {
             var restRequest = new RestRequest("service/calendars", Method.Get);
-            var result = await RestProxy.Invoke<List<string>>(restRequest);
-            return new CliActionResponse(result, serializeObj: result.Data);
+            return await ExecuteEntity<List<string>>(restRequest);
         }
     }
 }

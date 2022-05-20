@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
+using Quartz;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Planar.Common
 {
@@ -43,6 +45,22 @@ namespace Planar.Common
             Parameters = null;
             Environment = null;
             ServiceProvider = null;
+        }
+
+        public static SortedDictionary<string, string> ConvertDataMapToDictionary(JobDataMap map)
+        {
+            if (map == null)
+            {
+                return null;
+            }
+
+            var dic = map
+                .Where(k => k.Key.StartsWith(Consts.ConstPrefix) == false && k.Key.StartsWith(Consts.QuartzPrefix) == false)
+                .OrderBy(k => k.Key)
+                .ToDictionary(k => k.Key, v => Convert.ToString(v.Value));
+
+            var result = new SortedDictionary<string, string>(dic);
+            return result;
         }
     }
 }

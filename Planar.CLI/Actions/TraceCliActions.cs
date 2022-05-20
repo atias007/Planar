@@ -32,8 +32,7 @@ namespace Planar.CLI.Actions
         {
             var restRequest = new RestRequest("trace/{id}/exception", Method.Get)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
-            var result = await RestProxy.Invoke<string>(restRequest);
-            return new CliActionResponse(result, message: result.Data);
+            return await ExecuteEntity<string>(restRequest);
         }
 
         [Action("prop")]

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace CommonJob
 {
@@ -9,9 +8,7 @@ namespace CommonJob
 
         public string Description { get; set; }
 
-        public Type JobType { get; set; }
-
-        public Dictionary<string, string> JobDataMap { get; set; }
+        public SortedDictionary<string, string> JobDataMap { get; set; }
 
         public bool Durable { get; set; }
 

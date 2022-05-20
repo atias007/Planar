@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Planar
 {
-    public class JobExecutionContext : IJobExecutionContext
+    internal class JobExecutionContext : IJobExecutionContext
     {
         public Dictionary<string, string> JobSettings { get; set; }
 
@@ -26,7 +26,7 @@ namespace Planar
 
         public IJobDetail JobDetails { get; set; }
 
-        public Key RecoveringTriggerKey { get; set; }
+        public ITriggerDetail TriggerDetails { get; set; }
 
         public string Environment { get; set; }
     }
