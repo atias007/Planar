@@ -1,44 +1,32 @@
-﻿using Quartz;
-using System;
+﻿using System.Collections.Generic;
 
 namespace Planar.Job.Test
 {
     public class MockJobDetails : IJobDetail
     {
-        private readonly JobDataMap _jobDataMap;
+        private readonly SortedDictionary<string, string> _jobDataMap;
+        private readonly IKey _key = new MockKey();
 
         public MockJobDetails()
         {
-            _jobDataMap = new JobDataMap
+            _jobDataMap = new SortedDictionary<string, string>
             {
                 { Consts.JobId, "UnitTest_JobId" }
             };
         }
 
-        public JobKey Key => new("TestJob", "Default");
+        public IKey Key => _key;
 
-        public string Description => throw new NotImplementedException();
+        public string Description => "This is UnitTest job description";
 
-        public Type JobType => throw new NotImplementedException();
+        public SortedDictionary<string, string> JobDataMap => _jobDataMap;
 
-        public JobDataMap JobDataMap => _jobDataMap;
+        public bool Durable => false;
 
-        public bool Durable => throw new NotImplementedException();
+        public bool PersistJobDataAfterExecution => false;
 
-        public bool PersistJobDataAfterExecution => throw new NotImplementedException();
+        public bool ConcurrentExecutionDisallowed => false;
 
-        public bool ConcurrentExecutionDisallowed => throw new NotImplementedException();
-
-        public bool RequestsRecovery => throw new NotImplementedException();
-
-        public IJobDetail Clone()
-        {
-            throw new NotImplementedException();
-        }
-
-        public JobBuilder GetJobBuilder()
-        {
-            throw new NotImplementedException();
-        }
+        public bool RequestsRecovery => false;
     }
 }

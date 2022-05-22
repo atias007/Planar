@@ -142,12 +142,11 @@ namespace CommonJob
         {
             try
             {
-                if (string.IsNullOrEmpty(JobPath)) return null;
-
                 // Load job global parameters
                 var final = Global.Parameters;
 
                 // Merge settings yml file
+                if (string.IsNullOrEmpty(JobPath)) return null;
                 var location = new DirectoryInfo(JobPath);
                 var jobSettings = CommonUtil.LoadJobSettings(location.FullName);
                 final = final.Merge(jobSettings);

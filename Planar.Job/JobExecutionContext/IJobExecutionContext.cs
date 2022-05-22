@@ -24,7 +24,7 @@ namespace Planar
 
         ITriggerDetail TriggerDetails { get; }
 
-        Dictionary<string, string> MergedJobDataMap { get; }
+        SortedDictionary<string, string> MergedJobDataMap { get; }
 
         string Environment { get; }
     }

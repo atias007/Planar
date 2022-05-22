@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.Json;
@@ -7,26 +9,31 @@ namespace Planar.Job.Test
 {
     public abstract class BaseJobTest
     {
-        protected static JobInstanceLog ExecuteJob<T>(Dictionary<string, object> dataMap = null, Dictionary<string, string> settings = null, DateTime? overrideNow = null)
+        protected abstract void Configure(IConfigurationBuilder configurationBuilder);
+
+        protected abstract void RegisterServices(IServiceCollection services);
+
+        protected static JobInstanceLog ExecuteJob<T>(Dictionary<string, string> dataMap = null, DateTime? overrideNow = null)
         where T : BaseJob
         {
             var instance = Activator.CreateInstance<T>();
             if (overrideNow.HasValue)
             {
-                dataMap.Add(Consts.NowOverrideValue, overrideNow);
+                dataMap.Add(Consts.NowOverrideValue, Convert.ToString(overrideNow));
             }
 
-            var context = new MockJobExecutionContext(dataMap);
-            instance.LoadJobSettings(settings);
+            var dict = dataMap == null ? new SortedDictionary<string, string>() : new SortedDictionary<string, string>(dataMap);
+            var context = new MockJobExecutionContext(new SortedDictionary<string, string>(dict));
+            // TODO: instance.LoadJobSettings(settings);
 
             Exception jobException = null;
             var start = DateTime.Now;
 
             try
             {
-                context.FireTimeUtc = new DateTimeOffset(overrideNow ?? DateTime.Now);
+                context.FireTime = new DateTimeOffset(overrideNow ?? DateTime.Now);
                 context.FireInstanceId = $"JobTest_{Environment.MachineName}_{Environment.UserName}_{GenerateFireInstanceId()}";
-                instance.Execute(context).Wait();
+                instance.ExecuteJob(context).Wait();
             }
             catch (Exception ex)
             {
@@ -39,7 +46,7 @@ namespace Planar.Job.Test
 
             var data = context.MergedJobDataMap.Keys.Count == 0 ? null : JsonSerializer.Serialize(context.MergedJobDataMap);
             var duration = context.JobRunTime.TotalMilliseconds;
-            var endDate = context.FireTimeUtc.DateTime.Add(context.JobRunTime);
+            var endDate = context.FireTime.DateTime.Add(context.JobRunTime);
             var status = jobException == null ? 0 : 1;
 
             //var value = context.Get(Consts.JobEffectedRows);
@@ -53,23 +60,24 @@ namespace Planar.Job.Test
             {
                 InstanceId = context.FireInstanceId,
                 Data = data,
-                StartDate = context.FireTimeUtc.DateTime,
+                StartDate = context.FireTime.DateTime,
                 JobName = context.JobDetail.Key.Name,
                 JobGroup = context.JobDetail.Key.Group,
-                JobId = context.JobDetail.JobDataMap.GetString(Consts.JobId),
-                TriggerName = context.Trigger.Key.Name,
-                TriggerGroup = context.Trigger.Key.Group,
-                TriggerId = context.Trigger.JobDataMap.GetString(Consts.TriggerId),
+                JobId = context.JobDetail.JobDataMap[Consts.JobId],
+                TriggerName = context.TriggerDetails.Key.Name,
+                TriggerGroup = context.TriggerDetails.Key.Group,
+                TriggerId = context.TriggerDetails.TriggerDataMap[Consts.TriggerId],
                 Duration = Convert.ToInt32(duration),
                 EndDate = endDate,
                 Exception = jobException?.ToString(),
+                // TODO: ---------------------------------
                 // EffectedRows = effectedRows,
                 // Information = information,
                 // Id = 0,
                 // IsStopped = false,
                 // Retry = false,
                 // StatusTitle = string.Empty
-                Status = status
+                Status = status,
             };
 
             return log;

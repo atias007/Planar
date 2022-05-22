@@ -8,7 +8,7 @@ namespace Planar.Job
 
         public string Description { get; set; }
 
-        public Dictionary<string, string> JobDataMap { get; set; }
+        public SortedDictionary<string, string> JobDataMap { get; set; }
 
         public bool Durable { get; set; }
 

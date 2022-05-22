@@ -5,15 +5,15 @@ namespace Planar.Job
 {
     public interface ITriggerDetail
     {
-        string CalendarName { get; set; }
-        string Description { get; set; }
-        DateTimeOffset? EndTime { get; set; }
-        DateTimeOffset? FinalFireTime { get; set; }
-        bool HasMillisecondPrecision { get; set; }
-        IKey Key { get; set; }
-        int MisfireInstruction { get; set; }
-        int Priority { get; set; }
-        DateTimeOffset StartTime { get; set; }
-        SortedDictionary<string, string> TriggerDataMap { get; set; }
+        string CalendarName { get; }
+        string Description { get; }
+        DateTimeOffset? EndTime { get; }
+        DateTimeOffset? FinalFireTime { get; }
+        bool HasMillisecondPrecision { get; }
+        IKey Key { get; }
+        int MisfireInstruction { get; }
+        int Priority { get; }
+        DateTimeOffset StartTime { get; }
+        SortedDictionary<string, string> TriggerDataMap { get; }
     }
 }

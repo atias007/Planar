@@ -14,7 +14,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Planar.Job.Test\Planar.Job.Test.csproj" />
     <ProjectReference Include="..\Planar.Service\Planar.Service.csproj" />
+    <ProjectReference Include="..\TestAction\TestAction.csproj" />
   </ItemGroup>
 
 </Project>

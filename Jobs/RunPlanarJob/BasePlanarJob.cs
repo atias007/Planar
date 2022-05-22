@@ -4,6 +4,7 @@ using Planar.Common;
 using Quartz;
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Threading.Tasks;
@@ -34,6 +35,10 @@ namespace RunPlanarJob
                 var assembly = AssemblyLoader.LoadFromAssemblyPath(assemblyFilename, assemblyContext);
 
                 var type = assembly.GetType(TypeName);
+                if (type == null)
+                {
+                    type = assembly.GetTypes().FirstOrDefault(t => t.FullName == TypeName);
+                }
                 Validate(type);
 
                 var method = type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance);

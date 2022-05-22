@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Planar.Job.Logger;
 using System;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -9,69 +11,10 @@ namespace Planar.Job
     public abstract class BaseJob
     {
         private JobExecutionContext _context;
-        private MessageBroker _messageBroker;
         private bool? _isNowOverrideValueExists;
+        private MessageBroker _messageBroker;
         private DateTime? _nowOverrideValue;
         private IServiceProvider _provider;
-
-        internal Task Execute(ref object messageBroker)
-        {
-            InitializeMessageBroker(messageBroker);
-            InitializeDepedencyInjection();
-
-            return ExecuteJob(_context)
-                .ContinueWith(t =>
-                {
-                    if (t.Exception != null) { throw t.Exception; }
-                });
-        }
-
-        private void InitializeDepedencyInjection()
-        {
-            var services = new ServiceCollection();
-            var configuration = GetConfiguration(_context);
-            services.AddSingleton(configuration);
-            RegisterServices(services);
-            _provider = services.BuildServiceProvider();
-        }
-
-        private void InitializeMessageBroker(object messageBroker)
-        {
-            if (messageBroker == null)
-            {
-                throw new ApplicationException("MessageBroker at BaseJob.Execute(string, ref object) is null");
-            }
-
-            _messageBroker = new MessageBroker(messageBroker);
-
-            try
-            {
-                var options = new JsonSerializerOptions
-                {
-                    Converters =
-                    {
-                        new TypeMappingConverter<IJobDetail, JobDetail>(),
-                        new TypeMappingConverter<ITriggerDetail, TriggerDetail>(),
-                        new TypeMappingConverter<IKey, Key>()
-                    }
-                };
-                _context = JsonSerializer.Deserialize<JobExecutionContext>(_messageBroker.Details, options);
-            }
-            catch (Exception ex)
-            {
-                throw new ApplicationException("Fail to deserialize job execution context at BaseJob.Execute(string, ref object)", ex);
-            }
-
-            _messageBroker = new MessageBroker(messageBroker);
-        }
-
-        protected IServiceProvider ServiceProvider
-        {
-            get
-            {
-                return _provider;
-            }
-        }
 
         protected IConfiguration Configuration
         {
@@ -81,34 +24,40 @@ namespace Planar.Job
             }
         }
 
-        private IConfiguration GetConfiguration(JobExecutionContext context)
+        protected ILogger Logger { get; private set; }
+
+        protected IServiceProvider ServiceProvider
         {
-            var builder = new ConfigurationBuilder();
-            builder.AddInMemoryCollection(context.JobSettings);
-            Configure(builder);
-            var result = builder.Build();
-            return result;
+            get
+            {
+                return _provider;
+            }
         }
+
+        public abstract void Configure(IConfigurationBuilder configurationBuilder);
 
         public abstract Task ExecuteJob(IJobExecutionContext context);
 
         public abstract void RegisterServices(IServiceCollection services);
 
-        public abstract void Configure(IConfigurationBuilder configurationBuilder);
+        internal Task Execute(ref object messageBroker)
+        {
+            InitializeMessageBroker(messageBroker);
+            InitializeDepedencyInjection(_context, _messageBroker);
+
+            Logger = ServiceProvider.GetRequiredService<ILogger>();
+
+            return ExecuteJob(_context)
+                .ContinueWith(t =>
+                {
+                    if (t.Exception != null) { throw t.Exception; }
+                });
+        }
 
         protected void AddAggragateException(Exception ex)
         {
             var message = new ExceptionDto(ex);
             _messageBroker.Publish(MessageBrokerChannels.AddAggragateException, message);
-        }
-
-        protected void AppendInformation(string info)
-        {
-            Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Console.Out.WriteLineAsync(info);
-            Console.ForegroundColor = ConsoleColor.White;
-
-            _messageBroker.Publish(MessageBrokerChannels.AppendInformation, info);
         }
 
         protected void CheckAggragateException()
@@ -150,13 +99,6 @@ namespace Planar.Job
             return GetData<string>(key);
         }
 
-        protected bool IsDataExists(string key)
-        {
-            var text = _messageBroker.Publish(MessageBrokerChannels.DataContainsKey, key);
-            _ = bool.TryParse(text, out var result);
-            return result;
-        }
-
         protected int? GetEffectedRows()
         {
             var text = _messageBroker.Publish(MessageBrokerChannels.GetEffectedRows);
@@ -164,45 +106,33 @@ namespace Planar.Job
             return rows;
         }
 
-        ////protected string GetSetting(string key)
-        ////{
-        ////    if (_context.JobSettings.ContainsKey(key) == false)
-        ////    {
-        ////        throw new ApplicationException($"Key '{key}' could not found in job settings");
-        ////    }
-
-        ////    if (_context.JobSettings.ContainsKey(key))
-        ////    {
-        ////        return _context.JobSettings[key];
-        ////    }
-        ////    else
-        ////    {
-        ////        return null;
-        ////    }
-        ////}
-
-        ////protected T GetSetting<T>(string key)
-        ////{
-        ////    if (_context.JobSettings.ContainsKey(key) == false)
-        ////    {
-        ////        throw new ApplicationException($"Key '{key}' could not found in job settings");
-        ////    }
-
-        ////    var result = _context.JobSettings[key];
-
-        ////    try
-        ////    {
-        ////        return (T)Convert.ChangeType(result, typeof(T));
-        ////    }
-        ////    catch (Exception ex)
-        ////    {
-        ////        throw new ApplicationException($"Fail to convert job settings '{result}' to type {typeof(T).Name}", ex);
-        ////    }
-        ////}
-
         protected void IncreaseEffectedRows(int delta = 1)
         {
             _messageBroker.Publish(MessageBrokerChannels.IncreaseEffectedRows, delta);
+        }
+
+        protected bool IsDataExists(string key)
+        {
+            var text = _messageBroker.Publish(MessageBrokerChannels.DataContainsKey, key);
+            _ = bool.TryParse(text, out var result);
+            return result;
+        }
+
+        protected TimeSpan JobRunTime
+        {
+            get
+            {
+                var text = _messageBroker.Publish(MessageBrokerChannels.JobRunTime);
+                var success = double.TryParse(text, out var result);
+                if (success)
+                {
+                    return TimeSpan.FromMilliseconds(result);
+                }
+                else
+                {
+                    return TimeSpan.Zero;
+                }
+            }
         }
 
         protected DateTime Now()
@@ -256,6 +186,57 @@ namespace Planar.Job
             var percentage = 1.0 * current / total;
             var value = Convert.ToByte(percentage * 100);
             UpdateProgress(value);
+        }
+
+        private IConfiguration GetConfiguration(JobExecutionContext context)
+        {
+            var builder = new ConfigurationBuilder();
+            builder.AddInMemoryCollection(context.JobSettings);
+            Configure(builder);
+            var result = builder.Build();
+            return result;
+        }
+
+        private void InitializeDepedencyInjection(JobExecutionContext context, MessageBroker messageBroker)
+        {
+            var services = new ServiceCollection();
+            var configuration = GetConfiguration(context);
+            services.AddSingleton(configuration);
+            services.AddSingleton<IJobExecutionContext>(context);
+            services.AddSingleton(messageBroker);
+            services.AddSingleton<ILogger, PlannerLogger>();
+            RegisterServices(services);
+            _provider = services.BuildServiceProvider();
+        }
+
+        private void InitializeMessageBroker(object messageBroker)
+        {
+            if (messageBroker == null)
+            {
+                throw new ApplicationException("MessageBroker at BaseJob.Execute(string, ref object) is null");
+            }
+
+            _messageBroker = new MessageBroker(messageBroker);
+
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    Converters =
+                    {
+                        new TypeMappingConverter<IJobDetail, JobDetail>(),
+                        new TypeMappingConverter<ITriggerDetail, TriggerDetail>(),
+                        new TypeMappingConverter<IKey, Key>()
+                    }
+                };
+                _context = JsonSerializer.Deserialize<JobExecutionContext>(_messageBroker.Details, options);
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException("Fail to deserialize job execution context at BaseJob.Execute(string, ref object)", ex);
+            }
+
+            _messageBroker = new MessageBroker(messageBroker);
         }
     }
 }

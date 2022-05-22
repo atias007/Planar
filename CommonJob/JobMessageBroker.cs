@@ -155,6 +155,9 @@ namespace CommonJob
 
                     return null;
 
+                case "JobRunTime":
+                    return _context.JobRunTime.TotalMilliseconds.ToString();
+
                 default:
                     return null;
             }

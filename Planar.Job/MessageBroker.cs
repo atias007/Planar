@@ -19,7 +19,8 @@ namespace Planar.Job
         DataContainsKey,
         PutJobData,
         PutTriggerData,
-        UpdateProgress
+        UpdateProgress,
+        JobRunTime
     }
 
     internal class MessageBroker

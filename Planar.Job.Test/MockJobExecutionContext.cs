@@ -1,72 +1,50 @@
-﻿using Quartz;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 
 namespace Planar.Job.Test
 {
     public class MockJobExecutionContext : IJobExecutionContext
     {
+        private readonly DateTime _now = DateTime.Now;
+        private readonly IJobDetail _jobDetail = new MockJobDetails();
+        private readonly ITriggerDetail _triggerDetail = new MockTriggerDetails();
+        private readonly SortedDictionary<string, string> _mergedJobDataMap;
+
         public MockJobExecutionContext()
         {
-            MergedJobDataMap = new JobDataMap();
+            _mergedJobDataMap = new();
         }
 
-        public MockJobExecutionContext(IDictionary<string, object> dataMap)
+        public MockJobExecutionContext(SortedDictionary<string, string> dataMap)
         {
-            if (dataMap == null) { dataMap = new Dictionary<string, object>(); }
-            MergedJobDataMap = new JobDataMap(dataMap);
+            if (dataMap == null) { dataMap = new SortedDictionary<string, string>(); }
+            _mergedJobDataMap = dataMap;
         }
-
-        public IScheduler Scheduler => null;
-
-        public ITrigger Trigger => new MockTrigger();
-
-        public ICalendar Calendar => null;
 
         public bool Recovering => false;
 
-        public TriggerKey RecoveringTriggerKey => new("UnitTestKeyName", "UnitTestKeyGroup");
-
         public int RefireCount => 0;
 
-        public JobDataMap MergedJobDataMap { get; private set; }
-
-        public IJobDetail JobDetail => new MockJobDetails();
-
-        public IJob JobInstance => null;
-
-        public DateTimeOffset FireTimeUtc { get; set; }
-
-        public DateTimeOffset? ScheduledFireTimeUtc => new(DateTime.Now);
-
-        public DateTimeOffset? PreviousFireTimeUtc => new(DateTime.Now.AddHours(-1));
-
-        public DateTimeOffset? NextFireTimeUtc => new(DateTime.Now.AddHours(1));
+        public IJobDetail JobDetail => _jobDetail;
 
         public string FireInstanceId { get; set; }
 
-        public object Result { get; set; }
+        public DateTimeOffset FireTime { get; set; }
 
         public TimeSpan JobRunTime { get; set; }
 
-        public CancellationToken CancellationToken => new(false);
+        public DateTimeOffset? NextFireTime => _now;
 
-        public object Get(object key)
-        {
-            return MergedJobDataMap.Get(Convert.ToString(key));
-        }
+        public DateTimeOffset? ScheduledFireTime => _now;
 
-        public void Put(object key, object objectValue)
-        {
-            if (MergedJobDataMap.ContainsKey(Convert.ToString(key)))
-            {
-                MergedJobDataMap[Convert.ToString(key)] = objectValue;
-            }
-            else
-            {
-                MergedJobDataMap.Add(Convert.ToString(key), objectValue);
-            }
-        }
+        public DateTimeOffset? PreviousFireTime => _now;
+
+        public IJobDetail JobDetails => new MockJobDetails();
+
+        public ITriggerDetail TriggerDetails => _triggerDetail;
+
+        public string Environment => "UnitTest";
+
+        public SortedDictionary<string, string> MergedJobDataMap => _mergedJobDataMap;
     }
 }

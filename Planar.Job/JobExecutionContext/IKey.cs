@@ -2,7 +2,7 @@
 {
     public interface IKey
     {
-        string Group { get; set; }
-        string Name { get; set; }
+        string Group { get; }
+        string Name { get; }
     }
 }
