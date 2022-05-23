@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
 
-namespace Planar.Job
+namespace Planar
 {
     internal enum MessageBrokerChannels
     {

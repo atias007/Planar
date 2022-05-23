@@ -19,6 +19,8 @@ namespace Planar.Job.Test
             if (overrideNow.HasValue)
             {
                 MergedJobDataMap.Add(Consts.NowOverrideValue, overrideNow);
+                JobDetail.JobDataMap.Add(Consts.NowOverrideValue, overrideNow);
+                Trigger.JobDataMap.Add(Consts.NowOverrideValue, overrideNow);
             }
 
             if (dataMap != null)

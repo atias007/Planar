@@ -113,7 +113,7 @@ namespace CommonJob
             try
             {
                 var propInfo = targetType.GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
-                foreach (var item in context.JobDetail.JobDataMap)
+                foreach (var item in context.MergedJobDataMap)
                 {
                     if (item.Key.StartsWith("__") == false)
                     {

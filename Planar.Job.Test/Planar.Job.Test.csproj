@@ -18,6 +18,7 @@
     <Compile Include="..\CommonJob\JobExecutionMetadata.cs" Link="Common\JobExecutionMetadata.cs" />
     <Compile Include="..\CommonJob\JobMessageBroker.cs" Link="Common\JobMessageBroker.cs" />
     <Compile Include="..\CommonJob\MessageBrokerEntities\KeyValueItem.cs" Link="Common\KeyValueItem.cs" />
+    <Compile Include="..\Planar.API.Common\Entities\StatusMembers.cs" Link="Common\StatusMembers.cs" />
     <Compile Include="..\Planar.Common\CommonUtil.cs" Link="Common\CommonUtil.cs" />
     <Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
     <Compile Include="..\Planar.Common\Extensions.cs" Link="Common\Extensions.cs" />

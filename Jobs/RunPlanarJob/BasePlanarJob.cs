@@ -49,7 +49,7 @@ namespace RunPlanarJob
                 var settings = LoadJobSettings();
                 _broker = new JobMessageBroker(context, settings);
                 var result = method.Invoke(instance, new object[] { _broker }) as Task;
-                await result;
+                await result;  // TODO: consider using ConfigureAwait like BaseJobTest
             }
             catch (JobExecutionException ex)
             {

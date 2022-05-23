@@ -1,12 +1,13 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Planar.Job;
 using Planar.Job.Logger;
 using System;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace Planar.Job
+namespace Planar
 {
     public abstract class BaseJob
     {

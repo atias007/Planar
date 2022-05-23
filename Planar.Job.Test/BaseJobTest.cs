@@ -1,6 +1,7 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Planar.API.Common.Entities;
 using Planar.Common;
 using Quartz;
 using System;
@@ -24,6 +25,7 @@ namespace Planar.Job.Test
 
         protected static JobInstanceLog ExecuteJob<T>(Dictionary<string, object> dataMap = null, DateTime? overrideNow = null)
         {
+            Global.Environment = "UnitTest";
             var context = new MockJobExecutionContext(dataMap, overrideNow);
             var type = typeof(T);
             Validate(type);
@@ -40,7 +42,7 @@ namespace Planar.Job.Test
             {
                 _broker = new JobMessageBroker(context, settings);
                 var result = method.Invoke(instance, new object[] { _broker }) as Task;
-                result.Wait();
+                result.ConfigureAwait(false).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
@@ -56,12 +58,7 @@ namespace Planar.Job.Test
             var endDate = context.FireTimeUtc.DateTime.Add(context.JobRunTime);
             var status = jobException == null ? 0 : 1;
 
-            //var value = context.Get(Consts.JobEffectedRows);
-            //var effectedRows = value == null ? 0 : Convert.ToInt32(value);
-
-            //value = context.Get(Consts.JobInformation);
-            //var information = value == null ? null : Convert.ToString(value);
-            // TODO: expose informaion to test
+            var metadata = context.Result as JobExecutionMetadata;
 
             var log = new JobInstanceLog
             {
@@ -77,14 +74,13 @@ namespace Planar.Job.Test
                 Duration = Convert.ToInt32(duration),
                 EndDate = endDate,
                 Exception = jobException?.ToString(),
-                // TODO: ---------------------------------
-                // EffectedRows = effectedRows,
-                // Information = information,
-                // Id = 0,
-                // IsStopped = false,
-                // Retry = false,
-                // StatusTitle = string.Empty
-                Status = status,
+                EffectedRows = metadata?.EffectedRows,
+                Information = metadata?.GetInformation(),
+                Id = -1,
+                IsStopped = false,
+                Retry = false,
+                StatusTitle = ((StatusMembers)status).ToString(),
+                Status = status
             };
 
             return log;
@@ -95,7 +91,7 @@ namespace Planar.Job.Test
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
 
             var propInfo = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
-            foreach (var item in context.JobDetail.JobDataMap)
+            foreach (var item in context.MergedJobDataMap)
             {
                 if (item.Key.StartsWith("__") == false)
                 {
