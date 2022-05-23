@@ -100,6 +100,8 @@ namespace RunPlanarJob
 
         private MethodInfo Validate(Type type)
         {
+            //// ***** Attention: be aware for sync code with Validate on BaseJobTest *****
+
             if (type == null)
             {
                 var assemblyFilename = Path.Combine(JobPath, FileName);
@@ -140,6 +142,8 @@ namespace RunPlanarJob
             }
 
             return method;
+
+            //// ***** Attention: be aware for sync code with Validate on BaseJobTest *****
         }
     }
 }

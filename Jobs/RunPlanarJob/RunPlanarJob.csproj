@@ -7,4 +7,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\CommonJob\CommonJob.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="JobFile.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>

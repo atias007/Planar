@@ -65,6 +65,7 @@ namespace CommonJob
 
         protected void MapProperties(IJobExecutionContext context)
         {
+            //// ***** Attention: be aware for sync code with MapProperties on BaseJobTest *****
             try
             {
                 var json = context.JobDetail.JobDataMap[Consts.JobTypeProperties] as string;
@@ -88,6 +89,8 @@ namespace CommonJob
                 Logger.Instance.LogError(ex, "Fail at {@source} with job {@Group}.{@Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
                 throw;
             }
+
+            //// ***** Attention: be aware for sync code with MapProperties on BaseJobTest *****
         }
 
         protected void FinalizeJob(IJobExecutionContext context)

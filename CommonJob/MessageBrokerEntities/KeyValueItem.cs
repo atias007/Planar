@@ -1,6 +1,6 @@
 ﻿namespace CommonJob.MessageBrokerEntities
 {
-    internal class KeyValueItem
+    public class KeyValueItem
     {
         public string Key { get; set; }
 

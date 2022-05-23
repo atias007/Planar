@@ -77,7 +77,7 @@ namespace CommonJob
             switch (channel)
             {
                 case "PutJobData":
-                    var data1 = Serialize<KeyValueItem>(message);
+                    var data1 = Deserialize<KeyValueItem>(message);
                     lock (Locker)
                     {
                         _context.JobDetail.JobDataMap.Put(data1.Key, data1.Value);
@@ -85,15 +85,15 @@ namespace CommonJob
                     return null;
 
                 case "PutTriggerData":
-                    var data2 = Serialize<KeyValueItem>(message);
+                    var data2 = Deserialize<KeyValueItem>(message);
                     lock (Locker)
                     {
-                        _context.JobDetail.JobDataMap.Put(data2.Key, data2.Value);
+                        _context.Trigger.JobDataMap.Put(data2.Key, data2.Value);
                     }
                     return null;
 
                 case "AddAggragateException":
-                    var data3 = Serialize<ExceptionDto>(message);
+                    var data3 = Deserialize<ExceptionDto>(message);
                     lock (Locker)
                     {
                         Metadata.Exceptions.Add(data3);
@@ -163,7 +163,7 @@ namespace CommonJob
             }
         }
 
-        private static T Serialize<T>(string message)
+        private static T Deserialize<T>(string message)
         {
             var result = JsonConvert.DeserializeObject<T>(message);
             return result;

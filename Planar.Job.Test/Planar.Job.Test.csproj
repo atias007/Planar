@@ -2,15 +2,39 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
-    <Version>1.0.5</Version>
+    <Version>1.0.4</Version>
+    <Description>Library for develop planar job</Description>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\CommonJob\JobExecutionContext\JobDetail.cs" Link="Common\JobExecutionContext\JobDetail.cs" />
+    <Compile Include="..\CommonJob\JobExecutionContext\JobExecutionContext.cs" Link="Common\JobExecutionContext\JobExecutionContext.cs" />
+    <Compile Include="..\CommonJob\JobExecutionContext\Key.cs" Link="Common\JobExecutionContext\Key.cs" />
+    <Compile Include="..\CommonJob\JobExecutionContext\TriggerDetail.cs" Link="Common\JobExecutionContext\TriggerDetail.cs" />
+    <Compile Include="..\CommonJob\JobExecutionMetadata.cs" Link="Common\JobExecutionMetadata.cs" />
+    <Compile Include="..\CommonJob\JobMessageBroker.cs" Link="Common\JobMessageBroker.cs" />
+    <Compile Include="..\CommonJob\MessageBrokerEntities\KeyValueItem.cs" Link="Common\KeyValueItem.cs" />
+    <Compile Include="..\Planar.Common\CommonUtil.cs" Link="Common\CommonUtil.cs" />
     <Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
+    <Compile Include="..\Planar.Common\Extensions.cs" Link="Common\Extensions.cs" />
+    <Compile Include="..\Planar.Common\Global.cs" Link="Common\Global.cs" />
+    <Compile Include="..\Planar.Job\ExceptionDto.cs" Link="Common\ExceptionDto.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Planar.Job\Planar.Job.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Quartz" Version="3.4.0" />
+    <PackageReference Include="YamlDotNet" Version="11.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Common\JobExecutionContext\" />
   </ItemGroup>
 
 </Project>

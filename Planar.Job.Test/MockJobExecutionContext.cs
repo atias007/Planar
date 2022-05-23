@@ -1,5 +1,8 @@
-﻿using System;
+﻿using Quartz;
+using System;
 using System.Collections.Generic;
+using System.Text;
+using System.Threading;
 
 namespace Planar.Job.Test
 {
@@ -7,18 +10,27 @@ namespace Planar.Job.Test
     {
         private readonly DateTime _now = DateTime.Now;
         private readonly IJobDetail _jobDetail = new MockJobDetails();
-        private readonly ITriggerDetail _triggerDetail = new MockTriggerDetails();
-        private readonly SortedDictionary<string, string> _mergedJobDataMap;
+        private readonly ITrigger _triggerDetail = new MockTriggerDetails();
 
-        public MockJobExecutionContext()
+        public MockJobExecutionContext(Dictionary<string, object> dataMap, DateTime? overrideNow)
         {
-            _mergedJobDataMap = new();
-        }
+            MergedJobDataMap = new JobDataMap();
 
-        public MockJobExecutionContext(SortedDictionary<string, string> dataMap)
-        {
-            if (dataMap == null) { dataMap = new SortedDictionary<string, string>(); }
-            _mergedJobDataMap = dataMap;
+            if (overrideNow.HasValue)
+            {
+                MergedJobDataMap.Add(Consts.NowOverrideValue, overrideNow);
+            }
+
+            if (dataMap != null)
+            {
+                foreach (var item in dataMap)
+                {
+                    MergedJobDataMap.Add(item);
+                }
+            }
+
+            FireTimeUtc = new DateTimeOffset(overrideNow ?? DateTime.Now);
+            FireInstanceId = $"JobTest_{Environment.MachineName}_{Environment.UserName}_{GenerateFireInstanceId()}";
         }
 
         public bool Recovering => false;
@@ -29,22 +41,56 @@ namespace Planar.Job.Test
 
         public string FireInstanceId { get; set; }
 
-        public DateTimeOffset FireTime { get; set; }
+        public DateTimeOffset FireTimeUtc { get; set; }
 
         public TimeSpan JobRunTime { get; set; }
 
-        public DateTimeOffset? NextFireTime => _now;
+        public DateTimeOffset? NextFireTimeUtc => _now;
 
-        public DateTimeOffset? ScheduledFireTime => _now;
+        public DateTimeOffset? ScheduledFireTimeUtc => _now;
 
-        public DateTimeOffset? PreviousFireTime => _now;
+        public DateTimeOffset? PreviousFireTimeUtc => _now;
 
-        public IJobDetail JobDetails => new MockJobDetails();
+        public IJobDetail JobDetails => _jobDetail;
 
-        public ITriggerDetail TriggerDetails => _triggerDetail;
+        public IScheduler Scheduler => null;
 
-        public string Environment => "UnitTest";
+        public ITrigger Trigger => _triggerDetail;
 
-        public SortedDictionary<string, string> MergedJobDataMap => _mergedJobDataMap;
+        public ICalendar Calendar => null;
+
+        public TriggerKey RecoveringTriggerKey => null;
+
+        public IJob JobInstance => null;
+
+        public object Result { get; set; }
+
+        public CancellationToken CancellationToken => CancellationToken.None;
+
+        public JobDataMap MergedJobDataMap { get; set; }
+
+        private static string GenerateFireInstanceId()
+        {
+            var result = new StringBuilder();
+            var random = new Random();
+            var offset = '0';
+            for (var i = 0; i < 18; i++)
+            {
+                var @char = (char)random.Next(offset, offset + 10);
+                result.Append(@char);
+            }
+
+            return result.ToString();
+        }
+
+        public object Get(object key)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Put(object key, object objectValue)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
