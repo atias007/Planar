@@ -310,7 +310,7 @@ namespace Planar.CLI.Actions
                 if (instanceId.Data != null) break;
             }
 
-            if (instanceId.Data == null)
+            if (instanceId == null || instanceId.Data == null)
             {
                 AnsiConsole.WriteLine();
                 throw new ApplicationException("Could not found running instance id");

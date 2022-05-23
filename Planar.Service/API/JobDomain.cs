@@ -437,7 +437,7 @@ namespace Planar.Service.API
         {
             if (details == null || details.JobDataMap.ContainsKey(key) == false)
             {
-                throw new PlanarValidationException($"Data with Key '{key}' could not found in job '{jobId}' (Name '{details.Key.Name}' and Group '{details.Key.Group}')");
+                throw new PlanarValidationException($"Data with Key '{key}' could not found in job '{jobId}' (Name '{details?.Key.Name}' and Group '{details?.Key.Group}')");
             }
         }
 

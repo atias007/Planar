@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 namespace Planar.Service.General.Password
@@ -61,10 +62,10 @@ namespace Planar.Service.General.Password
             var password = new char[properties.Length];
             var characterSetLength = characterSet.Length;
 
-            var random = new System.Random();
+            //var random = new System.Random();
             for (int characterPosition = 0; characterPosition < properties.Length; characterPosition++)
             {
-                password[characterPosition] = characterSet[random.Next(characterSetLength - 1)];
+                password[characterPosition] = characterSet[RandomNumberGenerator.GetInt32(characterSetLength - 1)];
 
                 bool moreThanTwoIdenticalInARow =
                     characterPosition > MAXIMUM_IDENTICAL_CONSECUTIVE_CHARS

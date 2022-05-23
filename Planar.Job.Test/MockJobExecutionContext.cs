@@ -1,6 +1,7 @@
 ﻿using Quartz;
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 
@@ -74,11 +75,10 @@ namespace Planar.Job.Test
         private static string GenerateFireInstanceId()
         {
             var result = new StringBuilder();
-            var random = new Random();
             var offset = '0';
             for (var i = 0; i < 18; i++)
             {
-                var @char = (char)random.Next(offset, offset + 10);
+                var @char = (char)RandomNumberGenerator.GetInt32(offset, offset + 10);
                 result.Append(@char);
             }
 
