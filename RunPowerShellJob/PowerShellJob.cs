@@ -46,7 +46,8 @@ namespace RunPowerShellJob
             catch (JobExecutionException ex)
             {
                 SetJobRunningProperty("Fail", true);
-                ThrowJobExecutingException(ex, context);
+                var jobEx = GetJobExecutingException(ex, context);
+                throw jobEx;
             }
             finally
             {

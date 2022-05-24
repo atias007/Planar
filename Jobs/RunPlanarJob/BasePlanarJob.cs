@@ -20,7 +20,7 @@ namespace RunPlanarJob
 
         private JobMessageBroker _broker;
 
-        public override async Task Execute(IJobExecutionContext context)
+        public override Task Execute(IJobExecutionContext context)
         {
             AssemblyLoadContext assemblyContext = null;
 
@@ -49,12 +49,13 @@ namespace RunPlanarJob
                 var settings = LoadJobSettings();
                 _broker = new JobMessageBroker(context, settings);
                 var result = method.Invoke(instance, new object[] { _broker }) as Task;
-                await result;  // TODO: consider using ConfigureAwait like BaseJobTest
+                return result;
             }
             catch (JobExecutionException ex)
             {
                 SetJobRunningProperty("Fail", true);
-                ThrowJobExecutingException(ex, context);
+                var jobEx = GetJobExecutingException(ex, context);
+                throw jobEx;
             }
             catch (Exception ex)
             {

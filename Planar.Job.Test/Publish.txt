@@ -1,1 +1,7 @@
-﻿nuget push -Source CustomClouds -ApiKey AzureDevOps %USERPROFILE%\Source\Repos\Planar\Planar.Client.Test\bin\Release\net5.0\publish\Planar.Client.Test.1.0.5.nupkg
+﻿c:
+cd %USERPROFILE%\source\repos\Planar\Planar.Job.Test
+del bin\Release\net5.0\publish\*.* /F /Q
+dotnet publish --configuration Release
+cd bin\Release\net5.0\publish 
+
+FOR /R %F in (*.nupkg) do dotnet nuget push %~nF.nupkg --api-key oy2nw6ktwux5wqz3hp5qru7dzhnffsuupamhm6wzfnaini --source https://api.nuget.org/v3/index.json
