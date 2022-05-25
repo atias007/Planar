@@ -206,6 +206,7 @@ namespace Planar
             services.AddSingleton<IJobExecutionContext>(context);
             services.AddSingleton(messageBroker);
             services.AddSingleton<ILogger, PlannerLogger>();
+            services.AddSingleton(typeof(ILogger<>), typeof(PlannerLogger<>));
             RegisterServices(services);
             _provider = services.BuildServiceProvider();
         }

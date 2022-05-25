@@ -12,7 +12,7 @@ namespace Planar.Test
         {
             var data = new Dictionary<string, object>
             {
-                { "Value", 100.2 }
+                { "Value", 100.1 }
             };
 
             ExecuteJob<ActionJob>(data);
