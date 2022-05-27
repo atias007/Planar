@@ -13,6 +13,7 @@ namespace Planar.Service.List.Base
             {
                 try
                 {
+                    // TODO: when stop service the ServiceProvider is null
                     return Global.ServiceProvider.GetService(typeof(DataLayer)) as DataLayer;
                 }
                 catch (Exception ex)

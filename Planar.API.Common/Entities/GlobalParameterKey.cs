@@ -1,10 +1,9 @@
-﻿using Planar.API.Common.Validation;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Planar.API.Common.Entities
 {
     public class GlobalParameterKey
     {
-        [Trim]
         [Required]
         public string Key { get; set; }
     }

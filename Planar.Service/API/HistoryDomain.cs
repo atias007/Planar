@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.Data;
+using Planar.Service.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +25,7 @@ namespace Planar.Service.API
         public async Task<JobInstanceLog> GetHistoryById(int id)
         {
             var result = await DataLayer.GetHistoryById(id);
+            ValidateExistingEntity(result);
             var response = JsonMapper.Map<JobInstanceLog, Model.JobInstanceLog>(result);
             return response;
         }
@@ -31,18 +33,42 @@ namespace Planar.Service.API
         public async Task<string> GetHistoryDataById(int id)
         {
             var result = await DataLayer.GetHistoryDataById(id);
+            if (string.IsNullOrEmpty(result))
+            {
+                if (await DataLayer.IsHistoryExists(id) == false)
+                {
+                    throw new RestNotFoundException();
+                }
+            }
+
             return result;
         }
 
         public async Task<string> GetHistoryInformationById(int id)
         {
             var result = await DataLayer.GetHistoryInformationById(id);
+            if (string.IsNullOrEmpty(result))
+            {
+                if (await DataLayer.IsHistoryExists(id) == false)
+                {
+                    throw new RestNotFoundException();
+                }
+            }
+
             return result;
         }
 
         public async Task<string> GetHistoryExceptionById(int id)
         {
             var result = await DataLayer.GetHistoryExceptionById(id);
+            if (string.IsNullOrEmpty(result))
+            {
+                if (await DataLayer.IsHistoryExists(id) == false)
+                {
+                    throw new RestNotFoundException();
+                }
+            }
+
             return result;
         }
 

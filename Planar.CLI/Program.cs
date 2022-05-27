@@ -1,5 +1,4 @@
-﻿using Planar.API.Common.Entities;
-using Planar.CLI.Actions;
+﻿using Planar.CLI.Actions;
 using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
 using RestSharp;

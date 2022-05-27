@@ -1,11 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Planar.API.Common.Entities;
 using Planar.Service.Data;
+using Planar.Service.Exceptions;
 using Quartz;
 using System;
-using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
@@ -49,6 +48,15 @@ namespace Planar.Service.API
         {
             var entity = JsonConvert.SerializeObject(obj);
             return entity;
+        }
+
+        protected static void ValidateExistingEntity<T>(T entity)
+            where T : class
+        {
+            if (entity == null)
+            {
+                throw new RestNotFoundException();
+            }
         }
     }
 }

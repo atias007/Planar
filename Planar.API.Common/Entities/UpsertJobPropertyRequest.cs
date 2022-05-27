@@ -1,4 +1,4 @@
-﻿using Planar.API.Common.Validation;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Planar.API.Common.Entities
 {

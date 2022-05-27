@@ -279,6 +279,14 @@ namespace Planar.Service.Data
             return result;
         }
 
+        public async Task<bool> IsHistoryExists(int id)
+        {
+            var result = await _context.JobInstanceLogs
+                .AnyAsync(l => l.Id == id);
+
+            return result;
+        }
+
         public async Task<GetTestStatusResponse> GetTestStatus(int id)
         {
             var result = await _context.JobInstanceLogs
@@ -368,11 +376,14 @@ namespace Planar.Service.Data
         public async Task<object> GetGroupWithUsers(int id)
         {
             var result = await _context.Groups.FindAsync(id);
-            result.Users = await _context.UsersToGroups
-                .Include(ug => ug.User)
-                .Where(ug => ug.GroupId == id)
-                .Select(ug => ug.User)
-                .ToListAsync();
+            if (result != null)
+            {
+                result.Users = await _context.UsersToGroups
+                    .Include(ug => ug.User)
+                    .Where(ug => ug.GroupId == id)
+                    .Select(ug => ug.User)
+                    .ToListAsync();
+            }
 
             return result;
         }
@@ -413,8 +424,7 @@ namespace Planar.Service.Data
         public async Task RemoveGroup(Group group)
         {
             _context.Groups.Remove(group);
-            _context.SaveChanges();
-            await Task.CompletedTask;
+            await _context.SaveChangesAsync();
         }
 
         public async Task AddUserToGroup(int userId, int groupId)

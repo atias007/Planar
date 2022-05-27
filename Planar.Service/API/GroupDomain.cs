@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Planar.Service.API.Validation;
 using Planar.Service.Data;
@@ -31,7 +32,9 @@ namespace Planar.Service.API
 
         public async Task<object> GetGroupById(int id)
         {
-            return await DataLayer.GetGroupWithUsers(id);
+            var result = await DataLayer.GetGroupWithUsers(id);
+            ValidateExistingEntity(result);
+            return result;
         }
 
         public async Task<object> GetGroups()
@@ -42,7 +45,14 @@ namespace Planar.Service.API
         public async Task DeleteGroup(int id)
         {
             var group = new Group { Id = id };
-            await DataLayer.RemoveGroup(group);
+            try
+            {
+                await DataLayer.RemoveGroup(group);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new RestNotFoundException();
+            }
         }
 
         public async Task UpdateGroup(int id, UpdateEntityRecord request)
@@ -51,14 +61,14 @@ namespace Planar.Service.API
 
             if (await DataLayer.GetGroup(id) is not Group existsGroup)
             {
-                throw new PlanarValidationException($"Group with id {id} could not be found");
+                throw new RestNotFoundException($"Group with id {id} could not be found");
             }
 
             var properties = typeof(Group).GetProperties(BindingFlags.Public | BindingFlags.Instance);
             var prop = properties.FirstOrDefault(p => p.Name == request.PropertyName);
             if (prop == null)
             {
-                throw new PlanarValidationException($"PropertyName '{request.PropertyName}' could not be found in Group entity");
+                throw new RestValidationException(request.PropertyName, $"PropertyName '{request.PropertyName}' could not be found in Group entity");
             }
 
             try
@@ -70,7 +80,7 @@ namespace Planar.Service.API
             }
             catch (Exception ex)
             {
-                throw new PlanarValidationException($"PropertyValue '{request.PropertyValue}' could not be set to PropertyName '{request.PropertyName}' ({ex.Message})");
+                throw new RestValidationException(request.PropertyName, $"PropertyValue '{request.PropertyValue}' could not be set to PropertyName '{request.PropertyName}' ({ex.Message})");
             }
 
             await new GroupValidator().ValidateAndThrowAsync(existsGroup);

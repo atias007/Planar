@@ -70,7 +70,7 @@ namespace Planar.Service.API.Helpers
 
             if (exists == null)
             {
-                throw new NotExistsException($"job with id {jobKey.Name} or key {jobKey.Group}.{jobKey.Name} not exists");
+                throw new RestNotFoundException($"job with id {jobKey.Name} or key {jobKey.Group}.{jobKey.Name} not exists");
             }
         }
 

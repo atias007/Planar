@@ -1,31 +1,25 @@
-﻿using Planar.API.Common.Validation;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Planar.API.Common.Entities
 {
     public class AddUserRequest
     {
-        [Trim]
         [Required]
-        [Length(2, 50)]
+        [Range(2, 50)]
         public string Username { get; set; }
 
-        [Trim]
         [Required]
-        [Length(2, 50)]
+        [Range(2, 50)]
         public string FirstName { get; set; }
 
-        [Trim]
-        [Length(2, 50)]
+        [Range(2, 50)]
         public string LastName { get; set; }
 
-        [Trim]
-        [Email]
-        [Length(5, 250)]
+        [EmailAddress]
+        [Range(5, 250)]
         public string Email { get; set; }
 
-        [Trim]
-        [Length(9, 50)]
-        [Numeric]
+        [Range(9, 50)]
         public string PhoneNumber { get; set; }
     }
 }

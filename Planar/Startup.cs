@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using Planar.API.Common;
+using Planar.Filters;
 using Planar.Service;
 using Planar.Service.API;
 using Planar.Service.Data;
@@ -26,6 +27,12 @@ namespace Planar
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddMvc(options =>
+            {
+                options.Filters.Add<ValidateModelStateAttribute>();
+                options.Filters.Add<HttpResponseExceptionFilter>();
+            });
+
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {

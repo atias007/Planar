@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using Planar.CLI.Attributes;
 using RestSharp;
 using Spectre.Console;

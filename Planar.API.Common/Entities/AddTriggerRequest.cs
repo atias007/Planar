@@ -1,10 +1,9 @@
-﻿using Planar.API.Common.Validation;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Planar.API.Common.Entities
 {
     public class AddTriggerRequest : JobOrTriggerKey
     {
-        [Trim]
         [Required]
         public string Yaml { get; set; }
     }

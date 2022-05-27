@@ -1,10 +1,9 @@
-﻿using Planar.API.Common.Validation;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Planar.API.Common.Entities
 {
     public class JobOrTriggerKey
     {
-        [Trim]
         [Required]
         public string Id { get; set; }
 

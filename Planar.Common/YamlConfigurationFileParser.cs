@@ -1,8 +1,8 @@
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.Extensions.Configuration;
 using YamlDotNet.RepresentationModel;
 
 namespace NetEscapades.Configuration.Yaml
@@ -118,7 +118,7 @@ namespace NetEscapades.Configuration.Yaml
             _currentPath = ConfigurationPath.Combine(_context.Reverse());
         }
 
-        private bool IsNullValue(YamlScalarNode yamlValue)
+        private static bool IsNullValue(YamlScalarNode yamlValue)
         {
             return yamlValue.Style == YamlDotNet.Core.ScalarStyle.Plain
                 && (

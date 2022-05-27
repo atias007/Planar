@@ -110,7 +110,7 @@ namespace RunPlanarJob
             }
 
             var baseTypeName = type.BaseType?.FullName;
-            if (baseTypeName != "Planar.Job.BaseJob")
+            if (baseTypeName != "Planar.BaseJob")
             {
                 var assemblyFilename = Path.Combine(JobPath, FileName);
                 throw new ApplicationException($"Type '{TypeName}' from assembly '{assemblyFilename}' not inherit 'Planar.Job.BaseJob' type");

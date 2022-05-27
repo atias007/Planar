@@ -45,7 +45,6 @@ namespace Planar.Controllers
         [HttpPost("stop")]
         public async Task<ActionResult> StopScheduler(StopSchedulerRequest request)
         {
-            ValidateEntity(request);
             await Scheduler.Shutdown(request.WaitJobsToComplete);
 
             var t = Task.Run(async () =>
