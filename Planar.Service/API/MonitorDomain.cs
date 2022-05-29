@@ -121,17 +121,17 @@ namespace Planar.Service.API
             var eventExists = Enum.IsDefined(typeof(MonitorEvents), request.MonitorEvent);
             if (eventExists == false)
             {
-                throw new PlanarValidationException($"Monitor event {request.MonitorEvent} does not exists");
+                throw new RestValidationException($"Monitor event {request.MonitorEvent} does not exists");
             }
 
             if (string.IsNullOrEmpty(request.JobId) && string.IsNullOrEmpty(request.JobGroup))
             {
-                throw new PlanarValidationException("Job id and Job group name are both missing. to add monitor please supply one of them");
+                throw new RestValidationException("Job id and Job group name are both missing. to add monitor please supply one of them");
             }
 
             if (string.IsNullOrEmpty(request.JobId) == false && string.IsNullOrEmpty(request.JobGroup) == false)
             {
-                throw new PlanarValidationException("Job id and Job group name are both has value. to add monitor please supply only one of them");
+                throw new RestValidationException("Job id and Job group name are both has value. to add monitor please supply only one of them");
             }
 
             if (string.IsNullOrEmpty(request.JobId) == false)
@@ -142,28 +142,28 @@ namespace Planar.Service.API
             var existsGroup = await DataLayer.IsGroupExists(request.GroupId);
             if (existsGroup == false)
             {
-                throw new PlanarValidationException($"Group id {request.GroupId} does not exists");
+                throw new RestValidationException($"Group id {request.GroupId} does not exists");
             }
 
             var existsHook = ServiceUtil.MonitorHooks.ContainsKey(request.Hook);
             if (existsHook == false)
             {
-                throw new PlanarValidationException($"Hook {request.Hook} does not exists");
+                throw new RestValidationException($"Hook {request.Hook} does not exists");
             }
 
             if (string.IsNullOrEmpty(request.Title))
             {
-                throw new PlanarValidationException("Title is null or empty");
+                throw new RestValidationException("Title is null or empty");
             }
 
             if (request.Title?.Length > 50)
             {
-                throw new PlanarValidationException($"Title lenght is {request.Title.Length}. Max lenght should be 50");
+                throw new RestValidationException($"Title lenght is {request.Title.Length}. Max lenght should be 50");
             }
 
             if (request.EventArguments?.Length > 50)
             {
-                throw new PlanarValidationException($"Event arguments lenght is {request.EventArguments.Length}. Max lenght should be 50");
+                throw new RestValidationException($"Event arguments lenght is {request.EventArguments.Length}. Max lenght should be 50");
             }
 
             await DataLayer.AddMonitor(monitor);
@@ -174,7 +174,7 @@ namespace Planar.Service.API
         {
             if (id <= 0)
             {
-                throw new PlanarValidationException("Id parameter must be greater then 0");
+                throw new RestValidationException("id", "Id parameter must be greater then 0");
             }
 
             var monitor = new MonitorAction { Id = id };
@@ -183,9 +183,9 @@ namespace Planar.Service.API
             {
                 await DataLayer.DeleteMonitor(monitor);
             }
-            catch (DbUpdateConcurrencyException ex)
+            catch (DbUpdateConcurrencyException)
             {
-                throw new PlanarValidationException($"Monitor with id {id} could not be found", ex);
+                throw new RestNotFoundException($"Monitor with id {id} could not be found");
             }
         }
     }

@@ -28,13 +28,13 @@ namespace Planar.Service.Api.Validation
             if (Minimum.HasValue && stringValue.Length < Minimum)
             {
                 var message = $"Property {propertyInfo.Name} length {stringValue.Length} is less then minumum length of {Minimum}";
-                throw new PlanarValidationException(message);
+                throw new RestValidationException(message);
             }
 
             if (Maximum.HasValue && stringValue.Length > Maximum)
             {
                 var message = $"Property {propertyInfo.Name} length {stringValue.Length} is more then maximum length of {Maximum}";
-                throw new PlanarValidationException(message);
+                throw new RestValidationException(message);
             }
         }
     }

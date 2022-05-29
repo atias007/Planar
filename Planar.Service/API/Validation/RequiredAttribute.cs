@@ -31,7 +31,7 @@ namespace Planar.Service.Api.Validation
             if (isEmpty)
             {
                 var message = $"Property {propertyInfo.Name} is required but does not contain a value";
-                throw new PlanarValidationException(message);
+                throw new RestValidationException(message);
             }
         }
     }

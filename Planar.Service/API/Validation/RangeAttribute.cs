@@ -29,19 +29,19 @@ namespace Planar.Service.Api.Validation
             if (valid == false)
             {
                 var message = $"Property {propertyInfo.Name} has invalid value for Range validation attribute";
-                throw new PlanarValidationException(message);
+                throw new RestValidationException(message);
             }
 
             if (Minimum.HasValue && numericValue < Minimum)
             {
                 var message = $"Property {propertyInfo.Name} value {numericValue} is less then minumum value of {Minimum}";
-                throw new PlanarValidationException(message);
+                throw new RestValidationException(message);
             }
 
             if (Maximum.HasValue && numericValue > Maximum)
             {
                 var message = $"Property {propertyInfo.Name} value {numericValue} is more then maximum value of {Maximum}";
-                throw new PlanarValidationException(message);
+                throw new RestValidationException(message);
             }
         }
     }

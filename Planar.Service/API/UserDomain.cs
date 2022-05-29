@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API.Validation;
@@ -54,6 +55,7 @@ namespace Planar.Service.API
         public async Task<User> Get(int id)
         {
             var result = await DataLayer.GetUser(id);
+            ValidateExistingEntity(result);
             result.Password = string.Empty.PadLeft(15, '*');
             return result;
         }
@@ -66,28 +68,36 @@ namespace Planar.Service.API
         public async Task Delete(int id)
         {
             var user = new User { Id = id };
-            await DataLayer.RemoveUser(user);
+
+            try
+            {
+                await DataLayer.RemoveUser(user);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new RestNotFoundException();
+            }
         }
 
         public async Task Update(int id, UpdateEntityRecord request)
         {
             if (id != request.Id)
             {
-                throw new PlanarValidationException($"Conflict id value. (from routing: {id}, from body {request.Id}");
+                throw new RestValidationException("id", $"conflict id value. (from routing: {id}, from body {request.Id}");
             }
 
             await new UpdateEntityRecordValidator().ValidateAndThrowAsync(request);
 
             if ((await DataLayer.GetUser(request.Id)) is not User existsUser)
             {
-                throw new PlanarValidationException($"User with id {request.Id} could not be found");
+                throw new RestValidationException("id", $"user with id {request.Id} could not be found");
             }
 
             var properties = typeof(User).GetProperties(BindingFlags.Public | BindingFlags.Instance);
             var prop = properties.FirstOrDefault(p => p.Name == request.PropertyName);
             if (prop == null)
             {
-                throw new PlanarValidationException($"PropertyName '{request.PropertyName}' could not be found in User entity");
+                throw new RestValidationException("propertyName", $"property name '{request.PropertyName}' could not be found in User entity");
             }
 
             try
@@ -99,7 +109,7 @@ namespace Planar.Service.API
             }
             catch (Exception ex)
             {
-                throw new PlanarValidationException($"PropertyValue '{request.PropertyValue}' could not be set to PropertyName '{request.PropertyName}' ({ex.Message})");
+                throw new RestValidationException($"property value", $"property value '{request.PropertyValue}' could not be set to property name '{request.PropertyName}' ({ex.Message})");
             }
 
             await new UpdateUserValidator().ValidateAndThrowAsync(existsUser);

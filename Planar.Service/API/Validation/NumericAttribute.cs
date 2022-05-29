@@ -16,7 +16,7 @@ namespace Planar.Service.Api.Validation
             if (regex.IsMatch(stringValue) == false)
             {
                 var message = $"Property {propertyInfo.Name} has invalid numeric value";
-                throw new PlanarValidationException(message);
+                throw new RestValidationException(message);
             }
         }
     }

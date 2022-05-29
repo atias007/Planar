@@ -64,7 +64,7 @@ namespace Planar.Service.API.Helpers
             return GetJobId(context.JobDetail);
         }
 
-        private static async Task ValidateJobExists(JobKey jobKey)
+        public static async Task ValidateJobExists(JobKey jobKey)
         {
             var exists = await Scheduler.GetJobDetail(jobKey);
 

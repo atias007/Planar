@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
+using Planar.Service.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -22,12 +23,30 @@ namespace Planar.Service.API
         public async Task<string> GetException(int id)
         {
             var result = await DataLayer.GetTraceException(id);
+
+            if (result == null)
+            {
+                if (await DataLayer.IsTraceExists(id) == false)
+                {
+                    throw new RestNotFoundException($"Trace with id {id} not found");
+                }
+            }
+
             return result;
         }
 
         public async Task<string> GetProperties(int id)
         {
             var result = await DataLayer.GetTraceProperties(id);
+
+            if (result == null)
+            {
+                if (await DataLayer.IsTraceExists(id) == false)
+                {
+                    throw new RestNotFoundException($"Trace with id {id} not found");
+                }
+            }
+
             return result;
         }
     }

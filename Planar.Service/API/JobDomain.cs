@@ -212,7 +212,7 @@ namespace Planar.Service.API
             var result = await Scheduler.Interrupt(request.FireInstanceId);
             if (result == false)
             {
-                throw new PlanarValidationException($"Fail to stop running job with FireInstanceId {request.FireInstanceId}");
+                throw new RestValidationException("fireInstanceId", $"fail to stop running job with FireInstanceId {request.FireInstanceId}");
             }
         }
 
@@ -232,7 +232,7 @@ namespace Planar.Service.API
             }
             else
             {
-                throw new PlanarValidationException($"Property {request.PropertyKey} could not be found in job {request.Id}");
+                throw new RestValidationException($"{request.PropertyKey}", $"Property {request.PropertyKey} could not be found in job {request.Id}");
             }
 
             SetJobProperties(info, properties);
@@ -437,7 +437,7 @@ namespace Planar.Service.API
         {
             if (details == null || details.JobDataMap.ContainsKey(key) == false)
             {
-                throw new PlanarValidationException($"Data with Key '{key}' could not found in job '{jobId}' (Name '{details?.Key.Name}' and Group '{details?.Key.Group}')");
+                throw new RestValidationException($"{key}", $"data with Key '{key}' could not found in job '{jobId}' (Name '{details?.Key.Name}' and Group '{details?.Key.Group}')");
             }
         }
 
@@ -446,7 +446,7 @@ namespace Planar.Service.API
             var allRunning = await Scheduler.GetCurrentlyExecutingJobs();
             if (allRunning.AsQueryable().Any(c => c.JobDetail.Key.Name == jobKey.Name && c.JobDetail.Key.Group == jobKey.Group))
             {
-                throw new PlanarValidationException($"job with name: {jobKey.Name} and group: {jobKey.Group} is currently running");
+                throw new RestValidationException($"{jobKey.Group}.{jobKey.Name}", $"job with name: {jobKey.Name} and group: {jobKey.Group} is currently running");
             }
         }
 
@@ -454,7 +454,7 @@ namespace Planar.Service.API
         {
             if (key.StartsWith(Consts.ConstPrefix))
             {
-                throw new PlanarValidationException($"Forbidden: this is system data key and it should not be modified");
+                throw new RestValidationException("key", "forbidden: this is system data key and it should not be modified");
             }
         }
 
@@ -462,7 +462,7 @@ namespace Planar.Service.API
         {
             if (jobKey.Group == Consts.PlanarSystemGroup)
             {
-                throw new PlanarValidationException($"Forbidden: this is system job and it should not be modified");
+                throw new RestValidationException("key", "forbidden: this is system job and it should not be modified");
             }
         }
     }

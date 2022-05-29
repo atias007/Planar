@@ -132,6 +132,11 @@ namespace Planar.Service.Data
             return result;
         }
 
+        public async Task<bool> IsTraceExists(int id)
+        {
+            return await _context.Traces.AnyAsync(t => t.Id == id);
+        }
+
         public async Task<GlobalParameter> GetGlobalParameter(string key)
         {
             var result = await _context.GlobalParameters.FindAsync(key);

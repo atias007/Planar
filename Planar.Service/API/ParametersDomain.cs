@@ -1,6 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.Data;
+using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
@@ -17,7 +19,14 @@ namespace Planar.Service.API
 
         public async Task Delete(string key)
         {
-            await DataLayer.RemoveGlobalParameter(key);
+            try
+            {
+                await DataLayer.RemoveGlobalParameter(key);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new RestNotFoundException($"Parameter with key '{key}' not found");
+            }
         }
 
         public async Task Flush()
@@ -28,6 +37,12 @@ namespace Planar.Service.API
         public async Task<string> Get(string key)
         {
             var data = await DataLayer.GetGlobalParameter(key);
+
+            if (data == null)
+            {
+                throw new RestNotFoundException($"Parameter with key '{key}' not found");
+            }
+
             return data?.ParamValue;
         }
 

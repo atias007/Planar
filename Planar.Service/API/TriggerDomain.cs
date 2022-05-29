@@ -20,6 +20,7 @@ namespace Planar.Service.API
         public async Task<TriggerRowDetails> Get(string triggerId)
         {
             var triggerKey = await TriggerKeyHelper.GetTriggerKey(triggerId);
+            ValidateExistingEntity(triggerKey);
             var result = await GetTriggerDetails(triggerKey);
             return result;
         }
@@ -34,6 +35,7 @@ namespace Planar.Service.API
         public async Task Delete(string triggerId)
         {
             var triggerKey = await TriggerKeyHelper.GetTriggerKey(triggerId);
+            ValidateExistingEntity(triggerKey);
             ValidateSystemTrigger(triggerKey);
             await Scheduler.PauseTrigger(triggerKey);
             var success = await Scheduler.UnscheduleJob(triggerKey);
@@ -70,6 +72,7 @@ namespace Planar.Service.API
         {
             var result = new TriggerRowDetails();
             var trigger = await Scheduler.GetTrigger(triggerKey);
+            ValidateExistingEntity(trigger);
 
             if (trigger is ISimpleTrigger t1)
             {
@@ -88,6 +91,7 @@ namespace Planar.Service.API
 
         private static async Task<TriggerRowDetails> GetTriggersDetails(JobKey jobKey)
         {
+            await JobKeyHelper.ValidateJobExists(jobKey);
             var result = new TriggerRowDetails();
             var triggers = await Scheduler.GetTriggersOfJob(jobKey);
 
@@ -113,7 +117,7 @@ namespace Planar.Service.API
         {
             if (triggerKey.Group == Consts.PlanarSystemGroup)
             {
-                throw new PlanarValidationException($"Forbidden: this is system trigger and it should not be modified or deleted");
+                throw new RestValidationException("triggerId", "Forbidden: this is system trigger and it should not be modified or deleted");
             }
         }
 

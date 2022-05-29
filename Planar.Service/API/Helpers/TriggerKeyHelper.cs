@@ -35,7 +35,7 @@ namespace Planar.Service.API.Helpers
 
             if (result == null)
             {
-                throw new NotExistsException($"trigger with id {key.Id} not exists");
+                throw new RestNotFoundException($"trigger with id {key.Id} not exists");
             }
 
             return result;
@@ -104,7 +104,7 @@ namespace Planar.Service.API.Helpers
 
             if (exists == null)
             {
-                throw new NotExistsException($"trigger with name: {triggerKey.Name} and group: {triggerKey.Group} not exists");
+                throw new RestNotFoundException($"trigger with name: {triggerKey.Name} and group: {triggerKey.Group} not exists");
             }
         }
     }
