@@ -1,11 +1,7 @@
 using NetEscapades.Configuration.Yaml;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using Planar.Service.Model.Metadata;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;

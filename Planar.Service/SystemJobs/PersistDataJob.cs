@@ -1,14 +1,14 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using CommonJob;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.Data;
+using Planar.Service.General;
 using Polly;
 using Quartz;
 using System;
 using System.Threading.Tasks;
 using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
-using Planar.Service.General;
-using CommonJob;
 
 namespace Planar.Service.SystemJobs
 {

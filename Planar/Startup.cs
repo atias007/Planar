@@ -5,7 +5,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
-using Planar.API.Common;
 using Planar.Filters;
 using Planar.Service;
 using Planar.Service.API;

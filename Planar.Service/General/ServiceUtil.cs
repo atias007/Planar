@@ -1,13 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.Monitor;
-using Quartz;
-using Quartz.Impl.Calendar;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.Loader;
 
 namespace Planar.Service.General

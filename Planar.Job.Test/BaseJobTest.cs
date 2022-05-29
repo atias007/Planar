@@ -1,6 +1,4 @@
 ﻿using CommonJob;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Quartz;

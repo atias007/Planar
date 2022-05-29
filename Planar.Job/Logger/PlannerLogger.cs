@@ -14,12 +14,15 @@ namespace Planar.Job.Logger
 
         protected MessageBroker MessageBroker => _messageBroker;
 
-#pragma warning disable IDE0060 // Remove unused parameter
 #pragma warning disable CA1822 // Mark members as static
+
+#pragma warning disable IDE0060 // Remove unused parameter
 
         public IDisposable BeginScope<TState>(TState state) => default;
 
         public bool IsEnabled(LogLevel logLevel) => true;
+
+#pragma warning restore IDE0060 // Remove unused parameter
 
         protected void LogToConsole(string message)
         {
@@ -29,7 +32,6 @@ namespace Planar.Job.Logger
         }
 
 #pragma warning restore CA1822 // Mark members as static
-#pragma warning restore IDE0060 // Remove unused parameter
     }
 
     internal class PlannerLogger<TContext> : BaseLogger, ILogger<TContext>

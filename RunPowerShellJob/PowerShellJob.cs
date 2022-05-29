@@ -1,12 +1,11 @@
 ﻿using CommonJob;
+using Microsoft.Extensions.Logging;
 using Quartz;
 using System;
-using System.Threading.Tasks;
-using System.Management.Automation;
 using System.Collections.Generic;
 using System.IO;
-using Microsoft.Extensions.Logging;
-using Planar;
+using System.Management.Automation;
+using System.Threading.Tasks;
 
 namespace RunPowerShellJob
 {

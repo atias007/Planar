@@ -2,10 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Service;
-using Planar.Service.Exceptions;
 using Quartz;
 using System;
-using System.Linq;
 
 namespace Planar.Controllers
 {
