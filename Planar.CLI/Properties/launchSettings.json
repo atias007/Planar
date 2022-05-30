@@ -2,7 +2,7 @@
   "profiles": {
     "Planar.CLI": {
       "commandName": "Project",
-      "commandLineArgs": "trace prop 9694"
+      "commandLineArgs": "user add"
     }
   }
 }

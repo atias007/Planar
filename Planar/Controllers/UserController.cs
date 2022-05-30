@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
-using Planar.Service.API.Validation;
+using Planar.API.Common.Validation;
 using Planar.Service.Model;
 using System;
 using System.Collections.Generic;

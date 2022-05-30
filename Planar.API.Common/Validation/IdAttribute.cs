@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace Planar.Service.API.Validation
+namespace Planar.API.Common.Validation
 {
     public class IdAttribute : ValidationAttribute
     {
@@ -20,7 +20,7 @@ namespace Planar.Service.API.Validation
 
             if (id <= 0)
             {
-                return new ValidationResult($"{validationContext.MemberName} with value {id} is not valid id value. It should be greater thn 0");
+                return new ValidationResult($"{validationContext.MemberName} with value {id} is not valid. It should be greater then 0");
             }
 
             return ValidationResult.Success;

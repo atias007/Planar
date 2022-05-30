@@ -1,5 +1,4 @@
 ﻿using RestSharp;
-using System;
 using System.Threading.Tasks;
 
 namespace Planar.CLI
@@ -12,14 +11,7 @@ namespace Planar.CLI
         {
             var client = new RestClient(baseUrl);
             var response = await client.ExecuteAsync<TResponse>(request);
-            if (response.IsSuccessful)
-            {
-                return response;
-            }
-            else
-            {
-                throw new Exception("To be implemented");
-            }
+            return response;
         }
 
         public static async Task<RestResponse> Invoke(RestRequest request)

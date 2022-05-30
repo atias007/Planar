@@ -16,17 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="API\Validation\ValidationBaseAttribute.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Include="..\Planar.CLI\JsonMapper.cs" Link="General\JsonMapper.cs" />
     <Compile Include="..\Planar.Common\Consts.cs" Link="General\Consts.cs" />
     <Compile Include="..\Planar\FolderConsts.cs" Link="General\FolderConsts.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="API\Validation\ValidationBaseAttribute.cs" />
   </ItemGroup>
 
   <ItemGroup>

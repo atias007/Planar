@@ -2,10 +2,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
-using Planar.Service.API.Validation;
 using Planar.Service.Exceptions;
 using Planar.Service.General.Password;
 using Planar.Service.Model;
+using Planar.Service.Validation;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Planar.API.Common.Validation;
 using Planar.Service.API;
-using Planar.Service.API.Validation;
 using System;
 using System.Threading.Tasks;
 

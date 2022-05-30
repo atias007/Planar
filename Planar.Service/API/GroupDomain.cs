@@ -1,10 +1,10 @@
 ﻿using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Planar.Service.API.Validation;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
+using Planar.Service.Validation;
 using System;
 using System.Linq;
 using System.Reflection;

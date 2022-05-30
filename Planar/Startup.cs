@@ -1,3 +1,4 @@
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -30,9 +31,11 @@ namespace Planar
             {
                 options.Filters.Add<ValidateModelStateAttribute>();
                 options.Filters.Add<HttpResponseExceptionFilter>();
-            });
+            })
+            .AddFluentValidation(fv => fv.RegisterValidatorsFromAssembly(GetType().Assembly));
 
             services.AddControllers();
+
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Planar", Version = "v1" });

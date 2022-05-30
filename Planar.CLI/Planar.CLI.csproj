@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <AssemblyName>Planar</AssemblyName>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <StartupObject>Planar.CLI.Program</StartupObject>
   </PropertyGroup>
 

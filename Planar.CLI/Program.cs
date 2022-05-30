@@ -1,4 +1,6 @@
-﻿using Planar.CLI.Actions;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Planar.CLI.Actions;
 using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
 using RestSharp;
@@ -8,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -159,18 +162,64 @@ namespace Planar.CLI
         {
             if (response == null) return;
 
-            if (response.Tables != null)
+            if (response.Response.IsSuccessful)
             {
-                response.Tables.ForEach(t => AnsiConsole.Write(t));
+                if (response.Tables != null)
+                {
+                    response.Tables.ForEach(t => AnsiConsole.Write(t));
+                }
+                else
+                {
+                    WriteInfo(response.Message);
+                }
             }
-            else if (!(string.IsNullOrEmpty(response.Message) == false && response.Response.IsSuccessful))
+            else
             {
-                WriteCliResult(response.Response);
+                HandleHttpFailResponse(response.Response);
             }
-            else if (response.Response.IsSuccessful) //-V3022
+        }
+
+        private static void HandleHttpFailResponse(RestResponse response)
+        {
+            if (response.StatusCode == HttpStatusCode.NotFound)
             {
-                WriteInfo(response.Message);
+                var message = string.IsNullOrEmpty(response.Content) ?
+                    "entity not found" :
+                    JsonConvert.DeserializeObject<string>(response.Content);
+
+                AnsiConsole.MarkupLine($"[red]validation error: {message}[/]");
+                return;
             }
+
+            if (response.StatusCode == HttpStatusCode.BadRequest)
+            {
+                var entity = JsonConvert.DeserializeObject<BadRequestEntity>(response.Content);
+
+                var obj = JObject.Parse(response.Content);
+                var errors = obj["errors"].SelectMany(e => e.ToList()).SelectMany(e => e.ToList());
+                if (errors.Any() == false)
+                {
+                    AnsiConsole.MarkupLine($"[red]validation error: {entity.Title}[/]");
+                    return;
+                }
+
+                if (errors.Count() == 1)
+                {
+                    var value = errors.First() as JValue;
+                    AnsiConsole.MarkupLine($"[red]validation error: {value.Value}[/]");
+                    return;
+                }
+
+                AnsiConsole.MarkupLine("[red]validation error:[/]");
+                foreach (JValue item in errors)
+                {
+                    AnsiConsole.MarkupLine($"[red]  - {item.Value}[/]");
+                }
+
+                return;
+            }
+
+            AnsiConsole.Markup($"[red]error: general error ({response.StatusDescription})[/]");
         }
 
         private static void WriteInfo(string message)
@@ -180,28 +229,6 @@ namespace Planar.CLI
             if (string.IsNullOrEmpty(message)) return;
 
             AnsiConsole.WriteLine(message);
-        }
-
-        private static void WriteCliResult(RestResponse result)
-        {
-            if (result != null)
-            {
-                if (result.IsSuccessful == false)
-                {
-                    if (string.IsNullOrEmpty(result.ErrorMessage) == false)
-                    {
-                        AnsiConsole.Markup($"[red]error: {result.ErrorMessage}[/]");
-                    }
-                    else if (string.IsNullOrEmpty(result.ErrorException?.Message) == false)
-                    {
-                        AnsiConsole.Markup($"[red]error: {result.ErrorException?.Message}[/]");
-                    }
-                    else
-                    {
-                        AnsiConsole.Markup($"[red]error: general error ({result.StatusDescription})[/]");
-                    }
-                }
-            }
         }
 
         private static void WriteException(Exception ex)

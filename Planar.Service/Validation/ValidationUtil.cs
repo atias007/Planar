@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace Planar.Service.API.Validation
+namespace Planar.Service.Validation
 {
     public static class ValidationUtil
     {

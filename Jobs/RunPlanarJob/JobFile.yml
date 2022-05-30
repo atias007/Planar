@@ -16,27 +16,27 @@ global parameters:
   ParamKey2: ParamValue2
   ParamKey3: ParamValue3
 simple triggers:
-- name: every-minute-trigger
-  start: 2021-09-19 00:00:00
-  end: 2021-09-19 23:59:00
-  interval: 00:01:00
-  repeat count: 100
-  misfire behaviour: 0
-  priority: 1
-  calendar: null
-  retry span: 01:00:00
-  trigger data:
-    key4: value4
-    key5: value5
-    key6: value6
+  - name: every-minute-trigger
+    start: 2021-09-19 00:00:00
+    end: 2021-09-19 23:59:00
+    interval: 00:01:00
+    repeat count: 100
+    misfire behaviour: 0
+    priority: 1
+    calendar: null
+    retry span: 01:00:00
+    trigger data:
+      key4: value4
+      key5: value5
+      key6: value6
 cron triggers:
-- name: some-cron-trigger
-  cron expression: 0 15 10 ? * MON-FRI
-  misfire behaviour: 0
-  priority: 1
-  calendar: null
-  retry span: 01:00:00
-  trigger data:
-    key7: value7
-    key8: value8
-    key9: value9
+  - name: some-cron-trigger
+    cron expression: 0 15 10 ? * MON-FRI
+    misfire behaviour: 0
+    priority: 1
+    calendar: null
+    retry span: 01:00:00
+    trigger data:
+      key7: value7
+      key8: value8
+      key9: value9
