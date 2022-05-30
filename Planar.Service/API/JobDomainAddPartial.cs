@@ -36,7 +36,7 @@ namespace Planar.Service.API
             var metadata = GetJobMetadata(request.Yaml);
             if (metadata == null)
             {
-                throw new RestValidationException("Fail to read yml data");
+                throw new RestValidationException("yaml", "fail to read yml data");
             }
 
             AddPathRelativeFolder(metadata, request.Path);
@@ -314,28 +314,28 @@ namespace Planar.Service.API
 
             #region Mandatory
 
-            if (string.IsNullOrEmpty(metadata.Name)) throw new RestValidationException("job name is mandatory");
-            if (string.IsNullOrEmpty(metadata.JobType)) throw new RestValidationException("job type is mandatory");
+            if (string.IsNullOrEmpty(metadata.Name)) throw new RestValidationException("name", "job name is mandatory");
+            if (string.IsNullOrEmpty(metadata.JobType)) throw new RestValidationException("type", "job type is mandatory");
 
             #endregion Mandatory
 
             #region Valid Name & Group
 
             var regex = new Regex(nameRegex);
-            if (IsRegexMatch(regex, metadata.Name) == false) throw new RestValidationException($"job name '{metadata.Name}' is invalid. use only alphanumeric, dashes & underscore");
-            if (IsRegexMatch(regex, metadata.Group) == false) throw new RestValidationException($"job group '{metadata.Group}' is invalid. use only alphanumeric, dashes & underscore");
+            if (IsRegexMatch(regex, metadata.Name) == false) throw new RestValidationException("name", $"job name '{metadata.Name}' is invalid. use only alphanumeric, dashes & underscore");
+            if (IsRegexMatch(regex, metadata.Group) == false) throw new RestValidationException("group", $"job group '{metadata.Group}' is invalid. use only alphanumeric, dashes & underscore");
 
             #endregion Valid Name & Group
 
             #region Max Chars
 
-            if (metadata.Name.Length > 50) throw new RestValidationException("job name length is invalid. max length is 50");
-            if (metadata.Group?.Length > 50) throw new RestValidationException("job group length is invalid. max length is 50");
-            if (metadata.Description?.Length > 100) throw new RestValidationException("job description length is invalid. max length is 100");
+            if (metadata.Name.Length > 50) throw new RestValidationException("name", "job name length is invalid. max length is 50");
+            if (metadata.Group?.Length > 50) throw new RestValidationException("group", "job group length is invalid. max length is 50");
+            if (metadata.Description?.Length > 100) throw new RestValidationException("description", "job description length is invalid. max length is 100");
 
             #endregion Max Chars
 
-            if (Consts.PreserveGroupNames.Contains(metadata.Group)) { throw new RestValidationException($"job group group '{metadata.Group}' is invalid (preserved value)"); }
+            if (Consts.PreserveGroupNames.Contains(metadata.Group)) { throw new RestValidationException("group", $"job group group '{metadata.Group}' is invalid (preserved value)"); }
 
             ValidateTriggerMetadata(metadata);
 
@@ -357,7 +357,7 @@ namespace Planar.Service.API
 
             if (exists != null)
             {
-                throw new RestValidationException($"job with name: {jobKey.Name} and group: {jobKey.Group} already exists");
+                throw new RestValidationException("name,group", $"job with name: {jobKey.Name} and group: {jobKey.Group} already exists");
             }
         }
 
@@ -384,11 +384,11 @@ namespace Planar.Service.API
 
             metadata.SimpleTriggers?.ForEach(t =>
             {
-                if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("trigger name is mandatory");
+                if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
             });
             metadata.CronTriggers?.ForEach(t =>
             {
-                if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("trigger name is mandatory");
+                if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
             });
 
             #endregion Mandatory
@@ -398,13 +398,13 @@ namespace Planar.Service.API
             var regex = new Regex(nameRegex);
             metadata.SimpleTriggers?.ForEach(t =>
             {
-                if (IsRegexMatch(regex, t.Name) == false) throw new RestValidationException($"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
-                if (IsRegexMatch(regex, t.Group) == false) throw new RestValidationException($"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
+                if (IsRegexMatch(regex, t.Name) == false) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
+                if (IsRegexMatch(regex, t.Group) == false) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
             });
             metadata.CronTriggers?.ForEach(t =>
             {
-                if (IsRegexMatch(regex, t.Name) == false) throw new RestValidationException($"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
-                if (IsRegexMatch(regex, t.Group) == false) throw new RestValidationException($"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
+                if (IsRegexMatch(regex, t.Name) == false) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
+                if (IsRegexMatch(regex, t.Group) == false) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
             });
 
             #endregion Valid Name & Group
@@ -413,13 +413,13 @@ namespace Planar.Service.API
 
             metadata.SimpleTriggers?.ForEach(t =>
             {
-                if (t.Name.Length > 50) throw new RestValidationException("trigger name length is invalid. max length is 50");
-                if (t.Group?.Length > 50) throw new RestValidationException("trigger group length is invalid. max length is 50");
+                if (t.Name.Length > 50) throw new RestValidationException("name", "trigger name length is invalid. max length is 50");
+                if (t.Group?.Length > 50) throw new RestValidationException("group", "trigger group length is invalid. max length is 50");
             });
             metadata.CronTriggers?.ForEach(t =>
             {
-                if (t.Name.Length > 50) throw new RestValidationException("trigger name length is invalid. max length is 50");
-                if (t.Group?.Length > 50) throw new RestValidationException("trigger group length is invalid. max length is 50");
+                if (t.Name.Length > 50) throw new RestValidationException("name", "trigger name length is invalid. max length is 50");
+                if (t.Group?.Length > 50) throw new RestValidationException("group", "trigger group length is invalid. max length is 50");
             });
 
             #endregion Max Chars
@@ -428,11 +428,11 @@ namespace Planar.Service.API
 
             metadata.SimpleTriggers?.ForEach(t =>
             {
-                if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException($"simple trigger group '{t.Group}' is invalid (preserved value)"); }
+                if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"simple trigger group '{t.Group}' is invalid (preserved value)"); }
             });
             metadata.CronTriggers?.ForEach(t =>
             {
-                if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException($"cron trigger group '{t.Group}' is invalid (preserved value)"); }
+                if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"cron trigger group '{t.Group}' is invalid (preserved value)"); }
             });
 
             #endregion Preserve Words
@@ -493,23 +493,23 @@ namespace Planar.Service.API
                     }
                     catch (Exception ex)
                     {
-                        throw new RestValidationException($"Fail to load assemly {nameof(RunPlanarJob)} ({ex.Message})");
+                        throw new RestValidationException("jobType", $"fail to load assemly {nameof(RunPlanarJob)} ({ex.Message})");
                     }
                     break;
 
                 default:
-                    throw new RestValidationException($"Job type '{job.JobType}' is not supported");
+                    throw new RestValidationException("jobType", $"job type '{job.JobType}' is not supported");
             }
 
             try
             {
                 var type = assembly.GetType(typeName);
-                if (type == null) throw new RestValidationException($"Type {typeName} is not supported");
+                if (type == null) throw new RestValidationException("jobType", $"type {typeName} is not supported");
                 return type;
             }
             catch (Exception ex)
             {
-                throw new RestValidationException($"Fail to get type {job.JobType} from assemly {assembly.FullName} ({ex.Message})");
+                throw new RestValidationException("jobType", $"Fail to get type {job.JobType} from assemly {assembly.FullName} ({ex.Message})");
             }
         }
     }

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
+using Planar.Service.API.Validation;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -24,28 +25,28 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<JobInstanceLog>> GetHistoryById([FromRoute] int id)
+        public async Task<ActionResult<JobInstanceLog>> GetHistoryById([FromRoute][Id] int id)
         {
             var result = await BusinesLayer.GetHistoryById(id);
             return Ok(result);
         }
 
         [HttpGet("{id}/data")]
-        public async Task<ActionResult<string>> GetHistoryDataById([FromRoute] int id)
+        public async Task<ActionResult<string>> GetHistoryDataById([FromRoute][Id] int id)
         {
             var result = await BusinesLayer.GetHistoryDataById(id);
             return Ok(result);
         }
 
         [HttpGet("{id}/info")]
-        public async Task<ActionResult<string>> GetHistoryInformationById([FromRoute] int id)
+        public async Task<ActionResult<string>> GetHistoryInformationById([FromRoute][Id] int id)
         {
             var result = await BusinesLayer.GetHistoryInformationById(id);
             return Ok(result);
         }
 
         [HttpGet("{id}/exception")]
-        public async Task<ActionResult<string>> GetHistoryExceptionById([FromRoute] int id)
+        public async Task<ActionResult<string>> GetHistoryExceptionById([FromRoute][Id] int id)
         {
             var result = await BusinesLayer.GetHistoryExceptionById(id);
             return Ok(result);

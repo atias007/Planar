@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Planar.Service.API;
+using Planar.Service.API.Validation;
 using System;
 using System.Threading.Tasks;
 
@@ -22,7 +23,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetGroup([FromRoute] int id)
+        public async Task<IActionResult> GetGroup([FromRoute][Id] int id)
         {
             var result = await BusinesLayer.GetGroupById(id);
             return Ok(result);
@@ -36,21 +37,21 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteGroup([FromRoute] int id)
+        public async Task<IActionResult> DeleteGroup([FromRoute][Id] int id)
         {
             await BusinesLayer.DeleteGroup(id);
             return NoContent();
         }
 
         [HttpPatch("{id}")]
-        public async Task<IActionResult> UpdateGroup([FromRoute] int id, [FromBody] UpdateEntityRecord request)
+        public async Task<IActionResult> UpdateGroup([FromRoute][Id] int id, [FromBody] UpdateEntityRecord request)
         {
             await BusinesLayer.UpdateGroup(id, request);
             return NoContent();
         }
 
         [HttpPost("{id}/user")]
-        public async Task<IActionResult> AddUserToGroup([FromRoute] int id, [FromBody] UserToGroupRecord request)
+        public async Task<IActionResult> AddUserToGroup([FromRoute][Id] int id, [FromBody] UserToGroupRecord request)
         {
             await BusinesLayer.AddUserToGroup(id, request);
             return CreatedAtAction("GetGroup", new { id }, id);

@@ -97,15 +97,5 @@ namespace Planar.Service.API.Helpers
 
             return result;
         }
-
-        private static async Task ValidateTriggerExists(TriggerKey triggerKey)
-        {
-            var exists = await Scheduler.GetTrigger(triggerKey);
-
-            if (exists == null)
-            {
-                throw new RestNotFoundException($"trigger with name: {triggerKey.Name} and group: {triggerKey.Group} not exists");
-            }
-        }
     }
 }

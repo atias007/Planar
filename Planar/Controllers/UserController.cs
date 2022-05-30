@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
+using Planar.Service.API.Validation;
 using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
@@ -25,7 +26,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> Get([FromRoute] int id)
+        public async Task<ActionResult<User>> Get([FromRoute][Id] int id)
         {
             var result = await BusinesLayer.Get(id);
             return Ok(result);
@@ -39,21 +40,21 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<ActionResult> Delete([FromRoute] int id)
+        public async Task<ActionResult> Delete([FromRoute][Id] int id)
         {
             await BusinesLayer.Delete(id);
             return NoContent();
         }
 
         [HttpPatch("{id}")]
-        public async Task<ActionResult> Update([FromRoute] int id, [FromBody] UpdateEntityRecord request)
+        public async Task<ActionResult> Update([FromRoute][Id] int id, [FromBody] UpdateEntityRecord request)
         {
             await BusinesLayer.Update(id, request);
             return NoContent();
         }
 
         [HttpGet("{id}/password")]
-        public async Task<ActionResult<string>> GetPassword([FromRoute] int id)
+        public async Task<ActionResult<string>> GetPassword([FromRoute][Id] int id)
         {
             var result = await BusinesLayer.GetPassword(id);
             return Ok(result);

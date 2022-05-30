@@ -1,23 +1,23 @@
-﻿using Planar.Service.Exceptions;
-using System;
-using System.Reflection;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 
 namespace Planar.Service.Api.Validation
 {
-    public class EmailAttribute : ValidationBaseAttribute
+    public class EmailAttribute : ValidationAttribute
     {
-        public override void Validate(object value, PropertyInfo propertyInfo)
+        public override bool IsValid(object value)
         {
-            if (value == null) { return; }
+            if (value == null) { return false; }
             var stringValue = Convert.ToString(value);
             const string pattern = @"\A(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9]{2,8}(?:[a-z0-9-]*[a-z0-9])?)\Z";
             var regex = new Regex(pattern, RegexOptions.IgnoreCase);
-            if (regex.IsMatch(stringValue) == false)
-            {
-                var message = $"Property {propertyInfo.Name} has invalid email address value";
-                throw new RestValidationException(message);
-            }
+            return regex.IsMatch(stringValue);
+        }
+
+        public override string FormatErrorMessage(string name)
+        {
+            return $"{name} is not valid email address";
         }
     }
 }

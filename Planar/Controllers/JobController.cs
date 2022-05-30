@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
+using Planar.Service.API.Validation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -123,7 +124,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("testStatus/{id}")]
-        public async Task<ActionResult<GetTestStatusResponse>> GetTestStatus([FromRoute] int id)
+        public async Task<ActionResult<GetTestStatusResponse>> GetTestStatus([FromRoute][Id] int id)
         {
             var result = await BusinesLayer.GetTestStatus(id);
             return Ok(result);
