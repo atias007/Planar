@@ -1,6 +1,6 @@
 ﻿namespace Planar
 {
-    internal enum MonitorEvents
+    public enum MonitorEvents
     {
         ExecutionVetoed = 1,
         ExecutionRetry = 2,

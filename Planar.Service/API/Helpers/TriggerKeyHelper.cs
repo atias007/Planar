@@ -35,7 +35,7 @@ namespace Planar.Service.API.Helpers
 
             if (result == null)
             {
-                throw new RestNotFoundException($"trigger with id {key.Id} not exists");
+                throw new RestNotFoundException($"trigger with id {key.Id} does not exist");
             }
 
             return result;

@@ -2,9 +2,10 @@
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
-using Planar.API.Common.Validation;
+using Planar.Validation.Attributes;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -33,14 +34,14 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Remove([FromRoute] string id)
+        public async Task<IActionResult> Remove([FromRoute][Required] string id)
         {
             await BusinesLayer.Remove(id);
             return NoContent();
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<JobDetails>> Get([FromRoute] string id)
+        public async Task<ActionResult<JobDetails>> Get([FromRoute][Required] string id)
         {
             var result = await BusinesLayer.Get(id);
             return Ok(result);
@@ -96,14 +97,14 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}/settings")]
-        public async Task<ActionResult<Dictionary<string, string>>> GetSettings([FromRoute] string id)
+        public async Task<ActionResult<Dictionary<string, string>>> GetSettings([FromRoute][Required] string id)
         {
             var result = await BusinesLayer.GetSettings(id);
             return Ok(result);
         }
 
         [HttpGet("running/{instanceId}")]
-        public async Task<ActionResult<RunningJobDetails>> GetAllRunning([FromRoute] string instanceId)
+        public async Task<ActionResult<RunningJobDetails>> GetAllRunning([FromRoute][Required] string instanceId)
         {
             var result = await BusinesLayer.GetRunning(instanceId);
             return Ok(result.FirstOrDefault());
@@ -117,7 +118,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("runningInfo/{instanceId}")]
-        public async Task<ActionResult<GetRunningInfoResponse>> GetRunningInfo([FromRoute] string instanceId)
+        public async Task<ActionResult<GetRunningInfoResponse>> GetRunningInfo([FromRoute][Required] string instanceId)
         {
             var result = await BusinesLayer.GetRunningInfo(instanceId);
             return Ok(result);
@@ -131,14 +132,14 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}/data/{key}")]
-        public async Task<IActionResult> RemoveData([FromRoute] string id, [FromRoute] string key)
+        public async Task<IActionResult> RemoveData([FromRoute][Required] string id, [FromRoute][Required] string key)
         {
             await BusinesLayer.RemoveData(id, key);
             return NoContent();
         }
 
         [HttpDelete("{id}/allData")]
-        public async Task<IActionResult> ClearData([FromRoute] string id)
+        public async Task<IActionResult> ClearData([FromRoute][Required] string id)
         {
             await BusinesLayer.ClearData(id);
             return NoContent();
@@ -152,7 +153,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}/lastInstanceId")]
-        public async Task<ActionResult<LastInstanceId>> GetLastInstanceId([FromRoute] string id, [FromQuery] DateTime invokeDate)
+        public async Task<ActionResult<LastInstanceId>> GetLastInstanceId([FromRoute][Required] string id, [FromQuery] DateTime invokeDate)
         {
             var result = await BusinesLayer.GetLastInstanceId(id, invokeDate);
             return Ok(result);

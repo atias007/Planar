@@ -2,9 +2,10 @@
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
-using Planar.API.Common.Validation;
+using Planar.Validation.Attributes;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -25,7 +26,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{jobOrGroupId}")]
-        public async Task<ActionResult<List<MonitorItem>>> Get([FromRoute] string jobOrGroupId)
+        public async Task<ActionResult<List<MonitorItem>>> Get([FromRoute][Required] string jobOrGroupId)
         {
             var result = await BusinesLayer.Get(jobOrGroupId);
             return Ok(result);

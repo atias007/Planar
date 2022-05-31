@@ -86,8 +86,6 @@ namespace Planar.Service.API
                 throw new RestValidationException("id", $"conflict id value. (from routing: {id}, from body {request.Id}");
             }
 
-            await new UpdateEntityRecordValidator().ValidateAndThrowAsync(request);
-
             if ((await DataLayer.GetUser(request.Id)) is not User existsUser)
             {
                 throw new RestValidationException("id", $"user with id {request.Id} could not be found");

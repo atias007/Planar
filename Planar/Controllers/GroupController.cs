@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Planar.API.Common.Validation;
 using Planar.Service.API;
+using Planar.Validation.Attributes;
 using System;
 using System.Threading.Tasks;
 
@@ -58,7 +58,7 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}/user/{userId}")]
-        public async Task<IActionResult> RemoveUserFromGroup([FromRoute] int id, [FromRoute] int userId)
+        public async Task<IActionResult> RemoveUserFromGroup([FromRoute][Id] int id, [FromRoute][Id] int userId)
         {
             await BusinesLayer.RemoveUserFromGroup(id, userId);
             return NoContent();

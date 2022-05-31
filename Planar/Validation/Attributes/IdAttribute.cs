@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace Planar.API.Common.Validation
+namespace Planar.Validation.Attributes
 {
     public class IdAttribute : ValidationAttribute
     {

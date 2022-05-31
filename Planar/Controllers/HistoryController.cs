@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
-using Planar.API.Common.Validation;
+using Planar.Validation.Attributes;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -53,7 +53,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("last")]
-        public async Task<ActionResult<List<JobInstanceLogRow>>> GetLastHistoryCallForJob([FromQuery] int lastDays)
+        public async Task<ActionResult<List<JobInstanceLogRow>>> GetLastHistoryCallForJob([FromQuery][UInt] int lastDays)
         {
             var result = await BusinesLayer.GetLastHistoryCallForJob(lastDays);
             return Ok(result);

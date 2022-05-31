@@ -24,7 +24,7 @@ namespace Planar.CLI.Actions
             var fi = new FileInfo(request.Filename);
             if (fi.Exists == false)
             {
-                throw new ApplicationException($"filename '{fi.FullName}' not exists");
+                throw new ApplicationException($"filename '{fi.FullName}' not exist");
             }
 
             var yml = File.ReadAllText(fi.FullName);

@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using Planar.Service.API.Helpers;
+using System.Text.RegularExpressions;
 
 namespace Planar.Service.Validation
 {
@@ -12,12 +13,19 @@ namespace Planar.Service.Validation
             return regex.IsMatch(value);
         }
 
-        public static bool IsValidNumeric(string value)
+        public static bool IsOnlyDigits(string value)
         {
             if (value == null) return true;
             const string pattern = "^[0-9]+$";
             var regex = new Regex(pattern, RegexOptions.IgnoreCase);
             return regex.IsMatch(value);
+        }
+
+        public static bool IsJobExists(string value)
+        {
+            if (value == null) return true;
+            var key = JobKeyHelper.GetJobKeyById(value).Result;
+            return key != null;
         }
     }
 }

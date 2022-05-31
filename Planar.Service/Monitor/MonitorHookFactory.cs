@@ -3,7 +3,7 @@ using System.Runtime.Loader;
 
 namespace Planar.Service.Monitor
 {
-    internal class MonitorHookFactory
+    public class MonitorHookFactory
     {
         public string Name { get; set; }
 

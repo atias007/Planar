@@ -1,5 +1,5 @@
 ﻿using FluentValidation;
-using System.Text.RegularExpressions;
+using Planar.Service.Validation;
 
 namespace Planar.Validation
 {
@@ -7,15 +7,12 @@ namespace Planar.Validation
     {
         public static IRuleBuilderOptions<T, string> OnlyDigits<T>(this IRuleBuilder<T, string> ruleBuilder)
         {
-            return ruleBuilder.Must(v => IsOnlyDigits(v)).WithMessage("'{PropertyName}' must have only digits");
+            return ruleBuilder.Must(v => ValidationUtil.IsOnlyDigits(v)).WithMessage("'{PropertyName}' must have only digits");
         }
 
-        public static bool IsOnlyDigits(string value)
+        public static IRuleBuilderOptions<T, string> JobIdExists<T>(this IRuleBuilder<T, string> ruleBuilder)
         {
-            if (value == null) { return false; }
-            const string pattern = "^[0-9]+$";
-            var regex = new Regex(pattern, RegexOptions.IgnoreCase);
-            return regex.IsMatch(value);
+            return ruleBuilder.Must(v => ValidationUtil.IsJobExists(v)).WithMessage("'{PropertyName}' field with value '{PropertyValue}' does not exist");
         }
     }
 }

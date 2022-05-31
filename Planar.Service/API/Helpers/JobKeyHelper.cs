@@ -70,7 +70,7 @@ namespace Planar.Service.API.Helpers
 
             if (exists == null)
             {
-                throw new RestNotFoundException($"job with id {jobKey.Name} or key {jobKey.Group}.{jobKey.Name} not exists");
+                throw new RestNotFoundException($"job with id {jobKey.Name} or key {jobKey.Group}.{jobKey.Name} does not exist");
             }
         }
 
@@ -81,7 +81,7 @@ namespace Planar.Service.API.Helpers
                             new JobKey(metadata.Name, metadata.Group);
         }
 
-        private static async Task<JobKey> GetJobKeyById(string jobId)
+        public static async Task<JobKey> GetJobKeyById(string jobId)
         {
             JobKey result = null;
             var keys = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());

@@ -118,53 +118,47 @@ namespace Planar.Service.API
                 Title = request.Title,
             };
 
-            var eventExists = Enum.IsDefined(typeof(MonitorEvents), request.MonitorEvent);
-            if (eventExists == false)
-            {
-                throw new RestValidationException("monitorEvent", $"monitor event {request.MonitorEvent} does not exists");
-            }
+            ////if (string.IsNullOrEmpty(request.JobId) && string.IsNullOrEmpty(request.JobGroup))
+            ////{
+            ////    throw new RestValidationException("jobId,jobGroup", "job id and Job group name are both missing. to add monitor please supply one of them");
+            ////}
 
-            if (string.IsNullOrEmpty(request.JobId) && string.IsNullOrEmpty(request.JobGroup))
-            {
-                throw new RestValidationException("jobId,jobGroup", "job id and Job group name are both missing. to add monitor please supply one of them");
-            }
+            ////if (string.IsNullOrEmpty(request.JobId) == false && string.IsNullOrEmpty(request.JobGroup) == false)
+            ////{
+            ////    throw new RestValidationException("jobId,jobGroup", "job id and Job group name are both has value. to add monitor please supply only one of them");
+            ////}
 
-            if (string.IsNullOrEmpty(request.JobId) == false && string.IsNullOrEmpty(request.JobGroup) == false)
-            {
-                throw new RestValidationException("jobId,jobGroup", "job id and Job group name are both has value. to add monitor please supply only one of them");
-            }
+            //if (string.IsNullOrEmpty(request.JobId) == false)
+            //{
+            //    await JobKeyHelper.GetJobKey(request.JobId);
+            //}
 
-            if (string.IsNullOrEmpty(request.JobId) == false)
-            {
-                await JobKeyHelper.GetJobKey(new JobOrTriggerKey { Id = request.JobId });
-            }
+            //var existsGroup = await DataLayer.IsGroupExists(request.GroupId);
+            //if (existsGroup == false)
+            //{
+            //    throw new RestValidationException("groupId", $"group id {request.GroupId} does not exists");
+            //}
 
-            var existsGroup = await DataLayer.IsGroupExists(request.GroupId);
-            if (existsGroup == false)
-            {
-                throw new RestValidationException("groupId", $"group id {request.GroupId} does not exists");
-            }
+            //var existsHook = ServiceUtil.MonitorHooks.ContainsKey(request.Hook);
+            //if (existsHook == false)
+            //{
+            //    throw new RestValidationException("hook", $"hook {request.Hook} does not exists");
+            //}
 
-            var existsHook = ServiceUtil.MonitorHooks.ContainsKey(request.Hook);
-            if (existsHook == false)
-            {
-                throw new RestValidationException("hook", $"hook {request.Hook} does not exists");
-            }
+            //if (string.IsNullOrEmpty(request.Title))
+            //{
+            //    throw new RestValidationException("title", "title is null or empty");
+            //}
 
-            if (string.IsNullOrEmpty(request.Title))
-            {
-                throw new RestValidationException("title", "title is null or empty");
-            }
+            ////if (request.Title?.Length > 50)
+            ////{
+            ////    throw new RestValidationException("title", $"title lenght is {request.Title.Length}. Max lenght should be 50");
+            ////}
 
-            if (request.Title?.Length > 50)
-            {
-                throw new RestValidationException("title", $"title lenght is {request.Title.Length}. Max lenght should be 50");
-            }
-
-            if (request.EventArguments?.Length > 50)
-            {
-                throw new RestValidationException("eventArguments", $"event arguments lenght is {request.EventArguments.Length}. Max lenght should be 50");
-            }
+            ////if (request.EventArguments?.Length > 50)
+            ////{
+            ////    throw new RestValidationException("eventArguments", $"event arguments lenght is {request.EventArguments.Length}. Max lenght should be 50");
+            ////}
 
             await DataLayer.AddMonitor(monitor);
             return monitor.Id;

@@ -101,7 +101,7 @@ namespace Planar.Service.Monitor
                             var hookInstance = GetMonitorHookInstance(action.Hook);
                             if (hookInstance == null)
                             {
-                                _logger.LogWarning("Hook {@Hook} in monitor item id: {@Id}, title: '{@Title}' is not exists in service", action.Hook, action.Id, action.Title);
+                                _logger.LogWarning("Hook {@Hook} in monitor item id: {@Id}, title: '{@Title}' does not exist in service", action.Hook, action.Id, action.Title);
                             }
                             else
                             {

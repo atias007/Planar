@@ -9,9 +9,9 @@ using System.Runtime.Loader;
 
 namespace Planar.Service.General
 {
-    internal static class ServiceUtil
+    public static class ServiceUtil
     {
-        internal static Dictionary<string, MonitorHookFactory> MonitorHooks { get; private set; } = new();
+        public static Dictionary<string, MonitorHookFactory> MonitorHooks { get; private set; } = new();
 
         internal static string GenerateId()
         {
