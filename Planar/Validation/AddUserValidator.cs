@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Planar.Service.Model;
+using Planar.Service.Validation;
 
 namespace Planar.Validation
 {

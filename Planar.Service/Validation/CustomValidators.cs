@@ -1,7 +1,6 @@
 ﻿using FluentValidation;
-using Planar.Service.Validation;
 
-namespace Planar.Validation
+namespace Planar.Service.Validation
 {
     public static class CustomValidators
     {

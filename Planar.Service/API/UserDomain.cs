@@ -41,7 +41,7 @@ namespace Planar.Service.API
                 Password = password
             };
 
-            await new AddUserValidator().ValidateAndThrowAsync(user);
+            await new UserValidator().ValidateAndThrowAsync(user);
             var result = await DataLayer.AddUser(user);
             var response = new AddUserResponse
             {
@@ -86,32 +86,9 @@ namespace Planar.Service.API
                 throw new RestValidationException("id", $"conflict id value. (from routing: {id}, from body {request.Id}");
             }
 
-            if ((await DataLayer.GetUser(request.Id)) is not User existsUser)
-            {
-                throw new RestValidationException("id", $"user with id {request.Id} could not be found");
-            }
-
-            var properties = typeof(User).GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            var prop = properties.FirstOrDefault(p => p.Name == request.PropertyName);
-            if (prop == null)
-            {
-                throw new RestValidationException("propertyName", $"property name '{request.PropertyName}' could not be found in User entity");
-            }
-
-            try
-            {
-                var stringValue = request.PropertyValue;
-                if (stringValue.ToLower() == "[null]") { stringValue = null; }
-                var value = Convert.ChangeType(stringValue, prop.PropertyType);
-                prop.SetValue(existsUser, value);
-            }
-            catch (Exception ex)
-            {
-                throw new RestValidationException($"property value", $"property value '{request.PropertyValue}' could not be set to property name '{request.PropertyName}' ({ex.Message})");
-            }
-
-            await new UpdateUserValidator().ValidateAndThrowAsync(existsUser);
-
+            var existsUser = await DataLayer.GetUser(request.Id);
+            ValidateExistingEntity(existsUser);
+            await UpdateEntity(existsUser, request, new UserValidator());
             await DataLayer.UpdateUser(existsUser);
         }
 

@@ -60,6 +60,13 @@ namespace Planar.Controllers
             return NoContent();
         }
 
+        [HttpPatch("{id}")]
+        public async Task<ActionResult> Update([FromRoute][Id] int id, [FromBody] UpdateEntityRecord request)
+        {
+            await BusinesLayer.Update(id, request);
+            return NoContent();
+        }
+
         [HttpPost("reload")]
         public ActionResult<string> Reload()
         {

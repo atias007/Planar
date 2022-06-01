@@ -9,6 +9,20 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
+    internal struct AddMonitorJobData
+    {
+        public string JobId { get; set; }
+        public string JobGroupId { get; set; }
+
+        public bool IsEmpty
+        {
+            get
+            {
+                return string.IsNullOrEmpty(JobId) && string.IsNullOrEmpty(JobGroupId);
+            }
+        }
+    }
+
     [Module("monitor")]
     public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     {
@@ -58,8 +72,7 @@ namespace Planar.CLI.Actions
             }
 
             var title = GetTitle();
-            var jobId = GetJobId(metadata);
-            var jobGroup = GetJobGroup(metadata, jobId);
+            var job = GetJob(metadata);
             var monitorEvent = GetEvent(metadata);
             var monitorEventArgs = GetEventArguments(monitorEvent);
             var groupId = GetDistributionGroup(metadata);
@@ -70,10 +83,10 @@ namespace Planar.CLI.Actions
             var monitor = new AddMonitorRequest
             {
                 EventArguments = monitorEventArgs,
-                JobGroup = jobGroup,
+                JobGroup = job.JobGroupId,
                 GroupId = groupId,
                 Hook = hookName,
-                JobId = jobId,
+                JobId = job.JobId,
                 MonitorEvent = monitorEvent,
                 Title = title
             };
@@ -159,6 +172,27 @@ namespace Planar.CLI.Actions
             return monitorEvent;
         }
 
+        private static AddMonitorJobData GetJob(RestResponse<MonitorActionMedatada> metadata)
+        {
+            var result = new AddMonitorJobData();
+
+            while (result.IsEmpty)
+            {
+                result.JobId = GetJobId(metadata);
+                if (string.IsNullOrEmpty(result.JobId))
+                {
+                    result.JobGroupId = GetJobGroup(metadata);
+                }
+
+                if (result.IsEmpty)
+                {
+                    AnsiConsole.Write(new Markup("[red]job id and job group are empty[/]\r\n"));
+                }
+            }
+
+            return result;
+        }
+
         private static string GetJobId(RestResponse<MonitorActionMedatada> metadata)
         {
             var table = CliTableExtensions.GetTable(metadata.Data.Jobs, "Description");
@@ -168,7 +202,13 @@ namespace Planar.CLI.Actions
                 .AllowEmpty()
                 .Validate(job =>
                 {
-                    if (string.IsNullOrEmpty(job) || metadata.Data.Jobs.ContainsKey(job))
+                    if (string.IsNullOrEmpty(job))
+                    {
+                        return ValidationResult.Success();
+                    }
+
+                    job = job.Trim();
+                    if (metadata.Data.Jobs.ContainsKey(job))
                     {
                         return ValidationResult.Success();
                     }
@@ -185,31 +225,34 @@ namespace Planar.CLI.Actions
             return jobId;
         }
 
-        private static string GetJobGroup(RestResponse<MonitorActionMedatada> result, string jobId)
+        private static string GetJobGroup(RestResponse<MonitorActionMedatada> metadata)
         {
             string jobGroup = null;
 
-            if (string.IsNullOrEmpty(jobId))
+            if (metadata.Data.JobGroups != null && metadata.Data.JobGroups.Count > 0)
             {
-                if (result.Data.JobGroups != null && result.Data.JobGroups.Count > 0)
-                {
-                    var table = CliTableExtensions.GetTable(result.Data.JobGroups, "Job Group");
-                    AnsiConsole.Write(table);
-                }
-
-                jobGroup = AnsiConsole.Prompt(
-                    new TextPrompt<string>("[turquoise2]  > Job group: [/]")
-                    .AllowEmpty()
-                    .Validate(group =>
-                    {
-                        if (string.IsNullOrEmpty(group) || result.Data.JobGroups.Contains(group))
-                        {
-                            return ValidationResult.Success();
-                        }
-
-                        return ValidationResult.Error($"[red]group {group} does not exist[/]");
-                    }));
+                var table = CliTableExtensions.GetTable(metadata.Data.JobGroups, "Job Group");
+                AnsiConsole.Write(table);
             }
+
+            jobGroup = AnsiConsole.Prompt(
+                new TextPrompt<string>("[turquoise2]  > Job group: [/]")
+                .AllowEmpty()
+                .Validate(group =>
+                {
+                    if (string.IsNullOrEmpty(group))
+                    {
+                        return ValidationResult.Success();
+                    }
+
+                    group = group.Trim();
+                    if (metadata.Data.JobGroups.Contains(group))
+                    {
+                        return ValidationResult.Success();
+                    }
+
+                    return ValidationResult.Error($"[red]group {group} does not exist[/]");
+                }));
 
             if (string.IsNullOrEmpty(jobGroup))
             {
@@ -226,6 +269,7 @@ namespace Planar.CLI.Actions
                 .Validate(title =>
                 {
                     if (string.IsNullOrWhiteSpace(title)) { return ValidationResult.Error("[red]Title is required field[/]"); }
+                    title = title.Trim();
                     if (title.Length > 50) { return ValidationResult.Error("[red]Title limited to 50 chars maximum[/]"); }
                     if (title.Length < 5) { return ValidationResult.Error("[red]Title must have at least 5 chars[/]"); }
                     return ValidationResult.Success();

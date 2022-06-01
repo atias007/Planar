@@ -3,9 +3,9 @@ using Planar.Service.Model;
 
 namespace Planar.Service.Validation
 {
-    public class AddUserValidator : AbstractValidator<User>
+    public class UserValidator : AbstractValidator<User>
     {
-        public AddUserValidator()
+        public UserValidator()
         {
             RuleFor(u => u.Username).NotEmpty().Length(2, 50);
             RuleFor(u => u.FirstName).NotEmpty().Length(2, 50);

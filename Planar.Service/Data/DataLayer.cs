@@ -69,6 +69,11 @@ namespace Planar.Service.Data
                 .ToListAsync();
         }
 
+        public async Task<MonitorAction> GetMonitorAction(int id)
+        {
+            return await _context.MonitorActions.FindAsync(id);
+        }
+
         public async Task SetJobInstanceLogStatus(string instanceId, StatusMembers status)
         {
             var paramInstanceId = new SqlParameter("@InstanceId", instanceId);
