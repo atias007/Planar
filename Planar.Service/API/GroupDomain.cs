@@ -57,32 +57,11 @@ namespace Planar.Service.API
 
         public async Task UpdateGroup(int id, UpdateEntityRecord request)
         {
-            if (await DataLayer.GetGroup(id) is not Group existsGroup)
-            {
-                throw new RestNotFoundException($"Group with id {id} could not be found");
-            }
-
-            var properties = typeof(Group).GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            var prop = properties.FirstOrDefault(p => p.Name == request.PropertyName);
-            if (prop == null)
-            {
-                throw new RestValidationException(request.PropertyName, $"PropertyName '{request.PropertyName}' could not be found in Group entity");
-            }
-
-            try
-            {
-                var stringValue = request.PropertyValue;
-                if (stringValue.ToLower() == "[null]") { stringValue = null; }
-                var value = Convert.ChangeType(stringValue, prop.PropertyType);
-                prop.SetValue(existsGroup, value);
-            }
-            catch (Exception ex)
-            {
-                throw new RestValidationException(request.PropertyName, $"PropertyValue '{request.PropertyValue}' could not be set to PropertyName '{request.PropertyName}' ({ex.Message})");
-            }
-
-            await new GroupValidator().ValidateAndThrowAsync(existsGroup);
-
+            ValidateIdConflict(id, request.Id);
+            ValidateForbiddenUpdateProperties(request, "Id", "MonitorActions", "UsersToGroups", "Users");
+            var existsGroup = await DataLayer.GetGroup(id);
+            ValidateExistingEntity(existsGroup);
+            await UpdateEntity(existsGroup, request, new GroupValidator());
             await DataLayer.UpdateGroup(existsGroup);
         }
 

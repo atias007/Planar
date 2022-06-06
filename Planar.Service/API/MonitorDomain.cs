@@ -125,14 +125,13 @@ namespace Planar.Service.API
 
         public async Task Update(int id, UpdateEntityRecord request)
         {
-            if (id != request.Id)
-            {
-                throw new RestValidationException("id", $"conflict id value. (from routing: {id}, from body {request.Id}");
-            }
-
+            ValidateIdConflict(id, request.Id);
+            ValidateForbiddenUpdateProperties(request, "Id", "JobGroup", "JobGroup", "Group");
             var action = await DataLayer.GetMonitorAction(id);
             ValidateExistingEntity(action);
-            await UpdateEntity(action, request, new MonitorActionValidator(DataLayer));
+            var validator = new MonitorActionValidator(DataLayer);
+            await UpdateEntity(action, request, validator);
+            await DataLayer.UpdateMonitorAction(action);
         }
 
         public async Task Delete(int id)

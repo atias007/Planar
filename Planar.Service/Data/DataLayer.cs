@@ -83,6 +83,12 @@ namespace Planar.Service.Data
             await _context.Database.ExecuteSqlRawAsync($"dbo.SetJobInstanceLogStatus @InstanceId,  @Status, @StatusTitle", paramInstanceId, paramStatus, paramTitle);
         }
 
+        public async Task UpdateMonitorAction(MonitorAction monitor)
+        {
+            _context.MonitorActions.Update(monitor);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<List<LogDetails>> GetTrace(GetTraceRequest request)
         {
             var query = _context.Traces.AsQueryable();
@@ -398,7 +404,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<object> GetGroup(int id)
+        public async Task<Group> GetGroup(int id)
         {
             var result = await _context.Groups.FindAsync(id);
             return result;

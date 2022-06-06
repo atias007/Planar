@@ -63,6 +63,25 @@ namespace Planar.Service.API
             }
         }
 
+        protected void ValidateIdConflict(int routeId, int bodyId)
+        {
+            if (routeId != bodyId)
+            {
+                throw new RestValidationException("id", $"conflict id value. (route id: {routeId}, body id: {bodyId}");
+            }
+        }
+
+        protected void ValidateForbiddenUpdateProperties(UpdateEntityRecord entity, params string[] properties)
+        {
+            if (properties != null && entity != null)
+            {
+                if (properties.Any(p => p.Equals(entity.PropertyName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    throw new RestValidationException(entity.PropertyName, $"property {entity.PropertyName} not allowed to be updated");
+                }
+            }
+        }
+
         protected static async Task UpdateEntity<T>(T entity, UpdateEntityRecord request, AbstractValidator<T> validator = null)
         {
             var type = typeof(T);

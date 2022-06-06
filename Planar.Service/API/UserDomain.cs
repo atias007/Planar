@@ -8,8 +8,6 @@ using Planar.Service.Model;
 using Planar.Service.Validation;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -81,11 +79,8 @@ namespace Planar.Service.API
 
         public async Task Update(int id, UpdateEntityRecord request)
         {
-            if (id != request.Id)
-            {
-                throw new RestValidationException("id", $"conflict id value. (from routing: {id}, from body {request.Id}");
-            }
-
+            ValidateIdConflict(id, request.Id);
+            ValidateForbiddenUpdateProperties(request, "Id", "UsersToGroups", "Groups");
             var existsUser = await DataLayer.GetUser(request.Id);
             ValidateExistingEntity(existsUser);
             await UpdateEntity(existsUser, request, new UserValidator());
