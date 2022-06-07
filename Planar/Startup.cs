@@ -12,6 +12,8 @@ using Planar.Service.API;
 using Planar.Service.Data;
 using Serilog;
 using System.Net;
+using AutoMapper;
+using System.Reflection;
 
 namespace Planar
 {
@@ -54,6 +56,8 @@ namespace Planar
                 contextLifetime: ServiceLifetime.Transient,
                 optionsLifetime: ServiceLifetime.Singleton
             );
+
+            services.AddAutoMapper(Assembly.Load("Planar.Service"));
             services.AddTransient<DataLayer>();
             services.AddTransient<MainService>();
             services.AddScoped<GroupDomain>();

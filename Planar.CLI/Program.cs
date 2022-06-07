@@ -199,7 +199,7 @@ namespace Planar.CLI
                 var errors = obj["errors"].SelectMany(e => e.ToList()).SelectMany(e => e.ToList());
                 if (errors.Any() == false)
                 {
-                    AnsiConsole.MarkupLine($"[red]validation error: {entity.Title}[/]");
+                    AnsiConsole.MarkupLine($"[red]validation error: {entity.Detail}[/]");
                     return;
                 }
 
@@ -211,15 +211,29 @@ namespace Planar.CLI
                 }
 
                 AnsiConsole.MarkupLine("[red]validation error:[/]");
-                foreach (JValue item in errors)
+                foreach (JToken item in errors)
                 {
-                    AnsiConsole.MarkupLine($"[red]  - {item.Value}[/]");
+                    if (item is JArray arr)
+                    {
+                        foreach (JValue subItem in arr)
+                        {
+                            AnsiConsole.MarkupLine($"[red]  - {subItem.Value}[/]");
+                        }
+                    }
+                    else
+                    {
+                        AnsiConsole.MarkupLine($"[red]  - {(item as JValue).Value}[/]");
+                    }
                 }
 
                 return;
             }
 
-            AnsiConsole.Markup($"[red]error: general error ({response.StatusDescription})[/]");
+            AnsiConsole.Markup($"[red]error: general error[/]");
+            if (string.IsNullOrEmpty(response.StatusDescription) == false)
+            {
+                AnsiConsole.Markup($"[red] ({response.StatusDescription})[/]");
+            }
         }
 
         private static void WriteInfo(string message)

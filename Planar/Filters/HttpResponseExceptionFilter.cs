@@ -68,6 +68,42 @@ namespace Planar.Filters
             context.ExceptionHandled = true;
         }
 
+        private static void HandleValidationException(ActionExecutedContext context, FluentValidation.ValidationException exception)
+        {
+            const string ProblemType = "https://tools.ietf.org/html/rfc7231#section-6.5.1";
+            const string MultipleErrors = "One or more validation errors occurred.";
+
+            RestBadRequestResult problem;
+            if (exception.Errors.Count() == 1)
+            {
+                var error = exception.Errors.First();
+                problem = new RestBadRequestResult
+                {
+                    Detail = error.ErrorMessage,
+                    Instance = context.HttpContext.Request.Path,
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = error.PropertyName,
+                    Type = ProblemType,
+                };
+            }
+            else
+            {
+                problem = new RestBadRequestResult
+                {
+                    Instance = context.HttpContext.Request.Path,
+                    Status = StatusCodes.Status400BadRequest,
+                    Title = MultipleErrors,
+                    Type = ProblemType,
+                    Errors = exception.Errors
+                        .Select(e => new RestBadRequestError { Field = e.PropertyName, Detail = new List<string> { e.ErrorMessage } })
+                        .ToList(),
+                };
+            }
+
+            context.Result = new BadRequestObjectResult(problem);
+            context.ExceptionHandled = true;
+        }
+
         public void OnActionExecuted(ActionExecutedContext context)
         {
             if (context.Exception is RestNotFoundException notFoundException)
@@ -84,6 +120,10 @@ namespace Planar.Filters
             else if (context.Exception is RestValidationException validationException)
             {
                 HandleValidationException(context, validationException);
+            }
+            else if (context.Exception is FluentValidation.ValidationException validationException2)
+            {
+                HandleValidationException(context, validationException2);
             }
             else if (context.Exception is RestGeneralException generalException)
             {

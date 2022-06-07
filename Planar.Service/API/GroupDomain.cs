@@ -1,13 +1,13 @@
-﻿using FluentValidation;
+﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Planar.API.Common.Entities;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using Planar.Service.Validation;
 using System;
-using System.Linq;
-using System.Reflection;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -30,14 +30,19 @@ namespace Planar.Service.API
             return group.Id;
         }
 
-        public async Task<object> GetGroupById(int id)
+        public async Task<GroupDetails> GetGroupById(int id)
         {
-            var result = await DataLayer.GetGroupWithUsers(id);
-            ValidateExistingEntity(result);
+            var group = await DataLayer.GetGroup(id);
+            ValidateExistingEntity(group);
+            var users = await DataLayer.GetUsersInGroup(id);
+            var mapper = Resolve<IMapper>();
+            var result = mapper.Map<GroupDetails>(group);
+            users.ForEach(u => result.Users.Add(u.ToString()));
+
             return result;
         }
 
-        public async Task<object> GetGroups()
+        public async Task<List<GroupInfo>> GetGroups()
         {
             return await DataLayer.GetGroups();
         }

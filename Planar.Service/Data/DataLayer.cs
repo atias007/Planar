@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
 using Planar.Service.Model;
+using Planar.Service.Model.DataObjects;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -328,15 +329,16 @@ namespace Planar.Service.Data
         public async Task<User> GetUser(int id)
         {
             var result = await _context.Users.FindAsync(id);
+            return result;
+        }
 
-            if (result != null)
-            {
-                result.Groups = await _context.UsersToGroups
+        internal async Task<List<EntityTitle>> GetGroupsForUser(int id)
+        {
+            var result = await _context.UsersToGroups
                     .Include(ug => ug.Group)
                     .Where(ug => ug.UserId == id)
-                    .Select(ug => ug.Group)
+                    .Select(ug => new EntityTitle(ug.Group.Id, ug.Group.Name))
                     .ToListAsync();
-            }
 
             return result;
         }
@@ -389,17 +391,13 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
-        public async Task<object> GetGroupWithUsers(int id)
+        internal async Task<List<EntityTitle>> GetUsersInGroup(int id)
         {
-            var result = await _context.Groups.FindAsync(id);
-            if (result != null)
-            {
-                result.Users = await _context.UsersToGroups
-                    .Include(ug => ug.User)
-                    .Where(ug => ug.GroupId == id)
-                    .Select(ug => ug.User)
-                    .ToListAsync();
-            }
+            var result = await _context.UsersToGroups
+                .Include(ug => ug.User)
+                .Where(ug => ug.GroupId == id)
+                .Select(ug => new EntityTitle(ug.User.Id, ug.User.FirstName, ug.User.LastName))
+                .ToListAsync();
 
             return result;
         }
@@ -410,11 +408,16 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<object> GetGroups()
+        public async Task<List<GroupInfo>> GetGroups()
         {
             var result = await _context.Groups
                 .Include(g => g.UsersToGroups)
-                .Select(g => new { g.Id, g.Name, UsersCount = g.UsersToGroups.Count })
+                .Select(g => new GroupInfo
+                {
+                    Id = g.Id,
+                    Name = g.Name,
+                    UsersCount = g.UsersToGroups.Count
+                })
                 .OrderBy(g => g.Name)
                 .ToListAsync();
 

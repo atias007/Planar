@@ -62,12 +62,12 @@ namespace Planar.CLI
             return table;
         }
 
-        public static Table GetTable(List<GroupRowDetails> data)
+        public static Table GetTable(List<GroupInfo> data)
         {
             var table = new Table();
             if (data == null) { return table; }
-            table.AddColumns("Id", "Name");
-            data.ForEach(r => table.AddRow($"{r.Id}", r.Name.EscapeMarkup()));
+            table.AddColumns("Id", "Name", "UserCount");
+            data.ForEach(r => table.AddRow($"{r.Id}", r.Name.EscapeMarkup(), $"{r.UsersCount}"));
             return table;
         }
 

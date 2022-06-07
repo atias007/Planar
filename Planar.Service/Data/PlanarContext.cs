@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Planar.Service.Model;
 
 #nullable disable
@@ -50,6 +52,8 @@ namespace Planar.Service.Data
             modelBuilder.Entity<MonitorAction>(entity =>
             {
                 entity.Property(e => e.Active).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.EventArgument).IsUnicode(false);
 
                 entity.Property(e => e.Hook).IsUnicode(false);
 

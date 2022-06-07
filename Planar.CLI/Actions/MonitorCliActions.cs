@@ -62,6 +62,16 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, table);
         }
 
+        [Action("update")]
+        public static async Task<CliActionResponse> UpdateMonitor(CliUpdateEntityRequest request)
+        {
+            var restRequest = new RestRequest("monitor/{id}", Method.Patch)
+                .AddParameter("id", request.Id, ParameterType.UrlSegment)
+                .AddBody(request);
+
+            return await Execute(restRequest);
+        }
+
         [Action("add")]
         public static async Task<CliActionResponse> AddMonitorHooks()
         {

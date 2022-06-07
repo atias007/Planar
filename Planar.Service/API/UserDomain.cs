@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using AutoMapper;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
@@ -50,11 +51,14 @@ namespace Planar.Service.API
             return response;
         }
 
-        public async Task<User> Get(int id)
+        public async Task<UserDetails> Get(int id)
         {
-            var result = await DataLayer.GetUser(id);
-            ValidateExistingEntity(result);
-            result.Password = string.Empty.PadLeft(15, '*');
+            var user = await DataLayer.GetUser(id);
+            ValidateExistingEntity(user);
+            var groups = await DataLayer.GetGroupsForUser(id);
+            var mapper = Resolve<IMapper>();
+            var result = mapper.Map<UserDetails>(user);
+            groups.ForEach(g => result.Groups.Add(g.ToString()));
             return result;
         }
 

@@ -75,7 +75,7 @@ namespace Planar.Service.API
         {
             if (properties != null && entity != null)
             {
-                if (properties.Any(p => p.Equals(entity.PropertyName, StringComparison.OrdinalIgnoreCase)))
+                if (properties.Any(p => string.Compare(p, entity.PropertyName, true) == 0))
                 {
                     throw new RestValidationException(entity.PropertyName, $"property {entity.PropertyName} not allowed to be updated");
                 }
@@ -86,7 +86,7 @@ namespace Planar.Service.API
         {
             var type = typeof(T);
             var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            var prop = properties.FirstOrDefault(p => p.Name == request.PropertyName);
+            var prop = properties.FirstOrDefault(p => string.Compare(p.Name, request.PropertyName, true) == 0);
             if (prop == null)
             {
                 throw new RestValidationException("propertyName", $"property name '{request.PropertyName}' could not be found in {type.Name} entity");
@@ -96,8 +96,18 @@ namespace Planar.Service.API
             {
                 var stringValue = request.PropertyValue;
                 if (stringValue.ToLower() == "[null]") { stringValue = null; }
-                var value = Convert.ChangeType(stringValue, prop.PropertyType);
-                prop.SetValue(entity, value);
+                var propertyType = prop.PropertyType;
+
+                if (Nullable.GetUnderlyingType(propertyType) != null && stringValue != null)
+                {
+                    var value1 = Convert.ChangeType(stringValue, prop.PropertyType.GetGenericArguments()[0]);
+                    prop.SetValue(entity, value1);
+                }
+                else
+                {
+                    var value2 = Convert.ChangeType(stringValue, prop.PropertyType);
+                    prop.SetValue(entity, value2);
+                }
             }
             catch (Exception ex)
             {

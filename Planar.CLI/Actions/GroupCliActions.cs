@@ -1,4 +1,5 @@
-﻿using Planar.CLI.Attributes;
+﻿using Planar.API.Common.Entities;
+using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
 using RestSharp;
 using System;
@@ -25,7 +26,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("group/{id}", Method.Get)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
-            return await Execute(restRequest);
+            return await ExecuteEntity<GroupDetails>(restRequest);
         }
 
         [Action("ls")]
@@ -33,7 +34,7 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> Get()
         {
             var restRequest = new RestRequest("group", Method.Get);
-            var result = await RestProxy.Invoke<List<GroupRowDetails>>(restRequest);
+            var result = await RestProxy.Invoke<List<GroupInfo>>(restRequest);
 
             if (result.IsSuccessful)
             {
