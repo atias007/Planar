@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using YamlDotNet.Serialization;
 
 namespace Planar.Common
@@ -14,27 +15,35 @@ namespace Planar.Common
 
         public static Dictionary<string, string> LoadJobSettings(string path = null)
         {
-            try
+            var result = new Dictionary<string, string>();
+            var relativePath = path ?? ".";
+
+            // JobSettings.yml
+            var settingsFile = path == null ? SettingsFilename : Path.Combine(path, SettingsFilename);
+            var files = Directory.GetFiles(relativePath, SettingsFilename, SearchOption.AllDirectories)
+                .ToList()
+                .OrderByDescending(f => f);
+
+            foreach (var f in files)
             {
-                // JobSettings.yml
-                var settingsFile = path == null ? SettingsFilename : Path.Combine(path, SettingsFilename);
-                var final = ReadSettingsFile(settingsFile);
-
-                // JobSettings.{environment}.yml
-                var filename = EnvironmntSettingsFilename.Replace(EnvironmentPlaceholder, Global.Environment);
-                var envSettingsFile = path == null ? filename : Path.Combine(path, filename);
-                var envSettings = ReadSettingsFile(envSettingsFile);
-
-                // Merge
-                final = final.Merge(envSettings);
-
-                return final;
+                var temp = ReadSettingsFile(f);
+                result = result.Merge(temp);
             }
-            catch (Exception ex)
+
+            // JobSettings.{environment}.yml
+            var filename = EnvironmntSettingsFilename.Replace(EnvironmentPlaceholder, Global.Environment);
+            var envSettingsFile = path == null ? filename : Path.Combine(path, filename);
+            files = Directory.GetFiles(relativePath, filename, SearchOption.AllDirectories)
+                .ToList()
+                .OrderByDescending(f => f);
+
+            foreach (var f in files)
             {
-                Global.GetLogger<object>().LogError($"Fail to load job settings at Planar.Common.Utils.LoadJobSettings", ex);
-                throw;
+                var temp = ReadSettingsFile(f);
+                result = result.Merge(temp);
             }
+
+            return result;
         }
 
         private static Dictionary<string, string> ReadSettingsFile(string filename)

@@ -70,7 +70,7 @@ namespace Planar.Service
 
         public async Task Run()
         {
-            await LoadGlobalParameters();
+            await LoadGlobalParametersInner();
 
             await SetQuartzLogProvider();
 
@@ -92,6 +92,12 @@ namespace Planar.Service
         }
 
         #region Initialize Scheduler
+
+        private async Task LoadGlobalParametersInner()
+        {
+            await LoadGlobalParameters();
+            _logger.LogInformation("Service environment: {Environment}", Global.Environment);
+        }
 
         public static async Task LoadGlobalParameters()
         {

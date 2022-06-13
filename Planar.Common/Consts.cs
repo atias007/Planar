@@ -28,14 +28,14 @@ namespace Planar
         public const string RecoveringJobsGroup = "RECOVERING_JOBS";
 
         /// ---------------------------- Environments Variables ----------------------------
-        public const string EnvironmentVariableKey = "Planar_ENVIRONMENT";
+        public const string EnvironmentVariableKey = "PLANAR_ENVIRONMENT";
 
-        public const string ConnectionStringVariableKey = "Planar_DBCONNSTRING";
-        public const string MaxConcurrencyVariableKey = "Planar_MAXCONCURRENCY";
+        public const string ConnectionStringVariableKey = "PLANAR_DBCONNSTRING";
+        public const string MaxConcurrencyVariableKey = "PLANAR_MAXCONCURRENCY";
         public const string PersistRunningJobsSpanVariableKey = "Planar_PERSISTSPAN";
 
-        public const string HttpPortVariableKey = "Planar_HTTPPORT";
-        public const string HttpsPortVariableKey = "Planar_HTTPSPORT";
-        public const string UseHttpsRedirectVariableKey = "Planar_HTTPSREDIRECT";
+        public const string HttpPortVariableKey = "PLANAR_HTTPPORT";
+        public const string HttpsPortVariableKey = "PLANAR_HTTPSPORT";
+        public const string UseHttpsRedirectVariableKey = "PLANAR_HTTPSREDIRECT";
     }
 }
