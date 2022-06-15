@@ -20,6 +20,8 @@ namespace Planar.Service
 
         public static bool UseHttpsRedirect { get; set; }
 
+        public static bool UseHttps { get; set; }
+
         public static void Initialize(IConfiguration configuration)
         {
             InitializeConnectionString(configuration);
@@ -129,50 +131,73 @@ namespace Planar.Service
 
         private static void InitializePorts(IConfiguration configuration)
         {
+            HttpPort = GetSettings(configuration, Consts.HttpPortVariableKey, "HttpPort", 2306);
+            HttpsPort = GetSettings(configuration, Consts.HttpsPortVariableKey, "HttpsPort", 2610);
+            UseHttps = GetSettings(configuration, Consts.UseHttpsVariableKey, "UseHttps", false);
+            UseHttpsRedirect = GetSettings(configuration, Consts.UseHttpsRedirectVariableKey, "UseHttpsRedirect", true);
+            ////// Environment Variable
+            ////var httpPort = configuration.GetValue<int?>(Consts.HttpPortVariableKey);
+            ////if (httpPort == null)
+            ////{
+            ////    // AppSettings
+            ////    httpPort = configuration.GetValue<int?>("HttpPort");
+            ////}
+
+            ////if (httpPort == null)
+            ////{
+            ////    httpPort = 2306;
+            ////}
+
+            ////HttpPort = httpPort.GetValueOrDefault();
+
+            ////// Environment Variable
+            ////var httpsPort = configuration.GetValue<int?>(Consts.HttpsPortVariableKey);
+            ////if (httpsPort == null)
+            ////{
+            ////    // AppSettings
+            ////    httpsPort = configuration.GetValue<int?>("HttpsPort");
+            ////}
+
+            ////if (httpsPort == null)
+            ////{
+            ////    httpsPort = 2610;
+            ////}
+
+            ////HttpsPort = httpsPort.GetValueOrDefault();
+
+            ////// Environment Variable
+            ////var useHttpsRedirect = configuration.GetValue<bool?>(Consts.UseHttpsRedirectVariableKey);
+            ////if (useHttpsRedirect == null)
+            ////{
+            ////    // AppSettings
+            ////    useHttpsRedirect = configuration.GetValue<bool?>("UseHttpsRedirect");
+            ////}
+
+            ////if (useHttpsRedirect == null)
+            ////{
+            ////    useHttpsRedirect = true;
+            ////}
+
+            ////UseHttpsRedirect = useHttpsRedirect.GetValueOrDefault();
+        }
+
+        private static T GetSettings<T>(IConfiguration configuration, string environmentKey, string appSettingsKey, T defaultValue)
+            where T : struct
+        {
             // Environment Variable
-            var httpPort = configuration.GetValue<int?>(Consts.HttpPortVariableKey);
-            if (httpPort == null)
+            var property = configuration.GetValue<T?>(environmentKey);
+            if (property == null)
             {
                 // AppSettings
-                httpPort = configuration.GetValue<int?>("HttpPort");
+                property = configuration.GetValue<T?>(appSettingsKey);
             }
 
-            if (httpPort == null)
+            if (property == null)
             {
-                httpPort = 2306;
+                property = defaultValue;
             }
 
-            HttpPort = httpPort.GetValueOrDefault();
-
-            // Environment Variable
-            var httpsPort = configuration.GetValue<int?>(Consts.HttpsPortVariableKey);
-            if (httpsPort == null)
-            {
-                // AppSettings
-                httpsPort = configuration.GetValue<int?>("HttpsPort");
-            }
-
-            if (httpsPort == null)
-            {
-                httpsPort = 2610;
-            }
-
-            HttpsPort = httpsPort.GetValueOrDefault();
-
-            // Environment Variable
-            var useHttpsRedirect = configuration.GetValue<bool?>(Consts.UseHttpsRedirectVariableKey);
-            if (useHttpsRedirect == null)
-            {
-                // AppSettings
-                useHttpsRedirect = configuration.GetValue<bool?>("UseHttpsRedirect");
-            }
-
-            if (useHttpsRedirect == null)
-            {
-                useHttpsRedirect = true;
-            }
-
-            UseHttpsRedirect = useHttpsRedirect.GetValueOrDefault();
+            return property.GetValueOrDefault();
         }
     }
 }

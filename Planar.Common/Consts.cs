@@ -37,5 +37,6 @@ namespace Planar
         public const string HttpPortVariableKey = "PLANAR_HTTPPORT";
         public const string HttpsPortVariableKey = "PLANAR_HTTPSPORT";
         public const string UseHttpsRedirectVariableKey = "PLANAR_HTTPSREDIRECT";
+        public const string UseHttpsVariableKey = "PLANAR_HTTPS";
     }
 }

@@ -2,7 +2,7 @@
   "profiles": {
     "Planar.CLI": {
       "commandName": "Project",
-      "commandLineArgs": " user update 1 phonenumber1 zz"
+      "commandLineArgs": "job get osp0td20dsd"
     }
   }
 }

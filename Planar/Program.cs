@@ -8,6 +8,7 @@ using Serilog;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 
 namespace Planar
 {
@@ -28,25 +29,42 @@ namespace Planar
                 {
                     InitializeAppSettings();
 
-                    webBuilder.UseStartup<Startup>();
+                    webBuilder
+                        .UseKestrel(options =>
+                        {
+                            options.Listen(IPAddress.Loopback, 0);
+                            options.ListenAnyIP(AppSettings.HttpPort);
+                            if (AppSettings.UseHttps)
+                            {
+                                options.ListenAnyIP(AppSettings.HttpsPort, opts => opts.UseHttps());
+                            }
+                        })
+                        .UseStartup<Startup>()
 
-                    webBuilder.UseKestrel(opts =>
-                    {
-                        opts.ListenLocalhost(AppSettings.HttpPort);
-                        opts.ListenLocalhost(AppSettings.HttpsPort, opts => opts.UseHttps());
-                    });
+                        ////webBuilder.UseKestrel(opts =>
+                        ////{
+                        ////    opts.ListenLocalhost(AppSettings.HttpPort);
+                        ////    if (AppSettings.HttpsPort > 0)
+                        ////    {
+                        ////        opts.ListenLocalhost(AppSettings.HttpsPort, opts => opts.UseHttps());
+                        ////    }
+                        ////    else
+                        ////    {
+                        ////        // TODO: add warning log
+                        ////    }
+                        ////});
 
-                    webBuilder.ConfigureAppConfiguration(builder =>
-                    {
-                        var file1 = Path.Combine(FolderConsts.Data, FolderConsts.Settings, "appsettings.json");
-                        var file2 = Path.Combine(FolderConsts.Data, FolderConsts.Settings, $"appsettings.{Global.Environment}.json");
+                        .ConfigureAppConfiguration(builder =>
+                        {
+                            var file1 = Path.Combine(FolderConsts.Data, FolderConsts.Settings, "appsettings.json");
+                            var file2 = Path.Combine(FolderConsts.Data, FolderConsts.Settings, $"appsettings.{Global.Environment}.json");
 
-                        builder
-                        .AddJsonFile(file1, false, true)
-                        .AddJsonFile(file2, true, true)
-                        .AddCommandLine(args)
-                        .AddEnvironmentVariables();
-                    });
+                            builder
+                            .AddJsonFile(file1, false, true)
+                            .AddJsonFile(file2, true, true)
+                            .AddCommandLine(args)
+                            .AddEnvironmentVariables();
+                        });
 
                     Serilog.Debugging.SelfLog.Enable(msg =>
                     {
