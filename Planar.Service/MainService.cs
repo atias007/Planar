@@ -101,8 +101,6 @@ namespace Planar.Service
 
         public static async Task LoadGlobalParameters()
         {
-            Global.Environment = _config.GetValue<string>(Consts.EnvironmentVariableKey);
-
             var dal = Resolve<DataLayer>();
             var prms = await dal.GetAllGlobalParameter();
             var dict = prms.ToDictionary(p => p.ParamKey, p => p.ParamValue);

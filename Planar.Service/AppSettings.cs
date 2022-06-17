@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Planar.Common;
 using Planar.Service.Exceptions;
 using System;
 using System.Text;
@@ -22,90 +23,83 @@ namespace Planar.Service
 
         public static bool UseHttps { get; set; }
 
+        public static string Environment { get; set; }
+
         public static void Initialize(IConfiguration configuration)
         {
+            InitializeEnvironment(configuration);
             InitializeConnectionString(configuration);
             InitializeMaxConcurrency(configuration);
             InitializePersistanceSpan(configuration);
             InitializePorts(configuration);
         }
 
+        private static void InitializeEnvironment(IConfiguration configuration)
+        {
+            Environment = GetSettings(configuration, Consts.EnvironmentVariableKey, nameof(Environment), Consts.ProductionEnvironment);
+            Global.Environment = Environment;
+            if (Environment == Consts.ProductionEnvironment)
+            {
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine(string.Empty.PadLeft(40, '*'));
+                Console.WriteLine($"ATTENTION: Planar is running in {Consts.ProductionEnvironment} mode");
+                Console.WriteLine(string.Empty.PadLeft(40, '*'));
+                Console.ResetColor();
+            }
+        }
+
         private static void InitializePersistanceSpan(IConfiguration configuration)
         {
-            // Environment Variable
-            var prsistanceSpan = configuration.GetValue<TimeSpan?>(Consts.PersistRunningJobsSpanVariableKey);
-            if (prsistanceSpan == null)
-            {
-                // AppSettings
-                prsistanceSpan = configuration.GetValue<TimeSpan?>(nameof(PersistRunningJobsSpan));
-            }
+            PersistRunningJobsSpan = GetSettings<TimeSpan>(configuration, Consts.PersistRunningJobsSpanVariableKey, nameof(PersistRunningJobsSpan));
 
-            if (prsistanceSpan == null)
+            if (PersistRunningJobsSpan == default)
             {
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
                 Console.WriteLine($"WARNING: PersistRunningJobsSpan settings is null. Set to default value {Consts.PersistRunningJobsSpanDefaultValue}");
                 Console.ResetColor();
-                prsistanceSpan = Consts.PersistRunningJobsSpanDefaultValue;
+                PersistRunningJobsSpan = Consts.PersistRunningJobsSpanDefaultValue;
             }
 
-            if (prsistanceSpan.GetValueOrDefault() == TimeSpan.Zero)
+            if (PersistRunningJobsSpan == TimeSpan.Zero)
             {
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
                 Console.WriteLine($"WARNING: PersistRunningJobsSpan settings is Zero (00:00:00). Set to default value {Consts.PersistRunningJobsSpanDefaultValue}");
                 Console.ResetColor();
-                prsistanceSpan = Consts.PersistRunningJobsSpanDefaultValue;
+                PersistRunningJobsSpan = Consts.PersistRunningJobsSpanDefaultValue;
             }
-
-            PersistRunningJobsSpan = prsistanceSpan.GetValueOrDefault();
         }
 
         private static void InitializeMaxConcurrency(IConfiguration configuration)
         {
-            // Environment Variable
-            var maxConcurrency = configuration.GetValue<int?>(Consts.MaxConcurrencyVariableKey);
-            if (maxConcurrency == null)
-            {
-                // AppSettings
-                maxConcurrency = configuration.GetValue<int?>(nameof(MaxConcurrency));
-            }
+            MaxConcurrency = GetSettings<int>(configuration, Consts.MaxConcurrencyVariableKey, nameof(MaxConcurrency));
 
-            if (maxConcurrency == null)
+            if (MaxConcurrency == default)
             {
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
                 Console.WriteLine($"WARNING: MaxConcurrency settings is null. Set to default value {Consts.MaxConcurrencyDefaultValue}");
                 Console.ResetColor();
-                maxConcurrency = Consts.MaxConcurrencyDefaultValue;
+                MaxConcurrency = Consts.MaxConcurrencyDefaultValue;
             }
 
-            if (maxConcurrency < 1)
+            if (MaxConcurrency < 1)
             {
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine($"WARNING: MaxConcurrency settings is less then 1 ({maxConcurrency}). Set to default value {Consts.MaxConcurrencyDefaultValue}");
+                Console.WriteLine($"WARNING: MaxConcurrency settings is less then 1 ({MaxConcurrency}). Set to default value {Consts.MaxConcurrencyDefaultValue}");
                 Console.ResetColor();
-                maxConcurrency = Consts.MaxConcurrencyDefaultValue;
+                MaxConcurrency = Consts.MaxConcurrencyDefaultValue;
             }
-
-            MaxConcurrency = maxConcurrency.GetValueOrDefault();
         }
 
         private static void InitializeConnectionString(IConfiguration configuration)
         {
-            // Environment Variable
-            var connectionString = configuration.GetValue<string>(Consts.ConnectionStringVariableKey);
-            if (string.IsNullOrEmpty(connectionString))
+            DatabaseConnectionString = GetSettings(configuration, Consts.ConnectionStringVariableKey, nameof(DatabaseConnectionString));
+
+            if (string.IsNullOrEmpty(DatabaseConnectionString))
             {
-                // AppSettings
-                connectionString = configuration.GetValue<string>("DatabaseConnectionString");
+                throw new AppSettingsException($"ERROR: Database connection string could not be initialized\r\nMissing key '{nameof(DatabaseConnectionString)}' or value is empty in AppSettings.json file and there is no environment variable 'Planar_DBCONNSTR'");
             }
 
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                throw new AppSettingsException("ERROR: Database connection string could not be initialized\r\nMissing key 'DatabaseConnectionString' or value is empty in appsettings.json file and there is no environment variable 'Planar_DBCONNSTR'");
-            }
-
-            CheckConnectionString(connectionString);
-
-            DatabaseConnectionString = connectionString;
+            CheckConnectionString(DatabaseConnectionString);
         }
 
         private static void CheckConnectionString(string connectionString)
@@ -135,53 +129,9 @@ namespace Planar.Service
             HttpsPort = GetSettings(configuration, Consts.HttpsPortVariableKey, "HttpsPort", 2610);
             UseHttps = GetSettings(configuration, Consts.UseHttpsVariableKey, "UseHttps", false);
             UseHttpsRedirect = GetSettings(configuration, Consts.UseHttpsRedirectVariableKey, "UseHttpsRedirect", true);
-            ////// Environment Variable
-            ////var httpPort = configuration.GetValue<int?>(Consts.HttpPortVariableKey);
-            ////if (httpPort == null)
-            ////{
-            ////    // AppSettings
-            ////    httpPort = configuration.GetValue<int?>("HttpPort");
-            ////}
-
-            ////if (httpPort == null)
-            ////{
-            ////    httpPort = 2306;
-            ////}
-
-            ////HttpPort = httpPort.GetValueOrDefault();
-
-            ////// Environment Variable
-            ////var httpsPort = configuration.GetValue<int?>(Consts.HttpsPortVariableKey);
-            ////if (httpsPort == null)
-            ////{
-            ////    // AppSettings
-            ////    httpsPort = configuration.GetValue<int?>("HttpsPort");
-            ////}
-
-            ////if (httpsPort == null)
-            ////{
-            ////    httpsPort = 2610;
-            ////}
-
-            ////HttpsPort = httpsPort.GetValueOrDefault();
-
-            ////// Environment Variable
-            ////var useHttpsRedirect = configuration.GetValue<bool?>(Consts.UseHttpsRedirectVariableKey);
-            ////if (useHttpsRedirect == null)
-            ////{
-            ////    // AppSettings
-            ////    useHttpsRedirect = configuration.GetValue<bool?>("UseHttpsRedirect");
-            ////}
-
-            ////if (useHttpsRedirect == null)
-            ////{
-            ////    useHttpsRedirect = true;
-            ////}
-
-            ////UseHttpsRedirect = useHttpsRedirect.GetValueOrDefault();
         }
 
-        private static T GetSettings<T>(IConfiguration configuration, string environmentKey, string appSettingsKey, T defaultValue)
+        private static T GetSettings<T>(IConfiguration configuration, string environmentKey, string appSettingsKey, T defaultValue = default)
             where T : struct
         {
             // Environment Variable
@@ -198,6 +148,24 @@ namespace Planar.Service
             }
 
             return property.GetValueOrDefault();
+        }
+
+        private static string GetSettings(IConfiguration configuration, string environmentKey, string appSettingsKey, string defaultValue = null)
+        {
+            // Environment Variable
+            var property = configuration.GetValue<string>(environmentKey);
+            if (string.IsNullOrEmpty(property))
+            {
+                // AppSettings
+                property = configuration.GetValue<string>(appSettingsKey);
+            }
+
+            if (string.IsNullOrEmpty(property))
+            {
+                property = defaultValue;
+            }
+
+            return property;
         }
     }
 }
