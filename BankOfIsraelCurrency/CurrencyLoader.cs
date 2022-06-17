@@ -10,6 +10,8 @@ namespace BankOfIsraelCurrency
 {
     public class CurrencyLoader : BaseJob
     {
+        #region Planar Methods
+
         public override void Configure(IConfigurationBuilder configurationBuilder)
         {
             //// Do Nothig ////
@@ -18,13 +20,15 @@ namespace BankOfIsraelCurrency
         public override Task ExecuteJob(IJobExecutionContext context)
         {
             //// Execute Job ////
-            return Task.CompletedTask;
+            return SaveCurrency();
         }
 
         public override void RegisterServices(IServiceCollection services)
         {
             //// Do Nothig ////
         }
+
+        #endregion Planar Methods
 
         private static async Task SaveCurrency()
         {
