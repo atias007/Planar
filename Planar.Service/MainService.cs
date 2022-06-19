@@ -213,7 +213,7 @@ namespace Planar.Service
                 {
                     { "quartz.scheduler.instanceName", "PlanarScheduler" },
                     { "quartz.jobStore.type", "Quartz.Impl.AdoJobStore.JobStoreTX, Quartz" },
-                    {"quartz.jobStore.driverDelegateType", "Quartz.Impl.AdoJobStore.StdAdoDelegate, Quartz" },
+                    { "quartz.jobStore.driverDelegateType", "Quartz.Impl.AdoJobStore.StdAdoDelegate, Quartz" },
                     { "quartz.jobStore.tablePrefix", "QRTZ_" },
                     { "quartz.jobStore.dataSource", "myDS" },
                     { "quartz.dataSource.myDS.connectionString", AppSettings.DatabaseConnectionString },

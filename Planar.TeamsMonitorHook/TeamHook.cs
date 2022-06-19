@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace Planar.TeamsMonitorHook
 {
+    // https://docs.microsoft.com/en-us/graph/api/chatmessage-post?view=graph-rest-1.0&tabs=powershell
     public class TeamHook : BaseMonitorHook
     {
         public override async Task Handle(IMonitorDetails monitorDetails)
