@@ -161,6 +161,7 @@ namespace Planar.CLI
         private static void HandleCliResponse(CliActionResponse response)
         {
             if (response == null) return;
+            if (response.Response == null) return;
 
             if (response.Response.IsSuccessful)
             {

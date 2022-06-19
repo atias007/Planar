@@ -2,7 +2,7 @@
   "profiles": {
     "Planar.CLI": {
       "commandName": "Project",
-      "commandLineArgs": "job get osp0td20dsd"
+      "commandLineArgs": "job add"
     }
   }
 }

@@ -33,8 +33,8 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("job", Method.Post)
                 .AddBody(prm);
 
-            var result = await RestProxy.Invoke<string>(restRequest);
-            return new CliActionResponse(result, result.Data);
+            var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
+            return new CliActionResponse(result, message: result.Data.Id);
         }
 
         [Action("ls")]
@@ -330,7 +330,7 @@ namespace Planar.CLI.Actions
             {
                 Console.CursorTop -= 1;
                 var span = DateTime.Now.Subtract(invokeDate);
-                AnsiConsole.MarkupLine($" [gold3_1][[x]][/] Progress: [wheat1]{runResult.Data.Progress}[/]%  |  Effected Row(s): [wheat1]{runResult.Data.EffectedRows.GetValueOrDefault()}  |  Run Time: {CliTableFormat.FormatTimeSpan(span)}[/]");
+                AnsiConsole.MarkupLine($" [gold3_1][[x]][/] Progress: [wheat1]{runResult.Data.Progress}[/]%  |  Effected Row(s): [wheat1]{runResult.Data.EffectedRows.GetValueOrDefault()}  |  Run Time: {CliTableFormat.FormatTimeSpan(span)}[/]     ");
                 Thread.Sleep(sleepTime);
                 runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest);
                 if (runResult.IsSuccessful == false) { break; }

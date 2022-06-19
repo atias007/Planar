@@ -19,12 +19,11 @@
     },
     "Planar": {
       "commandName": "Project",
-      "launchBrowser": true,
-      "launchUrl": "swagger",
+      //"launchBrowser": true,
+      //"launchUrl": "swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "https://localhost:2610;http://localhost:2306",
       "dotnetRunMessages": "true"
     },
     "Docker": {

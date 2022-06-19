@@ -7,7 +7,7 @@ namespace Planar.CLI
 {
     public class CliActionResponse
     {
-        public CliActionResponse()
+        private CliActionResponse()
         {
         }
 
