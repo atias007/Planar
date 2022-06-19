@@ -4,6 +4,8 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service;
 using Planar.Service.API;
+using Quartz;
+using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,8 +22,9 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
-        public ActionResult<GetServiceInfoResponse> GetServiceInfo()
+        public async Task<ActionResult<GetServiceInfoResponse>> GetServiceInfo()
         {
+            var total = Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
             var response = new GetServiceInfoResponse
             {
                 InStandbyMode = Scheduler.InStandbyMode,
@@ -30,6 +33,7 @@ namespace Planar.Controllers
                 SchedulerInstanceId = Scheduler.SchedulerInstanceId,
                 SchedulerName = Scheduler.SchedulerName,
                 Environment = Global.Environment,
+                TotalJobs = (await total).Count
             };
 
             return Ok(response);

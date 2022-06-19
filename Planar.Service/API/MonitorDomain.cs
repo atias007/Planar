@@ -126,7 +126,7 @@ namespace Planar.Service.API
         public async Task Update(int id, UpdateEntityRecord request)
         {
             ValidateIdConflict(id, request.Id);
-            ValidateForbiddenUpdateProperties(request, "Id", "JobGroup", "JobGroup", "Group");
+            ValidateForbiddenUpdateProperties(request, "Id", "JobGroup", "JobGroup", "Group", "Event");
             var action = await DataLayer.GetMonitorAction(id);
             ValidateExistingEntity(action);
             var validator = new MonitorActionValidator(DataLayer);

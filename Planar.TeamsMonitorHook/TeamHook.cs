@@ -1,8 +1,8 @@
 ﻿using Planar.MonitorHook;
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -24,7 +24,7 @@ namespace Planar.TeamsMonitorHook
         {
             if (string.IsNullOrEmpty(group.Reference1))
             {
-                LogError(null, "Group {Name} is invalid for Teams monitor hook. All reference fields are empty. At least 1 reference field should have teams channel url", group.Name);
+                LogError(null, "Group {Name} is invalid for Teams monitor hook. Reference1 is null or empty", group.Name);
                 return false;
             }
 
@@ -56,29 +56,36 @@ namespace Planar.TeamsMonitorHook
             }
         }
 
-        private string GetMessageText(IMonitorDetails details)
+        private static string GetMessageText(IMonitorDetails details)
         {
-            var sb = new StringBuilder();
-            sb.AppendLine($"Job: {details.JobGroup}.{details.JobName}  ");
-            sb.AppendLine($"Event: {details.EventTitle}  ");
+            var template = GetTemplate();
+            template = Replace(template, "EventTitle", details.EventTitle);
+            template = Replace(template, "JobGroup", details.JobGroup);
+            template = Replace(template, "JobName", details.JobName);
+            template = Replace(template, "JobDescription", details.JobDescription);
+            template = Replace(template, "FireTime", $"{details.FireTime:g}");
+            template = Replace(template, "JobRunTime", $"{details.JobRunTime:hh\\:mm\\:ss}");
+            template = Replace(template, "JobId", details.JobId);
+            template = Replace(template, "FireInstanceId", details.FireInstanceId);
+            template = Replace(template, "Exception", details.Exception.Message);
 
-            if (details.EventId == 6)
-            {
-                var status = details.Exception == null ? "Success" : "Fail";
-                sb.AppendLine($"Status: {status}  ");
-            }
+            return template;
+        }
 
-            sb.AppendLine($"JobDescription: {details.JobDescription}  ");
-            sb.AppendLine($"FireTime: {details.FireTime:g}  ");
-            sb.AppendLine($"JobRunTime: {details.JobRunTime:hh\\:mm\\:ss}  ");
-            sb.AppendLine($"FireInstanceId: {details.FireInstanceId}");
-            if (details.Exception != null)
-            {
-                var ex = GetMostInnerException(details.Exception);
-                sb.AppendLine($"  \r\nException: {ex.Message}");
-            }
+        private static string Replace(string source, string find, string value)
+        {
+            return source.Replace($"@@{find}@@", value);
+        }
 
-            return sb.ToString();
+        private static string GetTemplate()
+        {
+            var assembly = typeof(TeamHook).Assembly;
+            var resourceName = "Planar.TeamsMonitorHook.MessageCard.json";
+
+            using Stream stream = assembly.GetManifestResourceStream(resourceName);
+            using StreamReader reader = new(stream);
+            var result = reader.ReadToEnd();
+            return result;
         }
 
         private Exception GetMostInnerException(Exception ex)

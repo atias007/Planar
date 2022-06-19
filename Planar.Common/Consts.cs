@@ -32,7 +32,7 @@ namespace Planar
 
         public const string ConnectionStringVariableKey = "PLANAR_DBCONNSTRING";
         public const string MaxConcurrencyVariableKey = "PLANAR_MAXCONCURRENCY";
-        public const string PersistRunningJobsSpanVariableKey = "Planar_PERSISTSPAN";
+        public const string PersistRunningJobsSpanVariableKey = "PLANAR_PERSISTSPAN";
 
         public const string HttpPortVariableKey = "PLANAR_HTTPPORT";
         public const string HttpsPortVariableKey = "PLANAR_HTTPSPORT";

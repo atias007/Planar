@@ -13,5 +13,7 @@
         public string SchedulerName { get; set; }
 
         public string Environment { get; set; }
+
+        public int TotalJobs { get; set; }
     }
 }

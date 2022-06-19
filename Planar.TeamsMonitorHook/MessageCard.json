@@ -1,0 +1,33 @@
+﻿{
+  "@type": "MessageCard",
+  "@context": "https://schema.org/extensions",
+  "summary": "Planar monitor notification",
+  "themeColor": "0078D7",
+  "title": "Planar Monitor Event: @@EventTitle@@",
+  "sections": [
+    {
+      "activityTitle": "For job: @@JobGroup@@.@@JobName@@",
+      "activitySubtitle": "@@JobDescription@@",
+      "activityImage": "https://icons.iconarchive.com/icons/awicons/vista-artistic/72/delete-icon.png",
+      "facts": [
+        {
+          "name": "Fire time:",
+          "value": "@@FireTime@@"
+        },
+        {
+          "name": "Run time:",
+          "value": "@@JobRunTime@@"
+        },
+        {
+          "name": "Job id:",
+          "value": "@@JobId@@"
+        },
+        {
+          "name": "Fire instance id:",
+          "value": "@@FireInstanceId@@"
+        }
+      ],
+      "text": "@@Exception@@"
+    }
+  ]
+}

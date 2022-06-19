@@ -10,21 +10,9 @@ namespace Planar.Common
     {
         public static Dictionary<string, string> Parameters { get; set; }
 
-        private static string _environment;
-
-        public static string Environment
-        {
-            get
-            {
-                return string.IsNullOrEmpty(_environment) ? Consts.ProductionEnvironment : _environment;
-            }
-            set
-            {
-                _environment = value;
-            }
-        }
-
         public static IServiceProvider ServiceProvider { get; set; }
+
+        public static string Environment { get; set; }
 
         public static ILogger<T> GetLogger<T>()
         {
@@ -43,7 +31,6 @@ namespace Planar.Common
         public static void Clear()
         {
             Parameters = null;
-            Environment = null;
             ServiceProvider = null;
         }
 

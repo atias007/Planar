@@ -1,0 +1,12 @@
+﻿job type: PlanarJob
+name: BankOfIsraelCurrency
+group: Infrastructure
+description: Download daily currency information and save it to disk as xml 
+properties:
+  JobPath: C:\Temp\BankOfIsraelCurrency
+  FileName: BankOfIsraelCurrency.dll
+  TypeName: BankOfIsraelCurrency.CurrencyLoader
+simple triggers:
+- name: every 10 minutes
+  interval: 00:10:00
+  misfire behaviour: 2
