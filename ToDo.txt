@@ -1,13 +1,9 @@
-- check option to kill running job (https://newbedev.com/is-it-possible-to-kill-a-current-running-quartz-job)
 - add to base test to retrieve information & exception
 - add monitor event when user pause / delete / add job
 - add monitor event when retry
 - planar stop with job id (not only instance id)
-
-
-
+- when delete job --> delete its monitoring items
+- dont allow to delete group when the group has monitoring
+- allow to stop planar scheduler withoul stop the windows service (service stop, service start, service shutdown)
 
 -----------------------------------------DONE-----------------------------------------
-- clean the Planar.Common project
-- check the Result property of iexecutionjobcontext. should be usefull for save information & exception & progress
-

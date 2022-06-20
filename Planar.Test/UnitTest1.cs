@@ -1,6 +1,7 @@
 using NetEscapades.Configuration.Yaml;
 using NUnit.Framework;
 using Planar.Service.Model.Metadata;
+using Planar.TeamsMonitorHook;
 using System.IO;
 using System.Text;
 using YamlDotNet.Serialization;
@@ -18,21 +19,8 @@ namespace Planar.Test
         [Test]
         public void TestDeserialize()
         {
-            var yaml = File.ReadAllText(@"C:\Users\tsahi_a\source\repos\Planar\Jobs\RunPlanarJob\JobFile.yml");
-
-            var p = new YamlConfigurationFileParser();
-            byte[] byteArray = Encoding.UTF8.GetBytes(yaml);
-            using (var stream = new MemoryStream(byteArray))
-            {
-                var dict = p.Parse(stream);
-            }
-
-            var deserializer = new DeserializerBuilder()
-                .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                .Build();
-
-            //yml contains a string containing your YAML
-            _ = deserializer.Deserialize<JobMetadata>(yaml);
+            var hook = new TeamHook();
+            hook.Handle(null).Wait();
         }
     }
 }

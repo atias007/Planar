@@ -34,7 +34,7 @@ namespace Planar.CLI.Actions
                 .AddBody(prm);
 
             var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
-            return new CliActionResponse(result, message: result.Data.Id);
+            return new CliActionResponse(result, message: result.Data?.Id);
         }
 
         [Action("ls")]

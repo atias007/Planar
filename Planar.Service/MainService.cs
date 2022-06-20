@@ -84,7 +84,7 @@ namespace Planar.Service
 
             await AddCalendars();
 
-            AddMonitorHooks();
+            await AddMonitorHooks();
 
             await ScheduleSystemJobs();
 
@@ -174,13 +174,12 @@ namespace Planar.Service
             };
         }
 
-        private void AddMonitorHooks()
+        private async Task AddMonitorHooks()
         {
             try
             {
                 ServiceUtil.LoadMonitorHooks(_logger);
-                MonitorUtil.Load();
-                MonitorUtil.Validate(_logger);
+                await MonitorUtil.Validate(_logger);
             }
             catch (Exception ex)
             {

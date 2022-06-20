@@ -61,13 +61,30 @@ namespace Planar.Service.Data
             await _context.Database.ExecuteSqlRawAsync($"dbo.PersistJobInstanceLog @InstanceId, @Information, @Exception", paramInstanceId, paramInformation, paramException);
         }
 
-        public async Task<List<MonitorAction>> GetMonitorData()
+        public async Task<int> GetMonitorCount()
         {
-            return await _context.MonitorActions
+            return await _context.MonitorActions.CountAsync();
+        }
+
+        public async Task<List<string>> GetMonitorHooks()
+        {
+            return await _context.MonitorActions.Select(m => m.Hook).Distinct().ToListAsync();
+        }
+
+        public async Task<List<MonitorAction>> GetMonitorData(int @event, string group, string job)
+        {
+            var all = _context.MonitorActions
                 .Include(m => m.Group)
                 .ThenInclude(g => g.UsersToGroups)
-                .ThenInclude(ug => ug.User)
-                .ToListAsync();
+                .ThenInclude(ug => ug.User);
+
+            var filter = all.Where(m => m.EventId == @event && m.Active == true);
+            filter = filter.Where(m =>
+                (string.IsNullOrEmpty(m.JobGroup) && string.IsNullOrEmpty(m.JobId)) ||
+                (string.IsNullOrEmpty(m.JobGroup) == false && m.JobGroup == group && string.IsNullOrEmpty(m.JobId)) ||
+                (string.IsNullOrEmpty(m.JobGroup) && string.IsNullOrEmpty(m.JobId) == false && m.JobId == job));
+
+            return await filter.ToListAsync();
         }
 
         public async Task<MonitorAction> GetMonitorAction(int id)

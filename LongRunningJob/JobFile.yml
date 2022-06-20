@@ -1,0 +1,16 @@
+﻿job type: PlanarJob
+name: LongRunningJob
+description: Long running task test (inc. cancel request)
+job data:
+  Message: This is long running task
+  Value: 100.1
+  MaxId: 100
+properties:
+  JobPath: C:\Temp\LongRunningJob
+  FileName: LongRunningJob.dll
+  TypeName: LongRunningJob.Worker
+simple triggers:
+- name: every-minute-trigger
+  interval: 00:05:00
+  misfire behaviour: 2
+

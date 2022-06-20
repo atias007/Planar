@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="MessageCard.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
   </ItemGroup>
 

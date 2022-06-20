@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
@@ -16,41 +17,27 @@ namespace Planar.Service.Monitor
 {
     public class MonitorUtil
     {
-        private static readonly LazySingleton<List<MonitorAction>> _monitorData = new(() => { return LoadMonitor().Result; });
         private static readonly ILogger<MonitorUtil> _logger = Global.GetLogger<MonitorUtil>();
 
-        public static void Load()
-        {
-            _monitorData.Reload();
+        //private static IEnumerable<string> Hooks
+        //{
+        //    get
+        //    {
+        //        return _monitorData.Instance.Select(m => m.Hook);
+        //    }
+        //}
 
-            // TODO: warn for no items
-        }
-
-        public static IEnumerable<string> Hooks
+        public static async Task Validate<T>(ILogger<T> logger)
         {
-            get
-            {
-                return _monitorData.Instance.Select(m => m.Hook);
-            }
-        }
-
-        public static void Validate<T>(ILogger<T> logger)
-        {
-            if (Count == 0)
+            var count = await DAL.GetMonitorCount();
+            if (count == 0)
             {
                 logger.LogWarning("There is no monitor items. Service does not have any monitor");
             }
 
-            var missingHooks = Hooks.Where(h => ServiceUtil.MonitorHooks.Keys.Contains(h) == false).ToList();
-            missingHooks.ForEach(h => logger.LogWarning("Monitor with hook '{@h}' is invalid. Missing hook in service", h));
-        }
-
-        public static int Count
-        {
-            get
-            {
-                return _monitorData.Instance.Count;
-            }
+            var hooks = await DAL.GetMonitorHooks();
+            var missingHooks = hooks.Where(h => ServiceUtil.MonitorHooks.Keys.Contains(h) == false).ToList();
+            missingHooks.ForEach(h => logger.LogWarning("Monitor with hook '{Hook}' is invalid. Missing hook in service", h));
         }
 
         public static DataLayer DAL
@@ -59,11 +46,11 @@ namespace Planar.Service.Monitor
             {
                 try
                 {
-                    return Global.ServiceProvider.GetService(typeof(DataLayer)) as DataLayer;
+                    return Global.ServiceProvider.GetRequiredService<DataLayer>();
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogCritical(ex, "Error initialize DataLayer at BaseJobListenerWithDataLayer");
+                    _logger.LogCritical(ex, $"Error initialize DataLayer at {nameof(MonitorUtil)}");
                     throw;
                 }
             }
@@ -83,7 +70,7 @@ namespace Planar.Service.Monitor
 
                 try
                 {
-                    items = LoadMonitorItems(@event, context);
+                    items = LoadMonitorItems(@event, context).Result;
                 }
                 catch (Exception ex)
                 {
@@ -184,35 +171,12 @@ namespace Planar.Service.Monitor
             return result;
         }
 
-        private static List<MonitorAction> LoadMonitorItems(MonitorEvents @event, IJobExecutionContext context)
+        private static async Task<List<MonitorAction>> LoadMonitorItems(MonitorEvents @event, IJobExecutionContext context)
         {
-            var eventItems = _monitorData.Instance.Where(m => m.EventId == (int)@event && m.Active.GetValueOrDefault());
-
-            var allJobsItems = eventItems.Where(m =>
-                string.IsNullOrEmpty(m.JobGroup) &&
-                string.IsNullOrEmpty(m.JobId));
-
-            var jobGroupItems = eventItems.Where(m =>
-                string.IsNullOrEmpty(m.JobGroup) == false &&
-                string.Compare(m.JobGroup, context.JobDetail.Key.Group, true) == 0 &&
-                string.IsNullOrEmpty(m.JobId));
-
-            var jobId = JobKeyHelper.GetJobId(context.JobDetail);
-            var jobIdItems = eventItems.Where(m =>
-                string.IsNullOrEmpty(m.JobGroup) &&
-                string.IsNullOrEmpty(m.JobId) == false &&
-                string.Compare(m.JobId, jobId, true) == 0);
-
-            var result = jobGroupItems.ToList();
-            result.AddRange(jobIdItems.ToList());
-
+            var group = context.JobDetail.Key.Group;
+            var job = JobKeyHelper.GetJobId(context.JobDetail);
+            var result = await DAL.GetMonitorData((int)@event, group, job);
             return result;
-        }
-
-        private static async Task<List<MonitorAction>> LoadMonitor()
-        {
-            var dal = MainService.Resolve<DataLayer>();
-            return await dal.GetMonitorData();
         }
 
         private static async Task<bool> Analyze(MonitorEvents @event, MonitorAction action)

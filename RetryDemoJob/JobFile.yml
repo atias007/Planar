@@ -1,0 +1,13 @@
+﻿job type: PlanarJob
+name: RetryDemoJob
+description: Demo of retry when job throw new exception
+properties:
+  JobPath: C:\Temp\RetryDemoJob
+  FileName: RetryDemoJob.dll
+  TypeName: RetryDemoJob.Worker
+simple triggers:
+- name: every-halfhour-trigger
+  interval: 00:30:00
+  retry span: 00:00:20
+  misfire behaviour: 2
+

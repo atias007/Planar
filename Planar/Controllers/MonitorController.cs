@@ -68,9 +68,9 @@ namespace Planar.Controllers
         }
 
         [HttpPost("reload")]
-        public ActionResult<string> Reload()
+        public async Task<ActionResult<string>> Reload()
         {
-            var result = BusinesLayer.Reload();
+            var result = await BusinesLayer.Reload();
             return Ok(result);
         }
 

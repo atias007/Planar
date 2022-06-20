@@ -23,15 +23,13 @@ namespace Planar.Service.API
         {
         }
 
-        public string Reload()
+        public async Task<string> Reload()
         {
             var sb = new StringBuilder();
 
             ServiceUtil.LoadMonitorHooks(Logger);
             sb.AppendLine($"{ServiceUtil.MonitorHooks.Count} monitor hooks loaded");
-            MonitorUtil.Load();
-            sb.AppendLine($"{MonitorUtil.Count} monitor items loaded");
-            MonitorUtil.Validate(Logger);
+            await MonitorUtil.Validate(Logger);
 
             return sb.ToString();
         }
