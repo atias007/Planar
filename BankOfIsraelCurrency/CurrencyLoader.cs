@@ -4,13 +4,11 @@ using Microsoft.Extensions.Logging;
 using Planar;
 using RestSharp;
 using System;
-using System.IO;
-using System.Threading.Tasks;
-using System.Xml;
-using System.Xml.Serialization;
 using System.Collections.Generic;
-using System.Xml.Linq;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace BankOfIsraelCurrency
 {
@@ -23,10 +21,12 @@ namespace BankOfIsraelCurrency
             //// Do Nothig ////
         }
 
-        public override Task ExecuteJob(IJobExecutionContext context)
+        public override async Task ExecuteJob(IJobExecutionContext context)
         {
             //// Execute Job ////
-            return SaveCurrencyV2();
+            var t1 = SaveCurrency();
+            var t2 = SaveCurrencyV2();
+            await Task.WhenAll(t1, t2);
         }
 
         public override void RegisterServices(IServiceCollection services)

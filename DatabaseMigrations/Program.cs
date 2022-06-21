@@ -18,7 +18,7 @@ namespace DatabaseMigrations
 
         private static Status _status = Status.Success;
 
-        public static string ModuleName { get; set; }
+        public const string ModuleName = "Planar";
 
         private static string RunningPath => AppContext.BaseDirectory;
 
@@ -202,9 +202,8 @@ namespace DatabaseMigrations
             if (success == false)
             {
                 WriteError($"argument '{envText}' is not valid running environment");
+                AssertStatus();
             }
-
-            Console.Clear();
 
             return env;
         }
@@ -250,17 +249,11 @@ namespace DatabaseMigrations
         private static void Main(string[] args)
         {
             var assembly = Assembly.GetExecutingAssembly();
-            ModuleName = "Planar";
             Run(assembly, args);
         }
 
         private static void Run(Assembly assembly, string[] args)
         {
-            if (string.IsNullOrEmpty(ModuleName))
-            {
-                ModuleName = new DirectoryInfo(Path.Combine(RunningPath, "..", "..", "..", "..")).Name;
-            }
-
             var mode = GetRunningMode(args);
 
             if (mode == RunningMode.Validate)

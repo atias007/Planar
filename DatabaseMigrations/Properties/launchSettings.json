@@ -1,8 +1,8 @@
 {
   "profiles": {
-    "WSL": {
-      "commandName": "WSL2",
-      "distributionName": ""
+    "DatabaseMigrations-Execute": {
+      "commandName": "Project",
+      "commandLineArgs": "Execute Local"
     }
   }
 }
