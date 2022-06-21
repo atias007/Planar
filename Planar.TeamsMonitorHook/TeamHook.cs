@@ -31,7 +31,7 @@ namespace Planar.TeamsMonitorHook
             return true;
         }
 
-        private async Task SendMessageToChannel(string url, string message)
+        private async Task SendMessageToChannel(string url, string json)
         {
             if (string.IsNullOrEmpty(url)) { return; }
 
@@ -39,8 +39,6 @@ namespace Planar.TeamsMonitorHook
             {
                 using var httpClient = new HttpClient();
                 using var request = new HttpRequestMessage(new HttpMethod("POST"), url);
-                var tempObject = new { text = message };
-                var json = JsonSerializer.Serialize(tempObject);
                 request.Content = new StringContent(json);
                 request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
 
