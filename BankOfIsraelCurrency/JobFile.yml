@@ -7,6 +7,6 @@ properties:
   FileName: BankOfIsraelCurrency.dll
   TypeName: BankOfIsraelCurrency.CurrencyLoader
 simple triggers:
-- name: every_10_minutes
-  interval: 00:10:00
-  misfire behaviour: 2
+  - name: every_10_minutes
+    interval: 00:10:00
+    misfire behaviour: 2

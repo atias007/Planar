@@ -26,7 +26,7 @@ namespace BankOfIsraelCurrency
         public override Task ExecuteJob(IJobExecutionContext context)
         {
             //// Execute Job ////
-            return SaveCurrency();
+            return SaveCurrencyV2();
         }
 
         public override void RegisterServices(IServiceCollection services)

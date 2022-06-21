@@ -1,12 +1,12 @@
 ﻿USE [master]
 GO
-/****** Object:  Database [Planar]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Database [Planar]    Script Date: 21/06/2022 16:03:20 ******/
 CREATE DATABASE [Planar]
  CONTAINMENT = NONE
  ON  PRIMARY 
-( NAME = N'Quartz', FILENAME = N'/var/opt/mssql/data/Quartz.mdf' , SIZE = 73728KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
+( NAME = N'Planner', FILENAME = N'/var/opt/mssql/data/Planner.mdf' , SIZE = 73728KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
  LOG ON 
-( NAME = N'Quartz_log', FILENAME = N'/var/opt/mssql/data/Quartz_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
+( NAME = N'Planner_log', FILENAME = N'/var/opt/mssql/data/Planner_log.ldf' , SIZE = 139264KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
  WITH CATALOG_COLLATION = DATABASE_DEFAULT
 GO
 ALTER DATABASE [Planar] SET COMPATIBILITY_LEVEL = 150
@@ -60,7 +60,7 @@ ALTER DATABASE [Planar] SET READ_COMMITTED_SNAPSHOT OFF
 GO
 ALTER DATABASE [Planar] SET HONOR_BROKER_PRIORITY OFF 
 GO
-ALTER DATABASE [Planar] SET RECOVERY SIMPLE 
+ALTER DATABASE [Planar] SET RECOVERY FULL 
 GO
 ALTER DATABASE [Planar] SET  MULTI_USER 
 GO
@@ -76,13 +76,11 @@ ALTER DATABASE [Planar] SET DELAYED_DURABILITY = DISABLED
 GO
 ALTER DATABASE [Planar] SET ACCELERATED_DATABASE_RECOVERY = OFF  
 GO
-EXEC sys.sp_db_vardecimal_storage_format N'Planar', N'ON'
-GO
 ALTER DATABASE [Planar] SET QUERY_STORE = OFF
 GO
 USE [Planar]
 GO
-/****** Object:  Table [dbo].[GlobalParameters]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[GlobalParameters]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -96,7 +94,7 @@ CREATE TABLE [dbo].[GlobalParameters](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[GlobalParameters_Audit]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[GlobalParameters_Audit]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -111,7 +109,7 @@ CREATE TABLE [dbo].[GlobalParameters_Audit](
 	[UpdateColumns] [varchar](max) NULL
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Groups]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[Groups]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -119,18 +117,18 @@ GO
 CREATE TABLE [dbo].[Groups](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[Name] [nvarchar](50) NOT NULL,
-	[Reference1] [nvarchar](50) NULL,
-	[Reference2] [nvarchar](50) NULL,
-	[Reference3] [nvarchar](50) NULL,
-	[Reference4] [nvarchar](50) NULL,
-	[Reference5] [nvarchar](50) NULL,
+	[Reference1] [nvarchar](500) NULL,
+	[Reference2] [nvarchar](500) NULL,
+	[Reference3] [nvarchar](500) NULL,
+	[Reference4] [nvarchar](500) NULL,
+	[Reference5] [nvarchar](500) NULL,
  CONSTRAINT [PK_Groups] PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[JobInstanceLog]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[JobInstanceLog]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -154,13 +152,35 @@ CREATE TABLE [dbo].[JobInstanceLog](
 	[Information] [nvarchar](max) NULL,
 	[Exception] [nvarchar](max) NULL,
 	[Retry] [bit] NOT NULL,
+	[IsStopped] [bit] NOT NULL,
  CONSTRAINT [PK_AutomationTaskCalls] PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[QRTZ_BLOB_TRIGGERS]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[MonitorActions]    Script Date: 21/06/2022 16:03:21 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MonitorActions](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Title] [nvarchar](50) NOT NULL,
+	[EventId] [int] NOT NULL,
+	[EventArgument] [varchar](50) NULL,
+	[JobId] [varchar](20) NULL,
+	[JobGroup] [varchar](50) NULL,
+	[GroupId] [int] NOT NULL,
+	[Hook] [varchar](50) NOT NULL,
+	[Active] [bit] NOT NULL,
+ CONSTRAINT [PK_Monitor] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[QRTZ_BLOB_TRIGGERS]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -178,7 +198,7 @@ CREATE TABLE [dbo].[QRTZ_BLOB_TRIGGERS](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[QRTZ_CALENDARS]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[QRTZ_CALENDARS]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -194,7 +214,7 @@ CREATE TABLE [dbo].[QRTZ_CALENDARS](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[QRTZ_CRON_TRIGGERS]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[QRTZ_CRON_TRIGGERS]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -213,7 +233,7 @@ CREATE TABLE [dbo].[QRTZ_CRON_TRIGGERS](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[QRTZ_FIRED_TRIGGERS]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[QRTZ_FIRED_TRIGGERS]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -239,7 +259,7 @@ CREATE TABLE [dbo].[QRTZ_FIRED_TRIGGERS](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[QRTZ_JOB_DETAILS]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[QRTZ_JOB_DETAILS]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -263,7 +283,7 @@ CREATE TABLE [dbo].[QRTZ_JOB_DETAILS](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[QRTZ_LOCKS]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[QRTZ_LOCKS]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -278,7 +298,7 @@ CREATE TABLE [dbo].[QRTZ_LOCKS](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[QRTZ_PAUSED_TRIGGER_GRPS]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[QRTZ_PAUSED_TRIGGER_GRPS]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -293,7 +313,7 @@ CREATE TABLE [dbo].[QRTZ_PAUSED_TRIGGER_GRPS](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[QRTZ_SCHEDULER_STATE]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[QRTZ_SCHEDULER_STATE]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -310,7 +330,7 @@ CREATE TABLE [dbo].[QRTZ_SCHEDULER_STATE](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[QRTZ_SIMPLE_TRIGGERS]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[QRTZ_SIMPLE_TRIGGERS]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -330,7 +350,7 @@ CREATE TABLE [dbo].[QRTZ_SIMPLE_TRIGGERS](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[QRTZ_SIMPROP_TRIGGERS]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[QRTZ_SIMPROP_TRIGGERS]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -359,7 +379,7 @@ CREATE TABLE [dbo].[QRTZ_SIMPROP_TRIGGERS](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[QRTZ_TRIGGERS]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[QRTZ_TRIGGERS]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -389,7 +409,22 @@ CREATE TABLE [dbo].[QRTZ_TRIGGERS](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Trace]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[SchemaVersions]    Script Date: 21/06/2022 16:03:21 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[SchemaVersions](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[ScriptName] [nvarchar](255) NOT NULL,
+	[Applied] [datetime] NOT NULL,
+ CONSTRAINT [PK_SchemaVersions_Id] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[Trace]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -407,7 +442,7 @@ CREATE TABLE [dbo].[Trace](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Users]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[Users]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -424,18 +459,18 @@ CREATE TABLE [dbo].[Users](
 	[PhoneNumber1] [nvarchar](50) NULL,
 	[PhoneNumber2] [nvarchar](50) NULL,
 	[PhoneNumber3] [nvarchar](50) NULL,
-	[Reference1] [nvarchar](50) NULL,
-	[Reference2] [nvarchar](50) NULL,
-	[Reference3] [nvarchar](50) NULL,
-	[Reference4] [nvarchar](50) NULL,
-	[Reference5] [nvarchar](50) NULL,
+	[Reference1] [nvarchar](500) NULL,
+	[Reference2] [nvarchar](500) NULL,
+	[Reference3] [nvarchar](500) NULL,
+	[Reference4] [nvarchar](500) NULL,
+	[Reference5] [nvarchar](500) NULL,
  CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[UsersToGroups]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Table [dbo].[UsersToGroups]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -452,11 +487,20 @@ CREATE TABLE [dbo].[UsersToGroups](
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [IX_Groups]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  Index [IX_Groups]    Script Date: 21/06/2022 16:03:21 ******/
 CREATE UNIQUE NONCLUSTERED INDEX [IX_Groups] ON [dbo].[Groups]
 (
 	[Name] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[JobInstanceLog] ADD  CONSTRAINT [DF_JobInstanceLog_IsStopped]  DEFAULT ((0)) FOR [IsStopped]
+GO
+ALTER TABLE [dbo].[MonitorActions] ADD  CONSTRAINT [DF_Monitor_Active]  DEFAULT ((1)) FOR [Active]
+GO
+ALTER TABLE [dbo].[MonitorActions]  WITH CHECK ADD  CONSTRAINT [FK_MonitorActions_Groups] FOREIGN KEY([GroupId])
+REFERENCES [dbo].[Groups] ([Id])
+GO
+ALTER TABLE [dbo].[MonitorActions] CHECK CONSTRAINT [FK_MonitorActions_Groups]
 GO
 ALTER TABLE [dbo].[QRTZ_CRON_TRIGGERS]  WITH CHECK ADD  CONSTRAINT [FK_QRTZ_CRON_TRIGGERS_QRTZ_TRIGGERS] FOREIGN KEY([SCHED_NAME], [TRIGGER_NAME], [TRIGGER_GROUP])
 REFERENCES [dbo].[QRTZ_TRIGGERS] ([SCHED_NAME], [TRIGGER_NAME], [TRIGGER_GROUP])
@@ -491,7 +535,45 @@ REFERENCES [dbo].[Users] ([Id])
 GO
 ALTER TABLE [dbo].[UsersToGroups] CHECK CONSTRAINT [FK_UsersToGroups_Users]
 GO
-/****** Object:  StoredProcedure [dbo].[FactoryReset]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  StoredProcedure [dbo].[CountFailsInHourForJob]    Script Date: 21/06/2022 16:03:21 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE	[dbo].[CountFailsInHourForJob]
+	@JobId varchar(20)
+AS
+PRINT @JobId
+SELECT COUNT([Id])
+FROM 
+	[dbo].[JobInstanceLog]
+WHERE 
+	[JobId] = @JobId AND
+	[Status] = 1 AND
+	DATEDIFF(MINUTE, [EndDate], GETDATE()) <=60
+GO
+/****** Object:  StoredProcedure [dbo].[CountFailsInRowForJob]    Script Date: 21/06/2022 16:03:21 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE	[dbo].[CountFailsInRowForJob]
+	@JobId varchar(20),
+	@Total int
+AS
+PRINT @JobId
+SELECT SUM([Status])
+FROM
+	(SELECT TOP (@Total) 
+		CASE [Status] WHEN 1 THEN 1 ELSE 0 END AS [Status]
+	FROM 
+		[dbo].[JobInstanceLog]
+	WHERE 
+		JobId=@JobId
+	ORDER BY 
+		id DESC) T
+GO
+/****** Object:  StoredProcedure [dbo].[FactoryReset]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -513,9 +595,9 @@ delete from [dbo].[QRTZ_JOB_DETAILS]
 TRUNCATE TABLE [dbo].[GlobalParameters]
 TRUNCATE TABLE [dbo].[GlobalParameters_Audit]
 TRUNCATE TABLE [dbo].[JobInstanceLog]
-TRUNCATE TABLE [dbo].[PlanarLog]
+TRUNCATE TABLE [dbo].[PlannerLog]
 GO
-/****** Object:  StoredProcedure [dbo].[GetLastHistoryCallForJob]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  StoredProcedure [dbo].[GetLastHistoryCallForJob]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -546,12 +628,28 @@ WHERE row_number = 1
 AND DATEDIFF(day, StartDate, GETDATE())<=@LastDays
 ORDER BY StartDate DESC
 GO
-/****** Object:  StoredProcedure [dbo].[SetJobInstanceLogStatus]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  StoredProcedure [dbo].[PersistJobInstanceLog]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-  CREATE PROCEDURE [dbo].[SetJobInstanceLogStatus]
+CREATE PROCEDURE [dbo].[PersistJobInstanceLog]
+	@InstanceId varchar(250),
+	@Information nvarchar(max),
+	@Exception nvarchar(max)
+AS
+	UPDATE [dbo].[JobInstanceLog] SET
+	[Information] = @Information,
+	[Exception] = @Exception
+WHERE 
+	InstanceId = @InstanceId AND Status = -1
+GO
+/****** Object:  StoredProcedure [dbo].[SetJobInstanceLogStatus]    Script Date: 21/06/2022 16:03:21 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[SetJobInstanceLogStatus]
   @InstanceId varchar(250),
   @Status int,
   @StatusTitle varchar(10)
@@ -563,12 +661,12 @@ GO
 WHERE 
 	InstanceId = @InstanceId
 GO
-/****** Object:  StoredProcedure [dbo].[UpdateJobInstanceLog]    Script Date: 07/12/2021 11:01:10 ******/
+/****** Object:  StoredProcedure [dbo].[UpdateJobInstanceLog]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-  CREATE PROCEDURE [dbo].[UpdateJobInstanceLog]
+CREATE PROCEDURE [dbo].[UpdateJobInstanceLog]
   @InstanceId varchar(250),
   @Status int,
   @StatusTitle varchar(10),
@@ -576,7 +674,8 @@ GO
   @Duration int,
   @EffectedRows int,
   @Information nvarchar(max),
-  @Exception nvarchar(max) = null
+  @Exception nvarchar(max) = null,
+  @IsStopped bit
   AS
   UPDATE [dbo].[JobInstanceLog] SET
 	[Status] = @Status,
@@ -585,7 +684,8 @@ GO
 	[Duration] = @Duration,
 	[EffectedRows] = @EffectedRows,
 	[Information] = @Information,
-	[Exception] = @Exception
+	[Exception] = @Exception,
+	[IsStopped] = @IsStopped
 WHERE 
 	InstanceId = @InstanceId
 GO
