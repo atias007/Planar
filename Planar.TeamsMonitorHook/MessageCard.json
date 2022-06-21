@@ -8,7 +8,7 @@
     {
       "activityTitle": "For job: @@JobGroup@@.@@JobName@@",
       "activitySubtitle": "@@JobDescription@@",
-      "activityImage": "https://icons.iconarchive.com/icons/awicons/vista-artistic/72/delete-icon.png",
+      "activityImage": "https://raw.githubusercontent.com/atias007/Planar/master/Planar.TeamsMonitorHook/Icons/@@Icon@@.png",
       "facts": [
         {
           "name": "Fire time:",

@@ -65,9 +65,23 @@ namespace Planar.TeamsMonitorHook
             template = Replace(template, "JobRunTime", $"{details.JobRunTime:hh\\:mm\\:ss}");
             template = Replace(template, "JobId", details.JobId);
             template = Replace(template, "FireInstanceId", details.FireInstanceId);
+            template = Replace(template, "Icon", GetIcon(details));
             template = Replace(template, "Exception", details.Exception?.Message);
 
             return template;
+        }
+
+        private static string GetIcon(IMonitorDetails details)
+        {
+            return details.EventId switch
+            {
+                1 => "veto",
+                2 => "retry",
+                4 => "success",
+                5 => "start",
+                6 => "end",
+                _ => "fail",
+            };
         }
 
         private static string Replace(string source, string find, string value)

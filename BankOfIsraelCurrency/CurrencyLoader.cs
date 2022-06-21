@@ -26,7 +26,7 @@ namespace BankOfIsraelCurrency
         public override Task ExecuteJob(IJobExecutionContext context)
         {
             //// Execute Job ////
-            return SaveCurrencyV2();
+            return SaveCurrency();
         }
 
         public override void RegisterServices(IServiceCollection services)
@@ -66,6 +66,7 @@ namespace BankOfIsraelCurrency
                 {
                     UpdateProgress(counter, data.Count());
                     Logger.LogInformation(" [x] Handle currency {Currency} with value {Value}", item.NAME, item.RATE);
+                    IncreaseEffectedRows();
                     await Task.Delay(3000);
                     counter++;
                 }
