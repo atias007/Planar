@@ -65,7 +65,7 @@ namespace Planar.TeamsMonitorHook
             template = Replace(template, "JobRunTime", $"{details.JobRunTime:hh\\:mm\\:ss}");
             template = Replace(template, "JobId", details.JobId);
             template = Replace(template, "FireInstanceId", details.FireInstanceId);
-            template = Replace(template, "Exception", details.Exception.Message);
+            template = Replace(template, "Exception", details.Exception?.Message);
 
             return template;
         }
