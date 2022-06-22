@@ -249,12 +249,14 @@ namespace DatabaseMigrations
 
         private static void Main(string[] args)
         {
+            var counter = 1000;
             var assembly = Assembly.GetExecutingAssembly();
-            while (true)
+            while (counter > 0)
             {
                 Run(assembly, args);
                 _status = Status.Success;
                 Console.Clear();
+                counter--;
             }
         }
 
