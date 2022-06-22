@@ -1,8 +1,15 @@
 {
   "profiles": {
+    "DatabaseMigrations": {
+      "commandName": "Project"
+    },
     "DatabaseMigrations-Execute": {
       "commandName": "Project",
       "commandLineArgs": "Execute Local"
+    },
+    "DatabaseMigrations-Add": {
+      "commandName": "Project",
+      "commandLineArgs": "AddScript Local"
     }
   }
 }

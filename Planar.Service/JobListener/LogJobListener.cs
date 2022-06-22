@@ -58,7 +58,8 @@ namespace Planar.Service.List
                     TriggerId = TriggerKeyHelper.GetTriggerId(context.Trigger),
                     TriggerName = context.Trigger.Key.Name,
                     TriggerGroup = context.Trigger.Key.Group,
-                    Retry = context.Trigger.Key.Group == Consts.RetryTriggerGroup
+                    Retry = context.Trigger.Key.Group == Consts.RetryTriggerGroup,
+                    ServerName = Environment.MachineName
                 };
 
                 if (log.TriggerId == null) { log.TriggerId = Consts.ManualTriggerId; }
@@ -70,6 +71,7 @@ namespace Planar.Service.List
                 if (log.TriggerName.Length > 50) { log.TriggerName = log.TriggerName[0..50]; }
                 if (log.TriggerGroup.Length > 50) { log.TriggerGroup = log.TriggerGroup[0..50]; }
                 if (log.InstanceId.Length > 250) { log.InstanceId = log.InstanceId[0..250]; }
+                if (log.ServerName.Length > 50) { log.ServerName = log.ServerName[0..50]; }
 
                 await DAL.CreateJobInstanceLog(log);
             }

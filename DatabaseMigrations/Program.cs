@@ -151,8 +151,9 @@ namespace DatabaseMigrations
 #if DEBUG
             Console.WriteLine("Press enter to close");
             Console.ReadLine();
-#endif
+#else
             Environment.Exit(_status == Status.Success ? 0 : -1);
+#endif
         }
 
         private static string GetConnectionString(RunningEnvironment environment)
@@ -249,7 +250,12 @@ namespace DatabaseMigrations
         private static void Main(string[] args)
         {
             var assembly = Assembly.GetExecutingAssembly();
-            Run(assembly, args);
+            while (true)
+            {
+                Run(assembly, args);
+                _status = Status.Success;
+                Console.Clear();
+            }
         }
 
         private static void Run(Assembly assembly, string[] args)
@@ -260,11 +266,13 @@ namespace DatabaseMigrations
             {
                 Validate(assembly);
                 AssertStatus();
+                return;
             }
             else if (mode == RunningMode.AddScript)
             {
                 AddScript();
                 AssertStatus();
+                return;
             }
 
             var environment = GetRunningEnvironment(args);
@@ -288,6 +296,7 @@ namespace DatabaseMigrations
                     });
 
                 AssertStatus();
+                return;
             }
 
             switch (mode)
@@ -297,6 +306,7 @@ namespace DatabaseMigrations
                     if (_status == Status.Error)
                     {
                         AssertStatus();
+                        return;
                     }
 
                     _status = Status.Success;
@@ -308,6 +318,7 @@ namespace DatabaseMigrations
                     if (_status != Status.Success)
                     {
                         AssertStatus();
+                        return;
                     }
 
                     _status = Status.Success;
@@ -319,6 +330,7 @@ namespace DatabaseMigrations
                     if (_status != Status.Success)
                     {
                         AssertStatus();
+                        return;
                     }
 
                     builder.WithTransaction();
