@@ -34,6 +34,8 @@ namespace Planar.Service.Model
         [Required]
         [StringLength(50)]
         public string TriggerGroup { get; set; }
+        [StringLength(50)]
+        public string ServerName { get; set; }
         public int Status { get; set; }
         [StringLength(10)]
         public string StatusTitle { get; set; }

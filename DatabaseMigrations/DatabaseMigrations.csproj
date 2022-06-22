@@ -1,8 +1,18 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
+  <ItemGroup>
+    <None Remove="Scripts\Planar_0001 - Create all.sql" />
+    <None Remove="Scripts\Planar_0002 - Add ServerName Column.sql" />
+    <None Remove="Scripts\Planar_0003 - FixFactoryReset.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Scripts\Planar_0001 - Create all.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0002 - Add ServerName Column.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0003 - FixFactoryReset.sql" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="dbup-sqlserver" Version="4.6.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
@@ -12,5 +22,6 @@
     <None Update="appsettings.Local.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Remove="Scripts\Planar_0003 - FixFactoryReset.sql" />
   </ItemGroup>
 </Project>

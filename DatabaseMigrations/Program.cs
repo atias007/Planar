@@ -18,7 +18,7 @@ namespace DatabaseMigrations
 
         private static Status _status = Status.Success;
 
-        public static string ModuleName { get; set; }
+        public const string ModuleName = "Planar";
 
         private static string RunningPath => AppContext.BaseDirectory;
 
@@ -151,8 +151,9 @@ namespace DatabaseMigrations
 #if DEBUG
             Console.WriteLine("Press enter to close");
             Console.ReadLine();
-#endif
+#else
             Environment.Exit(_status == Status.Success ? 0 : -1);
+#endif
         }
 
         private static string GetConnectionString(RunningEnvironment environment)
@@ -202,9 +203,8 @@ namespace DatabaseMigrations
             if (success == false)
             {
                 WriteError($"argument '{envText}' is not valid running environment");
+                AssertStatus();
             }
-
-            Console.Clear();
 
             return env;
         }
@@ -250,28 +250,29 @@ namespace DatabaseMigrations
         private static void Main(string[] args)
         {
             var assembly = Assembly.GetExecutingAssembly();
-            ModuleName = "Planar";
-            Run(assembly, args);
+            while (true)
+            {
+                Run(assembly, args);
+                _status = Status.Success;
+                Console.Clear();
+            }
         }
 
         private static void Run(Assembly assembly, string[] args)
         {
-            if (string.IsNullOrEmpty(ModuleName))
-            {
-                ModuleName = new DirectoryInfo(Path.Combine(RunningPath, "..", "..", "..", "..")).Name;
-            }
-
             var mode = GetRunningMode(args);
 
             if (mode == RunningMode.Validate)
             {
                 Validate(assembly);
                 AssertStatus();
+                return;
             }
             else if (mode == RunningMode.AddScript)
             {
                 AddScript();
                 AssertStatus();
+                return;
             }
 
             var environment = GetRunningEnvironment(args);
@@ -295,6 +296,7 @@ namespace DatabaseMigrations
                     });
 
                 AssertStatus();
+                return;
             }
 
             switch (mode)
@@ -304,6 +306,7 @@ namespace DatabaseMigrations
                     if (_status == Status.Error)
                     {
                         AssertStatus();
+                        return;
                     }
 
                     _status = Status.Success;
@@ -315,6 +318,7 @@ namespace DatabaseMigrations
                     if (_status != Status.Success)
                     {
                         AssertStatus();
+                        return;
                     }
 
                     _status = Status.Success;
@@ -326,6 +330,7 @@ namespace DatabaseMigrations
                     if (_status != Status.Success)
                     {
                         AssertStatus();
+                        return;
                     }
 
                     builder.WithTransaction();
