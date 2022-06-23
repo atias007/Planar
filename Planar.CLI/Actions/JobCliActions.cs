@@ -81,6 +81,30 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, serializeObj: result.Data);
         }
 
+        [Action("runningex")]
+        public static async Task<CliActionResponse> GetRunningExceptions(CliFireInstanceIdRequest request)
+        {
+            var restRequest = new RestRequest("job/runningInfo/{instanceId}", Method.Get)
+                .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<GetRunningInfoResponse>(restRequest);
+            if (string.IsNullOrEmpty(result.Data?.Exceptions)) { return new CliActionResponse(result); }
+
+            return new CliActionResponse(result, result.Data?.Exceptions);
+        }
+
+        [Action("runninginfo")]
+        public static async Task<CliActionResponse> GetRunningInfo(CliFireInstanceIdRequest request)
+        {
+            var restRequest = new RestRequest("job/runningInfo/{instanceId}", Method.Get)
+                .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<GetRunningInfoResponse>(restRequest);
+            if (string.IsNullOrEmpty(result.Data?.Information)) { return new CliActionResponse(result); }
+
+            return new CliActionResponse(result, result.Data?.Information);
+        }
+
         [Action("running")]
         public static async Task<CliActionResponse> GetRunningJobs(CliGetRunningJobsRequest request)
         {
@@ -97,70 +121,6 @@ namespace Planar.CLI.Actions
                new CliActionResponse(result.Item2, table);
 
             return response;
-        }
-
-        internal static async Task<(List<RunningJobDetails>, RestResponse)> GetRunningJobsInner(CliGetRunningJobsRequest request)
-        {
-            if (request.Iterative && request.Details)
-            {
-                throw new Exception("running command can't accept both 'iterative' and 'details' parameters");
-            }
-
-            RestRequest restRequest;
-            RestResponse restResponse;
-            List<RunningJobDetails> resultData;
-
-            if (string.IsNullOrEmpty(request.FireInstanceId))
-            {
-                restRequest = new RestRequest("job/running", Method.Get);
-                var result = await RestProxy.Invoke<List<RunningJobDetails>>(restRequest);
-                resultData = result.Data;
-                restResponse = result;
-            }
-            else
-            {
-                restRequest = new RestRequest("job/running/{instanceId}", Method.Get)
-                    .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
-                var result = await RestProxy.Invoke<RunningJobDetails>(restRequest);
-                resultData = new List<RunningJobDetails> { result.Data };
-                restResponse = result;
-            }
-
-            return (resultData, restResponse);
-        }
-
-        [Action("stop")]
-        public static async Task<CliActionResponse> StopRunningJob(CliFireInstanceIdRequest request)
-        {
-            var restRequest = new RestRequest("job/stop", Method.Post)
-                .AddBody(request);
-
-            var result = await RestProxy.Invoke(restRequest);
-            return new CliActionResponse(result);
-        }
-
-        [Action("runninginfo")]
-        public static async Task<CliActionResponse> GetRunningInfo(CliFireInstanceIdRequest request)
-        {
-            var restRequest = new RestRequest("job/runningInfo/{instanceId}", Method.Get)
-                .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
-
-            var result = await RestProxy.Invoke<GetRunningInfoResponse>(restRequest);
-            if (string.IsNullOrEmpty(result.Data?.Information)) { return new CliActionResponse(result); }
-
-            return new CliActionResponse(result, result.Data?.Information);
-        }
-
-        [Action("runningex")]
-        public static async Task<CliActionResponse> GetRunningExceptions(CliFireInstanceIdRequest request)
-        {
-            var restRequest = new RestRequest("job/runningInfo/{instanceId}", Method.Get)
-                .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
-
-            var result = await RestProxy.Invoke<GetRunningInfoResponse>(restRequest);
-            if (string.IsNullOrEmpty(result.Data?.Exceptions)) { return new CliActionResponse(result); }
-
-            return new CliActionResponse(result, result.Data?.Exceptions);
         }
 
         [Action("invoke")]
@@ -219,6 +179,47 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
+        [Action("stop")]
+        public static async Task<CliActionResponse> StopRunningJob(CliFireInstanceIdRequest request)
+        {
+            var restRequest = new RestRequest("job/stop", Method.Post)
+                .AddBody(request);
+
+            var result = await RestProxy.Invoke(restRequest);
+            return new CliActionResponse(result);
+        }
+
+        [Action("test")]
+        public static async Task<CliActionResponse> TestJob(CliInvokeJobRequest request)
+        {
+            var invokeDate = DateTime.Now.AddSeconds(-1);
+
+            // (1) Invoke job
+            var step1 = await TestStep1InvokeJob(request);
+            if (step1 != null) { return step1; }
+
+            // (2) Sleep 1 sec
+            await Task.Delay(1000);
+
+            // (3) Get instance id
+            var step3 = await TestStep2GetInstanceId(request, invokeDate);
+            if (step3.Item1 != null) { return step3.Item1; }
+            var instanceId = step3.Item2;
+            var logId = step3.Item3;
+
+            // (4) Get running info
+            var step4 = await TestStep4GetRunningInfo(instanceId, invokeDate);
+            if (step4 != null) { return step4; }
+
+            // (5) Sleep 1 sec
+            await Task.Delay(1000);
+
+            // (6) Check log
+            var step6 = await TestStep6CheckLog(logId);
+            if (step6 != null) { return step6; }
+            return CliActionResponse.Empty;
+        }
+
         [Action("data")]
         public static async Task<CliActionResponse> UpsertJobData(CliJobDataRequest request)
         {
@@ -258,15 +259,44 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        private static async Task<RestResponse> InvokeJobInner(CliInvokeJobRequest request)
+        [Action("updateprop")]
+        public static async Task<CliActionResponse> UpsertJobProperty(CliUpsertJobPropertyRequest request)
         {
-            var prm = JsonMapper.Map<InvokeJobRequest, CliInvokeJobRequest>(request);
-            if (prm.NowOverrideValue == DateTime.MinValue) { prm.NowOverrideValue = null; }
+            var restRequest = new RestRequest("job/property", Method.Post)
+                .AddBody(request);
 
-            var restRequest = new RestRequest("job/invoke", Method.Post)
-                .AddBody(prm);
             var result = await RestProxy.Invoke(restRequest);
-            return result;
+            return new CliActionResponse(result);
+        }
+
+        internal static async Task<(List<RunningJobDetails>, RestResponse)> GetRunningJobsInner(CliGetRunningJobsRequest request)
+        {
+            if (request.Iterative && request.Details)
+            {
+                throw new Exception("running command can't accept both 'iterative' and 'details' parameters");
+            }
+
+            RestRequest restRequest;
+            RestResponse restResponse;
+            List<RunningJobDetails> resultData;
+
+            if (string.IsNullOrEmpty(request.FireInstanceId))
+            {
+                restRequest = new RestRequest("job/running", Method.Get);
+                var result = await RestProxy.Invoke<List<RunningJobDetails>>(restRequest);
+                resultData = result.Data;
+                restResponse = result;
+            }
+            else
+            {
+                restRequest = new RestRequest("job/running/{instanceId}", Method.Get)
+                    .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
+                var result = await RestProxy.Invoke<RunningJobDetails>(restRequest);
+                resultData = new List<RunningJobDetails> { result.Data };
+                restResponse = result;
+            }
+
+            return (resultData, restResponse);
         }
 
         private static async Task<RestResponse<LastInstanceId>> GetLastInstanceId(string id, DateTime invokeDate)
@@ -281,22 +311,32 @@ namespace Planar.CLI.Actions
             return result;
         }
 
-        [Action("test")]
-        public static async Task<CliActionResponse> TestJob(CliInvokeJobRequest request)
+        private static async Task<RestResponse> InvokeJobInner(CliInvokeJobRequest request)
+        {
+            var prm = JsonMapper.Map<InvokeJobRequest, CliInvokeJobRequest>(request);
+            if (prm.NowOverrideValue == DateTime.MinValue) { prm.NowOverrideValue = null; }
+
+            var restRequest = new RestRequest("job/invoke", Method.Post)
+                .AddBody(prm);
+            var result = await RestProxy.Invoke(restRequest);
+            return result;
+        }
+
+        private static async Task<CliActionResponse> TestStep1InvokeJob(CliInvokeJobRequest request)
         {
             // (1) Invoke job
-            var invokeDate = DateTime.Now.AddSeconds(-1);
             AnsiConsole.MarkupLine(" [gold3_1][[x]][/] Invoke job...");
             var result = await InvokeJobInner(request);
-            if (result.IsSuccessful == false)
+            if (result.IsSuccessful)
             {
-                return new CliActionResponse(result);
+                return null;
             }
 
-            // (2) Sleep 1 sec
-            await Task.Delay(1000);
+            return new CliActionResponse(result);
+        }
 
-            // (3) Get instance id
+        private static async Task<(CliActionResponse, string, int)> TestStep2GetInstanceId(CliInvokeJobRequest request, DateTime invokeDate)
+        {
             AnsiConsole.Markup(" [gold3_1][[x]][/] Get instance id... ");
             RestResponse<LastInstanceId> instanceId = null;
             for (int i = 0; i < 3; i++)
@@ -304,7 +344,7 @@ namespace Planar.CLI.Actions
                 instanceId = await GetLastInstanceId(request.Id, invokeDate);
                 if (instanceId.IsSuccessful == false)
                 {
-                    return new CliActionResponse(instanceId);
+                    return (new CliActionResponse(instanceId), null, 0);
                 }
 
                 if (instanceId.Data != null) break;
@@ -317,10 +357,13 @@ namespace Planar.CLI.Actions
             }
 
             AnsiConsole.MarkupLine($"[turquoise2]{instanceId.Data.InstanceId}[/]");
+            return (null, instanceId.Data.InstanceId, instanceId.Data.LogId);
+        }
 
-            // (4) Get running info
+        private static async Task<CliActionResponse> TestStep4GetRunningInfo(string instanceId, DateTime invokeDate)
+        {
             var restRequest = new RestRequest("job/running/{instanceId}", Method.Get)
-                .AddParameter("instanceId", instanceId.Data.InstanceId, ParameterType.UrlSegment);
+                .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
             var runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest);
 
             if (runResult.IsSuccessful == false) { return new CliActionResponse(runResult); }
@@ -342,19 +385,20 @@ namespace Planar.CLI.Actions
             Console.CursorTop -= 1;
             AnsiConsole.Markup($" [gold3_1][[x]][/] Progress: [green]100%[/]  |  ");
 
-            // (5) Sleep 1 sec
-            await Task.Delay(1000);
+            return null;
+        }
 
-            // (6) Check log
+        private static async Task<CliActionResponse> TestStep6CheckLog(int logId)
+        {
             var restTestRequest = new RestRequest("job/testStatus/{id}", Method.Get)
-                .AddParameter("id", instanceId.Data.LogId, ParameterType.UrlSegment);
+                .AddParameter("id", logId, ParameterType.UrlSegment);
             var status = await RestProxy.Invoke<GetTestStatusResponse>(restTestRequest);
 
             if (status.IsSuccessful == false) { return new CliActionResponse(status); }
             if (status.Data == null)
             {
                 Console.WriteLine();
-                throw new ApplicationException($"Could not found log data for log id {instanceId.Data.LogId}");
+                throw new ApplicationException($"Could not found log data for log id {logId}");
             }
 
             var finalSpan = TimeSpan.FromMilliseconds(status.Data.Duration.GetValueOrDefault());
@@ -376,28 +420,18 @@ namespace Planar.CLI.Actions
             var table = new Table();
             table.AddColumn(new TableColumn(new Markup("[grey54]Get more information by the following commands[/]")));
             table.BorderColor(Color.FromInt32(242));
-            table.AddRow($"[grey54]Planar history get[/] [grey62]{instanceId.Data.LogId}[/]");
-            table.AddRow($"[grey54]Planar history info[/] [grey62]{instanceId.Data.LogId}[/]");
-            table.AddRow($"[grey54]Planar history data[/] [grey62]{instanceId.Data.LogId}[/]");
+            table.AddRow($"[grey54]Planar history get[/] [grey62]{logId}[/]");
+            table.AddRow($"[grey54]Planar history info[/] [grey62]{logId}[/]");
+            table.AddRow($"[grey54]Planar history data[/] [grey62]{logId}[/]");
 
             if (status.Data.Status == 1)
             {
-                table.AddRow($"[grey54]Planar history ex[/] [grey62]{instanceId.Data.LogId}[/]");
+                table.AddRow($"[grey54]Planar history ex[/] [grey62]{logId}[/]");
             }
 
             AnsiConsole.Write(table);
 
-            return CliActionResponse.Empty;
-        }
-
-        [Action("updateprop")]
-        public static async Task<CliActionResponse> UpsertJobProperty(CliUpsertJobPropertyRequest request)
-        {
-            var restRequest = new RestRequest("job/property", Method.Post)
-                .AddBody(request);
-
-            var result = await RestProxy.Invoke(restRequest);
-            return new CliActionResponse(result);
+            return null;
         }
     }
 }

@@ -41,7 +41,6 @@ namespace Planar.Service.API
 
             AddPathRelativeFolder(metadata, request.Path);
             var jobKey = await ValidateJobMetadata(metadata);
-            ExtractJobPackage(request.Path);
             await BuildGlobalParameters(metadata.GlobalParameters);
 
             var jobType = GetJobType(metadata);
@@ -60,36 +59,6 @@ namespace Planar.Service.API
             var id = BuildJobData(metadata, job);
             await BuildTriggers(Scheduler, job, metadata);
             return new JobIdResponse { Id = id };
-        }
-
-        private void ExtractJobPackage(string path)
-        {
-            try
-            {
-                var dirInfo = new DirectoryInfo(path);
-                var files = dirInfo.GetFiles("*.nupkg").Concat(dirInfo.GetFiles("*.zip")).ToArray();
-
-                if (files.Length == 0)
-                {
-                    Logger.LogInformation("No nuget/zip packge found in directory '{@FullName}' when add new job file", dirInfo.FullName);
-                    return;
-                }
-
-                if (files.Length > 1)
-                {
-                    Logger.LogInformation("More then 1 nuget/zip packge fount in directory '{@FullName}' when add new job file. Found {@Length} files", dirInfo.FullName, files.Length);
-                    return;
-                }
-
-                var package = files[0];
-                Logger.LogInformation("Extract nuget/zip package '{@FullName}'", package.FullName);
-                ZipFile.ExtractToDirectory(package.FullName, package.Directory.FullName);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Fail to extract nuget/zip package: {@Message}", ex.Message);
-                throw;
-            }
         }
 
         private static async Task BuildTriggers(IScheduler scheduler, IJobDetail quartzJob, JobMetadata job)
