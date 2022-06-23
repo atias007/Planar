@@ -15,7 +15,8 @@ namespace Planar.Test
                 { "Value", 100.1 }
             };
 
-            ExecuteJob<ActionJob>(data);
+            var result = ExecuteJob<ActionJob>(data);
+            Assert.IsTrue(result.Status == 0);
         }
     }
 }
