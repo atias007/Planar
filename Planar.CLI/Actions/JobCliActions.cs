@@ -398,7 +398,7 @@ namespace Planar.CLI.Actions
             if (status.Data == null)
             {
                 Console.WriteLine();
-                throw new ApplicationException($"Could not found log data for log id {logId}");
+                throw new CliException($"Could not found log data for log id {logId}");
             }
 
             var finalSpan = TimeSpan.FromMilliseconds(status.Data.Duration.GetValueOrDefault());

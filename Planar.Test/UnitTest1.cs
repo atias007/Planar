@@ -1,11 +1,5 @@
-using NetEscapades.Configuration.Yaml;
 using NUnit.Framework;
-using Planar.Service.Model.Metadata;
 using Planar.TeamsMonitorHook;
-using System.IO;
-using System.Text;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace Planar.Test
 {
@@ -21,6 +15,7 @@ namespace Planar.Test
         {
             var hook = new TeamHook();
             hook.Handle(null).Wait();
+            Assert.Pass();
         }
     }
 }

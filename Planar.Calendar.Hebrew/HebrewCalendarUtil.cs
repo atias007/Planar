@@ -647,10 +647,10 @@ namespace Planar.Calendar.Hebrew
         /// <param name="date">The date.</param>
         private void Analyze(DateTime date)
         {
-            this.IsShabat = date.DayOfWeek == DayOfWeek.Saturday;
-            this.IsHoliday = this.IsShabat;
-            this.IsSabbaton = this.IsShabat;
-            this.IsLeapYear = IsLeapYearInner(date.Year);
+            IsShabat = date.DayOfWeek == DayOfWeek.Saturday;
+            IsHoliday = IsShabat;
+            IsSabbaton = IsShabat;
+            IsLeapYear = IsLeapYearInner(date.Year);
 
             IsEvent = true;
             var d = HebrewDate.ToString("dd MMM");
@@ -671,48 +671,19 @@ namespace Planar.Calendar.Hebrew
                     break;
 
                 case "ז' אדר":
-                    if (IsLeapYear)
-                    {
-                        IsEvent = false;
-                    }
-                    else
-                    {
-                        EventType = HebrewEventType.YomHazikaronMakomKvuraLoNoda;
-                    }
+                    ZAdar();
                     break;
 
                 case "י\"ג אדר":
-                    if (IsLeapYear)
-                    {
-                        IsEvent = false;
-                    }
-                    else
-                    {
-                        EventType = HebrewEventType.TaanitEster;
-                        IsZom = true;
-                    }
+                    GAdar();
                     break;
 
                 case "י\"ד אדר":
-                    if (IsLeapYear)
-                    {
-                        IsEvent = false;
-                    }
-                    else
-                    {
-                        EventType = HebrewEventType.Purim;
-                    }
+                    DAdar();
                     break;
 
                 case "ט\"ו אדר":
-                    if (IsLeapYear)
-                    {
-                        IsEvent = false;
-                    }
-                    else
-                    {
-                        EventType = HebrewEventType.ShushanPurim;
-                    }
+                    VAdar();
                     break;
 
                 case "ז' אדר ב":
@@ -776,103 +747,35 @@ namespace Planar.Calendar.Hebrew
                     break;
 
                 case "כ\"ו ניסן":
-                    if (date.DayOfWeek == DayOfWeek.Thursday)
-                    {
-                        EventType = HebrewEventType.YomHazikaronLashoaaVelagvura;
-                    }
-                    else
-                    {
-                        IsEvent = false;
-                    }
+                    VNisan(date);
                     break;
 
                 case "כ\"ז ניסן":
-                    if (date.DayOfWeek != DayOfWeek.Friday && date.DayOfWeek != DayOfWeek.Sunday)
-                    {
-                        EventType = HebrewEventType.YomHazikaronLashoaaVelagvura;
-                    }
-                    else
-                    {
-                        IsEvent = false;
-                    }
+                    ZNisan(date);
                     break;
 
                 case "כ\"ח ניסן":
-                    if (date.DayOfWeek == DayOfWeek.Monday)
-                    {
-                        EventType = HebrewEventType.YomHazikaronLashoaaVelagvura;
-                    }
-                    else
-                    {
-                        IsEvent = false;
-                    }
+                    HNisan(date);
                     break;
 
                 case "ב' אייר":
-                    if (date.DayOfWeek == DayOfWeek.Wednesday)
-                    {
-                        EventType = HebrewEventType.YomHazikaronLehalaleyMaarhotIsrael;
-                    }
-                    else
-                    {
-                        IsEvent = false;
-                    }
+                    BIar(date);
                     break;
 
                 case "ג' אייר":
-                    if (date.DayOfWeek == DayOfWeek.Wednesday)
-                    {
-                        EventType = HebrewEventType.YomHazikaronLehalaleyMaarhotIsrael;
-                    }
-                    else if (date.DayOfWeek == DayOfWeek.Thursday)
-                    {
-                        EventType = HebrewEventType.YomHaAzmaaut;
-                        IsSabbaton = true;
-                    }
-                    else
-                    {
-                        IsEvent = false;
-                    }
+                    GIar(date);
                     break;
 
                 case "ד' אייר":
-                    if (date.DayOfWeek == DayOfWeek.Thursday)
-                    {
-                        EventType = HebrewEventType.YomHaAzmaaut;
-                        IsSabbaton = true;
-                    }
-                    else
-                    {
-                        EventType = HebrewEventType.YomHazikaronLehalaleyMaarhotIsrael;
-                    }
+                    DIar(date);
                     break;
 
                 case "ה' אייר":
-                    if (date.DayOfWeek == DayOfWeek.Monday)
-                    {
-                        EventType = HebrewEventType.YomHazikaronLehalaleyMaarhotIsrael;
-                    }
-                    else if (date.DayOfWeek != DayOfWeek.Friday && date.DayOfWeek != DayOfWeek.Saturday)
-                    {
-                        EventType = HebrewEventType.YomHaAzmaaut;
-                        IsSabbaton = true;
-                    }
-                    else
-                    {
-                        IsEvent = false;
-                    }
+                    HIar(date);
                     break;
 
                 case "ו' אייר":
-                    if (date.DayOfWeek == DayOfWeek.Tuesday)
-                    {
-                        EventType = HebrewEventType.YomHaAzmaaut;
-                        IsSabbaton = true;
-                    }
-                    else
-                    {
-                        IsEvent = false;
-                    }
+                    VIar(date);
                     break;
 
                 case "י\"ח אייר":
@@ -1044,6 +947,163 @@ namespace Planar.Calendar.Hebrew
                 default:
                     IsEvent = false;
                     break;
+            }
+        }
+
+        private void VIar(DateTime date)
+        {
+            if (date.DayOfWeek == DayOfWeek.Tuesday)
+            {
+                EventType = HebrewEventType.YomHaAzmaaut;
+                IsSabbaton = true;
+            }
+            else
+            {
+                IsEvent = false;
+            }
+        }
+
+        private void HIar(DateTime date)
+        {
+            if (date.DayOfWeek == DayOfWeek.Monday)
+            {
+                EventType = HebrewEventType.YomHazikaronLehalaleyMaarhotIsrael;
+            }
+            else if (date.DayOfWeek != DayOfWeek.Friday && date.DayOfWeek != DayOfWeek.Saturday)
+            {
+                EventType = HebrewEventType.YomHaAzmaaut;
+                IsSabbaton = true;
+            }
+            else
+            {
+                IsEvent = false;
+            }
+        }
+
+        private void DIar(DateTime date)
+        {
+            if (date.DayOfWeek == DayOfWeek.Thursday)
+            {
+                EventType = HebrewEventType.YomHaAzmaaut;
+                IsSabbaton = true;
+            }
+            else
+            {
+                EventType = HebrewEventType.YomHazikaronLehalaleyMaarhotIsrael;
+            }
+        }
+
+        private void GIar(DateTime date)
+        {
+            if (date.DayOfWeek == DayOfWeek.Wednesday)
+            {
+                EventType = HebrewEventType.YomHazikaronLehalaleyMaarhotIsrael;
+            }
+            else if (date.DayOfWeek == DayOfWeek.Thursday)
+            {
+                EventType = HebrewEventType.YomHaAzmaaut;
+                IsSabbaton = true;
+            }
+            else
+            {
+                IsEvent = false;
+            }
+        }
+
+        private void BIar(DateTime date)
+        {
+            if (date.DayOfWeek == DayOfWeek.Wednesday)
+            {
+                EventType = HebrewEventType.YomHazikaronLehalaleyMaarhotIsrael;
+            }
+            else
+            {
+                IsEvent = false;
+            }
+        }
+
+        private void HNisan(DateTime date)
+        {
+            if (date.DayOfWeek == DayOfWeek.Monday)
+            {
+                EventType = HebrewEventType.YomHazikaronLashoaaVelagvura;
+            }
+            else
+            {
+                IsEvent = false;
+            }
+        }
+
+        private void ZNisan(DateTime date)
+        {
+            if (date.DayOfWeek != DayOfWeek.Friday && date.DayOfWeek != DayOfWeek.Sunday)
+            {
+                EventType = HebrewEventType.YomHazikaronLashoaaVelagvura;
+            }
+            else
+            {
+                IsEvent = false;
+            }
+        }
+
+        private void VNisan(DateTime date)
+        {
+            if (date.DayOfWeek == DayOfWeek.Thursday)
+            {
+                EventType = HebrewEventType.YomHazikaronLashoaaVelagvura;
+            }
+            else
+            {
+                IsEvent = false;
+            }
+        }
+
+        private void VAdar()
+        {
+            if (IsLeapYear)
+            {
+                IsEvent = false;
+            }
+            else
+            {
+                EventType = HebrewEventType.ShushanPurim;
+            }
+        }
+
+        private void DAdar()
+        {
+            if (IsLeapYear)
+            {
+                IsEvent = false;
+            }
+            else
+            {
+                EventType = HebrewEventType.Purim;
+            }
+        }
+
+        private void GAdar()
+        {
+            if (IsLeapYear)
+            {
+                IsEvent = false;
+            }
+            else
+            {
+                EventType = HebrewEventType.TaanitEster;
+                IsZom = true;
+            }
+        }
+
+        private void ZAdar()
+        {
+            if (IsLeapYear)
+            {
+                IsEvent = false;
+            }
+            else
+            {
+                EventType = HebrewEventType.YomHazikaronMakomKvuraLoNoda;
             }
         }
 

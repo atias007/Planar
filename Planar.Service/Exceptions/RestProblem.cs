@@ -3,10 +3,7 @@ using System.Collections.Generic;
 
 namespace Planar.Service.Exceptions
 {
-#pragma warning disable CS0659 // Type overrides Object.Equals(object o) but does not override Object.GetHashCode()
-
     public class RestProblem : IEquatable<RestProblem>
-#pragma warning restore CS0659 // Type overrides Object.Equals(object o) but does not override Object.GetHashCode()
     {
         public RestProblem()
         {
@@ -40,6 +37,11 @@ namespace Planar.Service.Exceptions
             }
 
             return false;
+        }
+
+        public override int GetHashCode()
+        {
+            return $"{Field}|{Detail}".GetHashCode();
         }
     }
 }

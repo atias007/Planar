@@ -22,7 +22,7 @@ namespace Planar.CLI
             Message = message;
         }
 
-        public CliActionResponse(RestResponse response, object serializeObj = null)
+        public CliActionResponse(RestResponse response, object serializeObj)
             : this(response)
         {
             if (serializeObj != null)

@@ -19,14 +19,6 @@ namespace Planar.Service.Monitor
     {
         private static readonly ILogger<MonitorUtil> _logger = Global.GetLogger<MonitorUtil>();
 
-        //private static IEnumerable<string> Hooks
-        //{
-        //    get
-        //    {
-        //        return _monitorData.Instance.Select(m => m.Hook);
-        //    }
-        //}
-
         public static async Task Validate<T>(ILogger<T> logger)
         {
             var count = await DAL.GetMonitorCount();
@@ -60,72 +52,88 @@ namespace Planar.Service.Monitor
         {
             var task = Task.Run(() =>
             {
-                if (context.JobDetail.Key.Group.StartsWith(Consts.PlanarSystemGroup))
-                {
-                    return;
-                }
-
-                List<MonitorAction> items;
-                var hookTasks = new List<Task>();
-
-                try
-                {
-                    items = LoadMonitorItems(@event, context).Result;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Fail to handle monitor item(s) --> LoadMonitorItems");
-                    return;
-                }
-
-                Parallel.ForEach(items, action =>
-                {
-                    try
-                    {
-                        var toBeContinue = Analyze(@event, action).Result;
-                        if (toBeContinue)
-                        {
-                            var hookInstance = GetMonitorHookInstance(action.Hook);
-                            if (hookInstance == null)
-                            {
-                                _logger.LogWarning("Hook {@Hook} in monitor item id: {@Id}, title: '{@Title}' does not exist in service", action.Hook, action.Id, action.Title);
-                            }
-                            else
-                            {
-                                var details = GetMonitorDetails(action, context, jobException);
-                                var hookType = ServiceUtil.MonitorHooks[action.Hook]?.Type;
-                                var logger = Global.GetLogger(hookType);
-                                var hookTask = hookInstance.Handle(details, _logger)
-                                .ContinueWith(t =>
-                                {
-                                    if (t.Exception != null)
-                                    {
-                                        logger.LogError(t.Exception, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
-                                    }
-                                });
-
-                                logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle with hook {Hook}", action.Id, action.Title, action.Hook);
-                                hookTasks.Add(hookTask);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
-                    }
-                });
-
-                try
-                {
-                    Task.WaitAll(hookTasks.ToArray());
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Fail to handle monitor item(s)");
-                }
+                ScanAsync(@event, context, jobException, cancellationToken);
             }, cancellationToken);
 
             await task;
+        }
+
+        private static Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, JobExecutionException jobException)
+        {
+            Task hookTask = null;
+            try
+            {
+                var toBeContinue = Analyze(@event, action).Result;
+                if (toBeContinue)
+                {
+                    var hookInstance = GetMonitorHookInstance(action.Hook);
+                    if (hookInstance == null)
+                    {
+                        _logger.LogWarning("Hook {@Hook} in monitor item id: {@Id}, title: '{@Title}' does not exist in service", action.Hook, action.Id, action.Title);
+                    }
+                    else
+                    {
+                        var details = GetMonitorDetails(action, context, jobException);
+                        var hookType = ServiceUtil.MonitorHooks[action.Hook]?.Type;
+                        var logger = Global.GetLogger(hookType);
+                        hookTask = hookInstance.Handle(details, _logger)
+                        .ContinueWith(t =>
+                        {
+                            if (t.Exception != null)
+                            {
+                                logger.LogError(t.Exception, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
+                            }
+                        });
+
+                        logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle with hook {Hook}", action.Id, action.Title, action.Hook);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
+            }
+
+            return hookTask;
+        }
+
+        internal static void ScanAsync(MonitorEvents @event, IJobExecutionContext context, JobExecutionException jobException = default, CancellationToken cancellationToken = default)
+        {
+            if (context.JobDetail.Key.Group.StartsWith(Consts.PlanarSystemGroup))
+            {
+                return;
+            }
+
+            List<MonitorAction> items;
+            var hookTasks = new List<Task>();
+
+            try
+            {
+                items = LoadMonitorItems(@event, context).Result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to handle monitor item(s) --> LoadMonitorItems");
+                return;
+            }
+
+            Parallel.ForEach(items, action =>
+            {
+                var task = ExecuteMonitor(action, @event, context, jobException);
+                if (task != null)
+                {
+                    hookTasks.Add(task);
+                }
+            });
+
+            try
+            {
+                Task.WaitAll(hookTasks.ToArray(), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to handle monitor item(s)");
+            }
         }
 
         private static HookInstance GetMonitorHookInstance(string hook)
