@@ -25,12 +25,10 @@ namespace Planar.Service
     public class MainService : BackgroundService
     {
         private static IScheduler _scheduler;
-        private static IConfiguration _config;
         private readonly ILogger<MainService> _logger;
 
-        public MainService(IConfiguration config, IServiceProvider serviceProvider)
+        public MainService(IServiceProvider serviceProvider)
         {
-            _config = config ?? throw new ArgumentNullException(nameof(config));
             _logger = serviceProvider.GetService<ILogger<MainService>>();
             Global.ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider)); ;
         }

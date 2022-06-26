@@ -14,6 +14,7 @@ namespace Planar.Filters
 
         public void OnActionExecuting(ActionExecutingContext context)
         {
+            // Do nothing //
         }
 
         private static RestValidationException AggregateRestValidationException(IEnumerable<RestValidationException> exceptions)
