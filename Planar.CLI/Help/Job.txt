@@ -16,6 +16,7 @@ remove|delete   <job id>
 resumeall
 resume          <job id>
 data            <job id> <upsert|remove|clear> [<key>] [<value>]
+stop            <instance id>
 test            <job id> [-n|--now <now_value:"dd/mm/yyyy hh:mm">]
 updateprop      <job id> <key> <value>
 

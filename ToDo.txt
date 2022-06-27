@@ -2,9 +2,9 @@
 - add monitor event when user pause / delete / add job
 - add monitor event when retry
 - planar stop with job id (not only instance id)
-- when delete job --> delete its monitoring items
 - dont allow to delete group when the group has monitoring
 - allow to stop planar scheduler withoul stop the windows service (service stop, service start, service shutdown)
 - when cli has no connection to service - show specific error
 
 -----------------------------------------DONE-----------------------------------------
+- when delete job --> delete its monitoring items
