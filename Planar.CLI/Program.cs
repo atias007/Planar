@@ -35,38 +35,83 @@ namespace Planar.CLI
 
             if (args.Length == 0)
             {
-                AnsiConsole.Write(new FigletText("Planar")
-                    .LeftAligned()
-                    .Color(Color.SteelBlue1));
-
-                var versionString = Assembly.GetEntryAssembly()
-                                        ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-                                        ?.InformationalVersion
-                                        .ToString();
-
-                Console.WriteLine($"planar cli v{versionString}");
-                Console.WriteLine("-------------------------");
-                Console.WriteLine("usage: planar <module> <command> [<options>]");
-                Console.WriteLine();
-                Console.WriteLine("use 'planar <module> --help' to see all avalible commands and options");
-
-                using Stream stream = typeof(Program).Assembly.GetManifestResourceStream("Planar.CLI.Help.Modules.txt");
-                using StreamReader reader = new(stream);
-                string result = reader.ReadToEnd();
-                Console.WriteLine(result);
+                InteractiveMode(cliActions);
             }
             else
             {
+                var cliUtil = HandleCliCommand(args, cliActions);
+                if (cliUtil != null)
+                {
+                    if (string.Compare($"{cliUtil.Module}.{cliUtil.Command}", "service.connect", true) == 0)
+                    {
+                        InteractiveMode(cliActions);
+                    }
+                }
+            }
+        }
+
+        private static void InteractiveMode(IEnumerable<CliActionMetadata> cliActions)
+        {
+            var command = string.Empty;
+            Console.Clear();
+            WriteInfo();
+
+            while (string.Compare(command, "exit", true) != 0)
+            {
+                Console.WriteLine();
+                Console.Write($"{RestProxy.Host}:{RestProxy.Port}> ");
+                command = Console.ReadLine();
+                var args = SplitCommandLine(command).ToArray();
                 HandleCliCommand(args, cliActions);
             }
         }
 
-        private static void HandleCliCommand(string[] args, IEnumerable<CliActionMetadata> cliActions)
+        private static void WriteInfo()
         {
+            AnsiConsole.Write(new FigletText("Planar")
+                    .LeftAligned()
+                    .Color(Color.SteelBlue1));
+
+            var versionString = Assembly.GetEntryAssembly()
+                                    ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                                    ?.InformationalVersion
+                                    .ToString();
+
+            Console.WriteLine($"planar cli v{versionString}");
+            Console.WriteLine("-------------------------");
+            Console.WriteLine("usage: planar <module> <command> [<options>]");
+            Console.WriteLine();
+            Console.WriteLine("use 'planar <module> --help' to see all avalible commands and options");
+
+            using Stream stream = typeof(Program).Assembly.GetManifestResourceStream("Planar.CLI.Help.Modules.txt");
+            using StreamReader reader = new(stream);
+            string result = reader.ReadToEnd();
+            Console.WriteLine(result);
+        }
+
+        private static IEnumerable<string> SplitCommandLine(string commandLine)
+        {
+            bool inQuotes = false;
+
+            return commandLine.Split(c =>
+            {
+                if (c == '\"')
+                    inQuotes = !inQuotes;
+
+                return !inQuotes && c == ' ';
+            })
+                .Select(arg => arg.Trim().TrimMatchingQuotes('\"'))
+                .Where(arg => !string.IsNullOrEmpty(arg));
+        }
+
+        private static CliArgumentsUtil HandleCliCommand(string[] args, IEnumerable<CliActionMetadata> cliActions)
+        {
+            CliArgumentsUtil cliArgument = null;
+
             try
             {
                 var action = CliArgumentsUtil.ValidateArgs(ref args, cliActions);
-                var cliArgument = new CliArgumentsUtil(args);
+                cliArgument = new CliArgumentsUtil(args);
 
                 var console = Activator.CreateInstance(action.Method.DeclaringType);
                 CliActionResponse response;
@@ -114,6 +159,8 @@ namespace Planar.CLI
             {
                 HandleException(ex);
             }
+
+            return cliArgument;
         }
 
         private static void HandleException(Exception ex)

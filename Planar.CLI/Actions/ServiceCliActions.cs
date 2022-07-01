@@ -52,5 +52,13 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("service/calendars", Method.Get);
             return await ExecuteEntity<List<string>>(restRequest);
         }
+
+        [Action("connect")]
+        public static async Task<CliActionResponse> Connect(CliConnectRequest request)
+        {
+            RestProxy.Host = request.Host;
+            RestProxy.Port = request.Port;
+            return await Task.FromResult(CliActionResponse.Empty);
+        }
     }
 }
