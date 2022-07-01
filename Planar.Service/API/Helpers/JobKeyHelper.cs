@@ -59,12 +59,13 @@ namespace Planar.Service.API.Helpers
             return null;
         }
 
-        public static string GetJobId(IJobExecutionContext context)
+        public static async Task<string> GetJobId(JobKey jobKey)
         {
-            return GetJobId(context.JobDetail);
+            var job = await ValidateJobExists(jobKey);
+            return GetJobId(job);
         }
 
-        public static async Task ValidateJobExists(JobKey jobKey)
+        public static async Task<IJobDetail> ValidateJobExists(JobKey jobKey)
         {
             var exists = await Scheduler.GetJobDetail(jobKey);
 
@@ -72,6 +73,8 @@ namespace Planar.Service.API.Helpers
             {
                 throw new RestNotFoundException($"job with id {jobKey.Name} or key {jobKey.Group}.{jobKey.Name} does not exist");
             }
+
+            return exists;
         }
 
         public static JobKey GetJobKey(JobMetadata metadata)

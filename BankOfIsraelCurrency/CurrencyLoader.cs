@@ -64,6 +64,7 @@ namespace BankOfIsraelCurrency
                 var data = Deserialize(response.Content);
                 foreach (var item in data)
                 {
+                    FailOnStopRequest();
                     UpdateProgress(counter, data.Count());
                     Logger.LogInformation(" [x] Handle currency {Currency} with value {Value}", item.NAME, item.RATE);
                     IncreaseEffectedRows();

@@ -177,8 +177,18 @@ namespace Planar.Service.API
         public async Task Remove(string id)
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
+            var jobId = await JobKeyHelper.GetJobId(jobKey);
             ValidateSystemJob(jobKey);
             await Scheduler.DeleteJob(jobKey);
+
+            try
+            {
+                await DeleteMonitorOfJob(jobId, jobKey.Group);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Fail to delete monitor after delete job id {Id}", id);
+            }
         }
 
         public async Task RemoveData(string id, string key)
@@ -312,6 +322,12 @@ namespace Planar.Service.API
             }
 
             return result;
+        }
+
+        private static async Task<bool> JobGroupExists(string jobGroup)
+        {
+            var allGroups = await Scheduler.GetJobGroupNames();
+            return allGroups.Contains(jobGroup);
         }
 
         private static CronTriggerDetails MapCronTriggerDetails(ICronTrigger source)
@@ -463,6 +479,15 @@ namespace Planar.Service.API
             if (jobKey.Group == Consts.PlanarSystemGroup)
             {
                 throw new RestValidationException("key", "forbidden: this is system job and it should not be modified");
+            }
+        }
+
+        private async Task DeleteMonitorOfJob(string jobId, string jobGroup)
+        {
+            await DataLayer.DeleteMonitorByJobId(jobId);
+            if (await JobGroupExists(jobGroup) == false)
+            {
+                await DataLayer.DeleteMonitorByJobGroup(jobGroup);
             }
         }
     }

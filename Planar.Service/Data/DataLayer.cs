@@ -556,5 +556,17 @@ namespace Planar.Service.Data
             _context.MonitorActions.Remove(request);
             await _context.SaveChangesAsync();
         }
+
+        public async Task DeleteMonitorByJobId(string jobId)
+        {
+            _context.MonitorActions.RemoveRange(e => e.JobId == jobId);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteMonitorByJobGroup(string jobGroup)
+        {
+            _context.MonitorActions.RemoveRange(e => e.JobGroup == jobGroup);
+            await _context.SaveChangesAsync();
+        }
     }
 }
