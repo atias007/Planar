@@ -1,6 +1,6 @@
 ﻿using YamlDotNet.Serialization;
 
-namespace Planar.Service.Model.Metadata
+namespace Planar.API.Common.Entities
 {
     public class JobCronTriggerMetadata : BaseTrigger
     {

@@ -6,6 +6,8 @@ using Spectre.Console;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace Planar.CLI.Actions
 {
@@ -105,12 +107,20 @@ namespace Planar.CLI.Actions
         {
             if (request.Filename == ".") { request.Filename = "JobFile.yml"; }
             var yml = File.ReadAllText(request.Filename);
-            var key = request.GetKey();
-            var prm = JsonMapper.Map<AddTriggerRequest, JobOrTriggerKey>(key);
-            prm.Yaml = yml;
+            var prm = GetAddTriggerRequest(yml);
+            prm.Id = request.Id;
 
             var restRequest = new RestRequest("trigger", Method.Post).AddBody(prm);
             return await Execute(restRequest);
+        }
+
+        private static AddTriggerRequest GetAddTriggerRequest(string yaml)
+        {
+            var deserializer = new DeserializerBuilder()
+                            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                            .Build();
+            var request = deserializer.Deserialize<AddTriggerRequest>(yaml);
+            return request;
         }
     }
 }

@@ -11,6 +11,8 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace Planar.CLI.Actions
 {
@@ -28,7 +30,7 @@ namespace Planar.CLI.Actions
             }
 
             var yml = File.ReadAllText(fi.FullName);
-            var prm = new AddJobRequest { Yaml = yml, Path = fi.Directory.FullName };
+            var prm = GetAddJobRequest(yml);
 
             var restRequest = new RestRequest("job", Method.Post)
                 .AddBody(prm);
@@ -267,6 +269,15 @@ namespace Planar.CLI.Actions
 
             var result = await RestProxy.Invoke(restRequest);
             return new CliActionResponse(result);
+        }
+
+        private static AddJobRequest GetAddJobRequest(string yaml)
+        {
+            var deserializer = new DeserializerBuilder()
+                            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                            .Build();
+            var request = deserializer.Deserialize<AddJobRequest>(yaml);
+            return request;
         }
 
         internal static async Task<(List<RunningJobDetails>, RestResponse)> GetRunningJobsInner(CliGetRunningJobsRequest request)

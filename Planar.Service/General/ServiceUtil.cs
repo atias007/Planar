@@ -31,7 +31,7 @@ namespace Planar.Service.General
 
         internal static void LoadMonitorHooks<T>(ILogger<T> logger)
         {
-            var path = AppDomain.CurrentDomain.BaseDirectory;
+            var path = FolderConsts.BasePath;
             path = Path.Combine(path, FolderConsts.Data, "MonitorHooks");
 
             if (Directory.Exists(path) == false)

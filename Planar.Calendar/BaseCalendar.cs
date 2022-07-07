@@ -28,7 +28,7 @@ namespace Planar.Calendar
             var parts = GetType().FullName.Split('.');
             var name = parts[^1].Replace("Settings", string.Empty);
             var file = Path.Combine(FolderConsts.Data, FolderConsts.Calendars, $"{parts[^2]}", $"{name}.json");
-            var path = AppDomain.CurrentDomain.BaseDirectory;
+            var path = FolderConsts.BasePath;
             var filename = Path.Combine(path, file);
 
             if (File.Exists(filename))

@@ -1,6 +1,5 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.Service.Exceptions;
-using Planar.Service.Model.Metadata;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -77,7 +76,7 @@ namespace Planar.Service.API.Helpers
             return exists;
         }
 
-        public static JobKey GetJobKey(JobMetadata metadata)
+        public static JobKey GetJobKey(AddJobRequest metadata)
         {
             return string.IsNullOrEmpty(metadata.Group) ?
                             new JobKey(metadata.Name) :

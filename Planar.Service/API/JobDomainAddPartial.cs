@@ -1,23 +1,18 @@
-﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
-using Planar.Service.Model.Metadata;
 using Quartz;
 using RunPlanarJob;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace Planar.Service.API
 {
@@ -33,35 +28,34 @@ namespace Planar.Service.API
 
         public async Task<JobIdResponse> Add(AddJobRequest request)
         {
-            var metadata = GetJobMetadata(request.Yaml);
-            if (metadata == null)
+            if (request == null)
             {
                 throw new RestValidationException("yaml", "fail to read yml data");
             }
 
-            AddPathRelativeFolder(metadata, request.Path);
-            var jobKey = await ValidateJobMetadata(metadata);
-            await BuildGlobalParameters(metadata.GlobalParameters);
+            AddPathRelativeFolder(request);
+            var jobKey = await ValidateJobMetadata(request);
+            await BuildGlobalParameters(request.GlobalParameters);
 
-            var jobType = GetJobType(metadata);
+            var jobType = GetJobType(request);
             var jobBuilder = JobBuilder.Create(jobType)
                 .WithIdentity(jobKey)
-                .WithDescription(metadata.Description)
+                .WithDescription(request.Description)
                 .RequestRecovery();
 
-            if (metadata.Durable.GetValueOrDefault())
+            if (request.Durable.GetValueOrDefault())
             {
                 jobBuilder = jobBuilder.StoreDurably(true);
             }
 
             var job = jobBuilder.Build();
 
-            var id = BuildJobData(metadata, job);
-            await BuildTriggers(Scheduler, job, metadata);
+            var id = BuildJobData(request, job);
+            await BuildTriggers(Scheduler, job, request);
             return new JobIdResponse { Id = id };
         }
 
-        private static async Task BuildTriggers(IScheduler scheduler, IJobDetail quartzJob, JobMetadata job)
+        private static async Task BuildTriggers(IScheduler scheduler, IJobDetail quartzJob, AddJobRequest job)
         {
             var quartzTriggers1 = BuildTriggerWithSimpleSchedule(job.SimpleTriggers);
             var quartzTriggers2 = BuildTriggerWithCronSchedule(job.CronTriggers);
@@ -235,7 +229,7 @@ namespace Planar.Service.API
             return trigger;
         }
 
-        private static string BuildJobData(JobMetadata metadata, IJobDetail job)
+        private static string BuildJobData(AddJobRequest metadata, IJobDetail job)
         {
             // job data
             if (metadata.JobData != null)
@@ -270,7 +264,7 @@ namespace Planar.Service.API
             }
         }
 
-        private static async Task<JobKey> ValidateJobMetadata(JobMetadata metadata)
+        private static async Task<JobKey> ValidateJobMetadata(AddJobRequest metadata)
         {
             #region Trim
 
@@ -330,17 +324,17 @@ namespace Planar.Service.API
             }
         }
 
-        public static void ValidateTriggerMetadata(JobMetadata metadata)
+        public static void ValidateTriggerMetadata(ITriggersContainer container)
         {
             #region Trim
 
-            metadata.SimpleTriggers?.ForEach(t =>
+            container.SimpleTriggers?.ForEach(t =>
             {
                 t.Name = t.Name.SafeTrim();
                 t.Group = t.Group.SafeTrim();
                 t.Calendar = t.Calendar.SafeTrim();
             });
-            metadata.CronTriggers?.ForEach(t =>
+            container.CronTriggers?.ForEach(t =>
             {
                 t.Name = t.Name.SafeTrim();
                 t.Group = t.Group.SafeTrim();
@@ -351,11 +345,11 @@ namespace Planar.Service.API
 
             #region Mandatory
 
-            metadata.SimpleTriggers?.ForEach(t =>
+            container.SimpleTriggers?.ForEach(t =>
             {
                 if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
             });
-            metadata.CronTriggers?.ForEach(t =>
+            container.CronTriggers?.ForEach(t =>
             {
                 if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
             });
@@ -365,12 +359,12 @@ namespace Planar.Service.API
             #region Valid Name & Group
 
             var regex = new Regex(nameRegex);
-            metadata.SimpleTriggers?.ForEach(t =>
+            container.SimpleTriggers?.ForEach(t =>
             {
                 if (IsRegexMatch(regex, t.Name) == false) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
                 if (IsRegexMatch(regex, t.Group) == false) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
             });
-            metadata.CronTriggers?.ForEach(t =>
+            container.CronTriggers?.ForEach(t =>
             {
                 if (IsRegexMatch(regex, t.Name) == false) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
                 if (IsRegexMatch(regex, t.Group) == false) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
@@ -380,12 +374,12 @@ namespace Planar.Service.API
 
             #region Max Chars
 
-            metadata.SimpleTriggers?.ForEach(t =>
+            container.SimpleTriggers?.ForEach(t =>
             {
                 if (t.Name.Length > 50) throw new RestValidationException("name", "trigger name length is invalid. max length is 50");
                 if (t.Group?.Length > 50) throw new RestValidationException("group", "trigger group length is invalid. max length is 50");
             });
-            metadata.CronTriggers?.ForEach(t =>
+            container.CronTriggers?.ForEach(t =>
             {
                 if (t.Name.Length > 50) throw new RestValidationException("name", "trigger name length is invalid. max length is 50");
                 if (t.Group?.Length > 50) throw new RestValidationException("group", "trigger group length is invalid. max length is 50");
@@ -395,11 +389,11 @@ namespace Planar.Service.API
 
             #region Preserve Words
 
-            metadata.SimpleTriggers?.ForEach(t =>
+            container.SimpleTriggers?.ForEach(t =>
             {
                 if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"simple trigger group '{t.Group}' is invalid (preserved value)"); }
             });
-            metadata.CronTriggers?.ForEach(t =>
+            container.CronTriggers?.ForEach(t =>
             {
                 if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"cron trigger group '{t.Group}' is invalid (preserved value)"); }
             });
@@ -407,17 +401,9 @@ namespace Planar.Service.API
             #endregion Preserve Words
         }
 
-        public static JobMetadata GetJobMetadata(string yaml)
+        private static void AddPathRelativeFolder(AddJobRequest metadata)
         {
-            var deserializer = new DeserializerBuilder()
-                            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                            .Build();
-            var metadata = deserializer.Deserialize<JobMetadata>(yaml);
-            return metadata;
-        }
-
-        private static void AddPathRelativeFolder(JobMetadata metadata, string basePath)
-        {
+            var basePath = FolderConsts.BasePath;
             const string pathField = "JobPath";
             if (metadata.Properties != null)
             {
@@ -429,15 +415,12 @@ namespace Planar.Service.API
                         path = path.Trim();
                         if (path.Length > 0)
                         {
-                            if (path == "." || path == @"\" || path == "/") { path = $"{basePath}"; }
-                            else if (path[0] == '.')
+                            if (path == "." || path == @"\" || path == "/")
                             {
-                                path = $"{basePath}{path[1..]}";
+                                path = path[1..];
                             }
-                            else if (path[0] == '/' || path[0] == '\\')
-                            {
-                                path = @$"{basePath}\{path[1..]}";
-                            }
+
+                            path = Path.Combine(basePath, path);
                         }
                     }
 
@@ -446,7 +429,7 @@ namespace Planar.Service.API
             }
         }
 
-        private static Type GetJobType(JobMetadata job)
+        private static Type GetJobType(AddJobRequest job)
         {
             Assembly assembly;
             string typeName;
