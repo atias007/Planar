@@ -35,7 +35,7 @@ namespace Planar.Service.General
 
             if (Directory.Exists(path) == false)
             {
-                logger.LogWarning($"MonitorHooks path {path} could not be found. Service does not have any monitor");
+                logger.LogWarning("MonitorHooks path {Path} could not be found. Service does not have any monitor", path);
                 return;
             }
 
