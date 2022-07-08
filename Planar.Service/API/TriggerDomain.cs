@@ -3,7 +3,6 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
-using Planar.Service.Model.Metadata;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -47,11 +46,10 @@ namespace Planar.Service.API
 
         public async Task<string> Add(AddTriggerRequest request)
         {
-            var metadata = JobDomain.GetJobMetadata(request.Yaml);
-            JobDomain.ValidateTriggerMetadata(metadata);
+            JobDomain.ValidateTriggerMetadata(request);
             var key = await JobKeyHelper.GetJobKey(request);
             var job = await Scheduler.GetJobDetail(key);
-            await BuildTriggers(Scheduler, job, metadata);
+            await BuildTriggers(Scheduler, job, request);
             var id = JobKeyHelper.GetJobId(job);
             return id;
         }
@@ -168,10 +166,10 @@ namespace Planar.Service.API
             return result;
         }
 
-        private static async Task BuildTriggers(IScheduler scheduler, IJobDetail quartzJob, JobMetadata job)
+        private static async Task BuildTriggers(IScheduler scheduler, IJobDetail quartzJob, ITriggersContainer container)
         {
-            var quartzTriggers1 = JobDomain.BuildTriggerWithSimpleSchedule(job.SimpleTriggers);
-            var quartzTriggers2 = JobDomain.BuildTriggerWithCronSchedule(job.CronTriggers);
+            var quartzTriggers1 = JobDomain.BuildTriggerWithSimpleSchedule(container.SimpleTriggers);
+            var quartzTriggers2 = JobDomain.BuildTriggerWithCronSchedule(container.CronTriggers);
             var allTriggers = new List<ITrigger>();
             if (quartzTriggers1 != null) allTriggers.AddRange(quartzTriggers1);
             if (quartzTriggers2 != null) allTriggers.AddRange(quartzTriggers2);

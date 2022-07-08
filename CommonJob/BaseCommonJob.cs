@@ -76,7 +76,7 @@ namespace CommonJob
                 var propInfo = GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
                 foreach (var item in list)
                 {
-                    var p = propInfo.FirstOrDefault(p => p.Name == item.Key);
+                    var p = propInfo.FirstOrDefault(p => string.Compare(p.Name, item.Key, true) == 0);
                     if (p != null)
                     {
                         var value = Convert.ChangeType(item.Value, p.PropertyType);
@@ -151,7 +151,8 @@ namespace CommonJob
 
                 // Merge settings yml file
                 if (string.IsNullOrEmpty(JobPath)) return null;
-                var location = new DirectoryInfo(JobPath);
+                var fullpath = Path.Combine(FolderConsts.BasePath, FolderConsts.Data, FolderConsts.Jobs, JobPath);
+                var location = new DirectoryInfo(fullpath);
                 var jobSettings = CommonUtil.LoadJobSettings(location.FullName);
                 final = final.Merge(jobSettings);
 

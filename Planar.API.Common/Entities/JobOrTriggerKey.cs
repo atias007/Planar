@@ -1,10 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Planar.API.Common.Entities
+﻿namespace Planar.API.Common.Entities
 {
     public class JobOrTriggerKey
     {
-        [Required]
         public string Id { get; set; }
 
         public bool IsEmpty

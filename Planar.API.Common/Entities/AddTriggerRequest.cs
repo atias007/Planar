@@ -1,10 +1,15 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using YamlDotNet.Serialization;
 
 namespace Planar.API.Common.Entities
 {
-    public class AddTriggerRequest : JobOrTriggerKey
+    // TODO: add validation
+    public class AddTriggerRequest : JobOrTriggerKey, ITriggersContainer
     {
-        [Required]
-        public string Yaml { get; set; }
+        [YamlMember(Alias = "simple triggers")]
+        public List<JobSimpleTriggerMetadata> SimpleTriggers { get; set; }
+
+        [YamlMember(Alias = "cron triggers")]
+        public List<JobCronTriggerMetadata> CronTriggers { get; set; }
     }
 }

@@ -3,6 +3,7 @@ name: some job name
 group: null or group name
 description: some job description
 durable: true
+concurrent: false
 job data:
   key1: value1
   key2: value2

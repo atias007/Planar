@@ -86,7 +86,7 @@ namespace Planar.CLI
             table.AddRow(nameof(response.Description), response.Description.EscapeMarkup());
             table.AddRow(nameof(response.Durable), response.Durable.ToString());
             table.AddRow(nameof(response.RequestsRecovery), response.RequestsRecovery.ToString());
-            table.AddRow(nameof(response.ConcurrentExecution), response.ConcurrentExecution.ToString());
+            table.AddRow(nameof(response.Concurrent), response.Concurrent.ToString());
 
             var properties =
                 response.Properties?.Count == 0 ?
