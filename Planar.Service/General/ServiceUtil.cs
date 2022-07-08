@@ -62,7 +62,7 @@ namespace Planar.Service.General
                             var name = new DirectoryInfo(dir).Name;
                             var hook = new MonitorHookFactory { Name = name, Type = t, AssemblyContext = assemblyContext };
                             MonitorHooks.Add(name, hook);
-                            logger.LogInformation("Add MonitorHook '{@name}' from type '{@FullName}'", name, t.FullName);
+                            logger.LogInformation("Add MonitorHook '{Name}' from type '{FullName}'", name, t.FullName);
                         }
                     }
                 }

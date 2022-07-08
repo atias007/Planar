@@ -325,38 +325,41 @@ namespace Planar.Service.API
 
         public static void ValidateTriggerMetadata(ITriggersContainer container)
         {
-            #region Trim
+            TrimTriggerProperties(container);
+            ValidateMandatoryTriggerProperties(container);
+            ValidateTriggerNameProperties(container);
+            ValidateMaxCharsTiggerProperties(container);
+            ValidatePreserveWordsTriggerProperties(container);
+        }
 
+        private static void ValidatePreserveWordsTriggerProperties(ITriggersContainer container)
+        {
             container.SimpleTriggers?.ForEach(t =>
             {
-                t.Name = t.Name.SafeTrim();
-                t.Group = t.Group.SafeTrim();
-                t.Calendar = t.Calendar.SafeTrim();
+                if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"simple trigger group '{t.Group}' is invalid (preserved value)"); }
             });
             container.CronTriggers?.ForEach(t =>
             {
-                t.Name = t.Name.SafeTrim();
-                t.Group = t.Group.SafeTrim();
-                t.Calendar = t.Calendar.SafeTrim();
+                if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"cron trigger group '{t.Group}' is invalid (preserved value)"); }
             });
+        }
 
-            #endregion Trim
-
-            #region Mandatory
-
+        private static void ValidateMaxCharsTiggerProperties(ITriggersContainer container)
+        {
             container.SimpleTriggers?.ForEach(t =>
             {
-                if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
+                if (t.Name.Length > 50) throw new RestValidationException("name", "trigger name length is invalid. max length is 50");
+                if (t.Group?.Length > 50) throw new RestValidationException("group", "trigger group length is invalid. max length is 50");
             });
             container.CronTriggers?.ForEach(t =>
             {
-                if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
+                if (t.Name.Length > 50) throw new RestValidationException("name", "trigger name length is invalid. max length is 50");
+                if (t.Group?.Length > 50) throw new RestValidationException("group", "trigger group length is invalid. max length is 50");
             });
+        }
 
-            #endregion Mandatory
-
-            #region Valid Name & Group
-
+        private static void ValidateTriggerNameProperties(ITriggersContainer container)
+        {
             var regex = new Regex(nameRegex);
             container.SimpleTriggers?.ForEach(t =>
             {
@@ -368,36 +371,34 @@ namespace Planar.Service.API
                 if (IsRegexMatch(regex, t.Name) == false) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
                 if (IsRegexMatch(regex, t.Group) == false) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
             });
+        }
 
-            #endregion Valid Name & Group
-
-            #region Max Chars
-
+        private static void ValidateMandatoryTriggerProperties(ITriggersContainer container)
+        {
             container.SimpleTriggers?.ForEach(t =>
             {
-                if (t.Name.Length > 50) throw new RestValidationException("name", "trigger name length is invalid. max length is 50");
-                if (t.Group?.Length > 50) throw new RestValidationException("group", "trigger group length is invalid. max length is 50");
+                if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
             });
             container.CronTriggers?.ForEach(t =>
             {
-                if (t.Name.Length > 50) throw new RestValidationException("name", "trigger name length is invalid. max length is 50");
-                if (t.Group?.Length > 50) throw new RestValidationException("group", "trigger group length is invalid. max length is 50");
+                if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
             });
+        }
 
-            #endregion Max Chars
-
-            #region Preserve Words
-
+        private static void TrimTriggerProperties(ITriggersContainer container)
+        {
             container.SimpleTriggers?.ForEach(t =>
             {
-                if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"simple trigger group '{t.Group}' is invalid (preserved value)"); }
+                t.Name = t.Name.SafeTrim();
+                t.Group = t.Group.SafeTrim();
+                t.Calendar = t.Calendar.SafeTrim();
             });
             container.CronTriggers?.ForEach(t =>
             {
-                if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"cron trigger group '{t.Group}' is invalid (preserved value)"); }
+                t.Name = t.Name.SafeTrim();
+                t.Group = t.Group.SafeTrim();
+                t.Calendar = t.Calendar.SafeTrim();
             });
-
-            #endregion Preserve Words
         }
 
         private static Type GetJobType(AddJobRequest job)

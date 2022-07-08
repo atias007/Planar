@@ -40,7 +40,7 @@ namespace Planar.Calendar.Hebrew
             }
             catch (Exception ex)
             {
-                Logger.LogCritical(ex, "Fail to invoke IsTimeIncluded with DateTimeOffset={@timeUtc}", timeStampUtc);
+                Logger.LogCritical(ex, "Fail to invoke IsTimeIncluded with DateTimeOffset={TimeUtc}", timeStampUtc);
                 throw;
             }
         }

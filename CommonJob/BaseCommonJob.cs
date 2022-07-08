@@ -87,7 +87,7 @@ namespace CommonJob
             catch (Exception ex)
             {
                 var source = nameof(MapProperties);
-                Logger.Instance.LogError(ex, "Fail at {@source} with job {@Group}.{@Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+                Logger.Instance.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
                 throw;
             }
 
@@ -104,7 +104,7 @@ namespace CommonJob
             catch (Exception ex)
             {
                 var source = nameof(FinalizeJob);
-                Logger.Instance.LogError(ex, "Fail at {@source} with job {@Group}.{@Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+                Logger.Instance.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
                 throw;
             }
         }
@@ -137,7 +137,7 @@ namespace CommonJob
             catch (Exception ex)
             {
                 var source = nameof(MapJobInstanceProperties);
-                Logger.Instance.LogError(ex, "Fail at {@source} with job {@Group}.{@Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+                Logger.Instance.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
                 throw;
             }
         }
@@ -173,7 +173,7 @@ namespace CommonJob
             catch (Exception ex)
             {
                 var source = nameof(LoadJobSettings);
-                Logger.Instance.LogError(ex, "Fail at {@source}", source);
+                Logger.Instance.LogError(ex, "Fail at {Source}", source);
                 throw;
             }
         }
