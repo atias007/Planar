@@ -69,7 +69,7 @@ namespace Planar.Service.Monitor
                     var hookInstance = GetMonitorHookInstance(action.Hook);
                     if (hookInstance == null)
                     {
-                        _logger.LogWarning("Hook {@Hook} in monitor item id: {@Id}, title: '{@Title}' does not exist in service", action.Hook, action.Id, action.Title);
+                        _logger.LogWarning("Hook {Hook} in monitor item id: {Id}, title: '{Title}' does not exist in service", action.Hook, action.Id, action.Title);
                     }
                     else
                     {
@@ -205,7 +205,7 @@ namespace Planar.Service.Monitor
                     _ = int.TryParse(action.EventArgument, out var args1);
                     if (args1 < 2 || string.IsNullOrEmpty(action.JobId))
                     {
-                        _logger.LogWarning("Monitor action {@Id}, Title '{@Title}' has invalid argument ({@EventArgument}) or missing job id", action.Id, action.Title, action.EventArgument);
+                        _logger.LogWarning("Monitor action {Id}, Title '{Title}' has invalid argument ({EventArgument}) or missing job id", action.Id, action.Title, action.EventArgument);
                         return false;
                     }
 
@@ -216,7 +216,7 @@ namespace Planar.Service.Monitor
                     _ = int.TryParse(action.EventArgument, out var args2);
                     if (args2 < 2 || string.IsNullOrEmpty(action.JobId))
                     {
-                        _logger.LogWarning("Monitor action {@Id}, Title '{@Title}' has invalid argument ({@EventArgument}) or missing job id", action.Id, action.Title, action.EventArgument);
+                        _logger.LogWarning("Monitor action {Id}, Title '{Title}' has invalid argument ({EventArgument}) or missing job id", action.Id, action.Title, action.EventArgument);
                         return false;
                     }
 

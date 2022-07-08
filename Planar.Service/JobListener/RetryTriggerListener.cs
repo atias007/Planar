@@ -31,7 +31,7 @@ namespace Planar.Service.List
                 if (numTries > Consts.MaxRetries)
                 {
                     var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
-                    Logger.LogError("Job with key {@key} fail and retry for {@MaxRetries} times but failed each time", key, Consts.MaxRetries);
+                    Logger.LogError("Job with key {Key} fail and retry for {MaxRetries} times but failed each time", key, Consts.MaxRetries);
                     return;
                 }
 
@@ -51,12 +51,12 @@ namespace Planar.Service.List
                 if (numTries > 1)
                 {
                     var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
-                    Logger.LogWarning("Retry no. {@numTries} of job with key {@key} was fail. Retry again at {@start}", numTries, key, start);
+                    Logger.LogWarning("Retry no. {NumTries} of job with key {Key} was fail. Retry again at {Start}", numTries, key, start);
                 }
                 else
                 {
                     var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
-                    Logger.LogWarning("Job with key {@key} was fail. Retry again at {@start}", key, start);
+                    Logger.LogWarning("Job with key {Key} was fail. Retry again at {Start}", key, start);
                 }
 
                 await context.Scheduler.ScheduleJob(retryTrigger, cancellationToken);
@@ -64,7 +64,7 @@ namespace Planar.Service.List
             catch (Exception ex)
             {
                 var source = nameof(TriggerComplete);
-                Logger.LogCritical(ex, "Error handle {@source}: {@Message}", source, ex.Message);
+                Logger.LogCritical(ex, "Error handle {Source}: {Message}", source, ex.Message);
             }
             finally
             {
@@ -93,7 +93,7 @@ namespace Planar.Service.List
             catch (Exception ex)
             {
                 var source = nameof(TriggerFired);
-                Logger.LogError(ex, "Error handle {@source}: {@Message}", source, ex.Message);
+                Logger.LogError(ex, "Error handle {Source}: {Message}", source, ex.Message);
             }
         }
 

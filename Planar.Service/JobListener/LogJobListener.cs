@@ -29,7 +29,7 @@ namespace Planar.Service.List
             catch (Exception ex)
             {
                 var source = nameof(JobExecutionVetoed);
-                Logger.LogCritical(ex, "Error handle {@source}: {@Message} ", source, ex.Message);
+                Logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
             }
             finally
             {
@@ -79,7 +79,7 @@ namespace Planar.Service.List
             {
                 var source = nameof(JobToBeExecuted);
 
-                Logger.LogCritical(ex, "Error handle {@source}: {@Message} ", source, ex.Message);
+                Logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
             }
             finally
             {
@@ -117,7 +117,7 @@ namespace Planar.Service.List
             catch (Exception ex)
             {
                 var source = nameof(JobWasExecuted);
-                Logger.LogCritical(ex, "Error handle {@source}: {@Message} ", source, ex.Message);
+                Logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
             }
             finally
             {

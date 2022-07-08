@@ -37,7 +37,7 @@ namespace Planar.Calendar
             }
             else
             {
-                Logger.LogError("{@name} settings file '{@filename}' could not be found", name, filename);
+                Logger.LogError("{Name} settings file '{Filename}' could not be found", name, filename);
                 throw new ApplicationException($"{name} settings file '{filename}' could not be found");
             }
         }

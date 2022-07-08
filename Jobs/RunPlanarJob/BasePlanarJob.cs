@@ -96,7 +96,7 @@ namespace RunPlanarJob
             catch (Exception ex)
             {
                 var source = nameof(Validate);
-                Logger.Instance.LogError(ex, "Fail at {@source}", source);
+                Logger.Instance.LogError(ex, "Fail at {Source}", source);
                 throw;
             }
         }

@@ -33,7 +33,7 @@ namespace Planar.Service.SystemJobs
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to persist data {@message}", ex.Message);
+                _logger.LogError(ex, "Fail to persist data {Message}", ex.Message);
                 return Task.CompletedTask;
             }
         }
@@ -103,7 +103,7 @@ namespace Planar.Service.SystemJobs
             {
                 if (context.JobRunTime.TotalSeconds > AppSettings.PersistRunningJobsSpan.TotalSeconds)
                 {
-                    _logger.LogInformation("Persist information for job {@Group}.{@Name}", context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+                    _logger.LogInformation("Persist information for job {Group}.{Name}", context.JobDetail.Key.Group, context.JobDetail.Key.Name);
                     if (context.Result is not JobExecutionMetadata metadata)
                     {
                         continue;
