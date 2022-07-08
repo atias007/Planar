@@ -28,7 +28,7 @@ namespace Planar.Service.Monitor
             }
 
             var hooks = await DAL.GetMonitorHooks();
-            var missingHooks = hooks.Where(h => ServiceUtil.MonitorHooks.Keys.Contains(h) == false).ToList();
+            var missingHooks = hooks.Where(h => ServiceUtil.MonitorHooks.ContainsKey(h) == false).ToList();
             missingHooks.ForEach(h => logger.LogWarning("Monitor with hook '{Hook}' is invalid. Missing hook in service", h));
         }
 
