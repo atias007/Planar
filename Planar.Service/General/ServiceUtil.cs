@@ -31,12 +31,11 @@ namespace Planar.Service.General
 
         internal static void LoadMonitorHooks<T>(ILogger<T> logger)
         {
-            var path = FolderConsts.BasePath;
-            path = Path.Combine(path, FolderConsts.Data, "MonitorHooks");
+            var path = Path.Combine(FolderConsts.BasePath, FolderConsts.Data, FolderConsts.MonitorHooks);
 
             if (Directory.Exists(path) == false)
             {
-                logger.LogWarning("MonitorHooks path could not be found. Service does not have any monitor");
+                logger.LogWarning($"MonitorHooks path {path} could not be found. Service does not have any monitor");
                 return;
             }
 
