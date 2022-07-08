@@ -10,3 +10,4 @@
 - when delete job --> delete its monitoring items
 - add monitor event when retry
 - add concurent property to yml
+- move to .net 6
