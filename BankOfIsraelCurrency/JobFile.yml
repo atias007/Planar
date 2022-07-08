@@ -3,7 +3,7 @@ name: BankOfIsraelCurrency
 group: Infrastructure
 description: Download daily currency information and save it to disk as xml 
 properties:
-  JobPath: C:\Temp\BankOfIsraelCurrency
+  JobPath: BankOfIsraelCurrency
   FileName: BankOfIsraelCurrency.dll
   TypeName: BankOfIsraelCurrency.CurrencyLoader
 simple triggers:

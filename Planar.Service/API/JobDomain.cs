@@ -346,7 +346,7 @@ namespace Planar.Service.API
             }
 
             MapJobRowDetails(source, target);
-            target.ConcurrentExecution = !source.ConcurrentExecutionDisallowed;
+            target.Concurrent = !source.ConcurrentExecutionDisallowed;
             target.Durable = source.Durable;
             target.RequestsRecovery = source.RequestsRecovery;
             target.DataMap = Global.ConvertDataMapToDictionary(dataMap);

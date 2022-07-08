@@ -17,6 +17,18 @@ namespace Planar.CLI
 {
     internal class Program
     {
+        public static void Main(string[] args)
+        {
+            try
+            {
+                Start(args);
+            }
+            catch (Exception ex)
+            {
+                WriteException(ex);
+            }
+        }
+
         private static bool HandleBadRequestResponse(RestResponse response)
         {
             if (response.StatusCode == HttpStatusCode.BadRequest)
@@ -202,6 +214,28 @@ namespace Planar.CLI
             return false;
         }
 
+        private static void InteractiveMode(IEnumerable<CliActionMetadata> cliActions)
+        {
+            var command = string.Empty;
+            Console.Clear();
+            WriteInfo();
+
+            const string exit = "exit";
+            while (string.Compare(command, exit, true) != 0)
+            {
+                Console.WriteLine();
+                Console.Write($"{RestProxy.Host}:{RestProxy.Port}> ");
+                command = Console.ReadLine();
+                if (string.Compare(command, exit, true) == 0)
+                {
+                    break;
+                }
+
+                var args = SplitCommandLine(command).ToArray();
+                HandleCliCommand(args, cliActions);
+            }
+        }
+
         private static CliActionResponse InvokeCliAction(CliActionMetadata action, object console, object param)
         {
             CliActionResponse response;
@@ -217,16 +251,19 @@ namespace Planar.CLI
             return response;
         }
 
-        private static void Main(string[] args)
+        private static IEnumerable<string> SplitCommandLine(string commandLine)
         {
-            try
+            bool inQuotes = false;
+
+            return commandLine.Split(c =>
             {
-                Start(args);
-            }
-            catch (Exception ex)
-            {
-                WriteException(ex);
-            }
+                if (c == '\"')
+                    inQuotes = !inQuotes;
+
+                return !inQuotes && c == ' ';
+            })
+                .Select(arg => arg.Trim().TrimMatchingQuotes('\"'))
+                .Where(arg => !string.IsNullOrEmpty(arg));
         }
 
         private static void Start(string[] args)
@@ -250,35 +287,11 @@ namespace Planar.CLI
             }
         }
 
-        private static void InteractiveMode(IEnumerable<CliActionMetadata> cliActions)
+        private static void WriteException(Exception ex)
         {
-            var command = string.Empty;
-            Console.Clear();
-            WriteInfo();
-
-            while (string.Compare(command, "exit", true) != 0)
-            {
-                Console.WriteLine();
-                Console.Write($"{RestProxy.Host}:{RestProxy.Port}> ");
-                command = Console.ReadLine();
-                var args = SplitCommandLine(command).ToArray();
-                HandleCliCommand(args, cliActions);
-            }
-        }
-
-        private static IEnumerable<string> SplitCommandLine(string commandLine)
-        {
-            bool inQuotes = false;
-
-            return commandLine.Split(c =>
-            {
-                if (c == '\"')
-                    inQuotes = !inQuotes;
-
-                return !inQuotes && c == ' ';
-            })
-                .Select(arg => arg.Trim().TrimMatchingQuotes('\"'))
-                .Where(arg => !string.IsNullOrEmpty(arg));
+            AnsiConsole.WriteException(ex,
+                ExceptionFormats.ShortenPaths | ExceptionFormats.ShortenTypes |
+                ExceptionFormats.ShortenMethods | ExceptionFormats.ShowLinks);
         }
 
         private static void WriteInfo()
@@ -302,13 +315,6 @@ namespace Planar.CLI
             using StreamReader reader = new(stream);
             string result = reader.ReadToEnd();
             Console.WriteLine(result);
-        }
-
-        private static void WriteException(Exception ex)
-        {
-            AnsiConsole.WriteException(ex,
-                ExceptionFormats.ShortenPaths | ExceptionFormats.ShortenTypes |
-                ExceptionFormats.ShortenMethods | ExceptionFormats.ShowLinks);
         }
 
         private static void WriteInfo(string message)

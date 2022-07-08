@@ -1,5 +1,6 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.Logging;
+using Planar;
 using Planar.Common;
 using Quartz;
 using System;
@@ -20,6 +21,8 @@ namespace RunPlanarJob
 
         private JobMessageBroker _broker;
 
+        private string AssemblyFilename { get; set; }
+
         public override Task Execute(IJobExecutionContext context)
         {
             AssemblyLoadContext assemblyContext = null;
@@ -27,12 +30,12 @@ namespace RunPlanarJob
             try
             {
                 MapProperties(context);
+                AssemblyFilename = Path.Combine(FolderConsts.BasePath, FolderConsts.Data, FolderConsts.Jobs, JobPath, FileName);
 
                 Validate();
 
-                var assemblyFilename = Path.Combine(JobPath, FileName);
                 assemblyContext = AssemblyLoader.CreateAssemblyLoadContext(context.FireInstanceId, true);
-                var assembly = AssemblyLoader.LoadFromAssemblyPath(assemblyFilename, assemblyContext);
+                var assembly = AssemblyLoader.LoadFromAssemblyPath(AssemblyFilename, assemblyContext);
 
                 var type = assembly.GetType(TypeName);
                 if (type == null)
@@ -84,11 +87,10 @@ namespace RunPlanarJob
 
                 ValidateMandatoryString(FileName, nameof(FileName));
                 ValidateMandatoryString(TypeName, nameof(TypeName));
-                var assemblyFilename = Path.Combine(JobPath, FileName);
 
-                if (File.Exists(assemblyFilename) == false)
+                if (File.Exists(AssemblyFilename) == false)
                 {
-                    throw new ApplicationException($"Assembly filename '{assemblyFilename}' could not be found");
+                    throw new ApplicationException($"Assembly filename '{AssemblyFilename}' could not be found");
                 }
             }
             catch (Exception ex)
@@ -105,41 +107,35 @@ namespace RunPlanarJob
 
             if (type == null)
             {
-                var assemblyFilename = Path.Combine(JobPath, FileName);
-                throw new ApplicationException($"Type '{TypeName}' could not be found at assembly '{assemblyFilename}'");
+                throw new ApplicationException($"Type '{TypeName}' could not be found at assembly '{AssemblyFilename}'");
             }
 
             var baseTypeName = type.BaseType?.FullName;
             if (baseTypeName != "Planar.BaseJob")
             {
-                var assemblyFilename = Path.Combine(JobPath, FileName);
-                throw new ApplicationException($"Type '{TypeName}' from assembly '{assemblyFilename}' not inherit 'Planar.Job.BaseJob' type");
+                throw new ApplicationException($"Type '{TypeName}' from assembly '{AssemblyFilename}' not inherit 'Planar.Job.BaseJob' type");
             }
 
             var method = type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance);
             if (method == null)
             {
-                var assemblyFilename = Path.Combine(JobPath, FileName);
-                throw new ApplicationException($"Type '{TypeName}' from assembly '{assemblyFilename}' has no 'Execute' method");
+                throw new ApplicationException($"Type '{TypeName}' from assembly '{AssemblyFilename}' has no 'Execute' method");
             }
 
             if (method.ReturnType != typeof(Task))
             {
-                var assemblyFilename = Path.Combine(JobPath, FileName);
-                throw new ApplicationException($"Method 'Execute' at type '{TypeName}' from assembly '{assemblyFilename}' has no 'Task' return type (current return type is {method.ReturnType.FullName})");
+                throw new ApplicationException($"Method 'Execute' at type '{TypeName}' from assembly '{AssemblyFilename}' has no 'Task' return type (current return type is {method.ReturnType.FullName})");
             }
 
             var parameters = method.GetParameters();
             if (parameters?.Length != 1)
             {
-                var assemblyFilename = Path.Combine(JobPath, FileName);
-                throw new ApplicationException($"Method 'Execute' at type '{TypeName}' from assembly '{assemblyFilename}' must have only 1 parameters (current parameters count {parameters?.Length})");
+                throw new ApplicationException($"Method 'Execute' at type '{TypeName}' from assembly '{AssemblyFilename}' must have only 1 parameters (current parameters count {parameters?.Length})");
             }
 
             if (parameters[0].ParameterType.ToString().StartsWith("System.Object") == false)
             {
-                var assemblyFilename = Path.Combine(JobPath, FileName);
-                throw new ApplicationException($"Second parameter in method 'Execute' at type '{TypeName}' from assembly '{assemblyFilename}' must be object. (current type '{parameters[1].ParameterType.Name}')");
+                throw new ApplicationException($"Second parameter in method 'Execute' at type '{TypeName}' from assembly '{AssemblyFilename}' must be object. (current type '{parameters[1].ParameterType.Name}')");
             }
 
             return method;

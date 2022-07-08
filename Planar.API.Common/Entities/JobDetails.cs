@@ -12,7 +12,7 @@ namespace Planar.API.Common.Entities
         public bool RequestsRecovery { get; set; }
 
         [YamlMember(Order = 6)]
-        public bool ConcurrentExecution { get; set; }
+        public bool Concurrent { get; set; }
 
         [YamlMember(Order = 7)]
         public SortedDictionary<string, string> Properties { get; set; } = new();

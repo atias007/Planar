@@ -114,12 +114,12 @@ namespace Planar.CLI.Actions
             return await Execute(restRequest);
         }
 
-        private static AddTriggerRequest GetAddTriggerRequest(string yaml)
+        private static AddTriggerRequest GetAddTriggerRequest(string yml)
         {
             var deserializer = new DeserializerBuilder()
                             .WithNamingConvention(CamelCaseNamingConvention.Instance)
                             .Build();
-            var request = deserializer.Deserialize<AddTriggerRequest>(yaml);
+            var request = deserializer.Deserialize<AddTriggerRequest>(yml);
             return request;
         }
     }

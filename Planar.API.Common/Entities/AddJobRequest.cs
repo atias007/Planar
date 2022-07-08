@@ -17,6 +17,8 @@ namespace Planar.API.Common.Entities
 
         public bool? Durable { get; set; }
 
+        public bool Concurrent { get; set; }
+
         [YamlMember(Alias = "job data")]
         public Dictionary<string, string> JobData { get; set; }
 

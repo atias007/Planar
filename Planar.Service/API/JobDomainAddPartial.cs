@@ -33,7 +33,6 @@ namespace Planar.Service.API
                 throw new RestValidationException("yaml", "fail to read yml data");
             }
 
-            AddPathRelativeFolder(request);
             var jobKey = await ValidateJobMetadata(request);
             await BuildGlobalParameters(request.GlobalParameters);
 
@@ -401,34 +400,6 @@ namespace Planar.Service.API
             #endregion Preserve Words
         }
 
-        private static void AddPathRelativeFolder(AddJobRequest metadata)
-        {
-            var basePath = FolderConsts.BasePath;
-            const string pathField = "JobPath";
-            if (metadata.Properties != null)
-            {
-                if (metadata.Properties.ContainsKey(pathField))
-                {
-                    var path = metadata.Properties[pathField];
-                    if (string.IsNullOrEmpty(path) == false)
-                    {
-                        path = path.Trim();
-                        if (path.Length > 0)
-                        {
-                            if (path == "." || path == @"\" || path == "/")
-                            {
-                                path = path[1..];
-                            }
-
-                            path = Path.Combine(basePath, path);
-                        }
-                    }
-
-                    metadata.Properties[pathField] = path;
-                }
-            }
-        }
-
         private static Type GetJobType(AddJobRequest job)
         {
             Assembly assembly;
@@ -437,11 +408,17 @@ namespace Planar.Service.API
             switch (job.JobType)
             {
                 case nameof(PlanarJob):
-                case nameof(PlanarJobConcurrent):
                     try
                     {
                         assembly = Assembly.Load(nameof(RunPlanarJob));
-                        typeName = $"{nameof(RunPlanarJob)}.{job.JobType}";
+                        if (job.Concurrent)
+                        {
+                            typeName = $"{nameof(RunPlanarJob)}.{nameof(PlanarJobConcurrent)}";
+                        }
+                        else
+                        {
+                            typeName = $"{nameof(RunPlanarJob)}.{nameof(PlanarJob)}";
+                        }
                     }
                     catch (Exception ex)
                     {
