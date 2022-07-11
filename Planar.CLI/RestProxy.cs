@@ -7,9 +7,35 @@ namespace Planar.CLI
 {
     internal class RestProxy
     {
-        public const string Schema = "http";
+        public static string Schema { get; set; } = "http";
         public static string Host { get; set; } = "localhost";
         public static int Port { get; set; } = 2306;
+
+        private static RestClient _client;
+        private static object _lock = new object();
+
+        private static RestClient Proxy
+        {
+            get
+            {
+                lock (_lock)
+                {
+                    if (_client == null)
+                    {
+                        var options = new RestClientOptions
+                        {
+                            BaseUrl = BaseUri,
+                            MaxTimeout = 10000
+                        };
+
+                        _client = new RestClient(options);
+                        _client.UseNewtonsoftJson();
+                    }
+
+                    return _client;
+                }
+            }
+        }
 
         private static Uri BaseUri
         {
@@ -21,17 +47,13 @@ namespace Planar.CLI
 
         public static async Task<RestResponse<TResponse>> Invoke<TResponse>(RestRequest request)
         {
-            var client = new RestClient(BaseUri);
-            client.UseNewtonsoftJson();
-            var response = await client.ExecuteAsync<TResponse>(request);
+            var response = await Proxy.ExecuteAsync<TResponse>(request);
             return response;
         }
 
         public static async Task<RestResponse> Invoke(RestRequest request)
         {
-            var client = new RestClient(BaseUri);
-            client.UseNewtonsoftJson();
-            var response = await client.ExecuteAsync(request);
+            var response = await Proxy.ExecuteAsync(request);
             return response;
         }
     }

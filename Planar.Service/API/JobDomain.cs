@@ -4,7 +4,6 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
-using Planar.Service.General;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -219,6 +218,30 @@ namespace Planar.Service.API
 
         public async Task Stop(FireInstanceIdRequest request)
         {
+            var jobKey = await JobKeyHelper.GetJobKey(request.FireInstanceId);
+            var info = await Scheduler.GetJobDetail(jobKey);
+
+            if (info != null)
+            {
+                var allInstances = await GetRunningInstanceForJob(request.FireInstanceId);
+                if (allInstances.Count() == 0)
+                {
+                    throw new RestNotFoundException($"job with key/id '{request.FireInstanceId}' has no instance running");
+                }
+
+                if (allInstances.Count() > 1)
+                {
+                    throw new RestValidationException("fireInstanceId", $"job with key/id '{request.FireInstanceId}' has more then 1 instance running");
+                }
+
+                request.FireInstanceId = allInstances.First();
+            }
+
+            if (await IsRunningInstanceExist(request.FireInstanceId) == false)
+            {
+                throw new RestNotFoundException($"fire instance id '{request.FireInstanceId}' is not exist");
+            }
+
             var result = await Scheduler.Interrupt(request.FireInstanceId);
             if (result == false)
             {
@@ -276,6 +299,46 @@ namespace Planar.Service.API
                 await Scheduler.ScheduleJob(info, triggers, true);
                 await Scheduler.ResumeJob(jobKey);
             }
+        }
+
+        private static async Task<IEnumerable<string>> GetRunningInstanceForJob(string jobKeyId)
+        {
+            var result = new List<string>();
+            if (string.IsNullOrEmpty(jobKeyId))
+            {
+                return result;
+            }
+
+            var jobKey = await JobKeyHelper.GetJobKey(jobKeyId);
+
+            foreach (var context in await Scheduler.GetCurrentlyExecutingJobs())
+            {
+                var equals = JobKeyHelper.Compare(jobKey, context.JobDetail.Key);
+                if (equals)
+                {
+                    result.Add(context.FireInstanceId);
+                }
+            }
+
+            return result;
+        }
+
+        private static async Task<bool> IsRunningInstanceExist(string instanceId)
+        {
+            if (string.IsNullOrEmpty(instanceId))
+            {
+                return false;
+            }
+
+            foreach (var context in await Scheduler.GetCurrentlyExecutingJobs())
+            {
+                if (instanceId == context.FireInstanceId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static Dictionary<string, string> GetJobProperties(IJobDetail job)

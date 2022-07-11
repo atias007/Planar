@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Planar.CLI": {
-      "commandName": "Project",
-      "commandLineArgs": "job add c:\\Temp\\RetryDemoJob\\JobFile.yml"
+      "commandName": "Project"
     }
   }
 }
