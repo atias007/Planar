@@ -2,7 +2,7 @@
 
 the options for <command> and [<options>] parameters of service module:
 
-connect
+connect      <host> <port> [<is secure>]
 isalive
 stop         [-f|--force]
 env      
