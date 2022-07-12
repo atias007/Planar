@@ -224,7 +224,7 @@ namespace Planar.Service.API
             if (info != null)
             {
                 var allInstances = await GetRunningInstanceForJob(request.FireInstanceId);
-                if (allInstances.Count() == 0)
+                if (!allInstances.Any())
                 {
                     throw new RestNotFoundException($"job with key/id '{request.FireInstanceId}' has no instance running");
                 }
@@ -237,7 +237,7 @@ namespace Planar.Service.API
                 request.FireInstanceId = allInstances.First();
             }
 
-            if (await IsRunningInstanceExist(request.FireInstanceId) == false)
+            if (!await IsRunningInstanceExist(request.FireInstanceId))
             {
                 throw new RestNotFoundException($"fire instance id '{request.FireInstanceId}' is not exist");
             }
