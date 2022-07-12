@@ -104,6 +104,11 @@ namespace Planar.Service.API.Helpers
             return result;
         }
 
+        public static bool Compare(JobKey jobKeyA, JobKey jobKeyB)
+        {
+            return jobKeyA.Name == jobKeyB.Name && jobKeyA.Group == jobKeyB.Group;
+        }
+
         private static JobKey GetJobKeyByKey(string key)
         {
             JobKey result = null;
