@@ -188,6 +188,10 @@ namespace Planar.CLI
             {
                 AnsiConsole.Markup($"[red]error: no connection could be made to planar deamon ({RestProxy.Host}:{RestProxy.Port})[/]");
             }
+            else if (response.ErrorMessage.Contains("No such host is known"))
+            {
+                AnsiConsole.Markup($"[red]{response.ErrorMessage.ToLower()}[/]");
+            }
             else
             {
                 AnsiConsole.Markup("[red]error: general error[/]");

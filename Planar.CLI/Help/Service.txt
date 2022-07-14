@@ -2,8 +2,9 @@
 
 the options for <command> and [<options>] parameters of service module:
 
-connect      <host> <port> [<is secure>]
-isalive
-stop         [-f|--force]
+connect           <host> <port> [<is secure>]
+healthcheck|hc
+stop
+start
 env      
 calendars
