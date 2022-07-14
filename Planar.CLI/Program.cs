@@ -184,7 +184,15 @@ namespace Planar.CLI
 
         private static void HandleGeneralError(RestResponse response)
         {
-            AnsiConsole.Markup($"[red]error: general error[/]");
+            if (response.ErrorMessage.Contains("No connection could be made"))
+            {
+                AnsiConsole.Markup($"[red]error: no connection could be made to planar deamon ({RestProxy.Host}:{RestProxy.Port})[/]");
+            }
+            else
+            {
+                AnsiConsole.Markup("[red]error: general error[/]");
+            }
+
             if (string.IsNullOrEmpty(response.StatusDescription) == false)
             {
                 AnsiConsole.Markup($"[red] ({response.StatusDescription})[/]");
