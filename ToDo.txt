@@ -2,7 +2,6 @@
 - add monitor event when user pause / delete / add job
 - dont allow to delete group when the group has monitoring
 - allow to stop planar scheduler without stop the windows service (service stop, service start, service shutdown)
-- when cli has no connection to service - show specific error
 - add cluster support in cli in all "running" commands (and stop)
 -----------------------------------------DONE-----------------------------------------
 - when delete job --> delete its monitoring items
@@ -10,3 +9,4 @@
 - add concurent property to yml
 - move to .net 6
 - planar stop with job id (not only instance id)
+- when cli has no connection to service - show specific error

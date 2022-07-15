@@ -12,30 +12,26 @@ namespace Planar.CLI.Actions
     public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     {
         [Action("stop")]
-        public static async Task<CliActionResponse> StopScheduler(CliStopScheduler request)
+        public static async Task<CliActionResponse> StopScheduler()
         {
-            var prm = new StopSchedulerRequest
-            {
-                WaitJobsToComplete = !request.Force
-            };
-
-            var restRequest = new RestRequest("service/stop", Method.Post)
-                .AddBody(prm);
-
+            var restRequest = new RestRequest("service/stop", Method.Post);
             return await Execute(restRequest);
         }
 
-        [Action("isalive")]
-        public static async Task<CliActionResponse> IsAlive()
+        [Action("start")]
+        public static async Task<CliActionResponse> StartScheduler()
+        {
+            var restRequest = new RestRequest("service/start", Method.Post);
+            return await Execute(restRequest);
+        }
+
+        [Action("hc")]
+        [Action("healthcheck")]
+        public static async Task<CliActionResponse> HealthCheck()
         {
             var restRequest = new RestRequest("service", Method.Get);
             var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest);
-            var message =
-                result.IsSuccessful ?
-                (result.Data.IsStarted && result.Data.IsShutdown == false && result.Data.InStandbyMode == false).ToString().ToLower() :
-                string.Empty;
-
-            return new CliActionResponse(result, message);
+            return new CliActionResponse(result, result.Data);
         }
 
         [Action("env")]
@@ -63,6 +59,8 @@ namespace Planar.CLI.Actions
             {
                 RestProxy.Schema = "https";
             }
+
+            RestProxy.Flush();
 
             return await Task.FromResult(CliActionResponse.Empty);
         }

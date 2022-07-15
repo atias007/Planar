@@ -24,7 +24,10 @@ namespace Planar.Controllers
         [HttpGet]
         public async Task<ActionResult<GetServiceInfoResponse>> GetServiceInfo()
         {
-            var total = Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+            var totalJobs = Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+            var totalGroups = Scheduler.GetJobGroupNames();
+            var metadata = Scheduler.GetMetaData();
+
             var response = new GetServiceInfoResponse
             {
                 InStandbyMode = Scheduler.InStandbyMode,
@@ -33,7 +36,12 @@ namespace Planar.Controllers
                 SchedulerInstanceId = Scheduler.SchedulerInstanceId,
                 SchedulerName = Scheduler.SchedulerName,
                 Environment = Global.Environment,
-                TotalJobs = (await total).Count
+                TotalJobs = (await totalJobs).Count,
+                TotalGroups = (await totalGroups).Count,
+                Clustered = (await metadata).JobStoreClustered,
+                JobStoreType = (await metadata).JobStoreType.FullName,
+                RunningSince = (await metadata).RunningSince.GetValueOrDefault().DateTime,
+                QuartzVersion = (await metadata).Version
             };
 
             return Ok(response);
@@ -47,16 +55,16 @@ namespace Planar.Controllers
         }
 
         [HttpPost("stop")]
-        public async Task<ActionResult> StopScheduler(StopSchedulerRequest request)
+        public async Task<ActionResult> StopScheduler()
         {
-            await Scheduler.Shutdown(request.WaitJobsToComplete);
+            await Scheduler.Standby();
+            return Ok();
+        }
 
-            var t = Task.Run(async () =>
-            {
-                await Task.Delay(3000);
-                MainService.Shutdown();
-            });
-
+        [HttpPost("start")]
+        public async Task<ActionResult> StartScheduler()
+        {
+            await Scheduler.Start();
             return Ok();
         }
     }
