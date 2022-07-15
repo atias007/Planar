@@ -11,6 +11,16 @@ namespace Planar.Service
     {
         public static int MaxConcurrency { get; set; }
 
+        public static string ServiceName { get; set; }
+
+        public static int InstanceId { get; set; }
+
+        public static bool Clustering { get; set; }
+
+        public static TimeSpan ClusteringCheckinInterval { get; set; }
+
+        public static TimeSpan ClusteringCheckinMisfireThreshold { get; set; }
+
         public static string DatabaseConnectionString { get; set; }
 
         public static TimeSpan PersistRunningJobsSpan { get; set; }
@@ -32,6 +42,14 @@ namespace Planar.Service
             InitializeMaxConcurrency(configuration);
             InitializePersistanceSpan(configuration);
             InitializePorts(configuration);
+
+            ///// --------------
+
+            InstanceId = 1;
+            ServiceName = "PlanarService";
+            Clustering = true;
+            ClusteringCheckinInterval = TimeSpan.FromSeconds(5);
+            ClusteringCheckinMisfireThreshold = TimeSpan.FromSeconds(5);
         }
 
         private static void InitializeEnvironment(IConfiguration configuration)

@@ -1,4 +1,3 @@
-USE [Planar]
 GO
 /****** Object:  Table [dbo].[GlobalParameters]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
@@ -329,21 +328,6 @@ CREATE TABLE [dbo].[QRTZ_TRIGGERS](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[SchemaVersions]    Script Date: 21/06/2022 16:03:21 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[SchemaVersions](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[ScriptName] [nvarchar](255) NOT NULL,
-	[Applied] [datetime] NOT NULL,
- CONSTRAINT [PK_SchemaVersions_Id] PRIMARY KEY CLUSTERED 
-(
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-) ON [PRIMARY]
-GO
 /****** Object:  Table [dbo].[Trace]    Script Date: 21/06/2022 16:03:21 ******/
 SET ANSI_NULLS ON
 GO
@@ -608,8 +592,3 @@ CREATE PROCEDURE [dbo].[UpdateJobInstanceLog]
 	[IsStopped] = @IsStopped
 WHERE 
 	InstanceId = @InstanceId
-GO
-USE [master]
-GO
-ALTER DATABASE [Planar] SET  READ_WRITE 
-GO

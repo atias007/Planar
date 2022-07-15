@@ -74,9 +74,9 @@ namespace Planar.Service
 
             await AddCalendarSerializer();
 
-            var quartzConfig = LoadQuartzConfiguration();
+            ////var quartzConfig = LoadQuartzConfiguration();
 
-            await InitializeScheduler(quartzConfig);
+            await InitializeScheduler();
 
             await AddJobListeners();
 
@@ -186,14 +186,33 @@ namespace Planar.Service
             }
         }
 
-        private async Task InitializeScheduler(NameValueCollection config)
+        private async Task InitializeScheduler()
         {
             try
             {
                 _logger.LogInformation("Initialize: InitializeScheduler");
 
-                var factory = new StdSchedulerFactory(config);
-                _scheduler = await factory.GetScheduler();
+                var builder = SchedulerBuilder.Create()
+                    .WithName(AppSettings.ServiceName)
+                    .WithId($"PlanarInstance_{AppSettings.InstanceId}")
+                    .UseDefaultThreadPool(AppSettings.MaxConcurrency)
+                    .UsePersistentStore(x =>
+                    {
+                        x.UseProperties = true;
+                        x.UseJsonSerializer();
+                        x.UseSqlServer(AppSettings.DatabaseConnectionString);
+
+                        if (AppSettings.Clustering)
+                        {
+                            x.UseClustering(x =>
+                            {
+                                x.CheckinInterval = AppSettings.ClusteringCheckinInterval;
+                                x.CheckinMisfireThreshold = AppSettings.ClusteringCheckinMisfireThreshold;
+                            });
+                        }
+                    });
+
+                _scheduler = await builder.BuildScheduler();
             }
             catch (Exception ex)
             {
