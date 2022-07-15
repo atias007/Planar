@@ -31,8 +31,15 @@ namespace Planar
         public const string EnvironmentVariableKey = "PLANAR_ENVIRONMENT";
 
         public const string ConnectionStringVariableKey = "PLANAR_DBCONNSTRING";
+        public const string DatabaseProviderVariableKey = "PLANAR_DBPROVIDER";
         public const string MaxConcurrencyVariableKey = "PLANAR_MAXCONCURRENCY";
         public const string PersistRunningJobsSpanVariableKey = "PLANAR_PERSISTSPAN";
+
+        public const string InstanceIdVariableKey = "PLANAR_INSTANCEID";
+        public const string ServiceNameVariableKey = "PLANAR_SERVICENAME";
+        public const string ClusteringVariableKey = "PLANAR_CLUSTERING";
+        public const string ClusteringCheckinIntervalVariableKey = "PLANAR_CHECKININTERVAL";
+        public const string ClusteringCheckinMisfireThresholdVariableKey = "PLANAR_MISFIRETHRESHOLD";
 
         public const string HttpPortVariableKey = "PLANAR_HTTPPORT";
         public const string HttpsPortVariableKey = "PLANAR_HTTPSPORT";

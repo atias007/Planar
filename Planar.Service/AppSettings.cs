@@ -13,7 +13,7 @@ namespace Planar.Service
 
         public static string ServiceName { get; set; }
 
-        public static int InstanceId { get; set; }
+        public static string InstanceId { get; set; }
 
         public static bool Clustering { get; set; }
 
@@ -22,6 +22,8 @@ namespace Planar.Service
         public static TimeSpan ClusteringCheckinMisfireThreshold { get; set; }
 
         public static string DatabaseConnectionString { get; set; }
+
+        public static string DatabaseProvider { get; set; }
 
         public static TimeSpan PersistRunningJobsSpan { get; set; }
 
@@ -43,13 +45,12 @@ namespace Planar.Service
             InitializePersistanceSpan(configuration);
             InitializePorts(configuration);
 
-            ///// --------------
-
-            InstanceId = 1;
-            ServiceName = "PlanarService";
-            Clustering = true;
-            ClusteringCheckinInterval = TimeSpan.FromSeconds(5);
-            ClusteringCheckinMisfireThreshold = TimeSpan.FromSeconds(5);
+            InstanceId = GetSettings(configuration, Consts.InstanceIdVariableKey, nameof(InstanceId), "AUTO");
+            ServiceName = GetSettings(configuration, Consts.ServiceNameVariableKey, nameof(ServiceName), "PlanarService");
+            Clustering = GetSettings(configuration, Consts.ClusteringVariableKey, nameof(Clustering), false);
+            ClusteringCheckinInterval = GetSettings(configuration, Consts.ClusteringCheckinIntervalVariableKey, nameof(ClusteringCheckinInterval), TimeSpan.FromSeconds(5));
+            ClusteringCheckinMisfireThreshold = GetSettings(configuration, Consts.ClusteringCheckinMisfireThresholdVariableKey, nameof(ClusteringCheckinMisfireThreshold), TimeSpan.FromSeconds(5));
+            DatabaseProvider = GetSettings(configuration, Consts.DatabaseProviderVariableKey, nameof(DatabaseProvider), "Npgsql");
         }
 
         private static void InitializeEnvironment(IConfiguration configuration)

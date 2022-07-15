@@ -19,6 +19,7 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static Quartz.SchedulerBuilder;
 
 namespace Planar.Service
 {
@@ -60,7 +61,7 @@ namespace Planar.Service
             waiter.OnCompleted(async () =>
             {
                 _logger.LogInformation("IsCancellationRequested = true");
-                await _scheduler.Shutdown(true);
+                await _scheduler?.Shutdown(true);
             });
 
             return Task.CompletedTask;
@@ -194,13 +195,14 @@ namespace Planar.Service
 
                 var builder = SchedulerBuilder.Create()
                     .WithName(AppSettings.ServiceName)
-                    .WithId($"PlanarInstance_{AppSettings.InstanceId}")
+                    .WithId(AppSettings.InstanceId)
                     .UseDefaultThreadPool(AppSettings.MaxConcurrency)
                     .UsePersistentStore(x =>
                     {
                         x.UseProperties = true;
                         x.UseJsonSerializer();
-                        x.UseSqlServer(AppSettings.DatabaseConnectionString);
+
+                        SetDatabaseProvider(x);
 
                         if (AppSettings.Clustering)
                         {
@@ -213,11 +215,37 @@ namespace Planar.Service
                     });
 
                 _scheduler = await builder.BuildScheduler();
+                LogClustering();
             }
             catch (Exception ex)
             {
                 _logger.LogCritical(ex, "Initialize: Fail to InitializeScheduler");
                 throw;
+            }
+        }
+
+        private static void SetDatabaseProvider(PersistentStoreOptions options)
+        {
+            switch (AppSettings.DatabaseProvider)
+            {
+                case "SqlServer":
+                    options.UseSqlServer(AppSettings.DatabaseConnectionString);
+                    break;
+
+                default:
+                    throw new ApplicationException($"Database provider {AppSettings.DatabaseProvider} is not supported");
+            }
+        }
+
+        private void LogClustering()
+        {
+            if (AppSettings.Clustering)
+            {
+                _logger.LogInformation("Clustering [id: {Id}]", _scheduler.SchedulerInstanceId);
+            }
+            else
+            {
+                _logger.LogInformation("Clustering [No Cluster]");
             }
         }
 
