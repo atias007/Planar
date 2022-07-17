@@ -24,7 +24,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0DB882F1-2470-40F6-AB4B-4030A653BBCC}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
-		SolutionItems\BuildDatabase.sql = SolutionItems\BuildDatabase.sql
 		Features.txt = Features.txt
 		Install.txt = Install.txt
 		MalamWebHook.txt = MalamWebHook.txt
@@ -62,9 +61,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Calendar.Hebrew", "P
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BankOfIsraelCurrency", "BankOfIsraelCurrency\BankOfIsraelCurrency.csproj", "{CAD732CD-8573-4366-BE67-B931533FAB9F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LongRunningJob", "LongRunningJob\LongRunningJob.csproj", "{F0DF5B6F-D2B9-45DD-B9D0-6AD3B8944C73}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LongRunningJob", "LongRunningJob\LongRunningJob.csproj", "{F0DF5B6F-D2B9-45DD-B9D0-6AD3B8944C73}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RetryDemoJob", "RetryDemoJob\RetryDemoJob.csproj", "{D869037A-1D3E-4B4F-9B21-5C9419929811}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RetryDemoJob", "RetryDemoJob\RetryDemoJob.csproj", "{D869037A-1D3E-4B4F-9B21-5C9419929811}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -4,17 +4,15 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-#nullable disable
-
 namespace Planar.Service.Model
 {
-    [Index(nameof(Name), Name = "IX_Groups", IsUnique = true)]
+    [Index("Name", Name = "IX_Groups", IsUnique = true)]
     public partial class Group
     {
         public Group()
         {
             MonitorActions = new HashSet<MonitorAction>();
-            UsersToGroups = new HashSet<UsersToGroup>();
+            Users = new HashSet<User>();
         }
 
         [Key]
@@ -33,9 +31,11 @@ namespace Planar.Service.Model
         [StringLength(500)]
         public string Reference5 { get; set; }
 
-        [InverseProperty(nameof(MonitorAction.Group))]
+        [InverseProperty("Group")]
         public virtual ICollection<MonitorAction> MonitorActions { get; set; }
-        [InverseProperty(nameof(UsersToGroup.Group))]
-        public virtual ICollection<UsersToGroup> UsersToGroups { get; set; }
+
+        [ForeignKey("GroupId")]
+        [InverseProperty("Groups")]
+        public virtual ICollection<User> Users { get; set; }
     }
 }

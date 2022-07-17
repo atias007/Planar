@@ -7,6 +7,7 @@ using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.General;
 using Planar.Service.List;
+using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.SystemJobs;
 using Quartz;
@@ -61,6 +62,7 @@ namespace Planar.Service
             waiter.OnCompleted(async () =>
             {
                 _logger.LogInformation("IsCancellationRequested = true");
+                RemoveSchedulerCluster();
                 await _scheduler?.Shutdown(true);
             });
 
@@ -69,21 +71,23 @@ namespace Planar.Service
 
         public async Task Run()
         {
+            _logger.LogInformation("Service environment: {Environment}", Global.Environment);
+
             await LoadGlobalParametersInner();
 
             await SetQuartzLogProvider();
 
             await AddCalendarSerializer();
 
-            ////var quartzConfig = LoadQuartzConfiguration();
-
             await InitializeScheduler();
+
+            await AddSchedulerCluster();
 
             await AddJobListeners();
 
             await AddCalendars();
 
-            await AddMonitorHooks();
+            await LoadMonitorHooks();
 
             await ScheduleSystemJobs();
 
@@ -94,8 +98,16 @@ namespace Planar.Service
 
         private async Task LoadGlobalParametersInner()
         {
-            await LoadGlobalParameters();
-            _logger.LogInformation("Service environment: {Environment}", Global.Environment);
+            try
+            {
+                _logger.LogInformation("Initialize: LoadGlobalParameters");
+                await LoadGlobalParameters();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Initialize: Fail to LoadGlobalParameters");
+                throw;
+            }
         }
 
         public static async Task LoadGlobalParameters()
@@ -106,9 +118,18 @@ namespace Planar.Service
             Global.Parameters = dict;
         }
 
-        public static async Task ScheduleSystemJobs()
+        public async Task ScheduleSystemJobs()
         {
-            await PersistDataJob.Schedule(Scheduler);
+            try
+            {
+                _logger.LogInformation("Initialize: ScheduleSystemJobs");
+                await PersistDataJob.Schedule(Scheduler);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Initialize: Fail to ScheduleSystemJobs");
+                throw;
+            }
         }
 
         private async Task SetQuartzLogProvider()
@@ -173,10 +194,12 @@ namespace Planar.Service
             };
         }
 
-        private async Task AddMonitorHooks()
+        private async Task LoadMonitorHooks()
         {
             try
             {
+                _logger.LogInformation("Initialize: LoadMonitorHooks");
+
                 ServiceUtil.LoadMonitorHooks(_logger);
                 await MonitorUtil.Validate(_logger);
             }
@@ -187,13 +210,60 @@ namespace Planar.Service
             }
         }
 
+        private static void RemoveSchedulerCluster()
+        {
+            var dal = Resolve<DataLayer>();
+            var cluster = new ClusterServer
+            {
+                Server = Environment.MachineName,
+                Port = Convert.ToInt16(AppSettings.HttpPort),
+                InstanceId = _scheduler.SchedulerInstanceId
+            };
+
+            dal.RemoveClusterServer(cluster);
+        }
+
+        private async Task AddSchedulerCluster()
+        {
+            try
+            {
+                _logger.LogInformation("Initialize: AddSchedulerCluster");
+
+                var dal = Resolve<DataLayer>();
+                var cluster = new ClusterServer
+                {
+                    Server = Environment.MachineName,
+                    Port = Convert.ToInt16(AppSettings.HttpPort),
+                    InstanceId = _scheduler.SchedulerInstanceId
+                };
+
+                var item = await dal.GetClusterInstanceExists(cluster);
+                if (item == null)
+                {
+                    cluster.JoinDate = DateTime.Now;
+                    await dal.AddClusterServer(cluster);
+                }
+                else
+                {
+                    item.JoinDate = DateTime.Now;
+                    item.HealthCheckDate = null;
+                    await dal.UpdateClusterInstance(cluster);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Initialize: Fail to AddSchedulerCluster");
+                throw;
+            }
+        }
+
         private async Task InitializeScheduler()
         {
             try
             {
                 _logger.LogInformation("Initialize: InitializeScheduler");
 
-                var builder = SchedulerBuilder.Create()
+                var builder = Create()
                     .WithName(AppSettings.ServiceName)
                     .WithId(AppSettings.InstanceId)
                     .UseDefaultThreadPool(AppSettings.MaxConcurrency)
@@ -246,32 +316,6 @@ namespace Planar.Service
             else
             {
                 _logger.LogInformation("Clustering [No Cluster]");
-            }
-        }
-
-        private NameValueCollection LoadQuartzConfiguration()
-        {
-            try
-            {
-                var result = new NameValueCollection
-                {
-                    { "quartz.scheduler.instanceName", "PlanarScheduler" },
-                    { "quartz.jobStore.type", "Quartz.Impl.AdoJobStore.JobStoreTX, Quartz" },
-                    { "quartz.jobStore.driverDelegateType", "Quartz.Impl.AdoJobStore.StdAdoDelegate, Quartz" },
-                    { "quartz.jobStore.tablePrefix", "QRTZ_" },
-                    { "quartz.jobStore.dataSource", "myDS" },
-                    { "quartz.dataSource.myDS.connectionString", AppSettings.DatabaseConnectionString },
-                    { "quartz.dataSource.myDS.provider", "SqlServer" },
-                    { "quartz.serializer.type", "json" },
-                    { "quartz.threadPool.maxConcurrency", AppSettings.MaxConcurrency.ToString() }
-                };
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(ex, "Initialize: Fail to LoadQuartzConfiguration");
-                throw;
             }
         }
 

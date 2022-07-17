@@ -4,24 +4,24 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-#nullable disable
-
 namespace Planar.Service.Model
 {
     public partial class User
     {
         public User()
         {
-            UsersToGroups = new HashSet<UsersToGroup>();
+            Groups = new HashSet<Group>();
         }
 
         [Key]
         public int Id { get; set; }
         [Required]
         [StringLength(50)]
+        [Unicode(false)]
         public string Username { get; set; }
         [Required]
         [StringLength(12)]
+        [Unicode(false)]
         public string Password { get; set; }
         [Required]
         [StringLength(50)]
@@ -51,7 +51,8 @@ namespace Planar.Service.Model
         [StringLength(500)]
         public string Reference5 { get; set; }
 
-        [InverseProperty(nameof(UsersToGroup.User))]
-        public virtual ICollection<UsersToGroup> UsersToGroups { get; set; }
+        [ForeignKey("UserId")]
+        [InverseProperty("Users")]
+        public virtual ICollection<Group> Groups { get; set; }
     }
 }

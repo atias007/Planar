@@ -23,6 +23,11 @@ namespace Planar.Service.Data
             _context = context ?? throw new NullReferenceException(nameof(context));
         }
 
+        public async Task<int> SaveChanges()
+        {
+            return await _context.SaveChangesAsync();
+        }
+
         public async Task CreateJobInstanceLog(DbJobInstanceLog log)
         {
             _context.JobInstanceLogs.Add(log);
@@ -75,8 +80,7 @@ namespace Planar.Service.Data
         {
             var all = _context.MonitorActions
                 .Include(m => m.Group)
-                .ThenInclude(g => g.UsersToGroups)
-                .ThenInclude(ug => ug.User);
+                .ThenInclude(ug => ug.Users);
 
             var filter = all.Where(m => m.EventId == @event && m.Active == true);
             filter = filter.Where(m =>
@@ -351,10 +355,9 @@ namespace Planar.Service.Data
 
         internal async Task<List<EntityTitle>> GetGroupsForUser(int id)
         {
-            var result = await _context.UsersToGroups
-                    .Include(ug => ug.Group)
-                    .Where(ug => ug.UserId == id)
-                    .Select(ug => new EntityTitle(ug.Group.Id, ug.Group.Name))
+            var result = await _context.Groups
+                    .Where(g => g.Users.Any(u => u.Id == id))
+                    .Select(g => new EntityTitle(g.Id, g.Name))
                     .ToListAsync();
 
             return result;
@@ -410,10 +413,9 @@ namespace Planar.Service.Data
 
         internal async Task<List<EntityTitle>> GetUsersInGroup(int id)
         {
-            var result = await _context.UsersToGroups
-                .Include(ug => ug.User)
-                .Where(ug => ug.GroupId == id)
-                .Select(ug => new EntityTitle(ug.User.Id, ug.User.FirstName, ug.User.LastName))
+            var result = await _context.Users
+                .Where(u => u.Groups.Any(g => g.Id == id))
+                .Select(u => new EntityTitle(u.Id, u.FirstName, u.LastName))
                 .ToListAsync();
 
             return result;
@@ -428,12 +430,12 @@ namespace Planar.Service.Data
         public async Task<List<GroupInfo>> GetGroups()
         {
             var result = await _context.Groups
-                .Include(g => g.UsersToGroups)
+                .Include(g => g.Users)
                 .Select(g => new GroupInfo
                 {
                     Id = g.Id,
                     Name = g.Name,
-                    UsersCount = g.UsersToGroups.Count
+                    UsersCount = g.Users.Count
                 })
                 .OrderBy(g => g.Name)
                 .ToListAsync();
@@ -465,20 +467,26 @@ namespace Planar.Service.Data
 
         public async Task AddUserToGroup(int userId, int groupId)
         {
-            var entity = new UsersToGroup { UserId = userId, GroupId = groupId };
-            _context.UsersToGroups.Add(entity);
+            var user = _context.Users.FirstOrDefault(x => x.Id == userId);
+            if (user == null) { return; }
+
+            var group = _context.Groups.FirstOrDefault(x => x.Id == groupId);
+            if (group == null) { return; }
+
+            group.Users.Add(user);
             await _context.SaveChangesAsync();
         }
 
         public async Task RemoveUserFromGroup(int userId, int groupId)
         {
-            var entity = _context.UsersToGroups.FirstOrDefault(u => u.UserId == userId && u.GroupId == groupId);
+            var user = _context.Users.FirstOrDefault(x => x.Id == userId);
+            if (user == null) { return; }
 
-            if (entity != null)
-            {
-                _context.UsersToGroups.Remove(entity);
-                await _context.SaveChangesAsync();
-            }
+            var group = _context.Groups.FirstOrDefault(x => x.Id == groupId);
+            if (group == null) { return; }
+
+            group.Users.Remove(user);
+            await _context.SaveChangesAsync();
         }
 
         public async Task<bool> IsUserExists(int userId)
@@ -488,7 +496,7 @@ namespace Planar.Service.Data
 
         public async Task<bool> IsUserExistsInGroup(int userId, int groupId)
         {
-            return await _context.UsersToGroups.AnyAsync(u => u.UserId == userId && u.GroupId == groupId);
+            return await _context.Groups.AnyAsync(g => g.Id == groupId && g.Users.Any(u => u.Id == userId));
         }
 
         public async Task<bool> IsGroupExists(int groupId)
@@ -568,5 +576,42 @@ namespace Planar.Service.Data
             _context.MonitorActions.RemoveRange(e => e.JobGroup == jobGroup);
             await _context.SaveChangesAsync();
         }
+
+        #region Cluster
+
+        public async Task<ClusterServer> GetClusterInstanceExists(ClusterServer item)
+        {
+            return await _context.ClusterServers.FirstOrDefaultAsync(c =>
+                c.Server == item.Server &&
+                c.Port == item.Port &&
+                c.InstanceId == item.InstanceId);
+        }
+
+        public async Task UpdateClusterInstance(ClusterServer item)
+        {
+            _context.ClusterServers.Update(item);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateClusterHealthCheckDate(ClusterServer item)
+        {
+            var cluster = await GetClusterInstanceExists(item);
+            cluster.HealthCheckDate = DateTime.Now;
+            await UpdateClusterInstance(cluster);
+        }
+
+        public async Task AddClusterServer(ClusterServer item)
+        {
+            await _context.ClusterServers.AddAsync(item);
+            await _context.SaveChangesAsync();
+        }
+
+        public void RemoveClusterServer(ClusterServer item)
+        {
+            _context.ClusterServers.Remove(item);
+            _context.SaveChanges();
+        }
+
+        #endregion Cluster
     }
 }

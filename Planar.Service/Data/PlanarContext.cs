@@ -1,9 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Planar.Service.Model;
-
-#nullable disable
 
 namespace Planar.Service.Data
 {
@@ -18,48 +17,25 @@ namespace Planar.Service.Data
         {
         }
 
+        public virtual DbSet<ClusterServer> ClusterServers { get; set; }
         public virtual DbSet<GlobalParameter> GlobalParameters { get; set; }
         public virtual DbSet<Group> Groups { get; set; }
         public virtual DbSet<JobInstanceLog> JobInstanceLogs { get; set; }
         public virtual DbSet<MonitorAction> MonitorActions { get; set; }
         public virtual DbSet<Trace> Traces { get; set; }
         public virtual DbSet<User> Users { get; set; }
-        public virtual DbSet<UsersToGroup> UsersToGroups { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
-
-            modelBuilder.Entity<JobInstanceLog>(entity =>
+            modelBuilder.Entity<ClusterServer>(entity =>
             {
-                entity.Property(e => e.InstanceId).IsUnicode(false);
-
-                entity.Property(e => e.JobGroup).IsUnicode(false);
-
-                entity.Property(e => e.JobId).IsUnicode(false);
-
-                entity.Property(e => e.JobName).IsUnicode(false);
-
-                entity.Property(e => e.StatusTitle).IsUnicode(false);
-
-                entity.Property(e => e.TriggerGroup).IsUnicode(false);
-
-                entity.Property(e => e.TriggerId).IsUnicode(false);
-
-                entity.Property(e => e.TriggerName).IsUnicode(false);
+                entity.HasKey(e => new { e.Server, e.Port, e.InstanceId })
+                    .HasName("PK_ClusterServers_1");
             });
 
             modelBuilder.Entity<MonitorAction>(entity =>
             {
                 entity.Property(e => e.Active).HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.EventArgument).IsUnicode(false);
-
-                entity.Property(e => e.Hook).IsUnicode(false);
-
-                entity.Property(e => e.JobGroup).IsUnicode(false);
-
-                entity.Property(e => e.JobId).IsUnicode(false);
 
                 entity.HasOne(d => d.Group)
                     .WithMany(p => p.MonitorActions)
@@ -70,26 +46,18 @@ namespace Planar.Service.Data
 
             modelBuilder.Entity<User>(entity =>
             {
-                entity.Property(e => e.Password).IsUnicode(false);
+                entity.HasMany(d => d.Groups)
+                    .WithMany(p => p.Users)
+                    .UsingEntity<Dictionary<string, object>>(
+                        "UsersToGroup",
+                        l => l.HasOne<Group>().WithMany().HasForeignKey("GroupId").OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("FK_UsersToGroups_Groups"),
+                        r => r.HasOne<User>().WithMany().HasForeignKey("UserId").OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("FK_UsersToGroups_Users"),
+                        j =>
+                        {
+                            j.HasKey("UserId", "GroupId");
 
-                entity.Property(e => e.Username).IsUnicode(false);
-            });
-
-            modelBuilder.Entity<UsersToGroup>(entity =>
-            {
-                entity.HasKey(e => new { e.UserId, e.GroupId });
-
-                entity.HasOne(d => d.Group)
-                    .WithMany(p => p.UsersToGroups)
-                    .HasForeignKey(d => d.GroupId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_UsersToGroups_Groups");
-
-                entity.HasOne(d => d.User)
-                    .WithMany(p => p.UsersToGroups)
-                    .HasForeignKey(d => d.UserId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_UsersToGroups_Users");
+                            j.ToTable("UsersToGroups");
+                        });
             });
 
             OnModelCreatingPartial(modelBuilder);

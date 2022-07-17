@@ -174,7 +174,7 @@ namespace Planar.Service.Monitor
                 Exception = exception,
             };
 
-            result.Users.AddRange(action.Group.UsersToGroups.Select(ug => new MonitorUser(ug.User)).ToList());
+            result.Users.AddRange(action.Group.Users.Select(u => new MonitorUser(u)).ToList());
 
             return result;
         }
