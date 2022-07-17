@@ -14,6 +14,7 @@ using Serilog;
 using System.Net;
 using AutoMapper;
 using System.Reflection;
+using Microsoft.AspNetCore.Http;
 
 namespace Planar
 {
@@ -69,6 +70,7 @@ namespace Planar
             services.AddScoped<TraceDomain>();
             services.AddScoped<TriggerDomain>();
             services.AddScoped<UserDomain>();
+            services.AddGrpc();
             services.AddHostedService<MainService>();
         }
 
@@ -96,6 +98,8 @@ namespace Planar
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+
+                endpoints.MapGrpcService<ClusterService>();
             });
         }
     }

@@ -1,0 +1,20 @@
+syntax = "proto3";
+import "google/protobuf/empty.proto";
+
+option csharp_namespace = "Planar";
+
+package Cluster;
+
+service PlanarCluster {
+  rpc HealthCheck (google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc GetRunningJobs (google.protobuf.Empty) returns (GetRunningJobsReply);
+  rpc GetRunningJob (GetRunningJobRequest) returns (GetRunningJobsReply);
+}
+
+message GetRunningJobRequest {
+  string name = 1;
+}
+
+message GetRunningJobsReply {
+  string message = 1;
+}
