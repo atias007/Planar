@@ -124,6 +124,7 @@ namespace Planar.Service
             {
                 _logger.LogInformation("Initialize: ScheduleSystemJobs");
                 await PersistDataJob.Schedule(Scheduler);
+                await ClusterHealthCheckJob.Schedule(Scheduler);
             }
             catch (Exception ex)
             {
@@ -213,7 +214,7 @@ namespace Planar.Service
         private static void RemoveSchedulerCluster()
         {
             var dal = Resolve<DataLayer>();
-            var cluster = new ClusterServer
+            var cluster = new ClusterNode
             {
                 Server = Environment.MachineName,
                 Port = Convert.ToInt16(AppSettings.HttpPort),
@@ -230,7 +231,7 @@ namespace Planar.Service
                 _logger.LogInformation("Initialize: AddSchedulerCluster");
 
                 var dal = Resolve<DataLayer>();
-                var cluster = new ClusterServer
+                var cluster = new ClusterNode
                 {
                     Server = Environment.MachineName,
                     Port = Convert.ToInt16(AppSettings.HttpPort),
@@ -240,11 +241,13 @@ namespace Planar.Service
                 var item = await dal.GetClusterInstanceExists(cluster);
                 if (item == null)
                 {
+                    cluster.ClusterPort = Convert.ToInt16(AppSettings.ClusterPort);
                     cluster.JoinDate = DateTime.Now;
                     await dal.AddClusterServer(cluster);
                 }
                 else
                 {
+                    item.ClusterPort = Convert.ToInt16(AppSettings.ClusterPort);
                     item.JoinDate = DateTime.Now;
                     item.HealthCheckDate = null;
                     await dal.UpdateClusterInstance(cluster);

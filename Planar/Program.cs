@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Planar.Common;
@@ -35,7 +36,7 @@ namespace Planar
                         {
                             options.Listen(IPAddress.Loopback, 0);
                             options.ListenAnyIP(AppSettings.HttpPort);
-                            options.ListenAnyIP(9999, x => x.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http2);
+                            options.ListenAnyIP(AppSettings.HttpPort + 10000, x => x.Protocols = HttpProtocols.Http2);
                             if (AppSettings.UseHttps)
                             {
                                 options.ListenAnyIP(AppSettings.HttpsPort, opts => opts.UseHttps());

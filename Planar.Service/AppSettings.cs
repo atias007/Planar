@@ -21,6 +21,10 @@ namespace Planar.Service
 
         public static TimeSpan ClusteringCheckinMisfireThreshold { get; set; }
 
+        public static TimeSpan ClusterHealthCheckInterval { get; set; }
+
+        public static int ClusterPort { get; set; }
+
         public static string DatabaseConnectionString { get; set; }
 
         public static string DatabaseProvider { get; set; }
@@ -50,6 +54,8 @@ namespace Planar.Service
             Clustering = GetSettings(configuration, Consts.ClusteringVariableKey, nameof(Clustering), false);
             ClusteringCheckinInterval = GetSettings(configuration, Consts.ClusteringCheckinIntervalVariableKey, nameof(ClusteringCheckinInterval), TimeSpan.FromSeconds(5));
             ClusteringCheckinMisfireThreshold = GetSettings(configuration, Consts.ClusteringCheckinMisfireThresholdVariableKey, nameof(ClusteringCheckinMisfireThreshold), TimeSpan.FromSeconds(5));
+            ClusterHealthCheckInterval = GetSettings(configuration, Consts.ClusterHealthCheckIntervalVariableKey, nameof(ClusterHealthCheckInterval), TimeSpan.FromMinutes(1));
+            ClusterPort = GetSettings(configuration, Consts.ClusterPortVariableKey, nameof(ClusterPort), 12306);
             DatabaseProvider = GetSettings(configuration, Consts.DatabaseProviderVariableKey, nameof(DatabaseProvider), "Npgsql");
         }
 
@@ -144,10 +150,10 @@ namespace Planar.Service
 
         private static void InitializePorts(IConfiguration configuration)
         {
-            HttpPort = GetSettings(configuration, Consts.HttpPortVariableKey, "HttpPort", 2306);
-            HttpsPort = GetSettings(configuration, Consts.HttpsPortVariableKey, "HttpsPort", 2610);
-            UseHttps = GetSettings(configuration, Consts.UseHttpsVariableKey, "UseHttps", false);
-            UseHttpsRedirect = GetSettings(configuration, Consts.UseHttpsRedirectVariableKey, "UseHttpsRedirect", true);
+            HttpPort = GetSettings(configuration, Consts.HttpPortVariableKey, nameof(HttpPort), 2306);
+            HttpsPort = GetSettings(configuration, Consts.HttpsPortVariableKey, nameof(HttpsPort), 2610);
+            UseHttps = GetSettings(configuration, Consts.UseHttpsVariableKey, nameof(UseHttps), false);
+            UseHttpsRedirect = GetSettings(configuration, Consts.UseHttpsRedirectVariableKey, nameof(UseHttpsRedirect), true);
         }
 
         private static T GetSettings<T>(IConfiguration configuration, string environmentKey, string appSettingsKey, T defaultValue = default)

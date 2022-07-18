@@ -40,6 +40,8 @@ namespace Planar
         public const string ClusteringVariableKey = "PLANAR_CLUSTERING";
         public const string ClusteringCheckinIntervalVariableKey = "PLANAR_CHECKININTERVAL";
         public const string ClusteringCheckinMisfireThresholdVariableKey = "PLANAR_MISFIRETHRESHOLD";
+        public const string ClusterHealthCheckIntervalVariableKey = "PLANAR_CLUSTERHCINTERVAL";
+        public const string ClusterPortVariableKey = "PLANAR_CLUSTERPORT";
 
         public const string HttpPortVariableKey = "PLANAR_HTTPPORT";
         public const string HttpsPortVariableKey = "PLANAR_HTTPSPORT";

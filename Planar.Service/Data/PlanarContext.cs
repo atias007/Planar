@@ -17,7 +17,7 @@ namespace Planar.Service.Data
         {
         }
 
-        public virtual DbSet<ClusterServer> ClusterServers { get; set; }
+        public virtual DbSet<ClusterNode> ClusterNodes { get; set; }
         public virtual DbSet<GlobalParameter> GlobalParameters { get; set; }
         public virtual DbSet<Group> Groups { get; set; }
         public virtual DbSet<JobInstanceLog> JobInstanceLogs { get; set; }
@@ -27,7 +27,7 @@ namespace Planar.Service.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<ClusterServer>(entity =>
+            modelBuilder.Entity<ClusterNode>(entity =>
             {
                 entity.HasKey(e => new { e.Server, e.Port, e.InstanceId })
                     .HasName("PK_ClusterServers_1");

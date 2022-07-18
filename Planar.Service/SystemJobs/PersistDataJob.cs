@@ -33,7 +33,7 @@ namespace Planar.Service.SystemJobs
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to persist data {Message}", ex.Message);
+                _logger.LogError(ex, "Fail to persist data: {Message}", ex.Message);
                 return Task.CompletedTask;
             }
         }

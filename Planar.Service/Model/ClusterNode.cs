@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Planar.Service.Model
 {
-    public partial class ClusterServer
+    public partial class ClusterNode
     {
         [Key]
         [StringLength(100)]
@@ -16,6 +16,7 @@ namespace Planar.Service.Model
         [Key]
         [StringLength(100)]
         public string InstanceId { get; set; }
+        public short ClusterPort { get; set; }
         [Column(TypeName = "datetime")]
         public DateTime JoinDate { get; set; }
         [Column(TypeName = "datetime")]
