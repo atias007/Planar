@@ -62,7 +62,7 @@ namespace Planar.Service
             waiter.OnCompleted(async () =>
             {
                 _logger.LogInformation("IsCancellationRequested = true");
-                RemoveSchedulerCluster();
+                await RemoveSchedulerCluster();
                 await _scheduler?.Shutdown(true);
             });
 
@@ -81,7 +81,7 @@ namespace Planar.Service
 
             await InitializeScheduler();
 
-            await AddSchedulerCluster();
+            await JoinToCluster();
 
             await AddJobListeners();
 
@@ -211,45 +211,51 @@ namespace Planar.Service
             }
         }
 
-        private static void RemoveSchedulerCluster()
+        private static async Task RemoveSchedulerCluster()
         {
             var dal = Resolve<DataLayer>();
             var cluster = new ClusterNode
             {
                 Server = Environment.MachineName,
-                Port = Convert.ToInt16(AppSettings.HttpPort),
+                Port = AppSettings.HttpPort,
                 InstanceId = _scheduler.SchedulerInstanceId
             };
 
-            dal.RemoveClusterServer(cluster);
+            await dal.RemoveClusterNode(cluster);
         }
 
-        private async Task AddSchedulerCluster()
+        private async Task JoinToCluster()
         {
             try
             {
                 _logger.LogInformation("Initialize: AddSchedulerCluster");
 
+                // TODO: check for same instanceid with different server (in firs step of loading service)
+                // TODO: check my self - validate my self in table (server, port, instanceid)
+
                 var dal = Resolve<DataLayer>();
                 var cluster = new ClusterNode
                 {
                     Server = Environment.MachineName,
-                    Port = Convert.ToInt16(AppSettings.HttpPort),
-                    InstanceId = _scheduler.SchedulerInstanceId
+                    Port = AppSettings.HttpPort,
                 };
 
-                var item = await dal.GetClusterInstanceExists(cluster);
+                var item = await dal.GetClusterNode(cluster);
                 if (item == null)
                 {
-                    cluster.ClusterPort = Convert.ToInt16(AppSettings.ClusterPort);
+                    cluster.ClusterPort = AppSettings.ClusterPort;
                     cluster.JoinDate = DateTime.Now;
-                    await dal.AddClusterServer(cluster);
+                    cluster.InstanceId = _scheduler.SchedulerInstanceId;
+
+                    await dal.AddClusterNode(cluster);
                 }
                 else
                 {
-                    item.ClusterPort = Convert.ToInt16(AppSettings.ClusterPort);
+                    item.ClusterPort = AppSettings.ClusterPort;
                     item.JoinDate = DateTime.Now;
                     item.HealthCheckDate = null;
+                    item.InstanceId = _scheduler.SchedulerInstanceId;
+
                     await dal.UpdateClusterInstance(cluster);
                 }
             }

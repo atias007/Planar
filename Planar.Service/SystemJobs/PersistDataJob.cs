@@ -63,37 +63,30 @@ namespace Planar.Service.SystemJobs
                 }
             }
 
-            if (job != null)
-            {
-                await scheduler.DeleteJob(jobKey);
-                job = await scheduler.GetJobDetail(jobKey);
-            }
+            if (job != null) { return; }
 
-            if (job == null)
-            {
-                var jobId = ServiceUtil.GenerateId();
-                var triggerId = ServiceUtil.GenerateId();
+            var jobId = ServiceUtil.GenerateId();
+            var triggerId = ServiceUtil.GenerateId();
 
-                job = JobBuilder.Create(typeof(PersistDataJob))
-                    .WithIdentity(jobKey)
-                    .UsingJobData(Consts.JobId, jobId)
-                    .WithDescription("System job for persist information & exception from running jobs")
-                    .StoreDurably(true)
-                    .Build();
+            job = JobBuilder.Create(typeof(PersistDataJob))
+                .WithIdentity(jobKey)
+                .UsingJobData(Consts.JobId, jobId)
+                .WithDescription("System job for persist information & exception from running jobs")
+                .StoreDurably(true)
+                .Build();
 
-                var trigger = TriggerBuilder.Create()
-                    .WithIdentity(jobKey.Name, jobKey.Group)
-                    .StartAt(new DateTimeOffset(DateTime.Now.Add(AppSettings.PersistRunningJobsSpan)))
-                    .UsingJobData(Consts.TriggerId, triggerId)
-                    .WithSimpleSchedule(s => s
-                        .WithInterval(AppSettings.PersistRunningJobsSpan)
-                        .RepeatForever()
-                        .WithMisfireHandlingInstructionIgnoreMisfires()
-                    )
-                    .Build();
+            var trigger = TriggerBuilder.Create()
+                .WithIdentity(jobKey.Name, jobKey.Group)
+                .StartAt(new DateTimeOffset(DateTime.Now.Add(AppSettings.PersistRunningJobsSpan)))
+                .UsingJobData(Consts.TriggerId, triggerId)
+                .WithSimpleSchedule(s => s
+                    .WithInterval(AppSettings.PersistRunningJobsSpan)
+                    .RepeatForever()
+                    .WithMisfireHandlingInstructionIgnoreMisfires()
+                )
+                .Build();
 
-                await scheduler.ScheduleJob(job, trigger);
-            }
+            await scheduler.ScheduleJob(job, trigger);
         }
 
         private async Task DoWork()

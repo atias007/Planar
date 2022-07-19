@@ -579,12 +579,16 @@ namespace Planar.Service.Data
 
         #region Cluster
 
-        public async Task<ClusterNode> GetClusterInstanceExists(ClusterNode item)
+        public async Task<ClusterNode> GetClusterNode(ClusterNode item)
         {
             return await _context.ClusterNodes.FirstOrDefaultAsync(c =>
                 c.Server == item.Server &&
-                c.Port == item.Port &&
-                c.InstanceId == item.InstanceId);
+                c.Port == item.Port);
+        }
+
+        public async Task<List<ClusterNode>> GetClusterNodes()
+        {
+            return await _context.ClusterNodes.ToListAsync();
         }
 
         public async Task UpdateClusterInstance(ClusterNode item)
@@ -595,21 +599,21 @@ namespace Planar.Service.Data
 
         public async Task UpdateClusterHealthCheckDate(ClusterNode item)
         {
-            var cluster = await GetClusterInstanceExists(item);
+            var cluster = await GetClusterNode(item);
             cluster.HealthCheckDate = DateTime.Now;
             await UpdateClusterInstance(cluster);
         }
 
-        public async Task AddClusterServer(ClusterNode item)
+        public async Task AddClusterNode(ClusterNode item)
         {
             await _context.ClusterNodes.AddAsync(item);
             await _context.SaveChangesAsync();
         }
 
-        public void RemoveClusterServer(ClusterNode item)
+        public async Task RemoveClusterNode(ClusterNode item)
         {
             _context.ClusterNodes.Remove(item);
-            _context.SaveChanges();
+            _context.SaveChangesAsync();
         }
 
         #endregion Cluster
