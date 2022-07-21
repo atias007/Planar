@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Planar.Calendar.Hebrew;
@@ -11,12 +10,10 @@ using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.SystemJobs;
 using Quartz;
-using Quartz.Impl;
 using Quartz.Impl.Matchers;
 using Quartz.Logging;
 using Quartz.Simpl;
 using System;
-using System.Collections.Specialized;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -62,7 +59,7 @@ namespace Planar.Service
             waiter.OnCompleted(async () =>
             {
                 _logger.LogInformation("IsCancellationRequested = true");
-                await RemoveSchedulerCluster();
+                RemoveSchedulerCluster().Wait();
                 await _scheduler?.Shutdown(true);
             });
 
@@ -230,9 +227,6 @@ namespace Planar.Service
             {
                 _logger.LogInformation("Initialize: AddSchedulerCluster");
 
-                // TODO: check for same instanceid with different server (in firs step of loading service)
-                // TODO: check my self - validate my self in table (server, port, instanceid)
-
                 var dal = Resolve<DataLayer>();
                 var cluster = new ClusterNode
                 {
@@ -246,7 +240,6 @@ namespace Planar.Service
                     cluster.ClusterPort = AppSettings.ClusterPort;
                     cluster.JoinDate = DateTime.Now;
                     cluster.InstanceId = _scheduler.SchedulerInstanceId;
-
                     await dal.AddClusterNode(cluster);
                 }
                 else
@@ -255,8 +248,7 @@ namespace Planar.Service
                     item.JoinDate = DateTime.Now;
                     item.HealthCheckDate = null;
                     item.InstanceId = _scheduler.SchedulerInstanceId;
-
-                    await dal.UpdateClusterInstance(cluster);
+                    await dal.SaveChanges();
                 }
             }
             catch (Exception ex)

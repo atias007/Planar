@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Planar.Service.Model
 {
+    [Index("InstanceId", Name = "IX_ClusterNodes", IsUnique = true)]
     public partial class ClusterNode
     {
         [Key]
@@ -13,7 +14,7 @@ namespace Planar.Service.Model
         public string Server { get; set; }
         [Key]
         public short Port { get; set; }
-        [Key]
+        [Required]
         [StringLength(100)]
         public string InstanceId { get; set; }
         public short ClusterPort { get; set; }

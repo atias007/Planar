@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Planar
 {
-    public class ClusterService : PlanarCluster.PlanarClusterBase
+    internal class ClusterService : PlanarCluster.PlanarClusterBase
     {
         private readonly ILogger<ClusterService> _logger;
 

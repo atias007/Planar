@@ -7,8 +7,11 @@ using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.General;
 using Planar.Service.Model;
+using Polly;
 using Quartz;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs
@@ -45,30 +48,73 @@ namespace Planar.Service.SystemJobs
             {
                 Port = AppSettings.HttpPort,
                 Server = Environment.MachineName,
-                InstanceId = MainService.Scheduler.SchedulerInstanceId
             };
 
             var nodes = await _dal.GetClusterNodes();
+            await RegisterCurrentNodeIfNotExists(currentNode, nodes);
+
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
-
-                var address = $"http://{node.Server}:{node.ClusterPort}";
+                if (node == currentNode)
+                {
+                    await VerifyCurrentNode(node);
+                    continue;
+                }
 
                 try
                 {
-                    var channel = GrpcChannel.ForAddress(address);
-                    var client = new PlanarCluster.PlanarClusterClient(channel);
-                    await client.HealthCheckAsync(new Empty());
-                    await _dal.UpdateClusterHealthCheckDate(node); // TODO: make update more efficient
+                    await Policy.Handle<RpcException>()
+                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(500))
+                    .ExecuteAsync(() => CallHealthCheckService(node));
                 }
                 catch (RpcException ex)
                 {
-                    // TODO: make 3 times retry
-                    _logger.LogError(ex, "Fail to make health check to {Address}", address);
+                    _logger.LogError(ex, "Fail to make health check to {Server}:{Port}", node.Server, node.ClusterPort);
                     await _dal.RemoveClusterNode(node);
                 }
             }
+        }
+
+        private async Task CallHealthCheckService(ClusterNode node)
+        {
+            var address = $"http://{node.Server}:{node.ClusterPort}";
+            var channel = GrpcChannel.ForAddress(address);
+            var client = new PlanarCluster.PlanarClusterClient(channel);
+            await client.HealthCheckAsync(new Empty());
+
+            node.HealthCheckDate = DateTime.Now;
+            await _dal.SaveChanges();
+        }
+
+        private async Task RegisterCurrentNodeIfNotExists(ClusterNode currentNode, List<ClusterNode> allNodes)
+        {
+            if (allNodes.Any(n => n == currentNode) == false)
+            {
+                currentNode.ClusterPort = AppSettings.ClusterPort;
+                currentNode.JoinDate = DateTime.Now;
+                currentNode.InstanceId = MainService.Scheduler.SchedulerInstanceId;
+                currentNode.HealthCheckDate = DateTime.Now;
+
+                await _dal.AddClusterNode(currentNode);
+            }
+        }
+
+        private async Task VerifyCurrentNode(ClusterNode node)
+        {
+            if (node.InstanceId != MainService.Scheduler.SchedulerInstanceId)
+            {
+                node.InstanceId = MainService.Scheduler.SchedulerInstanceId;
+                node.JoinDate = DateTime.Now;
+            }
+
+            if (node.ClusterPort != AppSettings.ClusterPort)
+            {
+                node.ClusterPort = AppSettings.ClusterPort;
+            }
+
+            node.HealthCheckDate = DateTime.Now;
+
+            await _dal.SaveChanges();
         }
 
         public static async Task Schedule(IScheduler scheduler)
@@ -96,7 +142,13 @@ namespace Planar.Service.SystemJobs
                 }
             }
 
-            if (job != null) { return; }
+            if (job != null)
+            {
+                await scheduler.DeleteJob(jobKey);
+                job = await scheduler.GetJobDetail(jobKey);
+
+                if (job != null) { return; }
+            }
 
             var jobId = ServiceUtil.GenerateId();
             var triggerId = ServiceUtil.GenerateId();
@@ -115,7 +167,7 @@ namespace Planar.Service.SystemJobs
                 .WithSimpleSchedule(s => s
                     .WithInterval(AppSettings.ClusterHealthCheckInterval)
                     .RepeatForever()
-                    .WithMisfireHandlingInstructionIgnoreMisfires()
+                    .WithMisfireHandlingInstructionNextWithExistingCount()
                 )
                 .Build();
 

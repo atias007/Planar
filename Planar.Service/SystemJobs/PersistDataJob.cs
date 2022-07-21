@@ -63,7 +63,13 @@ namespace Planar.Service.SystemJobs
                 }
             }
 
-            if (job != null) { return; }
+            if (job != null)
+            {
+                await scheduler.DeleteJob(jobKey);
+                job = await scheduler.GetJobDetail(jobKey);
+
+                if (job != null) { return; }
+            }
 
             var jobId = ServiceUtil.GenerateId();
             var triggerId = ServiceUtil.GenerateId();
@@ -82,7 +88,7 @@ namespace Planar.Service.SystemJobs
                 .WithSimpleSchedule(s => s
                     .WithInterval(AppSettings.PersistRunningJobsSpan)
                     .RepeatForever()
-                    .WithMisfireHandlingInstructionIgnoreMisfires()
+                    .WithMisfireHandlingInstructionNextWithExistingCount()
                 )
                 .Build();
 

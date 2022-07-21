@@ -29,8 +29,7 @@ namespace Planar.Service.Data
         {
             modelBuilder.Entity<ClusterNode>(entity =>
             {
-                entity.HasKey(e => new { e.Server, e.Port, e.InstanceId })
-                    .HasName("PK_ClusterServers_1");
+                entity.HasKey(e => new { e.Server, e.Port });
             });
 
             modelBuilder.Entity<MonitorAction>(entity =>
