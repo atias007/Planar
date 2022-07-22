@@ -7,8 +7,11 @@ package Cluster;
 
 service PlanarCluster {
   rpc HealthCheck (google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc StopScheduler (google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc StartScheduler (google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc GetRunningJobs (google.protobuf.Empty) returns (GetRunningJobsReply);
   rpc GetRunningJob (GetRunningJobRequest) returns (GetRunningJobsReply);
+  rpc IsJobRunning (RpcJobKey) returns (IsJobRunningReply);
 }
 
 message GetRunningJobRequest {
@@ -17,4 +20,13 @@ message GetRunningJobRequest {
 
 message GetRunningJobsReply {
   string message = 1;
+}
+
+message RpcJobKey{
+	string group = 1;
+	string name = 2;
+}
+
+message IsJobRunningReply{
+	bool IsRunning = 1;
 }

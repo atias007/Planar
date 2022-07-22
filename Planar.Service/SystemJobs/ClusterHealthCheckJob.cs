@@ -1,17 +1,10 @@
-﻿using Google.Protobuf.WellKnownTypes;
-using Grpc.Core;
-using Grpc.Net.Client;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.General;
-using Planar.Service.Model;
-using Polly;
 using Quartz;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs
@@ -25,8 +18,6 @@ namespace Planar.Service.SystemJobs
 
         public ClusterHealthCheckJob()
         {
-            _logger = Global.GetLogger<ClusterHealthCheckJob>();
-            _dal = Global.ServiceProvider.GetService<DataLayer>();
         }
 
         public Task Execute(IJobExecutionContext context)
@@ -42,79 +33,12 @@ namespace Planar.Service.SystemJobs
             }
         }
 
-        private async Task DoWork()
+        private static async Task DoWork()
         {
-            var currentNode = new ClusterNode
-            {
-                Port = AppSettings.HttpPort,
-                Server = Environment.MachineName,
-            };
-
-            var nodes = await _dal.GetClusterNodes();
-            await RegisterCurrentNodeIfNotExists(currentNode, nodes);
-
-            foreach (var node in nodes)
-            {
-                if (node == currentNode)
-                {
-                    await VerifyCurrentNode(node);
-                    continue;
-                }
-
-                try
-                {
-                    await Policy.Handle<RpcException>()
-                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(500))
-                    .ExecuteAsync(() => CallHealthCheckService(node));
-                }
-                catch (RpcException ex)
-                {
-                    _logger.LogError(ex, "Fail to make health check to {Server}:{Port}", node.Server, node.ClusterPort);
-                    await _dal.RemoveClusterNode(node);
-                }
-            }
-        }
-
-        private async Task CallHealthCheckService(ClusterNode node)
-        {
-            var address = $"http://{node.Server}:{node.ClusterPort}";
-            var channel = GrpcChannel.ForAddress(address);
-            var client = new PlanarCluster.PlanarClusterClient(channel);
-            await client.HealthCheckAsync(new Empty());
-
-            node.HealthCheckDate = DateTime.Now;
-            await _dal.SaveChanges();
-        }
-
-        private async Task RegisterCurrentNodeIfNotExists(ClusterNode currentNode, List<ClusterNode> allNodes)
-        {
-            if (allNodes.Any(n => n == currentNode) == false)
-            {
-                currentNode.ClusterPort = AppSettings.ClusterPort;
-                currentNode.JoinDate = DateTime.Now;
-                currentNode.InstanceId = MainService.Scheduler.SchedulerInstanceId;
-                currentNode.HealthCheckDate = DateTime.Now;
-
-                await _dal.AddClusterNode(currentNode);
-            }
-        }
-
-        private async Task VerifyCurrentNode(ClusterNode node)
-        {
-            if (node.InstanceId != MainService.Scheduler.SchedulerInstanceId)
-            {
-                node.InstanceId = MainService.Scheduler.SchedulerInstanceId;
-                node.JoinDate = DateTime.Now;
-            }
-
-            if (node.ClusterPort != AppSettings.ClusterPort)
-            {
-                node.ClusterPort = AppSettings.ClusterPort;
-            }
-
-            node.HealthCheckDate = DateTime.Now;
-
-            await _dal.SaveChanges();
+            var logger = Global.GetLogger<ClusterHealthCheckJob>();
+            var dal = Global.ServiceProvider.GetService<DataLayer>();
+            var util = new ClusterUtil(dal, logger);
+            await util.HealthCheckWithUpdate();
         }
 
         public static async Task Schedule(IScheduler scheduler)

@@ -17,12 +17,6 @@ namespace Planar.API.Common.Entities
         [YamlMember(Order = 3)]
         public bool IsShutdown { get; set; }
 
-        [YamlMember(Order = 4)]
-        public string SchedulerName { get; set; }
-
-        [YamlMember(Order = 5)]
-        public string SchedulerInstanceId { get; set; }
-
         [YamlMember(Order = 6)]
         public bool Clustered { get; set; }
 

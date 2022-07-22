@@ -4,6 +4,22 @@ namespace Planar.Service.Model
 {
     public partial class ClusterNode
     {
+        public TimeSpan? HealthCheckGap
+        {
+            get
+            {
+                return HealthCheckDate.HasValue ? DateTime.Now.Subtract(HealthCheckDate.Value) : null;
+            }
+        }
+
+        public TimeSpan? HealthCheckGapDeviation
+        {
+            get
+            {
+                return HealthCheckGap.HasValue ? HealthCheckGap.Value.Subtract(AppSettings.ClusterHealthCheckInterval) : null;
+            }
+        }
+
         public static bool operator ==(ClusterNode a, ClusterNode b)
         {
             if (a is null && b is null) { return true; }

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Planar.Calendar.Hebrew;
 using Planar.Common;
 using Planar.Service.Data;
+using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.List;
 using Planar.Service.Model;
@@ -78,8 +79,6 @@ namespace Planar.Service
 
             await InitializeScheduler();
 
-            await JoinToCluster();
-
             await AddJobListeners();
 
             await AddCalendars();
@@ -89,6 +88,8 @@ namespace Planar.Service
             await ScheduleSystemJobs();
 
             await StartScheduler();
+
+            await JoinToCluster();
         }
 
         #region Initialize Scheduler
@@ -228,27 +229,15 @@ namespace Planar.Service
                 _logger.LogInformation("Initialize: AddSchedulerCluster");
 
                 var dal = Resolve<DataLayer>();
-                var cluster = new ClusterNode
-                {
-                    Server = Environment.MachineName,
-                    Port = AppSettings.HttpPort,
-                };
+                var util = new ClusterUtil(dal, _logger);
 
-                var item = await dal.GetClusterNode(cluster);
-                if (item == null)
+                if (await util.HealthCheck())
                 {
-                    cluster.ClusterPort = AppSettings.ClusterPort;
-                    cluster.JoinDate = DateTime.Now;
-                    cluster.InstanceId = _scheduler.SchedulerInstanceId;
-                    await dal.AddClusterNode(cluster);
+                    await util.Join();
                 }
                 else
                 {
-                    item.ClusterPort = AppSettings.ClusterPort;
-                    item.JoinDate = DateTime.Now;
-                    item.HealthCheckDate = null;
-                    item.InstanceId = _scheduler.SchedulerInstanceId;
-                    await dal.SaveChanges();
+                    throw new PlanarException("Cluster health check fail. Could not join to cluster. See previous errors for more details");
                 }
             }
             catch (Exception ex)

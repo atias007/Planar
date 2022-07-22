@@ -3,6 +3,9 @@
 - dont allow to delete group when the group has monitoring
 - allow to stop planar scheduler without stop the windows service (service stop, service start, service shutdown)
 - add cluster support in cli in all "running" commands (and stop)
+- enrich serilog with machine name
+- filter /Cluster.PlanarCluster/HealthCheck from trace
+- filter /swagger from trace from trace
 -----------------------------------------DONE-----------------------------------------
 - when delete job --> delete its monitoring items
 - add monitor event when retry

@@ -1,6 +1,5 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Entities;
-
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
@@ -120,6 +119,20 @@ namespace Planar.CLI
             var table = new Table();
             table.AddColumns("Id", "Title", "Event", "Job", "Group", "Hook", "Active");
             data.ForEach(r => table.AddRow(CliTableFormat.GetBooleanMarkup(r.Active, r.Id), r.Title.EscapeMarkup(), r.EventTitle.EscapeMarkup(), r.Job.EscapeMarkup(), r.GroupName.EscapeMarkup(), r.Hook.EscapeMarkup(), CliTableFormat.GetBooleanMarkup(r.Active)));
+            return table;
+        }
+
+        public static Table GetTable(List<CliClusterNode> response)
+        {
+            if (response == null) { return null; }
+            var table = new Table();
+            table.AddColumns("Server", "Port", "InstanceId", "ClusterPort", "JoinDate", "HealthCheck");
+            response.ForEach(r =>
+            {
+                var hcTitle = CliTableFormat.FormatClusterHealthCheck(r.HealthCheckGap, r.HealthCheckGapDeviation);
+                table.AddRow(r.Server.EscapeMarkup(), r.Port.ToString(), r.InstanceId.EscapeMarkup(), r.ClusterPort.ToString(), CliTableFormat.FormatDateTime(r.JoinDate), hcTitle);
+            });
+
             return table;
         }
 

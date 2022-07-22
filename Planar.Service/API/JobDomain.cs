@@ -4,6 +4,7 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
+using Planar.Service.General;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -79,6 +80,7 @@ namespace Planar.Service.API
             return result;
         }
 
+        // TODO: Cluster Support
         public async Task<List<RunningJobDetails>> GetRunning(string instanceId)
         {
             var result = new List<RunningJobDetails>();
@@ -98,6 +100,7 @@ namespace Planar.Service.API
             return response;
         }
 
+        // TODO: Cluster Support
         public async Task<GetRunningInfoResponse> GetRunningInfo(string instanceId)
         {
             var context = (await Scheduler.GetCurrentlyExecutingJobs()).FirstOrDefault(j => j.FireInstanceId == instanceId);
@@ -223,18 +226,13 @@ namespace Planar.Service.API
 
             if (info != null)
             {
-                var allInstances = await GetRunningInstanceForJob(request.FireInstanceId);
-                if (!allInstances.Any())
+                var resultJob = await Scheduler.Interrupt(request.FireInstanceId);
+                if (resultJob == false)
                 {
-                    throw new RestNotFoundException($"job with key/id '{request.FireInstanceId}' has no instance running");
+                    throw new RestValidationException("fireInstanceId", $"fail to stop running job(s) with job key {request.FireInstanceId}");
                 }
 
-                if (allInstances.Count() > 1)
-                {
-                    throw new RestValidationException("fireInstanceId", $"job with key/id '{request.FireInstanceId}' has more then 1 instance running");
-                }
-
-                request.FireInstanceId = allInstances.First();
+                return;
             }
 
             if (!await IsRunningInstanceExist(request.FireInstanceId))
@@ -301,28 +299,7 @@ namespace Planar.Service.API
             }
         }
 
-        private static async Task<IEnumerable<string>> GetRunningInstanceForJob(string jobKeyId)
-        {
-            var result = new List<string>();
-            if (string.IsNullOrEmpty(jobKeyId))
-            {
-                return result;
-            }
-
-            var jobKey = await JobKeyHelper.GetJobKey(jobKeyId);
-
-            foreach (var context in await Scheduler.GetCurrentlyExecutingJobs())
-            {
-                var equals = JobKeyHelper.Compare(jobKey, context.JobDetail.Key);
-                if (equals)
-                {
-                    result.Add(context.FireInstanceId);
-                }
-            }
-
-            return result;
-        }
-
+        // TODO: Cluster Support
         private static async Task<bool> IsRunningInstanceExist(string instanceId)
         {
             if (string.IsNullOrEmpty(instanceId))
@@ -520,10 +497,15 @@ namespace Planar.Service.API
             }
         }
 
-        private static async Task ValidateJobNotRunning(JobKey jobKey)
+        private async Task ValidateJobNotRunning(JobKey jobKey)
         {
-            var allRunning = await Scheduler.GetCurrentlyExecutingJobs();
-            if (allRunning.AsQueryable().Any(c => c.JobDetail.Key.Name == jobKey.Name && c.JobDetail.Key.Group == jobKey.Group))
+            var isRunning = await SchedulerUtil.IsJobRunning(jobKey);
+            if (isRunning == false)
+            {
+                isRunning = await new ClusterUtil(DataLayer, Logger).IsJobRunning(jobKey);
+            }
+
+            if (isRunning)
             {
                 throw new RestValidationException($"{jobKey.Group}.{jobKey.Name}", $"job with name: {jobKey.Name} and group: {jobKey.Group} is currently running");
             }
