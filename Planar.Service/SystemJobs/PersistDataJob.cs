@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.Data;
-using Planar.Service.General;
 using Polly;
 using Quartz;
 using System;
@@ -13,7 +12,7 @@ using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
 namespace Planar.Service.SystemJobs
 {
     [DisallowConcurrentExecution]
-    public class PersistDataJob : IJob
+    public class PersistDataJob : BaseSystemJob, IJob
     {
         private readonly ILogger<PersistDataJob> _logger;
 
@@ -40,59 +39,9 @@ namespace Planar.Service.SystemJobs
 
         public static async Task Schedule(IScheduler scheduler)
         {
-            var jobKey = new JobKey(nameof(PersistDataJob), Consts.PlanarSystemGroup);
-            IJobDetail job = null;
-
-            try
-            {
-                job = await scheduler.GetJobDetail(jobKey);
-            }
-            catch (Exception)
-            {
-                try
-                {
-                    await scheduler.DeleteJob(jobKey);
-                }
-                catch
-                {
-                    // *** DO NOTHING *** //
-                }
-                finally
-                {
-                    job = null;
-                }
-            }
-
-            if (job != null)
-            {
-                await scheduler.DeleteJob(jobKey);
-                job = await scheduler.GetJobDetail(jobKey);
-
-                if (job != null) { return; }
-            }
-
-            var jobId = ServiceUtil.GenerateId();
-            var triggerId = ServiceUtil.GenerateId();
-
-            job = JobBuilder.Create(typeof(PersistDataJob))
-                .WithIdentity(jobKey)
-                .UsingJobData(Consts.JobId, jobId)
-                .WithDescription("System job for persist information & exception from running jobs")
-                .StoreDurably(true)
-                .Build();
-
-            var trigger = TriggerBuilder.Create()
-                .WithIdentity(jobKey.Name, jobKey.Group)
-                .StartAt(new DateTimeOffset(DateTime.Now.Add(AppSettings.PersistRunningJobsSpan)))
-                .UsingJobData(Consts.TriggerId, triggerId)
-                .WithSimpleSchedule(s => s
-                    .WithInterval(AppSettings.PersistRunningJobsSpan)
-                    .RepeatForever()
-                    .WithMisfireHandlingInstructionNextWithExistingCount()
-                )
-                .Build();
-
-            await scheduler.ScheduleJob(job, trigger);
+            const string description = "System job for persist information & exception from running jobs";
+            var span = AppSettings.PersistRunningJobsSpan;
+            await Schedule<PersistDataJob>(scheduler, description, span);
         }
 
         private async Task DoWork()

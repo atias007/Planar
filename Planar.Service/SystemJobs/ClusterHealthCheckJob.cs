@@ -10,11 +10,9 @@ using System.Threading.Tasks;
 namespace Planar.Service.SystemJobs
 {
     [DisallowConcurrentExecution]
-    public class ClusterHealthCheckJob : IJob
+    public class ClusterHealthCheckJob : BaseSystemJob, IJob
     {
         private readonly ILogger<ClusterHealthCheckJob> _logger;
-
-        private readonly DataLayer _dal;
 
         public ClusterHealthCheckJob()
         {
@@ -43,59 +41,9 @@ namespace Planar.Service.SystemJobs
 
         public static async Task Schedule(IScheduler scheduler)
         {
-            var jobKey = new JobKey(nameof(ClusterHealthCheckJob), Consts.PlanarSystemGroup);
-            IJobDetail job = null;
-
-            try
-            {
-                job = await scheduler.GetJobDetail(jobKey);
-            }
-            catch (Exception)
-            {
-                try
-                {
-                    await scheduler.DeleteJob(jobKey);
-                }
-                catch
-                {
-                    // *** DO NOTHING *** //
-                }
-                finally
-                {
-                    job = null;
-                }
-            }
-
-            if (job != null)
-            {
-                await scheduler.DeleteJob(jobKey);
-                job = await scheduler.GetJobDetail(jobKey);
-
-                if (job != null) { return; }
-            }
-
-            var jobId = ServiceUtil.GenerateId();
-            var triggerId = ServiceUtil.GenerateId();
-
-            job = JobBuilder.Create(typeof(ClusterHealthCheckJob))
-                .WithIdentity(jobKey)
-                .UsingJobData(Consts.JobId, jobId)
-                .WithDescription("System job for check health of all cluster nodes")
-                .StoreDurably(true)
-                .Build();
-
-            var trigger = TriggerBuilder.Create()
-                .WithIdentity(jobKey.Name, jobKey.Group)
-                .StartAt(new DateTimeOffset(DateTime.Now.Add(AppSettings.ClusterHealthCheckInterval)))
-                .UsingJobData(Consts.TriggerId, triggerId)
-                .WithSimpleSchedule(s => s
-                    .WithInterval(AppSettings.ClusterHealthCheckInterval)
-                    .RepeatForever()
-                    .WithMisfireHandlingInstructionNextWithExistingCount()
-                )
-                .Build();
-
-            await scheduler.ScheduleJob(job, trigger);
+            const string description = "System job for check health of cluster nodes";
+            var span = AppSettings.ClusterHealthCheckInterval;
+            var jobKey = await Schedule<ClusterHealthCheckJob>(scheduler, description, span);
 
             if (AppSettings.Clustering == false)
             {

@@ -53,8 +53,8 @@ namespace Planar.Service.General
                 try
                 {
                     await Policy.Handle<RpcException>()
-                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(500))
-                    .ExecuteAsync(() => CallHealthCheckService(node));
+                      .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(500))
+                      .ExecuteAsync(() => CallHealthCheckService(node));
                 }
                 catch (RpcException ex)
                 {
@@ -78,8 +78,8 @@ namespace Planar.Service.General
                 try
                 {
                     await Policy.Handle<RpcException>()
-                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(500))
-                    .ExecuteAsync(() => CallHealthCheckService(node));
+                      .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(500))
+                      .ExecuteAsync(() => CallHealthCheckService(node));
                 }
                 catch (RpcException ex)
                 {
@@ -185,11 +185,17 @@ namespace Planar.Service.General
             return false;
         }
 
-        private async Task CallHealthCheckService(ClusterNode node)
+        private static PlanarCluster.PlanarClusterClient GetClient(ClusterNode node)
         {
             var address = $"http://{node.Server}:{node.ClusterPort}";
             var channel = GrpcChannel.ForAddress(address);
             var client = new PlanarCluster.PlanarClusterClient(channel);
+            return client;
+        }
+
+        private async Task CallHealthCheckService(ClusterNode node)
+        {
+            var client = GetClient(node);
             await client.HealthCheckAsync(new Empty());
 
             node.HealthCheckDate = DateTime.Now;
@@ -198,25 +204,19 @@ namespace Planar.Service.General
 
         private static async Task CallStopSchedulerService(ClusterNode node)
         {
-            var address = $"http://{node.Server}:{node.ClusterPort}";
-            var channel = GrpcChannel.ForAddress(address);
-            var client = new PlanarCluster.PlanarClusterClient(channel);
+            var client = GetClient(node); ;
             await client.StopSchedulerAsync(new Empty());
         }
 
         private static async Task CallStartSchedulerService(ClusterNode node)
         {
-            var address = $"http://{node.Server}:{node.ClusterPort}";
-            var channel = GrpcChannel.ForAddress(address);
-            var client = new PlanarCluster.PlanarClusterClient(channel);
+            var client = GetClient(node);
             await client.StartSchedulerAsync(new Empty());
         }
 
         private static async Task<bool> CallIsJobRunningService(RpcJobKey jobKey, ClusterNode node)
         {
-            var address = $"http://{node.Server}:{node.ClusterPort}";
-            var channel = GrpcChannel.ForAddress(address);
-            var client = new PlanarCluster.PlanarClusterClient(channel);
+            var client = GetClient(node);
             var result = await client.IsJobRunningAsync(jobKey);
             return result.IsRunning;
         }
