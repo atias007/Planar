@@ -4,19 +4,27 @@ namespace Planar.Service.Model
 {
     public partial class ClusterNode
     {
-        public TimeSpan? HealthCheckGap
+        public TimeSpan HealthCheckGap
         {
             get
             {
-                return HealthCheckDate.HasValue ? DateTime.Now.Subtract(HealthCheckDate.Value) : null;
+                return DateTime.Now.Subtract(HealthCheckDate);
             }
         }
 
-        public TimeSpan? HealthCheckGapDeviation
+        public TimeSpan HealthCheckGapDeviation
         {
             get
             {
-                return HealthCheckGap.HasValue ? HealthCheckGap.Value.Subtract(AppSettings.ClusterHealthCheckInterval) : null;
+                return HealthCheckGap.Subtract(AppSettings.ClusterHealthCheckInterval);
+            }
+        }
+
+        public bool LiveNode
+        {
+            get
+            {
+                return HealthCheckGapDeviation.TotalSeconds < 30;
             }
         }
 

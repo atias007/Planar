@@ -12,46 +12,20 @@ namespace Planar.Service.SystemJobs
         {
             var name = typeof(T).Name;
             var jobKey = new JobKey(name, Consts.PlanarSystemGroup);
-            IJobDetail job = null;
+            var job = await scheduler.GetJobDetail(jobKey);
 
-            try
+            if (job == null)
             {
-                job = await scheduler.GetJobDetail(jobKey);
-            }
-            catch (Exception)
-            {
-                try
-                {
-                    await scheduler.DeleteJob(jobKey);
-                }
-                catch
-                {
-                    // *** DO NOTHING *** //
-                }
-                finally
-                {
-                    job = null;
-                }
-            }
-
-            if (job != null)
-            {
-                await scheduler.DeleteJob(jobKey);
-                job = await scheduler.GetJobDetail(jobKey);
-
-                if (job != null) { return jobKey; }
-            }
-
-            var jobId = ServiceUtil.GenerateId();
-            var triggerId = ServiceUtil.GenerateId();
-
-            job = JobBuilder.Create(typeof(T))
+                var jobId = ServiceUtil.GenerateId();
+                job = JobBuilder.Create(typeof(T))
                 .WithIdentity(jobKey)
                 .UsingJobData(Consts.JobId, jobId)
                 .WithDescription(description)
                 .StoreDurably(true)
                 .Build();
+            }
 
+            var triggerId = ServiceUtil.GenerateId();
             var startDate = new DateTimeOffset(DateTime.Now);
             startDate = startDate.AddSeconds(-startDate.Second);
             startDate = startDate.Add(span);
@@ -68,7 +42,7 @@ namespace Planar.Service.SystemJobs
                 .WithPriority(int.MaxValue)
                 .Build();
 
-            await scheduler.ScheduleJob(job, trigger);
+            await scheduler.ScheduleJob(job, new[] { trigger }, true);
 
             return jobKey;
         }

@@ -15,6 +15,7 @@ using Quartz.Impl.Matchers;
 using Quartz.Logging;
 using Quartz.Simpl;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -229,9 +230,11 @@ namespace Planar.Service
                 _logger.LogInformation("Initialize: AddSchedulerCluster");
 
                 var dal = Resolve<DataLayer>();
+                var nodes = await dal.GetClusterNodes();
                 var util = new ClusterUtil(dal, _logger);
+                ClusterUtil.ValidateClusterConflict(nodes);
 
-                if (await util.HealthCheck())
+                if (await util.HealthCheck(nodes))
                 {
                     await util.Join();
                 }

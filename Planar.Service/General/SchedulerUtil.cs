@@ -21,11 +21,19 @@ namespace Planar.Service.General
 
         public static void HealthCheck(ILogger logger = null)
         {
-            if (MainService.Scheduler.IsShutdown || MainService.Scheduler.InStandbyMode || MainService.Scheduler.IsStarted == false)
+            if (IsSchedulerRunning == false)
             {
                 logger?.LogError("HealthCheck fail. IsShutdown={IsShutdown}, InStandbyMode={InStandbyMode}, IsStarted={IsStarted}",
                     MainService.Scheduler.IsShutdown, MainService.Scheduler.InStandbyMode, MainService.Scheduler.IsStarted);
                 throw new PlanarException("Scheduler is not running");
+            }
+        }
+
+        public static bool IsSchedulerRunning
+        {
+            get
+            {
+                return MainService.Scheduler.IsShutdown == false && MainService.Scheduler.InStandbyMode == false || MainService.Scheduler.IsStarted;
             }
         }
 

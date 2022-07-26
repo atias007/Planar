@@ -3,6 +3,7 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
 using Planar.Service.Data;
+using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using Polly;
 using Quartz;
@@ -58,18 +59,36 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to make health check to {Server}:{Port}", node.Server, node.ClusterPort);
-                    await _dal.RemoveClusterNode(node);
+                    _logger.LogError(ex, "fail to make health check to {Server}:{Port}", node.Server, node.ClusterPort);
+
+                    if (node.LiveNode == false)
+                    {
+                        _logger.LogError("remove node {Server}:{Port} from cluster due to health check failure", node.Server, node.ClusterPort);
+                        await _dal.RemoveClusterNode(node);
+                    }
                 }
             }
         }
 
-        public async Task<bool> HealthCheck()
+        public static void ValidateClusterConflict(List<ClusterNode> nodes)
+        {
+            if (AppSettings.Clustering) { return; }
+
+            var currentNode = GetCurrentClusterNode();
+            foreach (var node in nodes)
+            {
+                if (node == currentNode) { continue; }
+                if (node.LiveNode)
+                {
+                    throw new PlanarException("start up node fail. node {Server}:{Port} is not clustering but connected database contains live cluster nodes");
+                }
+            }
+        }
+
+        public async Task<bool> HealthCheck(List<ClusterNode> nodes)
         {
             var currentNode = GetCurrentClusterNode();
             var result = true;
-
-            var nodes = await _dal.GetClusterNodes();
 
             foreach (var node in nodes)
             {
@@ -83,7 +102,7 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to make health check to {Server}:{Port}", node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "fail to make health check to {Server}:{Port}", node.Server, node.ClusterPort);
                     result = false;
                 }
             }
@@ -100,6 +119,7 @@ namespace Planar.Service.General
             {
                 currentNode.ClusterPort = AppSettings.ClusterPort;
                 currentNode.JoinDate = DateTime.Now;
+                currentNode.HealthCheckDate = DateTime.Now;
                 currentNode.InstanceId = MainService.Scheduler.SchedulerInstanceId;
                 await _dal.AddClusterNode(currentNode);
             }
@@ -107,7 +127,7 @@ namespace Planar.Service.General
             {
                 item.ClusterPort = AppSettings.ClusterPort;
                 item.JoinDate = DateTime.Now;
-                item.HealthCheckDate = null;
+                item.HealthCheckDate = DateTime.Now;
                 item.InstanceId = MainService.Scheduler.SchedulerInstanceId;
                 await _dal.SaveChanges();
             }
@@ -225,12 +245,15 @@ namespace Planar.Service.General
         {
             if (allNodes.Any(n => n == currentNode) == false)
             {
-                currentNode.ClusterPort = AppSettings.ClusterPort;
-                currentNode.JoinDate = DateTime.Now;
-                currentNode.InstanceId = MainService.Scheduler.SchedulerInstanceId;
-                currentNode.HealthCheckDate = DateTime.Now;
+                if (SchedulerUtil.IsSchedulerRunning)
+                {
+                    currentNode.ClusterPort = AppSettings.ClusterPort;
+                    currentNode.JoinDate = DateTime.Now;
+                    currentNode.InstanceId = MainService.Scheduler.SchedulerInstanceId;
+                    currentNode.HealthCheckDate = DateTime.Now;
 
-                await _dal.AddClusterNode(currentNode);
+                    await _dal.AddClusterNode(currentNode);
+                }
             }
         }
 

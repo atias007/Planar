@@ -4,7 +4,7 @@ CREATE TABLE [dbo].[ClusterNodes](
 	[InstanceId] [nvarchar](100) NOT NULL,
 	[ClusterPort] [smallint] NOT NULL,
 	[JoinDate] [datetime] NOT NULL,
-	[HealthCheckDate] [datetime] NULL,
+	[HealthCheckDate] [datetime] NOT NULL,
  CONSTRAINT [PK_ClusterNodes] PRIMARY KEY CLUSTERED 
 (
 	[Server] ASC,
