@@ -100,24 +100,16 @@ namespace Planar.Service.API
             return result;
         }
 
-        // TODO: Cluster Support
         public async Task<GetRunningInfoResponse> GetRunningInfo(string instanceId)
         {
-            var context = (await Scheduler.GetCurrentlyExecutingJobs()).FirstOrDefault(j => j.FireInstanceId == instanceId);
-            var information = string.Empty;
-            var exceptions = string.Empty;
-
-            if (context != null)
+            var result = await SchedulerUtil.GetRunningInfo(instanceId);
+            if (result != null)
             {
-                if (context.Result is JobExecutionMetadata metadata)
-                {
-                    information = metadata.GetInformation();
-                    exceptions = metadata.GetExceptionsText();
-                }
+                return result;
             }
 
-            var response = new GetRunningInfoResponse { Information = information, Exceptions = exceptions };
-            return response;
+            result = await new ClusterUtil(DataLayer, Logger).GetRunningInfo(instanceId);
+            return result;
         }
 
         public async Task<Dictionary<string, string>> GetSettings(string id)
@@ -221,30 +213,8 @@ namespace Planar.Service.API
 
         public async Task Stop(FireInstanceIdRequest request)
         {
-            var jobKey = await JobKeyHelper.GetJobKey(request.FireInstanceId);
-            var info = await Scheduler.GetJobDetail(jobKey);
-
-            if (info != null)
-            {
-                var resultJob = await Scheduler.Interrupt(request.FireInstanceId);
-                if (resultJob == false)
-                {
-                    throw new RestValidationException("fireInstanceId", $"fail to stop running job(s) with job key {request.FireInstanceId}");
-                }
-
-                return;
-            }
-
-            if (!await IsRunningInstanceExist(request.FireInstanceId))
-            {
-                throw new RestNotFoundException($"fire instance id '{request.FireInstanceId}' is not exist");
-            }
-
-            var result = await Scheduler.Interrupt(request.FireInstanceId);
-            if (result == false)
-            {
-                throw new RestValidationException("fireInstanceId", $"fail to stop running job with FireInstanceId {request.FireInstanceId}");
-            }
+            await SchedulerUtil.StopRunningJob(request.FireInstanceId);
+            await new ClusterUtil(DataLayer, Logger).StopRunningJob(request.FireInstanceId);
         }
 
         public async Task UpdateProperty(UpsertJobPropertyRequest request)
@@ -299,23 +269,13 @@ namespace Planar.Service.API
             }
         }
 
-        // TODO: Cluster Support
-        private static async Task<bool> IsRunningInstanceExist(string instanceId)
+        private async Task<bool> IsRunningInstanceExist(string instanceId)
         {
-            if (string.IsNullOrEmpty(instanceId))
-            {
-                return false;
-            }
+            var result = await SchedulerUtil.IsRunningInstanceExist(instanceId);
+            if (result) { return true; }
 
-            foreach (var context in await Scheduler.GetCurrentlyExecutingJobs())
-            {
-                if (instanceId == context.FireInstanceId)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            result = await new ClusterUtil(DataLayer, Logger).IsRunningInstanceExist(instanceId);
+            return result;
         }
 
         private static Dictionary<string, string> GetJobProperties(IJobDetail job)

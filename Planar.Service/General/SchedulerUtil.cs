@@ -77,6 +77,73 @@ namespace Planar.Service.General
             return response;
         }
 
+        public static async Task<GetRunningInfoResponse> GetRunningInfo(string instanceId, CancellationToken cancellationToken = default)
+        {
+            var context = (await MainService.Scheduler.GetCurrentlyExecutingJobs(cancellationToken))
+                .FirstOrDefault(j => j.FireInstanceId == instanceId);
+
+            var information = string.Empty;
+            var exceptions = string.Empty;
+
+            if (context != null)
+            {
+                if (context.Result is JobExecutionMetadata metadata)
+                {
+                    information = metadata.GetInformation();
+                    exceptions = metadata.GetExceptionsText();
+                }
+            }
+
+            var response = new GetRunningInfoResponse { Information = information, Exceptions = exceptions };
+            return response;
+        }
+
+        public static async Task<bool> IsRunningInstanceExist(string instanceId, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrEmpty(instanceId))
+            {
+                return false;
+            }
+
+            foreach (var context in await MainService.Scheduler.GetCurrentlyExecutingJobs(cancellationToken))
+            {
+                if (instanceId == context.FireInstanceId)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static async Task StopRunningJob(string instanceId, CancellationToken cancellationToken = default)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(instanceId);
+            var info = await MainService.Scheduler.GetJobDetail(jobKey, cancellationToken);
+
+            if (info != null)
+            {
+                var resultJob = await MainService.Scheduler.Interrupt(instanceId, cancellationToken);
+                if (resultJob == false)
+                {
+                    throw new RestValidationException("fireInstanceId", $"fail to stop running job(s) with job key {instanceId}");
+                }
+
+                return;
+            }
+
+            if (!await IsRunningInstanceExist(instanceId, cancellationToken))
+            {
+                throw new RestNotFoundException($"instance id '{instanceId}' is not exist");
+            }
+
+            var result = await MainService.Scheduler.Interrupt(instanceId, cancellationToken);
+            if (result == false)
+            {
+                throw new RestValidationException("fireInstanceId", $"fail to stop running job with FireInstanceId {instanceId}");
+            }
+        }
+
         public static void MapJobRowDetails(IJobDetail source, JobRowDetails target)
         {
             target.Id = JobKeyHelper.GetJobId(source);
