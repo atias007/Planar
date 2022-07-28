@@ -1,5 +1,9 @@
 syntax = "proto3";
+
+/* https://docs.microsoft.com/en-us/dotnet/architecture/grpc-for-wcf-developers/protobuf-data-types */
+
 import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
 
 option csharp_namespace = "Planar";
 
@@ -10,16 +14,16 @@ service PlanarCluster {
   rpc StopScheduler (google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc StartScheduler (google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc GetRunningJobs (google.protobuf.Empty) returns (GetRunningJobsReply);
-  rpc GetRunningJob (GetRunningJobRequest) returns (GetRunningJobsReply);
+  rpc GetRunningJob (GetRunningJobRequest) returns (RunningJobReply);
   rpc IsJobRunning (RpcJobKey) returns (IsJobRunningReply);
 }
 
 message GetRunningJobRequest {
-  string name = 1;
+  string instanceId = 1;
 }
 
 message GetRunningJobsReply {
-  string message = 1;
+  repeated RunningJobReply jobs = 1;
 }
 
 message RpcJobKey{
@@ -28,5 +32,30 @@ message RpcJobKey{
 }
 
 message IsJobRunningReply{
-	bool IsRunning = 1;
+	bool isRunning = 1;
+}
+
+message RunningJobReply{
+	string id = 1;
+	string group = 2;
+	string name = 3;
+	string description = 4;
+	string fireInstanceId = 5;
+	optional google.protobuf.Timestamp scheduledFireTime = 6;
+	google.protobuf.Timestamp fireTime = 7;
+	optional google.protobuf.Timestamp nextFireTime = 8;
+	optional google.protobuf.Timestamp previousFireTime = 9;
+	string runTime = 10;
+	int32 refireCount = 11;
+	string triggerName = 12;
+	string triggerGroup = 13;
+	string triggerId = 14;
+	repeated DataMap DataMap = 15;
+	optional int32 effectedRows = 16;
+	int32 progress = 17;
+}
+
+message DataMap{
+	string key = 1;
+	string value = 2;
 }

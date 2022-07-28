@@ -61,7 +61,7 @@ namespace Planar.Service.API
                 var info = await Scheduler.GetJobDetail(jobKey);
 
                 var details = new JobRowDetails();
-                MapJobRowDetails(info, details);
+                SchedulerUtil.MapJobRowDetails(info, details);
                 result.Add(details);
             }
 
@@ -80,24 +80,24 @@ namespace Planar.Service.API
             return result;
         }
 
-        // TODO: Cluster Support
-        public async Task<List<RunningJobDetails>> GetRunning(string instanceId)
+        public async Task<List<RunningJobDetails>> GetRunning()
         {
-            var result = new List<RunningJobDetails>();
+            var result = await SchedulerUtil.GetRunningJobs();
+            var clusterResult = await new ClusterUtil(DataLayer, Logger).GetRunningJobs();
+            result.AddRange(clusterResult);
+            return result;
+        }
 
-            foreach (var context in await Scheduler.GetCurrentlyExecutingJobs())
+        public async Task<RunningJobDetails> GetRunning(string instanceId)
+        {
+            var result = await SchedulerUtil.GetRunningJob(instanceId);
+            if (result != null)
             {
-                if (string.IsNullOrEmpty(instanceId) || instanceId == context.FireInstanceId)
-                {
-                    var details = new RunningJobDetails();
-                    MapJobRowDetails(context.JobDetail, details);
-                    MapJobExecutionContext(context, details);
-                    result.Add(details);
-                }
+                return result;
             }
 
-            var response = result.OrderBy(r => r.Name).ToList();
-            return response;
+            result = await new ClusterUtil(DataLayer, Logger).GetRunningJob(instanceId);
+            return result;
         }
 
         // TODO: Cluster Support
@@ -385,7 +385,7 @@ namespace Planar.Service.API
                 dataMap = source.JobDataMap;
             }
 
-            MapJobRowDetails(source, target);
+            SchedulerUtil.MapJobRowDetails(source, target);
             target.Concurrent = !source.ConcurrentExecutionDisallowed;
             target.Durable = source.Durable;
             target.RequestsRecovery = source.RequestsRecovery;
@@ -400,40 +400,6 @@ namespace Planar.Service.API
                     target.Properties = new SortedDictionary<string, string>(dict);
                 }
             }
-        }
-
-        private static void MapJobExecutionContext(IJobExecutionContext source, RunningJobDetails target)
-        {
-            target.FireInstanceId = source.FireInstanceId;
-            target.NextFireTime = source.NextFireTimeUtc.HasValue ? source.NextFireTimeUtc.Value.DateTime : null;
-            target.PreviousFireTime = source.PreviousFireTimeUtc.HasValue ? source.PreviousFireTimeUtc.Value.DateTime : null;
-            target.ScheduledFireTime = source.ScheduledFireTimeUtc.HasValue ? source.ScheduledFireTimeUtc.Value.DateTime : null;
-            target.FireTime = source.FireTimeUtc.DateTime;
-            target.RunTime = $"{source.JobRunTime:hh\\:mm\\:ss}";
-            target.RefireCount = source.RefireCount;
-            target.TriggerGroup = source.Trigger.Key.Group;
-            target.TriggerName = source.Trigger.Key.Name;
-            target.DataMap = Global.ConvertDataMapToDictionary(source.MergedJobDataMap);
-            target.TriggerId = TriggerKeyHelper.GetTriggerId(source);
-
-            if (target.TriggerGroup == Consts.RecoveringJobsGroup)
-            {
-                target.TriggerId = Consts.RecoveringJobsGroup;
-            }
-
-            if (source.Result is JobExecutionMetadata metadata)
-            {
-                target.EffectedRows = metadata.EffectedRows;
-                target.Progress = metadata.Progress;
-            }
-        }
-
-        private static void MapJobRowDetails(IJobDetail source, JobRowDetails target)
-        {
-            target.Id = JobKeyHelper.GetJobId(source);
-            target.Name = source.Key.Name;
-            target.Group = source.Key.Group;
-            target.Description = source.Description;
         }
 
         private static SimpleTriggerDetails MapSimpleTriggerDetails(ISimpleTrigger source)

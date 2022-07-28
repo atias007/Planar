@@ -16,6 +16,7 @@ namespace Planar.Service.SystemJobs
 
         public ClusterHealthCheckJob()
         {
+            _logger = Global.GetLogger<ClusterHealthCheckJob>();
         }
 
         public Task Execute(IJobExecutionContext context)

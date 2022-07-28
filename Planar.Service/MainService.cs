@@ -237,9 +237,11 @@ namespace Planar.Service
                 if (await util.HealthCheck(nodes))
                 {
                     await util.Join();
+                    LogClustering();
                 }
                 else
                 {
+                    Scheduler?.Standby();
                     throw new PlanarException("Cluster health check fail. Could not join to cluster. See previous errors for more details");
                 }
             }
@@ -278,7 +280,6 @@ namespace Planar.Service
                     });
 
                 _scheduler = await builder.BuildScheduler();
-                LogClustering();
             }
             catch (Exception ex)
             {
@@ -304,11 +305,11 @@ namespace Planar.Service
         {
             if (AppSettings.Clustering)
             {
-                _logger.LogInformation("Clustering [id: {Id}]", _scheduler.SchedulerInstanceId);
+                _logger.LogInformation("Join to cluster [instance id: {Id}]", _scheduler.SchedulerInstanceId);
             }
             else
             {
-                _logger.LogInformation("Clustering [No Cluster]");
+                _logger.LogInformation("Non clustering instance");
             }
         }
 

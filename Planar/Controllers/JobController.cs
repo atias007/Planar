@@ -107,13 +107,13 @@ namespace Planar.Controllers
         public async Task<ActionResult<RunningJobDetails>> GetAllRunning([FromRoute][Required] string instanceId)
         {
             var result = await BusinesLayer.GetRunning(instanceId);
-            return Ok(result.FirstOrDefault());
+            return Ok(result);
         }
 
         [HttpGet("running")]
         public async Task<ActionResult<List<RunningJobDetails>>> GetRunning()
         {
-            var result = await BusinesLayer.GetRunning(null);
+            var result = await BusinesLayer.GetRunning();
             return Ok(result);
         }
 

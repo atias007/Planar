@@ -2,6 +2,7 @@
 using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
+using Planar.API.Common.Entities;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
@@ -72,6 +73,8 @@ namespace Planar.Service.General
 
         public static void ValidateClusterConflict(List<ClusterNode> nodes)
         {
+            // only if current node is not clustering
+            // and there is active cluster in same database --> throw exception
             if (AppSettings.Clustering) { return; }
 
             var currentNode = GetCurrentClusterNode();
@@ -205,6 +208,42 @@ namespace Planar.Service.General
             return false;
         }
 
+        public async Task<RunningJobDetails> GetRunningJob(string instanceId)
+        {
+            var currentNode = GetCurrentClusterNode();
+            var nodes = await _dal.GetClusterNodes();
+            foreach (var node in nodes)
+            {
+                if (node == currentNode) { continue; }
+
+                // TODO: add retry, try, catch
+                var job = await CallGetRunningJob(node, instanceId);
+                if (job != null)
+                {
+                    return job;
+                }
+            }
+
+            return null;
+        }
+
+        public async Task<List<RunningJobDetails>> GetRunningJobs()
+        {
+            var result = new List<RunningJobDetails>();
+            var currentNode = GetCurrentClusterNode();
+            var nodes = await _dal.GetClusterNodes();
+            foreach (var node in nodes)
+            {
+                if (node == currentNode) { continue; }
+
+                // TODO: add retry, try, catch
+                var jobs = await CallGetRunningJobs(node);
+                result.AddRange(jobs);
+            }
+
+            return result;
+        }
+
         private static PlanarCluster.PlanarClusterClient GetClient(ClusterNode node)
         {
             var address = $"http://{node.Server}:{node.ClusterPort}";
@@ -239,6 +278,67 @@ namespace Planar.Service.General
             var client = GetClient(node);
             var result = await client.IsJobRunningAsync(jobKey);
             return result.IsRunning;
+        }
+
+        private static async Task<List<RunningJobDetails>> CallGetRunningJobs(ClusterNode node)
+        {
+            var client = GetClient(node);
+            var result = await client.GetRunningJobsAsync(new Empty());
+
+            var response = new List<RunningJobDetails>();
+            foreach (var job in result.Jobs)
+            {
+                var entity = MapRunningJob(job);
+                response.Add(entity);
+            }
+
+            return response;
+        }
+
+        private static async Task<RunningJobDetails> CallGetRunningJob(ClusterNode node, string instanceId)
+        {
+            var client = GetClient(node);
+            var request = new GetRunningJobRequest { InstanceId = instanceId };
+            var result = await client.GetRunningJobAsync(request);
+            var response = MapRunningJob(result);
+            return response;
+        }
+
+        private static RunningJobDetails MapRunningJob(RunningJobReply reply)
+        {
+            var result = new RunningJobDetails
+            {
+                DataMap = new SortedDictionary<string, string>(reply.DataMap.ToDictionary(k => k.Key, v => v.Value)),
+                Description = reply.Description,
+                EffectedRows = reply.EffectedRows == -1 ? null : reply.EffectedRows,
+                FireInstanceId = reply.FireInstanceId,
+                FireTime = reply.FireTime.ToDateTime(),
+                Group = reply.Group,
+                Id = reply.Id,
+                Name = reply.Name,
+                NextFireTime = ConvertTimeStamp(reply.NextFireTime),
+                PreviousFireTime = ConvertTimeStamp(reply.PreviousFireTime),
+                Progress = reply.Progress,
+                RefireCount = reply.RefireCount,
+                RunTime = reply.RunTime,
+                ScheduledFireTime = ConvertTimeStamp(reply.ScheduledFireTime),
+                TriggerGroup = reply.TriggerGroup,
+                TriggerId = reply.TriggerId,
+                TriggerName = reply.TriggerName,
+            };
+
+            return result;
+        }
+
+        private static DateTime? ConvertTimeStamp(Timestamp stamp)
+        {
+            var result = stamp.ToDateTime();
+            if (result == default)
+            {
+                return null;
+            }
+
+            return result;
         }
 
         private async Task RegisterCurrentNodeIfNotExists(ClusterNode currentNode, List<ClusterNode> allNodes)
