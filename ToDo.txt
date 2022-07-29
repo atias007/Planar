@@ -6,7 +6,6 @@
 - enrich serilog with machine name
 - filter /Cluster.PlanarCluster/HealthCheck from trace
 - filter /swagger from trace
-- cli cls command
 - cli health check should check cluster mode
 -----------------------------------------DONE-----------------------------------------
 - when delete job --> delete its monitoring items
@@ -15,3 +14,4 @@
 - move to .net 6
 - planar stop with job id (not only instance id)
 - when cli has no connection to service - show specific error
+- - cli cls command
