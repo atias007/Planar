@@ -6,6 +6,7 @@ using Planar.API.Common.Entities;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
+using Planar.Service.Model.DataObjects;
 using Polly;
 using Quartz;
 using System;
@@ -336,6 +337,41 @@ namespace Planar.Service.General
             return result;
         }
 
+        public async Task<List<PersistanceRunningJobsInfo>> GetPersistanceRunningJobsInfo()
+        {
+            var result = new List<PersistanceRunningJobsInfo>();
+            var currentNode = GetCurrentClusterNode();
+            var nodes = await _dal.GetClusterNodes();
+            foreach (var node in nodes)
+            {
+                if (node == currentNode) { continue; }
+
+                try
+                {
+                    var items = await Policy.Handle<RpcException>()
+                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                        .ExecuteAsync(() => CallGetPersistanceRunningJobInfo(node));
+
+                    var mapItems = items.RunningJobs.Select(i => new PersistanceRunningJobsInfo
+                    {
+                        Exceptions = i.Exceptions,
+                        Group = i.Group,
+                        Information = i.Information,
+                        InstanceId = i.InstanceId,
+                        Name = i.Name,
+                    });
+
+                    result.AddRange(mapItems);
+                }
+                catch (RpcException ex)
+                {
+                    _logger.LogError(ex, "Fail to get persistance running jobs info at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                }
+            }
+
+            return result;
+        }
+
         private static PlanarCluster.PlanarClusterClient GetClient(ClusterNode node)
         {
             var address = $"http://{node.Server}:{node.ClusterPort}";
@@ -423,6 +459,13 @@ namespace Planar.Service.General
             var client = GetClient(node);
             var request = new GetRunningJobRequest { InstanceId = instanceId };
             await client.StopRunningJobAsync(request);
+        }
+
+        private static async Task<PersistanceRunningJobInfoReply> CallGetPersistanceRunningJobInfo(ClusterNode node)
+        {
+            var client = GetClient(node);
+            var result = await client.GetPersistanceRunningJobInfoAsync(new Empty());
+            return result;
         }
 
         private static RunningJobDetails MapRunningJob(RunningJobReply reply)

@@ -3,6 +3,7 @@ syntax = "proto3";
 /* https://docs.microsoft.com/en-us/dotnet/architecture/grpc-for-wcf-developers/protobuf-data-types */
 
 import "google/protobuf/empty.proto";
+import "google/protobuf/duration.proto"; 
 import "google/protobuf/timestamp.proto";
 
 option csharp_namespace = "Planar";
@@ -19,6 +20,7 @@ service PlanarCluster {
   rpc GetRunningInfo (GetRunningJobRequest) returns (RunningInfoReply);
   rpc IsRunningInstanceExist (GetRunningJobRequest) returns (IsRunningInstanceExistReply);
   rpc StopRunningJob (GetRunningJobRequest) returns (google.protobuf.Empty);
+  rpc GetPersistanceRunningJobInfo(google.protobuf.Empty) returns (PersistanceRunningJobInfoReply);
 }
 
 message GetRunningJobRequest {
@@ -36,6 +38,21 @@ message RpcJobKey{
 
 message IsJobRunningReply{
 	bool isRunning = 1;
+}
+
+message PersistanceRunningJobInfoReply
+{
+	repeated PersistanceRunningJobInfo runningJobs = 1;
+}
+
+message PersistanceRunningJobInfo
+{
+	string group = 1;
+	string name = 2;
+	string instanceId = 3;
+	/*google.protobuf.Duration jobRunTime = 3;*/
+	string information = 4;
+	string exceptions = 5;
 }
 
 message RunningJobReply{

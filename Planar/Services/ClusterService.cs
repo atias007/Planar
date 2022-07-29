@@ -5,6 +5,7 @@ using Planar.API.Common.Entities;
 using Planar.Service.General;
 using Quartz;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar
@@ -102,6 +103,24 @@ namespace Planar
         {
             await SchedulerUtil.StopRunningJob(request.InstanceId, context.CancellationToken);
             return new Empty();
+        }
+
+        // TODO: Test Me
+        public override async Task<PersistanceRunningJobInfoReply> GetPersistanceRunningJobInfo(Empty request, ServerCallContext context)
+        {
+            var result = new PersistanceRunningJobInfoReply();
+            var jobs = await SchedulerUtil.GetPersistanceRunningJobsInfo();
+            var items = jobs.Select(j => new PersistanceRunningJobInfo
+            {
+                Exceptions = j.Exceptions,
+                Group = j.Group,
+                Information = j.Information,
+                InstanceId = j.InstanceId,
+                Name = j.Name,
+            });
+
+            result.RunningJobs.AddRange(items);
+            return result;
         }
 
         private static RunningJobReply MapRunningJobReply(RunningJobDetails job)

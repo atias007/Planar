@@ -4,6 +4,7 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
+using Planar.Service.Model.DataObjects;
 using Quartz;
 using System.Collections.Generic;
 using System.Linq;
@@ -142,6 +143,40 @@ namespace Planar.Service.General
             {
                 throw new RestValidationException("fireInstanceId", $"fail to stop running job with FireInstanceId {instanceId}");
             }
+        }
+
+        public static async Task<List<PersistanceRunningJobsInfo>> GetPersistanceRunningJobsInfo(CancellationToken cancellationToken = default)
+        {
+            var result = new List<PersistanceRunningJobsInfo>();
+            var runningJobs = await MainService.Scheduler.GetCurrentlyExecutingJobs(cancellationToken);
+            foreach (var context in runningJobs)
+            {
+                if (context.JobRunTime.TotalSeconds > AppSettings.PersistRunningJobsSpan.TotalSeconds)
+                {
+                    if (context.Result is not JobExecutionMetadata metadata)
+                    {
+                        continue;
+                    }
+
+                    var information = metadata.GetInformation();
+                    var exceptions = metadata.GetExceptionsText();
+
+                    if (string.IsNullOrEmpty(information) && string.IsNullOrEmpty(exceptions)) { break; }
+
+                    var item = new PersistanceRunningJobsInfo
+                    {
+                        Group = context.JobDetail.Key.Group,
+                        Name = context.JobDetail.Key.Name,
+                        InstanceId = context.FireInstanceId,
+                        Information = information,
+                        Exceptions = exceptions
+                    };
+
+                    result.Add(item);
+                }
+            }
+
+            return result;
         }
 
         public static void MapJobRowDetails(IJobDetail source, JobRowDetails target)

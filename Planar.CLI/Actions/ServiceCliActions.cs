@@ -49,13 +49,6 @@ namespace Planar.CLI.Actions
             return await ExecuteEntity<List<string>>(restRequest);
         }
 
-        [Action("nodes")]
-        public static async Task<CliActionResponse> GetClusterNodes()
-        {
-            var restRequest = new RestRequest("service/nodes", Method.Get);
-            return await ExecuteTable<List<CliClusterNode>>(restRequest, CliTableExtensions.GetTable);
-        }
-
         [Action("connect")]
         public static async Task<CliActionResponse> Connect(CliConnectRequest request)
         {

@@ -70,6 +70,7 @@ namespace Planar
             services.AddScoped<TraceDomain>();
             services.AddScoped<TriggerDomain>();
             services.AddScoped<UserDomain>();
+            services.AddScoped<ClusterDomain>();
             services.AddGrpc();
             services.AddHostedService<MainService>();
         }

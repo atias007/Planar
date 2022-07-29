@@ -4,6 +4,7 @@ the options for <module> parameter:
 job          Actions to add, remove, list, update and operate jobs
 trigger      Actions to add, remove, list, update and operate triggers of job
 service      Actions to operate service, check alive, list calendars and more
+cluster      Actions to monitor cluster nodes, test communication and do some operatins
 history      Actions to inspect history runs of actions
 trace        Actions to list trace log info
 param        Actions to add, remove, list & update global parameters

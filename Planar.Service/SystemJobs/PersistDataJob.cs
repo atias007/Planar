@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.Data;
+using Planar.Service.General;
 using Polly;
 using Quartz;
 using System;
@@ -46,34 +47,23 @@ namespace Planar.Service.SystemJobs
 
         private async Task DoWork()
         {
-            // TODO: Cluster Support
-            var runningJobs = await MainService.Scheduler.GetCurrentlyExecutingJobs();
+            var runningJobs = await SchedulerUtil.GetPersistanceRunningJobsInfo();
+            var clusterRunningJobs = await new ClusterUtil(_dal, _logger).GetPersistanceRunningJobsInfo();
+            runningJobs.AddRange(clusterRunningJobs);
+
             foreach (var context in runningJobs)
             {
-                if (context.JobRunTime.TotalSeconds > AppSettings.PersistRunningJobsSpan.TotalSeconds)
+                var log = new DbJobInstanceLog
                 {
-                    _logger.LogInformation("Persist information for job {Group}.{Name}", context.JobDetail.Key.Group, context.JobDetail.Key.Name);
-                    if (context.Result is not JobExecutionMetadata metadata)
-                    {
-                        continue;
-                    }
+                    InstanceId = context.InstanceId,
+                    Information = context.Information,
+                    Exception = context.Exceptions
+                };
 
-                    var information = metadata.GetInformation();
-                    var exceptions = metadata.GetExceptionsText();
-
-                    if (string.IsNullOrEmpty(information) && string.IsNullOrEmpty(exceptions)) { break; }
-
-                    var log = new DbJobInstanceLog
-                    {
-                        InstanceId = context.FireInstanceId,
-                        Information = information,
-                        Exception = exceptions
-                    };
-
-                    await Policy.Handle<Exception>()
+                _logger.LogInformation("Persist information for job {Group}.{Name}", context.Group, context.Name);
+                await Policy.Handle<Exception>()
                         .WaitAndRetryAsync(3, i => TimeSpan.FromSeconds(1 * i))
                         .ExecuteAsync(() => _dal.PersistJobInstanceInformation(log));
-                }
             }
         }
     }
