@@ -84,8 +84,8 @@ namespace Planar
 
             var result = new RunningInfoReply
             {
-                Exceptions = job.Exceptions,
-                Information = job.Information
+                Exceptions = SafeString(job.Exceptions),
+                Information = SafeString(job.Information)
             };
 
             return result;
@@ -112,15 +112,21 @@ namespace Planar
             var jobs = await SchedulerUtil.GetPersistanceRunningJobsInfo();
             var items = jobs.Select(j => new PersistanceRunningJobInfo
             {
-                Exceptions = j.Exceptions,
-                Group = j.Group,
-                Information = j.Information,
-                InstanceId = j.InstanceId,
-                Name = j.Name,
+                Exceptions = SafeString(j.Exceptions),
+                Group = SafeString(j.Group),
+                Information = SafeString(j.Information),
+                InstanceId = SafeString(j.InstanceId),
+                Name = SafeString(j.Name),
             });
 
             result.RunningJobs.AddRange(items);
             return result;
+        }
+
+        private static string SafeString(string value)
+        {
+            if (value == null) { return string.Empty; }
+            return value;
         }
 
         private static RunningJobReply MapRunningJobReply(RunningJobDetails job)
@@ -129,17 +135,17 @@ namespace Planar
 
             var item = new RunningJobReply
             {
-                Description = job.Description,
+                Description = SafeString(job.Description),
                 EffectedRows = job.EffectedRows == null ? -1 : job.EffectedRows.Value,
-                FireInstanceId = job.FireInstanceId,
-                Group = job.Group,
+                FireInstanceId = SafeString(job.FireInstanceId),
+                Group = SafeString(job.Group),
                 Id = job.Id,
-                Name = job.Name,
+                Name = SafeString(job.Name),
                 Progress = job.Progress,
-                RunTime = job.RunTime,
-                TriggerGroup = job.TriggerGroup,
-                TriggerId = job.TriggerId,
-                TriggerName = job.TriggerName,
+                RunTime = SafeString(job.RunTime),
+                TriggerGroup = SafeString(job.TriggerGroup),
+                TriggerId = SafeString(job.TriggerId),
+                TriggerName = SafeString(job.TriggerName),
                 RefireCount = job.RefireCount,
                 FireTime = GetTimeStamp(job.FireTime),
                 NextFireTime = GetTimeStamp(job.NextFireTime),

@@ -352,15 +352,7 @@ namespace Planar.Service.General
                         .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
                         .ExecuteAsync(() => CallGetPersistanceRunningJobInfo(node));
 
-                    var mapItems = items.RunningJobs.Select(i => new PersistanceRunningJobsInfo
-                    {
-                        Exceptions = i.Exceptions,
-                        Group = i.Group,
-                        Information = i.Information,
-                        InstanceId = i.InstanceId,
-                        Name = i.Name,
-                    });
-
+                    var mapItems = items.RunningJobs.Select(i => PersistanceRunningJobsInfo.Parse(i));
                     result.AddRange(mapItems);
                 }
                 catch (RpcException ex)
@@ -439,8 +431,8 @@ namespace Planar.Service.General
             var result = await client.GetRunningInfoAsync(request);
             var response = new GetRunningInfoResponse
             {
-                Information = result.Information,
-                Exceptions = result.Exceptions
+                Information = string.IsNullOrEmpty(result.Information) ? null : result.Information,
+                Exceptions = string.IsNullOrEmpty(result.Exceptions) ? null : result.Exceptions
             };
 
             return response;
