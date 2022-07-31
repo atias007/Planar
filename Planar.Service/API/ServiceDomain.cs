@@ -2,7 +2,6 @@
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.General;
-using Planar.Service.Model;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -32,13 +31,32 @@ namespace Planar.Service.API
                 Environment = Global.Environment,
                 TotalJobs = (await totalJobs).Count,
                 TotalGroups = (await totalGroups).Count,
-                Clustered = (await metadata).JobStoreClustered,
-                JobStoreType = (await metadata).JobStoreType.FullName,
+                Clustering = (await metadata).JobStoreClustered,
+                DatabaseProvider = (await metadata).JobStoreType.FullName,
                 RunningSince = (await metadata).RunningSince.GetValueOrDefault().DateTime,
-                QuartzVersion = (await metadata).Version
+                QuartzVersion = (await metadata).Version,
+                ClusteringCheckinInterval = AppSettings.ClusteringCheckinInterval,
+                ClusteringCheckinMisfireThreshold = AppSettings.ClusteringCheckinMisfireThreshold,
+                ClusterPort = AppSettings.ClusterPort,
+                ClearTraceTableOverDays = AppSettings.ClearTraceTableOverDays,
+                HttpPort = AppSettings.HttpPort,
+                HttpsPort = AppSettings.HttpsPort,
+                MaxConcurrency = AppSettings.MaxConcurrency,
+                PersistRunningJobsSpan = AppSettings.PersistRunningJobsSpan,
+                UseHttps = AppSettings.UseHttps,
+                UseHttpsRedirect = AppSettings.UseHttpsRedirect,
+                ServiceVersion = ServiceVersion
             };
 
             return response;
+        }
+
+        public async Task<bool> HealthCheck()
+        {
+            var hc = SchedulerUtil.IsSchedulerRunning;
+            if (hc == false) { return false; }
+            hc = await new ClusterUtil(DataLayer, Logger).HealthCheck();
+            return hc;
         }
 
         public async Task<List<string>> GetCalendars()
@@ -57,11 +75,6 @@ namespace Planar.Service.API
         {
             await SchedulerUtil.Start();
             await new ClusterUtil(DataLayer, Logger).StartScheduler();
-        }
-
-        public async Task<List<ClusterNode>> GetNodes()
-        {
-            return await DataLayer.GetClusterNodes();
         }
     }
 }

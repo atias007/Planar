@@ -30,12 +30,15 @@
         "Name": "Console"
       }
     ],
-    "Enrich": [ "FromLogContext" ],
+    "Enrich": [
+      "FromLogContext",
+      "WithMachineName"
+    ],
     "Filter": [
       {
         "Name": "ByExcluding",
         "Args": {
-          "expression": "RequestPath like '%/HealthCheck'"
+          "expression": "RequestPath like '%Cluster/HealthCheck'"
         }
       }
     ]

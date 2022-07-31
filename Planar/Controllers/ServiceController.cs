@@ -24,6 +24,13 @@ namespace Planar.Controllers
             return Ok(response);
         }
 
+        [HttpGet("healthCheck")]
+        public async Task<ActionResult<bool>> HealthCheck()
+        {
+            var response = await BusinesLayer.HealthCheck();
+            return Ok(response);
+        }
+
         [HttpGet("calendars")]
         public async Task<ActionResult<List<string>>> GetCalendars()
         {
@@ -43,13 +50,6 @@ namespace Planar.Controllers
         {
             await BusinesLayer.StartScheduler();
             return Ok();
-        }
-
-        [HttpGet("nodes")]
-        public async Task<ActionResult<List<ClusterNode>>> GetNodes()
-        {
-            var response = await BusinesLayer.GetNodes();
-            return Ok(response);
         }
     }
 }

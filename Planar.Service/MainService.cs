@@ -124,6 +124,7 @@ namespace Planar.Service
                 _logger.LogInformation("Initialize: ScheduleSystemJobs");
                 await PersistDataJob.Schedule(Scheduler);
                 await ClusterHealthCheckJob.Schedule(Scheduler);
+                await ClearTraceTableJob.Schedule(Scheduler);
             }
             catch (Exception ex)
             {

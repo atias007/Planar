@@ -18,21 +18,54 @@ namespace Planar.API.Common.Entities
         public bool IsShutdown { get; set; }
 
         [YamlMember(Order = 6)]
-        public bool Clustered { get; set; }
-
-        [YamlMember(Order = 6)]
-        public DateTime RunningSince { get; set; }
+        public bool Clustering { get; set; }
 
         [YamlMember(Order = 7)]
-        public int TotalJobs { get; set; }
+        public int MaxConcurrency { get; set; }
 
         [YamlMember(Order = 8)]
-        public int TotalGroups { get; set; }
+        public TimeSpan ClusteringCheckinInterval { get; set; }
 
         [YamlMember(Order = 9)]
-        public string JobStoreType { get; set; }
+        public TimeSpan ClusteringCheckinMisfireThreshold { get; set; }
 
         [YamlMember(Order = 10)]
+        public int ClearTraceTableOverDays { get; set; }
+
+        [YamlMember(Order = 11)]
+        public TimeSpan PersistRunningJobsSpan { get; set; }
+
+        [YamlMember(Order = 12)]
+        public short HttpPort { get; set; }
+
+        [YamlMember(Order = 13)]
+        public short HttpsPort { get; set; }
+
+        [YamlMember(Order = 14)]
+        public bool UseHttpsRedirect { get; set; }
+
+        [YamlMember(Order = 15)]
+        public bool UseHttps { get; set; }
+
+        [YamlMember(Order = 16)]
+        public short ClusterPort { get; set; }
+
+        [YamlMember(Order = 96)]
+        public DateTime RunningSince { get; set; }
+
+        [YamlMember(Order = 97)]
+        public int TotalJobs { get; set; }
+
+        [YamlMember(Order = 98)]
+        public int TotalGroups { get; set; }
+
+        [YamlMember(Order = 99)]
+        public string DatabaseProvider { get; set; }
+
+        [YamlMember(Order = 100)]
         public string QuartzVersion { get; set; }
+
+        [YamlMember(Order = 101)]
+        public string ServiceVersion { get; set; }
     }
 }

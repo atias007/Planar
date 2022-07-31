@@ -7,7 +7,7 @@ namespace Planar.Service.SystemJobs
 {
     public abstract class BaseSystemJob
     {
-        protected static async Task<JobKey> Schedule<T>(IScheduler scheduler, string description, TimeSpan span)
+        protected static async Task<JobKey> Schedule<T>(IScheduler scheduler, string description, TimeSpan span, DateTime? startDate = null)
             where T : IJob
         {
             var name = typeof(T).Name;
@@ -26,13 +26,21 @@ namespace Planar.Service.SystemJobs
             }
 
             var triggerId = ServiceUtil.GenerateId();
-            var startDate = new DateTimeOffset(DateTime.Now);
-            startDate = startDate.AddSeconds(-startDate.Second);
-            startDate = startDate.Add(span);
+            DateTimeOffset jobStart;
+            if (startDate == null)
+            {
+                jobStart = new DateTimeOffset(DateTime.Now);
+                jobStart = jobStart.AddSeconds(-jobStart.Second);
+                jobStart = jobStart.Add(span);
+            }
+            else
+            {
+                jobStart = new DateTimeOffset(startDate.Value);
+            }
 
             var trigger = TriggerBuilder.Create()
                 .WithIdentity(jobKey.Name, jobKey.Group)
-                .StartAt(startDate)
+                .StartAt(jobStart)
                 .UsingJobData(Consts.TriggerId, triggerId)
                 .WithSimpleSchedule(s => s
                     .WithInterval(span)

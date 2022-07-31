@@ -31,6 +31,8 @@ namespace Planar.Service
 
         public static TimeSpan PersistRunningJobsSpan { get; set; }
 
+        public static int ClearTraceTableOverDays { get; set; }
+
         public static short HttpPort { get; set; }
 
         public static short HttpsPort { get; set; }
@@ -57,6 +59,7 @@ namespace Planar.Service
             ClusterHealthCheckInterval = GetSettings(configuration, Consts.ClusterHealthCheckIntervalVariableKey, nameof(ClusterHealthCheckInterval), TimeSpan.FromMinutes(1));
             ClusterPort = GetSettings<short>(configuration, Consts.ClusterPortVariableKey, nameof(ClusterPort), 12306);
             DatabaseProvider = GetSettings(configuration, Consts.DatabaseProviderVariableKey, nameof(DatabaseProvider), "Npgsql");
+            ClearTraceTableOverDays = GetSettings(configuration, Consts.ClearTraceTableOverDaysVariableKey, nameof(ClearTraceTableOverDays), 365);
         }
 
         private static void InitializeEnvironment(IConfiguration configuration)
@@ -76,14 +79,6 @@ namespace Planar.Service
         private static void InitializePersistanceSpan(IConfiguration configuration)
         {
             PersistRunningJobsSpan = GetSettings<TimeSpan>(configuration, Consts.PersistRunningJobsSpanVariableKey, nameof(PersistRunningJobsSpan));
-
-            if (PersistRunningJobsSpan == default)
-            {
-                Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine($"WARNING: PersistRunningJobsSpan settings is null. Set to default value {Consts.PersistRunningJobsSpanDefaultValue}");
-                Console.ResetColor();
-                PersistRunningJobsSpan = Consts.PersistRunningJobsSpanDefaultValue;
-            }
 
             if (PersistRunningJobsSpan == TimeSpan.Zero)
             {

@@ -559,6 +559,18 @@ namespace Planar.Service.Data
             return data;
         }
 
+        public async Task ClearTraceTable(int overDays)
+        {
+            var parameters = new { OverDays = overDays };
+            using var conn = _context.Database.GetDbConnection();
+            var cmd = new CommandDefinition(
+                commandText: "dbo.ClearTrace",
+                commandType: CommandType.StoredProcedure,
+                parameters: parameters);
+
+            await conn.ExecuteAsync(cmd);
+        }
+
         public async Task DeleteMonitor(MonitorAction request)
         {
             _context.MonitorActions.Remove(request);

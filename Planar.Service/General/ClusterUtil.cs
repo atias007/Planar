@@ -89,6 +89,12 @@ namespace Planar.Service.General
             }
         }
 
+        public async Task<bool> HealthCheck()
+        {
+            var nodes = await _dal.GetClusterNodes();
+            return await HealthCheck(nodes);
+        }
+
         public async Task<bool> HealthCheck(List<ClusterNode> nodes)
         {
             var currentNode = GetCurrentClusterNode();
