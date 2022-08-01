@@ -45,6 +45,8 @@ namespace Planar.Service
 
         public static void Initialize(IConfiguration configuration)
         {
+            Console.WriteLine("[x] Initialize AppSettings");
+
             InitializeEnvironment(configuration);
             InitializeConnectionString(configuration);
             InitializeMaxConcurrency(configuration);
@@ -124,6 +126,11 @@ namespace Planar.Service
 
         private static void CheckConnectionString(string connectionString)
         {
+            if (connectionString.ToLower().Contains("Connection Timeout") == false)
+            {
+                connectionString = $"{connectionString};Connection Timeout=3";
+            }
+
             try
             {
                 using var conn = new SqlConnection(connectionString);

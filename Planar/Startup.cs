@@ -30,6 +30,7 @@ namespace Planar
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            System.Console.WriteLine("[x] Configure services");
             services.AddMvc(options =>
             {
                 options.Filters.Add<ValidateModelStateAttribute>();

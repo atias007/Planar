@@ -459,10 +459,26 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
+        public async Task<string> GetGroupName(int groupId)
+        {
+            var result = await _context.Groups
+                .Where(g => g.Id == groupId)
+                .Select(g => g.Name)
+                .FirstOrDefaultAsync();
+
+            return result;
+        }
+
         public async Task RemoveGroup(Group group)
         {
             _context.Groups.Remove(group);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> IsGroupHasMonitors(string groupName)
+        {
+            var result = await _context.MonitorActions.AnyAsync(m => string.Compare(m.JobGroup, groupName, true) == 0);
+            return result;
         }
 
         public async Task AddUserToGroup(int userId, int groupId)

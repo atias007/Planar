@@ -142,7 +142,7 @@ namespace Planar
                 Id = job.Id,
                 Name = SafeString(job.Name),
                 Progress = job.Progress,
-                RunTime = SafeString(job.RunTime),
+                RunTime = Duration.FromTimeSpan(job.RunTime),
                 TriggerGroup = SafeString(job.TriggerGroup),
                 TriggerId = SafeString(job.TriggerId),
                 TriggerName = SafeString(job.TriggerName),

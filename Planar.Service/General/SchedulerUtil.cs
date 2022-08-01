@@ -194,7 +194,7 @@ namespace Planar.Service.General
             target.PreviousFireTime = source.PreviousFireTimeUtc.HasValue ? source.PreviousFireTimeUtc.Value.DateTime : null;
             target.ScheduledFireTime = source.ScheduledFireTimeUtc.HasValue ? source.ScheduledFireTimeUtc.Value.DateTime : null;
             target.FireTime = source.FireTimeUtc.DateTime;
-            target.RunTime = $"{source.JobRunTime:hh\\:mm\\:ss}";
+            target.RunTime = source.JobRunTime;
             target.RefireCount = source.RefireCount;
             target.TriggerGroup = source.Trigger.Key.Group;
             target.TriggerName = source.Trigger.Key.Name;

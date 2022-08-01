@@ -1,12 +1,11 @@
 - add to base test to retrieve information & exception
 - add monitor event when user pause / delete / add job
-- dont allow to delete group when the group has monitoring
-- check how cli display interval of trigger that is morre the 24 hours
+- dont allow to delete group when the group has monitoring (****** check)
 - misfire behaviour should be enum in yml file
 - demo yml file in data directory
-- runtime property in running job info is string!!! should be timespan
-- cli ls command should hide system job (with option to show all or just system tables)
+- cli monitor add will not start if no hooks exists
 - test cluster functions
+- add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
 -----------------------------------------DONE-----------------------------------------
 - cli health check should check cluster mode
 - allow to stop planar scheduler without stop the windows service (service stop, service start, service shutdown)
@@ -21,3 +20,6 @@
 - planar stop with job id (not only instance id)
 - when cli has no connection to service - show specific error
 - cli cls command
+- runtime property in running job info is string!!! should be timespan
+- cli ls command should hide system job (with option to show all or just system tables)
+- check how cli display interval of trigger that is morre the 24 hours

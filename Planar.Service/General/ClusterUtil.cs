@@ -482,7 +482,7 @@ namespace Planar.Service.General
                 PreviousFireTime = ConvertTimeStamp(reply.PreviousFireTime),
                 Progress = reply.Progress,
                 RefireCount = reply.RefireCount,
-                RunTime = reply.RunTime,
+                RunTime = reply.RunTime.ToTimeSpan(),
                 ScheduledFireTime = ConvertTimeStamp(reply.ScheduledFireTime),
                 TriggerGroup = reply.TriggerGroup,
                 TriggerId = reply.TriggerId,

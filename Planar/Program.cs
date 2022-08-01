@@ -59,6 +59,7 @@ namespace Planar
 
                         .ConfigureAppConfiguration(builder =>
                         {
+                            Console.WriteLine("[x] Load configuration & app settings");
                             var file1 = Path.Combine(FolderConsts.Data, FolderConsts.Settings, "appsettings.json");
                             var file2 = Path.Combine(FolderConsts.Data, FolderConsts.Settings, $"appsettings.{Global.Environment}.json");
 
@@ -82,6 +83,7 @@ namespace Planar
 
         private static void ConfigureSerilog(LoggerConfiguration loggerConfig)
         {
+            Console.WriteLine("[x] Configure serilog");
             var file = Path.Combine(FolderConsts.Data, FolderConsts.Settings, "Serilog.json");
             var configuration = new ConfigurationBuilder()
                         .AddJsonFile(file)

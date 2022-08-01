@@ -56,13 +56,17 @@ namespace Planar.TeamsMonitorHook
 
         private static string GetMessageText(IMonitorDetails details)
         {
+            var runtime = details.JobRunTime.TotalHours < 24 ?
+                $"{details.JobRunTime:hh\\:mm\\:ss}" :
+                $"{details.JobRunTime:\\(d\\)\\ hh\\:mm\\:ss}";
+
             var template = GetTemplate();
             template = Replace(template, "EventTitle", details.EventTitle);
             template = Replace(template, "JobGroup", details.JobGroup);
             template = Replace(template, "JobName", details.JobName);
             template = Replace(template, "JobDescription", details.JobDescription);
             template = Replace(template, "FireTime", $"{details.FireTime:g}");
-            template = Replace(template, "JobRunTime", $"{details.JobRunTime:hh\\:mm\\:ss}");
+            template = Replace(template, "JobRunTime", runtime);
             template = Replace(template, "JobId", details.JobId);
             template = Replace(template, "FireInstanceId", details.FireInstanceId);
             template = Replace(template, "Icon", GetIcon(details));

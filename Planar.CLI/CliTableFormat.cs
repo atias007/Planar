@@ -57,6 +57,11 @@ namespace Planar.CLI
 
         public static string FormatTimeSpan(TimeSpan timeSpan)
         {
+            if (timeSpan.TotalDays >= 1)
+            {
+                return $"{timeSpan:\\(d\\)\\ hh\\:mm\\:ss}";
+            }
+
             return $"{timeSpan:hh\\:mm\\:ss}";
         }
 
@@ -94,7 +99,12 @@ namespace Planar.CLI
                     return $"{span:mm\\:ss}";
                 }
 
-                return $"{span:hh\\:mm\\:ss}";
+                if (span.TotalHours < 24)
+                {
+                    return $"{span:hh\\:mm\\:ss}";
+                }
+
+                return $"{span:\\(d\\)\\ hh\\:mm\\:ss}";
             }
             else
             {
@@ -123,7 +133,12 @@ namespace Planar.CLI
                     return $"{span:mm\\:ss}";
                 }
 
-                return $"{span:hh\\:mm\\:ss}";
+                if (span.Value.TotalHours < 24)
+                {
+                    return $"{span:hh\\:mm\\:ss}";
+                }
+
+                return $"{span:\\(d\\)\\ hh\\:mm\\:ss}";
             }
             else
             {

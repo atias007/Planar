@@ -9,6 +9,7 @@ using Quartz;
 using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -52,14 +53,31 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<List<JobRowDetails>> GetAll()
+        private async Task<IReadOnlyCollection<JobKey>> GetJobKeys(AllJobsMembers members)
+        {
+            switch (members)
+            {
+                case AllJobsMembers.AllUserJobs:
+                    var result = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+                    var list = result.Where(x => x.Group != Consts.PlanarSystemGroup).ToList();
+                    return new ReadOnlyCollection<JobKey>(list);
+
+                case AllJobsMembers.AllSystemJobs:
+                    return await Scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(Consts.PlanarSystemGroup));
+
+                default:
+                case AllJobsMembers.All:
+                    return await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+            }
+        }
+
+        public async Task<List<JobRowDetails>> GetAll(GetAllJobsRequest request)
         {
             var result = new List<JobRowDetails>();
 
-            foreach (var jobKey in await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup()))
+            foreach (var jobKey in await GetJobKeys(request.Filter))
             {
                 var info = await Scheduler.GetJobDetail(jobKey);
-
                 var details = new JobRowDetails();
                 SchedulerUtil.MapJobRowDetails(info, details);
                 result.Add(details);
@@ -367,7 +385,11 @@ namespace Planar.Service.API
             var result = new SimpleTriggerDetails();
             MapTriggerDetails(source, result);
             result.RepeatCount = source.RepeatCount;
-            result.RepeatInterval = $"{source.RepeatInterval:hh\\:mm\\:ss}";
+            result.RepeatInterval =
+                source.RepeatInterval.TotalHours < 24 ?
+                $"{source.RepeatInterval:hh\\:mm\\:ss}" :
+                $"{source.RepeatInterval:\\(d\\)\\ hh\\:mm\\:ss}";
+
             result.TimesTriggered = source.TimesTriggered;
             return result;
         }
