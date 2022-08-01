@@ -49,6 +49,7 @@ namespace Planar.Service.API
 
         public async Task DeleteGroup(int id)
         {
+            await ValidateMonitorForGroup(id);
             var group = new Group { Id = id };
             try
             {
@@ -57,6 +58,16 @@ namespace Planar.Service.API
             catch (DbUpdateConcurrencyException)
             {
                 throw new RestNotFoundException();
+            }
+        }
+
+        private async Task ValidateMonitorForGroup(int groupId)
+        {
+            var name = await DataLayer.GetGroupName(groupId);
+            var hasMonitor = await DataLayer.IsGroupHasMonitors(name);
+            if (hasMonitor)
+            {
+                throw new RestValidationException("id", $"group id {groupId} is mounted to monitor items and can not be deleted");
             }
         }
 

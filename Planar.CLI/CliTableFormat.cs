@@ -6,6 +6,31 @@ namespace Planar.CLI
 {
     public static class CliTableFormat
     {
+        private const string WarningColor = "[khaki3]";
+        private const string OkColor = "[green]";
+        private const string ErrorColor = "[Red]";
+
+        public static string FormatClusterHealthCheck(TimeSpan? span, TimeSpan? deviation)
+        {
+            var title = FromatDurationUpToSecond(span).EscapeMarkup();
+            if (deviation.HasValue)
+            {
+                if (deviation.Value.TotalMilliseconds < 3000)
+                {
+                    return $"{OkColor}{title}[/]";
+                }
+
+                if (deviation.Value.TotalMilliseconds > 3000 && deviation.Value.TotalMilliseconds <= 6000)
+                {
+                    return $"{WarningColor}{title}[/]";
+                }
+
+                return $"{ErrorColor}{title}[/]";
+            }
+
+            return title;
+        }
+
         public static string FormatDateTime(DateTime? dateTime)
         {
             if (dateTime.HasValue)
@@ -32,6 +57,11 @@ namespace Planar.CLI
 
         public static string FormatTimeSpan(TimeSpan timeSpan)
         {
+            if (timeSpan.TotalDays >= 1)
+            {
+                return $"{timeSpan:\\(d\\)\\ hh\\:mm\\:ss}";
+            }
+
             return $"{timeSpan:hh\\:mm\\:ss}";
         }
 
@@ -69,7 +99,46 @@ namespace Planar.CLI
                     return $"{span:mm\\:ss}";
                 }
 
-                return $"{span:hh\\:mm\\:ss}";
+                if (span.TotalHours < 24)
+                {
+                    return $"{span:hh\\:mm\\:ss}";
+                }
+
+                return $"{span:\\(d\\)\\ hh\\:mm\\:ss}";
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
+
+        public static string FromatDurationUpToSecond(TimeSpan? span)
+        {
+            if (span.HasValue)
+            {
+                var value = span.Value.TotalMilliseconds;
+
+                if (value < 1000)
+                {
+                    return "now";
+                }
+
+                if (span.Value.TotalSeconds < 60)
+                {
+                    return $"{span:ss} sec";
+                }
+
+                if (span.Value.TotalMinutes < 60)
+                {
+                    return $"{span:mm\\:ss}";
+                }
+
+                if (span.Value.TotalHours < 24)
+                {
+                    return $"{span:hh\\:mm\\:ss}";
+                }
+
+                return $"{span:\\(d\\)\\ hh\\:mm\\:ss}";
             }
             else
             {
@@ -87,9 +156,9 @@ namespace Planar.CLI
             var statusEnum = (StatusMembers)status;
             return statusEnum switch
             {
-                StatusMembers.Running => $"[khaki3]{statusEnum}[/]",
-                StatusMembers.Success => $"[green]{statusEnum}[/]",
-                StatusMembers.Fail => $"[red]{statusEnum}[/]",
+                StatusMembers.Running => $"{WarningColor}{statusEnum}[/]",
+                StatusMembers.Success => $"{OkColor}{statusEnum}[/]",
+                StatusMembers.Fail => $"{ErrorColor}{statusEnum}[/]",
                 StatusMembers.Veto => $"[aqua]{statusEnum}[/]",
                 _ => $"[silver]{statusEnum}[/]",
             };
@@ -100,18 +169,18 @@ namespace Planar.CLI
             if (display == null) { display = value; }
 
             return value ?
-                $"[green]{display}[/]" :
-                $"[red]{display}[/]";
+                $"{OkColor}{display}[/]" :
+                $"{ErrorColor}{display}[/]";
         }
 
         public static string GetLevelMarkup(string level)
         {
             return level switch
             {
-                "Warning" => $"[khaki3]{level}[/]",
-                "Information" => $"[green]{level}[/]",
-                "Error" => $"[red]{level}[/]",
-                "Fatal" => $"[red]{level}[/]",
+                "Warning" => $"{WarningColor}{level}[/]",
+                "Information" => $"{OkColor}{level}[/]",
+                "Error" => $"{ErrorColor}{level}[/]",
+                "Fatal" => $"{ErrorColor}{level}[/]",
                 "Debug" => $"[aqua]{level}[/]",
                 "Verbose" => $"[silver]{level}[/]",
                 _ => $"[silver]{level}[/]",

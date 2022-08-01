@@ -44,6 +44,11 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> GetAllJobs(CliGetAllJobsRequest request)
         {
             var restRequest = new RestRequest("job", Method.Get);
+            var p = AllJobsMembers.AllUserJobs;
+            if (request.System) { p = AllJobsMembers.AllSystemJobs; }
+            if (request.All) { p = AllJobsMembers.All; }
+            restRequest.AddQueryParameter("filter", (int)p);
+
             var result = await RestProxy.Invoke<List<JobRowDetails>>(restRequest);
             var message = string.Empty;
             CliActionResponse response;

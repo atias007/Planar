@@ -1,0 +1,93 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/duration.proto"; 
+import "google/protobuf/timestamp.proto";
+
+
+/* https://docs.microsoft.com/en-us/dotnet/architecture/grpc-for-wcf-developers/protobuf-data-types */
+
+option csharp_namespace = "Planar";
+
+package Cluster;
+
+service PlanarCluster {
+  rpc HealthCheck (google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc StopScheduler (google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc StartScheduler (google.protobuf.Empty) returns (google.protobuf.Empty);
+  rpc GetRunningJobs (google.protobuf.Empty) returns (GetRunningJobsReply);
+  rpc GetRunningJob (GetRunningJobRequest) returns (RunningJobReply);
+  rpc IsJobRunning (RpcJobKey) returns (IsJobRunningReply);
+  rpc GetRunningInfo (GetRunningJobRequest) returns (RunningInfoReply);
+  rpc IsRunningInstanceExist (GetRunningJobRequest) returns (IsRunningInstanceExistReply);
+  rpc StopRunningJob (GetRunningJobRequest) returns (google.protobuf.Empty);
+  rpc GetPersistanceRunningJobInfo(google.protobuf.Empty) returns (PersistanceRunningJobInfoReply);
+}
+
+message GetRunningJobRequest {
+  string instanceId = 1;
+}
+
+message GetRunningJobsReply {
+  repeated RunningJobReply jobs = 1;
+}
+
+message RpcJobKey{
+	string group = 1;
+	string name = 2;
+}
+
+message IsJobRunningReply{
+	bool isRunning = 1;
+}
+
+message PersistanceRunningJobInfoReply
+{
+	repeated PersistanceRunningJobInfo runningJobs = 1;
+}
+
+message PersistanceRunningJobInfo
+{
+	string group = 1;
+	string name = 2;
+	string instanceId = 3;
+	/*google.protobuf.Duration jobRunTime = 3;*/
+	string information = 4;
+	string exceptions = 5;
+}
+
+message RunningJobReply{
+	string id = 1;
+	string group = 2;
+	string name = 3;
+	string description = 4;
+	string fireInstanceId = 5;
+	optional google.protobuf.Timestamp scheduledFireTime = 6;
+	google.protobuf.Timestamp fireTime = 7;
+	optional google.protobuf.Timestamp nextFireTime = 8;
+	optional google.protobuf.Timestamp previousFireTime = 9;
+	google.protobuf.Duration runTime = 10;
+	int32 refireCount = 11;
+	string triggerName = 12;
+	string triggerGroup = 13;
+	string triggerId = 14;
+	repeated DataMap DataMap = 15;
+	optional int32 effectedRows = 16;
+	int32 progress = 17;
+}
+
+message DataMap{
+	string key = 1;
+	string value = 2;
+}
+
+message RunningInfoReply
+{
+	string information =1;
+    string exceptions = 2;
+}
+
+message IsRunningInstanceExistReply
+{
+	bool exists = 1;
+}

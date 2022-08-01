@@ -62,6 +62,7 @@ namespace Planar.CLI.Actions
         public static IEnumerable<CliActionMetadata> GetAllActions()
         {
             var result = new List<CliActionMetadata>();
+            result.AddRange(InnerCliActions.GetActions());
             result.AddRange(JobCliActions.GetActions());
             result.AddRange(ServiceCliActions.GetActions());
             result.AddRange(TriggerCliActions.GetActions());
@@ -70,6 +71,7 @@ namespace Planar.CLI.Actions
             result.AddRange(HistoryCliActions.GetActions());
             result.AddRange(UserCliActions.GetActions());
             result.AddRange(GroupCliActions.GetActions());
+            result.AddRange(ClusterCliActions.GetActions());
             result.AddRange(MonitorCliActions.GetActions());
             return result;
         }

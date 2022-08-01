@@ -1,0 +1,5 @@
+﻿usage: planar service <command> [<options>]
+
+the options for <command> and [<options>] parameters of service module:
+
+nodes

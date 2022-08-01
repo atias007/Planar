@@ -14,6 +14,7 @@ using Serilog;
 using System.Net;
 using AutoMapper;
 using System.Reflection;
+using Microsoft.AspNetCore.Http;
 
 namespace Planar
 {
@@ -29,6 +30,7 @@ namespace Planar
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            System.Console.WriteLine("[x] Configure services");
             services.AddMvc(options =>
             {
                 options.Filters.Add<ValidateModelStateAttribute>();
@@ -69,6 +71,8 @@ namespace Planar
             services.AddScoped<TraceDomain>();
             services.AddScoped<TriggerDomain>();
             services.AddScoped<UserDomain>();
+            services.AddScoped<ClusterDomain>();
+            services.AddGrpc();
             services.AddHostedService<MainService>();
         }
 
@@ -96,6 +100,8 @@ namespace Planar
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+
+                endpoints.MapGrpcService<ClusterService>();
             });
         }
     }

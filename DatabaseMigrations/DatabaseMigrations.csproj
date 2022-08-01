@@ -8,12 +8,16 @@
     <None Remove="Scripts\Planar_0002 - Add ServerName Column.sql" />
     <None Remove="Scripts\Planar_0003 - FixFactoryReset.sql" />
     <None Remove="Scripts\Planar_0004 - Add Cluster Table.sql" />
+    <None Remove="Scripts\Planar_0005 - Add ClearTrace SP.sql" />
+    <None Remove="Scripts\Planar_0006 - fix factory reset sp.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - Create all.sql" />
     <EmbeddedResource Include="Scripts\Planar_0002 - Add ServerName Column.sql" />
     <EmbeddedResource Include="Scripts\Planar_0003 - FixFactoryReset.sql" />
     <EmbeddedResource Include="Scripts\Planar_0004 - Add Cluster Table.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0005 - Add ClearTrace SP.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0006 - fix factory reset sp.sql" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="dbup-sqlserver" Version="4.6.0" />
@@ -25,5 +29,7 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Remove="Scripts\Planar_0003 - FixFactoryReset.sql" />
+    <None Remove="Scripts\Planar_0005 - Add ClearTrace SP.sql" />
+    <None Remove="Scripts\Planar_0006 - fix factory reset sp.sql" />
   </ItemGroup>
 </Project>

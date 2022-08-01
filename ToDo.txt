@@ -1,12 +1,25 @@
 - add to base test to retrieve information & exception
 - add monitor event when user pause / delete / add job
-- dont allow to delete group when the group has monitoring
+- dont allow to delete group when the group has monitoring (****** check)
+- misfire behaviour should be enum in yml file
+- demo yml file in data directory
+- cli monitor add will not start if no hooks exists
+- test cluster functions
+- add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
+-----------------------------------------DONE-----------------------------------------
+- cli health check should check cluster mode
 - allow to stop planar scheduler without stop the windows service (service stop, service start, service shutdown)
 - add cluster support in cli in all "running" commands (and stop)
------------------------------------------DONE-----------------------------------------
+- filter /swagger from trace
+- enrich serilog with machine name
+- filter /Cluster.PlanarCluster/HealthCheck from trace
 - when delete job --> delete its monitoring items
 - add monitor event when retry
 - add concurent property to yml
 - move to .net 6
 - planar stop with job id (not only instance id)
 - when cli has no connection to service - show specific error
+- cli cls command
+- runtime property in running job info is string!!! should be timespan
+- cli ls command should hide system job (with option to show all or just system tables)
+- check how cli display interval of trigger that is morre the 24 hours

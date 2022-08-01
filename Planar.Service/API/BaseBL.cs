@@ -33,6 +33,18 @@ namespace Planar.Service.API
             }
         }
 
+        protected string ServiceVersion
+        {
+            get
+            {
+                var versionString = Assembly.GetEntryAssembly()
+                                       ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                                       ?.InformationalVersion
+                                       .ToString();
+                return versionString;
+            }
+        }
+
         protected DataLayer DataLayer => _dataLayer;
 
         protected ILogger<TBusinesLayer> Logger => _logger;

@@ -330,6 +330,19 @@ namespace Planar.Service.API
             ValidateTriggerNameProperties(container);
             ValidateMaxCharsTiggerProperties(container);
             ValidatePreserveWordsTriggerProperties(container);
+            ValidateTriggerPriority(container);
+        }
+
+        private static void ValidateTriggerPriority(ITriggersContainer container)
+        {
+            container.SimpleTriggers?.ForEach(t =>
+            {
+                if (t.Priority == int.MaxValue) { throw new RestValidationException("priority", $"priority ha invalid value ({t.Priority})"); }
+            });
+            container.CronTriggers?.ForEach(t =>
+            {
+                if (t.Priority == int.MaxValue) { throw new RestValidationException("priority", $"priority ha invalid value ({t.Priority})"); }
+            });
         }
 
         private static void ValidatePreserveWordsTriggerProperties(ITriggersContainer container)

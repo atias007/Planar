@@ -124,7 +124,11 @@ namespace Planar.Service.API
             var result = new SimpleTriggerDetails();
             MapTriggerDetails(source, result);
             result.RepeatCount = source.RepeatCount;
-            result.RepeatInterval = $"{source.RepeatInterval:hh\\:mm\\:ss}";
+            result.RepeatInterval =
+                source.RepeatInterval.TotalHours < 24 ?
+                $"{source.RepeatInterval:hh\\:mm\\:ss}" :
+                $"{source.RepeatInterval:\\(d\\)\\ hh\\:mm\\:ss}";
+
             result.TimesTriggered = source.TimesTriggered;
             return result;
         }

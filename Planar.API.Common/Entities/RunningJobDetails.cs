@@ -22,7 +22,7 @@ namespace Planar.API.Common.Entities
         public DateTime? PreviousFireTime { get; set; }
 
         [YamlMember(Order = 25)]
-        public string RunTime { get; set; }
+        public TimeSpan RunTime { get; set; }
 
         [YamlMember(Order = 26)]
         public int RefireCount { get; set; }

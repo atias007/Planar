@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Planar.Common;
@@ -17,7 +18,8 @@ namespace Planar
         public static void Main(string[] args)
         {
             AppDomain.CurrentDomain.ProcessExit += (s, e) => Log.CloseAndFlush();
-            CreateHostBuilder(args).Build().Run();
+            var app = CreateHostBuilder(args).Build();
+            app.Run();
             Global.Clear();
         }
 
@@ -34,6 +36,7 @@ namespace Planar
                         {
                             options.Listen(IPAddress.Loopback, 0);
                             options.ListenAnyIP(AppSettings.HttpPort);
+                            options.ListenAnyIP(AppSettings.HttpPort + 10000, x => x.Protocols = HttpProtocols.Http2);
                             if (AppSettings.UseHttps)
                             {
                                 options.ListenAnyIP(AppSettings.HttpsPort, opts => opts.UseHttps());
@@ -56,6 +59,7 @@ namespace Planar
 
                         .ConfigureAppConfiguration(builder =>
                         {
+                            Console.WriteLine("[x] Load configuration & app settings");
                             var file1 = Path.Combine(FolderConsts.Data, FolderConsts.Settings, "appsettings.json");
                             var file2 = Path.Combine(FolderConsts.Data, FolderConsts.Settings, $"appsettings.{Global.Environment}.json");
 
@@ -79,6 +83,7 @@ namespace Planar
 
         private static void ConfigureSerilog(LoggerConfiguration loggerConfig)
         {
+            Console.WriteLine("[x] Configure serilog");
             var file = Path.Combine(FolderConsts.Data, FolderConsts.Settings, "Serilog.json");
             var configuration = new ConfigurationBuilder()
                         .AddJsonFile(file)

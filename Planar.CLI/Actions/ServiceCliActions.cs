@@ -25,12 +25,20 @@ namespace Planar.CLI.Actions
             return await Execute(restRequest);
         }
 
+        [Action("info")]
+        public static async Task<CliActionResponse> GetInfo()
+        {
+            var restRequest = new RestRequest("service", Method.Get);
+            var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest);
+            return new CliActionResponse(result, result.Data);
+        }
+
         [Action("hc")]
         [Action("healthcheck")]
         public static async Task<CliActionResponse> HealthCheck()
         {
-            var restRequest = new RestRequest("service", Method.Get);
-            var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest);
+            var restRequest = new RestRequest("service/healthCheck", Method.Get);
+            var result = await RestProxy.Invoke<bool>(restRequest);
             return new CliActionResponse(result, result.Data);
         }
 

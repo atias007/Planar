@@ -459,10 +459,26 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
+        public async Task<string> GetGroupName(int groupId)
+        {
+            var result = await _context.Groups
+                .Where(g => g.Id == groupId)
+                .Select(g => g.Name)
+                .FirstOrDefaultAsync();
+
+            return result;
+        }
+
         public async Task RemoveGroup(Group group)
         {
             _context.Groups.Remove(group);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> IsGroupHasMonitors(string groupName)
+        {
+            var result = await _context.MonitorActions.AnyAsync(m => string.Compare(m.JobGroup, groupName, true) == 0);
+            return result;
         }
 
         public async Task AddUserToGroup(int userId, int groupId)
@@ -559,6 +575,18 @@ namespace Planar.Service.Data
             return data;
         }
 
+        public async Task ClearTraceTable(int overDays)
+        {
+            var parameters = new { OverDays = overDays };
+            using var conn = _context.Database.GetDbConnection();
+            var cmd = new CommandDefinition(
+                commandText: "dbo.ClearTrace",
+                commandType: CommandType.StoredProcedure,
+                parameters: parameters);
+
+            await conn.ExecuteAsync(cmd);
+        }
+
         public async Task DeleteMonitor(MonitorAction request)
         {
             _context.MonitorActions.Remove(request);
@@ -579,37 +607,26 @@ namespace Planar.Service.Data
 
         #region Cluster
 
-        public async Task<ClusterServer> GetClusterInstanceExists(ClusterServer item)
+        public async Task<ClusterNode> GetClusterNode(ClusterNode item)
         {
-            return await _context.ClusterServers.FirstOrDefaultAsync(c =>
-                c.Server == item.Server &&
-                c.Port == item.Port &&
-                c.InstanceId == item.InstanceId);
+            return await _context.ClusterNodes.FirstOrDefaultAsync(c => c.Server == item.Server && c.Port == item.Port);
         }
 
-        public async Task UpdateClusterInstance(ClusterServer item)
+        public async Task<List<ClusterNode>> GetClusterNodes()
         {
-            _context.ClusterServers.Update(item);
+            return await _context.ClusterNodes.ToListAsync();
+        }
+
+        public async Task AddClusterNode(ClusterNode item)
+        {
+            await _context.ClusterNodes.AddAsync(item);
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateClusterHealthCheckDate(ClusterServer item)
+        public async Task RemoveClusterNode(ClusterNode item)
         {
-            var cluster = await GetClusterInstanceExists(item);
-            cluster.HealthCheckDate = DateTime.Now;
-            await UpdateClusterInstance(cluster);
-        }
-
-        public async Task AddClusterServer(ClusterServer item)
-        {
-            await _context.ClusterServers.AddAsync(item);
+            _context.ClusterNodes.Remove(item);
             await _context.SaveChangesAsync();
-        }
-
-        public void RemoveClusterServer(ClusterServer item)
-        {
-            _context.ClusterServers.Remove(item);
-            _context.SaveChanges();
         }
 
         #endregion Cluster

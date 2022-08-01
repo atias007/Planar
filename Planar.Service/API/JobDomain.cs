@@ -4,10 +4,12 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
+using Planar.Service.General;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -51,16 +53,33 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<List<JobRowDetails>> GetAll()
+        private async Task<IReadOnlyCollection<JobKey>> GetJobKeys(AllJobsMembers members)
+        {
+            switch (members)
+            {
+                case AllJobsMembers.AllUserJobs:
+                    var result = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+                    var list = result.Where(x => x.Group != Consts.PlanarSystemGroup).ToList();
+                    return new ReadOnlyCollection<JobKey>(list);
+
+                case AllJobsMembers.AllSystemJobs:
+                    return await Scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(Consts.PlanarSystemGroup));
+
+                default:
+                case AllJobsMembers.All:
+                    return await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+            }
+        }
+
+        public async Task<List<JobRowDetails>> GetAll(GetAllJobsRequest request)
         {
             var result = new List<JobRowDetails>();
 
-            foreach (var jobKey in await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup()))
+            foreach (var jobKey in await GetJobKeys(request.Filter))
             {
                 var info = await Scheduler.GetJobDetail(jobKey);
-
                 var details = new JobRowDetails();
-                MapJobRowDetails(info, details);
+                SchedulerUtil.MapJobRowDetails(info, details);
                 result.Add(details);
             }
 
@@ -79,42 +98,36 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<List<RunningJobDetails>> GetRunning(string instanceId)
+        public async Task<List<RunningJobDetails>> GetRunning()
         {
-            var result = new List<RunningJobDetails>();
+            var result = await SchedulerUtil.GetRunningJobs();
+            var clusterResult = await new ClusterUtil(DataLayer, Logger).GetRunningJobs();
+            result.AddRange(clusterResult);
+            return result;
+        }
 
-            foreach (var context in await Scheduler.GetCurrentlyExecutingJobs())
+        public async Task<RunningJobDetails> GetRunning(string instanceId)
+        {
+            var result = await SchedulerUtil.GetRunningJob(instanceId);
+            if (result != null)
             {
-                if (string.IsNullOrEmpty(instanceId) || instanceId == context.FireInstanceId)
-                {
-                    var details = new RunningJobDetails();
-                    MapJobRowDetails(context.JobDetail, details);
-                    MapJobExecutionContext(context, details);
-                    result.Add(details);
-                }
+                return result;
             }
 
-            var response = result.OrderBy(r => r.Name).ToList();
-            return response;
+            result = await new ClusterUtil(DataLayer, Logger).GetRunningJob(instanceId);
+            return result;
         }
 
         public async Task<GetRunningInfoResponse> GetRunningInfo(string instanceId)
         {
-            var context = (await Scheduler.GetCurrentlyExecutingJobs()).FirstOrDefault(j => j.FireInstanceId == instanceId);
-            var information = string.Empty;
-            var exceptions = string.Empty;
-
-            if (context != null)
+            var result = await SchedulerUtil.GetRunningInfo(instanceId);
+            if (result != null)
             {
-                if (context.Result is JobExecutionMetadata metadata)
-                {
-                    information = metadata.GetInformation();
-                    exceptions = metadata.GetExceptionsText();
-                }
+                return result;
             }
 
-            var response = new GetRunningInfoResponse { Information = information, Exceptions = exceptions };
-            return response;
+            result = await new ClusterUtil(DataLayer, Logger).GetRunningInfo(instanceId);
+            return result;
         }
 
         public async Task<Dictionary<string, string>> GetSettings(string id)
@@ -218,35 +231,8 @@ namespace Planar.Service.API
 
         public async Task Stop(FireInstanceIdRequest request)
         {
-            var jobKey = await JobKeyHelper.GetJobKey(request.FireInstanceId);
-            var info = await Scheduler.GetJobDetail(jobKey);
-
-            if (info != null)
-            {
-                var allInstances = await GetRunningInstanceForJob(request.FireInstanceId);
-                if (!allInstances.Any())
-                {
-                    throw new RestNotFoundException($"job with key/id '{request.FireInstanceId}' has no instance running");
-                }
-
-                if (allInstances.Count() > 1)
-                {
-                    throw new RestValidationException("fireInstanceId", $"job with key/id '{request.FireInstanceId}' has more then 1 instance running");
-                }
-
-                request.FireInstanceId = allInstances.First();
-            }
-
-            if (!await IsRunningInstanceExist(request.FireInstanceId))
-            {
-                throw new RestNotFoundException($"fire instance id '{request.FireInstanceId}' is not exist");
-            }
-
-            var result = await Scheduler.Interrupt(request.FireInstanceId);
-            if (result == false)
-            {
-                throw new RestValidationException("fireInstanceId", $"fail to stop running job with FireInstanceId {request.FireInstanceId}");
-            }
+            await SchedulerUtil.StopRunningJob(request.FireInstanceId);
+            await new ClusterUtil(DataLayer, Logger).StopRunningJob(request.FireInstanceId);
         }
 
         public async Task UpdateProperty(UpsertJobPropertyRequest request)
@@ -301,44 +287,13 @@ namespace Planar.Service.API
             }
         }
 
-        private static async Task<IEnumerable<string>> GetRunningInstanceForJob(string jobKeyId)
+        private async Task<bool> IsRunningInstanceExist(string instanceId)
         {
-            var result = new List<string>();
-            if (string.IsNullOrEmpty(jobKeyId))
-            {
-                return result;
-            }
+            var result = await SchedulerUtil.IsRunningInstanceExist(instanceId);
+            if (result) { return true; }
 
-            var jobKey = await JobKeyHelper.GetJobKey(jobKeyId);
-
-            foreach (var context in await Scheduler.GetCurrentlyExecutingJobs())
-            {
-                var equals = JobKeyHelper.Compare(jobKey, context.JobDetail.Key);
-                if (equals)
-                {
-                    result.Add(context.FireInstanceId);
-                }
-            }
-
+            result = await new ClusterUtil(DataLayer, Logger).IsRunningInstanceExist(instanceId);
             return result;
-        }
-
-        private static async Task<bool> IsRunningInstanceExist(string instanceId)
-        {
-            if (string.IsNullOrEmpty(instanceId))
-            {
-                return false;
-            }
-
-            foreach (var context in await Scheduler.GetCurrentlyExecutingJobs())
-            {
-                if (instanceId == context.FireInstanceId)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private static Dictionary<string, string> GetJobProperties(IJobDetail job)
@@ -408,7 +363,7 @@ namespace Planar.Service.API
                 dataMap = source.JobDataMap;
             }
 
-            MapJobRowDetails(source, target);
+            SchedulerUtil.MapJobRowDetails(source, target);
             target.Concurrent = !source.ConcurrentExecutionDisallowed;
             target.Durable = source.Durable;
             target.RequestsRecovery = source.RequestsRecovery;
@@ -425,46 +380,16 @@ namespace Planar.Service.API
             }
         }
 
-        private static void MapJobExecutionContext(IJobExecutionContext source, RunningJobDetails target)
-        {
-            target.FireInstanceId = source.FireInstanceId;
-            target.NextFireTime = source.NextFireTimeUtc.HasValue ? source.NextFireTimeUtc.Value.DateTime : null;
-            target.PreviousFireTime = source.PreviousFireTimeUtc.HasValue ? source.PreviousFireTimeUtc.Value.DateTime : null;
-            target.ScheduledFireTime = source.ScheduledFireTimeUtc.HasValue ? source.ScheduledFireTimeUtc.Value.DateTime : null;
-            target.FireTime = source.FireTimeUtc.DateTime;
-            target.RunTime = $"{source.JobRunTime:hh\\:mm\\:ss}";
-            target.RefireCount = source.RefireCount;
-            target.TriggerGroup = source.Trigger.Key.Group;
-            target.TriggerName = source.Trigger.Key.Name;
-            target.DataMap = Global.ConvertDataMapToDictionary(source.MergedJobDataMap);
-            target.TriggerId = TriggerKeyHelper.GetTriggerId(source);
-
-            if (target.TriggerGroup == Consts.RecoveringJobsGroup)
-            {
-                target.TriggerId = Consts.RecoveringJobsGroup;
-            }
-
-            if (source.Result is JobExecutionMetadata metadata)
-            {
-                target.EffectedRows = metadata.EffectedRows;
-                target.Progress = metadata.Progress;
-            }
-        }
-
-        private static void MapJobRowDetails(IJobDetail source, JobRowDetails target)
-        {
-            target.Id = JobKeyHelper.GetJobId(source);
-            target.Name = source.Key.Name;
-            target.Group = source.Key.Group;
-            target.Description = source.Description;
-        }
-
         private static SimpleTriggerDetails MapSimpleTriggerDetails(ISimpleTrigger source)
         {
             var result = new SimpleTriggerDetails();
             MapTriggerDetails(source, result);
             result.RepeatCount = source.RepeatCount;
-            result.RepeatInterval = $"{source.RepeatInterval:hh\\:mm\\:ss}";
+            result.RepeatInterval =
+                source.RepeatInterval.TotalHours < 24 ?
+                $"{source.RepeatInterval:hh\\:mm\\:ss}" :
+                $"{source.RepeatInterval:\\(d\\)\\ hh\\:mm\\:ss}";
+
             result.TimesTriggered = source.TimesTriggered;
             return result;
         }
@@ -520,10 +445,15 @@ namespace Planar.Service.API
             }
         }
 
-        private static async Task ValidateJobNotRunning(JobKey jobKey)
+        private async Task ValidateJobNotRunning(JobKey jobKey)
         {
-            var allRunning = await Scheduler.GetCurrentlyExecutingJobs();
-            if (allRunning.AsQueryable().Any(c => c.JobDetail.Key.Name == jobKey.Name && c.JobDetail.Key.Group == jobKey.Group))
+            var isRunning = await SchedulerUtil.IsJobRunning(jobKey);
+            if (isRunning == false)
+            {
+                isRunning = await new ClusterUtil(DataLayer, Logger).IsJobRunning(jobKey);
+            }
+
+            if (isRunning)
             {
                 throw new RestValidationException($"{jobKey.Group}.{jobKey.Name}", $"job with name: {jobKey.Name} and group: {jobKey.Group} is currently running");
             }

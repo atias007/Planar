@@ -1,22 +1,21 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Planar.Calendar.Hebrew;
 using Planar.Common;
 using Planar.Service.Data;
+using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.List;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.SystemJobs;
 using Quartz;
-using Quartz.Impl;
 using Quartz.Impl.Matchers;
 using Quartz.Logging;
 using Quartz.Simpl;
 using System;
-using System.Collections.Specialized;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -62,7 +61,7 @@ namespace Planar.Service
             waiter.OnCompleted(async () =>
             {
                 _logger.LogInformation("IsCancellationRequested = true");
-                RemoveSchedulerCluster();
+                RemoveSchedulerCluster().Wait();
                 await _scheduler?.Shutdown(true);
             });
 
@@ -81,8 +80,6 @@ namespace Planar.Service
 
             await InitializeScheduler();
 
-            await AddSchedulerCluster();
-
             await AddJobListeners();
 
             await AddCalendars();
@@ -92,6 +89,8 @@ namespace Planar.Service
             await ScheduleSystemJobs();
 
             await StartScheduler();
+
+            await JoinToCluster();
         }
 
         #region Initialize Scheduler
@@ -124,6 +123,8 @@ namespace Planar.Service
             {
                 _logger.LogInformation("Initialize: ScheduleSystemJobs");
                 await PersistDataJob.Schedule(Scheduler);
+                await ClusterHealthCheckJob.Schedule(Scheduler);
+                await ClearTraceTableJob.Schedule(Scheduler);
             }
             catch (Exception ex)
             {
@@ -210,44 +211,39 @@ namespace Planar.Service
             }
         }
 
-        private static void RemoveSchedulerCluster()
+        private static async Task RemoveSchedulerCluster()
         {
             var dal = Resolve<DataLayer>();
-            var cluster = new ClusterServer
+            var cluster = new ClusterNode
             {
                 Server = Environment.MachineName,
-                Port = Convert.ToInt16(AppSettings.HttpPort),
+                Port = AppSettings.HttpPort,
                 InstanceId = _scheduler.SchedulerInstanceId
             };
 
-            dal.RemoveClusterServer(cluster);
+            await dal.RemoveClusterNode(cluster);
         }
 
-        private async Task AddSchedulerCluster()
+        private async Task JoinToCluster()
         {
             try
             {
                 _logger.LogInformation("Initialize: AddSchedulerCluster");
 
                 var dal = Resolve<DataLayer>();
-                var cluster = new ClusterServer
-                {
-                    Server = Environment.MachineName,
-                    Port = Convert.ToInt16(AppSettings.HttpPort),
-                    InstanceId = _scheduler.SchedulerInstanceId
-                };
+                var nodes = await dal.GetClusterNodes();
+                var util = new ClusterUtil(dal, _logger);
+                ClusterUtil.ValidateClusterConflict(nodes);
 
-                var item = await dal.GetClusterInstanceExists(cluster);
-                if (item == null)
+                if (await util.HealthCheck(nodes))
                 {
-                    cluster.JoinDate = DateTime.Now;
-                    await dal.AddClusterServer(cluster);
+                    await util.Join();
+                    LogClustering();
                 }
                 else
                 {
-                    item.JoinDate = DateTime.Now;
-                    item.HealthCheckDate = null;
-                    await dal.UpdateClusterInstance(cluster);
+                    Scheduler?.Standby();
+                    throw new PlanarException("Cluster health check fail. Could not join to cluster. See previous errors for more details");
                 }
             }
             catch (Exception ex)
@@ -285,7 +281,6 @@ namespace Planar.Service
                     });
 
                 _scheduler = await builder.BuildScheduler();
-                LogClustering();
             }
             catch (Exception ex)
             {
@@ -311,11 +306,11 @@ namespace Planar.Service
         {
             if (AppSettings.Clustering)
             {
-                _logger.LogInformation("Clustering [id: {Id}]", _scheduler.SchedulerInstanceId);
+                _logger.LogInformation("Join to cluster [instance id: {Id}]", _scheduler.SchedulerInstanceId);
             }
             else
             {
-                _logger.LogInformation("Clustering [No Cluster]");
+                _logger.LogInformation("Non clustering instance");
             }
         }
 

@@ -13,7 +13,7 @@ using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
 namespace Planar.Service.SystemJobs
 {
     [DisallowConcurrentExecution]
-    public class PersistDataJob : IJob
+    public class PersistDataJob : BaseSystemJob, IJob
     {
         private readonly ILogger<PersistDataJob> _logger;
 
@@ -33,98 +33,37 @@ namespace Planar.Service.SystemJobs
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to persist data {Message}", ex.Message);
+                _logger.LogError(ex, "Fail to persist data: {Message}", ex.Message);
                 return Task.CompletedTask;
             }
         }
 
         public static async Task Schedule(IScheduler scheduler)
         {
-            var jobKey = new JobKey(nameof(PersistDataJob), Consts.PlanarSystemGroup);
-            IJobDetail job = null;
-
-            try
-            {
-                job = await scheduler.GetJobDetail(jobKey);
-            }
-            catch (Exception)
-            {
-                try
-                {
-                    await scheduler.DeleteJob(jobKey);
-                }
-                catch
-                {
-                    // *** DO NOTHING *** //
-                }
-                finally
-                {
-                    job = null;
-                }
-            }
-
-            if (job != null)
-            {
-                await scheduler.DeleteJob(jobKey);
-                job = await scheduler.GetJobDetail(jobKey);
-            }
-
-            if (job == null)
-            {
-                var jobId = ServiceUtil.GenerateId();
-                var triggerId = ServiceUtil.GenerateId();
-
-                job = JobBuilder.Create(typeof(PersistDataJob))
-                    .WithIdentity(jobKey)
-                    .UsingJobData(Consts.JobId, jobId)
-                    .WithDescription("System job for persist information & exception from running jobs")
-                    .StoreDurably(true)
-                    .Build();
-
-                var trigger = TriggerBuilder.Create()
-                    .WithIdentity(jobKey.Name, jobKey.Group)
-                    .StartAt(new DateTimeOffset(DateTime.Now.Add(AppSettings.PersistRunningJobsSpan)))
-                    .UsingJobData(Consts.TriggerId, triggerId)
-                    .WithSimpleSchedule(s => s
-                        .WithInterval(AppSettings.PersistRunningJobsSpan)
-                        .RepeatForever()
-                        .WithMisfireHandlingInstructionIgnoreMisfires()
-                    )
-                    .Build();
-
-                await scheduler.ScheduleJob(job, trigger);
-            }
+            const string description = "System job for persist information & exception from running jobs";
+            var span = AppSettings.PersistRunningJobsSpan;
+            await Schedule<PersistDataJob>(scheduler, description, span);
         }
 
         private async Task DoWork()
         {
-            var runningJobs = await MainService.Scheduler.GetCurrentlyExecutingJobs();
+            var runningJobs = await SchedulerUtil.GetPersistanceRunningJobsInfo();
+            var clusterRunningJobs = await new ClusterUtil(_dal, _logger).GetPersistanceRunningJobsInfo();
+            runningJobs.AddRange(clusterRunningJobs);
+
             foreach (var context in runningJobs)
             {
-                if (context.JobRunTime.TotalSeconds > AppSettings.PersistRunningJobsSpan.TotalSeconds)
+                var log = new DbJobInstanceLog
                 {
-                    _logger.LogInformation("Persist information for job {Group}.{Name}", context.JobDetail.Key.Group, context.JobDetail.Key.Name);
-                    if (context.Result is not JobExecutionMetadata metadata)
-                    {
-                        continue;
-                    }
+                    InstanceId = context.InstanceId,
+                    Information = context.Information,
+                    Exception = context.Exceptions
+                };
 
-                    var information = metadata.GetInformation();
-                    var exceptions = metadata.GetExceptionsText();
-
-                    if (string.IsNullOrEmpty(information) && string.IsNullOrEmpty(exceptions)) { break; }
-
-                    var log = new DbJobInstanceLog
-                    {
-                        InstanceId = context.FireInstanceId,
-                        Information = information,
-                        Exception = exceptions
-                    };
-
-                    await Policy.Handle<Exception>()
+                _logger.LogInformation("Persist information for job {Group}.{Name}", context.Group, context.Name);
+                await Policy.Handle<Exception>()
                         .WaitAndRetryAsync(3, i => TimeSpan.FromSeconds(1 * i))
                         .ExecuteAsync(() => _dal.PersistJobInstanceInformation(log));
-                }
             }
         }
     }

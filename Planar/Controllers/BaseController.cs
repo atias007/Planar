@@ -9,9 +9,9 @@ namespace Planar.Controllers
 {
     public class BaseController<TController, TBusinesLayer> : ControllerBase
     {
-        protected readonly ILogger<TController> _loggger;
-        protected readonly TBusinesLayer _businesLayer;
-        protected readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<TController> _loggger;
+        private readonly TBusinesLayer _businesLayer;
+        private readonly IServiceProvider _serviceProvider;
 
         public BaseController(ILogger<TController> logger, IServiceProvider serviceProvider)
         {

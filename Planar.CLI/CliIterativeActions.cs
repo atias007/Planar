@@ -72,9 +72,14 @@ namespace Planar.CLI
             }
             else
             {
+                var runtime =
+                    item.RunTime.TotalHours < 24 ?
+                    $"{item.RunTime:hh\\:mm\\:ss}" :
+                    $"{item.RunTime:\\(d\\)\\ hh\\:mm\\:ss}";
+
                 table.UpdateCell(i, 3, $"[gold3_1]{item.Progress}%[/]");
                 table.UpdateCell(i, 4, item.EffectedRows.ToString());
-                table.UpdateCell(i, 5, item.RunTime);
+                table.UpdateCell(i, 5, runtime);
             }
         }
     }
