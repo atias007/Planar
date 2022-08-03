@@ -27,61 +27,15 @@ namespace Planar.Service.General
             _logger = logger;
         }
 
-        private static ClusterNode GetCurrentClusterNode()
-        {
-            var cluster = new ClusterNode
-            {
-                Server = Environment.MachineName,
-                Port = AppSettings.HttpPort,
-            };
-
-            return cluster;
-        }
-
-        public async Task HealthCheckWithUpdate()
-        {
-            var currentNode = GetCurrentClusterNode();
-
-            var nodes = await _dal.GetClusterNodes();
-            await RegisterCurrentNodeIfNotExists(currentNode, nodes);
-
-            foreach (var node in nodes)
-            {
-                if (node == currentNode)
-                {
-                    await VerifyCurrentNode(node);
-                    continue;
-                }
-
-                try
-                {
-                    await Policy.Handle<RpcException>()
-                      .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                      .ExecuteAsync(() => CallHealthCheckService(node));
-                }
-                catch (RpcException ex)
-                {
-                    _logger.LogError(ex, "fail to make health check to {Server}:{Port}", node.Server, node.ClusterPort);
-
-                    if (node.LiveNode == false)
-                    {
-                        _logger.LogError("remove node {Server}:{Port} from cluster due to health check failure", node.Server, node.ClusterPort);
-                        await _dal.RemoveClusterNode(node);
-                    }
-                }
-            }
-        }
-
         public static void ValidateClusterConflict(List<ClusterNode> nodes)
         {
             // only if current node is not clustering
             // and there is active cluster in same database --> throw exception
             if (AppSettings.Clustering) { return; }
 
-            var currentNode = GetCurrentClusterNode();
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
+                if (node.IsCurrentNode) { continue; }
                 if (node.LiveNode)
                 {
                     throw new PlanarException("start up node fail. node {Server}:{Port} is not clustering but connected database contains live cluster nodes");
@@ -89,167 +43,38 @@ namespace Planar.Service.General
             }
         }
 
-        public async Task<bool> HealthCheck()
+        public async Task<List<PersistanceRunningJobsInfo>> GetPersistanceRunningJobsInfo()
         {
+            var result = new List<PersistanceRunningJobsInfo>();
             var nodes = await _dal.GetClusterNodes();
-            return await HealthCheck(nodes);
-        }
-
-        public async Task<bool> HealthCheck(List<ClusterNode> nodes)
-        {
-            var currentNode = GetCurrentClusterNode();
-            var result = true;
-
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
+                if (node.IsCurrentNode) { continue; }
 
                 try
                 {
-                    await Policy.Handle<RpcException>()
-                      .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                      .ExecuteAsync(() => CallHealthCheckService(node));
+                    var items = await Policy.Handle<RpcException>()
+                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                        .ExecuteAsync(() => CallGetPersistanceRunningJobInfo(node));
+
+                    var mapItems = items.RunningJobs.Select(i => PersistanceRunningJobsInfo.Parse(i));
+                    result.AddRange(mapItems);
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "fail to make health check to {Server}:{Port}", node.Server, node.ClusterPort);
-                    result = false;
+                    _logger.LogError(ex, "Fail to get persistance running jobs info at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
                 }
             }
 
             return result;
         }
 
-        public async Task Join()
-        {
-            var currentNode = GetCurrentClusterNode();
-
-            var item = await _dal.GetClusterNode(currentNode);
-            if (item == null)
-            {
-                currentNode.ClusterPort = AppSettings.ClusterPort;
-                currentNode.JoinDate = DateTime.Now;
-                currentNode.HealthCheckDate = DateTime.Now;
-                currentNode.InstanceId = MainService.Scheduler.SchedulerInstanceId;
-                await _dal.AddClusterNode(currentNode);
-            }
-            else
-            {
-                item.ClusterPort = AppSettings.ClusterPort;
-                item.JoinDate = DateTime.Now;
-                item.HealthCheckDate = DateTime.Now;
-                item.InstanceId = MainService.Scheduler.SchedulerInstanceId;
-                await _dal.SaveChanges();
-            }
-        }
-
-        public async Task StopScheduler()
-        {
-            var currentNode = GetCurrentClusterNode();
-
-            var nodes = await _dal.GetClusterNodes();
-            foreach (var node in nodes)
-            {
-                if (node == currentNode) { continue; }
-
-                try
-                {
-                    await Policy.Handle<RpcException>()
-                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                    .ExecuteAsync(() => CallStopSchedulerService(node));
-                }
-                catch (RpcException ex)
-                {
-                    _logger.LogError(ex, "Fail to stop scheduler at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
-                }
-            }
-        }
-
-        public async Task StartScheduler()
-        {
-            var currentNode = GetCurrentClusterNode();
-
-            var nodes = await _dal.GetClusterNodes();
-            foreach (var node in nodes)
-            {
-                if (node == currentNode) { continue; }
-
-                try
-                {
-                    await Policy.Handle<RpcException>()
-                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                    .ExecuteAsync(() => CallStartSchedulerService(node));
-                }
-                catch (RpcException ex)
-                {
-                    _logger.LogError(ex, "Fail to start scheduler at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
-                }
-            }
-        }
-
-        public async Task<bool> IsJobRunning(JobKey jobKey)
-        {
-            var rcpJobKey = new RpcJobKey { Group = jobKey.Group, Name = jobKey.Name };
-
-            var currentNode = GetCurrentClusterNode();
-
-            var nodes = await _dal.GetClusterNodes();
-            foreach (var node in nodes)
-            {
-                if (node == currentNode) { continue; }
-
-                try
-                {
-                    var result = await Policy.Handle<RpcException>()
-                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                    .ExecuteAsync(() => CallIsJobRunningService(rcpJobKey, node));
-
-                    if (result) { return result; }
-                }
-                catch (RpcException ex)
-                {
-                    _logger.LogError(ex, "Fail to start scheduler at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
-                }
-            }
-
-            return false;
-        }
-
-        public async Task<RunningJobDetails> GetRunningJob(string instanceId)
-        {
-            var currentNode = GetCurrentClusterNode();
-            var nodes = await _dal.GetClusterNodes();
-            foreach (var node in nodes)
-            {
-                if (node == currentNode) { continue; }
-
-                try
-                {
-                    var job = await Policy.Handle<RpcException>()
-                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => CallGetRunningJob(node, instanceId));
-
-                    if (job != null)
-                    {
-                        return job;
-                    }
-                }
-                catch (RpcException ex)
-                {
-                    _logger.LogError(ex, "Fail to get running job {InstanceId} at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
-                }
-            }
-
-            return null;
-        }
-
         public async Task<GetRunningInfoResponse> GetRunningInfo(string instanceId)
         {
-            var currentNode = GetCurrentClusterNode();
             var nodes = await _dal.GetClusterNodes();
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
+                if (node.IsCurrentNode) { continue; }
 
                 try
                 {
@@ -271,60 +96,40 @@ namespace Planar.Service.General
             return null;
         }
 
-        public async Task<bool> IsRunningInstanceExist(string instanceId)
+        public async Task<RunningJobDetails> GetRunningJob(string instanceId)
         {
-            var currentNode = GetCurrentClusterNode();
             var nodes = await _dal.GetClusterNodes();
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
+                if (node.IsCurrentNode) { continue; }
 
                 try
                 {
-                    var exists = await Policy.Handle<RpcException>()
+                    var job = await Policy.Handle<RpcException>()
                         .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => CallIsRunningInstanceExist(node, instanceId));
+                        .ExecuteAsync(() => CallGetRunningJob(node, instanceId));
 
-                    if (exists) { return true; }
+                    if (job != null)
+                    {
+                        return job;
+                    }
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to check is job {InstanceId} running at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "Fail to get running job {InstanceId} at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
                 }
             }
 
-            return false;
-        }
-
-        public async Task StopRunningJob(string instanceId)
-        {
-            var currentNode = GetCurrentClusterNode();
-            var nodes = await _dal.GetClusterNodes();
-            foreach (var node in nodes)
-            {
-                if (node == currentNode) { continue; }
-
-                try
-                {
-                    await Policy.Handle<RpcException>()
-                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => CallStopRunningJob(node, instanceId));
-                }
-                catch (RpcException ex)
-                {
-                    _logger.LogError(ex, "Fail to stop running instance {InstanceId} at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
-                }
-            }
+            return null;
         }
 
         public async Task<List<RunningJobDetails>> GetRunningJobs()
         {
             var result = new List<RunningJobDetails>();
-            var currentNode = GetCurrentClusterNode();
             var nodes = await _dal.GetClusterNodes();
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
+                if (node.IsCurrentNode) { continue; }
 
                 try
                 {
@@ -343,67 +148,228 @@ namespace Planar.Service.General
             return result;
         }
 
-        public async Task<List<PersistanceRunningJobsInfo>> GetPersistanceRunningJobsInfo()
+        public async Task<bool> HealthCheck()
         {
-            var result = new List<PersistanceRunningJobsInfo>();
-            var currentNode = GetCurrentClusterNode();
             var nodes = await _dal.GetClusterNodes();
+            return await HealthCheck(nodes);
+        }
+
+        public async Task<bool> HealthCheck(List<ClusterNode> nodes)
+        {
+            var result = true;
+
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
+                if (node.IsCurrentNode) { continue; }
 
                 try
                 {
-                    var items = await Policy.Handle<RpcException>()
-                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => CallGetPersistanceRunningJobInfo(node));
-
-                    var mapItems = items.RunningJobs.Select(i => PersistanceRunningJobsInfo.Parse(i));
-                    result.AddRange(mapItems);
+                    await Policy.Handle<RpcException>()
+                      .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                      .ExecuteAsync(() => CallHealthCheckService(node));
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to get persistance running jobs info at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "fail to make health check to {Server}:{Port}", node.Server, node.ClusterPort);
+                    result = false;
                 }
             }
 
             return result;
         }
 
-        private static PlanarCluster.PlanarClusterClient GetClient(ClusterNode node)
+        public async Task HealthCheckWithUpdate()
         {
-            var address = $"http://{node.Server}:{node.ClusterPort}";
-            var channel = GrpcChannel.ForAddress(address);
-            var client = new PlanarCluster.PlanarClusterClient(channel);
-            return client;
+            var nodes = await GetAllNodes();
+            await RegisterCurrentNodeIfNotExists(nodes);
+
+            foreach (var node in nodes)
+            {
+                if (node.IsCurrentNode)
+                {
+                    await VerifyCurrentNode(node);
+                    continue;
+                }
+
+                try
+                {
+                    await Policy.Handle<RpcException>()
+                      .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                      .ExecuteAsync(() => CallHealthCheckService(node));
+                }
+                catch (RpcException ex)
+                {
+                    _logger.LogError(ex, "fail to make health check to {Server}:{Port}", node.Server, node.ClusterPort);
+
+                    if (!node.LiveNode)
+                    {
+                        _logger.LogError("remove node {Server}:{Port} from cluster due to health check failure", node.Server, node.ClusterPort);
+                        await _dal.RemoveClusterNode(node);
+                    }
+                }
+            }
         }
 
-        private async Task CallHealthCheckService(ClusterNode node)
+        public async Task<bool> IsJobRunning(JobKey jobKey)
+        {
+            var rcpJobKey = new RpcJobKey { Group = jobKey.Group, Name = jobKey.Name };
+
+            var nodes = await _dal.GetClusterNodes();
+            foreach (var node in nodes)
+            {
+                if (node.IsCurrentNode) { continue; }
+
+                try
+                {
+                    var result = await Policy.Handle<RpcException>()
+                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                    .ExecuteAsync(() => CallIsJobRunningService(rcpJobKey, node));
+
+                    if (result) { return result; }
+                }
+                catch (RpcException ex)
+                {
+                    _logger.LogError(ex, "Fail to start scheduler at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                }
+            }
+
+            return false;
+        }
+
+        public async Task<bool> IsRunningInstanceExist(string instanceId)
+        {
+            var nodes = await _dal.GetClusterNodes();
+            foreach (var node in nodes)
+            {
+                if (node.IsCurrentNode) { continue; }
+
+                try
+                {
+                    var exists = await Policy.Handle<RpcException>()
+                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                        .ExecuteAsync(() => CallIsRunningInstanceExist(node, instanceId));
+
+                    if (exists) { return true; }
+                }
+                catch (RpcException ex)
+                {
+                    _logger.LogError(ex, "Fail to check is job {InstanceId} running at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
+                }
+            }
+
+            return false;
+        }
+
+        public async Task Join()
+        {
+            var currentNode = GetCurrentClusterNode();
+            var item = await _dal.GetClusterNode(currentNode);
+            if (item == null)
+            {
+                currentNode.ClusterPort = AppSettings.ClusterPort;
+                currentNode.JoinDate = DateTime.Now;
+                currentNode.HealthCheckDate = DateTime.Now;
+                currentNode.InstanceId = MainService.Scheduler.SchedulerInstanceId;
+                await _dal.AddClusterNode(currentNode);
+            }
+            else
+            {
+                item.ClusterPort = AppSettings.ClusterPort;
+                item.JoinDate = DateTime.Now;
+                item.HealthCheckDate = DateTime.Now;
+                item.InstanceId = MainService.Scheduler.SchedulerInstanceId;
+                await _dal.SaveChanges();
+            }
+        }
+
+        public async Task StartScheduler()
+        {
+            var nodes = await _dal.GetClusterNodes();
+            foreach (var node in nodes)
+            {
+                if (node.IsCurrentNode) { continue; }
+
+                try
+                {
+                    await Policy.Handle<RpcException>()
+                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                    .ExecuteAsync(() => CallStartSchedulerService(node));
+                }
+                catch (RpcException ex)
+                {
+                    _logger.LogError(ex, "Fail to start scheduler at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                }
+            }
+        }
+
+        public async Task StopRunningJob(string instanceId)
+        {
+            var nodes = await _dal.GetClusterNodes();
+            foreach (var node in nodes)
+            {
+                if (node.IsCurrentNode) { continue; }
+
+                try
+                {
+                    await Policy.Handle<RpcException>()
+                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                        .ExecuteAsync(() => CallStopRunningJob(node, instanceId));
+                }
+                catch (RpcException ex)
+                {
+                    _logger.LogError(ex, "Fail to stop running instance {InstanceId} at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
+                }
+            }
+        }
+
+        public async Task StopScheduler()
+        {
+            var nodes = await _dal.GetClusterNodes();
+            foreach (var node in nodes)
+            {
+                if (node.IsCurrentNode) { continue; }
+
+                try
+                {
+                    await Policy.Handle<RpcException>()
+                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                    .ExecuteAsync(() => CallStopSchedulerService(node));
+                }
+                catch (RpcException ex)
+                {
+                    _logger.LogError(ex, "Fail to stop scheduler at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                }
+            }
+        }
+
+        private static async Task<PersistanceRunningJobInfoReply> CallGetPersistanceRunningJobInfo(ClusterNode node)
         {
             var client = GetClient(node);
-            await client.HealthCheckAsync(new Empty());
-
-            node.HealthCheckDate = DateTime.Now;
-            await _dal.SaveChanges();
+            var result = await client.GetPersistanceRunningJobInfoAsync(new Empty());
+            return result;
         }
 
-        private static async Task CallStopSchedulerService(ClusterNode node)
-        {
-            var client = GetClient(node); ;
-            await client.StopSchedulerAsync(new Empty());
-        }
-
-        private static async Task CallStartSchedulerService(ClusterNode node)
+        private static async Task<GetRunningInfoResponse> CallGetRunningInfo(ClusterNode node, string instanceId)
         {
             var client = GetClient(node);
-            await client.StartSchedulerAsync(new Empty());
+            var request = new GetRunningJobRequest { InstanceId = instanceId };
+            var result = await client.GetRunningInfoAsync(request);
+            var response = new GetRunningInfoResponse
+            {
+                Information = string.IsNullOrEmpty(result.Information) ? null : result.Information,
+                Exceptions = string.IsNullOrEmpty(result.Exceptions) ? null : result.Exceptions
+            };
+
+            return response;
         }
 
-        private static async Task<bool> CallIsJobRunningService(RpcJobKey jobKey, ClusterNode node)
+        private static async Task<RunningJobDetails> CallGetRunningJob(ClusterNode node, string instanceId)
         {
             var client = GetClient(node);
-            var result = await client.IsJobRunningAsync(jobKey);
-            return result.IsRunning;
+            var request = new GetRunningJobRequest { InstanceId = instanceId };
+            var result = await client.GetRunningJobAsync(request);
+            var response = MapRunningJob(result);
+            return response;
         }
 
         private static async Task<List<RunningJobDetails>> CallGetRunningJobs(ClusterNode node)
@@ -421,27 +387,11 @@ namespace Planar.Service.General
             return response;
         }
 
-        private static async Task<RunningJobDetails> CallGetRunningJob(ClusterNode node, string instanceId)
+        private static async Task<bool> CallIsJobRunningService(RpcJobKey jobKey, ClusterNode node)
         {
             var client = GetClient(node);
-            var request = new GetRunningJobRequest { InstanceId = instanceId };
-            var result = await client.GetRunningJobAsync(request);
-            var response = MapRunningJob(result);
-            return response;
-        }
-
-        private static async Task<GetRunningInfoResponse> CallGetRunningInfo(ClusterNode node, string instanceId)
-        {
-            var client = GetClient(node);
-            var request = new GetRunningJobRequest { InstanceId = instanceId };
-            var result = await client.GetRunningInfoAsync(request);
-            var response = new GetRunningInfoResponse
-            {
-                Information = string.IsNullOrEmpty(result.Information) ? null : result.Information,
-                Exceptions = string.IsNullOrEmpty(result.Exceptions) ? null : result.Exceptions
-            };
-
-            return response;
+            var result = await client.IsJobRunningAsync(jobKey);
+            return result.IsRunning;
         }
 
         private static async Task<bool> CallIsRunningInstanceExist(ClusterNode node, string instanceId)
@@ -452,6 +402,12 @@ namespace Planar.Service.General
             return result.Exists;
         }
 
+        private static async Task CallStartSchedulerService(ClusterNode node)
+        {
+            var client = GetClient(node);
+            await client.StartSchedulerAsync(new Empty());
+        }
+
         private static async Task CallStopRunningJob(ClusterNode node, string instanceId)
         {
             var client = GetClient(node);
@@ -459,11 +415,49 @@ namespace Planar.Service.General
             await client.StopRunningJobAsync(request);
         }
 
-        private static async Task<PersistanceRunningJobInfoReply> CallGetPersistanceRunningJobInfo(ClusterNode node)
+        private static async Task CallStopSchedulerService(ClusterNode node)
         {
             var client = GetClient(node);
-            var result = await client.GetPersistanceRunningJobInfoAsync(new Empty());
+            await client.StopSchedulerAsync(new Empty());
+        }
+
+        private static DateTime? ConvertTimeStamp(Timestamp stamp)
+        {
+            if (stamp == null) { return null; }
+
+            var result = stamp.ToDateTimeOffset().DateTime;
+            if (result == default) { return null; }
+
             return result;
+        }
+
+        private static DateTime ConvertTimeStamp2(Timestamp stamp)
+        {
+            if (stamp == null) { return default; }
+
+            var result = stamp.ToDateTimeOffset().DateTime;
+
+            return result;
+        }
+
+        private static PlanarCluster.PlanarClusterClient GetClient(ClusterNode node)
+        {
+            const string schema = "http";
+            var address = $"{schema}://{node.Server}:{node.ClusterPort}";
+            var channel = GrpcChannel.ForAddress(address);
+            var client = new PlanarCluster.PlanarClusterClient(channel);
+            return client;
+        }
+
+        private static ClusterNode GetCurrentClusterNode()
+        {
+            var cluster = new ClusterNode
+            {
+                Server = Environment.MachineName,
+                Port = AppSettings.HttpPort,
+            };
+
+            return cluster;
         }
 
         private static RunningJobDetails MapRunningJob(RunningJobReply reply)
@@ -492,40 +486,41 @@ namespace Planar.Service.General
             return result;
         }
 
-        private static DateTime? ConvertTimeStamp(Timestamp stamp)
+        private async Task CallHealthCheckService(ClusterNode node)
         {
-            if (stamp == null) { return null; }
-            if (stamp == default) { return null; }
+            var client = GetClient(node);
+            await client.HealthCheckAsync(new Empty());
 
-            var result = stamp.ToDateTimeOffset().DateTime;
-            if (result == default) { return null; }
-
-            return result;
+            node.HealthCheckDate = DateTime.Now;
+            await _dal.SaveChanges();
         }
 
-        private static DateTime ConvertTimeStamp2(Timestamp stamp)
+        private async Task<IEnumerable<ClusterNode>> GetAllNodes()
         {
-            if (stamp == null) { return default; }
-            if (stamp == default) { return default; }
-
-            var result = stamp.ToDateTimeOffset().DateTime;
-
-            return result;
-        }
-
-        private async Task RegisterCurrentNodeIfNotExists(ClusterNode currentNode, List<ClusterNode> allNodes)
-        {
-            if (allNodes.Any(n => n == currentNode) == false)
+            var tempNode = GetCurrentClusterNode();
+            var result = await _dal.GetClusterNodes();
+            var currentNode = result.FirstOrDefault(n => string.Equals(n.Server, tempNode.Server, StringComparison.CurrentCultureIgnoreCase) && n.Port == tempNode.Port);
+            if (currentNode != null)
             {
-                if (SchedulerUtil.IsSchedulerRunning)
-                {
-                    currentNode.ClusterPort = AppSettings.ClusterPort;
-                    currentNode.JoinDate = DateTime.Now;
-                    currentNode.InstanceId = MainService.Scheduler.SchedulerInstanceId;
-                    currentNode.HealthCheckDate = DateTime.Now;
+                currentNode.IsCurrentNode = true;
+            }
 
-                    await _dal.AddClusterNode(currentNode);
-                }
+            return result;
+        }
+
+        private async Task RegisterCurrentNodeIfNotExists(IEnumerable<ClusterNode> allNodes)
+        {
+            if (!allNodes.Any(n => n.IsCurrentNode) && SchedulerUtil.IsSchedulerRunning)
+            {
+                var currentNode = new ClusterNode
+                {
+                    ClusterPort = AppSettings.ClusterPort,
+                    JoinDate = DateTime.Now,
+                    InstanceId = MainService.Scheduler.SchedulerInstanceId,
+                    HealthCheckDate = DateTime.Now,
+                };
+
+                await _dal.AddClusterNode(currentNode);
             }
         }
 

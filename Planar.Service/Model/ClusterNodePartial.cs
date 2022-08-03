@@ -28,27 +28,6 @@ namespace Planar.Service.Model
             }
         }
 
-        public static bool operator ==(ClusterNode a, ClusterNode b)
-        {
-            if (a is null && b is null) { return true; }
-            if (a is null || b is null) { return false; }
-
-            return string.Equals(a.Server, b.Server, StringComparison.CurrentCultureIgnoreCase) && a.Port == b.Port;
-        }
-
-        public static bool operator !=(ClusterNode a, ClusterNode b)
-        {
-            return !(a == b);
-        }
-
-        public override bool Equals(object obj)
-        {
-            return this == obj as ClusterNode;
-        }
-
-        public override int GetHashCode()
-        {
-            return $"{Server}|{Port}".GetHashCode();
-        }
+        public bool IsCurrentNode { get; set; }
     }
 }

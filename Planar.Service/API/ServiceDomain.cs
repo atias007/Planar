@@ -54,7 +54,7 @@ namespace Planar.Service.API
         public async Task<bool> HealthCheck()
         {
             var hc = SchedulerUtil.IsSchedulerRunning;
-            if (hc == false) { return false; }
+            if (!hc) { return false; }
             hc = await new ClusterUtil(DataLayer, Logger).HealthCheck();
             return hc;
         }

@@ -45,7 +45,7 @@ namespace Planar
         {
             if (request == null)
             {
-                throw new NullReferenceException();
+                throw new ArgumentNullException(nameof(request));
             }
 
             var jobKey = new JobKey(request.Name, request.Group);
@@ -94,7 +94,7 @@ namespace Planar
         // TODO: Test Me
         public override async Task<IsRunningInstanceExistReply> IsRunningInstanceExist(GetRunningJobRequest request, ServerCallContext context)
         {
-            var result = await SchedulerUtil.IsRunningInstanceExist(request.InstanceId, context.CancellationToken);
+            var result = await SchedulerUtil.IsRunningInstanceExistOnLocal(request.InstanceId, context.CancellationToken);
             return new IsRunningInstanceExistReply { Exists = result };
         }
 
