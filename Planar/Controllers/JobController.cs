@@ -29,7 +29,7 @@ namespace Planar.Controllers
         [HttpGet]
         public async Task<ActionResult<List<JobRowDetails>>> GetAll([FromQuery] GetAllJobsRequest request)
         {
-            var result = await JobDomain.GetAll(request);
+            var result = await BusinesLayer.GetAll(request);
             return Ok(result);
         }
 

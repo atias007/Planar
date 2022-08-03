@@ -27,12 +27,58 @@ namespace Planar.Service.General
             _logger = logger;
         }
 
+        private static ClusterNode GetCurrentClusterNode()
+        {
+            var cluster = new ClusterNode
+            {
+                Server = Environment.MachineName,
+                Port = AppSettings.HttpPort,
+            };
+
+            return cluster;
+        }
+
+        public async Task HealthCheckWithUpdate()
+        {
+            var currentNode = GetCurrentClusterNode();
+
+            var nodes = await _dal.GetClusterNodes();
+            await RegisterCurrentNodeIfNotExists(currentNode, nodes);
+
+            foreach (var node in nodes)
+            {
+                if (node == currentNode)
+                {
+                    await VerifyCurrentNode(node);
+                    continue;
+                }
+
+                try
+                {
+                    await Policy.Handle<RpcException>()
+                      .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                      .ExecuteAsync(() => CallHealthCheckService(node));
+                }
+                catch (RpcException ex)
+                {
+                    _logger.LogError(ex, "fail to make health check to {Server}:{Port}", node.Server, node.ClusterPort);
+
+                    if (node.LiveNode == false)
+                    {
+                        _logger.LogError("remove node {Server}:{Port} from cluster due to health check failure", node.Server, node.ClusterPort);
+                        await _dal.RemoveClusterNode(node);
+                    }
+                }
+            }
+        }
+
         public static void ValidateClusterConflict(List<ClusterNode> nodes)
         {
             // only if current node is not clustering
             // and there is active cluster in same database --> throw exception
             if (AppSettings.Clustering) { return; }
 
+            var currentNode = GetCurrentClusterNode();
             foreach (var node in nodes)
             {
                 if (node.IsCurrentNode) { continue; }
@@ -47,6 +93,14 @@ namespace Planar.Service.General
         {
             var result = new List<PersistanceRunningJobsInfo>();
             var nodes = await _dal.GetClusterNodes();
+            return await HealthCheck(nodes);
+        }
+
+        public async Task<bool> HealthCheck(List<ClusterNode> nodes)
+        {
+            var currentNode = GetCurrentClusterNode();
+            var result = true;
+
             foreach (var node in nodes)
             {
                 if (node.IsCurrentNode) { continue; }
@@ -54,7 +108,7 @@ namespace Planar.Service.General
                 try
                 {
                     var items = await Policy.Handle<RpcException>()
-                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                      .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
                         .ExecuteAsync(() => CallGetPersistanceRunningJobInfo(node));
 
                     var mapItems = items.RunningJobs.Select(i => PersistanceRunningJobsInfo.Parse(i));
@@ -77,7 +131,7 @@ namespace Planar.Service.General
                 if (node.IsCurrentNode) { continue; }
 
                 try
-                {
+            {
                     var job = await Policy.Handle<RpcException>()
                         .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
                         .ExecuteAsync(() => CallGetRunningInfo(node, instanceId));
@@ -85,13 +139,13 @@ namespace Planar.Service.General
                     if (job != null)
                     {
                         return job;
-                    }
+            }
                 }
                 catch (RpcException ex)
-                {
+            {
                     _logger.LogError(ex, "Fail to get running job {InstanceId} information at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
-                }
             }
+        }
 
             return null;
         }
@@ -106,13 +160,13 @@ namespace Planar.Service.General
                 try
                 {
                     var job = await Policy.Handle<RpcException>()
-                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
                         .ExecuteAsync(() => CallGetRunningJob(node, instanceId));
 
                     if (job != null)
                     {
                         return job;
-                    }
+                }
                 }
                 catch (RpcException ex)
                 {
@@ -134,7 +188,7 @@ namespace Planar.Service.General
                 try
                 {
                     var jobs = await Policy.Handle<RpcException>()
-                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
                         .ExecuteAsync(() => CallGetRunningJobs(node));
 
                     result.AddRange(jobs);
@@ -158,6 +212,7 @@ namespace Planar.Service.General
         {
             var result = true;
 
+            var nodes = await _dal.GetClusterNodes();
             foreach (var node in nodes)
             {
                 if (node.IsCurrentNode) { continue; }
@@ -165,7 +220,7 @@ namespace Planar.Service.General
                 try
                 {
                     await Policy.Handle<RpcException>()
-                      .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
                       .ExecuteAsync(() => CallHealthCheckService(node));
                 }
                 catch (RpcException ex)
@@ -194,7 +249,7 @@ namespace Planar.Service.General
                 try
                 {
                     await Policy.Handle<RpcException>()
-                      .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
                       .ExecuteAsync(() => CallHealthCheckService(node));
                 }
                 catch (RpcException ex)
@@ -207,8 +262,11 @@ namespace Planar.Service.General
                         await _dal.RemoveClusterNode(node);
                     }
                 }
+                catch (RpcException ex)
+                {
+                    _logger.LogError(ex, "Fail to get running job {InstanceId} at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
+                }
             }
-        }
 
         public async Task<bool> IsJobRunning(JobKey jobKey)
         {
@@ -222,10 +280,11 @@ namespace Planar.Service.General
                 try
                 {
                     var result = await Policy.Handle<RpcException>()
-                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
                     .ExecuteAsync(() => CallIsJobRunningService(rcpJobKey, node));
 
                     if (result) { return result; }
+                    }
                 }
                 catch (RpcException ex)
                 {
@@ -238,6 +297,7 @@ namespace Planar.Service.General
 
         public async Task<bool> IsRunningInstanceExist(string instanceId)
         {
+            var currentNode = GetCurrentClusterNode();
             var nodes = await _dal.GetClusterNodes();
             foreach (var node in nodes)
             {
@@ -292,7 +352,7 @@ namespace Planar.Service.General
                 try
                 {
                     await Policy.Handle<RpcException>()
-                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
                     .ExecuteAsync(() => CallStartSchedulerService(node));
                 }
                 catch (RpcException ex)
@@ -304,6 +364,8 @@ namespace Planar.Service.General
 
         public async Task StopRunningJob(string instanceId)
         {
+            var result = new List<RunningJobDetails>();
+            var currentNode = GetCurrentClusterNode();
             var nodes = await _dal.GetClusterNodes();
             foreach (var node in nodes)
             {
@@ -320,10 +382,14 @@ namespace Planar.Service.General
                     _logger.LogError(ex, "Fail to stop running instance {InstanceId} at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
                 }
             }
+
+            return result;
         }
 
         public async Task StopScheduler()
         {
+            var result = new List<PersistanceRunningJobsInfo>();
+            var currentNode = GetCurrentClusterNode();
             var nodes = await _dal.GetClusterNodes();
             foreach (var node in nodes)
             {
@@ -332,7 +398,7 @@ namespace Planar.Service.General
                 try
                 {
                     await Policy.Handle<RpcException>()
-                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
                     .ExecuteAsync(() => CallStopSchedulerService(node));
                 }
                 catch (RpcException ex)
@@ -340,6 +406,8 @@ namespace Planar.Service.General
                     _logger.LogError(ex, "Fail to stop scheduler at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
                 }
             }
+
+            return result;
         }
 
         private static async Task<PersistanceRunningJobInfoReply> CallGetPersistanceRunningJobInfo(ClusterNode node)
@@ -355,7 +423,7 @@ namespace Planar.Service.General
             var request = new GetRunningJobRequest { InstanceId = instanceId };
             var result = await client.GetRunningInfoAsync(request);
             var response = new GetRunningInfoResponse
-            {
+        {
                 Information = string.IsNullOrEmpty(result.Information) ? null : result.Information,
                 Exceptions = string.IsNullOrEmpty(result.Exceptions) ? null : result.Exceptions
             };
@@ -501,7 +569,7 @@ namespace Planar.Service.General
             var result = await _dal.GetClusterNodes();
             var currentNode = result.FirstOrDefault(n => string.Equals(n.Server, tempNode.Server, StringComparison.CurrentCultureIgnoreCase) && n.Port == tempNode.Port);
             if (currentNode != null)
-            {
+        {
                 currentNode.IsCurrentNode = true;
             }
 
@@ -520,7 +588,8 @@ namespace Planar.Service.General
                     HealthCheckDate = DateTime.Now,
                 };
 
-                await _dal.AddClusterNode(currentNode);
+                    await _dal.AddClusterNode(currentNode);
+                }
             }
         }
 
