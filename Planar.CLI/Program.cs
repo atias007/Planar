@@ -184,11 +184,11 @@ namespace Planar.CLI
 
         private static void HandleGeneralError(RestResponse response)
         {
-            if (response.ErrorMessage.Contains("No connection could be made"))
+            if (response.ErrorMessage != null && response.ErrorMessage.Contains("No connection could be made"))
             {
                 AnsiConsole.Markup($"[red]error: no connection could be made to planar deamon ({RestProxy.Host}:{RestProxy.Port})[/]");
             }
-            else if (response.ErrorMessage.Contains("No such host is known"))
+            else if (response.ErrorMessage != null && response.ErrorMessage.Contains("No such host is known"))
             {
                 AnsiConsole.Markup($"[red]{response.ErrorMessage.ToLower()}[/]");
             }
