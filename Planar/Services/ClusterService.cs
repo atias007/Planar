@@ -43,10 +43,7 @@ namespace Planar
         // TODO: Test Me
         public override async Task<IsJobRunningReply> IsJobRunning(RpcJobKey request, ServerCallContext context)
         {
-            if (request == null)
-            {
-                throw new NullReferenceException();
-            }
+            ValidateRequest(request);
 
             var jobKey = new JobKey(request.Name, request.Group);
             var result = await SchedulerUtil.IsJobRunning(jobKey, context.CancellationToken);
@@ -56,6 +53,7 @@ namespace Planar
         // TODO: Test Me
         public override async Task<RunningJobReply> GetRunningJob(GetRunningJobRequest request, ServerCallContext context)
         {
+            ValidateRequest(request);
             var job = await SchedulerUtil.GetRunningJob(request.InstanceId, context.CancellationToken);
             var item = MapRunningJobReply(job);
             return item;
@@ -79,6 +77,7 @@ namespace Planar
         // TODO: Test Me
         public override async Task<RunningInfoReply> GetRunningInfo(GetRunningJobRequest request, ServerCallContext context)
         {
+            ValidateRequest(request);
             var job = await SchedulerUtil.GetRunningInfo(request.InstanceId, context.CancellationToken);
             if (job == null) { return null; }
 
@@ -94,13 +93,15 @@ namespace Planar
         // TODO: Test Me
         public override async Task<IsRunningInstanceExistReply> IsRunningInstanceExist(GetRunningJobRequest request, ServerCallContext context)
         {
-            var result = await SchedulerUtil.IsRunningInstanceExist(request.InstanceId, context.CancellationToken);
+            ValidateRequest(request);
+            var result = await SchedulerUtil.IsRunningInstanceExistOnLocal(request.InstanceId, context.CancellationToken);
             return new IsRunningInstanceExistReply { Exists = result };
         }
 
         // TODO: Test Me
         public override async Task<Empty> StopRunningJob(GetRunningJobRequest request, ServerCallContext context)
         {
+            ValidateRequest(request);
             await SchedulerUtil.StopRunningJob(request.InstanceId, context.CancellationToken);
             return new Empty();
         }
@@ -121,6 +122,14 @@ namespace Planar
 
             result.RunningJobs.AddRange(items);
             return result;
+        }
+
+        private static void ValidateRequest(object request)
+        {
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
         }
 
         private static string SafeString(string value)

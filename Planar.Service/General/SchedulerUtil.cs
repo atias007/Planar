@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
+using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model.DataObjects;
 using Quartz;
@@ -27,7 +28,7 @@ namespace Planar.Service.General
 
         public static void HealthCheck(ILogger logger = null)
         {
-            if (IsSchedulerRunning == false)
+            if (!IsSchedulerRunning)
             {
                 logger?.LogError("HealthCheck fail. IsShutdown={IsShutdown}, InStandbyMode={InStandbyMode}, IsStarted={IsStarted}",
                     MainService.Scheduler.IsShutdown, MainService.Scheduler.InStandbyMode, MainService.Scheduler.IsStarted);
@@ -39,7 +40,7 @@ namespace Planar.Service.General
         {
             get
             {
-                return MainService.Scheduler.IsShutdown == false && MainService.Scheduler.InStandbyMode == false || MainService.Scheduler.IsStarted;
+                return !MainService.Scheduler.IsShutdown && !MainService.Scheduler.InStandbyMode && MainService.Scheduler.IsStarted;
             }
         }
 
@@ -86,20 +87,28 @@ namespace Planar.Service.General
             var information = string.Empty;
             var exceptions = string.Empty;
 
-            if (context != null)
+            if (context != null && context.Result is JobExecutionMetadata metadata)
             {
-                if (context.Result is JobExecutionMetadata metadata)
-                {
-                    information = metadata.GetInformation();
-                    exceptions = metadata.GetExceptionsText();
-                }
+                information = metadata.GetInformation();
+                exceptions = metadata.GetExceptionsText();
             }
 
             var response = new GetRunningInfoResponse { Information = information, Exceptions = exceptions };
             return response;
         }
 
-        public static async Task<bool> IsRunningInstanceExist(string instanceId, CancellationToken cancellationToken = default)
+        private static async Task<bool> IsRunningInstanceExistOnCluster(string instanceId, CancellationToken cancellationToken = default)
+        {
+            var result = await IsRunningInstanceExistOnLocal(instanceId, cancellationToken);
+            if (result) { return true; }
+
+            var dal = MainService.Resolve<DataLayer>();
+            var logger = MainService.Resolve<ILogger<ClusterUtil>>();
+            result = await new ClusterUtil(dal, logger).IsRunningInstanceExist(instanceId);
+            return result;
+        }
+
+        public static async Task<bool> IsRunningInstanceExistOnLocal(string instanceId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(instanceId))
             {
@@ -133,7 +142,7 @@ namespace Planar.Service.General
                 return;
             }
 
-            if (!await IsRunningInstanceExist(instanceId, cancellationToken))
+            if (!await IsRunningInstanceExistOnCluster(instanceId, cancellationToken))
             {
                 throw new RestNotFoundException($"instance id '{instanceId}' is not exist");
             }

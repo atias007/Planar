@@ -126,7 +126,7 @@ namespace Planar.Service
 
         private static void CheckConnectionString(string connectionString)
         {
-            if (connectionString.ToLower().Contains("Connection Timeout") == false)
+            if (!connectionString.ToLower().Contains("Connection Timeout"))
             {
                 connectionString = $"{connectionString};Connection Timeout=3";
             }

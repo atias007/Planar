@@ -1,9 +1,11 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Planar.Service.Model
 {
     public partial class ClusterNode
     {
+        [NotMapped]
         public TimeSpan HealthCheckGap
         {
             get
@@ -12,6 +14,7 @@ namespace Planar.Service.Model
             }
         }
 
+        [NotMapped]
         public TimeSpan HealthCheckGapDeviation
         {
             get
@@ -20,6 +23,7 @@ namespace Planar.Service.Model
             }
         }
 
+        [NotMapped]
         public bool LiveNode
         {
             get
@@ -28,27 +32,7 @@ namespace Planar.Service.Model
             }
         }
 
-        public static bool operator ==(ClusterNode a, ClusterNode b)
-        {
-            if (a is null && b is null) { return true; }
-            if (a is null || b is null) { return false; }
-
-            return string.Equals(a.Server, b.Server, StringComparison.CurrentCultureIgnoreCase) && a.Port == b.Port;
-        }
-
-        public static bool operator !=(ClusterNode a, ClusterNode b)
-        {
-            return !(a == b);
-        }
-
-        public override bool Equals(object obj)
-        {
-            return this == obj as ClusterNode;
-        }
-
-        public override int GetHashCode()
-        {
-            return $"{Server}|{Port}".GetHashCode();
-        }
+        [NotMapped]
+        public bool IsCurrentNode { get; set; }
     }
 }

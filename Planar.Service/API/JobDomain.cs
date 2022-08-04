@@ -53,7 +53,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        private async Task<IReadOnlyCollection<JobKey>> GetJobKeys(AllJobsMembers members)
+        private static async Task<IReadOnlyCollection<JobKey>> GetJobKeys(AllJobsMembers members)
         {
             switch (members)
             {
@@ -287,15 +287,6 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task<bool> IsRunningInstanceExist(string instanceId)
-        {
-            var result = await SchedulerUtil.IsRunningInstanceExist(instanceId);
-            if (result) { return true; }
-
-            result = await new ClusterUtil(DataLayer, Logger).IsRunningInstanceExist(instanceId);
-            return result;
-        }
-
         private static Dictionary<string, string> GetJobProperties(IJobDetail job)
         {
             var propertiesJson = Convert.ToString(job.JobDataMap[Consts.JobTypeProperties]);
@@ -447,11 +438,9 @@ namespace Planar.Service.API
 
         private async Task ValidateJobNotRunning(JobKey jobKey)
         {
-            var isRunning = await SchedulerUtil.IsJobRunning(jobKey);
-            if (isRunning == false)
-            {
-                isRunning = await new ClusterUtil(DataLayer, Logger).IsJobRunning(jobKey);
-            }
+            var isRunning =
+                await SchedulerUtil.IsJobRunning(jobKey) &&
+                await new ClusterUtil(DataLayer, Logger).IsJobRunning(jobKey);
 
             if (isRunning)
             {

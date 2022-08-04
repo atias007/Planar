@@ -1,6 +1,6 @@
 USE [Planar]
 GO
-/****** Object:  StoredProcedure [Admin].[FactoryReset]    Script Date: 31/07/2022 17:05:41 ******/
+
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON

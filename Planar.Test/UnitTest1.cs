@@ -18,6 +18,8 @@ namespace Planar.Test
             var text1 = $"{timespan:\\(d\\)\\ hh\\:mm\\:ss}";
             timespan = TimeSpan.FromHours(22).Add(TimeSpan.FromMinutes(33));
             var text2 = timespan.ToString("c");
+            Console.WriteLine(text1);
+            Console.WriteLine(text2);
 
             var hook = new TeamHook();
             hook.Handle(null).Wait();

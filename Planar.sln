@@ -27,6 +27,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Features.txt = Features.txt
 		Install.txt = Install.txt
 		MalamWebHook.txt = MalamWebHook.txt
+		..\temp\run.bat = ..\temp\run.bat
 		Scaffold-DbContext.txt = Scaffold-DbContext.txt
 		ToDo.txt = ToDo.txt
 	EndProjectSection
@@ -65,7 +66,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LongRunningJob", "LongRunni
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RetryDemoJob", "RetryDemoJob\RetryDemoJob.csproj", "{D869037A-1D3E-4B4F-9B21-5C9419929811}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{B018E9CD-F950-412E-BD36-9D1211083F8D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{B018E9CD-F950-412E-BD36-9D1211083F8D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

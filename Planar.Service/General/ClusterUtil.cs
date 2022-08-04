@@ -38,16 +38,27 @@ namespace Planar.Service.General
             return cluster;
         }
 
+        private async Task<IEnumerable<ClusterNode>> GetAllNodes()
+        {
+            var tempNode = GetCurrentClusterNode();
+            var result = await _dal.GetClusterNodes();
+            var currentNode = result.FirstOrDefault(n => string.Equals(n.Server, tempNode.Server, StringComparison.CurrentCultureIgnoreCase) && n.Port == tempNode.Port);
+            if (currentNode != null)
+            {
+                currentNode.IsCurrentNode = true;
+            }
+
+            return result;
+        }
+
         public async Task HealthCheckWithUpdate()
         {
-            var currentNode = GetCurrentClusterNode();
-
-            var nodes = await _dal.GetClusterNodes();
-            await RegisterCurrentNodeIfNotExists(currentNode, nodes);
+            var nodes = await GetAllNodes();
+            await RegisterCurrentNodeIfNotExists(nodes);
 
             foreach (var node in nodes)
             {
-                if (node == currentNode)
+                if (node.IsCurrentNode)
                 {
                     await VerifyCurrentNode(node);
                     continue;
@@ -63,7 +74,7 @@ namespace Planar.Service.General
                 {
                     _logger.LogError(ex, "fail to make health check to {Server}:{Port}", node.Server, node.ClusterPort);
 
-                    if (node.LiveNode == false)
+                    if (!node.LiveNode)
                     {
                         _logger.LogError("remove node {Server}:{Port} from cluster due to health check failure", node.Server, node.ClusterPort);
                         await _dal.RemoveClusterNode(node);
@@ -78,10 +89,9 @@ namespace Planar.Service.General
             // and there is active cluster in same database --> throw exception
             if (AppSettings.Clustering) { return; }
 
-            var currentNode = GetCurrentClusterNode();
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
+                if (node.IsCurrentNode) { continue; }
                 if (node.LiveNode)
                 {
                     throw new PlanarException("start up node fail. node {Server}:{Port} is not clustering but connected database contains live cluster nodes");
@@ -91,18 +101,17 @@ namespace Planar.Service.General
 
         public async Task<bool> HealthCheck()
         {
-            var nodes = await _dal.GetClusterNodes();
+            var nodes = await GetAllNodes();
             return await HealthCheck(nodes);
         }
 
-        public async Task<bool> HealthCheck(List<ClusterNode> nodes)
+        public async Task<bool> HealthCheck(IEnumerable<ClusterNode> nodes)
         {
-            var currentNode = GetCurrentClusterNode();
             var result = true;
 
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
+                if (node.IsCurrentNode) { continue; }
 
                 try
                 {
@@ -145,12 +154,10 @@ namespace Planar.Service.General
 
         public async Task StopScheduler()
         {
-            var currentNode = GetCurrentClusterNode();
-
-            var nodes = await _dal.GetClusterNodes();
+            var nodes = await GetAllNodes();
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
+                if (node.IsCurrentNode) { continue; }
 
                 try
                 {
@@ -167,12 +174,10 @@ namespace Planar.Service.General
 
         public async Task StartScheduler()
         {
-            var currentNode = GetCurrentClusterNode();
-
-            var nodes = await _dal.GetClusterNodes();
+            var nodes = await GetAllNodes();
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
+                if (node.IsCurrentNode) { continue; }
 
                 try
                 {
@@ -191,12 +196,10 @@ namespace Planar.Service.General
         {
             var rcpJobKey = new RpcJobKey { Group = jobKey.Group, Name = jobKey.Name };
 
-            var currentNode = GetCurrentClusterNode();
-
-            var nodes = await _dal.GetClusterNodes();
+            var nodes = await GetAllNodes();
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
+                if (node.IsCurrentNode) { continue; }
 
                 try
                 {
@@ -217,11 +220,10 @@ namespace Planar.Service.General
 
         public async Task<RunningJobDetails> GetRunningJob(string instanceId)
         {
-            var currentNode = GetCurrentClusterNode();
-            var nodes = await _dal.GetClusterNodes();
+            var nodes = await GetAllNodes();
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
+                if (node.IsCurrentNode) { continue; }
 
                 try
                 {
@@ -245,11 +247,10 @@ namespace Planar.Service.General
 
         public async Task<GetRunningInfoResponse> GetRunningInfo(string instanceId)
         {
-            var currentNode = GetCurrentClusterNode();
-            var nodes = await _dal.GetClusterNodes();
+            var nodes = await GetAllNodes();
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
+                if (node.IsCurrentNode) { continue; }
 
                 try
                 {
@@ -273,11 +274,10 @@ namespace Planar.Service.General
 
         public async Task<bool> IsRunningInstanceExist(string instanceId)
         {
-            var currentNode = GetCurrentClusterNode();
-            var nodes = await _dal.GetClusterNodes();
+            var nodes = await GetAllNodes();
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
+                if (node.IsCurrentNode) { continue; }
 
                 try
                 {
@@ -298,11 +298,10 @@ namespace Planar.Service.General
 
         public async Task StopRunningJob(string instanceId)
         {
-            var currentNode = GetCurrentClusterNode();
-            var nodes = await _dal.GetClusterNodes();
+            var nodes = await GetAllNodes();
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
+                if (node.IsCurrentNode) { continue; }
 
                 try
                 {
@@ -320,11 +319,10 @@ namespace Planar.Service.General
         public async Task<List<RunningJobDetails>> GetRunningJobs()
         {
             var result = new List<RunningJobDetails>();
-            var currentNode = GetCurrentClusterNode();
-            var nodes = await _dal.GetClusterNodes();
+            var nodes = await GetAllNodes();
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
+                if (node.IsCurrentNode) { continue; }
 
                 try
                 {
@@ -346,11 +344,10 @@ namespace Planar.Service.General
         public async Task<List<PersistanceRunningJobsInfo>> GetPersistanceRunningJobsInfo()
         {
             var result = new List<PersistanceRunningJobsInfo>();
-            var currentNode = GetCurrentClusterNode();
-            var nodes = await _dal.GetClusterNodes();
+            var nodes = await GetAllNodes();
             foreach (var node in nodes)
             {
-                if (node == currentNode) { continue; }
+                if (node.IsCurrentNode) { continue; }
 
                 try
                 {
@@ -513,19 +510,19 @@ namespace Planar.Service.General
             return result;
         }
 
-        private async Task RegisterCurrentNodeIfNotExists(ClusterNode currentNode, List<ClusterNode> allNodes)
+        private async Task RegisterCurrentNodeIfNotExists(IEnumerable<ClusterNode> allNodes)
         {
-            if (allNodes.Any(n => n == currentNode) == false)
+            if (!allNodes.Any(n => n.IsCurrentNode) && SchedulerUtil.IsSchedulerRunning)
             {
-                if (SchedulerUtil.IsSchedulerRunning)
+                var currentNode = new ClusterNode
                 {
-                    currentNode.ClusterPort = AppSettings.ClusterPort;
-                    currentNode.JoinDate = DateTime.Now;
-                    currentNode.InstanceId = MainService.Scheduler.SchedulerInstanceId;
-                    currentNode.HealthCheckDate = DateTime.Now;
+                    ClusterPort = AppSettings.ClusterPort,
+                    JoinDate = DateTime.Now,
+                    InstanceId = MainService.Scheduler.SchedulerInstanceId,
+                    HealthCheckDate = DateTime.Now,
+                };
 
-                    await _dal.AddClusterNode(currentNode);
-                }
+                await _dal.AddClusterNode(currentNode);
             }
         }
 
