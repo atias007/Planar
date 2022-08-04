@@ -71,7 +71,7 @@ namespace Planar.Service.API
             }
         }
 
-        public static async Task<List<JobRowDetails>> GetAll(GetAllJobsRequest request)
+        public async Task<List<JobRowDetails>> GetAll(GetAllJobsRequest request)
         {
             var result = new List<JobRowDetails>();
 

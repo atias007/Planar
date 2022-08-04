@@ -88,10 +88,9 @@ namespace Planar.Service.General
             var exceptions = string.Empty;
 
             if (context != null && context.Result is JobExecutionMetadata metadata)
-                {
-                    information = metadata.GetInformation();
-                    exceptions = metadata.GetExceptionsText();
-                }
+            {
+                information = metadata.GetInformation();
+                exceptions = metadata.GetExceptionsText();
             }
 
             var response = new GetRunningInfoResponse { Information = information, Exceptions = exceptions };

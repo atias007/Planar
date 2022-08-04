@@ -1,9 +1,11 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Planar.Service.Model
 {
     public partial class ClusterNode
     {
+        [NotMapped]
         public TimeSpan HealthCheckGap
         {
             get
@@ -12,6 +14,7 @@ namespace Planar.Service.Model
             }
         }
 
+        [NotMapped]
         public TimeSpan HealthCheckGapDeviation
         {
             get
@@ -20,6 +23,7 @@ namespace Planar.Service.Model
             }
         }
 
+        [NotMapped]
         public bool LiveNode
         {
             get
@@ -28,6 +32,7 @@ namespace Planar.Service.Model
             }
         }
 
+        [NotMapped]
         public bool IsCurrentNode { get; set; }
     }
 }
