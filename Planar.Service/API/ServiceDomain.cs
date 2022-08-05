@@ -55,6 +55,7 @@ namespace Planar.Service.API
         {
             var hc = SchedulerUtil.IsSchedulerRunning;
             if (!hc) { return false; }
+
             if (AppSettings.Clustering)
             {
                 hc = await new ClusterUtil(DataLayer, Logger).HealthCheck();

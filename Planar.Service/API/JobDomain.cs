@@ -467,6 +467,7 @@ namespace Planar.Service.API
                 isRunning = isRunning && await new ClusterUtil(DataLayer, Logger).IsJobRunning(jobKey);
             }
 
+
             if (isRunning)
             {
                 throw new RestValidationException($"{jobKey.Group}.{jobKey.Name}", $"job with name: {jobKey.Name} and group: {jobKey.Group} is currently running");
