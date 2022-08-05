@@ -9,6 +9,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
@@ -117,17 +118,21 @@ namespace Planar.CLI.Actions
         {
             var result = await GetRunningJobsInner(request);
 
-            var table =
-                request.Details ?
-                null :
-                CliTableExtensions.GetTable(result.Item1);
+            if (request.Quiet)
+            {
+                var data = result.Item1?.Select(i => i.FireInstanceId).ToList();
+                var sb = new StringBuilder();
+                data.ForEach(m => sb.AppendLine(m));
+                return new CliActionResponse(result.Item2, message: sb.ToString());
+            }
 
-            var response =
-               request.Details ?
-               new CliActionResponse(result.Item2, serializeObj: result.Item1) :
-               new CliActionResponse(result.Item2, table);
+            if (request.Details)
+            {
+                return new CliActionResponse(result.Item2, serializeObj: result.Item1);
+            }
 
-            return response;
+            var table = CliTableExtensions.GetTable(result.Item1);
+            return new CliActionResponse(result.Item2, table);
         }
 
         [Action("invoke")]
@@ -294,7 +299,7 @@ namespace Planar.CLI.Actions
 
             RestRequest restRequest;
             RestResponse restResponse;
-            List<RunningJobDetails> resultData;
+            List<RunningJobDetails> resultData = null;
 
             if (string.IsNullOrEmpty(request.FireInstanceId))
             {
@@ -308,7 +313,11 @@ namespace Planar.CLI.Actions
                 restRequest = new RestRequest("job/running/{instanceId}", Method.Get)
                     .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
                 var result = await RestProxy.Invoke<RunningJobDetails>(restRequest);
-                resultData = new List<RunningJobDetails> { result.Data };
+                if (result.Data != null)
+                {
+                    resultData = new List<RunningJobDetails> { result.Data };
+                }
+
                 restResponse = result;
             }
 

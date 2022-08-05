@@ -4,9 +4,11 @@ using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.General;
+using Planar.Service.Model.DataObjects;
 using Polly;
 using Quartz;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
 
@@ -48,8 +50,20 @@ namespace Planar.Service.SystemJobs
         private async Task DoWork()
         {
             var runningJobs = await SchedulerUtil.GetPersistanceRunningJobsInfo();
-            var clusterRunningJobs = await new ClusterUtil(_dal, _logger).GetPersistanceRunningJobsInfo();
-            runningJobs.AddRange(clusterRunningJobs);
+
+            if (AppSettings.Clustering)
+            {
+                var clusterRunningJobs = await new ClusterUtil(_dal, _logger).GetPersistanceRunningJobsInfo();
+                if (runningJobs == null)
+                {
+                    runningJobs = new List<PersistanceRunningJobsInfo>();
+                }
+
+                if (clusterRunningJobs != null)
+                {
+                    runningJobs.AddRange(clusterRunningJobs);
+                }
+            }
 
             foreach (var context in runningJobs)
             {

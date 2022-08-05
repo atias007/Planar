@@ -2,10 +2,9 @@
 
 namespace Planar.CLI.Entities
 {
-    public class CliFireInstanceIdRequest
+    public class CliFireInstanceIdOptionalRequest
     {
         [ActionProperty(DefaultOrder = 0)]
-        [Required("instance id parameter is required")]
         public string FireInstanceId { get; set; }
     }
 }

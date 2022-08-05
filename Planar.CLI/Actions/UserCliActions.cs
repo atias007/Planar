@@ -59,7 +59,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("password")]
-        public static async Task<CliActionResponse> GetUserPassword(CliUpdateEntityRequest request)
+        public static async Task<CliActionResponse> GetUserPassword(CliGetByIdRequest request)
         {
             var restRequest = new RestRequest("user/{id}/password", Method.Get)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);

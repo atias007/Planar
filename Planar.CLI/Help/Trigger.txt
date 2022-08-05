@@ -3,6 +3,7 @@
 the options for <command> and [<options>] parameters of trigger module:
 
 ls|list         <job id> [-q|--quiet]
+get             <trigger id>
 add|upsert      <trigger id> <filename|.>
 pause           <trigger id>
 resume          <trigger id>

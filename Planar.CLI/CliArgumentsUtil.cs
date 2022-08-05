@@ -126,9 +126,26 @@ namespace Planar.CLI
                 }
 
                 SetValue(matchProp.PropertyInfo, result, a.Value);
+                matchProp.ValueSupplied = true;
             }
 
+            FindMissingRequiredProperties(props);
+
             return result;
+        }
+
+        private static void FindMissingRequiredProperties(IEnumerable<RequestPropertyInfo> props)
+        {
+            var p = props.FirstOrDefault(v => v.Required && v.ValueSupplied == false);
+            if (p != null)
+            {
+                var message =
+                    string.IsNullOrEmpty(p.RequiredMissingMessage) ?
+                    $"property {p.Name} is required" :
+                    p.RequiredMissingMessage;
+
+                throw new CliException(message);
+            }
         }
 
         private static void SetValue(PropertyInfo prop, object instance, string value)
@@ -144,7 +161,7 @@ namespace Planar.CLI
             }
             catch (Exception)
             {
-                throw new Exception($"Value '{value}' has wrong format for type '{prop.PropertyType.Name}' of property {prop.Name}");
+                throw new CliException($"Value '{value}' has wrong format for type '{prop.PropertyType.Name}' of property {prop.Name}");
             }
         }
     }
