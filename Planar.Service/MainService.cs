@@ -226,9 +226,11 @@ namespace Planar.Service
 
         private async Task JoinToCluster()
         {
+            if (!AppSettings.Clustering) { return; }
+
             try
             {
-                _logger.LogInformation("Initialize: AddSchedulerCluster");
+                _logger.LogInformation("Initialize: JoinToCluster");
 
                 var dal = Resolve<DataLayer>();
                 var nodes = await dal.GetClusterNodes();

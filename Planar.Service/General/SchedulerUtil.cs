@@ -102,9 +102,13 @@ namespace Planar.Service.General
             var result = await IsRunningInstanceExistOnLocal(instanceId, cancellationToken);
             if (result) { return true; }
 
-            var dal = MainService.Resolve<DataLayer>();
-            var logger = MainService.Resolve<ILogger<ClusterUtil>>();
-            result = await new ClusterUtil(dal, logger).IsRunningInstanceExist(instanceId);
+            if (AppSettings.Clustering)
+            {
+                var dal = MainService.Resolve<DataLayer>();
+                var logger = MainService.Resolve<ILogger<ClusterUtil>>();
+                result = await new ClusterUtil(dal, logger).IsRunningInstanceExist(instanceId);
+            }
+
             return result;
         }
 

@@ -477,7 +477,7 @@ namespace Planar.Service.Data
 
         public async Task<bool> IsGroupHasMonitors(string groupName)
         {
-            var result = await _context.MonitorActions.AnyAsync(m => string.Compare(m.JobGroup, groupName, true) == 0);
+            var result = await _context.MonitorActions.AnyAsync(m => m.Group.Name == groupName);
             return result;
         }
 

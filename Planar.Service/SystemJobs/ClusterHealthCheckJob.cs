@@ -37,7 +37,11 @@ namespace Planar.Service.SystemJobs
             var logger = Global.GetLogger<ClusterHealthCheckJob>();
             var dal = Global.ServiceProvider.GetService<DataLayer>();
             var util = new ClusterUtil(dal, logger);
-            await util.HealthCheckWithUpdate();
+
+            if (AppSettings.Clustering)
+            {
+                await util.HealthCheckWithUpdate();
+            }
         }
 
         public static async Task Schedule(IScheduler scheduler)

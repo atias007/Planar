@@ -1,9 +1,9 @@
 - add to base test to retrieve information & exception
-- add monitor event when user pause / delete / add job
-- dont allow to delete group when the group has monitoring (****** check)
+- add monitor event when user pause / delete / add job / invoke job / cancel job / join to cluster / remove from cluster / start scheduler / stop scheduler
+- add interface to hooks to handle system events
+
 - misfire behaviour should be enum in yml file
 - demo yml file in data directory
-- cli monitor add will not start if no hooks exists
 - test cluster functions
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
 -----------------------------------------DONE-----------------------------------------
@@ -23,3 +23,9 @@
 - runtime property in running job info is string!!! should be timespan
 - cli ls command should hide system job (with option to show all or just system tables)
 - check how cli display interval of trigger that is morre the 24 hours
+- cli monitor add will not start if no hooks exists
+- dont allow to delete group when the group has monitoring
+- ERROR!!! job running pguegs0udxg
+- allow job running with quiet mode
+- enforce required parameters on cli
+- call cluster functions only if running is cluster mode

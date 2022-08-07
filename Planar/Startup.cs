@@ -1,3 +1,4 @@
+using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -12,9 +13,7 @@ using Planar.Service.API;
 using Planar.Service.Data;
 using Serilog;
 using System.Net;
-using AutoMapper;
 using System.Reflection;
-using Microsoft.AspNetCore.Http;
 
 namespace Planar
 {
@@ -35,8 +34,10 @@ namespace Planar
             {
                 options.Filters.Add<ValidateModelStateAttribute>();
                 options.Filters.Add<HttpResponseExceptionFilter>();
-            })
-            .AddFluentValidation(fv => fv.RegisterValidatorsFromAssembly(GetType().Assembly));
+            });
+
+            services.AddFluentValidationAutoValidation();
+            services.AddValidatorsFromAssembly(GetType().Assembly);
 
             services.AddControllers();
 

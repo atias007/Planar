@@ -18,11 +18,10 @@ namespace Planar.Service.API
         {
         }
 
-        public async Task<int> AddGroup(UpsertGroupRecord request)
+        public async Task<int> AddGroup(AddGroupRecord request)
         {
             var group = new Group
             {
-                Id = request.Id,
                 Name = request.Name
             };
 

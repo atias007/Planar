@@ -101,20 +101,36 @@ namespace Planar.Service.API
         public async Task<List<RunningJobDetails>> GetRunning()
         {
             var result = await SchedulerUtil.GetRunningJobs();
-            var clusterResult = await new ClusterUtil(DataLayer, Logger).GetRunningJobs();
-            result.AddRange(clusterResult);
+            if (AppSettings.Clustering)
+            {
+                var clusterResult = await new ClusterUtil(DataLayer, Logger).GetRunningJobs();
+                if (result == null)
+                {
+                    result = new List<RunningJobDetails>();
+                }
+
+                if (clusterResult != null)
+                {
+                    result.AddRange(clusterResult);
+                }
+            }
+
             return result;
         }
 
         public async Task<RunningJobDetails> GetRunning(string instanceId)
         {
             var result = await SchedulerUtil.GetRunningJob(instanceId);
-            if (result != null)
+            if (result == null && AppSettings.Clustering)
             {
-                return result;
+                result = await new ClusterUtil(DataLayer, Logger).GetRunningJob(instanceId);
             }
 
-            result = await new ClusterUtil(DataLayer, Logger).GetRunningJob(instanceId);
+            if (result == null)
+            {
+                throw new RestNotFoundException();
+            }
+
             return result;
         }
 
@@ -126,7 +142,11 @@ namespace Planar.Service.API
                 return result;
             }
 
-            result = await new ClusterUtil(DataLayer, Logger).GetRunningInfo(instanceId);
+            if (AppSettings.Clustering)
+            {
+                result = await new ClusterUtil(DataLayer, Logger).GetRunningInfo(instanceId);
+            }
+
             return result;
         }
 
@@ -232,7 +252,10 @@ namespace Planar.Service.API
         public async Task Stop(FireInstanceIdRequest request)
         {
             await SchedulerUtil.StopRunningJob(request.FireInstanceId);
-            await new ClusterUtil(DataLayer, Logger).StopRunningJob(request.FireInstanceId);
+            if (AppSettings.Clustering)
+            {
+                await new ClusterUtil(DataLayer, Logger).StopRunningJob(request.FireInstanceId);
+            }
         }
 
         public async Task UpdateProperty(UpsertJobPropertyRequest request)
@@ -438,9 +461,12 @@ namespace Planar.Service.API
 
         private async Task ValidateJobNotRunning(JobKey jobKey)
         {
-            var isRunning =
-                await SchedulerUtil.IsJobRunning(jobKey) &&
-                await new ClusterUtil(DataLayer, Logger).IsJobRunning(jobKey);
+            var isRunning = await SchedulerUtil.IsJobRunning(jobKey);
+            if (AppSettings.Clustering)
+            {
+                isRunning = isRunning && await new ClusterUtil(DataLayer, Logger).IsJobRunning(jobKey);
+            }
+
 
             if (isRunning)
             {

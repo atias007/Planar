@@ -50,7 +50,7 @@ namespace Planar
             return new IsJobRunningReply { IsRunning = result };
         }
 
-        // TODO: Test Me
+        // OK
         public override async Task<RunningJobReply> GetRunningJob(GetRunningJobRequest request, ServerCallContext context)
         {
             ValidateRequest(request);
@@ -74,7 +74,7 @@ namespace Planar
             return result;
         }
 
-        // TODO: Test Me
+        // OK
         public override async Task<RunningInfoReply> GetRunningInfo(GetRunningJobRequest request, ServerCallContext context)
         {
             ValidateRequest(request);
@@ -106,7 +106,6 @@ namespace Planar
             return new Empty();
         }
 
-        // TODO: Test Me
         public override async Task<PersistanceRunningJobInfoReply> GetPersistanceRunningJobInfo(Empty request, ServerCallContext context)
         {
             var result = new PersistanceRunningJobInfoReply();

@@ -55,7 +55,12 @@ namespace Planar.Service.API
         {
             var hc = SchedulerUtil.IsSchedulerRunning;
             if (!hc) { return false; }
-            hc = await new ClusterUtil(DataLayer, Logger).HealthCheck();
+
+            if (AppSettings.Clustering)
+            {
+                hc = await new ClusterUtil(DataLayer, Logger).HealthCheck();
+            }
+
             return hc;
         }
 
@@ -68,13 +73,19 @@ namespace Planar.Service.API
         public async Task StopScheduler()
         {
             await SchedulerUtil.Stop();
-            await new ClusterUtil(DataLayer, Logger).StopScheduler();
+            if (AppSettings.Clustering)
+            {
+                await new ClusterUtil(DataLayer, Logger).StopScheduler();
+            }
         }
 
         public async Task StartScheduler()
         {
             await SchedulerUtil.Start();
-            await new ClusterUtil(DataLayer, Logger).StartScheduler();
+            if (AppSettings.Clustering)
+            {
+                await new ClusterUtil(DataLayer, Logger).StartScheduler();
+            }
         }
     }
 }

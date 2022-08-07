@@ -16,7 +16,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddGroup(UpsertGroupRecord request)
+        public async Task<IActionResult> AddGroup(AddGroupRecord request)
         {
             var id = await BusinesLayer.AddGroup(request);
             return CreatedAtAction("GetGroup", new { id }, id);

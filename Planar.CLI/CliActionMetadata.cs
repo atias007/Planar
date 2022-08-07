@@ -44,13 +44,16 @@ namespace Planar.CLI
             foreach (var item in props)
             {
                 var att = item.GetCustomAttribute<ActionPropertyAttribute>();
+                var req = item.GetCustomAttribute<RequiredAttribute>();
                 var info = new RequestPropertyInfo
                 {
                     PropertyInfo = item,
                     LongName = att?.LongName?.ToLower(),
                     ShortName = att?.ShortName?.ToLower(),
                     Default = (att?.Default).GetValueOrDefault(),
-                    DefaultOrder = (att?.DefaultOrder).GetValueOrDefault()
+                    Required = req != null,
+                    RequiredMissingMessage = req?.Message,
+                    DefaultOrder = (att?.DefaultOrder).GetValueOrDefault(),
                 };
                 result.Add(info);
             }
@@ -76,6 +79,12 @@ namespace Planar.CLI
         public bool Default { get; set; }
 
         public int DefaultOrder { get; set; }
+
+        public bool Required { get; set; }
+
+        public string RequiredMissingMessage { get; set; }
+
+        public bool ValueSupplied { get; set; }
 
         public PropertyInfo PropertyInfo { get; set; }
     }

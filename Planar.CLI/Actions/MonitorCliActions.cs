@@ -1,10 +1,12 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
+using Planar.CLI.Exceptions;
 using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
@@ -79,6 +81,21 @@ namespace Planar.CLI.Actions
             if (metadata.IsSuccessful == false)
             {
                 return new CliActionResponse(metadata);
+            }
+
+            if (!metadata.Data.Hooks.Any())
+            {
+                throw new ValidationException("there are no monitor hooks define in service");
+            }
+
+            if (!metadata.Data.Groups.Any())
+            {
+                throw new ValidationException("there are no distribution groups define in service");
+            }
+
+            if (!metadata.Data.Jobs.Any())
+            {
+                throw new ValidationException("there are no jobs define in service");
             }
 
             var title = GetTitle();
