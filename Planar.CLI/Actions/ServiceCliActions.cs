@@ -30,7 +30,30 @@ namespace Planar.CLI.Actions
         {
             var restRequest = new RestRequest("service", Method.Get);
             var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest);
+
+            if (result.IsSuccessful && result.Data != null)
+            {
+                result.Data.CliVersion = Program.Version;
+            }
+
             return new CliActionResponse(result, result.Data);
+        }
+
+        [Action("version")]
+        public static async Task<CliActionResponse> GetVersion()
+        {
+            var restRequest = new RestRequest("service", Method.Get);
+            var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest);
+
+            if (result.IsSuccessful && result.Data != null)
+            {
+                result.Data.CliVersion = Program.Version;
+
+                var versionData = new { result.Data.ServiceVersion, result.Data.CliVersion };
+                return new CliActionResponse(result, versionData);
+            }
+
+            return new CliActionResponse(result);
         }
 
         [Action("hc")]

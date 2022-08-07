@@ -22,7 +22,7 @@ simple triggers:
     end: 2021-09-19 23:59:00
     interval: 00:01:00
     repeat count: 100
-    misfire behaviour: 0
+    misfire behaviour: FireNow   # | FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount
     priority: 1
     calendar: null
     retry span: 01:00:00
@@ -33,7 +33,7 @@ simple triggers:
 cron triggers:
   - name: some-cron-trigger
     cron expression: 0 15 10 ? * MON-FRI
-    misfire behaviour: 0
+    misfire behaviour: DoNothing   # | DoNothing | FireAndProceed | IgnoreMisfires
     priority: 1
     calendar: null
     retry span: 01:00:00

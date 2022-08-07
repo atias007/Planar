@@ -2,6 +2,8 @@
 name: BankOfIsraelCurrency
 group: Infrastructure
 description: Download daily currency information and save it to disk as xml 
+durable: true
+concurrent: true
 properties:
   JobPath: BankOfIsraelCurrency
   FileName: BankOfIsraelCurrency.dll
@@ -9,4 +11,4 @@ properties:
 simple triggers:
   - name: every_10_minutes
     interval: 00:10:00
-    misfire behaviour: 2
+    misfire behaviour: IgnoreMisfires

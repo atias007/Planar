@@ -40,7 +40,7 @@ namespace Planar
             return new Empty();
         }
 
-        // TODO: Test Me
+        // OK
         public override async Task<IsJobRunningReply> IsJobRunning(RpcJobKey request, ServerCallContext context)
         {
             ValidateRequest(request);
@@ -90,7 +90,7 @@ namespace Planar
             return result;
         }
 
-        // TODO: Test Me
+        // OK
         public override async Task<IsRunningInstanceExistReply> IsRunningInstanceExist(GetRunningJobRequest request, ServerCallContext context)
         {
             ValidateRequest(request);
@@ -98,12 +98,12 @@ namespace Planar
             return new IsRunningInstanceExistReply { Exists = result };
         }
 
-        // TODO: Test Me
-        public override async Task<Empty> StopRunningJob(GetRunningJobRequest request, ServerCallContext context)
+        // OK
+        public override async Task<StopRunningJobReply> StopRunningJob(GetRunningJobRequest request, ServerCallContext context)
         {
             ValidateRequest(request);
-            await SchedulerUtil.StopRunningJob(request.InstanceId, context.CancellationToken);
-            return new Empty();
+            var result = await SchedulerUtil.StopRunningJob(request.InstanceId, context.CancellationToken);
+            return new StopRunningJobReply { IsStopped = result };
         }
 
         public override async Task<PersistanceRunningJobInfoReply> GetPersistanceRunningJobInfo(Empty request, ServerCallContext context)

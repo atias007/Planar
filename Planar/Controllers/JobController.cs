@@ -90,7 +90,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("stop")]
-        public async Task<IActionResult> Stop([FromBody] FireInstanceIdRequest request)
+        public async Task<ActionResult<bool>> Stop([FromBody] FireInstanceIdRequest request)
         {
             await BusinesLayer.Stop(request);
             return Accepted();

@@ -306,18 +306,26 @@ namespace Planar.CLI
                 ExceptionFormats.ShortenMethods | ExceptionFormats.ShowLinks);
         }
 
+        internal static string Version
+        {
+            get
+            {
+                var result = Assembly.GetEntryAssembly()
+                                    ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                                    ?.InformationalVersion
+                                    .ToString();
+
+                return result;
+            }
+        }
+
         private static void WriteInfo()
         {
             AnsiConsole.Write(new FigletText("Planar")
                     .LeftAligned()
                     .Color(Color.SteelBlue1));
 
-            var versionString = Assembly.GetEntryAssembly()
-                                    ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-                                    ?.InformationalVersion
-                                    .ToString();
-
-            Console.WriteLine($"planar cli v{versionString}");
+            Console.WriteLine($"planar cli v{Version}");
             Console.WriteLine("-------------------------");
             Console.WriteLine("usage: planar <module> <command> [<options>]");
             Console.WriteLine();

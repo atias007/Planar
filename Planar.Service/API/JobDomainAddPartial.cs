@@ -112,19 +112,20 @@ namespace Planar.Service.API
 
         private static void BuidCronSchedule(CronScheduleBuilder builder, JobCronTriggerMetadata trigger)
         {
-            if (trigger.MisfireBehaviour.HasValue)
+            if (!string.IsNullOrEmpty(trigger.MisfireBehaviour))
             {
-                switch (trigger.MisfireBehaviour.Value)
+                var value = trigger.MisfireBehaviour.ToLower();
+                switch (value)
                 {
-                    case 0:
+                    case "donothing":
                         builder.WithMisfireHandlingInstructionDoNothing();
                         break;
 
-                    case 2:
+                    case "fireandproceed":
                         builder.WithMisfireHandlingInstructionFireAndProceed();
                         break;
 
-                    case 3:
+                    case "ignoremisfires":
                         builder.WithMisfireHandlingInstructionIgnoreMisfires();
                         break;
 
@@ -146,31 +147,32 @@ namespace Planar.Service.API
                 builder = builder.RepeatForever();
             }
 
-            if (trigger.MisfireBehaviour.HasValue)
+            if (!string.IsNullOrEmpty(trigger.MisfireBehaviour))
             {
-                switch (trigger.MisfireBehaviour.Value)
+                var value = trigger.MisfireBehaviour.ToLower();
+                switch (value)
                 {
-                    case 0:
+                    case "firenow":
                         builder.WithMisfireHandlingInstructionFireNow();
                         break;
 
-                    case 1:
+                    case "ignoremisfires":
                         builder.WithMisfireHandlingInstructionIgnoreMisfires();
                         break;
 
-                    case 2:
+                    case "nextwithexistingcount":
                         builder.WithMisfireHandlingInstructionNextWithExistingCount();
                         break;
 
-                    case 3:
+                    case "nextwithremainingcount":
                         builder.WithMisfireHandlingInstructionNextWithRemainingCount();
                         break;
 
-                    case 4:
+                    case "nowwithexistingcount":
                         builder.WithMisfireHandlingInstructionNowWithExistingCount();
                         break;
 
-                    case 5:
+                    case "nowwithremainingcount":
                         builder.WithMisfireHandlingInstructionNowWithRemainingCount();
                         break;
 
@@ -331,6 +333,34 @@ namespace Planar.Service.API
             ValidateMaxCharsTiggerProperties(container);
             ValidatePreserveWordsTriggerProperties(container);
             ValidateTriggerPriority(container);
+            ValidateTriggerMisfireBehaviour(container);
+        }
+
+        private static void ValidateTriggerMisfireBehaviour(ITriggersContainer container)
+        {
+            var simpleValues = new[] { "firenow", "ignoremisfires", "nextwithexistingcount", "nextwithremainingcount", "nowwithexistingcount", "nowwithremainingcount" };
+            container.SimpleTriggers?.ForEach(t =>
+            {
+                if (string.IsNullOrEmpty(t.MisfireBehaviour) == false)
+                {
+                    if (simpleValues.Contains(t.MisfireBehaviour.ToLower()) == false)
+                    {
+                        throw new RestValidationException("misfireBehaviour", $"value {t.MisfireBehaviour} is not valid value for simple trigger misfire behaviour");
+                    }
+                }
+            });
+
+            var cronValues = new[] { "donothing", "fireandproceed", "ignoremisfires" };
+            container.SimpleTriggers?.ForEach(t =>
+            {
+                if (string.IsNullOrEmpty(t.MisfireBehaviour) == false)
+                {
+                    if (cronValues.Contains(t.MisfireBehaviour.ToLower()) == false)
+                    {
+                        throw new RestValidationException("misfireBehaviour", $"value {t.MisfireBehaviour} is not valid value for cron trigger misfire behaviour");
+                    }
+                }
+            });
         }
 
         private static void ValidateTriggerPriority(ITriggersContainer container)

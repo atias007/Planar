@@ -296,7 +296,7 @@ namespace Planar.Service.General
             return false;
         }
 
-        public async Task StopRunningJob(string instanceId)
+        public async Task<bool> StopRunningJob(string instanceId)
         {
             var nodes = await GetAllNodes();
             foreach (var node in nodes)
@@ -305,15 +305,19 @@ namespace Planar.Service.General
 
                 try
                 {
-                    await Policy.Handle<RpcException>()
+                    var isStopped = await Policy.Handle<RpcException>()
                         .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
                         .ExecuteAsync(() => CallStopRunningJob(node, instanceId));
+
+                    if (isStopped) { return true; }
                 }
                 catch (RpcException ex)
                 {
                     _logger.LogError(ex, "Fail to stop running instance {InstanceId} at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
                 }
             }
+
+            return false;
         }
 
         public async Task<List<RunningJobDetails>> GetRunningJobs()
@@ -449,11 +453,12 @@ namespace Planar.Service.General
             return result.Exists;
         }
 
-        private static async Task CallStopRunningJob(ClusterNode node, string instanceId)
+        private static async Task<bool> CallStopRunningJob(ClusterNode node, string instanceId)
         {
             var client = GetClient(node);
             var request = new GetRunningJobRequest { InstanceId = instanceId };
-            await client.StopRunningJobAsync(request);
+            var result = await client.StopRunningJobAsync(request);
+            return result.IsStopped;
         }
 
         private static async Task<PersistanceRunningJobInfoReply> CallGetPersistanceRunningJobInfo(ClusterNode node)

@@ -42,7 +42,6 @@ namespace Planar.Service.API
                 HttpPort = AppSettings.HttpPort,
                 HttpsPort = AppSettings.HttpsPort,
                 MaxConcurrency = AppSettings.MaxConcurrency,
-                PersistRunningJobsSpan = AppSettings.PersistRunningJobsSpan,
                 UseHttps = AppSettings.UseHttps,
                 UseHttpsRedirect = AppSettings.UseHttpsRedirect,
                 ServiceVersion = ServiceVersion

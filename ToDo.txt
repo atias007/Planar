@@ -2,9 +2,7 @@
 - add monitor event when user pause / delete / add job / invoke job / cancel job / join to cluster / remove from cluster / start scheduler / stop scheduler
 - add interface to hooks to handle system events
 
-- misfire behaviour should be enum in yml file
 - demo yml file in data directory
-- test cluster functions
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
 -----------------------------------------DONE-----------------------------------------
 - cli health check should check cluster mode
@@ -29,3 +27,4 @@
 - allow job running with quiet mode
 - enforce required parameters on cli
 - call cluster functions only if running is cluster mode
+- misfire behaviour should be enum in yml file

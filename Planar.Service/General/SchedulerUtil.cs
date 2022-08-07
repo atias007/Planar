@@ -7,6 +7,7 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model.DataObjects;
 using Quartz;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -130,31 +131,23 @@ namespace Planar.Service.General
             return false;
         }
 
-        public static async Task StopRunningJob(string instanceId, CancellationToken cancellationToken = default)
+        public static async Task<bool> StopRunningJob(string instanceId, CancellationToken cancellationToken = default)
         {
-            var jobKey = await JobKeyHelper.GetJobKey(instanceId);
-            var info = await MainService.Scheduler.GetJobDetail(jobKey, cancellationToken);
-
-            if (info != null)
+            try
             {
-                var resultJob = await MainService.Scheduler.Interrupt(instanceId, cancellationToken);
-                if (resultJob == false)
+                var jobKey = await JobKeyHelper.GetJobKey(instanceId);
+                var resultJob = await MainService.Scheduler.Interrupt(jobKey, cancellationToken);
+                return resultJob;
+            }
+            catch (RestNotFoundException)
+            {
+                if (!await IsRunningInstanceExistOnCluster(instanceId, cancellationToken))
                 {
-                    throw new RestValidationException("fireInstanceId", $"fail to stop running job(s) with job key {instanceId}");
+                    throw new RestNotFoundException($"instance id '{instanceId}' is not running");
                 }
 
-                return;
-            }
-
-            if (!await IsRunningInstanceExistOnCluster(instanceId, cancellationToken))
-            {
-                throw new RestNotFoundException($"instance id '{instanceId}' is not exist");
-            }
-
-            var result = await MainService.Scheduler.Interrupt(instanceId, cancellationToken);
-            if (result == false)
-            {
-                throw new RestValidationException("fireInstanceId", $"fail to stop running job with FireInstanceId {instanceId}");
+                var result = await MainService.Scheduler.Interrupt(instanceId, cancellationToken);
+                return result;
             }
         }
 

@@ -32,9 +32,6 @@ namespace Planar.API.Common.Entities
         [YamlMember(Order = 10)]
         public int ClearTraceTableOverDays { get; set; }
 
-        [YamlMember(Order = 11)]
-        public TimeSpan PersistRunningJobsSpan { get; set; }
-
         [YamlMember(Order = 12)]
         public short HttpPort { get; set; }
 
@@ -67,5 +64,8 @@ namespace Planar.API.Common.Entities
 
         [YamlMember(Order = 101)]
         public string ServiceVersion { get; set; }
+
+        [YamlMember(Order = 102)]
+        public string CliVersion { get; set; }
     }
 }
