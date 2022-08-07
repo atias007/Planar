@@ -122,7 +122,11 @@ namespace Planar.CLI.Actions
             {
                 var data = result.Item1?.Select(i => i.FireInstanceId).ToList();
                 var sb = new StringBuilder();
-                data.ForEach(m => sb.AppendLine(m));
+                if (data != null)
+                {
+                    data.ForEach(m => sb.AppendLine(m));
+                }
+
                 return new CliActionResponse(result.Item2, message: sb.ToString());
             }
 

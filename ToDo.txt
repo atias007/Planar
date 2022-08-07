@@ -1,5 +1,6 @@
 - add to base test to retrieve information & exception
-- add monitor event when user pause / delete / add job
+- add monitor event when user pause / delete / add job / invoke job / cancel job / join to cluster / remove from cluster / start scheduler / stop scheduler
+- add interface to hooks to handle system events
 
 - misfire behaviour should be enum in yml file
 - demo yml file in data directory
