@@ -278,7 +278,7 @@ namespace Planar.CLI.Actions
         [Action("updateprop")]
         public static async Task<CliActionResponse> UpsertJobProperty(CliUpsertJobPropertyRequest request)
         {
-            var restRequest = new RestRequest("job/property", Method.Post)
+            var restRequest = new RestRequest("job/property", Method.Put)
                 .AddBody(request);
 
             var result = await RestProxy.Invoke(restRequest);

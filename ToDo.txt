@@ -4,6 +4,9 @@
 
 - demo yml file in data directory
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
+- cli test cluster command
+- trigger get -> show misfilebehaviour as numeric
+- option to pause job after {x} fails in row
 -----------------------------------------DONE-----------------------------------------
 - cli health check should check cluster mode
 - allow to stop planar scheduler without stop the windows service (service stop, service start, service shutdown)

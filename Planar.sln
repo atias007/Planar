@@ -27,6 +27,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Features.txt = Features.txt
 		Install.txt = Install.txt
 		MalamWebHook.txt = MalamWebHook.txt
+		..\temp\Postgres\postgressql-docker-compose.yml = ..\temp\Postgres\postgressql-docker-compose.yml
 		..\temp\run.bat = ..\temp\run.bat
 		Scaffold-DbContext.txt = Scaffold-DbContext.txt
 		ToDo.txt = ToDo.txt

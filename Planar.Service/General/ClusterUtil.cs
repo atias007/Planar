@@ -38,6 +38,14 @@ namespace Planar.Service.General
             return cluster;
         }
 
+        private static DateTime GrpcDeadLine
+        {
+            get
+            {
+                return DateTime.UtcNow.AddSeconds(2);
+            }
+        }
+
         private async Task<IEnumerable<ClusterNode>> GetAllNodes()
         {
             var tempNode = GetCurrentClusterNode();
@@ -211,7 +219,7 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to start scheduler at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "Fail to check if job is running at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
                 }
             }
 
@@ -382,7 +390,7 @@ namespace Planar.Service.General
         private async Task CallHealthCheckService(ClusterNode node)
         {
             var client = GetClient(node);
-            await client.HealthCheckAsync(new Empty());
+            await client.HealthCheckAsync(new Empty(), deadline: GrpcDeadLine);
 
             node.HealthCheckDate = DateTime.Now;
             await _dal.SaveChanges();
@@ -391,26 +399,26 @@ namespace Planar.Service.General
         private static async Task CallStopSchedulerService(ClusterNode node)
         {
             var client = GetClient(node); ;
-            await client.StopSchedulerAsync(new Empty());
+            await client.StopSchedulerAsync(new Empty(), deadline: GrpcDeadLine);
         }
 
         private static async Task CallStartSchedulerService(ClusterNode node)
         {
             var client = GetClient(node);
-            await client.StartSchedulerAsync(new Empty());
+            await client.StartSchedulerAsync(new Empty(), deadline: GrpcDeadLine);
         }
 
         private static async Task<bool> CallIsJobRunningService(RpcJobKey jobKey, ClusterNode node)
         {
             var client = GetClient(node);
-            var result = await client.IsJobRunningAsync(jobKey);
+            var result = await client.IsJobRunningAsync(jobKey, deadline: GrpcDeadLine);
             return result.IsRunning;
         }
 
         private static async Task<List<RunningJobDetails>> CallGetRunningJobs(ClusterNode node)
         {
             var client = GetClient(node);
-            var result = await client.GetRunningJobsAsync(new Empty());
+            var result = await client.GetRunningJobsAsync(new Empty(), deadline: GrpcDeadLine);
 
             var response = new List<RunningJobDetails>();
             foreach (var job in result.Jobs)
@@ -426,7 +434,7 @@ namespace Planar.Service.General
         {
             var client = GetClient(node);
             var request = new GetRunningJobRequest { InstanceId = instanceId };
-            var result = await client.GetRunningJobAsync(request);
+            var result = await client.GetRunningJobAsync(request, deadline: GrpcDeadLine);
             var response = MapRunningJob(result);
             return response;
         }
@@ -435,7 +443,7 @@ namespace Planar.Service.General
         {
             var client = GetClient(node);
             var request = new GetRunningJobRequest { InstanceId = instanceId };
-            var result = await client.GetRunningInfoAsync(request);
+            var result = await client.GetRunningInfoAsync(request, deadline: GrpcDeadLine);
             var response = new GetRunningInfoResponse
             {
                 Information = string.IsNullOrEmpty(result.Information) ? null : result.Information,
@@ -449,7 +457,7 @@ namespace Planar.Service.General
         {
             var client = GetClient(node);
             var request = new GetRunningJobRequest { InstanceId = instanceId };
-            var result = await client.IsRunningInstanceExistAsync(request);
+            var result = await client.IsRunningInstanceExistAsync(request, deadline: GrpcDeadLine);
             return result.Exists;
         }
 
@@ -457,14 +465,14 @@ namespace Planar.Service.General
         {
             var client = GetClient(node);
             var request = new GetRunningJobRequest { InstanceId = instanceId };
-            var result = await client.StopRunningJobAsync(request);
+            var result = await client.StopRunningJobAsync(request, deadline: GrpcDeadLine);
             return result.IsStopped;
         }
 
         private static async Task<PersistanceRunningJobInfoReply> CallGetPersistanceRunningJobInfo(ClusterNode node)
         {
             var client = GetClient(node);
-            var result = await client.GetPersistanceRunningJobInfoAsync(new Empty());
+            var result = await client.GetPersistanceRunningJobInfoAsync(new Empty(), deadline: GrpcDeadLine);
             return result;
         }
 

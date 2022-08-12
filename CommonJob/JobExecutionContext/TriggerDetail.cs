@@ -15,5 +15,8 @@ namespace CommonJob
         public DateTimeOffset StartTime { get; set; }
         public int Priority { get; set; }
         public bool HasMillisecondPrecision { get; set; }
+        public bool HasRetry { get; set; }
+        public bool IsRetryTrigger { get; set; }
+        public bool? IsLastRetry { get; set; }
     }
 }

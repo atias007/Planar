@@ -11,6 +11,7 @@ namespace Planar
         public const int MaxRetries = 3;
 
         public const string RetryTriggerGroup = "__RetryTrigger";
+        public const string RetryTriggerNamePrefix = "__RetryCount";
         public const string PlanarSystemGroup = "__System";
         public static readonly string[] PreserveGroupNames = new string[] { RetryTriggerGroup, PlanarSystemGroup };
 

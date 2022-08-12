@@ -6,5 +6,5 @@ cd bin\Release\net5.0\publish
 
 FOR /R %F in (*.nupkg) do dotnet nuget push %~nF.nupkg --api-key <API_KEY> --source https://api.nuget.org/v3/index.json
 
-@ECHO API key with AES encryption (ECB mode, secret: RockyBalboa2006!): FkoZR1EKsciFCBL/QlOPSPqYf92hIsfFPF5RIvYMuwMA/MEf361fjPHEvhxOwZEd
+@ECHO API key with AES encryption (ECB mode, 128 bit, secret: RockyBalboa2006!): FkoZR1EKsciFCBL/QlOPSPqYf92hIsfFPF5RIvYMuwMA/MEf361fjPHEvhxOwZEd
 @ECHO Decoder tool: https://www.devglan.com/online-tools/aes-encryption-decryption

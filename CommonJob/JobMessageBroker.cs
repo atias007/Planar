@@ -24,6 +24,13 @@ namespace CommonJob
 
         private static JobExecutionContext MapContext(IJobExecutionContext context, Dictionary<string, string> settings)
         {
+            var hasRetry = context.Trigger.JobDataMap.Contains(Consts.RetrySpan);
+            bool? lastRetry = null;
+            if (hasRetry)
+            {
+                lastRetry = context.Trigger.JobDataMap.GetIntValue(Consts.RetryCounter) > Consts.MaxRetries;
+            }
+
             var result = new JobExecutionContext
             {
                 JobSettings = settings,
@@ -64,7 +71,10 @@ namespace CommonJob
                     MisfireInstruction = context.Trigger.MisfireInstruction,
                     Priority = context.Trigger.Priority,
                     StartTime = context.Trigger.StartTimeUtc,
-                    TriggerDataMap = Global.ConvertDataMapToDictionary(context.Trigger.JobDataMap)
+                    TriggerDataMap = Global.ConvertDataMapToDictionary(context.Trigger.JobDataMap),
+                    HasRetry = hasRetry,
+                    IsLastRetry = lastRetry,
+                    IsRetryTrigger = context.Trigger.Key.Name.StartsWith(Consts.RetryTriggerNamePrefix),
                 },
                 Environment = Global.Environment
             };
