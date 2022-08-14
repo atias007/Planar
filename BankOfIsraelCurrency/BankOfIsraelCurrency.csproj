@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Planar.Job" Version="1.0.6" />
+    <PackageReference Include="Planar.Job" Version="1.0.7" />
     <PackageReference Include="RestSharp" Version="108.0.1" />
   </ItemGroup>
 
