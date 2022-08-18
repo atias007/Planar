@@ -257,8 +257,8 @@ namespace Planar.Service
                 _logger.LogInformation("Initialize: JoinToCluster");
 
                 var dal = Resolve<DataLayer>();
-                var nodes = await dal.GetClusterNodes();
                 var util = new ClusterUtil(dal, _logger);
+                var nodes = await util.GetAllNodes();
                 ClusterUtil.ValidateClusterConflict(nodes);
 
                 var liveNodes = nodes.Where(n => n.LiveNode).ToList();

@@ -47,6 +47,9 @@ namespace Planar.API.Common.Entities
         [YamlMember(Order = 16)]
         public short ClusterPort { get; set; }
 
+        [YamlMember(Order = 17)]
+        public string LogLevel { get; set; }
+
         [YamlMember(Order = 96)]
         public DateTime RunningSince { get; set; }
 

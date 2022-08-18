@@ -46,7 +46,7 @@ namespace Planar.Service.General
             }
         }
 
-        private async Task<IEnumerable<ClusterNode>> GetAllNodes()
+        public async Task<IEnumerable<ClusterNode>> GetAllNodes()
         {
             var tempNode = GetCurrentClusterNode();
             var result = await _dal.GetClusterNodes();
@@ -91,7 +91,7 @@ namespace Planar.Service.General
             }
         }
 
-        public static void ValidateClusterConflict(List<ClusterNode> nodes)
+        public static void ValidateClusterConflict(IEnumerable<ClusterNode> nodes)
         {
             // only if current node is not clustering
             // and there is active cluster in same database --> throw exception
@@ -124,7 +124,7 @@ namespace Planar.Service.General
                 try
                 {
                     await Policy.Handle<RpcException>()
-                      .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                      .WaitAndRetryAsync(6, i => TimeSpan.FromMilliseconds(100))
                       .ExecuteAsync(() => CallHealthCheckService(node));
                 }
                 catch (RpcException ex)

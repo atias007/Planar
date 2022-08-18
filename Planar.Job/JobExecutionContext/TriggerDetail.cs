@@ -10,7 +10,6 @@ namespace Planar.Job
         public string CalendarName { get; set; }
         public SortedDictionary<string, string> TriggerDataMap { get; set; }
         public DateTimeOffset? FinalFireTime { get; set; }
-        public int MisfireInstruction { get; set; }
         public DateTimeOffset? EndTime { get; set; }
         public DateTimeOffset StartTime { get; set; }
         public int Priority { get; set; }

@@ -85,10 +85,12 @@ namespace Planar.Service.General
             var context = (await MainService.Scheduler.GetCurrentlyExecutingJobs(cancellationToken))
                 .FirstOrDefault(j => j.FireInstanceId == instanceId);
 
+            if (context == null) { return null; }
+
             var information = string.Empty;
             var exceptions = string.Empty;
 
-            if (context != null && context.Result is JobExecutionMetadata metadata)
+            if (context.Result is JobExecutionMetadata metadata)
             {
                 information = metadata.GetInformation();
                 exceptions = metadata.GetExceptionsText();

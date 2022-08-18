@@ -1,5 +1,6 @@
 ﻿using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.Exceptions;
 using System;
@@ -43,6 +44,8 @@ namespace Planar.Service
 
         public static string Environment { get; set; }
 
+        public static LogLevel LogLevel { get; set; }
+
         public static void Initialize(IConfiguration configuration)
         {
             Console.WriteLine("[x] Initialize AppSettings");
@@ -52,6 +55,7 @@ namespace Planar.Service
             InitializeMaxConcurrency(configuration);
             InitializePersistanceSpan(configuration);
             InitializePorts(configuration);
+            InitializeLogLevel(configuration);
 
             InstanceId = GetSettings(configuration, Consts.InstanceIdVariableKey, nameof(InstanceId), "AUTO");
             ServiceName = GetSettings(configuration, Consts.ServiceNameVariableKey, nameof(ServiceName), "PlanarService");
@@ -156,6 +160,21 @@ namespace Planar.Service
             HttpsPort = GetSettings<short>(configuration, Consts.HttpsPortVariableKey, nameof(HttpsPort), 2610);
             UseHttps = GetSettings(configuration, Consts.UseHttpsVariableKey, nameof(UseHttps), false);
             UseHttpsRedirect = GetSettings(configuration, Consts.UseHttpsRedirectVariableKey, nameof(UseHttpsRedirect), true);
+        }
+
+        private static void InitializeLogLevel(IConfiguration configuration)
+        {
+            var level = GetSettings(configuration, Consts.LogLevelVariableKey, nameof(LogLevel));
+            if (Enum.TryParse<LogLevel>(level, true, out var tempLevel))
+            {
+                LogLevel = tempLevel;
+            }
+            else
+            {
+                LogLevel = LogLevel.Information;
+            }
+
+            Global.LogLevel = AppSettings.LogLevel;
         }
 
         private static T GetSettings<T>(IConfiguration configuration, string environmentKey, string appSettingsKey, T defaultValue = default)

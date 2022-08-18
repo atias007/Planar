@@ -73,6 +73,14 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, message: result.Data?.Environment);
         }
 
+        [Action("loglevel")]
+        public static async Task<CliActionResponse> GetLogLevel()
+        {
+            var restRequest = new RestRequest("service", Method.Get);
+            var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest);
+            return new CliActionResponse(result, message: result.Data?.LogLevel);
+        }
+
         [Action("calendars")]
         public static async Task<CliActionResponse> GetAllCalendars()
         {

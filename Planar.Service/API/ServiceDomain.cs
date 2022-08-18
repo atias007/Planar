@@ -44,7 +44,8 @@ namespace Planar.Service.API
                 MaxConcurrency = AppSettings.MaxConcurrency,
                 UseHttps = AppSettings.UseHttps,
                 UseHttpsRedirect = AppSettings.UseHttpsRedirect,
-                ServiceVersion = ServiceVersion
+                ServiceVersion = ServiceVersion,
+                LogLevel = AppSettings.LogLevel.ToString()
             };
 
             return response;

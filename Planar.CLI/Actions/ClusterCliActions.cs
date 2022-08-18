@@ -24,13 +24,13 @@ namespace Planar.CLI.Actions
         {
             var restRequest = new RestRequest("cluster/nodes", Method.Get);
             var result = await RestProxy.Invoke<List<CliClusterNode>>(restRequest);
-            string message = null;
+            bool? message = null;
             if (result.IsSuccessful)
             {
-                message = result.Data.All(d => d.LiveNode).ToString();
+                message = result.Data.All(d => d.LiveNode);
             }
 
-            return new CliActionResponse(result, message: message);
+            return new CliActionResponse(result, message);
         }
     }
 }

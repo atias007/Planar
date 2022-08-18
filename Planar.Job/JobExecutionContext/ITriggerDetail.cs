@@ -11,7 +11,6 @@ namespace Planar.Job
         DateTimeOffset? FinalFireTime { get; }
         bool HasMillisecondPrecision { get; }
         IKey Key { get; }
-        int MisfireInstruction { get; }
         int Priority { get; }
         DateTimeOffset StartTime { get; }
         SortedDictionary<string, string> TriggerDataMap { get; }

@@ -130,6 +130,7 @@ namespace Planar.Service.API
                 $"{source.RepeatInterval:\\(d\\)\\ hh\\:mm\\:ss}";
 
             result.TimesTriggered = source.TimesTriggered;
+            result.MisfireBehaviour = GetMisfireInstructionNameForSimpleTrigger(source.MisfireInstruction);
             return result;
         }
 
@@ -147,7 +148,6 @@ namespace Planar.Service.API
             target.FinalFire = source.FinalFireTimeUtc?.LocalDateTime;
             target.Group = source.Key.Group;
             target.MayFireAgain = source.GetMayFireAgain();
-            target.MisfireBehaviour = source.MisfireInstruction.ToString();
             target.Name = source.Key.Name;
             target.NextFireTime = source.GetNextFireTimeUtc()?.LocalDateTime;
             target.PreviousFireTime = source.GetPreviousFireTimeUtc()?.LocalDateTime;
@@ -167,6 +167,7 @@ namespace Planar.Service.API
             var result = new CronTriggerDetails();
             MapTriggerDetails(source, result);
             result.CronExpression = source.CronExpressionString;
+            result.MisfireBehaviour = GetMisfireInstructionNameForCronTrigger(source.MisfireInstruction);
             return result;
         }
 
@@ -179,6 +180,57 @@ namespace Planar.Service.API
             if (quartzTriggers2 != null) allTriggers.AddRange(quartzTriggers2);
 
             await scheduler.ScheduleJob(quartzJob, allTriggers, true);
+        }
+
+        private static string GetMisfireInstructionNameForSimpleTrigger(int value)
+        {
+            switch (value)
+            {
+                case -1:
+                    return "Ignore Misfire Policy";
+
+                case 0:
+                    return "Instruction Not Set";
+
+                case 1:
+                    return "Fire Now";
+
+                case 2:
+                    return "Now With Existing Repeat Count";
+
+                case 3:
+                    return "Now With Remaining Repeat Count";
+
+                case 4:
+                    return "Next With Remaining Count";
+
+                case 5:
+                    return "Next With Existing Count";
+
+                default:
+                    return "Unknown";
+            }
+        }
+
+        private static string GetMisfireInstructionNameForCronTrigger(int value)
+        {
+            switch (value)
+            {
+                case -1:
+                    return "Ignore Misfire Policy";
+
+                case 0:
+                    return "Instruction Not Set";
+
+                case 1:
+                    return "Fire Once Now";
+
+                case 2:
+                    return "Do Nothing";
+
+                default:
+                    return "Unknown";
+            }
         }
     }
 }

@@ -147,6 +147,11 @@ namespace Planar.Service.API
                 result = await new ClusterUtil(DataLayer, Logger).GetRunningInfo(instanceId);
             }
 
+            if (result == null)
+            {
+                throw new RestNotFoundException($"instanceId {instanceId} was not found");
+            }
+
             return result;
         }
 

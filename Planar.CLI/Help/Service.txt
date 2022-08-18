@@ -8,5 +8,6 @@ info
 version
 stop
 start
-env      
+env
+loglevel
 calendars

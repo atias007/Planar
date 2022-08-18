@@ -11,4 +11,4 @@ properties:
 simple triggers:
   - name: every_10_minutes
     interval: 00:10:00
-    misfire behaviour: IgnoreMisfires
+    misfire behaviour: FireNow

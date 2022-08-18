@@ -5,7 +5,6 @@
 - demo yml file in data directory
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
 - cli test cluster command
-- trigger get -> show misfilebehaviour as numeric
 - option to pause job after {x} fails in row
 -----------------------------------------DONE-----------------------------------------
 - cli health check should check cluster mode
@@ -31,3 +30,5 @@
 - enforce required parameters on cli
 - call cluster functions only if running is cluster mode
 - misfire behaviour should be enum in yml file
+-- job runninginfo w10n-TsahiAti637964208165023851637964208471912498 should return 404
+- trigger get -> show misfirebehaviour as numeric

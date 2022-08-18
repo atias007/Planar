@@ -22,6 +22,8 @@ namespace Planar
         public const string NowOverrideValue = "__Now_Override_Value";
 
         public const string ManualTriggerId = "Manual";
+        public const string LogLevelSettingsKey1 = "Log Level";
+        public const string LogLevelSettingsKey2 = "LogLevel";
 
         public const int MaxConcurrencyDefaultValue = 10;
         public static readonly TimeSpan PersistRunningJobsSpanDefaultValue = TimeSpan.FromMinutes(5);
@@ -36,6 +38,7 @@ namespace Planar
         public const string MaxConcurrencyVariableKey = "PLANAR_MAXCONCURRENCY";
         public const string PersistRunningJobsSpanVariableKey = "PLANAR_PERSISTSPAN";
         public const string ClearTraceTableOverDaysVariableKey = "PLANAR_CLEARTRACEDAYS";
+        public const string LogLevelVariableKey = "PLANAR_LOGLEVEL";
 
         public const string InstanceIdVariableKey = "PLANAR_INSTANCEID";
         public const string ServiceNameVariableKey = "PLANAR_SERVICENAME";
