@@ -5,8 +5,15 @@
 		<UserSecretsId>aa268b80-a337-47b8-aa26-8733fac0c1af</UserSecretsId>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<BaseOutputPath>bin</BaseOutputPath>
+		<Version>1.0.1</Version>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<NoWarn>1701;1702;NU1803</NoWarn>
+	</PropertyGroup>
 	<ItemGroup>
 		<Content Remove="Data\Settings\AppSettings.json" />
 		<Content Remove="Data\Settings\HebrewCalendar.json" />
@@ -19,12 +26,12 @@
 
 	<ItemGroup>
 		<PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="11.0.0" />
-		<PackageReference Include="FluentValidation.AspNetCore" Version="11.1.3" />
+		<PackageReference Include="FluentValidation.AspNetCore" Version="11.2.1" />
 		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.2.0" />
 		<PackageReference Include="Grpc.AspNetCore" Version="2.47.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.2.0" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.0" />
-		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.16.1" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
 		<PackageReference Include="Serilog.AspNetCore" Version="6.0.1" />
 		<PackageReference Include="Serilog.Enrichers.Environment" Version="2.2.0" />
 		<PackageReference Include="Serilog.Expressions" Version="3.4.0" />
@@ -49,22 +56,22 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Data\MonitorHooks\Http\" />
-	  <Folder Include="Protos\" />
+		<Folder Include="Data\MonitorHooks\Http\" />
+		<Folder Include="Protos\" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Update="Data\Calendars\readme.md">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
-	  <None Update="Data\Jobs\readme.md">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
-	  <None Update="Data\MonitorHooks\readme.md">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
-	  <None Update="Data\MonitorHooks\Teams\readme.md">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </None>
+		<None Update="Data\Calendars\readme.md">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Data\Jobs\readme.md">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Data\MonitorHooks\readme.md">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Data\MonitorHooks\Teams\readme.md">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
 </Project>

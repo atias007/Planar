@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Planar.Calendar.Hebrew;
@@ -49,7 +50,19 @@ namespace Planar.Service
 
         public static void Shutdown()
         {
-            if (Global.ServiceProvider.GetService(typeof(IHostApplicationLifetime)) is IHostApplicationLifetime app) { app.StopApplication(); }
+            var removeTask = RemoveSchedulerCluster();
+            if (Global.ServiceProvider.GetService(typeof(IHostApplicationLifetime)) is IHostApplicationLifetime app)
+            {
+                try
+                {
+                    removeTask.Wait(3000);
+                }
+                catch
+                {
+                    // *** IGNORE EXCEPTION *** //
+                }
+                app.StopApplication();
+            }
             Global.Clear();
         }
 
@@ -61,7 +74,15 @@ namespace Planar.Service
             waiter.OnCompleted(async () =>
             {
                 _logger.LogInformation("IsCancellationRequested = true");
-                RemoveSchedulerCluster().Wait();
+                try
+                {
+                    RemoveSchedulerCluster().Wait();
+                }
+                catch
+                {
+                    _logger.LogWarning("Fail to RemoveSchedulerCluster");
+                }
+
                 await _scheduler?.Shutdown(true);
             });
 
@@ -154,7 +175,7 @@ namespace Planar.Service
             try
             {
                 _logger.LogInformation("Initialize: StartScheduler");
-                await _scheduler.Start();
+                await _scheduler.StartDelayed(TimeSpan.FromSeconds(30));
                 _logger.LogInformation("Initialize: Scheduler is online :))");
             }
             catch (Exception ex)
@@ -213,15 +234,18 @@ namespace Planar.Service
 
         private static async Task RemoveSchedulerCluster()
         {
-            var dal = Resolve<DataLayer>();
-            var cluster = new ClusterNode
+            if (AppSettings.Clustering)
             {
-                Server = Environment.MachineName,
-                Port = AppSettings.HttpPort,
-                InstanceId = _scheduler.SchedulerInstanceId
-            };
+                var dal = Resolve<DataLayer>();
+                var cluster = new ClusterNode
+                {
+                    Server = Environment.MachineName,
+                    Port = AppSettings.HttpPort,
+                    InstanceId = _scheduler.SchedulerInstanceId
+                };
 
-            await dal.RemoveClusterNode(cluster);
+                await dal.RemoveClusterNode(cluster);
+            }
         }
 
         private async Task JoinToCluster()
@@ -233,11 +257,15 @@ namespace Planar.Service
                 _logger.LogInformation("Initialize: JoinToCluster");
 
                 var dal = Resolve<DataLayer>();
-                var nodes = await dal.GetClusterNodes();
                 var util = new ClusterUtil(dal, _logger);
+                var nodes = await util.GetAllNodes();
                 ClusterUtil.ValidateClusterConflict(nodes);
 
-                if (await util.HealthCheck(nodes))
+                var liveNodes = nodes.Where(n => n.LiveNode).ToList();
+                var deadNodes = nodes.Where(n => !n.LiveNode).ToList();
+                LogDeadNodes(deadNodes);
+
+                if (await util.HealthCheck(liveNodes))
                 {
                     await util.Join();
                     LogClustering();
@@ -251,7 +279,18 @@ namespace Planar.Service
             catch (Exception ex)
             {
                 _logger.LogCritical(ex, "Initialize: Fail to AddSchedulerCluster");
-                throw;
+                await _scheduler.Standby();
+                await _scheduler.Shutdown();
+                Shutdown();
+            }
+        }
+
+        private void LogDeadNodes(List<ClusterNode> nodes)
+        {
+            if (nodes != null && nodes.Any())
+            {
+                var text = string.Join(',', nodes.Select(n => $"{n.Server}:{n.Port}").ToArray());
+                _logger.LogWarning("There are dead cluster nodes. Current node will not check health with them {Nodes}", text);
             }
         }
 
@@ -337,7 +376,7 @@ namespace Planar.Service
         public static T Resolve<T>()
             where T : class
         {
-            return Global.ServiceProvider.GetService(typeof(T)) as T;
+            return Global.ServiceProvider.GetRequiredService(typeof(T)) as T;
         }
     }
 }

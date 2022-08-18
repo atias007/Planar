@@ -1,55 +1,61 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
-    <AssemblyName>Planar</AssemblyName>
-    <Version>1.1.0</Version>
-    <StartupObject>Planar.CLI.Program</StartupObject>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net6.0</TargetFramework>
+		<AssemblyName>Planar</AssemblyName>
+		<Version>1.1.1</Version>
+		<StartupObject>Planar.CLI.Program</StartupObject>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<NoWarn>1701;1702;NU1803</NoWarn>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="Help\Cluster.txt" />
-    <None Remove="Help\group.txt" />
-    <None Remove="Help\History.txt" />
-    <None Remove="Help\Job.txt" />
-    <None Remove="Help\Modules.txt" />
-    <None Remove="Help\Monitor.txt" />
-    <None Remove="Help\Param.txt" />
-    <None Remove="Help\Service.txt" />
-    <None Remove="Help\Trace.txt" />
-    <None Remove="Help\Trigger.txt" />
-    <None Remove="Help\User.txt" />
-  </ItemGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<NoWarn>1701;1702;NU1803</NoWarn>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Remove="Help\Cluster.txt" />
+		<None Remove="Help\group.txt" />
+		<None Remove="Help\History.txt" />
+		<None Remove="Help\Job.txt" />
+		<None Remove="Help\Modules.txt" />
+		<None Remove="Help\Monitor.txt" />
+		<None Remove="Help\Param.txt" />
+		<None Remove="Help\Service.txt" />
+		<None Remove="Help\Trace.txt" />
+		<None Remove="Help\Trigger.txt" />
+		<None Remove="Help\User.txt" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Help\History.txt" />
-    <EmbeddedResource Include="Help\Monitor.txt" />
-    <EmbeddedResource Include="Help\Group.txt" />
-    <EmbeddedResource Include="Help\Cluster.txt" />
-    <EmbeddedResource Include="Help\User.txt" />
-    <EmbeddedResource Include="Help\Trigger.txt" />
-    <EmbeddedResource Include="Help\Service.txt" />
-    <EmbeddedResource Include="Help\Param.txt" />
-    <EmbeddedResource Include="Help\Trace.txt" />
-    <EmbeddedResource Include="Help\Job.txt" />
-    <EmbeddedResource Include="Help\Modules.txt" />
-  </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Help\History.txt" />
+		<EmbeddedResource Include="Help\Monitor.txt" />
+		<EmbeddedResource Include="Help\Group.txt" />
+		<EmbeddedResource Include="Help\Cluster.txt" />
+		<EmbeddedResource Include="Help\User.txt" />
+		<EmbeddedResource Include="Help\Trigger.txt" />
+		<EmbeddedResource Include="Help\Service.txt" />
+		<EmbeddedResource Include="Help\Param.txt" />
+		<EmbeddedResource Include="Help\Trace.txt" />
+		<EmbeddedResource Include="Help\Job.txt" />
+		<EmbeddedResource Include="Help\Modules.txt" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="RestSharp" Version="108.0.1" />
-    <PackageReference Include="RestSharp.Serializers.NewtonsoftJson" Version="108.0.1" />
-    <PackageReference Include="Spectre.Console" Version="0.44.0" />
-    <PackageReference Include="YamlDotNet" Version="12.0.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+		<PackageReference Include="RestSharp" Version="108.0.1" />
+		<PackageReference Include="RestSharp.Serializers.NewtonsoftJson" Version="108.0.1" />
+		<PackageReference Include="Spectre.Console" Version="0.44.0" />
+		<PackageReference Include="YamlDotNet" Version="12.0.0" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Planar.API.Common\Planar.API.Common.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Planar.API.Common\Planar.API.Common.csproj" />
+	</ItemGroup>
 </Project>

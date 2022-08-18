@@ -4,7 +4,10 @@ the options for <command> and [<options>] parameters of service module:
 
 connect           <host> <port> [<is secure>]
 healthcheck|hc
+info
+version
 stop
 start
-env      
+env
+loglevel
 calendars

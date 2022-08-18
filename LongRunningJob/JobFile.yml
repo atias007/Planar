@@ -14,5 +14,5 @@ properties:
 simple triggers:
 - name: every-minute-trigger
   interval: 00:05:00
-  misfire behaviour: 2
+  misfire behaviour: FireNow
 

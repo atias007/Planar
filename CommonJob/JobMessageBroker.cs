@@ -1,4 +1,5 @@
 ﻿using CommonJob.MessageBrokerEntities;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar;
 using Planar.Common;
@@ -17,13 +18,46 @@ namespace CommonJob
         {
             _context = context;
             var mapContext = MapContext(context, settings);
+            SetLogLevel(settings);
             Details = JsonConvert.SerializeObject(mapContext);
+        }
+
+        private void SetLogLevel(Dictionary<string, string> settings)
+        {
+            if (HasSettings(settings, Consts.LogLevelSettingsKey1)) { return; }
+            if (HasSettings(settings, Consts.LogLevelSettingsKey2)) { return; }
+            LogLevel = Global.LogLevel;
+        }
+
+        private bool HasSettings(Dictionary<string, string> settings, string key)
+        {
+            if (settings == null) { return false; }
+            if (settings.ContainsKey(key))
+            {
+                var value = settings[key];
+                if (Enum.TryParse<LogLevel>(value, true, out var tempLevel))
+                {
+                    LogLevel = tempLevel;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public string Details { get; set; }
 
+        private LogLevel LogLevel { get; set; }
+
         private static JobExecutionContext MapContext(IJobExecutionContext context, Dictionary<string, string> settings)
         {
+            var hasRetry = context.Trigger.JobDataMap.Contains(Consts.RetrySpan);
+            bool? lastRetry = null;
+            if (hasRetry)
+            {
+                lastRetry = context.Trigger.JobDataMap.GetIntValue(Consts.RetryCounter) > Consts.MaxRetries;
+            }
+
             var result = new JobExecutionContext
             {
                 JobSettings = settings,
@@ -61,10 +95,12 @@ namespace CommonJob
                         Name = context.Trigger.Key.Name,
                         Group = context.Trigger.Key.Group
                     },
-                    MisfireInstruction = context.Trigger.MisfireInstruction,
                     Priority = context.Trigger.Priority,
                     StartTime = context.Trigger.StartTimeUtc,
-                    TriggerDataMap = Global.ConvertDataMapToDictionary(context.Trigger.JobDataMap)
+                    TriggerDataMap = Global.ConvertDataMapToDictionary(context.Trigger.JobDataMap),
+                    HasRetry = hasRetry,
+                    IsLastRetry = lastRetry,
+                    IsRetryTrigger = context.Trigger.Key.Name.StartsWith(Consts.RetryTriggerNamePrefix),
                 },
                 Environment = Global.Environment
             };
@@ -101,9 +137,13 @@ namespace CommonJob
                     return null;
 
                 case "AppendInformation":
+                    var data4 = Deserialize<LogEntity>(message);
                     lock (Locker)
                     {
-                        Metadata.Information.AppendLine(message);
+                        if ((int)data4.Level >= (int)LogLevel)
+                        {
+                            Metadata.Information.AppendLine(data4.Message);
+                        }
                     }
                     return null;
 

@@ -20,7 +20,7 @@ service PlanarCluster {
   rpc IsJobRunning (RpcJobKey) returns (IsJobRunningReply);
   rpc GetRunningInfo (GetRunningJobRequest) returns (RunningInfoReply);
   rpc IsRunningInstanceExist (GetRunningJobRequest) returns (IsRunningInstanceExistReply);
-  rpc StopRunningJob (GetRunningJobRequest) returns (google.protobuf.Empty);
+  rpc StopRunningJob (GetRunningJobRequest) returns (StopRunningJobReply);
   rpc GetPersistanceRunningJobInfo(google.protobuf.Empty) returns (PersistanceRunningJobInfoReply);
 }
 
@@ -41,6 +41,10 @@ message IsJobRunningReply{
 	bool isRunning = 1;
 }
 
+message StopRunningJobReply{
+	bool isStopped = 1;
+}
+
 message PersistanceRunningJobInfoReply
 {
 	repeated PersistanceRunningJobInfo runningJobs = 1;
@@ -51,7 +55,6 @@ message PersistanceRunningJobInfo
 	string group = 1;
 	string name = 2;
 	string instanceId = 3;
-	/*google.protobuf.Duration jobRunTime = 3;*/
 	string information = 4;
 	string exceptions = 5;
 }

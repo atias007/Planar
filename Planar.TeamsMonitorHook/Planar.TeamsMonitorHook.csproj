@@ -1,21 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<NoWarn>1701;1702;NU1803</NoWarn>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="MessageCard.json" />
-  </ItemGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<NoWarn>1701;1702;NU1803</NoWarn>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Remove="MessageCard.json" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="MessageCard.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
-  </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="MessageCard.json">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Planar.MonitorHook\Planar.MonitorHook.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Planar.MonitorHook\Planar.MonitorHook.csproj" />
+	</ItemGroup>
 
 </Project>

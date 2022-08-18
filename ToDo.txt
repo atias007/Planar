@@ -2,10 +2,10 @@
 - add monitor event when user pause / delete / add job / invoke job / cancel job / join to cluster / remove from cluster / start scheduler / stop scheduler
 - add interface to hooks to handle system events
 
-- misfire behaviour should be enum in yml file
 - demo yml file in data directory
-- test cluster functions
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
+- cli test cluster command
+- option to pause job after {x} fails in row
 -----------------------------------------DONE-----------------------------------------
 - cli health check should check cluster mode
 - allow to stop planar scheduler without stop the windows service (service stop, service start, service shutdown)
@@ -29,3 +29,6 @@
 - allow job running with quiet mode
 - enforce required parameters on cli
 - call cluster functions only if running is cluster mode
+- misfire behaviour should be enum in yml file
+-- job runninginfo w10n-TsahiAti637964208165023851637964208471912498 should return 404
+- trigger get -> show misfirebehaviour as numeric

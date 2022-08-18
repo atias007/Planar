@@ -12,5 +12,6 @@ namespace Planar.CLI.Entities
         public DateTime? HealthCheckDate { get; set; }
         public TimeSpan? HealthCheckGap { get; set; }
         public TimeSpan? HealthCheckGapDeviation { get; set; }
+        public bool LiveNode { get; set; }
     }
 }

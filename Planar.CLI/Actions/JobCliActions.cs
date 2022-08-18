@@ -278,7 +278,7 @@ namespace Planar.CLI.Actions
         [Action("updateprop")]
         public static async Task<CliActionResponse> UpsertJobProperty(CliUpsertJobPropertyRequest request)
         {
-            var restRequest = new RestRequest("job/property", Method.Post)
+            var restRequest = new RestRequest("job/property", Method.Put)
                 .AddBody(request);
 
             var result = await RestProxy.Invoke(restRequest);
@@ -368,7 +368,7 @@ namespace Planar.CLI.Actions
         {
             AnsiConsole.Markup(" [gold3_1][[x]][/] Get instance id... ");
             RestResponse<LastInstanceId> instanceId = null;
-            for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 60; i++)
             {
                 instanceId = await GetLastInstanceId(request.Id, invokeDate);
                 if (instanceId.IsSuccessful == false)
@@ -377,6 +377,7 @@ namespace Planar.CLI.Actions
                 }
 
                 if (instanceId.Data != null) break;
+                await Task.Delay(1000);
             }
 
             if (instanceId == null || instanceId.Data == null)

@@ -12,6 +12,8 @@ namespace Planar.Common
 
         public static IServiceProvider ServiceProvider { get; set; }
 
+        public static LogLevel LogLevel { get; set; }
+
         public static string Environment { get; set; }
 
         public static ILogger<T> GetLogger<T>()

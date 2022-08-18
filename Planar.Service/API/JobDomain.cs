@@ -147,6 +147,11 @@ namespace Planar.Service.API
                 result = await new ClusterUtil(DataLayer, Logger).GetRunningInfo(instanceId);
             }
 
+            if (result == null)
+            {
+                throw new RestNotFoundException($"instanceId {instanceId} was not found");
+            }
+
             return result;
         }
 
@@ -249,13 +254,15 @@ namespace Planar.Service.API
             await Scheduler.ResumeAll();
         }
 
-        public async Task Stop(FireInstanceIdRequest request)
+        public async Task<bool> Stop(FireInstanceIdRequest request)
         {
-            await SchedulerUtil.StopRunningJob(request.FireInstanceId);
-            if (AppSettings.Clustering)
+            var stop = await SchedulerUtil.StopRunningJob(request.FireInstanceId);
+            if (AppSettings.Clustering && stop == false)
             {
-                await new ClusterUtil(DataLayer, Logger).StopRunningJob(request.FireInstanceId);
+                stop = await new ClusterUtil(DataLayer, Logger).StopRunningJob(request.FireInstanceId);
             }
+
+            return stop;
         }
 
         public async Task UpdateProperty(UpsertJobPropertyRequest request)
@@ -466,7 +473,6 @@ namespace Planar.Service.API
             {
                 isRunning = isRunning && await new ClusterUtil(DataLayer, Logger).IsJobRunning(jobKey);
             }
-
 
             if (isRunning)
             {

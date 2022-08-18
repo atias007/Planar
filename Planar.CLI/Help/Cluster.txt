@@ -3,3 +3,4 @@
 the options for <command> and [<options>] parameters of service module:
 
 nodes
+healthcheck|hc
