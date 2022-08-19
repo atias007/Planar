@@ -13,7 +13,7 @@ namespace Planar.Common
 
         public static bool NotContains<T>(this IEnumerable<T> list, T value)
         {
-            return list == null || list.Contains(value) == false;
+            return list == null || !list.Contains(value);
         }
 
         public static Dictionary<string, string> Merge(this Dictionary<string, string> source, Dictionary<string, string> target)
@@ -48,7 +48,7 @@ namespace Planar.Common
 
         public static bool HasValue(this string value)
         {
-            return string.IsNullOrEmpty(value) == false;
+            return !string.IsNullOrEmpty(value);
         }
     }
 }
