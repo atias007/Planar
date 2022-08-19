@@ -206,7 +206,7 @@ namespace Planar.Service.API
             }
 
             // Calendar
-            if (string.IsNullOrEmpty(jobTrigger.Calendar) == false)
+            if (jobTrigger.Calendar.HasValue())
             {
                 trigger = trigger.ModifiedByCalendar(jobTrigger.Calendar);
             }
@@ -341,24 +341,18 @@ namespace Planar.Service.API
             var simpleValues = new[] { "firenow", "ignoremisfires", "nextwithexistingcount", "nextwithremainingcount", "nowwithexistingcount", "nowwithremainingcount" };
             container.SimpleTriggers?.ForEach(t =>
             {
-                if (string.IsNullOrEmpty(t.MisfireBehaviour) == false)
+                if (t.MisfireBehaviour.HasValue() && simpleValues.NotContains(t.MisfireBehaviour.ToLower()))
                 {
-                    if (simpleValues.Contains(t.MisfireBehaviour.ToLower()) == false)
-                    {
-                        throw new RestValidationException("misfireBehaviour", $"value {t.MisfireBehaviour} is not valid value for simple trigger misfire behaviour");
-                    }
+                    throw new RestValidationException("misfireBehaviour", $"value {t.MisfireBehaviour} is not valid value for simple trigger misfire behaviour");
                 }
             });
 
             var cronValues = new[] { "donothing", "fireandproceed", "ignoremisfires" };
-            container.SimpleTriggers?.ForEach(t =>
+            container.CronTriggers?.ForEach(t =>
             {
-                if (string.IsNullOrEmpty(t.MisfireBehaviour) == false)
+                if (t.MisfireBehaviour.HasValue() && cronValues.NotContains(t.MisfireBehaviour.ToLower()))
                 {
-                    if (cronValues.Contains(t.MisfireBehaviour.ToLower()) == false)
-                    {
-                        throw new RestValidationException("misfireBehaviour", $"value {t.MisfireBehaviour} is not valid value for cron trigger misfire behaviour");
-                    }
+                    throw new RestValidationException("misfireBehaviour", $"value {t.MisfireBehaviour} is not valid value for cron trigger misfire behaviour");
                 }
             });
         }

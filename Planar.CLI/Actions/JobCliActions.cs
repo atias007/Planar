@@ -368,7 +368,7 @@ namespace Planar.CLI.Actions
         {
             AnsiConsole.Markup(" [gold3_1][[x]][/] Get instance id... ");
             RestResponse<LastInstanceId> instanceId = null;
-            for (int i = 0; i < 60; i++)
+            for (int i = 0; i < 20; i++)
             {
                 instanceId = await GetLastInstanceId(request.Id, invokeDate);
                 if (instanceId.IsSuccessful == false)
@@ -450,9 +450,9 @@ namespace Planar.CLI.Actions
             var table = new Table();
             table.AddColumn(new TableColumn(new Markup("[grey54]Get more information by the following commands[/]")));
             table.BorderColor(Color.FromInt32(242));
-            table.AddRow($"[grey54]Planar history get[/] [grey62]{logId}[/]");
-            table.AddRow($"[grey54]Planar history info[/] [grey62]{logId}[/]");
-            table.AddRow($"[grey54]Planar history data[/] [grey62]{logId}[/]");
+            table.AddRow($"[grey54]history get[/] [grey62]{logId}[/]");
+            table.AddRow($"[grey54]history info[/] [grey62]{logId}[/]");
+            table.AddRow($"[grey54]history data[/] [grey62]{logId}[/]");
 
             if (status.Data.Status == 1)
             {

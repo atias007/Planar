@@ -1,6 +1,15 @@
+upgrade:
+(1) add log level to app settings
+(2) upgrade planar.job nuget for all jobs
+
+
+--------------------------------------------------------
 - add to base test to retrieve information & exception
 - add monitor event when user pause / delete / add job / invoke job / cancel job / join to cluster / remove from cluster / start scheduler / stop scheduler
 - add interface to hooks to handle system events
+
+- job test: in no instance id, check hc and print warning about already running job with no concurent
+- add cli action: job loglevel <id>
 
 - demo yml file in data directory
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
