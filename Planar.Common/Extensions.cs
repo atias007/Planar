@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Planar.Common
 {
@@ -8,6 +9,11 @@ namespace Planar.Common
         public static bool IsNullOrEmpty<T>(this List<T> list)
         {
             return list == null || list.Count == 0;
+        }
+
+        public static bool NotContains<T>(this IEnumerable<T> list, T value)
+        {
+            return list == null || list.Contains(value) == false;
         }
 
         public static Dictionary<string, string> Merge(this Dictionary<string, string> source, Dictionary<string, string> target)
@@ -38,6 +44,11 @@ namespace Planar.Common
         {
             if (string.IsNullOrEmpty(value)) return value;
             return value.Trim();
+        }
+
+        public static bool HasValue(this string value)
+        {
+            return string.IsNullOrEmpty(value) == false;
         }
     }
 }

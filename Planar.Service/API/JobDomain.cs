@@ -257,7 +257,7 @@ namespace Planar.Service.API
         public async Task<bool> Stop(FireInstanceIdRequest request)
         {
             var stop = await SchedulerUtil.StopRunningJob(request.FireInstanceId);
-            if (AppSettings.Clustering && stop == false)
+            if (AppSettings.Clustering && !stop)
             {
                 stop = await new ClusterUtil(DataLayer, Logger).StopRunningJob(request.FireInstanceId);
             }
