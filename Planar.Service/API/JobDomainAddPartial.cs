@@ -357,6 +357,33 @@ namespace Planar.Service.API
             });
         }
 
+        private static void ValidateTriggerMisfireBehaviour(ITriggersContainer container)
+        {
+            var simpleValues = new[] { "firenow", "ignoremisfires", "nextwithexistingcount", "nextwithremainingcount", "nowwithexistingcount", "nowwithremainingcount" };
+            container.SimpleTriggers?.ForEach(t =>
+            {
+                if (string.IsNullOrEmpty(t.MisfireBehaviour) == false)
+                {
+                    if (simpleValues.Contains(t.MisfireBehaviour.ToLower()) == false)
+                    {
+                        throw new RestValidationException("misfireBehaviour", $"value {t.MisfireBehaviour} is not valid value for simple trigger misfire behaviour");
+                    }
+                }
+            });
+
+            var cronValues = new[] { "donothing", "fireandproceed", "ignoremisfires" };
+            container.SimpleTriggers?.ForEach(t =>
+            {
+                if (string.IsNullOrEmpty(t.MisfireBehaviour) == false)
+                {
+                    if (cronValues.Contains(t.MisfireBehaviour.ToLower()) == false)
+                    {
+                        throw new RestValidationException("misfireBehaviour", $"value {t.MisfireBehaviour} is not valid value for cron trigger misfire behaviour");
+                    }
+                }
+            });
+        }
+
         private static void ValidateTriggerPriority(ITriggersContainer container)
         {
             container.SimpleTriggers?.ForEach(t =>
