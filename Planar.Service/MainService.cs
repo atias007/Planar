@@ -175,8 +175,15 @@ namespace Planar.Service
             try
             {
                 _logger.LogInformation("Initialize: StartScheduler");
-                await _scheduler.StartDelayed(TimeSpan.FromSeconds(30));
-                _logger.LogInformation("Initialize: Scheduler is online :))");
+
+#if DEBUG
+                var delaySeconds = 1;
+#else
+                var delaySeconds = 30;
+#endif
+
+                await _scheduler.StartDelayed(TimeSpan.FromSeconds(delaySeconds));
+                _logger.LogInformation("Initialize: Scheduler is initializes and started :)) [with {Delay} seconds]", delaySeconds);
             }
             catch (Exception ex)
             {

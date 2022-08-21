@@ -26,7 +26,13 @@ namespace CommonJob
         {
             if (HasSettings(settings, Consts.LogLevelSettingsKey1)) { return; }
             if (HasSettings(settings, Consts.LogLevelSettingsKey2)) { return; }
-            LogLevel = Global.LogLevel;
+            SetLogLevel(Global.LogLevel);
+        }
+
+        private void SetLogLevel(LogLevel level)
+        {
+            LogLevel = level;
+            Metadata.Information.AppendLine($"[Log Level: {LogLevel}]");
         }
 
         private bool HasSettings(Dictionary<string, string> settings, string key)
@@ -37,7 +43,7 @@ namespace CommonJob
                 var value = settings[key];
                 if (Enum.TryParse<LogLevel>(value, true, out var tempLevel))
                 {
-                    LogLevel = tempLevel;
+                    SetLogLevel(tempLevel);
                     return true;
                 }
             }
