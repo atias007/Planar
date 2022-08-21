@@ -104,10 +104,7 @@ namespace Planar.Service.API
             if (AppSettings.Clustering)
             {
                 var clusterResult = await new ClusterUtil(DataLayer, Logger).GetRunningJobs();
-                if (result == null)
-                {
-                    result = new List<RunningJobDetails>();
-                }
+                result ??= new List<RunningJobDetails>();
 
                 if (clusterResult != null)
                 {
@@ -160,14 +157,11 @@ namespace Planar.Service.API
             var result = new Dictionary<string, string>();
             var jobkey = await JobKeyHelper.GetJobKey(id);
             var details = await Scheduler.GetJobDetail(jobkey);
-            var json = details?.JobDataMap[Consts.JobTypeProperties] as string;
 
-            if (string.IsNullOrEmpty(json)) return result;
-            var list = DeserializeObject<Dictionary<string, string>>(json);
-            if (list == null) return result;
-            if (list.ContainsKey("JobPath") == false) return result;
-            var jobPath = list["JobPath"];
+            var properties = GetJobProperties(details);
+            if (properties.ContainsKey("JobPath") == false) { return result; }
 
+            var jobPath = properties["JobPath"];
             var parameters = Global.Parameters;
             var settings = CommonUtil.LoadJobSettings(jobPath);
             result = parameters.Merge(settings);
@@ -317,7 +311,7 @@ namespace Planar.Service.API
             }
         }
 
-        private static Dictionary<string, string> GetJobProperties(IJobDetail job)
+        private Dictionary<string, string> GetJobProperties(IJobDetail job)
         {
             var propertiesJson = Convert.ToString(job.JobDataMap[Consts.JobTypeProperties]);
             Dictionary<string, string> properties;
@@ -331,9 +325,10 @@ namespace Planar.Service.API
                 {
                     properties = DeserializeObject<Dictionary<string, string>>(propertiesJson);
                 }
-                catch
+                catch (Exception ex)
                 {
                     properties = new Dictionary<string, string>();
+                    Logger.LogError(ex, "Fail at GetJobProperties with job {JobGroup}.{JobName}. fail to DeserializeObject", job.Key.Group, job.Key.Name);
                 }
             }
 
