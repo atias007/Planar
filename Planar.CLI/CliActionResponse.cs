@@ -63,7 +63,7 @@ namespace Planar.CLI
             var serializer = new SerializerBuilder().Build();
             var yml = serializer.Serialize(response);
 
-            if (string.IsNullOrEmpty(yml) == false)
+            if (!string.IsNullOrEmpty(yml))
             {
                 yml = yml.Trim();
             }

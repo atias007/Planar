@@ -16,6 +16,11 @@ namespace Planar.Common
             return list == null || !list.Contains(value);
         }
 
+        public static bool NotContainsKey<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key)
+        {
+            return dictionary == null || !dictionary.ContainsKey(key);
+        }
+
         public static Dictionary<string, string> Merge(this Dictionary<string, string> source, Dictionary<string, string> target)
         {
             if (target == null) return source;

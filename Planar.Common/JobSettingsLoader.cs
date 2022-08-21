@@ -18,7 +18,7 @@ namespace Planar.Common
             var final = Global.Parameters;
 
             // Merge settings yml file
-            if (string.IsNullOrEmpty(jobPath)) { return null; }
+            if (string.IsNullOrEmpty(jobPath)) { return new Dictionary<string, string>(); }
             var fullpath = Path.Combine(FolderConsts.BasePath, FolderConsts.Data, FolderConsts.Jobs, jobPath);
             var location = new DirectoryInfo(fullpath);
             if (!location.Exists) { return final; }
@@ -78,7 +78,7 @@ namespace Planar.Common
             }
             catch (Exception ex)
             {
-                throw new ApplicationException($"Error while reading settings file {SettingsFilename}", ex);
+                throw new ArgumentNullException($"Error while reading settings file {SettingsFilename}", ex);
             }
 
             return dict;
