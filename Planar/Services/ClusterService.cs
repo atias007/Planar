@@ -75,16 +75,16 @@ namespace Planar
         }
 
         // OK
-        public override async Task<RunningInfoReply> GetRunningInfo(GetRunningJobRequest request, ServerCallContext context)
+        public override async Task<RunningDataReply> GetRunningData(GetRunningJobRequest request, ServerCallContext context)
         {
             ValidateRequest(request);
-            var job = await SchedulerUtil.GetRunningInfo(request.InstanceId, context.CancellationToken);
+            var job = await SchedulerUtil.GetRunningData(request.InstanceId, context.CancellationToken);
             if (job == null) { return null; }
 
-            var result = new RunningInfoReply
+            var result = new RunningDataReply
             {
                 Exceptions = SafeString(job.Exceptions),
-                Information = SafeString(job.Information)
+                Log = SafeString(job.Log)
             };
 
             return result;
@@ -114,7 +114,7 @@ namespace Planar
             {
                 Exceptions = SafeString(j.Exceptions),
                 Group = SafeString(j.Group),
-                Information = SafeString(j.Information),
+                Log = SafeString(j.Log),
                 InstanceId = SafeString(j.InstanceId),
                 Name = SafeString(j.Name),
             });

@@ -1,42 +1,53 @@
 <Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<OutputType>Exe</OutputType>
-		<TargetFramework>net6.0</TargetFramework>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-		<NoWarn>1701;1702;NU1803</NoWarn>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-		<NoWarn>1701;1702;NU1803</NoWarn>
-	</PropertyGroup>
-	<ItemGroup>
-		<None Remove="Scripts\Planar_0001 - Create all.sql" />
-		<None Remove="Scripts\Planar_0002 - Add ServerName Column.sql" />
-		<None Remove="Scripts\Planar_0003 - FixFactoryReset.sql" />
-		<None Remove="Scripts\Planar_0004 - Add Cluster Table.sql" />
-		<None Remove="Scripts\Planar_0005 - Add ClearTrace SP.sql" />
-		<None Remove="Scripts\Planar_0006 - fix factory reset sp.sql" />
-	</ItemGroup>
-	<ItemGroup>
-		<EmbeddedResource Include="Scripts\Planar_0001 - Create all.sql" />
-		<EmbeddedResource Include="Scripts\Planar_0002 - Add ServerName Column.sql" />
-		<EmbeddedResource Include="Scripts\Planar_0003 - FixFactoryReset.sql" />
-		<EmbeddedResource Include="Scripts\Planar_0004 - Add Cluster Table.sql" />
-		<EmbeddedResource Include="Scripts\Planar_0005 - Add ClearTrace SP.sql" />
-		<EmbeddedResource Include="Scripts\Planar_0006 - fix factory reset sp.sql" />
-	</ItemGroup>
-	<ItemGroup>
-		<PackageReference Include="dbup-sqlserver" Version="4.6.0" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-		<PackageReference Include="Spectre.Console" Version="0.44.0" />
-	</ItemGroup>
-	<ItemGroup>
-		<None Update="appsettings.Local.json">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Remove="Scripts\Planar_0003 - FixFactoryReset.sql" />
-		<None Remove="Scripts\Planar_0005 - Add ClearTrace SP.sql" />
-		<None Remove="Scripts\Planar_0006 - fix factory reset sp.sql" />
-	</ItemGroup>
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;NU1803</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <NoWarn>1701;1702;NU1803</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Remove="Scripts\Planar_0001 - Create all.sql" />
+    <None Remove="Scripts\Planar_0002 - Add ServerName Column.sql" />
+    <None Remove="Scripts\Planar_0003 - FixFactoryReset.sql" />
+    <None Remove="Scripts\Planar_0004 - Add Cluster Table.sql" />
+    <None Remove="Scripts\Planar_0005 - Add ClearTrace SP.sql" />
+    <None Remove="Scripts\Planar_0006 - fix factory reset sp.sql" />
+    <None Remove="Scripts\Planar_0007 - ChangeInfoColumnName.sql" />
+    <None Remove="Scripts\Planar_0008 - alter sp updatejob.sql" />
+    <None Remove="Scripts\Planar_0009 - update sp persistjob.sql" />
+    <None Remove="Scripts\Planar_0010 - update sp reset.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Scripts\Planar_0001 - Create all.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0002 - Add ServerName Column.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0003 - FixFactoryReset.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0004 - Add Cluster Table.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0005 - Add ClearTrace SP.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0006 - fix factory reset sp.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0007 - ChangeInfoColumnName.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0008 - alter sp updatejob.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0009 - update sp persistjob.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0010 - update sp reset.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="dbup-sqlserver" Version="4.6.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Spectre.Console" Version="0.44.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="appsettings.Local.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Remove="Scripts\Planar_0003 - FixFactoryReset.sql" />
+    <None Remove="Scripts\Planar_0005 - Add ClearTrace SP.sql" />
+    <None Remove="Scripts\Planar_0006 - fix factory reset sp.sql" />
+    <None Remove="Scripts\Planar_0007 - ChangeInfoColumnName.sql" />
+    <None Remove="Scripts\Planar_0008 - alter sp updatejob.sql" />
+    <None Remove="Scripts\Planar_0009 - update sp persistjob.sql" />
+    <None Remove="Scripts\Planar_0010 - update sp reset.sql" />
+  </ItemGroup>
 </Project>

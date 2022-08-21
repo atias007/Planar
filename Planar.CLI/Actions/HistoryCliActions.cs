@@ -63,10 +63,10 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, serializeObj: result.Data);
         }
 
-        [Action("info")]
-        public static async Task<CliActionResponse> GetHistoryInformationById(CliGetByIdRequest request)
+        [Action("log")]
+        public static async Task<CliActionResponse> GetHistoryLogById(CliGetByIdRequest request)
         {
-            var restRequest = new RestRequest("history/{id}/info", Method.Get)
+            var restRequest = new RestRequest("history/{id}/log", Method.Get)
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<string>(restRequest);

@@ -5,17 +5,19 @@
         public string Group { get; set; }
         public string Name { get; set; }
         public string InstanceId { get; set; }
-        public string Information { get; set; }
+        public string Log { get; set; }
         public string Exceptions { get; set; }
 
         public static PersistanceRunningJobsInfo Parse(PersistanceRunningJobInfo info)
         {
-            var item = new PersistanceRunningJobsInfo();
-            item.Exceptions = ReverseSafeString(info.Exceptions);
-            item.Group = ReverseSafeString(info.Group);
-            item.Information = ReverseSafeString(info.Information);
-            item.InstanceId = ReverseSafeString(info.InstanceId);
-            item.Name = ReverseSafeString(info.Name);
+            var item = new PersistanceRunningJobsInfo
+            {
+                Exceptions = ReverseSafeString(info.Exceptions),
+                Group = ReverseSafeString(info.Group),
+                Log = ReverseSafeString(info.Log),
+                InstanceId = ReverseSafeString(info.InstanceId),
+                Name = ReverseSafeString(info.Name)
+            };
             return item;
         }
 

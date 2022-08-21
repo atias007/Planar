@@ -253,7 +253,7 @@ namespace Planar.Service.General
             return null;
         }
 
-        public async Task<GetRunningInfoResponse> GetRunningInfo(string instanceId)
+        public async Task<GetRunningDataResponse> GetRunningData(string instanceId)
         {
             var nodes = await GetAllNodes();
             foreach (var node in nodes)
@@ -264,7 +264,7 @@ namespace Planar.Service.General
                 {
                     var job = await Policy.Handle<RpcException>()
                         .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => CallGetRunningInfo(node, instanceId));
+                        .ExecuteAsync(() => CallGetRunningData(node, instanceId));
 
                     if (job != null)
                     {
@@ -273,7 +273,7 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to get running job {InstanceId} information at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "Fail to get running job {InstanceId} data at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
                 }
             }
 
@@ -439,14 +439,14 @@ namespace Planar.Service.General
             return response;
         }
 
-        private static async Task<GetRunningInfoResponse> CallGetRunningInfo(ClusterNode node, string instanceId)
+        private static async Task<GetRunningDataResponse> CallGetRunningData(ClusterNode node, string instanceId)
         {
             var client = GetClient(node);
             var request = new GetRunningJobRequest { InstanceId = instanceId };
-            var result = await client.GetRunningInfoAsync(request, deadline: GrpcDeadLine);
-            var response = new GetRunningInfoResponse
+            var result = await client.GetRunningDataAsync(request, deadline: GrpcDeadLine);
+            var response = new GetRunningDataResponse
             {
-                Information = string.IsNullOrEmpty(result.Information) ? null : result.Information,
+                Log = string.IsNullOrEmpty(result.Log) ? null : result.Log,
                 Exceptions = string.IsNullOrEmpty(result.Exceptions) ? null : result.Exceptions
             };
 

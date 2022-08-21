@@ -8,7 +8,7 @@ namespace Planar.API.Common.Entities
         public string Data { get; set; }
 
         [YamlMember(Order = 998)]
-        public string Information { get; set; }
+        public string Log { get; set; }
 
         [YamlMember(Order = 999)]
         public string Exception { get; set; }

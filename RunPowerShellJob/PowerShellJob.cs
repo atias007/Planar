@@ -31,7 +31,7 @@ namespace RunPowerShellJob
                     {
                         if (obj != null)
                         {
-                            metadata.Information.AppendLine(obj.ToString());
+                            metadata.Log.AppendLine(obj.ToString());
                         }
                     }
 

@@ -21,7 +21,7 @@ namespace Planar.Job.Test
         public bool Retry { get; set; }
         public bool IsStopped { get; set; }
         public string Data { get; set; }
-        public string Information { get; set; }
+        public string Log { get; set; }
         public string Exception { get; set; }
     }
 }

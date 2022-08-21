@@ -1,8 +1,8 @@
 ﻿namespace Planar.API.Common.Entities
 {
-    public class GetRunningInfoResponse
+    public class GetRunningDataResponse
     {
-        public string Information { get; set; }
+        public string Log { get; set; }
 
         public string Exceptions { get; set; }
     }

@@ -8,7 +8,7 @@ namespace CommonJob
 {
     public class JobExecutionMetadata
     {
-        public StringBuilder Information { get; set; } = new();
+        public StringBuilder Log { get; set; } = new();
 
         public List<ExceptionDto> Exceptions { get; set; } = new();
 
@@ -18,9 +18,9 @@ namespace CommonJob
 
         private static readonly object Locker = new();
 
-        public string GetInformation()
+        public string GetLog()
         {
-            return Information.ToString();
+            return Log.ToString();
         }
 
         public string GetExceptionsText()

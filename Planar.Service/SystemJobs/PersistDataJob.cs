@@ -42,7 +42,7 @@ namespace Planar.Service.SystemJobs
 
         public static async Task Schedule(IScheduler scheduler)
         {
-            const string description = "System job for persist information & exception from running jobs";
+            const string description = "System job for persist log & exception from running jobs";
             var span = AppSettings.PersistRunningJobsSpan;
             await Schedule<PersistDataJob>(scheduler, description, span);
         }
@@ -54,10 +54,7 @@ namespace Planar.Service.SystemJobs
             if (AppSettings.Clustering)
             {
                 var clusterRunningJobs = await new ClusterUtil(_dal, _logger).GetPersistanceRunningJobsInfo();
-                if (runningJobs == null)
-                {
-                    runningJobs = new List<PersistanceRunningJobsInfo>();
-                }
+                runningJobs ??= new List<PersistanceRunningJobsInfo>();
 
                 if (clusterRunningJobs != null)
                 {
@@ -70,14 +67,14 @@ namespace Planar.Service.SystemJobs
                 var log = new DbJobInstanceLog
                 {
                     InstanceId = context.InstanceId,
-                    Information = context.Information,
+                    Log = context.Log,
                     Exception = context.Exceptions
                 };
 
-                _logger.LogInformation("Persist information for job {Group}.{Name}", context.Group, context.Name);
+                _logger.LogInformation("Persist data for job {Group}.{Name}", context.Group, context.Name);
                 await Policy.Handle<Exception>()
                         .WaitAndRetryAsync(3, i => TimeSpan.FromSeconds(1 * i))
-                        .ExecuteAsync(() => _dal.PersistJobInstanceInformation(log));
+                        .ExecuteAsync(() => _dal.PersistJobInstanceData(log));
             }
         }
     }

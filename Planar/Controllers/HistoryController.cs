@@ -38,10 +38,10 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{id}/info")]
-        public async Task<ActionResult<string>> GetHistoryInformationById([FromRoute][Id] int id)
+        [HttpGet("{id}/log")]
+        public async Task<ActionResult<string>> GetHistoryLogById([FromRoute][Id] int id)
         {
-            var result = await BusinesLayer.GetHistoryInformationById(id);
+            var result = await BusinesLayer.GetHistoryLogById(id);
             return Ok(result);
         }
 

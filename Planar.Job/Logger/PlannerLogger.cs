@@ -46,7 +46,7 @@ namespace Planar.Job.Logger
 
             var message = $"[{logLevel}] | {typeof(TContext).Name} | {formatter(state, exception)}";
             var entity = new LogEntity { Message = message, Level = logLevel };
-            MessageBroker.Publish(MessageBrokerChannels.AppendInformation, entity);
+            MessageBroker.Publish(MessageBrokerChannels.AppendLog, entity);
             LogToConsole(message);
         }
     }
@@ -63,7 +63,7 @@ namespace Planar.Job.Logger
 
             var message = $"[{logLevel}] {formatter(state, exception)}";
             var entity = new LogEntity { Message = message, Level = logLevel };
-            MessageBroker.Publish(MessageBrokerChannels.AppendInformation, entity);
+            MessageBroker.Publish(MessageBrokerChannels.AppendLog, entity);
             LogToConsole(message);
         }
     }

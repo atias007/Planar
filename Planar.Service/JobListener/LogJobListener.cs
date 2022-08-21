@@ -62,7 +62,7 @@ namespace Planar.Service.List
                     ServerName = Environment.MachineName
                 };
 
-                if (log.TriggerId == null) { log.TriggerId = Consts.ManualTriggerId; }
+                log.TriggerId ??= Consts.ManualTriggerId;
                 if (log.Data?.Length > 4000) { log.Data = log.Data[0..4000]; }
                 if (log.JobId?.Length > 20) { log.JobId = log.JobId[0..20]; }
                 if (log.JobName.Length > 50) { log.JobName = log.JobName[0..50]; }
@@ -106,7 +106,7 @@ namespace Planar.Service.List
                     EndDate = endDate,
                     Exception = jobException?.ToString(),
                     EffectedRows = metadata?.EffectedRows,
-                    Information = metadata?.Information.ToString(),
+                    Log = metadata?.Log.ToString(),
                     Status = (int)status,
                     StatusTitle = status.ToString(),
                     IsStopped = context.CancellationToken.IsCancellationRequested
