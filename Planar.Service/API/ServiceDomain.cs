@@ -1,12 +1,15 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Grpc.Core;
+using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -49,6 +52,22 @@ namespace Planar.Service.API
             };
 
             return response;
+        }
+
+        public async Task<string> GetServiceInfo(string key)
+        {
+            var lowerKey = key.Replace(" ", string.Empty).ToLower();
+            var info = await GetServiceInfo();
+            var props = info.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            var prop = props.FirstOrDefault(p => p.Name.ToLower() == lowerKey);
+
+            if (prop == null)
+            {
+                throw new RestNotFoundException($"Key '{key}' was not found in service information");
+            }
+
+            var value = prop.GetValue(info);
+            return Convert.ToString(value);
         }
 
         public async Task<bool> HealthCheck()

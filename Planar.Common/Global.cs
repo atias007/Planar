@@ -8,7 +8,7 @@ namespace Planar.Common
 {
     public static class Global
     {
-        public static Dictionary<string, string> Parameters { get; set; }
+        public static Dictionary<string, string> Parameters { get; private set; }
 
         public static IServiceProvider ServiceProvider { get; set; }
 
@@ -28,6 +28,11 @@ namespace Planar.Common
             var loggerType = generic.MakeGenericType(type);
             var logger = ServiceProvider.GetService(loggerType) as ILogger;
             return logger;
+        }
+
+        public static void SetParameters(Dictionary<string, string> parameters)
+        {
+            Parameters = parameters;
         }
 
         public static void Clear()

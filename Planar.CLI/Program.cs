@@ -233,6 +233,7 @@ namespace Planar.CLI
             WriteInfo();
 
             const string exit = "exit";
+            const string help = "help";
             while (string.Compare(command, exit, true) != 0)
             {
                 Console.WriteLine();
@@ -243,8 +244,15 @@ namespace Planar.CLI
                     break;
                 }
 
-                var args = SplitCommandLine(command).ToArray();
-                HandleCliCommand(args, cliActions);
+                if (string.Compare(command, help, true) == 0)
+                {
+                    WriteInfo();
+                }
+                else
+                {
+                    var args = SplitCommandLine(command).ToArray();
+                    HandleCliCommand(args, cliActions);
+                }
             }
         }
 

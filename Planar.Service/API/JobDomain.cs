@@ -159,14 +159,11 @@ namespace Planar.Service.API
             var details = await Scheduler.GetJobDetail(jobkey);
 
             var properties = GetJobProperties(details);
-            if (properties.ContainsKey("JobPath") == false) { return result; }
+            if (properties.ContainsKey("jobPath") == false) { return result; }
 
-            var jobPath = properties["JobPath"];
-            var parameters = Global.Parameters;
-            var settings = CommonUtil.LoadJobSettings(jobPath);
-            result = parameters.Merge(settings);
-
-            return result;
+            var jobPath = properties["jobPath"];
+            var settings = JobSettingsLoader.LoadJobSettings(jobPath);
+            return settings;
         }
 
         public async Task<GetTestStatusResponse> GetTestStatus(int id)

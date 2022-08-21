@@ -26,17 +26,33 @@ namespace Planar.CLI.Actions
         }
 
         [Action("info")]
-        public static async Task<CliActionResponse> GetInfo()
+        public static async Task<CliActionResponse> GetInfo(CliGetInfoRequest request)
         {
-            var restRequest = new RestRequest("service", Method.Get);
-            var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest);
-
-            if (result.IsSuccessful && result.Data != null)
+            if (string.IsNullOrEmpty(request.Key))
             {
-                result.Data.CliVersion = Program.Version;
-            }
+                var restRequest = new RestRequest("service", Method.Get);
+                var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest);
 
-            return new CliActionResponse(result, result.Data);
+                if (result.IsSuccessful && result.Data != null)
+                {
+                    result.Data.CliVersion = Program.Version;
+                }
+
+                return new CliActionResponse(result, result.Data);
+            }
+            else
+            {
+                var key = request.Key.Replace(" ", string.Empty).ToLower();
+                if (key == "cliversion")
+                {
+                    return new CliActionResponse(new RestResponse { IsSuccessful = true }, Program.Version);
+                }
+
+                var restRequest = new RestRequest("service/{key}", Method.Get);
+                restRequest.AddUrlSegment("key", request.Key);
+                var result = await RestProxy.Invoke<string>(restRequest);
+                return new CliActionResponse(result, result.Data);
+            }
         }
 
         [Action("version")]

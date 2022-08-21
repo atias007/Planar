@@ -28,7 +28,7 @@ namespace Planar.Service.API
             {
                 if (await DataLayer.IsTraceExists(id) == false)
                 {
-                    throw new RestNotFoundException($"Trace with id {id} not found");
+                    throw new RestNotFoundException($"trace with id {id} not found");
                 }
             }
 
@@ -43,7 +43,7 @@ namespace Planar.Service.API
             {
                 if (await DataLayer.IsTraceExists(id) == false)
                 {
-                    throw new RestNotFoundException($"Trace with id {id} not found");
+                    throw new RestNotFoundException($"trace with id {id} not found");
                 }
             }
 

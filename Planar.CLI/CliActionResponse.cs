@@ -62,6 +62,17 @@ namespace Planar.CLI
             if (response == null) return null;
             var serializer = new SerializerBuilder().Build();
             var yml = serializer.Serialize(response);
+
+            if (string.IsNullOrEmpty(yml) == false)
+            {
+                yml = yml.Trim();
+            }
+
+            if (yml == "{}")
+            {
+                yml = null;
+            }
+
             return yml;
         }
     }

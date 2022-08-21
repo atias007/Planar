@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,22 +6,34 @@ using YamlDotNet.Serialization;
 
 namespace Planar.Common
 {
-    public static class CommonUtil
+    public static class JobSettingsLoader
     {
         private const string SettingsFilename = "JobSettings.yml";
         private const string EnvironmentPlaceholder = "{environment}";
         private static readonly string EnvironmntSettingsFilename = $"JobSettings.{EnvironmentPlaceholder}.yml";
 
-        public static Dictionary<string, string> LoadJobSettings(string path = null)
+        public static Dictionary<string, string> LoadJobSettings(string jobPath)
+        {
+            // Load job global parameters
+            var final = Global.Parameters;
+
+            // Merge settings yml file
+            if (string.IsNullOrEmpty(jobPath)) { return null; }
+            var fullpath = Path.Combine(FolderConsts.BasePath, FolderConsts.Data, FolderConsts.Jobs, jobPath);
+            var location = new DirectoryInfo(fullpath);
+            if (!location.Exists) { return final; }
+
+            var jobSettings = LoadJobSettingsFiles(location.FullName);
+            final = final.Merge(jobSettings);
+            return final;
+        }
+
+        private static Dictionary<string, string> LoadJobSettingsFiles(string path)
         {
             var result = new Dictionary<string, string>();
-            var relativePath = path ?? ".";
 
             // JobSettings.yml
-            var settingsFile = path == null ? SettingsFilename : Path.Combine(path, SettingsFilename);
-            var files = Directory.GetFiles(relativePath, SettingsFilename, SearchOption.AllDirectories)
-                .ToList()
-                .OrderByDescending(f => f);
+            var files = GetFiles(path, SettingsFilename);
 
             foreach (var f in files)
             {
@@ -32,10 +43,7 @@ namespace Planar.Common
 
             // JobSettings.{environment}.yml
             var filename = EnvironmntSettingsFilename.Replace(EnvironmentPlaceholder, Global.Environment);
-            var envSettingsFile = path == null ? filename : Path.Combine(path, filename);
-            files = Directory.GetFiles(relativePath, filename, SearchOption.AllDirectories)
-                .ToList()
-                .OrderByDescending(f => f);
+            files = GetFiles(path, filename);
 
             foreach (var f in files)
             {
@@ -44,6 +52,15 @@ namespace Planar.Common
             }
 
             return result;
+        }
+
+        private static IEnumerable<string> GetFiles(string path, string filename)
+        {
+            var files = Directory
+                .GetFiles(path, filename, SearchOption.AllDirectories)
+                .OrderByDescending(f => f);
+
+            return files;
         }
 
         private static Dictionary<string, string> ReadSettingsFile(string filename)

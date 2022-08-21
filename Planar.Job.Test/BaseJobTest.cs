@@ -17,7 +17,7 @@ namespace Planar.Job.Test
         private static Dictionary<string, string> LoadJobSettings<T>()
         {
             var path = new FileInfo(typeof(T).Assembly.Location).DirectoryName;
-            var result = CommonUtil.LoadJobSettings(path);
+            var result = JobSettingsLoader.LoadJobSettings(path);
             return result;
         }
 

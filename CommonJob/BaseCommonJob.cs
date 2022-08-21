@@ -146,29 +146,9 @@ namespace CommonJob
         {
             try
             {
-                // Load job global parameters
-                var final = Global.Parameters;
-
-                // Merge settings yml file
                 if (string.IsNullOrEmpty(JobPath)) return null;
-                var fullpath = Path.Combine(FolderConsts.BasePath, FolderConsts.Data, FolderConsts.Jobs, JobPath);
-                var location = new DirectoryInfo(fullpath);
-                var jobSettings = CommonUtil.LoadJobSettings(location.FullName);
-                final = final.Merge(jobSettings);
-
-                foreach (var item in jobSettings)
-                {
-                    if (final.ContainsKey(item.Key))
-                    {
-                        final[item.Key] = item.Value;
-                    }
-                    else
-                    {
-                        final.Add(item.Key, item.Value);
-                    }
-                }
-
-                return final;
+                var jobSettings = JobSettingsLoader.LoadJobSettings(JobPath);
+                return jobSettings;
             }
             catch (Exception ex)
             {

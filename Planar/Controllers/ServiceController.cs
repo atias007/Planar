@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
-using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -21,6 +20,13 @@ namespace Planar.Controllers
         public async Task<ActionResult<GetServiceInfoResponse>> GetServiceInfo()
         {
             var response = await BusinesLayer.GetServiceInfo();
+            return Ok(response);
+        }
+
+        [HttpGet("{key}")]
+        public async Task<ActionResult<string>> GetServiceInfo(string key)
+        {
+            var response = await BusinesLayer.GetServiceInfo(key);
             return Ok(response);
         }
 

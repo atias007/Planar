@@ -37,7 +37,7 @@ namespace Planar.Service.API
             {
                 if (await DataLayer.IsHistoryExists(id) == false)
                 {
-                    throw new RestNotFoundException($"History with id {id} not found");
+                    throw new RestNotFoundException($"history with id {id} not found");
                 }
             }
 
@@ -51,7 +51,7 @@ namespace Planar.Service.API
             {
                 if (await DataLayer.IsHistoryExists(id) == false)
                 {
-                    throw new RestNotFoundException($"History with id {id} not found");
+                    throw new RestNotFoundException($"history with id {id} not found");
                 }
             }
 

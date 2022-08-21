@@ -25,12 +25,13 @@
 		<Compile Include="..\CommonJob\JobMessageBroker.cs" Link="Common\JobMessageBroker.cs" />
 		<Compile Include="..\CommonJob\MessageBrokerEntities\KeyValueItem.cs" Link="Common\KeyValueItem.cs" />
 		<Compile Include="..\Planar.API.Common\Entities\StatusMembers.cs" Link="Common\StatusMembers.cs" />
-		<Compile Include="..\Planar.Common\CommonUtil.cs" Link="Common\CommonUtil.cs" />
 		<Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
 		<Compile Include="..\Planar.Common\Extensions.cs" Link="Common\Extensions.cs" />
 		<Compile Include="..\Planar.Common\Global.cs" Link="Common\Global.cs" />
+		<Compile Include="..\Planar.Common\JobSettingsLoader.cs" Link="Common\JobSettingsLoader.cs" />
 		<Compile Include="..\Planar.Job\ExceptionDto.cs" Link="Common\ExceptionDto.cs" />
 		<Compile Include="..\Planar.Job\Logger\LogEntity.cs" Link="Common\LogEntity.cs" />
+		<Compile Include="..\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

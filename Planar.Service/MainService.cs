@@ -135,7 +135,7 @@ namespace Planar.Service
             var dal = Resolve<DataLayer>();
             var prms = await dal.GetAllGlobalParameter();
             var dict = prms.ToDictionary(p => p.ParamKey, p => p.ParamValue);
-            Global.Parameters = dict;
+            Global.SetParameters(dict);
         }
 
         public async Task ScheduleSystemJobs()

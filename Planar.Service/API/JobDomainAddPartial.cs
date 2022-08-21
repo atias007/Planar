@@ -242,7 +242,7 @@ namespace Planar.Service.API
             }
 
             // properties
-            if (metadata.Properties == null) { metadata.Properties = new Dictionary<string, string>(); }
+            metadata.Properties ??= new Dictionary<string, string>();
             var json = JsonConvert.SerializeObject(metadata.Properties);
             job.JobDataMap.Add(Consts.JobTypeProperties, json);
 
