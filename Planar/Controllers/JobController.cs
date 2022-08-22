@@ -117,10 +117,10 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("runningInfo/{instanceId}")]
-        public async Task<ActionResult<GetRunningInfoResponse>> GetRunningInfo([FromRoute][Required] string instanceId)
+        [HttpGet("runningData/{instanceId}")]
+        public async Task<ActionResult<GetRunningDataResponse>> GetRunningData([FromRoute][Required] string instanceId)
         {
-            var result = await BusinesLayer.GetRunningInfo(instanceId);
+            var result = await BusinesLayer.GetRunningData(instanceId);
             return Ok(result);
         }
 

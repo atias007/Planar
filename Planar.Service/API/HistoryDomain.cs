@@ -44,9 +44,9 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<string> GetHistoryInformationById(int id)
+        public async Task<string> GetHistoryLogById(int id)
         {
-            var result = await DataLayer.GetHistoryInformationById(id);
+            var result = await DataLayer.GetHistoryLogById(id);
             if (string.IsNullOrEmpty(result))
             {
                 if (await DataLayer.IsHistoryExists(id) == false)

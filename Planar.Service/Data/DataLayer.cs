@@ -42,13 +42,13 @@ namespace Planar.Service.Data
             var paramEndDate = new SqlParameter("@EndDate", GetNullableSqlParameter(log.EndDate));
             var paramDuration = new SqlParameter("@Duration", GetNullableSqlParameter(log.Duration));
             var paramEffectedRows = new SqlParameter("@EffectedRows", GetNullableSqlParameter(log.EffectedRows));
-            var paramInformation = new SqlParameter("@Information", GetNullableSqlParameter(log.Information));
+            var paramLog = new SqlParameter("@Log", GetNullableSqlParameter(log.Log));
             var paramException = new SqlParameter("@Exception", GetNullableSqlParameter(log.Exception));
             var paramIsStopped = new SqlParameter("@IsStopped", log.IsStopped);
 
             await _context.Database.ExecuteSqlRawAsync(
-                $"dbo.UpdateJobInstanceLog @InstanceId, @Status, @StatusTitle, @EndDate, @Duration, @EffectedRows, @Information, @Exception, @IsStopped",
-                paramInstanceId, paramStatus, paramStatusTitle, paramEndDate, paramDuration, paramEffectedRows, paramInformation, paramException, paramIsStopped);
+                $"dbo.UpdateJobInstanceLog @InstanceId, @Status, @StatusTitle, @EndDate, @Duration, @EffectedRows, @Log, @Exception, @IsStopped",
+                paramInstanceId, paramStatus, paramStatusTitle, paramEndDate, paramDuration, paramEffectedRows, paramLog, paramException, paramIsStopped);
         }
 
         private static object GetNullableSqlParameter(object value)
@@ -57,13 +57,13 @@ namespace Planar.Service.Data
             else { return value; }
         }
 
-        public async Task PersistJobInstanceInformation(DbJobInstanceLog log)
+        public async Task PersistJobInstanceData(DbJobInstanceLog log)
         {
             var paramInstanceId = new SqlParameter("@InstanceId", log.InstanceId);
-            var paramInformation = new SqlParameter("@Information", GetNullableSqlParameter(log.Information));
+            var paramLog = new SqlParameter("@Log", GetNullableSqlParameter(log.Log));
             var paramException = new SqlParameter("@Exception", GetNullableSqlParameter(log.Exception));
 
-            await _context.Database.ExecuteSqlRawAsync($"dbo.PersistJobInstanceLog @InstanceId, @Information, @Exception", paramInstanceId, paramInformation, paramException);
+            await _context.Database.ExecuteSqlRawAsync($"dbo.PersistJobInstanceLog @InstanceId, @Log, @Exception", paramInstanceId, paramLog, paramException);
         }
 
         public async Task<int> GetMonitorCount()
@@ -288,11 +288,11 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<string> GetHistoryInformationById(int id)
+        public async Task<string> GetHistoryLogById(int id)
         {
             var result = await _context.JobInstanceLogs
                 .Where(l => l.Id == id)
-                .Select(l => l.Information)
+                .Select(l => l.Log)
                 .FirstOrDefaultAsync();
 
             return result;

@@ -7,5 +7,5 @@ ls|list      [-r|--rows <rows>] [-d|--desc] [-f|--from <from date>] [-t|--to <to
 last         [<days>]
 get          <id>
 data         <id>
-info         <id>
+log          <id>
 exception    <id>

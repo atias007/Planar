@@ -1,7 +1,7 @@
 ﻿job type: PlanarJob
 name: BankOfIsraelCurrency
 group: Infrastructure
-description: Download daily currency information and save it to disk as xml 
+description: Download daily currency data and save it to disk as xml 
 durable: true
 concurrent: true
 properties:

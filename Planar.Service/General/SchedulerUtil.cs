@@ -80,23 +80,23 @@ namespace Planar.Service.General
             return response;
         }
 
-        public static async Task<GetRunningInfoResponse> GetRunningInfo(string instanceId, CancellationToken cancellationToken = default)
+        public static async Task<GetRunningDataResponse> GetRunningData(string instanceId, CancellationToken cancellationToken = default)
         {
             var context = (await MainService.Scheduler.GetCurrentlyExecutingJobs(cancellationToken))
                 .FirstOrDefault(j => j.FireInstanceId == instanceId);
 
             if (context == null) { return null; }
 
-            var information = string.Empty;
+            var log = string.Empty;
             var exceptions = string.Empty;
 
             if (context.Result is JobExecutionMetadata metadata)
             {
-                information = metadata.GetInformation();
+                log = metadata.GetLog();
                 exceptions = metadata.GetExceptionsText();
             }
 
-            var response = new GetRunningInfoResponse { Information = information, Exceptions = exceptions };
+            var response = new GetRunningDataResponse { Log = log, Exceptions = exceptions };
             return response;
         }
 
@@ -166,17 +166,17 @@ namespace Planar.Service.General
                         continue;
                     }
 
-                    var information = metadata.GetInformation();
+                    var log = metadata.GetLog();
                     var exceptions = metadata.GetExceptionsText();
 
-                    if (string.IsNullOrEmpty(information) && string.IsNullOrEmpty(exceptions)) { break; }
+                    if (string.IsNullOrEmpty(log) && string.IsNullOrEmpty(exceptions)) { break; }
 
                     var item = new PersistanceRunningJobsInfo
                     {
                         Group = context.JobDetail.Key.Group,
                         Name = context.JobDetail.Key.Name,
                         InstanceId = context.FireInstanceId,
-                        Information = information,
+                        Log = log,
                         Exceptions = exceptions
                     };
 

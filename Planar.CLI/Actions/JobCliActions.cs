@@ -92,25 +92,25 @@ namespace Planar.CLI.Actions
         [Action("runningex")]
         public static async Task<CliActionResponse> GetRunningExceptions(CliFireInstanceIdRequest request)
         {
-            var restRequest = new RestRequest("job/runningInfo/{instanceId}", Method.Get)
+            var restRequest = new RestRequest("job/runningData/{instanceId}", Method.Get)
                 .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
 
-            var result = await RestProxy.Invoke<GetRunningInfoResponse>(restRequest);
+            var result = await RestProxy.Invoke<GetRunningDataResponse>(restRequest);
             if (string.IsNullOrEmpty(result.Data?.Exceptions)) { return new CliActionResponse(result); }
 
             return new CliActionResponse(result, result.Data?.Exceptions);
         }
 
-        [Action("runninginfo")]
-        public static async Task<CliActionResponse> GetRunningInfo(CliFireInstanceIdRequest request)
+        [Action("runninglog")]
+        public static async Task<CliActionResponse> GetRunningData(CliFireInstanceIdRequest request)
         {
-            var restRequest = new RestRequest("job/runningInfo/{instanceId}", Method.Get)
+            var restRequest = new RestRequest("job/runningData/{instanceId}", Method.Get)
                 .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
 
-            var result = await RestProxy.Invoke<GetRunningInfoResponse>(restRequest);
-            if (string.IsNullOrEmpty(result.Data?.Information)) { return new CliActionResponse(result); }
+            var result = await RestProxy.Invoke<GetRunningDataResponse>(restRequest);
+            if (string.IsNullOrEmpty(result.Data?.Log)) { return new CliActionResponse(result); }
 
-            return new CliActionResponse(result, result.Data?.Information);
+            return new CliActionResponse(result, result.Data?.Log);
         }
 
         [Action("running")]
@@ -224,7 +224,7 @@ namespace Planar.CLI.Actions
             var logId = step3.Item3;
 
             // (4) Get running info
-            var step4 = await TestStep4GetRunningInfo(instanceId, invokeDate);
+            var step4 = await TestStep4GetRunningData(instanceId, invokeDate);
             if (step4 != null) { return step4; }
 
             // (5) Sleep 1 sec
@@ -390,7 +390,7 @@ namespace Planar.CLI.Actions
             return (null, instanceId.Data.InstanceId, instanceId.Data.LogId);
         }
 
-        private static async Task<CliActionResponse> TestStep4GetRunningInfo(string instanceId, DateTime invokeDate)
+        private static async Task<CliActionResponse> TestStep4GetRunningData(string instanceId, DateTime invokeDate)
         {
             var restRequest = new RestRequest("job/running/{instanceId}", Method.Get)
                 .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);

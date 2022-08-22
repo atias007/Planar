@@ -1,5 +1,4 @@
-﻿using CommonJob;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -131,9 +130,9 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<GetRunningInfoResponse> GetRunningInfo(string instanceId)
+        public async Task<GetRunningDataResponse> GetRunningData(string instanceId)
         {
-            var result = await SchedulerUtil.GetRunningInfo(instanceId);
+            var result = await SchedulerUtil.GetRunningData(instanceId);
             if (result != null)
             {
                 return result;
@@ -141,7 +140,7 @@ namespace Planar.Service.API
 
             if (AppSettings.Clustering)
             {
-                result = await new ClusterUtil(DataLayer, Logger).GetRunningInfo(instanceId);
+                result = await new ClusterUtil(DataLayer, Logger).GetRunningData(instanceId);
             }
 
             if (result == null)

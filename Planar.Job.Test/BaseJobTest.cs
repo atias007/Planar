@@ -73,7 +73,7 @@ namespace Planar.Job.Test
                 EndDate = endDate,
                 Exception = jobException?.ToString(),
                 EffectedRows = metadata?.EffectedRows,
-                Information = metadata?.GetInformation(),
+                Log = metadata?.GetLog(),
                 Id = -1,
                 IsStopped = false,
                 Retry = false,

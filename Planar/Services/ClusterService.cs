@@ -56,7 +56,7 @@ namespace Planar
             ValidateRequest(request);
             var job = await SchedulerUtil.GetRunningJob(request.InstanceId, context.CancellationToken);
             var item = MapRunningJobReply(job);
-            return item;
+            return item ?? new RunningJobReply { IsEmpty = true };
         }
 
         // OK
@@ -68,23 +68,29 @@ namespace Planar
             foreach (var j in jobs)
             {
                 var item = MapRunningJobReply(j);
-                result.Jobs.Add(item);
+                if (item != null)
+                {
+                    result.Jobs.Add(item);
+                }
             }
 
             return result;
         }
 
         // OK
-        public override async Task<RunningInfoReply> GetRunningInfo(GetRunningJobRequest request, ServerCallContext context)
+        public override async Task<RunningDataReply> GetRunningData(GetRunningJobRequest request, ServerCallContext context)
         {
             ValidateRequest(request);
-            var job = await SchedulerUtil.GetRunningInfo(request.InstanceId, context.CancellationToken);
-            if (job == null) { return null; }
+            var job = await SchedulerUtil.GetRunningData(request.InstanceId, context.CancellationToken);
+            if (job == null)
+            {
+                return new RunningDataReply { IsEmpty = true };
+            }
 
-            var result = new RunningInfoReply
+            var result = new RunningDataReply
             {
                 Exceptions = SafeString(job.Exceptions),
-                Information = SafeString(job.Information)
+                Log = SafeString(job.Log)
             };
 
             return result;
@@ -114,7 +120,7 @@ namespace Planar
             {
                 Exceptions = SafeString(j.Exceptions),
                 Group = SafeString(j.Group),
-                Information = SafeString(j.Information),
+                Log = SafeString(j.Log),
                 InstanceId = SafeString(j.InstanceId),
                 Name = SafeString(j.Name),
             });

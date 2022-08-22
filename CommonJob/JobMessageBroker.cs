@@ -32,7 +32,7 @@ namespace CommonJob
         private void SetLogLevel(LogLevel level)
         {
             LogLevel = level;
-            Metadata.Information.AppendLine($"[Log Level: {LogLevel}]");
+            Metadata.Log.AppendLine($"[Log Level: {LogLevel}]");
         }
 
         private bool HasSettings(Dictionary<string, string> settings, string key)
@@ -142,13 +142,13 @@ namespace CommonJob
                     }
                     return null;
 
-                case "AppendInformation":
+                case "AppendLog":
                     var data4 = Deserialize<LogEntity>(message);
                     lock (Locker)
                     {
                         if ((int)data4.Level >= (int)LogLevel)
                         {
-                            Metadata.Information.AppendLine(data4.Message);
+                            Metadata.Log.AppendLine(data4.Message);
                         }
                     }
                     return null;

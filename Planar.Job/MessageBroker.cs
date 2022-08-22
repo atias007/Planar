@@ -8,7 +8,7 @@ namespace Planar
     internal enum MessageBrokerChannels
     {
         AddAggragateException,
-        AppendInformation,
+        AppendLog,
         FailOnStopRequest,
         GetExceptionsText,
         GetData,
