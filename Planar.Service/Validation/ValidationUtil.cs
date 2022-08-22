@@ -48,5 +48,14 @@ namespace Planar.Service.Validation
             var exists = dal.IsGroupExists(groop).Result;
             return exists;
         }
+
+        public static bool IsPath(string value)
+        {
+            if (value == null) return true;
+
+            const string pattern = @"^(?:\w+\\?)*$";
+            var regex = new Regex(pattern, RegexOptions.IgnoreCase);
+            return regex.IsMatch(value);
+        }
     }
 }

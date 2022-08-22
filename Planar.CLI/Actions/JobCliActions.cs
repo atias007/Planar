@@ -23,18 +23,29 @@ namespace Planar.CLI.Actions
         [Action("add")]
         public static async Task<CliActionResponse> AddJob(CliAddJobRequest request)
         {
-            if (request.Filename == ".") { request.Filename = "JobFile.yml"; }
+            if (request.Filename == ".") { request.Filename = JobFileName; }
             var fi = new FileInfo(request.Filename);
-            if (fi.Exists == false)
+            RestRequest restRequest;
+
+            if (fi.Extension.ToLower() == ".yml")
             {
-                throw new ApplicationException($"filename '{fi.FullName}' not exist");
+                if (fi.Exists == false)
+                {
+                    throw new ApplicationException($"filename '{fi.FullName}' not exist");
+                }
+
+                var yml = File.ReadAllText(fi.FullName);
+                var prm = GetAddJobRequest(yml);
+
+                restRequest = new RestRequest("job", Method.Post)
+                    .AddBody(prm);
             }
-
-            var yml = File.ReadAllText(fi.FullName);
-            var prm = GetAddJobRequest(yml);
-
-            var restRequest = new RestRequest("job", Method.Post)
-                .AddBody(prm);
+            else
+            {
+                var body = new AddJobFoldeRequest { Folder = request.Filename };
+                restRequest = new RestRequest("job/folder", Method.Post)
+                    .AddBody(body);
+            }
 
             var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
             return new CliActionResponse(result, message: result.Data?.Id);

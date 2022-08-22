@@ -11,5 +11,7 @@ namespace Planar
         public const string MonitorHooks = "MonitorHooks";
 
         public static string BasePath => AppDomain.CurrentDomain.BaseDirectory;
+
+        public const string JobFileName = "JobFile.yml";
     }
 }

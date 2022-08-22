@@ -6,7 +6,6 @@ using Planar.Validation.Attributes;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -23,7 +22,14 @@ namespace Planar.Controllers
         public async Task<ActionResult<JobIdResponse>> Add([FromBody] AddJobRequest request)
         {
             var result = await BusinesLayer.Add(request);
-            return CreatedAtAction(nameof(Get), result, result);
+            return CreatedAtAction(nameof(Get), result.Id, result);
+        }
+
+        [HttpPost("folder")]
+        public async Task<ActionResult<JobIdResponse>> AddFolder([FromBody] AddJobFoldeRequest request)
+        {
+            var result = await BusinesLayer.AddFolder(request);
+            return CreatedAtAction(nameof(Get), result.Id, result);
         }
 
         [HttpGet]
