@@ -60,23 +60,24 @@ message PersistanceRunningJobInfo
 }
 
 message RunningJobReply{
-	string id = 1;
-	string group = 2;
-	string name = 3;
-	string description = 4;
-	string fireInstanceId = 5;
-	optional google.protobuf.Timestamp scheduledFireTime = 6;
-	google.protobuf.Timestamp fireTime = 7;
-	optional google.protobuf.Timestamp nextFireTime = 8;
-	optional google.protobuf.Timestamp previousFireTime = 9;
-	google.protobuf.Duration runTime = 10;
-	int32 refireCount = 11;
-	string triggerName = 12;
-	string triggerGroup = 13;
-	string triggerId = 14;
-	repeated DataMap DataMap = 15;
-	optional int32 effectedRows = 16;
-	int32 progress = 17;
+	bool isEmpty = 1;
+	string id = 2;
+	string group = 3;
+	string name = 4;
+	string description = 5;
+	string fireInstanceId = 6;
+	optional google.protobuf.Timestamp scheduledFireTime = 7;
+	google.protobuf.Timestamp fireTime = 8;
+	optional google.protobuf.Timestamp nextFireTime = 9;
+	optional google.protobuf.Timestamp previousFireTime = 10;
+	google.protobuf.Duration runTime = 11;
+	int32 refireCount = 12;
+	string triggerName = 13;
+	string triggerGroup = 14;
+	string triggerId = 15;
+	repeated DataMap DataMap = 16;
+	optional int32 effectedRows = 17;
+	int32 progress = 18;
 }
 
 message DataMap{
@@ -86,8 +87,9 @@ message DataMap{
 
 message RunningDataReply
 {
-	string log = 1;
-    string exceptions = 2;
+	bool isEmpty = 1;
+	string log = 2;
+    string exceptions = 3;
 }
 
 message IsRunningInstanceExistReply

@@ -435,6 +435,12 @@ namespace Planar.Service.General
             var client = GetClient(node);
             var request = new GetRunningJobRequest { InstanceId = instanceId };
             var result = await client.GetRunningJobAsync(request, deadline: GrpcDeadLine);
+
+            if (result.IsEmpty)
+            {
+                return null;
+            }
+
             var response = MapRunningJob(result);
             return response;
         }
@@ -444,6 +450,12 @@ namespace Planar.Service.General
             var client = GetClient(node);
             var request = new GetRunningJobRequest { InstanceId = instanceId };
             var result = await client.GetRunningDataAsync(request, deadline: GrpcDeadLine);
+
+            if (result.IsEmpty)
+            {
+                return null;
+            }
+
             var response = new GetRunningDataResponse
             {
                 Log = string.IsNullOrEmpty(result.Log) ? null : result.Log,
