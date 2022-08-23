@@ -11,10 +11,10 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
-		<Compile Include="..\Planar.Job\ExceptionDto.cs" Link="ExceptionDto.cs" />
-		<Compile Include="..\Planar.Job\Logger\LogEntity.cs" Link="LogEntity.cs" />
-		<Compile Include="..\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
+		<Compile Include="..\..\Planar.Common\Consts.cs" Link="Consts.cs" />
+		<Compile Include="..\..\Planar.Job\ExceptionDto.cs" Link="ExceptionDto.cs" />
+		<Compile Include="..\..\Planar.Job\Logger\LogEntity.cs" Link="LogEntity.cs" />
+		<Compile Include="..\..\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -22,6 +22,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
+		<ProjectReference Include="..\..\Planar.Common\Planar.Common.csproj" />
 	</ItemGroup>
 </Project>

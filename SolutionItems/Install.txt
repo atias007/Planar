@@ -1,0 +1,1 @@
+sc create Planar binPath=C:\Workers\Planar\Planar.exe start=auto

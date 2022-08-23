@@ -20,10 +20,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Planar.Job.Test\Planar.Job.Test.csproj" />
-		<ProjectReference Include="..\Planar.MonitorHook\Planar.MonitorHook.csproj" />
-		<ProjectReference Include="..\Planar.Service\Planar.Service.csproj" />
-		<ProjectReference Include="..\Planar.TeamsMonitorHook\Planar.TeamsMonitorHook.csproj" />
+		<ProjectReference Include="..\..\Planar.Job.Test\Planar.Job.Test.csproj" />
+		<ProjectReference Include="..\..\Planar.MonitorHook\Planar.MonitorHook.csproj" />
+		<ProjectReference Include="..\..\Planar.Service\Planar.Service.csproj" />
+		<ProjectReference Include="..\..\Planar.TeamsMonitorHook\Planar.TeamsMonitorHook.csproj" />
 		<ProjectReference Include="..\TestAction\TestAction.csproj" />
 	</ItemGroup>
 

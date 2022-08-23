@@ -17,13 +17,13 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<Compile Include="..\CommonJob\JobExecutionContext\JobDetail.cs" Link="Common\JobExecutionContext\JobDetail.cs" />
-		<Compile Include="..\CommonJob\JobExecutionContext\JobExecutionContext.cs" Link="Common\JobExecutionContext\JobExecutionContext.cs" />
-		<Compile Include="..\CommonJob\JobExecutionContext\Key.cs" Link="Common\JobExecutionContext\Key.cs" />
-		<Compile Include="..\CommonJob\JobExecutionContext\TriggerDetail.cs" Link="Common\JobExecutionContext\TriggerDetail.cs" />
-		<Compile Include="..\CommonJob\JobExecutionMetadata.cs" Link="Common\JobExecutionMetadata.cs" />
-		<Compile Include="..\CommonJob\JobMessageBroker.cs" Link="Common\JobMessageBroker.cs" />
-		<Compile Include="..\CommonJob\MessageBrokerEntities\KeyValueItem.cs" Link="Common\KeyValueItem.cs" />
+		<Compile Include="..\Jobs\CommonJob\JobExecutionContext\JobDetail.cs" Link="Common\JobExecutionContext\JobDetail.cs" />
+		<Compile Include="..\Jobs\CommonJob\JobExecutionContext\JobExecutionContext.cs" Link="Common\JobExecutionContext\JobExecutionContext.cs" />
+		<Compile Include="..\Jobs\CommonJob\JobExecutionContext\Key.cs" Link="Common\JobExecutionContext\Key.cs" />
+		<Compile Include="..\Jobs\CommonJob\JobExecutionContext\TriggerDetail.cs" Link="Common\JobExecutionContext\TriggerDetail.cs" />
+		<Compile Include="..\Jobs\CommonJob\JobExecutionMetadata.cs" Link="Common\JobExecutionMetadata.cs" />
+		<Compile Include="..\Jobs\CommonJob\JobMessageBroker.cs" Link="Common\JobMessageBroker.cs" />
+		<Compile Include="..\Jobs\CommonJob\MessageBrokerEntities\KeyValueItem.cs" Link="Common\KeyValueItem.cs" />
 		<Compile Include="..\Planar.API.Common\Entities\StatusMembers.cs" Link="Common\StatusMembers.cs" />
 		<Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
 		<Compile Include="..\Planar.Common\Extensions.cs" Link="Common\Extensions.cs" />
@@ -43,7 +43,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Common\JobExecutionContext\" />
+		<Folder Include="Jobs\Common\JobExecutionContext\" />
 	</ItemGroup>
 
 </Project>
