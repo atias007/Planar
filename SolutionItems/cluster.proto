@@ -59,6 +59,7 @@ message PersistanceRunningJobInfo
 	string instanceId = 3;
 	string log = 4;
 	string exceptions = 5;
+	int32 duration = 6;
 }
 
 message RunningJobReply{

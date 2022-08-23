@@ -68,7 +68,8 @@ namespace Planar.Service.SystemJobs
                 {
                     InstanceId = context.InstanceId,
                     Log = context.Log,
-                    Exception = context.Exceptions
+                    Exception = context.Exceptions,
+                    Duration = context.Duration,
                 };
 
                 _logger.LogInformation("Persist data for job {Group}.{Name}", context.Group, context.Name);

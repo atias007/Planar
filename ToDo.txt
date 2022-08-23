@@ -9,7 +9,6 @@ upgrade:
 - add interface to hooks to handle system events
 
 - job test: in no instance id, check hc and print warning about already running job with no concurent
-- job add with only folder name
 - odata
 - persistance system job write also the duration
 
@@ -43,4 +42,5 @@ upgrade:
 - misfire behaviour should be enum in yml file
 -- job runningdata w10n-TsahiAti637964208165023851637964208471912498 should return 404
 - trigger get -> show misfirebehaviour as numeric
-- job settings <id> return empty;
+- job settings <id> return empty
+- job add with only folder name

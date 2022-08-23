@@ -62,8 +62,9 @@ namespace Planar.Service.Data
             var paramInstanceId = new SqlParameter("@InstanceId", log.InstanceId);
             var paramLog = new SqlParameter("@Log", GetNullableSqlParameter(log.Log));
             var paramException = new SqlParameter("@Exception", GetNullableSqlParameter(log.Exception));
+            var paramDuration = new SqlParameter("@Duration", log.Duration);
 
-            await _context.Database.ExecuteSqlRawAsync($"dbo.PersistJobInstanceLog @InstanceId, @Log, @Exception", paramInstanceId, paramLog, paramException);
+            await _context.Database.ExecuteSqlRawAsync($"dbo.PersistJobInstanceLog @InstanceId, @Log, @Exception, @Duration", paramInstanceId, paramLog, paramException, paramDuration);
         }
 
         public async Task<int> GetMonitorCount()

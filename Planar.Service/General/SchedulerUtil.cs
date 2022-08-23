@@ -177,7 +177,8 @@ namespace Planar.Service.General
                         Name = context.JobDetail.Key.Name,
                         InstanceId = context.FireInstanceId,
                         Log = log,
-                        Exceptions = exceptions
+                        Exceptions = exceptions,
+                        Duration = Convert.ToInt32(context.JobRunTime.TotalMilliseconds)
                     };
 
                     result.Add(item);
