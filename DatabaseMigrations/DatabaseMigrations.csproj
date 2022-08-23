@@ -20,6 +20,7 @@
     <None Remove="Scripts\Planar_0008 - alter sp updatejob.sql" />
     <None Remove="Scripts\Planar_0009 - update sp persistjob.sql" />
     <None Remove="Scripts\Planar_0010 - update sp reset.sql" />
+    <None Remove="Scripts\Planar_0011 - persistlog sp.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - Create all.sql" />
@@ -32,6 +33,7 @@
     <EmbeddedResource Include="Scripts\Planar_0008 - alter sp updatejob.sql" />
     <EmbeddedResource Include="Scripts\Planar_0009 - update sp persistjob.sql" />
     <EmbeddedResource Include="Scripts\Planar_0010 - update sp reset.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0011 - persistlog sp.sql" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="dbup-sqlserver" Version="4.6.0" />
@@ -49,5 +51,6 @@
     <None Remove="Scripts\Planar_0008 - alter sp updatejob.sql" />
     <None Remove="Scripts\Planar_0009 - update sp persistjob.sql" />
     <None Remove="Scripts\Planar_0010 - update sp reset.sql" />
+    <None Remove="Scripts\Planar_0011 - persistlog sp.sql" />
   </ItemGroup>
 </Project>

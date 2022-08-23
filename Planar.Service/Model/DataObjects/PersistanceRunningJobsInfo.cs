@@ -7,6 +7,7 @@
         public string InstanceId { get; set; }
         public string Log { get; set; }
         public string Exceptions { get; set; }
+        public int Duration { get; set; }
 
         public static PersistanceRunningJobsInfo Parse(PersistanceRunningJobInfo info)
         {
@@ -16,7 +17,8 @@
                 Group = ReverseSafeString(info.Group),
                 Log = ReverseSafeString(info.Log),
                 InstanceId = ReverseSafeString(info.InstanceId),
-                Name = ReverseSafeString(info.Name)
+                Name = ReverseSafeString(info.Name),
+                Duration = info.Duration
             };
             return item;
         }

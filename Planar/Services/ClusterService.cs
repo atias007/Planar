@@ -124,6 +124,7 @@ namespace Planar
                 Log = SafeString(j.Log),
                 InstanceId = SafeString(j.InstanceId),
                 Name = SafeString(j.Name),
+                Duration = j.Duration
             });
 
             result.RunningJobs.AddRange(items);
