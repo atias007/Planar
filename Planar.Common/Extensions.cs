@@ -21,6 +21,55 @@ namespace Planar.Common
             return dictionary == null || !dictionary.ContainsKey(key);
         }
 
+        public static bool NotContainsKey<TValue>(this Dictionary<string, TValue> dictionary, string key, bool ignoreCase)
+        {
+            if (dictionary == null) { return true; }
+            if (string.IsNullOrEmpty(key)) { return true; }
+
+            if (ignoreCase)
+            {
+                return !dictionary.Keys.Any(k => k.ToLower() == key.ToLower());
+            }
+            else
+            {
+                return !dictionary.ContainsKey(key);
+            }
+        }
+
+        public static TValue Get<TValue>(this Dictionary<string, TValue> dictionary, string key, bool ignoreCase)
+        {
+            if (key == null)
+            {
+                throw new ArgumentNullException(nameof(key));
+            }
+
+            if (ignoreCase)
+            {
+                var thekey = dictionary.Keys.FirstOrDefault(k => k.ToLower() == key.ToLower());
+                return dictionary[thekey];
+            }
+            else
+            {
+                return dictionary[key];
+            }
+        }
+
+        public static bool ContainsKey<TValue>(this Dictionary<string, TValue> dictionary, string key, bool ignoreCase)
+        {
+            if (dictionary == null) { return false; }
+            if (string.IsNullOrEmpty(key)) { return false; }
+
+            if (ignoreCase)
+            {
+                var result = dictionary.Keys.Any(k => k.ToLower() == key.ToLower());
+                return result;
+            }
+            else
+            {
+                return dictionary.ContainsKey(key);
+            }
+        }
+
         public static Dictionary<string, string> Merge(this Dictionary<string, string> source, Dictionary<string, string> target)
         {
             if (target == null) return source;

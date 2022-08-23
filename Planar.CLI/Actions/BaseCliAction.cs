@@ -13,6 +13,8 @@ namespace Planar.CLI.Actions
 {
     public class BaseCliAction
     {
+        protected const string JobFileName = "JobFile.yml";
+
         protected static async Task<CliActionResponse> Execute(RestRequest request)
         {
             var result = await RestProxy.Invoke(request);

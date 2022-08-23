@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar.Common;
+using Planar.Service.Exceptions;
 using Planar.Service.Monitor;
 using System;
 using System.Collections.Generic;
@@ -71,6 +72,51 @@ namespace Planar.Service.General
                 {
                     assemblyContext.Unload();
                 }
+            }
+        }
+
+        public static string GetJobFolder(string folder)
+        {
+            var path = Path.Combine(FolderConsts.BasePath, FolderConsts.Data, FolderConsts.Jobs, folder);
+            return path;
+        }
+
+        public static string GetJobFilename(string folder, string filename)
+        {
+            var path = GetJobFolder(folder);
+            var fullname = Path.Combine(path, filename);
+            return fullname;
+        }
+
+        public static bool IsJobFolderExists(string folder)
+        {
+            var path = GetJobFolder(folder);
+            var result = Directory.Exists(path);
+            return result;
+        }
+
+        public static bool IsJobFileExists(string folder, string filename)
+        {
+            var fullname = GetJobFilename(folder, filename);
+            var result = File.Exists(fullname);
+            return result;
+        }
+
+        public static void ValidateJobFolderExists(string folder)
+        {
+            if (!IsJobFolderExists(folder))
+            {
+                var path = GetJobFolder(folder);
+                throw new PlanarException($"folder {path} is not exists. (node {Environment.MachineName})");
+            }
+        }
+
+        public static void ValidateJobFileExists(string folder, string filename)
+        {
+            if (!IsJobFileExists(folder, filename))
+            {
+                var path = GetJobFolder(folder);
+                throw new PlanarException($"folder {path} does not have {FolderConsts.JobFileName} filename. (node {Environment.MachineName})");
             }
         }
     }

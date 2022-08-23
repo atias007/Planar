@@ -158,9 +158,9 @@ namespace Planar.Service.API
             var details = await Scheduler.GetJobDetail(jobkey);
 
             var properties = GetJobProperties(details);
-            if (properties.NotContainsKey("jobPath")) { return result; }
+            if (properties.NotContainsKey("JobPath", ignoreCase: true)) { return result; }
 
-            var jobPath = properties["jobPath"];
+            var jobPath = properties.Get("JobPath", ignoreCase: true);
             var settings = JobSettingsLoader.LoadJobSettings(jobPath);
             return settings;
         }

@@ -13,5 +13,10 @@ namespace Planar.Service.Validation
         {
             return ruleBuilder.Must(v => ValidationUtil.IsJobExists(v)).WithMessage("'{PropertyName}' field with value '{PropertyValue}' does not exist");
         }
+
+        public static IRuleBuilderOptions<T, string> Path<T>(this IRuleBuilder<T, string> ruleBuilder)
+        {
+            return ruleBuilder.Must(v => ValidationUtil.IsPath(v)).WithMessage("'{PropertyName}' field with value '{PropertyValue}' is not valid path");
+        }
     }
 }

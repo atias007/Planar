@@ -105,7 +105,7 @@ namespace Planar.CLI.Actions
         [Action("add")]
         public static async Task<CliActionResponse> UpsertTrigger(CliAddTriggerRequest request)
         {
-            if (request.Filename == ".") { request.Filename = "JobFile.yml"; }
+            if (request.Filename == ".") { request.Filename = JobFileName; }
             var yml = File.ReadAllText(request.Filename);
             var prm = GetAddTriggerRequest(yml);
             prm.Id = request.Id;

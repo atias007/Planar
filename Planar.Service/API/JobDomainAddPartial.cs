@@ -13,6 +13,8 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace Planar.Service.API
 {
@@ -28,10 +30,7 @@ namespace Planar.Service.API
 
         public async Task<JobIdResponse> Add(AddJobRequest request)
         {
-            if (request == null)
-            {
-                throw new RestValidationException("yaml", "fail to read yml data");
-            }
+            await ValidateAdd(request);
 
             var jobKey = await ValidateJobMetadata(request);
             await BuildGlobalParameters(request.GlobalParameters);
@@ -52,6 +51,104 @@ namespace Planar.Service.API
             var id = BuildJobData(request, job);
             await BuildTriggers(Scheduler, job, request);
             return new JobIdResponse { Id = id };
+        }
+
+        public async Task<JobIdResponse> AddFolder(AddJobFoldeRequest request)
+        {
+            await ValidateAddFolder(request);
+
+            string yml;
+            var filename = ServiceUtil.GetJobFilename(request.Folder, FolderConsts.JobFileName);
+            try
+            {
+                yml = File.ReadAllText(filename);
+            }
+            catch (Exception ex)
+            {
+                throw new RestGeneralException($"Fail to read file: {filename}", ex);
+            }
+
+            AddJobRequest subrequest;
+            try
+            {
+                var deserializer = new DeserializerBuilder()
+                            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                            .Build();
+
+                subrequest = deserializer.Deserialize<AddJobRequest>(yml);
+            }
+            catch (Exception ex)
+            {
+                throw new RestGeneralException($"Fail to deserialize file: {filename}", ex);
+            }
+
+            var response = await Add(subrequest);
+            return response;
+        }
+
+        private async Task ValidateAdd(AddJobRequest request)
+        {
+            if (request == null)
+            {
+                throw new RestValidationException("request", "request is null");
+            }
+
+            if (request.Properties.ContainsKey("JobPath", ignoreCase: true))
+            {
+                var path = request.Properties.Get("JobPath", ignoreCase: true);
+
+                try
+                {
+                    ServiceUtil.ValidateJobFolderExists(path);
+                    await new ClusterUtil(DataLayer, Logger).ValidateJobFolderExists(path);
+                }
+                catch (PlanarException ex)
+                {
+                    throw new RestValidationException("folder", ex.Message);
+                }
+
+                if (request.Properties.ContainsKey("Filename", ignoreCase: true))
+                {
+                    try
+                    {
+                        var filename = request.Properties.Get("FileName", ignoreCase: true);
+                        ServiceUtil.ValidateJobFileExists(path, filename);
+                        await new ClusterUtil(DataLayer, Logger).ValidateJobFileExists(path, filename);
+                    }
+                    catch (PlanarException ex)
+                    {
+                        throw new RestValidationException("filename", ex.Message);
+                    }
+                }
+            }
+        }
+
+        private async Task ValidateAddFolder(AddJobFoldeRequest request)
+        {
+            if (request == null)
+            {
+                throw new RestValidationException("request", "request is null");
+            }
+
+            try
+            {
+                ServiceUtil.ValidateJobFolderExists(request.Folder);
+                await new ClusterUtil(DataLayer, Logger).ValidateJobFolderExists(request.Folder);
+            }
+            catch (PlanarException ex)
+            {
+                throw new RestValidationException("folder", ex.Message);
+            }
+
+            try
+            {
+                ServiceUtil.ValidateJobFileExists(request.Folder, FolderConsts.JobFileName);
+                await new ClusterUtil(DataLayer, Logger).ValidateJobFileExists(request.Folder, FolderConsts.JobFileName);
+            }
+            catch (PlanarException ex)
+            {
+                throw new RestValidationException("folder", ex.Message);
+            }
         }
 
         private static async Task BuildTriggers(IScheduler scheduler, IJobDetail quartzJob, AddJobRequest job)

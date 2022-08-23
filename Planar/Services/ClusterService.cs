@@ -112,6 +112,7 @@ namespace Planar
             return new StopRunningJobReply { IsStopped = result };
         }
 
+        // OK
         public override async Task<PersistanceRunningJobInfoReply> GetPersistanceRunningJobInfo(Empty request, ServerCallContext context)
         {
             var result = new PersistanceRunningJobInfoReply();
@@ -127,6 +128,28 @@ namespace Planar
 
             result.RunningJobs.AddRange(items);
             return result;
+        }
+
+        public override async Task<IsJobAssestsExistReply> IsJobFolderExist(IsJobAssestsExistRequest request, ServerCallContext context)
+        {
+            var result = new IsJobAssestsExistReply
+            {
+                Exists = ServiceUtil.IsJobFolderExists(request.Folder),
+                Path = ServiceUtil.GetJobFolder(request.Folder)
+            };
+
+            return await Task.FromResult(result);
+        }
+
+        public override async Task<IsJobAssestsExistReply> IsJobFileExist(IsJobAssestsExistRequest request, ServerCallContext context)
+        {
+            var result = new IsJobAssestsExistReply
+            {
+                Exists = ServiceUtil.IsJobFileExists(request.Folder, request.Filename),
+                Path = ServiceUtil.GetJobFolder(request.Folder)
+            };
+
+            return await Task.FromResult(result);
         }
 
         private static void ValidateRequest(object request)

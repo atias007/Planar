@@ -11,6 +11,7 @@ using Polly;
 using Quartz;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -57,6 +58,56 @@ namespace Planar.Service.General
             }
 
             return result;
+        }
+
+        public async Task ValidateJobFolderExists(string folder)
+        {
+            var nodes = await GetAllNodes();
+            foreach (var node in nodes)
+            {
+                if (node.IsCurrentNode) { continue; }
+
+                try
+                {
+                    var result = await Policy.Handle<RpcException>()
+                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                        .ExecuteAsync(() => CallIsJobFolderExistsService(node, folder));
+
+                    if (!result.Exists)
+                    {
+                        throw new PlanarException($"folder {result.Path} is not exists. (node {Environment.MachineName})");
+                    }
+                }
+                catch (RpcException ex)
+                {
+                    _logger.LogError(ex, "Fail to validate job folder exists at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                }
+            }
+        }
+
+        public async Task ValidateJobFileExists(string folder, string filename)
+        {
+            var nodes = await GetAllNodes();
+            foreach (var node in nodes)
+            {
+                if (node.IsCurrentNode) { continue; }
+
+                try
+                {
+                    var result = await Policy.Handle<RpcException>()
+                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                        .ExecuteAsync(() => CallIsJobFileExistsService(node, folder, filename));
+
+                    if (!result.Exists)
+                    {
+                        throw new PlanarException($"folder {result.Path} does not have {filename} filename. (node {Environment.MachineName})");
+                    }
+                }
+                catch (RpcException ex)
+                {
+                    _logger.LogError(ex, "Fail to validate job folder exists at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                }
+            }
         }
 
         public async Task HealthCheckWithUpdate()
@@ -400,6 +451,22 @@ namespace Planar.Service.General
         {
             var client = GetClient(node); ;
             await client.StopSchedulerAsync(new Empty(), deadline: GrpcDeadLine);
+        }
+
+        private static async Task<IsJobAssestsExistReply> CallIsJobFolderExistsService(ClusterNode node, string folder)
+        {
+            var client = GetClient(node); ;
+            var request = new IsJobAssestsExistRequest { Folder = folder };
+            var result = await client.IsJobFolderExistAsync(request, deadline: GrpcDeadLine);
+            return result;
+        }
+
+        private static async Task<IsJobAssestsExistReply> CallIsJobFileExistsService(ClusterNode node, string folder, string filename)
+        {
+            var client = GetClient(node); ;
+            var request = new IsJobAssestsExistRequest { Folder = folder, Filename = filename };
+            var result = await client.IsJobFileExistAsync(request, deadline: GrpcDeadLine);
+            return result;
         }
 
         private static async Task CallStartSchedulerService(ClusterNode node)
