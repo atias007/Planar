@@ -42,6 +42,7 @@ namespace RunPlanarJob
                 {
                     type = assembly.GetTypes().FirstOrDefault(t => t.FullName == TypeName);
                 }
+
                 Validate(type);
 
                 var method = type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance);

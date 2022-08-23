@@ -93,9 +93,9 @@ namespace Planar.Service.API
                 throw new RestValidationException("request", "request is null");
             }
 
-            if (request.Properties.ContainsKey("jobPath"))
+            if (request.Properties.ContainsKey("JobPath", ignoreCase: true))
             {
-                var path = request.Properties["jobPath"];
+                var path = request.Properties.Get("JobPath", ignoreCase: true);
 
                 try
                 {
@@ -107,11 +107,11 @@ namespace Planar.Service.API
                     throw new RestValidationException("folder", ex.Message);
                 }
 
-                if (request.Properties.ContainsKey("fileName"))
+                if (request.Properties.ContainsKey("Filename", ignoreCase: true))
                 {
                     try
                     {
-                        var filename = request.Properties["fileName"];
+                        var filename = request.Properties.Get("FileName", ignoreCase: true);
                         ServiceUtil.ValidateJobFileExists(path, filename);
                         await new ClusterUtil(DataLayer, Logger).ValidateJobFileExists(path, filename);
                     }
