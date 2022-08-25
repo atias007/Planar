@@ -37,15 +37,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.API.Common", "Planar
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Job", "Planar.Job\Planar.Job.csproj", "{C786A9DF-6325-451F-94DC-141F62AE6DCE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.MonitorHook", "Planar.MonitorHook\Planar.MonitorHook.csproj", "{05F951DD-BD8C-4D4D-AE76-01F920A02680}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.MonitorHook", "MonitorHooks\Planar.MonitorHook\Planar.MonitorHook.csproj", "{05F951DD-BD8C-4D4D-AE76-01F920A02680}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Job.Test", "Planar.Job.Test\Planar.Job.Test.csproj", "{2D7C6E55-016D-4C43-8CD8-56CC50B22CE3}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MonitorHooks", "MonitorHooks", "{54DA8D37-F640-4C45-910E-8074F4D30FEE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.HttpMonitorHook", "Planar.HttpMonitorHook\Planar.HttpMonitorHook.csproj", "{20B4B3DD-D4C6-4EE6-96D3-9E95CABFAA5B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.HttpMonitorHook", "MonitorHooks\Planar.HttpMonitorHook\Planar.HttpMonitorHook.csproj", "{20B4B3DD-D4C6-4EE6-96D3-9E95CABFAA5B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.TeamsMonitorHook", "Planar.TeamsMonitorHook\Planar.TeamsMonitorHook.csproj", "{C6A913AE-C44C-4DA9-B431-ABACA4B135B8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.TeamsMonitorHook", "MonitorHooks\Planar.TeamsMonitorHook\Planar.TeamsMonitorHook.csproj", "{C6A913AE-C44C-4DA9-B431-ABACA4B135B8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestAggEx", "Test\TestAggEx\TestAggEx.csproj", "{8E25D607-7B89-4869-96EE-EE263453FA3E}"
 EndProject
@@ -57,9 +57,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar", "Planar\Planar.csp
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Calendars", "Calendars", "{28C597B0-F8FA-4631-84B9-3E9A7F32ACB6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Calendar", "Planar.Calendar\Planar.Calendar.csproj", "{F8BA95CB-20DD-4B98-9B7E-C63B20AE825B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Calendar", "Calendars\Planar.Calendar\Planar.Calendar.csproj", "{F8BA95CB-20DD-4B98-9B7E-C63B20AE825B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Calendar.Hebrew", "Planar.Calendar.Hebrew\Planar.Calendar.Hebrew.csproj", "{0592511E-2150-4A3E-9DA2-B708B7BDB740}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Calendar.Hebrew", "Calendars\Planar.Calendar.Hebrew\Planar.Calendar.Hebrew.csproj", "{0592511E-2150-4A3E-9DA2-B708B7BDB740}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BankOfIsraelCurrency", "Test\BankOfIsraelCurrency\BankOfIsraelCurrency.csproj", "{CAD732CD-8573-4366-BE67-B931533FAB9F}"
 EndProject

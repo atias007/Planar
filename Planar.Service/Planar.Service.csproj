@@ -67,7 +67,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Jobs\RunPlanarJob\RunPlanarJob.csproj" />
     <ProjectReference Include="..\Planar.API.Common\Planar.API.Common.csproj" />
-    <ProjectReference Include="..\Planar.Calendar.Hebrew\Planar.Calendar.Hebrew.csproj" />
+    <ProjectReference Include="..\Calendars\Planar.Calendar.Hebrew\Planar.Calendar.Hebrew.csproj" />
     <ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
   </ItemGroup>
 
