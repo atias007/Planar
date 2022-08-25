@@ -5,7 +5,6 @@ using Planar;
 using RestSharp;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -24,9 +23,7 @@ namespace BankOfIsraelCurrency
         public override async Task ExecuteJob(IJobExecutionContext context)
         {
             //// Execute Job ////
-            var t1 = SaveCurrency();
-            var t2 = SaveCurrencyV2();
-            await Task.WhenAll(t1, t2);
+            await SaveCurrency();
         }
 
         public override void RegisterServices(IServiceCollection services)
@@ -36,22 +33,7 @@ namespace BankOfIsraelCurrency
 
         #endregion Planar Methods
 
-        private static async Task SaveCurrency()
-        {
-            var client = new RestClient("https://www.boi.org.il");
-            var request = new RestRequest("currency.xml", Method.Get);
-            var response = await client.ExecuteAsync<CURRENCIES>(request);
-            if (response.IsSuccessful)
-            {
-                await File.WriteAllTextAsync(@$"c:\temp\CURRENCIES_{DateTime.Now:ddMMyyyyHHmmss}.xml", response.Content);
-            }
-            else
-            {
-                throw new ApplicationException($"Requst to bank of israel return error. StatusCode: {response.StatusCode}");
-            }
-        }
-
-        private async Task SaveCurrencyV2()
+        private async Task SaveCurrency()
         {
             var client = new RestClient("https://www.boi.org.il");
             var request = new RestRequest("currency.xml", Method.Get);
