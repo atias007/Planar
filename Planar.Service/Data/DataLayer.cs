@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
+using Planar.Service.General.Hash;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using Quartz;
@@ -368,16 +369,6 @@ namespace Planar.Service.Data
         {
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
-        }
-
-        public async Task<string> GetPassword(int id)
-        {
-            var result = await _context.Users
-                .Where(u => u.Id == id)
-                .Select(u => u.Password)
-                .FirstOrDefaultAsync();
-
-            return result;
         }
 
         public async Task<List<UserRow>> GetUsers()

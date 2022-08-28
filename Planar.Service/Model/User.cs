@@ -20,9 +20,12 @@ namespace Planar.Service.Model
         [Unicode(false)]
         public string Username { get; set; }
         [Required]
-        [StringLength(12)]
-        [Unicode(false)]
-        public string Password { get; set; }
+        [MaxLength(128)]
+        public byte[] Password { get; set; }
+        [Required]
+        [MaxLength(128)]
+        public byte[] Salt { get; set; }
+        public int Role { get; set; }
         [Required]
         [StringLength(50)]
         public string FirstName { get; set; }

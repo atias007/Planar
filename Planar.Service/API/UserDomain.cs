@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.Exceptions;
+using Planar.Service.General.Hash;
 using Planar.Service.General.Password;
 using Planar.Service.Model;
 using Planar.Service.Validation;
@@ -21,14 +22,7 @@ namespace Planar.Service.API
 
         public async Task<AddUserResponse> Add(AddUserRequest request)
         {
-            var password = PasswordGenerator.GeneratePassword(
-               new PasswordGeneratorBuilder()
-               .IncludeLowercase()
-               .IncludeNumeric()
-               .IncludeSpecial()
-               .IncludeUppercase()
-               .WithLength(12)
-               .Build());
+            var hash = GeneratePassword();
 
             var user = new User
             {
@@ -37,7 +31,8 @@ namespace Planar.Service.API
                 FirstName = request.FirstName,
                 LastName = request.LastName,
                 PhoneNumber1 = request.PhoneNumber,
-                Password = password
+                Password = hash.Hash,
+                Salt = hash.Salt
             };
 
             await new UserValidator().ValidateAndThrowAsync(user);
@@ -45,7 +40,7 @@ namespace Planar.Service.API
             var response = new AddUserResponse
             {
                 Id = result.Id,
-                Password = result.Password
+                Password = hash.Value
             };
 
             return response;
@@ -91,10 +86,29 @@ namespace Planar.Service.API
             await DataLayer.UpdateUser(existsUser);
         }
 
-        public async Task<string> GetPassword(int id)
+        public async Task<string> ResetPassword(int id)
         {
-            var password = await DataLayer.GetPassword(id);
-            return password;
+            var existsUser = await DataLayer.GetUser(id);
+            ValidateExistingEntity(existsUser);
+            var hash = GeneratePassword();
+            existsUser.Password = hash.Hash;
+            existsUser.Salt = hash.Salt;
+            return hash.Value;
+        }
+
+        private static HashEntity GeneratePassword()
+        {
+            var password = PasswordGenerator.GeneratePassword(
+               new PasswordGeneratorBuilder()
+               .IncludeLowercase()
+               .IncludeNumeric()
+               .IncludeSpecial()
+               .IncludeUppercase()
+               .WithLength(12)
+               .Build());
+
+            var hash = HashUtil.CreateHash(password);
+            return hash;
         }
     }
 }

@@ -9,6 +9,18 @@ namespace Planar.CLI
 {
     public static class CliTableExtensions
     {
+        public static Table GetTable(AddUserResponse response)
+        {
+            var table = new Table();
+            if (response == null) { return table; }
+            table.AddColumns("User Id", "Password");
+            table.AddRow(response.Id.ToString(), $"{response.Password}".EscapeMarkup());
+            table.AddRow(string.Empty, string.Empty);
+            table.AddRow(string.Empty, $"{CliTableFormat.WarningColor} Warning - Make sure you copy the above password now.[/]");
+            table.AddRow(string.Empty, $"{CliTableFormat.WarningColor} We don't store it and you will not be able to see it again.[/]");
+            return table;
+        }
+
         public static Table GetTable(List<JobRowDetails> response)
         {
             var table = new Table();
