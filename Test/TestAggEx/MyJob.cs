@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Planar;
+using Planar.Job;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,7 +23,7 @@ namespace TestAggEx
                 {
                     if (i % 3 == 0)
                     {
-                        throw new ApplicationException($"This is my ex with id {i}");
+                        throw new PlanarJobException($"This is my ex with id {i}");
                     }
                     IncreaseEffectedRows();
                 }

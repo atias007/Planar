@@ -8,9 +8,10 @@ using System.Collections.Generic;
 namespace Planar.Calendar.Hebrew
 {
     [Serializable]
-    public class HebrewCalendar : BaseCalendar<HebrewCalendar>
+    public class HebrewCalendar : PlanarBaseCalendar
     {
         private static HebrewCalendarSettings _settings;
+        private static readonly object Locker = new();
         private readonly Dictionary<long, bool> _cache = new();
 
         public HebrewCalendar(ILogger logger) : base(logger)
@@ -18,6 +19,19 @@ namespace Planar.Calendar.Hebrew
             if (_settings == null)
             {
                 _settings = LoadSettings<HebrewCalendarSettings>();
+            }
+        }
+
+        public HebrewCalendarSettings Settings
+        {
+            get
+            {
+                lock (Locker)
+                {
+                    _settings ??= LoadSettings<HebrewCalendarSettings>();
+
+                    return _settings;
+                }
             }
         }
 
@@ -138,13 +152,10 @@ namespace Planar.Calendar.Hebrew
 
         protected override void SerializeFields(JsonWriter writer, HebrewCalendar calendar)
         {
-            //writer.WritePropertyName("SomeCustomProperty");
-            //writer.WriteValue(calendar.SomeCustomProperty);
         }
 
         protected override void DeserializeFields(HebrewCalendar calendar, JObject source)
         {
-            //calendar.SomeCustomProperty = source["SomeCustomProperty"]!.Value<bool>();
         }
     }
 }

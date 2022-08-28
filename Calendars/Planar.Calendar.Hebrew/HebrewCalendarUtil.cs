@@ -88,7 +88,7 @@ namespace Planar.Calendar.Hebrew
 
     #region Util
 
-    public class HebrewEvent
+    public static class HebrewEvent
     {
         /// <summary>
         /// Gets event by type.
@@ -98,27 +98,6 @@ namespace Planar.Calendar.Hebrew
         public static HebrewEventInfo GetEvent(HebrewEventType eventType)
         {
             return GetEvent(eventType, DateTime.Now.Year);
-        }
-
-        /// <summary>
-        /// Gets the close event by type.
-        /// </summary>
-        /// <param name="eventType">Type of the event.</param>
-        /// <returns></returns>
-        public static HebrewEventInfo GetCloseEvent(HebrewEventType eventType)
-        {
-            var startDate = DateTime.Now;
-            HebrewEventInfo info;
-
-            do
-            {
-                info = new HebrewEventInfo(startDate);
-                if (info.IsEvent && info.EventType == eventType)
-                {
-                    return info;
-                }
-                startDate = startDate.AddDays(1);
-            } while (true);
         }
 
         /// <summary>
@@ -141,6 +120,27 @@ namespace Planar.Calendar.Hebrew
             }
 
             return null;
+        }
+
+        /// <summary>
+        /// Gets the close event by type.
+        /// </summary>
+        /// <param name="eventType">Type of the event.</param>
+        /// <returns></returns>
+        public static HebrewEventInfo GetCloseEvent(HebrewEventType eventType)
+        {
+            var startDate = DateTime.Now;
+            HebrewEventInfo info;
+
+            do
+            {
+                info = new HebrewEventInfo(startDate);
+                if (info.IsEvent && info.EventType == eventType)
+                {
+                    return info;
+                }
+                startDate = startDate.AddDays(1);
+            } while (true);
         }
 
         /// <summary>
@@ -188,7 +188,7 @@ namespace Planar.Calendar.Hebrew
         /// <returns></returns>
         public static IEnumerable<HebrewEventInfo> GetEvents(HebrewEventFilter filter)
         {
-            if (filter.Year == null) filter.Year = DateTime.Now.Year;
+            filter.Year ??= DateTime.Now.Year;
 
             var result = new List<HebrewEventInfo>();
             var startDate = new DateTime(filter.Year.Value, filter.Month ?? 1, 1);
@@ -626,7 +626,7 @@ namespace Planar.Calendar.Hebrew
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    throw new ArgumentOutOfRangeException(nameof(EventType));
             }
         }
 
@@ -1181,7 +1181,7 @@ namespace Planar.Calendar.Hebrew
                     throw new ArgumentException("Year can not be null or empty");
 
                 const string val = "א' תשרי ";
-                if (!value.Contains("\"") && value.Length > 1)
+                if (!value.Contains('"') && value.Length > 1)
                 {
                     value = val[..(value.Length - 1)] + "\"" + value[^1];
                 }

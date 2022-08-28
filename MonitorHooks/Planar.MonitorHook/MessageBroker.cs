@@ -20,7 +20,7 @@ namespace Planar.MonitorHook
 
             if (_method == null)
             {
-                throw new ApplicationException("MessageBroker does not contains 'Publish' method");
+                throw new PlanarMonitorException("MessageBroker does not contains 'Publish' method");
             }
 
             Details = GetProperty<string>(type, nameof(Details));
@@ -46,7 +46,7 @@ namespace Planar.MonitorHook
             var prop = type.GetProperty(name);
             if (prop == null)
             {
-                throw new ApplicationException($"MessageBroker does not contains '{name}' property");
+                throw new PlanarMonitorException($"MessageBroker does not contains '{name}' property");
             }
 
             var value = prop.GetValue(Instance);

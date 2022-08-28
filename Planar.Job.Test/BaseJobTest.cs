@@ -91,7 +91,7 @@ namespace Planar.Job.Test
             var propInfo = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
             foreach (var item in context.MergedJobDataMap)
             {
-                if (item.Key.StartsWith("__") == false)
+                if (!item.Key.StartsWith("__"))
                 {
                     var p = propInfo.FirstOrDefault(p => p.Name == item.Key);
                     if (p != null)

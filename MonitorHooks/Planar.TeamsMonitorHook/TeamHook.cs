@@ -14,7 +14,7 @@ namespace Planar.TeamsMonitorHook
         public override async Task Handle(IMonitorDetails monitorDetails)
         {
             var valid = ValidateGroup(monitorDetails.Group);
-            if (valid == false) { return; }
+            if (!valid) { return; }
 
             var message = GetMessageText(monitorDetails);
             await SendMessageToChannel(monitorDetails.Group.Reference1, message);
@@ -43,7 +43,7 @@ namespace Planar.TeamsMonitorHook
                 request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
 
                 var response = await httpClient.SendAsync(request);
-                if (response.IsSuccessStatusCode == false)
+                if (!response.IsSuccessStatusCode)
                 {
                     LogError(null, "Send message to url '{Url}' fail with status code {StatusCode}", url, response.StatusCode);
                 }

@@ -116,7 +116,7 @@ namespace CommonJob
                 var propInfo = targetType.GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
                 foreach (var item in context.MergedJobDataMap)
                 {
-                    if (item.Key.StartsWith("__") == false)
+                    if (!item.Key.StartsWith("__"))
                     {
                         var p = propInfo.FirstOrDefault(p => p.Name == item.Key);
                         if (p != null)
@@ -146,7 +146,7 @@ namespace CommonJob
         {
             try
             {
-                if (string.IsNullOrEmpty(JobPath)) return null;
+                if (string.IsNullOrEmpty(JobPath)) return new Dictionary<string, string>();
                 var jobSettings = JobSettingsLoader.LoadJobSettings(JobPath);
                 return jobSettings;
             }
@@ -160,10 +160,10 @@ namespace CommonJob
 
         protected void ValidateMandatoryString(string value, string propertyName)
         {
-            if (string.IsNullOrEmpty(value) == false) { value = value.Trim(); }
+            if (!string.IsNullOrEmpty(value)) { value = value.Trim(); }
             if (string.IsNullOrEmpty(value))
             {
-                throw new ApplicationException($"Property '{propertyName}' is mandatory for job '{GetType().FullName}'");
+                throw new PlanarJobException($"Property '{propertyName}' is mandatory for job '{GetType().FullName}'");
             }
         }
 

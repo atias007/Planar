@@ -2,10 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using Planar.Job;
 using System.Threading.Tasks;
 
 namespace RetryDemoJob
@@ -19,7 +16,7 @@ namespace RetryDemoJob
         public override Task ExecuteJob(IJobExecutionContext context)
         {
             Logger.LogInformation("Lets throw some exception and check for retry...");
-            throw new ApplicationException("This is some test exception");
+            throw new PlanarJobException("This is some test exception");
         }
 
         public override void RegisterServices(IServiceCollection services)

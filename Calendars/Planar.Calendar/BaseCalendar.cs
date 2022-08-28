@@ -6,11 +6,11 @@ using System.IO;
 
 namespace Planar.Calendar
 {
-    public abstract class BaseCalendar<T> : BaseCalendar
+    public abstract class PlanarBaseCalendar : BaseCalendar
     {
         private readonly ILogger _logger;
 
-        public BaseCalendar(ILogger logger)
+        protected PlanarBaseCalendar(ILogger logger)
         {
             _logger = logger;
         }
@@ -38,7 +38,7 @@ namespace Planar.Calendar
             else
             {
                 Logger.LogError("{Name} settings file '{Filename}' could not be found", name, filename);
-                throw new ApplicationException($"{name} settings file '{filename}' could not be found");
+                throw new PlanarCalendarException($"{name} settings file '{filename}' could not be found");
             }
         }
     }

@@ -18,13 +18,13 @@ namespace Planar.MonitorHook
             try
             {
                 monitorDetails = JsonConvert.DeserializeObject<MonitorDetails>(_messageBroker.Details);
-                if (string.IsNullOrEmpty(_messageBroker.Users) == false)
+                if (!string.IsNullOrEmpty(_messageBroker.Users))
                 {
                     var users = JsonConvert.DeserializeObject<List<User>>(_messageBroker.Users);
                     monitorDetails.Users = users;
                 }
 
-                if (string.IsNullOrEmpty(_messageBroker.Group) == false)
+                if (!string.IsNullOrEmpty(_messageBroker.Group))
                 {
                     var group = JsonConvert.DeserializeObject<Group>(_messageBroker.Group);
                     monitorDetails.Group = group;
@@ -32,7 +32,7 @@ namespace Planar.MonitorHook
             }
             catch (Exception ex)
             {
-                throw new ApplicationException("Fail to deserialize monitor details context at BaseMonitorHook.Execute(string)", ex);
+                throw new PlanarMonitorException("Fail to deserialize monitor details context at BaseMonitorHook.Execute(string)", ex);
             }
 
             return Handle(monitorDetails)

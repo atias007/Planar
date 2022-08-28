@@ -26,7 +26,7 @@ namespace CommonJob
         public string GetExceptionsText()
         {
             var exceptions = Exceptions;
-            if (exceptions == null || exceptions.Any() == false)
+            if (exceptions == null || !exceptions.Any())
             {
                 return null;
             }

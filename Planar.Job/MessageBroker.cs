@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Planar.Job;
+using System;
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
@@ -80,7 +81,7 @@ namespace Planar
             var prop = type.GetProperty(name);
             if (prop == null)
             {
-                throw new ApplicationException($"MessageBroker does not contains '{name}' property");
+                throw new PlanarJobException($"MessageBroker does not contains '{name}' property");
             }
 
             var value = prop.GetValue(Instance);
