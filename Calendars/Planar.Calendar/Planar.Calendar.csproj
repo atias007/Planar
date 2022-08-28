@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net6.0</TargetFramework>
@@ -13,13 +13,10 @@
 	<ItemGroup>
 		<Compile Include="..\..\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
 	</ItemGroup>
-	<ItemGroup>
-	  <ProjectReference Include="..\CommonJob\CommonJob.csproj" />
-	</ItemGroup>
 
 	<ItemGroup>
-		<None Update="JobFile.yml">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+		<PackageReference Include="Quartz" Version="3.4.0" />
 	</ItemGroup>
+
 </Project>

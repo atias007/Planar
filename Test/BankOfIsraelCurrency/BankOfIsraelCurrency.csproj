@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net5.0</TargetFramework>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
@@ -11,15 +12,19 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<Compile Include="..\..\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
+		<PackageReference Include="RestSharp" Version="108.0.1" />
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\CommonJob\CommonJob.csproj" />
+	  <ProjectReference Include="..\..\Planar.Job\Planar.Job.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<None Update="JobFile.yml">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
+		<None Update="JobSettings.yml">
+		  <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
 	</ItemGroup>
+
 </Project>

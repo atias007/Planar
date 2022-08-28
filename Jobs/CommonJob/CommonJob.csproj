@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net6.0</TargetFramework>
@@ -11,15 +11,17 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
+		<Compile Include="..\..\Planar.Common\Consts.cs" Link="Consts.cs" />
+		<Compile Include="..\..\Planar.Job\ExceptionDto.cs" Link="ExceptionDto.cs" />
+		<Compile Include="..\..\Planar.Job\Logger\LogEntity.cs" Link="LogEntity.cs" />
 		<Compile Include="..\..\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
-	</ItemGroup>
-	<ItemGroup>
-	  <ProjectReference Include="..\CommonJob\CommonJob.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Update="JobFile.yml">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\Planar.Common\Planar.Common.csproj" />
 	</ItemGroup>
 </Project>

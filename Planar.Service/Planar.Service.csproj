@@ -35,8 +35,8 @@
     <PackageReference Include="Dapper" Version="2.0.123" />
     <PackageReference Include="FluentValidation" Version="11.2.0" />
     <PackageReference Include="Google.Protobuf" Version="3.21.5" />
-    <PackageReference Include="Grpc.AspNetCore.Server" Version="2.47.0" />
-    <PackageReference Include="Grpc.Net.ClientFactory" Version="2.47.0" />
+    <PackageReference Include="Grpc.AspNetCore.Server" Version="2.48.0" />
+    <PackageReference Include="Grpc.Net.ClientFactory" Version="2.48.0" />
     <PackageReference Include="Grpc.Tools" Version="2.48.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -67,7 +67,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Jobs\RunPlanarJob\RunPlanarJob.csproj" />
     <ProjectReference Include="..\Planar.API.Common\Planar.API.Common.csproj" />
-    <ProjectReference Include="..\Planar.Calendar.Hebrew\Planar.Calendar.Hebrew.csproj" />
+    <ProjectReference Include="..\Calendars\Planar.Calendar.Hebrew\Planar.Calendar.Hebrew.csproj" />
     <ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
   </ItemGroup>
 

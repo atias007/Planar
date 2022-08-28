@@ -1,1 +1,0 @@
-sc create CustomsCloud.Planar binPath=C:\Workers\Planar\Planar.Service.exe start=auto
