@@ -1,0 +1,10 @@
+ALTER TABLE dbo.Groups ADD CONSTRAINT
+	FK_Groups_Roles FOREIGN KEY
+	(
+	RoleId
+	) REFERENCES dbo.Roles
+	(
+	Id
+	) ON UPDATE  NO ACTION 
+	 ON DELETE  NO ACTION 
+	

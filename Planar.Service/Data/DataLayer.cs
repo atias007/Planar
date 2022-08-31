@@ -355,6 +355,18 @@ namespace Planar.Service.Data
             return result;
         }
 
+        public async Task<User> GetUserByUsername(string username)
+        {
+            var result = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
+            return result;
+        }
+
+        public async Task<bool> IsUsernameExists(string username)
+        {
+            var result = await _context.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower());
+            return result;
+        }
+
         internal async Task<List<EntityTitle>> GetGroupsForUser(int id)
         {
             var result = await _context.Groups

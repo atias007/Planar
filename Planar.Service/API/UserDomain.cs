@@ -79,7 +79,7 @@ namespace Planar.Service.API
         public async Task Update(int id, UpdateEntityRecord request)
         {
             ValidateIdConflict(id, request.Id);
-            ValidateForbiddenUpdateProperties(request, "Id", "UsersToGroups", "Groups", "Password", "Salt");
+            ValidateForbiddenUpdateProperties(request, "Id", "UsersToGroups", "Groups", "Password", "Salt", "Username");
             var existsUser = await DataLayer.GetUser(request.Id);
             ValidateExistingEntity(existsUser);
             await UpdateEntity(existsUser, request, new UserValidator());
@@ -94,6 +94,12 @@ namespace Planar.Service.API
             existsUser.Password = hash.Hash;
             existsUser.Salt = hash.Salt;
             return hash.Value;
+        }
+
+        public async Task<bool> IsUsernameExists(string username)
+        {
+            var result = await DataLayer.IsUsernameExists(username);
+            return result;
         }
 
         private static HashEntity GeneratePassword()

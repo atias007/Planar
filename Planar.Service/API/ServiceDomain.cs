@@ -4,6 +4,7 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
+using Planar.Service.General.Hash;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -105,6 +106,20 @@ namespace Planar.Service.API
             {
                 await new ClusterUtil(DataLayer, Logger).StartScheduler();
             }
+        }
+
+        public async Task<string> Login(LoginRequest request)
+        {
+            var user = await DataLayer.GetUserByUsername(request.Username);
+            ValidateExistingEntity(user);
+
+            var verify = HashUtil.VerifyHash(request.Password, user.Password, user.Salt);
+            if (!verify)
+            {
+                throw new RestValidationException("password", "Wrong password");
+            }
+
+            return user.Id.ToString();
         }
     }
 }
