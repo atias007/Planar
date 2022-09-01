@@ -10,6 +10,11 @@ namespace Planar.Common
 {
     public static class AssemblyLoader
     {
+        private static List<string> ExcludedAssemblies = new List<string>
+        {
+            "Microsoft.Data.SqlClient.dll"
+        };
+
         public static Assembly LoadFromAssemblyPath(string assemblyFullPath, AssemblyLoadContext context = null)
         {
             var fileNameWithOutExtension = Path.GetFileNameWithoutExtension(assemblyFullPath);
@@ -41,9 +46,22 @@ namespace Planar.Common
         {
             if (context == null) { context = AssemblyLoadContext.Default; }
 
+            if (IsExcludedAssembly(filename))
+            {
+                return null;
+            }
+
             using var stream = File.OpenRead(filename);
             var result = context.LoadFromStream(stream);
-            // var result = AssemblyLoadContext.Default.LoadFromAssemblyPath(filename);
+
+            // var result = context.LoadFromAssemblyPath(filename);
+            return result;
+        }
+
+        private static bool IsExcludedAssembly(string filename)
+        {
+            var name = new FileInfo(filename).Name;
+            var result = ExcludedAssemblies.Any(a => string.Compare(name, a, true) == 0);
             return result;
         }
 

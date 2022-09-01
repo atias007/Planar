@@ -1,4 +1,4 @@
-﻿job type: RunPlanarJob
+﻿job type: PlanarJob
 name: some job name
 group: null or group name
 description: some job description
