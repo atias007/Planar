@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Planar.Service.Model
 {
+    [Index("Username", Name = "IX_Users", IsUnique = true)]
     public partial class User
     {
         public User()
@@ -20,9 +21,12 @@ namespace Planar.Service.Model
         [Unicode(false)]
         public string Username { get; set; }
         [Required]
-        [StringLength(12)]
-        [Unicode(false)]
-        public string Password { get; set; }
+        [MaxLength(128)]
+        public byte[] Password { get; set; }
+        [Required]
+        [MaxLength(128)]
+        public byte[] Salt { get; set; }
+        public int RoleId { get; set; }
         [Required]
         [StringLength(50)]
         public string FirstName { get; set; }

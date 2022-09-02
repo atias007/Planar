@@ -4,7 +4,6 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.List.Base;
-using Planar.Service.Monitor;
 using Quartz;
 using System;
 using System.Threading;
@@ -20,29 +19,27 @@ namespace Planar.Service.List
 
         public async Task JobExecutionVetoed(IJobExecutionContext context, CancellationToken cancellationToken = default)
         {
-            if (context.JobDetail.Key.Group == Consts.PlanarSystemGroup) { return; }
-
             try
             {
+                if (context.JobDetail.Key.Group == Consts.PlanarSystemGroup) { return; }
                 await DAL.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto);
             }
             catch (Exception ex)
             {
-                var source = nameof(JobExecutionVetoed);
-                Logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
+                SafeLog(nameof(JobExecutionVetoed), ex);
             }
             finally
             {
-                await MonitorUtil.Scan(MonitorEvents.ExecutionVetoed, context, null, cancellationToken);
+                await SafeScan(MonitorEvents.ExecutionVetoed, context, null, cancellationToken);
             }
         }
 
         public async Task JobToBeExecuted(IJobExecutionContext context, CancellationToken cancellationToken = default)
         {
-            if (context.JobDetail.Key.Group == Consts.PlanarSystemGroup) { return; }
-
             try
             {
+                if (context.JobDetail.Key.Group == Consts.PlanarSystemGroup) { return; }
+
                 string data = GetJobDataForLogging(context.MergedJobDataMap);
 
                 var log = new DbJobInstanceLog
@@ -77,25 +74,28 @@ namespace Planar.Service.List
             }
             catch (Exception ex)
             {
-                var source = nameof(JobToBeExecuted);
-
-                Logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
+                SafeLog(nameof(JobToBeExecuted), ex);
             }
             finally
             {
-                await MonitorUtil.Scan(MonitorEvents.ExecutionStart, context, null, cancellationToken);
+                await SafeScan(MonitorEvents.ExecutionStart, context, null, cancellationToken);
             }
         }
 
         public async Task JobWasExecuted(IJobExecutionContext context, JobExecutionException jobException, CancellationToken cancellationToken = default)
         {
-            if (context.JobDetail.Key.Group == Consts.PlanarSystemGroup) { return; }
+            Exception executionException = null;
 
             try
             {
+                if (context.JobDetail.Key.Group == Consts.PlanarSystemGroup) { return; }
+
+                var unhadleException = JobExecutionMetadata.GetInstance(context)?.UnhandleException;
+                executionException = unhadleException ?? jobException;
+
                 var duration = context.JobRunTime.TotalMilliseconds;
                 var endDate = context.FireTimeUtc.ToLocalTime().DateTime.Add(context.JobRunTime);
-                var status = jobException == null ? StatusMembers.Success : StatusMembers.Fail;
+                var status = executionException == null ? StatusMembers.Success : StatusMembers.Fail;
 
                 var metadata = context.Result as JobExecutionMetadata;
 
@@ -104,7 +104,7 @@ namespace Planar.Service.List
                     InstanceId = context.FireInstanceId,
                     Duration = Convert.ToInt32(duration),
                     EndDate = endDate,
-                    Exception = jobException?.ToString(),
+                    Exception = executionException?.ToString(),
                     EffectedRows = metadata?.EffectedRows,
                     Log = metadata?.Log.ToString(),
                     Status = (int)status,
@@ -116,32 +116,33 @@ namespace Planar.Service.List
             }
             catch (Exception ex)
             {
-                var source = nameof(JobWasExecuted);
-                Logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
+                SafeLog(nameof(JobWasExecuted), ex);
             }
             finally
             {
-                await MonitorJobWasExecuted(context, jobException, cancellationToken);
+                await SafeMonitorJobWasExecuted(context, executionException, cancellationToken);
             }
         }
 
-        private static async Task MonitorJobWasExecuted(IJobExecutionContext context, JobExecutionException jobException, CancellationToken cancellationToken)
+        private async Task SafeMonitorJobWasExecuted(IJobExecutionContext context, Exception exception, CancellationToken cancellationToken)
         {
-            await MonitorUtil.Scan(MonitorEvents.ExecutionEnd, context, jobException, cancellationToken);
+            await SafeScan(MonitorEvents.ExecutionEnd, context, exception, cancellationToken);
 
             var @event =
-                jobException == null ?
+                exception == null ?
                 MonitorEvents.ExecutionSuccess :
                 MonitorEvents.ExecutionFail;
 
-            await MonitorUtil.Scan(@event, context, jobException, cancellationToken);
+            await SafeScan(@event, context, exception, cancellationToken);
         }
 
         private static string GetJobDataForLogging(JobDataMap data)
         {
-            if (data.Count == 0) return null;
+            if (data?.Count == 0) { return null; }
 
             var items = Global.ConvertDataMapToDictionary(data);
+            if (items?.Count == 0) { return null; }
+
             var yml = new SerializerBuilder().Build().Serialize(items);
             return yml;
         }

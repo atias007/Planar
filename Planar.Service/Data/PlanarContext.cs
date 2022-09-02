@@ -22,6 +22,7 @@ namespace Planar.Service.Data
         public virtual DbSet<Group> Groups { get; set; }
         public virtual DbSet<JobInstanceLog> JobInstanceLogs { get; set; }
         public virtual DbSet<MonitorAction> MonitorActions { get; set; }
+        public virtual DbSet<Role> Roles { get; set; }
         public virtual DbSet<Trace> Traces { get; set; }
         public virtual DbSet<User> Users { get; set; }
 
@@ -30,6 +31,15 @@ namespace Planar.Service.Data
             modelBuilder.Entity<ClusterNode>(entity =>
             {
                 entity.HasKey(e => new { e.Server, e.Port });
+            });
+
+            modelBuilder.Entity<Group>(entity =>
+            {
+                entity.HasOne(d => d.Role)
+                    .WithMany(p => p.Groups)
+                    .HasForeignKey(d => d.RoleId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Groups_Roles");
             });
 
             modelBuilder.Entity<MonitorAction>(entity =>
@@ -41,6 +51,11 @@ namespace Planar.Service.Data
                     .HasForeignKey(d => d.GroupId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_MonitorActions_Groups");
+            });
+
+            modelBuilder.Entity<Role>(entity =>
+            {
+                entity.Property(e => e.Id).ValueGeneratedNever();
             });
 
             modelBuilder.Entity<User>(entity =>

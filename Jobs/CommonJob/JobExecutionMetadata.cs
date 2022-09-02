@@ -1,5 +1,6 @@
 ﻿using Planar;
 using Quartz;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -49,6 +50,11 @@ namespace CommonJob
 
             return sb.ToString();
         }
+
+        public Exception UnhandleException { get; set; }
+
+        public bool IsRunningFail => !IsRunningSuccess;
+        public bool IsRunningSuccess => UnhandleException == null;
 
         public static JobExecutionMetadata GetInstance(IJobExecutionContext context)
         {

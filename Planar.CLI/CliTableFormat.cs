@@ -6,9 +6,9 @@ namespace Planar.CLI
 {
     public static class CliTableFormat
     {
-        private const string WarningColor = "[khaki3]";
-        private const string OkColor = "[green]";
-        private const string ErrorColor = "[Red]";
+        internal const string WarningColor = "[khaki3]";
+        internal const string OkColor = "[green]";
+        internal const string ErrorColor = "[Red]";
 
         public static string FormatClusterHealthCheck(TimeSpan? span, TimeSpan? deviation)
         {

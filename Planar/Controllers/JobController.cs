@@ -22,14 +22,14 @@ namespace Planar.Controllers
         public async Task<ActionResult<JobIdResponse>> Add([FromBody] AddJobRequest request)
         {
             var result = await BusinesLayer.Add(request);
-            return CreatedAtAction(nameof(Get), result.Id, result);
+            return CreatedAtAction(nameof(Get), result, result);
         }
 
         [HttpPost("folder")]
         public async Task<ActionResult<JobIdResponse>> AddFolder([FromBody] AddJobFoldeRequest request)
         {
             var result = await BusinesLayer.AddFolder(request);
-            return CreatedAtAction(nameof(Get), result.Id, result);
+            return CreatedAtAction(nameof(Get), result, result);
         }
 
         [HttpGet]

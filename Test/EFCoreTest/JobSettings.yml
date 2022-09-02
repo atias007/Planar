@@ -1,0 +1,2 @@
+﻿Log Level: Information
+Connection String: "Password=CustomsDev123!;Persist Security Info=True;User ID=sa;Initial Catalog=Planar;Data Source=localhost;MultipleActiveResultSets=True"

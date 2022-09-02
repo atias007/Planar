@@ -30,7 +30,11 @@ namespace Planar.Service.Model
         public string Reference4 { get; set; }
         [StringLength(500)]
         public string Reference5 { get; set; }
+        public int RoleId { get; set; }
 
+        [ForeignKey("RoleId")]
+        [InverseProperty("Groups")]
+        public virtual Role Role { get; set; }
         [InverseProperty("Group")]
         public virtual ICollection<MonitorAction> MonitorActions { get; set; }
 

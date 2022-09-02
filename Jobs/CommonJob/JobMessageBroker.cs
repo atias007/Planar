@@ -122,7 +122,8 @@ namespace CommonJob
                     var data1 = Deserialize<KeyValueItem>(message);
                     lock (Locker)
                     {
-                        _context.JobDetail.JobDataMap.Put(data1.Key, data1.Value);
+                        var value = Convert.ToString(data1.Value);
+                        _context.JobDetail.JobDataMap.Put(data1.Key, value);
                     }
                     return null;
 
@@ -130,7 +131,8 @@ namespace CommonJob
                     var data2 = Deserialize<KeyValueItem>(message);
                     lock (Locker)
                     {
-                        _context.Trigger.JobDataMap.Put(data2.Key, data2.Value);
+                        var value = Convert.ToString(data2.Value);
+                        _context.Trigger.JobDataMap.Put(data2.Key, value);
                     }
                     return null;
 

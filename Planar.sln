@@ -67,6 +67,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LongRunningJob", "Test\Long
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RetryDemoJob", "Test\RetryDemoJob\RetryDemoJob.csproj", "{D869037A-1D3E-4B4F-9B21-5C9419929811}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EFCoreTest", "Test\EFCoreTest\EFCoreTest.csproj", "{34FB3E9E-0362-4C04-BB6B-4AF6314F047F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -161,6 +163,10 @@ Global
 		{D869037A-1D3E-4B4F-9B21-5C9419929811}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D869037A-1D3E-4B4F-9B21-5C9419929811}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D869037A-1D3E-4B4F-9B21-5C9419929811}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34FB3E9E-0362-4C04-BB6B-4AF6314F047F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34FB3E9E-0362-4C04-BB6B-4AF6314F047F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34FB3E9E-0362-4C04-BB6B-4AF6314F047F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34FB3E9E-0362-4C04-BB6B-4AF6314F047F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -180,6 +186,7 @@ Global
 		{CAD732CD-8573-4366-BE67-B931533FAB9F} = {E4B60197-60EA-4593-9085-37B34CD99CCD}
 		{F0DF5B6F-D2B9-45DD-B9D0-6AD3B8944C73} = {E4B60197-60EA-4593-9085-37B34CD99CCD}
 		{D869037A-1D3E-4B4F-9B21-5C9419929811} = {E4B60197-60EA-4593-9085-37B34CD99CCD}
+		{34FB3E9E-0362-4C04-BB6B-4AF6314F047F} = {E4B60197-60EA-4593-9085-37B34CD99CCD}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E379E82B-7E36-4F72-8191-C425A6FA97CD}

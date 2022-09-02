@@ -42,15 +42,13 @@ namespace RunPowerShellJob
                     metadata.Progress = value;
                 }
             }
-            catch (JobExecutionException ex)
+            catch (Exception ex)
             {
-                SetJobRunningProperty("Fail", true);
-                var jobEx = GetJobExecutingException(ex, context);
-                throw jobEx;
+                var metadata = JobExecutionMetadata.GetInstance(context);
+                metadata.UnhandleException = ex;
             }
             finally
             {
-                SetJobRunningProperty("Fail", true);
                 FinalizeJob(context);
             }
         }

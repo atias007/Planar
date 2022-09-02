@@ -53,10 +53,10 @@ namespace Planar.Controllers
             return NoContent();
         }
 
-        [HttpGet("{id}/password")]
-        public async Task<ActionResult<string>> GetPassword([FromRoute][Id] int id)
+        [HttpPatch("{id}/resetpassword")]
+        public async Task<ActionResult<string>> ResetPassword([FromRoute][Id] int id)
         {
-            var result = await BusinesLayer.GetPassword(id);
+            var result = await BusinesLayer.ResetPassword(id);
             return Ok(result);
         }
     }

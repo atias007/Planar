@@ -73,7 +73,7 @@ namespace Planar.Service.API
         public async Task UpdateGroup(int id, UpdateEntityRecord request)
         {
             ValidateIdConflict(id, request.Id);
-            ValidateForbiddenUpdateProperties(request, "Id", "MonitorActions", "UsersToGroups", "Users");
+            ValidateForbiddenUpdateProperties(request, "Id", "MonitorActions", "Users", "Role", "RoleId");
             var existsGroup = await DataLayer.GetGroup(id);
             ValidateExistingEntity(existsGroup);
             await UpdateEntity(existsGroup, request, new GroupValidator());

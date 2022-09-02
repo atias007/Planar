@@ -29,7 +29,16 @@ namespace Planar.Service.General
                         LogLevel.Fatal => Microsoft.Extensions.Logging.LogLevel.Critical,
                         _ => Microsoft.Extensions.Logging.LogLevel.Trace,
                     };
-                    _logger.Log(logLevel, string.Format(func(), parameters));
+
+                    var template = func();
+                    if (logLevel == Microsoft.Extensions.Logging.LogLevel.Error)
+                    {
+                        _logger.Log(logLevel, exception, template, parameters);
+                    }
+                    else
+                    {
+                        _logger.Log(logLevel, template, parameters);
+                    }
                 }
                 return true;
             };
@@ -37,12 +46,12 @@ namespace Planar.Service.General
 
         public IDisposable OpenNestedContext(string message)
         {
-            throw new NotImplementedException();
+            return null;
         }
 
         public IDisposable OpenMappedContext(string key, object value, bool destructure = false)
         {
-            throw new NotImplementedException();
+            return null;
         }
     }
 }

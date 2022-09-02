@@ -8,8 +8,7 @@ namespace Planar.Service.MapperProfiles
     {
         public UserDetailsProfile()
         {
-            CreateMap<User, UserDetails>()
-                .ForMember(t => t.Password, map => map.MapFrom(s => string.Empty.PadLeft(15, '*')));
+            CreateMap<User, UserDetails>();
         }
     }
 }

@@ -18,7 +18,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("user", Method.Post)
                 .AddBody(prm);
 
-            return await ExecuteEntity<AddUserResponse>(restRequest);
+            return await ExecuteTable<AddUserResponse>(restRequest, CliTableExtensions.GetTable);
         }
 
         [Action("get")]

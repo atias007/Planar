@@ -48,17 +48,17 @@ namespace Planar.Service.Monitor
             }
         }
 
-        internal static async Task Scan(MonitorEvents @event, IJobExecutionContext context, JobExecutionException jobException = default, CancellationToken cancellationToken = default)
+        internal static async Task Scan(MonitorEvents @event, IJobExecutionContext context, Exception exception = default, CancellationToken cancellationToken = default)
         {
             var task = Task.Run(() =>
             {
-                ScanAsync(@event, context, jobException, cancellationToken);
+                ScanAsync(@event, context, exception, cancellationToken);
             }, cancellationToken);
 
             await task;
         }
 
-        private static Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, JobExecutionException jobException)
+        private static Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception exception)
         {
             Task hookTask = null;
             try
@@ -73,7 +73,7 @@ namespace Planar.Service.Monitor
                     }
                     else
                     {
-                        var details = GetMonitorDetails(action, context, jobException);
+                        var details = GetMonitorDetails(action, context, exception);
                         var hookType = ServiceUtil.MonitorHooks[action.Hook]?.Type;
                         var logger = Global.GetLogger(hookType);
                         hookTask = hookInstance.Handle(details, _logger)
@@ -97,7 +97,7 @@ namespace Planar.Service.Monitor
             return hookTask;
         }
 
-        internal static void ScanAsync(MonitorEvents @event, IJobExecutionContext context, JobExecutionException jobException = default, CancellationToken cancellationToken = default)
+        internal static void ScanAsync(MonitorEvents @event, IJobExecutionContext context, Exception exception = default, CancellationToken cancellationToken = default)
         {
             if (context.JobDetail.Key.Group.StartsWith(Consts.PlanarSystemGroup))
             {
@@ -119,7 +119,7 @@ namespace Planar.Service.Monitor
 
             Parallel.ForEach(items, action =>
             {
-                var task = ExecuteMonitor(action, @event, context, jobException);
+                var task = ExecuteMonitor(action, @event, context, exception);
                 if (task != null)
                 {
                     hookTasks.Add(task);

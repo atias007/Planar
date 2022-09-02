@@ -8,7 +8,8 @@ namespace Planar.Service.MapperProfiles
     {
         public GroupDetailsProfile()
         {
-            CreateMap<Group, GroupDetails>();
+            CreateMap<Group, GroupDetails>()
+                .ForMember(t => t.Role, map => map.MapFrom(s => s.Role.Name));
         }
     }
 }

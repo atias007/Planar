@@ -1,0 +1,2 @@
+ALTER TABLE dbo.Groups ADD
+	RoleId int NOT NULL CONSTRAINT DF_Groups_RoleId DEFAULT 0

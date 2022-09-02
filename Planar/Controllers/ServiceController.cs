@@ -57,5 +57,12 @@ namespace Planar.Controllers
             await BusinesLayer.StartScheduler();
             return Ok();
         }
+
+        [HttpPost("login")]
+        public async Task<ActionResult<string>> Login([FromBody] LoginRequest request)
+        {
+            var result = await BusinesLayer.Login(request);
+            return Ok(result);
+        }
     }
 }

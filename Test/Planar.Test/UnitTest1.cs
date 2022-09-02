@@ -1,6 +1,9 @@
 using NUnit.Framework;
+using Planar.Service.General.Password;
 using Planar.TeamsMonitorHook;
 using System;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Planar.Test
 {
@@ -12,17 +15,24 @@ namespace Planar.Test
         }
 
         [Test]
-        public void TestDeserialize()
+        public void TestPassword()
         {
-            var timespan = TimeSpan.FromHours(24);
-            var text1 = $"{timespan:\\(d\\)\\ hh\\:mm\\:ss}";
-            timespan = TimeSpan.FromHours(22).Add(TimeSpan.FromMinutes(33));
-            var text2 = timespan.ToString("c");
-            Console.WriteLine(text1);
-            Console.WriteLine(text2);
+            var password = PasswordGenerator.GeneratePassword(
+               new PasswordGeneratorBuilder()
+               .IncludeLowercase()
+               .IncludeNumeric()
+               .IncludeSpecial()
+               .IncludeUppercase()
+               .WithLength(12)
+               .Build());
 
-            var hook = new TeamHook();
-            hook.Handle(null).Wait();
+            using (var hmac = new HMACSHA512())
+            {
+                var passwordBytes = Encoding.UTF8.GetBytes(password);
+                var salt = hmac.Key;
+                var hash = hmac.ComputeHash(passwordBytes);
+            }
+
             Assert.Pass();
         }
     }

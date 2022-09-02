@@ -21,6 +21,18 @@
     <None Remove="Scripts\Planar_0009 - update sp persistjob.sql" />
     <None Remove="Scripts\Planar_0010 - update sp reset.sql" />
     <None Remove="Scripts\Planar_0011 - persistlog sp.sql" />
+    <None Remove="Scripts\Planar_0012 - users password salt.sql" />
+    <None Remove="Scripts\Planar_0013 - create roles.sql" />
+    <None Remove="Scripts\Planar_0014 - alter user.sql" />
+    <None Remove="Scripts\Planar_0015 - fix roles.sql" />
+    <None Remove="Scripts\Planar_0016 - fk role to user.sql" />
+    <None Remove="Scripts\Planar_0017 - fill roles.sql" />
+    <None Remove="Scripts\Planar_0018 - fix1.sql" />
+    <None Remove="Scripts\Planar_0019 - fix2.sql" />
+    <None Remove="Scripts\Planar_0020 - add unique username.sql" />
+    <None Remove="Scripts\Planar_0021 - add roleid to group.sql" />
+    <None Remove="Scripts\Planar_0022 - add roleid fk.sql" />
+    <None Remove="Scripts\Planar_0023 - update roles name.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - Create all.sql" />
@@ -34,6 +46,18 @@
     <EmbeddedResource Include="Scripts\Planar_0009 - update sp persistjob.sql" />
     <EmbeddedResource Include="Scripts\Planar_0010 - update sp reset.sql" />
     <EmbeddedResource Include="Scripts\Planar_0011 - persistlog sp.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0012 - users password salt.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0013 - create roles.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0014 - alter user.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0015 - fix roles.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0016 - fk role to user.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0017 - fill roles.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0018 - fix1.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0019 - fix2.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0020 - add unique username.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0021 - add roleid to group.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0022 - add roleid fk.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0023 - update roles name.sql" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="dbup-sqlserver" Version="4.6.0" />
@@ -52,5 +76,17 @@
     <None Remove="Scripts\Planar_0009 - update sp persistjob.sql" />
     <None Remove="Scripts\Planar_0010 - update sp reset.sql" />
     <None Remove="Scripts\Planar_0011 - persistlog sp.sql" />
+    <None Remove="Scripts\Planar_0012 - users password salt.sql" />
+    <None Remove="Scripts\Planar_0013 - create roles.sql" />
+    <None Remove="Scripts\Planar_0014 - alter user.sql" />
+    <None Remove="Scripts\Planar_0015 - fix roles.sql" />
+    <None Remove="Scripts\Planar_0016 - fk role to user.sql" />
+    <None Remove="Scripts\Planar_0017 - fill roles.sql" />
+    <None Remove="Scripts\Planar_0018 - fix1.sql" />
+    <None Remove="Scripts\Planar_0019 - fix2.sql" />
+    <None Remove="Scripts\Planar_0020 - add unique username.sql" />
+    <None Remove="Scripts\Planar_0021 - add roleid to group.sql" />
+    <None Remove="Scripts\Planar_0022 - add roleid fk.sql" />
+    <None Remove="Scripts\Planar_0023 - update roles name.sql" />
   </ItemGroup>
 </Project>
