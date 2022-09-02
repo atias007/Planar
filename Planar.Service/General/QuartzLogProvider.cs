@@ -30,13 +30,14 @@ namespace Planar.Service.General
                         _ => Microsoft.Extensions.Logging.LogLevel.Trace,
                     };
 
+                    var template = func();
                     if (logLevel == Microsoft.Extensions.Logging.LogLevel.Error)
                     {
-                        _logger.Log(logLevel, exception, string.Format(func(), parameters));
+                        _logger.Log(logLevel, exception, template, parameters);
                     }
                     else
                     {
-                        _logger.Log(logLevel, string.Format(func(), parameters));
+                        _logger.Log(logLevel, template, parameters);
                     }
                 }
                 return true;

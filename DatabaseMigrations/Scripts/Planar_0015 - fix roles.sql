@@ -18,8 +18,7 @@ GO
 ALTER TABLE dbo.Tmp_Roles SET (LOCK_ESCALATION = TABLE)
 GO
 IF EXISTS(SELECT * FROM dbo.Roles)
-	 EXEC('INSERT INTO dbo.Tmp_Roles (Id, Name)
-		SELECT Id, Name FROM dbo.Roles WITH (HOLDLOCK TABLOCKX)')
+	 EXEC('INSERT INTO dbo.Tmp_Roles (Id, Name) SELECT Id, Name FROM dbo.Roles WITH (HOLDLOCK TABLOCKX)')
 GO
 DROP TABLE dbo.Roles
 GO

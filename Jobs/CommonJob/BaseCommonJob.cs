@@ -17,8 +17,6 @@ namespace CommonJob
     {
         public string JobPath { get; set; }
 
-        private readonly Dictionary<string, string> _jobRunningProperties = new();
-
         public abstract Task Execute(IJobExecutionContext context);
 
         protected LazySingleton<ILogger<TInstance>> Logger = new(Global.GetLogger<TInstance>);

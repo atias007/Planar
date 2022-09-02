@@ -32,6 +32,8 @@ namespace Planar.Test
                 var salt = hmac.Key;
                 var hash = hmac.ComputeHash(passwordBytes);
             }
+
+            Assert.Pass();
         }
     }
 }
