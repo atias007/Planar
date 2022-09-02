@@ -34,7 +34,7 @@ namespace Planar
                     webBuilder
                         .UseKestrel(options =>
                         {
-                            options.Listen(IPAddress.Loopback, 0);
+                            //options.Listen(IPAddress.Loopback, 0);
                             options.ListenAnyIP(AppSettings.HttpPort);
                             if (AppSettings.Clustering)
                             {
