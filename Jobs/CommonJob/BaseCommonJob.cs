@@ -4,7 +4,6 @@ using Planar.Common;
 using Quartz;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
@@ -13,52 +12,12 @@ using System.Threading.Tasks;
 namespace CommonJob
 {
     [PersistJobDataAfterExecution]
-    public abstract class BaseCommonJob<TInstance> : IJob, ICommonJob
+    public abstract class BaseCommonJob<TInstance> : IJob
         where TInstance : class, new()
     {
         public string JobPath { get; set; }
 
         private readonly Dictionary<string, string> _jobRunningProperties = new();
-
-        public void SetJobRunningProperty<TPropery>(string key, TPropery value)
-        {
-            var json = JsonSerializer.Serialize(value);
-            _jobRunningProperties.Add(key, json);
-        }
-
-        public JobExecutionException GetJobExecutingException(JobExecutionException ex, IJobExecutionContext context)
-        {
-            var message = $"FireInstanceId {context.FireInstanceId} throw JobExecutionException with message {ex.Message}";
-            var jobException = new JobExecutionException(message, ex)
-            {
-                RefireImmediately = ex.RefireImmediately,
-                Source = ex.Source,
-                UnscheduleAllTriggers = ex.UnscheduleAllTriggers,
-                UnscheduleFiringTrigger = ex.UnscheduleFiringTrigger,
-            };
-
-            return jobException;
-        }
-
-        public bool ContainsJobRunningProperty(string key)
-        {
-            var result = _jobRunningProperties.ContainsKey(key);
-            return result;
-        }
-
-        public TPropery GetJobRunningProperty<TPropery>(string key)
-        {
-            if (_jobRunningProperties.ContainsKey(key))
-            {
-                var json = _jobRunningProperties[key];
-                var value = JsonSerializer.Deserialize<TPropery>(json);
-                return value;
-            }
-            else
-            {
-                return default;
-            }
-        }
 
         public abstract Task Execute(IJobExecutionContext context);
 

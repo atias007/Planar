@@ -4,7 +4,6 @@ using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.General;
 using Planar.Service.List.Base;
-using Planar.Service.Monitor;
 using Quartz;
 using System;
 using System.Threading;
@@ -22,7 +21,8 @@ namespace Planar.Service.List
             {
                 if (context.JobDetail.Key.Group == Consts.PlanarSystemGroup) { return; }
 
-                if (context.JobInstance is ICommonJob job && job.GetJobRunningProperty<bool>("Fail") == false) { return; }
+                var metadata = JobExecutionMetadata.GetInstance(context);
+                if (metadata.IsRunningSuccess) { return; }
                 if (trigger.JobDataMap.Contains(Consts.RetrySpan) == false) { return; }
                 var span = GetRetrySpan(trigger);
                 if (span == null) { return; }
@@ -63,12 +63,11 @@ namespace Planar.Service.List
             }
             catch (Exception ex)
             {
-                var source = nameof(TriggerComplete);
-                Logger.LogCritical(ex, "Error handle {Source}: {Message}", source, ex.Message);
+                SafeLog(nameof(TriggerComplete), ex);
             }
             finally
             {
-                await MonitorUtil.Scan(MonitorEvents.ExecutionRetry, context, cancellationToken: cancellationToken);
+                await SafeScan(MonitorEvents.ExecutionRetry, context, cancellationToken: cancellationToken);
             }
         }
 
@@ -92,8 +91,7 @@ namespace Planar.Service.List
             }
             catch (Exception ex)
             {
-                var source = nameof(TriggerFired);
-                Logger.LogError(ex, "Error handle {Source}: {Message}", source, ex.Message);
+                SafeLog(nameof(TriggerFired), ex);
             }
         }
 

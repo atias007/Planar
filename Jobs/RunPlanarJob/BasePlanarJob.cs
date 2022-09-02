@@ -23,7 +23,7 @@ namespace RunPlanarJob
 
         private string AssemblyFilename { get; set; }
 
-        public override Task Execute(IJobExecutionContext context)
+        public override async Task Execute(IJobExecutionContext context)
         {
             AssemblyLoadContext assemblyContext = null;
 
@@ -52,26 +52,12 @@ namespace RunPlanarJob
 
                 var settings = LoadJobSettings();
                 _broker = new JobMessageBroker(context, settings);
-                var result = method.Invoke(instance, new object[] { _broker }) as Task;
-                return result;
-            }
-            catch (JobExecutionException ex)
-            {
-                SetJobRunningProperty("Fail", true);
-                var jobEx = GetJobExecutingException(ex, context);
-                throw jobEx;
+                await (method.Invoke(instance, new object[] { _broker }) as Task);
             }
             catch (Exception ex)
             {
-                SetJobRunningProperty("Fail", true);
-                var message = $"FireInstanceId {context.FireInstanceId} throw exception with message {ex.Message}";
-
-                if (ex.GetType().Name == "PlanarJobAggragateException")
-                {
-                    throw new JobExecutionException(message);
-                }
-
-                throw new JobExecutionException(message, ex);
+                var metadata = JobExecutionMetadata.GetInstance(context);
+                metadata.UnhandleException = ex;
             }
             finally
             {

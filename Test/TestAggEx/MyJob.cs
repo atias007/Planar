@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Planar;
 using Planar.Job;
 using System;
@@ -16,15 +17,18 @@ namespace TestAggEx
 
         public override Task ExecuteJob(IJobExecutionContext context)
         {
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 6; i++)
             {
                 Thread.Sleep(1000);
                 try
                 {
                     if (i % 3 == 0)
                     {
-                        throw new PlanarJobException($"This is my ex with id {i}");
+                        throw new PlanarJobException($"This is demo exception occur at loop no. {i}");
                     }
+
+                    Logger.LogInformation($"This is loop no. {i}");
+
                     IncreaseEffectedRows();
                 }
                 catch (Exception ex)
