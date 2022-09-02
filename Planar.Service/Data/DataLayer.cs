@@ -427,7 +427,10 @@ namespace Planar.Service.Data
 
         public async Task<Group> GetGroup(int id)
         {
-            var result = await _context.Groups.FindAsync(id);
+            var result = await _context.Groups
+                .Include(g => g.Role)
+                .FirstOrDefaultAsync(g => g.Id == id);
+
             return result;
         }
 
