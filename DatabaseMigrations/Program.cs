@@ -158,10 +158,10 @@ namespace DatabaseMigrations
 
         private static string GetConnectionString(RunningEnvironment environment)
         {
-            var settingsFile = Path.Combine(RunningPath, $"appsettings.{environment}.json");
+            var settingsFile = Path.Combine(RunningPath, $"AppSettings.{environment}.json");
             if (File.Exists(settingsFile) == false)
             {
-                WriteError($"Could not found appsettings.{ environment}.json file");
+                WriteError($"Could not found appsettings.{environment}.json file");
                 AssertStatus();
             }
 
