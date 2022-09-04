@@ -10,6 +10,7 @@ using Planar.Service.Model;
 using Planar.Service.Validation;
 using System;
 using System.Collections.Generic;
+using System.Reflection.Metadata;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -72,7 +73,7 @@ namespace Planar.Service.API
             }
             catch (DbUpdateConcurrencyException)
             {
-                throw new RestNotFoundException();
+                throw new RestNotFoundException($"{nameof(Group)} entity could not be found");
             }
         }
 

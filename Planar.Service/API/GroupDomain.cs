@@ -56,7 +56,7 @@ namespace Planar.Service.API
             }
             catch (DbUpdateConcurrencyException)
             {
-                throw new RestNotFoundException();
+                throw new RestNotFoundException($"{nameof(Group)} entity could not be found");
             }
         }
 
