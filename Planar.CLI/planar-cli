@@ -1,0 +1,2 @@
+﻿echo "Start planar CLI application..."
+dotnet planar-cli.dll
