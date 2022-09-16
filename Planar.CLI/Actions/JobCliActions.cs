@@ -1,4 +1,5 @@
-﻿using Planar.API.Common.Entities;
+﻿using FluentValidation;
+using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
 using RestSharp;
@@ -280,7 +281,7 @@ namespace Planar.CLI.Actions
                     break;
 
                 default:
-                    throw new ApplicationException($"Action {request.Action} is not supported for this command");
+                    throw new ValidationException($"Action {request.Action} is not supported for this command");
             }
 
             return new CliActionResponse(result);
@@ -462,7 +463,7 @@ namespace Planar.CLI.Actions
             table.AddColumn(new TableColumn(new Markup("[grey54]Get more information by the following commands[/]")));
             table.BorderColor(Color.FromInt32(242));
             table.AddRow($"[grey54]history get[/] [grey62]{logId}[/]");
-            table.AddRow($"[grey54]history info[/] [grey62]{logId}[/]");
+            table.AddRow($"[grey54]history log[/] [grey62]{logId}[/]");
             table.AddRow($"[grey54]history data[/] [grey62]{logId}[/]");
 
             if (status.Data.Status == 1)

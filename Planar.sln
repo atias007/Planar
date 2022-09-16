@@ -24,6 +24,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0DB882F1-2470-40F6-AB4B-4030A653BBCC}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		SolutionItems\docker-compose.yml = SolutionItems\docker-compose.yml
 		SolutionItems\Features.txt = SolutionItems\Features.txt
 		SolutionItems\Install.txt = SolutionItems\Install.txt
 		SolutionItems\MalamWebHook.txt = SolutionItems\MalamWebHook.txt
@@ -67,7 +68,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LongRunningJob", "Test\Long
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RetryDemoJob", "Test\RetryDemoJob\RetryDemoJob.csproj", "{D869037A-1D3E-4B4F-9B21-5C9419929811}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EFCoreTest", "Test\EFCoreTest\EFCoreTest.csproj", "{34FB3E9E-0362-4C04-BB6B-4AF6314F047F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EFCoreTest", "Test\EFCoreTest\EFCoreTest.csproj", "{34FB3E9E-0362-4C04-BB6B-4AF6314F047F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

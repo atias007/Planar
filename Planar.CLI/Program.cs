@@ -77,6 +77,11 @@ namespace Planar.CLI
 
         private static CliArgumentsUtil HandleCliCommand(string[] args, IEnumerable<CliActionMetadata> cliActions)
         {
+            if (args.Any() == false)
+            {
+                return null;
+            }
+
             CliArgumentsUtil cliArgument = null;
 
             try
@@ -186,20 +191,20 @@ namespace Planar.CLI
         {
             if (response.ErrorMessage != null && response.ErrorMessage.Contains("No connection could be made"))
             {
-                AnsiConsole.Markup($"[red]error: no connection could be made to planar deamon ({RestProxy.Host}:{RestProxy.Port})[/]");
+                AnsiConsole.MarkupLine($"[red]error: no connection could be made to planar deamon ({RestProxy.Host}:{RestProxy.Port})[/]");
             }
             else if (response.ErrorMessage != null && response.ErrorMessage.Contains("No such host is known"))
             {
-                AnsiConsole.Markup($"[red]{response.ErrorMessage.ToLower()}[/]");
+                AnsiConsole.MarkupLine($"[red]{response.ErrorMessage.ToLower()}[/]");
             }
             else
             {
-                AnsiConsole.Markup("[red]error: general error[/]");
+                AnsiConsole.MarkupLine("[red]error: general error[/]");
             }
 
             if (string.IsNullOrEmpty(response.StatusDescription) == false)
             {
-                AnsiConsole.Markup($"[red] ({response.StatusDescription})[/]");
+                AnsiConsole.MarkupLine($"[red] ({response.StatusDescription})[/]");
             }
         }
 
@@ -236,7 +241,7 @@ namespace Planar.CLI
             const string help = "help";
             while (string.Compare(command, exit, true) != 0)
             {
-                Console.WriteLine();
+                // TODO: to be deleted ==> Console.WriteLine();
                 Console.Write($"{RestProxy.Host}:{RestProxy.Port}> ");
                 command = Console.ReadLine();
                 if (string.Compare(command, exit, true) == 0)

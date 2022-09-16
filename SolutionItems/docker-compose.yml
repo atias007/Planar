@@ -1,0 +1,25 @@
+version: "3.9"
+services:
+  planar:
+  image: planar:dev
+  container_name: customs-dev-planar
+  ports:
+    - '2306:2306'
+  environment:
+    - TZ=Israel
+    - PLANAR_ENVIRONMENT=Test
+    - PLANAR_DBCONNSTRING=Password=CustomsDev123!;Persist Security Info=True;User ID=sa;Initial Catalog=Planar;Data Source=customs-dev-sql;MultipleActiveResultSets=True
+    - PLANAR_DBPROVIDER=SqlServer
+  volumes:  
+    - ./Data:/app/Data
+  networks:
+    - backend
+
+networks:
+  backend:
+
+volumes:
+  sqlvolume:
+
+
+# docker-compose -p customs up -d
