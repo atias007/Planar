@@ -62,7 +62,7 @@
   <ItemGroup>
     <PackageReference Include="dbup-sqlserver" Version="4.6.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="Spectre.Console" Version="0.44.0" />
+    <PackageReference Include="Spectre.Console" Version="0.45.0" />
   </ItemGroup>
   <ItemGroup>
     <None Update="appsettings.Local.json">

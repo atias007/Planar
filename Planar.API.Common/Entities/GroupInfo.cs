@@ -7,5 +7,7 @@
         public string Name { get; set; }
 
         public int UsersCount { get; set; }
+
+        public string Role { get; set; }
     }
 }

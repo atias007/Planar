@@ -46,6 +46,8 @@ namespace Planar.CLI
         {
             var list = args.ToList();
 
+
+
             if (list[0].ToLower() == "ls") { list.Insert(0, "job"); }
             if (list[0].ToLower() == "connect") { list.Insert(0, "service"); }
             if (list[0].ToLower() == "cls") { list.Insert(0, "inner"); }
@@ -115,7 +117,7 @@ namespace Planar.CLI
 
                 if (matchProp == null)
                 {
-                    throw new ApplicationException($"Argument '{a.Key}' is not supported with command '{action.Command.FirstOrDefault()}' at module '{action.Module}'");
+                    throw new ValidationException($"Argument '{a.Key}' is not supported with command '{action.Command.FirstOrDefault()}' at module '{action.Module}'");
                 }
 
                 if (a.Key.StartsWith("-") && string.IsNullOrEmpty(a.Value))

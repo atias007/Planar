@@ -64,8 +64,8 @@ namespace Planar
                         .ConfigureAppConfiguration(builder =>
                         {
                             Console.WriteLine("[x] Load configuration & app settings");
-                            var file1 = Path.Combine(FolderConsts.Data, FolderConsts.Settings, "appsettings.json");
-                            var file2 = Path.Combine(FolderConsts.Data, FolderConsts.Settings, $"appsettings.{Global.Environment}.json");
+                            var file1 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.json");
+                            var file2 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, $"AppSettings.{Global.Environment}.json");
 
                             builder
                             .AddJsonFile(file1, false, true)
@@ -88,7 +88,7 @@ namespace Planar
         private static void ConfigureSerilog(LoggerConfiguration loggerConfig)
         {
             Console.WriteLine("[x] Configure serilog");
-            var file = Path.Combine(FolderConsts.Data, FolderConsts.Settings, "Serilog.json");
+            var file = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "Serilog.json");
             var configuration = new ConfigurationBuilder()
                         .AddJsonFile(file)
                         .AddEnvironmentVariables()
@@ -116,8 +116,8 @@ namespace Planar
 
         private static void InitializeAppSettings()
         {
-            var file1 = Path.Combine(FolderConsts.Data, FolderConsts.Settings, "appsettings.json");
-            var file2 = Path.Combine(FolderConsts.Data, FolderConsts.Settings, $"appsettings.{Global.Environment}.json");
+            var file1 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.json");
+            var file2 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, $"AppSettings.{Global.Environment}.json");
 
             var configBuilder = new ConfigurationBuilder();
             configBuilder

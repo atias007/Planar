@@ -30,7 +30,7 @@ namespace RunPlanarJob
             try
             {
                 MapProperties(context);
-                AssemblyFilename = Path.Combine(FolderConsts.BasePath, FolderConsts.Data, FolderConsts.Jobs, JobPath, FileName);
+                AssemblyFilename = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, JobPath, FileName);
 
                 Validate();
 

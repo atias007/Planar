@@ -147,7 +147,7 @@ namespace Planar.Service.API
             }
             catch (DbUpdateConcurrencyException)
             {
-                throw new RestNotFoundException($"Monitor with id {id} could not be found");
+                throw new RestNotFoundException($"{nameof(Monitor)} with id {id} could not be found");
             }
         }
     }

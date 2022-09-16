@@ -32,7 +32,7 @@ namespace Planar.Service.General
 
         internal static void LoadMonitorHooks<T>(ILogger<T> logger)
         {
-            var path = Path.Combine(FolderConsts.BasePath, FolderConsts.Data, FolderConsts.MonitorHooks);
+            var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.MonitorHooks);
 
             if (Directory.Exists(path) == false)
             {
@@ -77,7 +77,7 @@ namespace Planar.Service.General
 
         public static string GetJobFolder(string folder)
         {
-            var path = Path.Combine(FolderConsts.BasePath, FolderConsts.Data, FolderConsts.Jobs, folder);
+            var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, folder);
             return path;
         }
 

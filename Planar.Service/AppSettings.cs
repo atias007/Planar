@@ -8,6 +8,13 @@ using System.Text;
 
 namespace Planar.Service
 {
+    public enum AuthMode
+    {
+        AllAnonymous = 0,
+        ViewAnonymous = 1,
+        Authenticate = 2
+    }
+
     public static class AppSettings
     {
         public static int MaxConcurrency { get; set; }
@@ -44,6 +51,12 @@ namespace Planar.Service
 
         public static string Environment { get; set; }
 
+        public static bool SwaggerUI { get; set; }
+
+        public static bool DeveloperExceptionPage { get; set; }
+
+        public static AuthMode AuthenticationMode { get; set; }
+
         public static LogLevel LogLevel { get; set; }
 
         public static void Initialize(IConfiguration configuration)
@@ -56,6 +69,7 @@ namespace Planar.Service
             InitializePersistanceSpan(configuration);
             InitializePorts(configuration);
             InitializeLogLevel(configuration);
+            InitializeAuthenticationMode(configuration);
 
             InstanceId = GetSettings(configuration, Consts.InstanceIdVariableKey, nameof(InstanceId), "AUTO");
             ServiceName = GetSettings(configuration, Consts.ServiceNameVariableKey, nameof(ServiceName), "PlanarService");
@@ -66,6 +80,8 @@ namespace Planar.Service
             ClusterPort = GetSettings<short>(configuration, Consts.ClusterPortVariableKey, nameof(ClusterPort), 12306);
             DatabaseProvider = GetSettings(configuration, Consts.DatabaseProviderVariableKey, nameof(DatabaseProvider), "Npgsql");
             ClearTraceTableOverDays = GetSettings(configuration, Consts.ClearTraceTableOverDaysVariableKey, nameof(ClearTraceTableOverDays), 365);
+            SwaggerUI = GetSettings(configuration, Consts.SwaggerUIVariableKey, nameof(SwaggerUI), true);
+            DeveloperExceptionPage = GetSettings(configuration, Consts.DeveloperExceptionPageVariableKey, nameof(DeveloperExceptionPage), true);
         }
 
         private static void InitializeEnvironment(IConfiguration configuration)
@@ -164,7 +180,7 @@ namespace Planar.Service
 
         private static void InitializeLogLevel(IConfiguration configuration)
         {
-            var level = GetSettings(configuration, Consts.LogLevelVariableKey, nameof(LogLevel));
+            var level = GetSettings(configuration, Consts.LogLevelVariableKey, nameof(AuthenticationMode));
             if (Enum.TryParse<LogLevel>(level, true, out var tempLevel))
             {
                 LogLevel = tempLevel;
@@ -174,7 +190,20 @@ namespace Planar.Service
                 LogLevel = LogLevel.Information;
             }
 
-            Global.LogLevel = AppSettings.LogLevel;
+            Global.LogLevel = LogLevel;
+        }
+
+        private static void InitializeAuthenticationMode(IConfiguration configuration)
+        {
+            var mode = GetSettings(configuration, Consts.AuthenticationModeVariableKey, nameof(AuthenticationMode));
+            if (Enum.TryParse<AuthMode>(mode, true, out var tempMode))
+            {
+                AuthenticationMode = tempMode;
+            }
+            else
+            {
+                AuthenticationMode = AuthMode.AllAnonymous;
+            }
         }
 
         private static T GetSettings<T>(IConfiguration configuration, string environmentKey, string appSettingsKey, T defaultValue = default)
@@ -182,16 +211,8 @@ namespace Planar.Service
         {
             // Environment Variable
             var property = configuration.GetValue<T?>(environmentKey);
-            if (property == null)
-            {
-                // AppSettings
-                property = configuration.GetValue<T?>(appSettingsKey);
-            }
-
-            if (property == null)
-            {
-                property = defaultValue;
-            }
+            property ??= configuration.GetValue<T?>(appSettingsKey);
+            property ??= defaultValue;
 
             return property.GetValueOrDefault();
         }

@@ -19,7 +19,7 @@ namespace Planar.Common
 
             // Merge settings yml file
             if (string.IsNullOrEmpty(jobPath)) { return new Dictionary<string, string>(); }
-            var fullpath = Path.Combine(FolderConsts.BasePath, FolderConsts.Data, FolderConsts.Jobs, jobPath);
+            var fullpath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, jobPath);
             var location = new DirectoryInfo(fullpath);
             if (!location.Exists) { return final; }
 
