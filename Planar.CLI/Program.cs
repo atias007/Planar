@@ -347,6 +347,7 @@ namespace Planar.CLI
             using StreamReader reader = new(stream);
             string result = reader.ReadToEnd();
             Console.WriteLine(result);
+            Console.WriteLine();
         }
 
         private static void WriteInfo(string message)

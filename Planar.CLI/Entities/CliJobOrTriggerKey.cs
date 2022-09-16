@@ -7,7 +7,7 @@ namespace Planar.CLI.Entities
     {
         [Required("id parameter is required")]
         [ActionProperty(DefaultOrder = 0)]
-        public string Id { get; set; }
+        public virtual string Id { get; set; }
 
         internal JobOrTriggerKey GetKey()
         {
