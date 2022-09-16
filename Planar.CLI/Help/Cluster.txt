@@ -1,6 +1,6 @@
-﻿usage: planar service <command> [<options>]
+﻿usage: planar cluster <command> [<options>]
 
-the options for <command> and [<options>] parameters of service module:
+the options for <command> and [<options>] parameters of cluster module:
 
 nodes
 healthcheck|hc

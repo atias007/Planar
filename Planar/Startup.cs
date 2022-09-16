@@ -80,7 +80,7 @@ namespace Planar
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            if (AppSettings.DeveloperExceptionPage || env.IsDevelopment() == false)
+            if (AppSettings.DeveloperExceptionPage || !env.IsProduction())
             {
                 app.UseDeveloperExceptionPage();
             }

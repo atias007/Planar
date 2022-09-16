@@ -1,6 +1,6 @@
-﻿usage: planar user <command> [<options>]
+﻿usage: planar group <command> [<options>]
 
-the options for <command> and [<options>] parameters of user module:
+the options for <command> and [<options>] parameters of group module:
 
 ls|list 
 get           <id>
