@@ -77,7 +77,7 @@ namespace Planar.CLI
 
         private static CliArgumentsUtil HandleCliCommand(string[] args, IEnumerable<CliActionMetadata> cliActions)
         {
-            if (args.Any() == false)
+            if (!args.Any())
             {
                 return null;
             }
@@ -241,7 +241,6 @@ namespace Planar.CLI
             const string help = "help";
             while (string.Compare(command, exit, true) != 0)
             {
-                // TODO: to be deleted ==> Console.WriteLine();
                 Console.Write($"{RestProxy.Host}:{RestProxy.Port}> ");
                 command = Console.ReadLine();
                 if (string.Compare(command, exit, true) == 0)

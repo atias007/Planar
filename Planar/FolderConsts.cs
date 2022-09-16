@@ -36,7 +36,7 @@ namespace Planar
             };
 
             var folder = Path.Combine(BasePath, Data, specialPath);
-            if (paths == null || paths.Any() == false)
+            if (paths == null || !paths.Any())
             {
                 return folder;
             }
