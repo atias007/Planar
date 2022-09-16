@@ -22,4 +22,4 @@ volumes:
   sqlvolume:
 
 
-# docker-compose -p customs up -d
+# docker-compose -p customs up -d --remove-orphans
