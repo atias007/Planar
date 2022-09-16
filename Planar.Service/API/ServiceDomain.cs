@@ -37,7 +37,7 @@ namespace Planar.Service.API
                 TotalGroups = (await totalGroups).Count,
                 Clustering = (await metadata).JobStoreClustered,
                 DatabaseProvider = (await metadata).JobStoreType.FullName,
-                RunningSince = (await metadata).RunningSince.GetValueOrDefault().DateTime,
+                RunningSince = (await metadata).RunningSince?.DateTime,
                 QuartzVersion = (await metadata).Version,
                 ClusteringCheckinInterval = AppSettings.ClusteringCheckinInterval,
                 ClusteringCheckinMisfireThreshold = AppSettings.ClusteringCheckinMisfireThreshold,
@@ -49,7 +49,10 @@ namespace Planar.Service.API
                 UseHttps = AppSettings.UseHttps,
                 UseHttpsRedirect = AppSettings.UseHttpsRedirect,
                 ServiceVersion = ServiceVersion,
-                LogLevel = AppSettings.LogLevel.ToString()
+                LogLevel = AppSettings.LogLevel.ToString(),
+                SwaggerUI = AppSettings.SwaggerUI,
+                DeveloperExceptionPage = AppSettings.DeveloperExceptionPage,
+                AuthenticationMode = AppSettings.AuthenticationMode.ToString()
             };
 
             return response;

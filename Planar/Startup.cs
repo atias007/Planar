@@ -80,9 +80,16 @@ namespace Planar
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-            app.UseDeveloperExceptionPage();
-            app.UseSwagger();
-            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Planar v1"));
+            if (AppSettings.DeveloperExceptionPage)
+            {
+                app.UseDeveloperExceptionPage();
+            }
+
+            if (AppSettings.SwaggerUI)
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Planar"));
+            }
 
             app.UseSerilogRequestLogging();
 

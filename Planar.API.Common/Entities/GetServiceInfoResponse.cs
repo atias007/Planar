@@ -50,8 +50,17 @@ namespace Planar.API.Common.Entities
         [YamlMember(Order = 17)]
         public string LogLevel { get; set; }
 
+        [YamlMember(Order = 18)]
+        public bool SwaggerUI { get; set; }
+
+        [YamlMember(Order = 19)]
+        public bool DeveloperExceptionPage { get; set; }
+
+        [YamlMember(Order = 20)]
+        public string AuthenticationMode { get; set; }
+
         [YamlMember(Order = 96)]
-        public DateTime RunningSince { get; set; }
+        public DateTime? RunningSince { get; set; }
 
         [YamlMember(Order = 97)]
         public int TotalJobs { get; set; }

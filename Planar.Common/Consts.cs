@@ -38,7 +38,10 @@ namespace Planar
         public const string MaxConcurrencyVariableKey = "PLANAR_MAXCONCURRENCY";
         public const string PersistRunningJobsSpanVariableKey = "PLANAR_PERSISTSPAN";
         public const string ClearTraceTableOverDaysVariableKey = "PLANAR_CLEARTRACEDAYS";
+        public const string SwaggerUIVariableKey = "PLANAR_SWAGGERUI";
+        public const string DeveloperExceptionPageVariableKey = "PLANAR_DEVEXPAGE";
         public const string LogLevelVariableKey = "PLANAR_LOGLEVEL";
+        public const string AuthenticationModeVariableKey = "PLANAR_AUTHMODE";
 
         public const string InstanceIdVariableKey = "PLANAR_INSTANCEID";
         public const string ServiceNameVariableKey = "PLANAR_SERVICENAME";
