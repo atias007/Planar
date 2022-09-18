@@ -11,7 +11,7 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="Quartz.Serialization.Json" Version="3.4.0" />
+		<PackageReference Include="Quartz.Serialization.Json" Version="3.5.0" />
 	</ItemGroup>
 
 	<ItemGroup>
