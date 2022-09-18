@@ -318,7 +318,7 @@ namespace Planar.CLI.Actions
 
                 return AnsiConsole.Prompt(
                      new SelectionPrompt<string>()
-                         .Title("select job to invoke:")
+                         .Title("[underline]select job to invoke (press enter to select):[/]")
                          .PageSize(10)
                          .MoreChoicesText("[grey](Move up and down to reveal more jobs)[/]")
                          .AddChoices(jobs));

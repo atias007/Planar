@@ -46,8 +46,6 @@ namespace Planar.CLI
         {
             var list = args.ToList();
 
-
-
             if (list[0].ToLower() == "ls") { list.Insert(0, "job"); }
             if (list[0].ToLower() == "connect") { list.Insert(0, "service"); }
             if (list[0].ToLower() == "cls") { list.Insert(0, "inner"); }
@@ -125,6 +123,7 @@ namespace Planar.CLI
                     a.Value = true.ToString();
                 }
 
+                FillLastJobOrTriggerId(matchProp, a);
                 SetValue(matchProp.PropertyInfo, result, a.Value);
                 matchProp.ValueSupplied = true;
             }
@@ -132,6 +131,22 @@ namespace Planar.CLI
             FindMissingRequiredProperties(props);
 
             return result;
+        }
+
+        private static void FillLastJobOrTriggerId(RequestPropertyInfo prop, CliArgument arg)
+        {
+            if (prop.JobOrTriggerKey)
+            {
+                if (arg.Value == "!!")
+                {
+                    arg.Key = Util.LastJobOrTriggerId;
+                    arg.Value = Util.LastJobOrTriggerId;
+                }
+                else
+                {
+                    Util.LastJobOrTriggerId = arg.Value;
+                }
+            }
         }
 
         private static void FindMissingRequiredProperties(IEnumerable<RequestPropertyInfo> props)

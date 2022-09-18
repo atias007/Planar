@@ -1,4 +1,5 @@
 ﻿using Planar.CLI.Attributes;
+using Planar.CLI.Entities;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -41,6 +42,11 @@ namespace Planar.CLI
         {
             var result = new List<RequestPropertyInfo>();
             var props = RequestType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            var inheritKey =
+                RequestType.IsAssignableFrom(typeof(CliJobOrTriggerKey)) ||
+                RequestType.IsSubclassOf(typeof(CliJobOrTriggerKey));
+
             foreach (var item in props)
             {
                 var att = item.GetCustomAttribute<ActionPropertyAttribute>();
@@ -54,6 +60,7 @@ namespace Planar.CLI
                     Required = req != null,
                     RequiredMissingMessage = req?.Message,
                     DefaultOrder = (att?.DefaultOrder).GetValueOrDefault(),
+                    JobOrTriggerKey = inheritKey && item.Name == nameof(CliJobOrTriggerKey.Id)
                 };
                 result.Add(info);
             }
@@ -87,5 +94,7 @@ namespace Planar.CLI
         public bool ValueSupplied { get; set; }
 
         public PropertyInfo PropertyInfo { get; set; }
+
+        public bool JobOrTriggerKey { get; set; }
     }
 }
