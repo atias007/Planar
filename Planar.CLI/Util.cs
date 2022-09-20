@@ -5,6 +5,8 @@ namespace Planar.CLI
 {
     internal static class Util
     {
+        public static string LastJobOrTriggerId { get; set; }
+
         public static string BeautifyJson(string json)
         {
             if (string.IsNullOrEmpty(json))

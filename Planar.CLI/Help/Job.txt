@@ -21,3 +21,5 @@ test            <job id> [-n|--now <now_value:"dd/mm/yyyy hh:mm">]
 updateprop      <job id> <key> <value>
 
 *** <job id> represent job hash id or job key <[group.]name>
+*** <job id> use ? to get jobs menu
+*** <job id> use !! to get last job id

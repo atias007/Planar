@@ -2,10 +2,13 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.OData.Edm;
+using Microsoft.OData.ModelBuilder;
 using Microsoft.OpenApi.Models;
 using Planar.Filters;
 using Planar.Service;
@@ -39,7 +42,8 @@ namespace Planar
             services.AddFluentValidationAutoValidation();
             services.AddValidatorsFromAssembly(GetType().Assembly);
 
-            services.AddControllers();
+            var mvcBuilder = services.AddControllers();
+            RegisterOData(mvcBuilder);
 
             services.AddSwaggerGen(c =>
             {
@@ -108,6 +112,31 @@ namespace Planar
 
                 endpoints.MapGrpcService<ClusterService>();
             });
+        }
+
+        public void RegisterOData(IMvcBuilder builder)
+        {
+            builder.AddOData(option => option
+                    .Select()
+                    .Filter()
+                    .Count()
+                    .OrderBy()
+                    .SetMaxTop(50)
+                    .AddRouteComponents("odata", GetTraceEdmModel()));
+        }
+
+        public static IEdmModel GetTraceEdmModel()
+        {
+            var modelBuilder = new ODataConventionModelBuilder();
+            var customers = modelBuilder.EntitySet<Service.Model.Trace>("TraceData");
+            customers.EntityType.Page(50, 50);
+            customers.EntityType.OrderBy("Id", "TimeStamp");
+
+            var history = modelBuilder.EntitySet<Service.Model.JobInstanceLog>("HistoryData");
+            history.EntityType.Page(50, 50);
+            history.EntityType.OrderBy("Id", "StartDate", "EndDate", "Duration", "EffectedRows");
+
+            return modelBuilder.GetEdmModel();
         }
     }
 }

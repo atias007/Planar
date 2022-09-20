@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "Planar.Calendar.Hebrew": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:60890;http://localhost:60891"
+    }
+  }
+}

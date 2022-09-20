@@ -265,7 +265,7 @@ namespace Planar.Service.API
             var info = await Scheduler.GetJobDetail(jobKey);
             var properties = GetJobProperties(info);
 
-            if (properties.ContainsKey(request.PropertyKey))
+            if (properties.ContainsKey(request.PropertyKey, true))
             {
                 properties[request.PropertyKey] = request.PropertyValue;
             }

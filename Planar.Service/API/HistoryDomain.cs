@@ -15,6 +15,23 @@ namespace Planar.Service.API
         {
         }
 
+        public IQueryable<Model.JobInstanceLog> GetHistoryData()
+        {
+            return DataLayer.GetHistoryData();
+        }
+
+        public Model.JobInstanceLog GetHistory(int key)
+        {
+            var history = DataLayer.GetHistory(key);
+
+            if (history == null)
+            {
+                throw new RestNotFoundException();
+            }
+
+            return history;
+        }
+
         public async Task<List<JobInstanceLogRow>> GetHistory(GetHistoryRequest request)
         {
             if (request.Rows.GetValueOrDefault() == 0) { request.Rows = 50; }
