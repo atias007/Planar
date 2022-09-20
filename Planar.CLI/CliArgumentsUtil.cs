@@ -1,9 +1,11 @@
-﻿using Planar.CLI.Exceptions;
+﻿using Planar.CLI.Actions;
+using Planar.CLI.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Planar.CLI
 {
@@ -124,13 +126,30 @@ namespace Planar.CLI
                 }
 
                 FillLastJobOrTriggerId(matchProp, a);
+                FillJobId(matchProp, a).Wait();
                 SetValue(matchProp.PropertyInfo, result, a.Value);
-                matchProp.ValueSupplied = true;
+                if (!string.IsNullOrEmpty(a.Value))
+                {
+                    matchProp.ValueSupplied = true;
+                }
             }
 
             FindMissingRequiredProperties(props);
 
             return result;
+        }
+
+        private static async Task FillJobId(RequestPropertyInfo prop, CliArgument arg)
+        {
+            if (prop.JobOrTriggerKey)
+            {
+                if (arg.Value == "?")
+                {
+                    var jobId = await JobCliActions.ChooseJob();
+                    arg.Value = jobId;
+                    Util.LastJobOrTriggerId = jobId;
+                }
+            }
         }
 
         private static void FillLastJobOrTriggerId(RequestPropertyInfo prop, CliArgument arg)
@@ -139,7 +158,6 @@ namespace Planar.CLI
             {
                 if (arg.Value == "!!")
                 {
-                    arg.Key = Util.LastJobOrTriggerId;
                     arg.Value = Util.LastJobOrTriggerId;
                 }
                 else

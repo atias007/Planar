@@ -154,11 +154,6 @@ namespace Planar.CLI.Actions
         [Action("invoke")]
         public static async Task<CliActionResponse> InvokeJob(CliInvokeJobRequest request)
         {
-            if (request.Id == "!")
-            {
-                request.Id = await ChooseJob();
-            }
-
             var result = await InvokeJobInner(request);
             return new CliActionResponse(result);
         }
@@ -302,7 +297,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        private static async Task<string> ChooseJob()
+        public static async Task<string> ChooseJob()
         {
             var restRequest = new RestRequest("job", Method.Get);
             var p = AllJobsMembers.AllUserJobs;
