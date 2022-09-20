@@ -2,7 +2,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
-using Planar.Service.General.Hash;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using Quartz;
@@ -13,6 +12,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
 
+using JobInstanceLog = Planar.Service.Model.JobInstanceLog;
+
 namespace Planar.Service.Data
 {
     public class DataLayer
@@ -22,6 +23,26 @@ namespace Planar.Service.Data
         public DataLayer(PlanarContext context)
         {
             _context = context ?? throw new NullReferenceException(nameof(context));
+        }
+
+        public IQueryable<Trace> GetTraceData()
+        {
+            return _context.Traces.AsQueryable();
+        }
+
+        public Trace GetTrace(int key)
+        {
+            return _context.Traces.Find(key);
+        }
+
+        public IQueryable<JobInstanceLog> GetHistoryData()
+        {
+            return _context.JobInstanceLogs.AsQueryable();
+        }
+
+        public JobInstanceLog GetHistory(int key)
+        {
+            return _context.JobInstanceLogs.Find(key);
         }
 
         public async Task<int> SaveChanges()
