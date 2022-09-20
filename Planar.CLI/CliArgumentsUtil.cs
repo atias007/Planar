@@ -1,9 +1,11 @@
-﻿using Planar.CLI.Exceptions;
+﻿using Planar.CLI.Actions;
+using Planar.CLI.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace Planar.CLI
 {
@@ -45,8 +47,6 @@ namespace Planar.CLI
         public static CliActionMetadata ValidateArgs(ref string[] args, IEnumerable<CliActionMetadata> cliActionsMetadata)
         {
             var list = args.ToList();
-
-
 
             if (list[0].ToLower() == "ls") { list.Insert(0, "job"); }
             if (list[0].ToLower() == "connect") { list.Insert(0, "service"); }
@@ -125,13 +125,43 @@ namespace Planar.CLI
                     a.Value = true.ToString();
                 }
 
+                FillLastJobOrTriggerId(matchProp, a);
+                FillJobId(matchProp, a).Wait();
                 SetValue(matchProp.PropertyInfo, result, a.Value);
-                matchProp.ValueSupplied = true;
+                if (!string.IsNullOrEmpty(a.Value))
+                {
+                    matchProp.ValueSupplied = true;
+                }
             }
 
             FindMissingRequiredProperties(props);
 
             return result;
+        }
+
+        private static async Task FillJobId(RequestPropertyInfo prop, CliArgument arg)
+        {
+            if (prop.JobOrTriggerKey && arg.Value == "?")
+            {
+                var jobId = await JobCliActions.ChooseJob();
+                arg.Value = jobId;
+                Util.LastJobOrTriggerId = jobId;
+            }
+        }
+
+        private static void FillLastJobOrTriggerId(RequestPropertyInfo prop, CliArgument arg)
+        {
+            if (prop.JobOrTriggerKey)
+            {
+                if (arg.Value == "!!")
+                {
+                    arg.Value = Util.LastJobOrTriggerId;
+                }
+                else
+                {
+                    Util.LastJobOrTriggerId = arg.Value;
+                }
+            }
         }
 
         private static void FindMissingRequiredProperties(IEnumerable<RequestPropertyInfo> props)

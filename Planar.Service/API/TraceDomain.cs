@@ -3,6 +3,7 @@ using Planar.API.Common.Entities;
 using Planar.Service.Exceptions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -11,6 +12,23 @@ namespace Planar.Service.API
     {
         public TraceDomain(ILogger<TraceDomain> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
         {
+        }
+
+        public IQueryable<Model.Trace> GetTraceData()
+        {
+            return DataLayer.GetTraceData();
+        }
+
+        public Model.Trace GetTrace(int key)
+        {
+            var trace = DataLayer.GetTrace(key);
+
+            if (trace == null)
+            {
+                throw new RestNotFoundException();
+            }
+
+            return trace;
         }
 
         public async Task<List<LogDetails>> Get(GetTraceRequest request)

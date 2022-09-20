@@ -14,6 +14,7 @@ upgrade:
 - cli: job invoke !! invoke the last running job
 - cli: job test !! test the last running job
 
+
 - demo yml file in data directory
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
 - cli test cluster command
@@ -47,3 +48,6 @@ upgrade:
 - job settings <id> return empty
 - job add with only folder name
 - persistance system job write also the duration
+- cli: job invoke show list of abc jobs
+- cli: job invoke !! invoke the last running job
+- cli: job test !! test the last running job

@@ -32,7 +32,7 @@ namespace Planar.CLI.Actions
             {
                 if (fi.Exists == false)
                 {
-                    throw new ApplicationException($"filename '{fi.FullName}' not exist");
+                    throw new CliException($"filename '{fi.FullName}' not exist");
                 }
 
                 var yml = File.ReadAllText(fi.FullName);
@@ -297,6 +297,33 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
+        public static async Task<string> ChooseJob()
+        {
+            var restRequest = new RestRequest("job", Method.Get);
+            var p = AllJobsMembers.AllUserJobs;
+            restRequest.AddQueryParameter("filter", (int)p);
+            var result = await RestProxy.Invoke<List<JobRowDetails>>(restRequest);
+            if (result.IsSuccessful)
+            {
+                var jobs = result.Data
+                    .OrderBy(d => d.Group)
+                    .ThenBy(d => d.Name)
+                    .Select(d => $"{d.Group}.{d.Name}")
+                    .ToList();
+
+                return AnsiConsole.Prompt(
+                     new SelectionPrompt<string>()
+                         .Title("[underline]select job to invoke (press enter to select):[/]")
+                         .PageSize(10)
+                         .MoreChoicesText("[grey](Move up and down to reveal more jobs)[/]")
+                         .AddChoices(jobs));
+            }
+            else
+            {
+                throw new CliException($"fail to fetch list of jobs. error message: {result.ErrorMessage}");
+            }
+        }
+
         private static AddJobRequest GetAddJobRequest(string yaml)
         {
             var deserializer = new DeserializerBuilder()
@@ -310,7 +337,7 @@ namespace Planar.CLI.Actions
         {
             if (request.Iterative && request.Details)
             {
-                throw new Exception("running command can't accept both 'iterative' and 'details' parameters");
+                throw new CliException("running command can't accept both 'iterative' and 'details' parameters");
             }
 
             RestRequest restRequest;
@@ -395,7 +422,7 @@ namespace Planar.CLI.Actions
             if (instanceId == null || instanceId.Data == null)
             {
                 AnsiConsole.WriteLine();
-                throw new ApplicationException("Could not found running instance id");
+                throw new CliException("Could not found running instance id");
             }
 
             AnsiConsole.MarkupLine($"[turquoise2]{instanceId.Data.InstanceId}[/]");
