@@ -30,19 +30,9 @@ namespace Planar.Service.Data
             return _context.Traces.AsQueryable();
         }
 
-        public Trace GetTrace(int key)
-        {
-            return _context.Traces.Find(key);
-        }
-
         public IQueryable<JobInstanceLog> GetHistoryData()
         {
             return _context.JobInstanceLogs.AsQueryable();
-        }
-
-        public JobInstanceLog GetHistory(int key)
-        {
-            return _context.JobInstanceLogs.Find(key);
         }
 
         public async Task<int> SaveChanges()
@@ -132,6 +122,11 @@ namespace Planar.Service.Data
         {
             _context.MonitorActions.Update(monitor);
             await _context.SaveChangesAsync();
+        }
+
+        public Trace GetTrace(int key)
+        {
+            return _context.Traces.Find(key);
         }
 
         public async Task<List<LogDetails>> GetTrace(GetTraceRequest request)
@@ -254,6 +249,11 @@ namespace Planar.Service.Data
 
             var data = await conn.QueryAsync<JobInstanceLogRow>(cmd);
             return data.ToList();
+        }
+
+        public JobInstanceLog GetHistory(int key)
+        {
+            return _context.JobInstanceLogs.Find(key);
         }
 
         public async Task<List<JobInstanceLogRow>> GetHistory(GetHistoryRequest request)

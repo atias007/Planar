@@ -48,8 +48,6 @@ namespace Planar.CLI
         {
             var list = args.ToList();
 
-
-
             if (list[0].ToLower() == "ls") { list.Insert(0, "job"); }
             if (list[0].ToLower() == "connect") { list.Insert(0, "service"); }
             if (list[0].ToLower() == "cls") { list.Insert(0, "inner"); }
@@ -143,14 +141,11 @@ namespace Planar.CLI
 
         private static async Task FillJobId(RequestPropertyInfo prop, CliArgument arg)
         {
-            if (prop.JobOrTriggerKey)
+            if (prop.JobOrTriggerKey && arg.Value == "?")
             {
-                if (arg.Value == "?")
-                {
-                    var jobId = await JobCliActions.ChooseJob();
-                    arg.Value = jobId;
-                    Util.LastJobOrTriggerId = jobId;
-                }
+                var jobId = await JobCliActions.ChooseJob();
+                arg.Value = jobId;
+                Util.LastJobOrTriggerId = jobId;
             }
         }
 
