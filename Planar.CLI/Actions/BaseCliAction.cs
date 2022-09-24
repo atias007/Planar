@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -120,7 +121,7 @@ namespace Planar.CLI.Actions
         {
             var name = typeof(T).Name.Replace("CliActions", string.Empty);
             var help = GetHelpResource(name);
-            var response = new RestResponse { IsSuccessful = true };
+            var response = new RestResponse { StatusCode = HttpStatusCode.OK, ResponseStatus = ResponseStatus.Completed, IsSuccessStatusCode = true };
             var result = new CliActionResponse(response, help);
             return await Task.FromResult(result);
         }
