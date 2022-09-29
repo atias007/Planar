@@ -9,6 +9,7 @@ settings        <job id>
 running         [<instance id>] [-it|--iterative] [-d|--details] [-q|--quiet]
 runninglog      <instance id>
 runningex       <instance id>
+next            <job id>
 invoke          <job id> [-n|--now <now_value:"dd/mm/yyyy hh:mm">]
 pauseall
 pause           <job id>
@@ -20,6 +21,8 @@ stop            <instance id>
 test            <job id> [-n|--now <now_value:"dd/mm/yyyy hh:mm">]
 updateprop      <job id> <key> <value>
 
-*** <job id> represent job hash id or job key <[group.]name>
-*** <job id> use ? to get jobs menu
-*** <job id> use !! to get last job id
+*****************************************************************
+*** <job id> represent job hash id or job key <[group.]name>  ***
+*** <job id> use ? to get jobs menu                           ***
+*** <job id> use !! to get last job id                        ***
+*****************************************************************

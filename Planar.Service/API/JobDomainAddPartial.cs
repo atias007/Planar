@@ -38,6 +38,8 @@ namespace Planar.Service.API
             var jobType = GetJobType(request);
             var jobBuilder = JobBuilder.Create(jobType)
                 .WithIdentity(jobKey)
+                .DisallowConcurrentExecution(!request.Concurrent)
+                .PersistJobDataAfterExecution(!request.Concurrent)
                 .WithDescription(request.Description)
                 .RequestRecovery();
 
@@ -80,6 +82,15 @@ namespace Planar.Service.API
             catch (Exception ex)
             {
                 throw new RestGeneralException($"Fail to deserialize file: {filename}", ex);
+            }
+
+            if (subrequest.Properties.ContainsKey("JobPath", ignoreCase: true))
+            {
+                var value = subrequest.Properties.Get("JobPath", ignoreCase: true);
+                if (string.IsNullOrEmpty(value) || value.Trim() == "." || value.Trim() == "./")
+                {
+                    subrequest.Properties.Set("JobPath", request.Folder, ignoreCase: true);
+                }
             }
 
             var response = await Add(subrequest);
@@ -309,7 +320,11 @@ namespace Planar.Service.API
             }
 
             // Data
-            if (jobTrigger.TriggerData == null) { jobTrigger.TriggerData = new Dictionary<string, string>(); }
+            if (jobTrigger.TriggerData == null)
+            {
+                jobTrigger.TriggerData = new Dictionary<string, string>();
+            }
+
             if (jobTrigger.TriggerData.Count > 0)
             {
                 trigger = trigger.UsingJobData(new JobDataMap(jobTrigger.TriggerData));
@@ -396,7 +411,15 @@ namespace Planar.Service.API
 
             #endregion Max Chars
 
-            if (Consts.PreserveGroupNames.Contains(metadata.Group)) { throw new RestValidationException("group", $"job group group '{metadata.Group}' is invalid (preserved value)"); }
+            if (Consts.PreserveGroupNames.Contains(metadata.Group))
+            {
+                throw new RestValidationException("group", $"job group '{metadata.Group}' is invalid (preserved value)");
+            }
+
+            if (metadata.JobData != null && metadata.JobData.Any() && metadata.Concurrent)
+            {
+                throw new RestValidationException("concurrent", $"job with concurrent=true can not have data. persist data with concurent running may cause unexpected results");
+            }
 
             ValidateTriggerMetadata(metadata);
 
@@ -548,14 +571,7 @@ namespace Planar.Service.API
                     try
                     {
                         assembly = Assembly.Load(nameof(RunPlanarJob));
-                        if (job.Concurrent)
-                        {
-                            typeName = $"{nameof(RunPlanarJob)}.{nameof(PlanarJobConcurrent)}";
-                        }
-                        else
-                        {
-                            typeName = $"{nameof(RunPlanarJob)}.{nameof(PlanarJob)}";
-                        }
+                        typeName = $"{nameof(RunPlanarJob)}.{nameof(PlanarJob)}";
                     }
                     catch (Exception ex)
                     {

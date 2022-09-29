@@ -2,8 +2,10 @@
 
 namespace RunPlanarJob
 {
-    [DisallowConcurrentExecution]
     public class PlanarJob : BasePlanarJob<PlanarJob>
     {
     }
+
+    public class PlanarJobConcurrent : BasePlanarJob<PlanarJobConcurrent>
+    { }
 }

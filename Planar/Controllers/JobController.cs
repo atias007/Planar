@@ -53,6 +53,13 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
+        [HttpGet("nextRunning/{id}")]
+        public async Task<ActionResult<string>> GetNextRunning([FromRoute][Required] string id)
+        {
+            var result = await BusinesLayer.GetNextRunning(id);
+            return Ok(result);
+        }
+
         [HttpPost("data")]
         public async Task<IActionResult> UpsertData([FromBody] JobDataRequest request)
         {

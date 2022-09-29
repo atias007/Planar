@@ -4,6 +4,7 @@ using Planar.CLI.Entities;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
@@ -45,7 +46,7 @@ namespace Planar.CLI.Actions
                 var key = request.Key.Replace(" ", string.Empty).ToLower();
                 if (key == "cliversion")
                 {
-                    return new CliActionResponse(new RestResponse { IsSuccessful = true }, Program.Version);
+                    return new CliActionResponse(new RestResponse { StatusCode = HttpStatusCode.OK, ResponseStatus = ResponseStatus.Completed, IsSuccessStatusCode = true });
                 }
 
                 var restRequest = new RestRequest("service/{key}", Method.Get);

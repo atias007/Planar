@@ -52,6 +52,34 @@ namespace Planar.Service.API
             return result;
         }
 
+        public async Task<DateTime?> GetNextRunning(string id)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(id);
+            var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+            DateTime? result = null;
+            foreach (var t in triggers)
+            {
+                var state = await Scheduler.GetTriggerState(t.Key);
+                if (state == TriggerState.Paused) { continue; }
+                var next = t.GetNextFireTimeUtc();
+                if (next == null) { continue; }
+                var nextDate = next.Value.LocalDateTime;
+                if (result == null)
+                {
+                    result = nextDate;
+                }
+                else
+                {
+                    if (nextDate < result)
+                    {
+                        result = nextDate;
+                    }
+                }
+            }
+
+            return result;
+        }
+
         private static async Task<IReadOnlyCollection<JobKey>> GetJobKeys(AllJobsMembers members)
         {
             switch (members)

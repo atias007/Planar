@@ -91,6 +91,17 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, tables);
         }
 
+        [Action("next")]
+        public static async Task<CliActionResponse> GetNextRunning(CliJobOrTriggerKey jobKey)
+        {
+            var restRequest = new RestRequest("job/nextRunning/{id}", Method.Get)
+                .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<DateTime?>(restRequest);
+            var message = $"{result?.Data?.ToShortDateString()} {result?.Data?.ToShortTimeString()}";
+            return new CliActionResponse(result, message: message);
+        }
+
         [Action("settings")]
         public static async Task<CliActionResponse> GetJobSettings(CliJobOrTriggerKey jobKey)
         {
