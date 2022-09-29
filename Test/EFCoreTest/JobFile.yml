@@ -3,7 +3,7 @@ name: EFCoreTest
 group: Infrastructure
 description: Test connect to sql server with entity framework
 durable: true
-concurrent: true
+concurrent: false
 job data:
   LastId: 1
 properties:

@@ -9,5 +9,7 @@ pause           <trigger id>
 resume          <trigger id>
 delete|remove   <trigger id>
 
-*** <job id> represent job hash id  or job key <[group.]name>
-*** <trigger id> represent trigger hash id or trigger key <[group.]name>
+******************************************************************************
+*** <job id> represent job hash id  or job key <[group.]name>              ***
+*** <trigger id> represent trigger hash id or trigger key <[group.]name>   ***
+******************************************************************************

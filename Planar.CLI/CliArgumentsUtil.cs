@@ -48,8 +48,6 @@ namespace Planar.CLI
         {
             var list = args.ToList();
 
-
-
             if (list[0].ToLower() == "ls") { list.Insert(0, "job"); }
             if (list[0].ToLower() == "connect") { list.Insert(0, "service"); }
             if (list[0].ToLower() == "cls") { list.Insert(0, "inner"); }

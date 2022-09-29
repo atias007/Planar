@@ -9,10 +9,7 @@ upgrade:
 - add interface to hooks to handle system events
 
 - job test: in no instance id, check hc and print warning about already running job with no concurent
-- odata
-- cli: job invoke show list of abc jobs
-- cli: job invoke !! invoke the last running job
-- cli: job test !! test the last running job
+
 
 
 - demo yml file in data directory
@@ -51,3 +48,9 @@ upgrade:
 - cli: job invoke show list of abc jobs
 - cli: job invoke !! invoke the last running job
 - cli: job test !! test the last running job
+- cli: job command to see the next running
+- odata
+- cli: job invoke show list of abc jobs
+- cli: job invoke !! invoke the last running job
+- cli: job test !! test the last running job
+
