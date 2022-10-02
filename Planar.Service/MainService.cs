@@ -83,7 +83,14 @@ namespace Planar.Service
                     _logger.LogWarning("Fail to RemoveSchedulerCluster");
                 }
 
-                await _scheduler?.Shutdown(true);
+                try
+                {
+                    await _scheduler?.Shutdown(true);
+                }
+                catch
+                {
+                    // *** ignore exceptions *** //
+                }
             });
 
             return Task.CompletedTask;

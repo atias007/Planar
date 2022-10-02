@@ -18,6 +18,14 @@
 		<Content Remove="Data\Settings\HebrewCalendar.json" />
 		<Content Remove="Data\Settings\Serilog.json" />
 	</ItemGroup>
+	<ItemGroup>
+	  <None Remove="Data\Calendars\readme.md" />
+	  <None Remove="Data\Jobs\readme.md" />
+	  <None Remove="Data\MonitorHooks\readme.md" />
+	  <None Remove="Data\MonitorHooks\Teams\readme.md" />
+	  <None Remove="Data\Setup\CliPath.ps1" />
+	  <None Remove="Data\Setup\EnvironmentVariable.ps1" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
@@ -39,15 +47,29 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Include="Data\Settings\AppSettings.json">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Include="Data\Calendars\Hebrew\HebrewCalendar.json">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Include="Data\Settings\Serilog.json">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
+		<EmbeddedResource Include="Data\Settings\AppSettings.json">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
+		<EmbeddedResource Include="Data\Calendars\Hebrew\HebrewCalendar.json">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
+		<EmbeddedResource Include="Data\Calendars\readme.md">
+		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
+		<EmbeddedResource Include="Data\Jobs\readme.md">
+		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
+		<EmbeddedResource Include="Data\MonitorHooks\readme.md">
+		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
+		<EmbeddedResource Include="Data\MonitorHooks\Teams\readme.md">
+		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
+		<EmbeddedResource Include="Data\Settings\Serilog.json">
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
+		<EmbeddedResource Include="Data\Setup\CliPath.ps1" />
+		<EmbeddedResource Include="Data\Setup\EnvironmentVariable.ps1" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -61,17 +83,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Update="Data\Calendars\readme.md">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Update="Data\Jobs\readme.md">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Update="Data\MonitorHooks\readme.md">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
-		<None Update="Data\MonitorHooks\Teams\readme.md">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
+	  <None Update="Data\Setup\docker-compose.yml">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 </Project>

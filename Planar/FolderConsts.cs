@@ -46,5 +46,13 @@ namespace Planar
             var result = Path.Combine(parts.ToArray());
             return result;
         }
+
+        public static string GetPath(params string[] paths)
+        {
+            var parts = paths.ToList();
+            parts.Insert(0, BasePath);
+            var result = Path.Combine(parts.ToArray());
+            return result;
+        }
     }
 }

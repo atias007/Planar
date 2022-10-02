@@ -15,6 +15,7 @@ using Planar.Service;
 using Planar.Service.API;
 using Planar.Service.Data;
 using Serilog;
+using System;
 using System.Net;
 using System.Reflection;
 
@@ -59,7 +60,9 @@ namespace Planar
                 });
             }
 
-            services.AddDbContext<PlanarContext>(o => o.UseSqlServer(AppSettings.DatabaseConnectionString),
+            services.AddDbContext<PlanarContext>(o => o.UseSqlServer(
+                    AppSettings.DatabaseConnectionString,
+                    options => options.EnableRetryOnFailure(10, TimeSpan.FromSeconds(10), null)),
                 contextLifetime: ServiceLifetime.Transient,
                 optionsLifetime: ServiceLifetime.Singleton
             );

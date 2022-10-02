@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.Exceptions;
+using Polly;
 using System;
 using System.Text;
 
@@ -153,8 +154,17 @@ namespace Planar.Service
 
             try
             {
-                using var conn = new SqlConnection(connectionString);
-                conn.Open();
+                var counter = 1;
+                Policy.Handle<SqlException>()
+                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(5000))
+                    .ExecuteAsync(() =>
+                    {
+                        Console.WriteLine($"Attemp no {counter} to connect to database");
+                        using var conn = new SqlConnection(connectionString);
+                        return conn.OpenAsync();
+                    });
+
+                Console.WriteLine($"Connection database success");
             }
             catch (Exception ex)
             {
