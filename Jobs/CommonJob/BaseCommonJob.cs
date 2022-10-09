@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 
 namespace CommonJob
 {
-    [PersistJobDataAfterExecution]
     public abstract class BaseCommonJob<TInstance> : IJob
         where TInstance : class, new()
     {

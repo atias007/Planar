@@ -8,7 +8,7 @@ namespace Planar.Common
 {
     public static class Global
     {
-        public static Dictionary<string, string> Parameters { get; private set; }
+        public static Dictionary<string, string> GlobalConfig { get; private set; }
 
         public static IServiceProvider ServiceProvider { get; set; }
 
@@ -30,14 +30,14 @@ namespace Planar.Common
             return logger;
         }
 
-        public static void SetParameters(Dictionary<string, string> parameters)
+        public static void SetGlobalConfig(Dictionary<string, string> config)
         {
-            Parameters = parameters;
+            GlobalConfig = config;
         }
 
         public static void Clear()
         {
-            Parameters = null;
+            GlobalConfig = null;
             ServiceProvider = null;
         }
 

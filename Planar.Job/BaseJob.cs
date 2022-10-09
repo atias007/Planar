@@ -44,7 +44,9 @@ namespace Planar
         internal Task Execute(ref object messageBroker)
         {
             InitializeMessageBroker(messageBroker);
-            InitializeDepedencyInjection(_context, _messageBroker);
+
+            var configuration = GetConfiguration(_context);
+            InitializeDepedencyInjection(_context, configuration);
 
             Logger = ServiceProvider.GetRequiredService<ILogger>();
 
@@ -198,13 +200,11 @@ namespace Planar
             return result;
         }
 
-        private void InitializeDepedencyInjection(JobExecutionContext context, MessageBroker messageBroker)
+        private void InitializeDepedencyInjection(JobExecutionContext context, IConfiguration configuration)
         {
             var services = new ServiceCollection();
-            var configuration = GetConfiguration(context);
             services.AddSingleton(configuration);
             services.AddSingleton<IJobExecutionContext>(context);
-            services.AddSingleton(messageBroker);
             services.AddSingleton<ILogger, PlannerLogger>();
             services.AddSingleton(typeof(ILogger<>), typeof(PlannerLogger<>));
             RegisterServices(services);
@@ -217,8 +217,6 @@ namespace Planar
             {
                 throw new ApplicationException("MessageBroker at BaseJob.Execute(string, ref object) is null");
             }
-
-            _messageBroker = new MessageBroker(messageBroker);
 
             try
             {
@@ -237,8 +235,10 @@ namespace Planar
             {
                 throw new ApplicationException("Fail to deserialize job execution context at BaseJob.Execute(string, ref object)", ex);
             }
-
-            _messageBroker = new MessageBroker(messageBroker);
+            finally
+            {
+                _messageBroker = new MessageBroker(messageBroker);
+            }
         }
     }
 }

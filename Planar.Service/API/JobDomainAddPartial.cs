@@ -5,6 +5,7 @@ using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
+using Planar.Service.Model;
 using Planar.Service.Validation;
 using Quartz;
 using RunPlanarJob;
@@ -374,7 +375,7 @@ namespace Planar.Service.API
             {
                 foreach (var p in config)
                 {
-                    var data = new GlobalConfigData { Key = p.Key, Value = p.Value };
+                    var data = new GlobalConfig { Key = p.Key, Value = p.Value };
                     var validator = new GlobalConfigDataValidator();
                     await validator.ValidateAndThrowAsync(data);
                 };
@@ -388,7 +389,7 @@ namespace Planar.Service.API
                 var configDomain = Resolve<ConfigDomain>();
                 foreach (var p in config)
                 {
-                    var data = new GlobalConfigData { Key = p.Key, Value = p.Value };
+                    var data = new GlobalConfig { Key = p.Key, Value = p.Value };
                     await configDomain.Upsert(data);
                 };
             }

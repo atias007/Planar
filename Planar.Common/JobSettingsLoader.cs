@@ -14,8 +14,8 @@ namespace Planar.Common
 
         public static Dictionary<string, string> LoadJobSettings(string jobPath)
         {
-            // Load job global parameters
-            var final = Global.Parameters;
+            // Load job global config
+            var final = Global.GlobalConfig;
 
             // Merge settings yml file
             if (string.IsNullOrEmpty(jobPath)) { return new Dictionary<string, string>(); }

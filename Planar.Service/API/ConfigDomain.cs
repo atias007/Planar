@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Planar.API.Common.Entities;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
@@ -49,48 +48,22 @@ namespace Planar.Service.API
         public async Task<Dictionary<string, string>> GetAll()
         {
             var data = (await DataLayer.GetAllGlobalConfig())
-                .Select(p => GetGlobalConfigData(p))
                 .ToDictionary(p => p.Key, p => p.Value);
 
             return data;
         }
 
-        public async Task Upsert(GlobalConfigData request)
+        public async Task Upsert(GlobalConfig request)
         {
             var exists = await DataLayer.IsGlobalConfigExists(request.Key);
-            var data = GetGlobalConfig(request);
             if (exists)
             {
-                await DataLayer.UpdateGlobalConfig(data);
+                await DataLayer.UpdateGlobalConfig(request);
             }
             else
             {
-                await DataLayer.AddGlobalConfig(data);
+                await DataLayer.AddGlobalConfig(request);
             }
-        }
-
-        private static GlobalConfig GetGlobalConfig(GlobalConfigData request)
-        {
-            var result = new GlobalConfig
-            {
-                Key = request.Key,
-                Value = request.Value,
-                Type = request.Type
-            };
-
-            return result;
-        }
-
-        private static GlobalConfigData GetGlobalConfigData(GlobalConfig data)
-        {
-            var result = new GlobalConfigData
-            {
-                Key = data.Key,
-                Value = data.Value,
-                Type = data.Type
-            };
-
-            return result;
         }
     }
 }

@@ -41,10 +41,13 @@ namespace Planar
             var mvcBuilder = services.AddControllers();
             RegisterOData(mvcBuilder);
 
-            services.AddSwaggerGen(c =>
+            if (AppSettings.SwaggerUI)
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Planar", Version = "v1" });
-            });
+                services.AddSwaggerGen(c =>
+                {
+                    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Planar", Version = "v1" });
+                });
+            }
 
             if (AppSettings.UseHttpsRedirect)
             {

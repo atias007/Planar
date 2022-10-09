@@ -159,12 +159,12 @@ namespace Planar.Service
                     .WaitAndRetryAsync(12, i => TimeSpan.FromSeconds(5))
                     .ExecuteAsync(() =>
                     {
-                        Console.WriteLine($"Attemp no {counter++} to connect to database");
+                        Console.WriteLine($"    - Attemp no {counter++} to connect to database");
                         using var conn = new SqlConnection(connectionString);
                         return conn.OpenAsync();
                     });
 
-                Console.WriteLine($"Connection database success");
+                Console.WriteLine($"    - Connection database success");
             }
             catch (Exception ex)
             {

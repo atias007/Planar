@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
+using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -31,7 +32,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Upsert([FromBody] GlobalConfigData request)
+        public async Task<ActionResult> Upsert([FromBody] GlobalConfig request)
         {
             await BusinesLayer.Upsert(request);
             return CreatedAtAction(nameof(Get), new { key = request.Key }, null);
