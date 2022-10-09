@@ -67,7 +67,7 @@ namespace Planar
                 optionsLifetime: ServiceLifetime.Singleton
             );
 
-            services.AddAutoMapper(Assembly.Load("Planar.Service"));
+            services.AddAutoMapper(Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));
             services.AddTransient<DataLayer>();
             services.AddTransient<MainService>();
             services.AddScoped<GroupDomain>();
