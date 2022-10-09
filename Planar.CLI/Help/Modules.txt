@@ -7,7 +7,7 @@ service      Actions to operate service, check alive, list calendars and more
 cluster      Actions to monitor cluster nodes, test communication and do some operatins
 history      Actions to inspect history runs of actions
 trace        Actions to list trace log info
-param        Actions to add, remove, list & update global parameters
+config       Actions to add, remove, list & update global parameters
 monitor      Actions to handle monitoring and monitor hooks
 user         Actions to handle users
 group        Actions to handle groups

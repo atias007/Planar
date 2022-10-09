@@ -16,10 +16,7 @@ namespace Planar.Calendar.Hebrew
 
         public HebrewCalendar(ILogger logger) : base(logger)
         {
-            if (_settings == null)
-            {
-                _settings = LoadSettings<HebrewCalendarSettings>();
-            }
+            _settings ??= LoadSettings<HebrewCalendarSettings>();
         }
 
         public HebrewCalendarSettings Settings

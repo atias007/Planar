@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("param")]
-    public class ParamCliActions : BaseCliAction<ParamCliActions>
+    [Module("config")]
+    public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     {
         [Action("get")]
-        public static async Task<CliActionResponse> GetParameter(CliParameterKeyRequest request)
+        public static async Task<CliActionResponse> GetConfig(CliConfigKeyRequest request)
         {
-            var restRequest = new RestRequest("parameters/{key}", Method.Get)
+            var restRequest = new RestRequest("config/{key}", Method.Get)
                 .AddParameter("key", request.Key, ParameterType.UrlSegment);
             var result = await RestProxy.Invoke<string>(restRequest);
             return new CliActionResponse(result, message: result.Data);
@@ -21,17 +21,17 @@ namespace Planar.CLI.Actions
 
         [Action("ls")]
         [Action("list")]
-        public static async Task<CliActionResponse> GetAllParameter()
+        public static async Task<CliActionResponse> GetAllConfiguration()
         {
-            var restRequest = new RestRequest("parameters", Method.Get);
+            var restRequest = new RestRequest("config", Method.Get);
             return await ExecuteEntity<Dictionary<string, string>>(restRequest);
         }
 
         [Action("upsert")]
         [Action("add")]
-        public static async Task<CliActionResponse> Upsert(CliParameterRequest request)
+        public static async Task<CliActionResponse> Upsert(CliConfigRequest request)
         {
-            var restRequest = new RestRequest("parameters", Method.Post)
+            var restRequest = new RestRequest("config", Method.Post)
                 .AddBody(request);
 
             return await Execute(restRequest);
@@ -40,14 +40,14 @@ namespace Planar.CLI.Actions
         [Action("flush")]
         public static async Task<CliActionResponse> Flush()
         {
-            var restRequest = new RestRequest("parameters/flush", Method.Post);
+            var restRequest = new RestRequest("config/flush", Method.Post);
             return await Execute(restRequest);
         }
 
         [Action("remove")]
-        public static async Task<CliActionResponse> RemoveParameter(CliParameterKeyRequest request)
+        public static async Task<CliActionResponse> RemoveConfig(CliConfigKeyRequest request)
         {
-            var restRequest = new RestRequest("parameters/{key}", Method.Delete)
+            var restRequest = new RestRequest("config/{key}", Method.Delete)
                 .AddParameter("key", request.Key, ParameterType.UrlSegment);
             return await Execute(restRequest);
         }

@@ -184,53 +184,29 @@ namespace Planar.Service.API
 
         private static string GetMisfireInstructionNameForSimpleTrigger(int value)
         {
-            switch (value)
+            return value switch
             {
-                case -1:
-                    return "Ignore Misfire Policy";
-
-                case 0:
-                    return "Instruction Not Set";
-
-                case 1:
-                    return "Fire Now";
-
-                case 2:
-                    return "Now With Existing Repeat Count";
-
-                case 3:
-                    return "Now With Remaining Repeat Count";
-
-                case 4:
-                    return "Next With Remaining Count";
-
-                case 5:
-                    return "Next With Existing Count";
-
-                default:
-                    return "Unknown";
-            }
+                -1 => "Ignore Misfire Policy",
+                0 => "Instruction Not Set",
+                1 => "Fire Now",
+                2 => "Now With Existing Repeat Count",
+                3 => "Now With Remaining Repeat Count",
+                4 => "Next With Remaining Count",
+                5 => "Next With Existing Count",
+                _ => "Unknown",
+            };
         }
 
         private static string GetMisfireInstructionNameForCronTrigger(int value)
         {
-            switch (value)
+            return value switch
             {
-                case -1:
-                    return "Ignore Misfire Policy";
-
-                case 0:
-                    return "Instruction Not Set";
-
-                case 1:
-                    return "Fire Once Now";
-
-                case 2:
-                    return "Do Nothing";
-
-                default:
-                    return "Unknown";
-            }
+                -1 => "Ignore Misfire Policy",
+                0 => "Instruction Not Set",
+                1 => "Fire Once Now",
+                2 => "Do Nothing",
+                _ => "Unknown",
+            };
         }
     }
 }

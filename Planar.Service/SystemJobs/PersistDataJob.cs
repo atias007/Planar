@@ -14,7 +14,6 @@ using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
 
 namespace Planar.Service.SystemJobs
 {
-    [DisallowConcurrentExecution]
     public class PersistDataJob : BaseSystemJob, IJob
     {
         private readonly ILogger<PersistDataJob> _logger;

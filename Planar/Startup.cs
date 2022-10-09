@@ -3,7 +3,6 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.OData;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,12 +11,8 @@ using Microsoft.OData.ModelBuilder;
 using Microsoft.OpenApi.Models;
 using Planar.Filters;
 using Planar.Service;
-using Planar.Service.API;
-using Planar.Service.Data;
 using Serilog;
-using System;
 using System.Net;
-using System.Reflection;
 
 namespace Planar
 {
@@ -41,7 +36,7 @@ namespace Planar
             });
 
             services.AddFluentValidationAutoValidation();
-            services.AddValidatorsFromAssembly(GetType().Assembly);
+            services.AddValidatorsFromAssemblies(new[] { GetType().Assembly, typeof(MainService).Assembly });
 
             var mvcBuilder = services.AddControllers();
             RegisterOData(mvcBuilder);
@@ -60,28 +55,8 @@ namespace Planar
                 });
             }
 
-            services.AddDbContext<PlanarContext>(o => o.UseSqlServer(
-                    AppSettings.DatabaseConnectionString,
-                    options => options.EnableRetryOnFailure(10, TimeSpan.FromSeconds(10), null)),
-                contextLifetime: ServiceLifetime.Transient,
-                optionsLifetime: ServiceLifetime.Singleton
-            );
-
-            services.AddAutoMapper(Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));
-            services.AddTransient<DataLayer>();
-            services.AddTransient<MainService>();
-            services.AddScoped<GroupDomain>();
-            services.AddScoped<HistoryDomain>();
-            services.AddScoped<JobDomain>();
-            services.AddScoped<ParametersDomain>();
-            services.AddScoped<ServiceDomain>();
-            services.AddScoped<MonitorDomain>();
-            services.AddScoped<TraceDomain>();
-            services.AddScoped<TriggerDomain>();
-            services.AddScoped<UserDomain>();
-            services.AddScoped<ClusterDomain>();
+            services.AddPlanarServices();
             services.AddGrpc();
-            services.AddHostedService<MainService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

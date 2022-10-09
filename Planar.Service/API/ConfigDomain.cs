@@ -11,9 +11,9 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class ParametersDomain : BaseBL<ParametersDomain>
+    public class ConfigDomain : BaseBL<ConfigDomain>
     {
-        public ParametersDomain(ILogger<ParametersDomain> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public ConfigDomain(ILogger<ConfigDomain> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
         {
         }
 
@@ -21,7 +21,7 @@ namespace Planar.Service.API
         {
             try
             {
-                await DataLayer.RemoveGlobalParameter(key);
+                await DataLayer.RemoveGlobalConfig(key);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -31,61 +31,63 @@ namespace Planar.Service.API
 
         public async Task Flush()
         {
-            await MainService.LoadGlobalParameters();
+            await MainService.LoadGlobalConfig();
         }
 
         public async Task<string> Get(string key)
         {
-            var data = await DataLayer.GetGlobalParameter(key);
+            var data = await DataLayer.GetGlobalConfig(key);
 
             if (data == null)
             {
                 throw new RestNotFoundException($"Parameter with key '{key}' not found");
             }
 
-            return data?.ParamValue;
+            return data?.Value;
         }
 
         public async Task<Dictionary<string, string>> GetAll()
         {
-            var data = (await DataLayer.GetAllGlobalParameter())
-                .Select(p => GetGlobalParameterData(p))
+            var data = (await DataLayer.GetAllGlobalConfig())
+                .Select(p => GetGlobalConfigData(p))
                 .ToDictionary(p => p.Key, p => p.Value);
 
             return data;
         }
 
-        public async Task Upsert(GlobalParameterData request)
+        public async Task Upsert(GlobalConfigData request)
         {
-            var exists = await DataLayer.IsGlobalParameterExists(request.Key);
-            var data = GetGlobalParameter(request);
+            var exists = await DataLayer.IsGlobalConfigExists(request.Key);
+            var data = GetGlobalConfig(request);
             if (exists)
             {
-                await DataLayer.UpdateGlobalParameter(data);
+                await DataLayer.UpdateGlobalConfig(data);
             }
             else
             {
-                await DataLayer.AddGlobalParameter(data);
+                await DataLayer.AddGlobalConfig(data);
             }
         }
 
-        private static GlobalParameter GetGlobalParameter(GlobalParameterData request)
+        private static GlobalConfig GetGlobalConfig(GlobalConfigData request)
         {
-            var result = new GlobalParameter
+            var result = new GlobalConfig
             {
-                ParamKey = request.Key,
-                ParamValue = request.Value
+                Key = request.Key,
+                Value = request.Value,
+                Type = request.Type
             };
 
             return result;
         }
 
-        private static GlobalParameterData GetGlobalParameterData(GlobalParameter data)
+        private static GlobalConfigData GetGlobalConfigData(GlobalConfig data)
         {
-            var result = new GlobalParameterData
+            var result = new GlobalConfigData
             {
-                Key = data.ParamKey,
-                Value = data.ParamValue
+                Key = data.Key,
+                Value = data.Value,
+                Type = data.Type
             };
 
             return result;

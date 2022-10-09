@@ -70,7 +70,7 @@ namespace Planar.CLI.Actions
             result.AddRange(ServiceCliActions.GetActions());
             result.AddRange(TriggerCliActions.GetActions());
             result.AddRange(TraceCliActions.GetActions());
-            result.AddRange(ParamCliActions.GetActions());
+            result.AddRange(ConfigCliActions.GetActions());
             result.AddRange(HistoryCliActions.GetActions());
             result.AddRange(UserCliActions.GetActions());
             result.AddRange(GroupCliActions.GetActions());

@@ -1,9 +1,11 @@
-﻿using Newtonsoft.Json;
+﻿using FluentValidation;
+using Newtonsoft.Json;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
+using Planar.Service.Validation;
 using Quartz;
 using RunPlanarJob;
 using System;
@@ -33,7 +35,8 @@ namespace Planar.Service.API
             await ValidateAdd(request);
 
             var jobKey = await ValidateJobMetadata(request);
-            await BuildGlobalParameters(request.GlobalParameters);
+            await ValidateGlobalConfig(request.GlobalConfig);
+            await BuildGlobalConfig(request.GlobalConfig);
 
             var jobType = GetJobType(request);
             var jobBuilder = JobBuilder.Create(jobType)
@@ -365,14 +368,28 @@ namespace Planar.Service.API
             return id;
         }
 
-        private async Task BuildGlobalParameters(Dictionary<string, string> parameters)
+        private static async Task ValidateGlobalConfig(Dictionary<string, string> config)
         {
-            if (parameters != null)
+            if (config != null)
             {
-                var parametersDomain = Resolve<ParametersDomain>();
-                foreach (var p in parameters)
+                foreach (var p in config)
                 {
-                    await parametersDomain.Upsert(new GlobalParameterData { Key = p.Key, Value = p.Value });
+                    var data = new GlobalConfigData { Key = p.Key, Value = p.Value };
+                    var validator = new GlobalConfigDataValidator();
+                    await validator.ValidateAndThrowAsync(data);
+                };
+            }
+        }
+
+        private async Task BuildGlobalConfig(Dictionary<string, string> config)
+        {
+            if (config != null)
+            {
+                var configDomain = Resolve<ConfigDomain>();
+                foreach (var p in config)
+                {
+                    var data = new GlobalConfigData { Key = p.Key, Value = p.Value };
+                    await configDomain.Upsert(data);
                 };
             }
         }

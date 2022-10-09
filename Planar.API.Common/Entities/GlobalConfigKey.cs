@@ -2,7 +2,7 @@
 
 namespace Planar.API.Common.Entities
 {
-    public class GlobalParameterKey
+    public class GlobalConfigKey
     {
         [Required]
         public string Key { get; set; }

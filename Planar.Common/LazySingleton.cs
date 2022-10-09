@@ -22,10 +22,7 @@ namespace Planar.Common
                 {
                     lock (Locker)
                     {
-                        if (_instance == null) //-V3054
-                        {
-                            _instance = _instanceCreator.Invoke();
-                        }
+                        _instance ??= _instanceCreator.Invoke();
                     }
                 }
 
