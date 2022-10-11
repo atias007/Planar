@@ -16,12 +16,12 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<None Remove="Help\Cluster.txt" />
+		<None Remove="Help\Config.txt" />
 		<None Remove="Help\group.txt" />
 		<None Remove="Help\History.txt" />
 		<None Remove="Help\Job.txt" />
 		<None Remove="Help\Modules.txt" />
 		<None Remove="Help\Monitor.txt" />
-		<None Remove="Help\Param.txt" />
 		<None Remove="Help\Service.txt" />
 		<None Remove="Help\Trace.txt" />
 		<None Remove="Help\Trigger.txt" />
@@ -40,7 +40,7 @@
 		<EmbeddedResource Include="Help\User.txt" />
 		<EmbeddedResource Include="Help\Trigger.txt" />
 		<EmbeddedResource Include="Help\Service.txt" />
-		<EmbeddedResource Include="Help\Param.txt" />
+		<EmbeddedResource Include="Help\Config.txt" />
 		<EmbeddedResource Include="Help\Trace.txt" />
 		<EmbeddedResource Include="Help\Job.txt" />
 		<EmbeddedResource Include="Help\Modules.txt" />
@@ -52,7 +52,7 @@
 		<PackageReference Include="RestSharp" Version="108.0.2" />
 		<PackageReference Include="RestSharp.Serializers.NewtonsoftJson" Version="108.0.2" />
 		<PackageReference Include="Spectre.Console" Version="0.45.0" />
-		<PackageReference Include="YamlDotNet" Version="12.0.1" />
+		<PackageReference Include="YamlDotNet" Version="12.0.2" />
 	</ItemGroup>
 
 	<ItemGroup>

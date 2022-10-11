@@ -1,9 +1,12 @@
-﻿using Newtonsoft.Json;
+﻿using FluentValidation;
+using Newtonsoft.Json;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
+using Planar.Service.Model;
+using Planar.Service.Validation;
 using Quartz;
 using RunPlanarJob;
 using System;
@@ -33,7 +36,9 @@ namespace Planar.Service.API
             await ValidateAdd(request);
 
             var jobKey = await ValidateJobMetadata(request);
-            await BuildGlobalParameters(request.GlobalParameters);
+            var config = GetGlobalConfig(request.GlobalConfig);
+            await ValidateGlobalConfig(config);
+            await BuildGlobalConfig(config);
 
             var jobType = GetJobType(request);
             var jobBuilder = JobBuilder.Create(jobType)
@@ -365,16 +370,29 @@ namespace Planar.Service.API
             return id;
         }
 
-        private async Task BuildGlobalParameters(Dictionary<string, string> parameters)
+        private static IEnumerable<GlobalConfig> GetGlobalConfig(Dictionary<string, string> config)
         {
-            if (parameters != null)
+            if (config == null) { return Array.Empty<GlobalConfig>(); }
+            var result = config.Select(c => new GlobalConfig { Key = c.Key, Value = c.Value, Type = "string" });
+            return result;
+        }
+
+        private static async Task ValidateGlobalConfig(IEnumerable<GlobalConfig> config)
+        {
+            foreach (var p in config)
             {
-                var parametersDomain = Resolve<ParametersDomain>();
-                foreach (var p in parameters)
-                {
-                    await parametersDomain.Upsert(new GlobalParameterData { Key = p.Key, Value = p.Value });
-                };
+                var validator = new GlobalConfigDataValidator();
+                await validator.ValidateAndThrowAsync(p);
             }
+        }
+
+        private async Task BuildGlobalConfig(IEnumerable<GlobalConfig> config)
+        {
+            var configDomain = Resolve<ConfigDomain>();
+            foreach (var p in config)
+            {
+                await configDomain.Upsert(p);
+            };
         }
 
         private static async Task<JobKey> ValidateJobMetadata(AddJobRequest metadata)

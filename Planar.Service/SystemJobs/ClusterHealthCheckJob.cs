@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs
 {
-    [DisallowConcurrentExecution]
     public class ClusterHealthCheckJob : BaseSystemJob, IJob
     {
         private readonly ILogger<ClusterHealthCheckJob> _logger;

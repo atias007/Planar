@@ -133,7 +133,7 @@ namespace Planar.Job.Test
                 throw new ApplicationException($"Method 'Execute' at type '{type.Name}' must have only 1 parameters (current parameters count {parameters?.Length})");
             }
 
-            if (parameters[0].ParameterType.ToString().StartsWith("System.Object") == false)
+            if (!parameters[0].ParameterType.ToString().StartsWith("System.Object"))
             {
                 throw new ApplicationException($"Second parameter in method 'Execute' at type '{type.Name}' must be object. (current type '{parameters[1].ParameterType.Name}')");
             }

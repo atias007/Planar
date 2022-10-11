@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
+using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -9,10 +10,10 @@ using System.Threading.Tasks;
 namespace Planar.Controllers
 {
     [ApiController]
-    [Route("parameters")]
-    public class ParametersController : BaseController<ParametersController, ParametersDomain>
+    [Route("config")]
+    public class ConfigController : BaseController<ConfigController, ConfigDomain>
     {
-        public ParametersController(ILogger<ParametersController> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public ConfigController(ILogger<ConfigController> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
         {
         }
 
@@ -31,7 +32,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Upsert([FromBody] GlobalParameterData request)
+        public async Task<ActionResult> Upsert([FromBody] GlobalConfig request)
         {
             await BusinesLayer.Upsert(request);
             return CreatedAtAction(nameof(Get), new { key = request.Key }, null);

@@ -28,11 +28,13 @@ namespace Planar.Service
     {
         private static IScheduler _scheduler;
         private readonly ILogger<MainService> _logger;
+        private readonly IHostApplicationLifetime _lifetime;
 
-        public MainService(IServiceProvider serviceProvider)
+        public MainService(IServiceProvider serviceProvider, IHostApplicationLifetime lifetime)
         {
+            _lifetime = lifetime;
             _logger = serviceProvider.GetService<ILogger<MainService>>();
-            Global.ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider)); ;
+            Global.ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         }
 
         public static IScheduler Scheduler
@@ -46,6 +48,22 @@ namespace Planar.Service
 
                 return _scheduler;
             }
+        }
+
+        private static async Task<bool> WaitForAppStartup(IHostApplicationLifetime lifetime, CancellationToken stoppingToken)
+        {
+            var startedSource = new TaskCompletionSource();
+            var cancelledSource = new TaskCompletionSource();
+
+            using var reg1 = lifetime.ApplicationStarted.Register(() => startedSource.SetResult());
+            using var reg2 = stoppingToken.Register(() => cancelledSource.SetResult());
+
+            Task completedTask = await Task.WhenAny(
+                startedSource.Task,
+                cancelledSource.Task).ConfigureAwait(false);
+
+            // If the completed tasks was the "app started" task, return true, otherwise false
+            return completedTask == startedSource.Task;
         }
 
         public static void Shutdown()
@@ -66,8 +84,13 @@ namespace Planar.Service
             Global.Clear();
         }
 
-        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            if (!await WaitForAppStartup(_lifetime, stoppingToken))
+            {
+                return;
+            }
+
             var mainTask = Run();
             var waiter = new CancellationTokenAwaiter(stoppingToken);
 
@@ -93,14 +116,14 @@ namespace Planar.Service
                 }
             });
 
-            return Task.CompletedTask;
+            await Task.CompletedTask;
         }
 
         public async Task Run()
         {
             _logger.LogInformation("Service environment: {Environment}", Global.Environment);
 
-            await LoadGlobalParametersInner();
+            await LoadGlobalConfigInner();
 
             await SetQuartzLogProvider();
 
@@ -123,26 +146,26 @@ namespace Planar.Service
 
         #region Initialize Scheduler
 
-        private async Task LoadGlobalParametersInner()
+        private async Task LoadGlobalConfigInner()
         {
             try
             {
-                _logger.LogInformation("Initialize: LoadGlobalParameters");
-                await LoadGlobalParameters();
+                _logger.LogInformation("Initialize: LoadGlobalConfig");
+                await LoadGlobalConfig();
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Initialize: Fail to LoadGlobalParameters");
+                _logger.LogCritical(ex, "Initialize: Fail to LoadGlobalConfig");
                 throw;
             }
         }
 
-        public static async Task LoadGlobalParameters()
+        public static async Task LoadGlobalConfig()
         {
             var dal = Resolve<DataLayer>();
-            var prms = await dal.GetAllGlobalParameter();
-            var dict = prms.ToDictionary(p => p.ParamKey, p => p.ParamValue);
-            Global.SetParameters(dict);
+            var prms = await dal.GetAllGlobalConfig();
+            var dict = prms.ToDictionary(p => p.Key, p => p.Value);
+            Global.SetGlobalConfig(dict);
         }
 
         public async Task ScheduleSystemJobs()
@@ -250,7 +273,6 @@ namespace Planar.Service
         {
             if (AppSettings.Clustering)
             {
-                var dal = Resolve<DataLayer>();
                 var cluster = new ClusterNode
                 {
                     Server = Environment.MachineName,
@@ -258,6 +280,10 @@ namespace Planar.Service
                     InstanceId = _scheduler.SchedulerInstanceId
                 };
 
+                var services = new ServiceCollection();
+                services.AddPlanarDataLayerWithContext();
+                var provider = services.BuildServiceProvider();
+                var dal = provider.GetRequiredService<DataLayer>();
                 await dal.RemoveClusterNode(cluster);
             }
         }

@@ -2,7 +2,7 @@
 
 namespace Planar.CLI.Entities
 {
-    public class CliParameterKeyRequest
+    public class CliConfigKeyRequest
     {
         [ActionProperty(DefaultOrder = 0)]
         [Required("key parameter is required")]

@@ -27,7 +27,7 @@ namespace TestAggEx
                         throw new PlanarJobException($"This is demo exception occur at loop no. {i}");
                     }
 
-                    Logger.LogInformation($"This is loop no. {i}");
+                    Logger.LogInformation("This is loop no. {Index}", i);
 
                     IncreaseEffectedRows();
                 }

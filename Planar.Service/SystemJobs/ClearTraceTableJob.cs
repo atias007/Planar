@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs
 {
-    [DisallowConcurrentExecution]
     public class ClearTraceTableJob : BaseSystemJob, IJob
     {
         private readonly ILogger<ClearTraceTableJob> _logger;

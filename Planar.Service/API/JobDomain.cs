@@ -398,10 +398,7 @@ namespace Planar.Service.API
 
         private static void MapJobDetails(IJobDetail source, JobDetails target, JobDataMap dataMap = null)
         {
-            if (dataMap == null)
-            {
-                dataMap = source.JobDataMap;
-            }
+            dataMap ??= source.JobDataMap;
 
             SchedulerUtil.MapJobRowDetails(source, target);
             target.Concurrent = !source.ConcurrentExecutionDisallowed;
