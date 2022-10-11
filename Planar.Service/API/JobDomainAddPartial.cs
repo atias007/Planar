@@ -372,14 +372,13 @@ namespace Planar.Service.API
 
         private static IEnumerable<GlobalConfig> GetGlobalConfig(Dictionary<string, string> config)
         {
-            if (config == null) { return null; }
+            if (config == null) { return Array.Empty<GlobalConfig>(); }
             var result = config.Select(c => new GlobalConfig { Key = c.Key, Value = c.Value, Type = "string" });
             return result;
         }
 
         private static async Task ValidateGlobalConfig(IEnumerable<GlobalConfig> config)
         {
-            if (config == null) { return; }
             foreach (var p in config)
             {
                 var validator = new GlobalConfigDataValidator();
@@ -389,7 +388,6 @@ namespace Planar.Service.API
 
         private async Task BuildGlobalConfig(IEnumerable<GlobalConfig> config)
         {
-            if (config == null) { return; }
             var configDomain = Resolve<ConfigDomain>();
             foreach (var p in config)
             {
