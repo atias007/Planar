@@ -18,8 +18,6 @@ namespace RunPlanarJob
 
         public string TypeName { get; set; }
 
-        private JobMessageBroker _broker;
-
         private string AssemblyFilename { get; set; }
 
         public override async Task Execute(IJobExecutionContext context)
@@ -31,7 +29,7 @@ namespace RunPlanarJob
                 MapProperties(context);
                 AssemblyFilename = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, JobPath, FileName);
 
-                Validate();
+                ValidatePlanarJob();
 
                 assemblyContext = AssemblyLoader.CreateAssemblyLoadContext(context.FireInstanceId, true);
                 var assembly = AssemblyLoader.LoadFromAssemblyPath(AssemblyFilename, assemblyContext);
@@ -42,15 +40,13 @@ namespace RunPlanarJob
                     type = assembly.GetTypes().FirstOrDefault(t => t.FullName == TypeName);
                 }
 
-                Validate(type);
-
-                var method = type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance);
+                var method = ValidateBaseJob(type);
                 var instance = assembly.CreateInstance(TypeName);
 
                 MapJobInstanceProperties(context, type, instance);
 
                 var settings = LoadJobSettings();
-                _broker = new JobMessageBroker(context, settings);
+                var _broker = new JobMessageBroker(context, settings);
                 await (method.Invoke(instance, new object[] { _broker }) as Task);
             }
             catch (Exception ex)
@@ -65,7 +61,7 @@ namespace RunPlanarJob
             }
         }
 
-        private new void Validate()
+        private void ValidatePlanarJob()
         {
             try
             {
@@ -74,54 +70,54 @@ namespace RunPlanarJob
                 ValidateMandatoryString(FileName, nameof(FileName));
                 ValidateMandatoryString(TypeName, nameof(TypeName));
 
-                if (File.Exists(AssemblyFilename) == false)
+                if (!File.Exists(AssemblyFilename))
                 {
-                    throw new ApplicationException($"Assembly filename '{AssemblyFilename}' could not be found");
+                    throw new PlanarJobException($"Assembly filename '{AssemblyFilename}' could not be found");
                 }
             }
             catch (Exception ex)
             {
-                var source = nameof(Validate);
-                Logger.Instance.LogError(ex, "Fail at {Source}", source);
+                var source = nameof(ValidatePlanarJob);
+                Logger.LogError(ex, "Fail at {Source}", source);
                 throw;
             }
         }
 
-        private MethodInfo Validate(Type type)
+        private MethodInfo ValidateBaseJob(Type type)
         {
             //// ***** Attention: be aware for sync code with Validate on BaseJobTest *****
 
             if (type == null)
             {
-                throw new ApplicationException($"Type '{TypeName}' could not be found at assembly '{AssemblyFilename}'");
+                throw new PlanarJobException($"Type '{TypeName}' could not be found at assembly '{AssemblyFilename}'");
             }
 
             var baseTypeName = type.BaseType?.FullName;
-            if (baseTypeName != "Planar.BaseJob")
+            if (baseTypeName != $"{nameof(Planar)}.BaseJob")
             {
-                throw new ApplicationException($"Type '{TypeName}' from assembly '{AssemblyFilename}' not inherit 'Planar.Job.BaseJob' type");
+                throw new PlanarJobException($"Type '{TypeName}' from assembly '{AssemblyFilename}' not inherit 'Planar.Job.BaseJob' type");
             }
 
             var method = type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance);
             if (method == null)
             {
-                throw new ApplicationException($"Type '{TypeName}' from assembly '{AssemblyFilename}' has no 'Execute' method");
+                throw new PlanarJobException($"Type '{TypeName}' from assembly '{AssemblyFilename}' has no 'Execute' method");
             }
 
             if (method.ReturnType != typeof(Task))
             {
-                throw new ApplicationException($"Method 'Execute' at type '{TypeName}' from assembly '{AssemblyFilename}' has no 'Task' return type (current return type is {method.ReturnType.FullName})");
+                throw new PlanarJobException($"Method 'Execute' at type '{TypeName}' from assembly '{AssemblyFilename}' has no 'Task' return type (current return type is {method.ReturnType.FullName})");
             }
 
             var parameters = method.GetParameters();
             if (parameters?.Length != 1)
             {
-                throw new ApplicationException($"Method 'Execute' at type '{TypeName}' from assembly '{AssemblyFilename}' must have only 1 parameters (current parameters count {parameters?.Length})");
+                throw new PlanarJobException($"Method 'Execute' at type '{TypeName}' from assembly '{AssemblyFilename}' must have only 1 parameters (current parameters count {parameters?.Length})");
             }
 
             if (parameters[0].ParameterType.ToString().StartsWith("System.Object") == false)
             {
-                throw new ApplicationException($"Second parameter in method 'Execute' at type '{TypeName}' from assembly '{AssemblyFilename}' must be object. (current type '{parameters[1].ParameterType.Name}')");
+                throw new PlanarJobException($"Second parameter in method 'Execute' at type '{TypeName}' from assembly '{AssemblyFilename}' must be object. (current type '{parameters[1].ParameterType.Name}')");
             }
 
             return method;

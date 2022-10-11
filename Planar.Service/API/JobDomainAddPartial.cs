@@ -378,7 +378,7 @@ namespace Planar.Service.API
                     var data = new GlobalConfig { Key = p.Key, Value = p.Value };
                     var validator = new GlobalConfigDataValidator();
                     await validator.ValidateAndThrowAsync(data);
-                };
+                }
             }
         }
 

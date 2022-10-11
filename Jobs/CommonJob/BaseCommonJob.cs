@@ -18,7 +18,7 @@ namespace CommonJob
 
         public abstract Task Execute(IJobExecutionContext context);
 
-        protected LazySingleton<ILogger<TInstance>> Logger = new(Global.GetLogger<TInstance>);
+        protected ILogger<TInstance> Logger = Global.GetLogger<TInstance>();
 
         protected void MapProperties(IJobExecutionContext context)
         {
@@ -43,7 +43,7 @@ namespace CommonJob
             catch (Exception ex)
             {
                 var source = nameof(MapProperties);
-                Logger.Instance.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+                Logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
                 throw;
             }
 
@@ -60,7 +60,7 @@ namespace CommonJob
             catch (Exception ex)
             {
                 var source = nameof(FinalizeJob);
-                Logger.Instance.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+                Logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
                 throw;
             }
         }
@@ -93,7 +93,7 @@ namespace CommonJob
             catch (Exception ex)
             {
                 var source = nameof(MapJobInstanceProperties);
-                Logger.Instance.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+                Logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
                 throw;
             }
         }
@@ -109,7 +109,7 @@ namespace CommonJob
             catch (Exception ex)
             {
                 var source = nameof(LoadJobSettings);
-                Logger.Instance.LogError(ex, "Fail at {Source}", source);
+                Logger.LogError(ex, "Fail at {Source}", source);
                 throw;
             }
         }
