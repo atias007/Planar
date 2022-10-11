@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace CommonJob
 {
@@ -6,6 +7,10 @@ namespace CommonJob
     public class PlanarJobException : Exception
     {
         public PlanarJobException(string message) : base(message)
+        {
+        }
+
+        protected PlanarJobException(SerializationInfo info, StreamingContext context)
         {
         }
     }
