@@ -17,13 +17,7 @@ namespace Planar
         private DateTime? _nowOverrideValue;
         private IServiceProvider _provider;
 
-        protected IConfiguration Configuration
-        {
-            get
-            {
-                return _provider.GetRequiredService<IConfiguration>();
-            }
-        }
+        protected IConfiguration Configuration { get; private set; }
 
         protected ILogger Logger { get; private set; }
 
@@ -45,8 +39,8 @@ namespace Planar
         {
             InitializeMessageBroker(messageBroker);
 
-            var configuration = GetConfiguration(_context);
-            InitializeDepedencyInjection(_context, configuration);
+            InitializeConfiguration(_context);
+            InitializeDepedencyInjection(_context, _messageBroker);
 
             Logger = ServiceProvider.GetRequiredService<ILogger>();
 
@@ -191,21 +185,21 @@ namespace Planar
             UpdateProgress(value);
         }
 
-        private IConfiguration GetConfiguration(JobExecutionContext context)
+        private void InitializeConfiguration(JobExecutionContext context)
         {
             var builder = new ConfigurationBuilder();
             builder.AddInMemoryCollection(context.JobSettings);
             Configure(builder);
-            var result = builder.Build();
-            return result;
+            Configuration = builder.Build();
         }
 
-        private void InitializeDepedencyInjection(JobExecutionContext context, IConfiguration configuration)
+        private void InitializeDepedencyInjection(JobExecutionContext context, MessageBroker messageBroker)
         {
             var services = new ServiceCollection();
-            services.AddSingleton(configuration);
+            services.AddSingleton(Configuration);
             services.AddSingleton<IJobExecutionContext>(context);
             services.AddSingleton<ILogger, PlannerLogger>();
+            services.AddSingleton(messageBroker);
             services.AddSingleton(typeof(ILogger<>), typeof(PlannerLogger<>));
             RegisterServices(services);
             _provider = services.BuildServiceProvider();
@@ -220,6 +214,8 @@ namespace Planar
 
             try
             {
+                _messageBroker = new MessageBroker(messageBroker);
+
                 var options = new JsonSerializerOptions
                 {
                     Converters =
@@ -234,10 +230,6 @@ namespace Planar
             catch (Exception ex)
             {
                 throw new ApplicationException("Fail to deserialize job execution context at BaseJob.Execute(string, ref object)", ex);
-            }
-            finally
-            {
-                _messageBroker = new MessageBroker(messageBroker);
             }
         }
     }

@@ -1,20 +1,23 @@
 ﻿job type: PlanarJob
-name: test1
+name: TestAction
+group: Infrastructure
 description: long running task test
+durable: true
+concurrent: false
 job data:
   Message: This is long running task
   Value: 100.1
   MaxId: 100
-global parameters:
+global config:
   ParamKey1: ParamValue1
   ParamKey2: ParamValue2
   ParamKey3: ParamValue3
 properties:
-  JobPath: R:\Temp\Task1
+  JobPath: .
   FileName: TestAction.dll
   TypeName: TestAction.ActionJob
 simple triggers:
 - name: every-minute-trigger
   interval: 00:05:00
-  misfire behaviour: 2
+  misfire behaviour: FireNow
 

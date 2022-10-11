@@ -4,6 +4,7 @@ using System.Linq;
 
 namespace Planar.Service.Exceptions
 {
+    [Serializable]
     public class RestValidationException : Exception
     {
         public RestValidationException()

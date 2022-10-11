@@ -115,7 +115,7 @@ namespace RunPlanarJob
                 throw new PlanarJobException($"Method 'Execute' at type '{TypeName}' from assembly '{AssemblyFilename}' must have only 1 parameters (current parameters count {parameters?.Length})");
             }
 
-            if (parameters[0].ParameterType.ToString().StartsWith("System.Object") == false)
+            if (!parameters[0].ParameterType.ToString().StartsWith("System.Object"))
             {
                 throw new PlanarJobException($"Second parameter in method 'Execute' at type '{TypeName}' from assembly '{AssemblyFilename}' must be object. (current type '{parameters[1].ParameterType.Name}')");
             }

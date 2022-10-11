@@ -7,5 +7,7 @@ namespace Planar.CLI.Entities
         [ActionProperty(DefaultOrder = 1)]
         [Required("value parameter is required")]
         public string Value { get; set; }
+
+        public string Type { get; set; }
     }
 }

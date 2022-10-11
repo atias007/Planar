@@ -36,8 +36,9 @@ namespace Planar.Service.API
             await ValidateAdd(request);
 
             var jobKey = await ValidateJobMetadata(request);
-            await ValidateGlobalConfig(request.GlobalConfig);
-            await BuildGlobalConfig(request.GlobalConfig);
+            var config = GetGlobalConfig(request.GlobalConfig);
+            await ValidateGlobalConfig(config);
+            await BuildGlobalConfig(config);
 
             var jobType = GetJobType(request);
             var jobBuilder = JobBuilder.Create(jobType)
@@ -369,30 +370,31 @@ namespace Planar.Service.API
             return id;
         }
 
-        private static async Task ValidateGlobalConfig(Dictionary<string, string> config)
+        private static IEnumerable<GlobalConfig> GetGlobalConfig(Dictionary<string, string> config)
         {
-            if (config != null)
+            if (config == null) { return null; }
+            var result = config.Select(c => new GlobalConfig { Key = c.Key, Value = c.Value, Type = "string" });
+            return result;
+        }
+
+        private static async Task ValidateGlobalConfig(IEnumerable<GlobalConfig> config)
+        {
+            if (config == null) { return; }
+            foreach (var p in config)
             {
-                foreach (var p in config)
-                {
-                    var data = new GlobalConfig { Key = p.Key, Value = p.Value };
-                    var validator = new GlobalConfigDataValidator();
-                    await validator.ValidateAndThrowAsync(data);
-                }
+                var validator = new GlobalConfigDataValidator();
+                await validator.ValidateAndThrowAsync(p);
             }
         }
 
-        private async Task BuildGlobalConfig(Dictionary<string, string> config)
+        private async Task BuildGlobalConfig(IEnumerable<GlobalConfig> config)
         {
-            if (config != null)
+            if (config == null) { return; }
+            var configDomain = Resolve<ConfigDomain>();
+            foreach (var p in config)
             {
-                var configDomain = Resolve<ConfigDomain>();
-                foreach (var p in config)
-                {
-                    var data = new GlobalConfig { Key = p.Key, Value = p.Value };
-                    await configDomain.Upsert(data);
-                };
-            }
+                await configDomain.Upsert(p);
+            };
         }
 
         private static async Task<JobKey> ValidateJobMetadata(AddJobRequest metadata)

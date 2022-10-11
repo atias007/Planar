@@ -188,7 +188,7 @@ namespace Planar
             });
         }
 
-        private static string[] sufixes = new[] { "json", "md", "ps1", "yml" };
+        private static readonly string[] sufixes = new[] { "json", "md", "ps1", "yml" };
 
         private static FileInfo ConvertResourceToPath(string resource)
         {
@@ -200,7 +200,7 @@ namespace Planar
             {
                 parts = parts[..^1];
                 var last = parts.Last();
-                parts[parts.Length - 1] = $"{last}.{sufix}";
+                parts[^1] = $"{last}.{sufix}";
             }
 
             var path = Path.Combine(parts);

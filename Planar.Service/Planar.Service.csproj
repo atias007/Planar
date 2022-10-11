@@ -61,7 +61,7 @@
     <PackageReference Include="Serilog.Settings.Configuration" Version="3.4.0" />
     <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
     <PackageReference Include="Serilog.Sinks.MSSqlServer" Version="5.8.0" />
-    <PackageReference Include="YamlDotNet" Version="12.0.1" />
+    <PackageReference Include="YamlDotNet" Version="12.0.2" />
   </ItemGroup>
 
   <ItemGroup>

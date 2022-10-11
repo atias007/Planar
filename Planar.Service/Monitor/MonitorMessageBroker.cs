@@ -29,11 +29,13 @@ namespace Planar.Service.Monitor
         {
             if (exception == null)
             {
+#pragma warning disable CA2254 // Template should be a static expression
                 _logger.LogError(message, args);
             }
             else
             {
                 _logger.LogError(exception, message, args);
+#pragma warning restore CA2254 // Template should be a static expression
             }
         }
     }
