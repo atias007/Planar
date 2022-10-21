@@ -10,7 +10,7 @@ namespace Planar.Common
 {
     public static class AssemblyLoader
     {
-        private static List<string> ExcludedAssemblies = new List<string>
+        private static readonly List<string> ExcludedAssemblies = new()
         {
             "Microsoft.Data.SqlClient.dll"
         };
@@ -44,7 +44,7 @@ namespace Planar.Common
 
         private static Assembly LoadAssemblyFile(string filename, AssemblyLoadContext context)
         {
-            if (context == null) { context = AssemblyLoadContext.Default; }
+            context ??= AssemblyLoadContext.Default;
 
             if (IsExcludedAssembly(filename))
             {

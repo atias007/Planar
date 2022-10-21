@@ -20,6 +20,8 @@ namespace Planar.Service.SystemJobs
                 job = JobBuilder.Create(typeof(T))
                 .WithIdentity(jobKey)
                 .UsingJobData(Consts.JobId, jobId)
+                .DisallowConcurrentExecution()
+                .PersistJobDataAfterExecution()
                 .WithDescription(description)
                 .StoreDurably(true)
                 .Build();

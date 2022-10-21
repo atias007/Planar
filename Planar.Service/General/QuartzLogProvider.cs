@@ -33,11 +33,14 @@ namespace Planar.Service.General
                     var template = func();
                     if (logLevel == Microsoft.Extensions.Logging.LogLevel.Error)
                     {
+#pragma warning disable CA2254 // Template should be a static expression
+
                         _logger.Log(logLevel, exception, template, parameters);
                     }
                     else
                     {
                         _logger.Log(logLevel, template, parameters);
+#pragma warning restore CA2254 // Template should be a static expression
                     }
                 }
                 return true;

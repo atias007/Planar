@@ -188,39 +188,39 @@ namespace Planar.Service.Data
             return await _context.Traces.AnyAsync(t => t.Id == id);
         }
 
-        public async Task<GlobalParameter> GetGlobalParameter(string key)
+        public async Task<GlobalConfig> GetGlobalConfig(string key)
         {
-            var result = await _context.GlobalParameters.FindAsync(key);
+            var result = await _context.GlobalConfigs.FindAsync(key);
             return result;
         }
 
-        public async Task<bool> IsGlobalParameterExists(string key)
+        public async Task<bool> IsGlobalConfigExists(string key)
         {
-            var result = await _context.GlobalParameters.AnyAsync(p => p.ParamKey == key);
+            var result = await _context.GlobalConfigs.AnyAsync(p => p.Key == key);
             return result;
         }
 
-        public async Task<IEnumerable<GlobalParameter>> GetAllGlobalParameter()
+        public async Task<IEnumerable<GlobalConfig>> GetAllGlobalConfig()
         {
-            var result = await _context.GlobalParameters.OrderBy(p => p.ParamKey).ToListAsync();
+            var result = await _context.GlobalConfigs.OrderBy(p => p.Key).ToListAsync();
             return result;
         }
 
-        public async Task AddGlobalParameter(GlobalParameter data)
+        public async Task AddGlobalConfig(GlobalConfig config)
         {
-            _context.GlobalParameters.Add(data);
+            _context.GlobalConfigs.Add(config);
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateGlobalParameter(GlobalParameter data)
+        public async Task UpdateGlobalConfig(GlobalConfig config)
         {
-            _context.GlobalParameters.Update(data);
+            _context.GlobalConfigs.Update(config);
             await _context.SaveChangesAsync();
         }
 
-        public async Task RemoveGlobalParameter(string key)
+        public async Task RemoveGlobalConfig(string key)
         {
-            var data = new GlobalParameter { ParamKey = key };
+            var data = new GlobalConfig { Key = key };
             _context.Remove(data);
             await _context.SaveChangesAsync();
         }

@@ -1,0 +1,39 @@
+version: '3.4'
+
+services:
+  planar:
+    image: planar_service:latest
+    container_name: planar-service
+    ports:
+      - '2306:2306'
+    environment:
+      - TZ=Israel
+      - PLANAR_ENVIRONMENT=Development
+      - PLANAR_DBCONNSTRING=Password=PlanarSqlPassword12345@;Persist Security Info=True;User ID=sa;Initial Catalog=Planar;Data Source=planar-db,1433;MultipleActiveResultSets=True
+      - PLANAR_DBPROVIDER=SqlServer
+    volumes:  
+      - ./Planar/Data:/app/Data
+    depends_on:
+      - db
+    networks:
+      - planar_network
+  db:
+    image: planar_db
+    container_name: planar-db
+    build:
+      context: .
+      dockerfile: data/Dockerfile
+    ports:
+      - "6020:1433"
+    volumes:
+      - dbvolume:/var/opt/mssql
+    networks:
+      - planar_network
+
+volumes:
+  dbvolume:
+
+networks:
+  planar_network:
+
+# docker-compose -p planar up -d --remove-orphans

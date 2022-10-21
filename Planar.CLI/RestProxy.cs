@@ -12,7 +12,7 @@ namespace Planar.CLI
         public static int Port { get; set; } = 2306;
 
         private static RestClient _client;
-        private static readonly object _lock = new object();
+        private static readonly object _lock = new();
 
         public static void Flush()
         {

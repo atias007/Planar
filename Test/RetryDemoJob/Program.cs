@@ -4,8 +4,9 @@ namespace RetryDemoJob
 {
     internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
+            Console.WriteLine(args);
             Console.WriteLine("Hello World!");
         }
     }

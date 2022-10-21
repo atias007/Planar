@@ -32,10 +32,7 @@ namespace Planar.Service.API.Helpers
             else
             {
                 result = await GetJobKeyById(key.Id);
-                if (result == null)
-                {
-                    result = GetJobKeyByKey(key.Id);
-                }
+                result ??= GetJobKeyByKey(key.Id);
             }
 
             await ValidateJobExists(result);

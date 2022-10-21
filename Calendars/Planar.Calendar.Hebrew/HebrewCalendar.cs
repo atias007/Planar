@@ -10,7 +10,7 @@ namespace Planar.Calendar.Hebrew
     [Serializable]
     public class HebrewCalendar : PlanarBaseCalendar
     {
-        private static HebrewCalendarSettings _settings;
+        private HebrewCalendarSettings _settings;
         private static readonly object Locker = new();
         private readonly Dictionary<long, bool> _cache = new();
 
@@ -56,7 +56,7 @@ namespace Planar.Calendar.Hebrew
             }
         }
 
-        private static bool IsWorkingDateTime(DateTime date)
+        private bool IsWorkingDateTime(DateTime date)
         {
             var hebrewDate = HebrewEvent.GetHebrewEventInfo(date);
             DateTime start;

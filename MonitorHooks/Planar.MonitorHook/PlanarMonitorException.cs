@@ -2,6 +2,7 @@
 
 namespace Planar.MonitorHook
 {
+    [Serializable]
     public class PlanarMonitorException : Exception
     {
         public PlanarMonitorException(string message) : base(message)

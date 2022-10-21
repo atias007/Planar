@@ -27,10 +27,7 @@ namespace Planar.Service.API.Helpers
             else
             {
                 result = await GetTriggerKey(key.Id);
-                if (result == null)
-                {
-                    result = GetTriggerKeyByKey(key.Id);
-                }
+                result ??= GetTriggerKeyByKey(key.Id);
             }
 
             if (result == null)
