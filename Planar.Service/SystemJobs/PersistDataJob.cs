@@ -9,6 +9,7 @@ using Polly;
 using Quartz;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
 
@@ -39,11 +40,11 @@ namespace Planar.Service.SystemJobs
             }
         }
 
-        public static async Task Schedule(IScheduler scheduler)
+        public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
         {
             const string description = "System job for persist log & exception from running jobs";
             var span = AppSettings.PersistRunningJobsSpan;
-            await Schedule<PersistDataJob>(scheduler, description, span);
+            await Schedule<PersistDataJob>(scheduler, description, span, stoppingToken: stoppingToken);
         }
 
         private async Task DoWork()

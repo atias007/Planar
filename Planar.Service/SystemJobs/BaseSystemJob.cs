@@ -1,13 +1,14 @@
 ﻿using Planar.Service.General;
 using Quartz;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs
 {
     public abstract class BaseSystemJob
     {
-        protected static async Task<JobKey> Schedule<T>(IScheduler scheduler, string description, TimeSpan span, DateTime? startDate = null)
+        protected static async Task<JobKey> Schedule<T>(IScheduler scheduler, string description, TimeSpan span, DateTime? startDate = null, CancellationToken stoppingToken = default)
             where T : IJob
         {
             var name = typeof(T).Name;
@@ -52,7 +53,7 @@ namespace Planar.Service.SystemJobs
                 .WithPriority(int.MaxValue)
                 .Build();
 
-            await scheduler.ScheduleJob(job, new[] { trigger }, true);
+            await scheduler.ScheduleJob(job, new[] { trigger }, true, stoppingToken);
 
             return jobKey;
         }

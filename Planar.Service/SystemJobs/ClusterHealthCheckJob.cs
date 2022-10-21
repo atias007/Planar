@@ -5,6 +5,7 @@ using Planar.Service.Data;
 using Planar.Service.General;
 using Quartz;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs
@@ -43,11 +44,11 @@ namespace Planar.Service.SystemJobs
             }
         }
 
-        public static async Task Schedule(IScheduler scheduler)
+        public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
         {
             const string description = "System job for check health of cluster nodes";
             var span = AppSettings.ClusterHealthCheckInterval;
-            var jobKey = await Schedule<ClusterHealthCheckJob>(scheduler, description, span);
+            var jobKey = await Schedule<ClusterHealthCheckJob>(scheduler, description, span, stoppingToken: stoppingToken);
 
             if (AppSettings.Clustering == false)
             {

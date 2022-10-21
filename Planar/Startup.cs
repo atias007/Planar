@@ -3,6 +3,7 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.OData;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -11,8 +12,12 @@ using Microsoft.OData.ModelBuilder;
 using Microsoft.OpenApi.Models;
 using Planar.Filters;
 using Planar.Service;
+using Planar.Service.API;
+using Planar.Service.Data;
 using Serilog;
+using System;
 using System.Net;
+using System.Reflection;
 
 namespace Planar
 {
@@ -72,7 +77,7 @@ namespace Planar
             services.AddScoped<GroupDomain>();
             services.AddScoped<HistoryDomain>();
             services.AddScoped<JobDomain>();
-            services.AddScoped<ParametersDomain>();
+            services.AddScoped<ConfigDomain>();
             services.AddScoped<ServiceDomain>();
             services.AddScoped<MonitorDomain>();
             services.AddScoped<TraceDomain>();

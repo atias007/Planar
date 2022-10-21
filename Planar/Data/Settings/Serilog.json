@@ -3,6 +3,7 @@
     "MinimumLevel": {
       "Default": "Debug",
       "Override": {
+        "Quartz": "Information",
         "Microsoft": "Information",
         "System": "Information",
         "Microsoft.Hosting.Lifetime": "Information",

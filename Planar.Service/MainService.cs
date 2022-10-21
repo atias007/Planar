@@ -1,26 +1,19 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Planar.Calendar.Hebrew;
 using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
-using Planar.Service.List;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.SystemJobs;
 using Quartz;
-using Quartz.Impl.Matchers;
-using Quartz.Logging;
-using Quartz.Simpl;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using static Quartz.SchedulerBuilder;
 
 namespace Planar.Service
 {
@@ -91,7 +84,7 @@ namespace Planar.Service
                 return;
             }
 
-            var mainTask = Run();
+            var mainTask = Run(stoppingToken);
             var waiter = new CancellationTokenAwaiter(stoppingToken);
 
             waiter.OnCompleted(async () =>
@@ -119,33 +112,35 @@ namespace Planar.Service
             await Task.CompletedTask;
         }
 
-        public async Task Run()
+        public async Task Run(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Service environment: {Environment}", Global.Environment);
 
-            await LoadGlobalConfigInner();
+            await LoadGlobalConfigInner(stoppingToken);
 
             // await SetQuartzLogProvider();
 
             // await AddCalendarSerializer();
 
+            await InitializeScheduler(stoppingToken);
+
             await LoadMonitorHooks();
 
-            await ScheduleSystemJobs();
+            await ScheduleSystemJobs(stoppingToken);
 
             // await StartScheduler();
 
-            await JoinToCluster();
+            await JoinToCluster(stoppingToken);
         }
 
         #region Initialize Scheduler
 
-        private async Task LoadGlobalConfigInner()
+        private async Task LoadGlobalConfigInner(CancellationToken stoppingToken)
         {
             try
             {
                 _logger.LogInformation("Initialize: LoadGlobalConfig");
-                await LoadGlobalConfig();
+                await LoadGlobalConfig(stoppingToken);
             }
             catch (Exception ex)
             {
@@ -154,12 +149,12 @@ namespace Planar.Service
             }
         }
 
-        private async Task InitializeScheduler()
+        private async Task InitializeScheduler(CancellationToken stoppingToken)
         {
             try
             {
                 _logger.LogInformation("Initialize: InitializeScheduler");
-                _scheduler = await Global.ServiceProvider.GetRequiredService<ISchedulerFactory>().GetScheduler();
+                _scheduler = await Global.ServiceProvider.GetRequiredService<ISchedulerFactory>().GetScheduler(stoppingToken);
             }
             catch (Exception ex)
             {
@@ -168,22 +163,22 @@ namespace Planar.Service
             }
         }
 
-        public static async Task LoadGlobalConfig()
+        public static async Task LoadGlobalConfig(CancellationToken stoppingToken = default)
         {
             var dal = Resolve<DataLayer>();
-            var prms = await dal.GetAllGlobalConfig();
+            var prms = await dal.GetAllGlobalConfig(stoppingToken);
             var dict = prms.ToDictionary(p => p.Key, p => p.Value);
             Global.SetGlobalConfig(dict);
         }
 
-        public async Task ScheduleSystemJobs()
+        public async Task ScheduleSystemJobs(CancellationToken stoppingToken = default)
         {
             try
             {
                 _logger.LogInformation("Initialize: ScheduleSystemJobs");
-                await PersistDataJob.Schedule(Scheduler);
-                await ClusterHealthCheckJob.Schedule(Scheduler);
-                await ClearTraceTableJob.Schedule(Scheduler);
+                await PersistDataJob.Schedule(Scheduler, stoppingToken);
+                await ClusterHealthCheckJob.Schedule(Scheduler, stoppingToken);
+                await ClearTraceTableJob.Schedule(Scheduler, stoppingToken);
             }
             catch (Exception ex)
             {
@@ -265,7 +260,7 @@ namespace Planar.Service
             }
         }
 
-        private async Task JoinToCluster()
+        private async Task JoinToCluster(CancellationToken stoppingToken)
         {
             if (!AppSettings.Clustering) { return; }
 
@@ -289,15 +284,15 @@ namespace Planar.Service
                 }
                 else
                 {
-                    Scheduler?.Standby();
+                    Scheduler?.Standby(stoppingToken);
                     throw new PlanarException("Cluster health check fail. Could not join to cluster. See previous errors for more details");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogCritical(ex, "Initialize: Fail to AddSchedulerCluster");
-                await _scheduler.Standby();
-                await _scheduler.Shutdown();
+                await _scheduler.Standby(stoppingToken);
+                await _scheduler.Shutdown(stoppingToken);
                 Shutdown();
             }
         }

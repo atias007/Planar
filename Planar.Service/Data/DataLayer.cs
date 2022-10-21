@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
 
@@ -200,9 +201,9 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<IEnumerable<GlobalConfig>> GetAllGlobalConfig()
+        public async Task<IEnumerable<GlobalConfig>> GetAllGlobalConfig(CancellationToken stoppingToken = default)
         {
-            var result = await _context.GlobalConfigs.OrderBy(p => p.Key).ToListAsync();
+            var result = await _context.GlobalConfigs.OrderBy(p => p.Key).ToListAsync(stoppingToken);
             return result;
         }
 

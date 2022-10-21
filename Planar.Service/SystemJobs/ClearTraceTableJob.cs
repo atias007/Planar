@@ -2,8 +2,10 @@
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.Data;
+using Planar.Service.General;
 using Quartz;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs
@@ -33,12 +35,12 @@ namespace Planar.Service.SystemJobs
             }
         }
 
-        public static async Task Schedule(IScheduler scheduler)
+        public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
         {
             const string description = "System job for clearing old trace records from database";
             var span = TimeSpan.FromHours(24);
             var start = DateTime.Now.Date.AddDays(1);
-            await Schedule<ClearTraceTableJob>(scheduler, description, span, start);
+            await Schedule<ClearTraceTableJob>(scheduler, description, span, start, stoppingToken);
         }
 
         private async Task DoWork()
