@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using Quartz.Impl.Calendar;
 using System;
 using System.IO;
@@ -8,21 +7,6 @@ namespace Planar.Calendar
 {
     public abstract class PlanarBaseCalendar : BaseCalendar
     {
-        private readonly ILogger _logger;
-
-        protected PlanarBaseCalendar(ILogger logger)
-        {
-            _logger = logger;
-        }
-
-        protected ILogger Logger
-        {
-            get
-            {
-                return _logger;
-            }
-        }
-
         protected TSettings LoadSettings<TSettings>()
         {
             var parts = GetType().FullName.Split('.');
@@ -37,7 +21,7 @@ namespace Planar.Calendar
             }
             else
             {
-                Logger.LogError("{Name} settings file '{Filename}' could not be found", name, filename);
+                Console.WriteLine($"ERROR: {name} settings file '{filename}' could not be found");
                 throw new PlanarCalendarException($"{name} settings file '{filename}' could not be found");
             }
         }

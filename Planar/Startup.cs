@@ -67,6 +67,7 @@ namespace Planar
                 optionsLifetime: ServiceLifetime.Singleton
             );
 
+            services.AddQuartzService();
             services.AddAutoMapper(Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));
             services.AddTransient<DataLayer>();
             services.AddTransient<MainService>();

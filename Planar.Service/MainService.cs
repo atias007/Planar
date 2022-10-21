@@ -102,21 +102,15 @@ namespace Planar.Service
 
             await LoadGlobalParametersInner();
 
-            await SetQuartzLogProvider();
+            // await SetQuartzLogProvider();
 
-            await AddCalendarSerializer();
-
-            await InitializeScheduler();
-
-            await AddJobListeners();
-
-            await AddCalendars();
+            // await AddCalendarSerializer();
 
             await LoadMonitorHooks();
 
             await ScheduleSystemJobs();
 
-            await StartScheduler();
+            // await StartScheduler();
 
             await JoinToCluster();
         }
@@ -133,6 +127,20 @@ namespace Planar.Service
             catch (Exception ex)
             {
                 _logger.LogCritical(ex, "Initialize: Fail to LoadGlobalParameters");
+                throw;
+            }
+        }
+
+        private async Task InitializeScheduler()
+        {
+            try
+            {
+                _logger.LogInformation("Initialize: InitializeScheduler");
+                _scheduler = await Global.ServiceProvider.GetRequiredService<ISchedulerFactory>().GetScheduler();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Initialize: Fail to InitializeScheduler");
                 throw;
             }
         }
@@ -161,74 +169,43 @@ namespace Planar.Service
             }
         }
 
-        private async Task SetQuartzLogProvider()
-        {
-            try
-            {
-                _logger.LogInformation("Initialize: SetQuartzLogProvider");
-                var quartzLogger = Global.ServiceProvider.GetService<ILogger<QuartzLogProvider>>();
-                LogProvider.SetCurrentLogProvider(new QuartzLogProvider(quartzLogger));
-                await Task.CompletedTask;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(ex, "Initialize: Fail to SetQuartzLogProvider");
-                throw;
-            }
-        }
+        ////private async Task SetQuartzLogProvider()
+        ////{
+        ////    try
+        ////    {
+        ////        _logger.LogInformation("Initialize: SetQuartzLogProvider");
+        ////        var quartzLogger = Global.ServiceProvider.GetService<ILogger<QuartzLogProvider>>();
+        ////        LogProvider.SetCurrentLogProvider(new QuartzLogProvider(quartzLogger));
+        ////        await Task.CompletedTask;
+        ////    }
+        ////    catch (Exception ex)
+        ////    {
+        ////        _logger.LogCritical(ex, "Initialize: Fail to SetQuartzLogProvider");
+        ////        throw;
+        ////    }
+        ////}
 
-        private async Task StartScheduler()
-        {
-            try
-            {
-                _logger.LogInformation("Initialize: StartScheduler");
+        ////        private async Task StartScheduler()
+        ////        {
+        ////            try
+        ////            {
+        ////                _logger.LogInformation("Initialize: StartScheduler");
 
-#if DEBUG
-                var delaySeconds = 1;
-#else
-                var delaySeconds = 30;
-#endif
+        ////#if DEBUG
+        ////                var delaySeconds = 1;
+        ////#else
+        ////                var delaySeconds = 30;
+        ////#endif
 
-                await _scheduler.StartDelayed(TimeSpan.FromSeconds(delaySeconds));
-                _logger.LogInformation("Initialize: Scheduler is initializes and started :)) [with {Delay} seconds]", delaySeconds);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(ex, "Initialize: Fail to StartScheduler");
-                throw;
-            }
-        }
-
-        private async Task AddJobListeners()
-        {
-            try
-            {
-                _logger.LogInformation("Initialize: AddJobListeners");
-                _scheduler.ListenerManager.AddJobListener(new LogJobListener(), GroupMatcher<JobKey>.AnyGroup());
-                _scheduler.ListenerManager.AddTriggerListener(new RetryTriggerListener(), GroupMatcher<TriggerKey>.AnyGroup());
-                await Task.CompletedTask;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(ex, "Initialize: Fail to AddJobListeners");
-                throw;
-            };
-        }
-
-        private async Task AddCalendars()
-        {
-            try
-            {
-                _logger.LogInformation("Initialize: AddCalendars");
-
-                await _scheduler.AddCalendar(nameof(HebrewCalendar), new HebrewCalendar(_logger), true, true);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(ex, "Initialize: Fail to AddCalendars");
-                throw;
-            };
-        }
+        ////                await _scheduler.StartDelayed(TimeSpan.FromSeconds(delaySeconds));
+        ////                _logger.LogInformation("Initialize: Scheduler is initializes and started :)) [with {Delay} seconds]", delaySeconds);
+        ////            }
+        ////            catch (Exception ex)
+        ////            {
+        ////                _logger.LogCritical(ex, "Initialize: Fail to StartScheduler");
+        ////                throw;
+        ////            }
+        ////        }
 
         private async Task LoadMonitorHooks()
         {
@@ -308,55 +285,6 @@ namespace Planar.Service
             }
         }
 
-        private async Task InitializeScheduler()
-        {
-            try
-            {
-                _logger.LogInformation("Initialize: InitializeScheduler");
-
-                var builder = Create()
-                    .WithName(AppSettings.ServiceName)
-                    .WithId(AppSettings.InstanceId)
-                    .UseDefaultThreadPool(AppSettings.MaxConcurrency)
-                    .UsePersistentStore(x =>
-                    {
-                        x.UseProperties = true;
-                        x.UseJsonSerializer();
-
-                        SetDatabaseProvider(x);
-
-                        if (AppSettings.Clustering)
-                        {
-                            x.UseClustering(x =>
-                            {
-                                x.CheckinInterval = AppSettings.ClusteringCheckinInterval;
-                                x.CheckinMisfireThreshold = AppSettings.ClusteringCheckinMisfireThreshold;
-                            });
-                        }
-                    });
-
-                _scheduler = await builder.BuildScheduler();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(ex, "Initialize: Fail to InitializeScheduler");
-                throw;
-            }
-        }
-
-        private static void SetDatabaseProvider(PersistentStoreOptions options)
-        {
-            switch (AppSettings.DatabaseProvider)
-            {
-                case "SqlServer":
-                    options.UseSqlServer(AppSettings.DatabaseConnectionString);
-                    break;
-
-                default:
-                    throw new ApplicationException($"Database provider {AppSettings.DatabaseProvider} is not supported");
-            }
-        }
-
         private void LogClustering()
         {
             if (AppSettings.Clustering)
@@ -369,21 +297,21 @@ namespace Planar.Service
             }
         }
 
-        private async Task AddCalendarSerializer()
-        {
-            try
-            {
-                _logger.LogInformation("Initialize: AddCalendarSerializer");
+        ////private async Task AddCalendarSerializer()
+        ////{
+        ////    try
+        ////    {
+        ////        _logger.LogInformation("Initialize: AddCalendarSerializer");
 
-                JsonObjectSerializer.AddCalendarSerializer<HebrewCalendar>(new CustomCalendarSerializer(_logger));
-                await Task.CompletedTask;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(ex, "Initialize: Fail to AddCalendarSerializer");
-                throw;
-            }
-        }
+        ////        JsonObjectSerializer.AddCalendarSerializer<HebrewCalendar>(new CustomCalendarSerializer());
+        ////        await Task.CompletedTask;
+        ////    }
+        ////    catch (Exception ex)
+        ////    {
+        ////        _logger.LogCritical(ex, "Initialize: Fail to AddCalendarSerializer");
+        ////        throw;
+        ////    }
+        ////}
 
         #endregion Initialize Scheduler
 

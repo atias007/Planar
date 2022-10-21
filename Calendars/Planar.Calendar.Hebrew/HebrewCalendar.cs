@@ -14,12 +14,9 @@ namespace Planar.Calendar.Hebrew
         private static readonly object Locker = new();
         private readonly Dictionary<long, bool> _cache = new();
 
-        public HebrewCalendar(ILogger logger) : base(logger)
+        public HebrewCalendar()
         {
-            if (_settings == null)
-            {
-                _settings = LoadSettings<HebrewCalendarSettings>();
-            }
+            _settings ??= LoadSettings<HebrewCalendarSettings>();
         }
 
         public HebrewCalendarSettings Settings
@@ -44,7 +41,7 @@ namespace Planar.Calendar.Hebrew
             }
             catch (Exception ex)
             {
-                Logger.LogWarning(ex, $"Fail to invoke IsTimeIncluded (try get cache value)");
+                Console.WriteLine($"WARNING: Fail to invoke IsTimeIncluded (try get cache value). {ex.Message}");
                 throw;
             }
 
@@ -54,7 +51,7 @@ namespace Planar.Calendar.Hebrew
             }
             catch (Exception ex)
             {
-                Logger.LogCritical(ex, "Fail to invoke IsTimeIncluded with DateTimeOffset={TimeUtc}", timeStampUtc);
+                Console.WriteLine($"Fail to invoke IsTimeIncluded with DateTimeOffset={timeStampUtc}. {ex.Message}");
                 throw;
             }
         }
@@ -138,16 +135,13 @@ namespace Planar.Calendar.Hebrew
 
     public class CustomCalendarSerializer : CalendarSerializer<HebrewCalendar>
     {
-        private readonly ILogger _logger;
-
-        public CustomCalendarSerializer(ILogger logger)
+        public CustomCalendarSerializer()
         {
-            _logger = logger;
         }
 
         protected override HebrewCalendar Create(JObject source)
         {
-            return new HebrewCalendar(_logger);
+            return new HebrewCalendar();
         }
 
         protected override void SerializeFields(JsonWriter writer, HebrewCalendar calendar)
