@@ -14,7 +14,7 @@ namespace Planar.Service.API
 {
     public abstract class BaseBL<TBusinesLayer>
     {
-        private readonly IServiceProvider _serviceProvider;
+        protected readonly IServiceProvider _serviceProvider;
         private readonly ILogger<TBusinesLayer> _logger;
         private readonly DataLayer _dataLayer;
 

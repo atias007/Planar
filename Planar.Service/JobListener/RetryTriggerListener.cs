@@ -13,6 +13,10 @@ namespace Planar.Service.List
 {
     public class RetryTriggerListener : BaseListener<RetryTriggerListener>, ITriggerListener
     {
+        public RetryTriggerListener(ILogger<RetryTriggerListener> logger) : base(logger)
+        {
+        }
+
         public string Name => nameof(RetryTriggerListener);
 
         public async Task TriggerComplete(ITrigger trigger, IJobExecutionContext context, SchedulerInstruction triggerInstructionCode, CancellationToken cancellationToken = default)
@@ -31,7 +35,7 @@ namespace Planar.Service.List
                 if (numTries > Consts.MaxRetries)
                 {
                     var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
-                    Logger.LogError("Job with key {Key} fail and retry for {MaxRetries} times but failed each time", key, Consts.MaxRetries);
+                    _logger.LogError("Job with key {Key} fail and retry for {MaxRetries} times but failed each time", key, Consts.MaxRetries);
                     return;
                 }
 
@@ -51,19 +55,19 @@ namespace Planar.Service.List
                 if (numTries > 1)
                 {
                     var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
-                    Logger.LogWarning("Retry no. {NumTries} of job with key {Key} was fail. Retry again at {Start}", numTries, key, start);
+                    _logger.LogWarning("Retry no. {NumTries} of job with key {Key} was fail. Retry again at {Start}", numTries, key, start);
                 }
                 else
                 {
                     var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
-                    Logger.LogWarning("Job with key {Key} was fail. Retry again at {Start}", key, start);
+                    _logger.LogWarning("Job with key {Key} was fail. Retry again at {Start}", key, start);
                 }
 
                 await context.Scheduler.ScheduleJob(retryTrigger, cancellationToken);
             }
             catch (Exception ex)
             {
-                SafeLog(nameof(TriggerComplete), ex);
+                LogCritical(nameof(TriggerComplete), ex);
             }
             finally
             {
@@ -91,7 +95,7 @@ namespace Planar.Service.List
             }
             catch (Exception ex)
             {
-                SafeLog(nameof(TriggerFired), ex);
+                LogCritical(nameof(TriggerFired), ex);
             }
         }
 

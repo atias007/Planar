@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
+using Planar.Service.API;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
@@ -9,6 +10,8 @@ using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.SystemJobs;
 using Quartz;
+using Quartz.Impl.AdoJobStore.Common;
+using Quartz.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,11 +25,13 @@ namespace Planar.Service
         private static IScheduler _scheduler;
         private readonly ILogger<MainService> _logger;
         private readonly IHostApplicationLifetime _lifetime;
+        private readonly IServiceProvider _serviceProvider;
 
         public MainService(IServiceProvider serviceProvider, IHostApplicationLifetime lifetime)
         {
+            _serviceProvider = serviceProvider;
             _lifetime = lifetime;
-            _logger = serviceProvider.GetService<ILogger<MainService>>();
+            _logger = _serviceProvider.GetService<ILogger<MainService>>();
             Global.ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         }
 
@@ -59,10 +64,10 @@ namespace Planar.Service
             return completedTask == startedSource.Task;
         }
 
-        public static void Shutdown()
+        public void Shutdown()
         {
             var removeTask = RemoveSchedulerCluster();
-            if (Global.ServiceProvider.GetService(typeof(IHostApplicationLifetime)) is IHostApplicationLifetime app)
+            if (_serviceProvider.GetService(typeof(IHostApplicationLifetime)) is IHostApplicationLifetime app)
             {
                 try
                 {
@@ -118,17 +123,11 @@ namespace Planar.Service
 
             await LoadGlobalConfigInner(stoppingToken);
 
-            // await SetQuartzLogProvider();
-
-            // await AddCalendarSerializer();
-
             await InitializeScheduler(stoppingToken);
 
             await LoadMonitorHooks();
 
             await ScheduleSystemJobs(stoppingToken);
-
-            // await StartScheduler();
 
             await JoinToCluster(stoppingToken);
         }
@@ -154,7 +153,7 @@ namespace Planar.Service
             try
             {
                 _logger.LogInformation("Initialize: InitializeScheduler");
-                _scheduler = await Global.ServiceProvider.GetRequiredService<ISchedulerFactory>().GetScheduler(stoppingToken);
+                _scheduler = await _serviceProvider.GetRequiredService<ISchedulerFactory>().GetScheduler(stoppingToken);
             }
             catch (Exception ex)
             {
@@ -163,12 +162,11 @@ namespace Planar.Service
             }
         }
 
-        public static async Task LoadGlobalConfig(CancellationToken stoppingToken = default)
+        public async Task LoadGlobalConfig(CancellationToken stoppingToken = default)
         {
-            var dal = Resolve<DataLayer>();
-            var prms = await dal.GetAllGlobalConfig(stoppingToken);
-            var dict = prms.ToDictionary(p => p.Key, p => p.Value);
-            Global.SetGlobalConfig(dict);
+            using var scope = _serviceProvider.CreateScope();
+            var config = scope.ServiceProvider.GetRequiredService<ConfigDomain>();
+            await config.Flush(stoppingToken);
         }
 
         public async Task ScheduleSystemJobs(CancellationToken stoppingToken = default)
@@ -186,44 +184,6 @@ namespace Planar.Service
                 throw;
             }
         }
-
-        ////private async Task SetQuartzLogProvider()
-        ////{
-        ////    try
-        ////    {
-        ////        _logger.LogInformation("Initialize: SetQuartzLogProvider");
-        ////        var quartzLogger = Global.ServiceProvider.GetService<ILogger<QuartzLogProvider>>();
-        ////        LogProvider.SetCurrentLogProvider(new QuartzLogProvider(quartzLogger));
-        ////        await Task.CompletedTask;
-        ////    }
-        ////    catch (Exception ex)
-        ////    {
-        ////        _logger.LogCritical(ex, "Initialize: Fail to SetQuartzLogProvider");
-        ////        throw;
-        ////    }
-        ////}
-
-        ////        private async Task StartScheduler()
-        ////        {
-        ////            try
-        ////            {
-        ////                _logger.LogInformation("Initialize: StartScheduler");
-
-        ////#if DEBUG
-        ////                var delaySeconds = 1;
-        ////#else
-        ////                var delaySeconds = 30;
-        ////#endif
-
-        ////                await _scheduler.StartDelayed(TimeSpan.FromSeconds(delaySeconds));
-        ////                _logger.LogInformation("Initialize: Scheduler is initializes and started :)) [with {Delay} seconds]", delaySeconds);
-        ////            }
-        ////            catch (Exception ex)
-        ////            {
-        ////                _logger.LogCritical(ex, "Initialize: Fail to StartScheduler");
-        ////                throw;
-        ////            }
-        ////        }
 
         private async Task LoadMonitorHooks()
         {
@@ -255,7 +215,8 @@ namespace Planar.Service
                 var services = new ServiceCollection();
                 services.AddPlanarDataLayerWithContext();
                 var provider = services.BuildServiceProvider();
-                var dal = provider.GetRequiredService<DataLayer>();
+                using var scope = provider.CreateScope();
+                var dal = scope.ServiceProvider.GetRequiredService<DataLayer>();
                 await dal.RemoveClusterNode(cluster);
             }
         }
@@ -268,8 +229,8 @@ namespace Planar.Service
             {
                 _logger.LogInformation("Initialize: JoinToCluster");
 
-                var dal = Resolve<DataLayer>();
-                var util = new ClusterUtil(dal, _logger);
+                using var scope = _serviceProvider.CreateScope();
+                var util = scope.ServiceProvider.GetRequiredService<ClusterUtil>();
                 var nodes = await util.GetAllNodes();
                 ClusterUtil.ValidateClusterConflict(nodes);
 
@@ -318,28 +279,6 @@ namespace Planar.Service
             }
         }
 
-        ////private async Task AddCalendarSerializer()
-        ////{
-        ////    try
-        ////    {
-        ////        _logger.LogInformation("Initialize: AddCalendarSerializer");
-
-        ////        JsonObjectSerializer.AddCalendarSerializer<HebrewCalendar>(new CustomCalendarSerializer());
-        ////        await Task.CompletedTask;
-        ////    }
-        ////    catch (Exception ex)
-        ////    {
-        ////        _logger.LogCritical(ex, "Initialize: Fail to AddCalendarSerializer");
-        ////        throw;
-        ////    }
-        ////}
-
         #endregion Initialize Scheduler
-
-        public static T Resolve<T>()
-            where T : class
-        {
-            return Global.ServiceProvider.GetRequiredService(typeof(T)) as T;
-        }
     }
 }

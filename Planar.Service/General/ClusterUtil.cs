@@ -11,18 +11,17 @@ using Polly;
 using Quartz;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Service.General
 {
-    internal class ClusterUtil
+    public class ClusterUtil
     {
         private readonly DataLayer _dal;
-        private readonly ILogger _logger;
+        private readonly ILogger<ClusterUtil> _logger;
 
-        public ClusterUtil(DataLayer dal, ILogger logger)
+        public ClusterUtil(DataLayer dal, ILogger<ClusterUtil> logger)
         {
             _dal = dal;
             _logger = logger;

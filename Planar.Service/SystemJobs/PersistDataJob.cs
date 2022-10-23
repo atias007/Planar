@@ -20,11 +20,13 @@ namespace Planar.Service.SystemJobs
         private readonly ILogger<PersistDataJob> _logger;
 
         private readonly DataLayer _dal;
+        private readonly IServiceProvider _serviceProvider;
 
-        public PersistDataJob()
+        public PersistDataJob(IServiceProvider serviceProvider)
         {
-            _logger = Global.GetLogger<PersistDataJob>();
-            _dal = Global.ServiceProvider.GetService<DataLayer>();
+            _serviceProvider = serviceProvider;
+            _logger = _serviceProvider.GetRequiredService<ILogger<PersistDataJob>>();
+            _dal = _serviceProvider.GetService<DataLayer>();
         }
 
         public Task Execute(IJobExecutionContext context)
@@ -53,7 +55,8 @@ namespace Planar.Service.SystemJobs
 
             if (AppSettings.Clustering)
             {
-                var clusterRunningJobs = await new ClusterUtil(_dal, _logger).GetPersistanceRunningJobsInfo();
+                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+                var clusterRunningJobs = await util.GetPersistanceRunningJobsInfo();
                 runningJobs ??= new List<PersistanceRunningJobsInfo>();
 
                 if (clusterRunningJobs != null)

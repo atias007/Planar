@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -130,7 +131,8 @@ namespace Planar.Service.API
             var result = await SchedulerUtil.GetRunningJobs();
             if (AppSettings.Clustering)
             {
-                var clusterResult = await new ClusterUtil(DataLayer, Logger).GetRunningJobs();
+                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+                var clusterResult = await util.GetRunningJobs();
                 result ??= new List<RunningJobDetails>();
 
                 if (clusterResult != null)
@@ -147,7 +149,8 @@ namespace Planar.Service.API
             var result = await SchedulerUtil.GetRunningJob(instanceId);
             if (result == null && AppSettings.Clustering)
             {
-                result = await new ClusterUtil(DataLayer, Logger).GetRunningJob(instanceId);
+                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+                result = await util.GetRunningJob(instanceId);
             }
 
             if (result == null)
@@ -168,7 +171,8 @@ namespace Planar.Service.API
 
             if (AppSettings.Clustering)
             {
-                result = await new ClusterUtil(DataLayer, Logger).GetRunningData(instanceId);
+                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+                result = await util.GetRunningData(instanceId);
             }
 
             if (result == null)
@@ -274,10 +278,11 @@ namespace Planar.Service.API
 
         public async Task<bool> Stop(FireInstanceIdRequest request)
         {
-            var stop = await SchedulerUtil.StopRunningJob(request.FireInstanceId);
+            var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+            var stop = await SchedulerUtil.StopRunningJob(request.FireInstanceId, util);
             if (AppSettings.Clustering && !stop)
             {
-                stop = await new ClusterUtil(DataLayer, Logger).StopRunningJob(request.FireInstanceId);
+                stop = await util.StopRunningJob(request.FireInstanceId);
             }
 
             return stop;
@@ -487,7 +492,8 @@ namespace Planar.Service.API
             var isRunning = await SchedulerUtil.IsJobRunning(jobKey);
             if (AppSettings.Clustering)
             {
-                isRunning = isRunning && await new ClusterUtil(DataLayer, Logger).IsJobRunning(jobKey);
+                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+                isRunning = isRunning && await util.IsJobRunning(jobKey);
             }
 
             if (isRunning)

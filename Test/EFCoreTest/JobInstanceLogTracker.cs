@@ -19,10 +19,9 @@ namespace EFCoreTest
             Logger.LogInformation("Start with id {Id}", LastId);
             var dbContext = ServiceProvider.GetRequiredService<PlanarDbContext>();
             var count = await dbContext.JobInstanceLogs.Where(l => l.Id > LastId).CountAsync();
-            var last = await dbContext.JobInstanceLogs.OrderByDescending(l => l.Id).Select(l => l.Id).FirstOrDefaultAsync();
-            PutJobData(nameof(LastId), last);
+            LastId = await dbContext.JobInstanceLogs.OrderByDescending(l => l.Id).Select(l => l.Id).FirstOrDefaultAsync();
             Logger.LogInformation("Total items {Count}", count);
-            Logger.LogInformation("Last id {Id}", last);
+            Logger.LogInformation("Last id {Id}", LastId);
         }
 
         public override void RegisterServices(IServiceCollection services)

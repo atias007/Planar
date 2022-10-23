@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Planar.API.Common.Entities;
 using Planar.Common;
@@ -43,8 +44,6 @@ namespace Planar.Service.API
             var jobType = GetJobType(request);
             var jobBuilder = JobBuilder.Create(jobType)
                 .WithIdentity(jobKey)
-                .DisallowConcurrentExecution(!request.Concurrent)
-                .PersistJobDataAfterExecution(!request.Concurrent)
                 .WithDescription(request.Description)
                 .RequestRecovery();
 
@@ -116,7 +115,8 @@ namespace Planar.Service.API
                 try
                 {
                     ServiceUtil.ValidateJobFolderExists(path);
-                    await new ClusterUtil(DataLayer, Logger).ValidateJobFolderExists(path);
+                    var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+                    await util.ValidateJobFolderExists(path);
                 }
                 catch (PlanarException ex)
                 {
@@ -129,7 +129,8 @@ namespace Planar.Service.API
                     {
                         var filename = request.Properties.Get("FileName", ignoreCase: true);
                         ServiceUtil.ValidateJobFileExists(path, filename);
-                        await new ClusterUtil(DataLayer, Logger).ValidateJobFileExists(path, filename);
+                        var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+                        await util.ValidateJobFileExists(path, filename);
                     }
                     catch (PlanarException ex)
                     {
@@ -149,7 +150,8 @@ namespace Planar.Service.API
             try
             {
                 ServiceUtil.ValidateJobFolderExists(request.Folder);
-                await new ClusterUtil(DataLayer, Logger).ValidateJobFolderExists(request.Folder);
+                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+                await util.ValidateJobFolderExists(request.Folder);
             }
             catch (PlanarException ex)
             {
@@ -159,7 +161,8 @@ namespace Planar.Service.API
             try
             {
                 ServiceUtil.ValidateJobFileExists(request.Folder, FolderConsts.JobFileName);
-                await new ClusterUtil(DataLayer, Logger).ValidateJobFileExists(request.Folder, FolderConsts.JobFileName);
+                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+                await util.ValidateJobFileExists(request.Folder, FolderConsts.JobFileName);
             }
             catch (PlanarException ex)
             {
@@ -589,7 +592,15 @@ namespace Planar.Service.API
                     try
                     {
                         assembly = Assembly.Load(nameof(RunPlanarJob));
-                        typeName = $"{nameof(RunPlanarJob)}.{nameof(PlanarJob)}";
+
+                        if (job.Concurrent)
+                        {
+                            typeName = $"{nameof(RunPlanarJob)}.{nameof(PlanarJobConcurent)}";
+                        }
+                        else
+                        {
+                            typeName = $"{nameof(RunPlanarJob)}.{nameof(PlanarJobNoConcurent)}";
+                        }
                     }
                     catch (Exception ex)
                     {

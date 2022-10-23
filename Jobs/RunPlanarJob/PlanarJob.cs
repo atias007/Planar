@@ -48,6 +48,8 @@ namespace RunPlanarJob
                 var settings = LoadJobSettings();
                 var _broker = new JobMessageBroker(context, settings);
                 await (method.Invoke(instance, new object[] { _broker }) as Task);
+
+                MapJobInstancePropertiesBack(context, type, instance);
             }
             catch (Exception ex)
             {

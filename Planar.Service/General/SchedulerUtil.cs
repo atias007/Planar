@@ -100,16 +100,14 @@ namespace Planar.Service.General
             return response;
         }
 
-        private static async Task<bool> IsRunningInstanceExistOnCluster(string instanceId, CancellationToken cancellationToken = default)
+        private static async Task<bool> IsRunningInstanceExistOnCluster(string instanceId, ClusterUtil clusterUtil, CancellationToken cancellationToken = default)
         {
             var result = await IsRunningInstanceExistOnLocal(instanceId, cancellationToken);
             if (result) { return true; }
 
             if (AppSettings.Clustering)
             {
-                var dal = MainService.Resolve<DataLayer>();
-                var logger = MainService.Resolve<ILogger<ClusterUtil>>();
-                result = await new ClusterUtil(dal, logger).IsRunningInstanceExist(instanceId);
+                result = await clusterUtil.IsRunningInstanceExist(instanceId);
             }
 
             return result;
@@ -133,7 +131,7 @@ namespace Planar.Service.General
             return false;
         }
 
-        public static async Task<bool> StopRunningJob(string instanceId, CancellationToken cancellationToken = default)
+        public static async Task<bool> StopRunningJob(string instanceId, ClusterUtil clusterUtil, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -143,7 +141,7 @@ namespace Planar.Service.General
             }
             catch (RestNotFoundException)
             {
-                if (!await IsRunningInstanceExistOnCluster(instanceId, cancellationToken))
+                if (!await IsRunningInstanceExistOnCluster(instanceId, clusterUtil, cancellationToken))
                 {
                     throw new RestNotFoundException($"instance id '{instanceId}' is not running");
                 }

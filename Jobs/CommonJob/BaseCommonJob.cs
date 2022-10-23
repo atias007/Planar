@@ -98,6 +98,71 @@ namespace CommonJob
             }
         }
 
+        protected void MapJobInstancePropertiesBack(IJobExecutionContext context, Type targetType, object instance)
+        {
+            try
+            {
+                var propInfo = targetType.GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
+                foreach (var p in propInfo)
+                {
+                    if (!p.Name.StartsWith("__"))
+                    {
+                        if (context.JobDetail.JobDataMap.ContainsKey(p.Name))
+                        {
+                            try
+                            {
+                                var value = Convert.ToString(p.GetValue(instance));
+                                context.JobDetail.JobDataMap.Put(p.Name, value);
+                            }
+                            catch
+                            {
+                                // *** DO NOTHING *** //
+                            }
+                        }
+
+                        if (context.Trigger.JobDataMap.ContainsKey(p.Name))
+                        {
+                            try
+                            {
+                                var value = Convert.ToString(p.GetValue(instance));
+                                context.Trigger.JobDataMap.Put(p.Name, value);
+                            }
+                            catch
+                            {
+                                // *** DO NOTHING *** //
+                            }
+                        }
+                    }
+                }
+
+                foreach (var item in context.MergedJobDataMap)
+                {
+                    if (!item.Key.StartsWith("__"))
+                    {
+                        var p = propInfo.FirstOrDefault(p => p.Name == item.Key);
+                        if (p != null)
+                        {
+                            try
+                            {
+                                var value = Convert.ChangeType(item.Value, p.PropertyType);
+                                p.SetValue(instance, value);
+                            }
+                            catch
+                            {
+                                // *** DO NOTHING *** //
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                var source = nameof(MapJobInstancePropertiesBack);
+                Logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+                throw;
+            }
+        }
+
         protected Dictionary<string, string> LoadJobSettings()
         {
             try

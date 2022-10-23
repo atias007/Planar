@@ -13,10 +13,12 @@ namespace Planar.Service.SystemJobs
     public class ClusterHealthCheckJob : BaseSystemJob, IJob
     {
         private readonly ILogger<ClusterHealthCheckJob> _logger;
+        private readonly IServiceProvider _serviceProvider;
 
-        public ClusterHealthCheckJob()
+        public ClusterHealthCheckJob(IServiceProvider serviceProvider)
         {
-            _logger = Global.GetLogger<ClusterHealthCheckJob>();
+            _serviceProvider = serviceProvider;
+            _logger = _serviceProvider.GetRequiredService<ILogger<ClusterHealthCheckJob>>();
         }
 
         public Task Execute(IJobExecutionContext context)
@@ -32,14 +34,11 @@ namespace Planar.Service.SystemJobs
             }
         }
 
-        private static async Task DoWork()
+        private async Task DoWork()
         {
-            var logger = Global.GetLogger<ClusterHealthCheckJob>();
-            var dal = Global.ServiceProvider.GetService<DataLayer>();
-            var util = new ClusterUtil(dal, logger);
-
             if (AppSettings.Clustering)
             {
+                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
                 await util.HealthCheckWithUpdate();
             }
         }
@@ -52,7 +51,7 @@ namespace Planar.Service.SystemJobs
 
             if (AppSettings.Clustering == false)
             {
-                await scheduler.PauseJob(jobKey);
+                await scheduler.PauseJob(jobKey, stoppingToken);
             }
         }
     }

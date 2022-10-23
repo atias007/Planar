@@ -1,11 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -28,9 +31,11 @@ namespace Planar.Service.API
             }
         }
 
-        public async Task Flush()
+        public async Task Flush(CancellationToken stoppingToken = default)
         {
-            await MainService.LoadGlobalConfig();
+            var prms = await DataLayer.GetAllGlobalConfig(stoppingToken);
+            var dict = prms.ToDictionary(p => p.Key, p => p.Value);
+            Global.SetGlobalConfig(dict);
         }
 
         public async Task<string> Get(string key)

@@ -1,4 +1,5 @@
 ﻿using Grpc.Core;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
@@ -81,7 +82,8 @@ namespace Planar.Service.API
 
             if (AppSettings.Clustering)
             {
-                hc = await new ClusterUtil(DataLayer, Logger).HealthCheck();
+                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+                hc = await util.HealthCheck();
             }
 
             return hc;
@@ -98,7 +100,8 @@ namespace Planar.Service.API
             await SchedulerUtil.Stop();
             if (AppSettings.Clustering)
             {
-                await new ClusterUtil(DataLayer, Logger).StopScheduler();
+                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+                await util.StopScheduler();
             }
         }
 
@@ -107,7 +110,8 @@ namespace Planar.Service.API
             await SchedulerUtil.Start();
             if (AppSettings.Clustering)
             {
-                await new ClusterUtil(DataLayer, Logger).StartScheduler();
+                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+                await util.StartScheduler();
             }
         }
 

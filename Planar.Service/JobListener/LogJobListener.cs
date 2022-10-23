@@ -1,4 +1,5 @@
 ﻿using CommonJob;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
@@ -15,6 +16,10 @@ namespace Planar.Service.List
 {
     public class LogJobListener : BaseJobListenerWithDataLayer<LogJobListener>, IJobListener
     {
+        public LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<LogJobListener> logger) : base(serviceScopeFactory, logger)
+        {
+        }
+
         public string Name => nameof(LogJobListener);
 
         public async Task JobExecutionVetoed(IJobExecutionContext context, CancellationToken cancellationToken = default)
@@ -22,11 +27,11 @@ namespace Planar.Service.List
             try
             {
                 if (context.JobDetail.Key.Group == Consts.PlanarSystemGroup) { return; }
-                await DAL.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto);
+                await ExecuteDal(d => d.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto));
             }
             catch (Exception ex)
             {
-                SafeLog(nameof(JobExecutionVetoed), ex);
+                LogCritical(nameof(JobExecutionVetoed), ex);
             }
             finally
             {
@@ -70,11 +75,11 @@ namespace Planar.Service.List
                 if (log.InstanceId.Length > 250) { log.InstanceId = log.InstanceId[0..250]; }
                 if (log.ServerName.Length > 50) { log.ServerName = log.ServerName[0..50]; }
 
-                await DAL.CreateJobInstanceLog(log);
+                await ExecuteDal(d => d.CreateJobInstanceLog(log));
             }
             catch (Exception ex)
             {
-                SafeLog(nameof(JobToBeExecuted), ex);
+                LogCritical(nameof(JobToBeExecuted), ex);
             }
             finally
             {
@@ -112,11 +117,11 @@ namespace Planar.Service.List
                     IsStopped = context.CancellationToken.IsCancellationRequested
                 };
 
-                await DAL.UpdateHistoryJobRunLog(log);
+                await ExecuteDal(d => d.UpdateHistoryJobRunLog(log));
             }
             catch (Exception ex)
             {
-                SafeLog(nameof(JobWasExecuted), ex);
+                LogCritical(nameof(JobWasExecuted), ex);
             }
             finally
             {

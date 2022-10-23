@@ -3,7 +3,7 @@ name: BankOfIsraelCurrency
 group: Infrastructure
 description: Download daily currency data and save it to disk as xml 
 durable: true
-concurrent: true
+concurrent: false
 properties:
   JobPath: BankOfIsraelCurrency
   FileName: BankOfIsraelCurrency.dll

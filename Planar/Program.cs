@@ -178,6 +178,13 @@ namespace Planar
             // create files
             Parallel.ForEach(resources, async source =>
             {
+#if DEBUG
+                if (source.FileInfo.Exists)
+                {
+                    source.FileInfo.Delete();
+                }
+#endif
+
                 if (!source.FileInfo.Exists)
                 {
                     using var stream = assembly.GetManifestResourceStream(source.ResourceName);

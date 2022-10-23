@@ -9,8 +9,8 @@ start planar.exe
 cd\temp\planar2
 start planar.exe
 cd\temp\cli
-start planar.exe service connect localhost 2306
-start planar.exe service connect localhost 2307
+start planar-cli.exe service connect localhost 2306
+start planar-cli.exe service connect localhost 2307
 
 cd\temp
 del *.xml

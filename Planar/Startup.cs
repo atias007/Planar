@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
 using Microsoft.OpenApi.Models;
@@ -14,6 +15,8 @@ using Planar.Filters;
 using Planar.Service;
 using Planar.Service.API;
 using Planar.Service.Data;
+using Planar.Service.General;
+using Quartz.Logging;
 using Serilog;
 using System;
 using System.Net;
@@ -33,7 +36,11 @@ namespace Planar
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            System.Console.WriteLine("[x] Configure services");
+            Console.WriteLine("[x] Configure services");
+
+            ////var quartzLogger = services.BuildServiceProvider().GetService<ILogger<QuartzLogProvider>>();
+            ////LogProvider.SetCurrentLogProvider(new QuartzLogProvider(quartzLogger));
+
             services.AddMvc(options =>
             {
                 options.Filters.Add<ValidateModelStateAttribute>();
@@ -84,6 +91,7 @@ namespace Planar
             services.AddScoped<TriggerDomain>();
             services.AddScoped<UserDomain>();
             services.AddScoped<ClusterDomain>();
+            services.AddScoped<ClusterUtil>();
             services.AddPlanarServices();
             services.AddGrpc();
         }
@@ -102,7 +110,7 @@ namespace Planar
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Planar"));
             }
 
-            app.UseSerilogRequestLogging();
+            // app.UseSerilogRequestLogging();
 
             if (AppSettings.UseHttpsRedirect)
             {

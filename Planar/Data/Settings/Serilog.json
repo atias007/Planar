@@ -8,6 +8,7 @@
         "System": "Information",
         "Microsoft.Hosting.Lifetime": "Information",
         "Microsoft.AspNetCore": "Warning",
+        "Microsoft.AspNetCore.Mvc.Infrastructure": "Information",
         "Microsoft.EntityFrameworkCore.Database.Command": "Warning",
         "Microsoft.EntityFrameworkCore.Infrastructure": "Warning"
       }
