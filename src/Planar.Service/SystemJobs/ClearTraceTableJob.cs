@@ -1,8 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Planar.Common;
 using Planar.Service.Data;
-using Planar.Service.General;
 using Quartz;
 using System;
 using System.Threading;
@@ -15,11 +13,13 @@ namespace Planar.Service.SystemJobs
         private readonly ILogger<ClearTraceTableJob> _logger;
 
         private readonly DataLayer _dal;
+        private readonly IServiceProvider _serviceProvider;
 
-        public ClearTraceTableJob()
+        public ClearTraceTableJob(IServiceProvider serviceProvider)
         {
-            _logger = Global.GetLogger<ClearTraceTableJob>();
-            _dal = Global.ServiceProvider.GetService<DataLayer>();
+            _serviceProvider = serviceProvider;
+            _logger = _serviceProvider.GetRequiredService<ILogger<ClearTraceTableJob>>();
+            _dal = _serviceProvider.GetRequiredService<DataLayer>();
         }
 
         public Task Execute(IJobExecutionContext context)

@@ -13,7 +13,7 @@ namespace Planar.Service.SystemJobs
         {
             var name = typeof(T).Name;
             var jobKey = new JobKey(name, Consts.PlanarSystemGroup);
-            var job = await scheduler.GetJobDetail(jobKey);
+            var job = await scheduler.GetJobDetail(jobKey, stoppingToken);
 
             if (job == null)
             {

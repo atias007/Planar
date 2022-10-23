@@ -15,6 +15,7 @@ using Planar.Service;
 using Planar.Service.API;
 using Planar.Service.Data;
 using Planar.Service.General;
+using Planar.Service.Monitor;
 using System;
 using System.Net;
 using System.Reflection;
@@ -89,6 +90,7 @@ namespace Planar
             services.AddScoped<UserDomain>();
             services.AddScoped<ClusterDomain>();
             services.AddScoped<ClusterUtil>();
+            services.AddScoped<MonitorUtil>();
             services.AddPlanarServices();
             services.AddGrpc();
         }

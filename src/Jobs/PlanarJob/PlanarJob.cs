@@ -13,6 +13,10 @@ namespace Planar
 {
     public class PlanarJob : BaseCommonJob<PlanarJob>
     {
+        public PlanarJob(ILogger<PlanarJob> logger) : base(logger)
+        {
+        }
+
         public string FileName { get; set; }
 
         public string TypeName { get; set; }
@@ -79,7 +83,7 @@ namespace Planar
             catch (Exception ex)
             {
                 var source = nameof(ValidatePlanarJob);
-                Logger.LogError(ex, "Fail at {Source}", source);
+                _logger.LogError(ex, "Fail at {Source}", source);
                 throw;
             }
         }

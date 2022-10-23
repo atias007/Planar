@@ -11,7 +11,6 @@ using Planar.Service.Monitor;
 using Planar.Service.SystemJobs;
 using Quartz;
 using Quartz.Impl.AdoJobStore.Common;
-using Quartz.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,7 +31,6 @@ namespace Planar.Service
             _serviceProvider = serviceProvider;
             _lifetime = lifetime;
             _logger = _serviceProvider.GetService<ILogger<MainService>>();
-            Global.ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         }
 
         public static IScheduler Scheduler
@@ -89,7 +87,7 @@ namespace Planar.Service
                 return;
             }
 
-            var mainTask = Run(stoppingToken);
+            _ = Run(stoppingToken);
             var waiter = new CancellationTokenAwaiter(stoppingToken);
 
             waiter.OnCompleted(async () =>
@@ -192,7 +190,9 @@ namespace Planar.Service
                 _logger.LogInformation("Initialize: LoadMonitorHooks");
 
                 ServiceUtil.LoadMonitorHooks(_logger);
-                await MonitorUtil.Validate(_logger);
+                using var scope = _serviceProvider.CreateScope();
+                var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
+                await monitor.Validate();
             }
             catch (Exception ex)
             {

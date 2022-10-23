@@ -1,4 +1,5 @@
 ﻿using CommonJob;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -13,7 +14,7 @@ namespace Planar.Service.List
 {
     public class RetryTriggerListener : BaseListener<RetryTriggerListener>, ITriggerListener
     {
-        public RetryTriggerListener(ILogger<RetryTriggerListener> logger) : base(logger)
+        public RetryTriggerListener(IServiceScopeFactory serviceScopeFactory, ILogger<RetryTriggerListener> logger) : base(serviceScopeFactory, logger)
         {
         }
 

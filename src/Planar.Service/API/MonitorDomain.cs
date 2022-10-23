@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
@@ -29,7 +30,8 @@ namespace Planar.Service.API
 
             ServiceUtil.LoadMonitorHooks(Logger);
             sb.AppendLine($"{ServiceUtil.MonitorHooks.Count} monitor hooks loaded");
-            await MonitorUtil.Validate(Logger);
+            var monitor = _serviceProvider.GetRequiredService<MonitorUtil>();
+            await monitor.Validate();
 
             return sb.ToString();
         }

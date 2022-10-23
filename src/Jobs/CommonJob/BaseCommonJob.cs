@@ -12,13 +12,18 @@ using System.Threading.Tasks;
 namespace CommonJob
 {
     public abstract class BaseCommonJob<TInstance> : IJob
-        where TInstance : class, new()
+        where TInstance : class
     {
+        protected readonly ILogger<TInstance> _logger;
+
+        public BaseCommonJob(ILogger<TInstance> logger)
+        {
+            _logger = logger;
+        }
+
         public string JobPath { get; set; }
 
         public abstract Task Execute(IJobExecutionContext context);
-
-        protected ILogger<TInstance> Logger = Global.GetLogger<TInstance>();
 
         protected void MapProperties(IJobExecutionContext context)
         {
@@ -43,7 +48,7 @@ namespace CommonJob
             catch (Exception ex)
             {
                 var source = nameof(MapProperties);
-                Logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+                _logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
                 throw;
             }
 
@@ -60,7 +65,7 @@ namespace CommonJob
             catch (Exception ex)
             {
                 var source = nameof(FinalizeJob);
-                Logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+                _logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
                 throw;
             }
         }
@@ -93,7 +98,7 @@ namespace CommonJob
             catch (Exception ex)
             {
                 var source = nameof(MapJobInstanceProperties);
-                Logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+                _logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
                 throw;
             }
         }
@@ -105,61 +110,49 @@ namespace CommonJob
                 var propInfo = targetType.GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
                 foreach (var p in propInfo)
                 {
-                    if (!p.Name.StartsWith("__"))
+                    if (p.Name.StartsWith("__")) { continue; }
+                    if (context.JobDetail.JobDataMap.ContainsKey(p.Name))
                     {
-                        if (context.JobDetail.JobDataMap.ContainsKey(p.Name))
-                        {
-                            try
-                            {
-                                var value = Convert.ToString(p.GetValue(instance));
-                                context.JobDetail.JobDataMap.Put(p.Name, value);
-                            }
-                            catch
-                            {
-                                // *** DO NOTHING *** //
-                            }
-                        }
-
-                        if (context.Trigger.JobDataMap.ContainsKey(p.Name))
-                        {
-                            try
-                            {
-                                var value = Convert.ToString(p.GetValue(instance));
-                                context.Trigger.JobDataMap.Put(p.Name, value);
-                            }
-                            catch
-                            {
-                                // *** DO NOTHING *** //
-                            }
-                        }
+                        SafePutJobDataMap(context, instance, p);
                     }
-                }
 
-                foreach (var item in context.MergedJobDataMap)
-                {
-                    if (!item.Key.StartsWith("__"))
+                    if (context.Trigger.JobDataMap.ContainsKey(p.Name))
                     {
-                        var p = propInfo.FirstOrDefault(p => p.Name == item.Key);
-                        if (p != null)
-                        {
-                            try
-                            {
-                                var value = Convert.ChangeType(item.Value, p.PropertyType);
-                                p.SetValue(instance, value);
-                            }
-                            catch
-                            {
-                                // *** DO NOTHING *** //
-                            }
-                        }
+                        SafePutTiggerDataMap(context, instance, p);
                     }
                 }
             }
             catch (Exception ex)
             {
                 var source = nameof(MapJobInstancePropertiesBack);
-                Logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+                _logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
                 throw;
+            }
+        }
+
+        private static void SafePutJobDataMap(IJobExecutionContext context, object instance, PropertyInfo p)
+        {
+            try
+            {
+                var value = Convert.ToString(p.GetValue(instance));
+                context.JobDetail.JobDataMap.Put(p.Name, value);
+            }
+            catch
+            {
+                // *** DO NOTHING *** //
+            }
+        }
+
+        private static void SafePutTiggerDataMap(IJobExecutionContext context, object instance, PropertyInfo p)
+        {
+            try
+            {
+                var value = Convert.ToString(p.GetValue(instance));
+                context.Trigger.JobDataMap.Put(p.Name, value);
+            }
+            catch
+            {
+                // *** DO NOTHING *** //
             }
         }
 
@@ -174,7 +167,7 @@ namespace CommonJob
             catch (Exception ex)
             {
                 var source = nameof(LoadJobSettings);
-                Logger.LogError(ex, "Fail at {Source}", source);
+                _logger.LogError(ex, "Fail at {Source}", source);
                 throw;
             }
         }

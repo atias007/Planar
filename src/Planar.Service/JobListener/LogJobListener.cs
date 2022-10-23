@@ -14,7 +14,7 @@ using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
 
 namespace Planar.Service.List
 {
-    public class LogJobListener : BaseJobListenerWithDataLayer<LogJobListener>, IJobListener
+    public class LogJobListener : BaseListener<LogJobListener>, IJobListener
     {
         public LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<LogJobListener> logger) : base(serviceScopeFactory, logger)
         {

@@ -10,25 +10,9 @@ namespace Planar.Common
     {
         public static Dictionary<string, string> GlobalConfig { get; private set; }
 
-        public static IServiceProvider ServiceProvider { get; set; }
-
         public static LogLevel LogLevel { get; set; }
 
         public static string Environment { get; set; }
-
-        public static ILogger<T> GetLogger<T>()
-        {
-            var logger = ServiceProvider.GetService(typeof(ILogger<T>)) as ILogger<T>;
-            return logger;
-        }
-
-        public static ILogger GetLogger(Type type)
-        {
-            Type generic = typeof(ILogger<>);
-            var loggerType = generic.MakeGenericType(type);
-            var logger = ServiceProvider.GetService(loggerType) as ILogger;
-            return logger;
-        }
 
         public static void SetGlobalConfig(Dictionary<string, string> config)
         {
@@ -38,7 +22,6 @@ namespace Planar.Common
         public static void Clear()
         {
             GlobalConfig = null;
-            ServiceProvider = null;
         }
 
         public static SortedDictionary<string, string> ConvertDataMapToDictionary(JobDataMap map)

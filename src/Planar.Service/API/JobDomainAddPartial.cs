@@ -418,8 +418,15 @@ namespace Planar.Service.API
             #region Valid Name & Group
 
             var regex = new Regex(nameRegex);
-            if (IsRegexMatch(regex, metadata.Name) == false) throw new RestValidationException("name", $"job name '{metadata.Name}' is invalid. use only alphanumeric, dashes & underscore");
-            if (IsRegexMatch(regex, metadata.Group) == false) throw new RestValidationException("group", $"job group '{metadata.Group}' is invalid. use only alphanumeric, dashes & underscore");
+            if (!IsRegexMatch(regex, metadata.Name))
+            {
+                throw new RestValidationException("name", $"job name '{metadata.Name}' is invalid. use only alphanumeric, dashes & underscore");
+            }
+
+            if (!IsRegexMatch(regex, metadata.Group))
+            {
+                throw new RestValidationException("group", $"job group '{metadata.Group}' is invalid. use only alphanumeric, dashes & underscore");
+            }
 
             #endregion Valid Name & Group
 

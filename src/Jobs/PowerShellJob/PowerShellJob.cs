@@ -15,6 +15,10 @@ namespace RunPowerShellJob
         public List<string> ScriptFiles { get; set; } = new();
         private List<string> _scripts;
 
+        public PowerShellJob(ILogger<PowerShellJob> logger) : base(logger)
+        {
+        }
+
         public override async Task Execute(IJobExecutionContext context)
         {
             var counter = 0;
@@ -82,7 +86,7 @@ namespace RunPowerShellJob
             {
                 _scripts.Clear();
                 var source = nameof(Validate);
-                Logger.LogError(ex, "Fail at {Source}", source);
+                _logger.LogError(ex, "Fail at {Source}", source);
                 throw;
             }
         }

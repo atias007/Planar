@@ -17,38 +17,31 @@ namespace Planar.Service.Monitor
 {
     public class MonitorUtil
     {
-        private static readonly ILogger<MonitorUtil> _logger = Global.GetLogger<MonitorUtil>();
+        private readonly ILogger<MonitorUtil> _logger;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public static async Task Validate<T>(ILogger<T> logger)
+        public MonitorUtil(IServiceScopeFactory serviceScopeFactory, ILogger<MonitorUtil> logger)
         {
-            var count = await DAL.GetMonitorCount();
+            _logger = logger;
+            _serviceScopeFactory = serviceScopeFactory;
+        }
+
+        public async Task Validate()
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<DataLayer>();
+            var count = await dal.GetMonitorCount();
             if (count == 0)
             {
-                logger.LogWarning("There is no monitor items. Service does not have any monitor");
+                _logger.LogWarning("There is no monitor items. Service does not have any monitor");
             }
 
-            var hooks = await DAL.GetMonitorHooks();
+            var hooks = await dal.GetMonitorHooks();
             var missingHooks = hooks.Where(h => ServiceUtil.MonitorHooks.ContainsKey(h) == false).ToList();
-            missingHooks.ForEach(h => logger.LogWarning("Monitor with hook '{Hook}' is invalid. Missing hook in service", h));
+            missingHooks.ForEach(h => _logger.LogWarning("Monitor with hook '{Hook}' is invalid. Missing hook in service", h));
         }
 
-        public static DataLayer DAL
-        {
-            get
-            {
-                try
-                {
-                    return Global.ServiceProvider.GetRequiredService<DataLayer>();
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogCritical(ex, $"Error initialize DataLayer at {nameof(MonitorUtil)}");
-                    throw;
-                }
-            }
-        }
-
-        internal static async Task Scan(MonitorEvents @event, IJobExecutionContext context, Exception exception = default, CancellationToken cancellationToken = default)
+        internal async Task Scan(MonitorEvents @event, IJobExecutionContext context, Exception exception = default, CancellationToken cancellationToken = default)
         {
             var task = Task.Run(() =>
             {
@@ -58,7 +51,7 @@ namespace Planar.Service.Monitor
             await task;
         }
 
-        private static Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception exception)
+        private Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception exception)
         {
             Task hookTask = null;
             try
@@ -75,17 +68,16 @@ namespace Planar.Service.Monitor
                     {
                         var details = GetMonitorDetails(action, context, exception);
                         var hookType = ServiceUtil.MonitorHooks[action.Hook]?.Type;
-                        var logger = Global.GetLogger(hookType);
                         hookTask = hookInstance.Handle(details, _logger)
                         .ContinueWith(t =>
                         {
                             if (t.Exception != null)
                             {
-                                logger.LogError(t.Exception, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
+                                _logger.LogError(t.Exception, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
                             }
                         });
 
-                        logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle with hook {Hook}", action.Id, action.Title, action.Hook);
+                        _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle with hook {Hook}", action.Id, action.Title, action.Hook);
                     }
                 }
             }
@@ -97,7 +89,7 @@ namespace Planar.Service.Monitor
             return hookTask;
         }
 
-        internal static void ScanAsync(MonitorEvents @event, IJobExecutionContext context, Exception exception = default, CancellationToken cancellationToken = default)
+        internal void ScanAsync(MonitorEvents @event, IJobExecutionContext context, Exception exception = default, CancellationToken cancellationToken = default)
         {
             if (context.JobDetail.Key.Group.StartsWith(Consts.PlanarSystemGroup))
             {
@@ -179,16 +171,21 @@ namespace Planar.Service.Monitor
             return result;
         }
 
-        private static async Task<List<MonitorAction>> LoadMonitorItems(MonitorEvents @event, IJobExecutionContext context)
+        private async Task<List<MonitorAction>> LoadMonitorItems(MonitorEvents @event, IJobExecutionContext context)
         {
             var group = context.JobDetail.Key.Group;
             var job = JobKeyHelper.GetJobId(context.JobDetail);
-            var result = await DAL.GetMonitorData((int)@event, group, job);
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<DataLayer>();
+            var result = await dal.GetMonitorData((int)@event, group, job);
             return result;
         }
 
-        private static async Task<bool> Analyze(MonitorEvents @event, MonitorAction action)
+        private async Task<bool> Analyze(MonitorEvents @event, MonitorAction action)
         {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<DataLayer>();
+
             switch (@event)
             {
                 case MonitorEvents.ExecutionVetoed:
@@ -209,7 +206,7 @@ namespace Planar.Service.Monitor
                         return false;
                     }
 
-                    var count1 = await DAL.CountFailsInRowForJob(new { action.JobId, Total = args1 });
+                    var count1 = await dal.CountFailsInRowForJob(new { action.JobId, Total = args1 });
                     return count1 == args1;
 
                 case MonitorEvents.ExecutionFailnTimesInHour:
@@ -220,7 +217,7 @@ namespace Planar.Service.Monitor
                         return false;
                     }
 
-                    var count2 = await DAL.CountFailsInHourForJob(new { action.JobId });
+                    var count2 = await dal.CountFailsInHourForJob(new { action.JobId });
                     return args2 >= count2;
             }
         }
