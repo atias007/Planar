@@ -16,7 +16,7 @@ namespace CommonJob
     {
         protected readonly ILogger<TInstance> _logger;
 
-        public BaseCommonJob(ILogger<TInstance> logger)
+        protected BaseCommonJob(ILogger<TInstance> logger)
         {
             _logger = logger;
         }

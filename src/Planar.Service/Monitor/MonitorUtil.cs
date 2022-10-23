@@ -67,7 +67,6 @@ namespace Planar.Service.Monitor
                     else
                     {
                         var details = GetMonitorDetails(action, context, exception);
-                        var hookType = ServiceUtil.MonitorHooks[action.Hook]?.Type;
                         hookTask = hookInstance.Handle(details, _logger)
                         .ContinueWith(t =>
                         {

@@ -58,13 +58,28 @@ namespace Planar.CLI.Actions
             return await Execute(restRequest);
         }
 
-        [Action("password")]
+        [Action("reset-password")]
         public static async Task<CliActionResponse> GetUserPassword(CliGetByIdRequest request)
         {
-            var restRequest = new RestRequest("user/{id}/password", Method.Get)
+            var restRequest = new RestRequest("user/{id}/resetpassword", Method.Patch)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
-            return await ExecuteEntity<string>(restRequest);
+            var result = await RestProxy.Invoke<string>(restRequest);
+            if (result.IsSuccessful)
+            {
+                var addResponse = new AddUserResponse
+                {
+                    Id = request.Id,
+                    Password = result.Data
+                };
+
+                var table = CliTableExtensions.GetTable(addResponse);
+                return new CliActionResponse(result, table);
+            }
+            else
+            {
+                return new CliActionResponse(result);
+            }
         }
     }
 }

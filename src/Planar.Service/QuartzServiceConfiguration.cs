@@ -78,7 +78,7 @@ namespace Planar.Service
                             break;
 
                         default:
-                            throw new ApplicationException($"Database provider {AppSettings.DatabaseProvider} is not supported");
+                            throw new NotImplementedException($"Database provider {AppSettings.DatabaseProvider} is not supported");
                     }
 
                     // this requires Quartz.Serialization.Json NuGet package

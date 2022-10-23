@@ -70,9 +70,7 @@ namespace Planar
 
             services.AddDbContext<PlanarContext>(o => o.UseSqlServer(
                     AppSettings.DatabaseConnectionString,
-                    options => options.EnableRetryOnFailure(10, TimeSpan.FromSeconds(10), null)),
-                contextLifetime: ServiceLifetime.Transient,
-                optionsLifetime: ServiceLifetime.Singleton
+                    options => options.EnableRetryOnFailure(10, TimeSpan.FromSeconds(10), null))
             );
 
             services.AddQuartzService();
