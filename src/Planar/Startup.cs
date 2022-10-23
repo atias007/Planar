@@ -109,8 +109,6 @@ namespace Planar
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Planar"));
             }
 
-            // app.UseSerilogRequestLogging();
-
             if (AppSettings.UseHttpsRedirect)
             {
                 app.UseHttpsRedirection();
