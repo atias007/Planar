@@ -1,0 +1,48 @@
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Debug",
+      "Override": {
+        "Quartz": "Information",
+        "Microsoft": "Information",
+        "System": "Information",
+        "Microsoft.Hosting.Lifetime": "Information",
+        "Microsoft.AspNetCore": "Warning",
+        "Microsoft.AspNetCore.Mvc.Infrastructure": "Information",
+        "Microsoft.EntityFrameworkCore.Database.Command": "Warning",
+        "Microsoft.EntityFrameworkCore.Infrastructure": "Warning"
+      }
+    },
+    "WriteTo": [
+      {
+        "Name": "MSSqlServer",
+        "Args": {
+          "connectionString": "",
+          "tableName": "Trace",
+          "columnOptionsSection": {
+            "addStandardColumns": [ "LogEvent" ],
+            "removeStandardColumns": [ "MessageTemplate", "Properties" ],
+            "logEvent": {
+              "excludeStandardColumns": true
+            }
+          }
+        }
+      },
+      {
+        "Name": "Console"
+      }
+    ],
+    "Enrich": [
+      "FromLogContext",
+      "WithMachineName"
+    ],
+    "Filter": [
+      {
+        "Name": "ByExcluding",
+        "Args": {
+          "expression": "RequestPath like '%Cluster/HealthCheck'"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+﻿job type: PlanarJob
+name: BankOfIsraelCurrency
+group: Infrastructure
+description: Download daily currency data and save it to disk as xml 
+durable: true
+concurrent: false
+properties:
+  JobPath: BankOfIsraelCurrency
+  FileName: BankOfIsraelCurrency.dll
+  TypeName: BankOfIsraelCurrency.CurrencyLoader
+simple triggers:
+  - name: every_10_minutes
+    interval: 00:10:00
+    misfire behaviour: FireNow
