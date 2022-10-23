@@ -1,6 +1,6 @@
 ﻿using Quartz;
 
-namespace RunPlanarJob
+namespace Planar
 {
     [DisallowConcurrentExecution]
     [PersistJobDataAfterExecution]

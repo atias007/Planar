@@ -1,6 +1,5 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.Logging;
-using Planar;
 using Planar.Common;
 using Quartz;
 using System;
@@ -10,7 +9,7 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Threading.Tasks;
 
-namespace RunPlanarJob
+namespace Planar
 {
     public class PlanarJob : BaseCommonJob<PlanarJob>
     {

@@ -11,7 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Common", "Planar.Com
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Service", "Planar.Service\Planar.Service.csproj", "{0875B6C0-C563-4F74-AA0C-2B305A7A2297}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RunPlanarJob", "Jobs\RunPlanarJob\RunPlanarJob.csproj", "{02B629A8-83FE-4D17-8BD8-A386FDF075D8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PlanarJob", "Jobs\PlanarJob\PlanarJob.csproj", "{02B629A8-83FE-4D17-8BD8-A386FDF075D8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Jobs", "Jobs", "{8877FB52-2C70-41FB-8119-13C99EF673E1}"
 EndProject
@@ -52,7 +52,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestAggEx", "Test\TestAggEx
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatabaseMigrations", "DatabaseMigrations\DatabaseMigrations.csproj", "{9FA5D8F5-0927-4149-896A-675D9373128B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RunPowerShellJob", "Jobs\RunPowerShellJob\RunPowerShellJob.csproj", "{1B54F392-8C57-4F88-BC76-9072B338ED17}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PowerShellJob", "Jobs\PowerShellJob\PowerShellJob.csproj", "{1B54F392-8C57-4F88-BC76-9072B338ED17}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar", "Planar\Planar.csproj", "{EF74149D-ECDD-4680-8C68-C335A873020A}"
 EndProject

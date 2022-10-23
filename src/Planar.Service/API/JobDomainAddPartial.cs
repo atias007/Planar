@@ -9,7 +9,6 @@ using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Validation;
 using Quartz;
-using RunPlanarJob;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -591,20 +590,20 @@ namespace Planar.Service.API
                 case nameof(PlanarJob):
                     try
                     {
-                        assembly = Assembly.Load(nameof(RunPlanarJob));
+                        assembly = Assembly.Load(nameof(PlanarJob));
 
                         if (job.Concurrent)
                         {
-                            typeName = $"{nameof(RunPlanarJob)}.{nameof(PlanarJobConcurent)}";
+                            typeName = $"Planar.{nameof(PlanarJobConcurent)}";
                         }
                         else
                         {
-                            typeName = $"{nameof(RunPlanarJob)}.{nameof(PlanarJobNoConcurent)}";
+                            typeName = $"Planar.{nameof(PlanarJobNoConcurent)}";
                         }
                     }
                     catch (Exception ex)
                     {
-                        throw new RestValidationException("jobType", $"fail to load assemly {nameof(RunPlanarJob)} ({ex.Message})");
+                        throw new RestValidationException("jobType", $"fail to load assemly {nameof(PlanarJob)} ({ex.Message})");
                     }
                     break;
 
