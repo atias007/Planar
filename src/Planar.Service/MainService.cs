@@ -10,7 +10,6 @@ using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.SystemJobs;
 using Quartz;
-using Quartz.Impl.AdoJobStore.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -121,7 +120,7 @@ namespace Planar.Service
 
             await LoadGlobalConfigInner(stoppingToken);
 
-            await InitializeScheduler(stoppingToken);
+            await InitializeScheduler(_logger, _serviceProvider, stoppingToken);
 
             await LoadMonitorHooks();
 
@@ -146,16 +145,16 @@ namespace Planar.Service
             }
         }
 
-        private async Task InitializeScheduler(CancellationToken stoppingToken)
+        private static async Task InitializeScheduler(ILogger<MainService> logger, IServiceProvider serviceProvider, CancellationToken stoppingToken)
         {
             try
             {
-                _logger.LogInformation("Initialize: InitializeScheduler");
-                _scheduler = await _serviceProvider.GetRequiredService<ISchedulerFactory>().GetScheduler(stoppingToken);
+                logger.LogInformation("Initialize: InitializeScheduler");
+                _scheduler = await serviceProvider.GetRequiredService<ISchedulerFactory>().GetScheduler(stoppingToken);
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Initialize: Fail to InitializeScheduler");
+                logger.LogCritical(ex, "Initialize: Fail to InitializeScheduler");
                 throw;
             }
         }

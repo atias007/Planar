@@ -40,7 +40,6 @@ namespace Planar.Service
                 // convert time zones using converter that can handle Windows/Linux differences
                 q.UseTimeZoneConverter();
 
-                // TODO: add appsettings fro this
                 ////q.UseJobAutoInterrupt(options =>
                 ////{
                 ////    // this is the default

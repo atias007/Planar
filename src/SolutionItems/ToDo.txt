@@ -4,6 +4,8 @@ upgrade:
 
 
 --------------------------------------------------------
+
+- // TODO: add appsettings for UseJobAutoInterrupt at QuartzServiceConfiguration
 - add to base test to retrieve log & exception
 - add monitor event when user pause / delete / add job / invoke job / cancel job / join to cluster / remove from cluster / start scheduler / stop scheduler
 - add interface to hooks to handle system events
