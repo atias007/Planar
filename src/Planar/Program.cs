@@ -69,12 +69,12 @@ namespace Planar
                         Debugger.Break();
                     });
                 })
-                .UseSerilog((context, config) => ConfigureSerilog(config));
+                .UseSerilog(ConfigureSerilog);
 
             return result;
         }
 
-        private static void ConfigureSerilog(LoggerConfiguration loggerConfig)
+        private static void ConfigureSerilog(HostBuilderContext context, LoggerConfiguration config)
         {
             Console.WriteLine("[x] Configure serilog");
             var file = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "Serilog.json");
@@ -100,7 +100,7 @@ namespace Planar
                 }
             }
 
-            loggerConfig.ReadFrom.Configuration(configuration);
+            config.ReadFrom.Configuration(configuration);
         }
 
         private static void InitializeAppSettings()
