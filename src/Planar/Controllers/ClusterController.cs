@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Planar.Service.API;
 using Planar.Service.Model;
 using System;
@@ -10,9 +9,9 @@ namespace Planar.Controllers
 {
     [ApiController]
     [Route("cluster")]
-    public class ClusterController : BaseController<ClusterController, ClusterDomain>
+    public class ClusterController : BaseController<ClusterDomain>
     {
-        public ClusterController(ILogger<ClusterController> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public ClusterController(ClusterDomain bl) : base(bl)
         {
         }
 

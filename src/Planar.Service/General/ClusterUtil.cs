@@ -197,7 +197,7 @@ namespace Planar.Service.General
                 currentNode.ClusterPort = AppSettings.ClusterPort;
                 currentNode.JoinDate = DateTime.Now;
                 currentNode.HealthCheckDate = DateTime.Now;
-                currentNode.InstanceId = MainService.Scheduler.SchedulerInstanceId;
+                currentNode.InstanceId = SchedulerUtil.SchedulerInstanceId;
                 await _dal.AddClusterNode(currentNode);
             }
             else
@@ -205,7 +205,7 @@ namespace Planar.Service.General
                 item.ClusterPort = AppSettings.ClusterPort;
                 item.JoinDate = DateTime.Now;
                 item.HealthCheckDate = DateTime.Now;
-                item.InstanceId = MainService.Scheduler.SchedulerInstanceId;
+                item.InstanceId = SchedulerUtil.SchedulerInstanceId;
                 await _dal.SaveChanges();
             }
         }
@@ -609,7 +609,7 @@ namespace Planar.Service.General
                 {
                     ClusterPort = AppSettings.ClusterPort,
                     JoinDate = DateTime.Now,
-                    InstanceId = MainService.Scheduler.SchedulerInstanceId,
+                    InstanceId = SchedulerUtil.SchedulerInstanceId,
                     HealthCheckDate = DateTime.Now,
                 };
 
@@ -619,9 +619,9 @@ namespace Planar.Service.General
 
         private async Task VerifyCurrentNode(ClusterNode node)
         {
-            if (node.InstanceId != MainService.Scheduler.SchedulerInstanceId)
+            if (node.InstanceId != SchedulerUtil.SchedulerInstanceId)
             {
-                node.InstanceId = MainService.Scheduler.SchedulerInstanceId;
+                node.InstanceId = SchedulerUtil.SchedulerInstanceId;
                 node.JoinDate = DateTime.Now;
             }
 

@@ -102,6 +102,17 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, message: message);
         }
 
+        [Action("prev")]
+        public static async Task<CliActionResponse> GetPreviousRunning(CliJobOrTriggerKey jobKey)
+        {
+            var restRequest = new RestRequest("job/prevRunning/{id}", Method.Get)
+                .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<DateTime?>(restRequest);
+            var message = $"{result?.Data?.ToShortDateString()} {result?.Data?.ToShortTimeString()}";
+            return new CliActionResponse(result, message: message);
+        }
+
         [Action("settings")]
         public static async Task<CliActionResponse> GetJobSettings(CliJobOrTriggerKey jobKey)
         {
@@ -112,7 +123,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, serializeObj: result.Data);
         }
 
-        [Action("runningex")]
+        [Action("running-ex")]
         public static async Task<CliActionResponse> GetRunningExceptions(CliFireInstanceIdRequest request)
         {
             var restRequest = new RestRequest("job/runningData/{instanceId}", Method.Get)
@@ -124,7 +135,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, result.Data?.Exceptions);
         }
 
-        [Action("runninglog")]
+        [Action("running-log")]
         public static async Task<CliActionResponse> GetRunningData(CliFireInstanceIdRequest request)
         {
             var restRequest = new RestRequest("job/runningData/{instanceId}", Method.Get)
@@ -169,7 +180,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        [Action("pauseall")]
+        [Action("pause-all")]
         public static async Task<CliActionResponse> PauseAll()
         {
             var restRequest = new RestRequest("job/pauseAll", Method.Post);
@@ -199,7 +210,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        [Action("resumeall")]
+        [Action("resume-all")]
         public static async Task<CliActionResponse> ResumeAll()
         {
             var restRequest = new RestRequest("job/resumeAll", Method.Post);
@@ -298,7 +309,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        [Action("updateprop")]
+        [Action("update-prop")]
         public static async Task<CliActionResponse> UpsertJobProperty(CliUpsertJobPropertyRequest request)
         {
             var restRequest = new RestRequest("job/property", Method.Put)

@@ -1,6 +1,5 @@
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.General;
@@ -14,12 +13,10 @@ namespace Planar
     internal class ClusterService : PlanarCluster.PlanarClusterBase
     {
         private readonly ILogger<ClusterService> _logger;
-        private readonly IServiceProvider _serviceProvider;
 
-        public ClusterService(IServiceProvider serviceProvider)
+        public ClusterService(ILogger<ClusterService> logger)
         {
-            _serviceProvider = serviceProvider;
-            _logger = _serviceProvider.GetRequiredService<ILogger<ClusterService>>();
+            _logger = logger;
         }
 
         // OK
@@ -111,8 +108,7 @@ namespace Planar
         public override async Task<StopRunningJobReply> StopRunningJob(GetRunningJobRequest request, ServerCallContext context)
         {
             ValidateRequest(request);
-            var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-            var result = await SchedulerUtil.StopRunningJob(request.InstanceId, util, context.CancellationToken);
+            var result = await SchedulerUtil.StopRunningJob(request.InstanceId, context.CancellationToken);
             return new StopRunningJobReply { IsStopped = result };
         }
 

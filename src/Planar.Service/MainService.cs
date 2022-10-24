@@ -20,7 +20,6 @@ namespace Planar.Service
 {
     public class MainService : BackgroundService
     {
-        private static IScheduler _scheduler;
         private readonly ILogger<MainService> _logger;
         private readonly IHostApplicationLifetime _lifetime;
         private readonly IServiceProvider _serviceProvider;
@@ -30,19 +29,6 @@ namespace Planar.Service
             _serviceProvider = serviceProvider;
             _lifetime = lifetime;
             _logger = _serviceProvider.GetService<ILogger<MainService>>();
-        }
-
-        public static IScheduler Scheduler
-        {
-            get
-            {
-                if (_scheduler == null)
-                {
-                    throw new ApplicationException("Scheduler is not initialized");
-                }
-
-                return _scheduler;
-            }
         }
 
         private static async Task<bool> WaitForAppStartup(IHostApplicationLifetime lifetime, CancellationToken stoppingToken)
@@ -103,7 +89,7 @@ namespace Planar.Service
 
                 try
                 {
-                    await _scheduler?.Shutdown(true);
+                    await SchedulerUtil.Shutdown(stoppingToken);
                 }
                 catch
                 {
@@ -150,7 +136,7 @@ namespace Planar.Service
             try
             {
                 logger.LogInformation("Initialize: InitializeScheduler");
-                _scheduler = await serviceProvider.GetRequiredService<ISchedulerFactory>().GetScheduler(stoppingToken);
+                await SchedulerUtil.Initialize(serviceProvider, stoppingToken);
             }
             catch (Exception ex)
             {
@@ -171,9 +157,9 @@ namespace Planar.Service
             try
             {
                 _logger.LogInformation("Initialize: ScheduleSystemJobs");
-                await PersistDataJob.Schedule(Scheduler, stoppingToken);
-                await ClusterHealthCheckJob.Schedule(Scheduler, stoppingToken);
-                await ClearTraceTableJob.Schedule(Scheduler, stoppingToken);
+                await PersistDataJob.Schedule(SchedulerUtil.Scheduler, stoppingToken);
+                await ClusterHealthCheckJob.Schedule(SchedulerUtil.Scheduler, stoppingToken);
+                await ClearTraceTableJob.Schedule(SchedulerUtil.Scheduler, stoppingToken);
             }
             catch (Exception ex)
             {
@@ -208,7 +194,7 @@ namespace Planar.Service
                 {
                     Server = Environment.MachineName,
                     Port = AppSettings.HttpPort,
-                    InstanceId = _scheduler.SchedulerInstanceId
+                    InstanceId = SchedulerUtil.SchedulerInstanceId
                 };
 
                 var services = new ServiceCollection();
@@ -244,15 +230,15 @@ namespace Planar.Service
                 }
                 else
                 {
-                    Scheduler?.Standby(stoppingToken);
+                    await SchedulerUtil.Stop(stoppingToken);
                     throw new PlanarException("Cluster health check fail. Could not join to cluster. See previous errors for more details");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogCritical(ex, "Initialize: Fail to AddSchedulerCluster");
-                await _scheduler.Standby(stoppingToken);
-                await _scheduler.Shutdown(stoppingToken);
+                await SchedulerUtil.Stop(stoppingToken);
+                await SchedulerUtil.Shutdown(stoppingToken);
                 Shutdown();
             }
         }
@@ -270,7 +256,7 @@ namespace Planar.Service
         {
             if (AppSettings.Clustering)
             {
-                _logger.LogInformation("Join to cluster [instance id: {Id}]", _scheduler.SchedulerInstanceId);
+                _logger.LogInformation("Join to cluster [instance id: {Id}]", SchedulerUtil.SchedulerInstanceId);
             }
             else
             {

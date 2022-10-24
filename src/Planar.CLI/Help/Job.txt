@@ -7,19 +7,20 @@ add             <filename|.>
 get|inspect     <job id>
 settings        <job id>
 running         [<instance id>] [-it|--iterative] [-d|--details] [-q|--quiet]
-runninglog      <instance id>
-runningex       <instance id>
+running-log     <instance id>
+running-ex      <instance id>
 next            <job id>
+prev            <job id>
 invoke          <job id> [-n|--now <now_value:"dd/mm/yyyy hh:mm">]
-pauseall
+pause-all
 pause           <job id>
 remove|delete   <job id>
-resumeall
+resume-all
 resume          <job id>
 data            <job id> <upsert|remove|clear> [<key>] [<value>]
 stop            <instance id>
 test            <job id> [-n|--now <now_value:"dd/mm/yyyy hh:mm">]
-updateprop      <job id> <key> <value>
+update-prop     <job id> <key> <value>
 
 *****************************************************************
 *** <job id> represent job hash id or job key <[group.]name>  ***

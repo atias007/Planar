@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -11,9 +9,9 @@ namespace Planar.Controllers
 {
     [ApiController]
     [Route("history")]
-    public class HistoryController : BaseController<HistoryController, HistoryDomain>
+    public class HistoryController : BaseController<HistoryDomain>
     {
-        public HistoryController(ILogger<HistoryController> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public HistoryController(HistoryDomain bl) : base(bl)
         {
         }
 

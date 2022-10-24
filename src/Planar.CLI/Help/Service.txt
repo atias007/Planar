@@ -3,7 +3,7 @@
 the options for <command> and [<options>] parameters of service module:
 
 connect           <host> <port> [<is secure>]
-healthcheck|hc
+health-check|hc
 info              [<key>]
 version
 stop

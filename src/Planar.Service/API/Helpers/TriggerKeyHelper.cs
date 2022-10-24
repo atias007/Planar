@@ -1,5 +1,6 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.Service.Exceptions;
+using Planar.Service.General;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -9,14 +10,6 @@ namespace Planar.Service.API.Helpers
 {
     public class TriggerKeyHelper
     {
-        private static IScheduler Scheduler
-        {
-            get
-            {
-                return MainService.Scheduler;
-            }
-        }
-
         public static async Task<TriggerKey> GetTriggerKey(JobOrTriggerKey key)
         {
             TriggerKey result;
@@ -41,10 +34,10 @@ namespace Planar.Service.API.Helpers
         public static async Task<TriggerKey> GetTriggerKey(string triggerId)
         {
             TriggerKey result = null;
-            var keys = await Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
+            var keys = await SchedulerUtil.Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
             foreach (var k in keys)
             {
-                var triggerDetails = await Scheduler.GetTrigger(k);
+                var triggerDetails = await SchedulerUtil.Scheduler.GetTrigger(k);
                 var id = GetTriggerId(triggerDetails);
                 if (id == triggerId)
                 {

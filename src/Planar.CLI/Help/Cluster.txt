@@ -3,4 +3,4 @@
 the options for <command> and [<options>] parameters of cluster module:
 
 nodes
-healthcheck|hc
+health-check|hc

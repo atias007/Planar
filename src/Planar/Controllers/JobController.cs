@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
@@ -12,9 +11,9 @@ namespace Planar.Controllers
 {
     [ApiController]
     [Route("job")]
-    public class JobController : BaseController<JobController, JobDomain>
+    public class JobController : BaseController<JobDomain>
     {
-        public JobController(ILogger<JobController> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public JobController(JobDomain bl) : base(bl)
         {
         }
 
@@ -57,6 +56,13 @@ namespace Planar.Controllers
         public async Task<ActionResult<string>> GetNextRunning([FromRoute][Required] string id)
         {
             var result = await BusinesLayer.GetNextRunning(id);
+            return Ok(result);
+        }
+
+        [HttpGet("prevRunning/{id}")]
+        public async Task<ActionResult<string>> GetPreviousRunning([FromRoute][Required] string id)
+        {
+            var result = await BusinesLayer.GetPreviousRunning(id);
             return Ok(result);
         }
 

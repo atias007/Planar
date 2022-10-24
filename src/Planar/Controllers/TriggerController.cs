@@ -1,17 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
-using System;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
     [ApiController]
     [Route("trigger")]
-    public class TriggerController : BaseController<TriggerController, TriggerDomain>
+    public class TriggerController : BaseController<TriggerDomain>
     {
-        public TriggerController(ILogger<TriggerController> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public TriggerController(TriggerDomain bl) : base(bl)
         {
         }
 

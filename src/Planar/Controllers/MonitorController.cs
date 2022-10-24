@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
@@ -12,9 +10,9 @@ namespace Planar.Controllers
 {
     [ApiController]
     [Route("monitor")]
-    public class MonitorController : BaseController<MonitorController, MonitorDomain>
+    public class MonitorController : BaseController<MonitorDomain>
     {
-        public MonitorController(ILogger<MonitorController> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public MonitorController(MonitorDomain bl) : base(bl)
         {
         }
 

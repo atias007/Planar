@@ -1,10 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
 using Planar.Service.Model;
 using Planar.Validation.Attributes;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -12,9 +10,9 @@ namespace Planar.Controllers
 {
     [ApiController]
     [Route("user")]
-    public class UserController : BaseController<UserController, UserDomain>
+    public class UserController : BaseController<UserDomain>
     {
-        public UserController(ILogger<UserController> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public UserController(UserDomain bl) : base(bl)
         {
         }
 

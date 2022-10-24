@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
+using Planar.Service.General;
 using Quartz;
 using System;
 using System.Linq;
@@ -25,11 +26,20 @@ namespace Planar.Service.API
             _dataLayer = serviceProvider.GetRequiredService<DataLayer>();
         }
 
+        protected ClusterUtil ClusterUtil
+        {
+            get
+            {
+                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+                return util;
+            }
+        }
+
         protected static IScheduler Scheduler
         {
             get
             {
-                return MainService.Scheduler;
+                return SchedulerUtil.Scheduler;
             }
         }
 

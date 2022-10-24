@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -11,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -81,6 +81,33 @@ namespace Planar.Service.API
             return result;
         }
 
+        public async Task<DateTime?> GetPreviousRunning(string id)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(id);
+            var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+            DateTime? result = null;
+            foreach (var t in triggers)
+            {
+                var state = await Scheduler.GetTriggerState(t.Key);
+                var prev = t.GetPreviousFireTimeUtc();
+                if (prev == null) { continue; }
+                var prevDate = prev.Value.LocalDateTime;
+                if (result == null)
+                {
+                    result = prevDate;
+                }
+                else
+                {
+                    if (prevDate > result)
+                    {
+                        result = prevDate;
+                    }
+                }
+            }
+
+            return result;
+        }
+
         private static async Task<IReadOnlyCollection<JobKey>> GetJobKeys(AllJobsMembers members)
         {
             switch (members)
@@ -131,8 +158,7 @@ namespace Planar.Service.API
             var result = await SchedulerUtil.GetRunningJobs();
             if (AppSettings.Clustering)
             {
-                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-                var clusterResult = await util.GetRunningJobs();
+                var clusterResult = await ClusterUtil.GetRunningJobs();
                 result ??= new List<RunningJobDetails>();
 
                 if (clusterResult != null)
@@ -149,8 +175,7 @@ namespace Planar.Service.API
             var result = await SchedulerUtil.GetRunningJob(instanceId);
             if (result == null && AppSettings.Clustering)
             {
-                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-                result = await util.GetRunningJob(instanceId);
+                result = await ClusterUtil.GetRunningJob(instanceId);
             }
 
             if (result == null)
@@ -171,8 +196,7 @@ namespace Planar.Service.API
 
             if (AppSettings.Clustering)
             {
-                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-                result = await util.GetRunningData(instanceId);
+                result = await ClusterUtil.GetRunningData(instanceId);
             }
 
             if (result == null)
@@ -278,11 +302,18 @@ namespace Planar.Service.API
 
         public async Task<bool> Stop(FireInstanceIdRequest request)
         {
-            var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-            var stop = await SchedulerUtil.StopRunningJob(request.FireInstanceId, util);
+            var stop = await SchedulerUtil.StopRunningJob(request.FireInstanceId);
             if (AppSettings.Clustering && !stop)
             {
-                stop = await util.StopRunningJob(request.FireInstanceId);
+                stop = await ClusterUtil.StopRunningJob(request.FireInstanceId);
+            }
+
+            if (!stop)
+            {
+                if (!await SchedulerUtil.IsRunningInstanceExistOnLocal(request.FireInstanceId))
+                {
+                    throw new RestNotFoundException($"instance id '{request.FireInstanceId}' is not running");
+                }
             }
 
             return stop;
@@ -492,8 +523,7 @@ namespace Planar.Service.API
             var isRunning = await SchedulerUtil.IsJobRunning(jobKey);
             if (AppSettings.Clustering)
             {
-                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-                isRunning = isRunning && await util.IsJobRunning(jobKey);
+                isRunning = isRunning && await ClusterUtil.IsJobRunning(jobKey);
             }
 
             if (isRunning)

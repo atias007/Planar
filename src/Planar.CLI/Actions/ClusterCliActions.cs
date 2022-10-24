@@ -19,7 +19,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("hc")]
-        [Action("healthcheck")]
+        [Action("health-check")]
         public static async Task<CliActionResponse> HealthCheck()
         {
             var restRequest = new RestRequest("cluster/nodes", Method.Get);

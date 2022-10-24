@@ -1,5 +1,6 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.Service.Exceptions;
+using Planar.Service.General;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -9,14 +10,6 @@ namespace Planar.Service.API.Helpers
 {
     public static class JobKeyHelper
     {
-        private static IScheduler Scheduler
-        {
-            get
-            {
-                return MainService.Scheduler;
-            }
-        }
-
         public static async Task<JobKey> GetJobKey(string id)
         {
             return await GetJobKey(new JobOrTriggerKey { Id = id });
@@ -63,7 +56,7 @@ namespace Planar.Service.API.Helpers
 
         public static async Task<IJobDetail> ValidateJobExists(JobKey jobKey)
         {
-            var exists = await Scheduler.GetJobDetail(jobKey);
+            var exists = await SchedulerUtil.Scheduler.GetJobDetail(jobKey);
 
             if (exists == null)
             {
@@ -83,10 +76,10 @@ namespace Planar.Service.API.Helpers
         public static async Task<JobKey> GetJobKeyById(string jobId)
         {
             JobKey result = null;
-            var keys = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+            var keys = await SchedulerUtil.Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
             foreach (var k in keys)
             {
-                var jobDetails = await Scheduler.GetJobDetail(k);
+                var jobDetails = await SchedulerUtil.Scheduler.GetJobDetail(k);
                 if (jobDetails != null)
                 {
                     var id = GetJobId(jobDetails);

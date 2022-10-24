@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -10,9 +8,9 @@ namespace Planar.Controllers
 {
     [ApiController]
     [Route("service")]
-    public class ServiceController : BaseController<ServiceController, ServiceDomain>
+    public class ServiceController : BaseController<ServiceDomain>
     {
-        public ServiceController(ILogger<ServiceController> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public ServiceController(ServiceDomain bl) : base(bl)
         {
         }
 

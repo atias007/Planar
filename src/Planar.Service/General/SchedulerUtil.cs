@@ -1,9 +1,9 @@
 ﻿using CommonJob;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
-using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model.DataObjects;
 using Quartz;
@@ -17,14 +17,47 @@ namespace Planar.Service.General
 {
     public static class SchedulerUtil
     {
+        private static IScheduler _scheduler;
+
+        public static IScheduler Scheduler
+        {
+            get
+            {
+                if (_scheduler == null)
+                {
+                    throw new ApplicationException("Scheduler is not initialized");
+                }
+
+                return _scheduler;
+            }
+        }
+
+        internal static async Task Initialize(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
+        {
+            _scheduler = await serviceProvider.GetRequiredService<ISchedulerFactory>().GetScheduler(cancellationToken);
+        }
+
+        internal static string SchedulerInstanceId
+        {
+            get
+            {
+                return _scheduler?.SchedulerInstanceId;
+            }
+        }
+
         public static async Task Start(CancellationToken cancellationToken = default)
         {
-            await MainService.Scheduler.Start(cancellationToken);
+            await _scheduler?.Start(cancellationToken);
+        }
+
+        public static async Task Shutdown(CancellationToken cancellationToken = default)
+        {
+            await _scheduler?.Shutdown(true, cancellationToken);
         }
 
         public static async Task Stop(CancellationToken cancellationToken = default)
         {
-            await MainService.Scheduler.Standby(cancellationToken);
+            await _scheduler?.Standby(cancellationToken);
         }
 
         public static void HealthCheck(ILogger logger = null)
@@ -32,7 +65,7 @@ namespace Planar.Service.General
             if (!IsSchedulerRunning)
             {
                 logger?.LogError("HealthCheck fail. IsShutdown={IsShutdown}, InStandbyMode={InStandbyMode}, IsStarted={IsStarted}",
-                    MainService.Scheduler.IsShutdown, MainService.Scheduler.InStandbyMode, MainService.Scheduler.IsStarted);
+                    _scheduler.IsShutdown, _scheduler.InStandbyMode, _scheduler.IsStarted);
                 throw new PlanarException("Scheduler is not running");
             }
         }
@@ -41,20 +74,20 @@ namespace Planar.Service.General
         {
             get
             {
-                return !MainService.Scheduler.IsShutdown && !MainService.Scheduler.InStandbyMode && MainService.Scheduler.IsStarted;
+                return !_scheduler.IsShutdown && !_scheduler.InStandbyMode && _scheduler.IsStarted;
             }
         }
 
         public static async Task<bool> IsJobRunning(JobKey jobKey, CancellationToken cancellationToken = default)
         {
-            var allRunning = await MainService.Scheduler.GetCurrentlyExecutingJobs(cancellationToken);
+            var allRunning = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
             var result = allRunning.AsQueryable().Any(c => c.JobDetail.Key.Name == jobKey.Name && c.JobDetail.Key.Group == jobKey.Group);
             return result;
         }
 
         public static async Task<RunningJobDetails> GetRunningJob(string instanceId, CancellationToken cancellationToken = default)
         {
-            var jobs = await MainService.Scheduler.GetCurrentlyExecutingJobs(cancellationToken);
+            var jobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
             var context = jobs.FirstOrDefault(j => j.FireInstanceId == instanceId);
             if (context == null) { return null; }
             var details = new RunningJobDetails();
@@ -66,7 +99,7 @@ namespace Planar.Service.General
         public static async Task<List<RunningJobDetails>> GetRunningJobs(CancellationToken cancellationToken = default)
         {
             var result = new List<RunningJobDetails>();
-            var jobs = await MainService.Scheduler.GetCurrentlyExecutingJobs(cancellationToken);
+            var jobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
 
             foreach (var context in jobs)
             {
@@ -82,7 +115,7 @@ namespace Planar.Service.General
 
         public static async Task<GetRunningDataResponse> GetRunningData(string instanceId, CancellationToken cancellationToken = default)
         {
-            var context = (await MainService.Scheduler.GetCurrentlyExecutingJobs(cancellationToken))
+            var context = (await _scheduler.GetCurrentlyExecutingJobs(cancellationToken))
                 .FirstOrDefault(j => j.FireInstanceId == instanceId);
 
             if (context == null) { return null; }
@@ -100,19 +133,6 @@ namespace Planar.Service.General
             return response;
         }
 
-        private static async Task<bool> IsRunningInstanceExistOnCluster(string instanceId, ClusterUtil clusterUtil, CancellationToken cancellationToken = default)
-        {
-            var result = await IsRunningInstanceExistOnLocal(instanceId, cancellationToken);
-            if (result) { return true; }
-
-            if (AppSettings.Clustering)
-            {
-                result = await clusterUtil.IsRunningInstanceExist(instanceId);
-            }
-
-            return result;
-        }
-
         public static async Task<bool> IsRunningInstanceExistOnLocal(string instanceId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(instanceId))
@@ -120,7 +140,7 @@ namespace Planar.Service.General
                 return false;
             }
 
-            foreach (var context in await MainService.Scheduler.GetCurrentlyExecutingJobs(cancellationToken))
+            foreach (var context in await _scheduler.GetCurrentlyExecutingJobs(cancellationToken))
             {
                 if (instanceId == context.FireInstanceId)
                 {
@@ -131,22 +151,17 @@ namespace Planar.Service.General
             return false;
         }
 
-        public static async Task<bool> StopRunningJob(string instanceId, ClusterUtil clusterUtil, CancellationToken cancellationToken = default)
+        public static async Task<bool> StopRunningJob(string instanceId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var jobKey = await JobKeyHelper.GetJobKey(instanceId);
-                var resultJob = await MainService.Scheduler.Interrupt(jobKey, cancellationToken);
+                var resultJob = await _scheduler.Interrupt(jobKey, cancellationToken);
                 return resultJob;
             }
             catch (RestNotFoundException)
             {
-                if (!await IsRunningInstanceExistOnCluster(instanceId, clusterUtil, cancellationToken))
-                {
-                    throw new RestNotFoundException($"instance id '{instanceId}' is not running");
-                }
-
-                var result = await MainService.Scheduler.Interrupt(instanceId, cancellationToken);
+                var result = await _scheduler.Interrupt(instanceId, cancellationToken);
                 return result;
             }
         }
@@ -154,7 +169,7 @@ namespace Planar.Service.General
         public static async Task<List<PersistanceRunningJobsInfo>> GetPersistanceRunningJobsInfo(CancellationToken cancellationToken = default)
         {
             var result = new List<PersistanceRunningJobsInfo>();
-            var runningJobs = await MainService.Scheduler.GetCurrentlyExecutingJobs(cancellationToken);
+            var runningJobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
             foreach (var context in runningJobs)
             {
                 if (context.JobRunTime.TotalSeconds > AppSettings.PersistRunningJobsSpan.TotalSeconds)

@@ -1,17 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
-using System;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
     [ApiController]
     [Route("group")]
-    public class GroupController : BaseController<GroupController, GroupDomain>
+    public class GroupController : BaseController<GroupDomain>
     {
-        public GroupController(ILogger<GroupController> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public GroupController(GroupDomain bl) : base(bl)
         {
         }
 
