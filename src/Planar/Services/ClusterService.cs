@@ -13,30 +13,32 @@ namespace Planar
     internal class ClusterService : PlanarCluster.PlanarClusterBase
     {
         private readonly ILogger<ClusterService> _logger;
+        private readonly SchedulerUtil _schedulerUtil;
 
-        public ClusterService(ILogger<ClusterService> logger)
+        public ClusterService(ILogger<ClusterService> logger, SchedulerUtil schedulerUtil)
         {
             _logger = logger;
+            _schedulerUtil = schedulerUtil;
         }
 
         // OK
         public override async Task<Empty> HealthCheck(Empty request, ServerCallContext context)
         {
-            SchedulerUtil.HealthCheck(_logger);
+            _schedulerUtil.HealthCheck(_logger);
             return await Task.FromResult(new Empty());
         }
 
         // OK
         public override async Task<Empty> StopScheduler(Empty request, ServerCallContext context)
         {
-            await SchedulerUtil.Stop(context.CancellationToken);
+            await _schedulerUtil.Stop(context.CancellationToken);
             return new Empty();
         }
 
         // OK
         public override async Task<Empty> StartScheduler(Empty request, ServerCallContext context)
         {
-            await SchedulerUtil.Start(context.CancellationToken);
+            await _schedulerUtil.Start(context.CancellationToken);
             return new Empty();
         }
 
@@ -46,7 +48,7 @@ namespace Planar
             ValidateRequest(request);
 
             var jobKey = new JobKey(request.Name, request.Group);
-            var result = await SchedulerUtil.IsJobRunning(jobKey, context.CancellationToken);
+            var result = await _schedulerUtil.IsJobRunning(jobKey, context.CancellationToken);
             return new IsJobRunningReply { IsRunning = result };
         }
 
@@ -54,7 +56,7 @@ namespace Planar
         public override async Task<RunningJobReply> GetRunningJob(GetRunningJobRequest request, ServerCallContext context)
         {
             ValidateRequest(request);
-            var job = await SchedulerUtil.GetRunningJob(request.InstanceId, context.CancellationToken);
+            var job = await _schedulerUtil.GetRunningJob(request.InstanceId, context.CancellationToken);
             var item = MapRunningJobReply(job);
             return item ?? new RunningJobReply { IsEmpty = true };
         }
@@ -63,7 +65,7 @@ namespace Planar
         public override async Task<GetRunningJobsReply> GetRunningJobs(Empty request, ServerCallContext context)
         {
             var result = new GetRunningJobsReply();
-            var jobs = await SchedulerUtil.GetRunningJobs(context.CancellationToken);
+            var jobs = await _schedulerUtil.GetRunningJobs(context.CancellationToken);
 
             foreach (var j in jobs)
             {
@@ -81,7 +83,7 @@ namespace Planar
         public override async Task<RunningDataReply> GetRunningData(GetRunningJobRequest request, ServerCallContext context)
         {
             ValidateRequest(request);
-            var job = await SchedulerUtil.GetRunningData(request.InstanceId, context.CancellationToken);
+            var job = await _schedulerUtil.GetRunningData(request.InstanceId, context.CancellationToken);
             if (job == null)
             {
                 return new RunningDataReply { IsEmpty = true };
@@ -100,7 +102,7 @@ namespace Planar
         public override async Task<IsRunningInstanceExistReply> IsRunningInstanceExist(GetRunningJobRequest request, ServerCallContext context)
         {
             ValidateRequest(request);
-            var result = await SchedulerUtil.IsRunningInstanceExistOnLocal(request.InstanceId, context.CancellationToken);
+            var result = await _schedulerUtil.IsRunningInstanceExistOnLocal(request.InstanceId, context.CancellationToken);
             return new IsRunningInstanceExistReply { Exists = result };
         }
 
@@ -108,7 +110,7 @@ namespace Planar
         public override async Task<StopRunningJobReply> StopRunningJob(GetRunningJobRequest request, ServerCallContext context)
         {
             ValidateRequest(request);
-            var result = await SchedulerUtil.StopRunningJob(request.InstanceId, context.CancellationToken);
+            var result = await _schedulerUtil.StopRunningJob(request.InstanceId, context.CancellationToken);
             return new StopRunningJobReply { IsStopped = result };
         }
 
@@ -116,7 +118,7 @@ namespace Planar
         public override async Task<PersistanceRunningJobInfoReply> GetPersistanceRunningJobInfo(Empty request, ServerCallContext context)
         {
             var result = new PersistanceRunningJobInfoReply();
-            var jobs = await SchedulerUtil.GetPersistanceRunningJobsInfo();
+            var jobs = await _schedulerUtil.GetPersistanceRunningJobsInfo();
             var items = jobs.Select(j => new PersistanceRunningJobInfo
             {
                 Exceptions = SafeString(j.Exceptions),

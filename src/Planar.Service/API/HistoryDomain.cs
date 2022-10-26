@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using System;
@@ -11,7 +10,7 @@ namespace Planar.Service.API
 {
     public class HistoryDomain : BaseBL<HistoryDomain>
     {
-        public HistoryDomain(ILogger<HistoryDomain> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public HistoryDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
 

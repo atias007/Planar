@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Planar.Service.API.Helpers;
 
 namespace Planar.Service.Validation
 {
@@ -9,9 +10,9 @@ namespace Planar.Service.Validation
             return ruleBuilder.Must(v => ValidationUtil.IsOnlyDigits(v)).WithMessage("'{PropertyName}' must have only digits");
         }
 
-        public static IRuleBuilderOptions<T, string> JobIdExists<T>(this IRuleBuilder<T, string> ruleBuilder)
+        public static IRuleBuilderOptions<T, string> JobIdExists<T>(this IRuleBuilder<T, string> ruleBuilder, JobKeyHelper jobKeyHelper)
         {
-            return ruleBuilder.Must(v => ValidationUtil.IsJobExists(v)).WithMessage("'{PropertyName}' field with value '{PropertyValue}' does not exist");
+            return ruleBuilder.Must(v => ValidationUtil.IsJobExists(v, jobKeyHelper)).WithMessage("'{PropertyName}' field with value '{PropertyValue}' does not exist");
         }
 
         public static IRuleBuilderOptions<T, string> Path<T>(this IRuleBuilder<T, string> ruleBuilder)

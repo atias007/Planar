@@ -10,7 +10,14 @@ namespace Planar.Service.API.Helpers
 {
     public class TriggerKeyHelper
     {
-        public static async Task<TriggerKey> GetTriggerKey(JobOrTriggerKey key)
+        private readonly IScheduler _scheduler;
+
+        public TriggerKeyHelper(IScheduler scheduler)
+        {
+            _scheduler = scheduler;
+        }
+
+        public async Task<TriggerKey> GetTriggerKey(JobOrTriggerKey key)
         {
             TriggerKey result;
             if (key.Id.Contains('.'))
@@ -31,13 +38,13 @@ namespace Planar.Service.API.Helpers
             return result;
         }
 
-        public static async Task<TriggerKey> GetTriggerKey(string triggerId)
+        public async Task<TriggerKey> GetTriggerKey(string triggerId)
         {
             TriggerKey result = null;
-            var keys = await SchedulerUtil.Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
+            var keys = await _scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
             foreach (var k in keys)
             {
-                var triggerDetails = await SchedulerUtil.Scheduler.GetTrigger(k);
+                var triggerDetails = await _scheduler.GetTrigger(k);
                 var id = GetTriggerId(triggerDetails);
                 if (id == triggerId)
                 {

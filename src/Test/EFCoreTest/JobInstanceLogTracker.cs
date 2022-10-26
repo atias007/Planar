@@ -17,6 +17,7 @@ namespace EFCoreTest
         public override async Task ExecuteJob(IJobExecutionContext context)
         {
             Logger.LogInformation("Start with id {Id}", LastId);
+
             var dbContext = ServiceProvider.GetRequiredService<PlanarDbContext>();
             var count = await dbContext.JobInstanceLogs.Where(l => l.Id > LastId).CountAsync();
             LastId = await dbContext.JobInstanceLogs.OrderByDescending(l => l.Id).Select(l => l.Id).FirstOrDefaultAsync();

@@ -171,10 +171,7 @@ namespace Planar.CLI
                 finaleException = exception.InnerExceptions.LastOrDefault();
             }
 
-            if (finaleException == null)
-            {
-                finaleException = ex;
-            }
+            finaleException ??= ex;
 
             if (finaleException.InnerException != null)
             {

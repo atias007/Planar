@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
@@ -20,7 +19,7 @@ namespace Planar.Service.API
 {
     public class MonitorDomain : BaseBL<MonitorDomain>
     {
-        public MonitorDomain(ILogger<MonitorDomain> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public MonitorDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
 
@@ -129,7 +128,7 @@ namespace Planar.Service.API
             ValidateForbiddenUpdateProperties(request, "Id", "JobGroup", "JobGroup", "Group", "Event");
             var action = await DataLayer.GetMonitorAction(id);
             ValidateExistingEntity(action);
-            var validator = new MonitorActionValidator(DataLayer);
+            var validator = new MonitorActionValidator(DataLayer, JobKeyHelper);
             await UpdateEntity(action, request, validator);
             await DataLayer.UpdateMonitorAction(action);
         }

@@ -1,6 +1,4 @@
-﻿using Grpc.Core;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.Exceptions;
@@ -18,7 +16,7 @@ namespace Planar.Service.API
 {
     public class ServiceDomain : BaseBL<ServiceDomain>
     {
-        public ServiceDomain(ILogger<ServiceDomain> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public ServiceDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
 

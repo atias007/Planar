@@ -23,12 +23,14 @@ namespace Planar.Service
         private readonly ILogger<MainService> _logger;
         private readonly IHostApplicationLifetime _lifetime;
         private readonly IServiceProvider _serviceProvider;
+        private readonly SchedulerUtil _schedulerUtil;
 
         public MainService(IServiceProvider serviceProvider, IHostApplicationLifetime lifetime)
         {
             _serviceProvider = serviceProvider;
             _lifetime = lifetime;
-            _logger = _serviceProvider.GetService<ILogger<MainService>>();
+            _logger = _serviceProvider.GetRequiredService<ILogger<MainService>>();
+            _schedulerUtil = _serviceProvider.GetRequiredService<SchedulerUtil>();
         }
 
         private static async Task<bool> WaitForAppStartup(IHostApplicationLifetime lifetime, CancellationToken stoppingToken)
@@ -89,7 +91,7 @@ namespace Planar.Service
 
                 try
                 {
-                    await SchedulerUtil.Shutdown(stoppingToken);
+                    await _schedulerUtil.Shutdown(stoppingToken);
                 }
                 catch
                 {
@@ -105,8 +107,6 @@ namespace Planar.Service
             _logger.LogInformation("Service environment: {Environment}", Global.Environment);
 
             await LoadGlobalConfigInner(stoppingToken);
-
-            await InitializeScheduler(_logger, _serviceProvider, stoppingToken);
 
             await LoadMonitorHooks();
 
@@ -131,20 +131,6 @@ namespace Planar.Service
             }
         }
 
-        private static async Task InitializeScheduler(ILogger<MainService> logger, IServiceProvider serviceProvider, CancellationToken stoppingToken)
-        {
-            try
-            {
-                logger.LogInformation("Initialize: InitializeScheduler");
-                await SchedulerUtil.Initialize(serviceProvider, stoppingToken);
-            }
-            catch (Exception ex)
-            {
-                logger.LogCritical(ex, "Initialize: Fail to InitializeScheduler");
-                throw;
-            }
-        }
-
         public async Task LoadGlobalConfig(CancellationToken stoppingToken = default)
         {
             using var scope = _serviceProvider.CreateScope();
@@ -157,9 +143,9 @@ namespace Planar.Service
             try
             {
                 _logger.LogInformation("Initialize: ScheduleSystemJobs");
-                await PersistDataJob.Schedule(SchedulerUtil.Scheduler, stoppingToken);
-                await ClusterHealthCheckJob.Schedule(SchedulerUtil.Scheduler, stoppingToken);
-                await ClearTraceTableJob.Schedule(SchedulerUtil.Scheduler, stoppingToken);
+                await PersistDataJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
+                await ClusterHealthCheckJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
+                await ClearTraceTableJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
             }
             catch (Exception ex)
             {
@@ -186,7 +172,7 @@ namespace Planar.Service
             }
         }
 
-        private static async Task RemoveSchedulerCluster()
+        private async Task RemoveSchedulerCluster()
         {
             if (AppSettings.Clustering)
             {
@@ -194,7 +180,7 @@ namespace Planar.Service
                 {
                     Server = Environment.MachineName,
                     Port = AppSettings.HttpPort,
-                    InstanceId = SchedulerUtil.SchedulerInstanceId
+                    InstanceId = _schedulerUtil.SchedulerInstanceId
                 };
 
                 var services = new ServiceCollection();
@@ -230,15 +216,15 @@ namespace Planar.Service
                 }
                 else
                 {
-                    await SchedulerUtil.Stop(stoppingToken);
+                    await _schedulerUtil.Stop(stoppingToken);
                     throw new PlanarException("Cluster health check fail. Could not join to cluster. See previous errors for more details");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogCritical(ex, "Initialize: Fail to AddSchedulerCluster");
-                await SchedulerUtil.Stop(stoppingToken);
-                await SchedulerUtil.Shutdown(stoppingToken);
+                await _schedulerUtil.Stop(stoppingToken);
+                await _schedulerUtil.Shutdown(stoppingToken);
                 Shutdown();
             }
         }
@@ -256,7 +242,7 @@ namespace Planar.Service
         {
             if (AppSettings.Clustering)
             {
-                _logger.LogInformation("Join to cluster [instance id: {Id}]", SchedulerUtil.SchedulerInstanceId);
+                _logger.LogInformation("Join to cluster [instance id: {Id}]", _schedulerUtil.SchedulerInstanceId);
             }
             else
             {

@@ -20,11 +20,13 @@ namespace Planar.Service.General
     {
         private readonly DataLayer _dal;
         private readonly ILogger<ClusterUtil> _logger;
+        private readonly SchedulerUtil _schedulerUtil;
 
-        public ClusterUtil(DataLayer dal, ILogger<ClusterUtil> logger)
+        public ClusterUtil(DataLayer dal, ILogger<ClusterUtil> logger, SchedulerUtil schedulerUtil)
         {
             _dal = dal;
             _logger = logger;
+            _schedulerUtil = schedulerUtil;
         }
 
         private static ClusterNode GetCurrentClusterNode()
@@ -197,7 +199,7 @@ namespace Planar.Service.General
                 currentNode.ClusterPort = AppSettings.ClusterPort;
                 currentNode.JoinDate = DateTime.Now;
                 currentNode.HealthCheckDate = DateTime.Now;
-                currentNode.InstanceId = SchedulerUtil.SchedulerInstanceId;
+                currentNode.InstanceId = _schedulerUtil.SchedulerInstanceId;
                 await _dal.AddClusterNode(currentNode);
             }
             else
@@ -205,7 +207,7 @@ namespace Planar.Service.General
                 item.ClusterPort = AppSettings.ClusterPort;
                 item.JoinDate = DateTime.Now;
                 item.HealthCheckDate = DateTime.Now;
-                item.InstanceId = SchedulerUtil.SchedulerInstanceId;
+                item.InstanceId = _schedulerUtil.SchedulerInstanceId;
                 await _dal.SaveChanges();
             }
         }
@@ -603,13 +605,13 @@ namespace Planar.Service.General
 
         private async Task RegisterCurrentNodeIfNotExists(IEnumerable<ClusterNode> allNodes)
         {
-            if (!allNodes.Any(n => n.IsCurrentNode) && SchedulerUtil.IsSchedulerRunning)
+            if (!allNodes.Any(n => n.IsCurrentNode) && _schedulerUtil.IsSchedulerRunning)
             {
                 var currentNode = new ClusterNode
                 {
                     ClusterPort = AppSettings.ClusterPort,
                     JoinDate = DateTime.Now,
-                    InstanceId = SchedulerUtil.SchedulerInstanceId,
+                    InstanceId = _schedulerUtil.SchedulerInstanceId,
                     HealthCheckDate = DateTime.Now,
                 };
 
@@ -619,9 +621,9 @@ namespace Planar.Service.General
 
         private async Task VerifyCurrentNode(ClusterNode node)
         {
-            if (node.InstanceId != SchedulerUtil.SchedulerInstanceId)
+            if (node.InstanceId != _schedulerUtil.SchedulerInstanceId)
             {
-                node.InstanceId = SchedulerUtil.SchedulerInstanceId;
+                node.InstanceId = _schedulerUtil.SchedulerInstanceId;
                 node.JoinDate = DateTime.Now;
             }
 

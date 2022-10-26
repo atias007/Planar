@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.Service.Exceptions;
 using System;
 using System.Collections.Generic;
@@ -10,7 +9,7 @@ namespace Planar.Service.API
 {
     public class TraceDomain : BaseBL<TraceDomain>
     {
-        public TraceDomain(ILogger<TraceDomain> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public TraceDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
 

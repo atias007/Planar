@@ -10,14 +10,13 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
     public partial class JobDomain : BaseBL<JobDomain>
     {
-        public JobDomain(ILogger<JobDomain> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public JobDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
 
@@ -108,7 +107,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        private static async Task<IReadOnlyCollection<JobKey>> GetJobKeys(AllJobsMembers members)
+        private async Task<IReadOnlyCollection<JobKey>> GetJobKeys(AllJobsMembers members)
         {
             switch (members)
             {
@@ -395,7 +394,7 @@ namespace Planar.Service.API
             return properties;
         }
 
-        private static async Task<TriggerRowDetails> GetTriggersDetails(JobKey jobKey)
+        private async Task<TriggerRowDetails> GetTriggersDetails(JobKey jobKey)
         {
             var result = new TriggerRowDetails();
             var triggers = await Scheduler.GetTriggersOfJob(jobKey);
@@ -418,13 +417,13 @@ namespace Planar.Service.API
             return result;
         }
 
-        private static async Task<bool> JobGroupExists(string jobGroup)
+        private async Task<bool> JobGroupExists(string jobGroup)
         {
             var allGroups = await Scheduler.GetJobGroupNames();
             return allGroups.Contains(jobGroup);
         }
 
-        private static CronTriggerDetails MapCronTriggerDetails(ICronTrigger source)
+        private CronTriggerDetails MapCronTriggerDetails(ICronTrigger source)
         {
             var result = new CronTriggerDetails();
             MapTriggerDetails(source, result);
@@ -453,7 +452,7 @@ namespace Planar.Service.API
             }
         }
 
-        private static SimpleTriggerDetails MapSimpleTriggerDetails(ISimpleTrigger source)
+        private SimpleTriggerDetails MapSimpleTriggerDetails(ISimpleTrigger source)
         {
             var result = new SimpleTriggerDetails();
             MapTriggerDetails(source, result);
@@ -467,7 +466,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        private static void MapTriggerDetails(ITrigger source, TriggerDetails target)
+        private void MapTriggerDetails(ITrigger source, TriggerDetails target)
         {
             target.CalendarName = source.CalendarName;
             if (TimeSpan.TryParse(Convert.ToString(source.JobDataMap[Consts.RetrySpan]), out var span))

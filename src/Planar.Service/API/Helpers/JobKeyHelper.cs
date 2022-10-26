@@ -8,14 +8,21 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API.Helpers
 {
-    public static class JobKeyHelper
+    public class JobKeyHelper
     {
-        public static async Task<JobKey> GetJobKey(string id)
+        private readonly IScheduler _scheduler;
+
+        public JobKeyHelper(IScheduler scheduler)
+        {
+            _scheduler = scheduler;
+        }
+
+        public async Task<JobKey> GetJobKey(string id)
         {
             return await GetJobKey(new JobOrTriggerKey { Id = id });
         }
 
-        public static async Task<JobKey> GetJobKey(JobOrTriggerKey key)
+        public async Task<JobKey> GetJobKey(JobOrTriggerKey key)
         {
             JobKey result;
             if (key.Id.Contains('.'))
@@ -48,15 +55,15 @@ namespace Planar.Service.API.Helpers
             return null;
         }
 
-        public static async Task<string> GetJobId(JobKey jobKey)
+        public async Task<string> GetJobId(JobKey jobKey)
         {
             var job = await ValidateJobExists(jobKey);
             return GetJobId(job);
         }
 
-        public static async Task<IJobDetail> ValidateJobExists(JobKey jobKey)
+        public async Task<IJobDetail> ValidateJobExists(JobKey jobKey)
         {
-            var exists = await SchedulerUtil.Scheduler.GetJobDetail(jobKey);
+            var exists = await _scheduler.GetJobDetail(jobKey);
 
             if (exists == null)
             {
@@ -73,13 +80,13 @@ namespace Planar.Service.API.Helpers
                             new JobKey(metadata.Name, metadata.Group);
         }
 
-        public static async Task<JobKey> GetJobKeyById(string jobId)
+        public async Task<JobKey> GetJobKeyById(string jobId)
         {
             JobKey result = null;
-            var keys = await SchedulerUtil.Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+            var keys = await _scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
             foreach (var k in keys)
             {
-                var jobDetails = await SchedulerUtil.Scheduler.GetJobDetail(k);
+                var jobDetails = await _scheduler.GetJobDetail(k);
                 if (jobDetails != null)
                 {
                     var id = GetJobId(jobDetails);

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
@@ -18,12 +19,14 @@ namespace Planar.Service.API
         protected readonly IServiceProvider _serviceProvider;
         private readonly ILogger<TBusinesLayer> _logger;
         private readonly DataLayer _dataLayer;
+        private readonly SchedulerUtil _schedulerUtil;
 
-        public BaseBL(ILogger<TBusinesLayer> logger, IServiceProvider serviceProvider)
+        protected BaseBL(IServiceProvider serviceProvider)
         {
-            _logger = logger ?? throw new NullReferenceException(nameof(logger));
+            _logger = serviceProvider.GetRequiredService<ILogger<TBusinesLayer>>();
             _serviceProvider = serviceProvider ?? throw new NullReferenceException(nameof(serviceProvider));
             _dataLayer = serviceProvider.GetRequiredService<DataLayer>();
+            _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
         }
 
         protected ClusterUtil ClusterUtil
@@ -35,13 +38,13 @@ namespace Planar.Service.API
             }
         }
 
-        protected static IScheduler Scheduler
-        {
-            get
-            {
-                return SchedulerUtil.Scheduler;
-            }
-        }
+        protected IScheduler Scheduler => _schedulerUtil.Scheduler;
+
+        protected SchedulerUtil SchedulerUtil => _schedulerUtil;
+
+        protected JobKeyHelper JobKeyHelper => _serviceProvider.GetRequiredService<JobKeyHelper>();
+
+        protected TriggerKeyHelper TriggerKeyHelper => _serviceProvider.GetRequiredService<TriggerKeyHelper>();
 
         protected string ServiceVersion
         {

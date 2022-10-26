@@ -15,29 +15,20 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.General
 {
-    public static class SchedulerUtil
+    public class SchedulerUtil
     {
-        private static IScheduler _scheduler;
+        private readonly IScheduler _scheduler;
+        private readonly IServiceProvider _serviceProvider;
 
-        public static IScheduler Scheduler
+        public SchedulerUtil(IServiceProvider provider)
         {
-            get
-            {
-                if (_scheduler == null)
-                {
-                    throw new ApplicationException("Scheduler is not initialized");
-                }
-
-                return _scheduler;
-            }
+            _serviceProvider = provider;
+            _scheduler = _serviceProvider.GetRequiredService<IScheduler>();
         }
 
-        internal static async Task Initialize(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
-        {
-            _scheduler = await serviceProvider.GetRequiredService<ISchedulerFactory>().GetScheduler(cancellationToken);
-        }
+        public IScheduler Scheduler => _scheduler;
 
-        internal static string SchedulerInstanceId
+        internal string SchedulerInstanceId
         {
             get
             {
@@ -45,22 +36,22 @@ namespace Planar.Service.General
             }
         }
 
-        public static async Task Start(CancellationToken cancellationToken = default)
+        public async Task Start(CancellationToken cancellationToken = default)
         {
             await _scheduler?.Start(cancellationToken);
         }
 
-        public static async Task Shutdown(CancellationToken cancellationToken = default)
+        public async Task Shutdown(CancellationToken cancellationToken = default)
         {
             await _scheduler?.Shutdown(true, cancellationToken);
         }
 
-        public static async Task Stop(CancellationToken cancellationToken = default)
+        public async Task Stop(CancellationToken cancellationToken = default)
         {
             await _scheduler?.Standby(cancellationToken);
         }
 
-        public static void HealthCheck(ILogger logger = null)
+        public void HealthCheck(ILogger logger = null)
         {
             if (!IsSchedulerRunning)
             {
@@ -70,7 +61,7 @@ namespace Planar.Service.General
             }
         }
 
-        public static bool IsSchedulerRunning
+        public bool IsSchedulerRunning
         {
             get
             {
@@ -78,14 +69,14 @@ namespace Planar.Service.General
             }
         }
 
-        public static async Task<bool> IsJobRunning(JobKey jobKey, CancellationToken cancellationToken = default)
+        public async Task<bool> IsJobRunning(JobKey jobKey, CancellationToken cancellationToken = default)
         {
             var allRunning = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
             var result = allRunning.AsQueryable().Any(c => c.JobDetail.Key.Name == jobKey.Name && c.JobDetail.Key.Group == jobKey.Group);
             return result;
         }
 
-        public static async Task<RunningJobDetails> GetRunningJob(string instanceId, CancellationToken cancellationToken = default)
+        public async Task<RunningJobDetails> GetRunningJob(string instanceId, CancellationToken cancellationToken = default)
         {
             var jobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
             var context = jobs.FirstOrDefault(j => j.FireInstanceId == instanceId);
@@ -96,7 +87,7 @@ namespace Planar.Service.General
             return details;
         }
 
-        public static async Task<List<RunningJobDetails>> GetRunningJobs(CancellationToken cancellationToken = default)
+        public async Task<List<RunningJobDetails>> GetRunningJobs(CancellationToken cancellationToken = default)
         {
             var result = new List<RunningJobDetails>();
             var jobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
@@ -113,7 +104,7 @@ namespace Planar.Service.General
             return response;
         }
 
-        public static async Task<GetRunningDataResponse> GetRunningData(string instanceId, CancellationToken cancellationToken = default)
+        public async Task<GetRunningDataResponse> GetRunningData(string instanceId, CancellationToken cancellationToken = default)
         {
             var context = (await _scheduler.GetCurrentlyExecutingJobs(cancellationToken))
                 .FirstOrDefault(j => j.FireInstanceId == instanceId);
@@ -133,7 +124,7 @@ namespace Planar.Service.General
             return response;
         }
 
-        public static async Task<bool> IsRunningInstanceExistOnLocal(string instanceId, CancellationToken cancellationToken = default)
+        public async Task<bool> IsRunningInstanceExistOnLocal(string instanceId, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(instanceId))
             {
@@ -151,11 +142,12 @@ namespace Planar.Service.General
             return false;
         }
 
-        public static async Task<bool> StopRunningJob(string instanceId, CancellationToken cancellationToken = default)
+        public async Task<bool> StopRunningJob(string instanceId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var jobKey = await JobKeyHelper.GetJobKey(instanceId);
+                var helper = _serviceProvider.GetRequiredService<JobKeyHelper>();
+                var jobKey = await helper.GetJobKey(instanceId);
                 var resultJob = await _scheduler.Interrupt(jobKey, cancellationToken);
                 return resultJob;
             }
@@ -166,7 +158,7 @@ namespace Planar.Service.General
             }
         }
 
-        public static async Task<List<PersistanceRunningJobsInfo>> GetPersistanceRunningJobsInfo(CancellationToken cancellationToken = default)
+        public async Task<List<PersistanceRunningJobsInfo>> GetPersistanceRunningJobsInfo(CancellationToken cancellationToken = default)
         {
             var result = new List<PersistanceRunningJobsInfo>();
             var runningJobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
