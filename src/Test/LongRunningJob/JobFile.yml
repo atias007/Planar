@@ -2,7 +2,7 @@
 name: LongRunningJob
 description: Long running task test (inc. cancel request)
 durable: true
-concurrent: true
+concurrent: false
 job data:
   Message: This is long running task
   Value: 100.1
