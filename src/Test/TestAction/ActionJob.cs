@@ -34,7 +34,7 @@ namespace TestAction
                     }
                     if (i % 10 == 0)
                     {
-                        Logger.LogInformation($"Step {i}");
+                        Logger.LogInformation("Step {Index}", i);
                     }
                     await Task.Delay(1000);
                 }
@@ -50,7 +50,7 @@ namespace TestAction
             }
 
             var greetings = Configuration.GetValue<string>("JobSet1");
-            Logger.LogInformation($"[x] Greetings from ActionJob ({greetings})! [{Now():dd/MM/yyyy HH:mm}] {Message}, {Value:N1}, MaxId: {MaxId}");
+            Logger.LogInformation("[x] Greetings from ActionJob ({Greetings})! [{Now:dd/MM/yyyy HH:mm}] {Message}, {Value:N1}, MaxId: {MaxId}", greetings, Now(), Message, Value, MaxId);
 
             PutJobData(nameof(MaxId), ++MaxId);
         }

@@ -431,7 +431,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        private void MapJobDetails(IJobDetail source, JobDetails target, JobDataMap dataMap = null)
+        private static void MapJobDetails(IJobDetail source, JobDetails target, JobDataMap dataMap = null)
         {
             dataMap ??= source.JobDataMap;
 

@@ -21,7 +21,7 @@ namespace Planar.Service.API
         private readonly DataLayer _dataLayer;
         private readonly SchedulerUtil _schedulerUtil;
 
-        public BaseBL(IServiceProvider serviceProvider)
+        protected BaseBL(IServiceProvider serviceProvider)
         {
             _logger = serviceProvider.GetRequiredService<ILogger<TBusinesLayer>>();
             _serviceProvider = serviceProvider ?? throw new NullReferenceException(nameof(serviceProvider));

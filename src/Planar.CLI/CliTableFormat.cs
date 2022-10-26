@@ -166,7 +166,7 @@ namespace Planar.CLI
 
         public static string GetBooleanMarkup(bool value, object display = null)
         {
-            if (display == null) { display = value; }
+            display ??= value;
 
             return value ?
                 $"{OkColor}{display}[/]" :
