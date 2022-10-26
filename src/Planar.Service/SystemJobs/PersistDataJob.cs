@@ -1,7 +1,5 @@
-﻿using CommonJob;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.General;
 using Planar.Service.Model.DataObjects;
@@ -20,13 +18,15 @@ namespace Planar.Service.SystemJobs
         private readonly ILogger<PersistDataJob> _logger;
 
         private readonly DataLayer _dal;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly ClusterUtil _clusterUtil;
+        private readonly SchedulerUtil _schedulerUtil;
 
         public PersistDataJob(IServiceProvider serviceProvider)
         {
-            _serviceProvider = serviceProvider;
-            _logger = _serviceProvider.GetRequiredService<ILogger<PersistDataJob>>();
-            _dal = _serviceProvider.GetService<DataLayer>();
+            _logger = serviceProvider.GetRequiredService<ILogger<PersistDataJob>>();
+            _dal = serviceProvider.GetService<DataLayer>();
+            _clusterUtil = serviceProvider.GetService<ClusterUtil>();
+            _schedulerUtil = serviceProvider.GetService<SchedulerUtil>();
         }
 
         public Task Execute(IJobExecutionContext context)
@@ -51,12 +51,11 @@ namespace Planar.Service.SystemJobs
 
         private async Task DoWork()
         {
-            var runningJobs = await SchedulerUtil.GetPersistanceRunningJobsInfo();
+            var runningJobs = await _schedulerUtil.GetPersistanceRunningJobsInfo();
 
             if (AppSettings.Clustering)
             {
-                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-                var clusterRunningJobs = await util.GetPersistanceRunningJobsInfo();
+                var clusterRunningJobs = await _clusterUtil.GetPersistanceRunningJobsInfo();
                 runningJobs ??= new List<PersistanceRunningJobsInfo>();
 
                 if (clusterRunningJobs != null)

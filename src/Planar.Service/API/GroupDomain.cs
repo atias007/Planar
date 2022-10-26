@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -14,7 +13,7 @@ namespace Planar.Service.API
 {
     public class GroupDomain : BaseBL<GroupDomain>
     {
-        public GroupDomain(ILogger<GroupDomain> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public GroupDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
 

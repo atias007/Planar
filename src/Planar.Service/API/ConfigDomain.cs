@@ -1,6 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -15,7 +13,7 @@ namespace Planar.Service.API
 {
     public class ConfigDomain : BaseBL<ConfigDomain>
     {
-        public ConfigDomain(ILogger<ConfigDomain> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public ConfigDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
 

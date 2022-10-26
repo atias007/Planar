@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.Exceptions;
 using Planar.Service.General.Hash;
@@ -10,14 +9,13 @@ using Planar.Service.Model;
 using Planar.Service.Validation;
 using System;
 using System.Collections.Generic;
-using System.Reflection.Metadata;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
     public class UserDomain : BaseBL<UserDomain>
     {
-        public UserDomain(ILogger<UserDomain> logger, IServiceProvider serviceProvider) : base(logger, serviceProvider)
+        public UserDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
 

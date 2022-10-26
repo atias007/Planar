@@ -24,10 +24,10 @@ namespace Planar.Service.Validation
             return regex.IsMatch(value);
         }
 
-        public static bool IsJobExists(string value)
+        public static bool IsJobExists(string value, JobKeyHelper jobKeyHelper)
         {
             if (value == null) return true;
-            var key = JobKeyHelper.GetJobKeyById(value).Result;
+            var key = jobKeyHelper.GetJobKeyById(value).Result;
             return key != null;
         }
 

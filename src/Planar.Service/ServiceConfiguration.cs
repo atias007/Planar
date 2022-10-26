@@ -1,8 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.Service.API;
+using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.General;
+using Quartz;
 using System;
 using System.Reflection;
 
@@ -12,10 +14,16 @@ namespace Planar.Service
     {
         public static IServiceCollection AddPlanarServices(this IServiceCollection services)
         {
+            // AutoMapper
             services.AddAutoMapper(Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));
 
+            // DAL
             services.AddPlanarDataLayerWithContext();
+
+            // Service
             services.AddTransient<MainService>();
+
+            // Domains
             services.AddScoped<GroupDomain>();
             services.AddScoped<HistoryDomain>();
             services.AddScoped<JobDomain>();
@@ -27,6 +35,13 @@ namespace Planar.Service
             services.AddScoped<UserDomain>();
             services.AddScoped<ClusterDomain>();
 
+            // Scheduler
+            services.AddSingleton(p => p.GetRequiredService<ISchedulerFactory>().GetScheduler().Result);
+            services.AddSingleton<SchedulerUtil>();
+            services.AddSingleton<JobKeyHelper>();
+            services.AddSingleton<TriggerKeyHelper>();
+
+            // Host
             services.AddHostedService<MainService>();
 
             return services;

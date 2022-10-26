@@ -327,10 +327,7 @@ namespace Planar.Service.API
             }
 
             // Data
-            if (jobTrigger.TriggerData == null)
-            {
-                jobTrigger.TriggerData = new Dictionary<string, string>();
-            }
+            jobTrigger.TriggerData ??= new Dictionary<string, string>();
 
             if (jobTrigger.TriggerData.Count > 0)
             {
@@ -397,7 +394,7 @@ namespace Planar.Service.API
             };
         }
 
-        private static async Task<JobKey> ValidateJobMetadata(AddJobRequest metadata)
+        private async Task<JobKey> ValidateJobMetadata(AddJobRequest metadata)
         {
             #region Trim
 
@@ -462,7 +459,7 @@ namespace Planar.Service.API
             return regex.IsMatch(value);
         }
 
-        private static async Task ValidateJobNotExists(JobKey jobKey)
+        private async Task ValidateJobNotExists(JobKey jobKey)
         {
             var exists = await Scheduler.GetJobDetail(jobKey);
 
