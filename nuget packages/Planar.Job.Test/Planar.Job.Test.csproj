@@ -1,13 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
-		<Version>1.0.5</Version>
-		<Description>Library for develop planar job</Description>
+		<TargetFramework>net5.0</TargetFramework>
+		<Version>1.1.0</Version>
+		<Description>Library for writing DotNet unit tests for Planar jobs</Description>
 		<RepositoryType>git</RepositoryType>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Title>Library for writing DotNet unit tests for Planar jobs</Title>
+		<PackageProjectUrl>https://github.com/atias007/Planar</PackageProjectUrl>
+		<PackageIcon>76537_planer_FLAT_HR_02.png</PackageIcon>
+		<RepositoryUrl>https://github.com/atias007/Planar</RepositoryUrl>
+		<PackageTags>planar;job;schedule;task;automation</PackageTags>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
@@ -38,6 +43,12 @@
 		<Compile Include="..\Planar.Job\ExceptionDto.cs" Link="Common\ExceptionDto.cs" />
 		<Compile Include="..\Planar.Job\Logger\LogEntity.cs" Link="Common\LogEntity.cs" />
 		<Compile Include="..\..\src\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
+	</ItemGroup>
+	<ItemGroup>
+	  <None Include="..\..\..\Users\tsahi_a\Downloads\76537_planer_FLAT_HR_02.png">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
 	</ItemGroup>
 
 	<ItemGroup>
