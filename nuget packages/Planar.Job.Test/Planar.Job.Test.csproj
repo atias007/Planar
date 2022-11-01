@@ -10,7 +10,7 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Title>Library for writing DotNet unit tests for Planar jobs</Title>
 		<PackageProjectUrl>https://github.com/atias007/Planar</PackageProjectUrl>
-		<PackageIcon>logo.png</PackageIcon>
+		<PackageIcon>nuget_logo.png</PackageIcon>
 		<RepositoryUrl>https://github.com/atias007/Planar</RepositoryUrl>
 		<PackageTags>planar;job;schedule;task;automation</PackageTags>
 	</PropertyGroup>
@@ -45,7 +45,7 @@
 		<Compile Include="..\..\src\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
 	</ItemGroup>
 	<ItemGroup>
-	  <None Include="..\..\res\logo.png">
+	  <None Include="..\..\res\nuget_logo.png">
 	    <Pack>True</Pack>
 	    <PackagePath>\</PackagePath>
 	  </None>
