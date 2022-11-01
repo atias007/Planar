@@ -11,8 +11,9 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
+
 	<ItemGroup>
-		<ProjectReference Include="..\..\Planar.Job\Planar.Job.csproj" />
+	  <ProjectReference Include="..\..\nuget packages\Planar.Job\Planar.Job.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

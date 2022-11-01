@@ -16,9 +16,8 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.10" />
 	</ItemGroup>
-
 	<ItemGroup>
-		<ProjectReference Include="..\..\Planar.Job\Planar.Job.csproj" />
+	  <ProjectReference Include="..\..\nuget packages\Planar.Job\Planar.Job.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

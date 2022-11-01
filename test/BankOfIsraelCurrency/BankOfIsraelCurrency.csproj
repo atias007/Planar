@@ -12,12 +12,18 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<ProjectReference Include="..\..\Planar.Job\Planar.Job.csproj" />
+		<PackageReference Include="RestSharp" Version="108.0.2" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\..\nuget packages\Planar.Job\Planar.Job.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<None Update="JobFile.yml">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="JobSettings.yml">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
 

@@ -17,7 +17,7 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
+		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

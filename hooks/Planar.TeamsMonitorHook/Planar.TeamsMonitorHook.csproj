@@ -21,7 +21,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\Planar.MonitorHook\Planar.MonitorHook.csproj" />
+	  <ProjectReference Include="..\..\nuget packages\Planar.MonitorHook\Planar.MonitorHook.csproj" />
 	</ItemGroup>
 
 </Project>

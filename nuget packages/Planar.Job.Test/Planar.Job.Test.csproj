@@ -23,21 +23,21 @@
 	  <None Remove="Jobs\**" />
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Include="..\Jobs\CommonJob\JobExecutionContext\JobDetail.cs" Link="Common\JobExecutionContext\JobDetail.cs" />
-		<Compile Include="..\Jobs\CommonJob\JobExecutionContext\JobExecutionContext.cs" Link="Common\JobExecutionContext\JobExecutionContext.cs" />
-		<Compile Include="..\Jobs\CommonJob\JobExecutionContext\Key.cs" Link="Common\JobExecutionContext\Key.cs" />
-		<Compile Include="..\Jobs\CommonJob\JobExecutionContext\TriggerDetail.cs" Link="Common\JobExecutionContext\TriggerDetail.cs" />
-		<Compile Include="..\Jobs\CommonJob\JobExecutionMetadata.cs" Link="Common\JobExecutionMetadata.cs" />
-		<Compile Include="..\Jobs\CommonJob\JobMessageBroker.cs" Link="Common\JobMessageBroker.cs" />
-		<Compile Include="..\Jobs\CommonJob\MessageBrokerEntities\KeyValueItem.cs" Link="Common\KeyValueItem.cs" />
-		<Compile Include="..\Planar.API.Common\Entities\StatusMembers.cs" Link="Common\StatusMembers.cs" />
-		<Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
-		<Compile Include="..\Planar.Common\Extensions.cs" Link="Common\Extensions.cs" />
-		<Compile Include="..\Planar.Common\Global.cs" Link="Common\Global.cs" />
-		<Compile Include="..\Planar.Common\JobSettingsLoader.cs" Link="Common\JobSettingsLoader.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\JobDetail.cs" Link="Common\JobExecutionContext\JobDetail.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\JobExecutionContext.cs" Link="Common\JobExecutionContext\JobExecutionContext.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\Key.cs" Link="Common\JobExecutionContext\Key.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\TriggerDetail.cs" Link="Common\JobExecutionContext\TriggerDetail.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionMetadata.cs" Link="Common\JobExecutionMetadata.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\JobMessageBroker.cs" Link="Common\JobMessageBroker.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\MessageBrokerEntities\KeyValueItem.cs" Link="Common\KeyValueItem.cs" />
+		<Compile Include="..\..\src\Planar.API.Common\Entities\StatusMembers.cs" Link="Common\StatusMembers.cs" />
+		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
+		<Compile Include="..\..\src\Planar.Common\Extensions.cs" Link="Common\Extensions.cs" />
+		<Compile Include="..\..\src\Planar.Common\Global.cs" Link="Common\Global.cs" />
+		<Compile Include="..\..\src\Planar.Common\JobSettingsLoader.cs" Link="Common\JobSettingsLoader.cs" />
 		<Compile Include="..\Planar.Job\ExceptionDto.cs" Link="Common\ExceptionDto.cs" />
 		<Compile Include="..\Planar.Job\Logger\LogEntity.cs" Link="Common\LogEntity.cs" />
-		<Compile Include="..\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
+		<Compile Include="..\..\src\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
