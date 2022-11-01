@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace Planar.MonitorHook
 {
@@ -11,6 +12,16 @@ namespace Planar.MonitorHook
 
         public PlanarMonitorException(string message, Exception innerException) : base(message, innerException)
         {
+        }
+
+        protected PlanarMonitorException(SerializationInfo info, StreamingContext context)
+        {
+            // ...
+        }
+
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
         }
     }
 }
