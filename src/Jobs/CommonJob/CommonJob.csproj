@@ -11,9 +11,9 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
+		<Compile Include="..\..\..\nuget packages\Planar.Job\ExceptionDto.cs" Link="ExceptionDto.cs" />
+		<Compile Include="..\..\..\nuget packages\Planar.Job\Logger\LogEntity.cs" Link="LogEntity.cs" />
 		<Compile Include="..\..\Planar.Common\Consts.cs" Link="Consts.cs" />
-		<Compile Include="..\..\Planar.Job\ExceptionDto.cs" Link="ExceptionDto.cs" />
-		<Compile Include="..\..\Planar.Job\Logger\LogEntity.cs" Link="LogEntity.cs" />
 		<Compile Include="..\..\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
 	</ItemGroup>
 
