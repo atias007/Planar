@@ -10,7 +10,7 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<Title>Library for writing DotNet jobs for Planar </Title>
 		<PackageProjectUrl>https://github.com/atias007/Planar</PackageProjectUrl>
-		<PackageIcon>76537_planer_FLAT_HR_02.png</PackageIcon>
+		<PackageIcon>logo.png</PackageIcon>
 		<RepositoryUrl>https://github.com/atias007/Planar</RepositoryUrl>
 		<PackageTags>planar;job;schedule;task;automation</PackageTags>
 		<IncludeSymbols>False</IncludeSymbols>
@@ -26,7 +26,7 @@
 		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
 	</ItemGroup>
 	<ItemGroup>
-	  <None Include="..\..\..\Users\tsahi_a\Downloads\76537_planer_FLAT_HR_02.png">
+	  <None Include="..\..\res\logo.png">
 	    <Pack>True</Pack>
 	    <PackagePath>\</PackagePath>
 	  </None>
