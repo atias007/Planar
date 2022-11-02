@@ -29,7 +29,7 @@ namespace Planar
             }
         }
 
-        public abstract void Configure(IConfigurationBuilder configurationBuilder);
+        public abstract void Configure(IConfigurationBuilder configurationBuilder, string environment);
 
         public abstract Task ExecuteJob(IJobExecutionContext context);
 
@@ -189,7 +189,7 @@ namespace Planar
         {
             var builder = new ConfigurationBuilder();
             builder.AddInMemoryCollection(context.JobSettings);
-            Configure(builder);
+            Configure(builder, context.Environment);
             Configuration = builder.Build();
         }
 
