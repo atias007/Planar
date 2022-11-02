@@ -11,7 +11,7 @@ namespace TestAggEx
 {
     public class MyJob : BaseJob
     {
-        public override void Configure(IConfigurationBuilder configurationBuilder)
+        public override void Configure(IConfigurationBuilder configurationBuilder, string environment)
         {
         }
 

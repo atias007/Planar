@@ -10,7 +10,7 @@ namespace EFCoreTest
     {
         public int LastId { get; set; }
 
-        public override void Configure(IConfigurationBuilder configurationBuilder)
+        public override void Configure(IConfigurationBuilder configurationBuilder, string environment)
         {
         }
 
