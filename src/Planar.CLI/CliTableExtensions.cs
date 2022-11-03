@@ -39,7 +39,7 @@ namespace Planar.CLI
             return table;
         }
 
-        public static Table GetTable(List<JobInstanceLogRow> response)
+        public static Table GetTable(List<CliJobInstanceLog> response)
         {
             var table = new Table();
             if (response == null) { return table; }

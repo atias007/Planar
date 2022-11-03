@@ -1,6 +1,7 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
+using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,7 +32,7 @@ namespace Planar.Service.API
             return history;
         }
 
-        public async Task<List<JobInstanceLogRow>> GetHistory(GetHistoryRequest request)
+        public async Task<List<JobInstanceLog>> GetHistory(GetHistoryRequest request)
         {
             if (request.Rows.GetValueOrDefault() == 0) { request.Rows = 50; }
             var result = await DataLayer.GetHistory(request);
@@ -88,7 +89,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<List<JobInstanceLogRow>> GetLastHistoryCallForJob(int lastDays)
+        public async Task<List<JobInstanceLog>> GetLastHistoryCallForJob(int lastDays)
         {
             var parameters = new { LastDays = lastDays };
             var result = (await DataLayer.GetLastHistoryCallForJob(parameters)).ToList();

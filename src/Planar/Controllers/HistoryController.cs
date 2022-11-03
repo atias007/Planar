@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
+using Planar.Service.Model;
 using Planar.Validation.Attributes;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -16,7 +17,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<JobInstanceLogRow>>> GetHistory([FromQuery] GetHistoryRequest request)
+        public async Task<ActionResult<List<JobInstanceLog>>> GetHistory([FromQuery] GetHistoryRequest request)
         {
             var result = await BusinesLayer.GetHistory(request);
             return Ok(result);
@@ -51,7 +52,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("last")]
-        public async Task<ActionResult<List<JobInstanceLogRow>>> GetLastHistoryCallForJob([FromQuery][UInt] int lastDays)
+        public async Task<ActionResult<List<JobInstanceLog>>> GetLastHistoryCallForJob([FromQuery][UInt] int lastDays)
         {
             var result = await BusinesLayer.GetLastHistoryCallForJob(lastDays);
             return Ok(result);

@@ -240,7 +240,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<List<JobInstanceLogRow>> GetLastHistoryCallForJob(object parameters)
+        public async Task<List<JobInstanceLog>> GetLastHistoryCallForJob(object parameters)
         {
             using var conn = _context.Database.GetDbConnection();
             var cmd = new CommandDefinition(
@@ -248,7 +248,7 @@ namespace Planar.Service.Data
                 commandType: CommandType.StoredProcedure,
                 parameters: parameters);
 
-            var data = await conn.QueryAsync<JobInstanceLogRow>(cmd);
+            var data = await conn.QueryAsync<JobInstanceLog>(cmd);
             return data.ToList();
         }
 
@@ -257,7 +257,7 @@ namespace Planar.Service.Data
             return _context.JobInstanceLogs.Find(key);
         }
 
-        public async Task<List<JobInstanceLogRow>> GetHistory(GetHistoryRequest request)
+        public async Task<List<JobInstanceLog>> GetHistory(GetHistoryRequest request)
         {
             var query = _context.JobInstanceLogs.AsQueryable();
 
@@ -286,7 +286,7 @@ namespace Planar.Service.Data
             }
 
             query = query.Take(request.Rows.GetValueOrDefault());
-            var final = query.Select(l => new JobInstanceLogRow
+            var final = query.Select(l => new JobInstanceLog
             {
                 Id = l.Id,
                 JobId = l.JobId,

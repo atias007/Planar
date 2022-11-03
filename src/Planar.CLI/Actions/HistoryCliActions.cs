@@ -17,7 +17,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("history/{id}", Method.Get)
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
-            var result = await RestProxy.Invoke<JobInstanceLog>(restRequest);
+            var result = await RestProxy.Invoke<CliJobInstanceLog>(restRequest);
             return new CliActionResponse(result, serializeObj: result.Data);
         }
 
@@ -48,7 +48,7 @@ namespace Planar.CLI.Actions
 
             restRequest.AddQueryParameter("ascending", request.Ascending);
 
-            var result = await RestProxy.Invoke<List<JobInstanceLogRow>>(restRequest);
+            var result = await RestProxy.Invoke<List<CliJobInstanceLog>>(restRequest);
             var table = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, table);
         }
@@ -89,7 +89,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("history/last", Method.Get)
                 .AddQueryParameter("lastDays", request.LastDays);
 
-            var result = await RestProxy.Invoke<List<JobInstanceLogRow>>(restRequest);
+            var result = await RestProxy.Invoke<List<CliJobInstanceLog>>(restRequest);
             var table = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, table);
         }
