@@ -121,12 +121,13 @@ namespace Planar.Service.API
                 result.AppendLine("Cluster: not relevant");
             }
 
+            var message = result.ToString().Trim();
             if (serviceUnavaliable)
             {
-                throw new RestServiceUnavailable(result.ToString());
+                throw new RestServiceUnavailable(message);
             }
 
-            return result.ToString();
+            return message;
         }
 
         public async Task<List<string>> GetCalendars()

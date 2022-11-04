@@ -78,7 +78,7 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> HealthCheck()
         {
             var restRequest = new RestRequest("service/healthCheck", Method.Get);
-            var result = await RestProxy.Invoke<bool>(restRequest);
+            var result = await RestProxy.Invoke<string>(restRequest);
             return new CliActionResponse(result, result.Data);
         }
 
