@@ -11,11 +11,12 @@ namespace Planar.Service.Exceptions
         }
 
         protected RestServiceUnavailableException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
         {
             // ...
         }
 
-        public new void GetObjectData(SerializationInfo info, StreamingContext context)
+        public virtual new void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
         }
