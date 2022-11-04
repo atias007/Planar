@@ -16,7 +16,7 @@ using System.Reflection;
 
 namespace Planar.Startup
 {
-    public class ServiceCollectionInitializer
+    public static class ServiceCollectionInitializer
     {
         public static void ConfigureServices(IServiceCollection services)
         {

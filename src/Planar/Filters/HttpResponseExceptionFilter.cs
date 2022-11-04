@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Grpc.Core;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Planar.Service.Exceptions;
@@ -107,13 +108,21 @@ namespace Planar.Filters
 
         public void OnActionExecuted(ActionExecutedContext context)
         {
-            if (context.Exception is RestNotFoundException notFoundException)
+            if (context.Exception is RestServiceUnavailableException unavailableException)
+            {
+                context.Result = new ObjectResult(unavailableException.Message)
+                {
+                    StatusCode = 503
+                };
+
+                context.ExceptionHandled = true;
+            }
+            else if (context.Exception is RestNotFoundException notFoundException)
             {
                 context.Result = new NotFoundObjectResult(notFoundException.Value);
                 context.ExceptionHandled = true;
             }
-
-            if (context.Exception is RestConflictException conflictException)
+            else if (context.Exception is RestConflictException conflictException)
             {
                 context.Result = new ConflictObjectResult(conflictException.Value);
                 context.ExceptionHandled = true;

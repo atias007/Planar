@@ -12,7 +12,7 @@ upgrade:
 
 - job test: in no instance id, check hc and print warning about already running job with no concurent
 
-
+- *** stop service while log running task (service provider is null) ***
 
 - demo yml file in data directory
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )

@@ -209,8 +209,34 @@ namespace Planar.CLI
         {
             if (HandleHttpNotFoundResponse(response)) { return; }
             if (HandleBadRequestResponse(response)) { return; }
+            if (HandleHealthCheckResponse(response)) { return; }
 
             HandleGeneralError(response);
+        }
+
+        private static bool HandleHealthCheckResponse(RestResponse response)
+        {
+            if (response.StatusCode == HttpStatusCode.ServiceUnavailable &&
+                response.Request.Resource.ToLower().Contains("service/healthcheck"))
+            {
+                var s = JsonConvert.DeserializeObject<string>(response.Content);
+                var lines = s.Split("\r", StringSplitOptions.TrimEntries);
+                foreach (var item in lines)
+                {
+                    if (item.Contains("unhealthy"))
+                    {
+                        AnsiConsole.MarkupLine($"[red]{item.EscapeMarkup()}[/]");
+                    }
+                    else
+                    {
+                        AnsiConsole.WriteLine(item);
+                    }
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         private static bool HandleHttpNotFoundResponse(RestResponse response)

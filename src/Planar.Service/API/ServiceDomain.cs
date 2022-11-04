@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -73,18 +74,60 @@ namespace Planar.Service.API
             return Convert.ToString(value);
         }
 
-        public async Task<bool> HealthCheck()
+        public async Task<string> HealthCheck()
         {
+            var serviceUnavaliable = false;
+            var result = new StringBuilder();
+
             var hc = SchedulerUtil.IsSchedulerRunning;
-            if (!hc) { return false; }
+            if (hc)
+            {
+                result.AppendLine("Scheduler healthy");
+            }
+            else
+            {
+                serviceUnavaliable = true;
+                result.AppendLine("Scheduler unhealthy");
+            }
+
+            try
+            {
+                await DataLayer.HealthCheck();
+                result.AppendLine("Database healthy");
+            }
+            catch (Exception ex)
+            {
+                serviceUnavaliable = false;
+                result.AppendLine($"Database unhealthy: {ex.Message}");
+            }
 
             if (AppSettings.Clustering)
             {
                 var util = _serviceProvider.GetRequiredService<ClusterUtil>();
                 hc = await util.HealthCheck();
+
+                if (hc)
+                {
+                    result.AppendLine("Cluster healthy");
+                }
+                else
+                {
+                    serviceUnavaliable = true;
+                    result.AppendLine("Cluster unhealthy");
+                }
+            }
+            else
+            {
+                result.AppendLine("Cluster: not relevant");
             }
 
-            return hc;
+            var message = result.ToString().Trim();
+            if (serviceUnavaliable)
+            {
+                throw new RestServiceUnavailableException(message);
+            }
+
+            return message;
         }
 
         public async Task<List<string>> GetCalendars()
