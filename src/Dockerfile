@@ -38,6 +38,9 @@ FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 
+# ---------------------------- Health Check -------------------------------------------
+HEALTHCHECK --interval=5m --timeout=3s --start-period=30s CMD curl --fail http://localhost/health-check || exit
+
 # ---------------------------- Entry Point -------------------------------------------
 ENV PATH="/app:${PATH}"
 ENTRYPOINT ["dotnet", "Planar.dll"]

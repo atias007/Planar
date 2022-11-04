@@ -36,6 +36,12 @@ namespace Planar.Service.Data
             return _context.JobInstanceLogs.AsQueryable();
         }
 
+        public async Task HealthCheck()
+        {
+            const string query = "SELECT 1";
+            await _context.Database.ExecuteSqlRawAsync(query);
+        }
+
         public async Task<int> SaveChanges()
         {
             return await _context.SaveChangesAsync();

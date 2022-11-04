@@ -35,12 +35,9 @@ namespace Planar.Startup
                 if (name == "MSSqlServer")
                 {
                     var connSection = item.GetSection("Args:connectionString");
-                    if (connSection != null)
+                    if (connSection != null && string.IsNullOrEmpty(connSection.Value))
                     {
-                        if (string.IsNullOrEmpty(connSection.Value))
-                        {
-                            connSection.Value = AppSettings.DatabaseConnectionString;
-                        }
+                        connSection.Value = AppSettings.DatabaseConnectionString;
                     }
                 }
             }

@@ -29,7 +29,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("healthCheck")]
-        public async Task<ActionResult<bool>> HealthCheck()
+        public async Task<ActionResult<string>> HealthCheck()
         {
             var response = await BusinesLayer.HealthCheck();
             return Ok(response);
