@@ -108,7 +108,7 @@ namespace Planar.Filters
 
         public void OnActionExecuted(ActionExecutedContext context)
         {
-            if (context.Exception is RestServiceUnavailable unavailableException)
+            if (context.Exception is RestServiceUnavailableException unavailableException)
             {
                 context.Result = new ObjectResult(unavailableException.Message)
                 {

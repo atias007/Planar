@@ -124,7 +124,7 @@ namespace Planar.Service.API
             var message = result.ToString().Trim();
             if (serviceUnavaliable)
             {
-                throw new RestServiceUnavailable(message);
+                throw new RestServiceUnavailableException(message);
             }
 
             return message;
