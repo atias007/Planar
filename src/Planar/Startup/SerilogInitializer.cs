@@ -37,7 +37,10 @@ namespace Planar.Startup
                     var connSection = item.GetSection("Args:connectionString");
                     if (connSection != null && string.IsNullOrEmpty(connSection.Value))
                     {
-                        connSection.Value = AppSettings.DatabaseConnectionString;
+                        if (string.IsNullOrEmpty(connSection.Value))
+                        {
+                            connSection.Value = AppSettings.DatabaseConnectionString;
+                        }
                     }
                 }
             }
