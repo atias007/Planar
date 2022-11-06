@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Planar.Service.API;
 using Planar.Service.Model;
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -19,6 +18,13 @@ namespace Planar.Controllers
         public async Task<ActionResult<List<ClusterNode>>> GetNodes()
         {
             var response = await BusinesLayer.GetNodes();
+            return Ok(response);
+        }
+
+        [HttpGet("healthCheck")]
+        public async Task<ActionResult<string>> HealthCheck()
+        {
+            var response = await BusinesLayer.HealthCheck();
             return Ok(response);
         }
     }

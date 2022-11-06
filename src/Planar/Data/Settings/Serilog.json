@@ -40,7 +40,7 @@
       {
         "Name": "ByExcluding",
         "Args": {
-          "expression": "RequestPath like '%Cluster/HealthCheck'"
+          "expression": "RequestPath like '%/healthCheck'"
         }
       }
     ]
