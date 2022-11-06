@@ -1,5 +1,4 @@
-﻿using Planar.API.Common.Entities;
-using Planar.CLI.Attributes;
+﻿using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
 using RestSharp;
 using System;

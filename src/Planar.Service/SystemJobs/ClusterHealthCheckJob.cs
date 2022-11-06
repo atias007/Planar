@@ -1,7 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Planar.Common;
-using Planar.Service.Data;
 using Planar.Service.General;
 using Quartz;
 using System;
