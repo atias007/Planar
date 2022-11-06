@@ -3,7 +3,6 @@ using Planar.CLI.Entities;
 using RestSharp;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
@@ -22,15 +21,9 @@ namespace Planar.CLI.Actions
         [Action("health-check")]
         public static async Task<CliActionResponse> HealthCheck()
         {
-            var restRequest = new RestRequest("cluster/nodes", Method.Get);
-            var result = await RestProxy.Invoke<List<CliClusterNode>>(restRequest);
-            bool? message = null;
-            if (result.IsSuccessful)
-            {
-                message = result.Data.All(d => d.LiveNode);
-            }
-
-            return new CliActionResponse(result, message);
+            var restRequest = new RestRequest("cluster/healthCheck", Method.Get);
+            var result = await RestProxy.Invoke<string>(restRequest);
+            return new CliActionResponse(result, result.Data);
         }
     }
 }

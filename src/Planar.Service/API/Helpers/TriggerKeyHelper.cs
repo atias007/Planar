@@ -1,6 +1,5 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.Service.Exceptions;
-using Planar.Service.General;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;

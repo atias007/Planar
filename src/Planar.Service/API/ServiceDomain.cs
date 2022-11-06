@@ -118,7 +118,7 @@ namespace Planar.Service.API
             }
             else
             {
-                result.AppendLine("Cluster: not relevant");
+                result.AppendLine("Cluster: [Clustering not enabled, skip health check]");
             }
 
             var message = result.ToString().Trim();

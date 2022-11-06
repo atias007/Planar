@@ -1,7 +1,7 @@
 ﻿using RestSharp;
-using System.Threading.Tasks;
 using RestSharp.Serializers.NewtonsoftJson;
 using System;
+using System.Threading.Tasks;
 
 namespace Planar.CLI
 {
