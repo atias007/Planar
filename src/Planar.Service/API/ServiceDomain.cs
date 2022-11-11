@@ -51,6 +51,7 @@ namespace Planar.Service.API
                 ServiceVersion = ServiceVersion,
                 LogLevel = AppSettings.LogLevel.ToString(),
                 SwaggerUI = AppSettings.SwaggerUI,
+                OpenApiUI = AppSettings.OpenApiUI,
                 DeveloperExceptionPage = AppSettings.DeveloperExceptionPage,
                 AuthenticationMode = AppSettings.AuthenticationMode.ToString()
             };

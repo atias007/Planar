@@ -54,6 +54,8 @@ namespace Planar.Service
 
         public static bool SwaggerUI { get; set; }
 
+        public static bool OpenApiUI { get; set; }
+
         public static bool DeveloperExceptionPage { get; set; }
 
         public static AuthMode AuthenticationMode { get; set; }
@@ -82,6 +84,7 @@ namespace Planar.Service
             DatabaseProvider = GetSettings(configuration, Consts.DatabaseProviderVariableKey, nameof(DatabaseProvider), "Npgsql");
             ClearTraceTableOverDays = GetSettings(configuration, Consts.ClearTraceTableOverDaysVariableKey, nameof(ClearTraceTableOverDays), 365);
             SwaggerUI = GetSettings(configuration, Consts.SwaggerUIVariableKey, nameof(SwaggerUI), true);
+            OpenApiUI = GetSettings(configuration, Consts.OpenApiUIVariableKey, nameof(OpenApiUI), true);
             DeveloperExceptionPage = GetSettings(configuration, Consts.DeveloperExceptionPageVariableKey, nameof(DeveloperExceptionPage), true);
         }
 
