@@ -7,10 +7,10 @@
         "Microsoft": "Information",
         "System": "Information",
         "Microsoft.Hosting.Lifetime": "Information",
-        "Microsoft.AspNetCore": "Warning",
+        "Microsoft.AspNetCore": "Information",
         "Microsoft.AspNetCore.Mvc.Infrastructure": "Information",
-        "Microsoft.EntityFrameworkCore.Database.Command": "Warning",
-        "Microsoft.EntityFrameworkCore.Infrastructure": "Warning"
+        "Microsoft.EntityFrameworkCore.Database.Command": "Information",
+        "Microsoft.EntityFrameworkCore.Infrastructure": "Information"
       }
     },
     "WriteTo": [

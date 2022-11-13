@@ -20,6 +20,7 @@
 		<Content Remove="Data\Settings\Serilog.json" />
 	</ItemGroup>
 	<ItemGroup>
+	  <None Remove="Content\fonts.googleapis.css" />
 	  <None Remove="Content\no_access.jpg" />
 	  <None Remove="Content\redoc.standalone.js" />
 	  <None Remove="Data\Calendars\readme.md" />
@@ -36,6 +37,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <EmbeddedResource Include="Content\fonts.googleapis.css" />
 	  <EmbeddedResource Include="Content\no_access.jpg" />
 	  <EmbeddedResource Include="Content\planar_openapi.html">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>

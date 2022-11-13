@@ -1,57 +1,54 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Planar.Service;
+using System;
 using System.IO;
-using System.Net.Mime;
 using System.Reflection;
 
 namespace Planar.Startup
 {
     public static class ContentInitializer
     {
-        private static Content _content = GetAllContent();
-
         private struct Content
         {
-            public string Html { get; set; }
+            static Content()
+            {
+                OpenApiHtml = new Lazy<IResult>(() => Results.Content(GetContent("planar_openapi.html"), "text/html"));
+                OpenApiJavaScript = new Lazy<IResult>(() => Results.Content(GetContent("redoc.standalone.js"), "application/javascript"));
+                OpenApiJson = new Lazy<IResult>(() => Results.Content(GetContent("planar_openapi.json"), "application/json"));
+                OpenApiCss = new Lazy<IResult>(() => Results.Content(GetContent("fonts.googleapis.css"), "text/css"));
+                NoAccessImage = new Lazy<IResult>(() => Results.File(GetBinaryContent("no_access.jpg"), "image/jpeg"));
+            }
 
-            public string Json { get; set; }
+            public static Lazy<IResult> OpenApiHtml { get; set; }
 
-            public string JavaScript { get; set; }
+            public static Lazy<IResult> OpenApiJson { get; set; }
 
-            public byte[] NoAccessImage { get; set; }
+            public static Lazy<IResult> OpenApiJavaScript { get; set; }
+
+            public static Lazy<IResult> NoAccessImage { get; set; }
+
+            public static Lazy<IResult> OpenApiCss { get; set; }
         }
 
         public static void MapContent(WebApplication app)
         {
             if (AppSettings.OpenApiUI)
             {
-                app.MapGet("/", () => Results.Content(_content.Html, "text/html"));
-                app.MapGet("/content/openapi.spec.json", () => Results.Content(_content.Json, "application/json"));
-                app.MapGet("/content/redoc.standalone.js", () => Results.Content(_content.JavaScript, "application/javascript"));
+                app.MapGet("/", () => Content.OpenApiHtml.Value);
+                app.MapGet("/content/openapi.spec.json", () => Content.OpenApiJson.Value);
+                app.MapGet("/content/redoc.standalone.js", () => Content.OpenApiJavaScript.Value);
+                app.MapGet("/content/fonts.googleapis.css", () => Content.OpenApiCss.Value);
             }
             else
             {
-                app.MapGet("/", () => Results.File(_content.NoAccessImage, "image/jpeg"));
+                app.MapGet("/", () => Content.NoAccessImage.Value);
             }
 
-            if (AppSettings.SwaggerUI == false)
+            if (!AppSettings.SwaggerUI)
             {
-                app.MapGet("/swagger", () => Results.File(_content.NoAccessImage, "image/jpeg"));
+                app.MapGet("/swagger", () => Content.NoAccessImage.Value);
             }
-        }
-
-        private static Content GetAllContent()
-        {
-            var content = new Content
-            {
-                Html = GetContent("planar_openapi.html"),
-                JavaScript = GetContent("redoc.standalone.js"),
-                Json = GetContent("planar_openapi.json"),
-                NoAccessImage = GetBinaryContent("no_access.jpg")
-            };
-
-            return content;
         }
 
         private static string GetContent(string name)
