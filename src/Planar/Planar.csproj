@@ -14,21 +14,36 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
+		<Content Remove="Content\planar_openapi.json" />
 		<Content Remove="Data\Settings\AppSettings.json" />
 		<Content Remove="Data\Settings\HebrewCalendar.json" />
 		<Content Remove="Data\Settings\Serilog.json" />
 	</ItemGroup>
 	<ItemGroup>
+	  <None Remove="Content\fonts.googleapis.css" />
+	  <None Remove="Content\no_access.jpg" />
+	  <None Remove="Content\redoc.standalone.js" />
 	  <None Remove="Data\Calendars\readme.md" />
 	  <None Remove="Data\Jobs\readme.md" />
 	  <None Remove="Data\MonitorHooks\readme.md" />
 	  <None Remove="Data\MonitorHooks\Teams\readme.md" />
 	  <None Remove="Data\Setup\CliPath.ps1" />
 	  <None Remove="Data\Setup\EnvironmentVariable.ps1" />
+	  <None Remove="planar_openapi.html" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Include="Content\fonts.googleapis.css" />
+	  <EmbeddedResource Include="Content\no_access.jpg" />
+	  <EmbeddedResource Include="Content\planar_openapi.html">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Content\planar_openapi.json" />
+	  <EmbeddedResource Include="Content\redoc.standalone.js" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -80,11 +95,5 @@
 	<ItemGroup>
 		<Folder Include="Data\MonitorHooks\Http\" />
 		<Folder Include="Protos\" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Update="Data\Setup\docker-compose.yml">
-	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-	  </None>
 	</ItemGroup>
 </Project>

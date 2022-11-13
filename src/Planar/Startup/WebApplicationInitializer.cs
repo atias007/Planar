@@ -50,14 +50,12 @@ namespace Planar.Startup
             ServiceCollectionInitializer.ConfigureServices(builder.Services);
 
             var app = builder.Build();
-            Configure(app, builder.Environment);
-
             return app;
         }
 
-        private static void Configure(WebApplication app, IWebHostEnvironment env)
+        public static void Configure(WebApplication app)
         {
-            if (AppSettings.DeveloperExceptionPage || !env.IsProduction())
+            if (AppSettings.DeveloperExceptionPage || !app.Environment.IsProduction())
             {
                 app.UseDeveloperExceptionPage();
             }

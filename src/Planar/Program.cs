@@ -14,6 +14,8 @@ namespace Planar
             DataFolderInitializer.CreateFolderAndFiles();
             AppSettingsInitializer.Initialize();
             var app = WebApplicationInitializer.Initialize(args);
+            WebApplicationInitializer.Configure(app);
+            ContentInitializer.MapContent(app);
             app.Run();
             Global.Clear();
         }

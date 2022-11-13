@@ -54,9 +54,12 @@ namespace Planar.API.Common.Entities
         public bool SwaggerUI { get; set; }
 
         [YamlMember(Order = 19)]
-        public bool DeveloperExceptionPage { get; set; }
+        public bool OpenApiUI { get; set; }
 
         [YamlMember(Order = 20)]
+        public bool DeveloperExceptionPage { get; set; }
+
+        [YamlMember(Order = 21)]
         public string AuthenticationMode { get; set; }
 
         [YamlMember(Order = 96)]

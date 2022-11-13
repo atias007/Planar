@@ -47,7 +47,7 @@ namespace Planar.Startup
                 services.AddHttpsRedirection(options =>
                 {
                     options.RedirectStatusCode = (int)HttpStatusCode.TemporaryRedirect;
-                    options.HttpsPort = 2610;
+                    options.HttpsPort = AppSettings.HttpsPort;
                 });
             }
 

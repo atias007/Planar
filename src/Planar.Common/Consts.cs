@@ -39,6 +39,7 @@ namespace Planar
         public const string PersistRunningJobsSpanVariableKey = "PLANAR_PERSISTSPAN";
         public const string ClearTraceTableOverDaysVariableKey = "PLANAR_CLEARTRACEDAYS";
         public const string SwaggerUIVariableKey = "PLANAR_SWAGGERUI";
+        public const string OpenApiUIVariableKey = "PLANAR_OPENAPIUI";
         public const string DeveloperExceptionPageVariableKey = "PLANAR_DEVEXPAGE";
         public const string LogLevelVariableKey = "PLANAR_LOGLEVEL";
         public const string AuthenticationModeVariableKey = "PLANAR_AUTHMODE";
