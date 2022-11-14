@@ -48,11 +48,9 @@ namespace Planar.Service.API
             return data?.Value;
         }
 
-        public async Task<Dictionary<string, string>> GetAll()
+        public async Task<IEnumerable<GlobalConfig>> GetAll()
         {
-            var data = (await DataLayer.GetAllGlobalConfig())
-                .ToDictionary(p => p.Key, p => p.Value);
-
+            var data = await DataLayer.GetAllGlobalConfig();
             return data;
         }
 
@@ -66,6 +64,33 @@ namespace Planar.Service.API
             else
             {
                 await DataLayer.AddGlobalConfig(request);
+            }
+        }
+
+        public async Task Add(GlobalConfig request)
+        {
+            var exists = await DataLayer.IsGlobalConfigExists(request.Key);
+
+            if (exists)
+            {
+                throw new RestConflictException($"key {request.Key} already exists");
+            }
+            else
+            {
+                await DataLayer.AddGlobalConfig(request);
+            }
+        }
+
+        public async Task Update(GlobalConfig request)
+        {
+            var exists = await DataLayer.IsGlobalConfigExists(request.Key);
+            if (exists)
+            {
+                await DataLayer.UpdateGlobalConfig(request);
+            }
+            else
+            {
+                throw new RestNotFoundException();
             }
         }
     }

@@ -56,6 +56,14 @@ namespace Planar.CLI
             return table;
         }
 
+        internal static Table GetTable(List<CliGlobalConfig> response)
+        {
+            var table = new Table();
+            table.AddColumns("Key", "Value", "Type");
+            response.ForEach(r => table.AddRow(r.Key.EscapeMarkup(), r.Value.EscapeMarkup(), r.Type.EscapeMarkup()));
+            return table;
+        }
+
         public static Table GetTable(TriggerRowDetails response)
         {
             var table = new Table();

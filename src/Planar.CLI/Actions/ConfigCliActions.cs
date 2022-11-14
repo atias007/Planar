@@ -24,7 +24,7 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> GetAllConfiguration()
         {
             var restRequest = new RestRequest("config", Method.Get);
-            return await ExecuteEntity<Dictionary<string, string>>(restRequest);
+            return await ExecuteTable<List<CliGlobalConfig>>(restRequest, CliTableExtensions.GetTable);
         }
 
         [Action("upsert")]
