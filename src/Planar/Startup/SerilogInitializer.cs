@@ -5,12 +5,13 @@ using Serilog;
 using Serilog.Debugging;
 using System;
 using System.Diagnostics;
+using Planar.Startup.Logging;
 
 namespace Planar.Startup
 {
     public static class SerilogInitializer
     {
-        public static void InitializeSelfLog()
+        public static void ConfigureSelfLog()
         {
             SelfLog.Enable(msg =>
             {
@@ -22,6 +23,7 @@ namespace Planar.Startup
         public static void Configure(HostBuilderContext context, LoggerConfiguration config)
         {
             Console.WriteLine("[x] Configure serilog");
+
             var file = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "Serilog.json");
             var configuration = new ConfigurationBuilder()
                         .AddJsonFile(file)
@@ -46,6 +48,7 @@ namespace Planar.Startup
             }
 
             config.ReadFrom.Configuration(configuration);
+            config.Enrich.WithPlanarEnricher();
         }
     }
 }

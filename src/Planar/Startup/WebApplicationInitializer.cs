@@ -55,6 +55,8 @@ namespace Planar.Startup
 
         public static void Configure(WebApplication app)
         {
+            //// app.UseHttpLogging();
+
             if (AppSettings.DeveloperExceptionPage || !app.Environment.IsProduction())
             {
                 app.UseDeveloperExceptionPage();
@@ -70,6 +72,8 @@ namespace Planar.Startup
             {
                 app.UseHttpsRedirection();
             }
+
+            app.UseSerilogRequestLogging();
 
             app.UseRouting();
 

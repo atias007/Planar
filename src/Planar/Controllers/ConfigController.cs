@@ -31,14 +31,14 @@ namespace Planar.Controllers
         [HttpPost]
         public async Task<ActionResult> Add([FromBody] GlobalConfig request)
         {
-            await BusinesLayer.Upsert(request);
+            await BusinesLayer.Add(request);
             return CreatedAtAction(nameof(Get), new { key = request.Key }, null);
         }
 
         [HttpPut]
         public async Task<ActionResult> Update([FromBody] GlobalConfig request)
         {
-            await BusinesLayer.Upsert(request);
+            await BusinesLayer.Update(request);
             return NoContent();
         }
 

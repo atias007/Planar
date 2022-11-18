@@ -3,6 +3,7 @@ using Planar.CLI.Entities;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
@@ -16,6 +17,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("config/{key}", Method.Get)
                 .AddParameter("key", request.Key, ParameterType.UrlSegment);
             var result = await RestProxy.Invoke<string>(restRequest);
+
             return new CliActionResponse(result, message: result.Data);
         }
 
@@ -35,7 +37,16 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("config", Method.Post)
                 .AddBody(request);
 
-            return await Execute(restRequest);
+            var result = await RestProxy.Invoke(restRequest);
+
+            if (result.StatusCode == HttpStatusCode.Conflict)
+            {
+                restRequest = new RestRequest("config", Method.Put)
+                    .AddBody(request);
+                result = await RestProxy.Invoke(restRequest);
+            }
+
+            return new CliActionResponse(result);
         }
 
         [Action("flush")]
@@ -46,6 +57,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("remove")]
+        [Action("delete")]
         public static async Task<CliActionResponse> RemoveConfig(CliConfigKeyRequest request)
         {
             var restRequest = new RestRequest("config/{key}", Method.Delete)
