@@ -31,10 +31,6 @@
         "Name": "Console"
       }
     ],
-    "Enrich": [
-      "FromLogContext",
-      "WithMachineName"
-    ],
     "Filter": [
       {
         "Name": "ByExcluding",

@@ -49,6 +49,7 @@ namespace Planar.Startup
 
             config.ReadFrom.Configuration(configuration);
             config.Enrich.WithPlanarEnricher();
+            config.Enrich.FromGlobalLogContext();
         }
     }
 }
