@@ -2,10 +2,10 @@
 
 the options for <command> and [<options>] parameters of monitor module:
 
-ls|list         [<job id | job group name>]
-add             <follow wizard...>
-remove|delete   <id>
-update          <id> <property name> <property value>
+ls|list        [<job id | job group name>]
+add            <follow wizard...>
+remove|delete  <id>
+update         <id> <property name> <property value>
 events
 hooks
 reload

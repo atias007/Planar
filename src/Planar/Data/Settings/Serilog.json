@@ -7,10 +7,9 @@
         "Microsoft": "Information",
         "System": "Information",
         "Microsoft.Hosting.Lifetime": "Information",
-        "Microsoft.AspNetCore": "Information",
-        "Microsoft.AspNetCore.Mvc.Infrastructure": "Information",
+        "Microsoft.AspNetCore": "Warning",
         "Microsoft.EntityFrameworkCore.Database.Command": "Information",
-        "Microsoft.EntityFrameworkCore.Infrastructure": "Information"
+        "Microsoft.EntityFrameworkCore.Infrastructure": "Warning"
       }
     },
     "WriteTo": [
@@ -31,10 +30,6 @@
       {
         "Name": "Console"
       }
-    ],
-    "Enrich": [
-      "FromLogContext",
-      "WithMachineName"
     ],
     "Filter": [
       {

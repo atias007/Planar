@@ -1,4 +1,3 @@
-using Planar.Common;
 using Planar.Startup;
 using Serilog;
 using System;
@@ -16,8 +15,9 @@ namespace Planar
             var app = WebApplicationInitializer.Initialize(args);
             WebApplicationInitializer.Configure(app);
             ContentInitializer.MapContent(app);
+            SerilogInitializer.ConfigureSelfLog();
+
             app.Run();
-            Global.Clear();
         }
     }
 }

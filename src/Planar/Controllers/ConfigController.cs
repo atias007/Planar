@@ -15,7 +15,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<Dictionary<string, string>>> GetAll()
+        public async Task<ActionResult<IEnumerable<GlobalConfig>>> GetAll()
         {
             var result = await BusinesLayer.GetAll();
             return Ok(result);
@@ -29,10 +29,17 @@ namespace Planar.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Upsert([FromBody] GlobalConfig request)
+        public async Task<ActionResult> Add([FromBody] GlobalConfig request)
         {
-            await BusinesLayer.Upsert(request);
+            await BusinesLayer.Add(request);
             return CreatedAtAction(nameof(Get), new { key = request.Key }, null);
+        }
+
+        [HttpPut]
+        public async Task<ActionResult> Update([FromBody] GlobalConfig request)
+        {
+            await BusinesLayer.Update(request);
+            return NoContent();
         }
 
         [HttpDelete("{key}")]

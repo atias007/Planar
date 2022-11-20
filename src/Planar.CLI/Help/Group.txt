@@ -3,9 +3,9 @@
 the options for <command> and [<options>] parameters of group module:
 
 ls|list 
-get           <id>
-add           <group name>
-update        <id> <property name> <property value>
-remove        <id>
-join          <id> <user id>
-exclude       <id> <user id>
+get            <id>
+add            <group name>
+update         <id> <property name> <property value>
+remove|delete  <id>
+join           <id> <user id>
+exclude        <id> <user id>
