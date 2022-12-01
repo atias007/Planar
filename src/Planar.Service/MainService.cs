@@ -103,7 +103,7 @@ namespace Planar.Service
 
         public async Task Run(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Service environment: {Environment}", Global.Environment);
+            _logger.LogInformation("Service environment: {Environment}", AppSettings.Environment);
 
             await LoadGlobalConfigInner(stoppingToken);
 

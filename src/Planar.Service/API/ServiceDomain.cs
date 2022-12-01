@@ -32,7 +32,7 @@ namespace Planar.Service.API
                 InStandbyMode = Scheduler.InStandbyMode,
                 IsShutdown = Scheduler.IsShutdown,
                 IsStarted = Scheduler.IsStarted,
-                Environment = Global.Environment,
+                Environment = AppSettings.Environment,
                 TotalJobs = (await totalJobs).Count,
                 TotalGroups = (await totalGroups).Count,
                 Clustering = (await metadata).JobStoreClustered,

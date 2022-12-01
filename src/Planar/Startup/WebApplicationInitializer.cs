@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Hosting.WindowsServices;
 using Planar.Common;
 using Planar.Service;
 using Serilog;
@@ -14,9 +15,14 @@ namespace Planar.Startup
     {
         public static WebApplication Initialize(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            var options = new WebApplicationOptions
+            {
+                Args = args,
+                ContentRootPath = WindowsServiceHelpers.IsWindowsService() ? AppContext.BaseDirectory : default,
+                EnvironmentName = AppSettings.Environment
+            };
 
-            builder.Host.UseWindowsService();
+            var builder = WebApplication.CreateBuilder(options);
 
             builder.Host.UseSerilog(SerilogInitializer.Configure);
 
@@ -38,17 +44,17 @@ namespace Planar.Startup
             {
                 Console.WriteLine("[x] Load configuration & app settings");
                 var file1 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.json");
-                var file2 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, $"AppSettings.{Global.Environment}.json");
+                var file2 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, $"AppSettings.{AppSettings.Environment}.json");
 
                 builder
-                .AddJsonFile(file1, false, true)
-                .AddJsonFile(file2, true, true)
+                .AddJsonFile(file1, optional: false, reloadOnChange: true)
+                .AddJsonFile(file2, optional: true, reloadOnChange: true)
                 .AddCommandLine(args)
                 .AddEnvironmentVariables();
             });
 
             ServiceCollectionInitializer.ConfigureServices(builder.Services);
-
+            builder.Host.UseWindowsService();
             var app = builder.Build();
             return app;
         }

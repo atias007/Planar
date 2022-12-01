@@ -12,7 +12,7 @@ namespace Planar.Startup
         public static void Initialize()
         {
             var file1 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.json");
-            var file2 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, $"AppSettings.{Global.Environment}.json");
+            var file2 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, $"AppSettings.{AppSettings.Environment}.json");
 
             IConfiguration config = null;
 

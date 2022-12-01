@@ -90,12 +90,15 @@ namespace Planar.Service
                 // when shutting down we want jobs to complete gracefully
                 options.WaitForJobsToComplete = true;
                 options.AwaitApplicationStarted = true;
-
-#if DEBUG
                 var delaySeconds = 1;
-#else
-                var delaySeconds = 30;
-#endif
+
+                // TODO : TO BE IMPLEMENT
+
+                ////#if DEBUG
+                ////                var delaySeconds = 1;
+                ////#else
+                ////                var delaySeconds = 30;
+                ////#endif
 
                 options.StartDelay = TimeSpan.FromSeconds(delaySeconds);
             });

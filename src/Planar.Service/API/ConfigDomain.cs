@@ -22,6 +22,7 @@ namespace Planar.Service.API
             try
             {
                 await DataLayer.RemoveGlobalConfig(key);
+                await Flush();
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -65,6 +66,8 @@ namespace Planar.Service.API
             {
                 await DataLayer.AddGlobalConfig(request);
             }
+
+            await Flush();
         }
 
         public async Task Add(GlobalConfig request)
@@ -75,23 +78,21 @@ namespace Planar.Service.API
             {
                 throw new RestConflictException($"key {request.Key} already exists");
             }
-            else
-            {
-                await DataLayer.AddGlobalConfig(request);
-            }
+
+            await DataLayer.AddGlobalConfig(request);
+            await Flush();
         }
 
         public async Task Update(GlobalConfig request)
         {
             var exists = await DataLayer.IsGlobalConfigExists(request.Key);
-            if (exists)
-            {
-                await DataLayer.UpdateGlobalConfig(request);
-            }
-            else
+            if (!exists)
             {
                 throw new RestNotFoundException();
             }
+
+            await DataLayer.UpdateGlobalConfig(request);
+            await Flush();
         }
     }
 }

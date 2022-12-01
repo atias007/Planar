@@ -517,7 +517,7 @@ namespace Planar.CLI.Actions
 
             if (status.Data.Status == 1)
             {
-                table.AddRow($"[grey54]Planar history ex[/] [grey62]{logId}[/]");
+                table.AddRow($"[grey54]history ex[/] [grey62]{logId}[/]");
             }
 
             AnsiConsole.Write(table);
