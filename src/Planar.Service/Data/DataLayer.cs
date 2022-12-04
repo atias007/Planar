@@ -667,5 +667,38 @@ namespace Planar.Service.Data
         }
 
         #endregion Cluster
+
+        #region JobProperty
+
+        public async Task<string> GetJobProperty(string jobId)
+        {
+            var properties = await _context.JobProperties
+                .Where(j => j.JobId == jobId)
+                .Select(j => j.Properties)
+                .FirstOrDefaultAsync();
+
+            return properties;
+        }
+
+        public async Task DeleteJobProperty(string jobId)
+        {
+            var p = new JobProperty { JobId = jobId };
+            _context.JobProperties.Remove(p);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task AddJobProperty(JobProperty jobProperty)
+        {
+            _context.JobProperties.Add(jobProperty);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateJobProperty(JobProperty jobProperty)
+        {
+            _context.JobProperties.Update(jobProperty);
+            await _context.SaveChangesAsync();
+        }
+
+        #endregion JobProperty
     }
 }

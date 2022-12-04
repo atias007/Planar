@@ -10,12 +10,6 @@
     <NoWarn>1701;1702;NU1803</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="Scripts\Planar_0001 - Create all.sql" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Scripts\Planar_0001 - Create all.sql" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="dbup-sqlserver" Version="4.6.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Spectre.Console" Version="0.45.0" />
@@ -24,5 +18,16 @@
     <None Update="appsettings.Local.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Remove="Scripts\Planar_0001 - add admin test.sql" />
+    <None Remove="Scripts\Planar_0002 - add admin test2.sql" />
+    <None Remove="Scripts\Planar_0003 - add job properties.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Scripts\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Scripts\Planar_0001 - add admin test.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0002 - add admin test2.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0003 - add job properties.sql" />
   </ItemGroup>
 </Project>

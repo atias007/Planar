@@ -1,10 +1,14 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using Dapper;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.Exceptions;
 using Polly;
 using System;
+using System.Data;
+using System.Diagnostics.Metrics;
 using System.Text;
 
 namespace Planar.Service
@@ -146,6 +150,34 @@ namespace Planar.Service
             }
 
             CheckConnectionString(DatabaseConnectionString);
+            TestDatabasePermission(DatabaseConnectionString);
+        }
+
+        private static void TestDatabasePermission(string connectionString)
+        {
+            try
+            {
+                using var conn = new SqlConnection(connectionString);
+
+                var cmd = new CommandDefinition(
+                    commandText: "admin.TestPermission",
+                    commandType: CommandType.StoredProcedure);
+
+                conn.ExecuteAsync(cmd).Wait();
+                Console.WriteLine($"    - Test database permission success");
+            }
+            catch (Exception ex)
+            {
+                var sb = new StringBuilder();
+                var seperator = string.Empty.PadLeft(80, '-');
+                sb.AppendLine("Fail to test database permissions");
+                sb.AppendLine(seperator);
+                sb.AppendLine(connectionString);
+                sb.AppendLine(seperator);
+                sb.AppendLine("Exception message:");
+                sb.AppendLine(ex.Message);
+                throw new AppSettingsException(sb.ToString());
+            }
         }
 
         private static void CheckConnectionString(string connectionString)
