@@ -1,6 +1,5 @@
 ﻿using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
-using Newtonsoft.Json;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -33,8 +32,12 @@ namespace Planar.Service.API
 
         public async Task<JobIdResponse> Add(AddJobRequest request)
         {
-            await ValidateAdd(request);
+            if (request == null)
+            {
+                throw new RestValidationException("request", "request is null");
+            }
 
+            await ValidateProperties(request);
             var jobKey = await ValidateJobMetadata(request);
             var config = GetGlobalConfig(request.GlobalConfig);
             await ValidateGlobalConfig(config);
@@ -51,10 +54,11 @@ namespace Planar.Service.API
                 jobBuilder = jobBuilder.StoreDurably(true);
             }
 
+            var jobPropertiesYml = GetJopPropertiesYml(request);
             var job = jobBuilder.Build();
-
             var id = BuildJobData(request, job);
             await BuildTriggers(Scheduler, job, request);
+            await DataLayer.AddJobProperty(new JobProperty { JobId = id, Properties = jobPropertiesYml });
             return new JobIdResponse { Id = id };
         }
 
@@ -76,67 +80,48 @@ namespace Planar.Service.API
             AddJobRequest subrequest;
             try
             {
-                var deserializer = new DeserializerBuilder()
-                            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                            .Build();
-
-                subrequest = deserializer.Deserialize<AddJobRequest>(yml);
+                subrequest = YmlDeserializer.Deserialize<AddJobRequest>(yml);
             }
             catch (Exception ex)
             {
                 throw new RestGeneralException($"Fail to deserialize file: {filename}", ex);
             }
 
-            if (subrequest.Properties.ContainsKey("JobPath", ignoreCase: true))
-            {
-                var value = subrequest.Properties.Get("JobPath", ignoreCase: true);
-                if (string.IsNullOrEmpty(value) || value.Trim() == "." || value.Trim() == "./")
-                {
-                    subrequest.Properties.Set("JobPath", request.Folder, ignoreCase: true);
-                }
-            }
-
             var response = await Add(subrequest);
             return response;
         }
 
-        private async Task ValidateAdd(AddJobRequest request)
+        private static IDeserializer YmlDeserializer
         {
-            if (request == null)
+            get
             {
-                throw new RestValidationException("request", "request is null");
+                var deserializer = new DeserializerBuilder()
+                            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                            .Build();
+                return deserializer;
+            }
+        }
+
+        private static ISerializer YmlSerializer
+        {
+            get
+            {
+                var serializer = new SerializerBuilder()
+                            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                            .Build();
+                return serializer;
+            }
+        }
+
+        private static string GetJopPropertiesYml(AddJobRequest request)
+        {
+            if (request.Properties == null)
+            {
+                return null;
             }
 
-            if (request.Properties.ContainsKey("JobPath", ignoreCase: true))
-            {
-                var path = request.Properties.Get("JobPath", ignoreCase: true);
-
-                try
-                {
-                    ServiceUtil.ValidateJobFolderExists(path);
-                    var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-                    await util.ValidateJobFolderExists(path);
-                }
-                catch (PlanarException ex)
-                {
-                    throw new RestValidationException("folder", ex.Message);
-                }
-
-                if (request.Properties.ContainsKey("Filename", ignoreCase: true))
-                {
-                    try
-                    {
-                        var filename = request.Properties.Get("FileName", ignoreCase: true);
-                        ServiceUtil.ValidateJobFileExists(path, filename);
-                        var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-                        await util.ValidateJobFileExists(path, filename);
-                    }
-                    catch (PlanarException ex)
-                    {
-                        throw new RestValidationException("filename", ex.Message);
-                    }
-                }
-            }
+            var yml = YmlSerializer.Serialize(request.Properties);
+            return yml;
         }
 
         private async Task ValidateAddFolder(AddJobFoldeRequest request)
@@ -356,11 +341,6 @@ namespace Planar.Service.API
                     job.JobDataMap[item.Key] = item.Value;
                 }
             }
-
-            // properties
-            metadata.Properties ??= new Dictionary<string, string>();
-            var json = JsonConvert.SerializeObject(metadata.Properties);
-            job.JobDataMap.Add(Consts.JobTypeProperties, json);
 
             // job id
             var id = ServiceUtil.GenerateId();
@@ -625,6 +605,68 @@ namespace Planar.Service.API
             {
                 throw new RestValidationException("jobType", $"Fail to get type {job.JobType} from assemly {assembly.FullName} ({ex.Message})");
             }
+        }
+
+        private async Task ValidateProperties(AddJobRequest request)
+        {
+            try
+            {
+                await ValidatePropertiesInner(request);
+            }
+            catch (Exception ex)
+            {
+                throw new RestValidationException("properties", $"fail to read/validate properties section. error: {ex.Message}");
+            }
+        }
+
+        private async Task ValidatePropertiesInner(AddJobRequest request)
+        {
+            var yml = GetJopPropertiesYml(request);
+
+            switch (request.JobType)
+            {
+                case nameof(PlanarJob):
+                    var properties = YmlDeserializer.Deserialize<PlanarJobProperties>(yml);
+                    await ValidatePlanarJobProperties(properties);
+                    break;
+
+                default:
+                    break;
+            }
+        }
+
+        private async Task ValidatePlanarJobProperties(PlanarJobProperties properties)
+        {
+            if (properties == null)
+            {
+                throw new RestValidationException("properties", "properties is null or empty");
+            }
+
+            var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+            var validator = new PlanarJobPropertiesValidator(util);
+            await validator.ValidateAndThrowAsync(properties);
+
+            ////try
+            ////{
+            ////    ServiceUtil.ValidateJobFolderExists(properties.Path);
+            ////    var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+            ////    await util.ValidateJobFolderExists(properties.Path);
+            ////}
+            ////catch (PlanarException ex)
+            ////{
+            ////    throw new RestValidationException("folder", ex.Message);
+            ////}
+
+            ////try
+            ////{
+            ////    ServiceUtil.ValidateJobFileExists(properties.Path, properties.Filename);
+            ////    var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+            ////    await util.ValidateJobFileExists(properties.Path, properties.Filename);
+            ////}
+            ////catch (PlanarException ex)
+            ////{
+            ////    throw new RestValidationException("filename", ex.Message);
+            ////}
         }
     }
 }

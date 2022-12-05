@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using YamlDotNet.Serialization;
 
 namespace Planar.API.Common.Entities
 {
-    // TODO: move validation to fluent
     public class AddJobRequest : ITriggersContainer
     {
         [YamlMember(Alias = "job type")]
@@ -22,7 +22,8 @@ namespace Planar.API.Common.Entities
         [YamlMember(Alias = "job data")]
         public Dictionary<string, string> JobData { get; set; }
 
-        public Dictionary<string, string> Properties { get; set; }
+        [JsonIgnore]
+        public virtual dynamic Properties { get; set; }
 
         [YamlMember(Alias = "global config")]
         public Dictionary<string, string> GlobalConfig { get; set; }

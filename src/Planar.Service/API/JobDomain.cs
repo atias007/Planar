@@ -265,6 +265,15 @@ namespace Planar.Service.API
 
             try
             {
+                await DataLayer.DeleteJobProperty(jobId);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Fail to delete properties after delete job id {Id}", id);
+            }
+
+            try
+            {
                 await DeleteMonitorOfJob(jobId, jobKey.Group);
             }
             catch (Exception ex)

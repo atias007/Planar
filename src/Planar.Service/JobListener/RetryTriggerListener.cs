@@ -49,7 +49,7 @@ namespace Planar.Service.List
                         .WithIdentity($"{Consts.RetryTriggerNamePrefix}_{numTries}_{name}", Consts.RetryTriggerGroup)
                         .UsingJobData(Consts.TriggerId, ServiceUtil.GenerateId())
                         .UsingJobData(Consts.RetrySpan, span.GetValueOrDefault().ToSimpleTimeString())
-                        .UsingJobData(Consts.RetryCounter, numTries)
+                        .UsingJobData(Consts.RetryCounter, numTries.ToString())
                         .StartAt(start)
                         .Build();
 
