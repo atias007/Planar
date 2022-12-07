@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Planar.Common;
 using Planar.Service.API;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
@@ -50,6 +51,7 @@ namespace Planar.Service
         internal static IServiceCollection AddPlanarDataLayerWithContext(this IServiceCollection services)
         {
             services.AddTransient<DataLayer>();
+            services.AddTransient<IJobPropertyDataLayer, DataLayer>();
             services.AddDbContext<PlanarContext>(o => o.UseSqlServer(
                     AppSettings.DatabaseConnectionString,
                     options => options.EnableRetryOnFailure(12, TimeSpan.FromSeconds(5), null)),

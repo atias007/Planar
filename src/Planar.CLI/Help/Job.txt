@@ -3,7 +3,7 @@
 the options for <command> and [<options>] parameters of job module:
 
 ls|list         [-q|--quiet]
-add             <filename|.>
+add             <filename|folder>
 get|inspect     <job id>
 settings        <job id>
 running         [<instance id>] [-it|--iterative] [-d|--details] [-q|--quiet]
@@ -20,7 +20,6 @@ resume          <job id>
 data            <job id> <upsert|remove|clear> [<key>] [<value>]
 stop            <instance id>
 test            <job id> [-n|--now <now_value:"dd/mm/yyyy hh:mm">]
-update-prop     <job id> <key> <value>
 
 *****************************************************************
 *** <job id> represent job hash id or job key <[group.]name>  ***

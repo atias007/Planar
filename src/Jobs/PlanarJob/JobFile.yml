@@ -9,13 +9,13 @@ job data:
   key2: value2
   key3: value3
 properties:
-  JobPath: path to dll file(s)
-  FileName: dll filename
-  TypeName: namespace.classname
+  path: path to dll file(s)
+  filename: dll filename
+  class name: namespace.classname
 global config:
-  ConfigKey1: ConfigValue1
-  ConfigKey2: ConfigValue2
-  ConfigKey3: ConfigValue3
+  config key1: value1
+  config key2: value2
+  config key3: value3
 simple triggers:
   - name: every-minute-trigger
     start: 2021-09-19 00:00:00

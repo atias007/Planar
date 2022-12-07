@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using AutoMapper;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -61,6 +62,8 @@ namespace Planar.Service.API
         protected DataLayer DataLayer => _dataLayer;
 
         protected ILogger<TBusinesLayer> Logger => _logger;
+
+        protected IMapper Mapper => _serviceProvider.GetRequiredService<IMapper>();
 
         protected T Resolve<T>()
         {

@@ -107,19 +107,13 @@ namespace Planar.CLI
             table.AddRow(nameof(response.RequestsRecovery), response.RequestsRecovery.ToString());
             table.AddRow(nameof(response.Concurrent), response.Concurrent.ToString());
 
-            var properties =
-                response.Properties?.Count == 0 ?
-                null :
-                new Serializer().Serialize(response.Properties);
-
-            table.AddRow(nameof(response.Properties), properties.EscapeMarkup());
-
             var dataMap =
                 response.DataMap?.Count == 0 ?
-                null :
+                string.Empty :
                 new Serializer().Serialize(response.DataMap);
 
-            table.AddRow("Data", dataMap.EscapeMarkup());
+            table.AddRow("Data", dataMap?.Trim().EscapeMarkup());
+            table.AddRow(nameof(response.Properties), response.Properties.EscapeMarkup());
 
             var response2 = new TriggerRowDetails
             {

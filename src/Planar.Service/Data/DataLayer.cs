@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using Quartz;
@@ -17,7 +18,7 @@ using JobInstanceLog = Planar.Service.Model.JobInstanceLog;
 
 namespace Planar.Service.Data
 {
-    public class DataLayer
+    public class DataLayer : IJobPropertyDataLayer
     {
         private readonly PlanarContext _context;
 
@@ -55,36 +56,46 @@ namespace Planar.Service.Data
 
         public async Task UpdateHistoryJobRunLog(DbJobInstanceLog log)
         {
-            var paramInstanceId = new SqlParameter("@InstanceId", log.InstanceId);
-            var paramStatus = new SqlParameter("@Status", log.Status);
-            var paramStatusTitle = new SqlParameter("@StatusTitle", GetNullableSqlParameter(log.StatusTitle));
-            var paramEndDate = new SqlParameter("@EndDate", GetNullableSqlParameter(log.EndDate));
-            var paramDuration = new SqlParameter("@Duration", GetNullableSqlParameter(log.Duration));
-            var paramEffectedRows = new SqlParameter("@EffectedRows", GetNullableSqlParameter(log.EffectedRows));
-            var paramLog = new SqlParameter("@Log", GetNullableSqlParameter(log.Log));
-            var paramException = new SqlParameter("@Exception", GetNullableSqlParameter(log.Exception));
-            var paramIsStopped = new SqlParameter("@IsStopped", log.IsStopped);
+            var parameters = new
+            {
+                log.InstanceId,
+                log.Status,
+                log.StatusTitle,
+                log.EndDate,
+                log.Duration,
+                log.EffectedRows,
+                log.Log,
+                log.Exception,
+                log.IsStopped
+            };
 
-            await _context.Database.ExecuteSqlRawAsync(
-                $"dbo.UpdateJobInstanceLog @InstanceId, @Status, @StatusTitle, @EndDate, @Duration, @EffectedRows, @Log, @Exception, @IsStopped",
-                paramInstanceId, paramStatus, paramStatusTitle, paramEndDate, paramDuration, paramEffectedRows, paramLog, paramException, paramIsStopped);
-        }
+            var cmd = new CommandDefinition(
+                commandText: "dbo.UpdateJobInstanceLog",
+                commandType: CommandType.StoredProcedure,
+                parameters: parameters);
 
-        private static object GetNullableSqlParameter(object value)
-        {
-            if (value == null) { return DBNull.Value; }
-            else { return value; }
+            await _context.Database.GetDbConnection().ExecuteAsync(cmd);
         }
 
         public async Task PersistJobInstanceData(DbJobInstanceLog log)
         {
-            var paramInstanceId = new SqlParameter("@InstanceId", log.InstanceId);
-            var paramLog = new SqlParameter("@Log", GetNullableSqlParameter(log.Log));
-            var paramException = new SqlParameter("@Exception", GetNullableSqlParameter(log.Exception));
-            var paramDuration = new SqlParameter("@Duration", log.Duration);
+            var parameters = new
+            {
+                log.InstanceId,
+                log.Log,
+                log.Exception,
+                log.Duration,
+            };
 
-            await _context.Database.ExecuteSqlRawAsync($"dbo.PersistJobInstanceLog @InstanceId, @Log, @Exception, @Duration", paramInstanceId, paramLog, paramException, paramDuration);
+            var cmd = new CommandDefinition(
+                commandText: "dbo.PersistJobInstanceLog",
+                commandType: CommandType.StoredProcedure,
+                parameters: parameters);
+
+            await _context.Database.GetDbConnection().ExecuteAsync(cmd);
         }
+
+        #region Monitor
 
         public async Task<int> GetMonitorCount()
         {
@@ -114,6 +125,71 @@ namespace Planar.Service.Data
         public async Task<MonitorAction> GetMonitorAction(int id)
         {
             return await _context.MonitorActions.FindAsync(id);
+        }
+
+        public async Task<List<MonitorAction>> GetMonitorActions(string jobOrGroupId)
+        {
+            var query = _context.MonitorActions.AsQueryable();
+            if (string.IsNullOrEmpty(jobOrGroupId) == false)
+            {
+                query = query.Where(m => m.JobId == jobOrGroupId || m.JobGroup == jobOrGroupId);
+            }
+
+            query = query.OrderByDescending(m => m.Active)
+                .ThenBy(m => m.JobGroup)
+                .ThenBy(m => m.JobId);
+
+            var result = await query.Include(m => m.Group).ToListAsync();
+            return result;
+        }
+
+        public async Task<List<MonitorAction>> GetMonitorActions()
+        {
+            return await _context.MonitorActions
+                .Include(i => i.Group)
+                .OrderByDescending(d => d.Active)
+                .ThenBy(d => d.JobId)
+                .ToListAsync();
+        }
+
+        public async Task AddMonitor(MonitorAction request)
+        {
+            await _context.MonitorActions.AddAsync(request);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteMonitor(MonitorAction request)
+        {
+            _context.MonitorActions.Remove(request);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteMonitorByJobId(string jobId)
+        {
+            _context.MonitorActions.RemoveRange(e => e.JobId == jobId);
+            await SaveChangesWithoutConcurrency();
+        }
+
+        public async Task DeleteMonitorByJobGroup(string jobGroup)
+        {
+            _context.MonitorActions.RemoveRange(e => e.JobGroup == jobGroup);
+            await SaveChangesWithoutConcurrency();
+        }
+
+        #endregion Monitor
+
+        private async Task<int> SaveChangesWithoutConcurrency()
+        {
+            try
+            {
+                return await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // *** DO NOTHING *** //
+            }
+
+            return 0;
         }
 
         public async Task SetJobInstanceLogStatus(string instanceId, StatusMembers status)
@@ -557,37 +633,6 @@ namespace Planar.Service.Data
             return await _context.Groups.AnyAsync(g => g.Id == groupId);
         }
 
-        public async Task<List<MonitorAction>> GetMonitorActions(string jobOrGroupId)
-        {
-            var query = _context.MonitorActions.AsQueryable();
-            if (string.IsNullOrEmpty(jobOrGroupId) == false)
-            {
-                query = query.Where(m => m.JobId == jobOrGroupId || m.JobGroup == jobOrGroupId);
-            }
-
-            query = query.OrderByDescending(m => m.Active)
-                .ThenBy(m => m.JobGroup)
-                .ThenBy(m => m.JobId);
-
-            var result = await query.Include(m => m.Group).ToListAsync();
-            return result;
-        }
-
-        public async Task<List<MonitorAction>> GetMonitorActions()
-        {
-            return await _context.MonitorActions
-                .Include(i => i.Group)
-                .OrderByDescending(d => d.Active)
-                .ThenBy(d => d.JobId)
-                .ToListAsync();
-        }
-
-        public async Task AddMonitor(MonitorAction request)
-        {
-            await _context.MonitorActions.AddAsync(request);
-            await _context.SaveChangesAsync();
-        }
-
         public async Task<int> CountFailsInRowForJob(object parameters)
         {
             using var conn = _context.Database.GetDbConnection();
@@ -622,24 +667,6 @@ namespace Planar.Service.Data
                 parameters: parameters);
 
             await conn.ExecuteAsync(cmd);
-        }
-
-        public async Task DeleteMonitor(MonitorAction request)
-        {
-            _context.MonitorActions.Remove(request);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task DeleteMonitorByJobId(string jobId)
-        {
-            _context.MonitorActions.RemoveRange(e => e.JobId == jobId);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task DeleteMonitorByJobGroup(string jobGroup)
-        {
-            _context.MonitorActions.RemoveRange(e => e.JobGroup == jobGroup);
-            await _context.SaveChangesAsync();
         }
 
         #region Cluster
@@ -684,7 +711,7 @@ namespace Planar.Service.Data
         {
             var p = new JobProperty { JobId = jobId };
             _context.JobProperties.Remove(p);
-            await _context.SaveChangesAsync();
+            await SaveChangesWithoutConcurrency();
         }
 
         public async Task AddJobProperty(JobProperty jobProperty)

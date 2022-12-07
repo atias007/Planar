@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -15,8 +16,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace Planar.Service.API
 {
@@ -30,7 +29,19 @@ namespace Planar.Service.API
             Cron
         }
 
-        public async Task<JobIdResponse> Add(AddJobRequest request)
+        public async Task<JobIdResponse> Add<TProperties>(AddJobRequest<TProperties> genericRequest)
+           where TProperties : class, new()
+        {
+            if (genericRequest == null)
+            {
+                throw new RestValidationException("request", "request is null");
+            }
+
+            var request = Mapper.Map<AddJobRequest<TProperties>, AddJobDynamicRequest>(genericRequest);
+            return await Add(request);
+        }
+
+        private async Task<JobIdResponse> Add(AddJobDynamicRequest request)
         {
             if (request == null)
             {
@@ -77,10 +88,10 @@ namespace Planar.Service.API
                 throw new RestGeneralException($"Fail to read file: {filename}", ex);
             }
 
-            AddJobRequest subrequest;
+            AddJobDynamicRequest subrequest;
             try
             {
-                subrequest = YmlDeserializer.Deserialize<AddJobRequest>(yml);
+                subrequest = YmlUtil.Deserialize<AddJobDynamicRequest>(yml);
             }
             catch (Exception ex)
             {
@@ -91,36 +102,14 @@ namespace Planar.Service.API
             return response;
         }
 
-        private static IDeserializer YmlDeserializer
-        {
-            get
-            {
-                var deserializer = new DeserializerBuilder()
-                            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                            .Build();
-                return deserializer;
-            }
-        }
-
-        private static ISerializer YmlSerializer
-        {
-            get
-            {
-                var serializer = new SerializerBuilder()
-                            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                            .Build();
-                return serializer;
-            }
-        }
-
-        private static string GetJopPropertiesYml(AddJobRequest request)
+        private static string GetJopPropertiesYml(AddJobDynamicRequest request)
         {
             if (request.Properties == null)
             {
                 return null;
             }
 
-            var yml = YmlSerializer.Serialize(request.Properties);
+            var yml = YmlUtil.Serialize(request.Properties);
             return yml;
         }
 
@@ -607,7 +596,7 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task ValidateProperties(AddJobRequest request)
+        private async Task ValidateProperties(AddJobDynamicRequest request)
         {
             try
             {
@@ -619,14 +608,14 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task ValidatePropertiesInner(AddJobRequest request)
+        private async Task ValidatePropertiesInner(AddJobDynamicRequest request)
         {
             var yml = GetJopPropertiesYml(request);
 
             switch (request.JobType)
             {
                 case nameof(PlanarJob):
-                    var properties = YmlDeserializer.Deserialize<PlanarJobProperties>(yml);
+                    var properties = YmlUtil.Deserialize<PlanarJobProperties>(yml);
                     await ValidatePlanarJobProperties(properties);
                     break;
 
@@ -635,38 +624,22 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task ValidatePlanarJobProperties(PlanarJobProperties properties)
+        private async Task ValidatePlanarJobProperties<TProperties>(TProperties properties)
         {
             if (properties == null)
             {
                 throw new RestValidationException("properties", "properties is null or empty");
             }
 
-            var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-            var validator = new PlanarJobPropertiesValidator(util);
+            var validator = _serviceProvider.GetService<IValidator<TProperties>>();
+
+            if (validator == null)
+            {
+                Logger.LogWarning("Job properties of type {PropertyType} has no registered validation in DI. validation skipped", typeof(TProperties).FullName);
+                return;
+            }
+
             await validator.ValidateAndThrowAsync(properties);
-
-            ////try
-            ////{
-            ////    ServiceUtil.ValidateJobFolderExists(properties.Path);
-            ////    var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-            ////    await util.ValidateJobFolderExists(properties.Path);
-            ////}
-            ////catch (PlanarException ex)
-            ////{
-            ////    throw new RestValidationException("folder", ex.Message);
-            ////}
-
-            ////try
-            ////{
-            ////    ServiceUtil.ValidateJobFileExists(properties.Path, properties.Filename);
-            ////    var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-            ////    await util.ValidateJobFileExists(properties.Path, properties.Filename);
-            ////}
-            ////catch (PlanarException ex)
-            ////{
-            ////    throw new RestValidationException("filename", ex.Message);
-            ////}
         }
     }
 }

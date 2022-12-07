@@ -60,6 +60,13 @@ namespace Planar.Service.API.Helpers
             return GetJobId(job);
         }
 
+        public async Task<string> GetJobId(string id)
+        {
+            var jobKey = await GetJobKey(id);
+            var jobId = await GetJobId(jobKey);
+            return jobId;
+        }
+
         public async Task<IJobDetail> ValidateJobExists(JobKey jobKey)
         {
             var exists = await _scheduler.GetJobDetail(jobKey);

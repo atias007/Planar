@@ -11,15 +11,11 @@ using System.Threading.Tasks;
 
 namespace Planar
 {
-    public class PlanarJob : BaseCommonJob<PlanarJob>
+    public abstract class PlanarJob : BaseCommonJob<PlanarJob, PlanarJobProperties>
     {
-        public PlanarJob(ILogger<PlanarJob> logger) : base(logger)
+        public PlanarJob(ILogger<PlanarJob> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
         {
         }
-
-        public string FileName { get; set; }
-
-        public string TypeName { get; set; }
 
         private string AssemblyFilename { get; set; }
 
@@ -29,26 +25,26 @@ namespace Planar
 
             try
             {
-                MapProperties(context);
-                AssemblyFilename = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, JobPath, FileName);
+                await SetProperties(context);
+                AssemblyFilename = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, Properties.Path, Properties.Filename);
 
                 ValidatePlanarJob();
 
                 assemblyContext = AssemblyLoader.CreateAssemblyLoadContext(context.FireInstanceId, true);
                 var assembly = AssemblyLoader.LoadFromAssemblyPath(AssemblyFilename, assemblyContext);
 
-                var type = assembly.GetType(TypeName);
+                var type = assembly.GetType(Properties.ClassName);
                 if (type == null)
                 {
-                    type = assembly.GetTypes().FirstOrDefault(t => t.FullName == TypeName);
+                    type = assembly.GetTypes().FirstOrDefault(t => t.FullName == Properties.ClassName);
                 }
 
                 var method = ValidateBaseJob(type);
-                var instance = assembly.CreateInstance(TypeName);
+                var instance = assembly.CreateInstance(Properties.ClassName);
 
                 MapJobInstanceProperties(context, type, instance);
 
-                var settings = LoadJobSettings();
+                var settings = LoadJobSettings(Properties.Path);
                 var _broker = new JobMessageBroker(context, settings);
                 await (method.Invoke(instance, new object[] { _broker }) as Task);
 
@@ -66,14 +62,27 @@ namespace Planar
             }
         }
 
+        private static string GetJobId(IJobDetail job)
+        {
+            if (job == null)
+            {
+                throw new NullReferenceException("job is null at JobKeyHelper.GetJobId(IJobDetail)");
+            }
+
+            if (job.JobDataMap.TryGetValue(Consts.JobId, out var id))
+            {
+                return Convert.ToString(id);
+            }
+
+            return null;
+        }
+
         private void ValidatePlanarJob()
         {
             try
             {
-                base.Validate();
-
-                ValidateMandatoryString(FileName, nameof(FileName));
-                ValidateMandatoryString(TypeName, nameof(TypeName));
+                ValidateMandatoryString(Properties.Filename, nameof(Properties.Filename));
+                ValidateMandatoryString(Properties.ClassName, nameof(Properties.ClassName));
 
                 if (!File.Exists(AssemblyFilename))
                 {
@@ -94,35 +103,35 @@ namespace Planar
 
             if (type == null)
             {
-                throw new PlanarJobException($"Type '{TypeName}' could not be found at assembly '{AssemblyFilename}'");
+                throw new PlanarJobException($"Type '{Properties.ClassName}' could not be found at assembly '{AssemblyFilename}'");
             }
 
             var baseTypeName = type.BaseType?.FullName;
             if (baseTypeName != $"{nameof(Planar)}.BaseJob")
             {
-                throw new PlanarJobException($"Type '{TypeName}' from assembly '{AssemblyFilename}' not inherit 'Planar.Job.BaseJob' type");
+                throw new PlanarJobException($"Type '{Properties.ClassName}' from assembly '{AssemblyFilename}' not inherit 'Planar.Job.BaseJob' type");
             }
 
             var method = type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance);
             if (method == null)
             {
-                throw new PlanarJobException($"Type '{TypeName}' from assembly '{AssemblyFilename}' has no 'Execute' method");
+                throw new PlanarJobException($"Type '{Properties.ClassName}' from assembly '{AssemblyFilename}' has no 'Execute' method");
             }
 
             if (method.ReturnType != typeof(Task))
             {
-                throw new PlanarJobException($"Method 'Execute' at type '{TypeName}' from assembly '{AssemblyFilename}' has no 'Task' return type (current return type is {method.ReturnType.FullName})");
+                throw new PlanarJobException($"Method 'Execute' at type '{Properties.ClassName}' from assembly '{AssemblyFilename}' has no 'Task' return type (current return type is {method.ReturnType.FullName})");
             }
 
             var parameters = method.GetParameters();
             if (parameters?.Length != 1)
             {
-                throw new PlanarJobException($"Method 'Execute' at type '{TypeName}' from assembly '{AssemblyFilename}' must have only 1 parameters (current parameters count {parameters?.Length})");
+                throw new PlanarJobException($"Method 'Execute' at type '{Properties.ClassName}' from assembly '{AssemblyFilename}' must have only 1 parameters (current parameters count {parameters?.Length})");
             }
 
             if (!parameters[0].ParameterType.ToString().StartsWith("System.Object"))
             {
-                throw new PlanarJobException($"Second parameter in method 'Execute' at type '{TypeName}' from assembly '{AssemblyFilename}' must be object. (current type '{parameters[1].ParameterType.Name}')");
+                throw new PlanarJobException($"Second parameter in method 'Execute' at type '{Properties.ClassName}' from assembly '{AssemblyFilename}' must be object. (current type '{parameters[1].ParameterType.Name}')");
             }
 
             return method;

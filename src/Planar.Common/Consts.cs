@@ -15,8 +15,6 @@ namespace Planar
         public const string PlanarSystemGroup = "__System";
         public static readonly string[] PreserveGroupNames = new string[] { RetryTriggerGroup, PlanarSystemGroup };
 
-        public const string JobTypeProperties = "__Job_Properties";
-
         public const string JobId = "__Job_Id";
         public const string TriggerId = "__Trigger_Id";
         public const string NowOverrideValue = "__Now_Override_Value";
@@ -43,6 +41,7 @@ namespace Planar
         public const string DeveloperExceptionPageVariableKey = "PLANAR_DEVEXPAGE";
         public const string LogLevelVariableKey = "PLANAR_LOGLEVEL";
         public const string AuthenticationModeVariableKey = "PLANAR_AUTHMODE";
+        public const string SchedulerStartupDelayVariableKey = "PLANAR_SCHEDULER_DELAY";
 
         public const string InstanceIdVariableKey = "PLANAR_INSTANCEID";
         public const string ServiceNameVariableKey = "PLANAR_SERVICENAME";

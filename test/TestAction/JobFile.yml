@@ -13,9 +13,9 @@ global config:
   ParamKey2: ParamValue2
   ParamKey3: ParamValue3
 properties:
-  JobPath: .
-  FileName: TestAction.dll
-  TypeName: TestAction.ActionJob
+  path: TestAction
+  filename: TestAction.dll
+  class name: TestAction.ActionJob
 simple triggers:
 - name: every-minute-trigger
   interval: 00:05:00

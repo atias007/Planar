@@ -8,7 +8,6 @@ using Planar.Service.Exceptions;
 using Polly;
 using System;
 using System.Data;
-using System.Diagnostics.Metrics;
 using System.Text;
 
 namespace Planar.Service
@@ -62,6 +61,8 @@ namespace Planar.Service
 
         public static bool DeveloperExceptionPage { get; set; }
 
+        public static TimeSpan SchedulerStartupDelay { get; set; }
+
         public static AuthMode AuthenticationMode { get; set; }
 
         public static LogLevel LogLevel { get; set; }
@@ -90,6 +91,7 @@ namespace Planar.Service
             SwaggerUI = GetSettings(configuration, Consts.SwaggerUIVariableKey, nameof(SwaggerUI), true);
             OpenApiUI = GetSettings(configuration, Consts.OpenApiUIVariableKey, nameof(OpenApiUI), true);
             DeveloperExceptionPage = GetSettings(configuration, Consts.DeveloperExceptionPageVariableKey, nameof(DeveloperExceptionPage), true);
+            SchedulerStartupDelay = GetSettings(configuration, Consts.SchedulerStartupDelayVariableKey, nameof(SchedulerStartupDelay), TimeSpan.FromSeconds(30));
         }
 
         private static void InitializeEnvironment(IConfiguration configuration)

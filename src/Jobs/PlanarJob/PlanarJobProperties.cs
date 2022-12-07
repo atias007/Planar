@@ -1,6 +1,6 @@
 ﻿using YamlDotNet.Serialization;
 
-namespace Planar.API.Common.Entities
+namespace Planar
 {
     public class PlanarJobProperties
     {

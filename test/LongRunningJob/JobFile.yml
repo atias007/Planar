@@ -8,9 +8,9 @@ job data:
   Value: 100.1
   MaxId: 100
 properties:
-  JobPath: LongRunningJob
-  FileName: LongRunningJob.dll
-  TypeName: LongRunningJob.Worker
+  path: LongRunningJob
+  filename: LongRunningJob.dll
+  class name: LongRunningJob.Worker
 simple triggers:
 - name: every-minute-trigger
   interval: 00:05:00

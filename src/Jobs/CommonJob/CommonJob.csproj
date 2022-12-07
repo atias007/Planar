@@ -22,6 +22,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\..\Planar.API.Common\Planar.API.Common.csproj" />
 		<ProjectReference Include="..\..\Planar.Common\Planar.Common.csproj" />
 	</ItemGroup>
 </Project>

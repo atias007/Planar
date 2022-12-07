@@ -15,7 +15,7 @@ namespace Planar.API.Common.Entities
         public bool Concurrent { get; set; }
 
         [YamlMember(Order = 7)]
-        public SortedDictionary<string, string> Properties { get; set; } = new();
+        public string Properties { get; set; }
 
         [YamlMember(Order = 8)]
         public SortedDictionary<string, string> DataMap { get; set; } = new();

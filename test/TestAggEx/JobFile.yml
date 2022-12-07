@@ -3,9 +3,9 @@ name: TestAggEx
 group: Infrastructure
 description: Test aggragate exceptions
 properties:
-  JobPath: TestAggEx
-  FileName: TestAggEx.dll
-  TypeName: TestAggEx.MyJob
+  path: TestAggEx
+  filename: TestAggEx.dll
+  class name: TestAggEx.MyJob
 simple triggers:
 - name: every-hour-trigger
   interval: 01:00:00

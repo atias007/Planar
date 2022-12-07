@@ -7,6 +7,11 @@ namespace Planar.CLI
     {
         public static IEnumerable<string> Split(this string str, Func<char, bool> controller)
         {
+            if (str == null)
+            {
+                yield return null;
+            }
+
             int nextPiece = 0;
 
             for (int c = 0; c < str.Length; c++)

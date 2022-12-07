@@ -2,9 +2,9 @@
 name: RetryDemoJob
 description: Demo of retry when job throw new exception
 properties:
-  JobPath: RetryDemoJob
-  FileName: RetryDemoJob.dll
-  TypeName: RetryDemoJob.Worker
+  path: RetryDemoJob
+  filename: RetryDemoJob.dll
+  class name: RetryDemoJob.Worker
 simple triggers:
 cron triggers:
   - name: some-cron-trigger

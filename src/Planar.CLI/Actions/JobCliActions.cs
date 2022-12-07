@@ -7,14 +7,11 @@ using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace Planar.CLI.Actions
 {
@@ -24,30 +21,9 @@ namespace Planar.CLI.Actions
         [Action("add")]
         public static async Task<CliActionResponse> AddJob(CliAddJobRequest request)
         {
-            if (request.Filename == ".") { request.Filename = JobFileName; }
-            var fi = new FileInfo(request.Filename);
-            RestRequest restRequest;
-
-            if (fi.Extension.ToLower() == ".yml")
-            {
-                if (fi.Exists == false)
-                {
-                    throw new CliException($"filename '{fi.FullName}' not exist");
-                }
-
-                var yml = File.ReadAllText(fi.FullName);
-                var prm = GetAddJobRequest(yml);
-
-                restRequest = new RestRequest("job", Method.Post)
-                    .AddBody(prm);
-            }
-            else
-            {
-                var body = new AddJobFoldeRequest { Folder = request.Filename };
-                restRequest = new RestRequest("job/folder", Method.Post)
-                    .AddBody(body);
-            }
-
+            var body = new AddJobFoldeRequest { Folder = request.Filename };
+            var restRequest = new RestRequest("job/folder", Method.Post)
+                .AddBody(body);
             var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
             return new CliActionResponse(result, message: result.Data?.Id);
         }
@@ -309,16 +285,6 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        [Action("update-prop")]
-        public static async Task<CliActionResponse> UpsertJobProperty(CliUpsertJobPropertyRequest request)
-        {
-            var restRequest = new RestRequest("job/property", Method.Put)
-                .AddBody(request);
-
-            var result = await RestProxy.Invoke(restRequest);
-            return new CliActionResponse(result);
-        }
-
         public static async Task<string> ChooseJob()
         {
             var restRequest = new RestRequest("job", Method.Get);
@@ -344,15 +310,6 @@ namespace Planar.CLI.Actions
             {
                 throw new CliException($"fail to fetch list of jobs. error message: {result.ErrorMessage}");
             }
-        }
-
-        private static AddJobRequest GetAddJobRequest(string yaml)
-        {
-            var deserializer = new DeserializerBuilder()
-                            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                            .Build();
-            var request = deserializer.Deserialize<AddJobRequest>(yaml);
-            return request;
         }
 
         internal static async Task<(List<RunningJobDetails>, RestResponse)> GetRunningJobsInner(CliGetRunningJobsRequest request)

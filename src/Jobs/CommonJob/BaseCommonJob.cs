@@ -6,53 +6,44 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace CommonJob
 {
-    public abstract class BaseCommonJob<TInstance> : IJob
-        where TInstance : class
+    public abstract class BaseCommonJob<TInstance, TProperties> : IJob
+    where TInstance : class
+    where TProperties : class, new()
     {
         protected readonly ILogger<TInstance> _logger;
+        private readonly IJobPropertyDataLayer _dataLayer;
 
-        protected BaseCommonJob(ILogger<TInstance> logger)
+        protected BaseCommonJob(ILogger<TInstance> logger, IJobPropertyDataLayer dataLayer)
         {
             _logger = logger;
+            _dataLayer = dataLayer;
         }
 
-        public string JobPath { get; set; }
+        public TProperties Properties { get; private set; } = new();
 
         public abstract Task Execute(IJobExecutionContext context);
 
-        protected void MapProperties(IJobExecutionContext context)
+        protected async Task SetProperties(IJobExecutionContext context)
         {
-            //// ***** Attention: be aware for sync code with MapProperties on BaseJobTest *****
-            try
+            var jobId = GetJobId(context.JobDetail);
+            if (jobId == null)
             {
-                var json = context.JobDetail.JobDataMap[Consts.JobTypeProperties] as string;
-                if (string.IsNullOrEmpty(json)) return;
-                var list = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
-                if (list == null) return;
-                var propInfo = GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
-                foreach (var item in list)
-                {
-                    var p = propInfo.FirstOrDefault(p => string.Compare(p.Name, item.Key, true) == 0);
-                    if (p != null)
-                    {
-                        var value = Convert.ChangeType(item.Value, p.PropertyType);
-                        p.SetValue(this, value);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                var source = nameof(MapProperties);
-                _logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
-                throw;
+                var key = context.JobDetail.Key;
+                throw new PlanarJobException($"Fail to get job id while execute job {key.Group}.{key.Name}");
             }
 
-            //// ***** Attention: be aware for sync code with MapProperties on BaseJobTest *****
+            var properties = await _dataLayer.GetJobProperty(jobId);
+            if (string.IsNullOrEmpty(properties))
+            {
+                var key = context.JobDetail.Key;
+                throw new PlanarJobException($"Fail to get job properties while execute job {key.Group}.{key.Name} (id: {jobId})");
+            }
+
+            Properties = YmlUtil.Deserialize<TProperties>(properties);
         }
 
         protected void FinalizeJob(IJobExecutionContext context)
@@ -156,12 +147,12 @@ namespace CommonJob
             }
         }
 
-        protected Dictionary<string, string> LoadJobSettings()
+        protected Dictionary<string, string> LoadJobSettings(string path)
         {
             try
             {
-                if (string.IsNullOrEmpty(JobPath)) return new Dictionary<string, string>();
-                var jobSettings = JobSettingsLoader.LoadJobSettings(JobPath);
+                if (string.IsNullOrEmpty(path)) return new Dictionary<string, string>();
+                var jobSettings = JobSettingsLoader.LoadJobSettings(path);
                 return jobSettings;
             }
             catch (Exception ex)
@@ -181,9 +172,19 @@ namespace CommonJob
             }
         }
 
-        protected virtual void Validate()
+        private static string GetJobId(IJobDetail job)
         {
-            ValidateMandatoryString(JobPath, nameof(JobPath));
+            if (job == null)
+            {
+                throw new NullReferenceException("job is null at JobKeyHelper.GetJobId(IJobDetail)");
+            }
+
+            if (job.JobDataMap.TryGetValue(Consts.JobId, out var id))
+            {
+                return Convert.ToString(id);
+            }
+
+            return null;
         }
     }
 }

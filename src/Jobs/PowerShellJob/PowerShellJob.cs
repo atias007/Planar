@@ -72,7 +72,7 @@ namespace RunPowerShellJob
 
                 foreach (var f in ScriptFiles)
                 {
-                    var filename = Path.Combine(JobPath, f);
+                    var filename = System.IO.Path.Combine(Path, f);
                     if (!File.Exists(filename))
                     {
                         throw new PlanarJobException($"Script filename '{filename}' could not be found");

@@ -96,7 +96,7 @@ namespace Planar.CLI
 
                 if (span.TotalMinutes < 60)
                 {
-                    return $"{span:mm\\:ss}";
+                    return $"{span:mm\\:ss} min";
                 }
 
                 if (span.TotalHours < 24)
