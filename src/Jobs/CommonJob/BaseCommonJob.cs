@@ -176,7 +176,7 @@ namespace CommonJob
         {
             if (job == null)
             {
-                throw new NullReferenceException("job is null at JobKeyHelper.GetJobId(IJobDetail)");
+                throw new PlanarJobException("job is null at JobKeyHelper.GetJobId(IJobDetail)");
             }
 
             if (job.JobDataMap.TryGetValue(Consts.JobId, out var id))

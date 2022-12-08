@@ -44,7 +44,7 @@ namespace Planar.Service.API
             var info = await Scheduler.GetJobDetail(jobKey);
 
             var result = new JobDetails();
-            MapJobDetails(info, result);
+            await MapJobDetails(info, result);
 
             var triggers = await GetTriggersDetails(jobKey);
             result.SimpleTriggers = triggers.SimpleTriggers;
@@ -403,7 +403,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        private async void MapJobDetails(IJobDetail source, JobDetails target, JobDataMap dataMap = null)
+        private async Task MapJobDetails(IJobDetail source, JobDetails target, JobDataMap dataMap = null)
         {
             dataMap ??= source.JobDataMap;
 

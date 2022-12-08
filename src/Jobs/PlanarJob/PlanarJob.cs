@@ -13,7 +13,7 @@ namespace Planar
 {
     public abstract class PlanarJob : BaseCommonJob<PlanarJob, PlanarJobProperties>
     {
-        public PlanarJob(ILogger<PlanarJob> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
+        protected PlanarJob(ILogger<PlanarJob> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
         {
         }
 
@@ -60,21 +60,6 @@ namespace Planar
                 FinalizeJob(context);
                 assemblyContext?.Unload();
             }
-        }
-
-        private static string GetJobId(IJobDetail job)
-        {
-            if (job == null)
-            {
-                throw new NullReferenceException("job is null at JobKeyHelper.GetJobId(IJobDetail)");
-            }
-
-            if (job.JobDataMap.TryGetValue(Consts.JobId, out var id))
-            {
-                return Convert.ToString(id);
-            }
-
-            return null;
         }
 
         private void ValidatePlanarJob()

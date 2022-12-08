@@ -1,4 +1,5 @@
-﻿using Dapper;
+﻿using CommonJob;
+using Dapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
@@ -24,7 +25,7 @@ namespace Planar.Service.Data
 
         public DataLayer(PlanarContext context)
         {
-            _context = context ?? throw new NullReferenceException(nameof(context));
+            _context = context ?? throw new PlanarJobException(nameof(context));
         }
 
         public IQueryable<Trace> GetTraceData()

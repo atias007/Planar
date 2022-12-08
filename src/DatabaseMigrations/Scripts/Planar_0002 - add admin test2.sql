@@ -11,17 +11,17 @@ CREATE PROCEDURE [Admin].[TestPermission]
 AS
 BEGIN
 	SET NOCOUNT ON;
-
+	DECLARE @SomeValue varchar(10) = 'TestWrite'
 	BEGIN TRANSACTION
 
 	-- TEST Read
 	SELECT TOP 1 [Key] FROM [GlobalConfig]
 
 	-- TEST Write
-	INSERT INTO [GlobalConfig] ([Key], [Value], [Type]) VALUES ('TestWrite', 'TestWrite', 'string')
+	INSERT INTO [GlobalConfig] ([Key], [Value], [Type]) VALUES (@SomeValue, @SomeValue, 'string')
 
 	-- TEST Delete
-	DELETE FROM [GlobalConfig] WHERE [Key] = 'TestWrite'
+	DELETE FROM [GlobalConfig] WHERE [Key] = @SomeValue
 
 	-- TEST Exec
 	EXEC [Admin].[TestExecPermission] 

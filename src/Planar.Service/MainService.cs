@@ -74,7 +74,7 @@ namespace Planar.Service
                 return;
             }
 
-            var task = Run(stoppingToken)
+            _ = Run(stoppingToken)
                 .ContinueWith(t =>
                 {
                     if (t.Exception != null)

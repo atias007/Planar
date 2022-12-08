@@ -14,16 +14,16 @@ namespace Planar.CLI
 
             int nextPiece = 0;
 
-            for (int c = 0; c < str.Length; c++)
+            for (int c = 0; c < str?.Length; c++)
             {
                 if (controller(str[c]))
                 {
-                    yield return str[nextPiece..c];
+                    yield return str?[nextPiece..c];
                     nextPiece = c + 1;
                 }
             }
 
-            yield return str[nextPiece..];
+            yield return str?[nextPiece..];
         }
 
         public static string TrimMatchingQuotes(this string input, char quote)
