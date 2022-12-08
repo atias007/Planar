@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace Planar.Service.Model
 {
@@ -10,11 +12,9 @@ namespace Planar.Service.Model
         [Key]
         [StringLength(50)]
         public string Key { get; set; }
-
         [Required]
         [StringLength(1000)]
         public string Value { get; set; }
-
         [Required]
         [StringLength(10)]
         [Unicode(false)]

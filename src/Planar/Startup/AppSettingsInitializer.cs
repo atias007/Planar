@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Planar.Common;
 using Planar.Service;
 using Planar.Service.Exceptions;
 using System;

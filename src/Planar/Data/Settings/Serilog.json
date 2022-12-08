@@ -8,7 +8,7 @@
         "System": "Information",
         "Microsoft.Hosting.Lifetime": "Information",
         "Microsoft.AspNetCore": "Warning",
-        "Microsoft.EntityFrameworkCore.Database.Command": "Information",
+        "Microsoft.EntityFrameworkCore.Database.Command": "Warning",
         "Microsoft.EntityFrameworkCore.Infrastructure": "Warning"
       }
     },

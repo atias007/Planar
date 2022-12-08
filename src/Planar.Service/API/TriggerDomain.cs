@@ -4,7 +4,6 @@ using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
 using Quartz;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -23,9 +22,9 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<TriggerRowDetails> GetByJob(string jobId)
+        public async Task<TriggerRowDetails> GetByJob(string id)
         {
-            var jobKey = await JobKeyHelper.GetJobKey(jobId);
+            var jobKey = await JobKeyHelper.GetJobKey(id);
             var result = await GetTriggersDetails(jobKey);
             return result;
         }
@@ -41,16 +40,6 @@ namespace Planar.Service.API
             {
                 throw new ApplicationException("Fail to remove trigger");
             }
-        }
-
-        public async Task<string> Add(AddTriggerRequest request)
-        {
-            JobDomain.ValidateTriggerMetadata(request);
-            var key = await JobKeyHelper.GetJobKey(request);
-            var job = await Scheduler.GetJobDetail(key);
-            await BuildTriggers(Scheduler, job, request);
-            var id = JobKeyHelper.GetJobId(job);
-            return id;
         }
 
         public async Task Pause(JobOrTriggerKey request)
@@ -168,17 +157,6 @@ namespace Planar.Service.API
             result.CronExpression = source.CronExpressionString;
             result.MisfireBehaviour = GetMisfireInstructionNameForCronTrigger(source.MisfireInstruction);
             return result;
-        }
-
-        private static async Task BuildTriggers(IScheduler scheduler, IJobDetail quartzJob, ITriggersContainer container)
-        {
-            var quartzTriggers1 = JobDomain.BuildTriggerWithSimpleSchedule(container.SimpleTriggers);
-            var quartzTriggers2 = JobDomain.BuildTriggerWithCronSchedule(container.CronTriggers);
-            var allTriggers = new List<ITrigger>();
-            if (quartzTriggers1 != null) allTriggers.AddRange(quartzTriggers1);
-            if (quartzTriggers2 != null) allTriggers.AddRange(quartzTriggers2);
-
-            await scheduler.ScheduleJob(quartzJob, allTriggers, true);
         }
 
         private static string GetMisfireInstructionNameForSimpleTrigger(int value)

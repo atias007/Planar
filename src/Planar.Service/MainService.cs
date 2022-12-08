@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.EntityFrameworkCore.SqlServer.Query.Internal;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
@@ -73,7 +74,15 @@ namespace Planar.Service
                 return;
             }
 
-            _ = Run(stoppingToken);
+            _ = Run(stoppingToken)
+                .ContinueWith(t =>
+                {
+                    if (t.Exception != null)
+                    {
+                        throw new NotImplementedException();
+                    }
+                }, stoppingToken);
+
             var waiter = new CancellationTokenAwaiter(stoppingToken);
 
             waiter.OnCompleted(async () =>

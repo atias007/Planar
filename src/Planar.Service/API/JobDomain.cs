@@ -4,6 +4,7 @@ using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
+using Planar.Service.Model;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -43,7 +44,7 @@ namespace Planar.Service.API
             var info = await Scheduler.GetJobDetail(jobKey);
 
             var result = new JobDetails();
-            MapJobDetails(info, result);
+            await MapJobDetails(info, result);
 
             var triggers = await GetTriggersDetails(jobKey);
             result.SimpleTriggers = triggers.SimpleTriggers;
@@ -209,13 +210,25 @@ namespace Planar.Service.API
         public async Task<Dictionary<string, string>> GetSettings(string id)
         {
             var result = new Dictionary<string, string>();
-            var jobkey = await JobKeyHelper.GetJobKey(id);
-            var details = await Scheduler.GetJobDetail(jobkey);
+            var jobId = await JobKeyHelper.GetJobId(id);
+            var properties = await DataLayer.GetJobProperty(jobId);
 
-            var properties = GetJobProperties(details);
-            if (properties.NotContainsKey("JobPath", ignoreCase: true)) { return result; }
+            if (string.IsNullOrEmpty(properties))
+            {
+                return result;
+            }
 
-            var jobPath = properties.Get("JobPath", ignoreCase: true);
+            string jobPath;
+            try
+            {
+                var pathObj = YmlUtil.Deserialize<JobPropertiesWithPath>(properties);
+                jobPath = pathObj.Path;
+            }
+            catch (Exception)
+            {
+                return result;
+            }
+
             var settings = JobSettingsLoader.LoadJobSettings(jobPath);
             return settings;
         }
@@ -262,6 +275,15 @@ namespace Planar.Service.API
             var jobId = await JobKeyHelper.GetJobId(jobKey);
             ValidateSystemJob(jobKey);
             await Scheduler.DeleteJob(jobKey);
+
+            try
+            {
+                await DataLayer.DeleteJobProperty(jobId);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Fail to delete properties after delete job id {Id}", id);
+            }
 
             try
             {
@@ -318,32 +340,6 @@ namespace Planar.Service.API
             return stop;
         }
 
-        public async Task UpdateProperty(UpsertJobPropertyRequest request)
-        {
-            var jobKey = await JobKeyHelper.GetJobKey(request);
-            ValidateSystemJob(jobKey);
-            await ValidateJobNotRunning(jobKey);
-
-            await Scheduler.PauseJob(jobKey);
-            var info = await Scheduler.GetJobDetail(jobKey);
-            var properties = GetJobProperties(info);
-
-            if (properties.ContainsKey(request.PropertyKey, true))
-            {
-                properties[request.PropertyKey] = request.PropertyValue;
-            }
-            else
-            {
-                throw new RestValidationException($"{request.PropertyKey}", $"Property {request.PropertyKey} could not be found in job {request.Id}");
-            }
-
-            SetJobProperties(info, properties);
-
-            var triggers = await Scheduler.GetTriggersOfJob(jobKey);
-            await Scheduler.ScheduleJob(info, triggers, true);
-            await Scheduler.ResumeJob(jobKey);
-        }
-
         public async Task UpsertData(JobDataRequest request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
@@ -368,30 +364,6 @@ namespace Planar.Service.API
                 await Scheduler.ScheduleJob(info, triggers, true);
                 await Scheduler.ResumeJob(jobKey);
             }
-        }
-
-        private Dictionary<string, string> GetJobProperties(IJobDetail job)
-        {
-            var propertiesJson = Convert.ToString(job.JobDataMap[Consts.JobTypeProperties]);
-            Dictionary<string, string> properties;
-            if (string.IsNullOrEmpty(propertiesJson))
-            {
-                properties = new Dictionary<string, string>();
-            }
-            else
-            {
-                try
-                {
-                    properties = DeserializeObject<Dictionary<string, string>>(propertiesJson);
-                }
-                catch (Exception ex)
-                {
-                    properties = new Dictionary<string, string>();
-                    Logger.LogError(ex, "Fail at GetJobProperties with job {JobGroup}.{JobName}. fail to DeserializeObject", job.Key.Group, job.Key.Name);
-                }
-            }
-
-            return properties;
         }
 
         private async Task<TriggerRowDetails> GetTriggersDetails(JobKey jobKey)
@@ -431,7 +403,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        private static void MapJobDetails(IJobDetail source, JobDetails target, JobDataMap dataMap = null)
+        private async Task MapJobDetails(IJobDetail source, JobDetails target, JobDataMap dataMap = null)
         {
             dataMap ??= source.JobDataMap;
 
@@ -440,16 +412,7 @@ namespace Planar.Service.API
             target.Durable = source.Durable;
             target.RequestsRecovery = source.RequestsRecovery;
             target.DataMap = Global.ConvertDataMapToDictionary(dataMap);
-
-            if (dataMap.ContainsKey(Consts.JobTypeProperties))
-            {
-                var json = Convert.ToString(dataMap[Consts.JobTypeProperties]);
-                if (string.IsNullOrEmpty(json) == false)
-                {
-                    var dict = DeserializeObject<Dictionary<string, string>>(json);
-                    target.Properties = new SortedDictionary<string, string>(dict);
-                }
-            }
+            target.Properties = await DataLayer.GetJobProperty(target.Id);
         }
 
         private SimpleTriggerDetails MapSimpleTriggerDetails(ISimpleTrigger source)
@@ -492,20 +455,6 @@ namespace Planar.Service.API
             if (source.Key.Group == Consts.RecoveringJobsGroup)
             {
                 target.Id = Consts.RecoveringJobsGroup;
-            }
-        }
-
-        private static void SetJobProperties(IJobDetail job, Dictionary<string, string> properties)
-        {
-            var propertiesJson = SerializeObject(properties);
-
-            if (job.JobDataMap.ContainsKey(Consts.JobTypeProperties))
-            {
-                job.JobDataMap.Put(Consts.JobTypeProperties, propertiesJson);
-            }
-            else
-            {
-                job.JobDataMap.Add(Consts.JobTypeProperties, propertiesJson);
             }
         }
 

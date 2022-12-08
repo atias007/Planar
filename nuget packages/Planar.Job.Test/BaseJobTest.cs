@@ -1,4 +1,6 @@
 ﻿using CommonJob;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Quartz;
@@ -21,13 +23,17 @@ namespace Planar.Job.Test
             return result;
         }
 
-        protected static JobInstanceLog ExecuteJob<T>(Dictionary<string, object> dataMap = null, DateTime? overrideNow = null)
+        public abstract void Configure(IConfigurationBuilder configurationBuilder, string environment);
+
+        public abstract void RegisterServices(IServiceCollection services);
+
+        protected JobInstanceLog ExecuteJob<T>(Dictionary<string, object> dataMap = null, DateTime? overrideNow = null)
         {
             Global.Environment = "UnitTest";
             var context = new MockJobExecutionContext(dataMap, overrideNow);
             var type = typeof(T);
             Validate(type);
-            var method = type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance);
+            var method = type.GetMethod("ExecuteUnitTest", BindingFlags.NonPublic | BindingFlags.Instance);
             var instance = Activator.CreateInstance<T>();
             MapJobInstanceProperties(context, instance);
             var settings = LoadJobSettings<T>();
@@ -39,7 +45,9 @@ namespace Planar.Job.Test
             try
             {
                 _broker = new JobMessageBroker(context, settings);
-                var result = method.Invoke(instance, new object[] { _broker }) as Task;
+                Action<IConfigurationBuilder, string> configureAction = Configure;
+                Action<IServiceCollection> registerServicesAction = RegisterServices;
+                var result = method.Invoke(instance, new object[] { _broker, configureAction, registerServicesAction }) as Task;
                 result.ConfigureAwait(false).GetAwaiter().GetResult();
             }
             catch (Exception ex)

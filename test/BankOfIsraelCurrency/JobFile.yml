@@ -5,9 +5,9 @@ description: Download daily currency data and save it to disk as xml
 durable: true
 concurrent: false
 properties:
-  JobPath: BankOfIsraelCurrency
-  FileName: BankOfIsraelCurrency.dll
-  TypeName: BankOfIsraelCurrency.CurrencyLoader
+  path: BankOfIsraelCurrency
+  filename: BankOfIsraelCurrency.dll
+  class name: BankOfIsraelCurrency.CurrencyLoader
 simple triggers:
   - name: every_10_minutes
     interval: 00:10:00

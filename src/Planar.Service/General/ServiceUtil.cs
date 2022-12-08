@@ -107,7 +107,7 @@ namespace Planar.Service.General
             if (!IsJobFolderExists(folder))
             {
                 var path = GetJobFolder(folder);
-                throw new PlanarException($"folder {path} is not exists. (node {Environment.MachineName})");
+                throw new PlanarException($"folder '{path}' is not exists. (node {Environment.MachineName})");
             }
         }
 
@@ -116,7 +116,7 @@ namespace Planar.Service.General
             if (!IsJobFileExists(folder, filename))
             {
                 var path = GetJobFolder(folder);
-                throw new PlanarException($"folder {path} does not have {FolderConsts.JobFileName} filename. (node {Environment.MachineName})");
+                throw new PlanarException($"folder '{path}' does not have '{filename}' filename. (node {Environment.MachineName})");
             }
         }
     }

@@ -1,4 +1,6 @@
-﻿using FluentValidation;
+﻿using AutoMapper;
+using CommonJob;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -24,7 +26,7 @@ namespace Planar.Service.API
         protected BaseBL(IServiceProvider serviceProvider)
         {
             _logger = serviceProvider.GetRequiredService<ILogger<TBusinesLayer>>();
-            _serviceProvider = serviceProvider ?? throw new NullReferenceException(nameof(serviceProvider));
+            _serviceProvider = serviceProvider ?? throw new PlanarJobException(nameof(serviceProvider));
             _dataLayer = serviceProvider.GetRequiredService<DataLayer>();
             _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
         }
@@ -61,6 +63,8 @@ namespace Planar.Service.API
         protected DataLayer DataLayer => _dataLayer;
 
         protected ILogger<TBusinesLayer> Logger => _logger;
+
+        protected IMapper Mapper => _serviceProvider.GetRequiredService<IMapper>();
 
         protected T Resolve<T>()
         {

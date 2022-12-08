@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Planar.Common;
 using Quartz;
 
 namespace Planar
@@ -7,7 +8,7 @@ namespace Planar
     [PersistJobDataAfterExecution]
     public class PlanarJobNoConcurent : PlanarJob
     {
-        public PlanarJobNoConcurent(ILogger<PlanarJob> logger) : base(logger)
+        public PlanarJobNoConcurent(ILogger<PlanarJob> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
         {
         }
     }

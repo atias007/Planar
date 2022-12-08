@@ -3,11 +3,8 @@ using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
 using RestSharp;
 using Spectre.Console;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace Planar.CLI.Actions
 {
@@ -99,28 +96,6 @@ namespace Planar.CLI.Actions
                 .AddBody(request);
 
             return await Execute(restRequest);
-        }
-
-        [Action("upsert")]
-        [Action("add")]
-        public static async Task<CliActionResponse> UpsertTrigger(CliAddTriggerRequest request)
-        {
-            if (request.Filename == ".") { request.Filename = JobFileName; }
-            var yml = File.ReadAllText(request.Filename);
-            var prm = GetAddTriggerRequest(yml);
-            prm.Id = request.Id;
-
-            var restRequest = new RestRequest("trigger", Method.Post).AddBody(prm);
-            return await Execute(restRequest);
-        }
-
-        private static AddTriggerRequest GetAddTriggerRequest(string yml)
-        {
-            var deserializer = new DeserializerBuilder()
-                            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                            .Build();
-            var request = deserializer.Deserialize<AddTriggerRequest>(yml);
-            return request;
         }
     }
 }

@@ -8,10 +8,12 @@
     "version": "v1",
     "contact": {
       "name": "Tsahi Atias",
-      "email": "admin@planar.me"
+      "email": "admin@planar.me",
+      "url": "www.planar.me"
     },
     "license": {
-      "name": "MIT"
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
     },
     "description": "REST API services of Planar system to get information, edit & control schedule task"
   },
@@ -83,7 +85,7 @@
             }
           }
         },
-        "summary": "GetConfig",
+        "summary": "GetAllConfigs",
         "operationId": "get_config",
         "description": "get list of all global configuration"
       },
@@ -101,8 +103,8 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "Success"
+          "201": {
+            "description": "Created"
           }
         },
         "summary": "AddConfig",
@@ -136,7 +138,8 @@
               }
             }
           }
-        }
+        },
+        "summary": "GetConfig"
       },
       "delete": {
         "tags": [
@@ -153,11 +156,22 @@
           }
         ],
         "responses": {
-          "200": {
+          "204": {
             "description": "Success"
           }
+        },
+        "summary": "DeleteConfig"
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "key",
+          "in": "path",
+          "required": true
         }
-      }
+      ]
     },
     "/config/flush": {
       "post": {
@@ -165,10 +179,11 @@
           "Config"
         ],
         "responses": {
-          "200": {
+          "204": {
             "description": "Success"
           }
-        }
+        },
+        "summary": "FlushConfig"
       }
     },
     "/group": {
@@ -178,82 +193,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json;odata.metadata=minimal;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/AddGroupRecord"
-              }
-            },
-            "application/json;odata.metadata=minimal;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/AddGroupRecord"
-              }
-            },
-            "application/json;odata.metadata=minimal": {
-              "schema": {
-                "$ref": "#/components/schemas/AddGroupRecord"
-              }
-            },
-            "application/json;odata.metadata=full;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/AddGroupRecord"
-              }
-            },
-            "application/json;odata.metadata=full;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/AddGroupRecord"
-              }
-            },
-            "application/json;odata.metadata=full": {
-              "schema": {
-                "$ref": "#/components/schemas/AddGroupRecord"
-              }
-            },
-            "application/json;odata.metadata=none;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/AddGroupRecord"
-              }
-            },
-            "application/json;odata.metadata=none;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/AddGroupRecord"
-              }
-            },
-            "application/json;odata.metadata=none": {
-              "schema": {
-                "$ref": "#/components/schemas/AddGroupRecord"
-              }
-            },
-            "application/json;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/AddGroupRecord"
-              }
-            },
-            "application/json;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/AddGroupRecord"
-              }
-            },
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddGroupRecord"
-              }
-            },
-            "application/xml": {
-              "schema": {
-                "$ref": "#/components/schemas/AddGroupRecord"
-              }
-            },
-            "text/plain": {
-              "schema": {
-                "$ref": "#/components/schemas/AddGroupRecord"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddGroupRecord"
-              }
-            },
-            "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/AddGroupRecord"
               }
@@ -424,7 +364,17 @@
             "description": "Success"
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "integer"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/group/{id}/user": {
       "post": {
@@ -531,7 +481,17 @@
             "description": "Success"
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "integer"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/group/{id}/user/{userId}": {
       "delete": {
@@ -563,7 +523,25 @@
             "description": "Success"
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "integer"
+          },
+          "name": "userId",
+          "in": "path",
+          "required": true
+        },
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/history": {
       "get": {
@@ -850,7 +828,17 @@
             }
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "integer"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/history/{id}/data": {
       "get": {
@@ -955,7 +943,17 @@
             }
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "integer"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/history/{id}/log": {
       "get": {
@@ -1060,7 +1058,17 @@
             }
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "integer"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/history/{id}/exception": {
       "get": {
@@ -1165,7 +1173,17 @@
             }
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "integer"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/history/last": {
       "get": {
@@ -1345,117 +1363,12 @@
         }
       }
     },
-    "/odata/HistoryData({key})": {
-      "get": {
-        "tags": [
-          "HistoryData"
-        ],
-        "operationId": "odata/HistoryData({key})",
-        "parameters": [
-          {
-            "name": "key",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json;odata.metadata=minimal;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=minimal;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=minimal": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=full": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=none": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/octet-stream": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/odata/HistoryData/{key}": {
       "get": {
         "tags": [
           "HistoryData"
         ],
-        "operationId": "odata/HistoryData/{key}",
+        "operationId": "odata/HistoryData/key",
         "parameters": [
           {
             "name": "key",
@@ -1553,93 +1466,28 @@
             }
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "key",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
-    "/job": {
+    "/job/planar": {
       "post": {
         "tags": [
           "Job"
         ],
         "requestBody": {
           "content": {
-            "application/json;odata.metadata=minimal;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/AddJobRequest"
-              }
-            },
-            "application/json;odata.metadata=minimal;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/AddJobRequest"
-              }
-            },
-            "application/json;odata.metadata=minimal": {
-              "schema": {
-                "$ref": "#/components/schemas/AddJobRequest"
-              }
-            },
-            "application/json;odata.metadata=full;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/AddJobRequest"
-              }
-            },
-            "application/json;odata.metadata=full;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/AddJobRequest"
-              }
-            },
-            "application/json;odata.metadata=full": {
-              "schema": {
-                "$ref": "#/components/schemas/AddJobRequest"
-              }
-            },
-            "application/json;odata.metadata=none;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/AddJobRequest"
-              }
-            },
-            "application/json;odata.metadata=none;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/AddJobRequest"
-              }
-            },
-            "application/json;odata.metadata=none": {
-              "schema": {
-                "$ref": "#/components/schemas/AddJobRequest"
-              }
-            },
-            "application/json;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/AddJobRequest"
-              }
-            },
-            "application/json;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/AddJobRequest"
-              }
-            },
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/AddJobRequest"
-              }
-            },
-            "application/xml": {
-              "schema": {
-                "$ref": "#/components/schemas/AddJobRequest"
-              }
-            },
-            "text/plain": {
-              "schema": {
-                "$ref": "#/components/schemas/AddJobRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddJobRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/AddJobRequest"
+                "$ref": "#/components/schemas/AddPlanarJobRequest"
               }
             }
           }
@@ -1730,7 +1578,8 @@
               }
             }
           }
-        }
+        },
+        "summary": "Add Planar Job"
       },
       "get": {
         "tags": [
@@ -1880,7 +1729,8 @@
             }
           }
         }
-      }
+      },
+      "parameters": []
     },
     "/job/folder": {
       "post": {
@@ -2081,108 +1931,16 @@
           }
         }
       },
-      "get": {
-        "tags": [
-          "Job"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json;odata.metadata=minimal;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobDetails"
-                }
-              },
-              "application/json;odata.metadata=minimal;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobDetails"
-                }
-              },
-              "application/json;odata.metadata=minimal": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobDetails"
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobDetails"
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobDetails"
-                }
-              },
-              "application/json;odata.metadata=full": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobDetails"
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobDetails"
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobDetails"
-                }
-              },
-              "application/json;odata.metadata=none": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobDetails"
-                }
-              },
-              "application/json;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobDetails"
-                }
-              },
-              "application/json;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobDetails"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobDetails"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobDetails"
-                }
-              },
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobDetails"
-                }
-              },
-              "application/octet-stream": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobDetails"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobDetails"
-                }
-              }
-            }
-          }
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
         }
-      }
+      ]
     },
     "/job/nextRunning/{id}": {
       "get": {
@@ -2286,7 +2044,17 @@
             }
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/job/prevRunning/{id}": {
       "get": {
@@ -2390,7 +2158,17 @@
             }
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/job/data": {
       "post": {
@@ -3128,7 +2906,17 @@
             }
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/job/running/{instanceId}": {
       "get": {
@@ -3231,8 +3019,19 @@
               }
             }
           }
+        },
+        "description": ""
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "instanceId",
+          "in": "path",
+          "required": true
         }
-      }
+      ]
     },
     "/job/running": {
       "get": {
@@ -3478,7 +3277,17 @@
             }
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "instanceId",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/job/testStatus/{id}": {
       "get": {
@@ -3583,7 +3392,17 @@
             }
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/job/{id}/data/{key}": {
       "delete": {
@@ -3613,7 +3432,25 @@
             "description": "Success"
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
+        },
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "key",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/job/{id}/allData": {
       "delete": {
@@ -3635,103 +3472,17 @@
             "description": "Success"
           }
         }
-      }
-    },
-    "/job/property": {
-      "put": {
-        "tags": [
-          "Job"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json;odata.metadata=minimal;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertJobPropertyRequest"
-              }
-            },
-            "application/json;odata.metadata=minimal;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertJobPropertyRequest"
-              }
-            },
-            "application/json;odata.metadata=minimal": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertJobPropertyRequest"
-              }
-            },
-            "application/json;odata.metadata=full;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertJobPropertyRequest"
-              }
-            },
-            "application/json;odata.metadata=full;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertJobPropertyRequest"
-              }
-            },
-            "application/json;odata.metadata=full": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertJobPropertyRequest"
-              }
-            },
-            "application/json;odata.metadata=none;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertJobPropertyRequest"
-              }
-            },
-            "application/json;odata.metadata=none;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertJobPropertyRequest"
-              }
-            },
-            "application/json;odata.metadata=none": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertJobPropertyRequest"
-              }
-            },
-            "application/json;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertJobPropertyRequest"
-              }
-            },
-            "application/json;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertJobPropertyRequest"
-              }
-            },
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertJobPropertyRequest"
-              }
-            },
-            "application/xml": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertJobPropertyRequest"
-              }
-            },
-            "text/plain": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertJobPropertyRequest"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertJobPropertyRequest"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertJobPropertyRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Success"
-          }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
         }
-      }
+      ]
     },
     "/job/{id}/lastInstanceId": {
       "get": {
@@ -3843,7 +3594,17 @@
             }
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/odata/$metadata": {
       "get": {
@@ -4519,7 +4280,17 @@
             }
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "jobOrGroupId",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/monitor/metadata": {
       "get": {
@@ -4883,7 +4654,17 @@
             "description": "Success"
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "integer"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/monitor/reload": {
       "post": {
@@ -5317,7 +5098,17 @@
             }
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "key",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/service/healthCheck": {
       "get": {
@@ -6042,7 +5833,17 @@
             }
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "integer"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/trace/{id}/properties": {
       "get": {
@@ -6147,7 +5948,17 @@
             }
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "integer"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/odata/TraceData": {
       "get": {
@@ -6175,117 +5986,12 @@
         }
       }
     },
-    "/odata/TraceData({key})": {
-      "get": {
-        "tags": [
-          "TraceData"
-        ],
-        "operationId": "odata/TraceData({key})",
-        "parameters": [
-          {
-            "name": "key",
-            "in": "query",
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json;odata.metadata=minimal;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trace"
-                }
-              },
-              "application/json;odata.metadata=minimal;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trace"
-                }
-              },
-              "application/json;odata.metadata=minimal": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trace"
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trace"
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trace"
-                }
-              },
-              "application/json;odata.metadata=full": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trace"
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trace"
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trace"
-                }
-              },
-              "application/json;odata.metadata=none": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trace"
-                }
-              },
-              "application/json;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trace"
-                }
-              },
-              "application/json;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trace"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trace"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trace"
-                }
-              },
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trace"
-                }
-              },
-              "application/octet-stream": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trace"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Trace"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/odata/TraceData/{key}": {
       "get": {
         "tags": [
           "TraceData"
         ],
-        "operationId": "odata/TraceData/{key}",
+        "operationId": "odata/TraceData/key",
         "parameters": [
           {
             "name": "key",
@@ -6383,7 +6089,17 @@
             }
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "key",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/trigger/{triggerId}": {
       "get": {
@@ -6507,7 +6223,17 @@
             "description": "Success"
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "triggerId",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/trigger/{jobId}/byjob": {
       "get": {
@@ -6611,7 +6337,17 @@
             }
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "jobId",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/trigger": {
       "post": {
@@ -7448,7 +7184,17 @@
             "description": "Success"
           }
         }
-      }
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "integer"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
     },
     "/user/{id}/resetpassword": {
       "patch": {
@@ -7552,7 +7298,40 @@
               }
             }
           }
+        },
+        "description": ""
+      },
+      "parameters": [
+        {
+          "schema": {
+            "type": "integer"
+          },
+          "name": "id",
+          "in": "path",
+          "required": true
         }
+      ]
+    },
+    "/job": {
+      "get": {
+        "summary": "Your GET endpoint",
+        "tags": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JobRowDetails"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get-job"
       }
     }
   },
@@ -7578,7 +7357,7 @@
         },
         "additionalProperties": false
       },
-      "AddJobRequest": {
+      "AddPlanarJobRequest": {
         "type": "object",
         "properties": {
           "jobType": {
@@ -7643,7 +7422,11 @@
             "nullable": true
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "title": "",
+        "x-stoplight": {
+          "id": "dd2e093acb703"
+        }
       },
       "AddMonitorRequest": {
         "type": "object",

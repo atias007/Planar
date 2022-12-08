@@ -17,8 +17,8 @@ namespace Planar.Controllers
         {
         }
 
-        [HttpPost]
-        public async Task<ActionResult<JobIdResponse>> Add([FromBody] AddJobRequest request)
+        [HttpPost("planar")]
+        public async Task<ActionResult<JobIdResponse>> AddPlanar([FromBody] AddJobRequest<PlanarJobProperties> request)
         {
             var result = await BusinesLayer.Add(request);
             return CreatedAtAction(nameof(Get), result, result);
@@ -162,13 +162,6 @@ namespace Planar.Controllers
         {
             await BusinesLayer.ClearData(id);
             return NoContent();
-        }
-
-        [HttpPut("property")]
-        public async Task<IActionResult> UpdateProperty([FromBody] UpsertJobPropertyRequest request)
-        {
-            await BusinesLayer.UpdateProperty(request);
-            return CreatedAtAction(nameof(Get), new { request.Id }, request.Id);
         }
 
         [HttpGet("{id}/lastInstanceId")]

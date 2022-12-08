@@ -34,13 +34,6 @@ namespace Planar.Controllers
             return NoContent();
         }
 
-        [HttpPost]
-        public async Task<ActionResult> Add([FromBody] AddTriggerRequest request)
-        {
-            var jobId = await BusinesLayer.Add(request);
-            return CreatedAtAction(nameof(GetByJob), new { jobId }, new { Id = jobId });
-        }
-
         [HttpPost("pause")]
         public async Task<ActionResult> Pause([FromBody] JobOrTriggerKey request)
         {

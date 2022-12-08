@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Planar.Service.Model;
+﻿using System;
 using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Planar.Service.Model;
 
 namespace Planar.Service.Data
 {
@@ -19,6 +21,7 @@ namespace Planar.Service.Data
         public virtual DbSet<GlobalConfig> GlobalConfigs { get; set; }
         public virtual DbSet<Group> Groups { get; set; }
         public virtual DbSet<JobInstanceLog> JobInstanceLogs { get; set; }
+        public virtual DbSet<JobProperty> JobProperties { get; set; }
         public virtual DbSet<MonitorAction> MonitorActions { get; set; }
         public virtual DbSet<Role> Roles { get; set; }
         public virtual DbSet<Trace> Traces { get; set; }

@@ -37,10 +37,31 @@ namespace Planar
 
         internal Task Execute(ref object messageBroker)
         {
-            InitializeMessageBroker(messageBroker);
+            Action<IConfigurationBuilder, string> configureAction = Configure;
+            Action<IServiceCollection> registerServicesAction = RegisterServices;
 
-            InitializeConfiguration(_context);
-            InitializeDepedencyInjection(_context, _messageBroker);
+            InitializeMessageBroker(messageBroker);
+            InitializeConfiguration(_context, configureAction);
+            InitializeDepedencyInjection(_context, _messageBroker, registerServicesAction);
+
+            Logger = ServiceProvider.GetRequiredService<ILogger>();
+
+            return ExecuteJob(_context)
+                .ContinueWith(t =>
+                {
+                    if (t.Exception != null) { throw t.Exception; }
+                });
+        }
+
+        internal Task ExecuteUnitTest(
+            ref object messageBroker,
+            Action<IConfigurationBuilder, string> configureAction,
+            Action<IServiceCollection> registerServicesAction)
+
+        {
+            InitializeMessageBroker(messageBroker);
+            InitializeConfiguration(_context, configureAction);
+            InitializeDepedencyInjection(_context, _messageBroker, registerServicesAction);
 
             Logger = ServiceProvider.GetRequiredService<ILogger>();
 
@@ -185,15 +206,15 @@ namespace Planar
             UpdateProgress(value);
         }
 
-        private void InitializeConfiguration(JobExecutionContext context)
+        private void InitializeConfiguration(JobExecutionContext context, Action<IConfigurationBuilder, string> configureAction)
         {
             var builder = new ConfigurationBuilder();
             builder.AddInMemoryCollection(context.JobSettings);
-            Configure(builder, context.Environment);
+            configureAction.Invoke(builder, context.Environment);
             Configuration = builder.Build();
         }
 
-        private void InitializeDepedencyInjection(JobExecutionContext context, MessageBroker messageBroker)
+        private void InitializeDepedencyInjection(JobExecutionContext context, MessageBroker messageBroker, Action<IServiceCollection> registerServicesAction)
         {
             var services = new ServiceCollection();
             services.AddSingleton(Configuration);
@@ -201,7 +222,7 @@ namespace Planar
             services.AddSingleton<ILogger, PlannerLogger>();
             services.AddSingleton(messageBroker);
             services.AddSingleton(typeof(ILogger<>), typeof(PlannerLogger<>));
-            RegisterServices(services);
+            registerServicesAction.Invoke(services);
             _provider = services.BuildServiceProvider();
         }
 

@@ -1,10 +1,13 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using Dapper;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.Exceptions;
 using Polly;
 using System;
+using System.Data;
 using System.Text;
 
 namespace Planar.Service
@@ -58,6 +61,8 @@ namespace Planar.Service
 
         public static bool DeveloperExceptionPage { get; set; }
 
+        public static TimeSpan SchedulerStartupDelay { get; set; }
+
         public static AuthMode AuthenticationMode { get; set; }
 
         public static LogLevel LogLevel { get; set; }
@@ -86,6 +91,7 @@ namespace Planar.Service
             SwaggerUI = GetSettings(configuration, Consts.SwaggerUIVariableKey, nameof(SwaggerUI), true);
             OpenApiUI = GetSettings(configuration, Consts.OpenApiUIVariableKey, nameof(OpenApiUI), true);
             DeveloperExceptionPage = GetSettings(configuration, Consts.DeveloperExceptionPageVariableKey, nameof(DeveloperExceptionPage), true);
+            SchedulerStartupDelay = GetSettings(configuration, Consts.SchedulerStartupDelayVariableKey, nameof(SchedulerStartupDelay), TimeSpan.FromSeconds(30));
         }
 
         private static void InitializeEnvironment(IConfiguration configuration)
@@ -146,6 +152,34 @@ namespace Planar.Service
             }
 
             CheckConnectionString(DatabaseConnectionString);
+            TestDatabasePermission(DatabaseConnectionString);
+        }
+
+        private static void TestDatabasePermission(string connectionString)
+        {
+            try
+            {
+                using var conn = new SqlConnection(connectionString);
+
+                var cmd = new CommandDefinition(
+                    commandText: "admin.TestPermission",
+                    commandType: CommandType.StoredProcedure);
+
+                conn.ExecuteAsync(cmd).Wait();
+                Console.WriteLine($"    - Test database permission success");
+            }
+            catch (Exception ex)
+            {
+                var sb = new StringBuilder();
+                var seperator = string.Empty.PadLeft(80, '-');
+                sb.AppendLine("Fail to test database permissions");
+                sb.AppendLine(seperator);
+                sb.AppendLine(connectionString);
+                sb.AppendLine(seperator);
+                sb.AppendLine("Exception message:");
+                sb.AppendLine(ex.Message);
+                throw new AppSettingsException(sb.ToString());
+            }
         }
 
         private static void CheckConnectionString(string connectionString)
