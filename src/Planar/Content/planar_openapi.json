@@ -139,7 +139,9 @@
             }
           }
         },
-        "summary": "GetConfig"
+        "summary": "GetConfig",
+        "operationId": "GetConfig",
+        "description": ""
       },
       "delete": {
         "tags": [
@@ -201,10 +203,23 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "Success"
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
           }
-        }
+        },
+        "summary": "AddGroup"
       },
       "get": {
         "tags": [
@@ -212,9 +227,20 @@
         ],
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroupInfo"
+                  }
+                }
+              }
+            }
           }
-        }
+        },
+        "summary": "GetAllGroups"
       }
     },
     "/group/{id}": {
@@ -235,9 +261,17 @@
         ],
         "responses": {
           "200": {
-            "description": "Success"
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroupDetails"
+                }
+              }
+            }
           }
-        }
+        },
+        "summary": "GetGroup"
       },
       "delete": {
         "tags": [
@@ -255,10 +289,11 @@
           }
         ],
         "responses": {
-          "200": {
+          "204": {
             "description": "Success"
           }
-        }
+        },
+        "summary": "DeleteGroup"
       },
       "patch": {
         "tags": [
@@ -277,82 +312,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json;odata.metadata=minimal;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateEntityRecord"
-              }
-            },
-            "application/json;odata.metadata=minimal;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateEntityRecord"
-              }
-            },
-            "application/json;odata.metadata=minimal": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateEntityRecord"
-              }
-            },
-            "application/json;odata.metadata=full;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateEntityRecord"
-              }
-            },
-            "application/json;odata.metadata=full;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateEntityRecord"
-              }
-            },
-            "application/json;odata.metadata=full": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateEntityRecord"
-              }
-            },
-            "application/json;odata.metadata=none;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateEntityRecord"
-              }
-            },
-            "application/json;odata.metadata=none;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateEntityRecord"
-              }
-            },
-            "application/json;odata.metadata=none": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateEntityRecord"
-              }
-            },
-            "application/json;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateEntityRecord"
-              }
-            },
-            "application/json;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateEntityRecord"
-              }
-            },
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateEntityRecord"
-              }
-            },
-            "application/xml": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateEntityRecord"
-              }
-            },
-            "text/plain": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateEntityRecord"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateEntityRecord"
-              }
-            },
-            "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/UpdateEntityRecord"
               }
@@ -360,10 +320,11 @@
           }
         },
         "responses": {
-          "200": {
+          "204": {
             "description": "Success"
           }
-        }
+        },
+        "summary": "UpdateGroup"
       },
       "parameters": [
         {
@@ -394,82 +355,7 @@
         ],
         "requestBody": {
           "content": {
-            "application/json;odata.metadata=minimal;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/UserToGroupRecord"
-              }
-            },
-            "application/json;odata.metadata=minimal;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/UserToGroupRecord"
-              }
-            },
-            "application/json;odata.metadata=minimal": {
-              "schema": {
-                "$ref": "#/components/schemas/UserToGroupRecord"
-              }
-            },
-            "application/json;odata.metadata=full;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/UserToGroupRecord"
-              }
-            },
-            "application/json;odata.metadata=full;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/UserToGroupRecord"
-              }
-            },
-            "application/json;odata.metadata=full": {
-              "schema": {
-                "$ref": "#/components/schemas/UserToGroupRecord"
-              }
-            },
-            "application/json;odata.metadata=none;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/UserToGroupRecord"
-              }
-            },
-            "application/json;odata.metadata=none;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/UserToGroupRecord"
-              }
-            },
-            "application/json;odata.metadata=none": {
-              "schema": {
-                "$ref": "#/components/schemas/UserToGroupRecord"
-              }
-            },
-            "application/json;odata.streaming=true": {
-              "schema": {
-                "$ref": "#/components/schemas/UserToGroupRecord"
-              }
-            },
-            "application/json;odata.streaming=false": {
-              "schema": {
-                "$ref": "#/components/schemas/UserToGroupRecord"
-              }
-            },
             "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UserToGroupRecord"
-              }
-            },
-            "application/xml": {
-              "schema": {
-                "$ref": "#/components/schemas/UserToGroupRecord"
-              }
-            },
-            "text/plain": {
-              "schema": {
-                "$ref": "#/components/schemas/UserToGroupRecord"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UserToGroupRecord"
-              }
-            },
-            "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/UserToGroupRecord"
               }
@@ -477,10 +363,11 @@
           }
         },
         "responses": {
-          "200": {
+          "204": {
             "description": "Success"
           }
-        }
+        },
+        "summary": "AddUserToGroup"
       },
       "parameters": [
         {
@@ -519,10 +406,11 @@
           }
         ],
         "responses": {
-          "200": {
+          "204": {
             "description": "Success"
           }
-        }
+        },
+        "summary": "RemoveUserFromGroup"
       },
       "parameters": [
         {
@@ -9339,6 +9227,63 @@
           }
         },
         "additionalProperties": false
+      },
+      "GroupInfo": {
+        "title": "GroupInfo",
+        "x-stoplight": {
+          "id": "yh4a3qeu8uuid"
+        },
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "userCount": {
+            "type": "integer"
+          },
+          "role": {
+            "type": "string"
+          }
+        }
+      },
+      "GroupDetails": {
+        "title": "GroupDetails",
+        "x-stoplight": {
+          "id": "ow3lcnoki2b6z"
+        },
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "reference1": {
+            "type": "string"
+          },
+          "reference2": {
+            "type": "string"
+          },
+          "reference3": {
+            "type": "string"
+          },
+          "reference4": {
+            "type": "string"
+          },
+          "reference5": {
+            "type": "string"
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
       }
     }
   },

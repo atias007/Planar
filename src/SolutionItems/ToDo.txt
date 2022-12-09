@@ -1,10 +1,4 @@
-upgrade:
-(1) add log level to app settings
-(2) upgrade planar.job nuget for all jobs
-
-
 --------------------------------------------------------
-
 - // TODO: add appsettings for UseJobAutoInterrupt at QuartzServiceConfiguration
 - add to base test to retrieve log & exception
 
@@ -16,6 +10,10 @@ upgrade:
       * Error handle SafeScan: BaseListener.cs:line 28
       * Error handle LogJobListener.JobWasExecuted: BaseListener.cs:line 48
       * system jobs
+- *** implement GetPausedTriggerGroups
+- *** validate new or update job without triggers is must be durable
+- *** run database migration on each startup
+- *** cli may CRUD trigger data
 
 - *** bug: use ? in cli at trigger id but show job menu. maybe show second menu of triggers list ***
 - api to get demo yml file 

@@ -25,9 +25,9 @@ namespace Planar.Controllers
         }
 
         [HttpPost("folder")]
-        public async Task<ActionResult<JobIdResponse>> AddFolder([FromBody] AddJobFoldeRequest request)
+        public async Task<ActionResult<JobIdResponse>> AddByFolder([FromBody] AddJobFoldeRequest request)
         {
-            var result = await BusinesLayer.AddFolder(request);
+            var result = await BusinesLayer.AddByFolder(request);
             return CreatedAtAction(nameof(Get), result, result);
         }
 

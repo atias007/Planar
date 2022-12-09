@@ -41,19 +41,129 @@ namespace Planar.Service.API
             return await Add(request);
         }
 
-        private async Task<JobIdResponse> Add(AddJobDynamicRequest request)
+        public async Task<JobIdResponse> AddByFolder(AddJobFoldeRequest request)
         {
-            if (request == null)
+            await ValidateAddFolder(request);
+            var yml = await GetJobFileContent(request);
+            var dynamicRequest = GetJobDynamicRequest(yml, request.Folder);
+            var response = await Add(dynamicRequest);
+            return response;
+        }
+
+        public async Task<JobIdResponse> UpdateByFolder(UpdateJobFolderRequest request)
+        {
+            await ValidateAddFolder(request);
+            var yml = await GetJobFileContent(request);
+            var dynamicRequest = GetJobDynamicRequest(yml, request.Folder);
+            var response = await Add(dynamicRequest);
+            return response;
+        }
+
+        private async Task<JobIdResponse> Update(AddJobDynamicRequest request, UpdateJobOptions options)
+        {
+            // Validation
+            ValidateRequestNoNull(request);
+            await ValidateRequestProperties(request);
+            var jobKey = await ValidateJobMetadata(request);
+            await JobKeyHelper.ValidateJobExists(jobKey);
+            ValidateSystemJob(jobKey);
+            var jobId = await JobKeyHelper.GetJobId(jobKey);
+
+            // Variables
+            IJobDetail job = null;
+            IJobDetail oldJobDetails = null;
+            List<ITrigger> triggers = null;
+            string oldJobProperties;
+
+            // Pause Job & Ensure job is not running
+            if (options.UpdateJobDetails || options.UpdateTriggers)
             {
-                throw new RestValidationException("request", "request is null");
+                await ValidateJobNotRunning(jobKey);
+                await Scheduler.PauseJob(jobKey);
+                await ValidateJobNotRunning(jobKey);
+
+                // Save for rollback
+                oldJobDetails = await Scheduler.GetJobDetail(jobKey);
+                await Scheduler.DeleteJob(jobKey);
+
+                // Create Job
+                if (options.UpdateJobDetails)
+                {
+                    job = BuildJobDetails(request, jobKey);
+                }
+                else
+                {
+                    job = BuildJobDetails(oldJobDetails, jobKey);
+                }
+
+                // Sync Job Data
+                // TODO: SyncJobData(...);
+
+                // Update Job Triggers
+                if (options.UpdateTriggers)
+                {
+                    triggers = BuildTriggers(request);
+                }
+                else
+                {
+                }
+
+                // Sync Triggers Data
+                // TODO: SyncTriggersData(...);
             }
 
-            await ValidateProperties(request);
-            var jobKey = await ValidateJobMetadata(request);
-            var config = GetGlobalConfig(request.GlobalConfig);
-            await ValidateGlobalConfig(config);
-            await BuildGlobalConfig(config);
+            // Save Job Properties
+            if (options.UpdateProperties)
+            {
+                oldJobProperties = await DataLayer.GetJobProperty(jobId);
+                var jobPropertiesYml = GetJopPropertiesYml(request);
+                await DataLayer.AddJobProperty(new JobProperty { JobId = jobId, Properties = jobPropertiesYml });
+            }
 
+            // ScheduleJob
+            if (job != null)
+            {
+                await Scheduler.ScheduleJob(job, triggers, true);
+            }
+
+            // Return Id
+            return new JobIdResponse { Id = jobId };
+        }
+
+        private async Task<JobIdResponse> Add(AddJobDynamicRequest request)
+        {
+            // Validation
+            ValidateRequestNoNull(request);
+            await ValidateRequestProperties(request);
+            var jobKey = await ValidateJobMetadata(request);
+
+            // Global Config
+            var config = ConvertToGlobalConfig(request.GlobalConfig);
+            await ValidateGlobalConfig(config);
+            await UpsertGlobalConfig(config);
+
+            // Create Job
+            var job = BuildJobDetails(request, jobKey);
+
+            // Build Data
+            var id = BuildJobData(request, job);
+
+            // Build Triggers
+            var triggers = BuildTriggers(request);
+
+            // Save Job Properties
+            var jobPropertiesYml = GetJopPropertiesYml(request);
+            await DataLayer.AddJobProperty(new JobProperty { JobId = id, Properties = jobPropertiesYml });
+
+            // ScheduleJob
+            await Scheduler.ScheduleJob(job, triggers, true);
+
+            // Return Id
+            return new JobIdResponse { Id = id };
+        }
+
+        private static IJobDetail BuildJobDetails(AddJobDynamicRequest request, JobKey jobKey)
+        {
             var jobType = GetJobType(request);
             var jobBuilder = JobBuilder.Create(jobType)
                 .WithIdentity(jobKey)
@@ -65,20 +175,57 @@ namespace Planar.Service.API
                 jobBuilder = jobBuilder.StoreDurably(true);
             }
 
-            var jobPropertiesYml = GetJopPropertiesYml(request);
             var job = jobBuilder.Build();
-            var id = BuildJobData(request, job);
-            await BuildTriggers(Scheduler, job, request);
-            await DataLayer.AddJobProperty(new JobProperty { JobId = id, Properties = jobPropertiesYml });
-            return new JobIdResponse { Id = id };
+            return job;
         }
 
-        public async Task<JobIdResponse> AddFolder(AddJobFoldeRequest request)
+        private static IJobDetail BuildJobDetails(IJobDetail source, JobKey jobKey)
+        {
+            var jobType = source.JobType;
+            var jobBuilder = JobBuilder.Create(jobType)
+                .WithIdentity(jobKey)
+                .WithDescription(source.Description)
+                .RequestRecovery();
+
+            if (source.Durable)
+            {
+                jobBuilder = jobBuilder.StoreDurably(true);
+            }
+
+            var job = jobBuilder.Build();
+            return job;
+        }
+
+        private static void ValidateRequestNoNull(AddJobDynamicRequest request)
+        {
+            if (request == null)
+            {
+                throw new RestValidationException("request", "request is null");
+            }
+        }
+
+        private static AddJobDynamicRequest GetJobDynamicRequest(string yml, string folder)
+        {
+            AddJobDynamicRequest dynamicRequest;
+
+            try
+            {
+                dynamicRequest = YmlUtil.Deserialize<AddJobDynamicRequest>(yml);
+            }
+            catch (Exception ex)
+            {
+                var filename = GetJobFileFullName(folder);
+                throw new RestGeneralException($"Fail to deserialize file: {filename}", ex);
+            }
+
+            return dynamicRequest;
+        }
+
+        private async Task<string> GetJobFileContent(AddJobFoldeRequest request)
         {
             await ValidateAddFolder(request);
-
             string yml;
-            var filename = ServiceUtil.GetJobFilename(request.Folder, FolderConsts.JobFileName);
+            var filename = GetJobFileFullName(request.Folder);
             try
             {
                 yml = File.ReadAllText(filename);
@@ -88,18 +235,13 @@ namespace Planar.Service.API
                 throw new RestGeneralException($"Fail to read file: {filename}", ex);
             }
 
-            AddJobDynamicRequest subrequest;
-            try
-            {
-                subrequest = YmlUtil.Deserialize<AddJobDynamicRequest>(yml);
-            }
-            catch (Exception ex)
-            {
-                throw new RestGeneralException($"Fail to deserialize file: {filename}", ex);
-            }
+            return yml;
+        }
 
-            var response = await Add(subrequest);
-            return response;
+        private static string GetJobFileFullName(string folder)
+        {
+            var filename = ServiceUtil.GetJobFilename(folder, FolderConsts.JobFileName);
+            return filename;
         }
 
         private static string GetJopPropertiesYml(AddJobDynamicRequest request)
@@ -143,15 +285,14 @@ namespace Planar.Service.API
             }
         }
 
-        private static async Task BuildTriggers(IScheduler scheduler, IJobDetail quartzJob, AddJobRequest job)
+        private static List<ITrigger> BuildTriggers(AddJobRequest job)
         {
             var quartzTriggers1 = BuildTriggerWithSimpleSchedule(job.SimpleTriggers);
             var quartzTriggers2 = BuildTriggerWithCronSchedule(job.CronTriggers);
             var allTriggers = new List<ITrigger>();
             if (quartzTriggers1 != null) allTriggers.AddRange(quartzTriggers1);
             if (quartzTriggers2 != null) allTriggers.AddRange(quartzTriggers2);
-
-            await scheduler.ScheduleJob(quartzJob, allTriggers, true);
+            return allTriggers;
         }
 
         public static IEnumerable<ITrigger> BuildTriggerWithCronSchedule(List<JobCronTriggerMetadata> triggers)
@@ -338,7 +479,7 @@ namespace Planar.Service.API
             return id;
         }
 
-        private static IEnumerable<GlobalConfig> GetGlobalConfig(Dictionary<string, string> config)
+        private static IEnumerable<GlobalConfig> ConvertToGlobalConfig(Dictionary<string, string> config)
         {
             if (config == null) { return Array.Empty<GlobalConfig>(); }
             var result = config.Select(c => new GlobalConfig { Key = c.Key, Value = c.Value, Type = "string" });
@@ -354,7 +495,7 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task BuildGlobalConfig(IEnumerable<GlobalConfig> config)
+        private async Task UpsertGlobalConfig(IEnumerable<GlobalConfig> config)
         {
             var configDomain = Resolve<ConfigDomain>();
             foreach (var p in config)
@@ -596,7 +737,7 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task ValidateProperties(AddJobDynamicRequest request)
+        private async Task ValidateRequestProperties(AddJobDynamicRequest request)
         {
             try
             {

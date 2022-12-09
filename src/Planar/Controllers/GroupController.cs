@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Planar.API.Common.Entities;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -21,14 +23,14 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetGroup([FromRoute][Id] int id)
+        public async Task<ActionResult<GroupDetails>> GetGroup([FromRoute][Id] int id)
         {
             var result = await BusinesLayer.GetGroupById(id);
             return Ok(result);
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetGroups()
+        public async Task<ActionResult<List<GroupInfo>>> GetGroups()
         {
             var result = await BusinesLayer.GetGroups();
             return Ok(result);
