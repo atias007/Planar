@@ -50,86 +50,6 @@ namespace Planar.Service.API
             return response;
         }
 
-        public async Task<JobIdResponse> UpdateByFolder(UpdateJobFolderRequest request)
-        {
-            await ValidateAddFolder(request);
-            var yml = await GetJobFileContent(request);
-            var dynamicRequest = GetJobDynamicRequest(yml, request.Folder);
-            var response = await Add(dynamicRequest);
-            return response;
-        }
-
-        private async Task<JobIdResponse> Update(AddJobDynamicRequest request, UpdateJobOptions options)
-        {
-            // Validation
-            ValidateRequestNoNull(request);
-            await ValidateRequestProperties(request);
-            var jobKey = await ValidateJobMetadata(request);
-            await JobKeyHelper.ValidateJobExists(jobKey);
-            ValidateSystemJob(jobKey);
-            var jobId = await JobKeyHelper.GetJobId(jobKey);
-
-            // Variables
-            IJobDetail job = null;
-            IJobDetail oldJobDetails = null;
-            List<ITrigger> triggers = null;
-            string oldJobProperties;
-
-            // Pause Job & Ensure job is not running
-            if (options.UpdateJobDetails || options.UpdateTriggers)
-            {
-                await ValidateJobNotRunning(jobKey);
-                await Scheduler.PauseJob(jobKey);
-                await ValidateJobNotRunning(jobKey);
-
-                // Save for rollback
-                oldJobDetails = await Scheduler.GetJobDetail(jobKey);
-                await Scheduler.DeleteJob(jobKey);
-
-                // Create Job
-                if (options.UpdateJobDetails)
-                {
-                    job = BuildJobDetails(request, jobKey);
-                }
-                else
-                {
-                    job = BuildJobDetails(oldJobDetails, jobKey);
-                }
-
-                // Sync Job Data
-                // TODO: SyncJobData(...);
-
-                // Update Job Triggers
-                if (options.UpdateTriggers)
-                {
-                    triggers = BuildTriggers(request);
-                }
-                else
-                {
-                }
-
-                // Sync Triggers Data
-                // TODO: SyncTriggersData(...);
-            }
-
-            // Save Job Properties
-            if (options.UpdateProperties)
-            {
-                oldJobProperties = await DataLayer.GetJobProperty(jobId);
-                var jobPropertiesYml = GetJopPropertiesYml(request);
-                await DataLayer.AddJobProperty(new JobProperty { JobId = jobId, Properties = jobPropertiesYml });
-            }
-
-            // ScheduleJob
-            if (job != null)
-            {
-                await Scheduler.ScheduleJob(job, triggers, true);
-            }
-
-            // Return Id
-            return new JobIdResponse { Id = jobId };
-        }
-
         private async Task<JobIdResponse> Add(AddJobDynamicRequest request)
         {
             // Validation
@@ -146,7 +66,10 @@ namespace Planar.Service.API
             var job = BuildJobDetails(request, jobKey);
 
             // Build Data
-            var id = BuildJobData(request, job);
+            BuildJobData(request, job);
+
+            // Create Job Id
+            var id = CreateJobId(job);
 
             // Build Triggers
             var triggers = BuildTriggers(request);
@@ -171,23 +94,6 @@ namespace Planar.Service.API
                 .RequestRecovery();
 
             if (request.Durable.GetValueOrDefault())
-            {
-                jobBuilder = jobBuilder.StoreDurably(true);
-            }
-
-            var job = jobBuilder.Build();
-            return job;
-        }
-
-        private static IJobDetail BuildJobDetails(IJobDetail source, JobKey jobKey)
-        {
-            var jobType = source.JobType;
-            var jobBuilder = JobBuilder.Create(jobType)
-                .WithIdentity(jobKey)
-                .WithDescription(source.Description)
-                .RequestRecovery();
-
-            if (source.Durable)
             {
                 jobBuilder = jobBuilder.StoreDurably(true);
             }
@@ -285,7 +191,7 @@ namespace Planar.Service.API
             }
         }
 
-        private static List<ITrigger> BuildTriggers(AddJobRequest job)
+        private static IReadOnlyCollection<ITrigger> BuildTriggers(AddJobRequest job)
         {
             var quartzTriggers1 = BuildTriggerWithSimpleSchedule(job.SimpleTriggers);
             var quartzTriggers2 = BuildTriggerWithCronSchedule(job.CronTriggers);
@@ -414,7 +320,11 @@ namespace Planar.Service.API
 
         private static TriggerBuilder GetBaseTriggerBuilder(BaseTrigger jobTrigger, TriggerType triggerType)
         {
-            var id = ServiceUtil.GenerateId();
+            var id =
+                string.IsNullOrEmpty(jobTrigger.Id) ?
+                ServiceUtil.GenerateId() :
+                jobTrigger.Id;
+
             var name = string.IsNullOrEmpty(jobTrigger.Name) ? $"{triggerType}Trigger_{id}" : jobTrigger.Name;
             var group = string.IsNullOrEmpty(jobTrigger.Group) ? null : jobTrigger.Group;
 
@@ -461,7 +371,7 @@ namespace Planar.Service.API
             return trigger;
         }
 
-        private static string BuildJobData(AddJobRequest metadata, IJobDetail job)
+        private static void BuildJobData(AddJobRequest metadata, IJobDetail job)
         {
             // job data
             if (metadata.JobData != null)
@@ -471,7 +381,10 @@ namespace Planar.Service.API
                     job.JobDataMap[item.Key] = item.Value;
                 }
             }
+        }
 
+        private static string CreateJobId(IJobDetail job)
+        {
             // job id
             var id = ServiceUtil.GenerateId();
             job.JobDataMap.Add(Consts.JobId, id);
