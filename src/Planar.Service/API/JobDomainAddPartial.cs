@@ -21,15 +21,21 @@ namespace Planar.Service.API
 {
     public partial class JobDomain
     {
-        private const string nameRegex = @"^[a-zA-Z0-9\-_]+$";
+        private const int MinNameLength = 3;
+        private const int MaxNameLength = 50;
+        private const string NameRegexTemplate = @"^[a-zA-Z0-9\-_]{@MinNameLength@,@MaxNameLength@}$";
+        private static readonly Regex _regex;
 
-        private enum TriggerType
+        static JobDomain()
         {
-            Simple,
-            Cron
+            var regexName = NameRegexTemplate
+                .Replace("@MinNameLength@", MinNameLength.ToString())
+                .Replace("@MaxNameLength@", MaxNameLength.ToString());
+
+            _regex = new Regex(regexName, RegexOptions.Compiled);
         }
 
-        public async Task<JobIdResponse> Add<TProperties>(AddJobRequest<TProperties> genericRequest)
+        public async Task<JobIdResponse> Add<TProperties>(SetJobRequest<TProperties> genericRequest)
            where TProperties : class, new()
         {
             if (genericRequest == null)
@@ -37,11 +43,11 @@ namespace Planar.Service.API
                 throw new RestValidationException("request", "request is null");
             }
 
-            var request = Mapper.Map<AddJobRequest<TProperties>, AddJobDynamicRequest>(genericRequest);
+            var request = Mapper.Map<SetJobRequest<TProperties>, SetJobDynamicRequest>(genericRequest);
             return await Add(request);
         }
 
-        public async Task<JobIdResponse> AddByFolder(AddJobFoldeRequest request)
+        public async Task<JobIdResponse> AddByFolder(SetJobFoldeRequest request)
         {
             await ValidateAddFolder(request);
             var yml = await GetJobFileContent(request);
@@ -50,12 +56,13 @@ namespace Planar.Service.API
             return response;
         }
 
-        private async Task<JobIdResponse> Add(AddJobDynamicRequest request)
+        private async Task<JobIdResponse> Add(SetJobDynamicRequest request)
         {
             // Validation
             ValidateRequestNoNull(request);
             await ValidateRequestProperties(request);
-            var jobKey = await ValidateJobMetadata(request);
+            var jobKey = ValidateJobMetadata(request);
+            await ValidateJobNotExists(jobKey);
 
             // Global Config
             var config = ConvertToGlobalConfig(request.GlobalConfig);
@@ -85,7 +92,7 @@ namespace Planar.Service.API
             return new JobIdResponse { Id = id };
         }
 
-        private static IJobDetail BuildJobDetails(AddJobDynamicRequest request, JobKey jobKey)
+        private static IJobDetail BuildJobDetails(SetJobDynamicRequest request, JobKey jobKey)
         {
             var jobType = GetJobType(request);
             var jobBuilder = JobBuilder.Create(jobType)
@@ -102,7 +109,7 @@ namespace Planar.Service.API
             return job;
         }
 
-        private static void ValidateRequestNoNull(AddJobDynamicRequest request)
+        private static void ValidateRequestNoNull(object request)
         {
             if (request == null)
             {
@@ -110,13 +117,13 @@ namespace Planar.Service.API
             }
         }
 
-        private static AddJobDynamicRequest GetJobDynamicRequest(string yml, string folder)
+        private static SetJobDynamicRequest GetJobDynamicRequest(string yml, string folder)
         {
-            AddJobDynamicRequest dynamicRequest;
+            SetJobDynamicRequest dynamicRequest;
 
             try
             {
-                dynamicRequest = YmlUtil.Deserialize<AddJobDynamicRequest>(yml);
+                dynamicRequest = YmlUtil.Deserialize<SetJobDynamicRequest>(yml);
             }
             catch (Exception ex)
             {
@@ -127,7 +134,7 @@ namespace Planar.Service.API
             return dynamicRequest;
         }
 
-        private async Task<string> GetJobFileContent(AddJobFoldeRequest request)
+        private async Task<string> GetJobFileContent(SetJobFoldeRequest request)
         {
             await ValidateAddFolder(request);
             string yml;
@@ -150,7 +157,7 @@ namespace Planar.Service.API
             return filename;
         }
 
-        private static string GetJopPropertiesYml(AddJobDynamicRequest request)
+        private static string GetJopPropertiesYml(SetJobDynamicRequest request)
         {
             if (request.Properties == null)
             {
@@ -161,7 +168,7 @@ namespace Planar.Service.API
             return yml;
         }
 
-        private async Task ValidateAddFolder(AddJobFoldeRequest request)
+        private async Task ValidateAddFolder(SetJobFoldeRequest request)
         {
             if (request == null)
             {
@@ -191,7 +198,7 @@ namespace Planar.Service.API
             }
         }
 
-        private static IReadOnlyCollection<ITrigger> BuildTriggers(AddJobRequest job)
+        private static IReadOnlyCollection<ITrigger> BuildTriggers(SetJobRequest job)
         {
             var quartzTriggers1 = BuildTriggerWithSimpleSchedule(job.SimpleTriggers);
             var quartzTriggers2 = BuildTriggerWithCronSchedule(job.CronTriggers);
@@ -203,11 +210,11 @@ namespace Planar.Service.API
 
         public static IEnumerable<ITrigger> BuildTriggerWithCronSchedule(List<JobCronTriggerMetadata> triggers)
         {
-            if (triggers.IsNullOrEmpty()) return null;
+            if (triggers.IsNullOrEmpty()) { return null; }
 
             var result = triggers.Select(t =>
             {
-                var trigger = GetBaseTriggerBuilder(t, TriggerType.Cron)
+                var trigger = GetBaseTriggerBuilder(t)
                     .WithCronSchedule(t.CronExpression, c => BuidCronSchedule(c, t));
 
                 return trigger.Build();
@@ -222,11 +229,11 @@ namespace Planar.Service.API
 
             var result = triggers.Select(t =>
             {
-                var trigger = GetBaseTriggerBuilder(t, TriggerType.Simple);
+                var trigger = GetBaseTriggerBuilder(t);
 
                 if (t.Start == null)
                 {
-                    trigger = trigger.StartNow();
+                    trigger = trigger.StartAt(new DateTimeOffset(DateTime.Now.AddSeconds(3)));
                 }
                 else
                 {
@@ -318,25 +325,22 @@ namespace Planar.Service.API
             }
         }
 
-        private static TriggerBuilder GetBaseTriggerBuilder(BaseTrigger jobTrigger, TriggerType triggerType)
+        private static TriggerBuilder GetBaseTriggerBuilder(BaseTrigger jobTrigger)
         {
             var id =
                 string.IsNullOrEmpty(jobTrigger.Id) ?
                 ServiceUtil.GenerateId() :
                 jobTrigger.Id;
 
-            var name = string.IsNullOrEmpty(jobTrigger.Name) ? $"{triggerType}Trigger_{id}" : jobTrigger.Name;
-            var group = string.IsNullOrEmpty(jobTrigger.Group) ? null : jobTrigger.Group;
-
             var trigger = TriggerBuilder.Create();
 
-            if (string.IsNullOrEmpty(group))
+            if (string.IsNullOrEmpty(jobTrigger.Group))
             {
-                trigger = trigger.WithIdentity(name);
+                trigger = trigger.WithIdentity(jobTrigger.Name);
             }
             else
             {
-                trigger = trigger.WithIdentity(name, group);
+                trigger = trigger.WithIdentity(jobTrigger.Name, jobTrigger.Group);
             }
 
             // Priority
@@ -371,7 +375,7 @@ namespace Planar.Service.API
             return trigger;
         }
 
-        private static void BuildJobData(AddJobRequest metadata, IJobDetail job)
+        private static void BuildJobData(SetJobRequest metadata, IJobDetail job)
         {
             // job data
             if (metadata.JobData != null)
@@ -417,7 +421,7 @@ namespace Planar.Service.API
             };
         }
 
-        private async Task<JobKey> ValidateJobMetadata(AddJobRequest metadata)
+        private JobKey ValidateJobMetadata(SetJobRequest metadata)
         {
             #region Trim
 
@@ -437,13 +441,12 @@ namespace Planar.Service.API
 
             #region Valid Name & Group
 
-            var regex = new Regex(nameRegex);
-            if (!IsRegexMatch(regex, metadata.Name))
+            if (!IsRegexMatch(_regex, metadata.Name))
             {
                 throw new RestValidationException("name", $"job name '{metadata.Name}' is invalid. use only alphanumeric, dashes & underscore");
             }
 
-            if (!IsRegexMatch(regex, metadata.Group))
+            if (!IsRegexMatch(_regex, metadata.Group))
             {
                 throw new RestValidationException("group", $"job group '{metadata.Group}' is invalid. use only alphanumeric, dashes & underscore");
             }
@@ -471,8 +474,6 @@ namespace Planar.Service.API
             ValidateTriggerMetadata(metadata);
 
             var jobKey = JobKeyHelper.GetJobKey(metadata);
-            await ValidateJobNotExists(jobKey);
-
             return jobKey;
         }
 
@@ -566,16 +567,15 @@ namespace Planar.Service.API
 
         private static void ValidateTriggerNameProperties(ITriggersContainer container)
         {
-            var regex = new Regex(nameRegex);
             container.SimpleTriggers?.ForEach(t =>
             {
-                if (IsRegexMatch(regex, t.Name) == false) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
-                if (IsRegexMatch(regex, t.Group) == false) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
+                if (IsRegexMatch(_regex, t.Name) == false) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
+                if (IsRegexMatch(_regex, t.Group) == false) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
             });
             container.CronTriggers?.ForEach(t =>
             {
-                if (IsRegexMatch(regex, t.Name) == false) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
-                if (IsRegexMatch(regex, t.Group) == false) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
+                if (IsRegexMatch(_regex, t.Name) == false) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
+                if (IsRegexMatch(_regex, t.Group) == false) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
             });
         }
 
@@ -607,7 +607,7 @@ namespace Planar.Service.API
             });
         }
 
-        private static Type GetJobType(AddJobRequest job)
+        private static Type GetJobType(SetJobRequest job)
         {
             Assembly assembly;
             string typeName;
@@ -650,7 +650,7 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task ValidateRequestProperties(AddJobDynamicRequest request)
+        private async Task ValidateRequestProperties(SetJobDynamicRequest request)
         {
             try
             {
@@ -662,7 +662,7 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task ValidatePropertiesInner(AddJobDynamicRequest request)
+        private async Task ValidatePropertiesInner(SetJobDynamicRequest request)
         {
             var yml = GetJopPropertiesYml(request);
 

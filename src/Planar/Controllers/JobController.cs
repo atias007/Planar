@@ -18,16 +18,23 @@ namespace Planar.Controllers
         }
 
         [HttpPost("planar")]
-        public async Task<ActionResult<JobIdResponse>> AddPlanar([FromBody] AddJobRequest<PlanarJobProperties> request)
+        public async Task<ActionResult<JobIdResponse>> AddPlanar([FromBody] SetJobRequest<PlanarJobProperties> request)
         {
             var result = await BusinesLayer.Add(request);
             return CreatedAtAction(nameof(Get), result, result);
         }
 
         [HttpPost("folder")]
-        public async Task<ActionResult<JobIdResponse>> AddByFolder([FromBody] AddJobFoldeRequest request)
+        public async Task<ActionResult<JobIdResponse>> AddByFolder([FromBody] SetJobFoldeRequest request)
         {
             var result = await BusinesLayer.AddByFolder(request);
+            return CreatedAtAction(nameof(Get), result, result);
+        }
+
+        [HttpPut("folder")]
+        public async Task<ActionResult<JobIdResponse>> UpdateByFolder([FromBody] UpdateJobFolderRequest request)
+        {
+            var result = await BusinesLayer.UpdateByFolder(request);
             return CreatedAtAction(nameof(Get), result, result);
         }
 

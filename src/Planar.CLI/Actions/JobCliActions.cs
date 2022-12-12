@@ -21,11 +21,121 @@ namespace Planar.CLI.Actions
         [Action("add")]
         public static async Task<CliActionResponse> AddJob(CliAddJobRequest request)
         {
-            var body = new AddJobFoldeRequest { Folder = request.Filename };
+            var body = new SetJobFoldeRequest { Folder = request.Filename };
             var restRequest = new RestRequest("job/folder", Method.Post)
                 .AddBody(body);
             var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
             return new CliActionResponse(result, message: result.Data?.Id);
+        }
+
+        [Action("update")]
+        public static async Task<CliActionResponse> UpdateJob(CliUpdateJobRequest request)
+        {
+            UpdateJobOptions options;
+
+            if (request.Options == null)
+            {
+                options = MapUpdateJobOptions();
+            }
+            else
+            {
+                options = MapUpdateJobOptions(request.Options);
+            }
+
+            var body = new UpdateJobFolderRequest { Folder = request.Filename, UpdateJobOptions = options };
+            var restRequest = new RestRequest("job/folder", Method.Put)
+                .AddBody(body);
+
+            var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
+
+            var warningMessage = "";
+
+            return new CliActionResponse(result, message: warningMessage);
+        }
+
+        private static UpdateJobOptions MapUpdateJobOptions()
+        {
+            var options = AnsiConsole.Prompt(
+                new MultiSelectionPrompt<string>()
+                    .Title("select update options:")
+                    .Required() // Not required to have a favorite fruit
+                    .InstructionsText(
+                        "[grey](Press [blue]<space>[/] to toggle a choise, [green]<enter>[/] to accept)[/]")
+                    .PageSize(15)
+                    .AddChoiceGroup("all", new[] { "job details", "job data", "properties", "triggers", "triggers data" })
+                    .AddChoiceGroup("all job", new[] { "job details", "job data", "properties" })
+                    .AddChoiceGroup("all triggers", new[] { "triggers", "triggers data" })
+                    );
+
+            var result = MapUpdateJobOptions(options);
+            return result;
+        }
+
+        private static UpdateJobOptions MapUpdateJobOptions(string options)
+        {
+            var items = options.Split(',');
+            var result = MapUpdateJobOptions(items);
+            return result;
+        }
+
+        private static UpdateJobOptions MapUpdateJobOptions(IEnumerable<string> items)
+        {
+            var result = new UpdateJobOptions();
+
+            foreach (var item in items)
+            {
+                switch (item.ToLower())
+                {
+                    case "all":
+                        result.UpdateJobDetails = true;
+                        result.UpdateJobData = true;
+                        result.UpdateProperties = true;
+                        result.UpdateTriggers = true;
+                        result.UpdateTriggersData = true;
+                        break;
+
+                    case "all job":
+                    case "all-job":
+                        result.UpdateJobDetails = true;
+                        result.UpdateJobData = true;
+                        result.UpdateProperties = true;
+                        break;
+
+                    case "all triggers":
+                    case "all-triggers":
+                        result.UpdateTriggers = true;
+                        result.UpdateTriggersData = true;
+                        break;
+
+                    case "job":
+                    case "job details":
+                        result.UpdateJobDetails = true;
+                        break;
+
+                    case "job-data":
+                    case "job data":
+                        result.UpdateJobData = true;
+                        break;
+
+                    case "properties":
+                        result.UpdateProperties = true;
+                        break;
+
+                    case "triggers":
+                        result.UpdateTriggers = true;
+                        break;
+
+                    case "triggers-data":
+                    case "triggers data":
+                        result.UpdateTriggersData = true;
+                        break;
+
+                    default:
+                        throw new ValidationException($"option {item} is invalid. use one or more from the following options: all,all-job,all-trigger,job,job-data,properties,triggers,triggers-data");
+                }
+            }
+
+            return result;
         }
 
         [Action("ls")]

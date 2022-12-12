@@ -2,7 +2,7 @@
 
 namespace Planar.Service.Model
 {
-    internal class AddJobDynamicRequest : AddJobRequest
+    internal class SetJobDynamicRequest : SetJobRequest
     {
         public virtual dynamic Properties { get; set; }
     }

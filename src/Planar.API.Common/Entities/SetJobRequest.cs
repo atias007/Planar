@@ -3,7 +3,7 @@ using YamlDotNet.Serialization;
 
 namespace Planar.API.Common.Entities
 {
-    public abstract class AddJobRequest : ITriggersContainer
+    public abstract class SetJobRequest : ITriggersContainer
     {
         [YamlMember(Alias = "job type")]
         public string JobType { get; set; }

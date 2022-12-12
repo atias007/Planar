@@ -18,5 +18,12 @@ namespace Planar.Service.API.Helpers
         public JobKey JobKey { get; set; }
 
         public string JobId { get; set; }
+
+        public bool RollbackEnabled { get; private set; }
+
+        public void EnableRollback()
+        {
+            RollbackEnabled = true;
+        }
     }
 }

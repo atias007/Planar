@@ -4,7 +4,7 @@ namespace Planar.CLI.Entities
 {
     public class CliAddJobRequest
     {
-        [ActionProperty(Default = true)]
+        [ActionProperty(DefaultOrder = 0)]
         [Required]
         public string Filename { get; set; }
     }

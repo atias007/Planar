@@ -1,4 +1,5 @@
-﻿using Planar.CLI.Actions;
+﻿using Newtonsoft.Json.Linq;
+using Planar.CLI.Actions;
 using Planar.CLI.Exceptions;
 using System;
 using System.Collections.Generic;
@@ -180,6 +181,12 @@ namespace Planar.CLI
 
         private static void SetValue(PropertyInfo prop, object instance, string value)
         {
+            if (string.Equals(value, prop.Name, StringComparison.OrdinalIgnoreCase) && prop.PropertyType == typeof(bool))
+            {
+                prop.SetValue(instance, true);
+                return;
+            }
+
             try
             {
                 object objValue = value;

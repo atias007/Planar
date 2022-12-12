@@ -1,12 +1,14 @@
-﻿using Planar.API.Common.Entities;
+﻿using Grpc.Core;
+using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
-using Planar.Service.General;
 using Planar.Service.Model;
 using Quartz;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using static Quartz.Logging.OperationName;
 
 namespace Planar.Service.API
 {
@@ -17,12 +19,71 @@ namespace Planar.Service.API
             await ValidateAddFolder(request);
             var yml = await GetJobFileContent(request);
             var dynamicRequest = GetJobDynamicRequest(yml, request.Folder);
-            var response = await Add(dynamicRequest);
+            var response = await Update(dynamicRequest, request.UpdateJobOptions);
             return response;
+        }
+
+        private static IEnumerable<BaseTrigger> GetAllTriggers(SetJobRequest request)
+        {
+            var allTriggers = new List<BaseTrigger>();
+            if (request.SimpleTriggers != null)
+            {
+                allTriggers.AddRange(request.SimpleTriggers);
+            }
+
+            if (request.CronTriggers != null)
+            {
+                allTriggers.AddRange(request.CronTriggers);
+            }
+
+            return allTriggers;
+        }
+
+        private static void SyncJobData(SetJobRequest request, JobUpdateMetadata metadata)
+        {
+            foreach (var item in metadata.OldJobDetails.JobDataMap)
+            {
+                request.JobData.Upsert(item.Key, Convert.ToString(item.Value));
+            }
+        }
+
+        private static void SyncTriggersData(SetJobRequest request, JobUpdateMetadata metadata)
+        {
+            var allTriggers = GetAllTriggers(request);
+            foreach (var oldTrigger in metadata.OldTriggers)
+            {
+                var updateTrigger = allTriggers.FirstOrDefault(t => t.Group == oldTrigger.Key.Group && t.Name == oldTrigger.Key.Name);
+                if (updateTrigger == null) { continue; }
+                foreach (var data in oldTrigger.JobDataMap)
+                {
+                    updateTrigger.TriggerData.Upsert(data.Key, Convert.ToString(data.Value));
+                }
+            }
+        }
+
+        private static async Task UpdateJobData(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+        {
+            if (options.UpdateJobData)
+            {
+                request.JobData.Add(Consts.JobId, metadata.JobId);
+            }
+            else
+            {
+                request.JobData.Clear();
+                SyncJobData(request, metadata);
+            }
+
+            BuildJobData(request, metadata.JobDetails);
+            await Task.CompletedTask;
         }
 
         private static void ValidateUpdateJobOptions(UpdateJobOptions options)
         {
+            if (options == null)
+            {
+                throw new RestValidationException("request", "options property is null or empty");
+            }
+
             if (options.IsEmpty)
             {
                 throw new RestValidationException("request", "all request options are false. no update will occur");
@@ -34,13 +95,39 @@ namespace Planar.Service.API
             metadata.OldJobDetails = await Scheduler.GetJobDetail(metadata.JobKey);
             metadata.OldTriggers = await Scheduler.GetTriggersOfJob(metadata.JobKey);
             await Scheduler.DeleteJob(metadata.JobKey);
+            metadata.EnableRollback();
             metadata.OldJobProperties = await DataLayer.GetJobProperty(metadata.JobId);
         }
 
-        private async Task<JobIdResponse> Update(AddJobDynamicRequest request, UpdateJobOptions options)
+        private async Task<JobIdResponse> Update(SetJobDynamicRequest request, UpdateJobOptions options)
         {
             var metadata = new JobUpdateMetadata();
 
+            try
+            {
+                return await UpdateInner(request, options, metadata);
+            }
+            catch
+            {
+                await RollBack(metadata);
+                throw;
+            }
+        }
+
+        private async Task RollBack(JobUpdateMetadata metadata)
+        {
+            if (metadata == null) { return; }
+            if (metadata.OldJobDetails == null) { return; }
+            if (metadata.RollbackEnabled == false) { return; }
+
+            var property = new JobProperty { JobId = metadata.JobId, Properties = metadata.OldJobProperties };
+            await Scheduler.ScheduleJob(metadata.OldJobDetails, metadata.OldTriggers, true);
+            await Scheduler.PauseJob(metadata.JobKey);
+            await DataLayer.UpdateJobProperty(property);
+        }
+
+        private async Task<JobIdResponse> UpdateInner(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+        {
             // Validation
             await ValidateUpdateJob(request, options, metadata);
 
@@ -56,11 +143,9 @@ namespace Planar.Service.API
             // Update Triggers
             await UpdateTriggers(request, options, metadata);
 
-            // Sync Triggers Data
-            // TODO: SyncTriggersData(...);
-
             // ScheduleJob
             await Scheduler.ScheduleJob(metadata.JobDetails, metadata.Triggers, true);
+            await Scheduler.PauseJob(metadata.JobKey);
 
             // Update Properties
             await UpdateJobProperties(request, options, metadata);
@@ -69,36 +154,7 @@ namespace Planar.Service.API
             return new JobIdResponse { Id = metadata.JobId };
         }
 
-        private static async Task UpdateTriggersData(AddJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
-        {
-            if (options.UpdateTriggersData)
-            {
-            }
-            else
-            {
-            }
-        }
-
-        private static async Task UpdateJobData(AddJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
-        {
-            if (options.UpdateJobData)
-            {
-                BuildJobData(request, metadata.JobDetails);
-            }
-            else
-            {
-                foreach (var item in metadata.OldJobDetails.JobDataMap)
-                {
-                    metadata.JobDetails.JobDataMap[item.Key] = item.Value;
-                }
-            }
-
-            metadata.JobDetails.JobDataMap.Add(Consts.JobId, metadata.JobId);
-
-            await Task.CompletedTask;
-        }
-
-        private async Task UpdateJobDetails(AddJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+        private async Task UpdateJobDetails(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
         {
             if (options.UpdateJobDetails)
             {
@@ -111,33 +167,32 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task UpdateJobProperties(AddJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+        private async Task UpdateJobProperties(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
         {
-            if (options.UpdateProperties)
+            if (!options.UpdateProperties) { return; }
+
+            var jobPropertiesYml = GetJopPropertiesYml(request);
+            var property = new JobProperty { JobId = metadata.JobId, Properties = jobPropertiesYml };
+            if (string.IsNullOrEmpty(metadata.OldJobProperties))
             {
-                var jobPropertiesYml = GetJopPropertiesYml(request);
-                var property = new JobProperty { JobId = metadata.JobId, Properties = jobPropertiesYml };
-                if (string.IsNullOrEmpty(metadata.OldJobProperties))
-                {
-                    await DataLayer.AddJobProperty(property);
-                }
-                else
-                {
-                    await DataLayer.UpdateJobProperty(property);
-                }
+                await DataLayer.AddJobProperty(property);
+            }
+            else
+            {
+                await DataLayer.UpdateJobProperty(property);
             }
         }
 
-        private async Task UpdateTriggers(AddJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+        private async Task UpdateTriggers(SetJobRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
         {
-            var triggers = await Scheduler.GetTriggersOfJob(metadata.JobKey);
-            foreach (var item in triggers)
+            foreach (var item in metadata.OldTriggers)
             {
                 await Scheduler.UnscheduleJob(item.Key);
             }
 
             if (options.UpdateTriggers)
             {
+                SyncTriggersData(request, metadata);
                 metadata.Triggers = BuildTriggers(request);
             }
             else
@@ -157,16 +212,16 @@ namespace Planar.Service.API
             if (notPaused.Any())
             {
                 var message = string.Join(',', notPaused);
-                throw new RestValidationException("triggers", "the following job triggers are not in pause state. stop the job before make any update");
+                throw new RestValidationException("triggers", $"the following job triggers are not in pause state: {message}. stop the job before make any update");
             }
         }
 
-        private async Task ValidateUpdateJob(AddJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+        private async Task ValidateUpdateJob(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
         {
             ValidateRequestNoNull(request);
             ValidateUpdateJobOptions(options);
             await ValidateRequestProperties(request);
-            metadata.JobKey = await ValidateJobMetadata(request);
+            metadata.JobKey = ValidateJobMetadata(request);
             await JobKeyHelper.ValidateJobExists(metadata.JobKey);
             ValidateSystemJob(metadata.JobKey);
             metadata.JobId = await JobKeyHelper.GetJobId(metadata.JobKey);

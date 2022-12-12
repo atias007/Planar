@@ -1,6 +1,6 @@
 ﻿namespace Planar.API.Common.Entities
 {
-    public class UpdateJobFolderRequest : AddJobFoldeRequest
+    public class UpdateJobFolderRequest : SetJobFoldeRequest
     {
         public UpdateJobOptions UpdateJobOptions { get; set; }
     }

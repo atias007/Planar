@@ -1,6 +1,6 @@
 ﻿namespace Planar.API.Common.Entities
 {
-    public class AddJobFoldeRequest
+    public class SetJobFoldeRequest
     {
         public string Folder { get; set; }
     }
