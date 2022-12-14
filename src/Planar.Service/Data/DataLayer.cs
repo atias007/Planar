@@ -335,9 +335,9 @@ namespace Planar.Service.Data
             return data.ToList();
         }
 
-        public JobInstanceLog GetHistory(int key)
+        public IQueryable<JobInstanceLog> GetHistory(int key)
         {
-            return _context.JobInstanceLogs.Find(key);
+            return _context.JobInstanceLogs.Where(l => l.Id == key);
         }
 
         public async Task<List<JobInstanceLog>> GetHistory(GetHistoryRequest request)

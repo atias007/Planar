@@ -15,12 +15,12 @@ namespace Planar.Service.API
         {
         }
 
-        public IQueryable<Model.JobInstanceLog> GetHistoryData()
+        public IQueryable<JobInstanceLog> GetHistoryData()
         {
             return DataLayer.GetHistoryData();
         }
 
-        public Model.JobInstanceLog GetHistory(int key)
+        public IQueryable<JobInstanceLog> GetHistory(int key)
         {
             var history = DataLayer.GetHistory(key);
 

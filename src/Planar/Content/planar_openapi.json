@@ -140,7 +140,7 @@
           }
         },
         "summary": "GetConfig",
-        "operationId": "GetConfig",
+        "operationId": "get_config_key",
         "description": ""
       },
       "delete": {
@@ -162,7 +162,8 @@
             "description": "Success"
           }
         },
-        "summary": "DeleteConfig"
+        "summary": "DeleteConfig",
+        "operationId": "delete_config_key"
       },
       "parameters": [
         {
@@ -185,7 +186,8 @@
             "description": "Success"
           }
         },
-        "summary": "FlushConfig"
+        "summary": "FlushConfig",
+        "operationId": "post_config_flush"
       }
     },
     "/group": {
@@ -219,7 +221,8 @@
             }
           }
         },
-        "summary": "AddGroup"
+        "summary": "AddGroup",
+        "operationId": "post_group"
       },
       "get": {
         "tags": [
@@ -240,7 +243,8 @@
             }
           }
         },
-        "summary": "GetAllGroups"
+        "summary": "GetAllGroups",
+        "operationId": "get_group"
       }
     },
     "/group/{id}": {
@@ -271,7 +275,8 @@
             }
           }
         },
-        "summary": "GetGroup"
+        "summary": "GetGroup",
+        "operationId": "get_group_id"
       },
       "delete": {
         "tags": [
@@ -293,7 +298,8 @@
             "description": "Success"
           }
         },
-        "summary": "DeleteGroup"
+        "summary": "DeleteGroup",
+        "operationId": "delete_group_id"
       },
       "patch": {
         "tags": [
@@ -324,7 +330,8 @@
             "description": "Success"
           }
         },
-        "summary": "UpdateGroup"
+        "summary": "UpdateGroup",
+        "operationId": "patch_group_id"
       },
       "parameters": [
         {
@@ -367,7 +374,9 @@
             "description": "Success"
           }
         },
-        "summary": "AddUserToGroup"
+        "summary": "AddUserToGroup",
+        "description": "\n",
+        "operationId": "post_group_id_user"
       },
       "parameters": [
         {
@@ -410,7 +419,8 @@
             "description": "Success"
           }
         },
-        "summary": "RemoveUserFromGroup"
+        "summary": "RemoveUserFromGroup",
+        "operationId": "delete_group_id_user_userid"
       },
       "parameters": [
         {
@@ -480,127 +490,7 @@
           "200": {
             "description": "Success",
             "content": {
-              "application/json;odata.metadata=minimal;odata.streaming=true": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.metadata=minimal;odata.streaming=false": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.metadata=minimal": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=true": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=false": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.metadata=full": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=true": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=false": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.metadata=none": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.streaming=true": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.streaming=false": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
               "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/octet-stream": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "text/json": {
                 "schema": {
                   "type": "array",
                   "items": {
@@ -610,7 +500,9 @@
               }
             }
           }
-        }
+        },
+        "operationId": "get_history",
+        "summary": "GetHistory"
       }
     },
     "/history/{id}": {
@@ -633,89 +525,16 @@
           "200": {
             "description": "Success",
             "content": {
-              "application/json;odata.metadata=minimal;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=minimal;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=minimal": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=full": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=none": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/octet-stream": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/JobInstanceLog"
                 }
               }
             }
           }
-        }
+        },
+        "summary": "GetHistoryById",
+        "operationId": "get_history_id"
       },
       "parameters": [
         {
@@ -748,89 +567,16 @@
           "200": {
             "description": "Success",
             "content": {
-              "application/json;odata.metadata=minimal;odata.streaming=true": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=minimal;odata.streaming=false": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=minimal": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=true": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=false": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=full": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=true": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=false": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=none": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.streaming=true": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.streaming=false": {
-                "schema": {
-                  "type": "string"
-                }
-              },
               "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "text/plain": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/octet-stream": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "text/json": {
                 "schema": {
                   "type": "string"
                 }
               }
             }
           }
-        }
+        },
+        "summary": "GetHistoryDataById",
+        "operationId": "get_history_id_data"
       },
       "parameters": [
         {
@@ -863,89 +609,16 @@
           "200": {
             "description": "Success",
             "content": {
-              "application/json;odata.metadata=minimal;odata.streaming=true": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=minimal;odata.streaming=false": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=minimal": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=true": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=false": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=full": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=true": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=false": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=none": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.streaming=true": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.streaming=false": {
-                "schema": {
-                  "type": "string"
-                }
-              },
               "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "text/plain": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/octet-stream": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "text/json": {
                 "schema": {
                   "type": "string"
                 }
               }
             }
           }
-        }
+        },
+        "summary": "GetHistoryLogById",
+        "operationId": "get_history_id_log"
       },
       "parameters": [
         {
@@ -978,89 +651,15 @@
           "200": {
             "description": "Success",
             "content": {
-              "application/json;odata.metadata=minimal;odata.streaming=true": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=minimal;odata.streaming=false": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=minimal": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=true": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=false": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=full": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=true": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=false": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.metadata=none": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.streaming=true": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json;odata.streaming=false": {
-                "schema": {
-                  "type": "string"
-                }
-              },
               "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "text/plain": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/octet-stream": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "text/json": {
                 "schema": {
                   "type": "string"
                 }
               }
             }
           }
-        }
+        },
+        "operationId": "get_history_id_exception"
       },
       "parameters": [
         {
@@ -1092,127 +691,7 @@
           "200": {
             "description": "Success",
             "content": {
-              "application/json;odata.metadata=minimal;odata.streaming=true": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.metadata=minimal;odata.streaming=false": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.metadata=minimal": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=true": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=false": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.metadata=full": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=true": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=false": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.metadata=none": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.streaming=true": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/json;odata.streaming=false": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
               "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "text/plain": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "application/octet-stream": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobInstanceLog"
-                  }
-                }
-              },
-              "text/json": {
                 "schema": {
                   "type": "array",
                   "items": {
@@ -1222,7 +701,8 @@
               }
             }
           }
-        }
+        },
+        "operationId": "get_history_last"
       }
     },
     "/odata/HistoryData": {
@@ -1230,7 +710,7 @@
         "tags": [
           "HistoryData"
         ],
-        "operationId": "odata/HistoryData",
+        "operationId": "get_odata_historydata",
         "responses": {
           "200": {
             "description": "Success"
@@ -1243,7 +723,7 @@
         "tags": [
           "HistoryData"
         ],
-        "operationId": "odata/HistoryData/$count",
+        "operationId": "get_odata_historydata_count",
         "responses": {
           "200": {
             "description": "Success"
@@ -1269,91 +749,10 @@
         ],
         "responses": {
           "200": {
-            "description": "Success",
-            "content": {
-              "application/json;odata.metadata=minimal;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=minimal;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=minimal": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=full;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=full": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=none;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.metadata=none": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.streaming=true": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json;odata.streaming=false": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/xml": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "application/octet-stream": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/JobInstanceLog"
-                }
-              }
-            }
+            "description": "OK"
           }
-        }
+        },
+        "description": "get_odatahistorydata_key"
       },
       "parameters": [
         {
@@ -7199,28 +6598,6 @@
           "required": true
         }
       ]
-    },
-    "/job": {
-      "get": {
-        "summary": "Your GET endpoint",
-        "tags": [],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobRowDetails"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "operationId": "get-job"
-      }
     }
   },
   "components": {

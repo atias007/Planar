@@ -3,11 +3,12 @@ using Planar.CLI.Entities;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using YamlDotNet.Serialization;
 
 namespace Planar.CLI
 {
-    public static class CliTableExtensions
+    internal static class CliTableExtensions
     {
         public static Table GetTable(AddUserResponse response)
         {
@@ -18,6 +19,22 @@ namespace Planar.CLI
             table.AddRow(string.Empty, string.Empty);
             table.AddRow(string.Empty, $"{CliTableFormat.WarningColor} Warning - Make sure you copy the above password now.[/]");
             table.AddRow(string.Empty, $"{CliTableFormat.WarningColor} We don't store it and you will not be able to see it again.[/]");
+            return table;
+        }
+
+        public static Table GetTable(CliGeneralMarupMessageResponse response)
+        {
+            var table = new Table();
+            if (response == null) { return table; }
+            if (response.MarkupMessages == null) { return table; }
+            if (!response.MarkupMessages.Any()) { return table; }
+
+            table.AddColumns(response.Title);
+            foreach (var item in response.MarkupMessages)
+            {
+                table.AddRow(item);
+            }
+
             return table;
         }
 

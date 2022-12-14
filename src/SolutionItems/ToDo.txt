@@ -14,6 +14,7 @@
 - *** validate new or update job without triggers is must be durable
 - *** run database migration on each startup
 - *** cli may CRUD trigger data
+- *** cli test: job that finish very fast - the test dont found it in running jobs. it should search in history
 
 - *** bug: use ? in cli at trigger id but show job menu. maybe show second menu of triggers list ***
 - api to get demo yml file 

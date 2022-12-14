@@ -48,9 +48,19 @@ namespace Planar.CLI.Actions
 
             var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
 
-            var warningMessage = "";
+            var response = new CliGeneralMarupMessageResponse
+            {
+                Title = $"{CliTableFormat.OkColor}Job id {result.Data?.Id.EscapeMarkup()} updated successfully[/]",
+                MarkupMessages = new List<string>
+                {
+                    $"{CliTableFormat.WarningColor}Warning - job trigger/s is in paused state[/]",
+                    $"{CliTableFormat.WarningColor}Run command [/]'[lightyellow3]job resume {result.Data?.Id.EscapeMarkup()}[/]{CliTableFormat.WarningColor}' to resume trigger\\s state to normal[/]"
+                }
+            };
 
-            return new CliActionResponse(result, message: warningMessage);
+            var table = CliTableExtensions.GetTable(response);
+
+            return new CliActionResponse(result, table: table);
         }
 
         private static UpdateJobOptions MapUpdateJobOptions()

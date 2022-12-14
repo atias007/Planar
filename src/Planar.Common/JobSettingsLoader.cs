@@ -18,12 +18,28 @@ namespace Planar.Common
             var final = Global.GlobalConfig;
 
             // Merge settings yml file
-            if (string.IsNullOrEmpty(jobPath)) { return new Dictionary<string, string>(); }
+            if (string.IsNullOrEmpty(jobPath)) { return final; }
             var fullpath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, jobPath);
             var location = new DirectoryInfo(fullpath);
             if (!location.Exists) { return final; }
 
             var jobSettings = LoadJobSettingsFiles(location.FullName);
+            final = final.Merge(jobSettings);
+            return final;
+        }
+
+        public static Dictionary<string, string> LoadJobSettingsForUnitTest<T>()
+            where T : class
+        {
+            var directory = new FileInfo(typeof(T).Assembly.Location).Directory;
+
+            // Load job global config
+            var final = Global.GlobalConfig;
+
+            // Merge settings yml file
+            if (directory == null || directory.Exists == false) { return final; }
+
+            var jobSettings = LoadJobSettingsFiles(directory.FullName);
             final = final.Merge(jobSettings);
             return final;
         }
@@ -69,19 +85,22 @@ namespace Planar.Common
 
             try
             {
-                if (File.Exists(filename))
-                {
-                    var yml = File.ReadAllText(filename);
-                    var serializer = new DeserializerBuilder().Build();
-                    dict = serializer.Deserialize<Dictionary<string, string>>(yml);
-                }
+                if (!File.Exists(filename)) { return dict; }
+
+                var yml = File.ReadAllText(filename);
+                if (yml == null) { return dict; }
+
+                yml = yml.Trim();
+                if (string.IsNullOrEmpty(yml)) { return dict; }
+
+                var serializer = new DeserializerBuilder().Build();
+                dict = serializer.Deserialize<Dictionary<string, string>>(yml);
+                return dict;
             }
             catch (Exception ex)
             {
-                throw new ArgumentNullException($"Error while reading settings file {SettingsFilename}", ex);
+                throw new ArgumentNullException($"Error while reading settings file {filename}", ex);
             }
-
-            return dict;
         }
     }
 }

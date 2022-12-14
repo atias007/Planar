@@ -16,18 +16,12 @@ namespace Planar.Job.Test
 {
     public abstract class BaseJobTest
     {
-        private static Dictionary<string, string> LoadJobSettings<T>()
-        {
-            var path = new FileInfo(typeof(T).Assembly.Location).DirectoryName;
-            var result = JobSettingsLoader.LoadJobSettings(path);
-            return result;
-        }
-
         public abstract void Configure(IConfigurationBuilder configurationBuilder, string environment);
 
         public abstract void RegisterServices(IServiceCollection services);
 
         protected JobInstanceLog ExecuteJob<T>(Dictionary<string, object> dataMap = null, DateTime? overrideNow = null)
+            where T : class, new()
         {
             Global.Environment = "UnitTest";
             var context = new MockJobExecutionContext(dataMap, overrideNow);
@@ -41,7 +35,7 @@ namespace Planar.Job.Test
 
             var instance = Activator.CreateInstance<T>();
             MapJobInstanceProperties(context, instance);
-            var settings = LoadJobSettings<T>();
+            var settings = JobSettingsLoader.LoadJobSettingsForUnitTest<T>();
 
             Exception jobException = null;
             var start = DateTime.Now;
