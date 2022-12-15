@@ -26,7 +26,7 @@ namespace Planar.Service.API.Helpers
             }
             else
             {
-                result = await GetTriggerKey(key.Id);
+                result = await GetTriggerKeyById(key.Id);
                 result ??= GetTriggerKeyByKey(key.Id);
             }
 
@@ -38,7 +38,12 @@ namespace Planar.Service.API.Helpers
             return result;
         }
 
-        public async Task<TriggerKey> GetTriggerKey(string triggerId)
+        public async Task<TriggerKey> GetTriggerKey(string id)
+        {
+            return await GetTriggerKey(new JobOrTriggerKey { Id = id });
+        }
+
+        public async Task<TriggerKey> GetTriggerKeyById(string triggerId)
         {
             TriggerKey result = null;
             var keys = await _scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());

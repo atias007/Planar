@@ -127,7 +127,11 @@ namespace Planar.CLI
                 }
 
                 FillLastJobOrTriggerId(matchProp, a);
-                FillJobId(matchProp, a).Wait();
+                if (action.Module?.ToLower() == "job")
+                {
+                    FillJobId(matchProp, a).Wait();
+                }
+
                 SetValue(matchProp.PropertyInfo, result, a.Value);
                 if (!string.IsNullOrEmpty(a.Value))
                 {

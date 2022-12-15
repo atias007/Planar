@@ -67,6 +67,8 @@ namespace Planar.Service
 
         public static LogLevel LogLevel { get; set; }
 
+        public static bool RunDatabaseMigration { get; set; }
+
         public static void Initialize(IConfiguration configuration)
         {
             Console.WriteLine("[x] Initialize AppSettings");
@@ -92,6 +94,7 @@ namespace Planar.Service
             OpenApiUI = GetSettings(configuration, Consts.OpenApiUIVariableKey, nameof(OpenApiUI), true);
             DeveloperExceptionPage = GetSettings(configuration, Consts.DeveloperExceptionPageVariableKey, nameof(DeveloperExceptionPage), true);
             SchedulerStartupDelay = GetSettings(configuration, Consts.SchedulerStartupDelayVariableKey, nameof(SchedulerStartupDelay), TimeSpan.FromSeconds(30));
+            RunDatabaseMigration = GetSettings(configuration, Consts.RunDatabaseMigrationVariableKey, nameof(RunDatabaseMigration), true);
         }
 
         private static void InitializeEnvironment(IConfiguration configuration)

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -25,6 +26,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("job/folder", Method.Post)
                 .AddBody(body);
             var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
+            Util.SetLastJobOrTriggerId(result);
             return new CliActionResponse(result, message: result.Data?.Id);
         }
 
@@ -47,20 +49,10 @@ namespace Planar.CLI.Actions
                 .AddBody(body);
 
             var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
+            Util.SetLastJobOrTriggerId(result);
 
-            var response = new CliGeneralMarupMessageResponse
-            {
-                Title = $"{CliTableFormat.OkColor}Job id {result.Data?.Id.EscapeMarkup()} updated successfully[/]",
-                MarkupMessages = new List<string>
-                {
-                    $"{CliTableFormat.WarningColor}Warning - job trigger/s is in paused state[/]",
-                    $"{CliTableFormat.WarningColor}Run command [/]'[lightyellow3]job resume {result.Data?.Id.EscapeMarkup()}[/]{CliTableFormat.WarningColor}' to resume trigger\\s state to normal[/]"
-                }
-            };
-
-            var table = CliTableExtensions.GetTable(response);
-
-            return new CliActionResponse(result, table: table);
+            var response = GetUpdateSuccessResponse(result, result.Data?.Id);
+            return response;
         }
 
         private static UpdateJobOptions MapUpdateJobOptions()
@@ -215,8 +207,9 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("job/{id}/settings", Method.Get)
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
 
-            var result = await RestProxy.Invoke<Dictionary<string, string>>(restRequest);
-            return new CliActionResponse(result, serializeObj: result.Data);
+            var result = await RestProxy.Invoke<IEnumerable<KeyValueItem>>(restRequest);
+            var table = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, table);
         }
 
         [Action("running-ex")]
@@ -382,6 +375,12 @@ namespace Planar.CLI.Actions
 
                     var restRequest1 = new RestRequest("job/data", Method.Post).AddBody(prm1);
                     result = await RestProxy.Invoke(restRequest1);
+
+                    if (result.StatusCode == HttpStatusCode.Conflict)
+                    {
+                        restRequest1 = new RestRequest("job/data", Method.Put).AddBody(prm1);
+                        result = await RestProxy.Invoke(restRequest1);
+                    }
                     break;
 
                 case JobDataActions.remove:
@@ -402,7 +401,28 @@ namespace Planar.CLI.Actions
                     throw new ValidationException($"Action {request.Action} is not supported for this command");
             }
 
-            return new CliActionResponse(result);
+            var response = GetUpdateSuccessResponse(result, request.Id);
+            return response;
+        }
+
+        private static CliActionResponse GetUpdateSuccessResponse(RestResponse result, string jobId)
+        {
+            if (!result.IsSuccessful)
+            {
+                return new CliActionResponse(result);
+            }
+
+            var response = new CliGeneralMarupMessageResponse
+            {
+                Title = $"{CliTableFormat.OkColor}Job id {jobId.EscapeMarkup()} updated successfully[/]",
+                MarkupMessages = new List<string>
+                {
+                    $"{CliTableFormat.WarningColor}Warning - job trigger/s is in paused state[/]",
+                }
+            };
+
+            var table = CliTableExtensions.GetTable(response);
+            return new CliActionResponse(result, table: table);
         }
 
         public static async Task<string> ChooseJob()

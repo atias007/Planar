@@ -17,7 +17,7 @@ namespace Planar.Service.API
         public async Task<TriggerRowDetails> Get(string triggerId)
         {
             var triggerKey = await TriggerKeyHelper.GetTriggerKey(triggerId);
-            ValidateExistingEntity(triggerKey);
+            ValidateExistingTrigger(triggerKey, triggerId);
             var result = await GetTriggerDetails(triggerKey);
             return result;
         }
@@ -32,7 +32,7 @@ namespace Planar.Service.API
         public async Task Delete(string triggerId)
         {
             var triggerKey = await TriggerKeyHelper.GetTriggerKey(triggerId);
-            ValidateExistingEntity(triggerKey);
+            ValidateExistingTrigger(triggerKey, triggerId);
             ValidateSystemTrigger(triggerKey);
             await Scheduler.PauseTrigger(triggerKey);
             var success = await Scheduler.UnscheduleJob(triggerKey);
@@ -58,7 +58,6 @@ namespace Planar.Service.API
         {
             var result = new TriggerRowDetails();
             var trigger = await Scheduler.GetTrigger(triggerKey);
-            ValidateExistingEntity(trigger);
 
             if (trigger is ISimpleTrigger t1)
             {

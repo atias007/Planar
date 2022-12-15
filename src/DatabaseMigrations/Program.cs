@@ -12,7 +12,7 @@ using System.Xml.Linq;
 
 namespace DatabaseMigrations
 {
-    internal class Program
+    public class Program
     {
         private static readonly string ProjectPath = new DirectoryInfo(Path.Combine(RunningPath, "..", "..", "..")).FullName;
 

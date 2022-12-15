@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
+    [ApiController]
     [Route("job")]
     public class JobController : BaseController<JobDomain>
     {
@@ -20,6 +21,13 @@ namespace Planar.Controllers
         public async Task<ActionResult<JobIdResponse>> AddPlanar([FromBody] SetJobRequest<PlanarJobProperties> request)
         {
             var result = await BusinesLayer.Add(request);
+            return CreatedAtAction(nameof(Get), result, result);
+        }
+
+        [HttpPut("planar")]
+        public async Task<ActionResult<JobIdResponse>> UpdatePlanar([FromBody] UpdateJobRequest<PlanarJobProperties> request)
+        {
+            var result = await BusinesLayer.Update(request);
             return CreatedAtAction(nameof(Get), result, result);
         }
 
@@ -73,9 +81,16 @@ namespace Planar.Controllers
         }
 
         [HttpPost("data")]
-        public async Task<IActionResult> UpsertData([FromBody] JobDataRequest request)
+        public async Task<IActionResult> AddData([FromBody] JobDataRequest request)
         {
-            await BusinesLayer.UpsertData(request);
+            await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Add);
+            return CreatedAtAction(nameof(Get), new { request.Id }, null);
+        }
+
+        [HttpPut("data")]
+        public async Task<IActionResult> UpdateData([FromBody] JobDataRequest request)
+        {
+            await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Update);
             return CreatedAtAction(nameof(Get), new { request.Id }, null);
         }
 
@@ -122,7 +137,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}/settings")]
-        public async Task<ActionResult<Dictionary<string, string>>> GetSettings([FromRoute][Required] string id)
+        public async Task<ActionResult<IEnumerable<KeyValueItem>>> GetSettings([FromRoute][Required] string id)
         {
             var result = await BusinesLayer.GetSettings(id);
             return Ok(result);

@@ -61,11 +61,15 @@ namespace Planar.CLI.Actions
                 return response;
             }
 
-            var trigger1 = result.Data.SimpleTriggers.FirstOrDefault(t => t.Id == request.Id || ($"{t.Group}.{t.Name}" == request.Id));
-            if (trigger1 != null) { return new CliActionResponse(result, serializeObj: trigger1); }
+            if (result.Data.SimpleTriggers.Any())
+            {
+                return new CliActionResponse(result, serializeObj: result.Data.SimpleTriggers.First());
+            }
 
-            var trigger2 = result.Data.CronTriggers.FirstOrDefault(t => t.Id == request.Id || ($"{t.Group}.{t.Name}" == request.Id));
-            if (trigger2 != null) { return new CliActionResponse(result, serializeObj: trigger2); }
+            if (result.Data.CronTriggers.Any())
+            {
+                return new CliActionResponse(result, serializeObj: result.Data.CronTriggers);
+            }
 
             return new CliActionResponse(result);
         }

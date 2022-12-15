@@ -1,4 +1,4 @@
-﻿using Grpc.Core;
+﻿using Azure.Core;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -20,6 +20,15 @@ namespace Planar.Service.API
             var yml = await GetJobFileContent(request);
             var dynamicRequest = GetJobDynamicRequest(yml, request.Folder);
             var response = await Update(dynamicRequest, request.UpdateJobOptions);
+            return response;
+        }
+
+        public async Task<JobIdResponse> Update<TProperties>(UpdateJobRequest<TProperties> genericRequest)
+           where TProperties : class, new()
+        {
+            ValidateRequestNoNull(genericRequest);
+            var dynamicRequest = Mapper.Map<SetJobRequest<TProperties>, SetJobDynamicRequest>(genericRequest);
+            var response = await Update(dynamicRequest, genericRequest.UpdateJobOptions);
             return response;
         }
 

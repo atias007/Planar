@@ -92,6 +92,14 @@ namespace Planar.Service.API
             }
         }
 
+        protected static void ValidateExistingTrigger(TriggerKey entity, string triggerId)
+        {
+            if (entity == null)
+            {
+                throw new RestNotFoundException($"trigger with id/key {triggerId} could not be found");
+            }
+        }
+
         protected void ValidateIdConflict(int routeId, int bodyId)
         {
             if (routeId != bodyId)

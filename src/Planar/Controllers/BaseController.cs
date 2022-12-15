@@ -4,7 +4,6 @@ namespace Planar.Controllers
 {
     [ApiController]
     [Produces("application/json")]
-    [Consumes("application/json")]
     public abstract class BaseController<TBusinesLayer> : ControllerBase
     {
         private readonly TBusinesLayer _businesLayer;

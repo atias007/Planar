@@ -38,11 +38,7 @@ namespace Planar.Service.API
         public async Task<JobIdResponse> Add<TProperties>(SetJobRequest<TProperties> genericRequest)
            where TProperties : class, new()
         {
-            if (genericRequest == null)
-            {
-                throw new RestValidationException("request", "request is null");
-            }
-
+            ValidateRequestNoNull(genericRequest);
             var request = Mapper.Map<SetJobRequest<TProperties>, SetJobDynamicRequest>(genericRequest);
             return await Add(request);
         }
@@ -170,10 +166,7 @@ namespace Planar.Service.API
 
         private async Task ValidateAddFolder(SetJobFoldeRequest request)
         {
-            if (request == null)
-            {
-                throw new RestValidationException("request", "request is null");
-            }
+            ValidateRequestNoNull(request);
 
             try
             {
