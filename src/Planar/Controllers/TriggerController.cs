@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
-    [ApiController]
     [Route("trigger")]
     public class TriggerController : BaseController<TriggerDomain>
     {

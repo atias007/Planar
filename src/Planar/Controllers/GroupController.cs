@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
-    [ApiController]
     [Route("group")]
     public class GroupController : BaseController<GroupDomain>
     {

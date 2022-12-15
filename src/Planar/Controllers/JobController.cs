@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
-    [ApiController]
     [Route("job")]
     public class JobController : BaseController<JobDomain>
     {

@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
-    [ApiController]
     [Route("trace")]
     public class TraceController : BaseController<TraceDomain>
     {

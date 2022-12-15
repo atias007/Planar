@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
-    [ApiController]
     [Route("service")]
     public class ServiceController : BaseController<ServiceDomain>
     {

@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
-    [ApiController]
     [Route("monitor")]
     public class MonitorController : BaseController<MonitorDomain>
     {
