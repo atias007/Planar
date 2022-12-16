@@ -81,17 +81,24 @@ namespace Planar.Controllers
         }
 
         [HttpPost("data")]
-        public async Task<IActionResult> AddData([FromBody] JobDataRequest request)
+        public async Task<IActionResult> AddData([FromBody] JobOrTriggerDataRequest request)
         {
             await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Add);
             return CreatedAtAction(nameof(Get), new { request.Id }, null);
         }
 
         [HttpPut("data")]
-        public async Task<IActionResult> UpdateData([FromBody] JobDataRequest request)
+        public async Task<IActionResult> UpdateData([FromBody] JobOrTriggerDataRequest request)
         {
             await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Update);
             return CreatedAtAction(nameof(Get), new { request.Id }, null);
+        }
+
+        [HttpDelete("{id}/data/{key}")]
+        public async Task<IActionResult> RemoveData([FromRoute][Required] string id, [FromRoute][Required] string key)
+        {
+            await BusinesLayer.RemoveData(id, key);
+            return NoContent();
         }
 
         [HttpPost("invoke")]
@@ -169,20 +176,6 @@ namespace Planar.Controllers
         {
             var result = await BusinesLayer.GetTestStatus(id);
             return Ok(result);
-        }
-
-        [HttpDelete("{id}/data/{key}")]
-        public async Task<IActionResult> RemoveData([FromRoute][Required] string id, [FromRoute][Required] string key)
-        {
-            await BusinesLayer.RemoveData(id, key);
-            return NoContent();
-        }
-
-        [HttpDelete("{id}/allData")]
-        public async Task<IActionResult> ClearData([FromRoute][Required] string id)
-        {
-            await BusinesLayer.ClearData(id);
-            return NoContent();
         }
 
         [HttpGet("{id}/lastInstanceId")]

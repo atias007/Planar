@@ -36,10 +36,7 @@ namespace Planar.Startup
 
             if (AppSettings.SwaggerUI)
             {
-                services.AddSwaggerGen(c =>
-                {
-                    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Planar", Version = "v1" });
-                });
+                services.AddSwaggerGen(SwaggerInitializer.InitializeSwagger);
             }
 
             if (AppSettings.UseHttpsRedirect)

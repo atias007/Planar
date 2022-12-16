@@ -5,11 +5,10 @@ namespace Planar.CLI.Entities
     public enum JobDataActions
     {
         upsert,
-        remove,
-        clear
+        remove
     }
 
-    public class CliJobDataRequest : CliJobOrTriggerKey
+    public class CliJobOrTriggerDataRequest : CliJobOrTriggerKey
     {
         [ActionProperty(DefaultOrder = 1)]
         [Required("must select action (upsert, remove, clear)")]

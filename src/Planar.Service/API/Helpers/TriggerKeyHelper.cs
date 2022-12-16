@@ -81,6 +81,13 @@ namespace Planar.Service.API.Helpers
             return GetTriggerId(context.Trigger);
         }
 
+        public static bool Equals(TriggerKey key1, TriggerKey key2)
+        {
+            if (key1 == null && key2 == null) { return true; }
+            if (key1 == null || key2 == null) { return false; }
+            return key1.Group.Equals(key2.Group) && key1.Name.Equals(key2);
+        }
+
         private static TriggerKey GetTriggerKeyByKey(string key)
         {
             TriggerKey result = null;

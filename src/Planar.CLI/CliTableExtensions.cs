@@ -17,7 +17,7 @@ namespace Planar.CLI
             table.AddColumns("User Id", "Password");
             table.AddRow(response.Id.ToString(), $"{response.Password}".EscapeMarkup());
             table.AddRow(string.Empty, string.Empty);
-            table.AddRow(string.Empty, $"{CliTableFormat.WarningColor} Warning - Make sure you copy the above password now.[/]");
+            table.AddRow(string.Empty, $"{CliTableFormat.WarningColor} Warning! Make sure you copy the above password now.[/]");
             table.AddRow(string.Empty, $"{CliTableFormat.WarningColor} We don't store it and you will not be able to see it again.[/]");
             return table;
         }

@@ -37,7 +37,7 @@ namespace Planar.Service.API
             Global.SetGlobalConfig(dict);
         }
 
-        public async Task<string> Get(string key)
+        public async Task<GlobalConfig> Get(string key)
         {
             var data = await DataLayer.GetGlobalConfig(key);
 
@@ -46,7 +46,7 @@ namespace Planar.Service.API
                 throw new RestNotFoundException($"Parameter with key '{key}' not found");
             }
 
-            return data?.Value;
+            return data;
         }
 
         public async Task<IEnumerable<GlobalConfig>> GetAll()

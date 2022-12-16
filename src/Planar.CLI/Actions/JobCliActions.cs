@@ -2,6 +2,7 @@
 using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
+using Planar.CLI.Exceptions;
 using RestSharp;
 using Spectre.Console;
 using System;
@@ -27,7 +28,8 @@ namespace Planar.CLI.Actions
                 .AddBody(body);
             var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
             Util.SetLastJobOrTriggerId(result);
-            return new CliActionResponse(result, message: result.Data?.Id);
+            AssertCreated(result.Data?.Id);
+            return new CliActionResponse(result);
         }
 
         [Action("update")]
@@ -50,9 +52,8 @@ namespace Planar.CLI.Actions
 
             var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
             Util.SetLastJobOrTriggerId(result);
-
-            var response = GetUpdateSuccessResponse(result, result.Data?.Id);
-            return response;
+            AssertJobUpdated(result.Data?.Id);
+            return new CliActionResponse(result);
         }
 
         private static UpdateJobOptions MapUpdateJobOptions()
@@ -360,13 +361,13 @@ namespace Planar.CLI.Actions
         }
 
         [Action("data")]
-        public static async Task<CliActionResponse> UpsertJobData(CliJobDataRequest request)
+        public static async Task<CliActionResponse> UpsertJobData(CliJobOrTriggerDataRequest request)
         {
             RestResponse result;
             switch (request.Action)
             {
                 case JobDataActions.upsert:
-                    var prm1 = new JobDataRequest
+                    var prm1 = new JobOrTriggerDataRequest
                     {
                         Id = request.Id,
                         DataKey = request.DataKey,
@@ -391,38 +392,12 @@ namespace Planar.CLI.Actions
                     result = await RestProxy.Invoke(restRequest2);
                     break;
 
-                case JobDataActions.clear:
-                    var restRequest3 = new RestRequest("job/{id}/allData", Method.Delete)
-                        .AddParameter("id", request.Id, ParameterType.UrlSegment);
-                    result = await RestProxy.Invoke(restRequest3);
-                    break;
-
                 default:
-                    throw new ValidationException($"Action {request.Action} is not supported for this command");
+                    throw new CliValidationException($"Action {request.Action} is not supported for this command");
             }
 
-            var response = GetUpdateSuccessResponse(result, request.Id);
-            return response;
-        }
-
-        private static CliActionResponse GetUpdateSuccessResponse(RestResponse result, string jobId)
-        {
-            if (!result.IsSuccessful)
-            {
-                return new CliActionResponse(result);
-            }
-
-            var response = new CliGeneralMarupMessageResponse
-            {
-                Title = $"{CliTableFormat.OkColor}Job id {jobId.EscapeMarkup()} updated successfully[/]",
-                MarkupMessages = new List<string>
-                {
-                    $"{CliTableFormat.WarningColor}Warning - job trigger/s is in paused state[/]",
-                }
-            };
-
-            var table = CliTableExtensions.GetTable(response);
-            return new CliActionResponse(result, table: table);
+            AssertJobUpdated(request.Id);
+            return new CliActionResponse(result);
         }
 
         public static async Task<string> ChooseJob()

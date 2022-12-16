@@ -210,21 +210,6 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task ValidateJobPaused(JobKey jobKey)
-        {
-            var triggers = await Scheduler.GetTriggersOfJob(jobKey);
-            var notPaused = triggers
-                .Where(t => Scheduler.GetTriggerState(t.Key).Result != TriggerState.Paused)
-                .Select(t => $"{t.Key.Group}.{t.Key.Name}")
-                .ToList();
-
-            if (notPaused.Any())
-            {
-                var message = string.Join(',', notPaused);
-                throw new RestValidationException("triggers", $"the following job triggers are not in pause state: {message}. stop the job before make any update");
-            }
-        }
-
         private async Task ValidateUpdateJob(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
         {
             ValidateRequestNoNull(request);

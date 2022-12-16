@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using Planar.CLI.Attributes;
+using Planar.CLI.Entities;
 using RestSharp;
 using Spectre.Console;
 using System;
@@ -132,6 +133,37 @@ namespace Planar.CLI.Actions
             using StreamReader reader = new(stream);
             var result = reader.ReadToEnd();
             return result;
+        }
+
+        protected static void AssertCreated(string id)
+        {
+            Console.WriteLine(id);
+        }
+
+        protected static void AssertJobUpdated(string id)
+        {
+            AssertUpdated(id, "job");
+        }
+
+        protected static void AssertTriggerUpdated(string id)
+        {
+            AssertUpdated(id, "trigger");
+        }
+
+        protected static void AssertUpdated(string id, string entity)
+        {
+            Console.WriteLine(id);
+            string message = entity switch
+            {
+                "job" => $"{CliTableFormat.WarningColor}Warning! job is in 'pause' state and none of its triggers will fire[/]",
+                "trigger" => $"{CliTableFormat.WarningColor}Warning! trigger is in 'pause' state and it will not fire[/]",
+                _ => null,
+            };
+
+            if (!string.IsNullOrEmpty(message))
+            {
+                AnsiConsole.MarkupLine(message);
+            }
         }
 
         protected static TRequest CollectDataFromCli<TRequest>()

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -44,6 +45,27 @@ namespace Planar.Controllers
         public async Task<ActionResult> Resume([FromBody] JobOrTriggerKey request)
         {
             await BusinesLayer.Resume(request);
+            return NoContent();
+        }
+
+        [HttpPost("data")]
+        public async Task<IActionResult> AddData([FromBody] JobOrTriggerDataRequest request)
+        {
+            await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Add);
+            return CreatedAtAction(nameof(Get), new { triggerId = request.Id }, null);
+        }
+
+        [HttpPut("data")]
+        public async Task<IActionResult> UpdateData([FromBody] JobOrTriggerDataRequest request)
+        {
+            await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Update);
+            return CreatedAtAction(nameof(Get), new { triggerId = request.Id }, null);
+        }
+
+        [HttpDelete("{id}/data/{key}")]
+        public async Task<IActionResult> RemoveData([FromRoute][Required] string id, [FromRoute][Required] string key)
+        {
+            await BusinesLayer.RemoveData(id, key);
             return NoContent();
         }
     }

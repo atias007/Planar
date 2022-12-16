@@ -85,17 +85,17 @@ namespace Planar.CLI.Actions
 
             if (!metadata.Data.Hooks.Any())
             {
-                throw new ValidationException("there are no monitor hooks define in service");
+                throw new CliValidationException("there are no monitor hooks define in service");
             }
 
             if (!metadata.Data.Groups.Any())
             {
-                throw new ValidationException("there are no distribution groups define in service");
+                throw new CliValidationException("there are no distribution groups define in service");
             }
 
             if (!metadata.Data.Jobs.Any())
             {
-                throw new ValidationException("there are no jobs define in service");
+                throw new CliValidationException("there are no jobs define in service");
             }
 
             var title = GetTitle();

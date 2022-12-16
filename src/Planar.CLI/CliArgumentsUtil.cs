@@ -55,23 +55,23 @@ namespace Planar.CLI
 
             if (cliActionsMetadata.Any(a => a.Module.ToLower() == list[0].ToLower()) == false)
             {
-                throw new ValidationException($"module '{list[0]}' is not supported");
+                throw new CliValidationException($"module '{list[0]}' is not supported");
             }
 
             if (list.Count == 1)
             {
-                throw new ValidationException($"missing command for module '{list[0]}'\r\n. command line format is 'Planar <module> <command> [<options>]'");
+                throw new CliValidationException($"missing command for module '{list[0]}'\r\n. command line format is 'Planar <module> <command> [<options>]'");
             }
 
             if (cliActionsMetadata.Any(a => a.Command.Any(c => c?.ToLower() == list[1].ToLower())) == false)
             {
-                throw new ValidationException($"module '{list[0]}' does not support command '{list[1]}'");
+                throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
             }
 
             var action = cliActionsMetadata.FirstOrDefault(a => a.Command.Any(c => c?.ToLower() == list[1].ToLower() && a.Module == list[0].ToLower()));
             if (action == null)
             {
-                throw new ValidationException($"module '{list[0]}' does not support command '{list[1]}'");
+                throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
             }
 
             args = list.ToArray();
@@ -118,7 +118,7 @@ namespace Planar.CLI
 
                 if (matchProp == null)
                 {
-                    throw new ValidationException($"Argument '{a.Key}' is not supported with command '{action.Command.FirstOrDefault()}' at module '{action.Module}'");
+                    throw new CliValidationException($"Argument '{a.Key}' is not supported with command '{action.Command.FirstOrDefault()}' at module '{action.Module}'");
                 }
 
                 if (a.Key.StartsWith("-") && string.IsNullOrEmpty(a.Value))

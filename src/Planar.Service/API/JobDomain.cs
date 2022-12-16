@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public partial class JobDomain : BaseBL<JobDomain>
+    public partial class JobDomain : BaseJobBL<JobDomain>
     {
         public JobDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
@@ -23,42 +23,31 @@ namespace Planar.Service.API
 
         #region Data
 
-        public async Task ClearData(string id)
-        {
-            var info = await GetJobDetailsForJobDataCommands(id);
-            if (info.Item1 == null) { return; }
-
-            info.Item1.JobDataMap.Clear();
-            var triggers = await Scheduler.GetTriggersOfJob(info.Item2);
-            await Scheduler.ScheduleJob(info.Item1, triggers, true);
-
-            await Scheduler.PauseJob(info.Item2);
-        }
-
         public async Task RemoveData(string id, string key)
         {
-            var info = await GetJobDetailsForJobDataCommands(id, key);
-            if (info.Item1 == null) { return; }
-            ValidateDataKeyExists(info.Item1, key, id);
-            info.Item1.JobDataMap.Remove(key);
-            var triggers = await Scheduler.GetTriggersOfJob(info.Item2);
-            await Scheduler.ScheduleJob(info.Item1, triggers, true);
-            await Scheduler.PauseJob(info.Item2);
+            var info = await GetJobDetailsForDataCommands(id, key);
+            if (info.JobDetails == null) { return; }
+
+            ValidateDataKeyExists(info.JobDetails, key, id);
+            info.JobDetails.JobDataMap.Remove(key);
+            var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
+            await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
+            await Scheduler.PauseJob(info.JobKey);
         }
 
-        public async Task UpsertData(JobDataRequest request, UpsertMode mode)
+        public async Task UpsertData(JobOrTriggerDataRequest request, UpsertMode mode)
         {
-            var info = await GetJobDetailsForJobDataCommands(request.Id, request.DataKey);
-            if (info.Item1 == null) { return; }
+            var info = await GetJobDetailsForDataCommands(request.Id, request.DataKey);
+            if (info.JobDetails == null) { return; }
 
-            if (info.Item1.JobDataMap.ContainsKey(request.DataKey))
+            if (info.JobDetails.JobDataMap.ContainsKey(request.DataKey))
             {
                 if (mode == UpsertMode.Add)
                 {
                     throw new RestConflictException($"data with key '{request.DataKey}' already exists");
                 }
 
-                info.Item1.JobDataMap.Put(request.DataKey, request.DataValue);
+                info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
             }
             else
             {
@@ -67,28 +56,28 @@ namespace Planar.Service.API
                     throw new RestNotFoundException($"data with key '{request.DataKey}' not found");
                 }
 
-                info.Item1.JobDataMap.Add(request.DataKey, request.DataValue);
+                info.JobDetails.JobDataMap.Add(request.DataKey, request.DataValue);
             }
 
-            var triggers = await Scheduler.GetTriggersOfJob(info.Item2);
-            await Scheduler.ScheduleJob(info.Item1, triggers, true);
-            await Scheduler.PauseJob(info.Item2);
+            var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
+            await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
+            await Scheduler.PauseJob(info.JobKey);
         }
 
-        private async Task<(IJobDetail, JobKey)> GetJobDetailsForJobDataCommands(string jobId, string key = null)
+        private async Task<DataCommandDto> GetJobDetailsForDataCommands(string jobId, string key)
         {
-            var jobKey = await JobKeyHelper.GetJobKey(jobId);
-            ValidateSystemJob(jobKey);
-            if (!string.IsNullOrEmpty(key))
-            {
-                ValidateSystemDataKey(key);
-            }
+            var result = new DataCommandDto();
 
-            await ValidateJobPaused(jobKey);
-            var info = await Scheduler.GetJobDetail(jobKey);
-            if (info == null) { return (null, jobKey); }
-            await ValidateJobNotRunning(jobKey);
-            return (info, jobKey);
+            // Get Job
+            result.JobKey = result.Trigger.JobKey;
+            result.JobDetails = await Scheduler.GetJobDetail(result.JobKey);
+            if (result.JobDetails == null) { return result; }
+
+            ValidateSystemJob(result.JobKey);
+            ValidateSystemDataKey(key);
+            await ValidateJobPaused(result.JobKey);
+            await ValidateJobNotRunning(result.JobKey);
+            return result;
         }
 
         #endregion Data
@@ -384,22 +373,6 @@ namespace Planar.Service.API
             }
         }
 
-        private static void ValidateSystemDataKey(string key)
-        {
-            if (key.StartsWith(Consts.ConstPrefix))
-            {
-                throw new RestValidationException("key", "forbidden: this is system data key and it should not be modified");
-            }
-        }
-
-        private static void ValidateSystemJob(JobKey jobKey)
-        {
-            if (jobKey.Group == Consts.PlanarSystemGroup)
-            {
-                throw new RestValidationException("key", "forbidden: this is system job and it should not be modified");
-            }
-        }
-
         private async Task DeleteMonitorOfJob(string jobId, string jobGroup)
         {
             await DataLayer.DeleteMonitorByJobId(jobId);
@@ -516,20 +489,6 @@ namespace Planar.Service.API
             if (source.Key.Group == Consts.RecoveringJobsGroup)
             {
                 target.Id = Consts.RecoveringJobsGroup;
-            }
-        }
-
-        private async Task ValidateJobNotRunning(JobKey jobKey)
-        {
-            var isRunning = await SchedulerUtil.IsJobRunning(jobKey);
-            if (AppSettings.Clustering)
-            {
-                isRunning = isRunning && await ClusterUtil.IsJobRunning(jobKey);
-            }
-
-            if (isRunning)
-            {
-                throw new RestValidationException($"{jobKey.Group}.{jobKey.Name}", $"job with name: {jobKey.Name} and group: {jobKey.Group} is currently running");
             }
         }
     }

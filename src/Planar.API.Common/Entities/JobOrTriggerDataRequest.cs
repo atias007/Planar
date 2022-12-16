@@ -1,6 +1,6 @@
 ﻿namespace Planar.API.Common.Entities
 {
-    public class JobDataRequest : JobOrTriggerKey
+    public class JobOrTriggerDataRequest : JobOrTriggerKey
     {
         public string DataKey { get; set; }
 
