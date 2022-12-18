@@ -73,7 +73,7 @@ namespace Planar.Startup
                 app.UseSwagger();
                 app.UseSwaggerUI(c =>
                 {
-                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Planar");
+                    c.SwaggerEndpoint($"/swagger/{SwaggerInitializer.SwaggerVersion}/swagger.json", "Planar");
                     c.InjectStylesheet("/Content/theme-flattop.css");
                 });
             }

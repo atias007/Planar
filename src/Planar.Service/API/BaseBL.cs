@@ -92,9 +92,10 @@ namespace Planar.Service.API
             }
         }
 
-        protected static void ValidateExistingTrigger(TriggerKey entity, string triggerId)
+        protected async Task ValidateExistingTrigger(TriggerKey entity, string triggerId)
         {
-            if (entity == null)
+            var details = await Scheduler.GetTrigger(entity);
+            if (details == null)
             {
                 throw new RestNotFoundException($"trigger with id/key {triggerId} could not be found");
             }

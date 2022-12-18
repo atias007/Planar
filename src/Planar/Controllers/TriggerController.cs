@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
+using Planar.Attributes;
 using Planar.Service.API;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
@@ -35,6 +36,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("pause")]
+        [JsonConsumes]
         public async Task<ActionResult> Pause([FromBody] JobOrTriggerKey request)
         {
             await BusinesLayer.Pause(request);
@@ -42,6 +44,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("resume")]
+        [JsonConsumes]
         public async Task<ActionResult> Resume([FromBody] JobOrTriggerKey request)
         {
             await BusinesLayer.Resume(request);
@@ -49,6 +52,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("data")]
+        [JsonConsumes]
         public async Task<IActionResult> AddData([FromBody] JobOrTriggerDataRequest request)
         {
             await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Add);
@@ -56,6 +60,7 @@ namespace Planar.Controllers
         }
 
         [HttpPut("data")]
+        [JsonConsumes]
         public async Task<IActionResult> UpdateData([FromBody] JobOrTriggerDataRequest request)
         {
             await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Update);

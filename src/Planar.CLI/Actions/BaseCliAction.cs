@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
 using RestSharp;
@@ -135,18 +136,29 @@ namespace Planar.CLI.Actions
             return result;
         }
 
-        protected static void AssertCreated(string id)
+        protected static void AssertCreated(RestResponse<JobIdResponse> response)
         {
-            Console.WriteLine(id);
+            if (!response.IsSuccessful) { return; }
+            Util.SetLastJobOrTriggerId(response);
+            Console.WriteLine(response?.Data?.Id);
         }
 
-        protected static void AssertJobUpdated(string id)
+        protected static void AssertJobUpdated(RestResponse<JobIdResponse> response)
         {
+            if (!response.IsSuccessful) { return; }
+            Util.SetLastJobOrTriggerId(response);
+            AssertUpdated(response?.Data?.Id, "job");
+        }
+
+        protected static void AssertJobDataUpdated(RestResponse response, string id)
+        {
+            if (!response.IsSuccessful) { return; }
             AssertUpdated(id, "job");
         }
 
-        protected static void AssertTriggerUpdated(string id)
+        protected static void AssertTriggerUpdated(RestResponse response, string id)
         {
+            if (!response.IsSuccessful) { return; }
             AssertUpdated(id, "trigger");
         }
 

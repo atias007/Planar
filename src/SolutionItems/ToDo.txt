@@ -12,10 +12,9 @@
       * system jobs
 - *** implement GetPausedTriggerGroups
 - *** validate new or update job without triggers is must be durable
-- *** cli may CRUD trigger data
 - *** cli test: job that finish very fast - the test dont found it in running jobs. it should search in history
 - *** cli connect with option to remember
-- *** cli show triggers menu on '?' argument
+
 
 - *** bug: use ? in cli at trigger id but show job menu. maybe show second menu of triggers list ***
 - api to get demo yml file 
@@ -25,6 +24,8 @@
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
 
 -----------------------------------------DONE-----------------------------------------
+- cli may CRUD trigger data
+- cli show triggers menu on '?' argument
 - run database migration on each startup
 - cli health check should check cluster mode
 - allow to stop planar scheduler without stop the windows service (service stop, service start, service shutdown)

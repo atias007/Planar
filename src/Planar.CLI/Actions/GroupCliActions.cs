@@ -16,7 +16,7 @@ namespace Planar.CLI.Actions
         {
             var restRequest = new RestRequest("group", Method.Post)
                 .AddBody(request);
-            var result = await RestProxy.Invoke<int>(restRequest);
+            var result = await RestProxy.Invoke(restRequest);
             return new CliActionResponse(result);
         }
 

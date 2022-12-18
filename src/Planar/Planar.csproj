@@ -4,7 +4,7 @@
 		<TargetFramework>net6.0</TargetFramework>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<BaseOutputPath>bin</BaseOutputPath>
-		<Version>1.0.2</Version>
+		<Version>1.1.0</Version>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
@@ -14,7 +14,6 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<Content Remove="Content\planar_openapi.json" />
 		<Content Remove="Data\Settings\AppSettings.json" />
 		<Content Remove="Data\Settings\HebrewCalendar.json" />
 		<Content Remove="Data\Settings\Serilog.json" />
@@ -22,6 +21,7 @@
 	<ItemGroup>
 	  <None Remove="Content\fonts.googleapis.css" />
 	  <None Remove="Content\logo.png" />
+	  <None Remove="Content\logo2.png" />
 	  <None Remove="Content\no_access.jpg" />
 	  <None Remove="Content\redoc.standalone.js" />
 	  <None Remove="Content\theme-flattop.css" />
@@ -41,11 +41,11 @@
 	<ItemGroup>
 	  <EmbeddedResource Include="Content\fonts.googleapis.css" />
 	  <EmbeddedResource Include="Content\logo.png" />
+	  <EmbeddedResource Include="Content\logo2.png" />
 	  <EmbeddedResource Include="Content\no_access.jpg" />
 	  <EmbeddedResource Include="Content\planar_openapi.html">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
-	  <EmbeddedResource Include="Content\planar_openapi.json" />
 	  <EmbeddedResource Include="Content\redoc.standalone.js" />
 	  <EmbeddedResource Include="Content\theme-flattop.css">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>

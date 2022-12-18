@@ -131,6 +131,10 @@ namespace Planar.CLI
                 {
                     FillJobId(matchProp, a).Wait();
                 }
+                else if (action.Module?.ToLower() == "trigger")
+                {
+                    FillTriggerId(matchProp, a).Wait();
+                }
 
                 SetValue(matchProp.PropertyInfo, result, a.Value);
                 if (!string.IsNullOrEmpty(a.Value))
@@ -151,6 +155,16 @@ namespace Planar.CLI
                 var jobId = await JobCliActions.ChooseJob();
                 arg.Value = jobId;
                 Util.LastJobOrTriggerId = jobId;
+            }
+        }
+
+        private static async Task FillTriggerId(RequestPropertyInfo prop, CliArgument arg)
+        {
+            if (prop.JobOrTriggerKey && arg.Value == "?")
+            {
+                var triggerId = await JobCliActions.ChooseTrigger();
+                arg.Value = triggerId;
+                Util.LastJobOrTriggerId = triggerId;
             }
         }
 

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
+using Planar.Attributes;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
 using System;
@@ -18,6 +19,8 @@ namespace Planar.Controllers
         }
 
         [HttpPost("planar")]
+        [JsonConsumes]
+        [CreatedResponse(typeof(JobIdResponse))]
         public async Task<ActionResult<JobIdResponse>> AddPlanar([FromBody] SetJobRequest<PlanarJobProperties> request)
         {
             var result = await BusinesLayer.Add(request);
@@ -25,6 +28,8 @@ namespace Planar.Controllers
         }
 
         [HttpPut("planar")]
+        [JsonConsumes]
+        [CreatedResponse(typeof(JobIdResponse))]
         public async Task<ActionResult<JobIdResponse>> UpdatePlanar([FromBody] UpdateJobRequest<PlanarJobProperties> request)
         {
             var result = await BusinesLayer.Update(request);
@@ -32,6 +37,8 @@ namespace Planar.Controllers
         }
 
         [HttpPost("folder")]
+        [JsonConsumes]
+        [CreatedResponse(typeof(JobIdResponse))]
         public async Task<ActionResult<JobIdResponse>> AddByFolder([FromBody] SetJobFoldeRequest request)
         {
             var result = await BusinesLayer.AddByFolder(request);
@@ -39,6 +46,8 @@ namespace Planar.Controllers
         }
 
         [HttpPut("folder")]
+        [JsonConsumes]
+        [CreatedResponse(typeof(JobIdResponse))]
         public async Task<ActionResult<JobIdResponse>> UpdateByFolder([FromBody] UpdateJobFolderRequest request)
         {
             var result = await BusinesLayer.UpdateByFolder(request);
@@ -46,6 +55,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
+        [OkJsonResponse(typeof(List<JobRowDetails>))]
         public async Task<ActionResult<List<JobRowDetails>>> GetAll([FromQuery] GetAllJobsRequest request)
         {
             var result = await BusinesLayer.GetAll(request);
@@ -53,6 +63,7 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}")]
+        [NoContentResponse]
         public async Task<IActionResult> Remove([FromRoute][Required] string id)
         {
             await BusinesLayer.Remove(id);
@@ -60,6 +71,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}")]
+        [OkJsonResponse(typeof(JobDetails))]
         public async Task<ActionResult<JobDetails>> Get([FromRoute][Required] string id)
         {
             var result = await BusinesLayer.Get(id);
@@ -67,6 +79,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("nextRunning/{id}")]
+        [OkTextResponse]
         public async Task<ActionResult<string>> GetNextRunning([FromRoute][Required] string id)
         {
             var result = await BusinesLayer.GetNextRunning(id);
@@ -74,6 +87,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("prevRunning/{id}")]
+        [OkTextResponse]
         public async Task<ActionResult<string>> GetPreviousRunning([FromRoute][Required] string id)
         {
             var result = await BusinesLayer.GetPreviousRunning(id);
@@ -81,6 +95,8 @@ namespace Planar.Controllers
         }
 
         [HttpPost("data")]
+        [JsonConsumes]
+        [CreatedResponse]
         public async Task<IActionResult> AddData([FromBody] JobOrTriggerDataRequest request)
         {
             await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Add);
@@ -88,6 +104,8 @@ namespace Planar.Controllers
         }
 
         [HttpPut("data")]
+        [JsonConsumes]
+        [CreatedResponse]
         public async Task<IActionResult> UpdateData([FromBody] JobOrTriggerDataRequest request)
         {
             await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Update);
@@ -95,6 +113,7 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}/data/{key}")]
+        [NoContentResponse]
         public async Task<IActionResult> RemoveData([FromRoute][Required] string id, [FromRoute][Required] string key)
         {
             await BusinesLayer.RemoveData(id, key);
@@ -102,6 +121,8 @@ namespace Planar.Controllers
         }
 
         [HttpPost("invoke")]
+        [JsonConsumes]
+        [AcceptedContentResponse]
         public async Task<IActionResult> Invoke([FromBody] InvokeJobRequest request)
         {
             await BusinesLayer.Invoke(request);
@@ -109,6 +130,8 @@ namespace Planar.Controllers
         }
 
         [HttpPost("pause")]
+        [JsonConsumes]
+        [AcceptedContentResponse]
         public async Task<IActionResult> Pause([FromBody] JobOrTriggerKey request)
         {
             await BusinesLayer.Pause(request);
@@ -116,6 +139,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("pauseAll")]
+        [AcceptedContentResponse]
         public async Task<IActionResult> PauseAll()
         {
             await BusinesLayer.PauseAll();
@@ -123,6 +147,8 @@ namespace Planar.Controllers
         }
 
         [HttpPost("resume")]
+        [JsonConsumes]
+        [AcceptedContentResponse]
         public async Task<IActionResult> Resume([FromBody] JobOrTriggerKey request)
         {
             await BusinesLayer.Resume(request);
@@ -130,6 +156,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("resumeAll")]
+        [AcceptedContentResponse]
         public async Task<IActionResult> ResumeAll()
         {
             await BusinesLayer.ResumeAll();
@@ -137,6 +164,8 @@ namespace Planar.Controllers
         }
 
         [HttpPost("stop")]
+        [JsonConsumes]
+        [AcceptedContentResponse]
         public async Task<ActionResult<bool>> Stop([FromBody] FireInstanceIdRequest request)
         {
             await BusinesLayer.Stop(request);
@@ -144,6 +173,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}/settings")]
+        [OkJsonResponse(typeof(IEnumerable<KeyValueItem>))]
         public async Task<ActionResult<IEnumerable<KeyValueItem>>> GetSettings([FromRoute][Required] string id)
         {
             var result = await BusinesLayer.GetSettings(id);
@@ -151,6 +181,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("running/{instanceId}")]
+        [OkJsonResponse(typeof(RunningJobDetails))]
         public async Task<ActionResult<RunningJobDetails>> GetAllRunning([FromRoute][Required] string instanceId)
         {
             var result = await BusinesLayer.GetRunning(instanceId);
@@ -158,6 +189,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("running")]
+        [OkJsonResponse(typeof(List<RunningJobDetails>))]
         public async Task<ActionResult<List<RunningJobDetails>>> GetRunning()
         {
             var result = await BusinesLayer.GetRunning();
@@ -165,6 +197,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("runningData/{instanceId}")]
+        [OkJsonResponse(typeof(GetRunningDataResponse))]
         public async Task<ActionResult<GetRunningDataResponse>> GetRunningData([FromRoute][Required] string instanceId)
         {
             var result = await BusinesLayer.GetRunningData(instanceId);
@@ -172,6 +205,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("testStatus/{id}")]
+        [OkJsonResponse(typeof(GetTestStatusResponse))]
         public async Task<ActionResult<GetTestStatusResponse>> GetTestStatus([FromRoute][Id] int id)
         {
             var result = await BusinesLayer.GetTestStatus(id);
@@ -179,6 +213,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}/lastInstanceId")]
+        [OkJsonResponse(typeof(LastInstanceId))]
         public async Task<ActionResult<LastInstanceId>> GetLastInstanceId([FromRoute][Required] string id, [FromQuery] DateTime invokeDate)
         {
             var result = await BusinesLayer.GetLastInstanceId(id, invokeDate);

@@ -27,8 +27,8 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("job/folder", Method.Post)
                 .AddBody(body);
             var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
-            Util.SetLastJobOrTriggerId(result);
-            AssertCreated(result.Data?.Id);
+
+            AssertCreated(result);
             return new CliActionResponse(result);
         }
 
@@ -51,8 +51,7 @@ namespace Planar.CLI.Actions
                 .AddBody(body);
 
             var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
-            Util.SetLastJobOrTriggerId(result);
-            AssertJobUpdated(result.Data?.Id);
+            AssertJobUpdated(result);
             return new CliActionResponse(result);
         }
 
@@ -396,7 +395,7 @@ namespace Planar.CLI.Actions
                     throw new CliValidationException($"Action {request.Action} is not supported for this command");
             }
 
-            AssertJobUpdated(request.Id);
+            AssertJobDataUpdated(result, request.Id);
             return new CliActionResponse(result);
         }
 
@@ -416,9 +415,40 @@ namespace Planar.CLI.Actions
 
                 return AnsiConsole.Prompt(
                      new SelectionPrompt<string>()
-                         .Title("[underline]select job to invoke (press enter to select):[/]")
+                         .Title("[underline]select job from the following list (press enter to select):[/]")
                          .PageSize(10)
                          .MoreChoicesText("[grey](Move up and down to reveal more jobs)[/]")
+                         .AddChoices(jobs));
+            }
+            else
+            {
+                throw new CliException($"fail to fetch list of jobs. error message: {result.ErrorMessage}");
+            }
+        }
+
+        public static async Task<string> ChooseTrigger()
+        {
+            var jobId = await ChooseJob();
+            var restRequest = new RestRequest("trigger/{jobId}/byjob", Method.Get);
+            restRequest.AddUrlSegment("jobId", jobId);
+            var result = await RestProxy.Invoke<TriggerRowDetails>(restRequest);
+            if (result.IsSuccessful)
+            {
+                var jobs = result.Data.SimpleTriggers
+                    .OrderBy(d => d.Name)
+                    .Select(d => $"{d.Group}.{d.Name}")
+                    .Union(
+                         result.Data.CronTriggers
+                         .OrderBy(d => d.Name)
+                        .Select(d => $"{d.Group}.{d.Name}")
+                    )
+                    .ToList();
+
+                return AnsiConsole.Prompt(
+                     new SelectionPrompt<string>()
+                         .Title("[underline]select trigger from the following list (press enter to select):[/]")
+                         .PageSize(10)
+                         .MoreChoicesText("[grey](Move up and down to reveal more triggers)[/]")
                          .AddChoices(jobs));
             }
             else

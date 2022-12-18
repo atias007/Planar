@@ -619,6 +619,11 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
+        public async Task<bool> IsGroupNameExists(string name)
+        {
+            return await _context.Groups.AnyAsync(g => g.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        }
+
         public async Task<bool> IsUserExists(int userId)
         {
             return await _context.Users.AnyAsync(u => u.Id == userId);

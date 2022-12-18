@@ -31,13 +31,6 @@
         "Name": "Console"
       }
     ],
-    "Filter": [
-      {
-        "Name": "ByExcluding",
-        "Args": {
-          "expression": "RequestPath like '%/healthCheck'"
-        }
-      }
-    ]
+    "Filter": []
   }
 }

@@ -17,15 +17,20 @@ namespace Planar.Service.API
         {
         }
 
-        public async Task<int> AddGroup(AddGroupRecord request)
+        public async Task<EntityIdResponse> AddGroup(AddGroupRecord request)
         {
+            if (await DataLayer.IsGroupNameExists(request.Name))
+            {
+                throw new RestConflictException($"group with name '{request.Name}' already exists");
+            }
+
             var group = new Group
             {
                 Name = request.Name
             };
 
             await DataLayer.AddGroup(group);
-            return group.Id;
+            return new EntityIdResponse(group.Id);
         }
 
         public async Task<GroupDetails> GetGroupById(int id)
@@ -82,7 +87,7 @@ namespace Planar.Service.API
         public async Task AddUserToGroup(int groupId, UserToGroupRecord request)
         {
             if (await DataLayer.IsUserExists(request.UserId) == false) { throw new RestValidationException("user id", $"user id {request.UserId} does not exist"); }
-            if (await DataLayer.IsGroupExists(groupId) == false) { throw new RestValidationException("group id", $"group id {groupId} does not exist"); }
+            if (await DataLayer.IsGroupExists(groupId) == false) { throw new RestNotFoundException($"group id {groupId} does not exist"); }
             if (await DataLayer.IsUserExistsInGroup(request.UserId, groupId)) { throw new RestValidationException("user id", $"user id {request.UserId} already in group id {groupId}"); }
 
             await DataLayer.AddUserToGroup(request.UserId, groupId);
@@ -91,7 +96,7 @@ namespace Planar.Service.API
         public async Task RemoveUserFromGroup(int groupId, int userId)
         {
             if (await DataLayer.IsUserExists(userId) == false) { throw new RestValidationException("user id", $"user id {userId} does not exist"); }
-            if (await DataLayer.IsGroupExists(groupId) == false) { throw new RestValidationException("group id", $"group id {groupId} does not exist"); }
+            if (await DataLayer.IsGroupExists(groupId) == false) { throw new RestNotFoundException($"group id {groupId} does not exist"); }
             if (await DataLayer.IsUserExistsInGroup(userId, groupId) == false) { throw new RestValidationException("user id", $"user id {userId} does not exist in group id {groupId}"); }
 
             await DataLayer.RemoveUserFromGroup(userId, groupId);

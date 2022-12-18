@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
+using Planar.Attributes;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
+using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -15,13 +17,20 @@ namespace Planar.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> AddGroup(AddGroupRecord request)
+        [SwaggerOperation(OperationId = "post_group", Description = "Add new group", Summary = "Add Group")]
+        [CreatedResponse(typeof(EntityIdResponse))]
+        [JsonConsumes]
+        [ConflictResponse]
+        public async Task<ActionResult<EntityIdResponse>> AddGroup([FromBody] AddGroupRecord request)
         {
             var id = await BusinesLayer.AddGroup(request);
-            return CreatedAtAction("GetGroup", new { id }, id);
+            return CreatedAtAction(nameof(GetGroup), id, id);
         }
 
         [HttpGet("{id}")]
+        [SwaggerOperation(OperationId = "get_group_id", Description = "Get group by id", Summary = "Get Group")]
+        [OkJsonResponse(typeof(GroupDetails))]
+        [NotFoundResponse]
         public async Task<ActionResult<GroupDetails>> GetGroup([FromRoute][Id] int id)
         {
             var result = await BusinesLayer.GetGroupById(id);
@@ -29,6 +38,8 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
+        [SwaggerOperation(OperationId = "get_group", Description = "Get all groups", Summary = "Get All Groups")]
+        [OkJsonResponse(typeof(List<GroupInfo>))]
         public async Task<ActionResult<List<GroupInfo>>> GetGroups()
         {
             var result = await BusinesLayer.GetGroups();
@@ -36,6 +47,10 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}")]
+        [SwaggerOperation(OperationId = "delete_group_id", Description = "Delete group by id", Summary = "Delete Group")]
+        [NoContentResponse]
+        [BadRequestResponse]
+        [NotFoundResponse]
         public async Task<IActionResult> DeleteGroup([FromRoute][Id] int id)
         {
             await BusinesLayer.DeleteGroup(id);
@@ -43,6 +58,11 @@ namespace Planar.Controllers
         }
 
         [HttpPatch("{id}")]
+        [SwaggerOperation(OperationId = "patch_group_id", Description = "Update group property", Summary = "Update Group")]
+        [JsonConsumes]
+        [NoContentResponse]
+        [BadRequestResponse]
+        [NotFoundResponse]
         public async Task<IActionResult> UpdateGroup([FromRoute][Id] int id, [FromBody] UpdateEntityRecord request)
         {
             await BusinesLayer.UpdateGroup(id, request);
@@ -50,13 +70,22 @@ namespace Planar.Controllers
         }
 
         [HttpPost("{id}/user")]
+        [SwaggerOperation(OperationId = "post_group_id_user", Description = "Add user to group", Summary = "Add User To Group")]
+        [JsonConsumes]
+        [NoContentResponse]
+        [BadRequestResponse]
+        [NotFoundResponse]
         public async Task<IActionResult> AddUserToGroup([FromRoute][Id] int id, [FromBody] UserToGroupRecord request)
         {
             await BusinesLayer.AddUserToGroup(id, request);
-            return CreatedAtAction("GetGroup", new { id }, id);
+            return NoContent();
         }
 
         [HttpDelete("{id}/user/{userId}")]
+        [SwaggerOperation(OperationId = "delete_group_id_user", Description = "Remove user from group", Summary = "Remove User From Group")]
+        [NoContentResponse]
+        [BadRequestResponse]
+        [NotFoundResponse]
         public async Task<IActionResult> RemoveUserFromGroup([FromRoute][Id] int id, [FromRoute][Id] int userId)
         {
             await BusinesLayer.RemoveUserFromGroup(id, userId);

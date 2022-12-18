@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
+using Planar.Attributes;
 using Planar.Service.API;
 using Planar.Service.Model;
 using Planar.Validation.Attributes;
@@ -16,6 +17,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
+        [OkJsonResponse(typeof(List<JobInstanceLog>))]
         public async Task<ActionResult<List<JobInstanceLog>>> GetHistory([FromQuery] GetHistoryRequest request)
         {
             var result = await BusinesLayer.GetHistory(request);
@@ -23,6 +25,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}")]
+        [OkJsonResponse(typeof(JobInstanceLog))]
         public async Task<ActionResult<JobInstanceLog>> GetHistoryById([FromRoute][Id] int id)
         {
             var result = await BusinesLayer.GetHistoryById(id);
@@ -30,6 +33,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}/data")]
+        [OkTextResponse]
         public async Task<ActionResult<string>> GetHistoryDataById([FromRoute][Id] int id)
         {
             var result = await BusinesLayer.GetHistoryDataById(id);
@@ -37,6 +41,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}/log")]
+        [OkTextResponse]
         public async Task<ActionResult<string>> GetHistoryLogById([FromRoute][Id] int id)
         {
             var result = await BusinesLayer.GetHistoryLogById(id);
@@ -44,6 +49,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}/exception")]
+        [OkTextResponse]
         public async Task<ActionResult<string>> GetHistoryExceptionById([FromRoute][Id] int id)
         {
             var result = await BusinesLayer.GetHistoryExceptionById(id);
@@ -51,6 +57,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("last")]
+        [OkJsonResponse(typeof(JobInstanceLog))]
         public async Task<ActionResult<List<JobInstanceLog>>> GetLastHistoryCallForJob([FromQuery][UInt] int lastDays)
         {
             var result = await BusinesLayer.GetLastHistoryCallForJob(lastDays);

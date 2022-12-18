@@ -140,7 +140,7 @@ namespace Planar.CLI.Actions
                     throw new CliValidationException($"Action {request.Action} is not supported for this command");
             }
 
-            AssertTriggerUpdated(request.Id);
+            AssertTriggerUpdated(result, request.Id);
             return new CliActionResponse(result);
         }
     }

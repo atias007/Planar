@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
+using Planar.Attributes;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
 using System.Collections.Generic;
@@ -44,6 +45,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost]
+        [JsonConsumes]
         public async Task<ActionResult<int>> Add([FromBody] AddMonitorRequest request)
         {
             var result = await BusinesLayer.Add(request);
@@ -58,6 +60,7 @@ namespace Planar.Controllers
         }
 
         [HttpPatch("{id}")]
+        [JsonConsumes]
         public async Task<ActionResult> Update([FromRoute][Id] int id, [FromBody] UpdateEntityRecord request)
         {
             await BusinesLayer.Update(id, request);
