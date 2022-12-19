@@ -13,7 +13,6 @@
 - *** implement GetPausedTriggerGroups
 - *** validate new or update job without triggers is must be durable
 - *** cli test: job that finish very fast - the test dont found it in running jobs. it should search in history
-- *** cli connect with option to remember
 
 
 - *** bug: use ? in cli at trigger id but show job menu. maybe show second menu of triggers list ***
@@ -24,6 +23,7 @@
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
 
 -----------------------------------------DONE-----------------------------------------
+- cli login with option to remember
 - cli may CRUD trigger data
 - cli show triggers menu on '?' argument
 - run database migration on each startup
@@ -50,7 +50,7 @@
 - enforce required parameters on cli
 - call cluster functions only if running is cluster mode
 - misfire behaviour should be enum in yml file
--- job runningdata w10n-TsahiAti637964208165023851637964208471912498 should return 404
+- job runningdata w10n-TsahiAti637964208165023851637964208471912498 should return 404
 - trigger get -> show misfirebehaviour as numeric
 - job settings <id> return empty
 - job add with only folder name
@@ -63,4 +63,3 @@
 - cli: job invoke show list of abc jobs
 - cli: job invoke !! invoke the last running job
 - cli: job test !! test the last running job
-

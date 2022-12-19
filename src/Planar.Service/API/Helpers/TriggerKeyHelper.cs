@@ -88,6 +88,18 @@ namespace Planar.Service.API.Helpers
             return key1.Group.Equals(key2.Group) && key1.Name.Equals(key2);
         }
 
+        public async Task<ITrigger> ValidateTriggerExists(TriggerKey triggerKey)
+        {
+            var exists = await _scheduler.GetTrigger(triggerKey);
+
+            if (exists == null)
+            {
+                throw new RestNotFoundException($"trigger with key {triggerKey.Group}.{triggerKey.Name} does not exist");
+            }
+
+            return exists;
+        }
+
         private static TriggerKey GetTriggerKeyByKey(string key)
         {
             TriggerKey result = null;

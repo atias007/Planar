@@ -74,8 +74,7 @@ namespace Planar.Service.API
 
             // Get Trigger
             result.TriggerKey = await TriggerKeyHelper.GetTriggerKey(triggerId);
-            result.Trigger = await Scheduler.GetTrigger(result.TriggerKey);
-            if (result.Trigger == null) { return result; }
+            result.Trigger = await TriggerKeyHelper.ValidateTriggerExists(result.TriggerKey);
 
             // Get Job
             result.JobKey = result.Trigger.JobKey;

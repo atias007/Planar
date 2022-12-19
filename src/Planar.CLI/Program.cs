@@ -316,6 +316,7 @@ namespace Planar.CLI
         private static void Start(string[] args)
         {
             var cliActions = BaseCliAction.GetAllActions();
+            ServiceCliActions.InitializeLogin();
 
             if (args.Length == 0)
             {
@@ -326,7 +327,8 @@ namespace Planar.CLI
                 var cliUtil = HandleCliCommand(args, cliActions);
                 if (cliUtil != null)
                 {
-                    if (string.Compare($"{cliUtil.Module}.{cliUtil.Command}", "service.connect", true) == 0)
+                    var command = $"{cliUtil.Module}.{cliUtil.Command}";
+                    if (string.Equals(command, "service.login", StringComparison.OrdinalIgnoreCase) && cliUtil.HasIterativeArgument)
                     {
                         InteractiveMode(cliActions);
                     }

@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using Planar.CLI.Actions;
+using Planar.CLI.Attributes;
 using Planar.CLI.Exceptions;
 using System;
 using System.Collections.Generic;
@@ -146,6 +147,16 @@ namespace Planar.CLI
             FindMissingRequiredProperties(props);
 
             return result;
+        }
+
+        public bool HasIterativeArgument
+        {
+            get
+            {
+                return CliArguments.Any(a =>
+                string.Equals(a.Key, $"-{IterativeActionPropertyAttribute.ShortNameText}", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(a.Key, $"--{IterativeActionPropertyAttribute.LongNameText}", StringComparison.OrdinalIgnoreCase));
+            }
         }
 
         private static async Task FillJobId(RequestPropertyInfo prop, CliArgument arg)

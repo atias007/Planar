@@ -482,7 +482,7 @@ namespace Planar.Service.API
 
             if (exists != null)
             {
-                throw new RestValidationException("name,group", $"job with name: {jobKey.Name} and group: {jobKey.Group} already exists");
+                throw new RestConflictException($"job with name: {jobKey.Name} and group: {jobKey.Group} already exists");
             }
         }
 

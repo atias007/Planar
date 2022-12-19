@@ -2,7 +2,8 @@
 
 the options for <command> and [<options>] parameters of service module:
 
-connect           <host> <port> [<is secure>]
+login             <host> <port> [--ssl|-s] [--user|-s <user>] [--password|w <password>] 
+                  [--remember|-r] [--remember-days|-rd]
 health-check|hc
 info              [<key>]
 version

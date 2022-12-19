@@ -1,5 +1,8 @@
-﻿using Planar.API.Common.Entities;
+﻿using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.DependencyInjection;
+using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
+using Planar.CLI.DataProtect;
 using Planar.CLI.Entities;
 using RestSharp;
 using System;
@@ -105,9 +108,19 @@ namespace Planar.CLI.Actions
             return await ExecuteEntity<List<string>>(restRequest);
         }
 
-        [Action("connect")]
-        public static async Task<CliActionResponse> Connect(CliConnectRequest request)
+        [Action("login")]
+        public static async Task<CliActionResponse> Login(CliLoginRequest request)
         {
+            if (string.IsNullOrEmpty(request.Host))
+            {
+                request.Host = "127.0.0.1";
+            }
+
+            if (request.Port == 0)
+            {
+                request.Port = 2306;
+            }
+
             RestProxy.Host = request.Host;
             RestProxy.Port = request.Port;
 
@@ -117,8 +130,15 @@ namespace Planar.CLI.Actions
             }
 
             RestProxy.Flush();
-
+            ConnectData.SetLoginRequest(request);
             return await Task.FromResult(CliActionResponse.Empty);
+        }
+
+        public static void InitializeLogin()
+        {
+            var request = ConnectData.GetLoginRequest();
+            if (request == null) { return; }
+            Login(request).Wait();
         }
     }
 }

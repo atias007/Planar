@@ -66,17 +66,18 @@ namespace Planar.Service.API
 
         private async Task<DataCommandDto> GetJobDetailsForDataCommands(string jobId, string key)
         {
-            var result = new DataCommandDto();
-
             // Get Job
-            result.JobKey = result.Trigger.JobKey;
-            result.JobDetails = await Scheduler.GetJobDetail(result.JobKey);
-            if (result.JobDetails == null) { return result; }
+            var jobKey = await JobKeyHelper.GetJobKey(jobId);
+            var result = new DataCommandDto
+            {
+                JobKey = jobKey,
+                JobDetails = await JobKeyHelper.ValidateJobExists(jobKey)
+            };
 
-            ValidateSystemJob(result.JobKey);
+            ValidateSystemJob(jobKey);
             ValidateSystemDataKey(key);
-            await ValidateJobPaused(result.JobKey);
-            await ValidateJobNotRunning(result.JobKey);
+            await ValidateJobPaused(jobKey);
+            await ValidateJobNotRunning(jobKey);
             return result;
         }
 
@@ -276,6 +277,11 @@ namespace Planar.Service.API
         public async Task<GetTestStatusResponse> GetTestStatus(int id)
         {
             var result = await DataLayer.GetTestStatus(id);
+            if (result == null)
+            {
+                throw new RestNotFoundException($"test with id {id} not found");
+            }
+
             return result;
         }
 
@@ -286,11 +292,8 @@ namespace Planar.Service.API
             if (request.NowOverrideValue.HasValue)
             {
                 var job = await Scheduler.GetJobDetail(jobKey);
-                if (job != null)
-                {
-                    job.JobDataMap.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value);
-                    await Scheduler.TriggerJob(jobKey, job.JobDataMap);
-                }
+                job.JobDataMap.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value);
+                await Scheduler.TriggerJob(jobKey, job.JobDataMap);
             }
             else
             {

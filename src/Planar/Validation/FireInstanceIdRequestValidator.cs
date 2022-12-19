@@ -7,7 +7,7 @@ namespace Planar.Validation
     {
         public FireInstanceIdRequestValidator()
         {
-            RuleFor(r => r.FireInstanceId).NotEmpty();
+            RuleFor(r => r.FireInstanceId).NotEmpty().MaximumLength(100);
         }
     }
 }
