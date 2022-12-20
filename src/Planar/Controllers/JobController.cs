@@ -3,7 +3,6 @@ using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
-using Quartz;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
