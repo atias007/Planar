@@ -6,7 +6,6 @@ using Planar.Service.Exceptions;
 using Planar.Service.General.Hash;
 using Planar.Service.General.Password;
 using Planar.Service.Model;
-using Planar.Service.Validation;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -22,19 +21,10 @@ namespace Planar.Service.API
         public async Task<AddUserResponse> Add(AddUserRequest request)
         {
             var hash = GeneratePassword();
+            var user = Mapper.Map<User>(request);
+            user.Password = hash.Hash;
+            user.Salt = hash.Salt;
 
-            var user = new User
-            {
-                Username = request.Username,
-                EmailAddress1 = request.Email,
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                PhoneNumber1 = request.PhoneNumber,
-                Password = hash.Hash,
-                Salt = hash.Salt
-            };
-
-            await new UserValidator().ValidateAndThrowAsync(user);
             var result = await DataLayer.AddUser(user);
             var response = new AddUserResponse
             {
@@ -75,14 +65,27 @@ namespace Planar.Service.API
             }
         }
 
-        public async Task Update(int id, UpdateEntityRecord request)
+        public async Task PartialUpdate(int id, UpdateEntityRecord request)
         {
             ValidateIdConflict(id, request.Id);
-            ValidateForbiddenUpdateProperties(request, "Id", "UsersToGroups", "Groups", "Password", "Salt", "Username");
-            var existsUser = await DataLayer.GetUser(request.Id);
-            ValidateExistingEntity(existsUser);
-            await UpdateEntity(existsUser, request, new UserValidator());
-            await DataLayer.UpdateUser(existsUser);
+
+            // ValidateForbiddenUpdateProperties(request, "Id", "UsersToGroups", "Groups", "Password", "Salt", "Username");
+            var user = await DataLayer.GetUser(request.Id);
+            var updateUser = Mapper.Map<UpdateUserRequest>(user);
+            await SetEntityProperties(updateUser, request, new AddUserRequestValidator(this));
+            await Update(updateUser);
+        }
+
+        public async Task Update(UpdateUserRequest request)
+        {
+            var exists = await DataLayer.IsUserExists(request.Id);
+            if (!exists)
+            {
+                throw new RestNotFoundException($"user with id {request} is not exists");
+            }
+
+            var user = Mapper.Map<User>(request);
+            await DataLayer.UpdateUser(user);
         }
 
         public async Task<string> ResetPassword(int id)

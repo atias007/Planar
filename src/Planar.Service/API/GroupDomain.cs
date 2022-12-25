@@ -80,7 +80,7 @@ namespace Planar.Service.API
             ValidateForbiddenUpdateProperties(request, "Id", "MonitorActions", "Users", "Role", "RoleId");
             var existsGroup = await DataLayer.GetGroup(id);
             ValidateExistingEntity(existsGroup);
-            await UpdateEntity(existsGroup, request, new GroupValidator());
+            await SetEntityProperties(existsGroup, request, new GroupValidator());
             await DataLayer.UpdateGroup(existsGroup);
         }
 

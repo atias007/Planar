@@ -120,7 +120,7 @@ namespace Planar.Service.API
             }
         }
 
-        protected static async Task UpdateEntity<T>(T entity, UpdateEntityRecord request, AbstractValidator<T> validator = null)
+        protected static async Task SetEntityProperties<T>(T entity, UpdateEntityRecord request, AbstractValidator<T> validator = null)
         {
             var type = typeof(T);
             var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);

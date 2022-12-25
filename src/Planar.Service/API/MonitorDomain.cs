@@ -129,7 +129,7 @@ namespace Planar.Service.API
             var action = await DataLayer.GetMonitorAction(id);
             ValidateExistingEntity(action);
             var validator = new MonitorActionValidator(DataLayer, JobKeyHelper);
-            await UpdateEntity(action, request, validator);
+            await SetEntityProperties(action, request, validator);
             await DataLayer.UpdateMonitorAction(action);
         }
 

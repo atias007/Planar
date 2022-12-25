@@ -4,11 +4,15 @@ using Planar.Service.Model;
 
 namespace Planar.Service.MapperProfiles
 {
-    internal class UserDetailsProfile : Profile
+    internal class UserProfile : Profile
     {
-        public UserDetailsProfile()
+        public UserProfile()
         {
             CreateMap<User, UserDetails>();
+
+            CreateMap<AddUserRequest, User>();
+
+            CreateMap<UpdateUserRequest, User>().ReverseMap();
         }
     }
 }

@@ -24,6 +24,14 @@ namespace Planar.Controllers
             return CreatedAtAction(nameof(Get), new { result.Id }, result);
         }
 
+        [HttpPut]
+        [JsonConsumes]
+        public async Task<IActionResult> Update([FromBody] UpdateUserRequest request)
+        {
+            await BusinesLayer.Update(request);
+            return NoContent();
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<User>> Get([FromRoute][Id] int id)
         {
@@ -47,9 +55,9 @@ namespace Planar.Controllers
 
         [HttpPatch("{id}")]
         [JsonConsumes]
-        public async Task<ActionResult> Update([FromRoute][Id] int id, [FromBody] UpdateEntityRecord request)
+        public async Task<ActionResult> PartialUpdate([FromRoute][Id] int id, [FromBody] UpdateEntityRecord request)
         {
-            await BusinesLayer.Update(id, request);
+            await BusinesLayer.PartialUpdate(id, request);
             return NoContent();
         }
 
