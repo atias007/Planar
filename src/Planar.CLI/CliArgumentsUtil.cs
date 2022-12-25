@@ -87,6 +87,11 @@ namespace Planar.CLI
 
         public object GetRequest(Type type, CliActionMetadata action)
         {
+            if (!CliArguments.Any() && action.AllowNullRequest)
+            {
+                return null;
+            }
+
             var result = Activator.CreateInstance(type);
             var props = action.GetRequestPropertiesInfo();
 

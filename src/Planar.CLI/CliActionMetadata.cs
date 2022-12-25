@@ -16,6 +16,8 @@ namespace Planar.CLI
 
         public MethodInfo Method { get; set; }
 
+        public bool AllowNullRequest { get; set; }
+
         public Type RequestType
         {
             get

@@ -12,11 +12,13 @@ namespace Planar.CLI.Actions
     public class UserCliActions : BaseCliAction<UserCliActions>
     {
         [Action("add")]
-        public static async Task<CliActionResponse> AddUser()
+        [NullRequest]
+        public static async Task<CliActionResponse> AddUser(CliAddUserRequest request)
         {
-            var prm = CollectDataFromCli<AddUserRequest>();
+            request ??= CollectDataFromCli<CliAddUserRequest>();
+
             var restRequest = new RestRequest("user", Method.Post)
-                .AddBody(prm);
+                .AddBody(request);
 
             return await ExecuteTable<AddUserResponse>(restRequest, CliTableExtensions.GetTable);
         }
