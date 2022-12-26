@@ -1,16 +1,14 @@
 ﻿using FluentValidation;
 using Planar.API.Common.Entities;
-using Planar.Service.API;
 using Planar.Service.Validation;
 
 namespace Planar.Service
 {
     public class AddUserRequestValidator : AbstractValidator<AddUserRequest>
     {
-        public AddUserRequestValidator(UserDomain bl)
+        public AddUserRequestValidator()
         {
-            RuleFor(r => r.Username).NotEmpty().Length(2, 50)
-                .Must(n => !bl.IsUsernameExists(n).Result).WithMessage("username '{PropertyValue}' already exists");
+            RuleFor(r => r.Username).NotEmpty().Length(2, 50);
             RuleFor(r => r.FirstName).NotEmpty().Length(2, 50);
             RuleFor(r => r.LastName).Length(2, 50);
             RuleFor(r => r.EmailAddress1).Length(5, 250).EmailAddress();

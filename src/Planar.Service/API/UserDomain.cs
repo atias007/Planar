@@ -2,6 +2,7 @@
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
+using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General.Hash;
 using Planar.Service.General.Password;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class UserDomain : BaseBL<UserDomain>
+    public class UserDomain : BaseBL<UserDomain, UserData>
     {
         public UserDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
@@ -20,6 +21,11 @@ namespace Planar.Service.API
 
         public async Task<AddUserResponse> Add(AddUserRequest request)
         {
+            if (await DataLayer.IsUsernameExists(request.Username, 0))
+            {
+                throw new RestConflictException($"{nameof(request.Username)} '{request.Username}' already exists");
+            }
+
             var hash = GeneratePassword();
             var user = Mapper.Map<User>(request);
             user.Password = hash.Hash;
@@ -38,10 +44,9 @@ namespace Planar.Service.API
         public async Task<UserDetails> Get(int id)
         {
             var user = await DataLayer.GetUser(id);
-            ValidateExistingEntity(user);
+            ValidateExistingEntity(user, "user");
             var groups = await DataLayer.GetGroupsForUser(id);
-            var mapper = Resolve<IMapper>();
-            var result = mapper.Map<UserDetails>(user);
+            var result = Mapper.Map<UserDetails>(user);
             groups.ForEach(g => result.Groups.Add(g.ToString()));
             return result;
         }
@@ -65,19 +70,22 @@ namespace Planar.Service.API
             }
         }
 
-        public async Task PartialUpdate(int id, UpdateEntityRecord request)
+        public async Task PartialUpdate(UpdateEntityRecord request)
         {
-            ValidateIdConflict(id, request.Id);
-
-            // ValidateForbiddenUpdateProperties(request, "Id", "UsersToGroups", "Groups", "Password", "Salt", "Username");
             var user = await DataLayer.GetUser(request.Id);
             var updateUser = Mapper.Map<UpdateUserRequest>(user);
-            await SetEntityProperties(updateUser, request, new AddUserRequestValidator(this));
+            var validator = Resolve<IValidator<UpdateUserRequest>>();
+            await SetEntityProperties(updateUser, request, validator);
             await Update(updateUser);
         }
 
         public async Task Update(UpdateUserRequest request)
         {
+            if (await DataLayer.IsUsernameExists(request.Username, request.Id))
+            {
+                throw new RestConflictException($"{nameof(request.Username)} '{request.Username}' already exists");
+            }
+
             var exists = await DataLayer.IsUserExists(request.Id);
             if (!exists)
             {
@@ -90,18 +98,13 @@ namespace Planar.Service.API
 
         public async Task<string> ResetPassword(int id)
         {
-            var existsUser = await DataLayer.GetUser(id);
-            ValidateExistingEntity(existsUser);
+            var existsUser = await DataLayer.GetUser(id, true);
+            ValidateExistingEntity(existsUser, "user");
             var hash = GeneratePassword();
             existsUser.Password = hash.Hash;
             existsUser.Salt = hash.Salt;
+            await DataLayer.SaveChangesAsync();
             return hash.Value;
-        }
-
-        public async Task<bool> IsUsernameExists(string username)
-        {
-            var result = await DataLayer.IsUsernameExists(username);
-            return result;
         }
 
         private static HashEntity GeneratePassword()

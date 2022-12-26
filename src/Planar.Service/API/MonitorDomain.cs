@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
+using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
@@ -17,7 +18,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class MonitorDomain : BaseBL<MonitorDomain>
+    public class MonitorDomain : BaseBL<MonitorDomain, MonitorData>
     {
         public MonitorDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
@@ -65,7 +66,7 @@ namespace Planar.Service.API
                 Hooks = ServiceUtil.MonitorHooks.Keys
                     .Select((k, i) => new { k, i })
                     .ToDictionary(i => i.i + 1, k => k.k),
-                Groups = await DataLayer.GetGroupsName(),
+                Groups = await Resolve<GroupData>().GetGroupsName(),
                 Events = Enum.GetValues(typeof(MonitorEvents))
                     .Cast<MonitorEvents>()
                     .ToDictionary(k => (int)k, v => v.ToString()),
@@ -124,11 +125,9 @@ namespace Planar.Service.API
 
         public async Task Update(int id, UpdateEntityRecord request)
         {
-            ValidateIdConflict(id, request.Id);
-            ValidateForbiddenUpdateProperties(request, "Id", "JobGroup", "JobGroup", "Group", "Event");
             var action = await DataLayer.GetMonitorAction(id);
-            ValidateExistingEntity(action);
-            var validator = new MonitorActionValidator(DataLayer, JobKeyHelper);
+            ValidateExistingEntity(action, "monitor");
+            var validator = new MonitorActionValidator(Resolve<GroupData>(), JobKeyHelper);
             await SetEntityProperties(action, request, validator);
             await DataLayer.UpdateMonitorAction(action);
         }

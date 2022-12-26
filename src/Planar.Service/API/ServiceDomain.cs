@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.General.Hash;
@@ -159,8 +160,8 @@ namespace Planar.Service.API
 
         public async Task<string> Login(LoginRequest request)
         {
-            var user = await DataLayer.GetUserByUsername(request.Username);
-            ValidateExistingEntity(user);
+            var user = await Resolve<UserData>().GetUserByUsername(request.Username);
+            ValidateExistingEntity(user, "user");
 
             var verify = HashUtil.VerifyHash(request.Password, user.Password, user.Salt);
             if (!verify)

@@ -42,9 +42,8 @@ namespace Planar.Service.API
         public async Task<JobInstanceLog> GetHistoryById(int id)
         {
             var result = await DataLayer.GetHistoryById(id);
-            ValidateExistingEntity(result);
-            var response = JsonMapper.Map<JobInstanceLog, Model.JobInstanceLog>(result);
-            return response;
+            ValidateExistingEntity(result, "history");
+            return result;
         }
 
         public async Task<string> GetHistoryDataById(int id)

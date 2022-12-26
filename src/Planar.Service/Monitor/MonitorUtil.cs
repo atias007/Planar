@@ -29,7 +29,7 @@ namespace Planar.Service.Monitor
         public async Task Validate()
         {
             using var scope = _serviceScopeFactory.CreateScope();
-            var dal = scope.ServiceProvider.GetRequiredService<DataLayer>();
+            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
             var count = await dal.GetMonitorCount();
             if (count == 0)
             {
@@ -175,7 +175,7 @@ namespace Planar.Service.Monitor
             var group = context.JobDetail.Key.Group;
             var job = JobKeyHelper.GetJobId(context.JobDetail);
             using var scope = _serviceScopeFactory.CreateScope();
-            var dal = scope.ServiceProvider.GetRequiredService<DataLayer>();
+            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
             var result = await dal.GetMonitorData((int)@event, group, job);
             return result;
         }

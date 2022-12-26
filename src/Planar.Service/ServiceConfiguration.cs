@@ -51,6 +51,8 @@ namespace Planar.Service
         internal static IServiceCollection AddPlanarDataLayerWithContext(this IServiceCollection services)
         {
             services.AddTransient<DataLayer>();
+            services.AddTransient<UserData>();
+            services.AddTransient<GroupData>();
             services.AddTransient<IJobPropertyDataLayer, DataLayer>();
             services.AddDbContext<PlanarContext>(o => o.UseSqlServer(
                     AppSettings.DatabaseConnectionString,

@@ -43,12 +43,6 @@ namespace Planar.Service.Validation
             return exists;
         }
 
-        public static bool IsGroopExists(int groop, DataLayer dal)
-        {
-            var exists = dal.IsGroupExists(groop).Result;
-            return exists;
-        }
-
         public static bool IsPath(string value)
         {
             if (value == null) return true;

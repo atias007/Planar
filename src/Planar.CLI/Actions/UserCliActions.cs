@@ -53,8 +53,7 @@ namespace Planar.CLI.Actions
         [Action("update")]
         public static async Task<CliActionResponse> UpdateUser(CliUpdateEntityRequest request)
         {
-            var restRequest = new RestRequest("user/{id}", Method.Patch)
-                .AddParameter("id", request.Id, ParameterType.UrlSegment)
+            var restRequest = new RestRequest("user", Method.Patch)
                 .AddBody(request);
 
             return await Execute(restRequest);

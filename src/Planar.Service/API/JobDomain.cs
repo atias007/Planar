@@ -2,6 +2,7 @@
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
+using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
@@ -378,10 +379,11 @@ namespace Planar.Service.API
 
         private async Task DeleteMonitorOfJob(string jobId, string jobGroup)
         {
-            await DataLayer.DeleteMonitorByJobId(jobId);
+            var dal = Resolve<MonitorData>();
+            await dal.DeleteMonitorByJobId(jobId);
             if (await JobGroupExists(jobGroup) == false)
             {
-                await DataLayer.DeleteMonitorByJobGroup(jobGroup);
+                await dal.DeleteMonitorByJobGroup(jobGroup);
             }
         }
 

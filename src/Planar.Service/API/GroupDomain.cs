@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class GroupDomain : BaseBL<GroupDomain>
+    public class GroupDomain : BaseBL<GroupDomain, GroupData>
     {
         public GroupDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
@@ -36,7 +36,7 @@ namespace Planar.Service.API
         public async Task<GroupDetails> GetGroupById(int id)
         {
             var group = await DataLayer.GetGroup(id);
-            ValidateExistingEntity(group);
+            ValidateExistingEntity(group, "group");
             var users = await DataLayer.GetUsersInGroup(id);
             var mapper = Resolve<IMapper>();
             var result = mapper.Map<GroupDetails>(group);
@@ -76,17 +76,16 @@ namespace Planar.Service.API
 
         public async Task UpdateGroup(int id, UpdateEntityRecord request)
         {
-            ValidateIdConflict(id, request.Id);
-            ValidateForbiddenUpdateProperties(request, "Id", "MonitorActions", "Users", "Role", "RoleId");
+            ////ValidateIdConflict(id, request.Id);
             var existsGroup = await DataLayer.GetGroup(id);
-            ValidateExistingEntity(existsGroup);
+            ValidateExistingEntity(existsGroup, "group");
             await SetEntityProperties(existsGroup, request, new GroupValidator());
             await DataLayer.UpdateGroup(existsGroup);
         }
 
         public async Task AddUserToGroup(int groupId, UserToGroupRecord request)
         {
-            if (await DataLayer.IsUserExists(request.UserId) == false) { throw new RestValidationException("user id", $"user id {request.UserId} does not exist"); }
+            if (await Resolve<UserData>().IsUserExists(request.UserId) == false) { throw new RestValidationException("user id", $"user id {request.UserId} does not exist"); }
             if (await DataLayer.IsGroupExists(groupId) == false) { throw new RestNotFoundException($"group id {groupId} does not exist"); }
             if (await DataLayer.IsUserExistsInGroup(request.UserId, groupId)) { throw new RestValidationException("user id", $"user id {request.UserId} already in group id {groupId}"); }
 
@@ -95,7 +94,7 @@ namespace Planar.Service.API
 
         public async Task RemoveUserFromGroup(int groupId, int userId)
         {
-            if (await DataLayer.IsUserExists(userId) == false) { throw new RestValidationException("user id", $"user id {userId} does not exist"); }
+            if (await Resolve<UserData>().IsUserExists(userId) == false) { throw new RestValidationException("user id", $"user id {userId} does not exist"); }
             if (await DataLayer.IsGroupExists(groupId) == false) { throw new RestNotFoundException($"group id {groupId} does not exist"); }
             if (await DataLayer.IsUserExistsInGroup(userId, groupId) == false) { throw new RestValidationException("user id", $"user id {userId} does not exist in group id {groupId}"); }
 

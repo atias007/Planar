@@ -1,4 +1,5 @@
-﻿using Planar.CLI.Attributes;
+﻿using Newtonsoft.Json;
+using Planar.CLI.Attributes;
 
 namespace Planar.CLI.Entities
 {
@@ -15,9 +16,9 @@ namespace Planar.CLI.Entities
         public string LastName { get; set; }
 
         [ActionProperty("e", "email")]
-        public string Email { get; set; }
+        public string EmailAddress1 { get; set; }
 
         [ActionProperty("p", "phone-number")]
-        public string PhoneNumber { get; set; }
+        public string PhoneNumber1 { get; set; }
     }
 }

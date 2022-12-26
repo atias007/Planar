@@ -1,11 +1,9 @@
-﻿using CommonJob;
-using Dapper;
+﻿using Dapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.Model;
-using Planar.Service.Model.DataObjects;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -13,19 +11,13 @@ using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
-
-using JobInstanceLog = Planar.Service.Model.JobInstanceLog;
 
 namespace Planar.Service.Data
 {
-    public class DataLayer : IJobPropertyDataLayer
+    public class DataLayer : BaseDataLayer, IJobPropertyDataLayer
     {
-        private readonly PlanarContext _context;
-
-        public DataLayer(PlanarContext context)
+        public DataLayer(PlanarContext context) : base(context)
         {
-            _context = context ?? throw new PlanarJobException(nameof(context));
         }
 
         public IQueryable<Trace> GetTraceData()
@@ -49,13 +41,13 @@ namespace Planar.Service.Data
             return await _context.SaveChangesAsync();
         }
 
-        public async Task CreateJobInstanceLog(DbJobInstanceLog log)
+        public async Task CreateJobInstanceLog(JobInstanceLog log)
         {
             _context.JobInstanceLogs.Add(log);
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateHistoryJobRunLog(DbJobInstanceLog log)
+        public async Task UpdateHistoryJobRunLog(JobInstanceLog log)
         {
             var parameters = new
             {
@@ -78,7 +70,7 @@ namespace Planar.Service.Data
             await _context.Database.GetDbConnection().ExecuteAsync(cmd);
         }
 
-        public async Task PersistJobInstanceData(DbJobInstanceLog log)
+        public async Task PersistJobInstanceData(JobInstanceLog log)
         {
             var parameters = new
             {
@@ -96,103 +88,6 @@ namespace Planar.Service.Data
             await _context.Database.GetDbConnection().ExecuteAsync(cmd);
         }
 
-        #region Monitor
-
-        public async Task<int> GetMonitorCount()
-        {
-            return await _context.MonitorActions.CountAsync();
-        }
-
-        public async Task<List<string>> GetMonitorHooks()
-        {
-            return await _context.MonitorActions.Select(m => m.Hook).Distinct().ToListAsync();
-        }
-
-        public async Task<List<MonitorAction>> GetMonitorData(int @event, string group, string job)
-        {
-            var all = _context.MonitorActions
-                .Include(m => m.Group)
-                .ThenInclude(ug => ug.Users);
-
-            var filter = all.Where(m => m.EventId == @event && m.Active == true);
-            filter = filter.Where(m =>
-                (string.IsNullOrEmpty(m.JobGroup) && string.IsNullOrEmpty(m.JobId)) ||
-                (string.IsNullOrEmpty(m.JobGroup) == false && m.JobGroup == group && string.IsNullOrEmpty(m.JobId)) ||
-                (string.IsNullOrEmpty(m.JobGroup) && string.IsNullOrEmpty(m.JobId) == false && m.JobId == job));
-
-            return await filter.ToListAsync();
-        }
-
-        public async Task<MonitorAction> GetMonitorAction(int id)
-        {
-            return await _context.MonitorActions.FindAsync(id);
-        }
-
-        public async Task<List<MonitorAction>> GetMonitorActions(string jobOrGroupId)
-        {
-            var query = _context.MonitorActions.AsQueryable();
-            if (string.IsNullOrEmpty(jobOrGroupId) == false)
-            {
-                query = query.Where(m => m.JobId == jobOrGroupId || m.JobGroup == jobOrGroupId);
-            }
-
-            query = query.OrderByDescending(m => m.Active)
-                .ThenBy(m => m.JobGroup)
-                .ThenBy(m => m.JobId);
-
-            var result = await query.Include(m => m.Group).ToListAsync();
-            return result;
-        }
-
-        public async Task<List<MonitorAction>> GetMonitorActions()
-        {
-            return await _context.MonitorActions
-                .Include(i => i.Group)
-                .OrderByDescending(d => d.Active)
-                .ThenBy(d => d.JobId)
-                .ToListAsync();
-        }
-
-        public async Task AddMonitor(MonitorAction request)
-        {
-            await _context.MonitorActions.AddAsync(request);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task DeleteMonitor(MonitorAction request)
-        {
-            _context.MonitorActions.Remove(request);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task DeleteMonitorByJobId(string jobId)
-        {
-            _context.MonitorActions.RemoveRange(e => e.JobId == jobId);
-            await SaveChangesWithoutConcurrency();
-        }
-
-        public async Task DeleteMonitorByJobGroup(string jobGroup)
-        {
-            _context.MonitorActions.RemoveRange(e => e.JobGroup == jobGroup);
-            await SaveChangesWithoutConcurrency();
-        }
-
-        #endregion Monitor
-
-        private async Task<int> SaveChangesWithoutConcurrency()
-        {
-            try
-            {
-                return await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                // *** DO NOTHING *** //
-            }
-
-            return 0;
-        }
-
         public async Task SetJobInstanceLogStatus(string instanceId, StatusMembers status)
         {
             var paramInstanceId = new SqlParameter("@InstanceId", instanceId);
@@ -200,12 +95,6 @@ namespace Planar.Service.Data
             var paramTitle = new SqlParameter("@StatusTitle", status.ToString());
 
             await _context.Database.ExecuteSqlRawAsync($"dbo.SetJobInstanceLogStatus @InstanceId,  @Status, @StatusTitle", paramInstanceId, paramStatus, paramTitle);
-        }
-
-        public async Task UpdateMonitorAction(MonitorAction monitor)
-        {
-            _context.MonitorActions.Update(monitor);
-            await _context.SaveChangesAsync();
         }
 
         public Trace GetTrace(int key)
@@ -415,7 +304,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<DbJobInstanceLog> GetHistoryById(int id)
+        public async Task<JobInstanceLog> GetHistoryById(int id)
         {
             var result = await _context.JobInstanceLogs
                 .Where(l => l.Id == id)
@@ -445,198 +334,6 @@ namespace Planar.Service.Data
                 .FirstOrDefaultAsync();
 
             return result;
-        }
-
-        public async Task<User> AddUser(User user)
-        {
-            var result = await _context.Users.AddAsync(user);
-            await _context.SaveChangesAsync();
-            return result.Entity;
-        }
-
-        public async Task<User> GetUser(int id)
-        {
-            var result = await _context.Users.FindAsync(id);
-            return result;
-        }
-
-        public async Task<User> GetUserByUsername(string username)
-        {
-            var result = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
-            return result;
-        }
-
-        public async Task<bool> IsUsernameExists(string username)
-        {
-            var result = await _context.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower());
-            return result;
-        }
-
-        internal async Task<List<EntityTitle>> GetGroupsForUser(int id)
-        {
-            var result = await _context.Groups
-                    .Where(g => g.Users.Any(u => u.Id == id))
-                    .Select(g => new EntityTitle(g.Id, g.Name))
-                    .ToListAsync();
-
-            return result;
-        }
-
-        public async Task UpdateUser(User user)
-        {
-            _context.Users.Update(user);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task<List<UserRow>> GetUsers()
-        {
-            var result = await _context.Users
-                .Select(u => new UserRow
-                {
-                    EmailAddress1 = u.EmailAddress1,
-                    FirstName = u.FirstName,
-                    Id = u.Id,
-                    LastName = u.LastName,
-                    PhoneNumber1 = u.PhoneNumber1,
-                    Username = u.Username
-                })
-                .OrderBy(u => u.FirstName)
-                .ThenBy(u => u.LastName)
-                .ToListAsync();
-
-            return result;
-        }
-
-        public async Task RemoveUser(User user)
-        {
-            _context.Users.Remove(user);
-            _context.SaveChanges();
-            await Task.CompletedTask;
-        }
-
-        public async Task AddGroup(Group group)
-        {
-            await _context.Groups.AddAsync(group);
-            await _context.SaveChangesAsync();
-        }
-
-        internal async Task<List<EntityTitle>> GetUsersInGroup(int id)
-        {
-            var result = await _context.Users
-                .Where(u => u.Groups.Any(g => g.Id == id))
-                .Select(u => new EntityTitle(u.Id, u.FirstName, u.LastName))
-                .ToListAsync();
-
-            return result;
-        }
-
-        public async Task<Group> GetGroup(int id)
-        {
-            var result = await _context.Groups
-                .Include(g => g.Role)
-                .FirstOrDefaultAsync(g => g.Id == id);
-
-            return result;
-        }
-
-        public async Task<List<GroupInfo>> GetGroups()
-        {
-            var result = await _context.Groups
-                .Include(g => g.Users)
-                .Include(g => g.Role)
-                .Select(g => new GroupInfo
-                {
-                    Id = g.Id,
-                    Name = g.Name,
-                    UsersCount = g.Users.Count,
-                    Role = g.Role.Name
-                })
-                .OrderBy(g => g.Name)
-                .ToListAsync();
-
-            return result;
-        }
-
-        public async Task<Dictionary<int, string>> GetGroupsName()
-        {
-            var result = await _context.Groups
-                .Select(g => new { g.Id, g.Name })
-                .OrderBy(g => g.Name)
-                .ToDictionaryAsync(k => k.Id, v => v.Name);
-
-            return result;
-        }
-
-        public async Task UpdateGroup(Group group)
-        {
-            _context.Groups.Update(group);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task<string> GetGroupName(int groupId)
-        {
-            var result = await _context.Groups
-                .Where(g => g.Id == groupId)
-                .Select(g => g.Name)
-                .FirstOrDefaultAsync();
-
-            return result;
-        }
-
-        public async Task RemoveGroup(Group group)
-        {
-            _context.Groups.Remove(group);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task<bool> IsGroupHasMonitors(string groupName)
-        {
-            var result = await _context.MonitorActions.AnyAsync(m => m.Group.Name == groupName);
-            return result;
-        }
-
-        public async Task AddUserToGroup(int userId, int groupId)
-        {
-            var user = _context.Users.FirstOrDefault(x => x.Id == userId);
-            if (user == null) { return; }
-
-            var group = _context.Groups.FirstOrDefault(x => x.Id == groupId);
-            if (group == null) { return; }
-
-            group.Users.Add(user);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task RemoveUserFromGroup(int userId, int groupId)
-        {
-            var user = _context.Users.FirstOrDefault(x => x.Id == userId);
-            if (user == null) { return; }
-
-            var group = _context.Groups.FirstOrDefault(x => x.Id == groupId);
-            if (group == null) { return; }
-
-            group.Users.Remove(user);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task<bool> IsGroupNameExists(string name)
-        {
-            return await _context.Groups.AnyAsync(g => g.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-        }
-
-        public async Task<bool> IsUserExists(int userId)
-        {
-            return await _context.Users.AnyAsync(u => u.Id == userId);
-        }
-
-        public async Task<bool> IsUserExistsInGroup(int userId, int groupId)
-        {
-            return await _context.Groups.AnyAsync(g => g.Id == groupId && g.Users.Any(u => u.Id == userId));
-        }
-
-        public async Task<bool> IsGroupExists(int groupId)
-        {
-            return await _context.Groups.AnyAsync(g => g.Id == groupId);
         }
 
         public async Task<int> CountFailsInRowForJob(object parameters)

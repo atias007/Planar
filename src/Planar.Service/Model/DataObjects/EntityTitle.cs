@@ -1,6 +1,6 @@
 ﻿namespace Planar.Service.Model.DataObjects
 {
-    internal class EntityTitle
+    public class EntityTitle
     {
         public EntityTitle(int id, string firstName)
         {
