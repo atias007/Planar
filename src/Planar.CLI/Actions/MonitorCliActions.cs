@@ -75,7 +75,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("add")]
-        public static async Task<CliActionResponse> AddMonitorHooks()
+        public static async Task<CliActionResponse> AddMonitorAction()
         {
             var metadata = await GetMetadata();
             if (metadata.IsSuccessful == false)
@@ -109,12 +109,12 @@ namespace Planar.CLI.Actions
 
             var monitor = new AddMonitorRequest
             {
-                EventArguments = monitorEventArgs,
+                EventArgument = monitorEventArgs,
                 JobGroup = job.JobGroupId,
                 GroupId = groupId,
                 Hook = hookName,
                 JobId = job.JobId,
-                MonitorEvent = monitorEvent,
+                EventId = monitorEvent,
                 Title = title
             };
 

@@ -59,8 +59,7 @@ namespace Planar.CLI.Actions
         [Action("update")]
         public static async Task<CliActionResponse> Update(CliUpdateEntityRequest request)
         {
-            var restRequest = new RestRequest("group/{id}", Method.Patch)
-               .AddParameter("id", request.Id, ParameterType.UrlSegment)
+            var restRequest = new RestRequest("group", Method.Patch)
                .AddBody(request);
 
             var result = await RestProxy.Invoke(restRequest);
@@ -70,9 +69,9 @@ namespace Planar.CLI.Actions
         [Action("join")]
         public static async Task<CliActionResponse> AddUserToGroup(CliUserToGroupRequest request)
         {
-            var restRequest = new RestRequest("group/{id}/user", Method.Post)
+            var restRequest = new RestRequest("group/{id}/user/{userId}", Method.Put)
                .AddParameter("id", request.GroupId, ParameterType.UrlSegment)
-               .AddBody(request);
+               .AddParameter("userId", request.UserId, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke(restRequest);
             return new CliActionResponse(result);
@@ -82,7 +81,8 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> RemoveUserFromGroup(CliUserToGroupRequest request)
         {
             var restRequest = new RestRequest("group/{id}/user/{userId}", Method.Delete)
-               .AddParameter("id", request.GroupId, ParameterType.UrlSegment);
+               .AddParameter("id", request.GroupId, ParameterType.UrlSegment)
+               .AddParameter("userId", request.UserId, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke(restRequest);
             return new CliActionResponse(result);

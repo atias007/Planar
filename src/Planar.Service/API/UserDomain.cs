@@ -23,7 +23,7 @@ namespace Planar.Service.API
         {
             if (await DataLayer.IsUsernameExists(request.Username, 0))
             {
-                throw new RestConflictException($"{nameof(request.Username)} '{request.Username}' already exists");
+                throw new RestConflictException($"user with {nameof(request.Username).ToLower()} '{request.Username}' already exists");
             }
 
             var hash = GeneratePassword();
@@ -81,15 +81,15 @@ namespace Planar.Service.API
 
         public async Task Update(UpdateUserRequest request)
         {
-            if (await DataLayer.IsUsernameExists(request.Username, request.Id))
-            {
-                throw new RestConflictException($"{nameof(request.Username)} '{request.Username}' already exists");
-            }
-
             var exists = await DataLayer.IsUserExists(request.Id);
             if (!exists)
             {
-                throw new RestNotFoundException($"user with id {request} is not exists");
+                throw new RestNotFoundException($"user with id {request.Id} is not exists");
+            }
+
+            if (await DataLayer.IsUsernameExists(request.Username, request.Id))
+            {
+                throw new RestConflictException($"user with {nameof(request.Username).ToLower()} '{request.Username}' already exists");
             }
 
             var user = Mapper.Map<User>(request);

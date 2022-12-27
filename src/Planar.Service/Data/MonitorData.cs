@@ -47,19 +47,39 @@ namespace Planar.Service.Data
             return await _context.MonitorActions.FindAsync(id);
         }
 
-        public async Task<List<MonitorAction>> GetMonitorActions(string jobOrGroupId)
+        public async Task<List<MonitorAction>> GetMonitorActionsByKey(string key)
         {
-            var query = _context.MonitorActions.AsQueryable();
-            if (string.IsNullOrEmpty(jobOrGroupId) == false)
-            {
-                query = query.Where(m => m.JobId == jobOrGroupId || m.JobGroup == jobOrGroupId);
-            }
-
-            query = query.OrderByDescending(m => m.Active)
+            var result = await _context.MonitorActions
+                .Include(m => m.Group)
+                .Where(m => m.JobId == key || m.JobGroup == key)
+                .OrderByDescending(m => m.Active)
                 .ThenBy(m => m.JobGroup)
-                .ThenBy(m => m.JobId);
+                .ThenBy(m => m.JobId)
+                .ToListAsync();
 
-            var result = await query.Include(m => m.Group).ToListAsync();
+            return result;
+        }
+
+        public async Task<List<MonitorAction>> GetAllMonitorActions(string jobOrGroupId)
+        {
+            var result = await _context.MonitorActions
+                .Include(m => m.Group)
+                .OrderByDescending(m => m.Active)
+                .ThenBy(m => m.JobGroup)
+                .ThenBy(m => m.JobId)
+                .ToListAsync();
+
+            return result;
+        }
+
+        public async Task<MonitorAction> GetMonitorActionWithGroup(int id)
+        {
+            var result = await _context.MonitorActions
+                .AsNoTracking()
+                .Include(m => m.Group)
+                .Where(m => m.Id == id)
+                .FirstOrDefaultAsync();
+
             return result;
         }
 
@@ -124,6 +144,11 @@ namespace Planar.Service.Data
 
             var data = await conn.QuerySingleAsync<int>(cmd);
             return data;
+        }
+
+        public async Task<bool> IsMonitorExists(int id)
+        {
+            return await _context.MonitorActions.AnyAsync(m => m.Id == id);
         }
     }
 }

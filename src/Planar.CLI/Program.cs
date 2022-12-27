@@ -210,6 +210,7 @@ namespace Planar.CLI
             if (HandleHttpNotFoundResponse(response)) { return; }
             if (HandleBadRequestResponse(response)) { return; }
             if (HandleHealthCheckResponse(response)) { return; }
+            if (HandleHttpConflictResponse(response)) { return; }
 
             HandleGeneralError(response);
         }
@@ -244,10 +245,25 @@ namespace Planar.CLI
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 var message = string.IsNullOrEmpty(response.Content) ?
-                    "entity not found" :
+                    "server return not found status" :
                     JsonConvert.DeserializeObject<string>(response.Content);
 
                 AnsiConsole.MarkupLine($"[red]validation error: {message}[/]");
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool HandleHttpConflictResponse(RestResponse response)
+        {
+            if (response.StatusCode == HttpStatusCode.Conflict)
+            {
+                var message = string.IsNullOrEmpty(response.Content) ?
+                    "server return conflict status" :
+                    JsonConvert.DeserializeObject<string>(response.Content);
+
+                AnsiConsole.MarkupLine($"[red]conflict error: {message}[/]");
                 return true;
             }
 

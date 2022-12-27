@@ -3,6 +3,7 @@ using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
+using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
@@ -17,19 +18,27 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<MonitorItem>>> Get()
+        public async Task<ActionResult<List<MonitorItem>>> GetAll()
         {
-            var result = await BusinesLayer.Get(null);
+            var result = await BusinesLayer.GetAll();
             return Ok(result);
         }
 
-        [HttpGet("{jobOrGroupId}")]
-        public async Task<ActionResult<List<MonitorItem>>> Get([FromRoute][Required] string jobOrGroupId)
+        [HttpGet("byKey/{key}")]
+        public async Task<ActionResult<List<MonitorItem>>> GetByKey([FromRoute][Required] string key)
         {
-            var result = await BusinesLayer.Get(jobOrGroupId);
+            var result = await BusinesLayer.GetByKey(key);
             return Ok(result);
         }
 
+        [HttpGet("{id}")]
+        public async Task<ActionResult<MonitorItem>> GetById([FromRoute][Id] int id)
+        {
+            var result = await BusinesLayer.GetById(id);
+            return Ok(result);
+        }
+
+        [ApiExplorerSettings(IgnoreApi = true)]
         [HttpGet("metadata")]
         public async Task<ActionResult<MonitorActionMedatada>> GetMetadata()
         {
@@ -46,10 +55,23 @@ namespace Planar.Controllers
 
         [HttpPost]
         [JsonConsumes]
-        public async Task<ActionResult<int>> Add([FromBody] AddMonitorRequest request)
+        public async Task<ActionResult<EntityIdResponse>> Add([FromBody] AddMonitorRequest request)
         {
             var result = await BusinesLayer.Add(request);
-            return CreatedAtAction(nameof(Get), result);
+            return CreatedAtAction(nameof(GetById), new { id = result }, new EntityIdResponse(result));
+        }
+
+        [HttpPut]
+        [JsonConsumes]
+        [SwaggerOperation(OperationId = "put_monitor", Description = "Update monitor", Summary = "Update Monitor")]
+        [NoContentResponse]
+        [BadRequestResponse]
+        [ConflictResponse]
+        [NotFoundResponse]
+        public async Task<IActionResult> Update([FromBody] UpdateMonitorRequest request)
+        {
+            await BusinesLayer.Update(request);
+            return NoContent();
         }
 
         [HttpDelete("{id}")]
@@ -59,11 +81,11 @@ namespace Planar.Controllers
             return NoContent();
         }
 
-        [HttpPatch("{id}")]
+        [HttpPatch]
         [JsonConsumes]
-        public async Task<ActionResult> Update([FromRoute][Id] int id, [FromBody] UpdateEntityRecord request)
+        public async Task<ActionResult> UpdatePartial([FromBody] UpdateEntityRecord request)
         {
-            await BusinesLayer.Update(id, request);
+            await BusinesLayer.UpdatePartial(request);
             return NoContent();
         }
 

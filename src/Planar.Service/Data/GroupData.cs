@@ -35,6 +35,7 @@ namespace Planar.Service.Data
         {
             var result = await _context.Groups
                 .Include(g => g.Role)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(g => g.Id == id);
 
             return result;
@@ -74,25 +75,21 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
-        public async Task<string> GetGroupName(int groupId)
-        {
-            var result = await _context.Groups
-                .Where(g => g.Id == groupId)
-                .Select(g => g.Name)
-                .FirstOrDefaultAsync();
-
-            return result;
-        }
-
         public async Task RemoveGroup(Group group)
         {
             _context.Groups.Remove(group);
             await _context.SaveChangesAsync();
         }
 
-        public async Task<bool> IsGroupHasMonitors(string groupName)
+        public async Task<bool> IsGroupHasMonitors(int groupId)
         {
-            var result = await _context.MonitorActions.AnyAsync(m => m.Group.Name == groupName);
+            var result = await _context.MonitorActions.AnyAsync(m => m.Group.Id == groupId);
+            return result;
+        }
+
+        public async Task<bool> IsGroupHasUsers(int groupId)
+        {
+            var result = await _context.Groups.AnyAsync(g => g.Id == groupId && g.Users.Any());
             return result;
         }
 
@@ -113,16 +110,16 @@ namespace Planar.Service.Data
             var user = _context.Users.FirstOrDefault(x => x.Id == userId);
             if (user == null) { return; }
 
-            var group = _context.Groups.FirstOrDefault(x => x.Id == groupId);
+            var group = _context.Groups.Include(g => g.Users).FirstOrDefault(x => x.Id == groupId);
             if (group == null) { return; }
 
             group.Users.Remove(user);
             await _context.SaveChangesAsync();
         }
 
-        public async Task<bool> IsGroupNameExists(string name)
+        public async Task<bool> IsGroupNameExists(string name, int id)
         {
-            return await _context.Groups.AnyAsync(g => g.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+            return await _context.Groups.AnyAsync(u => u.Id != id && u.Name.ToLower() == name.ToLower());
         }
 
         public async Task<bool> IsUserExistsInGroup(int userId, int groupId)
