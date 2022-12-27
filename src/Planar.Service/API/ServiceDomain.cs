@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class ServiceDomain : BaseBL<ServiceDomain>
+    public class ServiceDomain : BaseBL<ServiceDomain, ServiceData>
     {
         public ServiceDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {

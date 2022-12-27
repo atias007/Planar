@@ -1,6 +1,7 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
+using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Quartz;
 using System;
@@ -11,7 +12,7 @@ using static Planar.Service.API.JobDomain;
 
 namespace Planar.Service.API
 {
-    public class TriggerDomain : BaseJobBL<TriggerDomain>
+    public class TriggerDomain : BaseJobBL<TriggerDomain, JobData>
     {
         public TriggerDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
@@ -70,7 +71,9 @@ namespace Planar.Service.API
 
         private async Task<DataCommandDto> GetTriggerDetailsForDataCommands(string triggerId, string key)
         {
+#pragma warning disable IDE0017 // Simplify object initialization
             var result = new DataCommandDto();
+#pragma warning restore IDE0017 // Simplify object initialization
 
             // Get Trigger
             result.TriggerKey = await TriggerKeyHelper.GetTriggerKey(triggerId);

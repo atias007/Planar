@@ -16,26 +16,29 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public abstract class BaseBL<TBusinesLayer> : BaseBL<TBusinesLayer, DataLayer>
+    public abstract class BaseBL<TBusinesLayer, TDataLayer> : BaseBL<TBusinesLayer>
+        where TDataLayer : BaseDataLayer
     {
+        private readonly TDataLayer _dataLayer;
+
         protected BaseBL(IServiceProvider serviceProvider) : base(serviceProvider)
         {
+            _dataLayer = serviceProvider.GetRequiredService<TDataLayer>();
         }
+
+        protected TDataLayer DataLayer => _dataLayer;
     }
 
-    public abstract class BaseBL<TBusinesLayer, TDataLayer>
-        where TDataLayer : BaseDataLayer
+    public abstract class BaseBL<TBusinesLayer>
     {
         protected readonly IServiceProvider _serviceProvider;
         private readonly ILogger<TBusinesLayer> _logger;
-        private readonly TDataLayer _dataLayer;
         private readonly SchedulerUtil _schedulerUtil;
 
         protected BaseBL(IServiceProvider serviceProvider)
         {
             _logger = serviceProvider.GetRequiredService<ILogger<TBusinesLayer>>();
             _serviceProvider = serviceProvider ?? throw new PlanarJobException(nameof(serviceProvider));
-            _dataLayer = serviceProvider.GetRequiredService<TDataLayer>();
             _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
         }
 
@@ -67,8 +70,6 @@ namespace Planar.Service.API
                 return versionString;
             }
         }
-
-        protected TDataLayer DataLayer => _dataLayer;
 
         protected ILogger<TBusinesLayer> Logger => _logger;
 

@@ -55,7 +55,6 @@ namespace Planar.Startup
 
             services.AddQuartzService();
             services.AddAutoMapper(Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));
-            services.AddTransient<DataLayer>();
             services.AddTransient<MainService>();
             services.AddScoped<GroupDomain>();
             services.AddScoped<HistoryDomain>();

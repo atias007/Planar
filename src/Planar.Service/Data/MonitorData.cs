@@ -1,6 +1,11 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Dapper;
+using Microsoft.EntityFrameworkCore;
+using Planar.API.Common.Entities;
 using Planar.Service.Model;
+using Quartz;
+using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -95,6 +100,30 @@ namespace Planar.Service.Data
         {
             _context.MonitorActions.Update(monitor);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> CountFailsInRowForJob(object parameters)
+        {
+            using var conn = _context.Database.GetDbConnection();
+            var cmd = new CommandDefinition(
+                commandText: "dbo.CountFailsInRowForJob",
+                commandType: CommandType.StoredProcedure,
+                parameters: parameters);
+
+            var data = await conn.QuerySingleAsync<int>(cmd);
+            return data;
+        }
+
+        public async Task<int> CountFailsInHourForJob(object parameters)
+        {
+            using var conn = _context.Database.GetDbConnection();
+            var cmd = new CommandDefinition(
+                commandText: "dbo.CountFailsInHourForJob",
+                commandType: CommandType.StoredProcedure,
+                parameters: parameters);
+
+            var data = await conn.QuerySingleAsync<int>(cmd);
+            return data;
         }
     }
 }

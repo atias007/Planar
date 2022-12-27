@@ -309,7 +309,7 @@ namespace Planar.CLI
 
                 return !inQuotes && c == ' ';
             })
-                .Select(arg => arg.Trim().TrimMatchingQuotes('\"'))
+                .Select(arg => arg?.Trim().TrimMatchingQuotes('\"'))
                 .Where(arg => !string.IsNullOrEmpty(arg));
         }
 

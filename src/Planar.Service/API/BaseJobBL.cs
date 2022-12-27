@@ -1,4 +1,5 @@
-﻿using Planar.Service.Exceptions;
+﻿using Planar.Service.Data;
+using Planar.Service.Exceptions;
 using Quartz;
 using System;
 using System.Linq;
@@ -6,7 +7,9 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class BaseJobBL<T> : BaseBL<T>
+    public class BaseJobBL<TDomain, TData> : BaseBL<TDomain, TData>
+        where TData : BaseDataLayer
+
     {
         public BaseJobBL(IServiceProvider serviceProvider) : base(serviceProvider)
         {

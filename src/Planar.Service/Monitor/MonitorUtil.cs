@@ -183,7 +183,7 @@ namespace Planar.Service.Monitor
         private async Task<bool> Analyze(MonitorEvents @event, MonitorAction action)
         {
             using var scope = _serviceScopeFactory.CreateScope();
-            var dal = scope.ServiceProvider.GetRequiredService<DataLayer>();
+            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
 
             switch (@event)
             {

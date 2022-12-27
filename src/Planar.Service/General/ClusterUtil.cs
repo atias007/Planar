@@ -18,11 +18,11 @@ namespace Planar.Service.General
 {
     public class ClusterUtil
     {
-        private readonly DataLayer _dal;
+        private readonly ClusterData _dal;
         private readonly ILogger<ClusterUtil> _logger;
         private readonly SchedulerUtil _schedulerUtil;
 
-        public ClusterUtil(DataLayer dal, ILogger<ClusterUtil> logger, SchedulerUtil schedulerUtil)
+        public ClusterUtil(ClusterData dal, ILogger<ClusterUtil> logger, SchedulerUtil schedulerUtil)
         {
             _dal = dal;
             _logger = logger;
@@ -208,7 +208,7 @@ namespace Planar.Service.General
                 item.JoinDate = DateTime.Now;
                 item.HealthCheckDate = DateTime.Now;
                 item.InstanceId = _schedulerUtil.SchedulerInstanceId;
-                await _dal.SaveChanges();
+                await _dal.SaveChangesAsync();
             }
         }
 
@@ -445,7 +445,7 @@ namespace Planar.Service.General
             await client.HealthCheckAsync(new Empty(), deadline: GrpcDeadLine);
 
             node.HealthCheckDate = DateTime.Now;
-            await _dal.SaveChanges();
+            await _dal.SaveChangesAsync();
         }
 
         private static async Task CallStopSchedulerService(ClusterNode node)
@@ -634,7 +634,7 @@ namespace Planar.Service.General
 
             node.HealthCheckDate = DateTime.Now;
 
-            await _dal.SaveChanges();
+            await _dal.SaveChangesAsync();
         }
     }
 }

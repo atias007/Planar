@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class ConfigDomain : BaseBL<ConfigDomain>
+    public class ConfigDomain : BaseBL<ConfigDomain, ConfigData>
     {
         public ConfigDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {

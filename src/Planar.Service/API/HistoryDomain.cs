@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class HistoryDomain : BaseBL<HistoryDomain>
+    public class HistoryDomain : BaseBL<HistoryDomain, HistoryData>
     {
         public HistoryDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {

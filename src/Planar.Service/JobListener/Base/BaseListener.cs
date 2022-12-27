@@ -41,12 +41,13 @@ namespace Planar.Service.List.Base
             _logger.LogCritical(ex, "Error handle {Module}.{Source}: {Message}", typeof(T).Name, source, ex.Message);
         }
 
-        protected async Task ExecuteDal(Expression<Func<DataLayer, Task>> exp)
+        protected async Task ExecuteDal<TDataLayer>(Expression<Func<TDataLayer, Task>> exp)
+            where TDataLayer : BaseDataLayer
         {
             try
             {
                 using var scope = _serviceScopeFactory.CreateScope();
-                var dal = scope.ServiceProvider.GetRequiredService<DataLayer>();
+                var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
                 await exp.Compile().Invoke(dal);
             }
             catch (Exception ex)

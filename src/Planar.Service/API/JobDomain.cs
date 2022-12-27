@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public partial class JobDomain : BaseJobBL<JobDomain>
+    public partial class JobDomain : BaseJobBL<JobDomain, JobData>
     {
         public JobDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
@@ -129,7 +129,8 @@ namespace Planar.Service.API
         public async Task<LastInstanceId> GetLastInstanceId(string id, DateTime invokeDate)
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
-            var result = await DataLayer.GetLastInstanceId(jobKey, invokeDate);
+            var dal = Resolve<HistoryData>();
+            var result = await dal.GetLastInstanceId(jobKey, invokeDate);
             return result;
         }
 
@@ -277,7 +278,8 @@ namespace Planar.Service.API
 
         public async Task<GetTestStatusResponse> GetTestStatus(int id)
         {
-            var result = await DataLayer.GetTestStatus(id);
+            var dal = Resolve<HistoryData>();
+            var result = await dal.GetTestStatus(id);
             if (result == null)
             {
                 throw new RestNotFoundException($"test with id {id} not found");

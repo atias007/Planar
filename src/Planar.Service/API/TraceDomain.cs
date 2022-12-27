@@ -1,4 +1,5 @@
 ﻿using Planar.API.Common.Entities;
+using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using System;
 using System.Collections.Generic;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class TraceDomain : BaseBL<TraceDomain>
+    public class TraceDomain : BaseBL<TraceDomain, TraceData>
     {
         public TraceDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {

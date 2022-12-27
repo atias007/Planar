@@ -17,14 +17,14 @@ namespace Planar.Service.SystemJobs
     {
         private readonly ILogger<PersistDataJob> _logger;
 
-        private readonly DataLayer _dal;
+        private readonly HistoryData _dal;
         private readonly ClusterUtil _clusterUtil;
         private readonly SchedulerUtil _schedulerUtil;
 
         public PersistDataJob(IServiceProvider serviceProvider)
         {
             _logger = serviceProvider.GetRequiredService<ILogger<PersistDataJob>>();
-            _dal = serviceProvider.GetService<DataLayer>();
+            _dal = serviceProvider.GetService<HistoryData>();
             _clusterUtil = serviceProvider.GetService<ClusterUtil>();
             _schedulerUtil = serviceProvider.GetService<SchedulerUtil>();
         }

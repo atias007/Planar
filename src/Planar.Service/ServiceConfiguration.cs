@@ -50,10 +50,16 @@ namespace Planar.Service
 
         internal static IServiceCollection AddPlanarDataLayerWithContext(this IServiceCollection services)
         {
-            services.AddTransient<DataLayer>();
             services.AddTransient<UserData>();
             services.AddTransient<GroupData>();
-            services.AddTransient<IJobPropertyDataLayer, DataLayer>();
+            services.AddTransient<MonitorData>();
+            services.AddTransient<ConfigData>();
+            services.AddTransient<ClusterData>();
+            services.AddTransient<HistoryData>();
+            services.AddTransient<TraceData>();
+            services.AddTransient<ServiceData>();
+            services.AddTransient<JobData>();
+            services.AddTransient<IJobPropertyDataLayer, JobData>();
             services.AddDbContext<PlanarContext>(o => o.UseSqlServer(
                     AppSettings.DatabaseConnectionString,
                     options => options.EnableRetryOnFailure(12, TimeSpan.FromSeconds(5), null)),
