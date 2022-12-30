@@ -23,7 +23,7 @@ namespace Planar.Service.MapperProfiles
                 .ForMember(t => t.JobGroup, map => map.MapFrom(s => string.IsNullOrEmpty(s.JobGroup) ? null : s.JobGroup))
                 .ForMember(t => t.EventArgument, map => map.MapFrom(s => string.IsNullOrEmpty(s.EventArgument) ? null : s.EventArgument));
 
-            CreateMap<UpdateMonitorRequest, MonitorAction>();
+            CreateMap<UpdateMonitorRequest, MonitorAction>().ReverseMap();
         }
     }
 }

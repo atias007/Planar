@@ -13,15 +13,14 @@
 - *** implement GetPausedTriggerGroups
 - *** validate new or update job without triggers is must be durable
 - *** cli test: job that finish very fast - the test dont found it in running jobs. it should search in history
-- BUG: monitor get by key: if there is monitor for group, call gey by key with job id within the group return nothing
+- BUG: monitor get by key: if there is monitor for group, call get by key with job id within the group return nothing
 - BUG: add exactly same moniter ite, is enabled
-
-- *** bug: use ? in cli at trigger id but show job menu. maybe show second menu of triggers list ***
 - api to get demo yml file 
 - cli test cluster command
 - option to pause job after {x} fails in row
 - add service to convert cron to readable text https://github.com/bradymholt/cron-expression-descriptor
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
+- cli delete\remove operation must be with question R U Sure? (add option for --force)
 
 -----------------------------------------DONE-----------------------------------------
 - cli login with option to remember
@@ -64,3 +63,4 @@
 - cli: job invoke show list of abc jobs
 - cli: job invoke !! invoke the last running job
 - cli: job test !! test the last running job
+- bug: use ? in cli at trigger id but show job menu. maybe show second menu of triggers list ***

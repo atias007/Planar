@@ -8,7 +8,7 @@
 
         public string JobGroup { get; set; }
 
-        public int EventId { get; set; }
+        public MonitorEvents EventId { get; set; }
 
         public string EventArgument { get; set; }
 

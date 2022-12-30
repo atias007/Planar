@@ -18,6 +18,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
+        [SwaggerOperation(OperationId = "get_monitor", Description = "Get all monitors", Summary = "Get All Monitors")]
         public async Task<ActionResult<List<MonitorItem>>> GetAll()
         {
             var result = await BusinesLayer.GetAll();
@@ -25,6 +26,9 @@ namespace Planar.Controllers
         }
 
         [HttpGet("byKey/{key}")]
+        [SwaggerOperation(OperationId = "get_monitor_bykey_key", Description = "Get monitor by job or group", Summary = "Get monitor Job\\Group")]
+        [OkJsonResponse(typeof(List<MonitorItem>))]
+        [BadRequestResponse]
         public async Task<ActionResult<List<MonitorItem>>> GetByKey([FromRoute][Required] string key)
         {
             var result = await BusinesLayer.GetByKey(key);
@@ -32,29 +36,30 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}")]
+        [SwaggerOperation(OperationId = "get_monitor_id", Description = "Get monitor by id", Summary = "Get Monitor")]
+        [OkJsonResponse(typeof(MonitorItem))]
+        [BadRequestResponse]
+        [NotFoundResponse]
         public async Task<ActionResult<MonitorItem>> GetById([FromRoute][Id] int id)
         {
             var result = await BusinesLayer.GetById(id);
             return Ok(result);
         }
 
-        [ApiExplorerSettings(IgnoreApi = true)]
-        [HttpGet("metadata")]
-        public async Task<ActionResult<MonitorActionMedatada>> GetMetadata()
-        {
-            var result = await BusinesLayer.GetMedatada();
-            return Ok(result);
-        }
-
         [HttpGet("events")]
-        public ActionResult<List<string>> GetEvents()
+        [SwaggerOperation(OperationId = "get_monitor_events", Description = "Get all monitor events type", Summary = "Get All Monitor Events")]
+        [OkJsonResponse(typeof(List<LovItem>))]
+        public ActionResult<List<LovItem>> GetEvents()
         {
             var result = BusinesLayer.GetEvents();
             return Ok(result);
         }
 
         [HttpPost]
+        [SwaggerOperation(OperationId = "post_monitor", Description = "Add monitor", Summary = "Add Monitor")]
         [JsonConsumes]
+        [CreatedResponse(typeof(EntityIdResponse))]
+        [BadRequestResponse]
         public async Task<ActionResult<EntityIdResponse>> Add([FromBody] AddMonitorRequest request)
         {
             var result = await BusinesLayer.Add(request);
@@ -62,8 +67,8 @@ namespace Planar.Controllers
         }
 
         [HttpPut]
-        [JsonConsumes]
         [SwaggerOperation(OperationId = "put_monitor", Description = "Update monitor", Summary = "Update Monitor")]
+        [JsonConsumes]
         [NoContentResponse]
         [BadRequestResponse]
         [ConflictResponse]
@@ -75,6 +80,10 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}")]
+        [SwaggerOperation(OperationId = "delete_monitor_id", Description = "Delete monitor", Summary = "Delete Monitor")]
+        [BadRequestResponse]
+        [NoContentResponse]
+        [NotFoundResponse]
         public async Task<ActionResult> Delete([FromRoute][Id] int id)
         {
             await BusinesLayer.Delete(id);
@@ -82,14 +91,22 @@ namespace Planar.Controllers
         }
 
         [HttpPatch]
+        [SwaggerOperation(OperationId = "patch_monitor", Description = "Update monitor single property", Summary = "Partial Update Monitor")]
         [JsonConsumes]
+        [BadRequestResponse]
+        [NoContentResponse]
+        [BadRequestResponse]
+        [ConflictResponse]
+        [NotFoundResponse]
         public async Task<ActionResult> UpdatePartial([FromBody] UpdateEntityRecord request)
         {
-            await BusinesLayer.UpdatePartial(request);
+            await BusinesLayer.PartialUpdateMonitor(request);
             return NoContent();
         }
 
         [HttpPost("reload")]
+        [SwaggerOperation(OperationId = "post_monitor_reload", Description = "Refresh monitor cache", Summary = "Refresh Monitor Cache")]
+        [OkJsonResponse(typeof(string))]
         public async Task<ActionResult<string>> Reload()
         {
             var result = await BusinesLayer.Reload();
@@ -97,6 +114,8 @@ namespace Planar.Controllers
         }
 
         [HttpGet("hooks")]
+        [SwaggerOperation(OperationId = "get_monitor_hooks", Description = "Get all monitor hooks", Summary = "Get Monitor Hooks")]
+        [OkJsonResponse(typeof(string))]
         public ActionResult<List<string>> GetHooks()
         {
             var result = BusinesLayer.GetHooks();

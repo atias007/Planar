@@ -3,6 +3,7 @@ using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
+using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -19,6 +20,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("planar")]
+        [SwaggerOperation(OperationId = "post_job_planar_add", Description = "Add new planar job", Summary = "Add Planar Job")]
         [JsonConsumes]
         [CreatedResponse(typeof(JobIdResponse))]
         [BadRequestResponse]
@@ -30,6 +32,7 @@ namespace Planar.Controllers
         }
 
         [HttpPut("planar")]
+        [SwaggerOperation(OperationId = "put_job_planar", Description = "update existing planar job", Summary = "Update Planar Job")]
         [JsonConsumes]
         [CreatedResponse(typeof(JobIdResponse))]
         [BadRequestResponse]
@@ -40,7 +43,9 @@ namespace Planar.Controllers
             return CreatedAtAction(nameof(Get), result, result);
         }
 
+        [ApiExplorerSettings(IgnoreApi = true)]
         [HttpPost("folder")]
+        [SwaggerOperation(OperationId = "post_job_folder", Description = "", Summary = "")]
         [JsonConsumes]
         [CreatedResponse(typeof(JobIdResponse))]
         [BadRequestResponse]
@@ -51,7 +56,9 @@ namespace Planar.Controllers
             return CreatedAtAction(nameof(Get), result, result);
         }
 
+        [ApiExplorerSettings(IgnoreApi = true)]
         [HttpPut("folder")]
+        [SwaggerOperation(OperationId = "put_job_folder", Description = "", Summary = "")]
         [JsonConsumes]
         [CreatedResponse(typeof(JobIdResponse))]
         [BadRequestResponse]
@@ -63,6 +70,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
+        [SwaggerOperation(OperationId = "get_job", Description = "Get all jobs", Summary = "Get All Jobs")]
         [OkJsonResponse(typeof(List<JobRowDetails>))]
         public async Task<ActionResult<List<JobRowDetails>>> GetAll([FromQuery] GetAllJobsRequest request)
         {
@@ -71,6 +79,7 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}")]
+        [SwaggerOperation(OperationId = "delete_job_id", Description = "Delete job", Summary = "Delete Job")]
         [NoContentResponse]
         [BadRequestResponse]
         [NotFoundResponse]
@@ -81,6 +90,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}")]
+        [SwaggerOperation(OperationId = "get_job_id", Description = "Get job details by id", Summary = "Get Job By Id")]
         [OkJsonResponse(typeof(JobDetails))]
         [BadRequestResponse]
         [NotFoundResponse]
@@ -91,6 +101,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("nextRunning/{id}")]
+        [SwaggerOperation(OperationId = "get_job_nextRunning_id", Description = "Get the next running date & time of job", Summary = "Get Next Running Date")]
         [OkTextResponse]
         [BadRequestResponse]
         [NotFoundResponse]
@@ -101,6 +112,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("prevRunning/{id}")]
+        [SwaggerOperation(OperationId = "get_job_prevRunning_id", Description = "Get the previous running date & time of job", Summary = "Get Previous Running Date")]
         [OkTextResponse]
         [BadRequestResponse]
         [NotFoundResponse]
@@ -111,6 +123,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("data")]
+        [SwaggerOperation(OperationId = "post_job_data", Description = "Update job data", Summary = "Update Job Data")]
         [JsonConsumes]
         [CreatedResponse]
         [BadRequestResponse]
@@ -121,6 +134,7 @@ namespace Planar.Controllers
         }
 
         [HttpPut("data")]
+        [SwaggerOperation(OperationId = "put_job_data", Description = "Update job data", Summary = "Update Job Data")]
         [JsonConsumes]
         [CreatedResponse]
         [BadRequestResponse]
@@ -132,6 +146,7 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}/data/{key}")]
+        [SwaggerOperation(OperationId = "delete_job_id_data_key", Description = "Delete job data", Summary = "Delete Job Data")]
         [NoContentResponse]
         [BadRequestResponse]
         [NotFoundResponse]
@@ -142,6 +157,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("invoke")]
+        [SwaggerOperation(OperationId = "post_job_invoke", Description = "Invoke job", Summary = "Invoke Job")]
         [JsonConsumes]
         [AcceptedContentResponse]
         [BadRequestResponse]
@@ -153,6 +169,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("pause")]
+        [SwaggerOperation(OperationId = "post_job_pause", Description = "Pause job", Summary = "Pause Job")]
         [JsonConsumes]
         [AcceptedContentResponse]
         [BadRequestResponse]
@@ -164,6 +181,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("pauseAll")]
+        [SwaggerOperation(OperationId = "post_job_pauseall", Description = "Pause all jobs", Summary = "Pause All Jobs")]
         [AcceptedContentResponse]
         public async Task<IActionResult> PauseAll()
         {
@@ -172,6 +190,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("resume")]
+        [SwaggerOperation(OperationId = "post_job_resume", Description = "Resume job", Summary = "Resume Job")]
         [JsonConsumes]
         [AcceptedContentResponse]
         [BadRequestResponse]
@@ -183,6 +202,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("resumeAll")]
+        [SwaggerOperation(OperationId = "post_job_resumeall", Description = "Resume all jobs", Summary = "Resume All Jobs")]
         [AcceptedContentResponse]
         public async Task<IActionResult> ResumeAll()
         {
@@ -191,6 +211,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("stop")]
+        [SwaggerOperation(OperationId = "post_job_stop", Description = "Stop running job", Summary = "Stop Job")]
         [JsonConsumes]
         [AcceptedContentResponse]
         [BadRequestResponse]
@@ -202,6 +223,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}/settings")]
+        [SwaggerOperation(OperationId = "gat_job_id_settings", Description = "Get job settings", Summary = "Get Job Settings")]
         [OkJsonResponse(typeof(IEnumerable<KeyValueItem>))]
         [BadRequestResponse]
         public async Task<ActionResult<IEnumerable<KeyValueItem>>> GetSettings([FromRoute][Required] string id)
@@ -211,6 +233,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("running/{instanceId}")]
+        [SwaggerOperation(OperationId = "get_job_running_instanceid", Description = "Get runnng job info", Summary = "Get Runnng Job Info")]
         [OkJsonResponse(typeof(RunningJobDetails))]
         [BadRequestResponse]
         public async Task<ActionResult<RunningJobDetails>> GetAllRunning([FromRoute][Required] string instanceId)
@@ -220,6 +243,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("running")]
+        [SwaggerOperation(OperationId = "get_job_running", Description = "Gat all running jobs", Summary = "Gat All Running Jobs")]
         [OkJsonResponse(typeof(List<RunningJobDetails>))]
         public async Task<ActionResult<List<RunningJobDetails>>> GetRunning()
         {
@@ -228,6 +252,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("runningData/{instanceId}")]
+        [SwaggerOperation(OperationId = "get_job_runningData_instanceid", Description = "Get running job log & exception", Summary = "Get Running Job Data")]
         [OkJsonResponse(typeof(GetRunningDataResponse))]
         [BadRequestResponse]
         [NotFoundResponse]
@@ -237,7 +262,9 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
+        [ApiExplorerSettings(IgnoreApi = true)]
         [HttpGet("testStatus/{id}")]
+        [SwaggerOperation(OperationId = "get_job_teststatus_id", Description = "", Summary = "")]
         [OkJsonResponse(typeof(GetTestStatusResponse))]
         [BadRequestResponse]
         [NotFoundResponse]
@@ -247,7 +274,9 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
+        [ApiExplorerSettings(IgnoreApi = true)]
         [HttpGet("{id}/lastInstanceId")]
+        [SwaggerOperation(OperationId = "get_job_id_lastinstanceid", Description = "", Summary = "")]
         [OkJsonResponse(typeof(LastInstanceId))]
         [BadRequestResponse]
         [NotFoundResponse]

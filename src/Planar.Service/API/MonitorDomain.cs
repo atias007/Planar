@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
@@ -7,7 +8,6 @@ using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
-using Planar.Service.Validation;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -62,6 +62,7 @@ namespace Planar.Service.API
         public async Task<MonitorItem> GetById(int id)
         {
             var item = await DataLayer.GetMonitorAction(id);
+            ValidateExistingEntity(item, "monitor");
             var result = Mapper.Map<MonitorAction, MonitorItem>(item);
             return result;
         }
@@ -73,12 +74,12 @@ namespace Planar.Service.API
             return result;
         }
 
-        public List<string> GetEvents()
+        public List<LovItem> GetEvents()
         {
             var result =
                 Enum.GetValues(typeof(MonitorEvents))
                 .Cast<MonitorEvents>()
-                .Select(e => e.ToString())
+                .Select(e => new LovItem { Id = (int)e, Name = e.ToString() })
                 .ToList();
 
             return result;
@@ -87,41 +88,6 @@ namespace Planar.Service.API
         public List<string> GetHooks()
         {
             return ServiceUtil.MonitorHooks.Keys.ToList();
-        }
-
-        public async Task<MonitorActionMedatada> GetMedatada()
-        {
-            var result = new MonitorActionMedatada
-            {
-                Hooks = ServiceUtil.MonitorHooks.Keys
-                    .Select((k, i) => new { k, i })
-                    .ToDictionary(i => i.i + 1, k => k.k),
-                Groups = await Resolve<GroupData>().GetGroupsName(),
-                Events = Enum.GetValues(typeof(MonitorEvents))
-                    .Cast<MonitorEvents>()
-                    .ToDictionary(k => (int)k, v => v.ToString()),
-            };
-
-            var groups = (await Scheduler.GetJobGroupNames())
-                .Where(g => g != Consts.PlanarSystemGroup)
-                .ToList();
-
-            if (groups.Count <= 20)
-            {
-                result.JobGroups = groups.ToList();
-            }
-
-            var allKeys = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
-            if (allKeys.Count <= 20)
-            {
-                var jobs = allKeys
-                    .ToList()
-                    .Select(async key => await Scheduler.GetJobDetail(key));
-
-                result.Jobs = jobs.ToDictionary(d => JobKeyHelper.GetJobId(d.Result), d => d.Result.Description);
-            }
-
-            return result;
         }
 
         public async Task<string> Reload()
@@ -149,13 +115,14 @@ namespace Planar.Service.API
             ServiceUtil.LoadMonitorHooks(Logger);
         }
 
-        public async Task UpdatePartial(UpdateEntityRecord request)
+        public async Task PartialUpdateMonitor(UpdateEntityRecord request)
         {
-            var action = await DataLayer.GetMonitorAction(request.Id);
-            ValidateExistingEntity(action, "monitor");
-            var validator = new MonitorActionValidator(Resolve<GroupData>(), JobKeyHelper);
-            await SetEntityProperties(action, request, validator);
-            await DataLayer.UpdateMonitorAction(action);
+            var monitor = await DataLayer.GetMonitorAction(request.Id);
+            ValidateExistingEntity(monitor, "monitor");
+            var updateMonitor = Mapper.Map<UpdateMonitorRequest>(monitor);
+            var validator = Resolve<IValidator<UpdateMonitorRequest>>();
+            await SetEntityProperties(updateMonitor, request, validator);
+            await Update(updateMonitor);
         }
     }
 }

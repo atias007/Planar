@@ -405,25 +405,68 @@ namespace Planar.CLI.Actions
             var p = AllJobsMembers.AllUserJobs;
             restRequest.AddQueryParameter("filter", (int)p);
             var result = await RestProxy.Invoke<List<JobRowDetails>>(restRequest);
-            if (result.IsSuccessful)
-            {
-                var jobs = result.Data
-                    .OrderBy(d => d.Group)
-                    .ThenBy(d => d.Name)
-                    .Select(d => $"{d.Group}.{d.Name}")
-                    .ToList();
-
-                return AnsiConsole.Prompt(
-                     new SelectionPrompt<string>()
-                         .Title("[underline]select job from the following list (press enter to select):[/]")
-                         .PageSize(10)
-                         .MoreChoicesText("[grey](Move up and down to reveal more jobs)[/]")
-                         .AddChoices(jobs));
-            }
-            else
+            if (!result.IsSuccessful)
             {
                 throw new CliException($"fail to fetch list of jobs. error message: {result.ErrorMessage}");
             }
+
+            return ChooseJob(result.Data);
+        }
+
+        public static string ChooseJob(IEnumerable<JobRowDetails> data)
+        {
+            if (data.Count() <= 20)
+            {
+                return ShowJobsMenu(data);
+            }
+
+            var group = ShowGroupsMenu(data);
+            return ShowJobsMenu(data, group);
+        }
+
+        public static string ChooseGroup(IEnumerable<JobRowDetails> data)
+        {
+            return ShowGroupsMenu(data);
+        }
+
+        private static string ShowJobsMenu(IEnumerable<JobRowDetails> data, string groupName = null)
+        {
+            var query = data.AsQueryable();
+            var comment = string.Empty;
+
+            if (!string.IsNullOrEmpty(groupName))
+            {
+                query = query.Where(d => d.Group.ToLower() == groupName.ToLower());
+                comment = "now! ";
+            }
+
+            var jobs = query
+                .OrderBy(d => d.Group)
+                .ThenBy(d => d.Name)
+                .Select(d => $"{d.Group}.{d.Name}")
+                .ToList();
+
+            return AnsiConsole.Prompt(
+                 new SelectionPrompt<string>()
+                     .Title($"[underline]{comment}select job from the following list (press enter to select):[/]")
+                     .PageSize(20)
+                     .AddChoices(jobs));
+        }
+
+        private static string ShowGroupsMenu(IEnumerable<JobRowDetails> data)
+        {
+            var groups = data
+                .OrderBy(d => d.Group)
+                .Select(d => $"{d.Group}")
+                .Distinct()
+                .ToList();
+
+            return AnsiConsole.Prompt(
+                 new SelectionPrompt<string>()
+                     .Title("[underline]first! select group from the following list (press enter to select):[/]")
+                     .PageSize(20)
+                     .MoreChoicesText("[grey](Move up and down to reveal more groups)[/]")
+                     .AddChoices(groups));
         }
 
         public static async Task<string> ChooseTrigger()

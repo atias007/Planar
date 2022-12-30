@@ -1,12 +1,10 @@
 ﻿using AutoMapper;
 using FluentValidation;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
-using Planar.Service.Validation;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -91,6 +89,7 @@ namespace Planar.Service.API
         public async Task PartialUpdateGroup(UpdateEntityRecord request)
         {
             var group = await DataLayer.GetGroup(request.Id);
+            ValidateExistingEntity(group, "monitor");
             var updateGroup = Mapper.Map<UpdateGroupRequest>(group);
             var validator = Resolve<IValidator<UpdateGroupRequest>>();
             await SetEntityProperties(updateGroup, request, validator);

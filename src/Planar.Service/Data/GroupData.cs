@@ -59,16 +59,6 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<Dictionary<int, string>> GetGroupsName()
-        {
-            var result = await _context.Groups
-                .Select(g => new { g.Id, g.Name })
-                .OrderBy(g => g.Name)
-                .ToDictionaryAsync(k => k.Id, v => v.Name);
-
-            return result;
-        }
-
         public async Task UpdateGroup(Group group)
         {
             _context.Groups.Update(group);

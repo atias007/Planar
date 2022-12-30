@@ -1,4 +1,4 @@
-﻿namespace Planar
+﻿namespace Planar.API.Common.Entities
 {
     public enum MonitorEvents
     {

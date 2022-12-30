@@ -36,19 +36,19 @@ namespace BankOfIsraelCurrency
         private async Task SaveCurrency()
         {
             var client = new RestClient("https://www.boi.org.il");
-            var request = new RestRequest("currency.xml", Method.Get);
+            var request = new RestRequest("PublicApi/GetExchangeRates", Method.Get);
 
             Logger.LogInformation("Call bank of israel at: {Uri}", client.BuildUri(request));
-            var response = await client.ExecuteAsync<CURRENCIES>(request);
+            var response = await client.ExecuteAsync<Currencies>(request);
             if (response.IsSuccessful)
             {
                 var counter = 0;
-                var data = Deserialize(response.Content);
+                var data = response.Data.ExchangeRates;
                 foreach (var item in data)
                 {
                     FailOnStopRequest();
                     UpdateProgress(counter, data.Count());
-                    Logger.LogInformation(" [x] Handle currency {Currency} with value {Value}", item.NAME, item.RATE);
+                    Logger.LogInformation(" [x] Handle currency {Currency} with value {Value}", item.Key, item.CurrentExchangeRate);
                     IncreaseEffectedRows();
                     await Task.Delay(3000);
                     counter++;
@@ -57,20 +57,6 @@ namespace BankOfIsraelCurrency
             else
             {
                 throw new ApplicationException($"Requst to bank of israel return error. StatusCode: {response.StatusCode}");
-            }
-        }
-
-        private static IEnumerable<CURRENCIESCURRENCY> Deserialize(string xml)
-        {
-            var doc = XDocument.Parse(xml);
-            var elements = doc.Element("CURRENCIES").Elements("CURRENCY");
-            foreach (var element in elements)
-            {
-                yield return new CURRENCIESCURRENCY
-                {
-                    NAME = element.Element("NAME").Value,
-                    RATE = decimal.Parse(element.Element("RATE").Value),
-                };
             }
         }
     }

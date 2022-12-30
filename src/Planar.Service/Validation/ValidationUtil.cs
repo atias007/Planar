@@ -31,12 +31,6 @@ namespace Planar.Service.Validation
             return key != null;
         }
 
-        public static bool IsEventExists(int monitorEvent)
-        {
-            var exists = Enum.IsDefined(typeof(MonitorEvents), monitorEvent);
-            return exists;
-        }
-
         public static bool IsHookExists(string hook)
         {
             var exists = ServiceUtil.MonitorHooks.ContainsKey(hook);

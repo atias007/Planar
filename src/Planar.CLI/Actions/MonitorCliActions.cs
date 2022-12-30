@@ -55,7 +55,7 @@ namespace Planar.CLI.Actions
             }
             else
             {
-                restRequest = new RestRequest("monitor/{jobOrGroupId}", Method.Get)
+                restRequest = new RestRequest("monitor/{key}", Method.Get)
                     .AddParameter("jobOrGroupId", request.JobIdOrJobGroup, ParameterType.UrlSegment);
             }
 
@@ -67,226 +67,194 @@ namespace Planar.CLI.Actions
         [Action("update")]
         public static async Task<CliActionResponse> UpdateMonitor(CliUpdateEntityRequest request)
         {
-            var restRequest = new RestRequest("monitor/{id}", Method.Patch)
-                .AddParameter("id", request.Id, ParameterType.UrlSegment)
+            var restRequest = new RestRequest("monitor", Method.Patch)
                 .AddBody(request);
 
             return await Execute(restRequest);
         }
 
         [Action("add")]
-        public static async Task<CliActionResponse> AddMonitorAction()
+        [NullRequest]
+        public static async Task<CliActionResponse> AddMonitorAction(CliAddMonitorRequest request)
         {
-            var metadata = await GetMetadata();
-            if (metadata.IsSuccessful == false)
-            {
-                return new CliActionResponse(metadata);
-            }
-
-            if (!metadata.Data.Hooks.Any())
-            {
-                throw new CliValidationException("there are no monitor hooks define in service");
-            }
-
-            if (!metadata.Data.Groups.Any())
-            {
-                throw new CliValidationException("there are no distribution groups define in service");
-            }
-
-            if (!metadata.Data.Jobs.Any())
-            {
-                throw new CliValidationException("there are no jobs define in service");
-            }
-
-            var title = GetTitle();
-            var job = GetJob(metadata);
-            var monitorEvent = GetEvent(metadata);
-            var monitorEventArgs = GetEventArguments(monitorEvent);
-            var groupId = GetDistributionGroup(metadata);
-            var hookName = GetHook(metadata);
-
-            AnsiConsole.Write(new Rule());
-
-            var monitor = new AddMonitorRequest
-            {
-                EventArgument = monitorEventArgs,
-                JobGroup = job.JobGroupId,
-                GroupId = groupId,
-                Hook = hookName,
-                JobId = job.JobId,
-                EventId = monitorEvent,
-                Title = title
-            };
-
+            request ??= await CollectAddMonitorRequestData();
+            var mappedRequest = MapAddMonitorRequest(request);
             var restRequestAdd = new RestRequest("monitor", Method.Post)
-                .AddBody(monitor);
+                .AddBody(mappedRequest);
             var resultAdd = await RestProxy.Invoke<int>(restRequestAdd);
 
             return new CliActionResponse(resultAdd, message: Convert.ToString(resultAdd.Data));
         }
 
-        private static async Task<RestResponse<MonitorActionMedatada>> GetMetadata()
+        private static AddMonitorRequest MapAddMonitorRequest(CliAddMonitorRequest request)
         {
-            var restRequest = new RestRequest("monitor/metadata", Method.Get);
-            var result = await RestProxy.Invoke<MonitorActionMedatada>(restRequest);
+            var result = JsonMapper.Map<AddMonitorRequest, CliAddMonitorRequest>(request);
+            result.JobId = request.Id;
             return result;
         }
 
-        private static string GetHook(RestResponse<MonitorActionMedatada> metadata)
+        private static async Task<CliAddMonitorRequest> CollectAddMonitorRequestData()
         {
-            var hooksTable = CliTableExtensions.GetTable(metadata.Data.Hooks, "Name");
-            AnsiConsole.Write(hooksTable);
-            var hookPrompt = new TextPrompt<int>("[turquoise2]  > Hook id: [/]")
-                .Validate(hook =>
-                {
-                    if (metadata.Data.Hooks.ContainsKey(hook))
-                    {
-                        return ValidationResult.Success();
-                    }
+            var eventsRequest = new RestRequest("monitor/events", Method.Get);
+            var eventsTask = RestProxy.Invoke<List<LovItem>>(eventsRequest);
 
-                    return ValidationResult.Error($"[red]hook id {hook} does not exist[/]");
-                });
+            var hooksRequest = new RestRequest("monitor/hooks", Method.Get);
+            var hooksTask = RestProxy.Invoke<List<string>>(hooksRequest);
 
-            var hookId = AnsiConsole.Prompt(hookPrompt);
-            var hookName = metadata.Data.Hooks[hookId];
-            return hookName;
+            var jobsRequest = new RestRequest("job", Method.Get)
+                .AddQueryParameter("filter", (int)AllJobsMembers.AllUserJobs);
+            var jobsTask = RestProxy.Invoke<List<JobRowDetails>>(jobsRequest);
+
+            var groupsRequest = new RestRequest("group", Method.Get);
+            var groupsTask = RestProxy.Invoke<List<GroupInfo>>(groupsRequest);
+
+            var events = await eventsTask;
+            if (events.IsSuccessful == false)
+            {
+            }
+
+            var hooks = await hooksTask;
+            if (hooks.IsSuccessful == false)
+            {
+            }
+
+            var jobs = await jobsTask;
+            if (jobs.IsSuccessful == false)
+            {
+            }
+
+            var groups = await groupsTask;
+            if (groups.IsSuccessful == false)
+            {
+            }
+
+            if (!jobs.Data.Any())
+            {
+                throw new CliValidationException("there are no jobs for monitoring");
+            }
+
+            if (!hooks.Data.Any())
+            {
+                throw new CliValidationException("there are no monitor hooks define in service");
+            }
+
+            if (!groups.Data.Any())
+            {
+                throw new CliValidationException("there are no distribution groups define in service");
+            }
+
+            var title = GetTitle();
+            var job = GetJob(jobs.Data);
+            var monitorEvent = GetEvent(events.Data);
+            var monitorEventArgs = GetEventArguments(monitorEvent);
+            var groupId = GetDistributionGroup(groups.Data);
+            var hookName = GetHook(hooks.Data);
+
+            AnsiConsole.Write(new Rule());
+
+            var monitor = new CliAddMonitorRequest
+            {
+                EventArgument = monitorEventArgs,
+                JobGroup = job.JobGroupId,
+                GroupId = groupId,
+                Hook = hookName,
+                Id = job.JobId,
+                EventId = monitorEvent,
+                Title = title
+            };
+
+            return monitor;
         }
 
-        private static int GetDistributionGroup(RestResponse<MonitorActionMedatada> metadata)
+        private static string GetHook(IEnumerable<string> hooks)
         {
-            var groupsTable = CliTableExtensions.GetTable(metadata.Data.Groups, "Group Name");
-            AnsiConsole.Write(groupsTable);
+            var selectedHook = AnsiConsole.Prompt(
+                 new SelectionPrompt<string>()
+                    .Title("[underline]select hook from the following list (press enter to select):[/]")
+                    .PageSize(20)
+                    .MoreChoicesText("[grey](Move up and down to reveal more hooks)[/]")
+                    .AddChoices(hooks));
 
-            var prompt = new TextPrompt<int>("[turquoise2]  > Distribution group id: [/]")
-                .Validate(group =>
-                {
-                    if (metadata.Data.Groups.ContainsKey(group))
-                    {
-                        return ValidationResult.Success();
-                    }
+            AnsiConsole.MarkupLine($"[turquoise2]  > Hook: [/] {selectedHook}");
 
-                    return ValidationResult.Error($"[red]group id {group} does not exist[/]");
-                });
+            return selectedHook;
+        }
 
-            var groupId = AnsiConsole.Prompt(prompt);
-            return groupId;
+        private static int GetDistributionGroup(IEnumerable<GroupInfo> groups)
+        {
+            var groupsNames = groups.Select(group => group.Name);
+
+            var selectedGroup = AnsiConsole.Prompt(
+                 new SelectionPrompt<string>()
+                    .Title("[underline]select distribution group from the following list (press enter to select):[/]")
+                    .PageSize(20)
+                    .MoreChoicesText("[grey](Move up and down to reveal more distribution group)[/]")
+                    .AddChoices(groupsNames));
+
+            var group = groups.Where(e => e.Name == selectedGroup).First();
+            AnsiConsole.MarkupLine($"[turquoise2]  > Group: [/] {group}");
+            return group.Id;
         }
 
         private static string GetEventArguments(int monitorEvent)
         {
-            return monitorEvent >= 10 ?
+            var result = monitorEvent >= 10 ?
                 AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Monitor event argument: [/]").AllowEmpty()) :
                 null;
-        }
 
-        private static int GetEvent(RestResponse<MonitorActionMedatada> metadata)
-        {
-            var evenTtable = CliTableExtensions.GetTable(metadata.Data.Events, "Event Name");
-            AnsiConsole.Write(evenTtable);
-
-            var prompt = new TextPrompt<int>("[turquoise2]  > Monitor event id: [/]")
-                .Validate(ev =>
-                {
-                    if (metadata.Data.Events.ContainsKey(ev))
-                    {
-                        return ValidationResult.Success();
-                    }
-
-                    return ValidationResult.Error($"[red]event id {ev} does not exist[/]");
-                });
-
-            var monitorEvent = AnsiConsole.Prompt(prompt);
-            return monitorEvent;
-        }
-
-        private static AddMonitorJobData GetJob(RestResponse<MonitorActionMedatada> metadata)
-        {
-            var result = new AddMonitorJobData();
-
-            while (result.IsEmpty)
+            if (!string.IsNullOrEmpty(result))
             {
-                result.JobId = GetJobId(metadata);
-                if (string.IsNullOrEmpty(result.JobId))
-                {
-                    result.JobGroupId = GetJobGroup(metadata);
-                }
-
-                if (result.IsEmpty)
-                {
-                    AnsiConsole.Write(new Markup("[red]job id and job group are empty[/]\r\n"));
-                }
+                AnsiConsole.MarkupLine($"[turquoise2]  > Arguments: [/] {result}");
             }
 
             return result;
         }
 
-        private static string GetJobId(RestResponse<MonitorActionMedatada> metadata)
+        private static int GetEvent(IEnumerable<LovItem> events)
         {
-            var table = CliTableExtensions.GetTable(metadata.Data.Jobs, "Description");
-            AnsiConsole.Write(table);
+            var eventsName = events.Select(e => e.Name);
 
-            var prompt = new TextPrompt<string>("[turquoise2]  > Job id: [/]")
-                .AllowEmpty()
-                .Validate(job =>
-                {
-                    if (string.IsNullOrEmpty(job))
-                    {
-                        return ValidationResult.Success();
-                    }
+            var selectedEvent = AnsiConsole.Prompt(
+                 new SelectionPrompt<string>()
+                     .Title("[underline]select monitor event from the following list (press enter to select):[/]")
+                     .PageSize(20)
+                     .MoreChoicesText("[grey](Move up and down to reveal more monitor event)[/]")
+                     .AddChoices(eventsName));
 
-                    job = job.Trim();
-                    if (metadata.Data.Jobs.ContainsKey(job))
-                    {
-                        return ValidationResult.Success();
-                    }
-
-                    return ValidationResult.Error($"[red]job id {job} does not exist[/]");
-                });
-
-            var jobId = AnsiConsole.Prompt(prompt);
-            if (string.IsNullOrEmpty(jobId))
-            {
-                jobId = null;
-            }
-
-            return jobId;
+            var monitorEvent = events.Where(e => e.Name == selectedEvent).First();
+            AnsiConsole.MarkupLine($"[turquoise2]  > Event: [/] {monitorEvent}");
+            return monitorEvent.Id;
         }
 
-        private static string GetJobGroup(RestResponse<MonitorActionMedatada> metadata)
+        private static AddMonitorJobData GetJob(IEnumerable<JobRowDetails> jobs)
         {
-            string jobGroup = null;
+            var type = new[] { "single (monitor for single job)", "group (monitor for group of jobs)", "all (monitor for all jobs)" };
 
-            if (metadata.Data.JobGroups != null && metadata.Data.JobGroups.Count > 0)
+            var selectedEvent = AnsiConsole.Prompt(
+                 new SelectionPrompt<string>()
+                    .Title("[underline]which kind of monitor do you want to create? (press enter to select):[/]")
+                    .PageSize(20)
+                    .MoreChoicesText("[grey](Move up and down to reveal more monitor event)[/]")
+                    .AddChoices(type));
+
+            selectedEvent = selectedEvent.Split(' ').First();
+
+            if (selectedEvent == "all")
             {
-                var table = CliTableExtensions.GetTable(metadata.Data.JobGroups, "Job Group");
-                AnsiConsole.Write(table);
+                AnsiConsole.MarkupLine("[turquoise2]  > Monitor for: [/] all jobs");
+                return new AddMonitorJobData();
             }
 
-            jobGroup = AnsiConsole.Prompt(
-                new TextPrompt<string>("[turquoise2]  > Job group: [/]")
-                .AllowEmpty()
-                .Validate(group =>
-                {
-                    if (string.IsNullOrEmpty(group))
-                    {
-                        return ValidationResult.Success();
-                    }
-
-                    group = group.Trim();
-                    if (metadata.Data.JobGroups.Contains(group))
-                    {
-                        return ValidationResult.Success();
-                    }
-
-                    return ValidationResult.Error($"[red]group {group} does not exist[/]");
-                }));
-
-            if (string.IsNullOrEmpty(jobGroup))
+            if (selectedEvent == "group")
             {
-                jobGroup = null;
+                var group = JobCliActions.ChooseGroup(jobs);
+                AnsiConsole.MarkupLine($"[turquoise2]  > Monitor for: [/] job group '{group}'");
+                return new AddMonitorJobData { JobGroupId = group };
             }
 
-            return jobGroup;
+            var job = JobCliActions.ChooseJob(jobs);
+            AnsiConsole.MarkupLine($"[turquoise2]  > Monitor for: [/] single job '{job}'");
+            return new AddMonitorJobData { JobId = job };
         }
 
         private static string GetTitle()
@@ -307,7 +275,7 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> GetMonitorEvents()
         {
             var restRequest = new RestRequest("monitor/events", Method.Get);
-            var result = await RestProxy.Invoke<List<string>>(restRequest);
+            var result = await RestProxy.Invoke<List<LovItem>>(restRequest);
             return new CliActionResponse(result, serializeObj: result.Data);
         }
 
