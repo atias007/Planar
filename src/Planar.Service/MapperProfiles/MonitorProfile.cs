@@ -15,10 +15,8 @@ namespace Planar.Service.MapperProfiles
              .ForMember(t => t.GroupName, map => map.MapFrom(s => s.Group.Name))
              .ForMember(t => t.Job, map => map.MapFrom(s => string.IsNullOrEmpty(s.JobGroup) ? $"Id: {s.JobId}" : $"Group: {s.JobGroup}"));
 
-            //CreateMap<List<MonitorAction>, List<MonitorItem>>();
-
             CreateMap<AddMonitorRequest, MonitorAction>()
-                //.Include<UpdateMonitorRequest, MonitorAction>()
+                .Include<UpdateMonitorRequest, MonitorAction>()
                 .ForMember(t => t.Active, map => map.MapFrom(s => true))
                 .ForMember(t => t.JobGroup, map => map.MapFrom(s => string.IsNullOrEmpty(s.JobGroup) ? null : s.JobGroup))
                 .ForMember(t => t.EventArgument, map => map.MapFrom(s => string.IsNullOrEmpty(s.EventArgument) ? null : s.EventArgument));

@@ -17,11 +17,6 @@ namespace Planar.Common
             return list == null || !list.Contains(value);
         }
 
-        public static bool NotContainsKey<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key)
-        {
-            return dictionary == null || !dictionary.ContainsKey(key);
-        }
-
         public static void Upsert<TValue>(this Dictionary<string, TValue> dictionary, string key, TValue value)
         {
             if (dictionary == null) { throw new ArgumentNullException(nameof(dictionary)); }
@@ -38,21 +33,6 @@ namespace Planar.Common
         public static void Upsert(this Dictionary<string, string> dictionary, string key, string value)
         {
             Upsert<string>(dictionary, key, value);
-        }
-
-        public static bool NotContainsKey<TValue>(this Dictionary<string, TValue> dictionary, string key, bool ignoreCase)
-        {
-            if (dictionary == null) { return true; }
-            if (string.IsNullOrEmpty(key)) { return true; }
-
-            if (ignoreCase)
-            {
-                return !dictionary.Keys.Any(k => k.ToLower() == key.ToLower());
-            }
-            else
-            {
-                return !dictionary.ContainsKey(key);
-            }
         }
 
         public static TValue Get<TValue>(this Dictionary<string, TValue> dictionary, string key, bool ignoreCase)

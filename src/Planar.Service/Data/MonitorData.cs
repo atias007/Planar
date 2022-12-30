@@ -36,8 +36,8 @@ namespace Planar.Service.Data
             var filter = all.Where(m => m.EventId == @event && m.Active == true);
             filter = filter.Where(m =>
                 (string.IsNullOrEmpty(m.JobGroup) && string.IsNullOrEmpty(m.JobId)) ||
-                (string.IsNullOrEmpty(m.JobGroup) == false && m.JobGroup == group && string.IsNullOrEmpty(m.JobId)) ||
-                (string.IsNullOrEmpty(m.JobGroup) && string.IsNullOrEmpty(m.JobId) == false && m.JobId == job));
+                (!string.IsNullOrEmpty(m.JobGroup) && m.JobGroup == group && string.IsNullOrEmpty(m.JobId)) ||
+                (string.IsNullOrEmpty(m.JobGroup) && !string.IsNullOrEmpty(m.JobId) && m.JobId == job));
 
             return await filter.ToListAsync();
         }

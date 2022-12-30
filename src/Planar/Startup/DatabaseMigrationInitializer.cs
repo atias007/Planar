@@ -7,12 +7,7 @@ namespace Planar.Startup
 {
     public static class DatabaseMigrationInitializer
     {
-        private static readonly Assembly _assembly;
-
-        static DatabaseMigrationInitializer()
-        {
-            _assembly = Assembly.Load(nameof(DatabaseMigrations));
-        }
+        private static readonly Assembly _assembly = Assembly.Load(nameof(DatabaseMigrations));
 
         private static void HandleError(Exception ex)
         {
@@ -29,7 +24,7 @@ namespace Planar.Startup
 
         public static void RunMigration()
         {
-            if (AppSettings.RunDatabaseMigration == false)
+            if (!AppSettings.RunDatabaseMigration)
             {
                 Console.WriteLine("[x] Skip database migration");
                 return;

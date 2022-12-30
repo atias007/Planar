@@ -7,7 +7,7 @@ namespace Planar.Controllers
     {
         private readonly TBusinesLayer _businesLayer;
 
-        public BaseController(TBusinesLayer businesLayer)
+        protected BaseController(TBusinesLayer businesLayer)
         {
             _businesLayer = businesLayer;
         }

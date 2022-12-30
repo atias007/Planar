@@ -95,7 +95,7 @@ namespace Planar.Service.API
 
         private static void ValidateDataKeyExists(ITrigger trigger, string key, string triggerId)
         {
-            if (trigger == null || trigger.JobDataMap.ContainsKey(key) == false)
+            if (trigger == null || !trigger.JobDataMap.ContainsKey(key))
             {
                 throw new RestValidationException($"{key}", $"data with Key '{key}' could not found in trigger '{triggerId}' (Name '{trigger?.Key.Name}' and Group '{trigger?.Key.Group}')");
             }

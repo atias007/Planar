@@ -853,11 +853,10 @@
     }
 
     .swagger-ui .checkbox p {
-        font-weight: 400 !important;
+        font-weight: 600 !important;
         font-style: italic;
         margin: 0 !important;
         font-family: Source Code Pro, monospace;
-        font-weight: 600;
         color: #3b4151
     }
 
@@ -934,7 +933,6 @@
         .swagger-ui .dialog-ux .modal-ux-content p {
             font-size: 12px;
             margin: 0 0 5px;
-            color: #41444e;
             font-family: Open Sans, sans-serif;
             color: #3b4151
         }
@@ -981,7 +979,6 @@
 
 .swagger-ui .model {
     font-size: 12px;
-    font-weight: 300;
     font-family: Source Code Pro, monospace;
     font-weight: 600;
     color: #3b4151
@@ -1187,7 +1184,6 @@
 
     .swagger-ui table.headers td {
         font-size: 12px;
-        font-weight: 300;
         vertical-align: middle;
         font-family: Source Code Pro, monospace;
         font-weight: 600;
@@ -1368,10 +1364,9 @@
 
     .swagger-ui .info .base-url {
         font-size: 12px;
-        font-weight: 300 !important;
+        font-weight: 600 !important;
         margin: 0;
         font-family: Source Code Pro, monospace;
-        font-weight: 600;
         color: #3b4151
     }
 

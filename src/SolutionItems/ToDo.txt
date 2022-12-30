@@ -10,8 +10,7 @@
       * Error handle SafeScan: BaseListener.cs:line 28
       * Error handle LogJobListener.JobWasExecuted: BaseListener.cs:line 48
       * system jobs
-- *** implement GetPausedTriggerGroups
-- *** validate new or update job without triggers is must be durable
+- *** implement GetPausedTriggers
 - *** cli test: job that finish very fast - the test dont found it in running jobs. it should search in history
 - BUG: monitor get by key: if there is monitor for group, call get by key with job id within the group return nothing
 - BUG: add exactly same moniter ite, is enabled
@@ -64,3 +63,4 @@
 - cli: job invoke !! invoke the last running job
 - cli: job test !! test the last running job
 - bug: use ? in cli at trigger id but show job menu. maybe show second menu of triggers list ***
+- validate new or update job without triggers is must be durable

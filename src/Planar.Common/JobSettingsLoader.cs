@@ -37,7 +37,7 @@ namespace Planar.Common
             var final = Global.GlobalConfig;
 
             // Merge settings yml file
-            if (directory == null || directory.Exists == false) { return final; }
+            if (directory == null || !directory.Exists) { return final; }
 
             var jobSettings = LoadJobSettingsFiles(directory.FullName);
             final = final.Merge(jobSettings);

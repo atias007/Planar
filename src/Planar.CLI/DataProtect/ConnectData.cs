@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace Planar.CLI.DataProtect
 {
-    internal class ConnectData
+    public class ConnectData
     {
         private const string filename = "metadata.dat";
 

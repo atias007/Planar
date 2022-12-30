@@ -127,7 +127,7 @@ namespace Planar.Service.API
         {
             if (metadata == null) { return; }
             if (metadata.OldJobDetails == null) { return; }
-            if (metadata.RollbackEnabled == false) { return; }
+            if (!metadata.RollbackEnabled) { return; }
 
             var property = new JobProperty { JobId = metadata.JobId, Properties = metadata.OldJobProperties };
             await Scheduler.ScheduleJob(metadata.OldJobDetails, metadata.OldTriggers, true);

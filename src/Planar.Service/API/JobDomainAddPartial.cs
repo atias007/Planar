@@ -24,16 +24,11 @@ namespace Planar.Service.API
         private const int MinNameLength = 3;
         private const int MaxNameLength = 50;
         private const string NameRegexTemplate = @"^[a-zA-Z0-9\-_]{@MinNameLength@,@MaxNameLength@}$";
-        private static readonly Regex _regex;
 
-        static JobDomain()
-        {
-            var regexName = NameRegexTemplate
+        private static readonly Regex _regex = new(
+            NameRegexTemplate
                 .Replace("@MinNameLength@", MinNameLength.ToString())
-                .Replace("@MaxNameLength@", MaxNameLength.ToString());
-
-            _regex = new Regex(regexName, RegexOptions.Compiled);
-        }
+                .Replace("@MaxNameLength@", MaxNameLength.ToString()), RegexOptions.Compiled, TimeSpan.FromSeconds(5));
 
         public async Task<JobIdResponse> Add<TProperties>(SetJobRequest<TProperties> genericRequest)
            where TProperties : class, new()
@@ -414,7 +409,7 @@ namespace Planar.Service.API
             };
         }
 
-        private JobKey ValidateJobMetadata(SetJobRequest metadata)
+        private static JobKey ValidateJobMetadata(SetJobRequest metadata)
         {
             #region Trim
 
@@ -462,6 +457,12 @@ namespace Planar.Service.API
             if (metadata.JobData != null && metadata.JobData.Any() && metadata.Concurrent)
             {
                 throw new RestValidationException("concurrent", $"job with concurrent=true can not have data. persist data with concurent running may cause unexpected results");
+            }
+
+            var triggersCount = metadata.CronTriggers?.Count + metadata.SimpleTriggers?.Count;
+            if (triggersCount == 0 && metadata.Durable == false)
+            {
+                throw new RestValidationException("durable", $"job without any trigger must be durable. set the durable property to true or add at least one trigger");
             }
 
             ValidateTriggerMetadata(metadata);
@@ -562,13 +563,13 @@ namespace Planar.Service.API
         {
             container.SimpleTriggers?.ForEach(t =>
             {
-                if (IsRegexMatch(_regex, t.Name) == false) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
-                if (IsRegexMatch(_regex, t.Group) == false) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
+                if (!IsRegexMatch(_regex, t.Name)) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
+                if (!IsRegexMatch(_regex, t.Group)) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
             });
             container.CronTriggers?.ForEach(t =>
             {
-                if (IsRegexMatch(_regex, t.Name) == false) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
-                if (IsRegexMatch(_regex, t.Group) == false) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
+                if (!IsRegexMatch(_regex, t.Name)) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
+                if (!IsRegexMatch(_regex, t.Group)) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
             });
         }
 

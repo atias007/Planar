@@ -109,22 +109,22 @@ namespace Planar.CLI.Actions
             var groupsTask = RestProxy.Invoke<List<GroupInfo>>(groupsRequest);
 
             var events = await eventsTask;
-            if (events.IsSuccessful == false)
+            if (!events.IsSuccessful)
             {
             }
 
             var hooks = await hooksTask;
-            if (hooks.IsSuccessful == false)
+            if (!hooks.IsSuccessful)
             {
             }
 
             var jobs = await jobsTask;
-            if (jobs.IsSuccessful == false)
+            if (!jobs.IsSuccessful)
             {
             }
 
             var groups = await groupsTask;
-            if (groups.IsSuccessful == false)
+            if (!groups.IsSuccessful)
             {
             }
 
