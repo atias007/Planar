@@ -12,12 +12,12 @@ namespace Planar.Service.SystemJobs
     {
         private readonly ILogger<ClearTraceTableJob> _logger;
 
-        private readonly DataLayer _dal;
+        private readonly TraceData _dal;
 
         public ClearTraceTableJob(IServiceProvider serviceProvider)
         {
             _logger = serviceProvider.GetRequiredService<ILogger<ClearTraceTableJob>>();
-            _dal = serviceProvider.GetRequiredService<DataLayer>();
+            _dal = serviceProvider.GetRequiredService<TraceData>();
         }
 
         public Task Execute(IJobExecutionContext context)

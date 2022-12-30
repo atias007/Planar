@@ -1,9 +1,11 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
+using Planar.CLI.Exceptions;
 using RestSharp;
 using Spectre.Console;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
@@ -61,11 +63,15 @@ namespace Planar.CLI.Actions
                 return response;
             }
 
-            var trigger1 = result.Data.SimpleTriggers.FirstOrDefault(t => t.Id == request.Id || ($"{t.Group}.{t.Name}" == request.Id));
-            if (trigger1 != null) { return new CliActionResponse(result, serializeObj: trigger1); }
+            if (result.Data.SimpleTriggers.Any())
+            {
+                return new CliActionResponse(result, serializeObj: result.Data.SimpleTriggers.First());
+            }
 
-            var trigger2 = result.Data.CronTriggers.FirstOrDefault(t => t.Id == request.Id || ($"{t.Group}.{t.Name}" == request.Id));
-            if (trigger2 != null) { return new CliActionResponse(result, serializeObj: trigger2); }
+            if (result.Data.CronTriggers.Any())
+            {
+                return new CliActionResponse(result, serializeObj: result.Data.CronTriggers);
+            }
 
             return new CliActionResponse(result);
         }
@@ -96,6 +102,46 @@ namespace Planar.CLI.Actions
                 .AddBody(request);
 
             return await Execute(restRequest);
+        }
+
+        [Action("data")]
+        public static async Task<CliActionResponse> UpsertTriggerData(CliJobOrTriggerDataRequest request)
+        {
+            RestResponse result;
+            switch (request.Action)
+            {
+                case JobDataActions.upsert:
+                    var prm1 = new JobOrTriggerDataRequest
+                    {
+                        Id = request.Id,
+                        DataKey = request.DataKey,
+                        DataValue = request.DataValue
+                    };
+
+                    var restRequest1 = new RestRequest("trigger/data", Method.Post).AddBody(prm1);
+                    result = await RestProxy.Invoke(restRequest1);
+
+                    if (result.StatusCode == HttpStatusCode.Conflict)
+                    {
+                        restRequest1 = new RestRequest("trigger/data", Method.Put).AddBody(prm1);
+                        result = await RestProxy.Invoke(restRequest1);
+                    }
+                    break;
+
+                case JobDataActions.remove:
+                    var restRequest2 = new RestRequest("trigger/{id}/data/{key}", Method.Delete)
+                        .AddParameter("id", request.Id, ParameterType.UrlSegment)
+                        .AddParameter("key", request.DataKey, ParameterType.UrlSegment);
+
+                    result = await RestProxy.Invoke(restRequest2);
+                    break;
+
+                default:
+                    throw new CliValidationException($"Action {request.Action} is not supported for this command");
+            }
+
+            AssertTriggerUpdated(result, request.Id);
+            return new CliActionResponse(result);
         }
     }
 }

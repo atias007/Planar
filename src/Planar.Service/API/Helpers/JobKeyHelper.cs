@@ -74,13 +74,13 @@ namespace Planar.Service.API.Helpers
 
             if (exists == null)
             {
-                throw new RestNotFoundException($"job with id {jobKey.Name} or key {jobKey.Group}.{jobKey.Name} does not exist");
+                throw new RestNotFoundException($"job with key {jobKey.Group}.{jobKey.Name} does not exist");
             }
 
             return exists;
         }
 
-        public static JobKey GetJobKey(AddJobRequest metadata)
+        public static JobKey GetJobKey(SetJobRequest metadata)
         {
             return string.IsNullOrEmpty(metadata.Group) ?
                             new JobKey(metadata.Name) :

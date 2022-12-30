@@ -3,7 +3,7 @@ using Planar.API.Common.Entities;
 
 namespace Planar.Validation
 {
-    public class JobDataRequestValidator : AbstractValidator<JobDataRequest>
+    public class JobDataRequestValidator : AbstractValidator<JobOrTriggerDataRequest>
     {
         public JobDataRequestValidator()
         {

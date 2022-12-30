@@ -9,5 +9,10 @@ namespace Planar.CLI.Exceptions
             : base(string.Empty, innerException)
         {
         }
+
+        public PlanarServiceException(string message)
+            : base(message)
+        {
+        }
     }
 }

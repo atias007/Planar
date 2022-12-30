@@ -16,9 +16,9 @@ namespace Planar.CLI.Actions
         {
             var restRequest = new RestRequest("config/{key}", Method.Get)
                 .AddParameter("key", request.Key, ParameterType.UrlSegment);
-            var result = await RestProxy.Invoke<string>(restRequest);
+            var result = await RestProxy.Invoke<CliGlobalConfig>(restRequest);
 
-            return new CliActionResponse(result, message: result.Data);
+            return new CliActionResponse(result, message: result.Data?.Value);
         }
 
         [Action("ls")]

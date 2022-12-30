@@ -1,10 +1,4 @@
-upgrade:
-(1) add log level to app settings
-(2) upgrade planar.job nuget for all jobs
-
-
 --------------------------------------------------------
-
 - // TODO: add appsettings for UseJobAutoInterrupt at QuartzServiceConfiguration
 - add to base test to retrieve log & exception
 
@@ -16,15 +10,22 @@ upgrade:
       * Error handle SafeScan: BaseListener.cs:line 28
       * Error handle LogJobListener.JobWasExecuted: BaseListener.cs:line 48
       * system jobs
-
-- *** bug: use ? in cli at trigger id but show job menu. maybe show second menu of triggers list ***
+- *** implement GetPausedTriggers
+- *** cli test: job that finish very fast - the test dont found it in running jobs. it should search in history
+- BUG: monitor get by key: if there is monitor for group, call get by key with job id within the group return nothing
+- BUG: add exactly same moniter ite, is enabled
 - api to get demo yml file 
 - cli test cluster command
 - option to pause job after {x} fails in row
 - add service to convert cron to readable text https://github.com/bradymholt/cron-expression-descriptor
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
+- cli delete\remove operation must be with question R U Sure? (add option for --force)
 
 -----------------------------------------DONE-----------------------------------------
+- cli login with option to remember
+- cli may CRUD trigger data
+- cli show triggers menu on '?' argument
+- run database migration on each startup
 - cli health check should check cluster mode
 - allow to stop planar scheduler without stop the windows service (service stop, service start, service shutdown)
 - add cluster support in cli in all "running" commands (and stop)
@@ -48,7 +49,7 @@ upgrade:
 - enforce required parameters on cli
 - call cluster functions only if running is cluster mode
 - misfire behaviour should be enum in yml file
--- job runningdata w10n-TsahiAti637964208165023851637964208471912498 should return 404
+- job runningdata w10n-TsahiAti637964208165023851637964208471912498 should return 404
 - trigger get -> show misfirebehaviour as numeric
 - job settings <id> return empty
 - job add with only folder name
@@ -61,4 +62,5 @@ upgrade:
 - cli: job invoke show list of abc jobs
 - cli: job invoke !! invoke the last running job
 - cli: job test !! test the last running job
-
+- bug: use ? in cli at trigger id but show job menu. maybe show second menu of triggers list ***
+- validate new or update job without triggers is must be durable

@@ -12,7 +12,7 @@ namespace Planar.Service.Validation
         {
             if (value == null) return true;
             const string pattern = @"\A(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9]{2,8}(?:[a-z0-9-]*[a-z0-9])?)\Z";
-            var regex = new Regex(pattern, RegexOptions.IgnoreCase);
+            var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(5));
             return regex.IsMatch(value);
         }
 
@@ -20,7 +20,7 @@ namespace Planar.Service.Validation
         {
             if (value == null) return true;
             const string pattern = "^[0-9]+$";
-            var regex = new Regex(pattern, RegexOptions.IgnoreCase);
+            var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(5));
             return regex.IsMatch(value);
         }
 
@@ -31,21 +31,9 @@ namespace Planar.Service.Validation
             return key != null;
         }
 
-        public static bool IsEventExists(int monitorEvent)
-        {
-            var exists = Enum.IsDefined(typeof(MonitorEvents), monitorEvent);
-            return exists;
-        }
-
         public static bool IsHookExists(string hook)
         {
             var exists = ServiceUtil.MonitorHooks.ContainsKey(hook);
-            return exists;
-        }
-
-        public static bool IsGroopExists(int groop, DataLayer dal)
-        {
-            var exists = dal.IsGroupExists(groop).Result;
             return exists;
         }
 
@@ -54,7 +42,7 @@ namespace Planar.Service.Validation
             if (value == null) return true;
 
             const string pattern = @"^(?:\w+\\?)*$";
-            var regex = new Regex(pattern, RegexOptions.IgnoreCase);
+            var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(5));
             return regex.IsMatch(value);
         }
     }

@@ -12,18 +12,8 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
-
-	<ItemGroup>
-	  <Compile Remove="Entities\JobInstanceLog.cs" />
-	  <Compile Remove="Entities\JobInstanceLogRow.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Include="Entities\JobInstanceLog.cs" />
-	  <None Include="Entities\JobInstanceLogRow.cs" />
-	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="FluentValidation" Version="11.4.0" />
-		<PackageReference Include="YamlDotNet" Version="12.1.0" />
+		<PackageReference Include="YamlDotNet" Version="12.2.1" />
 	</ItemGroup>
 </Project>

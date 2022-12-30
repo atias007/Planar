@@ -71,7 +71,11 @@ namespace Planar.Startup
             if (AppSettings.SwaggerUI)
             {
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Planar"));
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint($"/swagger/{SwaggerInitializer.SwaggerVersion}/swagger.json", "Planar");
+                    c.InjectStylesheet("/Content/theme-flattop.css");
+                });
             }
 
             if (AppSettings.UseHttpsRedirect)

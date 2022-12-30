@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using YamlDotNet.Core.Tokens;
 
 namespace Planar.Common
 {
@@ -16,24 +17,22 @@ namespace Planar.Common
             return list == null || !list.Contains(value);
         }
 
-        public static bool NotContainsKey<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key)
+        public static void Upsert<TValue>(this Dictionary<string, TValue> dictionary, string key, TValue value)
         {
-            return dictionary == null || !dictionary.ContainsKey(key);
-        }
-
-        public static bool NotContainsKey<TValue>(this Dictionary<string, TValue> dictionary, string key, bool ignoreCase)
-        {
-            if (dictionary == null) { return true; }
-            if (string.IsNullOrEmpty(key)) { return true; }
-
-            if (ignoreCase)
+            if (dictionary == null) { throw new ArgumentNullException(nameof(dictionary)); }
+            if (dictionary.ContainsKey(key))
             {
-                return !dictionary.Keys.Any(k => k.ToLower() == key.ToLower());
+                dictionary[key] = value;
             }
             else
             {
-                return !dictionary.ContainsKey(key);
+                dictionary.Add(key, value);
             }
+        }
+
+        public static void Upsert(this Dictionary<string, string> dictionary, string key, string value)
+        {
+            Upsert<string>(dictionary, key, value);
         }
 
         public static TValue Get<TValue>(this Dictionary<string, TValue> dictionary, string key, bool ignoreCase)

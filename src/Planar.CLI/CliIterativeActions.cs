@@ -48,7 +48,7 @@ namespace Planar.CLI
 
             if (refreshResponse.IsSuccessful == false)
             {
-                throw new PlanarServiceException(null); // TODO: set restsharp response error text
+                throw new PlanarServiceException(refreshResponse.ErrorMessage);
             }
 
             for (int i = 0; i < table.Rows.Count; i++)

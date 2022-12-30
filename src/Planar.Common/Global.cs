@@ -3,11 +3,28 @@ using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using Version = System.Version;
 
 namespace Planar.Common
 {
     public static class Global
     {
+        private static Version _version;
+
+        public static Version Version
+        {
+            get
+            {
+                if (_version == null)
+                {
+                    _version = Assembly.GetExecutingAssembly().GetName().Version;
+                }
+
+                return _version;
+            }
+        }
+
         public static Dictionary<string, string> GlobalConfig { get; private set; }
 
         public static LogLevel LogLevel { get; set; }

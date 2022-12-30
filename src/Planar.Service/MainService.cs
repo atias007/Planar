@@ -79,7 +79,7 @@ namespace Planar.Service
                 {
                     if (t.Exception != null)
                     {
-                        throw new NotImplementedException();
+                        _logger.LogError(t.Exception, "Unhandled exception: {Message}", t.Exception.Message);
                     }
                 }, stoppingToken);
 
@@ -195,7 +195,7 @@ namespace Planar.Service
                 services.AddPlanarDataLayerWithContext();
                 var provider = services.BuildServiceProvider();
                 using var scope = provider.CreateScope();
-                var dal = scope.ServiceProvider.GetRequiredService<DataLayer>();
+                var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
                 await dal.RemoveClusterNode(cluster);
             }
         }

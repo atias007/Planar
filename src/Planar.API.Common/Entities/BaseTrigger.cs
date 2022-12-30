@@ -6,6 +6,8 @@ namespace Planar.API.Common.Entities
 {
     public class BaseTrigger
     {
+        public string Id { get; set; }
+
         public string Name { get; set; }
 
         public string Group { get; set; }

@@ -210,6 +210,7 @@ namespace Planar.CLI
             if (HandleHttpNotFoundResponse(response)) { return; }
             if (HandleBadRequestResponse(response)) { return; }
             if (HandleHealthCheckResponse(response)) { return; }
+            if (HandleHttpConflictResponse(response)) { return; }
 
             HandleGeneralError(response);
         }
@@ -244,10 +245,25 @@ namespace Planar.CLI
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 var message = string.IsNullOrEmpty(response.Content) ?
-                    "entity not found" :
+                    "server return not found status" :
                     JsonConvert.DeserializeObject<string>(response.Content);
 
                 AnsiConsole.MarkupLine($"[red]validation error: {message}[/]");
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool HandleHttpConflictResponse(RestResponse response)
+        {
+            if (response.StatusCode == HttpStatusCode.Conflict)
+            {
+                var message = string.IsNullOrEmpty(response.Content) ?
+                    "server return conflict status" :
+                    JsonConvert.DeserializeObject<string>(response.Content);
+
+                AnsiConsole.MarkupLine($"[red]conflict error: {message}[/]");
                 return true;
             }
 
@@ -309,13 +325,14 @@ namespace Planar.CLI
 
                 return !inQuotes && c == ' ';
             })
-                .Select(arg => arg.Trim().TrimMatchingQuotes('\"'))
+                .Select(arg => arg?.Trim().TrimMatchingQuotes('\"'))
                 .Where(arg => !string.IsNullOrEmpty(arg));
         }
 
         private static void Start(string[] args)
         {
             var cliActions = BaseCliAction.GetAllActions();
+            ServiceCliActions.InitializeLogin();
 
             if (args.Length == 0)
             {
@@ -326,7 +343,8 @@ namespace Planar.CLI
                 var cliUtil = HandleCliCommand(args, cliActions);
                 if (cliUtil != null)
                 {
-                    if (string.Compare($"{cliUtil.Module}.{cliUtil.Command}", "service.connect", true) == 0)
+                    var command = $"{cliUtil.Module}.{cliUtil.Command}";
+                    if (string.Equals(command, "service.login", StringComparison.OrdinalIgnoreCase) && cliUtil.HasIterativeArgument)
                     {
                         InteractiveMode(cliActions);
                     }

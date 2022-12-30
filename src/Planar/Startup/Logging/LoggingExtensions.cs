@@ -15,5 +15,15 @@ namespace Planar.Startup.Logging
 
             return enrich.With<PlanarEnricher>();
         }
+
+        public static LoggerConfiguration WithPlanarFilter(this LoggerFilterConfiguration config)
+        {
+            if (config == null)
+            {
+                throw new ArgumentNullException(nameof(config));
+            }
+
+            return config.With(new PlanarFilter());
+        }
     }
 }

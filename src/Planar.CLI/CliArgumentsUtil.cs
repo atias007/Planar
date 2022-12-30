@@ -1,4 +1,6 @@
-﻿using Planar.CLI.Actions;
+﻿using Newtonsoft.Json.Linq;
+using Planar.CLI.Actions;
+using Planar.CLI.Attributes;
 using Planar.CLI.Exceptions;
 using System;
 using System.Collections.Generic;
@@ -54,23 +56,23 @@ namespace Planar.CLI
 
             if (cliActionsMetadata.Any(a => a.Module.ToLower() == list[0].ToLower()) == false)
             {
-                throw new ValidationException($"module '{list[0]}' is not supported");
+                throw new CliValidationException($"module '{list[0]}' is not supported");
             }
 
             if (list.Count == 1)
             {
-                throw new ValidationException($"missing command for module '{list[0]}'\r\n. command line format is 'Planar <module> <command> [<options>]'");
+                throw new CliValidationException($"missing command for module '{list[0]}'\r\n. command line format is 'Planar <module> <command> [<options>]'");
             }
 
             if (cliActionsMetadata.Any(a => a.Command.Any(c => c?.ToLower() == list[1].ToLower())) == false)
             {
-                throw new ValidationException($"module '{list[0]}' does not support command '{list[1]}'");
+                throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
             }
 
             var action = cliActionsMetadata.FirstOrDefault(a => a.Command.Any(c => c?.ToLower() == list[1].ToLower() && a.Module == list[0].ToLower()));
             if (action == null)
             {
-                throw new ValidationException($"module '{list[0]}' does not support command '{list[1]}'");
+                throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
             }
 
             args = list.ToArray();
@@ -85,6 +87,11 @@ namespace Planar.CLI
 
         public object GetRequest(Type type, CliActionMetadata action)
         {
+            if (!CliArguments.Any() && action.AllowNullRequest)
+            {
+                return null;
+            }
+
             var result = Activator.CreateInstance(type);
             var props = action.GetRequestPropertiesInfo();
 
@@ -117,7 +124,7 @@ namespace Planar.CLI
 
                 if (matchProp == null)
                 {
-                    throw new ValidationException($"Argument '{a.Key}' is not supported with command '{action.Command.FirstOrDefault()}' at module '{action.Module}'");
+                    throw new CliValidationException($"Argument '{a.Key}' is not supported with command '{action.Command.FirstOrDefault()}' at module '{action.Module}'");
                 }
 
                 if (a.Key.StartsWith("-") && string.IsNullOrEmpty(a.Value))
@@ -126,7 +133,15 @@ namespace Planar.CLI
                 }
 
                 FillLastJobOrTriggerId(matchProp, a);
-                FillJobId(matchProp, a).Wait();
+                if (action.Module?.ToLower() == "job")
+                {
+                    FillJobId(matchProp, a).Wait();
+                }
+                else if (action.Module?.ToLower() == "trigger")
+                {
+                    FillTriggerId(matchProp, a).Wait();
+                }
+
                 SetValue(matchProp.PropertyInfo, result, a.Value);
                 if (!string.IsNullOrEmpty(a.Value))
                 {
@@ -139,6 +154,16 @@ namespace Planar.CLI
             return result;
         }
 
+        public bool HasIterativeArgument
+        {
+            get
+            {
+                return CliArguments.Any(a =>
+                string.Equals(a.Key, $"-{IterativeActionPropertyAttribute.ShortNameText}", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(a.Key, $"--{IterativeActionPropertyAttribute.LongNameText}", StringComparison.OrdinalIgnoreCase));
+            }
+        }
+
         private static async Task FillJobId(RequestPropertyInfo prop, CliArgument arg)
         {
             if (prop.JobOrTriggerKey && arg.Value == "?")
@@ -146,6 +171,16 @@ namespace Planar.CLI
                 var jobId = await JobCliActions.ChooseJob();
                 arg.Value = jobId;
                 Util.LastJobOrTriggerId = jobId;
+            }
+        }
+
+        private static async Task FillTriggerId(RequestPropertyInfo prop, CliArgument arg)
+        {
+            if (prop.JobOrTriggerKey && arg.Value == "?")
+            {
+                var triggerId = await JobCliActions.ChooseTrigger();
+                arg.Value = triggerId;
+                Util.LastJobOrTriggerId = triggerId;
             }
         }
 
@@ -180,6 +215,12 @@ namespace Planar.CLI
 
         private static void SetValue(PropertyInfo prop, object instance, string value)
         {
+            if (string.Equals(value, prop.Name, StringComparison.OrdinalIgnoreCase) && prop.PropertyType == typeof(bool))
+            {
+                prop.SetValue(instance, true);
+                return;
+            }
+
             try
             {
                 object objValue = value;

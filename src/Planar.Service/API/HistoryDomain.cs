@@ -9,18 +9,18 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class HistoryDomain : BaseBL<HistoryDomain>
+    public class HistoryDomain : BaseBL<HistoryDomain, HistoryData>
     {
         public HistoryDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
 
-        public IQueryable<Model.JobInstanceLog> GetHistoryData()
+        public IQueryable<JobInstanceLog> GetHistoryData()
         {
             return DataLayer.GetHistoryData();
         }
 
-        public Model.JobInstanceLog GetHistory(int key)
+        public IQueryable<JobInstanceLog> GetHistory(int key)
         {
             var history = DataLayer.GetHistory(key);
 
@@ -42,9 +42,8 @@ namespace Planar.Service.API
         public async Task<JobInstanceLog> GetHistoryById(int id)
         {
             var result = await DataLayer.GetHistoryById(id);
-            ValidateExistingEntity(result);
-            var response = JsonMapper.Map<JobInstanceLog, Model.JobInstanceLog>(result);
-            return response;
+            ValidateExistingEntity(result, "history");
+            return result;
         }
 
         public async Task<string> GetHistoryDataById(int id)

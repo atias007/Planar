@@ -16,27 +16,26 @@ namespace Planar.Job.Test
 {
     public abstract class BaseJobTest
     {
-        private static Dictionary<string, string> LoadJobSettings<T>()
-        {
-            var path = new FileInfo(typeof(T).Assembly.Location).DirectoryName;
-            var result = JobSettingsLoader.LoadJobSettings(path);
-            return result;
-        }
-
         public abstract void Configure(IConfigurationBuilder configurationBuilder, string environment);
 
         public abstract void RegisterServices(IServiceCollection services);
 
         protected JobInstanceLog ExecuteJob<T>(Dictionary<string, object> dataMap = null, DateTime? overrideNow = null)
+            where T : class, new()
         {
             Global.Environment = "UnitTest";
             var context = new MockJobExecutionContext(dataMap, overrideNow);
             var type = typeof(T);
             Validate(type);
             var method = type.GetMethod("ExecuteUnitTest", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (method == null)
+            {
+                throw new Exception($"Can not run test. Worker type {typeof(T).FullName} does not inherit BaseJob / does not use Planar.Job nuget pack with version 1.0.4 or higher");
+            }
+
             var instance = Activator.CreateInstance<T>();
             MapJobInstanceProperties(context, instance);
-            var settings = LoadJobSettings<T>();
+            var settings = JobSettingsLoader.LoadJobSettingsForUnitTest<T>();
 
             Exception jobException = null;
             var start = DateTime.Now;

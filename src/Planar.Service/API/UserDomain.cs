@@ -2,18 +2,18 @@
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
+using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General.Hash;
 using Planar.Service.General.Password;
 using Planar.Service.Model;
-using Planar.Service.Validation;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class UserDomain : BaseBL<UserDomain>
+    public class UserDomain : BaseBL<UserDomain, UserData>
     {
         public UserDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
@@ -21,20 +21,16 @@ namespace Planar.Service.API
 
         public async Task<AddUserResponse> Add(AddUserRequest request)
         {
-            var hash = GeneratePassword();
-
-            var user = new User
+            if (await DataLayer.IsUsernameExists(request.Username, 0))
             {
-                Username = request.Username,
-                EmailAddress1 = request.Email,
-                FirstName = request.FirstName,
-                LastName = request.LastName,
-                PhoneNumber1 = request.PhoneNumber,
-                Password = hash.Hash,
-                Salt = hash.Salt
-            };
+                throw new RestConflictException($"user with {nameof(request.Username).ToLower()} '{request.Username}' already exists");
+            }
 
-            await new UserValidator().ValidateAndThrowAsync(user);
+            var hash = GeneratePassword();
+            var user = Mapper.Map<User>(request);
+            user.Password = hash.Hash;
+            user.Salt = hash.Salt;
+
             var result = await DataLayer.AddUser(user);
             var response = new AddUserResponse
             {
@@ -48,10 +44,9 @@ namespace Planar.Service.API
         public async Task<UserDetails> Get(int id)
         {
             var user = await DataLayer.GetUser(id);
-            ValidateExistingEntity(user);
+            ValidateExistingEntity(user, "user");
             var groups = await DataLayer.GetGroupsForUser(id);
-            var mapper = Resolve<IMapper>();
-            var result = mapper.Map<UserDetails>(user);
+            var result = Mapper.Map<UserDetails>(user);
             groups.ForEach(g => result.Groups.Add(g.ToString()));
             return result;
         }
@@ -75,30 +70,42 @@ namespace Planar.Service.API
             }
         }
 
-        public async Task Update(int id, UpdateEntityRecord request)
+        public async Task PartialUpdate(UpdateEntityRecord request)
         {
-            ValidateIdConflict(id, request.Id);
-            ValidateForbiddenUpdateProperties(request, "Id", "UsersToGroups", "Groups", "Password", "Salt", "Username");
-            var existsUser = await DataLayer.GetUser(request.Id);
-            ValidateExistingEntity(existsUser);
-            await UpdateEntity(existsUser, request, new UserValidator());
-            await DataLayer.UpdateUser(existsUser);
+            var user = await DataLayer.GetUser(request.Id);
+            ValidateExistingEntity(user, "user");
+            var updateUser = Mapper.Map<UpdateUserRequest>(user);
+            var validator = Resolve<IValidator<UpdateUserRequest>>();
+            await SetEntityProperties(updateUser, request, validator);
+            await Update(updateUser);
+        }
+
+        public async Task Update(UpdateUserRequest request)
+        {
+            var exists = await DataLayer.IsUserExists(request.Id);
+            if (!exists)
+            {
+                throw new RestNotFoundException($"user with id {request.Id} is not exists");
+            }
+
+            if (await DataLayer.IsUsernameExists(request.Username, request.Id))
+            {
+                throw new RestConflictException($"user with {nameof(request.Username).ToLower()} '{request.Username}' already exists");
+            }
+
+            var user = Mapper.Map<User>(request);
+            await DataLayer.UpdateUser(user);
         }
 
         public async Task<string> ResetPassword(int id)
         {
-            var existsUser = await DataLayer.GetUser(id);
-            ValidateExistingEntity(existsUser);
+            var existsUser = await DataLayer.GetUser(id, true);
+            ValidateExistingEntity(existsUser, "user");
             var hash = GeneratePassword();
             existsUser.Password = hash.Hash;
             existsUser.Salt = hash.Salt;
+            await DataLayer.SaveChangesAsync();
             return hash.Value;
-        }
-
-        public async Task<bool> IsUsernameExists(string username)
-        {
-            var result = await DataLayer.IsUsernameExists(username);
-            return result;
         }
 
         private static HashEntity GeneratePassword()
