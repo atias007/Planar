@@ -7,6 +7,7 @@
         public string EventTitle { get; set; }
         public string JobName { get; set; }
         public string JobGroup { get; set; }
+        public string DistributionGroupName { get; set; }
         public string Hook { get; set; }
         public bool Active { get; set; }
     }

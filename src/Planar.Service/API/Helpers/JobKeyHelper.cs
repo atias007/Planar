@@ -5,6 +5,7 @@ using Planar.Service.Model;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API.Helpers
@@ -79,6 +80,12 @@ namespace Planar.Service.API.Helpers
             }
 
             return exists;
+        }
+
+        public async Task<bool> IsJobGroupExists(string group)
+        {
+            var all = await _scheduler.GetJobGroupNames();
+            return all.Contains(group);
         }
 
         public async Task<string> GetJobId(MonitorAction action)

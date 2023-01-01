@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
 
 namespace Planar.Service.Validation
@@ -12,7 +13,12 @@ namespace Planar.Service.Validation
 
         public static IRuleBuilderOptions<T, string> JobIdExists<T>(this IRuleBuilder<T, string> ruleBuilder, JobKeyHelper jobKeyHelper)
         {
-            return ruleBuilder.Must(v => ValidationUtil.IsJobExists(v, jobKeyHelper)).WithMessage("'{PropertyName}' field with value '{PropertyValue}' does not exist");
+            return ruleBuilder.Must(v => ValidationUtil.IsJobIdExists(v, jobKeyHelper)).WithMessage("'{PropertyName}' field with value '{PropertyValue}' does not exist");
+        }
+
+        public static IRuleBuilderOptions<T, AddMonitorRequest> JobAndGroupExists<T>(this IRuleBuilder<T, AddMonitorRequest> ruleBuilder, JobKeyHelper jobKeyHelper)
+        {
+            return ruleBuilder.Must(v => ValidationUtil.IsJobAndGroupExists(v.JobGroup, v.JobName, jobKeyHelper)).WithMessage($"add/update monitor request with job name and/or job group does not exist");
         }
 
         public static IRuleBuilderOptions<T, string> Path<T>(this IRuleBuilder<T, string> ruleBuilder)

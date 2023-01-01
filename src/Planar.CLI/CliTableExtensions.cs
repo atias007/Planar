@@ -161,8 +161,16 @@ namespace Planar.CLI
             if (response == null) { return null; }
             var data = response;
             var table = new Table();
-            table.AddColumns("Id", "Title", "Event", "Job", "Group", "Hook", "Active");
-            data.ForEach(r => table.AddRow(CliTableFormat.GetBooleanMarkup(r.Active, r.Id), r.Title.EscapeMarkup(), r.EventTitle.EscapeMarkup(), r.JobKey.EscapeMarkup(), r.JobGroup.EscapeMarkup(), r.Hook.EscapeMarkup(), CliTableFormat.GetBooleanMarkup(r.Active)));
+            table.AddColumns("Id", "Title", "Event", "Job Group", "Job Name", "Dist. Group", "Hook", "Active");
+            data.ForEach(r => table.AddRow(
+                r.Id.ToString(),
+                r.Title.EscapeMarkup(),
+                r.EventTitle.EscapeMarkup(),
+                r.JobGroup.EscapeMarkup(),
+                r.JobName.EscapeMarkup(),
+                r.DistributionGroupName.EscapeMarkup(),
+                r.Hook.EscapeMarkup(),
+                CliTableFormat.GetBooleanMarkup(r.Active)));
             return table;
         }
 
