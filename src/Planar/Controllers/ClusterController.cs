@@ -1,12 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Planar.Attributes;
 using Planar.Service.API;
 using Planar.Service.Model;
+using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
-    [ApiController]
     [Route("cluster")]
     public class ClusterController : BaseController<ClusterDomain>
     {
@@ -15,6 +16,8 @@ namespace Planar.Controllers
         }
 
         [HttpGet("nodes")]
+        [SwaggerOperation(OperationId = "get_cluster_nodes", Description = "Get list of all nodes in cluster", Summary = "Get Cluster Nodes")]
+        [OkJsonResponse(typeof(List<ClusterNode>))]
         public async Task<ActionResult<List<ClusterNode>>> GetNodes()
         {
             var response = await BusinesLayer.GetNodes();
@@ -22,6 +25,9 @@ namespace Planar.Controllers
         }
 
         [HttpGet("healthCheck")]
+        [SwaggerOperation(OperationId = "get_cluster_health-check", Description = "Check the health of all nodes in cluster", Summary = "Check Cluster Health")]
+        [OkTextResponse]
+        [ServiceUnavailableProduces]
         public async Task<ActionResult<string>> HealthCheck()
         {
             var response = await BusinesLayer.HealthCheck();

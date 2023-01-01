@@ -2,12 +2,14 @@
 using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
+using Planar.CLI.Exceptions;
 using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -21,11 +23,121 @@ namespace Planar.CLI.Actions
         [Action("add")]
         public static async Task<CliActionResponse> AddJob(CliAddJobRequest request)
         {
-            var body = new AddJobFoldeRequest { Folder = request.Filename };
+            var body = new SetJobFoldeRequest { Folder = request.Filename };
             var restRequest = new RestRequest("job/folder", Method.Post)
                 .AddBody(body);
             var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
-            return new CliActionResponse(result, message: result.Data?.Id);
+
+            AssertCreated(result);
+            return new CliActionResponse(result);
+        }
+
+        [Action("update")]
+        public static async Task<CliActionResponse> UpdateJob(CliUpdateJobRequest request)
+        {
+            UpdateJobOptions options;
+
+            if (request.Options == null)
+            {
+                options = MapUpdateJobOptions();
+            }
+            else
+            {
+                options = MapUpdateJobOptions(request.Options);
+            }
+
+            var body = new UpdateJobFolderRequest { Folder = request.Filename, UpdateJobOptions = options };
+            var restRequest = new RestRequest("job/folder", Method.Put)
+                .AddBody(body);
+
+            var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
+            AssertJobUpdated(result);
+            return new CliActionResponse(result);
+        }
+
+        private static UpdateJobOptions MapUpdateJobOptions()
+        {
+            var options = AnsiConsole.Prompt(
+                new MultiSelectionPrompt<string>()
+                    .Title("select update options:")
+                    .Required() // Not required to have a favorite fruit
+                    .InstructionsText(
+                        "[grey](Press [blue]<space>[/] to toggle a choise, [green]<enter>[/] to accept)[/]")
+                    .PageSize(15)
+                    .AddChoiceGroup("all", new[] { "job details", "job data", "properties", "triggers", "triggers data" })
+                    .AddChoiceGroup("all job", new[] { "job details", "job data", "properties" })
+                    .AddChoiceGroup("all triggers", new[] { "triggers", "triggers data" })
+                    );
+
+            var result = MapUpdateJobOptions(options);
+            return result;
+        }
+
+        private static UpdateJobOptions MapUpdateJobOptions(string options)
+        {
+            var items = options.Split(',');
+            var result = MapUpdateJobOptions(items);
+            return result;
+        }
+
+        private static UpdateJobOptions MapUpdateJobOptions(IEnumerable<string> items)
+        {
+            var result = new UpdateJobOptions();
+
+            foreach (var item in items)
+            {
+                switch (item.ToLower())
+                {
+                    case "all":
+                        result.UpdateJobDetails = true;
+                        result.UpdateJobData = true;
+                        result.UpdateProperties = true;
+                        result.UpdateTriggers = true;
+                        result.UpdateTriggersData = true;
+                        break;
+
+                    case "all job":
+                    case "all-job":
+                        result.UpdateJobDetails = true;
+                        result.UpdateJobData = true;
+                        result.UpdateProperties = true;
+                        break;
+
+                    case "all triggers":
+                    case "all-triggers":
+                        result.UpdateTriggers = true;
+                        result.UpdateTriggersData = true;
+                        break;
+
+                    case "job":
+                    case "job details":
+                        result.UpdateJobDetails = true;
+                        break;
+
+                    case "job-data":
+                    case "job data":
+                        result.UpdateJobData = true;
+                        break;
+
+                    case "properties":
+                        result.UpdateProperties = true;
+                        break;
+
+                    case "triggers":
+                        result.UpdateTriggers = true;
+                        break;
+
+                    case "triggers-data":
+                    case "triggers data":
+                        result.UpdateTriggersData = true;
+                        break;
+
+                    default:
+                        throw new ValidationException($"option {item} is invalid. use one or more from the following options: all,all-job,all-trigger,job,job-data,properties,triggers,triggers-data");
+                }
+            }
+
+            return result;
         }
 
         [Action("ls")]
@@ -95,8 +207,9 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("job/{id}/settings", Method.Get)
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
 
-            var result = await RestProxy.Invoke<Dictionary<string, string>>(restRequest);
-            return new CliActionResponse(result, serializeObj: result.Data);
+            var result = await RestProxy.Invoke<IEnumerable<KeyValueItem>>(restRequest);
+            var table = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, table);
         }
 
         [Action("running-ex")]
@@ -247,13 +360,13 @@ namespace Planar.CLI.Actions
         }
 
         [Action("data")]
-        public static async Task<CliActionResponse> UpsertJobData(CliJobDataRequest request)
+        public static async Task<CliActionResponse> UpsertJobData(CliJobOrTriggerDataRequest request)
         {
             RestResponse result;
             switch (request.Action)
             {
                 case JobDataActions.upsert:
-                    var prm1 = new JobDataRequest
+                    var prm1 = new JobOrTriggerDataRequest
                     {
                         Id = request.Id,
                         DataKey = request.DataKey,
@@ -262,6 +375,12 @@ namespace Planar.CLI.Actions
 
                     var restRequest1 = new RestRequest("job/data", Method.Post).AddBody(prm1);
                     result = await RestProxy.Invoke(restRequest1);
+
+                    if (result.StatusCode == HttpStatusCode.Conflict)
+                    {
+                        restRequest1 = new RestRequest("job/data", Method.Put).AddBody(prm1);
+                        result = await RestProxy.Invoke(restRequest1);
+                    }
                     break;
 
                 case JobDataActions.remove:
@@ -272,16 +391,11 @@ namespace Planar.CLI.Actions
                     result = await RestProxy.Invoke(restRequest2);
                     break;
 
-                case JobDataActions.clear:
-                    var restRequest3 = new RestRequest("job/{id}/allData", Method.Delete)
-                        .AddParameter("id", request.Id, ParameterType.UrlSegment);
-                    result = await RestProxy.Invoke(restRequest3);
-                    break;
-
                 default:
-                    throw new ValidationException($"Action {request.Action} is not supported for this command");
+                    throw new CliValidationException($"Action {request.Action} is not supported for this command");
             }
 
+            AssertJobDataUpdated(result, request.Id);
             return new CliActionResponse(result);
         }
 
@@ -291,19 +405,93 @@ namespace Planar.CLI.Actions
             var p = AllJobsMembers.AllUserJobs;
             restRequest.AddQueryParameter("filter", (int)p);
             var result = await RestProxy.Invoke<List<JobRowDetails>>(restRequest);
+            if (!result.IsSuccessful)
+            {
+                throw new CliException($"fail to fetch list of jobs. error message: {result.ErrorMessage}");
+            }
+
+            return ChooseJob(result.Data);
+        }
+
+        public static string ChooseJob(IEnumerable<JobRowDetails> data)
+        {
+            if (data.Count() <= 20)
+            {
+                return ShowJobsMenu(data);
+            }
+
+            var group = ShowGroupsMenu(data);
+            return ShowJobsMenu(data, group);
+        }
+
+        public static string ChooseGroup(IEnumerable<JobRowDetails> data)
+        {
+            return ShowGroupsMenu(data);
+        }
+
+        private static string ShowJobsMenu(IEnumerable<JobRowDetails> data, string groupName = null)
+        {
+            var query = data.AsQueryable();
+            var comment = string.Empty;
+
+            if (!string.IsNullOrEmpty(groupName))
+            {
+                query = query.Where(d => d.Group.ToLower() == groupName.ToLower());
+                comment = "now! ";
+            }
+
+            var jobs = query
+                .OrderBy(d => d.Group)
+                .ThenBy(d => d.Name)
+                .Select(d => $"{d.Group}.{d.Name}")
+                .ToList();
+
+            return AnsiConsole.Prompt(
+                 new SelectionPrompt<string>()
+                     .Title($"[underline]{comment}select job from the following list (press enter to select):[/]")
+                     .PageSize(20)
+                     .AddChoices(jobs));
+        }
+
+        private static string ShowGroupsMenu(IEnumerable<JobRowDetails> data)
+        {
+            var groups = data
+                .OrderBy(d => d.Group)
+                .Select(d => $"{d.Group}")
+                .Distinct()
+                .ToList();
+
+            return AnsiConsole.Prompt(
+                 new SelectionPrompt<string>()
+                     .Title("[underline]first! select group from the following list (press enter to select):[/]")
+                     .PageSize(20)
+                     .MoreChoicesText("[grey](Move up and down to reveal more groups)[/]")
+                     .AddChoices(groups));
+        }
+
+        public static async Task<string> ChooseTrigger()
+        {
+            var jobId = await ChooseJob();
+            var restRequest = new RestRequest("trigger/{jobId}/byjob", Method.Get);
+            restRequest.AddUrlSegment("jobId", jobId);
+            var result = await RestProxy.Invoke<TriggerRowDetails>(restRequest);
             if (result.IsSuccessful)
             {
-                var jobs = result.Data
-                    .OrderBy(d => d.Group)
-                    .ThenBy(d => d.Name)
+                var jobs = result.Data.SimpleTriggers
+                    .OrderBy(d => d.Name)
                     .Select(d => $"{d.Group}.{d.Name}")
+                    .Union(
+                         result.Data.CronTriggers
+                         .OrderBy(d => d.Name)
+                        .Select(d => $"{d.Group}.{d.Name}")
+                    )
                     .ToList();
 
                 return AnsiConsole.Prompt(
                      new SelectionPrompt<string>()
-                         .Title("[underline]select job to invoke (press enter to select):[/]")
+                         .Title("[underline]select trigger from the following list (press enter to select):[/]")
                          .PageSize(10)
-                         .MoreChoicesText("[grey](Move up and down to reveal more jobs)[/]")
+                         .MoreChoicesText("[grey](Move up and down to reveal more triggers)[/]")
                          .AddChoices(jobs));
             }
             else

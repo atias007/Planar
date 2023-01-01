@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
+using Planar.Service.Data;
 using Planar.Service.List.Base;
 using Quartz;
 using System;
@@ -27,7 +28,7 @@ namespace Planar.Service.List
             try
             {
                 if (context.JobDetail.Key.Group == Consts.PlanarSystemGroup) { return; }
-                await ExecuteDal(d => d.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto));
+                await ExecuteDal<HistoryData>(d => d.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto));
             }
             catch (Exception ex)
             {
@@ -75,7 +76,7 @@ namespace Planar.Service.List
                 if (log.InstanceId.Length > 250) { log.InstanceId = log.InstanceId[0..250]; }
                 if (log.ServerName.Length > 50) { log.ServerName = log.ServerName[0..50]; }
 
-                await ExecuteDal(d => d.CreateJobInstanceLog(log));
+                await ExecuteDal<HistoryData>(d => d.CreateJobInstanceLog(log));
             }
             catch (Exception ex)
             {
@@ -117,7 +118,7 @@ namespace Planar.Service.List
                     IsStopped = context.CancellationToken.IsCancellationRequested
                 };
 
-                await ExecuteDal(d => d.UpdateHistoryJobRunLog(log));
+                await ExecuteDal<HistoryData>(d => d.UpdateHistoryJobRunLog(log));
             }
             catch (Exception ex)
             {

@@ -5,6 +5,16 @@ namespace Planar.CLI.Attributes
     [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
     public class ActionPropertyAttribute : Attribute
     {
+        public ActionPropertyAttribute()
+        {
+        }
+
+        public ActionPropertyAttribute(string shortName, string longName)
+        {
+            ShortName = shortName;
+            LongName = longName;
+        }
+
         public string LongName { get; set; }
 
         public string ShortName { get; set; }

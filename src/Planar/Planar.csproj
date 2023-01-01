@@ -4,7 +4,7 @@
 		<TargetFramework>net6.0</TargetFramework>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<BaseOutputPath>bin</BaseOutputPath>
-		<Version>1.0.2</Version>
+		<Version>1.1.0</Version>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
@@ -14,15 +14,17 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<Content Remove="Content\planar_openapi.json" />
 		<Content Remove="Data\Settings\AppSettings.json" />
 		<Content Remove="Data\Settings\HebrewCalendar.json" />
 		<Content Remove="Data\Settings\Serilog.json" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Remove="Content\fonts.googleapis.css" />
+	  <None Remove="Content\logo.png" />
+	  <None Remove="Content\logo2.png" />
 	  <None Remove="Content\no_access.jpg" />
 	  <None Remove="Content\redoc.standalone.js" />
+	  <None Remove="Content\theme-flattop.css" />
 	  <None Remove="Data\Calendars\readme.md" />
 	  <None Remove="Data\Jobs\readme.md" />
 	  <None Remove="Data\MonitorHooks\readme.md" />
@@ -38,12 +40,16 @@
 
 	<ItemGroup>
 	  <EmbeddedResource Include="Content\fonts.googleapis.css" />
+	  <EmbeddedResource Include="Content\logo.png" />
+	  <EmbeddedResource Include="Content\logo2.png" />
 	  <EmbeddedResource Include="Content\no_access.jpg" />
 	  <EmbeddedResource Include="Content\planar_openapi.html">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
-	  <EmbeddedResource Include="Content\planar_openapi.json" />
 	  <EmbeddedResource Include="Content\redoc.standalone.js" />
+	  <EmbeddedResource Include="Content\theme-flattop.css">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -51,8 +57,9 @@
 		<PackageReference Include="FluentValidation.AspNetCore" Version="11.2.2" />
 		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.4.0" />
 		<PackageReference Include="Grpc.AspNetCore" Version="2.50.0" />
+		<PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="7.0.1" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.2.0" />
-		<PackageReference Include="Microsoft.AspNetCore.OData" Version="8.0.11" />
+		<PackageReference Include="Microsoft.AspNetCore.OData" Version="8.0.12" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.1" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
 		<PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
@@ -60,6 +67,7 @@
 		<PackageReference Include="Serilog.Enrichers.GlobalLogContext" Version="3.0.0" />
 		<PackageReference Include="Serilog.Expressions" Version="3.4.1" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.4.0" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -89,6 +97,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\DatabaseMigrations\DatabaseMigrations.csproj" />
 		<ProjectReference Include="..\Planar.API.Common\Planar.API.Common.csproj" />
 		<ProjectReference Include="..\Planar.Service\Planar.Service.csproj" />
 	</ItemGroup>

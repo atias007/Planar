@@ -16,18 +16,29 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
+    public abstract class BaseBL<TBusinesLayer, TDataLayer> : BaseBL<TBusinesLayer>
+        where TDataLayer : BaseDataLayer
+    {
+        private readonly TDataLayer _dataLayer;
+
+        protected BaseBL(IServiceProvider serviceProvider) : base(serviceProvider)
+        {
+            _dataLayer = serviceProvider.GetRequiredService<TDataLayer>();
+        }
+
+        protected TDataLayer DataLayer => _dataLayer;
+    }
+
     public abstract class BaseBL<TBusinesLayer>
     {
         protected readonly IServiceProvider _serviceProvider;
         private readonly ILogger<TBusinesLayer> _logger;
-        private readonly DataLayer _dataLayer;
         private readonly SchedulerUtil _schedulerUtil;
 
         protected BaseBL(IServiceProvider serviceProvider)
         {
             _logger = serviceProvider.GetRequiredService<ILogger<TBusinesLayer>>();
             _serviceProvider = serviceProvider ?? throw new PlanarJobException(nameof(serviceProvider));
-            _dataLayer = serviceProvider.GetRequiredService<DataLayer>();
             _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
         }
 
@@ -60,8 +71,6 @@ namespace Planar.Service.API
             }
         }
 
-        protected DataLayer DataLayer => _dataLayer;
-
         protected ILogger<TBusinesLayer> Logger => _logger;
 
         protected IMapper Mapper => _serviceProvider.GetRequiredService<IMapper>();
@@ -83,42 +92,37 @@ namespace Planar.Service.API
             return entity;
         }
 
-        protected static void ValidateExistingEntity<T>(T entity)
+        protected static void ValidateExistingEntity<T>(T entity, string entityName)
             where T : class
         {
             if (entity == null)
             {
-                throw new RestNotFoundException($"{typeof(T).Name} entity could not be found");
-            }
-        }
-
-        protected void ValidateIdConflict(int routeId, int bodyId)
-        {
-            if (routeId != bodyId)
-            {
-                throw new RestValidationException("id", $"conflict id value. (route id: {routeId}, body id: {bodyId}");
-            }
-        }
-
-        protected void ValidateForbiddenUpdateProperties(UpdateEntityRecord entity, params string[] properties)
-        {
-            if (properties != null && entity != null)
-            {
-                if (properties.Any(p => string.Compare(p, entity.PropertyName, true) == 0))
+                if (string.IsNullOrEmpty(entityName))
                 {
-                    throw new RestValidationException(entity.PropertyName, $"property {entity.PropertyName} not allowed to be updated");
+                    entityName = "entity";
                 }
+
+                throw new RestNotFoundException($"{entityName} could not be found");
             }
         }
 
-        protected static async Task UpdateEntity<T>(T entity, UpdateEntityRecord request, AbstractValidator<T> validator = null)
+        protected async Task ValidateExistingTrigger(TriggerKey entity, string triggerId)
+        {
+            var details = await Scheduler.GetTrigger(entity);
+            if (details == null)
+            {
+                throw new RestNotFoundException($"trigger with id/key {triggerId} could not be found");
+            }
+        }
+
+        protected static async Task SetEntityProperties<T>(T entity, UpdateEntityRecord request, IValidator<T> validator = null)
         {
             var type = typeof(T);
             var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
             var prop = properties.FirstOrDefault(p => string.Compare(p.Name, request.PropertyName, true) == 0);
             if (prop == null)
             {
-                throw new RestValidationException("propertyName", $"property name '{request.PropertyName}' could not be found in {type.Name} entity");
+                throw new RestValidationException("propertyName", $"property name '{request.PropertyName}' could not be found");
             }
 
             try
@@ -140,7 +144,7 @@ namespace Planar.Service.API
             }
             catch (Exception ex)
             {
-                throw new RestValidationException($"property value", $"property value '{request.PropertyValue}' could not be set to property name '{request.PropertyName}' ({ex.Message})");
+                throw new RestValidationException($"property value", $"property value '{request.PropertyValue}' could not be set. ({ex.Message})");
             }
 
             if (validator != null)

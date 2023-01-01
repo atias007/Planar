@@ -4,7 +4,7 @@ using Planar.Service.Validation;
 
 namespace Planar.Validation
 {
-    public class AddJobFoldeRequestValidator : AbstractValidator<AddJobFoldeRequest>
+    public class AddJobFoldeRequestValidator : AbstractValidator<SetJobFoldeRequest>
     {
         public AddJobFoldeRequestValidator()
         {

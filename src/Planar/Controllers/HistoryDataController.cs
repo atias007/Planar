@@ -24,10 +24,10 @@ namespace Planar.Controllers
         }
 
         [EnableQuery]
-        public Service.Model.JobInstanceLog Get([FromODataUri] int key)
+        public IActionResult Get([FromODataUri] int key)
         {
             var result = _businessLayer.GetHistory(key);
-            return result;
+            return Ok(result);
         }
     }
 }

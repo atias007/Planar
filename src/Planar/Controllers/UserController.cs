@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
+using Planar.Attributes;
 using Planar.Service.API;
 using Planar.Service.Model;
 using Planar.Validation.Attributes;
@@ -8,7 +9,6 @@ using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
-    [ApiController]
     [Route("user")]
     public class UserController : BaseController<UserDomain>
     {
@@ -17,14 +17,23 @@ namespace Planar.Controllers
         }
 
         [HttpPost]
+        [JsonConsumes]
         public async Task<ActionResult<AddUserResponse>> Add([FromBody] AddUserRequest request)
         {
             var result = await BusinesLayer.Add(request);
             return CreatedAtAction(nameof(Get), new { result.Id }, result);
         }
 
+        [HttpPut]
+        [JsonConsumes]
+        public async Task<IActionResult> Update([FromBody] UpdateUserRequest request)
+        {
+            await BusinesLayer.Update(request);
+            return NoContent();
+        }
+
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> Get([FromRoute][Id] int id)
+        public async Task<ActionResult<UserDetails>> Get([FromRoute][Id] int id)
         {
             var result = await BusinesLayer.Get(id);
             return Ok(result);
@@ -44,10 +53,11 @@ namespace Planar.Controllers
             return NoContent();
         }
 
-        [HttpPatch("{id}")]
-        public async Task<ActionResult> Update([FromRoute][Id] int id, [FromBody] UpdateEntityRecord request)
+        [HttpPatch]
+        [JsonConsumes]
+        public async Task<ActionResult> PartialUpdate([FromBody] UpdateEntityRecord request)
         {
-            await BusinesLayer.Update(id, request);
+            await BusinesLayer.PartialUpdate(request);
             return NoContent();
         }
 

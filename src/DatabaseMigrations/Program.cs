@@ -12,7 +12,7 @@ using System.Xml.Linq;
 
 namespace DatabaseMigrations
 {
-    internal class Program
+    public class Program
     {
         private static readonly string ProjectPath = new DirectoryInfo(Path.Combine(RunningPath, "..", "..", "..")).FullName;
 
@@ -32,7 +32,7 @@ namespace DatabaseMigrations
                 .Validate(name =>
                 {
                     const string regexTemplate = @"^([a-zA-Z0-9\s_\\.\-\(\):]){3,20}$";
-                    return Regex.IsMatch(name, regexTemplate);
+                    return Regex.IsMatch(name, regexTemplate, RegexOptions.None, TimeSpan.FromSeconds(5));
                 }));
 
             name = name.Trim();

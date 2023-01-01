@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class ClusterDomain : BaseBL<ClusterDomain>
+    public class ClusterDomain : BaseBL<ClusterDomain, ClusterData>
     {
         public ClusterDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {

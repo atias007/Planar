@@ -36,10 +36,7 @@ namespace Planar.Startup
 
             if (AppSettings.SwaggerUI)
             {
-                services.AddSwaggerGen(c =>
-                {
-                    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Planar", Version = "v1" });
-                });
+                services.AddSwaggerGen(SwaggerInitializer.InitializeSwagger);
             }
 
             if (AppSettings.UseHttpsRedirect)
@@ -58,7 +55,6 @@ namespace Planar.Startup
 
             services.AddQuartzService();
             services.AddAutoMapper(Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));
-            services.AddTransient<DataLayer>();
             services.AddTransient<MainService>();
             services.AddScoped<GroupDomain>();
             services.AddScoped<HistoryDomain>();

@@ -7,8 +7,11 @@ get            <trigger id>
 pause          <trigger id>
 resume         <trigger id>
 remove|delete  <trigger id>
+data           <trigger id> <upsert|remove|clear> [<key>] [<value>]
 
 ******************************************************************************
 *** <job id> represent job hash id  or job key <[group.]name>              ***
 *** <trigger id> represent trigger hash id or trigger key <[group.]name>   ***
+*** <job id>/<trigger id> use ? to get jobs/triggers menu                  ***
+*** <job id>/<trigger id> use !! to get last job/trigger id                ***
 ******************************************************************************

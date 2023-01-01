@@ -14,7 +14,7 @@ namespace Planar.Service.Validation
             RuleFor(f => f.Value).NotEmpty().MaximumLength(1000);
             RuleFor(f => f.Type).NotEmpty().MaximumLength(10)
                 .Must(IsValidType)
-                .WithMessage("{PropertyName} has invalid value {PropertyValue}. valid values are: " + string.Join(',', _types));
+                .WithMessage("{PropertyName} has invalid value '{PropertyValue}'. valid values are: " + string.Join(',', _types));
         }
 
         private static bool IsValidType(string type)

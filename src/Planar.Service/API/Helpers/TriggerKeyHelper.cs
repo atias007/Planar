@@ -26,7 +26,7 @@ namespace Planar.Service.API.Helpers
             }
             else
             {
-                result = await GetTriggerKey(key.Id);
+                result = await GetTriggerKeyById(key.Id);
                 result ??= GetTriggerKeyByKey(key.Id);
             }
 
@@ -38,7 +38,12 @@ namespace Planar.Service.API.Helpers
             return result;
         }
 
-        public async Task<TriggerKey> GetTriggerKey(string triggerId)
+        public async Task<TriggerKey> GetTriggerKey(string id)
+        {
+            return await GetTriggerKey(new JobOrTriggerKey { Id = id });
+        }
+
+        public async Task<TriggerKey> GetTriggerKeyById(string triggerId)
         {
             TriggerKey result = null;
             var keys = await _scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
@@ -74,6 +79,25 @@ namespace Planar.Service.API.Helpers
         public static string GetTriggerId(IJobExecutionContext context)
         {
             return GetTriggerId(context.Trigger);
+        }
+
+        public static bool Equals(TriggerKey key1, TriggerKey key2)
+        {
+            if (key1 == null && key2 == null) { return true; }
+            if (key1 == null || key2 == null) { return false; }
+            return key1.Group.Equals(key2.Group) && key1.Name.Equals(key2);
+        }
+
+        public async Task<ITrigger> ValidateTriggerExists(TriggerKey triggerKey)
+        {
+            var exists = await _scheduler.GetTrigger(triggerKey);
+
+            if (exists == null)
+            {
+                throw new RestNotFoundException($"trigger with key {triggerKey.Group}.{triggerKey.Name} does not exist");
+            }
+
+            return exists;
         }
 
         private static TriggerKey GetTriggerKeyByKey(string key)

@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Planar.Attributes;
 using Planar.Service.API;
 using Planar.Service.Model;
+using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
-    [ApiController]
     [Route("config")]
     public class ConfigController : BaseController<ConfigDomain>
     {
@@ -15,6 +17,8 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
+        [SwaggerOperation(OperationId = "get_config", Description = "Get all global configuration", Summary = "Get All Global Configurations")]
+        [OkJsonResponse(typeof(IEnumerable<GlobalConfig>))]
         public async Task<ActionResult<IEnumerable<GlobalConfig>>> GetAll()
         {
             var result = await BusinesLayer.GetAll();
@@ -22,13 +26,22 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{key}")]
-        public async Task<ActionResult<string>> Get([FromRoute] string key)
+        [SwaggerOperation(OperationId = "get_config_key", Description = "Get global configuration by key", Summary = "Get Global Configuration")]
+        [OkJsonResponse(typeof(GlobalConfig))]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<ActionResult<GlobalConfig>> Get([FromRoute][Required] string key)
         {
             var result = await BusinesLayer.Get(key);
             return Ok(result);
         }
 
         [HttpPost]
+        [SwaggerOperation(OperationId = "post_config", Description = "Add new global configuration", Summary = "Add Global Configuration")]
+        [JsonConsumes]
+        [CreatedResponse]
+        [BadRequestResponse]
+        [ConflictResponse]
         public async Task<ActionResult> Add([FromBody] GlobalConfig request)
         {
             await BusinesLayer.Add(request);
@@ -36,6 +49,11 @@ namespace Planar.Controllers
         }
 
         [HttpPut]
+        [SwaggerOperation(OperationId = "put_config", Description = "Update existing global configuration", Summary = "Update Global Configuration")]
+        [JsonConsumes]
+        [NoContentResponse]
+        [BadRequestResponse]
+        [NotFoundResponse]
         public async Task<ActionResult> Update([FromBody] GlobalConfig request)
         {
             await BusinesLayer.Update(request);
@@ -43,6 +61,9 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{key}")]
+        [SwaggerOperation(OperationId = "delete_config_key", Description = "Delete existing global configuration", Summary = "Delete Global Configuration")]
+        [NoContentResponse]
+        [NotFoundResponse]
         public async Task<ActionResult> Delete([FromRoute] string key)
         {
             await BusinesLayer.Delete(key);
@@ -50,6 +71,8 @@ namespace Planar.Controllers
         }
 
         [HttpPost("flush")]
+        [SwaggerOperation(OperationId = "post_config_flush", Description = "Flush and reload global configuration from cache", Summary = "Flush All Global Configuration")]
+        [NoContentResponse]
         public async Task<ActionResult> Flush()
         {
             await BusinesLayer.Flush();

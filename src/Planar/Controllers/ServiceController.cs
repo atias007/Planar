@@ -1,12 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
+using Planar.Attributes;
 using Planar.Service.API;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
-    [ApiController]
     [Route("service")]
     public class ServiceController : BaseController<ServiceDomain>
     {
@@ -57,6 +57,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("login")]
+        [JsonConsumes]
         public async Task<ActionResult<string>> Login([FromBody] LoginRequest request)
         {
             var result = await BusinesLayer.Login(request);

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
@@ -29,7 +30,7 @@ namespace Planar.Service.Monitor
         public async Task Validate()
         {
             using var scope = _serviceScopeFactory.CreateScope();
-            var dal = scope.ServiceProvider.GetRequiredService<DataLayer>();
+            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
             var count = await dal.GetMonitorCount();
             if (count == 0)
             {
@@ -175,7 +176,7 @@ namespace Planar.Service.Monitor
             var group = context.JobDetail.Key.Group;
             var job = JobKeyHelper.GetJobId(context.JobDetail);
             using var scope = _serviceScopeFactory.CreateScope();
-            var dal = scope.ServiceProvider.GetRequiredService<DataLayer>();
+            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
             var result = await dal.GetMonitorData((int)@event, group, job);
             return result;
         }
@@ -183,7 +184,7 @@ namespace Planar.Service.Monitor
         private async Task<bool> Analyze(MonitorEvents @event, MonitorAction action)
         {
             using var scope = _serviceScopeFactory.CreateScope();
-            var dal = scope.ServiceProvider.GetRequiredService<DataLayer>();
+            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
 
             switch (@event)
             {

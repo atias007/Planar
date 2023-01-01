@@ -12,11 +12,13 @@ namespace Planar.CLI.Actions
     public class UserCliActions : BaseCliAction<UserCliActions>
     {
         [Action("add")]
-        public static async Task<CliActionResponse> AddUser()
+        [NullRequest]
+        public static async Task<CliActionResponse> AddUser(CliAddUserRequest request)
         {
-            var prm = CollectDataFromCli<AddUserRequest>();
+            request ??= CollectDataFromCli<CliAddUserRequest>();
+
             var restRequest = new RestRequest("user", Method.Post)
-                .AddBody(prm);
+                .AddBody(request);
 
             return await ExecuteTable<AddUserResponse>(restRequest, CliTableExtensions.GetTable);
         }
@@ -51,8 +53,7 @@ namespace Planar.CLI.Actions
         [Action("update")]
         public static async Task<CliActionResponse> UpdateUser(CliUpdateEntityRequest request)
         {
-            var restRequest = new RestRequest("user/{id}", Method.Patch)
-                .AddParameter("id", request.Id, ParameterType.UrlSegment)
+            var restRequest = new RestRequest("user", Method.Patch)
                 .AddBody(request);
 
             return await Execute(restRequest);

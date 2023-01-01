@@ -1,5 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
+using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
+using Planar.CLI.Entities;
 using RestSharp;
 using Spectre.Console;
 using System;
@@ -96,6 +98,7 @@ namespace Planar.CLI.Actions
             foreach (var act in allActions)
             {
                 var actionAttributes = act.GetCustomAttributes<ActionAttribute>();
+                var nullRequestAttribute = act.GetCustomAttribute<NullRequestAttribute>();
 
                 // TODO: validate attributes (invalid name...)
                 if (actionAttributes != null)
@@ -104,7 +107,8 @@ namespace Planar.CLI.Actions
                     {
                         Module = moduleAttribute?.Name?.ToLower(),
                         Method = act,
-                        Command = actionAttributes.Select(a => a.Name).Distinct().ToList()
+                        Command = actionAttributes.Select(a => a.Name).Distinct().ToList(),
+                        AllowNullRequest = nullRequestAttribute != null
                     };
 
                     result.Add(item);
@@ -132,6 +136,48 @@ namespace Planar.CLI.Actions
             using StreamReader reader = new(stream);
             var result = reader.ReadToEnd();
             return result;
+        }
+
+        protected static void AssertCreated(RestResponse<JobIdResponse> response)
+        {
+            if (!response.IsSuccessful) { return; }
+            Util.SetLastJobOrTriggerId(response);
+            Console.WriteLine(response?.Data?.Id);
+        }
+
+        protected static void AssertJobUpdated(RestResponse<JobIdResponse> response)
+        {
+            if (!response.IsSuccessful) { return; }
+            Util.SetLastJobOrTriggerId(response);
+            AssertUpdated(response?.Data?.Id, "job");
+        }
+
+        protected static void AssertJobDataUpdated(RestResponse response, string id)
+        {
+            if (!response.IsSuccessful) { return; }
+            AssertUpdated(id, "job");
+        }
+
+        protected static void AssertTriggerUpdated(RestResponse response, string id)
+        {
+            if (!response.IsSuccessful) { return; }
+            AssertUpdated(id, "trigger");
+        }
+
+        protected static void AssertUpdated(string id, string entity)
+        {
+            Console.WriteLine(id);
+            string message = entity switch
+            {
+                "job" => $"{CliTableFormat.WarningColor}Warning! job is in 'pause' state and none of its triggers will fire[/]",
+                "trigger" => $"{CliTableFormat.WarningColor}Warning! trigger is in 'pause' state and it will not fire[/]",
+                _ => null,
+            };
+
+            if (!string.IsNullOrEmpty(message))
+            {
+                AnsiConsole.MarkupLine(message);
+            }
         }
 
         protected static TRequest CollectDataFromCli<TRequest>()

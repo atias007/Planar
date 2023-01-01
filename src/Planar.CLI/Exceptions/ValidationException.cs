@@ -3,9 +3,9 @@
 namespace Planar.CLI.Exceptions
 {
     [Serializable]
-    public class ValidationException : Exception
+    public class CliValidationException : Exception
     {
-        public ValidationException(string message) : base(message)
+        public CliValidationException(string message) : base(message)
         {
         }
     }
