@@ -376,8 +376,9 @@ namespace Planar.Service.API
 
         private async Task DeleteMonitorOfJob(string jobId, string jobGroup)
         {
+            var key = await JobKeyHelper.GetJobKeyById(jobId);
             var dal = Resolve<MonitorData>();
-            await dal.DeleteMonitorByJobId(jobId);
+            await dal.DeleteMonitorByJobId(key.Group, key.Name);
             if (await JobGroupExists(jobGroup) == false)
             {
                 await dal.DeleteMonitorByJobGroup(jobGroup);

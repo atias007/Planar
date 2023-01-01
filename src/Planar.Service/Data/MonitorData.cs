@@ -27,19 +27,18 @@ namespace Planar.Service.Data
             return await _context.MonitorActions.Select(m => m.Hook).Distinct().ToListAsync();
         }
 
-        public async Task<List<MonitorAction>> GetMonitorData(int @event, string group, string job)
+        public async Task<List<MonitorAction>> GetMonitorData(int @event, string groupName, string jobName)
         {
             var all = _context.MonitorActions
                 .Include(m => m.Group)
-                .ThenInclude(ug => ug.Users);
+                .ThenInclude(ug => ug.Users)
+                .Where(m => m.EventId == @event && m.Active == true);
 
-            var filter = all.Where(m => m.EventId == @event && m.Active == true);
-            filter = filter.Where(m =>
-                (string.IsNullOrEmpty(m.JobGroup) && string.IsNullOrEmpty(m.JobId)) ||
-                (!string.IsNullOrEmpty(m.JobGroup) && m.JobGroup == group && string.IsNullOrEmpty(m.JobId)) ||
-                (string.IsNullOrEmpty(m.JobGroup) && !string.IsNullOrEmpty(m.JobId) && m.JobId == job));
+            var byJob = await all.Where(m => m.JobGroup == groupName && m.JobName == jobName).ToListAsync();
+            var byGroup = await all.Where(m => m.JobGroup == groupName && string.IsNullOrEmpty(m.JobName)).ToListAsync();
 
-            return await filter.ToListAsync();
+            var final = byJob.Union(byGroup).Distinct().ToList();
+            return final;
         }
 
         public async Task<MonitorAction> GetMonitorAction(int id)
@@ -50,38 +49,28 @@ namespace Planar.Service.Data
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<List<MonitorAction>> GetMonitorActionsByKey(string key)
+        public async Task<List<MonitorAction>> GetMonitorActionsByJob(string group, string name)
         {
             var result = await _context.MonitorActions
                 .Include(m => m.Group)
-                .Where(m => m.JobId == key || m.JobGroup == key)
+                .Where(m => m.JobName == name && m.JobGroup == group)
                 .OrderByDescending(m => m.Active)
                 .ThenBy(m => m.JobGroup)
-                .ThenBy(m => m.JobId)
+                .ThenBy(m => m.JobName)
                 .ToListAsync();
 
             return result;
         }
 
-        public async Task<List<MonitorAction>> GetAllMonitorActions(string jobOrGroupId)
+        public async Task<List<MonitorAction>> GetMonitorActionsByGroup(string group)
         {
             var result = await _context.MonitorActions
                 .Include(m => m.Group)
+                .Where(m => m.JobGroup == group && m.JobName == null)
                 .OrderByDescending(m => m.Active)
                 .ThenBy(m => m.JobGroup)
-                .ThenBy(m => m.JobId)
+                .ThenBy(m => m.JobName)
                 .ToListAsync();
-
-            return result;
-        }
-
-        public async Task<MonitorAction> GetMonitorActionWithGroup(int id)
-        {
-            var result = await _context.MonitorActions
-                .AsNoTracking()
-                .Include(m => m.Group)
-                .Where(m => m.Id == id)
-                .FirstOrDefaultAsync();
 
             return result;
         }
@@ -91,7 +80,8 @@ namespace Planar.Service.Data
             return await _context.MonitorActions
                 .Include(i => i.Group)
                 .OrderByDescending(d => d.Active)
-                .ThenBy(d => d.JobId)
+                .ThenBy(d => d.JobGroup)
+                .ThenBy(d => d.JobName)
                 .ToListAsync();
         }
 
@@ -107,9 +97,9 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteMonitorByJobId(string jobId)
+        public async Task DeleteMonitorByJobId(string group, string name)
         {
-            _context.MonitorActions.RemoveRange(e => e.JobId == jobId);
+            _context.MonitorActions.RemoveRange(e => e.JobGroup == group && e.JobName == name);
             await SaveChangesWithoutConcurrency();
         }
 

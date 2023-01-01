@@ -1,6 +1,7 @@
 ﻿using CommonJob;
 using Planar.API.Common.Entities;
 using Planar.Service.Exceptions;
+using Planar.Service.Model;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -78,6 +79,12 @@ namespace Planar.Service.API.Helpers
             }
 
             return exists;
+        }
+
+        public async Task<string> GetJobId(MonitorAction action)
+        {
+            var key = $"{action.JobGroup}.{action.JobName}";
+            return await GetJobId(key);
         }
 
         public static JobKey GetJobKey(SetJobRequest metadata)

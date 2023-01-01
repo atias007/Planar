@@ -6,6 +6,8 @@
 - add interface to hooks to handle system events
 - job test: in no instance id, check hc and print warning about already running job with no concurent
 
+
+- *** when add / update monitor action with event type ExecutionFailnTimesInRow|ExecutionFailnTimesInHour - must have job group & job name
 - *** stop service while long running task (service provider is null) ***
       * Error handle SafeScan: BaseListener.cs:line 28
       * Error handle LogJobListener.JobWasExecuted: BaseListener.cs:line 48

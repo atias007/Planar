@@ -2,14 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
-using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
-using Quartz;
-using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -67,9 +64,17 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<List<MonitorItem>> GetByKey(string key)
+        public async Task<List<MonitorItem>> GetByJob(string id)
         {
-            var items = await DataLayer.GetMonitorActionsByKey(key);
+            var jobKey = await JobKeyHelper.GetJobKey(id);
+            var items = await DataLayer.GetMonitorActionsByJob(jobKey.Group, jobKey.Name);
+            var result = Mapper.Map<List<MonitorItem>>(items);
+            return result;
+        }
+
+        public async Task<List<MonitorItem>> GetByGroup(string group)
+        {
+            var items = await DataLayer.GetMonitorActionsByGroup(group);
             var result = Mapper.Map<List<MonitorItem>>(items);
             return result;
         }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -175,6 +176,7 @@ namespace Planar.Service.Monitor
         {
             var group = context.JobDetail.Key.Group;
             var job = JobKeyHelper.GetJobId(context.JobDetail);
+
             using var scope = _serviceScopeFactory.CreateScope();
             var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
             var result = await dal.GetMonitorData((int)@event, group, job);
@@ -185,6 +187,7 @@ namespace Planar.Service.Monitor
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
+            string jobId;
 
             switch (@event)
             {
@@ -200,24 +203,26 @@ namespace Planar.Service.Monitor
                 case MonitorEvents.ExecutionFailnTimesInRow:
 
                     _ = int.TryParse(action.EventArgument, out var args1);
-                    if (args1 < 2 || string.IsNullOrEmpty(action.JobId))
+                    jobId = await scope.ServiceProvider.GetRequiredService<JobKeyHelper>().GetJobId(action);
+                    if (args1 < 2 || string.IsNullOrEmpty(jobId))
                     {
-                        _logger.LogWarning("Monitor action {Id}, Title '{Title}' has invalid argument ({EventArgument}) or missing job id", action.Id, action.Title, action.EventArgument);
+                        _logger.LogWarning("Monitor action {Id}, Title '{Title}' has invalid argument ({EventArgument}) or missing job group / name", action.Id, action.Title, action.EventArgument);
                         return false;
                     }
 
-                    var count1 = await dal.CountFailsInRowForJob(new { action.JobId, Total = args1 });
+                    var count1 = await dal.CountFailsInRowForJob(new { JobId = jobId, Total = args1 });
                     return count1 == args1;
 
                 case MonitorEvents.ExecutionFailnTimesInHour:
                     _ = int.TryParse(action.EventArgument, out var args2);
-                    if (args2 < 2 || string.IsNullOrEmpty(action.JobId))
+                    jobId = await scope.ServiceProvider.GetRequiredService<JobKeyHelper>().GetJobId(action);
+                    if (args2 < 2 || string.IsNullOrEmpty(jobId))
                     {
                         _logger.LogWarning("Monitor action {Id}, Title '{Title}' has invalid argument ({EventArgument}) or missing job id", action.Id, action.Title, action.EventArgument);
                         return false;
                     }
 
-                    var count2 = await dal.CountFailsInHourForJob(new { action.JobId });
+                    var count2 = await dal.CountFailsInHourForJob(new { JobId = jobId });
                     return args2 >= count2;
             }
         }

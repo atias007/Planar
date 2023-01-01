@@ -89,7 +89,7 @@ namespace Planar.CLI.Actions
         private static AddMonitorRequest MapAddMonitorRequest(CliAddMonitorRequest request)
         {
             var result = JsonMapper.Map<AddMonitorRequest, CliAddMonitorRequest>(request);
-            result.JobId = request.Id;
+            result.JobKey = request.Id;
             return result;
         }
 
