@@ -25,18 +25,18 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("byJob/{id}")]
+        [HttpGet("byJob/{jobId}")]
         [SwaggerOperation(OperationId = "get_monitor_byjob_id", Description = "Get monitor by job key or id", Summary = "Get Monitor By Job")]
         [OkJsonResponse(typeof(List<MonitorItem>))]
         [BadRequestResponse]
-        public async Task<ActionResult<List<MonitorItem>>> GetByJob([FromRoute][Required] string id)
+        public async Task<ActionResult<List<MonitorItem>>> GetByJob([FromRoute][Required] string jobId)
         {
-            var result = await BusinesLayer.GetByJob(id);
+            var result = await BusinesLayer.GetByJob(jobId);
             return Ok(result);
         }
 
-        [HttpGet("byGroup/{id}")]
-        [SwaggerOperation(OperationId = "get_monitor_bygroup_id", Description = "Get monitor by job group", Summary = "Get Monitor By Group")]
+        [HttpGet("byGroup/{group}")]
+        [SwaggerOperation(OperationId = "get_monitor_bygroup_group", Description = "Get monitor by job group", Summary = "Get Monitor By Group")]
         [OkJsonResponse(typeof(List<MonitorItem>))]
         [BadRequestResponse]
         public async Task<ActionResult<List<MonitorItem>>> GetByGroup([FromRoute][Required] string group)

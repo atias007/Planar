@@ -42,8 +42,15 @@ namespace Planar.Service.Validation
             }
             else
             {
-                var key = jobKeyHelper.GetJobKey($"{group}.{name}").Result;
-                return key != null;
+                try
+                {
+                    jobKeyHelper.GetJobKey($"{group}.{name}").Wait();
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
             }
         }
 

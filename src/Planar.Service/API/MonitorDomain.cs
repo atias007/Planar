@@ -24,6 +24,10 @@ namespace Planar.Service.API
         public async Task<int> Add(AddMonitorRequest request)
         {
             var monitor = Mapper.Map<MonitorAction>(request);
+            if (string.IsNullOrEmpty(monitor.JobGroup)) { monitor.JobGroup = null; }
+            if (string.IsNullOrEmpty(monitor.JobName)) { monitor.JobName = null; }
+            monitor.Active = true;
+
             await DataLayer.AddMonitor(monitor);
             ServiceUtil.LoadMonitorHooks(Logger);
             return monitor.Id;
@@ -31,11 +35,6 @@ namespace Planar.Service.API
 
         public async Task Delete(int id)
         {
-            if (id <= 0)
-            {
-                throw new RestValidationException("id", "id parameter must be greater then 0");
-            }
-
             var monitor = new MonitorAction { Id = id };
 
             try
@@ -64,9 +63,9 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<List<MonitorItem>> GetByJob(string id)
+        public async Task<List<MonitorItem>> GetByJob(string jobId)
         {
-            var jobKey = await JobKeyHelper.GetJobKey(id);
+            var jobKey = await JobKeyHelper.GetJobKey(jobId);
             var items = await DataLayer.GetMonitorActionsByJob(jobKey.Group, jobKey.Name);
             var result = Mapper.Map<List<MonitorItem>>(items);
             return result;
@@ -74,6 +73,11 @@ namespace Planar.Service.API
 
         public async Task<List<MonitorItem>> GetByGroup(string group)
         {
+            if (!await JobKeyHelper.IsJobGroupExists(group))
+            {
+                throw new RestValidationException("group", $"group with name '{group}' is not exists");
+            }
+
             var items = await DataLayer.GetMonitorActionsByGroup(group);
             var result = Mapper.Map<List<MonitorItem>>(items);
             return result;

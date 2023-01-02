@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -69,6 +68,7 @@ namespace Planar.Service.Monitor
                     else
                     {
                         var details = GetMonitorDetails(action, context, exception);
+                        _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle with hook {Hook}", action.Id, action.Title, action.Hook);
                         hookTask = hookInstance.Handle(details, _logger)
                         .ContinueWith(t =>
                         {
@@ -77,8 +77,6 @@ namespace Planar.Service.Monitor
                                 _logger.LogError(t.Exception, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
                             }
                         });
-
-                        _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle with hook {Hook}", action.Id, action.Title, action.Hook);
                     }
                 }
             }
@@ -174,13 +172,47 @@ namespace Planar.Service.Monitor
 
         private async Task<List<MonitorAction>> LoadMonitorItems(MonitorEvents @event, IJobExecutionContext context)
         {
-            var group = context.JobDetail.Key.Group;
-            var job = JobKeyHelper.GetJobId(context.JobDetail);
+            var key = context.JobDetail.Key;
 
             using var scope = _serviceScopeFactory.CreateScope();
             var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
-            var result = await dal.GetMonitorData((int)@event, group, job);
+            var task1 = GetMonitorDataByEvent((int)@event);
+            var task2 = GetMonitorDataByGroup((int)@event, key.Group);
+            var task3 = GetMonitorDataByJob((int)@event, key.Group, key.Name);
+
+            await Task.WhenAll(task1, task2, task3);
+
+            var result = task1.Result
+                .Union(task2.Result)
+                .Union(task3.Result)
+                .Distinct()
+                .ToList();
+
             return result;
+        }
+
+        private async Task<List<MonitorAction>> GetMonitorDataByEvent(int @event)
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
+            var data = await dal.GetMonitorDataByEvent(@event);
+            return data;
+        }
+
+        private async Task<List<MonitorAction>> GetMonitorDataByGroup(int @event, string jobGroup)
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
+            var data = await dal.GetMonitorDataByGroup(@event, jobGroup);
+            return data;
+        }
+
+        private async Task<List<MonitorAction>> GetMonitorDataByJob(int @event, string jobGroup, string jobName)
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
+            var data = await dal.GetMonitorDataByJob(@event, jobGroup, jobName);
+            return data;
         }
 
         private async Task<bool> Analyze(MonitorEvents @event, MonitorAction action)

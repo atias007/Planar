@@ -13,16 +13,8 @@ namespace Planar.CLI.Actions
 {
     internal struct AddMonitorJobData
     {
-        public string JobId { get; set; }
-        public string JobGroupId { get; set; }
-
-        public bool IsEmpty
-        {
-            get
-            {
-                return string.IsNullOrEmpty(JobId) && string.IsNullOrEmpty(JobGroupId);
-            }
-        }
+        public string JobName { get; set; }
+        public string JobGroup { get; set; }
     }
 
     [Module("monitor")]
@@ -81,7 +73,7 @@ namespace Planar.CLI.Actions
             var mappedRequest = MapAddMonitorRequest(request);
             var restRequestAdd = new RestRequest("monitor", Method.Post)
                 .AddBody(mappedRequest);
-            var resultAdd = await RestProxy.Invoke<int>(restRequestAdd);
+            var resultAdd = await RestProxy.Invoke<EntityIdResponse>(restRequestAdd);
 
             return new CliActionResponse(resultAdd, message: Convert.ToString(resultAdd.Data));
         }
@@ -155,10 +147,10 @@ namespace Planar.CLI.Actions
             var monitor = new CliAddMonitorRequest
             {
                 EventArgument = monitorEventArgs,
-                JobGroup = job.JobGroupId,
+                JobGroup = job.JobGroup,
                 GroupId = groupId,
                 Hook = hookName,
-                Id = job.JobId,
+                JobName = job.JobName,
                 EventId = monitorEvent,
                 Title = title
             };
@@ -249,12 +241,13 @@ namespace Planar.CLI.Actions
             {
                 var group = JobCliActions.ChooseGroup(jobs);
                 AnsiConsole.MarkupLine($"[turquoise2]  > Monitor for: [/] job group '{group}'");
-                return new AddMonitorJobData { JobGroupId = group };
+                return new AddMonitorJobData { JobGroup = group };
             }
 
             var job = JobCliActions.ChooseJob(jobs);
             AnsiConsole.MarkupLine($"[turquoise2]  > Monitor for: [/] single job '{job}'");
-            return new AddMonitorJobData { JobId = job };
+            var key = JobKey.Parse(job);
+            return new AddMonitorJobData { JobName = key.Name, JobGroup = key.Group };
         }
 
         private static string GetTitle()

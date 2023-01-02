@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.Model;
 using Quartz;
@@ -27,18 +28,41 @@ namespace Planar.Service.Data
             return await _context.MonitorActions.Select(m => m.Hook).Distinct().ToListAsync();
         }
 
-        public async Task<List<MonitorAction>> GetMonitorData(int @event, string groupName, string jobName)
+        public async Task<List<MonitorAction>> GetMonitorDataByEvent(int @event)
         {
-            var all = _context.MonitorActions
+            var data = await GetMonitorData()
+                .Where(m => m.EventId == @event && string.IsNullOrEmpty(m.JobGroup) && string.IsNullOrEmpty(m.JobName))
+                .ToListAsync();
+
+            return data;
+        }
+
+        public async Task<List<MonitorAction>> GetMonitorDataByGroup(int @event, string jobGroup)
+        {
+            var data = await GetMonitorData()
+                .Where(m => m.EventId == @event && m.JobGroup == jobGroup && string.IsNullOrEmpty(m.JobName))
+                .ToListAsync();
+
+            return data;
+        }
+
+        public async Task<List<MonitorAction>> GetMonitorDataByJob(int @event, string jobGroup, string jobName)
+        {
+            var data = await GetMonitorData()
+                .Where(m => m.EventId == @event && m.JobGroup == jobGroup && m.JobName == jobName)
+                .ToListAsync();
+
+            return data;
+        }
+
+        private IQueryable<MonitorAction> GetMonitorData()
+        {
+            var query = _context.MonitorActions
                 .Include(m => m.Group)
                 .ThenInclude(ug => ug.Users)
-                .Where(m => m.EventId == @event && m.Active == true);
+                .Where(m => m.Active == true);
 
-            var byJob = await all.Where(m => m.JobGroup == groupName && m.JobName == jobName).ToListAsync();
-            var byGroup = await all.Where(m => m.JobGroup == groupName && string.IsNullOrEmpty(m.JobName)).ToListAsync();
-
-            var final = byJob.Union(byGroup).Distinct().ToList();
-            return final;
+            return query;
         }
 
         public async Task<MonitorAction> GetMonitorAction(int id)
@@ -87,7 +111,7 @@ namespace Planar.Service.Data
 
         public async Task AddMonitor(MonitorAction request)
         {
-            await _context.MonitorActions.AddAsync(request);
+            _context.MonitorActions.Add(request);
             await _context.SaveChangesAsync();
         }
 
