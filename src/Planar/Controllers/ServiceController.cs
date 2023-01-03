@@ -2,6 +2,7 @@
 using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Service.API;
+using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -15,6 +16,8 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
+        [SwaggerOperation(OperationId = "get_service", Description = "Get service information", Summary = "Get Information")]
+        [OkJsonResponse(typeof(GetServiceInfoResponse))]
         public async Task<ActionResult<GetServiceInfoResponse>> GetServiceInfo()
         {
             var response = await BusinesLayer.GetServiceInfo();
@@ -22,6 +25,8 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{key}")]
+        [SwaggerOperation(OperationId = "get_service_key", Description = "Get service information key", Summary = "Get Information Key")]
+        [OkJsonResponse(typeof(GetServiceInfoResponse))]
         public async Task<ActionResult<string>> GetServiceInfo(string key)
         {
             var response = await BusinesLayer.GetServiceInfo(key);
@@ -29,6 +34,9 @@ namespace Planar.Controllers
         }
 
         [HttpGet("healthCheck")]
+        [SwaggerOperation(OperationId = "get_service_healthcheck", Description = "Service health check", Summary = "Health Check")]
+        [OkJsonResponse(typeof(GetServiceInfoResponse))]
+        [ServiceUnavailableResponse]
         public async Task<ActionResult<string>> HealthCheck()
         {
             var response = await BusinesLayer.HealthCheck();
@@ -36,6 +44,8 @@ namespace Planar.Controllers
         }
 
         [HttpGet("calendars")]
+        [SwaggerOperation(OperationId = "get_service_calendars", Description = "Get calendars list", Summary = "Get Calendars")]
+        [OkJsonResponse(typeof(List<string>))]
         public async Task<ActionResult<List<string>>> GetCalendars()
         {
             var list = await BusinesLayer.GetCalendars();
@@ -43,6 +53,8 @@ namespace Planar.Controllers
         }
 
         [HttpPost("stop")]
+        [SwaggerOperation(OperationId = "post_service_stop", Description = "Stop service", Summary = "Stop Service")]
+        [OkJsonResponse]
         public async Task<ActionResult> StopScheduler()
         {
             await BusinesLayer.StopScheduler();
@@ -50,6 +62,8 @@ namespace Planar.Controllers
         }
 
         [HttpPost("start")]
+        [SwaggerOperation(OperationId = "post_service_start", Description = "Start service", Summary = "Start Service")]
+        [OkJsonResponse]
         public async Task<ActionResult> StartScheduler()
         {
             await BusinesLayer.StartScheduler();
@@ -57,7 +71,9 @@ namespace Planar.Controllers
         }
 
         [HttpPost("login")]
+        [SwaggerOperation(OperationId = "post_service_login", Description = "Login service", Summary = "Login Service")]
         [JsonConsumes]
+        [OkJsonResponse(typeof(string))]
         public async Task<ActionResult<string>> Login([FromBody] LoginRequest request)
         {
             var result = await BusinesLayer.Login(request);

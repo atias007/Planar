@@ -28,7 +28,7 @@ namespace Planar.Service.List.Base
             {
                 using var scope = _serviceScopeFactory.CreateScope();
                 var monitor = scope.ServiceProvider.GetService<MonitorUtil>();
-                await monitor.Scan(MonitorEvents.ExecutionVetoed, context, null, cancellationToken);
+                await monitor.Scan(@event, context, null, cancellationToken);
             }
             catch (Exception ex)
             {

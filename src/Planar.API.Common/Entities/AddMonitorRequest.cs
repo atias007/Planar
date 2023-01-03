@@ -4,11 +4,11 @@
     {
         public string Title { get; set; }
 
-        public string JobId { get; set; }
+        public string JobName { get; set; }
 
         public string JobGroup { get; set; }
 
-        public MonitorEvents EventId { get; set; }
+        public MonitorEvents? EventId { get; set; }
 
         public string EventArgument { get; set; }
 

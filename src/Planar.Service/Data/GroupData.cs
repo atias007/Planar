@@ -17,7 +17,7 @@ namespace Planar.Service.Data
 
         public async Task AddGroup(Group group)
         {
-            await _context.Groups.AddAsync(group);
+            _context.Groups.Add(group);
             await _context.SaveChangesAsync();
         }
 

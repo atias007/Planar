@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
-using Planar.CLI.Entities;
 using RestSharp;
 using Spectre.Console;
 using System;
@@ -125,9 +124,15 @@ namespace Planar.CLI.Actions
         {
             var name = typeof(T).Name.Replace("CliActions", string.Empty);
             var help = GetHelpResource(name);
-            var response = new RestResponse { StatusCode = HttpStatusCode.OK, ResponseStatus = ResponseStatus.Completed, IsSuccessStatusCode = true };
+            var response = GetGenericSuccessRestResponse();
             var result = new CliActionResponse(response, help);
             return await Task.FromResult(result);
+        }
+
+        internal static RestResponse GetGenericSuccessRestResponse()
+        {
+            var response = new RestResponse { StatusCode = HttpStatusCode.OK, ResponseStatus = ResponseStatus.Completed, IsSuccessStatusCode = true };
+            return response;
         }
 
         private static string GetHelpResource(string name)
@@ -183,8 +188,6 @@ namespace Planar.CLI.Actions
         protected static TRequest CollectDataFromCli<TRequest>()
             where TRequest : class, new()
         {
-            AnsiConsole.MarkupLine("[underline]Enter values for the following properties:[/]");
-
             var prm = Activator.CreateInstance<TRequest>();
             var properties = typeof(TRequest).GetProperties(BindingFlags.Public | BindingFlags.Instance);
             foreach (var prop in properties)

@@ -17,7 +17,7 @@ namespace Planar.Service.Data
 
         public async Task<User> AddUser(User user)
         {
-            var result = await _context.Users.AddAsync(user);
+            var result = _context.Users.Add(user);
             await _context.SaveChangesAsync();
             return result.Entity;
         }

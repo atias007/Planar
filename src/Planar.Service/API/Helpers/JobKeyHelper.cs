@@ -1,9 +1,11 @@
 ﻿using CommonJob;
 using Planar.API.Common.Entities;
 using Planar.Service.Exceptions;
+using Planar.Service.Model;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API.Helpers
@@ -15,6 +17,52 @@ namespace Planar.Service.API.Helpers
         public JobKeyHelper(IScheduler scheduler)
         {
             _scheduler = scheduler;
+        }
+
+        public static bool Compare(JobKey jobKeyA, JobKey jobKeyB)
+        {
+            return jobKeyA.Name == jobKeyB.Name && jobKeyA.Group == jobKeyB.Group;
+        }
+
+        public static string GetJobId(IJobDetail job)
+        {
+            if (job == null)
+            {
+                throw new PlanarJobException("job is null at JobKeyHelper.GetJobId(IJobDetail)");
+            }
+
+            if (job.JobDataMap.TryGetValue(Consts.JobId, out var id))
+            {
+                return Convert.ToString(id);
+            }
+
+            return null;
+        }
+
+        public static JobKey GetJobKey(SetJobRequest metadata)
+        {
+            return string.IsNullOrEmpty(metadata.Group) ?
+                            new JobKey(metadata.Name) :
+                            new JobKey(metadata.Name, metadata.Group);
+        }
+
+        public async Task<string> GetJobId(JobKey jobKey)
+        {
+            var job = await ValidateJobExists(jobKey);
+            return GetJobId(job);
+        }
+
+        public async Task<string> GetJobId(string id)
+        {
+            var jobKey = await GetJobKey(id);
+            var jobId = await GetJobId(jobKey);
+            return jobId;
+        }
+
+        public async Task<string> GetJobId(MonitorAction action)
+        {
+            var key = $"{action.JobGroup}.{action.JobName}";
+            return await GetJobId(key);
         }
 
         public async Task<JobKey> GetJobKey(string id)
@@ -40,53 +88,6 @@ namespace Planar.Service.API.Helpers
             return result;
         }
 
-        public static string GetJobId(IJobDetail job)
-        {
-            if (job == null)
-            {
-                throw new PlanarJobException("job is null at JobKeyHelper.GetJobId(IJobDetail)");
-            }
-
-            if (job.JobDataMap.TryGetValue(Consts.JobId, out var id))
-            {
-                return Convert.ToString(id);
-            }
-
-            return null;
-        }
-
-        public async Task<string> GetJobId(JobKey jobKey)
-        {
-            var job = await ValidateJobExists(jobKey);
-            return GetJobId(job);
-        }
-
-        public async Task<string> GetJobId(string id)
-        {
-            var jobKey = await GetJobKey(id);
-            var jobId = await GetJobId(jobKey);
-            return jobId;
-        }
-
-        public async Task<IJobDetail> ValidateJobExists(JobKey jobKey)
-        {
-            var exists = await _scheduler.GetJobDetail(jobKey);
-
-            if (exists == null)
-            {
-                throw new RestNotFoundException($"job with key {jobKey.Group}.{jobKey.Name} does not exist");
-            }
-
-            return exists;
-        }
-
-        public static JobKey GetJobKey(SetJobRequest metadata)
-        {
-            return string.IsNullOrEmpty(metadata.Group) ?
-                            new JobKey(metadata.Name) :
-                            new JobKey(metadata.Name, metadata.Group);
-        }
-
         public async Task<JobKey> GetJobKeyById(string jobId)
         {
             JobKey result = null;
@@ -108,9 +109,22 @@ namespace Planar.Service.API.Helpers
             return result;
         }
 
-        public static bool Compare(JobKey jobKeyA, JobKey jobKeyB)
+        public async Task<bool> IsJobGroupExists(string group)
         {
-            return jobKeyA.Name == jobKeyB.Name && jobKeyA.Group == jobKeyB.Group;
+            var all = await _scheduler.GetJobGroupNames();
+            return all.Contains(group);
+        }
+
+        public async Task<IJobDetail> ValidateJobExists(JobKey jobKey)
+        {
+            var exists = await _scheduler.GetJobDetail(jobKey);
+
+            if (exists == null)
+            {
+                throw new RestNotFoundException($"job with key {jobKey.Group}.{jobKey.Name} does not exist");
+            }
+
+            return exists;
         }
 
         private static JobKey GetJobKeyByKey(string key)

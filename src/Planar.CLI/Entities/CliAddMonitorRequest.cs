@@ -2,11 +2,14 @@
 
 namespace Planar.CLI.Entities
 {
-    public class CliAddMonitorRequest : CliJobOrTriggerKey
+    public class CliAddMonitorRequest
     {
         [ActionProperty("t", "title")]
         [Required]
         public string Title { get; set; }
+
+        [ActionProperty("n", "name")]
+        public string JobName { get; set; }
 
         [ActionProperty("jg", "job-group")]
         public string JobGroup { get; set; }

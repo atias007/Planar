@@ -35,6 +35,19 @@ namespace Planar.CLI
             return table;
         }
 
+        public static Table GetTable(IEnumerable<LovItem> response)
+        {
+            var table = new Table();
+            if (response == null) { return table; }
+            table.AddColumns("Id", "Name");
+            foreach (var item in response)
+            {
+                table.AddRow(item.Id.ToString(), item?.Name.EscapeMarkup());
+            }
+
+            return table;
+        }
+
         public static Table GetTable(CliGeneralMarupMessageResponse response)
         {
             var table = new Table();
@@ -161,8 +174,16 @@ namespace Planar.CLI
             if (response == null) { return null; }
             var data = response;
             var table = new Table();
-            table.AddColumns("Id", "Title", "Event", "Job", "Group", "Hook", "Active");
-            data.ForEach(r => table.AddRow(CliTableFormat.GetBooleanMarkup(r.Active, r.Id), r.Title.EscapeMarkup(), r.EventTitle.EscapeMarkup(), r.Job.EscapeMarkup(), r.GroupName.EscapeMarkup(), r.Hook.EscapeMarkup(), CliTableFormat.GetBooleanMarkup(r.Active)));
+            table.AddColumns("Id", "Title", "Event", "Job Group", "Job Name", "Dist. Group", "Hook", "Active");
+            data.ForEach(r => table.AddRow(
+                r.Id.ToString(),
+                r.Title.EscapeMarkup(),
+                r.EventTitle.EscapeMarkup(),
+                r.JobGroup.EscapeMarkup(),
+                r.JobName.EscapeMarkup(),
+                r.DistributionGroupName.EscapeMarkup(),
+                r.Hook.EscapeMarkup(),
+                CliTableFormat.GetBooleanMarkup(r.Active)));
             return table;
         }
 
