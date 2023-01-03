@@ -160,7 +160,7 @@ namespace Planar.CLI.Actions
                     .MoreChoicesText("[grey](Move up and down to reveal more distribution group)[/]")
                     .AddChoices(groupsNames));
 
-            var group = groups.Where(e => e.Name == selectedGroup).First();
+            var group = groups.First(e => e.Name == selectedGroup);
             AnsiConsole.MarkupLine($"[turquoise2]  > Group: [/] {group.Name}");
             return group.Id;
         }
@@ -176,7 +176,7 @@ namespace Planar.CLI.Actions
                      .MoreChoicesText("[grey](Move up and down to reveal more monitor event)[/]")
                      .AddChoices(eventsName));
 
-            var monitorEvent = events.Where(e => e.Name == selectedEvent).First();
+            var monitorEvent = events.First(e => e.Name == selectedEvent);
             AnsiConsole.MarkupLine($"[turquoise2]  > Event: [/] {monitorEvent.Name}");
             return monitorEvent.Id;
         }
@@ -324,7 +324,6 @@ namespace Planar.CLI.Actions
         private static AddMonitorRequest MapAddMonitorRequest(CliAddMonitorRequest request)
         {
             var result = JsonMapper.Map<AddMonitorRequest, CliAddMonitorRequest>(request);
-            //result.JobKey = request.Id;
             return result;
         }
 

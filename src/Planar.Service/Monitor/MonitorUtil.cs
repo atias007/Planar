@@ -175,7 +175,6 @@ namespace Planar.Service.Monitor
             var key = context.JobDetail.Key;
 
             using var scope = _serviceScopeFactory.CreateScope();
-            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
             var task1 = GetMonitorDataByEvent((int)@event);
             var task2 = GetMonitorDataByGroup((int)@event, key.Group);
             var task3 = GetMonitorDataByJob((int)@event, key.Group, key.Name);
