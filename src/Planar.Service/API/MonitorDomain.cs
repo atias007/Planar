@@ -28,6 +28,11 @@ namespace Planar.Service.API
             if (string.IsNullOrEmpty(monitor.JobName)) { monitor.JobName = null; }
             monitor.Active = true;
 
+            if (await DataLayer.IsMonitorExists(monitor))
+            {
+                throw new RestConflictException("monitor with same properties already exists");
+            }
+
             await DataLayer.AddMonitor(monitor);
             ServiceUtil.LoadMonitorHooks(Logger);
             return monitor.Id;

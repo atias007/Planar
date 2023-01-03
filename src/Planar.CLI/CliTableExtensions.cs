@@ -35,6 +35,19 @@ namespace Planar.CLI
             return table;
         }
 
+        public static Table GetTable(IEnumerable<LovItem> response)
+        {
+            var table = new Table();
+            if (response == null) { return table; }
+            table.AddColumns("Id", "Name");
+            foreach (var item in response)
+            {
+                table.AddRow(item.Id.ToString(), item?.Name.EscapeMarkup());
+            }
+
+            return table;
+        }
+
         public static Table GetTable(CliGeneralMarupMessageResponse response)
         {
             var table = new Table();

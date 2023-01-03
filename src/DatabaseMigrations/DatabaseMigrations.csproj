@@ -22,6 +22,7 @@
     <None Remove="Scripts\Planar_0002 - add admin test2.sql" />
     <None Remove="Scripts\Planar_0003 - add job properties.sql" />
     <None Remove="Scripts\Planar_0004 - fix monitor table.sql" />
+    <None Remove="Scripts\Planar_0005 - fix FactoryReset sp.sql" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Scripts\" />
@@ -31,5 +32,6 @@
     <EmbeddedResource Include="Scripts\Planar_0002 - add admin test2.sql" />
     <EmbeddedResource Include="Scripts\Planar_0003 - add job properties.sql" />
     <EmbeddedResource Include="Scripts\Planar_0004 - fix monitor table.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0005 - fix FactoryReset sp.sql" />
   </ItemGroup>
 </Project>

@@ -49,7 +49,8 @@ namespace Planar.CLI.Actions
                 var key = request.Key.Replace(" ", string.Empty).ToLower();
                 if (key == "cliversion")
                 {
-                    return new CliActionResponse(new RestResponse { StatusCode = HttpStatusCode.OK, ResponseStatus = ResponseStatus.Completed, IsSuccessStatusCode = true });
+                    var response = GetGenericSuccessRestResponse();
+                    return new CliActionResponse(response);
                 }
 
                 var restRequest = new RestRequest("service/{key}", Method.Get);

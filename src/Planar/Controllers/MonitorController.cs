@@ -19,6 +19,7 @@ namespace Planar.Controllers
 
         [HttpGet]
         [SwaggerOperation(OperationId = "get_monitor", Description = "Get all monitors", Summary = "Get All Monitors")]
+        [OkJsonResponse(typeof(List<MonitorItem>))]
         public async Task<ActionResult<List<MonitorItem>>> GetAll()
         {
             var result = await BusinesLayer.GetAll();
@@ -70,6 +71,7 @@ namespace Planar.Controllers
         [JsonConsumes]
         [CreatedResponse(typeof(EntityIdResponse))]
         [BadRequestResponse]
+        [ConflictResponse]
         public async Task<ActionResult<EntityIdResponse>> Add([FromBody] AddMonitorRequest request)
         {
             var result = await BusinesLayer.Add(request);

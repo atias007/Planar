@@ -4,8 +4,9 @@ the options for <command> and [<options>] parameters of user module:
 
 ls|list 
 get             <id>
-add            -u|-username <username> -f|-firstname <firstname> [-l|-lastname <lastname>]
-                [-e|-email <email>] [-p|-phone-number <phone number>]
+add            -u|--username <username> -f|--firstname <firstname> [-l|--lastname <lastname>]
+                [-e|--email <email>] [-p|--phone-number <phone number>]
+                --------------------------------------------------------------------------
                 [leave empty to open wizard...]
 update          <id> <property name> <property value>
 remove|delete   <id>

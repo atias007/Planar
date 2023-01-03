@@ -11,21 +11,86 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    internal struct AddMonitorJobData
-    {
-        public string JobName { get; set; }
-        public string JobGroup { get; set; }
-    }
-
     [Module("monitor")]
     public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     {
-        [Action("reload")]
-        public static async Task<CliActionResponse> ReloadMonitor()
+        [Action("add")]
+        [NullRequest]
+        public static async Task<CliActionResponse> AddMonitorAction(CliAddMonitorRequest request)
         {
-            var restRequest = new RestRequest("monitor/reload", Method.Post);
-            var result = await RestProxy.Invoke<string>(restRequest);
-            return new CliActionResponse(result, message: result.Data);
+            if (request == null)
+            {
+                var wrapper = await CollectAddMonitorRequestData();
+                if (!wrapper.IsSuccessful)
+                {
+                    return new CliActionResponse(wrapper.FailResponse);
+                }
+
+                request = wrapper.Request;
+            }
+
+            var mappedRequest = MapAddMonitorRequest(request);
+            var restRequestAdd = new RestRequest("monitor", Method.Post)
+                .AddBody(mappedRequest);
+            var resultAdd = await RestProxy.Invoke<EntityIdResponse>(restRequestAdd);
+
+            return new CliActionResponse(resultAdd, message: Convert.ToString(resultAdd.Data?.Id));
+        }
+
+        [Action("remove")]
+        [Action("delete")]
+        public static async Task<CliActionResponse> DeleteMonitor(CliGetByIdRequest request)
+        {
+            var restRequest = new RestRequest("monitor/{id}", Method.Delete)
+                .AddParameter("id", request.Id, ParameterType.UrlSegment);
+            var result = await RestProxy.Invoke(restRequest);
+            return new CliActionResponse(result);
+        }
+
+        [Action("ls")]
+        public static async Task<CliActionResponse> GetMonitorActions(CliGetMonitorActionsRequest request)
+        {
+            var data = new List<MonitorItem>();
+            RestResponse finalResult;
+
+            if (string.IsNullOrEmpty(request.JobIdOrJobGroup))
+            {
+                var restRequest = new RestRequest("monitor", Method.Get);
+                var result = await RestProxy.Invoke<List<MonitorItem>>(restRequest);
+                if (result.IsSuccessful) { data.AddRange(result.Data); }
+                finalResult = result;
+            }
+            else
+            {
+                var restRequest1 = new RestRequest("monitor/byJob/{jobId}", Method.Get)
+                    .AddParameter("jobId", request.JobIdOrJobGroup, ParameterType.UrlSegment);
+
+                var restRequest2 = new RestRequest("monitor/byGroup/{group}", Method.Get)
+                    .AddParameter("group", request.JobIdOrJobGroup, ParameterType.UrlSegment);
+
+                var task1 = RestProxy.Invoke<List<MonitorItem>>(restRequest1);
+                var task2 = RestProxy.Invoke<List<MonitorItem>>(restRequest2);
+                await Task.WhenAll(task1, task2);
+
+                var result1 = task1.Result;
+                var result2 = task2.Result;
+                if (result1.IsSuccessful) { data.AddRange(result1.Data); }
+                if (result2.IsSuccessful) { data.AddRange(result2.Data); }
+
+                finalResult = SelectRestResponse(result1, result2);
+            }
+
+            var table = CliTableExtensions.GetTable(data);
+            return new CliActionResponse(finalResult, table);
+        }
+
+        [Action("events")]
+        public static async Task<CliActionResponse> GetMonitorEvents()
+        {
+            var restRequest = new RestRequest("monitor/events", Method.Get);
+            var result = await RestProxy.Invoke<List<LovItem>>(restRequest);
+            var table = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, table);
         }
 
         [Action("hooks")]
@@ -36,24 +101,12 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, serializeObj: result.Data);
         }
 
-        [Action("ls")]
-        public static async Task<CliActionResponse> GetMonitorActions(CliGetMonitorActionsRequest request)
+        [Action("reload")]
+        public static async Task<CliActionResponse> ReloadMonitor()
         {
-            RestRequest restRequest;
-
-            if (string.IsNullOrEmpty(request.JobIdOrJobGroup))
-            {
-                restRequest = new RestRequest("monitor", Method.Get);
-            }
-            else
-            {
-                restRequest = new RestRequest("monitor/{key}", Method.Get)
-                    .AddParameter("jobOrGroupId", request.JobIdOrJobGroup, ParameterType.UrlSegment);
-            }
-
-            var result = await RestProxy.Invoke<List<MonitorItem>>(restRequest);
-            var table = CliTableExtensions.GetTable(result.Data);
-            return new CliActionResponse(result, table);
+            var restRequest = new RestRequest("monitor/reload", Method.Post);
+            var result = await RestProxy.Invoke<string>(restRequest);
+            return new CliActionResponse(result, message: result.Data);
         }
 
         [Action("update")]
@@ -65,82 +118,20 @@ namespace Planar.CLI.Actions
             return await Execute(restRequest);
         }
 
-        [Action("add")]
-        [NullRequest]
-        public static async Task<CliActionResponse> AddMonitorAction(CliAddMonitorRequest request)
+        private static async Task<AddMonitorRequestWrapper> CollectAddMonitorRequestData()
         {
-            request ??= await CollectAddMonitorRequestData();
-            var mappedRequest = MapAddMonitorRequest(request);
-            var restRequestAdd = new RestRequest("monitor", Method.Post)
-                .AddBody(mappedRequest);
-            var resultAdd = await RestProxy.Invoke<EntityIdResponse>(restRequestAdd);
-
-            return new CliActionResponse(resultAdd, message: Convert.ToString(resultAdd.Data));
-        }
-
-        private static AddMonitorRequest MapAddMonitorRequest(CliAddMonitorRequest request)
-        {
-            var result = JsonMapper.Map<AddMonitorRequest, CliAddMonitorRequest>(request);
-            //result.JobKey = request.Id;
-            return result;
-        }
-
-        private static async Task<CliAddMonitorRequest> CollectAddMonitorRequestData()
-        {
-            var eventsRequest = new RestRequest("monitor/events", Method.Get);
-            var eventsTask = RestProxy.Invoke<List<LovItem>>(eventsRequest);
-
-            var hooksRequest = new RestRequest("monitor/hooks", Method.Get);
-            var hooksTask = RestProxy.Invoke<List<string>>(hooksRequest);
-
-            var jobsRequest = new RestRequest("job", Method.Get)
-                .AddQueryParameter("filter", (int)AllJobsMembers.AllUserJobs);
-            var jobsTask = RestProxy.Invoke<List<JobRowDetails>>(jobsRequest);
-
-            var groupsRequest = new RestRequest("group", Method.Get);
-            var groupsTask = RestProxy.Invoke<List<GroupInfo>>(groupsRequest);
-
-            var events = await eventsTask;
-            if (!events.IsSuccessful)
+            var data = await GetMonitorData();
+            if (!data.IsSuccessful)
             {
-            }
-
-            var hooks = await hooksTask;
-            if (!hooks.IsSuccessful)
-            {
-            }
-
-            var jobs = await jobsTask;
-            if (!jobs.IsSuccessful)
-            {
-            }
-
-            var groups = await groupsTask;
-            if (!groups.IsSuccessful)
-            {
-            }
-
-            if (!jobs.Data.Any())
-            {
-                throw new CliValidationException("there are no jobs for monitoring");
-            }
-
-            if (!hooks.Data.Any())
-            {
-                throw new CliValidationException("there are no monitor hooks define in service");
-            }
-
-            if (!groups.Data.Any())
-            {
-                throw new CliValidationException("there are no distribution groups define in service");
+                return new AddMonitorRequestWrapper { FailResponse = data.FailResponse };
             }
 
             var title = GetTitle();
-            var job = GetJob(jobs.Data);
-            var monitorEvent = GetEvent(events.Data);
+            var job = GetJob(data.Jobs);
+            var monitorEvent = GetEvent(data.Events);
             var monitorEventArgs = GetEventArguments(monitorEvent);
-            var groupId = GetDistributionGroup(groups.Data);
-            var hookName = GetHook(hooks.Data);
+            var groupId = GetDistributionGroup(data.Groups);
+            var hookName = GetHook(data.Hooks);
 
             AnsiConsole.Write(new Rule());
 
@@ -155,21 +146,7 @@ namespace Planar.CLI.Actions
                 Title = title
             };
 
-            return monitor;
-        }
-
-        private static string GetHook(IEnumerable<string> hooks)
-        {
-            var selectedHook = AnsiConsole.Prompt(
-                 new SelectionPrompt<string>()
-                    .Title("[underline]select hook from the following list (press enter to select):[/]")
-                    .PageSize(20)
-                    .MoreChoicesText("[grey](Move up and down to reveal more hooks)[/]")
-                    .AddChoices(hooks));
-
-            AnsiConsole.MarkupLine($"[turquoise2]  > Hook: [/] {selectedHook}");
-
-            return selectedHook;
+            return new AddMonitorRequestWrapper { Request = monitor };
         }
 
         private static int GetDistributionGroup(IEnumerable<GroupInfo> groups)
@@ -184,22 +161,8 @@ namespace Planar.CLI.Actions
                     .AddChoices(groupsNames));
 
             var group = groups.Where(e => e.Name == selectedGroup).First();
-            AnsiConsole.MarkupLine($"[turquoise2]  > Group: [/] {group}");
+            AnsiConsole.MarkupLine($"[turquoise2]  > Group: [/] {group.Name}");
             return group.Id;
-        }
-
-        private static string GetEventArguments(int monitorEvent)
-        {
-            var result = monitorEvent >= 10 ?
-                AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Monitor event argument: [/]").AllowEmpty()) :
-                null;
-
-            if (!string.IsNullOrEmpty(result))
-            {
-                AnsiConsole.MarkupLine($"[turquoise2]  > Arguments: [/] {result}");
-            }
-
-            return result;
         }
 
         private static int GetEvent(IEnumerable<LovItem> events)
@@ -214,8 +177,36 @@ namespace Planar.CLI.Actions
                      .AddChoices(eventsName));
 
             var monitorEvent = events.Where(e => e.Name == selectedEvent).First();
-            AnsiConsole.MarkupLine($"[turquoise2]  > Event: [/] {monitorEvent}");
+            AnsiConsole.MarkupLine($"[turquoise2]  > Event: [/] {monitorEvent.Name}");
             return monitorEvent.Id;
+        }
+
+        private static string GetEventArguments(int monitorEvent)
+        {
+            var result = monitorEvent >= 10 ?
+                AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Event argument: [/]").AllowEmpty()) :
+                null;
+
+            if (!string.IsNullOrEmpty(result))
+            {
+                AnsiConsole.MarkupLine($"[turquoise2]  > Arguments: [/] {result}");
+            }
+
+            return result;
+        }
+
+        private static string GetHook(IEnumerable<string> hooks)
+        {
+            var selectedHook = AnsiConsole.Prompt(
+                 new SelectionPrompt<string>()
+                    .Title("[underline]select hook from the following list (press enter to select):[/]")
+                    .PageSize(20)
+                    .MoreChoicesText("[grey](Move up and down to reveal more hooks)[/]")
+                    .AddChoices(hooks));
+
+            AnsiConsole.MarkupLine($"[turquoise2]  > Hook: [/] {selectedHook}");
+
+            return selectedHook;
         }
 
         private static AddMonitorJobData GetJob(IEnumerable<JobRowDetails> jobs)
@@ -250,6 +241,72 @@ namespace Planar.CLI.Actions
             return new AddMonitorJobData { JobName = key.Name, JobGroup = key.Group };
         }
 
+        private static async Task<MonitorRequestData> GetMonitorData()
+        {
+            var data = new MonitorRequestData();
+            var eventsRequest = new RestRequest("monitor/events", Method.Get);
+            var eventsTask = RestProxy.Invoke<List<LovItem>>(eventsRequest);
+
+            var hooksRequest = new RestRequest("monitor/hooks", Method.Get);
+            var hooksTask = RestProxy.Invoke<List<string>>(hooksRequest);
+
+            var jobsRequest = new RestRequest("job", Method.Get)
+                .AddQueryParameter("filter", (int)AllJobsMembers.AllUserJobs);
+            var jobsTask = RestProxy.Invoke<List<JobRowDetails>>(jobsRequest);
+
+            var groupsRequest = new RestRequest("group", Method.Get);
+            var groupsTask = RestProxy.Invoke<List<GroupInfo>>(groupsRequest);
+
+            var events = await eventsTask;
+            data.Events = events.Data;
+            if (!events.IsSuccessful)
+            {
+                data.FailResponse = events;
+                return data;
+            }
+
+            var hooks = await hooksTask;
+            data.Hooks = hooks.Data;
+            if (!hooks.IsSuccessful)
+            {
+                data.FailResponse = hooks;
+                return data;
+            }
+
+            var jobs = await jobsTask;
+            data.Jobs = jobs.Data;
+            if (!jobs.IsSuccessful)
+            {
+                data.FailResponse = jobs;
+                return data;
+            }
+
+            var groups = await groupsTask;
+            data.Groups = groups.Data;
+            if (!groups.IsSuccessful)
+            {
+                data.FailResponse = groups;
+                return data;
+            }
+
+            if (!jobs.Data.Any())
+            {
+                throw new CliValidationException("there are no jobs for monitoring");
+            }
+
+            if (!hooks.Data.Any())
+            {
+                throw new CliValidationException("there are no monitor hooks define in service");
+            }
+
+            if (!groups.Data.Any())
+            {
+                throw new CliValidationException("there are no distribution groups define in service");
+            }
+
+            return data;
+        }
+
         private static string GetTitle()
         {
             // === Title ===
@@ -264,22 +321,43 @@ namespace Planar.CLI.Actions
                 }));
         }
 
-        [Action("events")]
-        public static async Task<CliActionResponse> GetMonitorEvents()
+        private static AddMonitorRequest MapAddMonitorRequest(CliAddMonitorRequest request)
         {
-            var restRequest = new RestRequest("monitor/events", Method.Get);
-            var result = await RestProxy.Invoke<List<LovItem>>(restRequest);
-            return new CliActionResponse(result, serializeObj: result.Data);
+            var result = JsonMapper.Map<AddMonitorRequest, CliAddMonitorRequest>(request);
+            //result.JobKey = request.Id;
+            return result;
         }
 
-        [Action("remove")]
-        [Action("delete")]
-        public static async Task<CliActionResponse> DeleteMonitor(CliGetByIdRequest request)
+        private static RestResponse SelectRestResponse(params RestResponse[] items)
         {
-            var restRequest = new RestRequest("monitor/{id}", Method.Delete)
-                .AddParameter("id", request.Id, ParameterType.UrlSegment);
-            var result = await RestProxy.Invoke(restRequest);
-            return new CliActionResponse(result);
+            if (!items.Any()) { return null; }
+            var result = items.FirstOrDefault(i => !i.IsSuccessful && (int)i.StatusCode >= 500);
+            result ??= GetGenericSuccessRestResponse();
+
+            return result;
+        }
+
+        private struct MonitorRequestData
+        {
+            public List<LovItem> Events { get; set; }
+            public List<GroupInfo> Groups { get; set; }
+            public List<string> Hooks { get; set; }
+            public List<JobRowDetails> Jobs { get; set; }
+            public RestResponse FailResponse { get; set; }
+            public bool IsSuccessful => FailResponse == null;
+        }
+
+        private struct AddMonitorJobData
+        {
+            public string JobGroup { get; set; }
+            public string JobName { get; set; }
+        }
+
+        private struct AddMonitorRequestWrapper
+        {
+            public CliAddMonitorRequest Request { get; set; }
+            public RestResponse FailResponse { get; set; }
+            public bool IsSuccessful => FailResponse == null;
         }
     }
 }

@@ -31,29 +31,6 @@ namespace Planar.Service.Validation
             return key != null;
         }
 
-        public static bool IsJobAndGroupExists(string group, string name, JobKeyHelper jobKeyHelper)
-        {
-            if (string.IsNullOrEmpty(group) && string.IsNullOrEmpty(name)) { return true; }
-            if (string.IsNullOrEmpty(group)) { return false; }
-            if (string.IsNullOrEmpty(name))
-            {
-                var result = jobKeyHelper.IsJobGroupExists(group).Result;
-                return result;
-            }
-            else
-            {
-                try
-                {
-                    jobKeyHelper.GetJobKey($"{group}.{name}").Wait();
-                    return true;
-                }
-                catch
-                {
-                    return false;
-                }
-            }
-        }
-
         public static bool IsHookExists(string hook)
         {
             if (hook == null) { return true; }

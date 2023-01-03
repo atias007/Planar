@@ -77,7 +77,7 @@ namespace Planar.Service.Data
         {
             var result = await _context.MonitorActions
                 .Include(m => m.Group)
-                .Where(m => m.JobName == name && m.JobGroup == group)
+                .Where(m => m.JobGroup == group && (m.JobName == name || string.IsNullOrEmpty(m.JobName)))
                 .OrderByDescending(m => m.Active)
                 .ThenBy(m => m.JobGroup)
                 .ThenBy(m => m.JobName)
@@ -161,6 +161,17 @@ namespace Planar.Service.Data
 
             var data = await conn.QuerySingleAsync<int>(cmd);
             return data;
+        }
+
+        public async Task<bool> IsMonitorExists(MonitorAction monitor)
+        {
+            return await _context.MonitorActions.AnyAsync(m =>
+                m.EventId == monitor.EventId &&
+                m.EventArgument == monitor.EventArgument &&
+                m.JobName == monitor.JobName &&
+                m.JobGroup == monitor.JobGroup &&
+                m.GroupId == monitor.GroupId &&
+                m.Hook == monitor.Hook);
         }
 
         public async Task<bool> IsMonitorExists(int id)

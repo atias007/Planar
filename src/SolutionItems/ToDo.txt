@@ -7,15 +7,13 @@
 - job test: in no instance id, check hc and print warning about already running job with no concurent
 
 
-- *** when add / update monitor action with event type ExecutionFailnTimesInRow|ExecutionFailnTimesInHour - must have job group & job name
 - *** stop service while long running task (service provider is null) ***
       * Error handle SafeScan: BaseListener.cs:line 28
       * Error handle LogJobListener.JobWasExecuted: BaseListener.cs:line 48
       * system jobs
-- *** implement GetPausedTriggers
-- *** cli test: job that finish very fast - the test dont found it in running jobs. it should search in history
-- BUG: monitor get by key: if there is monitor for group, call get by key with job id within the group return nothing
-- BUG: add exactly same moniter ite, is enabled
+- implement GetPausedTriggers
+- cli test: job that finish very fast - the test dont found it in running jobs. it should search in history
+- 
 - api to get demo yml file 
 - cli test cluster command
 - option to pause job after {x} fails in row
@@ -66,3 +64,6 @@
 - cli: job test !! test the last running job
 - bug: use ? in cli at trigger id but show job menu. maybe show second menu of triggers list ***
 - validate new or update job without triggers is must be durable
+- when add / update monitor action with event type ExecutionFailnTimesInRow|ExecutionFailnTimesInHour - must have job group & job name
+- BUG: monitor get by key: if there is monitor for group, call get by key with job id within the group return nothing
+- BUG: add exactly same moniter ite, is enabled
