@@ -6,14 +6,36 @@ namespace Planar.Service.Monitor
 {
     internal class HookInstance
     {
+        public const string HandleMethodName = "ExecuteHandle";
+        public const string HandleSystemMethodName = "ExecuteHandleSystem";
+
         public object Instance { get; set; }
 
-        public MethodInfo Method { get; set; }
+        public MethodInfo HandleMethod { get; set; }
+
+        public MethodInfo HandleSystemMethod { get; set; }
 
         public Task Handle(MonitorDetails details, ILogger<MonitorUtil> logger)
         {
+            if (HandleMethod == null)
+            {
+                throw new PlanarMonitorException($"Method '{HandleMethodName}' could not be found in hook");
+            }
+
             var messageBroker = new MonitorMessageBroker(logger, details);
-            var result = Method.Invoke(Instance, new object[] { messageBroker });
+            var result = HandleMethod.Invoke(Instance, new object[] { messageBroker });
+            return result as Task;
+        }
+
+        public Task HandleSystem(MonitorDetails details, ILogger<MonitorUtil> logger)
+        {
+            if (HandleSystemMethod == null)
+            {
+                throw new PlanarMonitorException($"Method '{HandleMethodName}' could not be found in hook");
+            }
+
+            var messageBroker = new MonitorMessageBroker(logger, details);
+            var result = HandleSystemMethod.Invoke(Instance, new object[] { messageBroker });
             return result as Task;
         }
     }

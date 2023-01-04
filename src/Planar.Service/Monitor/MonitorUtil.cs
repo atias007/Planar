@@ -13,6 +13,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace Planar.Service.Monitor
 {
@@ -52,12 +53,11 @@ namespace Planar.Service.Monitor
             await task;
         }
 
-        private Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception exception)
+        private async Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception exception)
         {
-            Task hookTask = null;
             try
             {
-                var toBeContinue = Analyze(@event, action).Result;
+                var toBeContinue = await Analyze(@event, action, context);
                 if (toBeContinue)
                 {
                     var hookInstance = GetMonitorHookInstance(action.Hook);
@@ -69,14 +69,7 @@ namespace Planar.Service.Monitor
                     {
                         var details = GetMonitorDetails(action, context, exception);
                         _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle with hook {Hook}", action.Id, action.Title, action.Hook);
-                        hookTask = hookInstance.Handle(details, _logger)
-                        .ContinueWith(t =>
-                        {
-                            if (t.Exception != null)
-                            {
-                                _logger.LogError(t.Exception, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
-                            }
-                        });
+                        await hookInstance.Handle(details, _logger);
                     }
                 }
             }
@@ -84,8 +77,6 @@ namespace Planar.Service.Monitor
             {
                 _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
             }
-
-            return hookTask;
         }
 
         internal void ScanAsync(MonitorEvents @event, IJobExecutionContext context, Exception exception = default, CancellationToken cancellationToken = default)
@@ -108,14 +99,11 @@ namespace Planar.Service.Monitor
                 return;
             }
 
-            Parallel.ForEach(items, action =>
+            foreach (var action in items)
             {
                 var task = ExecuteMonitor(action, @event, context, exception);
-                if (task != null)
-                {
-                    hookTasks.Add(task);
-                }
-            });
+                hookTasks.Add(task);
+            }
 
             try
             {
@@ -134,8 +122,9 @@ namespace Planar.Service.Monitor
             if (factory.Type == null) { return null; }
 
             var instance = Activator.CreateInstance(factory.Type);
-            var method = instance.GetType().GetMethod("ExecuteHandle", BindingFlags.NonPublic | BindingFlags.Instance);
-            var result = new HookInstance { Instance = instance, Method = method };
+            var method1 = instance.GetType().GetMethod(HookInstance.HandleMethodName, BindingFlags.NonPublic | BindingFlags.Instance);
+            var method2 = instance.GetType().GetMethod(HookInstance.HandleSystemMethodName, BindingFlags.NonPublic | BindingFlags.Instance);
+            var result = new HookInstance { Instance = instance, HandleMethod = method1, HandleSystemMethod = method2 };
             return result;
         }
 
@@ -214,12 +203,22 @@ namespace Planar.Service.Monitor
             return data;
         }
 
-        private async Task<bool> Analyze(MonitorEvents @event, MonitorAction action)
+        private async Task<MonitorArguments> GetAndValidateArgs(MonitorAction action, JobKeyHelper jobKeyHelper)
         {
-            using var scope = _serviceScopeFactory.CreateScope();
-            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
-            string jobId;
+            _ = int.TryParse(action.EventArgument, out var args);
+            var jobId = await jobKeyHelper.GetJobId(action);
+            if (args < 2 || string.IsNullOrEmpty(jobId))
+            {
+                _logger.LogWarning("Monitor action {Id}, Title '{Title}' has invalid argument ({EventArgument}) or missing job group/name", action.Id, action.Title, action.EventArgument);
+                return MonitorArguments.Empty;
+            }
 
+            var result = new MonitorArguments { Arg = args, Handle = true, JobId = jobId };
+            return result;
+        }
+
+        private async Task<bool> Analyze(MonitorEvents @event, MonitorAction action, IJobExecutionContext context)
+        {
             switch (@event)
             {
                 case MonitorEvents.ExecutionVetoed:
@@ -228,33 +227,35 @@ namespace Planar.Service.Monitor
                 case MonitorEvents.ExecutionSuccess:
                 case MonitorEvents.ExecutionStart:
                 case MonitorEvents.ExecutionEnd:
-                default:
                     return true;
+            }
 
-                case MonitorEvents.ExecutionFailnTimesInRow:
+            using var scope = _serviceScopeFactory.CreateScope();
+            var jobKeyHelper = scope.ServiceProvider.GetRequiredService<JobKeyHelper>();
+            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
+            var args = await GetAndValidateArgs(action, jobKeyHelper);
+            if (!args.Handle) { return false; }
 
-                    _ = int.TryParse(action.EventArgument, out var args1);
-                    jobId = await scope.ServiceProvider.GetRequiredService<JobKeyHelper>().GetJobId(action);
-                    if (args1 < 2 || string.IsNullOrEmpty(jobId))
-                    {
-                        _logger.LogWarning("Monitor action {Id}, Title '{Title}' has invalid argument ({EventArgument}) or missing job group / name", action.Id, action.Title, action.EventArgument);
-                        return false;
-                    }
+            switch (@event)
+            {
+                default:
+                    return false;
 
-                    var count1 = await dal.CountFailsInRowForJob(new { JobId = jobId, Total = args1 });
-                    return count1 == args1;
+                case MonitorEvents.ExecutionFailxTimesInRow:
+                    var count1 = await dal.CountFailsInRowForJob(new { JobId = args.JobId, Total = args.Arg });
+                    return count1 >= args.Arg;
 
-                case MonitorEvents.ExecutionFailnTimesInHour:
-                    _ = int.TryParse(action.EventArgument, out var args2);
-                    jobId = await scope.ServiceProvider.GetRequiredService<JobKeyHelper>().GetJobId(action);
-                    if (args2 < 2 || string.IsNullOrEmpty(jobId))
-                    {
-                        _logger.LogWarning("Monitor action {Id}, Title '{Title}' has invalid argument ({EventArgument}) or missing job id", action.Id, action.Title, action.EventArgument);
-                        return false;
-                    }
+                case MonitorEvents.ExecutionFailxTimesInHour:
+                    var count2 = await dal.CountFailsInHourForJob(new { JobId = args.JobId });
+                    return count2 >= args.Arg;
 
-                    var count2 = await dal.CountFailsInHourForJob(new { JobId = jobId });
-                    return args2 >= count2;
+                case MonitorEvents.ExecutionFailWithEffectedRowsGreaterThanx:
+                    var effectedRows1 = ServiceUtil.GetEffectedRows(context);
+                    return effectedRows1 > args.Arg;
+
+                case MonitorEvents.ExecutionFailWithEffectedRowsLessThanx:
+                    var effectedRows2 = ServiceUtil.GetEffectedRows(context);
+                    return effectedRows2 < args.Arg;
             }
         }
     }

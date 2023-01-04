@@ -8,7 +8,10 @@
         ExecutionSuccess = 4,
         ExecutionStart = 5,
         ExecutionEnd = 6,
-        ExecutionFailnTimesInRow = 10,
-        ExecutionFailnTimesInHour = 11
+        ExecutionSuccessWithNoEffectedRows = 7,
+        ExecutionFailxTimesInRow = 100, // this element must be 100 value. its value is compared in some places in code
+        ExecutionFailxTimesInHour = 101,
+        ExecutionFailWithEffectedRowsGreaterThanx = 102,
+        ExecutionFailWithEffectedRowsLessThanx = 103,
     }
 }

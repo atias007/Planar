@@ -1,5 +1,4 @@
 ﻿using FluentValidation;
-using Google.Protobuf.WellKnownTypes;
 using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
@@ -22,7 +21,8 @@ namespace Planar.Service.Validation
                 .WithMessage("{Message}");
 
             RuleFor(r => r.JobGroup).NotEmpty()
-                .When(r => !string.IsNullOrEmpty(r.JobName)).WithMessage("{PropertyName} must have value if 'Job Name' is not empty");
+                .When(r => !string.IsNullOrEmpty(r.JobName))
+                .WithMessage("{PropertyName} must have value if 'Job Name' is not empty");
 
             RuleFor(r => r.GroupId).GreaterThan(0)
                 .Must(g => dal.IsGroupExists(g).Result)
@@ -33,15 +33,15 @@ namespace Planar.Service.Validation
                 .WithMessage("'{PropertyName}' field with value '{PropertyValue}' does not exist");
 
             RuleFor(r => r.EventArgument).NotEmpty()
-                .When(r => (int)r.EventId >= 10)
+                .When(r => (int)r.EventId >= (int)MonitorEvents.ExecutionFailxTimesInRow)
                 .WithMessage(r => $"'{{PropertyName}}' must have value while event is {r.EventId}");
 
             RuleFor(r => r.EventArgument).Empty()
-                .When(r => (int)r.EventId < 10)
+                .When(r => (int)r.EventId < (int)MonitorEvents.ExecutionFailxTimesInRow)
                 .WithMessage(r => $"'{{PropertyName}}' must have be empty while event is {r.EventId}");
 
             RuleFor(r => r.JobName).NotEmpty()
-                .When(r => (int)r.EventId >= 10)
+                .When(r => (int)r.EventId >= (int)MonitorEvents.ExecutionFailxTimesInRow)
                 .WithMessage(r => $"'Job Name' and 'Job Group' must have value while event is {r.EventId}");
         }
 

@@ -5,9 +5,11 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
+using Planar.Service.General;
 using Planar.Service.List.Base;
 using Quartz;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using YamlDotNet.Serialization;
@@ -132,14 +134,39 @@ namespace Planar.Service.List
 
         private async Task SafeMonitorJobWasExecuted(IJobExecutionContext context, Exception exception, CancellationToken cancellationToken)
         {
+            var allTasks = new List<Task>();
             await SafeScan(MonitorEvents.ExecutionEnd, context, exception, cancellationToken);
 
-            var @event =
-                exception == null ?
-                MonitorEvents.ExecutionSuccess :
-                MonitorEvents.ExecutionFail;
+            var success = exception == null;
+            if (success)
+            {
+                var task1 = SafeScan(MonitorEvents.ExecutionSuccess, context, exception, cancellationToken);
+                allTasks.Add(task1);
 
-            await SafeScan(@event, context, exception, cancellationToken);
+                // Execution sucsses with no effected rows
+                var effectedRows = ServiceUtil.GetEffectedRows(context);
+                if (effectedRows == 0)
+                {
+                    var task2 = SafeScan(MonitorEvents.ExecutionSuccessWithNoEffectedRows, context, exception, cancellationToken);
+                    allTasks.Add(task2);
+                }
+            }
+            else
+            {
+                var task3 = SafeScan(MonitorEvents.ExecutionFail, context, exception, cancellationToken);
+                var task4 = SafeScan(MonitorEvents.ExecutionFailxTimesInRow, context, exception, cancellationToken);
+                var task5 = SafeScan(MonitorEvents.ExecutionFailxTimesInHour, context, exception, cancellationToken);
+                var task6 = SafeScan(MonitorEvents.ExecutionFailWithEffectedRowsGreaterThanx, context, exception, cancellationToken);
+                var task7 = SafeScan(MonitorEvents.ExecutionFailWithEffectedRowsLessThanx, context, exception, cancellationToken);
+
+                allTasks.Add(task3);
+                allTasks.Add(task4);
+                allTasks.Add(task5);
+                allTasks.Add(task6);
+                allTasks.Add(task7);
+            }
+
+            await Task.WhenAll(allTasks);
         }
 
         private static string GetJobDataForLogging(JobDataMap data)

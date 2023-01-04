@@ -1,7 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using CommonJob;
+using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.Exceptions;
 using Planar.Service.Monitor;
+using Quartz;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -118,6 +120,13 @@ namespace Planar.Service.General
                 var path = GetJobFolder(folder);
                 throw new PlanarException($"folder '{path}' does not have '{filename}' filename. (node {Environment.MachineName})");
             }
+        }
+
+        public static int? GetEffectedRows(IJobExecutionContext context)
+        {
+            var metadata = context.Result as JobExecutionMetadata;
+            var result = metadata?.EffectedRows.GetValueOrDefault();
+            return result;
         }
     }
 }
