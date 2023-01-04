@@ -12,7 +12,7 @@ namespace Planar.Service.Validation
 
         public static IRuleBuilderOptions<T, string> JobIdExists<T>(this IRuleBuilder<T, string> ruleBuilder, JobKeyHelper jobKeyHelper)
         {
-            return ruleBuilder.Must(v => ValidationUtil.IsJobExists(v, jobKeyHelper)).WithMessage("'{PropertyName}' field with value '{PropertyValue}' does not exist");
+            return ruleBuilder.Must(v => ValidationUtil.IsJobIdExists(v, jobKeyHelper)).WithMessage("'{PropertyName}' field with value '{PropertyValue}' does not exist");
         }
 
         public static IRuleBuilderOptions<T, string> Path<T>(this IRuleBuilder<T, string> ruleBuilder)

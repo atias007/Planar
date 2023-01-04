@@ -2,14 +2,11 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
-using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
-using Quartz;
-using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,6 +24,15 @@ namespace Planar.Service.API
         public async Task<int> Add(AddMonitorRequest request)
         {
             var monitor = Mapper.Map<MonitorAction>(request);
+            if (string.IsNullOrEmpty(monitor.JobGroup)) { monitor.JobGroup = null; }
+            if (string.IsNullOrEmpty(monitor.JobName)) { monitor.JobName = null; }
+            monitor.Active = true;
+
+            if (await DataLayer.IsMonitorExists(monitor))
+            {
+                throw new RestConflictException("monitor with same properties already exists");
+            }
+
             await DataLayer.AddMonitor(monitor);
             ServiceUtil.LoadMonitorHooks(Logger);
             return monitor.Id;
@@ -34,11 +40,6 @@ namespace Planar.Service.API
 
         public async Task Delete(int id)
         {
-            if (id <= 0)
-            {
-                throw new RestValidationException("id", "id parameter must be greater then 0");
-            }
-
             var monitor = new MonitorAction { Id = id };
 
             try
@@ -67,9 +68,22 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<List<MonitorItem>> GetByKey(string key)
+        public async Task<List<MonitorItem>> GetByJob(string jobId)
         {
-            var items = await DataLayer.GetMonitorActionsByKey(key);
+            var jobKey = await JobKeyHelper.GetJobKey(jobId);
+            var items = await DataLayer.GetMonitorActionsByJob(jobKey.Group, jobKey.Name);
+            var result = Mapper.Map<List<MonitorItem>>(items);
+            return result;
+        }
+
+        public async Task<List<MonitorItem>> GetByGroup(string group)
+        {
+            if (!await JobKeyHelper.IsJobGroupExists(group))
+            {
+                throw new RestValidationException("group", $"group with name '{group}' is not exists");
+            }
+
+            var items = await DataLayer.GetMonitorActionsByGroup(group);
             var result = Mapper.Map<List<MonitorItem>>(items);
             return result;
         }

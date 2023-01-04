@@ -23,7 +23,7 @@ namespace Planar.Service.Data
 
         public async Task AddClusterNode(ClusterNode item)
         {
-            await _context.ClusterNodes.AddAsync(item);
+            _context.ClusterNodes.Add(item);
             await _context.SaveChangesAsync();
         }
 

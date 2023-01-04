@@ -433,7 +433,8 @@ namespace Planar.Service.General
 
         private static PlanarCluster.PlanarClusterClient GetClient(ClusterNode node)
         {
-            var address = $"http://{node.Server}:{node.ClusterPort}";
+            const string schema = "http";
+            var address = $"{schema}://{node.Server}:{node.ClusterPort}";
             var channel = GrpcChannel.ForAddress(address);
             var client = new PlanarCluster.PlanarClusterClient(channel);
             return client;
@@ -585,7 +586,6 @@ namespace Planar.Service.General
         private static DateTime? ConvertTimeStamp(Timestamp stamp)
         {
             if (stamp == null) { return null; }
-            if (stamp == default) { return null; }
 
             var result = stamp.ToDateTimeOffset().DateTime;
             if (result == default) { return null; }
@@ -596,7 +596,6 @@ namespace Planar.Service.General
         private static DateTime ConvertTimeStamp2(Timestamp stamp)
         {
             if (stamp == null) { return default; }
-            if (stamp == default) { return default; }
 
             var result = stamp.ToDateTimeOffset().DateTime;
 

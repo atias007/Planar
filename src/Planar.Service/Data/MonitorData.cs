@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.Model;
 using Quartz;
@@ -27,19 +28,41 @@ namespace Planar.Service.Data
             return await _context.MonitorActions.Select(m => m.Hook).Distinct().ToListAsync();
         }
 
-        public async Task<List<MonitorAction>> GetMonitorData(int @event, string group, string job)
+        public async Task<List<MonitorAction>> GetMonitorDataByEvent(int @event)
         {
-            var all = _context.MonitorActions
+            var data = await GetMonitorData()
+                .Where(m => m.EventId == @event && string.IsNullOrEmpty(m.JobGroup) && string.IsNullOrEmpty(m.JobName))
+                .ToListAsync();
+
+            return data;
+        }
+
+        public async Task<List<MonitorAction>> GetMonitorDataByGroup(int @event, string jobGroup)
+        {
+            var data = await GetMonitorData()
+                .Where(m => m.EventId == @event && m.JobGroup == jobGroup && string.IsNullOrEmpty(m.JobName))
+                .ToListAsync();
+
+            return data;
+        }
+
+        public async Task<List<MonitorAction>> GetMonitorDataByJob(int @event, string jobGroup, string jobName)
+        {
+            var data = await GetMonitorData()
+                .Where(m => m.EventId == @event && m.JobGroup == jobGroup && m.JobName == jobName)
+                .ToListAsync();
+
+            return data;
+        }
+
+        private IQueryable<MonitorAction> GetMonitorData()
+        {
+            var query = _context.MonitorActions
                 .Include(m => m.Group)
-                .ThenInclude(ug => ug.Users);
+                .ThenInclude(ug => ug.Users)
+                .Where(m => m.Active == true);
 
-            var filter = all.Where(m => m.EventId == @event && m.Active == true);
-            filter = filter.Where(m =>
-                (string.IsNullOrEmpty(m.JobGroup) && string.IsNullOrEmpty(m.JobId)) ||
-                (!string.IsNullOrEmpty(m.JobGroup) && m.JobGroup == group && string.IsNullOrEmpty(m.JobId)) ||
-                (string.IsNullOrEmpty(m.JobGroup) && !string.IsNullOrEmpty(m.JobId) && m.JobId == job));
-
-            return await filter.ToListAsync();
+            return query;
         }
 
         public async Task<MonitorAction> GetMonitorAction(int id)
@@ -50,38 +73,28 @@ namespace Planar.Service.Data
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<List<MonitorAction>> GetMonitorActionsByKey(string key)
+        public async Task<List<MonitorAction>> GetMonitorActionsByJob(string group, string name)
         {
             var result = await _context.MonitorActions
                 .Include(m => m.Group)
-                .Where(m => m.JobId == key || m.JobGroup == key)
+                .Where(m => m.JobGroup == group && (m.JobName == name || string.IsNullOrEmpty(m.JobName)))
                 .OrderByDescending(m => m.Active)
                 .ThenBy(m => m.JobGroup)
-                .ThenBy(m => m.JobId)
+                .ThenBy(m => m.JobName)
                 .ToListAsync();
 
             return result;
         }
 
-        public async Task<List<MonitorAction>> GetAllMonitorActions(string jobOrGroupId)
+        public async Task<List<MonitorAction>> GetMonitorActionsByGroup(string group)
         {
             var result = await _context.MonitorActions
                 .Include(m => m.Group)
+                .Where(m => m.JobGroup == group && m.JobName == null)
                 .OrderByDescending(m => m.Active)
                 .ThenBy(m => m.JobGroup)
-                .ThenBy(m => m.JobId)
+                .ThenBy(m => m.JobName)
                 .ToListAsync();
-
-            return result;
-        }
-
-        public async Task<MonitorAction> GetMonitorActionWithGroup(int id)
-        {
-            var result = await _context.MonitorActions
-                .AsNoTracking()
-                .Include(m => m.Group)
-                .Where(m => m.Id == id)
-                .FirstOrDefaultAsync();
 
             return result;
         }
@@ -91,13 +104,14 @@ namespace Planar.Service.Data
             return await _context.MonitorActions
                 .Include(i => i.Group)
                 .OrderByDescending(d => d.Active)
-                .ThenBy(d => d.JobId)
+                .ThenBy(d => d.JobGroup)
+                .ThenBy(d => d.JobName)
                 .ToListAsync();
         }
 
         public async Task AddMonitor(MonitorAction request)
         {
-            await _context.MonitorActions.AddAsync(request);
+            _context.MonitorActions.Add(request);
             await _context.SaveChangesAsync();
         }
 
@@ -107,9 +121,9 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteMonitorByJobId(string jobId)
+        public async Task DeleteMonitorByJobId(string group, string name)
         {
-            _context.MonitorActions.RemoveRange(e => e.JobId == jobId);
+            _context.MonitorActions.RemoveRange(e => e.JobGroup == group && e.JobName == name);
             await SaveChangesWithoutConcurrency();
         }
 
@@ -147,6 +161,17 @@ namespace Planar.Service.Data
 
             var data = await conn.QuerySingleAsync<int>(cmd);
             return data;
+        }
+
+        public async Task<bool> IsMonitorExists(MonitorAction monitor)
+        {
+            return await _context.MonitorActions.AnyAsync(m =>
+                m.EventId == monitor.EventId &&
+                m.EventArgument == monitor.EventArgument &&
+                m.JobName == monitor.JobName &&
+                m.JobGroup == monitor.JobGroup &&
+                m.GroupId == monitor.GroupId &&
+                m.Hook == monitor.Hook);
         }
 
         public async Task<bool> IsMonitorExists(int id)

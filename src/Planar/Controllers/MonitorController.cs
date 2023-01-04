@@ -19,19 +19,30 @@ namespace Planar.Controllers
 
         [HttpGet]
         [SwaggerOperation(OperationId = "get_monitor", Description = "Get all monitors", Summary = "Get All Monitors")]
+        [OkJsonResponse(typeof(List<MonitorItem>))]
         public async Task<ActionResult<List<MonitorItem>>> GetAll()
         {
             var result = await BusinesLayer.GetAll();
             return Ok(result);
         }
 
-        [HttpGet("byKey/{key}")]
-        [SwaggerOperation(OperationId = "get_monitor_bykey_key", Description = "Get monitor by job or group", Summary = "Get monitor Job\\Group")]
+        [HttpGet("byJob/{jobId}")]
+        [SwaggerOperation(OperationId = "get_monitor_byjob_id", Description = "Get monitor by job key or id", Summary = "Get Monitor By Job")]
         [OkJsonResponse(typeof(List<MonitorItem>))]
         [BadRequestResponse]
-        public async Task<ActionResult<List<MonitorItem>>> GetByKey([FromRoute][Required] string key)
+        public async Task<ActionResult<List<MonitorItem>>> GetByJob([FromRoute][Required] string jobId)
         {
-            var result = await BusinesLayer.GetByKey(key);
+            var result = await BusinesLayer.GetByJob(jobId);
+            return Ok(result);
+        }
+
+        [HttpGet("byGroup/{group}")]
+        [SwaggerOperation(OperationId = "get_monitor_bygroup_group", Description = "Get monitor by job group", Summary = "Get Monitor By Group")]
+        [OkJsonResponse(typeof(List<MonitorItem>))]
+        [BadRequestResponse]
+        public async Task<ActionResult<List<MonitorItem>>> GetByGroup([FromRoute][Required] string group)
+        {
+            var result = await BusinesLayer.GetByGroup(group);
             return Ok(result);
         }
 
@@ -60,6 +71,7 @@ namespace Planar.Controllers
         [JsonConsumes]
         [CreatedResponse(typeof(EntityIdResponse))]
         [BadRequestResponse]
+        [ConflictResponse]
         public async Task<ActionResult<EntityIdResponse>> Add([FromBody] AddMonitorRequest request)
         {
             var result = await BusinesLayer.Add(request);

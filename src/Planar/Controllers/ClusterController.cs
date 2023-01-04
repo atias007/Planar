@@ -27,7 +27,7 @@ namespace Planar.Controllers
         [HttpGet("healthCheck")]
         [SwaggerOperation(OperationId = "get_cluster_health-check", Description = "Check the health of all nodes in cluster", Summary = "Check Cluster Health")]
         [OkTextResponse]
-        [ServiceUnavailableProduces]
+        [ServiceUnavailableResponse]
         public async Task<ActionResult<string>> HealthCheck()
         {
             var response = await BusinesLayer.HealthCheck();
