@@ -108,10 +108,7 @@ namespace Planar.Common
         public static Dictionary<string, string> Merge(this Dictionary<string, string> source, Dictionary<string, string> target)
         {
             if (target == null) { return source; }
-            if (source == null)
-            {
-                source = new Dictionary<string, string>();
-            }
+            source ??= new Dictionary<string, string>();
 
             foreach (var item in target)
             {
