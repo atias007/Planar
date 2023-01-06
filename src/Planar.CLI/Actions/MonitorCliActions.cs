@@ -183,7 +183,7 @@ namespace Planar.CLI.Actions
 
         private static string GetEventArguments(int monitorEvent)
         {
-            var result = monitorEvent >= (int)MonitorEvents.ExecutionFailxTimesInRow ?
+            var result = MonitorEventsExtensions.IsMonitorEventHasArguments(monitorEvent) ?
                 AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Event argument: [/]").AllowEmpty()) :
                 null;
 

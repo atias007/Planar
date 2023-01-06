@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Planar.MonitorHook
 {
-    internal class MonitorDetails : IMonitorDetails
+    internal class MonitorDetails : Monitor, IMonitorDetails
     {
         public string JobName { get; set; }
         public string JobGroup { get; set; }
@@ -20,11 +20,5 @@ namespace Planar.MonitorHook
         public DateTime FireTime { get; set; }
         public TimeSpan JobRunTime { get; set; }
         public bool Recovering { get; set; }
-        public string MonitorTitle { get; set; }
-        public int EventId { get; set; }
-        public IMonitorGroup Group { get; set; }
-        public IEnumerable<IMonitorUser> Users { get; set; }
-        public string EventTitle { get; set; }
-        public Exception Exception { get; set; }
     }
 }

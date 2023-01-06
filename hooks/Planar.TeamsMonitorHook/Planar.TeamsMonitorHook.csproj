@@ -11,12 +11,16 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<None Remove="MessageCard.json" />
+		<None Remove="SystemMessageCard.json" />
+		<None Remove="SystemMessageItem.json" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Include="MessageCard.json">
-			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		<EmbeddedResource Include="SystemMessageItem.json">
+		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+		</EmbeddedResource>
+		<EmbeddedResource Include="SystemMessageCard.json">
+		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</EmbeddedResource>
 	</ItemGroup>
 

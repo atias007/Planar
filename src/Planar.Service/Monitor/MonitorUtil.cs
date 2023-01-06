@@ -13,7 +13,6 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace Planar.Service.Monitor
 {
@@ -53,35 +52,19 @@ namespace Planar.Service.Monitor
             await task;
         }
 
-        private async Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception exception)
+        internal async Task Scan(MonitorEvents @event, MonitorSystemInfo info, Exception exception = default, CancellationToken cancellationToken = default)
         {
-            try
+            var task = Task.Run(() =>
             {
-                var toBeContinue = await Analyze(@event, action, context);
-                if (toBeContinue)
-                {
-                    var hookInstance = GetMonitorHookInstance(action.Hook);
-                    if (hookInstance == null)
-                    {
-                        _logger.LogWarning("Hook {Hook} in monitor item id: {Id}, title: '{Title}' does not exist in service", action.Hook, action.Id, action.Title);
-                    }
-                    else
-                    {
-                        var details = GetMonitorDetails(action, context, exception);
-                        _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle with hook {Hook}", action.Id, action.Title, action.Hook);
-                        await hookInstance.Handle(details, _logger);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
-            }
+                ScanAsync(@event, info, exception, cancellationToken);
+            }, cancellationToken);
+
+            await task;
         }
 
-        internal void ScanAsync(MonitorEvents @event, IJobExecutionContext context, Exception exception = default, CancellationToken cancellationToken = default)
+        private void ScanAsync(MonitorEvents @event, IJobExecutionContext context, Exception exception = default, CancellationToken cancellationToken = default)
         {
-            if (context.JobDetail.Key.Group.StartsWith(Consts.PlanarSystemGroup))
+            if (context != null && context.JobDetail.Key.Group.StartsWith(Consts.PlanarSystemGroup))
             {
                 return;
             }
@@ -115,6 +98,87 @@ namespace Planar.Service.Monitor
             }
         }
 
+        private void ScanAsync(MonitorEvents @event, MonitorSystemInfo info, Exception exception = default, CancellationToken cancellationToken = default)
+        {
+            List<MonitorAction> items;
+            var hookTasks = new List<Task>();
+
+            try
+            {
+                items = LoadMonitorItems(@event).Result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to handle monitor item(s) --> LoadMonitorItems");
+                return;
+            }
+
+            foreach (var action in items)
+            {
+                var task = ExecuteMonitor(action, @event, info, exception);
+                hookTasks.Add(task);
+            }
+
+            try
+            {
+                Task.WaitAll(hookTasks.ToArray(), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to handle monitor item(s)");
+            }
+        }
+
+        private async Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception exception)
+        {
+            try
+            {
+                var toBeContinue = await Analyze(@event, action, context);
+                if (!toBeContinue) { return; }
+
+                var hookInstance = GetMonitorHookInstance(action.Hook);
+                if (hookInstance == null)
+                {
+                    _logger.LogWarning("Hook {Hook} in monitor item id: {Id}, title: '{Title}' does not exist in service", action.Hook, action.Id, action.Title);
+                }
+                else
+                {
+                    var details = GetMonitorDetails(action, context, exception);
+                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle with hook {Hook}", action.Id, action.Title, action.Hook);
+                    await hookInstance.Handle(details, _logger);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
+            }
+        }
+
+        private async Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception exception)
+        {
+            try
+            {
+                var toBeContinue = await Analyze(@event, action, null);
+                if (!toBeContinue) { return; }
+
+                var hookInstance = GetMonitorHookInstance(action.Hook);
+                if (hookInstance == null)
+                {
+                    _logger.LogWarning("Hook {Hook} in monitor item id: {Id}, title: '{Title}' does not exist in service", action.Hook, action.Id, action.Title);
+                }
+                else
+                {
+                    var details = GetMonitorDetails(action, info, exception);
+                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle with hook {Hook}", action.Id, action.Title, action.Hook);
+                    await hookInstance.HandleSystem(details, _logger);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
+            }
+        }
+
         private static HookInstance GetMonitorHookInstance(string hook)
         {
             var factory = ServiceUtil.MonitorHooks[hook];
@@ -134,29 +198,57 @@ namespace Planar.Service.Monitor
             {
                 Calendar = context.Trigger.CalendarName,
                 Durable = context.JobDetail.Durable,
-                EventId = action.EventId,
-                EventTitle = ((MonitorEvents)action.EventId).ToString(),
                 FireInstanceId = context.FireInstanceId,
                 FireTime = context.Trigger.FinalFireTimeUtc.GetValueOrDefault().LocalDateTime,
-                Group = new MonitorGroup(action.Group),
                 JobDescription = context.JobDetail.Description,
                 JobGroup = context.JobDetail.Key.Group,
                 JobId = JobKeyHelper.GetJobId(context.JobDetail),
                 JobName = context.JobDetail.Key.Name,
                 JobRunTime = context.JobRunTime,
                 MergedJobDataMap = Global.ConvertDataMapToDictionary(context.MergedJobDataMap),
-                MonitorTitle = action.Title,
                 Recovering = context.JobDetail.RequestsRecovery,
                 TriggerDescription = context.Trigger.Description,
                 TriggerGroup = context.Trigger.Key.Group,
                 TriggerId = TriggerKeyHelper.GetTriggerId(context.Trigger),
                 TriggerName = context.Trigger.Key.Name,
-                Exception = exception,
             };
 
-            result.Users.AddRange(action.Group.Users.Select(u => new MonitorUser(u)).ToList());
+            FillMonitor(result, action, exception);
 
             return result;
+        }
+
+        private static MonitorSystemDetails GetMonitorDetails(MonitorAction action, MonitorSystemInfo details, Exception exception)
+        {
+            var result = new MonitorSystemDetails
+            {
+                MessageTemplate = details.MessageTemplate,
+                MessagesParameters = details.MessagesParameters
+            };
+
+            if (result.MessagesParameters == null)
+            {
+                result.MessagesParameters = new();
+            }
+
+            result.Message = result.MessageTemplate;
+            foreach (var item in result.MessagesParameters)
+            {
+                result.Message = result.Message.Replace($"{{{{{item.Key}}}}}", item.Value);
+            }
+
+            FillMonitor(result, action, exception);
+            return result;
+        }
+
+        private static void FillMonitor(Monitor monitor, MonitorAction action, Exception exception)
+        {
+            monitor.EventId = action.EventId;
+            monitor.EventTitle = ((MonitorEvents)action.EventId).ToString();
+            monitor.Group = new MonitorGroup(action.Group);
+            monitor.MonitorTitle = action.Title;
+            monitor.Users.AddRange(action.Group.Users.Select(u => new MonitorUser(u)).ToList());
+            monitor.Exception = exception;
         }
 
         private async Task<List<MonitorAction>> LoadMonitorItems(MonitorEvents @event, IJobExecutionContext context)
@@ -176,6 +268,13 @@ namespace Planar.Service.Monitor
                 .Distinct()
                 .ToList();
 
+            return result;
+        }
+
+        private async Task<List<MonitorAction>> LoadMonitorItems(MonitorEvents @event)
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var result = await GetMonitorDataByEvent((int)@event);
             return result;
         }
 
@@ -228,8 +327,26 @@ namespace Planar.Service.Monitor
                 case MonitorEvents.ExecutionStart:
                 case MonitorEvents.ExecutionEnd:
                     return true;
+
+                case MonitorEvents.ExecutionSuccessWithNoEffectedRows:
+                    return ServiceUtil.GetEffectedRows(context) == 0;
             }
 
+            if (MonitorEventsExtensions.IsSystemMonitorEvent(@event))
+            {
+                return true;
+            }
+
+            if (MonitorEventsExtensions.IsMonitorEventHasArguments(@event))
+            {
+                return await AnalyzeMonitorEventsWithArguments(@event, action, context);
+            }
+
+            return false;
+        }
+
+        private async Task<bool> AnalyzeMonitorEventsWithArguments(MonitorEvents @event, MonitorAction action, IJobExecutionContext context)
+        {
             using var scope = _serviceScopeFactory.CreateScope();
             var jobKeyHelper = scope.ServiceProvider.GetRequiredService<JobKeyHelper>();
             var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
@@ -250,12 +367,11 @@ namespace Planar.Service.Monitor
                     return count2 >= args.Arg;
 
                 case MonitorEvents.ExecutionFailWithEffectedRowsGreaterThanx:
-                    var effectedRows1 = ServiceUtil.GetEffectedRows(context);
-                    return effectedRows1 > args.Arg;
+
+                    return ServiceUtil.GetEffectedRows(context) > args.Arg;
 
                 case MonitorEvents.ExecutionFailWithEffectedRowsLessThanx:
-                    var effectedRows2 = ServiceUtil.GetEffectedRows(context);
-                    return effectedRows2 < args.Arg;
+                    return ServiceUtil.GetEffectedRows(context) < args.Arg;
             }
         }
     }

@@ -4,9 +4,9 @@ using Planar.Service.Model;
 
 namespace Planar.Service.MapperProfiles
 {
-    internal class AddJobRequestProfile : Profile
+    internal class JobProfile : Profile
     {
-        public AddJobRequestProfile()
+        public JobProfile()
         {
             CreateMap<SetJobRequest<PlanarJobProperties>, SetJobDynamicRequest>();
         }

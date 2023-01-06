@@ -33,15 +33,15 @@ namespace Planar.Service.Validation
                 .WithMessage("'{PropertyName}' field with value '{PropertyValue}' does not exist");
 
             RuleFor(r => r.EventArgument).NotEmpty()
-                .When(r => (int)r.EventId >= (int)MonitorEvents.ExecutionFailxTimesInRow)
+                .When(r => MonitorEventsExtensions.IsMonitorEventHasArguments(r.EventId.GetValueOrDefault()))
                 .WithMessage(r => $"'{{PropertyName}}' must have value while event is {r.EventId}");
 
             RuleFor(r => r.EventArgument).Empty()
-                .When(r => (int)r.EventId < (int)MonitorEvents.ExecutionFailxTimesInRow)
+                .When(r => !MonitorEventsExtensions.IsMonitorEventHasArguments(r.EventId.GetValueOrDefault()))
                 .WithMessage(r => $"'{{PropertyName}}' must have be empty while event is {r.EventId}");
 
             RuleFor(r => r.JobName).NotEmpty()
-                .When(r => (int)r.EventId >= (int)MonitorEvents.ExecutionFailxTimesInRow)
+                .When(r => MonitorEventsExtensions.IsMonitorEventHasArguments(r.EventId.GetValueOrDefault()))
                 .WithMessage(r => $"'Job Name' and 'Job Group' must have value while event is {r.EventId}");
         }
 

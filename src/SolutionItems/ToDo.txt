@@ -69,3 +69,4 @@
 - BUG: monitor get by key: if there is monitor for group, call get by key with job id within the group return nothing
 - BUG: add exactly same moniter ite, is enabled
 - add NoEffectedRows, EffectedRowsGreaterThenx,EffectedRowsLessThenx
+- add history option to query with filter jobid or group

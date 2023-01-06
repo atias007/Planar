@@ -5,13 +5,13 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.General;
-using Planar.Service.List.Base;
+using Planar.Service.Listeners.Base;
 using Quartz;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Planar.Service.List
+namespace Planar.Service.Listeners
 {
     public class RetryTriggerListener : BaseListener<RetryTriggerListener>, ITriggerListener
     {
@@ -66,14 +66,11 @@ namespace Planar.Service.List
                 }
 
                 await context.Scheduler.ScheduleJob(retryTrigger, cancellationToken);
+                await SafeScan(MonitorEvents.ExecutionRetry, context, cancellationToken: cancellationToken);
             }
             catch (Exception ex)
             {
                 LogCritical(nameof(TriggerComplete), ex);
-            }
-            finally
-            {
-                await SafeScan(MonitorEvents.ExecutionRetry, context, cancellationToken: cancellationToken);
             }
         }
 

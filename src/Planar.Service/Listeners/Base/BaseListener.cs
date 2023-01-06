@@ -3,13 +3,14 @@ using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.Data;
 using Planar.Service.Monitor;
+using Polly;
 using Quartz;
 using System;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Planar.Service.List.Base
+namespace Planar.Service.Listeners.Base
 {
     public class BaseListener<T>
     {
@@ -22,10 +23,33 @@ namespace Planar.Service.List.Base
             _logger = logger;
         }
 
+        protected async Task SafeSystemScan(MonitorEvents @event, MonitorSystemInfo details, Exception exception = default, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (!MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
+
+                using var scope = _serviceScopeFactory.CreateScope();
+                var monitor = scope.ServiceProvider.GetService<MonitorUtil>();
+                await monitor.Scan(@event, details, exception, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                var source = nameof(SafeSystemScan);
+                _logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
+
+                using var scope = _serviceScopeFactory.CreateScope();
+                var monitor = scope.ServiceProvider.GetService<MonitorUtil>();
+                await monitor.Scan(@event, details, exception, cancellationToken);
+            }
+        }
+
         protected async Task SafeScan(MonitorEvents @event, IJobExecutionContext context, Exception exception = default, CancellationToken cancellationToken = default)
         {
             try
             {
+                if (MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
+
                 using var scope = _serviceScopeFactory.CreateScope();
                 var monitor = scope.ServiceProvider.GetService<MonitorUtil>();
                 await monitor.Scan(@event, context, exception, cancellationToken);

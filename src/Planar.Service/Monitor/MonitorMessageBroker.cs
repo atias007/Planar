@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using System;
+using System.Text.Json;
 
 namespace Planar.Service.Monitor
 {
@@ -12,11 +12,22 @@ namespace Planar.Service.Monitor
         {
             _logger = logger;
 
-            Users = JsonConvert.SerializeObject(details.Users);
-            Group = JsonConvert.SerializeObject(details.Group);
+            Users = JsonSerializer.Serialize(details.Users);
+            Group = JsonSerializer.Serialize(details.Group);
             details.Users = null;
             details.Group = null;
-            Details = JsonConvert.SerializeObject(details);
+            Details = JsonSerializer.Serialize(details);
+        }
+
+        public MonitorMessageBroker(ILogger<MonitorUtil> logger, MonitorSystemDetails details)
+        {
+            _logger = logger;
+
+            Users = JsonSerializer.Serialize(details.Users);
+            Group = JsonSerializer.Serialize(details.Group);
+            details.Users = null;
+            details.Group = null;
+            Details = JsonSerializer.Serialize(details);
         }
 
         public string Users { get; set; }

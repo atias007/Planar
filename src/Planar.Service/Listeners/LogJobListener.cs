@@ -6,7 +6,7 @@ using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.General;
-using Planar.Service.List.Base;
+using Planar.Service.Listeners.Base;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
 
-namespace Planar.Service.List
+namespace Planar.Service.Listeners
 {
     public class LogJobListener : BaseListener<LogJobListener>, IJobListener
     {

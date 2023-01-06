@@ -19,9 +19,9 @@ namespace Planar.Controllers
 
         [HttpGet]
         [SwaggerOperation(OperationId = "get_history", Description = "Get history data by filter", Summary = "Get History")]
-        [OkJsonResponse(typeof(List<JobInstanceLog>))]
+        [OkJsonResponse(typeof(List<JobInstanceLogRow>))]
         [BadRequestResponse]
-        public async Task<ActionResult<List<JobInstanceLog>>> GetHistory([FromQuery] GetHistoryRequest request)
+        public async Task<ActionResult<List<JobInstanceLogRow>>> GetHistory([FromQuery] GetHistoryRequest request)
         {
             var result = await BusinesLayer.GetHistory(request);
             return Ok(result);

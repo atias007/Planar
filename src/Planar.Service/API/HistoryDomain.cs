@@ -1,4 +1,5 @@
-﻿using Planar.API.Common.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using Planar.API.Common.Entities;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
@@ -14,6 +15,8 @@ namespace Planar.Service.API
         public HistoryDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
+
+        #region OData
 
         public IQueryable<JobInstanceLog> GetHistoryData()
         {
@@ -32,10 +35,18 @@ namespace Planar.Service.API
             return history;
         }
 
-        public async Task<List<JobInstanceLog>> GetHistory(GetHistoryRequest request)
+        #endregion OData
+
+        public async Task<List<JobInstanceLogRow>> GetHistory(GetHistoryRequest request)
         {
             if (request.Rows.GetValueOrDefault() == 0) { request.Rows = 50; }
-            var result = await DataLayer.GetHistory(request);
+            if (request.JobId != null)
+            {
+                request.JobId = await JobKeyHelper.GetJobId(request.JobId);
+            }
+
+            var query = DataLayer.GetHistory(request);
+            var result = await Mapper.ProjectTo<JobInstanceLogRow>(query).ToListAsync();
             return result;
         }
 

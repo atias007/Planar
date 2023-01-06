@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Planar.Calendar.Hebrew;
-using Planar.Service.List;
+using Planar.Service.Listeners;
 using Quartz;
 using Quartz.Simpl;
 using System;
@@ -48,6 +48,7 @@ namespace Planar.Service
 
                 q.AddJobListener<LogJobListener>();
                 q.AddTriggerListener<RetryTriggerListener>();
+                q.AddSchedulerListener<SchedulerListener>();
                 q.AddCalendar<HebrewCalendar>(nameof(HebrewCalendar), true, true, c => { });
 
                 q.UsePersistentStore(x =>
