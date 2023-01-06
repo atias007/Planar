@@ -106,6 +106,7 @@ namespace Planar.Service.Data
                 .OrderByDescending(d => d.Active)
                 .ThenBy(d => d.JobGroup)
                 .ThenBy(d => d.JobName)
+                .ThenBy(d => d.Title)
                 .ToListAsync();
         }
 

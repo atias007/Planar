@@ -127,6 +127,11 @@ namespace Planar.Service.API.Helpers
             return exists;
         }
 
+        public static bool IsSystemJobKey(JobKey jobKey)
+        {
+            return jobKey.Group == Consts.PlanarSystemGroup;
+        }
+
         private static JobKey GetJobKeyByKey(string key)
         {
             JobKey result = null;

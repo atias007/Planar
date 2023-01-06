@@ -29,7 +29,7 @@ namespace Planar.Service.Listeners
         {
             try
             {
-                if (context.JobDetail.Key.Group == Consts.PlanarSystemGroup) { return; }
+                if (IsSystemJob(context.JobDetail)) { return; }
                 await ExecuteDal<HistoryData>(d => d.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto));
             }
             catch (Exception ex)
@@ -46,7 +46,7 @@ namespace Planar.Service.Listeners
         {
             try
             {
-                if (context.JobDetail.Key.Group == Consts.PlanarSystemGroup) { return; }
+                if (IsSystemJob(context.JobDetail)) { return; }
 
                 string data = GetJobDataForLogging(context.MergedJobDataMap);
 
@@ -96,7 +96,7 @@ namespace Planar.Service.Listeners
 
             try
             {
-                if (context.JobDetail.Key.Group == Consts.PlanarSystemGroup) { return; }
+                if (IsSystemJob(context.JobDetail)) { return; }
 
                 var unhadleException = JobExecutionMetadata.GetInstance(context)?.UnhandleException;
                 executionException = unhadleException ?? jobException;

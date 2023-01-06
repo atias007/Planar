@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
+using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Monitor;
 using Polly;
@@ -37,10 +38,6 @@ namespace Planar.Service.Listeners.Base
             {
                 var source = nameof(SafeSystemScan);
                 _logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
-
-                using var scope = _serviceScopeFactory.CreateScope();
-                var monitor = scope.ServiceProvider.GetService<MonitorUtil>();
-                await monitor.Scan(@event, details, exception, cancellationToken);
             }
         }
 
@@ -80,6 +77,26 @@ namespace Planar.Service.Listeners.Base
                 _logger.LogCritical(ex, "Error initialize/Execute DataLayer at BaseJobListenerWithDataLayer");
                 throw;
             }
+        }
+
+        protected bool IsSystemJobKey(JobKey jobKey)
+        {
+            return JobKeyHelper.IsSystemJobKey(jobKey);
+        }
+
+        protected bool IsSystemTriggerKey(TriggerKey triggerKey)
+        {
+            return TriggerKeyHelper.IsSystemTriggerKey(triggerKey);
+        }
+
+        protected bool IsSystemJob(IJobDetail job)
+        {
+            return JobKeyHelper.IsSystemJobKey(job.Key);
+        }
+
+        protected bool IsSystemTrigger(ITrigger trigger)
+        {
+            return TriggerKeyHelper.IsSystemTriggerKey(trigger.Key);
         }
     }
 }

@@ -100,6 +100,11 @@ namespace Planar.Service.API.Helpers
             return exists;
         }
 
+        public static bool IsSystemTriggerKey(TriggerKey triggerKey)
+        {
+            return triggerKey.Group == Consts.PlanarSystemGroup;
+        }
+
         private static TriggerKey GetTriggerKeyByKey(string key)
         {
             TriggerKey result = null;

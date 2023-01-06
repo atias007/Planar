@@ -25,7 +25,7 @@ namespace Planar.Service.Listeners
         {
             try
             {
-                if (context.JobDetail.Key.Group == Consts.PlanarSystemGroup) { return; }
+                if (IsSystemJob(context.JobDetail)) { return; }
 
                 var metadata = JobExecutionMetadata.GetInstance(context);
                 if (metadata.IsRunningSuccess) { return; }
@@ -38,6 +38,7 @@ namespace Planar.Service.Listeners
                 {
                     var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
                     _logger.LogError("Job with key {Key} fail and retry for {MaxRetries} times but failed each time", key, Consts.MaxRetries);
+                    await SafeScan(MonitorEvents.ExecutionLastRetryFail, context, cancellationToken: cancellationToken);
                     return;
                 }
 
@@ -78,7 +79,7 @@ namespace Planar.Service.Listeners
         {
             try
             {
-                if (context.JobDetail.Key.Group == Consts.PlanarSystemGroup) { return; }
+                if (IsSystemJob(context.JobDetail)) { return; }
                 if (trigger.JobDataMap.Contains(Consts.RetrySpan) == false) { return; }
                 var span = GetRetrySpan(trigger);
                 if (span == null) { return; }

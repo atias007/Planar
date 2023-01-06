@@ -12,7 +12,7 @@ namespace Planar
 
         public static bool IsMonitorEventHasArguments(int eventId)
         {
-            return eventId >= 100 && eventId < 200;
+            return eventId >= 200 && eventId < 300;
         }
 
         public static bool IsSystemMonitorEvent(MonitorEvents @event)
@@ -23,7 +23,7 @@ namespace Planar
 
         public static bool IsSystemMonitorEvent(int eventId)
         {
-            return eventId >= 200 && eventId <= 300;
+            return eventId >= 300 && eventId <= 400;
         }
     }
 }

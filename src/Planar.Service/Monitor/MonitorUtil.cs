@@ -144,7 +144,7 @@ namespace Planar.Service.Monitor
                 else
                 {
                     var details = GetMonitorDetails(action, context, exception);
-                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle with hook {Hook}", action.Id, action.Title, action.Hook);
+                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook {Hook}", action.Id, action.Title, @event, action.Hook);
                     await hookInstance.Handle(details, _logger);
                 }
             }
@@ -169,7 +169,7 @@ namespace Planar.Service.Monitor
                 else
                 {
                     var details = GetMonitorDetails(action, info, exception);
-                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle with hook {Hook}", action.Id, action.Title, action.Hook);
+                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook {Hook}", action.Id, action.Title, @event, action.Hook);
                     await hookInstance.HandleSystem(details, _logger);
                 }
             }

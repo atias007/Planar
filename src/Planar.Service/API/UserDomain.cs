@@ -70,7 +70,7 @@ namespace Planar.Service.API
             }
         }
 
-        public async Task PartialUpdate(UpdateEntityRecord request)
+        public async Task PartialUpdate(UpdateEntityRequest request)
         {
             var user = await DataLayer.GetUser(request.Id);
             ValidateExistingEntity(user, "user");

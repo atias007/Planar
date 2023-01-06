@@ -1,7 +1,9 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using CommonJob;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
+using Planar.Service.General;
 using Planar.Service.Listeners.Base;
 using Planar.Service.Monitor;
 using Quartz;
@@ -21,6 +23,7 @@ namespace Planar.Service.Listeners
 
         public async Task JobAdded(IJobDetail jobDetail, CancellationToken cancellationToken = default)
         {
+            if (IsSystemJob(jobDetail)) { return; }
             var info = new MonitorSystemInfo
             {
                 MessageTemplate = "Job {{JobGroup}}.{{JobName}} (Id: {{JobId}}) with description {{Description}} was added"
@@ -31,6 +34,7 @@ namespace Planar.Service.Listeners
             info.MessagesParameters.Add("JobName", jobDetail.Key.Name);
             info.MessagesParameters.Add("JobId", id);
             info.MessagesParameters.Add("Description", jobDetail.Description);
+            info.AddMachineName();
 
             await SafeSystemScan(MonitorEvents.JobAdded, info, null, cancellationToken);
         }
@@ -64,14 +68,16 @@ namespace Planar.Service.Listeners
             return Task.CompletedTask;
         }
 
-        public Task JobsPaused(string jobGroup, CancellationToken cancellationToken = default)
+        public async Task JobsPaused(string jobGroup, CancellationToken cancellationToken = default)
         {
-            return Task.CompletedTask;
+            var info = GetSimpleMonitorSystemInfo("Job group {{JobGroup}} was paused");
+            await SafeSystemScan(MonitorEvents.JobGroupPaused, info, null, cancellationToken);
         }
 
-        public Task JobsResumed(string jobGroup, CancellationToken cancellationToken = default)
+        public async Task JobsResumed(string jobGroup, CancellationToken cancellationToken = default)
         {
-            return Task.CompletedTask;
+            var info = GetSimpleMonitorSystemInfo("Job group {{JobGroup}} was resumed");
+            await SafeSystemScan(MonitorEvents.JobGroupResumed, info, null, cancellationToken);
         }
 
         public Task JobUnscheduled(TriggerKey triggerKey, CancellationToken cancellationToken = default)
@@ -86,25 +92,13 @@ namespace Planar.Service.Listeners
 
         public async Task SchedulerInStandbyMode(CancellationToken cancellationToken = default)
         {
-            var info = new MonitorSystemInfo
-            {
-                MessageTemplate = "Scheduler is in standby mode at {{MachineName}}"
-            };
-
-            info.MessagesParameters.Add("MachineName", Environment.MachineName);
-
+            var info = GetSimpleMonitorSystemInfo("Scheduler is in standby mode at {{MachineName}}");
             await SafeSystemScan(MonitorEvents.SchedulerInStandbyMode, info, null, cancellationToken);
         }
 
         public async Task SchedulerShutdown(CancellationToken cancellationToken = default)
         {
-            var info = new MonitorSystemInfo
-            {
-                MessageTemplate = "Scheduler was shutdown at {{MachineName}}"
-            };
-
-            info.MessagesParameters.Add("MachineName", Environment.MachineName);
-
+            var info = GetSimpleMonitorSystemInfo("Scheduler was shutdown at {{MachineName}}");
             await SafeSystemScan(MonitorEvents.SchedulerInStandbyMode, info, null, cancellationToken);
         }
 
@@ -115,13 +109,7 @@ namespace Planar.Service.Listeners
 
         public async Task SchedulerStarted(CancellationToken cancellationToken = default)
         {
-            var info = new MonitorSystemInfo
-            {
-                MessageTemplate = "Scheduler was started at {{MachineName}}"
-            };
-
-            info.MessagesParameters.Add("MachineName", Environment.MachineName);
-
+            var info = GetSimpleMonitorSystemInfo("Scheduler was started at {{MachineName}}");
             await SafeSystemScan(MonitorEvents.SchedulerStarted, info, null, cancellationToken);
         }
 
@@ -140,14 +128,16 @@ namespace Planar.Service.Listeners
             return Task.CompletedTask;
         }
 
-        public Task TriggerPaused(TriggerKey triggerKey, CancellationToken cancellationToken = default)
+        public async Task TriggerPaused(TriggerKey triggerKey, CancellationToken cancellationToken = default)
         {
-            return Task.CompletedTask;
+            var info = GetTriggerKeyMonitorSystemInfo(triggerKey, "paused");
+            await SafeSystemScan(MonitorEvents.TriggerPaused, info, null, cancellationToken);
         }
 
-        public Task TriggerResumed(TriggerKey triggerKey, CancellationToken cancellationToken = default)
+        public async Task TriggerResumed(TriggerKey triggerKey, CancellationToken cancellationToken = default)
         {
-            return Task.CompletedTask;
+            var info = GetTriggerKeyMonitorSystemInfo(triggerKey, "resumed");
+            await SafeSystemScan(MonitorEvents.TriggerResumed, info, null, cancellationToken);
         }
 
         public Task TriggersPaused(string triggerGroup, CancellationToken cancellationToken = default)
@@ -160,6 +150,13 @@ namespace Planar.Service.Listeners
             return Task.CompletedTask;
         }
 
+        private static MonitorSystemInfo GetSimpleMonitorSystemInfo(string messageTemplate)
+        {
+            var info = new MonitorSystemInfo(messageTemplate);
+            info.AddMachineName();
+            return info;
+        }
+
         private static MonitorSystemInfo GetJobKeyMonitorSystemInfo(JobKey jobKey, string title)
         {
             var info = new MonitorSystemInfo
@@ -169,6 +166,20 @@ namespace Planar.Service.Listeners
 
             info.MessagesParameters.Add("JobGroup", jobKey.Group);
             info.MessagesParameters.Add("JobName", jobKey.Name);
+            info.AddMachineName();
+            return info;
+        }
+
+        private static MonitorSystemInfo GetTriggerKeyMonitorSystemInfo(TriggerKey triggerKey, string title)
+        {
+            var info = new MonitorSystemInfo
+            {
+                MessageTemplate = $"Trigger {{{{TriggerGroup}}}}.{{{{TriggerName}}}} was {title}"
+            };
+
+            info.MessagesParameters.Add("TriggerGroup", triggerKey.Group);
+            info.MessagesParameters.Add("TriggerName", triggerKey.Name);
+            info.AddMachineName();
             return info;
         }
     }

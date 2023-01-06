@@ -1,8 +1,9 @@
 ﻿using FluentValidation;
+using Planar.API.Common.Entities;
 
 namespace Planar.Validation
 {
-    public class UpdateEntityRecordValidator : AbstractValidator<UpdateEntityRecord>
+    public class UpdateEntityRecordValidator : AbstractValidator<UpdateEntityRequest>
     {
         public UpdateEntityRecordValidator()
         {

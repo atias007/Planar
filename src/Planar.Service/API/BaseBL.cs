@@ -4,6 +4,7 @@ using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -115,7 +116,7 @@ namespace Planar.Service.API
             }
         }
 
-        protected static async Task SetEntityProperties<T>(T entity, UpdateEntityRecord request, IValidator<T> validator = null)
+        protected static async Task SetEntityProperties<T>(T entity, UpdateEntityRequest request, IValidator<T> validator = null)
         {
             var type = typeof(T);
             var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);

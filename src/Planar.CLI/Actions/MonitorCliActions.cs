@@ -126,12 +126,12 @@ namespace Planar.CLI.Actions
                 return new AddMonitorRequestWrapper { FailResponse = data.FailResponse };
             }
 
-            var title = GetTitle();
-            var job = GetJob(data.Jobs);
-            var monitorEvent = GetEvent(data.Events);
-            var monitorEventArgs = GetEventArguments(monitorEvent);
+            var monitorEventId = GetEvent(data.Events);
+            var job = GetJob(data.Jobs, monitorEventId);
+            var monitorEventArgs = GetEventArguments(monitorEventId);
             var groupId = GetDistributionGroup(data.Groups);
             var hookName = GetHook(data.Hooks);
+            var title = GetTitle();
 
             AnsiConsole.Write(new Rule());
 
@@ -142,7 +142,7 @@ namespace Planar.CLI.Actions
                 GroupId = groupId,
                 Hook = hookName,
                 JobName = job.JobName,
-                EventId = monitorEvent,
+                EventId = monitorEventId,
                 Title = title
             };
 
@@ -209,8 +209,13 @@ namespace Planar.CLI.Actions
             return selectedHook;
         }
 
-        private static AddMonitorJobData GetJob(IEnumerable<JobRowDetails> jobs)
+        private static AddMonitorJobData GetJob(IEnumerable<JobRowDetails> jobs, int monitorEventId)
         {
+            if (MonitorEventsExtensions.IsSystemMonitorEvent(monitorEventId))
+            {
+                return new AddMonitorJobData();
+            }
+
             var type = new[] { "single (monitor for single job)", "group (monitor for group of jobs)", "all (monitor for all jobs)" };
 
             var selectedEvent = AnsiConsole.Prompt(

@@ -2,36 +2,38 @@
 {
     public enum MonitorEvents
     {
-        ExecutionVetoed = 1,
-        ExecutionRetry = 2,
-        ExecutionFail = 3,
-        ExecutionSuccess = 4,
-        ExecutionStart = 5,
-        ExecutionEnd = 6,
-        ExecutionSuccessWithNoEffectedRows = 7,
+        ExecutionVetoed = 100,
+        ExecutionRetry = 101,
+        ExecutionLastRetryFail = 102,
+        ExecutionFail = 103,
+        ExecutionSuccess = 104,
+        ExecutionStart = 105,
+        ExecutionEnd = 106,
+        ExecutionSuccessWithNoEffectedRows = 107,
 
         //// - Events with argument --------------------------------
-        ExecutionFailxTimesInRow = 100,
+        ExecutionFailxTimesInRow = 200,
 
-        ExecutionFailxTimesInHour = 101,
-        ExecutionFailWithEffectedRowsGreaterThanx = 102,
-        ExecutionFailWithEffectedRowsLessThanx = 103,
+        ExecutionFailxTimesInHour = 201,
+        ExecutionFailWithEffectedRowsGreaterThanx = 202,
+        ExecutionFailWithEffectedRowsLessThanx = 203,
 
         //// -------------------------------------------------------
-        JobAdded = 200,
+        JobAdded = 300,
 
-        JobDeleted = 201,
-        JobInterrupted = 202,
-        JobPaused = 203,
-        JobResumed = 204,
-        JobGroupPaused = 205,
-        JobGroupResumed = 206,
-        SchedulerError = 207,
-        SchedulerInStandbyMode = 208,
-        SchedulerStarted = 209,
-        SchedulerShuttingdown = 210,
-        SchedulerShutdown = 211,
-        TriggerPaused = 212,
-        TriggerResumed = 213
+        JobDeleted = 301,
+        JobInterrupted = 302,
+        JobPaused = 303,
+        JobResumed = 304,
+        JobGroupPaused = 305,
+        JobGroupResumed = 306,
+        SchedulerError = 307,
+        SchedulerInStandbyMode = 308,
+        SchedulerStarted = 309,
+        SchedulerShutdown = 310,
+        TriggerPaused = 311,
+        TriggerResumed = 312,
+        ClusterNodeJoin = 313,
+        ClusterNodeRemoved = 314
     }
 }
