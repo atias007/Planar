@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Planar.Service.Exceptions;
+using Polly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -116,38 +117,47 @@ namespace Planar.Filters
                 };
 
                 context.ExceptionHandled = true;
+                return;
             }
-            else if (context.Exception is RestNotFoundException notFoundException)
+
+            if (context.Exception is RestNotFoundException notFoundException)
             {
                 context.Result = new NotFoundObjectResult(notFoundException.Value);
                 context.ExceptionHandled = true;
+                return;
             }
-            else if (context.Exception is RestConflictException conflictException)
+
+            if (context.Exception is RestConflictException conflictException)
             {
                 context.Result = new ConflictObjectResult(conflictException.Value);
                 context.ExceptionHandled = true;
+                return;
             }
-            else if (context.Exception is RestValidationException validationException)
+
+            if (context.Exception is RestValidationException validationException)
             {
                 HandleValidationException(context, validationException);
+                return;
             }
-            else if (context.Exception is FluentValidation.ValidationException validationException2)
+
+            if (context.Exception is FluentValidation.ValidationException validationException2)
             {
                 HandleValidationException(context, validationException2);
+                return;
             }
-            else if (context.Exception is RestGeneralException generalException)
+
+            if (context.Exception is RestGeneralException generalException)
             {
                 context.Result = new ObjectResult(generalException.ToString())
                 {
                     StatusCode = generalException.StatusCode ?? StatusCodes.Status500InternalServerError,
                 };
 
-                if (generalException.StatusCode < 500 || generalException.StatusCode >= 600)
-                {
-                    context.ExceptionHandled = true;
-                }
+                context.ExceptionHandled = generalException.StatusCode < 500 || generalException.StatusCode >= 600;
+                return;
             }
-            else if (context.Exception is AggregateException aggregateException)
+
+            if (context.Exception is AggregateException aggregateException)
             {
                 var all = aggregateException.Flatten();
                 if (all.InnerExceptions.All(e => e is RestValidationException))
@@ -169,6 +179,8 @@ namespace Planar.Filters
                     var filterException = all.InnerExceptions.Where(e => e is not RestValidationException).ToList();
                     throw new AggregateException(filterException);
                 }
+
+                return;
             }
         }
     }
