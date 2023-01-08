@@ -2,6 +2,7 @@
 using Planar.CLI.Actions;
 using Planar.CLI.Attributes;
 using Planar.CLI.Exceptions;
+using Planar.CLI.General;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -29,7 +30,7 @@ namespace Planar.CLI
                 }
                 else
                 {
-                    if (current.Key.StartsWith("-") && item.StartsWith("-") == false)
+                    if (!current.Key.StartsWith("-") && item.StartsWith("-"))
                     {
                         current.Value = item;
                         CliArguments.Add(current);
@@ -54,7 +55,7 @@ namespace Planar.CLI
             if (list[0].ToLower() == "connect") { list.Insert(0, "service"); }
             if (list[0].ToLower() == "cls") { list.Insert(0, "inner"); }
 
-            if (cliActionsMetadata.Any(a => a.Module.ToLower() == list[0].ToLower()) == false)
+            if (!cliActionsMetadata.Any(a => a.Module.ToLower() == list[0].ToLower()))
             {
                 throw new CliValidationException($"module '{list[0]}' is not supported");
             }
@@ -64,7 +65,7 @@ namespace Planar.CLI
                 throw new CliValidationException($"missing command for module '{list[0]}'\r\n. command line format is 'Planar <module> <command> [<options>]'");
             }
 
-            if (cliActionsMetadata.Any(a => a.Command.Any(c => c?.ToLower() == list[1].ToLower())) == false)
+            if (!cliActionsMetadata.Any(a => a.Command.Any(c => c?.ToLower() == list[1].ToLower())))
             {
                 throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
             }
@@ -208,7 +209,7 @@ namespace Planar.CLI
 
         private static void FindMissingRequiredProperties(IEnumerable<RequestPropertyInfo> props)
         {
-            var p = props.FirstOrDefault(v => v.Required && v.ValueSupplied == false);
+            var p = props.FirstOrDefault(v => v.Required && !v.ValueSupplied);
             if (p != null)
             {
                 var message =

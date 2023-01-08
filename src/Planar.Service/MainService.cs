@@ -279,8 +279,8 @@ namespace Planar.Service
             {
                 if (!MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
 
-                var monitor = _serviceProvider.GetService<MonitorUtil>();
-                await monitor.Scan(@event, info, exception, cancellationToken);
+                var monitor = _serviceProvider.GetRequiredService<MonitorUtil>();
+                await monitor.Scan(@event, info, exception);
             }
             catch (Exception ex)
             {

@@ -2,9 +2,8 @@
 using Newtonsoft.Json.Linq;
 using Planar.API.Common.Entities;
 using RestSharp;
-using System.Text.RegularExpressions;
 
-namespace Planar.CLI
+namespace Planar.CLI.General
 {
     internal static class Util
     {

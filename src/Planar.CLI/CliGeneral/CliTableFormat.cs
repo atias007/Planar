@@ -65,11 +65,16 @@ namespace Planar.CLI
             return $"{timeSpan:hh\\:mm\\:ss}";
         }
 
-        public static string FromatNumber(int? number)
+        public static string FormatNumber(int number)
+        {
+            return $"{number:N0}";
+        }
+
+        public static string FormatNumber(int? number)
         {
             if (number.HasValue)
             {
-                return FromatNumber(number.Value);
+                return FormatNumber(number.Value);
             }
             else
             {
@@ -144,11 +149,6 @@ namespace Planar.CLI
             {
                 return string.Empty;
             }
-        }
-
-        public static string FromatNumber(int number)
-        {
-            return $"{number:N0}";
         }
 
         public static string GetStatusMarkup(int status)

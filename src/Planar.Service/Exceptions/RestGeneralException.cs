@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace Planar.Service.Exceptions
 {
@@ -10,6 +11,10 @@ namespace Planar.Service.Exceptions
         }
 
         public RestGeneralException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        protected RestGeneralException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
 

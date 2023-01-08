@@ -21,25 +21,25 @@ namespace Planar.Service.Listeners
 
         public string Name => nameof(RetryTriggerListener);
 
-        public async Task TriggerComplete(ITrigger trigger, IJobExecutionContext context, SchedulerInstruction triggerInstructionCode, CancellationToken cancellationToken = default)
+        public Task TriggerComplete(ITrigger trigger, IJobExecutionContext context, SchedulerInstruction triggerInstructionCode, CancellationToken cancellationToken = default)
         {
             try
             {
-                if (IsSystemJob(context.JobDetail)) { return; }
+                if (IsSystemTrigger(trigger)) { return Task.CompletedTask; }
+                if (IsSystemJob(context.JobDetail)) { return Task.CompletedTask; }
 
                 var metadata = JobExecutionMetadata.GetInstance(context);
-                if (metadata.IsRunningSuccess) { return; }
-                if (!trigger.JobDataMap.Contains(Consts.RetrySpan)) { return; }
+                if (metadata.IsRunningSuccess) { return Task.CompletedTask; }
+                if (!trigger.JobDataMap.Contains(Consts.RetrySpan)) { return Task.CompletedTask; }
                 var span = GetRetrySpan(trigger);
-                if (span == null) { return; }
+                if (span == null) { return Task.CompletedTask; }
 
                 var numTries = trigger.JobDataMap.GetIntValue(Consts.RetryCounter);
                 if (numTries > Consts.MaxRetries)
                 {
                     var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
                     _logger.LogError("Job with key {Key} fail and retry for {MaxRetries} times but failed each time", key, Consts.MaxRetries);
-                    await SafeScan(MonitorEvents.ExecutionLastRetryFail, context, cancellationToken: cancellationToken);
-                    return;
+                    return SafeScan(MonitorEvents.ExecutionLastRetryFail, context);
                 }
 
                 var id = TriggerKeyHelper.GetTriggerId(trigger);
@@ -66,23 +66,26 @@ namespace Planar.Service.Listeners
                     _logger.LogWarning("Job with key {Key} was fail. Retry again at {Start}", key, start);
                 }
 
-                await context.Scheduler.ScheduleJob(retryTrigger, cancellationToken);
-                await SafeScan(MonitorEvents.ExecutionRetry, context, cancellationToken: cancellationToken);
+                context.Scheduler.ScheduleJob(retryTrigger, cancellationToken).Wait(cancellationToken);
+                return SafeScan(MonitorEvents.ExecutionRetry, context);
             }
             catch (Exception ex)
             {
                 LogCritical(nameof(TriggerComplete), ex);
+                return Task.CompletedTask;
             }
         }
 
-        public async Task TriggerFired(ITrigger trigger, IJobExecutionContext context, CancellationToken cancellationToken = default)
+        public Task TriggerFired(ITrigger trigger, IJobExecutionContext context, CancellationToken cancellationToken = default)
         {
             try
             {
-                if (IsSystemJob(context.JobDetail)) { return; }
-                if (!trigger.JobDataMap.Contains(Consts.RetrySpan)) { return; }
+                if (IsSystemTrigger(trigger)) { return Task.CompletedTask; }
+                if (IsSystemJob(context.JobDetail)) { return Task.CompletedTask; }
+
+                if (!trigger.JobDataMap.Contains(Consts.RetrySpan)) { return Task.CompletedTask; }
                 var span = GetRetrySpan(trigger);
-                if (span == null) { return; }
+                if (span == null) { return Task.CompletedTask; }
 
                 if (!trigger.JobDataMap.Contains(Consts.RetryCounter))
                 {
@@ -92,12 +95,13 @@ namespace Planar.Service.Listeners
                 var numberTries = trigger.JobDataMap.GetIntValue(Consts.RetryCounter);
                 numberTries++;
                 trigger.JobDataMap.Put(Consts.RetryCounter, numberTries);
-                await Task.CompletedTask;
             }
             catch (Exception ex)
             {
                 LogCritical(nameof(TriggerFired), ex);
             }
+
+            return Task.CompletedTask;
         }
 
         public Task TriggerMisfired(ITrigger trigger, CancellationToken cancellationToken = default)

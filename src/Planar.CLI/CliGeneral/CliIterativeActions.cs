@@ -46,7 +46,7 @@ namespace Planar.CLI
             var refreshData = refreshResult.Item1;
             var refreshResponse = refreshResult.Item2;
 
-            if (refreshResponse.IsSuccessful == false)
+            if (!refreshResponse.IsSuccessful)
             {
                 throw new PlanarServiceException(refreshResponse.ErrorMessage);
             }

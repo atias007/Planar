@@ -27,7 +27,7 @@ namespace Planar.Service.SystemJobs
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail check health of cluster: {Message}", ex.Message);
+                _logger?.LogError(ex, "Fail check health of cluster: {Message}", ex.Message);
                 return Task.CompletedTask;
             }
         }

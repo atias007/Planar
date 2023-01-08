@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Grpc.Core;
+using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -11,8 +12,10 @@ using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Planar.Service.API
 {
@@ -122,6 +125,37 @@ namespace Planar.Service.API
                 .OrderBy(r => r.Group)
                 .ThenBy(r => r.Name)
                 .ToList();
+
+            return result;
+        }
+
+        public async Task<IEnumerable<AvailableJobToAdd>> GetAvailableJobsToAdd()
+        {
+            var result = new List<AvailableJobToAdd>();
+            var folder = ServiceUtil.GetJobsFolder();
+            var files = Directory.GetFiles(folder, FolderConsts.JobFileName, SearchOption.AllDirectories);
+            foreach (var f in files)
+            {
+                try
+                {
+                    var yml = File.ReadAllText(f);
+                    var request = YmlUtil.Deserialize<SetJobDynamicRequest>(yml);
+                    if (request == null) { continue; }
+
+                    var key = JobKeyHelper.GetJobKey(request);
+                    var details = await Scheduler.GetJobDetail(key);
+                    if (details == null)
+                    {
+                        var fullFolder = new FileInfo(f).Directory;
+                        var relativeFolder = fullFolder.FullName[(folder.Length + 1)..];
+                        result.Add(new AvailableJobToAdd { RelativeFolder = relativeFolder, Name = fullFolder.Name });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogDebug(ex, "Fail to get avaliable job folder info");
+                }
+            }
 
             return result;
         }

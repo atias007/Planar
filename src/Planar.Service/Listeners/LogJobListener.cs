@@ -25,12 +25,13 @@ namespace Planar.Service.Listeners
 
         public string Name => nameof(LogJobListener);
 
-        public async Task JobExecutionVetoed(IJobExecutionContext context, CancellationToken cancellationToken = default)
+        public Task JobExecutionVetoed(IJobExecutionContext context, CancellationToken cancellationToken = default)
         {
+            var result = Task.CompletedTask;
             try
             {
-                if (IsSystemJob(context.JobDetail)) { return; }
-                await ExecuteDal<HistoryData>(d => d.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto));
+                if (IsSystemJob(context.JobDetail)) { return result; }
+                ExecuteDal<HistoryData>(d => d.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto)).Wait(cancellationToken);
             }
             catch (Exception ex)
             {
@@ -38,15 +39,19 @@ namespace Planar.Service.Listeners
             }
             finally
             {
-                await SafeScan(MonitorEvents.ExecutionVetoed, context, null, cancellationToken);
+                result = SafeScan(MonitorEvents.ExecutionVetoed, context, null);
             }
+
+            return result;
         }
 
-        public async Task JobToBeExecuted(IJobExecutionContext context, CancellationToken cancellationToken = default)
+        public Task JobToBeExecuted(IJobExecutionContext context, CancellationToken cancellationToken = default)
         {
+            var result = Task.CompletedTask;
+
             try
             {
-                if (IsSystemJob(context.JobDetail)) { return; }
+                if (IsSystemJob(context.JobDetail)) { return result; }
 
                 string data = GetJobDataForLogging(context.MergedJobDataMap);
 
@@ -78,7 +83,7 @@ namespace Planar.Service.Listeners
                 if (log.InstanceId.Length > 250) { log.InstanceId = log.InstanceId[0..250]; }
                 if (log.ServerName.Length > 50) { log.ServerName = log.ServerName[0..50]; }
 
-                await ExecuteDal<HistoryData>(d => d.CreateJobInstanceLog(log));
+                ExecuteDal<HistoryData>(d => d.CreateJobInstanceLog(log)).Wait(cancellationToken);
             }
             catch (Exception ex)
             {
@@ -86,17 +91,20 @@ namespace Planar.Service.Listeners
             }
             finally
             {
-                await SafeScan(MonitorEvents.ExecutionStart, context, null, cancellationToken);
+                result = SafeScan(MonitorEvents.ExecutionStart, context, null);
             }
+
+            return result;
         }
 
-        public async Task JobWasExecuted(IJobExecutionContext context, JobExecutionException jobException, CancellationToken cancellationToken = default)
+        public Task JobWasExecuted(IJobExecutionContext context, JobExecutionException jobException, CancellationToken cancellationToken = default)
         {
+            var result = Task.CompletedTask;
             Exception executionException = null;
 
             try
             {
-                if (IsSystemJob(context.JobDetail)) { return; }
+                if (IsSystemJob(context.JobDetail)) { return result; }
 
                 var unhadleException = JobExecutionMetadata.GetInstance(context)?.UnhandleException;
                 executionException = unhadleException ?? jobException;
@@ -120,7 +128,7 @@ namespace Planar.Service.Listeners
                     IsStopped = context.CancellationToken.IsCancellationRequested
                 };
 
-                await ExecuteDal<HistoryData>(d => d.UpdateHistoryJobRunLog(log));
+                ExecuteDal<HistoryData>(d => d.UpdateHistoryJobRunLog(log)).Wait(cancellationToken);
             }
             catch (Exception ex)
             {
@@ -128,36 +136,38 @@ namespace Planar.Service.Listeners
             }
             finally
             {
-                await SafeMonitorJobWasExecuted(context, executionException, cancellationToken);
+                result = SafeMonitorJobWasExecuted(context, executionException);
             }
+
+            return result;
         }
 
-        private async Task SafeMonitorJobWasExecuted(IJobExecutionContext context, Exception exception, CancellationToken cancellationToken)
+        private async Task SafeMonitorJobWasExecuted(IJobExecutionContext context, Exception exception)
         {
             var allTasks = new List<Task>();
-            await SafeScan(MonitorEvents.ExecutionEnd, context, exception, cancellationToken);
+            await SafeScan(MonitorEvents.ExecutionEnd, context, exception);
 
             var success = exception == null;
             if (success)
             {
-                var task1 = SafeScan(MonitorEvents.ExecutionSuccess, context, exception, cancellationToken);
+                var task1 = SafeScan(MonitorEvents.ExecutionSuccess, context, exception);
                 allTasks.Add(task1);
 
                 // Execution sucsses with no effected rows
                 var effectedRows = ServiceUtil.GetEffectedRows(context);
                 if (effectedRows == 0)
                 {
-                    var task2 = SafeScan(MonitorEvents.ExecutionSuccessWithNoEffectedRows, context, exception, cancellationToken);
+                    var task2 = SafeScan(MonitorEvents.ExecutionSuccessWithNoEffectedRows, context, exception);
                     allTasks.Add(task2);
                 }
             }
             else
             {
-                var task3 = SafeScan(MonitorEvents.ExecutionFail, context, exception, cancellationToken);
-                var task4 = SafeScan(MonitorEvents.ExecutionFailxTimesInRow, context, exception, cancellationToken);
-                var task5 = SafeScan(MonitorEvents.ExecutionFailxTimesInHour, context, exception, cancellationToken);
-                var task6 = SafeScan(MonitorEvents.ExecutionFailWithEffectedRowsGreaterThanx, context, exception, cancellationToken);
-                var task7 = SafeScan(MonitorEvents.ExecutionFailWithEffectedRowsLessThanx, context, exception, cancellationToken);
+                var task3 = SafeScan(MonitorEvents.ExecutionFail, context, exception);
+                var task4 = SafeScan(MonitorEvents.ExecutionFailxTimesInRow, context, exception);
+                var task5 = SafeScan(MonitorEvents.ExecutionFailxTimesInHour, context, exception);
+                var task6 = SafeScan(MonitorEvents.ExecutionFailWithEffectedRowsGreaterThanx, context, exception);
+                var task7 = SafeScan(MonitorEvents.ExecutionFailWithEffectedRowsLessThanx, context, exception);
 
                 allTasks.Add(task3);
                 allTasks.Add(task4);

@@ -1,4 +1,4 @@
-﻿namespace Planar.CLI
+﻿namespace Planar.CLI.General
 {
     internal struct JobKey
     {

@@ -3,8 +3,8 @@ using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
+using Planar.Service.General;
 using Planar.Service.Monitor;
-using Polly;
 using Quartz;
 using System;
 using System.Linq.Expressions;
@@ -24,15 +24,19 @@ namespace Planar.Service.Listeners.Base
             _logger = logger;
         }
 
-        protected async Task SafeSystemScan(MonitorEvents @event, MonitorSystemInfo details, Exception exception = default, CancellationToken cancellationToken = default)
+        protected async Task SafeSystemScan(MonitorEvents @event, MonitorSystemInfo details, Exception exception = default)
         {
             try
             {
                 if (!MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
 
                 using var scope = _serviceScopeFactory.CreateScope();
-                var monitor = scope.ServiceProvider.GetService<MonitorUtil>();
-                await monitor.Scan(@event, details, exception, cancellationToken);
+                var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
+                await monitor.Scan(@event, details, exception);
+            }
+            catch (ObjectDisposedException)
+            {
+                ServiceUtil.AddDisposeWarningToLog(_logger);
             }
             catch (Exception ex)
             {
@@ -41,15 +45,19 @@ namespace Planar.Service.Listeners.Base
             }
         }
 
-        protected async Task SafeScan(MonitorEvents @event, IJobExecutionContext context, Exception exception = default, CancellationToken cancellationToken = default)
+        protected async Task SafeScan(MonitorEvents @event, IJobExecutionContext context, Exception exception = default)
         {
             try
             {
                 if (MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
 
                 using var scope = _serviceScopeFactory.CreateScope();
-                var monitor = scope.ServiceProvider.GetService<MonitorUtil>();
-                await monitor.Scan(@event, context, exception, cancellationToken);
+                var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
+                await monitor.Scan(@event, context, exception);
+            }
+            catch (ObjectDisposedException)
+            {
+                ServiceUtil.AddDisposeWarningToLog(_logger);
             }
             catch (Exception ex)
             {
@@ -72,9 +80,32 @@ namespace Planar.Service.Listeners.Base
                 var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
                 await exp.Compile().Invoke(dal);
             }
+            catch (ObjectDisposedException)
+            {
+                await ExecuteDalOnObjectDisposedException(exp);
+            }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Error initialize/Execute DataLayer at BaseJobListenerWithDataLayer");
+                _logger.LogCritical(ex, $"Error initialize/Execute DataLayer at {nameof(BaseListener<T>)}");
+                throw;
+            }
+        }
+
+        private async Task ExecuteDalOnObjectDisposedException<TDataLayer>(Expression<Func<TDataLayer, Task>> exp)
+            where TDataLayer : BaseDataLayer
+        {
+            try
+            {
+                var services = new ServiceCollection();
+                services.AddPlanarDataLayerWithContext();
+                var provider = services.BuildServiceProvider();
+                using var scope = provider.CreateScope();
+                var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
+                await exp.Compile().Invoke(dal);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, $"Error initialize/Execute DataLayer at {nameof(BaseListener<T>)}");
                 throw;
             }
         }

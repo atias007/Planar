@@ -12,6 +12,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
+using Planar.CLI.General;
 
 namespace Planar.CLI
 {
@@ -94,7 +95,7 @@ namespace Planar.CLI
                 var console = Activator.CreateInstance(action.Method.DeclaringType);
                 CliActionResponse response;
 
-                if (action.RequestType == null)
+                if (action.GetRequestType == null)
                 {
                     try
                     {
@@ -107,7 +108,7 @@ namespace Planar.CLI
                 }
                 else
                 {
-                    var param = cliArgument.GetRequest(action.RequestType, action);
+                    var param = cliArgument.GetRequest(action.GetRequestType(), action);
                     var itMode = param is IIterative itParam && itParam.Iterative;
 
                     if (itMode)

@@ -18,36 +18,34 @@ namespace Planar.CLI
 
         public bool AllowNullRequest { get; set; }
 
-        public Type RequestType
+        public Type GetRequestType()
         {
-            get
+            if (Method == null) return null;
+
+            if (_requestType == null)
             {
-                if (Method == null) return null;
-
-                if (_requestType == null)
+                var parameters = Method.GetParameters();
+                if (parameters.Length == 0) return null;
+                if (parameters.Length > 1)
                 {
-                    var parameters = Method.GetParameters();
-                    if (parameters.Length == 0) return null;
-                    if (parameters.Length > 1)
-                    {
-                        throw new ApplicationException($"Cli Error: Action {Method.Name} has more then 1 parameter");
-                    }
-
-                    _requestType = parameters[0].ParameterType;
+                    throw new CliException($"Cli Error: Action {Method.Name} has more then 1 parameter");
                 }
 
-                return _requestType;
+                _requestType = parameters[0].ParameterType;
             }
+
+            return _requestType;
         }
 
         public List<RequestPropertyInfo> GetRequestPropertiesInfo()
         {
+            var requestType = GetRequestType();
             var result = new List<RequestPropertyInfo>();
-            var props = RequestType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            var props = requestType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
             var inheritKey =
-                RequestType.IsAssignableFrom(typeof(CliJobOrTriggerKey)) ||
-                RequestType.IsSubclassOf(typeof(CliJobOrTriggerKey));
+                requestType.IsAssignableFrom(typeof(CliJobOrTriggerKey)) ||
+                requestType.IsSubclassOf(typeof(CliJobOrTriggerKey));
 
             foreach (var item in props)
             {

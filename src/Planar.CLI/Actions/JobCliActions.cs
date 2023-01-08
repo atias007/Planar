@@ -3,6 +3,7 @@ using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
+using Planar.CLI.General;
 using RestSharp;
 using Spectre.Console;
 using System;
@@ -12,6 +13,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,15 +23,68 @@ namespace Planar.CLI.Actions
     public class JobCliActions : BaseCliAction<JobCliActions>
     {
         [Action("add")]
+        [NullRequest]
         public static async Task<CliActionResponse> AddJob(CliAddJobRequest request)
         {
-            var body = new SetJobFoldeRequest { Folder = request.Filename };
+            if (request == null)
+            {
+                var wrapper = await GetCliAddJobRequest();
+                if (!wrapper.IsSuccessful)
+                {
+                    return new CliActionResponse(wrapper.FailResponse);
+                }
+
+                request = wrapper.Request;
+            }
+
+            var body = new SetJobFoldeRequest { Folder = request.Folder };
             var restRequest = new RestRequest("job/folder", Method.Post)
                 .AddBody(body);
             var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
 
             AssertCreated(result);
             return new CliActionResponse(result);
+        }
+
+        private static async Task<RequestBuilderWrapper<CliAddJobRequest>> GetCliAddJobRequest()
+        {
+            var restRequest = new RestRequest("job/available-jobs", Method.Get);
+            var result = await RestProxy.Invoke<List<AvailableJobToAdd>>(restRequest);
+            if (!result.IsSuccessful)
+            {
+                return new RequestBuilderWrapper<CliAddJobRequest> { FailResponse = result };
+            }
+
+            var folder = SelectJobFolder(result.Data);
+            var request = new CliAddJobRequest { Folder = folder };
+            return new RequestBuilderWrapper<CliAddJobRequest> { Request = request };
+        }
+
+        private static string SelectJobFolder(IEnumerable<AvailableJobToAdd> data)
+        {
+            if (!data.Any())
+            {
+                throw new CliException("no available jobs found on server");
+            }
+
+            var folders = data.Select(e =>
+                e.Name == e.RelativeFolder ?
+                e.Name :
+                $"{e.Name} ({e.RelativeFolder})");
+
+            var selectedItem = AnsiConsole.Prompt(
+                 new SelectionPrompt<string>()
+                     .Title("[underline]select job folder from the following list (press enter to select):[/]")
+                     .PageSize(20)
+                     .MoreChoicesText("[grey](Move up and down to reveal more monitor job folders)[/]")
+                     .AddChoices(folders));
+
+            const string template = @"\(([^)]+)\)";
+            var regex = new Regex(template, RegexOptions.None, TimeSpan.FromMilliseconds(500));
+            var matches = regex.Matches(selectedItem);
+
+            var selectedFolder = matches.LastOrDefault();
+            return selectedFolder == null ? selectedItem : selectedFolder.Value[1..^1];
         }
 
         [Action("update")]
@@ -46,7 +101,7 @@ namespace Planar.CLI.Actions
                 options = MapUpdateJobOptions(request.Options);
             }
 
-            var body = new UpdateJobFolderRequest { Folder = request.Filename, UpdateJobOptions = options };
+            var body = new UpdateJobFolderRequest { Folder = request.Folder, UpdateJobOptions = options };
             var restRequest = new RestRequest("job/folder", Method.Put)
                 .AddBody(body);
 
