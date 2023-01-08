@@ -8,6 +8,6 @@
 
         public bool Handle { get; set; }
 
-        public static MonitorArguments Empty => new MonitorArguments { Handle = false };
+        public static MonitorArguments Empty => new() { Handle = false };
     }
 }

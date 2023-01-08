@@ -16,6 +16,6 @@ namespace Planar.Validation
             return obj == null ? 0 : obj.GetHashCode();
         }
 
-        public static StringIgnoreCaseComparer Instance => new StringIgnoreCaseComparer();
+        public static StringIgnoreCaseComparer Instance => new();
     }
 }

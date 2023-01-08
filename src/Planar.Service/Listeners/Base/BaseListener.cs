@@ -1,15 +1,17 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
+using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Monitor;
+using Polly;
 using Quartz;
 using System;
 using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Planar.Service.List.Base
+namespace Planar.Service.Listeners.Base
 {
     public class BaseListener<T>
     {
@@ -22,10 +24,29 @@ namespace Planar.Service.List.Base
             _logger = logger;
         }
 
+        protected async Task SafeSystemScan(MonitorEvents @event, MonitorSystemInfo details, Exception exception = default, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (!MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
+
+                using var scope = _serviceScopeFactory.CreateScope();
+                var monitor = scope.ServiceProvider.GetService<MonitorUtil>();
+                await monitor.Scan(@event, details, exception, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                var source = nameof(SafeSystemScan);
+                _logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
+            }
+        }
+
         protected async Task SafeScan(MonitorEvents @event, IJobExecutionContext context, Exception exception = default, CancellationToken cancellationToken = default)
         {
             try
             {
+                if (MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
+
                 using var scope = _serviceScopeFactory.CreateScope();
                 var monitor = scope.ServiceProvider.GetService<MonitorUtil>();
                 await monitor.Scan(@event, context, exception, cancellationToken);
@@ -56,6 +77,26 @@ namespace Planar.Service.List.Base
                 _logger.LogCritical(ex, "Error initialize/Execute DataLayer at BaseJobListenerWithDataLayer");
                 throw;
             }
+        }
+
+        protected bool IsSystemJobKey(JobKey jobKey)
+        {
+            return JobKeyHelper.IsSystemJobKey(jobKey);
+        }
+
+        protected bool IsSystemTriggerKey(TriggerKey triggerKey)
+        {
+            return TriggerKeyHelper.IsSystemTriggerKey(triggerKey);
+        }
+
+        protected bool IsSystemJob(IJobDetail job)
+        {
+            return JobKeyHelper.IsSystemJobKey(job.Key);
+        }
+
+        protected bool IsSystemTrigger(ITrigger trigger)
+        {
+            return TriggerKeyHelper.IsSystemTriggerKey(trigger.Key);
         }
     }
 }

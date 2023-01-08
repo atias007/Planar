@@ -189,7 +189,7 @@ namespace Planar.Service.API
 
         private static void ValidateSystemTrigger(TriggerKey triggerKey)
         {
-            if (triggerKey.Group == Consts.PlanarSystemGroup)
+            if (Helpers.TriggerKeyHelper.IsSystemTriggerKey(triggerKey))
             {
                 throw new RestValidationException("triggerId", "Forbidden: this is system trigger and it should not be modified or deleted");
             }

@@ -11,6 +11,11 @@ namespace Planar.HttpMonitorHook
             throw new NotImplementedException();
         }
 
+        public override Task HandleSystem(IMonitorSystemDetails monitorDetails)
+        {
+            throw new NotImplementedException();
+        }
+
         public override Task Test(IMonitorDetails monitorDetails)
         {
             throw new NotImplementedException();

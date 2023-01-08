@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API;
 using Planar.Service.Data;
@@ -10,6 +11,7 @@ using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.SystemJobs;
+using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -182,22 +184,27 @@ namespace Planar.Service
 
         private async Task RemoveSchedulerCluster()
         {
-            if (AppSettings.Clustering)
-            {
-                var cluster = new ClusterNode
-                {
-                    Server = Environment.MachineName,
-                    Port = AppSettings.HttpPort,
-                    InstanceId = _schedulerUtil.SchedulerInstanceId
-                };
+            if (!AppSettings.Clustering) { return; }
 
-                var services = new ServiceCollection();
-                services.AddPlanarDataLayerWithContext();
-                var provider = services.BuildServiceProvider();
-                using var scope = provider.CreateScope();
-                var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
-                await dal.RemoveClusterNode(cluster);
-            }
+            var cluster = new ClusterNode
+            {
+                Server = Environment.MachineName,
+                Port = AppSettings.HttpPort,
+                InstanceId = _schedulerUtil.SchedulerInstanceId
+            };
+
+            var services = new ServiceCollection();
+            services.AddPlanarDataLayerWithContext();
+            var provider = services.BuildServiceProvider();
+            using var scope = provider.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
+            await dal.RemoveClusterNode(cluster);
+
+            var info = new MonitorSystemInfo("Cluster node removed from {{MachineName}}");
+            info.MessagesParameters.Add("Port", AppSettings.HttpPort.ToString());
+            info.MessagesParameters.Add("InstanceId", _schedulerUtil.SchedulerInstanceId);
+            info.AddMachineName();
+            await SafeSystemScan(MonitorEvents.ClusterNodeRemoved, info);
         }
 
         private async Task JoinToCluster(CancellationToken stoppingToken)
@@ -221,6 +228,12 @@ namespace Planar.Service
                 {
                     await util.Join();
                     LogClustering();
+
+                    var info = new MonitorSystemInfo("Cluster node join to {{MachineName}}");
+                    info.MessagesParameters.Add("Port", AppSettings.HttpPort.ToString());
+                    info.MessagesParameters.Add("InstanceId", _schedulerUtil.SchedulerInstanceId);
+                    info.AddMachineName();
+                    await SafeSystemScan(MonitorEvents.ClusterNodeJoin, info, cancellationToken: stoppingToken);
                 }
                 else
                 {
@@ -259,5 +272,21 @@ namespace Planar.Service
         }
 
         #endregion Initialize Scheduler
+
+        protected async Task SafeSystemScan(MonitorEvents @event, MonitorSystemInfo info, Exception exception = default, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (!MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
+
+                var monitor = _serviceProvider.GetService<MonitorUtil>();
+                await monitor.Scan(@event, info, exception, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                var source = nameof(SafeSystemScan);
+                _logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
+            }
+        }
     }
 }

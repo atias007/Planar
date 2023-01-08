@@ -5,13 +5,13 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.General;
-using Planar.Service.List.Base;
+using Planar.Service.Listeners.Base;
 using Quartz;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Planar.Service.List
+namespace Planar.Service.Listeners
 {
     public class RetryTriggerListener : BaseListener<RetryTriggerListener>, ITriggerListener
     {
@@ -25,11 +25,11 @@ namespace Planar.Service.List
         {
             try
             {
-                if (context.JobDetail.Key.Group == Consts.PlanarSystemGroup) { return; }
+                if (IsSystemJob(context.JobDetail)) { return; }
 
                 var metadata = JobExecutionMetadata.GetInstance(context);
                 if (metadata.IsRunningSuccess) { return; }
-                if (trigger.JobDataMap.Contains(Consts.RetrySpan) == false) { return; }
+                if (!trigger.JobDataMap.Contains(Consts.RetrySpan)) { return; }
                 var span = GetRetrySpan(trigger);
                 if (span == null) { return; }
 
@@ -38,6 +38,7 @@ namespace Planar.Service.List
                 {
                     var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
                     _logger.LogError("Job with key {Key} fail and retry for {MaxRetries} times but failed each time", key, Consts.MaxRetries);
+                    await SafeScan(MonitorEvents.ExecutionLastRetryFail, context, cancellationToken: cancellationToken);
                     return;
                 }
 
@@ -66,14 +67,11 @@ namespace Planar.Service.List
                 }
 
                 await context.Scheduler.ScheduleJob(retryTrigger, cancellationToken);
+                await SafeScan(MonitorEvents.ExecutionRetry, context, cancellationToken: cancellationToken);
             }
             catch (Exception ex)
             {
                 LogCritical(nameof(TriggerComplete), ex);
-            }
-            finally
-            {
-                await SafeScan(MonitorEvents.ExecutionRetry, context, cancellationToken: cancellationToken);
             }
         }
 
@@ -81,8 +79,8 @@ namespace Planar.Service.List
         {
             try
             {
-                if (context.JobDetail.Key.Group == Consts.PlanarSystemGroup) { return; }
-                if (trigger.JobDataMap.Contains(Consts.RetrySpan) == false) { return; }
+                if (IsSystemJob(context.JobDetail)) { return; }
+                if (!trigger.JobDataMap.Contains(Consts.RetrySpan)) { return; }
                 var span = GetRetrySpan(trigger);
                 if (span == null) { return; }
 
@@ -92,7 +90,8 @@ namespace Planar.Service.List
                 }
 
                 var numberTries = trigger.JobDataMap.GetIntValue(Consts.RetryCounter);
-                trigger.JobDataMap.Put(Consts.RetryCounter, ++numberTries);
+                numberTries++;
+                trigger.JobDataMap.Put(Consts.RetryCounter, numberTries);
                 await Task.CompletedTask;
             }
             catch (Exception ex)
@@ -116,7 +115,7 @@ namespace Planar.Service.List
             var value = trigger.JobDataMap[Consts.RetrySpan];
             var spanValue = Convert.ToString(value);
             if (string.IsNullOrEmpty(spanValue)) { return null; }
-            if (TimeSpan.TryParse(spanValue, out TimeSpan span) == false) { return null; }
+            if (!TimeSpan.TryParse(spanValue, out TimeSpan span)) { return null; }
             return span;
         }
     }

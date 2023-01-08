@@ -86,7 +86,7 @@ namespace Planar.Service.API
             }
         }
 
-        public async Task PartialUpdateGroup(UpdateEntityRecord request)
+        public async Task PartialUpdateGroup(UpdateEntityRequest request)
         {
             var group = await DataLayer.GetGroup(request.Id);
             ValidateExistingEntity(group, "monitor");

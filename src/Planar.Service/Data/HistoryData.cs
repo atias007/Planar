@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
+using Planar.Service.API.Helpers;
 using Planar.Service.Model;
 using Quartz;
 using System;
@@ -40,7 +41,7 @@ namespace Planar.Service.Data
             return _context.JobInstanceLogs.Where(l => l.Id == key);
         }
 
-        public async Task<List<JobInstanceLog>> GetHistory(GetHistoryRequest request)
+        public IQueryable<JobInstanceLog> GetHistory(GetHistoryRequest request)
         {
             var query = _context.JobInstanceLogs.AsQueryable();
 
@@ -59,6 +60,16 @@ namespace Planar.Service.Data
                 query = query.Where(l => l.Status == (int)request.Status);
             }
 
+            if (request.JobId != null)
+            {
+                query = query.Where(l => l.JobId == request.JobId);
+            }
+
+            if (request.JobGroup != null)
+            {
+                query = query.Where(l => l.JobGroup == request.JobGroup);
+            }
+
             if (request.Ascending)
             {
                 query = query.OrderBy(l => l.StartDate);
@@ -69,20 +80,7 @@ namespace Planar.Service.Data
             }
 
             query = query.Take(request.Rows.GetValueOrDefault());
-            var final = query.Select(l => new JobInstanceLog
-            {
-                Id = l.Id,
-                JobId = l.JobId,
-                JobName = l.JobName,
-                JobGroup = l.JobGroup,
-                TriggerId = l.TriggerId,
-                Status = l.Status,
-                StartDate = l.StartDate,
-                Duration = l.Duration,
-                EffectedRows = l.EffectedRows
-            });
-
-            return await final.ToListAsync();
+            return query;
         }
 
         public async Task<string> GetHistoryDataById(int id)

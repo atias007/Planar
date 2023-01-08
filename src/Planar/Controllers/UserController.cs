@@ -55,7 +55,7 @@ namespace Planar.Controllers
 
         [HttpPatch]
         [JsonConsumes]
-        public async Task<ActionResult> PartialUpdate([FromBody] UpdateEntityRecord request)
+        public async Task<ActionResult> PartialUpdate([FromBody] UpdateEntityRequest request)
         {
             await BusinesLayer.PartialUpdate(request);
             return NoContent();

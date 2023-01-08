@@ -27,7 +27,7 @@ namespace Planar.Service.Monitor
             return result as Task;
         }
 
-        public Task HandleSystem(MonitorDetails details, ILogger<MonitorUtil> logger)
+        public Task HandleSystem(MonitorSystemDetails details, ILogger<MonitorUtil> logger)
         {
             if (HandleSystemMethod == null)
             {

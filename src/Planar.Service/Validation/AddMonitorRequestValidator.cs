@@ -3,6 +3,7 @@ using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
+using Planar.Service.General;
 using Quartz;
 using System;
 
@@ -24,6 +25,10 @@ namespace Planar.Service.Validation
                 .When(r => !string.IsNullOrEmpty(r.JobName))
                 .WithMessage("{PropertyName} must have value if 'Job Name' is not empty");
 
+            RuleFor(r => r.JobGroup).Empty()
+                .When(r => r.EventId != null && MonitorEventsExtensions.IsSystemMonitorEvent(r.EventId.GetValueOrDefault()))
+                .WithMessage(r => $"{{PropertyName}} must be null when 'Event Id' is {(int)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
+
             RuleFor(r => r.GroupId).GreaterThan(0)
                 .Must(g => dal.IsGroupExists(g).Result)
                 .WithMessage("'{PropertyName}' field with value '{PropertyValue}' does not exist");
@@ -33,16 +38,20 @@ namespace Planar.Service.Validation
                 .WithMessage("'{PropertyName}' field with value '{PropertyValue}' does not exist");
 
             RuleFor(r => r.EventArgument).NotEmpty()
-                .When(r => (int)r.EventId >= (int)MonitorEvents.ExecutionFailxTimesInRow)
-                .WithMessage(r => $"'{{PropertyName}}' must have value while event is {r.EventId}");
+                .When(r => MonitorEventsExtensions.IsMonitorEventHasArguments(r.EventId.GetValueOrDefault()))
+                .WithMessage(r => $"'{{PropertyName}}' must have value when 'Event Id' is {(int)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
 
             RuleFor(r => r.EventArgument).Empty()
-                .When(r => (int)r.EventId < (int)MonitorEvents.ExecutionFailxTimesInRow)
-                .WithMessage(r => $"'{{PropertyName}}' must have be empty while event is {r.EventId}");
+                .When(r => !MonitorEventsExtensions.IsMonitorEventHasArguments(r.EventId.GetValueOrDefault()))
+                .WithMessage(r => $"'{{PropertyName}}' must be empty when 'Event Id' is {(int)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
 
             RuleFor(r => r.JobName).NotEmpty()
-                .When(r => (int)r.EventId >= (int)MonitorEvents.ExecutionFailxTimesInRow)
-                .WithMessage(r => $"'Job Name' and 'Job Group' must have value while event is {r.EventId}");
+                .When(r => MonitorEventsExtensions.IsMonitorEventHasArguments(r.EventId.GetValueOrDefault()))
+                .WithMessage(r => $"{{PropertyName}} and 'Job Group' must have value when 'Event Id' is {(int)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
+
+            RuleFor(r => r.JobName).Empty()
+                .When(r => r.EventId != null && MonitorEventsExtensions.IsSystemMonitorEvent(r.EventId.GetValueOrDefault()))
+                .WithMessage(r => $"{{PropertyName}} must be null when 'Event Id' is {(int)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
         }
 
         private static bool JobAndGroupExists(AddMonitorRequest request, JobKeyHelper jobKeyHelper, ValidationContext<AddMonitorRequest> context)

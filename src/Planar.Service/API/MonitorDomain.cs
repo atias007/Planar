@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -93,7 +94,7 @@ namespace Planar.Service.API
             var result =
                 Enum.GetValues(typeof(MonitorEvents))
                 .Cast<MonitorEvents>()
-                .Select(e => new LovItem { Id = (int)e, Name = e.ToString() })
+                .Select(e => new LovItem { Id = (int)e, Name = e.ToString().SplitWords() })
                 .ToList();
 
             return result;
@@ -129,7 +130,7 @@ namespace Planar.Service.API
             ServiceUtil.LoadMonitorHooks(Logger);
         }
 
-        public async Task PartialUpdateMonitor(UpdateEntityRecord request)
+        public async Task PartialUpdateMonitor(UpdateEntityRequest request)
         {
             var monitor = await DataLayer.GetMonitorAction(request.Id);
             ValidateExistingEntity(monitor, "monitor");

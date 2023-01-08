@@ -40,9 +40,19 @@ namespace Planar.CLI.Actions
                 restRequest.AddQueryParameter("toDate", request.ToDate);
             }
 
-            if (string.IsNullOrEmpty(request.Status) == false)
+            if (!string.IsNullOrEmpty(request.Status))
             {
                 restRequest.AddQueryParameter("status", request.Status);
+            }
+
+            if (!string.IsNullOrEmpty(request.JobId))
+            {
+                restRequest.AddQueryParameter("jobid", request.JobId);
+            }
+
+            if (!string.IsNullOrEmpty(request.JobGroup))
+            {
+                restRequest.AddQueryParameter("jobgroup", request.JobGroup);
             }
 
             restRequest.AddQueryParameter("ascending", request.Ascending);

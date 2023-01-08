@@ -110,7 +110,7 @@ namespace Planar.Controllers
         [BadRequestResponse]
         [ConflictResponse]
         [NotFoundResponse]
-        public async Task<ActionResult> UpdatePartial([FromBody] UpdateEntityRecord request)
+        public async Task<ActionResult> UpdatePartial([FromBody] UpdateEntityRequest request)
         {
             await BusinesLayer.PartialUpdateMonitor(request);
             return NoContent();

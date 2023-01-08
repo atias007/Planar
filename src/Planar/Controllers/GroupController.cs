@@ -64,7 +64,7 @@ namespace Planar.Controllers
         [BadRequestResponse]
         [ConflictResponse]
         [NotFoundResponse]
-        public async Task<IActionResult> PatrialUpdateGroup([FromBody] UpdateEntityRecord request)
+        public async Task<IActionResult> PatrialUpdateGroup([FromBody] UpdateEntityRequest request)
         {
             await BusinesLayer.PartialUpdateGroup(request);
             return NoContent();

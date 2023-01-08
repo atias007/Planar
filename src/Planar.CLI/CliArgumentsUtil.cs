@@ -87,10 +87,7 @@ namespace Planar.CLI
 
         public object GetRequest(Type type, CliActionMetadata action)
         {
-            if (!CliArguments.Any() && action.AllowNullRequest)
-            {
-                return null;
-            }
+            if (!CliArguments.Any() && action.AllowNullRequest) { return null; }
 
             var result = Activator.CreateInstance(type);
             var props = action.GetRequestPropertiesInfo();
@@ -100,48 +97,8 @@ namespace Planar.CLI
 
             foreach (var a in CliArguments)
             {
-                RequestPropertyInfo matchProp = null;
-                if (a.Key.StartsWith("--"))
-                {
-                    var key = a.Key[2..].ToLower();
-                    matchProp = props.FirstOrDefault(p => p.LongName == key);
-                }
-                else if (a.Key.StartsWith("-"))
-                {
-                    var key = a.Key[1..].ToLower();
-                    matchProp = props.FirstOrDefault(p => p.ShortName == key);
-                }
-                else
-                {
-                    matchProp = props
-                        .Where(p => p.Default && (p.DefaultOrder == startDefaultOrder))
-                        .FirstOrDefault();
-
-                    startDefaultOrder++;
-
-                    a.Value = a.Key;
-                }
-
-                if (matchProp == null)
-                {
-                    throw new CliValidationException($"Argument '{a.Key}' is not supported with command '{action.Command.FirstOrDefault()}' at module '{action.Module}'");
-                }
-
-                if (a.Key.StartsWith("-") && string.IsNullOrEmpty(a.Value))
-                {
-                    a.Value = true.ToString();
-                }
-
-                FillLastJobOrTriggerId(matchProp, a);
-                if (action.Module?.ToLower() == "job")
-                {
-                    FillJobId(matchProp, a).Wait();
-                }
-                else if (action.Module?.ToLower() == "trigger")
-                {
-                    FillTriggerId(matchProp, a).Wait();
-                }
-
+                var matchProp = MatchProperty(action, props, ref startDefaultOrder, a);
+                FillJobOrTrigger(action, a, matchProp);
                 SetValue(matchProp.PropertyInfo, result, a.Value);
                 if (!string.IsNullOrEmpty(a.Value))
                 {
@@ -152,6 +109,56 @@ namespace Planar.CLI
             FindMissingRequiredProperties(props);
 
             return result;
+        }
+
+        private static void FillJobOrTrigger(CliActionMetadata action, CliArgument a, RequestPropertyInfo matchProp)
+        {
+            FillLastJobOrTriggerId(matchProp, a);
+            if (action.Module?.ToLower() == "job")
+            {
+                FillJobId(matchProp, a).Wait();
+            }
+            else if (action.Module?.ToLower() == "trigger")
+            {
+                FillTriggerId(matchProp, a).Wait();
+            }
+        }
+
+        private static RequestPropertyInfo MatchProperty(CliActionMetadata action, List<RequestPropertyInfo> props, ref int startDefaultOrder, CliArgument a)
+        {
+            RequestPropertyInfo matchProp = null;
+            if (a.Key.StartsWith("--"))
+            {
+                var key = a.Key[2..].ToLower();
+                matchProp = props.FirstOrDefault(p => p.LongName == key);
+            }
+            else if (a.Key.StartsWith("-"))
+            {
+                var key = a.Key[1..].ToLower();
+                matchProp = props.FirstOrDefault(p => p.ShortName == key);
+            }
+            else
+            {
+                var defaultOrder = startDefaultOrder;
+                matchProp = props
+                    .FirstOrDefault(p => p.Default && (p.DefaultOrder == defaultOrder));
+
+                startDefaultOrder++;
+
+                a.Value = a.Key;
+            }
+
+            if (matchProp == null)
+            {
+                throw new CliValidationException($"Argument '{a.Key}' is not supported with command '{action.Command.FirstOrDefault()}' at module '{action.Module}'");
+            }
+
+            if (a.Key.StartsWith("-") && string.IsNullOrEmpty(a.Value))
+            {
+                a.Value = true.ToString();
+            }
+
+            return matchProp;
         }
 
         public bool HasIterativeArgument

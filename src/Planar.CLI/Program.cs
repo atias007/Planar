@@ -31,48 +31,50 @@ namespace Planar.CLI
 
         private static bool HandleBadRequestResponse(RestResponse response)
         {
-            if (response.StatusCode == HttpStatusCode.BadRequest)
+            if (response.StatusCode != HttpStatusCode.BadRequest) { return false; }
+
+            var entity = JsonConvert.DeserializeObject<BadRequestEntity>(response.Content);
+
+            var obj = JObject.Parse(response.Content);
+            var errors = obj["errors"].SelectMany(e => e.ToList()).SelectMany(e => e.ToList());
+            if (errors.Any() == false)
             {
-                var entity = JsonConvert.DeserializeObject<BadRequestEntity>(response.Content);
-
-                var obj = JObject.Parse(response.Content);
-                var errors = obj["errors"].SelectMany(e => e.ToList()).SelectMany(e => e.ToList());
-                if (errors.Any() == false)
-                {
-                    AnsiConsole.MarkupLine($"[red]validation error: {entity.Detail}[/]");
-                    return true;
-                }
-
-                if (errors.Count() == 1)
-                {
-                    var value = errors.First() as JValue;
-                    AnsiConsole.MarkupLine($"[red]validation error: {value.Value}[/]");
-                    return true;
-                }
-
-                AnsiConsole.MarkupLine("[red]validation error:[/]");
-                foreach (JToken item in errors)
-                {
-                    if (item is JArray arr)
-                    {
-                        foreach (JToken subItem in arr)
-                        {
-                            if (subItem is JValue jvalue)
-                            {
-                                AnsiConsole.MarkupLine($"[red]  - {jvalue.Value}[/]");
-                            }
-                        }
-                    }
-                    else
-                    {
-                        AnsiConsole.MarkupLine($"[red]  - {(item as JValue).Value}[/]");
-                    }
-                }
-
+                AnsiConsole.MarkupLine($"[red]validation error: {entity.Detail}[/]");
                 return true;
             }
 
-            return false;
+            if (errors.Count() == 1)
+            {
+                var value = errors.First() as JValue;
+                AnsiConsole.MarkupLine($"[red]validation error: {value.Value}[/]");
+                return true;
+            }
+
+            AnsiConsole.MarkupLine("[red]validation error:[/]");
+            DisplayValidationErrors(errors);
+
+            return true;
+        }
+
+        private static void DisplayValidationErrors(IEnumerable<JToken> errors)
+        {
+            foreach (JToken item in errors)
+            {
+                if (item is JArray arr)
+                {
+                    foreach (JToken subItem in arr)
+                    {
+                        if (subItem is JValue jvalue)
+                        {
+                            AnsiConsole.MarkupLine($"[red]  - {jvalue.Value}[/]");
+                        }
+                    }
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"[red]  - {(item as JValue).Value}[/]");
+                }
+            }
         }
 
         private static CliArgumentsUtil HandleCliCommand(string[] args, IEnumerable<CliActionMetadata> cliActions)

@@ -28,7 +28,7 @@ namespace Planar.Service.API
 
         protected static void ValidateSystemJob(JobKey jobKey)
         {
-            if (jobKey.Group == Consts.PlanarSystemGroup)
+            if (Helpers.JobKeyHelper.IsSystemJobKey(jobKey))
             {
                 throw new RestValidationException("key", "forbidden: this is system job and it should not be modified");
             }

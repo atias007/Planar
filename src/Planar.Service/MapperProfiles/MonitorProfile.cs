@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Planar.API.Common.Entities;
+using Planar.Service.General;
 using Planar.Service.Model;
 
 namespace Planar.Service.MapperProfiles
@@ -10,7 +11,7 @@ namespace Planar.Service.MapperProfiles
         {
             CreateMap<MonitorAction, MonitorItem>()
              .ForMember(t => t.Active, map => map.MapFrom(s => s.Active.GetValueOrDefault()))
-             .ForMember(t => t.EventTitle, map => map.MapFrom(s => ((MonitorEvents)s.EventId).ToString()))
+             .ForMember(t => t.EventTitle, map => map.MapFrom(s => ((MonitorEvents)s.EventId).ToString().SplitWords()))
              .ForMember(t => t.DistributionGroupName, map => map.MapFrom(s => s.Group.Name));
 
             CreateMap<AddMonitorRequest, MonitorAction>()

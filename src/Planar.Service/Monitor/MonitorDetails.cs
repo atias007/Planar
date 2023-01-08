@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Planar.Service.Monitor
 {
-    public class MonitorDetails
+    public class MonitorDetails : Monitor
     {
         public string JobName { get; set; }
         public string JobGroup { get; set; }
@@ -20,11 +20,5 @@ namespace Planar.Service.Monitor
         public DateTime FireTime { get; set; }
         public TimeSpan JobRunTime { get; set; }
         public bool Recovering { get; set; }
-        public string MonitorTitle { get; set; }
-        public int EventId { get; set; }
-        public MonitorGroup Group { get; set; }
-        public List<MonitorUser> Users { get; set; } = new();
-        public string EventTitle { get; set; }
-        public Exception Exception { get; set; }
     }
 }
