@@ -170,22 +170,6 @@ namespace Planar.TeamsMonitorHook
             };
         }
 
-        private static string Replace(string source, string find, string value)
-        {
-            return source.Replace($"@@{find}@@", value);
-        }
-
-        private static string GetTemplate(string name)
-        {
-            var assembly = typeof(TeamHook).Assembly;
-            var resourceName = $"Planar.TeamsMonitorHook.{name}.json";
-
-            using Stream stream = assembly.GetManifestResourceStream(resourceName);
-            using StreamReader reader = new(stream);
-            var result = reader.ReadToEnd();
-            return result;
-        }
-
         private Exception GetMostInnerException(Exception ex)
         {
             if (ex.InnerException == null) { return ex; }

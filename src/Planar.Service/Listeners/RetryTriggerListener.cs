@@ -29,7 +29,7 @@ namespace Planar.Service.Listeners
 
                 var metadata = JobExecutionMetadata.GetInstance(context);
                 if (metadata.IsRunningSuccess) { return; }
-                if (trigger.JobDataMap.Contains(Consts.RetrySpan) == false) { return; }
+                if (!trigger.JobDataMap.Contains(Consts.RetrySpan)) { return; }
                 var span = GetRetrySpan(trigger);
                 if (span == null) { return; }
 
@@ -80,7 +80,7 @@ namespace Planar.Service.Listeners
             try
             {
                 if (IsSystemJob(context.JobDetail)) { return; }
-                if (trigger.JobDataMap.Contains(Consts.RetrySpan) == false) { return; }
+                if (!trigger.JobDataMap.Contains(Consts.RetrySpan)) { return; }
                 var span = GetRetrySpan(trigger);
                 if (span == null) { return; }
 
@@ -90,7 +90,8 @@ namespace Planar.Service.Listeners
                 }
 
                 var numberTries = trigger.JobDataMap.GetIntValue(Consts.RetryCounter);
-                trigger.JobDataMap.Put(Consts.RetryCounter, ++numberTries);
+                numberTries++;
+                trigger.JobDataMap.Put(Consts.RetryCounter, numberTries);
                 await Task.CompletedTask;
             }
             catch (Exception ex)
@@ -114,7 +115,7 @@ namespace Planar.Service.Listeners
             var value = trigger.JobDataMap[Consts.RetrySpan];
             var spanValue = Convert.ToString(value);
             if (string.IsNullOrEmpty(spanValue)) { return null; }
-            if (TimeSpan.TryParse(spanValue, out TimeSpan span) == false) { return null; }
+            if (!TimeSpan.TryParse(spanValue, out TimeSpan span)) { return null; }
             return span;
         }
     }

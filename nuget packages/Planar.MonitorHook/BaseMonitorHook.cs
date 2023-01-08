@@ -12,7 +12,7 @@ namespace Planar.MonitorHook
         internal Task ExecuteHandleSystem(ref object messageBroker)
         {
             InitializeMessageBroker(ref messageBroker);
-            var monitorDetails = InitializeMessageDetails<MonitorSystemDetails>(_messageBroker.Details);
+            var monitorDetails = InitializeMessageDetails<MonitorSystemDetails>(_messageBroker);
 
             return HandleSystem(monitorDetails)
                 .ContinueWith(t =>
@@ -24,7 +24,7 @@ namespace Planar.MonitorHook
         internal Task ExecuteHandle(ref object messageBroker)
         {
             InitializeMessageBroker(ref messageBroker);
-            var monitorDetails = InitializeMessageDetails<MonitorDetails>(_messageBroker.Details);
+            var monitorDetails = InitializeMessageDetails<MonitorDetails>(_messageBroker);
 
             return Handle(monitorDetails)
                 .ContinueWith(t =>
@@ -43,7 +43,7 @@ namespace Planar.MonitorHook
             _messageBroker = new MessageBroker(messageBroker);
         }
 
-        private T InitializeMessageDetails<T>(string details)
+        private static T InitializeMessageDetails<T>(MessageBroker messageBroker)
             where T : Monitor
         {
             var options = new JsonSerializerOptions
@@ -56,16 +56,16 @@ namespace Planar.MonitorHook
 
             try
             {
-                var monitorDetails = JsonSerializer.Deserialize<T>(_messageBroker.Details, options);
-                if (!string.IsNullOrEmpty(_messageBroker.Users))
+                var monitorDetails = JsonSerializer.Deserialize<T>(messageBroker.Details, options);
+                if (!string.IsNullOrEmpty(messageBroker.Users))
                 {
-                    var users = JsonSerializer.Deserialize<List<User>>(_messageBroker.Users);
+                    var users = JsonSerializer.Deserialize<List<User>>(messageBroker.Users);
                     monitorDetails.Users = users;
                 }
 
-                if (!string.IsNullOrEmpty(_messageBroker.Group))
+                if (!string.IsNullOrEmpty(messageBroker.Group))
                 {
-                    var group = JsonSerializer.Deserialize<Group>(_messageBroker.Group);
+                    var group = JsonSerializer.Deserialize<Group>(messageBroker.Group);
                     monitorDetails.Group = group;
                 }
 

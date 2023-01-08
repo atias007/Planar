@@ -233,7 +233,7 @@ namespace Planar.Service
                     info.MessagesParameters.Add("Port", AppSettings.HttpPort.ToString());
                     info.MessagesParameters.Add("InstanceId", _schedulerUtil.SchedulerInstanceId);
                     info.AddMachineName();
-                    await SafeSystemScan(MonitorEvents.ClusterNodeJoin, info);
+                    await SafeSystemScan(MonitorEvents.ClusterNodeJoin, info, cancellationToken: stoppingToken);
                 }
                 else
                 {

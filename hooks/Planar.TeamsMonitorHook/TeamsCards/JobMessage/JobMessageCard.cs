@@ -3,6 +3,8 @@ using System.Text.Json.Serialization;
 
 namespace Planar.TeamsMonitorHook.TeamsCards
 {
+#pragma warning disable CA1822 // Mark members as static
+
     public class JobMessageCard
     {
         [JsonPropertyName("@type")]
@@ -13,10 +15,13 @@ namespace Planar.TeamsMonitorHook.TeamsCards
 
         public string Summary => "Planar monitor notification";
         public string ThemeColor => "0078D7";
+
         public string Title { get; set; }
 
         public List<Section> Sections { get; set; } = new();
     }
+
+#pragma warning restore CA1822 // Mark members as static
 
     public class Section
     {
