@@ -141,8 +141,7 @@ namespace Planar.CLI
             {
                 var defaultOrder = startDefaultOrder;
                 matchProp = props
-                    .Where(p => p.Default && (p.DefaultOrder == defaultOrder))
-                    .FirstOrDefault();
+                    .FirstOrDefault(p => p.Default && (p.DefaultOrder == defaultOrder));
 
                 startDefaultOrder++;
 

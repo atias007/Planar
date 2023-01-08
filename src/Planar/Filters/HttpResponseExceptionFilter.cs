@@ -111,12 +111,7 @@ namespace Planar.Filters
         {
             if (context.Exception is RestServiceUnavailableException unavailableException)
             {
-                context.Result = new ObjectResult(unavailableException.Message)
-                {
-                    StatusCode = 503
-                };
-
-                context.ExceptionHandled = true;
+                HandleRestUnavailableException(context, unavailableException);
                 return;
             }
 
@@ -148,39 +143,57 @@ namespace Planar.Filters
 
             if (context.Exception is RestGeneralException generalException)
             {
-                context.Result = new ObjectResult(generalException.ToString())
-                {
-                    StatusCode = generalException.StatusCode ?? StatusCodes.Status500InternalServerError,
-                };
-
-                context.ExceptionHandled = generalException.StatusCode < 500 || generalException.StatusCode >= 600;
+                HandleRestGeneralException(context, generalException);
                 return;
             }
 
             if (context.Exception is AggregateException aggregateException)
             {
-                var all = aggregateException.Flatten();
-                if (all.InnerExceptions.All(e => e is RestValidationException))
-                {
-                    var allRestEx = all.InnerExceptions.Cast<RestValidationException>().ToList();
+                HandleAggregateException(context, aggregateException);
+            }
+        }
 
-                    if (allRestEx.Count == 1)
-                    {
-                        HandleValidationException(context, allRestEx[0]);
-                    }
-                    else
-                    {
-                        var aggregate = AggregateRestValidationException(allRestEx);
-                        HandleValidationException(context, aggregate);
-                    }
+        private static void HandleRestUnavailableException(ActionExecutedContext context, RestServiceUnavailableException unavailableException)
+        {
+            context.Result = new ObjectResult(unavailableException.Message)
+            {
+                StatusCode = 503
+            };
+
+            context.ExceptionHandled = true;
+        }
+
+        private static void HandleRestGeneralException(ActionExecutedContext context, RestGeneralException generalException)
+        {
+            context.Result = new ObjectResult(generalException.ToString())
+            {
+                StatusCode = generalException.StatusCode ?? StatusCodes.Status500InternalServerError,
+            };
+
+            context.ExceptionHandled = generalException.StatusCode < 500 || generalException.StatusCode >= 600;
+        }
+
+        private static void HandleAggregateException(ActionExecutedContext context, AggregateException aggregateException)
+        {
+            var all = aggregateException.Flatten();
+            if (all.InnerExceptions.All(e => e is RestValidationException))
+            {
+                var allRestEx = all.InnerExceptions.Cast<RestValidationException>().ToList();
+
+                if (allRestEx.Count == 1)
+                {
+                    HandleValidationException(context, allRestEx[0]);
                 }
                 else
                 {
-                    var filterException = all.InnerExceptions.Where(e => e is not RestValidationException).ToList();
-                    throw new AggregateException(filterException);
+                    var aggregate = AggregateRestValidationException(allRestEx);
+                    HandleValidationException(context, aggregate);
                 }
-
-                return;
+            }
+            else
+            {
+                var filterException = all.InnerExceptions.Where(e => e is not RestValidationException).ToList();
+                throw new AggregateException(filterException);
             }
         }
     }
