@@ -2,6 +2,7 @@
 using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
+using Planar.CLI.General;
 using RestSharp;
 using Spectre.Console;
 using System;
@@ -118,12 +119,12 @@ namespace Planar.CLI.Actions
             return await Execute(restRequest);
         }
 
-        private static async Task<AddMonitorRequestWrapper> CollectAddMonitorRequestData()
+        private static async Task<RequestBuilderWrapper<CliAddMonitorRequest>> CollectAddMonitorRequestData()
         {
             var data = await GetMonitorData();
             if (!data.IsSuccessful)
             {
-                return new AddMonitorRequestWrapper { FailResponse = data.FailResponse };
+                return new RequestBuilderWrapper<CliAddMonitorRequest> { FailResponse = data.FailResponse };
             }
 
             var monitorEventId = GetEvent(data.Events);
@@ -146,7 +147,7 @@ namespace Planar.CLI.Actions
                 Title = title
             };
 
-            return new AddMonitorRequestWrapper { Request = monitor };
+            return new RequestBuilderWrapper<CliAddMonitorRequest> { Request = monitor };
         }
 
         private static int GetDistributionGroup(IEnumerable<GroupInfo> groups)
@@ -355,13 +356,6 @@ namespace Planar.CLI.Actions
         {
             public string JobGroup { get; set; }
             public string JobName { get; set; }
-        }
-
-        private struct AddMonitorRequestWrapper
-        {
-            public CliAddMonitorRequest Request { get; set; }
-            public RestResponse FailResponse { get; set; }
-            public bool IsSuccessful => FailResponse == null;
         }
     }
 }

@@ -3,8 +3,8 @@
 the options for <command> and [<options>] parameters of job module:
 
 ls|list         [-q|--quiet]
-add             <filename|folder>
-update          <filename|folder> [all,all-job,all-trigger,job,job-data,properties,triggers,triggers-data]
+add             <folder>
+update          <folder> [all,all-job,all-trigger,job,job-data,properties,triggers,triggers-data]
 get|inspect     <job id>
 settings        <job id>
 running         [<instance id>] [-it|--iterative] [-d|--details] [-q|--quiet]

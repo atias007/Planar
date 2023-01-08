@@ -28,7 +28,7 @@ namespace Planar.Service.SystemJobs
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to clear trace table: {Message}", ex.Message);
+                _logger?.LogError(ex, "Fail to clear trace table: {Message}", ex.Message);
                 return Task.CompletedTask;
             }
         }
@@ -43,7 +43,7 @@ namespace Planar.Service.SystemJobs
 
         private async Task DoWork()
         {
-            await _dal.ClearTraceTable(AppSettings.ClearTraceTableOverDays);
+            await _dal?.ClearTraceTable(AppSettings.ClearTraceTableOverDays);
             _logger.LogInformation("Clear trace table rows (older then {Days} days)", AppSettings.ClearTraceTableOverDays);
         }
     }

@@ -6,6 +6,6 @@ namespace Planar.CLI.Entities
     {
         [ActionProperty(DefaultOrder = 0)]
         [Required]
-        public string Filename { get; set; }
+        public string Folder { get; set; }
     }
 }

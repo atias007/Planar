@@ -24,9 +24,9 @@ namespace Planar.Service.SystemJobs
         public PersistDataJob(IServiceProvider serviceProvider)
         {
             _logger = serviceProvider.GetRequiredService<ILogger<PersistDataJob>>();
-            _dal = serviceProvider.GetService<HistoryData>();
-            _clusterUtil = serviceProvider.GetService<ClusterUtil>();
-            _schedulerUtil = serviceProvider.GetService<SchedulerUtil>();
+            _dal = serviceProvider.GetRequiredService<HistoryData>();
+            _clusterUtil = serviceProvider.GetRequiredService<ClusterUtil>();
+            _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
         }
 
         public Task Execute(IJobExecutionContext context)
@@ -37,7 +37,7 @@ namespace Planar.Service.SystemJobs
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to persist data: {Message}", ex.Message);
+                _logger?.LogError(ex, "Fail to persist data: {Message}", ex.Message);
                 return Task.CompletedTask;
             }
         }
@@ -74,10 +74,10 @@ namespace Planar.Service.SystemJobs
                     Duration = context.Duration,
                 };
 
-                _logger.LogInformation("Persist data for job {Group}.{Name}", context.Group, context.Name);
+                _logger?.LogInformation("Persist data for job {Group}.{Name}", context.Group, context.Name);
                 await Policy.Handle<Exception>()
                         .WaitAndRetryAsync(3, i => TimeSpan.FromSeconds(1 * i))
-                        .ExecuteAsync(() => _dal.PersistJobInstanceData(log));
+                        .ExecuteAsync(() => _dal?.PersistJobInstanceData(log));
             }
         }
     }

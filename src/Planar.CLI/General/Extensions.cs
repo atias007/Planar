@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Planar.CLI
+namespace Planar.CLI.General
 {
     internal static class Extensions
     {

@@ -42,27 +42,7 @@ namespace Planar.Service.Monitor
             missingHooks.ForEach(h => _logger.LogWarning("Monitor with hook '{Hook}' is invalid. Missing hook in service", h));
         }
 
-        internal async Task Scan(MonitorEvents @event, IJobExecutionContext context, Exception exception = default, CancellationToken cancellationToken = default)
-        {
-            var task = Task.Run(() =>
-            {
-                ScanAsync(@event, context, exception, cancellationToken);
-            }, cancellationToken);
-
-            await task;
-        }
-
-        internal async Task Scan(MonitorEvents @event, MonitorSystemInfo info, Exception exception = default, CancellationToken cancellationToken = default)
-        {
-            var task = Task.Run(() =>
-            {
-                ScanAsync(@event, info, exception, cancellationToken);
-            }, cancellationToken);
-
-            await task;
-        }
-
-        private void ScanAsync(MonitorEvents @event, IJobExecutionContext context, Exception exception = default, CancellationToken cancellationToken = default)
+        internal async Task Scan(MonitorEvents @event, IJobExecutionContext context, Exception exception = default)
         {
             if (context != null && context.JobDetail.Key.Group.StartsWith(Consts.PlanarSystemGroup))
             {
@@ -90,7 +70,7 @@ namespace Planar.Service.Monitor
 
             try
             {
-                Task.WaitAll(hookTasks.ToArray(), cancellationToken);
+                await Task.WhenAll(hookTasks);
             }
             catch (Exception ex)
             {
@@ -98,14 +78,14 @@ namespace Planar.Service.Monitor
             }
         }
 
-        private void ScanAsync(MonitorEvents @event, MonitorSystemInfo info, Exception exception = default, CancellationToken cancellationToken = default)
+        internal async Task Scan(MonitorEvents @event, MonitorSystemInfo info, Exception exception = default)
         {
             List<MonitorAction> items;
             var hookTasks = new List<Task>();
 
             try
             {
-                items = LoadMonitorItems(@event).Result;
+                items = await LoadMonitorItems(@event);
             }
             catch (Exception ex)
             {
@@ -121,7 +101,7 @@ namespace Planar.Service.Monitor
 
             try
             {
-                Task.WaitAll(hookTasks.ToArray(), cancellationToken);
+                await Task.WhenAll(hookTasks);
             }
             catch (Exception ex)
             {
@@ -226,10 +206,7 @@ namespace Planar.Service.Monitor
                 MessagesParameters = details.MessagesParameters
             };
 
-            if (result.MessagesParameters == null)
-            {
-                result.MessagesParameters = new();
-            }
+            result.MessagesParameters ??= new();
 
             result.Message = result.MessageTemplate;
             foreach (var item in result.MessagesParameters)
@@ -255,7 +232,6 @@ namespace Planar.Service.Monitor
         {
             var key = context.JobDetail.Key;
 
-            using var scope = _serviceScopeFactory.CreateScope();
             var task1 = GetMonitorDataByEvent((int)@event);
             var task2 = GetMonitorDataByGroup((int)@event, key.Group);
             var task3 = GetMonitorDataByJob((int)@event, key.Group, key.Name);
@@ -273,7 +249,6 @@ namespace Planar.Service.Monitor
 
         private async Task<List<MonitorAction>> LoadMonitorItems(MonitorEvents @event)
         {
-            using var scope = _serviceScopeFactory.CreateScope();
             var result = await GetMonitorDataByEvent((int)@event);
             return result;
         }
@@ -322,6 +297,7 @@ namespace Planar.Service.Monitor
             {
                 case MonitorEvents.ExecutionVetoed:
                 case MonitorEvents.ExecutionRetry:
+                case MonitorEvents.ExecutionLastRetryFail:
                 case MonitorEvents.ExecutionFail:
                 case MonitorEvents.ExecutionSuccess:
                 case MonitorEvents.ExecutionStart:
@@ -359,11 +335,11 @@ namespace Planar.Service.Monitor
                     return false;
 
                 case MonitorEvents.ExecutionFailxTimesInRow:
-                    var count1 = await dal.CountFailsInRowForJob(new { JobId = args.JobId, Total = args.Arg });
+                    var count1 = await dal.CountFailsInRowForJob(new { args.JobId, Total = args.Arg });
                     return count1 >= args.Arg;
 
                 case MonitorEvents.ExecutionFailxTimesInHour:
-                    var count2 = await dal.CountFailsInHourForJob(new { JobId = args.JobId });
+                    var count2 = await dal.CountFailsInHourForJob(new { args.JobId });
                     return count2 >= args.Arg;
 
                 case MonitorEvents.ExecutionFailWithEffectedRowsGreaterThanx:

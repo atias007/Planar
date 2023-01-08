@@ -69,6 +69,16 @@ namespace Planar.Controllers
             return CreatedAtAction(nameof(Get), result, result);
         }
 
+        [ApiExplorerSettings(IgnoreApi = true)]
+        [HttpGet("available-jobs")]
+        [SwaggerOperation(OperationId = "put_job_folder", Description = "", Summary = "")]
+        [OkJsonResponse(typeof(List<AvailableJobToAdd>))]
+        public async Task<ActionResult<List<AvailableJobToAdd>>> GetAvailableJobsToAdd()
+        {
+            var result = await BusinesLayer.GetAvailableJobsToAdd();
+            return Ok(result);
+        }
+
         [HttpGet]
         [SwaggerOperation(OperationId = "get_job", Description = "Get all jobs", Summary = "Get All Jobs")]
         [OkJsonResponse(typeof(List<JobRowDetails>))]

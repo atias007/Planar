@@ -1,13 +1,10 @@
-﻿using CommonJob;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
-using Planar.Service.General;
 using Planar.Service.Listeners.Base;
 using Planar.Service.Monitor;
 using Quartz;
-using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,9 +18,9 @@ namespace Planar.Service.Listeners
 
         public string Name => nameof(SchedulerListener);
 
-        public async Task JobAdded(IJobDetail jobDetail, CancellationToken cancellationToken = default)
+        public Task JobAdded(IJobDetail jobDetail, CancellationToken cancellationToken = default)
         {
-            if (IsSystemJob(jobDetail)) { return; }
+            if (IsSystemJob(jobDetail)) { return Task.CompletedTask; }
             var info = new MonitorSystemInfo
             {
                 MessageTemplate = "Job {{JobGroup}}.{{JobName}} (Id: {{JobId}}) with description {{Description}} was added"
@@ -36,31 +33,31 @@ namespace Planar.Service.Listeners
             info.MessagesParameters.Add("Description", jobDetail.Description);
             info.AddMachineName();
 
-            await SafeSystemScan(MonitorEvents.JobAdded, info, null, cancellationToken);
+            return SafeSystemScan(MonitorEvents.JobAdded, info, null);
         }
 
-        public async Task JobDeleted(JobKey jobKey, CancellationToken cancellationToken = default)
+        public Task JobDeleted(JobKey jobKey, CancellationToken cancellationToken = default)
         {
             var info = GetJobKeyMonitorSystemInfo(jobKey, "deleted");
-            await SafeSystemScan(MonitorEvents.JobDeleted, info, null, cancellationToken);
+            return SafeSystemScan(MonitorEvents.JobDeleted, info, null);
         }
 
-        public async Task JobInterrupted(JobKey jobKey, CancellationToken cancellationToken = default)
+        public Task JobInterrupted(JobKey jobKey, CancellationToken cancellationToken = default)
         {
             var info = GetJobKeyMonitorSystemInfo(jobKey, "interrupted");
-            await SafeSystemScan(MonitorEvents.JobInterrupted, info, null, cancellationToken);
+            return SafeSystemScan(MonitorEvents.JobInterrupted, info, null);
         }
 
-        public async Task JobPaused(JobKey jobKey, CancellationToken cancellationToken = default)
+        public Task JobPaused(JobKey jobKey, CancellationToken cancellationToken = default)
         {
             var info = GetJobKeyMonitorSystemInfo(jobKey, "paused");
-            await SafeSystemScan(MonitorEvents.JobPaused, info, null, cancellationToken);
+            return SafeSystemScan(MonitorEvents.JobPaused, info, null);
         }
 
-        public async Task JobResumed(JobKey jobKey, CancellationToken cancellationToken = default)
+        public Task JobResumed(JobKey jobKey, CancellationToken cancellationToken = default)
         {
             var info = GetJobKeyMonitorSystemInfo(jobKey, "resumed");
-            await SafeSystemScan(MonitorEvents.JobPaused, info, null, cancellationToken);
+            return SafeSystemScan(MonitorEvents.JobPaused, info, null);
         }
 
         public Task JobScheduled(ITrigger trigger, CancellationToken cancellationToken = default)
@@ -68,16 +65,16 @@ namespace Planar.Service.Listeners
             return Task.CompletedTask;
         }
 
-        public async Task JobsPaused(string jobGroup, CancellationToken cancellationToken = default)
+        public Task JobsPaused(string jobGroup, CancellationToken cancellationToken = default)
         {
             var info = GetSimpleMonitorSystemInfo("Job group {{JobGroup}} was paused");
-            await SafeSystemScan(MonitorEvents.JobGroupPaused, info, null, cancellationToken);
+            return SafeSystemScan(MonitorEvents.JobGroupPaused, info, null);
         }
 
-        public async Task JobsResumed(string jobGroup, CancellationToken cancellationToken = default)
+        public Task JobsResumed(string jobGroup, CancellationToken cancellationToken = default)
         {
             var info = GetSimpleMonitorSystemInfo("Job group {{JobGroup}} was resumed");
-            await SafeSystemScan(MonitorEvents.JobGroupResumed, info, null, cancellationToken);
+            return SafeSystemScan(MonitorEvents.JobGroupResumed, info, null);
         }
 
         public Task JobUnscheduled(TriggerKey triggerKey, CancellationToken cancellationToken = default)
@@ -90,16 +87,16 @@ namespace Planar.Service.Listeners
             return Task.CompletedTask;
         }
 
-        public async Task SchedulerInStandbyMode(CancellationToken cancellationToken = default)
+        public Task SchedulerInStandbyMode(CancellationToken cancellationToken = default)
         {
             var info = GetSimpleMonitorSystemInfo("Scheduler is in standby mode at {{MachineName}}");
-            await SafeSystemScan(MonitorEvents.SchedulerInStandbyMode, info, null, cancellationToken);
+            return SafeSystemScan(MonitorEvents.SchedulerInStandbyMode, info, null);
         }
 
-        public async Task SchedulerShutdown(CancellationToken cancellationToken = default)
+        public Task SchedulerShutdown(CancellationToken cancellationToken = default)
         {
             var info = GetSimpleMonitorSystemInfo("Scheduler was shutdown at {{MachineName}}");
-            await SafeSystemScan(MonitorEvents.SchedulerInStandbyMode, info, null, cancellationToken);
+            return SafeSystemScan(MonitorEvents.SchedulerInStandbyMode, info, null);
         }
 
         public Task SchedulerShuttingdown(CancellationToken cancellationToken = default)
@@ -107,10 +104,10 @@ namespace Planar.Service.Listeners
             return Task.CompletedTask;
         }
 
-        public async Task SchedulerStarted(CancellationToken cancellationToken = default)
+        public Task SchedulerStarted(CancellationToken cancellationToken = default)
         {
             var info = GetSimpleMonitorSystemInfo("Scheduler was started at {{MachineName}}");
-            await SafeSystemScan(MonitorEvents.SchedulerStarted, info, null, cancellationToken);
+            return SafeSystemScan(MonitorEvents.SchedulerStarted, info, null);
         }
 
         public Task SchedulerStarting(CancellationToken cancellationToken = default)
@@ -128,16 +125,16 @@ namespace Planar.Service.Listeners
             return Task.CompletedTask;
         }
 
-        public async Task TriggerPaused(TriggerKey triggerKey, CancellationToken cancellationToken = default)
+        public Task TriggerPaused(TriggerKey triggerKey, CancellationToken cancellationToken = default)
         {
             var info = GetTriggerKeyMonitorSystemInfo(triggerKey, "paused");
-            await SafeSystemScan(MonitorEvents.TriggerPaused, info, null, cancellationToken);
+            return SafeSystemScan(MonitorEvents.TriggerPaused, info, null);
         }
 
-        public async Task TriggerResumed(TriggerKey triggerKey, CancellationToken cancellationToken = default)
+        public Task TriggerResumed(TriggerKey triggerKey, CancellationToken cancellationToken = default)
         {
             var info = GetTriggerKeyMonitorSystemInfo(triggerKey, "resumed");
-            await SafeSystemScan(MonitorEvents.TriggerResumed, info, null, cancellationToken);
+            return SafeSystemScan(MonitorEvents.TriggerResumed, info, null);
         }
 
         public Task TriggersPaused(string triggerGroup, CancellationToken cancellationToken = default)

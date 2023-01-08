@@ -5,6 +5,7 @@ using Planar.Service.API;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.General;
+using Planar.Service.Monitor;
 using Quartz;
 using System;
 using System.Reflection;
@@ -15,6 +16,31 @@ namespace Planar.Service
     {
         public static IServiceCollection AddPlanarServices(this IServiceCollection services)
         {
+            // Quartz
+            services.AddQuartzService();
+
+            // AutoMapper
+            services.AddAutoMapper(Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));
+
+            // Main Service
+            services.AddTransient<MainService>();
+
+            // Domain layers
+            services.AddScoped<GroupDomain>();
+            services.AddScoped<HistoryDomain>();
+            services.AddScoped<JobDomain>();
+            services.AddScoped<ConfigDomain>();
+            services.AddScoped<ServiceDomain>();
+            services.AddScoped<MonitorDomain>();
+            services.AddScoped<TraceDomain>();
+            services.AddScoped<TriggerDomain>();
+            services.AddScoped<UserDomain>();
+            services.AddScoped<ClusterDomain>();
+
+            // Utils
+            services.AddScoped<ClusterUtil>();
+            services.AddScoped<MonitorUtil>();
+
             // AutoMapper
             services.AddAutoMapper(Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));
 
@@ -50,6 +76,8 @@ namespace Planar.Service
 
         internal static IServiceCollection AddPlanarDataLayerWithContext(this IServiceCollection services)
         {
+            services.AddPlanarDbContext();
+
             services.AddTransient<UserData>();
             services.AddTransient<GroupData>();
             services.AddTransient<MonitorData>();
@@ -60,6 +88,29 @@ namespace Planar.Service
             services.AddTransient<ServiceData>();
             services.AddTransient<JobData>();
             services.AddTransient<IJobPropertyDataLayer, JobData>();
+
+            return services;
+        }
+
+        internal static IServiceCollection AddPlanarMonitorServices(this IServiceCollection services)
+        {
+            services.AddPlanarDbContext();
+            services.AddTransient<MonitorData>();
+
+            // Scheduler
+            services.AddSingleton(p => p.GetRequiredService<ISchedulerFactory>().GetScheduler().Result);
+            services.AddSingleton<SchedulerUtil>();
+            services.AddSingleton<JobKeyHelper>();
+            services.AddSingleton<TriggerKeyHelper>();
+
+            // Utils
+            services.AddScoped<ClusterUtil>();
+            services.AddScoped<MonitorUtil>();
+            return services;
+        }
+
+        private static IServiceCollection AddPlanarDbContext(this IServiceCollection services)
+        {
             services.AddDbContext<PlanarContext>(o => o.UseSqlServer(
                     AppSettings.DatabaseConnectionString,
                     options => options.EnableRetryOnFailure(12, TimeSpan.FromSeconds(5), null)),

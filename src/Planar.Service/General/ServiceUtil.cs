@@ -15,6 +15,8 @@ namespace Planar.Service.General
     public static class ServiceUtil
     {
         public static Dictionary<string, MonitorHookFactory> MonitorHooks { get; private set; } = new();
+        private static bool _disposeFlag;
+        private static readonly object _locker = new();
 
         internal static string GenerateId()
         {
@@ -83,6 +85,12 @@ namespace Planar.Service.General
             return path;
         }
 
+        public static string GetJobsFolder()
+        {
+            var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
+            return path;
+        }
+
         public static string GetJobFilename(string folder, string filename)
         {
             var path = GetJobFolder(folder);
@@ -127,6 +135,16 @@ namespace Planar.Service.General
             var metadata = context.Result as JobExecutionMetadata;
             var result = metadata?.EffectedRows.GetValueOrDefault();
             return result;
+        }
+
+        public static void AddDisposeWarningToLog<T>(ILogger<T> logger)
+        {
+            lock (_locker)
+            {
+                if (_disposeFlag) { return; }
+                logger.LogWarning("Execution of monitor events was canceled due to service dispose");
+                _disposeFlag = true;
+            }
         }
     }
 }
