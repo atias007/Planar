@@ -10,7 +10,7 @@ namespace Planar.Service.Exceptions
         {
         }
 
-        protected PlanarException(SerializationInfo info, StreamingContext context)
+        protected PlanarException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

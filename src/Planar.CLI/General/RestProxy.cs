@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI
 {
-    internal class RestProxy
+    internal static class RestProxy
     {
         public static string Schema { get; set; } = "http";
         public static string Host { get; set; } = "localhost";

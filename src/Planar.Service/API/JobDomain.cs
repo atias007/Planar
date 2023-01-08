@@ -151,9 +151,9 @@ namespace Planar.Service.API
                         result.Add(new AvailableJobToAdd { RelativeFolder = relativeFolder, Name = fullFolder.Name });
                     }
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
-                    continue;
+                    Logger.LogDebug(ex, "Fail to get avaliable job folder info");
                 }
             }
 
