@@ -7,9 +7,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.HttpMonitorHook", "P
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.TeamsMonitorHook", "Planar.TeamsMonitorHook\Planar.TeamsMonitorHook.csproj", "{F6AB2F91-EE38-4657-8C94-90D62DC662A1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.MonitorHook", "..\nuget packages\Planar.MonitorHook\Planar.MonitorHook.csproj", "{1570C5A6-2C54-4DB2-B039-D10F603140AA}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "package", "package", "{1764F5AF-6662-4E39-9E43-E09C28B8120E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Monitor.Hook", "..\nuget packages\Planar.Monitor.Hook\Planar.Monitor.Hook.csproj", "{A7880C13-111A-4FFC-A89C-49DB6630A624}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -25,16 +25,16 @@ Global
 		{F6AB2F91-EE38-4657-8C94-90D62DC662A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6AB2F91-EE38-4657-8C94-90D62DC662A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6AB2F91-EE38-4657-8C94-90D62DC662A1}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1570C5A6-2C54-4DB2-B039-D10F603140AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1570C5A6-2C54-4DB2-B039-D10F603140AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1570C5A6-2C54-4DB2-B039-D10F603140AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1570C5A6-2C54-4DB2-B039-D10F603140AA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7880C13-111A-4FFC-A89C-49DB6630A624}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7880C13-111A-4FFC-A89C-49DB6630A624}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7880C13-111A-4FFC-A89C-49DB6630A624}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7880C13-111A-4FFC-A89C-49DB6630A624}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{1570C5A6-2C54-4DB2-B039-D10F603140AA} = {1764F5AF-6662-4E39-9E43-E09C28B8120E}
+		{A7880C13-111A-4FFC-A89C-49DB6630A624} = {1764F5AF-6662-4E39-9E43-E09C28B8120E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AB111D60-C98F-4AB0-A563-57AFA8FCF45F}
