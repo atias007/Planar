@@ -12,7 +12,7 @@ namespace CommonJob
     public class JobMessageBroker
     {
         private readonly IJobExecutionContext _context;
-        private static readonly object Locker = new();
+        private static readonly object Locker = new object();
 
         public JobMessageBroker(IJobExecutionContext context, Dictionary<string, string> settings)
         {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace Planar.MonitorHook
+namespace Planar.Monitor.Hook
 {
     [Serializable]
     public class PlanarMonitorException : Exception

@@ -9,15 +9,15 @@ namespace CommonJob
 {
     public class JobExecutionMetadata
     {
-        public StringBuilder Log { get; set; } = new();
+        public StringBuilder Log { get; set; } = new StringBuilder();
 
-        public List<ExceptionDto> Exceptions { get; set; } = new();
+        public List<ExceptionDto> Exceptions { get; set; } = new List<ExceptionDto>();
 
         public int? EffectedRows { get; set; }
 
         public byte Progress { get; set; }
 
-        private static readonly object Locker = new();
+        private static readonly object Locker = new object();
 
         public string GetLog()
         {

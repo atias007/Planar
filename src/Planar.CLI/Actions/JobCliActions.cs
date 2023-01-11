@@ -72,13 +72,7 @@ namespace Planar.CLI.Actions
                 e.Name :
                 $"{e.Name} ({e.RelativeFolder})");
 
-            var selectedItem = AnsiConsole.Prompt(
-                 new SelectionPrompt<string>()
-                     .Title("[underline]select job folder from the following list (press enter to select):[/]")
-                     .PageSize(20)
-                     .MoreChoicesText("[grey](Move up and down to reveal more monitor job folders)[/]")
-                     .AddChoices(folders));
-
+            var selectedItem = PromptSelection(folders, "job folder");
             const string template = @"\(([^)]+)\)";
             var regex = new Regex(template, RegexOptions.None, TimeSpan.FromMilliseconds(500));
             var matches = regex.Matches(selectedItem);
@@ -501,11 +495,7 @@ namespace Planar.CLI.Actions
                 .Select(d => $"{d.Group}.{d.Name}")
                 .ToList();
 
-            return AnsiConsole.Prompt(
-                 new SelectionPrompt<string>()
-                     .Title($"[underline]{comment}select job from the following list (press enter to select):[/]")
-                     .PageSize(20)
-                     .AddChoices(jobs));
+            return PromptSelection(jobs, "job");
         }
 
         private static string ShowGroupsMenu(IEnumerable<JobRowDetails> data)
@@ -516,12 +506,7 @@ namespace Planar.CLI.Actions
                 .Distinct()
                 .ToList();
 
-            return AnsiConsole.Prompt(
-                 new SelectionPrompt<string>()
-                     .Title("[underline]first! select group from the following list (press enter to select):[/]")
-                     .PageSize(20)
-                     .MoreChoicesText("[grey](Move up and down to reveal more groups)[/]")
-                     .AddChoices(groups));
+            return PromptSelection(groups, "job group");
         }
 
         public static async Task<string> ChooseTrigger()
@@ -532,7 +517,7 @@ namespace Planar.CLI.Actions
             var result = await RestProxy.Invoke<TriggerRowDetails>(restRequest);
             if (result.IsSuccessful)
             {
-                var jobs = result.Data.SimpleTriggers
+                var triggers = result.Data.SimpleTriggers
                     .OrderBy(d => d.Name)
                     .Select(d => $"{d.Group}.{d.Name}")
                     .Union(
@@ -542,12 +527,7 @@ namespace Planar.CLI.Actions
                     )
                     .ToList();
 
-                return AnsiConsole.Prompt(
-                     new SelectionPrompt<string>()
-                         .Title("[underline]select trigger from the following list (press enter to select):[/]")
-                         .PageSize(10)
-                         .MoreChoicesText("[grey](Move up and down to reveal more triggers)[/]")
-                         .AddChoices(jobs));
+                return PromptSelection(triggers, "trigger");
             }
             else
             {

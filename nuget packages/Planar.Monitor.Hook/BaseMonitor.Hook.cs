@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace Planar.MonitorHook
+namespace Planar.Monitor.Hook
 {
     public abstract class BaseMonitorHook
     {

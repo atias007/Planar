@@ -153,13 +153,7 @@ namespace Planar.CLI.Actions
         private static int GetDistributionGroup(IEnumerable<GroupInfo> groups)
         {
             var groupsNames = groups.Select(group => group.Name);
-
-            var selectedGroup = AnsiConsole.Prompt(
-                 new SelectionPrompt<string>()
-                    .Title("[underline]select distribution group from the following list (press enter to select):[/]")
-                    .PageSize(20)
-                    .MoreChoicesText("[grey](Move up and down to reveal more distribution group)[/]")
-                    .AddChoices(groupsNames));
+            var selectedGroup = PromptSelection(groupsNames, "distribution group");
 
             var group = groups.First(e => e.Name == selectedGroup);
             AnsiConsole.MarkupLine($"[turquoise2]  > Group: [/] {group.Name}");
@@ -170,12 +164,7 @@ namespace Planar.CLI.Actions
         {
             var eventsName = events.Select(e => e.Name);
 
-            var selectedEvent = AnsiConsole.Prompt(
-                 new SelectionPrompt<string>()
-                     .Title("[underline]select monitor event from the following list (press enter to select):[/]")
-                     .PageSize(20)
-                     .MoreChoicesText("[grey](Move up and down to reveal more monitor event)[/]")
-                     .AddChoices(eventsName));
+            var selectedEvent = PromptSelection(eventsName, "monitor event");
 
             var monitorEvent = events.First(e => e.Name == selectedEvent);
             AnsiConsole.MarkupLine($"[turquoise2]  > Event: [/] {monitorEvent.Name}");
@@ -198,12 +187,7 @@ namespace Planar.CLI.Actions
 
         private static string GetHook(IEnumerable<string> hooks)
         {
-            var selectedHook = AnsiConsole.Prompt(
-                 new SelectionPrompt<string>()
-                    .Title("[underline]select hook from the following list (press enter to select):[/]")
-                    .PageSize(20)
-                    .MoreChoicesText("[grey](Move up and down to reveal more hooks)[/]")
-                    .AddChoices(hooks));
+            var selectedHook = PromptSelection(hooks, "hook");
 
             AnsiConsole.MarkupLine($"[turquoise2]  > Hook: [/] {selectedHook}");
 
@@ -217,14 +201,9 @@ namespace Planar.CLI.Actions
                 return new AddMonitorJobData();
             }
 
-            var type = new[] { "single (monitor for single job)", "group (monitor for group of jobs)", "all (monitor for all jobs)" };
+            var types = new[] { "single (monitor for single job)", "group (monitor for group of jobs)", "all (monitor for all jobs)" };
 
-            var selectedEvent = AnsiConsole.Prompt(
-                 new SelectionPrompt<string>()
-                    .Title("[underline]which kind of monitor do you want to create? (press enter to select):[/]")
-                    .PageSize(20)
-                    .MoreChoicesText("[grey](Move up and down to reveal more monitor event)[/]")
-                    .AddChoices(type));
+            var selectedEvent = PromptSelection(types, "monitor type");
 
             selectedEvent = selectedEvent.Split(' ').First();
 
