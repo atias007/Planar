@@ -7,7 +7,7 @@ namespace Planar.Job.Test
     public class MockJobDetails : IJobDetail
     {
         private readonly JobDataMap _jobDataMap;
-        private readonly JobKey _key = new("UnitTest", "Default");
+        private readonly JobKey _key = new JobKey("UnitTest", "Default");
 
         public MockJobDetails()
         {

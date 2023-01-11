@@ -137,6 +137,7 @@ namespace Planar.Controllers
         [JsonConsumes]
         [CreatedResponse]
         [BadRequestResponse]
+        [NotFoundResponse]
         public async Task<IActionResult> AddData([FromBody] JobOrTriggerDataRequest request)
         {
             await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Add);

@@ -2,6 +2,7 @@
 using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Service.API;
+using Swashbuckle.AspNetCore.Annotations;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
@@ -15,21 +16,32 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{triggerId}")]
-        public async Task<ActionResult<TriggerRowDetails>> Get([FromRoute] string triggerId)
+        [SwaggerOperation(OperationId = "get_trigger_triggerid", Description = "Get trigger by id", Summary = "Get Trigger")]
+        [BadRequestResponse]
+        [OkJsonResponse(typeof(TriggerRowDetails))]
+        public async Task<ActionResult<TriggerRowDetails>> Get([FromRoute][Required] string triggerId)
         {
             var result = await BusinesLayer.Get(triggerId);
             return Ok(result);
         }
 
         [HttpGet("{jobId}/byjob")]
-        public async Task<ActionResult<TriggerRowDetails>> GetByJob([FromRoute] string jobId)
+        [SwaggerOperation(OperationId = "get_trigger_jobid_byjob", Description = "Find triggers by job ", Summary = "Find Triggers By Job")]
+        [NotFoundResponse]
+        [BadRequestResponse]
+        [OkJsonResponse(typeof(TriggerRowDetails))]
+        public async Task<ActionResult<TriggerRowDetails>> GetByJob([FromRoute][Required] string jobId)
         {
             var result = await BusinesLayer.GetByJob(jobId);
             return Ok(result);
         }
 
         [HttpDelete("{triggerId}")]
-        public async Task<ActionResult> Delete([FromRoute] string triggerId)
+        [SwaggerOperation(OperationId = "delete_trigger_triggerId", Description = "Delete trigger", Summary = "Delete Trigger")]
+        [NotFoundResponse]
+        [BadRequestResponse]
+        [NoContentResponse]
+        public async Task<ActionResult> Delete([FromRoute][Required] string triggerId)
         {
             await BusinesLayer.Delete(triggerId);
             return NoContent();
@@ -37,6 +49,10 @@ namespace Planar.Controllers
 
         [HttpPost("pause")]
         [JsonConsumes]
+        [SwaggerOperation(OperationId = "post_trigger_pause", Description = "Pause trigger", Summary = "Pause Trigger")]
+        [NotFoundResponse]
+        [BadRequestResponse]
+        [NoContentResponse]
         public async Task<ActionResult> Pause([FromBody] JobOrTriggerKey request)
         {
             await BusinesLayer.Pause(request);
@@ -45,6 +61,10 @@ namespace Planar.Controllers
 
         [HttpPost("resume")]
         [JsonConsumes]
+        [SwaggerOperation(OperationId = "post_trigger_resume", Description = "Resume trigger", Summary = "Resume Trigger")]
+        [NotFoundResponse]
+        [BadRequestResponse]
+        [NoContentResponse]
         public async Task<ActionResult> Resume([FromBody] JobOrTriggerKey request)
         {
             await BusinesLayer.Resume(request);
@@ -53,6 +73,10 @@ namespace Planar.Controllers
 
         [HttpPost("data")]
         [JsonConsumes]
+        [SwaggerOperation(OperationId = "post_trigger_data", Description = "Add trigger data", Summary = "Add Trigger Data")]
+        [CreatedResponse]
+        [NotFoundResponse]
+        [BadRequestResponse]
         public async Task<IActionResult> AddData([FromBody] JobOrTriggerDataRequest request)
         {
             await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Add);
@@ -61,6 +85,10 @@ namespace Planar.Controllers
 
         [HttpPut("data")]
         [JsonConsumes]
+        [SwaggerOperation(OperationId = "put_trigger_data", Description = "Update trigger data", Summary = "Update Trigger Data")]
+        [CreatedResponse]
+        [NotFoundResponse]
+        [BadRequestResponse]
         public async Task<IActionResult> UpdateData([FromBody] JobOrTriggerDataRequest request)
         {
             await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Update);
@@ -68,6 +96,10 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}/data/{key}")]
+        [SwaggerOperation(OperationId = "delete_trigger_id_data_key", Description = "Delete trigger data", Summary = "Delete Trigger Data")]
+        [NoContentResponse]
+        [BadRequestResponse]
+        [NotFoundResponse]
         public async Task<IActionResult> RemoveData([FromRoute][Required] string id, [FromRoute][Required] string key)
         {
             await BusinesLayer.RemoveData(id, key);

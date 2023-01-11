@@ -216,5 +216,36 @@ namespace Planar.CLI.Actions
 
             return prm;
         }
+
+        protected static string PromptSelection(IEnumerable<string> items, string title, bool addCancelOption = true)
+        {
+            const string cancel = "<cancel>";
+
+            IEnumerable<string> finalItems;
+            if (addCancelOption)
+            {
+                var temp = items.ToList();
+                temp.Add(cancel);
+                finalItems = temp;
+            }
+            else
+            {
+                finalItems = items;
+            }
+
+            var selectedItem = AnsiConsole.Prompt(
+                 new SelectionPrompt<string>()
+                     .Title($"[underline][gray]select [/][white]{title?.EscapeMarkup()}[/][gray] from the following list (press [/][blue]enter[/][gray] to select):[/][/]")
+                     .PageSize(20)
+                     .MoreChoicesText($"[grey](Move [/][blue]up[/][grey] and [/][blue]down[/] [grey]to reveal more [/][white]{title?.EscapeMarkup()}s[/])")
+                     .AddChoices(finalItems));
+
+            if (selectedItem == cancel)
+            {
+                throw new CliException("operation was canceled");
+            }
+
+            return selectedItem;
+        }
     }
 }

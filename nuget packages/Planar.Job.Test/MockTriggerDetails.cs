@@ -7,8 +7,8 @@ namespace Planar.Job.Test
     {
         private readonly JobDataMap _triggerDataMap;
         private readonly DateTime _now = DateTime.Now;
-        private readonly TriggerKey _triggerKey = new("UnitTest", "Default");
-        private readonly JobKey _jobKey = new("UnitTest", "Default");
+        private readonly TriggerKey _triggerKey = new TriggerKey("UnitTest", "Default");
+        private readonly JobKey _jobKey = new JobKey("UnitTest", "Default");
 
         public MockTriggerDetails()
         {

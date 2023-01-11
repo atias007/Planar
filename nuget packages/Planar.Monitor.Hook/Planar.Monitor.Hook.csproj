@@ -3,17 +3,17 @@
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
 		<Version>1.1.6</Version>
+		<Description>Library for writing monitor hooks for Planar jobs</Description>
 		<RepositoryType>git</RepositoryType>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-		<Description>Library for writing DotNet jobs for Planar </Description>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-		<Title>Library for writing DotNet jobs for Planar </Title>
+		<Title>Library for writing DotNet unit tests for Planar jobs</Title>
 		<PackageProjectUrl>https://github.com/atias007/Planar</PackageProjectUrl>
-		<PackageIcon>nuget_logo.png</PackageIcon>
+		
 		<RepositoryUrl>https://github.com/atias007/Planar</RepositoryUrl>
 		<PackageTags>planar;job;schedule;task;automation</PackageTags>
-		<IncludeSymbols>False</IncludeSymbols>
+		<PackageIcon>nuget_logo.png</PackageIcon>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
@@ -22,27 +22,20 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
+
 	<ItemGroup>
-		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
+	  <Compile Include="..\Planar.Job\JobExecutionContext\TypeMappingConverter.cs" Link="TypeMappingConverter.cs" />
 	</ItemGroup>
+
 	<ItemGroup>
-	  <None Include="..\..\res\nuget_logo.png">
+	  <None Include="..\..\res\nuget_logo.png" Link="nuget_logo.png">
 	    <Pack>True</Pack>
 	    <PackagePath>\</PackagePath>
 	  </None>
 	</ItemGroup>
-
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
 		<PackageReference Include="System.Text.Json" Version="7.0.1" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Properties\PublishProfiles\" />
 	</ItemGroup>
 
 </Project>

@@ -2,12 +2,12 @@
 using System.Globalization;
 using System.Reflection;
 
-namespace Planar.MonitorHook
+namespace Planar.Monitor.Hook
 {
     internal class MessageBroker
     {
         private object Instance { get; set; }
-        private readonly object Locker = new();
+        private readonly object Locker = new object();
         private readonly MethodInfo _method;
 
         public MessageBroker(object instance)

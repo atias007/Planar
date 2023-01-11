@@ -47,7 +47,7 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}")]
-        [SwaggerOperation(OperationId = "delete_group_id", Description = "Delete group by id", Summary = "Delete Group")]
+        [SwaggerOperation(OperationId = "delete_group_id", Description = "Delete group", Summary = "Delete Group")]
         [NoContentResponse]
         [BadRequestResponse]
         [NotFoundResponse]

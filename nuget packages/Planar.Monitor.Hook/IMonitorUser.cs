@@ -1,4 +1,4 @@
-﻿namespace Planar.MonitorHook
+﻿namespace Planar.Monitor.Hook
 {
     public interface IMonitorUser
     {

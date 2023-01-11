@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Planar.MonitorHook
+namespace Planar.Monitor.Hook
 {
     public interface IMonitor
     {
