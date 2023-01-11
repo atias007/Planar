@@ -481,12 +481,10 @@ namespace Planar.CLI.Actions
         private static string ShowJobsMenu(IEnumerable<JobRowDetails> data, string groupName = null)
         {
             var query = data.AsQueryable();
-            var comment = string.Empty;
 
             if (!string.IsNullOrEmpty(groupName))
             {
                 query = query.Where(d => d.Group.ToLower() == groupName.ToLower());
-                comment = "now! ";
             }
 
             var jobs = query
