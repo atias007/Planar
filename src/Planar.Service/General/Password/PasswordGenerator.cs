@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Planar.Service.Exceptions;
+using System;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
@@ -29,7 +30,7 @@ namespace Planar.Service.General.Password
 
             if (properties.Length < PASSWORD_LENGTH_MIN || properties.Length > PASSWORD_LENGTH_MAX)
             {
-                throw new Exception("Password length must be between 8 and 128.");
+                throw new PlanarException("Password length must be between 8 and 128.");
             }
 
             string characterSet = "";
@@ -62,7 +63,6 @@ namespace Planar.Service.General.Password
             var password = new char[properties.Length];
             var characterSetLength = characterSet.Length;
 
-            //var random = new System.Random();
             for (int characterPosition = 0; characterPosition < properties.Length; characterPosition++)
             {
                 password[characterPosition] = characterSet[RandomNumberGenerator.GetInt32(characterSetLength - 1)];

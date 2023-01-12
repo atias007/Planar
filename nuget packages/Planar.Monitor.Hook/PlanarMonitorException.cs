@@ -22,9 +22,5 @@ namespace Planar.Monitor.Hook
         {
             // ...
         }
-
-        public override void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-        }
     }
 }

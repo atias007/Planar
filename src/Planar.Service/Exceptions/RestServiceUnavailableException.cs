@@ -15,10 +15,5 @@ namespace Planar.Service.Exceptions
         {
             // ...
         }
-
-        public virtual new void GetObjectData(SerializationInfo info, StreamingContext context)
-        {
-            base.GetObjectData(info, context);
-        }
     }
 }

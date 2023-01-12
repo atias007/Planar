@@ -2,11 +2,20 @@
 using Quartz.Impl.Calendar;
 using System;
 using System.IO;
+using System.Runtime.Serialization;
 
 namespace Planar.Calendar
 {
     public abstract class PlanarBaseCalendar : BaseCalendar
     {
+        public PlanarBaseCalendar()
+        {
+        }
+
+        public PlanarBaseCalendar(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
+        }
+
         protected TSettings LoadSettings<TSettings>()
         {
             var parts = GetType().FullName.Split('.');

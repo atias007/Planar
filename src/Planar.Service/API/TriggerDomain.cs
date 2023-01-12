@@ -1,4 +1,5 @@
-﻿using Planar.API.Common.Entities;
+﻿using CommonJob;
+using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
@@ -127,7 +128,7 @@ namespace Planar.Service.API
             var success = await Scheduler.UnscheduleJob(triggerKey);
             if (success == false)
             {
-                throw new ApplicationException("Fail to remove trigger");
+                throw new PlanarException($"Fail to remove trigger {triggerId}");
             }
         }
 

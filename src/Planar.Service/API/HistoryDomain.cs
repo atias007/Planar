@@ -60,41 +60,27 @@ namespace Planar.Service.API
         public async Task<string> GetHistoryDataById(int id)
         {
             var result = await DataLayer.GetHistoryDataById(id);
-            if (string.IsNullOrEmpty(result))
-            {
-                if (await DataLayer.IsHistoryExists(id) == false)
-                {
-                    throw new RestNotFoundException($"history with id {id} not found");
-                }
-            }
 
+            // generate NotFound response
+            await ValidateHistoryExists(id, result);
             return result;
         }
 
         public async Task<string> GetHistoryLogById(int id)
         {
             var result = await DataLayer.GetHistoryLogById(id);
-            if (string.IsNullOrEmpty(result))
-            {
-                if (await DataLayer.IsHistoryExists(id) == false)
-                {
-                    throw new RestNotFoundException($"history with id {id} not found");
-                }
-            }
 
+            // generate NotFound response
+            await ValidateHistoryExists(id, result);
             return result;
         }
 
         public async Task<string> GetHistoryExceptionById(int id)
         {
             var result = await DataLayer.GetHistoryExceptionById(id);
-            if (string.IsNullOrEmpty(result))
-            {
-                if (await DataLayer.IsHistoryExists(id) == false)
-                {
-                    throw new RestNotFoundException($"History with id {id} not found");
-                }
-            }
+
+            // generate NotFound response
+            await ValidateHistoryExists(id, result);
 
             return result;
         }
@@ -104,6 +90,17 @@ namespace Planar.Service.API
             var parameters = new { LastDays = lastDays };
             var result = (await DataLayer.GetLastHistoryCallForJob(parameters)).ToList();
             return result;
+        }
+
+        private async Task ValidateHistoryExists(int id, string result)
+        {
+            if (string.IsNullOrEmpty(result))
+            {
+                if (await DataLayer.IsHistoryExists(id) == false)
+                {
+                    throw new RestNotFoundException($"history with id {id} not found");
+                }
+            }
         }
     }
 }

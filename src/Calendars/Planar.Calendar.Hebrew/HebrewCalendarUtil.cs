@@ -626,7 +626,8 @@ namespace Planar.Calendar.Hebrew
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(EventType), "EventDetail has invalid value");
+                    EventTitle = $"EventType {EventType} is not supported";
+                    break;
             }
         }
 

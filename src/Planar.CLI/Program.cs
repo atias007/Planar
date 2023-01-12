@@ -16,7 +16,7 @@ using Planar.CLI.General;
 
 namespace Planar.CLI
 {
-    internal class Program
+    internal static class Program
     {
         public static void Main(string[] args)
         {

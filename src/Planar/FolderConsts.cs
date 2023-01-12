@@ -12,7 +12,7 @@ namespace Planar
         MonitorHooks
     }
 
-    internal sealed class FolderConsts
+    internal static class FolderConsts
     {
         private const string Data = "Data";
         private const string Settings = "Settings";

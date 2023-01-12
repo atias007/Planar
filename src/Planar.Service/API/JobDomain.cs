@@ -389,12 +389,9 @@ namespace Planar.Service.API
                 stop = await ClusterUtil.StopRunningJob(request.FireInstanceId);
             }
 
-            if (!stop)
+            if (!stop && !await SchedulerUtil.IsRunningInstanceExistOnLocal(request.FireInstanceId))
             {
-                if (!await SchedulerUtil.IsRunningInstanceExistOnLocal(request.FireInstanceId))
-                {
-                    throw new RestNotFoundException($"instance id '{request.FireInstanceId}' is not running");
-                }
+                throw new RestNotFoundException($"instance id '{request.FireInstanceId}' is not running");
             }
 
             return stop;
