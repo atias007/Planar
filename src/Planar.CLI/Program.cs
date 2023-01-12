@@ -378,7 +378,7 @@ namespace Planar.CLI
         private static void WriteInfo()
         {
             AnsiConsole.Write(new FigletText("Planar")
-                    .LeftAligned()
+                    .LeftJustified()
                     .Color(Color.SteelBlue1));
 
             Console.WriteLine($"planar cli v{Version}");
