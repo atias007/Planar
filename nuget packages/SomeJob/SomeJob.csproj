@@ -9,6 +9,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="7.0.2" />
+  </ItemGroup>
+	 
   <ItemGroup>
     <ProjectReference Include="..\Planar.Job\Planar.Job.csproj" />
   </ItemGroup>
