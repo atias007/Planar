@@ -23,6 +23,8 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
+		<Compile Include="..\..\src\Jobs\CommonJob\ExceptionDto.cs" Link="ExceptionDto.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\LogEntity.cs" Link="LogEntity.cs" />
 		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
 	</ItemGroup>
 	<ItemGroup>
