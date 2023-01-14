@@ -8,11 +8,11 @@ namespace Planar.Calendar
 {
     public abstract class PlanarBaseCalendar : BaseCalendar
     {
-        public PlanarBaseCalendar()
+        protected PlanarBaseCalendar()
         {
         }
 
-        public PlanarBaseCalendar(SerializationInfo info, StreamingContext context) : base(info, context)
+        protected PlanarBaseCalendar(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
 
