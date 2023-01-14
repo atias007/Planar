@@ -2,7 +2,7 @@
 
 namespace Planar
 {
-    internal sealed class Consts
+    internal static class Consts
     {
         public const string ConstPrefix = "__";
         public const string QuartzPrefix = "QRTZ_";

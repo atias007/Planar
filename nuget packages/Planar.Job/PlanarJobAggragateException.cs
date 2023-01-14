@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.Serialization;
 
 namespace Planar
 {
@@ -7,6 +8,10 @@ namespace Planar
     {
         public PlanarJobAggragateException(string message)
             : base(message)
+        {
+        }
+
+        public PlanarJobAggragateException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

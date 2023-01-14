@@ -27,7 +27,7 @@ namespace Planar.Service.Exceptions
         {
             if (errors == null || errors.Count == 0)
             {
-                throw new ApplicationException("RestValidationException ctor fail. errors parameter is null or empty");
+                throw new PlanarException("RestValidationException ctor fail. errors parameter is null or empty");
             }
 
             Errors = errors;

@@ -8,7 +8,7 @@ namespace Planar.Service.Data
     {
         protected readonly PlanarContext _context;
 
-        public BaseDataLayer(PlanarContext context)
+        protected BaseDataLayer(PlanarContext context)
         {
             _context = context ?? throw new PlanarJobException(nameof(context));
         }

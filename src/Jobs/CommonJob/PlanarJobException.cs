@@ -10,7 +10,7 @@ namespace CommonJob
         {
         }
 
-        protected PlanarJobException(SerializationInfo info, StreamingContext context)
+        protected PlanarJobException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

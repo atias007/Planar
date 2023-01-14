@@ -46,7 +46,7 @@ namespace Planar.Common
         {
             if (map == null)
             {
-                return null;
+                return new SortedDictionary<string, string>();
             }
 
             var dic = map

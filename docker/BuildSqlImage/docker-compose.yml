@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   planar:
-    image: planar_service:latest
+    image: atias007/planar:latest
     container_name: planar-service
     ports:
       - '2306:2306'

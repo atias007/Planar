@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    public class BaseCliAction
+    public abstract class BaseCliAction
     {
         protected const string JobFileName = "JobFile.yml";
 

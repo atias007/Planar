@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Planar.Service.Exceptions
 {
-    public class RestProblem : IEquatable<RestProblem>
+    public sealed class RestProblem : IEquatable<RestProblem>
     {
         public RestProblem()
         {

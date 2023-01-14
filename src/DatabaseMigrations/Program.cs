@@ -12,7 +12,7 @@ using System.Xml.Linq;
 
 namespace DatabaseMigrations
 {
-    public class Program
+    public static class Program
     {
         private static readonly string ProjectPath = new DirectoryInfo(Path.Combine(RunningPath, "..", "..", "..")).FullName;
 
@@ -185,7 +185,7 @@ namespace DatabaseMigrations
             {
                 var rule = new Rule("Choose running environment")
                 {
-                    Alignment = Justify.Left
+                    Justification = Justify.Left
                 };
                 AnsiConsole.Write(rule);
 
@@ -216,7 +216,7 @@ namespace DatabaseMigrations
             {
                 var rule = new Rule("Choose running mode")
                 {
-                    Alignment = Justify.Left
+                    Justification = Justify.Left
                 };
                 AnsiConsole.Write(rule);
 

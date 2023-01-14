@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using Quartz;
 using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace Planar.Calendar.Hebrew
 {
@@ -16,6 +17,10 @@ namespace Planar.Calendar.Hebrew
         public HebrewCalendar()
         {
             _settings ??= LoadSettings<HebrewCalendarSettings>();
+        }
+
+        public HebrewCalendar(SerializationInfo info, StreamingContext context) : base(info, context)
+        {
         }
 
         public HebrewCalendarSettings Settings

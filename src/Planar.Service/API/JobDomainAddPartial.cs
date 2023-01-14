@@ -191,14 +191,14 @@ namespace Planar.Service.API
             var quartzTriggers1 = BuildTriggerWithSimpleSchedule(job.SimpleTriggers);
             var quartzTriggers2 = BuildTriggerWithCronSchedule(job.CronTriggers);
             var allTriggers = new List<ITrigger>();
-            if (quartzTriggers1 != null) allTriggers.AddRange(quartzTriggers1);
-            if (quartzTriggers2 != null) allTriggers.AddRange(quartzTriggers2);
+            if (quartzTriggers1 != null) { allTriggers.AddRange(quartzTriggers1); }
+            if (quartzTriggers2 != null) { allTriggers.AddRange(quartzTriggers2); }
             return allTriggers;
         }
 
         public static IEnumerable<ITrigger> BuildTriggerWithCronSchedule(List<JobCronTriggerMetadata> triggers)
         {
-            if (triggers.IsNullOrEmpty()) { return null; }
+            if (triggers.IsNullOrEmpty()) { return new List<ITrigger>(); }
 
             var result = triggers.Select(t =>
             {
@@ -213,7 +213,7 @@ namespace Planar.Service.API
 
         public static IEnumerable<ITrigger> BuildTriggerWithSimpleSchedule(List<JobSimpleTriggerMetadata> triggers)
         {
-            if (triggers.IsNullOrEmpty()) return null;
+            if (triggers.IsNullOrEmpty()) { return new List<ITrigger>(); }
 
             var result = triggers.Select(t =>
             {

@@ -14,6 +14,7 @@ COPY ["Calendars/Planar.Calendar.Hebrew/Planar.Calendar.Hebrew.csproj", "Calenda
 COPY ["Jobs/CommonJob/CommonJob.csproj", "Jobs/CommonJob/"]
 COPY ["Jobs/PlanarJob/PlanarJob.csproj", "Jobs/PlanarJob/"]
 COPY ["Jobs/PowerShellJob/PowerShellJob.csproj", "Jobs/PowerShellJob/"]
+COPY ["DatabaseMigrations/DatabaseMigrations.csproj", "DatabaseMigrations/"]
 COPY ["Planar/Planar.csproj", "Planar/"]
 COPY ["Planar.API.Common/Planar.API.Common.csproj", "Planar.API.Common/"]
 COPY ["Planar.CLI/Planar.CLI.csproj", "Planar.CLI/"]
