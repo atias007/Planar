@@ -10,8 +10,15 @@ namespace Planar.Service.MapperProfiles
 {
     internal class TriggerDetailsProfile : Profile
     {
-        public TriggerDetailsProfile(IScheduler scheduler)
+        public TriggerDetailsProfile(IScheduler scheduler, JobKeyHelper jobKeyHelper)
         {
+            CreateMap<ITrigger, PausedTriggerDetails>()
+                .Include<ITrigger, TriggerDetails>()
+                .ForMember(t => t.Id, map => map.MapFrom(s => GetTriggerId(s)))
+                .ForMember(t => t.Name, map => map.MapFrom(s => s.Key.Name))
+                .ForMember(t => t.Group, map => map.MapFrom(s => s.Key.Group))
+                .ForMember(t => t.JobId, map => map.MapFrom(s => jobKeyHelper.GetJobId(s.JobKey).Result));
+
             CreateMap<ITrigger, TriggerDetails>()
                 .Include<ISimpleTrigger, SimpleTriggerDetails>()
                 .Include<ICronTrigger, CronTriggerDetails>()
@@ -19,14 +26,11 @@ namespace Planar.Service.MapperProfiles
                 .ForMember(t => t.End, map => map.MapFrom(s => GetDateTime(s.EndTimeUtc)))
                 .ForMember(t => t.Start, map => map.MapFrom(s => GetDateTime(s.StartTimeUtc)))
                 .ForMember(t => t.FinalFire, map => map.MapFrom(s => GetDateTime(s.FinalFireTimeUtc)))
-                .ForMember(t => t.Group, map => map.MapFrom(s => s.Key.Group))
                 .ForMember(t => t.MayFireAgain, map => map.MapFrom(s => s.GetMayFireAgain()))
-                .ForMember(t => t.Name, map => map.MapFrom(s => s.Key.Name))
                 .ForMember(t => t.NextFireTime, map => map.MapFrom(s => GetDateTime(s.GetNextFireTimeUtc())))
                 .ForMember(t => t.PreviousFireTime, map => map.MapFrom(s => GetDateTime(s.GetPreviousFireTimeUtc())))
                 .ForMember(t => t.DataMap, map => map.MapFrom(s => Global.ConvertDataMapToDictionary(s.JobDataMap)))
-                .ForMember(t => t.State, map => map.MapFrom(s => GetTriggerState(s.Key, scheduler)))
-                .ForMember(t => t.Id, map => map.MapFrom(s => GetTriggerId(s)));
+                .ForMember(t => t.State, map => map.MapFrom(s => GetTriggerState(s.Key, scheduler)));
 
             CreateMap<ISimpleTrigger, SimpleTriggerDetails>()
                 .ForMember(t => t.MisfireBehaviour, map => map.MapFrom(s => GetMisfireInstructionNameForSimpleTrigger(s.MisfireInstruction)));

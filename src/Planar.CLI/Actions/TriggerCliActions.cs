@@ -4,6 +4,7 @@ using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
 using RestSharp;
 using Spectre.Console;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -119,6 +120,16 @@ namespace Planar.CLI.Actions
             }
 
             return new CliActionResponse(result);
+        }
+
+        [Action("all-paused")]
+        public static async Task<CliActionResponse> GetAllPausedTriggers()
+        {
+            var restRequest = new RestRequest("trigger/paused", Method.Get);
+            var result = await RestProxy.Invoke<List<PausedTriggerDetails>>(restRequest);
+
+            var table = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, table);
         }
 
         [Action("data")]

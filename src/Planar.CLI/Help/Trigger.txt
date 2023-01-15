@@ -10,6 +10,8 @@ the options for <command> and [<options>] parameters of trigger module:
  resume          <trigger id>
  remove|delete   <trigger id>
  data            <trigger id> <upsert|remove|clear> [<key>] [<value>]
+ cronexpr        <cron expression>
+ all-paused
 ------------------------------------------------------------------------------
 
 *** <job id> represent job hash id  or job key <[group.]name>              ***

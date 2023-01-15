@@ -6,6 +6,7 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.MapperProfiles;
 using Quartz;
+using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -153,13 +154,32 @@ namespace Planar.Service.API
             }
             catch (FormatException ex)
             {
+                const string errorString = "Error: ";
+                const string doubleSpace = "  ";
+                const string singleSpace = " ";
                 var error = ex.Message?
-                    .Replace("Error: ", string.Empty)
-                    .Replace("  ", " ")
+                    .Replace(errorString, string.Empty)
+                    .Replace(doubleSpace, singleSpace)
                     .ToLowerInvariant();
 
                 throw new RestValidationException(nameof(expression), error);
             }
+        }
+
+        public async Task<IEnumerable<PausedTriggerDetails>> GetPausedTriggers()
+        {
+            var triggers = await Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
+            var pausedKeys = triggers.Where(t => t.Group != Consts.PlanarSystemGroup && Scheduler.GetTriggerState(t).Result == TriggerState.Paused);
+            var tasks = new List<Task<ITrigger>>();
+            foreach (var k in pausedKeys)
+            {
+                tasks.Add(Scheduler.GetTrigger(k));
+            }
+
+            await Task.WhenAll(tasks);
+            var pausedTriggers = tasks.Select(t => t.Result);
+            var result = Mapper.Map<List<PausedTriggerDetails>>(pausedTriggers);
+            return result;
         }
 
         private async Task<TriggerRowDetails> GetTriggerDetails(TriggerKey triggerKey)
