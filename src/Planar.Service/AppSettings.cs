@@ -151,18 +151,15 @@ namespace Planar.Service
 
             if (string.IsNullOrEmpty(DatabaseConnectionString))
             {
-                throw new AppSettingsException($"ERROR: Database connection string could not be initialized\r\nMissing key '{nameof(DatabaseConnectionString)}' or value is empty in AppSettings.json file and there is no environment variable 'Planar_DBCONNSTR'");
+                throw new AppSettingsException($"ERROR: database connection string could not be initialized\r\nMissing key '{nameof(DatabaseConnectionString)}' or value is empty in AppSettings.json file and there is no environment variable 'Planar_DBCONNSTR'");
             }
-
-            CheckConnectionString(DatabaseConnectionString);
-            TestDatabasePermission(DatabaseConnectionString);
         }
 
-        private static void TestDatabasePermission(string connectionString)
+        public static void TestDatabasePermission()
         {
             try
             {
-                using var conn = new SqlConnection(connectionString);
+                using var conn = new SqlConnection(DatabaseConnectionString);
 
                 var cmd = new CommandDefinition(
                     commandText: "admin.TestPermission",
@@ -175,18 +172,19 @@ namespace Planar.Service
             {
                 var sb = new StringBuilder();
                 var seperator = string.Empty.PadLeft(80, '-');
-                sb.AppendLine("Fail to test database permissions");
+                sb.AppendLine("fail to test database permissions");
                 sb.AppendLine(seperator);
-                sb.AppendLine(connectionString);
+                sb.AppendLine(DatabaseConnectionString);
                 sb.AppendLine(seperator);
-                sb.AppendLine("Exception message:");
+                sb.AppendLine("exception message:");
                 sb.AppendLine(ex.Message);
                 throw new AppSettingsException(sb.ToString());
             }
         }
 
-        private static void CheckConnectionString(string connectionString)
+        public static void TestConnectionString()
         {
+            var connectionString = DatabaseConnectionString;
             if (!connectionString.ToLower().Contains("Connection Timeout"))
             {
                 connectionString = $"{connectionString};Connection Timeout=3";
@@ -210,11 +208,11 @@ namespace Planar.Service
             {
                 var sb = new StringBuilder();
                 var seperator = string.Empty.PadLeft(80, '-');
-                sb.AppendLine("Fail to open connection to database using connection string");
+                sb.AppendLine("fail to open connection to database using connection string");
                 sb.AppendLine(seperator);
                 sb.AppendLine(connectionString);
                 sb.AppendLine(seperator);
-                sb.AppendLine("Exception message:");
+                sb.AppendLine("exception message:");
                 sb.AppendLine(ex.Message);
                 throw new AppSettingsException(sb.ToString());
             }

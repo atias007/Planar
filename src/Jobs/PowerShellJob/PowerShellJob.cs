@@ -65,7 +65,7 @@ namespace RunPowerShellJob
 
                 if (ScriptFiles == null || ScriptFiles.Count == 0)
                 {
-                    throw new PlanarJobException($"Property '{nameof(ScriptFiles)}' is mandatory for job '{GetType().FullName}'");
+                    throw new PlanarJobException($"property '{nameof(ScriptFiles)}' is mandatory for job '{GetType().FullName}'");
                 }
 
                 _scripts = new List<string>(ScriptFiles.Count);
@@ -75,7 +75,7 @@ namespace RunPowerShellJob
                     var filename = System.IO.Path.Combine(Path, f);
                     if (!File.Exists(filename))
                     {
-                        throw new PlanarJobException($"Script filename '{filename}' could not be found");
+                        throw new PlanarJobException($"script filename '{filename}' could not be found");
                     }
 
                     var content = File.ReadAllText(filename);

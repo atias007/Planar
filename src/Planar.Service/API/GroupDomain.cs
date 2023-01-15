@@ -51,7 +51,7 @@ namespace Planar.Service.API
             var exists = await DataLayer.IsGroupExists(id);
             if (!exists)
             {
-                throw new RestNotFoundException($"{nameof(Group).ToLower()} with id {id} could not be found");
+                throw new RestNotFoundException($"group with id {id} could not be found");
             }
 
             await ValidateMonitorForGroup(id);
@@ -64,7 +64,7 @@ namespace Planar.Service.API
             }
             catch (DbUpdateConcurrencyException)
             {
-                throw new RestNotFoundException($"{nameof(Group).ToLower()} with id {id} could not be found");
+                throw new RestNotFoundException($"group with id {id} could not be found");
             }
         }
 

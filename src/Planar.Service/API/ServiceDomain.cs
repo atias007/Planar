@@ -69,7 +69,7 @@ namespace Planar.Service.API
 
             if (prop == null)
             {
-                throw new RestNotFoundException($"Key '{key}' was not found in service information");
+                throw new RestNotFoundException($"key '{key}' was not found in service information");
             }
 
             var value = prop.GetValue(info);
@@ -166,7 +166,7 @@ namespace Planar.Service.API
             var verify = HashUtil.VerifyHash(request.Password, user.Password, user.Salt);
             if (!verify)
             {
-                throw new RestValidationException("password", "Wrong password");
+                throw new RestValidationException("password", "wrong password");
             }
 
             return user.Id.ToString();

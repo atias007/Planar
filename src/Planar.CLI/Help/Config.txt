@@ -1,9 +1,12 @@
-﻿usage: planar param <command> [<options>]
+﻿usage: planar-cli param <command> [<options>]
 
 the options for <command> and [<options>] parameters of param module:
 
-ls|list 
-get            <key>
-add|upsert     <key> <value>
-remove|delete  <key>
-flush
+ <command>       <options>
+-------------------------------
+ ls|list        
+ get             <key>
+ add|upsert      <key> <value>
+ remove|delete   <key>
+ flush          
+-------------------------------

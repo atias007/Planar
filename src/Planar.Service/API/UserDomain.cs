@@ -66,7 +66,7 @@ namespace Planar.Service.API
             }
             catch (DbUpdateConcurrencyException)
             {
-                throw new RestNotFoundException($"{nameof(Group)} entity could not be found");
+                throw new RestNotFoundException($"user with id {id} could not be found");
             }
         }
 

@@ -7,6 +7,7 @@
         ListScripts,
         DemoExecute,
         PullRequestReady,
-        Execute
+        Execute,
+        EnsureDatabase
     }
 }

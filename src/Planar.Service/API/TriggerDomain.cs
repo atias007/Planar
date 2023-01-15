@@ -128,7 +128,7 @@ namespace Planar.Service.API
             var success = await Scheduler.UnscheduleJob(triggerKey);
             if (success == false)
             {
-                throw new PlanarException($"Fail to remove trigger {triggerId}");
+                throw new PlanarException($"fail to remove trigger {triggerId}");
             }
         }
 
@@ -192,7 +192,7 @@ namespace Planar.Service.API
         {
             if (Helpers.TriggerKeyHelper.IsSystemTriggerKey(triggerKey))
             {
-                throw new RestValidationException("triggerId", "Forbidden: this is system trigger and it should not be modified or deleted");
+                throw new RestValidationException("triggerId", "forbidden: this is system trigger and it should not be modified or deleted");
             }
         }
 

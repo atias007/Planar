@@ -1,8 +1,11 @@
-﻿usage: planar trace <command> [<options>]
+﻿usage: planar-cli trace <command> [<options>]
 
 the options for <command> and [<options>] parameters of trace module:
 
-ls|list     [-r|--rows <rows>] [-a|--asc] [-f|--from <from date>] [-t|--to <to date>]
-            [-l|--level <Verbose|Debug|Information|Warning|Error|Fatal>]
-ex          <id>
-prop        <id>
+ <command>   <options>
+----------------------------------------------------------------------------------------
+ ls|list     [-r|--rows <rows>] [-a|--asc] [-f|--from <from date>] [-t|--to <to date>]
+             [-l|--level <Verbose|Debug|Information|Warning|Error|Fatal>]
+ ex          <id>
+ prop        <id>
+ ----------------------------------------------------------------------------------------

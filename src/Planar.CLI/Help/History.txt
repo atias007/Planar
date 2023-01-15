@@ -1,11 +1,15 @@
-﻿usage: planar history <command> [<options>]
+﻿usage: planar-cli history <command> [<options>]
 
 the options for <command> and [<options>] parameters of history module:
 
-ls|list      [-r|--rows <rows>] [-d|--desc] [-f|--from <from date>] [-t|--to <to date>] 
-             [-s|--status <Running|Success|Fail|Veto>]
-last         [<days>]
-get          <id>
-data         <id>
-log          <id>
-exception    <id>
+ <command>   <options>
+-------------------------------------------------------------------------
+ ls|list     [-r|--rows <rows>] [-a|--asc] [-f|--from <from date>] 
+             [-t|--to <to date>] [-s|--status <Running|Success|Fail|Veto>] 
+             [-j|--job <id>] [-jb|job-group <job group>]
+ last        [<days>]
+ get         <id>
+ data        <id>
+ log         <id>
+ exception   <id>
+-------------------------------------------------------------------------

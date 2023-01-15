@@ -26,7 +26,7 @@ namespace Planar.Service.API
             }
             catch (DbUpdateConcurrencyException)
             {
-                throw new RestNotFoundException($"Parameter with key '{key}' not found");
+                throw new RestNotFoundException($"global config with key '{key}' not found");
             }
         }
 
@@ -43,7 +43,7 @@ namespace Planar.Service.API
 
             if (data == null)
             {
-                throw new RestNotFoundException($"Parameter with key '{key}' not found");
+                throw new RestNotFoundException($"global config with key '{key}' not found");
             }
 
             return data;

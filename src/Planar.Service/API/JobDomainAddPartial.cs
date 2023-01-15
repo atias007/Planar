@@ -119,7 +119,7 @@ namespace Planar.Service.API
             catch (Exception ex)
             {
                 var filename = GetJobFileFullName(folder);
-                throw new RestGeneralException($"Fail to deserialize file: {filename}", ex);
+                throw new RestGeneralException($"fail to deserialize file: {filename}", ex);
             }
 
             return dynamicRequest;
@@ -136,7 +136,7 @@ namespace Planar.Service.API
             }
             catch (Exception ex)
             {
-                throw new RestGeneralException($"Fail to read file: {filename}", ex);
+                throw new RestGeneralException($"fail to read file: {filename}", ex);
             }
 
             return yml;
@@ -640,7 +640,7 @@ namespace Planar.Service.API
             }
             catch (Exception ex)
             {
-                throw new RestValidationException("jobType", $"Fail to get type {job.JobType} from assemly {assembly.FullName} ({ex.Message})");
+                throw new RestValidationException("jobType", $"fail to get type {job.JobType} from assemly {assembly.FullName} ({ex.Message})");
             }
         }
 

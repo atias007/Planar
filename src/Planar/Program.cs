@@ -13,6 +13,8 @@ namespace Planar
             DataFolderInitializer.CreateFolderAndFiles();
             AppSettingsInitializer.Initialize();
             DatabaseMigrationInitializer.RunMigration();
+            AppSettingsInitializer.TestDatabaseConnection();
+            AppSettingsInitializer.TestDatabasePermission();
             var app = WebApplicationInitializer.Initialize(args);
             WebApplicationInitializer.Configure(app);
             ContentInitializer.MapContent(app);

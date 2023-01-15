@@ -64,7 +64,7 @@ namespace Planar.CLI.Actions
         {
             if (!data.Any())
             {
-                throw new CliException("no available jobs found on server");
+                throw new CliWarningException("no available jobs found on server");
             }
 
             var folders = data.Select(e =>
@@ -341,6 +341,8 @@ namespace Planar.CLI.Actions
         [Action("delete")]
         public static async Task<CliActionResponse> RemoveJob(CliJobOrTriggerKey jobKey)
         {
+            if (!ConfirmAction($"remove job id {jobKey}")) { return CliActionResponse.Empty; }
+
             var restRequest = new RestRequest("job/{id}", Method.Delete)
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
 
@@ -433,6 +435,8 @@ namespace Planar.CLI.Actions
                     break;
 
                 case JobDataActions.remove:
+                    if (!ConfirmAction($"remove data with key '{request.DataKey}' from job {request.Id}")) { return CliActionResponse.Empty; }
+
                     var restRequest2 = new RestRequest("job/{id}/data/{key}", Method.Delete)
                         .AddParameter("id", request.Id, ParameterType.UrlSegment)
                         .AddParameter("key", request.DataKey, ParameterType.UrlSegment);
@@ -441,7 +445,7 @@ namespace Planar.CLI.Actions
                     break;
 
                 default:
-                    throw new CliValidationException($"Action {request.Action} is not supported for this command");
+                    throw new CliValidationException($"action {request.Action} is not supported for this command");
             }
 
             AssertJobDataUpdated(result, request.Id);
@@ -622,7 +626,7 @@ namespace Planar.CLI.Actions
             if (instanceId == null || instanceId.Data == null)
             {
                 AnsiConsole.WriteLine();
-                throw new CliException("Could not found running instance id");
+                throw new CliException("could not found running instance id");
             }
 
             AnsiConsole.MarkupLine($"[turquoise2]{instanceId.Data.InstanceId}[/]");
@@ -667,7 +671,7 @@ namespace Planar.CLI.Actions
             if (status.Data == null)
             {
                 Console.WriteLine();
-                throw new CliException($"Could not found log data for log id {logId}");
+                throw new CliException($"could not found log data for log id {logId}");
             }
 
             var finalSpan = TimeSpan.FromMilliseconds(status.Data.Duration.GetValueOrDefault());

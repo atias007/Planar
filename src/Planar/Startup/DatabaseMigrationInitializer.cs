@@ -34,6 +34,8 @@ namespace Planar.Startup
             {
                 Console.WriteLine("[x] Run database migration");
 
+                EnsureDatabase.For.SqlDatabase(AppSettings.DatabaseConnectionString);
+
                 var engine =
                     DeployChanges.To
                         .SqlDatabase(AppSettings.DatabaseConnectionString)

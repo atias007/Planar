@@ -71,7 +71,7 @@ namespace Planar
 
                 if (!File.Exists(AssemblyFilename))
                 {
-                    throw new PlanarJobException($"Assembly filename '{AssemblyFilename}' could not be found");
+                    throw new PlanarJobException($"assembly filename '{AssemblyFilename}' could not be found");
                 }
             }
             catch (Exception ex)
@@ -88,35 +88,35 @@ namespace Planar
 
             if (type == null)
             {
-                throw new PlanarJobException($"Type '{Properties.ClassName}' could not be found at assembly '{AssemblyFilename}'");
+                throw new PlanarJobException($"type '{Properties.ClassName}' could not be found at assembly '{AssemblyFilename}'");
             }
 
             var baseTypeName = type.BaseType?.FullName;
             if (baseTypeName != $"{nameof(Planar)}.BaseJob")
             {
-                throw new PlanarJobException($"Type '{Properties.ClassName}' from assembly '{AssemblyFilename}' not inherit 'Planar.Job.BaseJob' type");
+                throw new PlanarJobException($"type '{Properties.ClassName}' from assembly '{AssemblyFilename}' not inherit 'Planar.Job.BaseJob' type");
             }
 
             var method = type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance);
             if (method == null)
             {
-                throw new PlanarJobException($"Type '{Properties.ClassName}' from assembly '{AssemblyFilename}' has no 'Execute' method");
+                throw new PlanarJobException($"type '{Properties.ClassName}' from assembly '{AssemblyFilename}' has no 'Execute' method");
             }
 
             if (method.ReturnType != typeof(Task))
             {
-                throw new PlanarJobException($"Method 'Execute' at type '{Properties.ClassName}' from assembly '{AssemblyFilename}' has no 'Task' return type (current return type is {method.ReturnType.FullName})");
+                throw new PlanarJobException($"method 'Execute' at type '{Properties.ClassName}' from assembly '{AssemblyFilename}' has no 'Task' return type (current return type is {method.ReturnType.FullName})");
             }
 
             var parameters = method.GetParameters();
             if (parameters?.Length != 1)
             {
-                throw new PlanarJobException($"Method 'Execute' at type '{Properties.ClassName}' from assembly '{AssemblyFilename}' must have only 1 parameters (current parameters count {parameters?.Length})");
+                throw new PlanarJobException($"method 'Execute' at type '{Properties.ClassName}' from assembly '{AssemblyFilename}' must have only 1 parameters (current parameters count {parameters?.Length})");
             }
 
             if (!parameters[0].ParameterType.ToString().StartsWith("System.Object"))
             {
-                throw new PlanarJobException($"Second parameter in method 'Execute' at type '{Properties.ClassName}' from assembly '{AssemblyFilename}' must be object. (current type '{parameters[1].ParameterType.Name}')");
+                throw new PlanarJobException($"second parameter in method 'Execute' at type '{Properties.ClassName}' from assembly '{AssemblyFilename}' must be object. (current type '{parameters[1].ParameterType.Name}')");
             }
 
             return method;

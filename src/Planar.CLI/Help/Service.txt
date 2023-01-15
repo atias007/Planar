@@ -1,14 +1,17 @@
-﻿usage: planar service <command> [<options>]
+﻿usage: planar-cli service <command> [<options>]
 
 the options for <command> and [<options>] parameters of service module:
 
-login             <host> <port> [--ssl|-s] [--user|-s <user>] [--password|w <password>] 
-                  [--remember|-r] [--remember-days|-rd]
-health-check|hc
-info              [<key>]
-version
-stop
-start
-env
-loglevel
-calendars
+ <command>         <options>
+----------------------------------------------------------------------------------------
+ login             <host> <port> [--ssl|-s] [--user|-s <user>] [--password|w <password>]
+                   [--remember|-r] [--remember-days|-rd]
+ health-check|hc   
+ info              [<key>]
+ version
+ stop
+ start
+ env
+ loglevel
+ calendars
+----------------------------------------------------------------------------------------

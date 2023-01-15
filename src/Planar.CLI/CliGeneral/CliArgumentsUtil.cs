@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using Planar.CLI.Actions;
+﻿using Planar.CLI.Actions;
 using Planar.CLI.Attributes;
 using Planar.CLI.Exceptions;
 using Planar.CLI.General;
@@ -62,7 +61,7 @@ namespace Planar.CLI
 
             if (list.Count == 1)
             {
-                throw new CliValidationException($"missing command for module '{list[0]}'\r\n. command line format is 'Planar <module> <command> [<options>]'");
+                throw new CliValidationException($"missing command for module '{list[0]}'\r\n. command line format is 'planar-cli <module> <command> [<options>]'");
             }
 
             if (!cliActionsMetadata.Any(a => a.Command.Any(c => c?.ToLower() == list[1].ToLower())))
@@ -151,7 +150,7 @@ namespace Planar.CLI
 
             if (matchProp == null)
             {
-                throw new CliValidationException($"Argument '{a.Key}' is not supported with command '{action.Command.FirstOrDefault()}' at module '{action.Module}'");
+                throw new CliValidationException($"argument '{a.Key}' is not supported with command '{action.Command.FirstOrDefault()}' at module '{action.Module}'");
             }
 
             if (a.Key.StartsWith("-") && string.IsNullOrEmpty(a.Value))
@@ -240,7 +239,7 @@ namespace Planar.CLI
             }
             catch (Exception)
             {
-                throw new CliException($"Value '{value}' has wrong format for type '{prop.PropertyType.Name}' of property {prop.Name}");
+                throw new CliException($"value '{value}' has wrong format for type '{prop.PropertyType.Name}' of property {prop.Name}");
             }
         }
     }

@@ -20,7 +20,7 @@
                 return result;
             }
 
-            throw new CliException($"Fail to parse '{fullname}' to job key");
+            throw new CliException($"fail to parse '{fullname}' to job key");
         }
     }
 }

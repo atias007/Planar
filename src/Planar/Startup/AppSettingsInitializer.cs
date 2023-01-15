@@ -59,5 +59,15 @@ namespace Planar.Startup
                 Environment.Exit(-1);
             }
         }
+
+        public static void TestDatabaseConnection()
+        {
+            AppSettings.TestConnectionString();
+        }
+
+        public static void TestDatabasePermission()
+        {
+            AppSettings.TestDatabasePermission();
+        }
     }
 }

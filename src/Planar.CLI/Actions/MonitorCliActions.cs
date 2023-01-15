@@ -1,7 +1,6 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
-using Planar.CLI.Exceptions;
 using Planar.CLI.General;
 using RestSharp;
 using Spectre.Console;
@@ -42,6 +41,8 @@ namespace Planar.CLI.Actions
         [Action("delete")]
         public static async Task<CliActionResponse> DeleteMonitor(CliGetByIdRequest request)
         {
+            if (!ConfirmAction($"remove monitor id {request.Id}")) { return CliActionResponse.Empty; }
+
             var restRequest = new RestRequest("monitor/{id}", Method.Delete)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
             var result = await RestProxy.Invoke(restRequest);
@@ -276,17 +277,17 @@ namespace Planar.CLI.Actions
 
             if (!jobs.Data.Any())
             {
-                throw new CliValidationException("there are no jobs for monitoring");
+                throw new CliWarningException("there are no jobs for monitoring");
             }
 
             if (!hooks.Data.Any())
             {
-                throw new CliValidationException("there are no monitor hooks define in service");
+                throw new CliWarningException("there are no monitor hooks define in service");
             }
 
             if (!groups.Data.Any())
             {
-                throw new CliValidationException("there are no distribution groups define in service");
+                throw new CliWarningException("there are no distribution groups define in service");
             }
 
             return data;

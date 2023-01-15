@@ -80,6 +80,8 @@ namespace Planar.CLI.Actions
         [Action("remove")]
         public static async Task<CliActionResponse> RemoveTrigger(CliJobOrTriggerKey request)
         {
+            if (!ConfirmAction($"remove trigger id {request.Id}")) { return CliActionResponse.Empty; }
+
             var restRequest = new RestRequest("trigger/{triggerId}", Method.Delete)
                 .AddParameter("triggerId", request.Id, ParameterType.UrlSegment);
 
@@ -129,6 +131,7 @@ namespace Planar.CLI.Actions
                     break;
 
                 case JobDataActions.remove:
+                    if (!ConfirmAction($"remove data with key '{request.DataKey}' from trigger {request.Id}")) { return CliActionResponse.Empty; }
                     var restRequest2 = new RestRequest("trigger/{id}/data/{key}", Method.Delete)
                         .AddParameter("id", request.Id, ParameterType.UrlSegment)
                         .AddParameter("key", request.DataKey, ParameterType.UrlSegment);
@@ -137,7 +140,7 @@ namespace Planar.CLI.Actions
                     break;
 
                 default:
-                    throw new CliValidationException($"Action {request.Action} is not supported for this command");
+                    throw new CliValidationException($"action {request.Action} is not supported for this command");
             }
 
             AssertTriggerUpdated(result, request.Id);

@@ -60,6 +60,8 @@ namespace Planar.CLI.Actions
         [Action("delete")]
         public static async Task<CliActionResponse> RemoveConfig(CliConfigKeyRequest request)
         {
+            if (!ConfirmAction($"remove config '{request.Key}'")) { return CliActionResponse.Empty; }
+
             var restRequest = new RestRequest("config/{key}", Method.Delete)
                 .AddParameter("key", request.Key, ParameterType.UrlSegment);
             return await Execute(restRequest);

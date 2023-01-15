@@ -228,7 +228,8 @@ namespace DatabaseMigrations
                         "Validate",
                         "List Scripts",
                         "Demo Execute",
-                        "Execute"
+                        "Execute",
+                        "Ensure Database"
                     }));
             }
             else
@@ -279,6 +280,12 @@ namespace DatabaseMigrations
 
             var environment = GetRunningEnvironment(args);
             var connectionString = GetConnectionString(environment);
+
+            if (mode == RunningMode.EnsureDatabase)
+            {
+                EnsureDatabase.For.SqlDatabase(connectionString);
+                return;
+            }
 
             var builder =
                 DeployChanges.To

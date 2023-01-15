@@ -13,6 +13,7 @@ using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
 using Planar.CLI.General;
+using System.Text;
 
 namespace Planar.CLI
 {
@@ -93,9 +94,10 @@ namespace Planar.CLI
                 cliArgument = new CliArgumentsUtil(args);
 
                 var console = Activator.CreateInstance(action.Method.DeclaringType);
+                var requestType = action.GetRequestType();
                 CliActionResponse response;
 
-                if (action.GetRequestType == null)
+                if (requestType == null)
                 {
                     try
                     {
@@ -108,7 +110,7 @@ namespace Planar.CLI
                 }
                 else
                 {
-                    var param = cliArgument.GetRequest(action.GetRequestType(), action);
+                    var param = cliArgument.GetRequest(requestType, action);
                     var itMode = param is IIterative itParam && itParam.Iterative;
 
                     if (itMode)
@@ -183,7 +185,14 @@ namespace Planar.CLI
 
             if (string.IsNullOrEmpty(finaleException.Message) == false)
             {
-                AnsiConsole.MarkupLine($"[red]error: {Markup.Escape(finaleException.Message)}[/]");
+                if (finaleException is CliWarningException)
+                {
+                    AnsiConsole.MarkupLine($"{CliTableFormat.WarningColor}warning: {Markup.Escape(finaleException.Message)}[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"{CliTableFormat.ErrorColor}error: {Markup.Escape(finaleException.Message)}[/]");
+                }
             }
         }
 
@@ -275,6 +284,7 @@ namespace Planar.CLI
 
         private static void InteractiveMode(IEnumerable<CliActionMetadata> cliActions)
         {
+            BaseCliAction.InteractiveMode = true;
             var command = string.Empty;
             Console.Clear();
             WriteInfo();
@@ -381,17 +391,27 @@ namespace Planar.CLI
                     .LeftJustified()
                     .Color(Color.SteelBlue1));
 
-            Console.WriteLine($"planar cli v{Version}");
-            Console.WriteLine("-------------------------");
-            Console.WriteLine("usage: planar <module> <command> [<options>]");
+            Console.WriteLine(GetHelpHeader());
+            Console.WriteLine("usage: planar-cli <module> <command> [<options>]");
             Console.WriteLine();
-            Console.WriteLine("use 'planar <module> --help' to see all avalible commands and options");
+            Console.WriteLine("use 'planar-cli <module> --help' to see all avalible commands and options");
 
             using Stream stream = typeof(Program).Assembly.GetManifestResourceStream("Planar.CLI.Help.Modules.txt");
             using StreamReader reader = new(stream);
             string result = reader.ReadToEnd();
             Console.WriteLine(result);
             Console.WriteLine();
+        }
+
+        public static string GetHelpHeader()
+        {
+            const string seperator = "-------------------------";
+            var sb = new StringBuilder();
+            sb.AppendLine();
+            sb.AppendLine(seperator);
+            sb.AppendLine($"planar cli v{Version}");
+            sb.AppendLine(seperator);
+            return sb.ToString();
         }
 
         private static void WriteInfo(string message)
