@@ -50,7 +50,7 @@ namespace Planar.Common
             }
 
             var dic = map
-                .Where(k => k.Key.StartsWith(Consts.ConstPrefix) == false && k.Key.StartsWith(Consts.QuartzPrefix) == false)
+                .Where(k => !k.Key.StartsWith(Consts.ConstPrefix) && !k.Key.StartsWith(Consts.QuartzPrefix))
                 .OrderBy(k => k.Key)
                 .ToDictionary(k => k.Key, v => Convert.ToString(v.Value));
 

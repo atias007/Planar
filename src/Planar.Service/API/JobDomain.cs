@@ -204,6 +204,7 @@ namespace Planar.Service.API
             foreach (var t in triggers)
             {
                 var state = await Scheduler.GetTriggerState(t.Key);
+                if (state == TriggerState.Paused) { continue; }
                 var prev = t.GetPreviousFireTimeUtc();
                 if (prev == null) { continue; }
                 var prevDate = prev.Value.LocalDateTime;
@@ -399,7 +400,7 @@ namespace Planar.Service.API
 
         private static void ValidateDataKeyExists(IJobDetail details, string key, string jobId)
         {
-            if (details == null || details.JobDataMap.ContainsKey(key) == false)
+            if (details == null || !details.JobDataMap.ContainsKey(key))
             {
                 throw new RestValidationException($"{key}", $"data with Key '{key}' could not found in job '{jobId}' (Name '{details?.Key.Name}' and Group '{details?.Key.Group}')");
             }
@@ -410,7 +411,7 @@ namespace Planar.Service.API
             var key = await JobKeyHelper.GetJobKeyById(jobId);
             var dal = Resolve<MonitorData>();
             await dal.DeleteMonitorByJobId(key.Group, key.Name);
-            if (await JobGroupExists(jobGroup) == false)
+            if (!await JobGroupExists(jobGroup))
             {
                 await dal.DeleteMonitorByJobGroup(jobGroup);
             }

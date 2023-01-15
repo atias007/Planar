@@ -24,7 +24,7 @@ namespace Planar.Filters
 
             problems.ForEach(i =>
             {
-                if (result.Errors.Contains(i) == false)
+                if (!result.Errors.Contains(i))
                 {
                     result.Errors.Add(i);
                 }

@@ -406,7 +406,7 @@ namespace Planar.Service.API
             foreach (var p in config)
             {
                 await configDomain.Upsert(p);
-            };
+            }
         }
 
         private static JobKey ValidateJobMetadata(SetJobRequest metadata)

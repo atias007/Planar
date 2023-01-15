@@ -451,13 +451,13 @@ namespace Planar.Service.General
 
         private static async Task CallStopSchedulerService(ClusterNode node)
         {
-            var client = GetClient(node); ;
+            var client = GetClient(node);
             await client.StopSchedulerAsync(new Empty(), deadline: GrpcDeadLine);
         }
 
         private static async Task<IsJobAssestsExistReply> CallIsJobFolderExistsService(ClusterNode node, string folder)
         {
-            var client = GetClient(node); ;
+            var client = GetClient(node);
             var request = new IsJobAssestsExistRequest { Folder = folder };
             var result = await client.IsJobFolderExistAsync(request, deadline: GrpcDeadLine);
             return result;
@@ -465,7 +465,7 @@ namespace Planar.Service.General
 
         private static async Task<IsJobAssestsExistReply> CallIsJobFileExistsService(ClusterNode node, string folder, string filename)
         {
-            var client = GetClient(node); ;
+            var client = GetClient(node);
             var request = new IsJobAssestsExistRequest { Folder = folder, Filename = filename };
             var result = await client.IsJobFileExistAsync(request, deadline: GrpcDeadLine);
             return result;

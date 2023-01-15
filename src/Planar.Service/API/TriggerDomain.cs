@@ -128,7 +128,7 @@ namespace Planar.Service.API
             ValidateSystemTrigger(triggerKey);
             await Scheduler.PauseTrigger(triggerKey);
             var success = await Scheduler.UnscheduleJob(triggerKey);
-            if (success == false)
+            if (!success)
             {
                 throw new PlanarException($"fail to remove trigger {triggerId}");
             }

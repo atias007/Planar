@@ -200,7 +200,7 @@ namespace DatabaseMigrations
             }
 
             var success = Enum.TryParse<RunningEnvironment>(envText, out var env);
-            if (success == false)
+            if (!success)
             {
                 WriteError($"argument '{envText}' is not valid running environment");
                 AssertStatus();
@@ -238,7 +238,7 @@ namespace DatabaseMigrations
             }
 
             var success = Enum.TryParse<RunningMode>(modeText.Replace(" ", string.Empty), out var mode);
-            if (success == false)
+            if (!success)
             {
                 WriteError($"argument '{modeText}' is not valid running mode");
             }
@@ -432,17 +432,5 @@ namespace DatabaseMigrations
             Console.WriteLine($"- {text}");
             Console.ResetColor();
         }
-
-        ////private static void WriteWarning(string text)
-        ////{
-        ////    Console.ForegroundColor = ConsoleColor.DarkYellow;
-        ////    Console.WriteLine($"      --> {text}");
-        ////    Console.ResetColor();
-
-        ////    if (_status != Status.Error)
-        ////    {
-        ////        _status = Status.Warning;
-        ////    }
-        ////}
     }
 }

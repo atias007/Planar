@@ -614,7 +614,7 @@ namespace Planar.CLI.Actions
             for (int i = 0; i < 20; i++)
             {
                 instanceId = await GetLastInstanceId(request.Id, invokeDate);
-                if (instanceId.IsSuccessful == false)
+                if (!instanceId.IsSuccessful)
                 {
                     return (new CliActionResponse(instanceId), null, 0);
                 }
@@ -639,7 +639,7 @@ namespace Planar.CLI.Actions
                 .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
             var runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest);
 
-            if (runResult.IsSuccessful == false) { return new CliActionResponse(runResult); }
+            if (!runResult.IsSuccessful) { return new CliActionResponse(runResult); }
             Console.WriteLine();
             var sleepTime = 2000;
             while (runResult.Data != null)
@@ -649,7 +649,7 @@ namespace Planar.CLI.Actions
                 AnsiConsole.MarkupLine($" [gold3_1][[x]][/] Progress: [wheat1]{runResult.Data.Progress}[/]%  |  Effected Row(s): [wheat1]{runResult.Data.EffectedRows.GetValueOrDefault()}  |  Run Time: {CliTableFormat.FormatTimeSpan(span)}[/]     ");
                 Thread.Sleep(sleepTime);
                 runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest);
-                if (runResult.IsSuccessful == false) { break; }
+                if (!runResult.IsSuccessful) { break; }
                 if (span.TotalMinutes >= 5) { sleepTime = 10000; }
                 else if (span.TotalMinutes >= 15) { sleepTime = 20000; }
                 else if (span.TotalMinutes >= 30) { sleepTime = 30000; }
@@ -667,7 +667,7 @@ namespace Planar.CLI.Actions
                 .AddParameter("id", logId, ParameterType.UrlSegment);
             var status = await RestProxy.Invoke<GetTestStatusResponse>(restTestRequest);
 
-            if (status.IsSuccessful == false) { return new CliActionResponse(status); }
+            if (!status.IsSuccessful) { return new CliActionResponse(status); }
             if (status.Data == null)
             {
                 Console.WriteLine();

@@ -94,12 +94,9 @@ namespace Planar.Service.API
 
         private async Task ValidateHistoryExists(int id, string result)
         {
-            if (string.IsNullOrEmpty(result))
+            if (string.IsNullOrEmpty(result) && !await DataLayer.IsHistoryExists(id))
             {
-                if (await DataLayer.IsHistoryExists(id) == false)
-                {
-                    throw new RestNotFoundException($"history with id {id} not found");
-                }
+                throw new RestNotFoundException($"history with id {id} not found");
             }
         }
     }

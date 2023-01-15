@@ -25,7 +25,7 @@ namespace Planar.CLI.Actions
             var result = await RestProxy.Invoke<TriggerRowDetails>(restRequest);
             CliActionResponse response = new(result);
 
-            if (result.IsSuccessful == false)
+            if (!result.IsSuccessful)
             {
                 return response;
             }
@@ -58,7 +58,7 @@ namespace Planar.CLI.Actions
 
             var result = await RestProxy.Invoke<TriggerRowDetails>(restRequest);
 
-            if (result.IsSuccessful == false)
+            if (!result.IsSuccessful)
             {
                 CliActionResponse response = new(result);
                 return response;
