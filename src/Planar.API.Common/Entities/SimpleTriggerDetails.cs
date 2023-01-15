@@ -1,4 +1,5 @@
-﻿using YamlDotNet.Serialization;
+﻿using System;
+using YamlDotNet.Serialization;
 
 namespace Planar.API.Common.Entities
 {
@@ -8,7 +9,7 @@ namespace Planar.API.Common.Entities
         public int RepeatCount { get; set; }
 
         [YamlMember(Order = 98)]
-        public string RepeatInterval { get; set; }
+        public TimeSpan RepeatInterval { get; set; }
 
         [YamlMember(Order = 96)]
         public int TimesTriggered { get; set; }

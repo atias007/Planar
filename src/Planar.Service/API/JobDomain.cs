@@ -443,13 +443,15 @@ namespace Planar.Service.API
             {
                 if (t is ISimpleTrigger t1)
                 {
-                    result.SimpleTriggers.Add(MapSimpleTriggerDetails(t1));
+                    var simpleTrigger = Mapper.Map<SimpleTriggerDetails>(t1);
+                    result.SimpleTriggers.Add(simpleTrigger);
                 }
                 else
                 {
                     if (t is ICronTrigger t2)
                     {
-                        result.CronTriggers.Add(MapCronTriggerDetails(t2));
+                        var cronTrigger = Mapper.Map<CronTriggerDetails>(t2);
+                        result.CronTriggers.Add(cronTrigger);
                     }
                 }
             }
@@ -463,14 +465,6 @@ namespace Planar.Service.API
             return allGroups.Contains(jobGroup);
         }
 
-        private CronTriggerDetails MapCronTriggerDetails(ICronTrigger source)
-        {
-            var result = new CronTriggerDetails();
-            MapTriggerDetails(source, result);
-            result.CronExpression = source.CronExpressionString;
-            return result;
-        }
-
         private async Task MapJobDetails(IJobDetail source, JobDetails target, JobDataMap dataMap = null)
         {
             dataMap ??= source.JobDataMap;
@@ -481,49 +475,6 @@ namespace Planar.Service.API
             target.RequestsRecovery = source.RequestsRecovery;
             target.DataMap = Global.ConvertDataMapToDictionary(dataMap);
             target.Properties = await DataLayer.GetJobProperty(target.Id);
-        }
-
-        private SimpleTriggerDetails MapSimpleTriggerDetails(ISimpleTrigger source)
-        {
-            var result = new SimpleTriggerDetails();
-            MapTriggerDetails(source, result);
-            result.RepeatCount = source.RepeatCount;
-            result.RepeatInterval =
-                source.RepeatInterval.TotalHours < 24 ?
-                $"{source.RepeatInterval:hh\\:mm\\:ss}" :
-                $"{source.RepeatInterval:\\(d\\)\\ hh\\:mm\\:ss}";
-
-            result.TimesTriggered = source.TimesTriggered;
-            return result;
-        }
-
-        private void MapTriggerDetails(ITrigger source, TriggerDetails target)
-        {
-            target.CalendarName = source.CalendarName;
-            if (TimeSpan.TryParse(Convert.ToString(source.JobDataMap[Consts.RetrySpan]), out var span))
-            {
-                target.RetrySpan = span;
-            }
-
-            target.Description = source.Description;
-            target.End = source.EndTimeUtc?.LocalDateTime;
-            target.Start = source.StartTimeUtc.LocalDateTime;
-            target.FinalFire = source.FinalFireTimeUtc?.LocalDateTime;
-            target.Group = source.Key.Group;
-            target.MayFireAgain = source.GetMayFireAgain();
-            target.MisfireBehaviour = source.MisfireInstruction.ToString();
-            target.Name = source.Key.Name;
-            target.NextFireTime = source.GetNextFireTimeUtc()?.LocalDateTime;
-            target.PreviousFireTime = source.GetPreviousFireTimeUtc()?.LocalDateTime;
-            target.Priority = source.Priority;
-            target.DataMap = Global.ConvertDataMapToDictionary(source.JobDataMap);
-            target.State = Scheduler.GetTriggerState(source.Key).Result.ToString();
-            target.Id = TriggerKeyHelper.GetTriggerId(source);
-
-            if (source.Key.Group == Consts.RecoveringJobsGroup)
-            {
-                target.Id = Consts.RecoveringJobsGroup;
-            }
         }
     }
 }

@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Planar.CLI": {
-      "commandName": "Project",
-      "commandLineArgs": "user delete 1"
+      "commandName": "Project"
     }
   }
 }

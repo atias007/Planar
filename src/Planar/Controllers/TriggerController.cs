@@ -105,5 +105,15 @@ namespace Planar.Controllers
             await BusinesLayer.RemoveData(id, key);
             return NoContent();
         }
+
+        [HttpGet("cron")]
+        [SwaggerOperation(OperationId = "get_trigger_cron_expression", Description = "Get description of cron expression", Summary = "Get Cron Description")]
+        [OkTextResponse]
+        [BadRequestResponse]
+        public ActionResult<string> GetCronDescription([FromQuery][Required] string expression)
+        {
+            var result = BusinesLayer.GetCronDescription(expression);
+            return Ok(result);
+        }
     }
 }

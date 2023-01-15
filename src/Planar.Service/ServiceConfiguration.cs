@@ -19,9 +19,6 @@ namespace Planar.Service
             // Quartz
             services.AddQuartzService();
 
-            // AutoMapper
-            services.AddAutoMapper(Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));
-
             // Main Service
             services.AddTransient<MainService>();
 
@@ -70,6 +67,10 @@ namespace Planar.Service
 
             // Host
             services.AddHostedService<MainService>();
+
+            // AutoMapper
+            var assemply = Assembly.Load($"{nameof(Planar)}.{nameof(Service)}");
+            services.AddAutoMapperProfiles(new[] { assemply });
 
             return services;
         }

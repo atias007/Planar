@@ -106,6 +106,21 @@ namespace Planar.CLI.Actions
             return await Execute(restRequest);
         }
 
+        [Action("cronexpr")]
+        public static async Task<CliActionResponse> GetCronExpression(CliCronExpression request)
+        {
+            var restRequest = new RestRequest("trigger/cron", Method.Get)
+                .AddQueryParameter("expression", request.Expression);
+
+            var result = await RestProxy.Invoke<string>(restRequest);
+            if (result.IsSuccessful)
+            {
+                return new CliActionResponse(result, message: result.Data);
+            }
+
+            return new CliActionResponse(result);
+        }
+
         [Action("data")]
         public static async Task<CliActionResponse> UpsertTriggerData(CliJobOrTriggerDataRequest request)
         {
