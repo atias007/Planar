@@ -34,7 +34,8 @@ namespace Planar.Startup
         private static OpenApiInfo GetOpenApiInfo()
         {
             const string lic = "https://opensource.org/licenses/MIT";
-            const string planarSite = "http://www.planar.me";
+            const string schema = "http";
+            const string planarSite = "www.planar.me";
             const string email = "admin@planar.me";
             const string name = "Tsahi Atias";
             const string license = "MIT";
@@ -47,7 +48,7 @@ namespace Planar.Startup
                 {
                     Email = email,
                     Name = name,
-                    Url = new Uri(planarSite)
+                    Url = new Uri($"{schema}://{planarSite}")
                 },
                 License = new OpenApiLicense
                 {

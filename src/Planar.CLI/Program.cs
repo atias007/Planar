@@ -34,11 +34,13 @@ namespace Planar.CLI
 
         public static string GetHelpHeader()
         {
-            const string seperator = "-------------------------";
+            var title = $" planar cli v{Version}";
+            var seperator = string.Empty.PadLeft(title.Length + 1, '-');
+
             var sb = new StringBuilder();
             sb.AppendLine();
             sb.AppendLine(seperator);
-            sb.AppendLine($"planar cli v{Version}");
+            sb.AppendLine(title);
             sb.AppendLine(seperator);
             return sb.ToString();
         }
