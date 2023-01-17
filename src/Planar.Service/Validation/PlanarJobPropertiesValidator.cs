@@ -16,7 +16,7 @@ namespace Planar.Service.Validation
             _cluster = cluster;
             RuleFor(e => e.Path).NotEmpty().MaximumLength(500);
             RuleFor(e => e.Path).MustAsync(PathExists).When(e => !string.IsNullOrEmpty(e.Path));
-            RuleFor(e => e.Filename).NotEmpty().MaximumLength(255);
+            RuleFor(e => e.Filename).NotEmpty().MaximumLength(500);
             RuleFor(e => e.Filename).MustAsync(FilenameExists).When(e => !string.IsNullOrEmpty(e.Path) && !string.IsNullOrEmpty(e.Filename));
             RuleFor(e => e.ClassName).NotEmpty().MaximumLength(500);
         }

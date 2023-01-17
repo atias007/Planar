@@ -1,5 +1,6 @@
 ﻿using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -14,8 +15,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using static Azure.Core.HttpHeader;
 
 namespace Planar.Service.API
 {
@@ -158,6 +161,38 @@ namespace Planar.Service.API
             }
 
             return result;
+        }
+
+        public IEnumerable<string> GetJobFileTemplates()
+        {
+            return new[] { "PlanarJob" };
+        }
+
+        public string GetJobFileTemplate(string typeName)
+        {
+            var assembly = Assembly.Load(typeName);
+            if (assembly == null)
+            {
+                throw new RestNotFoundException($"type '{typeName}' could not be found");
+            }
+
+            using Stream stream = assembly.GetManifestResourceStream($"{typeName}.JobFile.yml");
+            {
+                if (stream == null)
+                {
+                    throw new RestNotFoundException("JobFile.yml resource could not be found");
+                }
+
+                using StreamReader reader = new(stream);
+                var result = reader.ReadToEnd();
+
+                if (string.IsNullOrEmpty(result))
+                {
+                    throw new RestNotFoundException("JobFile.yml resource could not be found");
+                }
+
+                return result;
+            }
         }
 
         public async Task<LastInstanceId> GetLastInstanceId(string id, DateTime invokeDate)

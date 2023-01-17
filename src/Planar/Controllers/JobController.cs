@@ -273,6 +273,26 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
+        [HttpGet("template/{name}")]
+        [SwaggerOperation(OperationId = "name", Description = "Get JobFile.yml template", Summary = "Get Job Yml Template")]
+        [OkYmlResponse]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public ActionResult<string> GetJobFileTemplate([Required][FromRoute] string name)
+        {
+            var result = BusinesLayer.GetJobFileTemplate(name);
+            return Ok(result);
+        }
+
+        [HttpGet("templates")]
+        [SwaggerOperation(OperationId = "name", Description = "Get list of all templates", Summary = "Get Templates List")]
+        [OkJsonResponse(typeof(IEnumerable<string>))]
+        public ActionResult<IEnumerable<string>> GetJobFileTemplates()
+        {
+            var result = BusinesLayer.GetJobFileTemplates();
+            return Ok(result);
+        }
+
         [ApiExplorerSettings(IgnoreApi = true)]
         [HttpGet("testStatus/{id}")]
         [SwaggerOperation(OperationId = "get_job_teststatus_id", Description = "", Summary = "")]

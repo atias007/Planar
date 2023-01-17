@@ -10,17 +10,20 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Remove="JobFile.yml" />
+	</ItemGroup>
 	<ItemGroup>
 		<Compile Include="..\..\Planar.Common\Consts.cs" Link="Consts.cs" />
 		<Compile Include="..\..\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
 	</ItemGroup>
 	<ItemGroup>
-	  <ProjectReference Include="..\CommonJob\CommonJob.csproj" />
+	  <EmbeddedResource Include="JobFile.yml">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
 	</ItemGroup>
-
 	<ItemGroup>
-		<None Update="JobFile.yml">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		</None>
+	  <ProjectReference Include="..\CommonJob\CommonJob.csproj" />
 	</ItemGroup>
 </Project>
