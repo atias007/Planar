@@ -273,8 +273,8 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("template/{name}")]
-        [SwaggerOperation(OperationId = "name", Description = "Get JobFile.yml template", Summary = "Get Job Yml Template")]
+        [HttpGet("jobfile/{name}")]
+        [SwaggerOperation(OperationId = "get_job_jobfile_name", Description = "Get JobFile.yml template", Summary = "Get JobFile.yml Template")]
         [OkYmlResponse]
         [BadRequestResponse]
         [NotFoundResponse]
@@ -284,8 +284,8 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("templates")]
-        [SwaggerOperation(OperationId = "name", Description = "Get list of all templates", Summary = "Get Templates List")]
+        [HttpGet("jobfiles")]
+        [SwaggerOperation(OperationId = "get_job_jobfiles", Description = "Get list of all job files templates", Summary = "Get All Job Files Templates")]
         [OkJsonResponse(typeof(IEnumerable<string>))]
         public ActionResult<IEnumerable<string>> GetJobFileTemplates()
         {

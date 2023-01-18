@@ -6,7 +6,7 @@ durable: true                         # Boolean [true/false]. Non durable job wi
 concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
 
 job data:                             # Key/Value pairs used by job code
-  key1: value1
+  key1: value1                        # --------------------------------
   key2: value2
   key3: value3
 
@@ -16,7 +16,7 @@ properties:                           # Properties for job with 'PlanarJob' type
   class name: HelloWorld.DemoJob      # Full class name (with namespace) [mandatory, up to 500 characters]
 
 global config:                        # Key/Value pairs of global parameters used across different jobs
-  globalkey1: value1
+  globalkey1: value1                  # ---------------------------------------------------------------
   globalkey2: value2
   globalkey3: value3
 
@@ -31,18 +31,18 @@ simple triggers:                      # List of simple triggers
     calendar: null                    # Calendar name
     retry span: 01:00:00              # Retry time span
     trigger data:                     # Key/Value pairs used by job code (merged with job data)
-      key4: value4
+      key4: value4                    # -------------------------------------------------------
       key5: value5
       key6: value6
 
-cron triggers:                        # List of cron triggers
-  - name: some-cron-trigger           # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+cron triggers:                               # List of cron triggers
+  - name: some-cron-trigger                  # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
     cron expression: 0 15 10 ? * MON-FRI     # Cron expression [mandatory]
-    misfire behaviour: DoNothing      # [ DoNothing | FireAndProceed | IgnoreMisfires ]
-    priority: 1                       # Priority [value between 0 to 100]
-    calendar: null                    # Calendar name
-    retry span: 01:00:00              # Retry time span
-    trigger data:                     # Key/Value pairs used by job code (merged with job data)
-      key7: value7
+    misfire behaviour: DoNothing             # [ DoNothing | FireAndProceed | IgnoreMisfires ]
+    priority: 1                              # Priority [value between 0 to 100]
+    calendar: null                           # Calendar name
+    retry span: 01:00:00                     # Retry time span
+    trigger data:                            # Key/Value pairs used by job code (merged with job data)
+      key7: value7                           # -------------------------------------------------------
       key8: value8
       key9: value9

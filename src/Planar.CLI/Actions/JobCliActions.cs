@@ -379,6 +379,52 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
+        [Action("jobfiles")]
+        public static async Task<CliActionResponse> GetJobFiles()
+        {
+            var restRequest = new RestRequest("job/jobfiles", Method.Get);
+
+            var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest);
+            return new CliActionResponse(result, result.Data);
+        }
+
+        [Action("jobfile")]
+        [NullRequest]
+        public static async Task<CliActionResponse> GetJobFile(CliGetJobFileRequest request)
+        {
+            if (request == null)
+            {
+                var wrapper = await GetCliGetJobFileRequest();
+                if (!wrapper.IsSuccessful)
+                {
+                    return new CliActionResponse(wrapper.FailResponse);
+                }
+
+                request = wrapper.Request;
+            }
+
+            var restRequest = new RestRequest("job/jobfile/{name}", Method.Get)
+                .AddUrlSegment("name", request.JobFile);
+
+            var result = await RestProxy.Invoke<string>(restRequest);
+            return new CliActionResponse(result, message: result.Data);
+        }
+
+        private static async Task<RequestBuilderWrapper<CliGetJobFileRequest>> GetCliGetJobFileRequest()
+        {
+            var restRequest = new RestRequest("job/jobfiles", Method.Get);
+
+            var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest);
+            if (!result.IsSuccessful)
+            {
+                return new RequestBuilderWrapper<CliGetJobFileRequest> { FailResponse = result };
+            }
+
+            var selectedItem = PromptSelection(result.Data, "job file template");
+            var request = new CliGetJobFileRequest { JobFile = selectedItem };
+            return new RequestBuilderWrapper<CliGetJobFileRequest> { Request = request };
+        }
+
         [Action("test")]
         public static async Task<CliActionResponse> TestJob(CliInvokeJobRequest request)
         {

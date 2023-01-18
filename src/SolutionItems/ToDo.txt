@@ -11,8 +11,7 @@
 - add to jobfile the option to write thr author
 - add to jobfile the option to control the amount of retries
 - cli test: job that finish very fast - the test dont found it in running jobs. it should search in history
-
-- api to get demo yml file 
+- cli: save output to file
 - cli test cluster command
 - option to pause job after {x} fails in row
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
@@ -74,3 +73,4 @@
 - cli delete\remove operation must be with question R U Sure?
 - add service to convert cron to readable text https://github.com/bradymholt/cron-expression-descriptor
 - implement GetPausedTriggers
+- api to get demo yml file 
