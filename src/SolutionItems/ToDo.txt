@@ -2,19 +2,20 @@
 - // TODO: add appsettings for UseJobAutoInterrupt at QuartzServiceConfiguration
 - add to base test to retrieve log & exception
 
+- bug: reload monitor + reload hooks --> not support cluster
+- cli: job update, when no folder supplied, show menu
+
 - add hook test option
 - add monitor event: cluster health check fail
 - job test: in no instance id, check hc and print warning about already running job with no concurent
-
-- implement GetPausedTriggers
+- add to jobfile the option to write thr author
+- add to jobfile the option to control the amount of retries
 - cli test: job that finish very fast - the test dont found it in running jobs. it should search in history
-
-- api to get demo yml file 
+- cli: save output to file
 - cli test cluster command
 - option to pause job after {x} fails in row
-- add service to convert cron to readable text https://github.com/bradymholt/cron-expression-descriptor
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
-- cli delete\remove operation must be with question R U Sure? (add option for --force)
+
 
 -----------------------------------------DONE-----------------------------------------
 - cli login with option to remember
@@ -69,3 +70,7 @@
 - add monitor event when user pause / delete / add job / invoke job / cancel job / join to cluster / remove from cluster / start scheduler / stop scheduler
 - stop service while long running task (service provider is null)
 - cli add job menu to show avaliable jobs to add
+- cli delete\remove operation must be with question R U Sure?
+- add service to convert cron to readable text https://github.com/bradymholt/cron-expression-descriptor
+- implement GetPausedTriggers
+- api to get demo yml file 

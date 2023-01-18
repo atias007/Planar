@@ -6,7 +6,7 @@ using System.Threading;
 namespace Planar.Service.General
 {
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public struct CancellationTokenAwaiter : INotifyCompletion, ICriticalNotifyCompletion
+    public struct CancellationTokenAwaiter : ICriticalNotifyCompletion
     {
         public CancellationTokenAwaiter(CancellationToken cancellationToken)
         {

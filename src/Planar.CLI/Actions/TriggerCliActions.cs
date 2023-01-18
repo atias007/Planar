@@ -4,6 +4,7 @@ using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
 using RestSharp;
 using Spectre.Console;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -24,7 +25,7 @@ namespace Planar.CLI.Actions
             var result = await RestProxy.Invoke<TriggerRowDetails>(restRequest);
             CliActionResponse response = new(result);
 
-            if (result.IsSuccessful == false)
+            if (!result.IsSuccessful)
             {
                 return response;
             }
@@ -57,7 +58,7 @@ namespace Planar.CLI.Actions
 
             var result = await RestProxy.Invoke<TriggerRowDetails>(restRequest);
 
-            if (result.IsSuccessful == false)
+            if (!result.IsSuccessful)
             {
                 CliActionResponse response = new(result);
                 return response;
@@ -80,6 +81,8 @@ namespace Planar.CLI.Actions
         [Action("remove")]
         public static async Task<CliActionResponse> RemoveTrigger(CliJobOrTriggerKey request)
         {
+            if (!ConfirmAction($"remove trigger id {request.Id}")) { return CliActionResponse.Empty; }
+
             var restRequest = new RestRequest("trigger/{triggerId}", Method.Delete)
                 .AddParameter("triggerId", request.Id, ParameterType.UrlSegment);
 
@@ -102,6 +105,31 @@ namespace Planar.CLI.Actions
                 .AddBody(request);
 
             return await Execute(restRequest);
+        }
+
+        [Action("cronexpr")]
+        public static async Task<CliActionResponse> GetCronExpression(CliCronExpression request)
+        {
+            var restRequest = new RestRequest("trigger/cron", Method.Get)
+                .AddQueryParameter("expression", request.Expression);
+
+            var result = await RestProxy.Invoke<string>(restRequest);
+            if (result.IsSuccessful)
+            {
+                return new CliActionResponse(result, message: result.Data);
+            }
+
+            return new CliActionResponse(result);
+        }
+
+        [Action("all-paused")]
+        public static async Task<CliActionResponse> GetAllPausedTriggers()
+        {
+            var restRequest = new RestRequest("trigger/paused", Method.Get);
+            var result = await RestProxy.Invoke<List<PausedTriggerDetails>>(restRequest);
+
+            var table = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, table);
         }
 
         [Action("data")]
@@ -129,6 +157,7 @@ namespace Planar.CLI.Actions
                     break;
 
                 case JobDataActions.remove:
+                    if (!ConfirmAction($"remove data with key '{request.DataKey}' from trigger {request.Id}")) { return CliActionResponse.Empty; }
                     var restRequest2 = new RestRequest("trigger/{id}/data/{key}", Method.Delete)
                         .AddParameter("id", request.Id, ParameterType.UrlSegment)
                         .AddParameter("key", request.DataKey, ParameterType.UrlSegment);
@@ -137,7 +166,7 @@ namespace Planar.CLI.Actions
                     break;
 
                 default:
-                    throw new CliValidationException($"Action {request.Action} is not supported for this command");
+                    throw new CliValidationException($"action {request.Action} is not supported for this command");
             }
 
             AssertTriggerUpdated(result, request.Id);

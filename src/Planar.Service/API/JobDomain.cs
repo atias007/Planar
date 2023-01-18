@@ -1,5 +1,6 @@
 ﻿using Grpc.Core;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -14,8 +15,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using static Azure.Core.HttpHeader;
 
 namespace Planar.Service.API
 {
@@ -160,6 +163,38 @@ namespace Planar.Service.API
             return result;
         }
 
+        public IEnumerable<string> GetJobFileTemplates()
+        {
+            return new[] { "PlanarJob" };
+        }
+
+        public string GetJobFileTemplate(string typeName)
+        {
+            var assembly = Assembly.Load(typeName);
+            if (assembly == null)
+            {
+                throw new RestNotFoundException($"type '{typeName}' could not be found");
+            }
+
+            using Stream stream = assembly.GetManifestResourceStream($"{typeName}.JobFile.yml");
+            {
+                if (stream == null)
+                {
+                    throw new RestNotFoundException("JobFile.yml resource could not be found");
+                }
+
+                using StreamReader reader = new(stream);
+                var result = reader.ReadToEnd();
+
+                if (string.IsNullOrEmpty(result))
+                {
+                    throw new RestNotFoundException("JobFile.yml resource could not be found");
+                }
+
+                return result;
+            }
+        }
+
         public async Task<LastInstanceId> GetLastInstanceId(string id, DateTime invokeDate)
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
@@ -204,6 +239,7 @@ namespace Planar.Service.API
             foreach (var t in triggers)
             {
                 var state = await Scheduler.GetTriggerState(t.Key);
+                if (state == TriggerState.Paused) { continue; }
                 var prev = t.GetPreviousFireTimeUtc();
                 if (prev == null) { continue; }
                 var prevDate = prev.Value.LocalDateTime;
@@ -399,7 +435,7 @@ namespace Planar.Service.API
 
         private static void ValidateDataKeyExists(IJobDetail details, string key, string jobId)
         {
-            if (details == null || details.JobDataMap.ContainsKey(key) == false)
+            if (details == null || !details.JobDataMap.ContainsKey(key))
             {
                 throw new RestValidationException($"{key}", $"data with Key '{key}' could not found in job '{jobId}' (Name '{details?.Key.Name}' and Group '{details?.Key.Group}')");
             }
@@ -410,7 +446,7 @@ namespace Planar.Service.API
             var key = await JobKeyHelper.GetJobKeyById(jobId);
             var dal = Resolve<MonitorData>();
             await dal.DeleteMonitorByJobId(key.Group, key.Name);
-            if (await JobGroupExists(jobGroup) == false)
+            if (!await JobGroupExists(jobGroup))
             {
                 await dal.DeleteMonitorByJobGroup(jobGroup);
             }
@@ -443,13 +479,15 @@ namespace Planar.Service.API
             {
                 if (t is ISimpleTrigger t1)
                 {
-                    result.SimpleTriggers.Add(MapSimpleTriggerDetails(t1));
+                    var simpleTrigger = Mapper.Map<SimpleTriggerDetails>(t1);
+                    result.SimpleTriggers.Add(simpleTrigger);
                 }
                 else
                 {
                     if (t is ICronTrigger t2)
                     {
-                        result.CronTriggers.Add(MapCronTriggerDetails(t2));
+                        var cronTrigger = Mapper.Map<CronTriggerDetails>(t2);
+                        result.CronTriggers.Add(cronTrigger);
                     }
                 }
             }
@@ -463,14 +501,6 @@ namespace Planar.Service.API
             return allGroups.Contains(jobGroup);
         }
 
-        private CronTriggerDetails MapCronTriggerDetails(ICronTrigger source)
-        {
-            var result = new CronTriggerDetails();
-            MapTriggerDetails(source, result);
-            result.CronExpression = source.CronExpressionString;
-            return result;
-        }
-
         private async Task MapJobDetails(IJobDetail source, JobDetails target, JobDataMap dataMap = null)
         {
             dataMap ??= source.JobDataMap;
@@ -481,49 +511,6 @@ namespace Planar.Service.API
             target.RequestsRecovery = source.RequestsRecovery;
             target.DataMap = Global.ConvertDataMapToDictionary(dataMap);
             target.Properties = await DataLayer.GetJobProperty(target.Id);
-        }
-
-        private SimpleTriggerDetails MapSimpleTriggerDetails(ISimpleTrigger source)
-        {
-            var result = new SimpleTriggerDetails();
-            MapTriggerDetails(source, result);
-            result.RepeatCount = source.RepeatCount;
-            result.RepeatInterval =
-                source.RepeatInterval.TotalHours < 24 ?
-                $"{source.RepeatInterval:hh\\:mm\\:ss}" :
-                $"{source.RepeatInterval:\\(d\\)\\ hh\\:mm\\:ss}";
-
-            result.TimesTriggered = source.TimesTriggered;
-            return result;
-        }
-
-        private void MapTriggerDetails(ITrigger source, TriggerDetails target)
-        {
-            target.CalendarName = source.CalendarName;
-            if (TimeSpan.TryParse(Convert.ToString(source.JobDataMap[Consts.RetrySpan]), out var span))
-            {
-                target.RetrySpan = span;
-            }
-
-            target.Description = source.Description;
-            target.End = source.EndTimeUtc?.LocalDateTime;
-            target.Start = source.StartTimeUtc.LocalDateTime;
-            target.FinalFire = source.FinalFireTimeUtc?.LocalDateTime;
-            target.Group = source.Key.Group;
-            target.MayFireAgain = source.GetMayFireAgain();
-            target.MisfireBehaviour = source.MisfireInstruction.ToString();
-            target.Name = source.Key.Name;
-            target.NextFireTime = source.GetNextFireTimeUtc()?.LocalDateTime;
-            target.PreviousFireTime = source.GetPreviousFireTimeUtc()?.LocalDateTime;
-            target.Priority = source.Priority;
-            target.DataMap = Global.ConvertDataMapToDictionary(source.JobDataMap);
-            target.State = Scheduler.GetTriggerState(source.Key).Result.ToString();
-            target.Id = TriggerKeyHelper.GetTriggerId(source);
-
-            if (source.Key.Group == Consts.RecoveringJobsGroup)
-            {
-                target.Id = Consts.RecoveringJobsGroup;
-            }
         }
     }
 }

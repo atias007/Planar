@@ -33,22 +33,29 @@ namespace Planar.Startup
 
         private static OpenApiInfo GetOpenApiInfo()
         {
+            const string lic = "https://opensource.org/licenses/MIT";
+            const string schema = "http";
+            const string planarSite = "www.planar.me";
+            const string email = "admin@planar.me";
+            const string name = "Tsahi Atias";
+            const string license = "MIT";
+            const string description = "Enterprise schedule system API";
             var result = new OpenApiInfo
             {
-                Title = "Planar",
+                Title = nameof(Planar),
                 Version = SwaggerVersion,
                 Contact = new OpenApiContact
                 {
-                    Email = "admin@planar.me",
-                    Name = "Tsahi Atias",
-                    Url = new Uri("http://www.planar.me")
+                    Email = email,
+                    Name = name,
+                    Url = new Uri($"{schema}://{planarSite}")
                 },
                 License = new OpenApiLicense
                 {
-                    Name = "MIT",
-                    Url = new Uri("https://opensource.org/licenses/MIT")
+                    Name = license,
+                    Url = new Uri(lic)
                 },
-                Description = "Enterprise schedule system API"
+                Description = description
             };
 
             return result;

@@ -19,7 +19,7 @@ namespace Planar.Service.Monitor
         {
             if (HandleMethod == null)
             {
-                throw new PlanarMonitorException($"Method '{HandleMethodName}' could not be found in hook");
+                throw new PlanarMonitorException($"method '{HandleMethodName}' could not be found in hook");
             }
 
             var messageBroker = new MonitorMessageBroker(logger, details);
@@ -31,7 +31,7 @@ namespace Planar.Service.Monitor
         {
             if (HandleSystemMethod == null)
             {
-                throw new PlanarMonitorException($"Method '{HandleMethodName}' could not be found in hook");
+                throw new PlanarMonitorException($"method '{HandleMethodName}' could not be found in hook");
             }
 
             var messageBroker = new MonitorMessageBroker(logger, details);

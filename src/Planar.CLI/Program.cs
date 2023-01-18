@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using Planar.CLI.Actions;
 using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
+using Planar.CLI.General;
 using RestSharp;
 using Spectre.Console;
 using System;
@@ -11,13 +12,39 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Text;
 using System.Threading.Tasks;
-using Planar.CLI.General;
 
 namespace Planar.CLI
 {
     internal static class Program
     {
+        internal static string Version
+        {
+            get
+            {
+                var result = Assembly.GetEntryAssembly()
+                                    ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                                    ?.InformationalVersion
+                                    .ToString();
+
+                return result;
+            }
+        }
+
+        public static string GetHelpHeader()
+        {
+            var title = $" planar cli v{Version}";
+            var seperator = string.Empty.PadLeft(title.Length + 1, '-');
+
+            var sb = new StringBuilder();
+            sb.AppendLine();
+            sb.AppendLine(seperator);
+            sb.AppendLine(title);
+            sb.AppendLine(seperator);
+            return sb.ToString();
+        }
+
         public static void Main(string[] args)
         {
             try
@@ -28,33 +55,6 @@ namespace Planar.CLI
             {
                 WriteException(ex);
             }
-        }
-
-        private static bool HandleBadRequestResponse(RestResponse response)
-        {
-            if (response.StatusCode != HttpStatusCode.BadRequest) { return false; }
-
-            var entity = JsonConvert.DeserializeObject<BadRequestEntity>(response.Content);
-
-            var obj = JObject.Parse(response.Content);
-            var errors = obj["errors"].SelectMany(e => e.ToList()).SelectMany(e => e.ToList());
-            if (errors.Any() == false)
-            {
-                AnsiConsole.MarkupLine($"[red]validation error: {entity.Detail}[/]");
-                return true;
-            }
-
-            if (errors.Count() == 1)
-            {
-                var value = errors.First() as JValue;
-                AnsiConsole.MarkupLine($"[red]validation error: {value.Value}[/]");
-                return true;
-            }
-
-            AnsiConsole.MarkupLine("[red]validation error:[/]");
-            DisplayValidationErrors(errors);
-
-            return true;
         }
 
         private static void DisplayValidationErrors(IEnumerable<JToken> errors)
@@ -78,6 +78,33 @@ namespace Planar.CLI
             }
         }
 
+        private static bool HandleBadRequestResponse(RestResponse response)
+        {
+            if (response.StatusCode != HttpStatusCode.BadRequest) { return false; }
+
+            var entity = JsonConvert.DeserializeObject<BadRequestEntity>(response.Content);
+
+            var obj = JObject.Parse(response.Content);
+            var errors = obj["errors"].SelectMany(e => e.ToList()).SelectMany(e => e.ToList());
+            if (!errors.Any())
+            {
+                AnsiConsole.MarkupLine($"[red]validation error: {entity.Detail}[/]");
+                return true;
+            }
+
+            if (errors.Count() == 1)
+            {
+                var value = errors.First() as JValue;
+                AnsiConsole.MarkupLine($"[red]validation error: {value.Value}[/]");
+                return true;
+            }
+
+            AnsiConsole.MarkupLine("[red]validation error:[/]");
+            DisplayValidationErrors(errors);
+
+            return true;
+        }
+
         private static CliArgumentsUtil HandleCliCommand(string[] args, IEnumerable<CliActionMetadata> cliActions)
         {
             if (!args.Any())
@@ -93,9 +120,10 @@ namespace Planar.CLI
                 cliArgument = new CliArgumentsUtil(args);
 
                 var console = Activator.CreateInstance(action.Method.DeclaringType);
+                var requestType = action.GetRequestType();
                 CliActionResponse response;
 
-                if (action.GetRequestType == null)
+                if (requestType == null)
                 {
                     try
                     {
@@ -108,7 +136,7 @@ namespace Planar.CLI
                 }
                 else
                 {
-                    var param = cliArgument.GetRequest(action.GetRequestType(), action);
+                    var param = cliArgument.GetRequest(requestType, action);
                     var itMode = param is IIterative itParam && itParam.Iterative;
 
                     if (itMode)
@@ -183,7 +211,14 @@ namespace Planar.CLI
 
             if (string.IsNullOrEmpty(finaleException.Message) == false)
             {
-                AnsiConsole.MarkupLine($"[red]error: {Markup.Escape(finaleException.Message)}[/]");
+                if (finaleException is CliWarningException)
+                {
+                    AnsiConsole.MarkupLine($"{CliTableFormat.WarningColor}warning: {Markup.Escape(finaleException.Message)}[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine($"{CliTableFormat.ErrorColor}error: {Markup.Escape(finaleException.Message)}[/]");
+                }
             }
         }
 
@@ -202,20 +237,10 @@ namespace Planar.CLI
                 AnsiConsole.MarkupLine("[red]error: general error[/]");
             }
 
-            if (string.IsNullOrEmpty(response.StatusDescription) == false)
+            if (!string.IsNullOrEmpty(response.StatusDescription))
             {
                 AnsiConsole.MarkupLine($"[red] ({response.StatusDescription})[/]");
             }
-        }
-
-        private static void HandleHttpFailResponse(RestResponse response)
-        {
-            if (HandleHttpNotFoundResponse(response)) { return; }
-            if (HandleBadRequestResponse(response)) { return; }
-            if (HandleHealthCheckResponse(response)) { return; }
-            if (HandleHttpConflictResponse(response)) { return; }
-
-            HandleGeneralError(response);
         }
 
         private static bool HandleHealthCheckResponse(RestResponse response)
@@ -243,21 +268,6 @@ namespace Planar.CLI
             return false;
         }
 
-        private static bool HandleHttpNotFoundResponse(RestResponse response)
-        {
-            if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                var message = string.IsNullOrEmpty(response.Content) ?
-                    "server return not found status" :
-                    JsonConvert.DeserializeObject<string>(response.Content);
-
-                AnsiConsole.MarkupLine($"[red]validation error: {message}[/]");
-                return true;
-            }
-
-            return false;
-        }
-
         private static bool HandleHttpConflictResponse(RestResponse response)
         {
             if (response.StatusCode == HttpStatusCode.Conflict)
@@ -273,8 +283,34 @@ namespace Planar.CLI
             return false;
         }
 
+        private static void HandleHttpFailResponse(RestResponse response)
+        {
+            if (HandleHttpNotFoundResponse(response)) { return; }
+            if (HandleBadRequestResponse(response)) { return; }
+            if (HandleHealthCheckResponse(response)) { return; }
+            if (HandleHttpConflictResponse(response)) { return; }
+
+            HandleGeneralError(response);
+        }
+
+        private static bool HandleHttpNotFoundResponse(RestResponse response)
+        {
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                var message = string.IsNullOrEmpty(response.Content) ?
+                    "server return not found status" :
+                    JsonConvert.DeserializeObject<string>(response.Content);
+
+                AnsiConsole.MarkupLine($"[red]validation error: {message}[/]");
+                return true;
+            }
+
+            return false;
+        }
+
         private static void InteractiveMode(IEnumerable<CliActionMetadata> cliActions)
         {
+            BaseCliAction.InteractiveMode = true;
             var command = string.Empty;
             Console.Clear();
             WriteInfo();
@@ -362,30 +398,16 @@ namespace Planar.CLI
                 ExceptionFormats.ShortenMethods | ExceptionFormats.ShowLinks);
         }
 
-        internal static string Version
-        {
-            get
-            {
-                var result = Assembly.GetEntryAssembly()
-                                    ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-                                    ?.InformationalVersion
-                                    .ToString();
-
-                return result;
-            }
-        }
-
         private static void WriteInfo()
         {
             AnsiConsole.Write(new FigletText("Planar")
                     .LeftJustified()
                     .Color(Color.SteelBlue1));
 
-            Console.WriteLine($"planar cli v{Version}");
-            Console.WriteLine("-------------------------");
-            Console.WriteLine("usage: planar <module> <command> [<options>]");
+            Console.WriteLine(GetHelpHeader());
+            Console.WriteLine("usage: planar-cli <module> <command> [<options>]");
             Console.WriteLine();
-            Console.WriteLine("use 'planar <module> --help' to see all avalible commands and options");
+            Console.WriteLine("use 'planar-cli <module> --help' to see all avalible commands and options");
 
             using Stream stream = typeof(Program).Assembly.GetManifestResourceStream("Planar.CLI.Help.Modules.txt");
             using StreamReader reader = new(stream);

@@ -44,6 +44,8 @@ namespace Planar.CLI.Actions
         [Action("delete")]
         public static async Task<CliActionResponse> RemoveUserById(CliGetByIdRequest request)
         {
+            if (!ConfirmAction($"remove user id {request.Id}")) { return CliActionResponse.Empty; }
+
             var restRequest = new RestRequest("user/{id}", Method.Delete)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
 

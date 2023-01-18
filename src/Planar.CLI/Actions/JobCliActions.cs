@@ -64,7 +64,7 @@ namespace Planar.CLI.Actions
         {
             if (!data.Any())
             {
-                throw new CliException("no available jobs found on server");
+                throw new CliWarningException("no available jobs found on server");
             }
 
             var folders = data.Select(e =>
@@ -341,6 +341,8 @@ namespace Planar.CLI.Actions
         [Action("delete")]
         public static async Task<CliActionResponse> RemoveJob(CliJobOrTriggerKey jobKey)
         {
+            if (!ConfirmAction($"remove job id {jobKey}")) { return CliActionResponse.Empty; }
+
             var restRequest = new RestRequest("job/{id}", Method.Delete)
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
 
@@ -375,6 +377,52 @@ namespace Planar.CLI.Actions
 
             var result = await RestProxy.Invoke(restRequest);
             return new CliActionResponse(result);
+        }
+
+        [Action("jobfiles")]
+        public static async Task<CliActionResponse> GetJobFiles()
+        {
+            var restRequest = new RestRequest("job/jobfiles", Method.Get);
+
+            var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest);
+            return new CliActionResponse(result, result.Data);
+        }
+
+        [Action("jobfile")]
+        [NullRequest]
+        public static async Task<CliActionResponse> GetJobFile(CliGetJobFileRequest request)
+        {
+            if (request == null)
+            {
+                var wrapper = await GetCliGetJobFileRequest();
+                if (!wrapper.IsSuccessful)
+                {
+                    return new CliActionResponse(wrapper.FailResponse);
+                }
+
+                request = wrapper.Request;
+            }
+
+            var restRequest = new RestRequest("job/jobfile/{name}", Method.Get)
+                .AddUrlSegment("name", request.JobFile);
+
+            var result = await RestProxy.Invoke<string>(restRequest);
+            return new CliActionResponse(result, message: result.Data);
+        }
+
+        private static async Task<RequestBuilderWrapper<CliGetJobFileRequest>> GetCliGetJobFileRequest()
+        {
+            var restRequest = new RestRequest("job/jobfiles", Method.Get);
+
+            var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest);
+            if (!result.IsSuccessful)
+            {
+                return new RequestBuilderWrapper<CliGetJobFileRequest> { FailResponse = result };
+            }
+
+            var selectedItem = PromptSelection(result.Data, "job file template");
+            var request = new CliGetJobFileRequest { JobFile = selectedItem };
+            return new RequestBuilderWrapper<CliGetJobFileRequest> { Request = request };
         }
 
         [Action("test")]
@@ -433,6 +481,8 @@ namespace Planar.CLI.Actions
                     break;
 
                 case JobDataActions.remove:
+                    if (!ConfirmAction($"remove data with key '{request.DataKey}' from job {request.Id}")) { return CliActionResponse.Empty; }
+
                     var restRequest2 = new RestRequest("job/{id}/data/{key}", Method.Delete)
                         .AddParameter("id", request.Id, ParameterType.UrlSegment)
                         .AddParameter("key", request.DataKey, ParameterType.UrlSegment);
@@ -441,7 +491,7 @@ namespace Planar.CLI.Actions
                     break;
 
                 default:
-                    throw new CliValidationException($"Action {request.Action} is not supported for this command");
+                    throw new CliValidationException($"action {request.Action} is not supported for this command");
             }
 
             AssertJobDataUpdated(result, request.Id);
@@ -610,7 +660,7 @@ namespace Planar.CLI.Actions
             for (int i = 0; i < 20; i++)
             {
                 instanceId = await GetLastInstanceId(request.Id, invokeDate);
-                if (instanceId.IsSuccessful == false)
+                if (!instanceId.IsSuccessful)
                 {
                     return (new CliActionResponse(instanceId), null, 0);
                 }
@@ -622,7 +672,7 @@ namespace Planar.CLI.Actions
             if (instanceId == null || instanceId.Data == null)
             {
                 AnsiConsole.WriteLine();
-                throw new CliException("Could not found running instance id");
+                throw new CliException("could not found running instance id");
             }
 
             AnsiConsole.MarkupLine($"[turquoise2]{instanceId.Data.InstanceId}[/]");
@@ -635,7 +685,7 @@ namespace Planar.CLI.Actions
                 .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
             var runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest);
 
-            if (runResult.IsSuccessful == false) { return new CliActionResponse(runResult); }
+            if (!runResult.IsSuccessful) { return new CliActionResponse(runResult); }
             Console.WriteLine();
             var sleepTime = 2000;
             while (runResult.Data != null)
@@ -645,7 +695,7 @@ namespace Planar.CLI.Actions
                 AnsiConsole.MarkupLine($" [gold3_1][[x]][/] Progress: [wheat1]{runResult.Data.Progress}[/]%  |  Effected Row(s): [wheat1]{runResult.Data.EffectedRows.GetValueOrDefault()}  |  Run Time: {CliTableFormat.FormatTimeSpan(span)}[/]     ");
                 Thread.Sleep(sleepTime);
                 runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest);
-                if (runResult.IsSuccessful == false) { break; }
+                if (!runResult.IsSuccessful) { break; }
                 if (span.TotalMinutes >= 5) { sleepTime = 10000; }
                 else if (span.TotalMinutes >= 15) { sleepTime = 20000; }
                 else if (span.TotalMinutes >= 30) { sleepTime = 30000; }
@@ -663,11 +713,11 @@ namespace Planar.CLI.Actions
                 .AddParameter("id", logId, ParameterType.UrlSegment);
             var status = await RestProxy.Invoke<GetTestStatusResponse>(restTestRequest);
 
-            if (status.IsSuccessful == false) { return new CliActionResponse(status); }
+            if (!status.IsSuccessful) { return new CliActionResponse(status); }
             if (status.Data == null)
             {
                 Console.WriteLine();
-                throw new CliException($"Could not found log data for log id {logId}");
+                throw new CliException($"could not found log data for log id {logId}");
             }
 
             var finalSpan = TimeSpan.FromMilliseconds(status.Data.Duration.GetValueOrDefault());

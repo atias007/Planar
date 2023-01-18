@@ -49,6 +49,8 @@ namespace Planar.CLI.Actions
         [Action("delete")]
         public static async Task<CliActionResponse> RemoveById(CliGetByIdRequest request)
         {
+            if (!ConfirmAction($"remove group id {request.Id}")) { return CliActionResponse.Empty; }
+
             var restRequest = new RestRequest("group/{id}", Method.Delete)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
 

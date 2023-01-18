@@ -119,7 +119,7 @@ namespace Planar.Service.API
             catch (Exception ex)
             {
                 var filename = GetJobFileFullName(folder);
-                throw new RestGeneralException($"Fail to deserialize file: {filename}", ex);
+                throw new RestGeneralException($"fail to deserialize file: {filename}", ex);
             }
 
             return dynamicRequest;
@@ -136,7 +136,7 @@ namespace Planar.Service.API
             }
             catch (Exception ex)
             {
-                throw new RestGeneralException($"Fail to read file: {filename}", ex);
+                throw new RestGeneralException($"fail to read file: {filename}", ex);
             }
 
             return yml;
@@ -406,7 +406,7 @@ namespace Planar.Service.API
             foreach (var p in config)
             {
                 await configDomain.Upsert(p);
-            };
+            }
         }
 
         private static JobKey ValidateJobMetadata(SetJobRequest metadata)
@@ -448,6 +448,12 @@ namespace Planar.Service.API
             if (metadata.Description?.Length > 100) throw new RestValidationException("description", "job description length is invalid. max length is 100");
 
             #endregion Max Chars
+
+            #region Min Chars
+
+            if (metadata.Name.Length < 5) throw new RestValidationException("name", "job name length is invalid. min length is 5");
+
+            #endregion Min Chars
 
             if (Consts.PreserveGroupNames.Contains(metadata.Group))
             {
@@ -495,6 +501,7 @@ namespace Planar.Service.API
             ValidateMaxCharsTiggerProperties(container);
             ValidatePreserveWordsTriggerProperties(container);
             ValidateTriggerPriority(container);
+            ValidateCronExpression(container);
             ValidateTriggerMisfireBehaviour(container);
         }
 
@@ -523,11 +530,19 @@ namespace Planar.Service.API
         {
             container.SimpleTriggers?.ForEach(t =>
             {
-                if (t.Priority == int.MaxValue) { throw new RestValidationException("priority", $"priority ha invalid value ({t.Priority})"); }
+                if (t.Priority < 0 || t.Priority > 100) { throw new RestValidationException("priority", $"priority has invalid value ({t.Priority}). valid scope of values is 0-100"); }
             });
             container.CronTriggers?.ForEach(t =>
             {
-                if (t.Priority == int.MaxValue) { throw new RestValidationException("priority", $"priority ha invalid value ({t.Priority})"); }
+                if (t.Priority < 0 || t.Priority > 100) { throw new RestValidationException("priority", $"priority has invalid value ({t.Priority}). valid scope of values is 0-100"); }
+            });
+        }
+
+        private static void ValidateCronExpression(ITriggersContainer container)
+        {
+            container.CronTriggers?.ForEach(t =>
+            {
+                if (string.IsNullOrEmpty(t.CronExpression)) { throw new RestValidationException("priority", "cron expression is mandatory in cron trigger"); }
             });
         }
 
@@ -550,12 +565,16 @@ namespace Planar.Service.API
             container.SimpleTriggers?.ForEach(t =>
             {
                 if (t.Name.Length > 50) throw new RestValidationException("name", "trigger name length is invalid. max length is 50");
+                if (t.Name.Length < 5) throw new RestValidationException("name", "trigger name length is invalid. min length is 5");
                 if (t.Group?.Length > 50) throw new RestValidationException("group", "trigger group length is invalid. max length is 50");
+                if (!string.IsNullOrEmpty(t.Group) && t.Group?.Length < 5) throw new RestValidationException("group", "trigger group length is invalid. max length is 5");
             });
             container.CronTriggers?.ForEach(t =>
             {
                 if (t.Name.Length > 50) throw new RestValidationException("name", "trigger name length is invalid. max length is 50");
+                if (t.Name.Length < 5) throw new RestValidationException("name", "trigger name length is invalid. min length is 5");
                 if (t.Group?.Length > 50) throw new RestValidationException("group", "trigger group length is invalid. max length is 50");
+                if (!string.IsNullOrEmpty(t.Group) && t.Group?.Length < 5) throw new RestValidationException("group", "trigger group length is invalid. max length is 5");
             });
         }
 
@@ -640,7 +659,7 @@ namespace Planar.Service.API
             }
             catch (Exception ex)
             {
-                throw new RestValidationException("jobType", $"Fail to get type {job.JobType} from assemly {assembly.FullName} ({ex.Message})");
+                throw new RestValidationException("jobType", $"fail to get type {job.JobType} from assemly {assembly.FullName} ({ex.Message})");
             }
         }
 

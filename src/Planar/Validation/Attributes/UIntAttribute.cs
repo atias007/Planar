@@ -13,7 +13,7 @@ namespace Planar.Validation.Attributes
             }
 
             var stringValue = Convert.ToString(value);
-            if (int.TryParse(stringValue, out int id) == false)
+            if (!int.TryParse(stringValue, out int id))
             {
                 return new ValidationResult($"{validationContext.MemberName} is not valid integer value");
             }

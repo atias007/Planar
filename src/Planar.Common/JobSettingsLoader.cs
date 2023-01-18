@@ -99,7 +99,7 @@ namespace Planar.Common
             }
             catch (Exception ex)
             {
-                throw new ArgumentNullException($"Error while reading settings file {filename}", ex);
+                throw new ArgumentNullException($"error while reading settings file {filename}", ex);
             }
         }
     }

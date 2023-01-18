@@ -18,6 +18,8 @@ namespace Planar.CLI.Actions
     {
         protected const string JobFileName = "JobFile.yml";
 
+        public static bool InteractiveMode { get; set; }
+
         protected static async Task<CliActionResponse> Execute(RestRequest request)
         {
             var result = await RestProxy.Invoke(request);
@@ -61,7 +63,7 @@ namespace Planar.CLI.Actions
                 return token.AsEnumerable().Cast<JProperty>().ToDictionary(x => x.Name, x => ConvertJTokenToObject(x.Value));
             }
 
-            throw new InvalidOperationException("Unexpected token: " + token);
+            throw new InvalidOperationException("unexpected token: " + token);
         }
 
         public static IEnumerable<CliActionMetadata> GetAllActions()
@@ -124,9 +126,10 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> ShowHelp()
         {
             var name = typeof(T).Name.Replace("CliActions", string.Empty);
+            var header = Program.GetHelpHeader();
             var help = GetHelpResource(name);
             var response = GetGenericSuccessRestResponse();
-            var result = new CliActionResponse(response, help);
+            var result = new CliActionResponse(response, header + help);
             return await Task.FromResult(result);
         }
 
@@ -242,10 +245,16 @@ namespace Planar.CLI.Actions
 
             if (selectedItem == cancel)
             {
-                throw new CliException("operation was canceled");
+                throw new CliWarningException("operation was canceled");
             }
 
             return selectedItem;
+        }
+
+        protected static bool ConfirmAction(string title)
+        {
+            if (!InteractiveMode) { return true; }
+            return AnsiConsole.Confirm($"are you sure that you want to {title}?", false);
         }
     }
 }

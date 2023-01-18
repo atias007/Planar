@@ -1,29 +1,30 @@
-﻿usage: planar job <command> [<options>]
+﻿usage: planar-cli job <command> [<options>]
 
 the options for <command> and [<options>] parameters of job module:
 
-ls|list         [-q|--quiet]
-add             <folder>
-update          <folder> [all,all-job,all-trigger,job,job-data,properties,triggers,triggers-data]
-get|inspect     <job id>
-settings        <job id>
-running         [<instance id>] [-it|--iterative] [-d|--details] [-q|--quiet]
-running-log     <instance id>
-running-ex      <instance id>
-next            <job id>
-prev            <job id>
-invoke          <job id> [-n|--now <now_value:"dd/mm/yyyy hh:mm">]
-pause-all
-pause           <job id>
-remove|delete   <job id>
-resume-all
-resume          <job id>
-data            <job id> <upsert|remove|clear> [<key>] [<value>]
-stop            <instance id>
-test            <job id> [-n|--now <now_value:"dd/mm/yyyy hh:mm">]
+ <command>       <options>
+--------------------------------------------------------------------------------------------------
+ ls|list         [-q|--quiet]
+ add             <folder>
+ update          <folder> [all,all-job,all-trigger,job,job-data,properties,triggers,triggers-data]
+ get|inspect     <job id>
+ settings        <job id>
+ running         [<instance id>] [-it|--iterative] [-d|--details] [-q|--quiet]
+ running-log     <instance id>
+ running-ex      <instance id>
+ next            <job id>
+ prev            <job id>
+ invoke          <job id> [-n|--now <now_value:"dd/mm/yyyy hh:mm">]
+ pause-all
+ pause           <job id>
+ remove|delete   <job id>
+ resume-all
+ resume          <job id>
+ data            <job id> <upsert|remove|clear> [<key>] [<value>]
+ stop            <instance id>
+ test            <job id> [-n|--now <now_value:"dd/mm/yyyy hh:mm">]
+--------------------------------------------------------------------------------------------------
 
-*****************************************************************
 *** <job id> represent job hash id or job key <[group.]name>  ***
 *** <job id> use ? to get jobs menu                           ***
 *** <job id> use !! to get last job id                        ***
-*****************************************************************

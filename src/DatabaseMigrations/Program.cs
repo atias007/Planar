@@ -200,7 +200,7 @@ namespace DatabaseMigrations
             }
 
             var success = Enum.TryParse<RunningEnvironment>(envText, out var env);
-            if (success == false)
+            if (!success)
             {
                 WriteError($"argument '{envText}' is not valid running environment");
                 AssertStatus();
@@ -228,7 +228,8 @@ namespace DatabaseMigrations
                         "Validate",
                         "List Scripts",
                         "Demo Execute",
-                        "Execute"
+                        "Execute",
+                        "Ensure Database"
                     }));
             }
             else
@@ -237,7 +238,7 @@ namespace DatabaseMigrations
             }
 
             var success = Enum.TryParse<RunningMode>(modeText.Replace(" ", string.Empty), out var mode);
-            if (success == false)
+            if (!success)
             {
                 WriteError($"argument '{modeText}' is not valid running mode");
             }
@@ -279,6 +280,12 @@ namespace DatabaseMigrations
 
             var environment = GetRunningEnvironment(args);
             var connectionString = GetConnectionString(environment);
+
+            if (mode == RunningMode.EnsureDatabase)
+            {
+                EnsureDatabase.For.SqlDatabase(connectionString);
+                return;
+            }
 
             var builder =
                 DeployChanges.To
@@ -425,17 +432,5 @@ namespace DatabaseMigrations
             Console.WriteLine($"- {text}");
             Console.ResetColor();
         }
-
-        ////private static void WriteWarning(string text)
-        ////{
-        ////    Console.ForegroundColor = ConsoleColor.DarkYellow;
-        ////    Console.WriteLine($"      --> {text}");
-        ////    Console.ResetColor();
-
-        ////    if (_status != Status.Error)
-        ////    {
-        ////        _status = Status.Warning;
-        ////    }
-        ////}
     }
 }

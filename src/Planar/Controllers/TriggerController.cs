@@ -3,7 +3,9 @@ using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Service.API;
 using Swashbuckle.AspNetCore.Annotations;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -104,6 +106,25 @@ namespace Planar.Controllers
         {
             await BusinesLayer.RemoveData(id, key);
             return NoContent();
+        }
+
+        [HttpGet("cron")]
+        [SwaggerOperation(OperationId = "get_trigger_cron_expression", Description = "Get description of cron expression", Summary = "Get Cron Description")]
+        [OkTextResponse]
+        [BadRequestResponse]
+        public ActionResult<string> GetCronDescription([FromQuery][Required] string expression)
+        {
+            var result = BusinesLayer.GetCronDescription(expression);
+            return Ok(result);
+        }
+
+        [HttpGet("paused")]
+        [SwaggerOperation(OperationId = "get_trigger_paused", Description = "Get all paused triggers", Summary = "Get Paused Triggers")]
+        [OkJsonResponse(typeof(IEnumerable<PausedTriggerDetails>))]
+        public async Task<ActionResult<IEnumerable<PausedTriggerDetails>>> GetPausedTriggers()
+        {
+            var result = await BusinesLayer.GetPausedTriggers();
+            return Ok(result);
         }
     }
 }

@@ -33,14 +33,14 @@ namespace CommonJob
             if (jobId == null)
             {
                 var key = context.JobDetail.Key;
-                throw new PlanarJobException($"Fail to get job id while execute job {key.Group}.{key.Name}");
+                throw new PlanarJobException($"fail to get job id while execute job {key.Group}.{key.Name}");
             }
 
             var properties = await _dataLayer.GetJobProperty(jobId);
             if (string.IsNullOrEmpty(properties))
             {
                 var key = context.JobDetail.Key;
-                throw new PlanarJobException($"Fail to get job properties while execute job {key.Group}.{key.Name} (id: {jobId})");
+                throw new PlanarJobException($"fail to get job properties while execute job {key.Group}.{key.Name} (id: {jobId})");
             }
 
             Properties = YmlUtil.Deserialize<TProperties>(properties);
@@ -168,7 +168,7 @@ namespace CommonJob
             if (!string.IsNullOrEmpty(value)) { value = value.Trim(); }
             if (string.IsNullOrEmpty(value))
             {
-                throw new PlanarJobException($"Property '{propertyName}' is mandatory for job '{GetType().FullName}'");
+                throw new PlanarJobException($"property '{propertyName}' is mandatory for job '{GetType().FullName}'");
             }
         }
 

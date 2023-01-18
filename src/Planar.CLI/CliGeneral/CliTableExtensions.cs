@@ -94,6 +94,7 @@ namespace Planar.CLI
         public static Table GetTable(List<LogDetails> response)
         {
             var table = new Table();
+            if (response == null) { return table; }
             table.AddColumns("Id", "Message", "Level", "TimeStamp");
             response.ForEach(r => table.AddRow($"{r.Id}", r.Message.EscapeMarkup(), CliTableFormat.GetLevelMarkup(r.Level), CliTableFormat.FormatDateTime(r.TimeStamp)));
             return table;
@@ -102,6 +103,7 @@ namespace Planar.CLI
         internal static Table GetTable(List<CliGlobalConfig> response)
         {
             var table = new Table();
+            if (response == null) { return table; }
             table.AddColumns("Key", "Value", "Type");
             response.ForEach(r => table.AddRow(r.Key.EscapeMarkup(), r.Value.EscapeMarkup(), r.Type.EscapeMarkup()));
             return table;
@@ -110,15 +112,26 @@ namespace Planar.CLI
         public static Table GetTable(TriggerRowDetails response)
         {
             var table = new Table();
+            if (response == null) { return table; }
             table.AddColumns("TriggerId", "Key (Group.Name)", "State", "NextFireTime", "Interval/Cron");
-            response.SimpleTriggers.ForEach(r => table.AddRow($"{r.Id}", $"{r.Group}.{r.Name}".EscapeMarkup(), r.State, CliTableFormat.FormatDateTime(r.NextFireTime), r.RepeatInterval));
+            response.SimpleTriggers.ForEach(r => table.AddRow($"{r.Id}", $"{r.Group}.{r.Name}".EscapeMarkup(), r.State, CliTableFormat.FormatDateTime(r.NextFireTime), CliTableFormat.FormatTimeSpan(r.RepeatInterval)));
             response.CronTriggers.ForEach(r => table.AddRow($"{r.Id}", $"{r.Group}.{r.Name}".EscapeMarkup(), r.State, CliTableFormat.FormatDateTime(r.NextFireTime), r.CronExpression.EscapeMarkup()));
+            return table;
+        }
+
+        public static Table GetTable(List<PausedTriggerDetails> response)
+        {
+            var table = new Table();
+            if (response == null) { return table; }
+            table.AddColumns("Trigger Id", "Key (Group.Name)", "Description", "Job Id");
+            response.ForEach(r => table.AddRow(r.Id.EscapeMarkup(), $"{r.Group}.{r.Name}".EscapeMarkup(), r.Description.EscapeMarkup(), r.Id.EscapeMarkup()));
             return table;
         }
 
         public static Table GetTable(List<UserRowDetails> data)
         {
             var table = new Table();
+            if (data == null) { return table; }
             table.AddColumns("Id", "FirstName", "LastName", "Username", "EmailAddress1", "PhoneNumber1");
             data.ForEach(r => table.AddRow($"{r.Id}", r.FirstName.EscapeMarkup(), r.LastName.EscapeMarkup(), r.Username.EscapeMarkup(), r.EmailAddress1.EscapeMarkup(), r.PhoneNumber1.EscapeMarkup()));
             return table;

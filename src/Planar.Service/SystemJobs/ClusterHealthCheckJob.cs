@@ -47,7 +47,7 @@ namespace Planar.Service.SystemJobs
             var span = AppSettings.ClusterHealthCheckInterval;
             var jobKey = await Schedule<ClusterHealthCheckJob>(scheduler, description, span, stoppingToken: stoppingToken);
 
-            if (AppSettings.Clustering == false)
+            if (!AppSettings.Clustering)
             {
                 await scheduler.PauseJob(jobKey, stoppingToken);
             }
