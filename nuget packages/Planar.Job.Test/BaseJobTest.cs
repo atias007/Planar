@@ -17,7 +17,7 @@ namespace Planar.Job.Test
     {
         public abstract void Configure(IConfigurationBuilder configurationBuilder, string environment);
 
-        public abstract void RegisterServices(IServiceCollection services);
+        public abstract void RegisterServices(IConfiguration configuration, IServiceCollection services);
 
         protected JobInstanceLog ExecuteJob<T>(Dictionary<string, object> dataMap = null, DateTime? overrideNow = null)
             where T : class, new()
@@ -44,7 +44,7 @@ namespace Planar.Job.Test
             {
                 _broker = new JobMessageBroker(context, settings);
                 Action<IConfigurationBuilder, string> configureAction = Configure;
-                Action<IServiceCollection> registerServicesAction = RegisterServices;
+                Action<IConfiguration, IServiceCollection> registerServicesAction = RegisterServices;
                 var result = method.Invoke(instance, new object[] { _broker, configureAction, registerServicesAction }) as Task;
                 result.ConfigureAwait(false).GetAwaiter().GetResult();
             }

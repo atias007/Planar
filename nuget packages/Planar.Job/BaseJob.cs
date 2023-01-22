@@ -33,12 +33,12 @@ namespace Planar
 
         public abstract Task ExecuteJob(IJobExecutionContext context);
 
-        public abstract void RegisterServices(IServiceCollection services);
+        public abstract void RegisterServices(IConfiguration configuration, IServiceCollection services);
 
         internal Task Execute(ref object messageBroker)
         {
             Action<IConfigurationBuilder, string> configureAction = Configure;
-            Action<IServiceCollection> registerServicesAction = RegisterServices;
+            Action<IConfiguration, IServiceCollection> registerServicesAction = RegisterServices;
 
             InitializeMessageBroker(messageBroker);
             InitializeConfiguration(_context, configureAction);
@@ -56,7 +56,7 @@ namespace Planar
         internal Task ExecuteUnitTest(
             ref object messageBroker,
             Action<IConfigurationBuilder, string> configureAction,
-            Action<IServiceCollection> registerServicesAction)
+            Action<IConfiguration, IServiceCollection> registerServicesAction)
 
         {
             InitializeMessageBroker(messageBroker);
@@ -214,7 +214,7 @@ namespace Planar
             Configuration = builder.Build();
         }
 
-        private void InitializeDepedencyInjection(JobExecutionContext context, MessageBroker messageBroker, Action<IServiceCollection> registerServicesAction)
+        private void InitializeDepedencyInjection(JobExecutionContext context, MessageBroker messageBroker, Action<IConfiguration, IServiceCollection> registerServicesAction)
         {
             var services = new ServiceCollection();
             services.AddSingleton(Configuration);
@@ -222,7 +222,7 @@ namespace Planar
             services.AddSingleton<ILogger, PlannerLogger>();
             services.AddSingleton(messageBroker);
             services.AddSingleton(typeof(ILogger<>), typeof(PlannerLogger<>));
-            registerServicesAction.Invoke(services);
+            registerServicesAction.Invoke(Configuration, services);
             _provider = services.BuildServiceProvider();
         }
 

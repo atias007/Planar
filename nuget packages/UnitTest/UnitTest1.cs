@@ -11,7 +11,7 @@ namespace UnitTest
         {
         }
 
-        public override void RegisterServices(IServiceCollection services)
+        public override void RegisterServices(IConfiguration configuration, IServiceCollection services)
         {
         }
 
