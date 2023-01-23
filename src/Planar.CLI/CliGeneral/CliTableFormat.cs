@@ -47,11 +47,11 @@ namespace Planar.CLI
         {
             if (DateTime.Today == dateTime.Date)
             {
-                return $"today      {dateTime:HH:mm:ss}";
+                return $"today      {dateTime.ToLongTimeString()}";
             }
             else
             {
-                return $"{dateTime:dd/MM/yyyy HH:mm:ss}";
+                return $"{dateTime.ToShortDateString()} {dateTime.ToLongTimeString()}";
             }
         }
 

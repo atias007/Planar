@@ -12,8 +12,5 @@ namespace Planar.CLI.Entities
 
         [ActionProperty(ShortName = "s", LongName = "system")]
         public bool System { get; set; }
-
-        [ActionProperty(ShortName = "su", LongName = "user")]
-        public bool User { get; set; }
     }
 }

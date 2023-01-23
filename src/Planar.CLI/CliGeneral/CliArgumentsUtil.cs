@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Planar.CLI
@@ -18,32 +19,41 @@ namespace Planar.CLI
             Module = args[0];
             Command = args[1];
 
-            CliArgument current = null;
-
+            var list = new List<CliArgument>();
             for (int i = 2; i < args.Length; i++)
             {
-                var item = args[i];
-                if (current == null)
+                list.Add(new CliArgument { Key = args[i] });
+            }
+
+            for (int i = 1; i < list.Count; i++)
+            {
+                var item1 = list[i - 1];
+                var item2 = list[i];
+
+                if (IsKeyArgument(item1) && !IsKeyArgument(item2))
                 {
-                    current = new CliArgument { Key = item };
-                }
-                else
-                {
-                    if (!current.Key.StartsWith("-") && item.StartsWith("-"))
-                    {
-                        current.Value = item;
-                        CliArguments.Add(current);
-                        current = null;
-                    }
-                    else
-                    {
-                        CliArguments.Add(current);
-                        current = new CliArgument { Key = item };
-                    }
+                    item1.Value = item2.Key;
+                    item2.Key = null;
+                    i++;
                 }
             }
 
-            if (current != null) CliArguments.Add(current);
+            foreach (var item in list)
+            {
+                if (item.Key != null && string.IsNullOrEmpty(item.Value))
+                {
+                    item.Value = true.ToString();
+                }
+            }
+
+            CliArguments = list.Where(l => l.Key != null).ToList();
+        }
+
+        private static bool IsKeyArgument(CliArgument arg)
+        {
+            if (string.IsNullOrEmpty(arg.Key)) { return false; }
+            const string template = "^-(-?)[a-z,A-Z]";
+            return Regex.IsMatch(arg.Key, template, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
         }
 
         public static CliActionMetadata ValidateArgs(ref string[] args, IEnumerable<CliActionMetadata> cliActionsMetadata)
@@ -213,7 +223,7 @@ namespace Planar.CLI
             {
                 var message =
                     string.IsNullOrEmpty(p.RequiredMissingMessage) ?
-                    $"property {p.Name} is required" :
+                    $"argument {p.Name} is required" :
                     p.RequiredMissingMessage;
 
                 throw new CliException(message);
@@ -239,7 +249,12 @@ namespace Planar.CLI
             }
             catch (Exception)
             {
-                throw new CliException($"value '{value}' has wrong format for type '{prop.PropertyType.Name}' of property {prop.Name}");
+                var attribute = prop.GetCustomAttribute<ActionPropertyAttribute>();
+                attribute ??= new ActionPropertyAttribute();
+
+                var message = $"value '{value}' has wrong format for argument '-{attribute.ShortName}|--{attribute.LongName}'";
+
+                throw new CliException(message);
             }
         }
     }

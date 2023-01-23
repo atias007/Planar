@@ -3,6 +3,7 @@
 - add to base test to retrieve log & exception
 
 - bug: reload monitor + reload hooks --> not support cluster
+- bug: job test dont validate that job is exists (run: job text xxxxxxxx)
 - cli: job update, when no folder supplied, show menu
 
 - add hook test option

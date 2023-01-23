@@ -4,7 +4,7 @@ the options for <command> and [<options>] parameters of job module:
 
  <command>       <options>
 --------------------------------------------------------------------------------------------------
- ls|list         [-q|--quiet]
+ ls|list         [-a|--all] [-s|--system] [-q|--quiet]
  add             <folder>
  update          <folder> [all,all-job,all-trigger,job,job-data,properties,triggers,triggers-data]
  get|inspect     <job id>
@@ -14,7 +14,7 @@ the options for <command> and [<options>] parameters of job module:
  running-ex      <instance id>
  next            <job id>
  prev            <job id>
- invoke          <job id> [-n|--now <now_value:"dd/mm/yyyy hh:mm">]
+ invoke          <job id> [-n|--now <{{ShortDatePattern}} {{LongTimePattern}}>]
  pause-all
  pause           <job id>
  remove|delete   <job id>
@@ -22,7 +22,7 @@ the options for <command> and [<options>] parameters of job module:
  resume          <job id>
  data            <job id> <upsert|remove|clear> [<key>] [<value>]
  stop            <instance id>
- test            <job id> [-n|--now <now_value:"dd/mm/yyyy hh:mm">]
+ test            <job id> [-n|--now <{{ShortDatePattern}} {{LongTimePattern}}>]
 --------------------------------------------------------------------------------------------------
 
 *** <job id> represent job hash id or job key <[group.]name>  ***

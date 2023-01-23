@@ -4,7 +4,7 @@ namespace Planar.CLI.Entities
 {
     public class CliCronExpression
     {
-        [Required("expression parameter is required")]
+        [Required("expression argument is required")]
         [ActionProperty(DefaultOrder = 0)]
         public string Expression { get; set; }
     }
