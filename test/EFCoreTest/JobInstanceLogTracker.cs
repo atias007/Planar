@@ -25,7 +25,7 @@ namespace EFCoreTest
             Logger.LogInformation("Last id {Id}", LastId);
         }
 
-        public override void RegisterServices(IServiceCollection services)
+        public override void RegisterServices(IConfiguration configuration, IServiceCollection services)
         {
             var config = services.BuildServiceProvider().GetRequiredService<IConfiguration>();
             var connectionString = config["Connection String"];

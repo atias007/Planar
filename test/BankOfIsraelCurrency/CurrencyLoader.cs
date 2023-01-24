@@ -26,7 +26,7 @@ namespace BankOfIsraelCurrency
             await SaveCurrency();
         }
 
-        public override void RegisterServices(IServiceCollection services)
+        public override void RegisterServices(IConfiguration configuration, IServiceCollection services)
         {
             //// Do Nothig ////
         }
@@ -47,7 +47,7 @@ namespace BankOfIsraelCurrency
                 foreach (var item in data)
                 {
                     FailOnStopRequest();
-                    UpdateProgress(counter, data.Count());
+                    UpdateProgress(counter, data.Length);
                     Logger.LogInformation(" [x] Handle currency {Currency} with value {Value}", item.Key, item.CurrentExchangeRate);
                     IncreaseEffectedRows();
                     await Task.Delay(3000);

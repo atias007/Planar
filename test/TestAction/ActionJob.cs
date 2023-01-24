@@ -55,7 +55,7 @@ namespace TestAction
             PutJobData(nameof(MaxId), ++MaxId);
         }
 
-        public override void RegisterServices(IServiceCollection services)
+        public override void RegisterServices(IConfiguration configuration, IServiceCollection services)
         {
         }
     }
