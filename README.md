@@ -7,4 +7,4 @@ Scheduler engine is based on [Quartz.NET](http://www.quartz-scheduler.org/)
 
 Below you can see the main key features of Planar:
 
-![flyer](https://github.com/atias007/Planar/blob/master/res/matrix.jpg?raw=true)
+![flyer](https://github.com/atias007/Planar/blob/8c7222d689590a97414b987517000ce4dc1ef526/res/characters.jpg)
