@@ -23,8 +23,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		SolutionItems\Features.txt = SolutionItems\Features.txt
 		SolutionItems\MalamWebHook.txt = SolutionItems\MalamWebHook.txt
 		SolutionItems\postgressql-docker-compose.yml = SolutionItems\postgressql-docker-compose.yml
-		SolutionItems\Scaffold-DbContext.txt = SolutionItems\Scaffold-DbContext.txt
 		SolutionItems\run_cluster.bat = SolutionItems\run_cluster.bat
+		SolutionItems\Scaffold-DbContext.txt = SolutionItems\Scaffold-DbContext.txt
 		SolutionItems\ToDo.txt = SolutionItems\ToDo.txt
 	EndProjectSection
 EndProject
@@ -43,6 +43,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Calendar.Hebrew", "Calendars\Planar.Calendar.Hebrew\Planar.Calendar.Hebrew.csproj", "{0592511E-2150-4A3E-9DA2-B708B7BDB740}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Test", "Planar.Test\Planar.Test.csproj", "{30B62187-2BF4-40AA-AB33-EDA20EBC2269}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcessJob", "ProcessJob\ProcessJob.csproj", "{61579251-E63C-46C0-861E-8553D31AB9C3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -98,6 +100,10 @@ Global
 		{30B62187-2BF4-40AA-AB33-EDA20EBC2269}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30B62187-2BF4-40AA-AB33-EDA20EBC2269}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30B62187-2BF4-40AA-AB33-EDA20EBC2269}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61579251-E63C-46C0-861E-8553D31AB9C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61579251-E63C-46C0-861E-8553D31AB9C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61579251-E63C-46C0-861E-8553D31AB9C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61579251-E63C-46C0-861E-8553D31AB9C3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -108,6 +114,7 @@ Global
 		{1B54F392-8C57-4F88-BC76-9072B338ED17} = {8877FB52-2C70-41FB-8119-13C99EF673E1}
 		{F8BA95CB-20DD-4B98-9B7E-C63B20AE825B} = {28C597B0-F8FA-4631-84B9-3E9A7F32ACB6}
 		{0592511E-2150-4A3E-9DA2-B708B7BDB740} = {28C597B0-F8FA-4631-84B9-3E9A7F32ACB6}
+		{61579251-E63C-46C0-861E-8553D31AB9C3} = {8877FB52-2C70-41FB-8119-13C99EF673E1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E379E82B-7E36-4F72-8191-C425A6FA97CD}
