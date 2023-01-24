@@ -5,7 +5,7 @@ the options for <command> and [<options>] parameters of history module:
  <command>   <options>
 -------------------------------------------------------------------------
  ls|list     [-r|--rows <rows>] [-a|--asc] [-f|--from <from date>] 
-             [-t|--to <to date>] [-s|--status <Running|Success|Fail|Veto>] 
+             [-t|--to <to date>] [-s|--status] <Running|Success|Fail|Veto>] 
              [-j|--job <id>] [-jb|job-group <job group>]
  last        [<days>]
  get         <id>

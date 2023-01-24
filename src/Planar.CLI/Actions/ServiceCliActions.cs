@@ -91,7 +91,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, message: result.Data?.Environment);
         }
 
-        [Action("loglevel")]
+        [Action("log-level")]
         public static async Task<CliActionResponse> GetLogLevel()
         {
             var restRequest = new RestRequest("service", Method.Get);
