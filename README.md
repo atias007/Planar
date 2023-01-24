@@ -1,4 +1,4 @@
-![Logo](https://raw.githubusercontent.com/atias007/Planar/master/res/nuget_logo.png)
+![Logo](https://github.com/atias007/Planar/blob/437265e8b34d94e09bb81f1aa7d9b28103d3ed14/res/planar_logo_full.png)
 
 # Planar
 
