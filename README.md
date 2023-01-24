@@ -1,6 +1,5 @@
 ![Logo](https://github.com/atias007/Planar/blob/437265e8b34d94e09bb81f1aa7d9b28103d3ed14/res/planar_logo_full.png)
-
-# Planar
+***
 
 Planar is an enterprise scheduler service. 
 It’s providing peripheral tools and infrastructure to met all of schedule jobs needs (small to enterprise systems).\
