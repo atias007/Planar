@@ -23,7 +23,7 @@ namespace Planar.Service.API
     {
         private const int MinNameLength = 3;
         private const int MaxNameLength = 50;
-        private const string NameRegexTemplate = @"^[a-zA-Z0-9\-_]{@MinNameLength@,@MaxNameLength@}$";
+        private const string NameRegexTemplate = @"^[a-zA-Z0-9\-_\s]{@MinNameLength@,@MaxNameLength@}$";
 
         private static readonly Regex _regex = new(
             NameRegexTemplate
@@ -622,33 +622,25 @@ namespace Planar.Service.API
 
         private static Type GetJobType(SetJobRequest job)
         {
-            Assembly assembly;
             string typeName;
+            Assembly assembly;
 
-            switch (job.JobType)
+            try
             {
-                case nameof(PlanarJob):
-                    try
-                    {
-                        assembly = Assembly.Load(nameof(PlanarJob));
+                assembly = Assembly.Load(job.JobType);
+            }
+            catch (Exception ex)
+            {
+                throw new RestValidationException("jobType", $"fail to load assemly {job.JobType} ({ex.Message})");
+            }
 
-                        if (job.Concurrent)
-                        {
-                            typeName = $"Planar.{nameof(PlanarJobConcurent)}";
-                        }
-                        else
-                        {
-                            typeName = $"Planar.{nameof(PlanarJobNoConcurent)}";
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new RestValidationException("jobType", $"fail to load assemly {nameof(PlanarJob)} ({ex.Message})");
-                    }
-                    break;
-
-                default:
-                    throw new RestValidationException("jobType", $"job type '{job.JobType}' is not supported");
+            if (job.Concurrent)
+            {
+                typeName = $"Planar.{job.JobType}Concurent";
+            }
+            else
+            {
+                typeName = $"Planar.{job.JobType}NoConcurent";
             }
 
             try
@@ -682,8 +674,13 @@ namespace Planar.Service.API
             switch (request.JobType)
             {
                 case nameof(PlanarJob):
-                    var properties = YmlUtil.Deserialize<PlanarJobProperties>(yml);
-                    await ValidatePlanarJobProperties(properties);
+                    var properties1 = YmlUtil.Deserialize<PlanarJobProperties>(yml);
+                    await ValidatePlanarJobProperties(properties1);
+                    break;
+
+                case nameof(ProcessJob):
+                    var properties2 = YmlUtil.Deserialize<ProcessJobProperties>(yml);
+                    await ValidatePlanarJobProperties(properties2);
                     break;
 
                 default:

@@ -5,10 +5,10 @@ namespace Planar.CLI.Entities
 {
     public class CliLoginRequest
     {
-        [ActionProperty(DefaultOrder = 1, LongName = "host", ShortName = "h")]
+        [ActionProperty(DefaultOrder = 1)]
         public string Host { get; set; }
 
-        [ActionProperty(DefaultOrder = 2, LongName = "port", ShortName = "p")]
+        [ActionProperty(DefaultOrder = 2)]
         public int Port { get; set; }
 
         [ActionProperty(LongName = "ssl", ShortName = "s")]
@@ -23,7 +23,7 @@ namespace Planar.CLI.Entities
         [ActionProperty(LongName = "user", ShortName = "u")]
         public string User { get; set; }
 
-        [ActionProperty(LongName = "password", ShortName = "w")]
+        [ActionProperty(LongName = "password", ShortName = "p")]
         public string Password { get; set; }
 
         [IterativeActionProperty]

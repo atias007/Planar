@@ -1,6 +1,4 @@
 ﻿using FluentValidation;
-using Planar.API.Common.Entities;
-using Planar.Service.Exceptions;
 using Planar.Service.General;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,32 +21,12 @@ namespace Planar.Service.Validation
 
         private async Task<bool> PathExists(PlanarJobProperties properties, string path, ValidationContext<PlanarJobProperties> context, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                ServiceUtil.ValidateJobFolderExists(path);
-                await _cluster.ValidateJobFolderExists(path);
-                return true;
-            }
-            catch (PlanarException ex)
-            {
-                context.AddFailure(ex.Message);
-                return false;
-            }
+            return await CommonValidations.PathExists(path, _cluster, context);
         }
 
         private async Task<bool> FilenameExists(PlanarJobProperties properties, string filename, ValidationContext<PlanarJobProperties> context, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                ServiceUtil.ValidateJobFileExists(properties.Path, filename);
-                await _cluster.ValidateJobFileExists(properties.Path, filename);
-                return true;
-            }
-            catch (PlanarException ex)
-            {
-                context.AddFailure(ex.Message);
-                return false;
-            }
+            return await CommonValidations.FilenameExists(properties, filename, _cluster, context);
         }
     }
 }

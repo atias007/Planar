@@ -6,14 +6,14 @@ using Planar.Common;
 using Quartz;
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace CommonJob
 {
     public class JobMessageBroker
     {
+        private static readonly object Locker = new();
         private readonly IJobExecutionContext _context;
-        private static readonly object Locker = new object();
-
         public JobMessageBroker(IJobExecutionContext context, Dictionary<string, string> settings)
         {
             _context = context;
@@ -22,96 +22,25 @@ namespace CommonJob
             Details = JsonConvert.SerializeObject(mapContext);
         }
 
-        private void SetLogLevel(Dictionary<string, string> settings)
-        {
-            if (HasSettings(settings, Consts.LogLevelSettingsKey1)) { return; }
-            if (HasSettings(settings, Consts.LogLevelSettingsKey2)) { return; }
-            SetLogLevel(Global.LogLevel);
-        }
-
-        private void SetLogLevel(LogLevel level)
-        {
-            LogLevel = level;
-            Metadata.Log.AppendLine($"[Log Level: {LogLevel}]");
-        }
-
-        private bool HasSettings(Dictionary<string, string> settings, string key)
-        {
-            if (settings == null) { return false; }
-            if (settings.ContainsKey(key))
-            {
-                var value = settings[key];
-                if (Enum.TryParse<LogLevel>(value, true, out var tempLevel))
-                {
-                    SetLogLevel(tempLevel);
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         public string Details { get; set; }
+
+        public StringBuilder Log => Metadata.Log;
 
         private LogLevel LogLevel { get; set; }
 
-        private static JobExecutionContext MapContext(IJobExecutionContext context, Dictionary<string, string> settings)
+        private JobExecutionMetadata Metadata
         {
-            var hasRetry = context.Trigger.JobDataMap.Contains(Consts.RetrySpan);
-            bool? lastRetry = null;
-            if (hasRetry)
+            get
             {
-                lastRetry = context.Trigger.JobDataMap.GetIntValue(Consts.RetryCounter) > Consts.MaxRetries;
+                return JobExecutionMetadata.GetInstance(_context);
             }
+        }
 
-            var result = new JobExecutionContext
-            {
-                JobSettings = settings,
-                MergedJobDataMap = Global.ConvertDataMapToDictionary(context.MergedJobDataMap),
-                FireInstanceId = context.FireInstanceId,
-                FireTime = context.FireTimeUtc,
-                NextFireTime = context.NextFireTimeUtc,
-                PreviousFireTime = context.PreviousFireTimeUtc,
-                Recovering = context.Recovering,
-                RefireCount = context.RefireCount,
-                ScheduledFireTime = context.ScheduledFireTimeUtc,
-                JobDetails = new JobDetail
-                {
-                    ConcurrentExecutionDisallowed = context.JobDetail.ConcurrentExecutionDisallowed,
-                    Description = context.JobDetail.Description,
-                    Durable = context.JobDetail.Durable,
-                    JobDataMap = Global.ConvertDataMapToDictionary(context.JobDetail.JobDataMap),
-                    Key = new Key
-                    {
-                        Name = context.JobDetail.Key.Name,
-                        Group = context.JobDetail.Key.Group
-                    },
-                    PersistJobDataAfterExecution = context.JobDetail.PersistJobDataAfterExecution,
-                    RequestsRecovery = context.JobDetail.RequestsRecovery
-                },
-                TriggerDetails = new TriggerDetail
-                {
-                    CalendarName = context.Trigger.CalendarName,
-                    Description = context.Trigger.Description,
-                    EndTime = context.Trigger.EndTimeUtc,
-                    FinalFireTime = context.Trigger.FinalFireTimeUtc,
-                    HasMillisecondPrecision = context.Trigger.HasMillisecondPrecision,
-                    Key = new Key
-                    {
-                        Name = context.Trigger.Key.Name,
-                        Group = context.Trigger.Key.Group
-                    },
-                    Priority = context.Trigger.Priority,
-                    StartTime = context.Trigger.StartTimeUtc,
-                    TriggerDataMap = Global.ConvertDataMapToDictionary(context.Trigger.JobDataMap),
-                    HasRetry = hasRetry,
-                    IsLastRetry = lastRetry,
-                    IsRetryTrigger = context.Trigger.Key.Name.StartsWith(Consts.RetryTriggerNamePrefix),
-                },
-                Environment = Global.Environment
-            };
-
-            return result;
+        public void AppendLog(LogLevel level, string messag)
+        {
+            var formatedMessage = $"[{level}] | {messag}";
+            var log = new LogEntity(level, formatedMessage);
+            LogData(log);
         }
 
         public string Publish(string channel, string message)
@@ -146,13 +75,7 @@ namespace CommonJob
 
                 case "AppendLog":
                     var data4 = Deserialize<LogEntity>(message);
-                    lock (Locker)
-                    {
-                        if ((int)data4.Level >= (int)LogLevel)
-                        {
-                            Metadata.Log.AppendLine(data4.Message);
-                        }
-                    }
+                    LogData(data4);
                     return null;
 
                 case "GetExceptionsText":
@@ -217,12 +140,103 @@ namespace CommonJob
             return result;
         }
 
-        private JobExecutionMetadata Metadata
+        private static JobExecutionContext MapContext(IJobExecutionContext context, Dictionary<string, string> settings)
         {
-            get
+            var hasRetry = context.Trigger.JobDataMap.Contains(Consts.RetrySpan);
+            bool? lastRetry = null;
+            if (hasRetry)
             {
-                return JobExecutionMetadata.GetInstance(_context);
+                lastRetry = context.Trigger.JobDataMap.GetIntValue(Consts.RetryCounter) > Consts.MaxRetries;
             }
+
+            var result = new JobExecutionContext
+            {
+                JobSettings = settings,
+                MergedJobDataMap = Global.ConvertDataMapToDictionary(context.MergedJobDataMap),
+                FireInstanceId = context.FireInstanceId,
+                FireTime = context.FireTimeUtc,
+                NextFireTime = context.NextFireTimeUtc,
+                PreviousFireTime = context.PreviousFireTimeUtc,
+                Recovering = context.Recovering,
+                RefireCount = context.RefireCount,
+                ScheduledFireTime = context.ScheduledFireTimeUtc,
+                JobDetails = new JobDetail
+                {
+                    ConcurrentExecutionDisallowed = context.JobDetail.ConcurrentExecutionDisallowed,
+                    Description = context.JobDetail.Description,
+                    Durable = context.JobDetail.Durable,
+                    JobDataMap = Global.ConvertDataMapToDictionary(context.JobDetail.JobDataMap),
+                    Key = new Key
+                    {
+                        Name = context.JobDetail.Key.Name,
+                        Group = context.JobDetail.Key.Group
+                    },
+                    PersistJobDataAfterExecution = context.JobDetail.PersistJobDataAfterExecution,
+                    RequestsRecovery = context.JobDetail.RequestsRecovery
+                },
+                TriggerDetails = new TriggerDetail
+                {
+                    CalendarName = context.Trigger.CalendarName,
+                    Description = context.Trigger.Description,
+                    EndTime = context.Trigger.EndTimeUtc,
+                    FinalFireTime = context.Trigger.FinalFireTimeUtc,
+                    HasMillisecondPrecision = context.Trigger.HasMillisecondPrecision,
+                    Key = new Key
+                    {
+                        Name = context.Trigger.Key.Name,
+                        Group = context.Trigger.Key.Group
+                    },
+                    Priority = context.Trigger.Priority,
+                    StartTime = context.Trigger.StartTimeUtc,
+                    TriggerDataMap = Global.ConvertDataMapToDictionary(context.Trigger.JobDataMap),
+                    HasRetry = hasRetry,
+                    IsLastRetry = lastRetry,
+                    IsRetryTrigger = context.Trigger.Key.Name.StartsWith(Consts.RetryTriggerNamePrefix),
+                },
+                Environment = Global.Environment
+            };
+
+            return result;
+        }
+
+        private bool HasSettings(Dictionary<string, string> settings, string key)
+        {
+            if (settings == null) { return false; }
+            if (settings.ContainsKey(key))
+            {
+                var value = settings[key];
+                if (Enum.TryParse<LogLevel>(value, true, out var tempLevel))
+                {
+                    SetLogLevel(tempLevel);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void LogData(LogEntity logEntity)
+        {
+            lock (Locker)
+            {
+                if ((int)logEntity.Level >= (int)LogLevel)
+                {
+                    Metadata.Log.AppendLine(logEntity.Message);
+                }
+            }
+        }
+
+        private void SetLogLevel(Dictionary<string, string> settings)
+        {
+            if (HasSettings(settings, Consts.LogLevelSettingsKey1)) { return; }
+            if (HasSettings(settings, Consts.LogLevelSettingsKey2)) { return; }
+            SetLogLevel(Global.LogLevel);
+        }
+
+        private void SetLogLevel(LogLevel level)
+        {
+            LogLevel = level;
+            Metadata.Log.AppendLine($"[Log Level: {LogLevel}]");
         }
     }
 }

@@ -16,6 +16,7 @@ namespace CommonJob
     {
         protected readonly ILogger<TInstance> _logger;
         private readonly IJobPropertyDataLayer _dataLayer;
+        private JobMessageBroker _messageBroker;
 
         protected BaseCommonJob(ILogger<TInstance> logger, IJobPropertyDataLayer dataLayer)
         {
@@ -27,7 +28,9 @@ namespace CommonJob
 
         public abstract Task Execute(IJobExecutionContext context);
 
-        protected async Task SetProperties(IJobExecutionContext context)
+        public JobMessageBroker MessageBroker => _messageBroker;
+
+        private async Task SetProperties(IJobExecutionContext context)
         {
             var jobId = GetJobId(context.JobDetail);
             if (jobId == null)
@@ -44,6 +47,20 @@ namespace CommonJob
             }
 
             Properties = YmlUtil.Deserialize<TProperties>(properties);
+        }
+
+        protected async Task Initialize(IJobExecutionContext context)
+        {
+            await SetProperties(context);
+
+            string path = null;
+            if (Properties is IPathJobProperties pathProperties)
+            {
+                path = pathProperties.Path;
+            }
+
+            var settings = LoadJobSettings(path);
+            _messageBroker = new JobMessageBroker(context, settings);
         }
 
         protected void FinalizeJob(IJobExecutionContext context)

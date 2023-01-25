@@ -165,7 +165,7 @@ namespace Planar.Service.API
 
         public IEnumerable<string> GetJobFileTemplates()
         {
-            return new[] { "PlanarJob" };
+            return new[] { "PlanarJob", "ProcessJob" };
         }
 
         public string GetJobFileTemplate(string typeName)

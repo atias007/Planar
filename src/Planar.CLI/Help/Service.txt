@@ -4,8 +4,8 @@ the options for <command> and [<options>] parameters of service module:
 
  <command>         <options>
 ----------------------------------------------------------------------------------------
- login             <host> <port> [--ssl|-s] [--user|-s <user>] [--password|w <password>]
-                   [--remember|-r] [--remember-days|-rd]
+ login             <host> <port> [-s|--ssl] [-u|--user <user>] [-p|--password <password>]
+                   [-r|--remember] [-rd|--remember-days] [-it|--iterative]
  hc|health-check   
  info              [<key>]
  version
