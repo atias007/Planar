@@ -89,14 +89,14 @@ namespace Planar.Service
 
             waiter.OnCompleted(async () =>
             {
-                _logger.LogInformation("IsCancellationRequested = true");
+                _logger.LogInformation("IsCancellationRequested = {Value}", stoppingToken.IsCancellationRequested);
                 try
                 {
                     RemoveSchedulerCluster().Wait();
                 }
                 catch
                 {
-                    _logger.LogWarning("Fail to RemoveSchedulerCluster");
+                    _logger.LogWarning("Fail to {Operation}", nameof(RemoveSchedulerCluster));
                 }
 
                 try
@@ -131,13 +131,13 @@ namespace Planar.Service
         {
             try
             {
-                _logger.LogInformation("Initialize: LoadGlobalConfig");
+                _logger.LogInformation("Initialize: {Operation}", nameof(LoadGlobalConfig));
                 await LoadGlobalConfig(stoppingToken);
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Initialize: Fail to LoadGlobalConfig");
-                throw;
+                _logger.LogCritical(ex, "Initialize: Fail to {Operation}", nameof(LoadGlobalConfig));
+                Shutdown();
             }
         }
 
@@ -152,15 +152,15 @@ namespace Planar.Service
         {
             try
             {
-                _logger.LogInformation("Initialize: ScheduleSystemJobs");
+                _logger.LogInformation("Initialize: {Operation}", nameof(ScheduleSystemJobs));
                 await PersistDataJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
                 await ClusterHealthCheckJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
                 await ClearTraceTableJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Initialize: Fail to ScheduleSystemJobs");
-                throw;
+                _logger.LogCritical(ex, "Initialize: Fail to {Operation}", nameof(ScheduleSystemJobs));
+                Shutdown();
             }
         }
 
@@ -168,7 +168,7 @@ namespace Planar.Service
         {
             try
             {
-                _logger.LogInformation("Initialize: LoadMonitorHooks");
+                _logger.LogInformation("Initialize: {Operation}",nameof(LoadMonitorHooks));
 
                 ServiceUtil.LoadMonitorHooks(_logger);
                 using var scope = _serviceProvider.CreateScope();
@@ -177,8 +177,7 @@ namespace Planar.Service
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Initialize: Fail to AddMonitorHooks");
-                throw;
+                _logger.LogCritical(ex, "Initialize: Fail to {Operation}", nameof(LoadMonitorHooks));
             }
         }
 
@@ -213,7 +212,7 @@ namespace Planar.Service
 
             try
             {
-                _logger.LogInformation("Initialize: JoinToCluster");
+                _logger.LogInformation("Initialize: {Operation}", nameof(JoinToCluster));
 
                 using var scope = _serviceProvider.CreateScope();
                 var util = scope.ServiceProvider.GetRequiredService<ClusterUtil>();
@@ -243,7 +242,7 @@ namespace Planar.Service
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Initialize: Fail to AddSchedulerCluster");
+                _logger.LogCritical(ex, "Initialize: Fail to {Operation}", nameof(JoinToCluster));
                 await _schedulerUtil.Stop(stoppingToken);
                 await _schedulerUtil.Shutdown(stoppingToken);
                 Shutdown();

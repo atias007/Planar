@@ -8,24 +8,24 @@ namespace Planar.CLI
 {
     public class CliActionMetadata
     {
-        private Type _requestType;
+        private Type? _requestType;
 
-        public string Module { get; set; }
+        public string Module { get; set; } = string.Empty;
 
         public List<string> Command { get; set; } = new();
 
-        public MethodInfo Method { get; set; }
+        public MethodInfo? Method { get; set; }
 
         public bool AllowNullRequest { get; set; }
 
-        public Type GetRequestType()
+        public Type? GetRequestType()
         {
-            if (Method == null) return null;
+            if (Method == null) { return null; }
 
             if (_requestType == null)
             {
                 var parameters = Method.GetParameters();
-                if (parameters.Length == 0) return null;
+                if (parameters.Length == 0) { return null; }
                 if (parameters.Length > 1)
                 {
                     throw new CliException($"cli Error: Action {Method.Name} has more then 1 parameter");
@@ -41,6 +41,11 @@ namespace Planar.CLI
         {
             var requestType = GetRequestType();
             var result = new List<RequestPropertyInfo>();
+            if (requestType == null)
+            {
+                return result;
+            }
+
             var props = requestType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
             var inheritKey =
@@ -71,7 +76,7 @@ namespace Planar.CLI
 
     public class RequestPropertyInfo
     {
-        public string Name
+        public string? Name
         {
             get
             {
@@ -79,9 +84,9 @@ namespace Planar.CLI
             }
         }
 
-        public string ShortName { get; set; }
+        public string? ShortName { get; set; }
 
-        public string LongName { get; set; }
+        public string? LongName { get; set; }
 
         public bool Default { get; set; }
 
@@ -89,11 +94,11 @@ namespace Planar.CLI
 
         public bool Required { get; set; }
 
-        public string RequiredMissingMessage { get; set; }
+        public string? RequiredMissingMessage { get; set; }
 
         public bool ValueSupplied { get; set; }
 
-        public PropertyInfo PropertyInfo { get; set; }
+        public PropertyInfo? PropertyInfo { get; set; }
 
         public bool JobOrTriggerKey { get; set; }
     }

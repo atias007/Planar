@@ -341,11 +341,11 @@ namespace Planar.Service.Monitor
                     var count2 = await dal.CountFailsInHourForJob(new { args.JobId });
                     return count2 >= args.Arg;
 
-                case MonitorEvents.ExecutionFailWithEffectedRowsGreaterThanx:
+                case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx:
 
                     return ServiceUtil.GetEffectedRows(context) > args.Arg;
 
-                case MonitorEvents.ExecutionFailWithEffectedRowsLessThanx:
+                case MonitorEvents.ExecutionEndWithEffectedRowsLessThanx:
                     return ServiceUtil.GetEffectedRows(context) < args.Arg;
             }
         }

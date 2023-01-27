@@ -398,7 +398,7 @@ namespace Planar.Service.API
 
             try
             {
-                await DeleteMonitorOfJob(jobId, jobKey.Group);
+                await DeleteMonitorOfJob(jobKey);
             }
             catch (Exception ex)
             {
@@ -441,14 +441,13 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task DeleteMonitorOfJob(string jobId, string jobGroup)
+        private async Task DeleteMonitorOfJob(JobKey jobKey)
         {
-            var key = await JobKeyHelper.GetJobKeyById(jobId);
             var dal = Resolve<MonitorData>();
-            await dal.DeleteMonitorByJobId(key.Group, key.Name);
-            if (!await JobGroupExists(jobGroup))
+            await dal.DeleteMonitorByJobId(jobKey.Group, jobKey.Name);
+            if (!await JobGroupExists(jobKey.Group))
             {
-                await dal.DeleteMonitorByJobGroup(jobGroup);
+                await dal.DeleteMonitorByJobGroup(jobKey.Group);
             }
         }
 

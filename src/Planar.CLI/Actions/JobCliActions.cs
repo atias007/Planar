@@ -563,7 +563,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("trigger/{jobId}/byjob", Method.Get);
             restRequest.AddUrlSegment("jobId", jobId);
             var result = await RestProxy.Invoke<TriggerRowDetails>(restRequest);
-            if (result.IsSuccessful)
+            if (result.IsSuccessful && result.Data != null)
             {
                 var triggers = result.Data.SimpleTriggers
                     .OrderBy(d => d.Name)

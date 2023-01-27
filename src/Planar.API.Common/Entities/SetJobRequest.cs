@@ -19,15 +19,15 @@ namespace Planar.API.Common.Entities
         public bool Concurrent { get; set; }
 
         [YamlMember(Alias = "job data")]
-        public Dictionary<string, string> JobData { get; set; }
+        public Dictionary<string, string> JobData { get; set; } = new();
 
         [YamlMember(Alias = "global config")]
-        public Dictionary<string, string> GlobalConfig { get; set; }
+        public Dictionary<string, string> GlobalConfig { get; set; } = new();
 
         [YamlMember(Alias = "simple triggers")]
-        public List<JobSimpleTriggerMetadata> SimpleTriggers { get; set; }
+        public List<JobSimpleTriggerMetadata> SimpleTriggers { get; set; } = new();
 
         [YamlMember(Alias = "cron triggers")]
-        public List<JobCronTriggerMetadata> CronTriggers { get; set; }
+        public List<JobCronTriggerMetadata> CronTriggers { get; set; } = new();
     }
 }

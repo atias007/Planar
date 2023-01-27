@@ -22,7 +22,7 @@ namespace Planar.CLI
             Message = message;
         }
 
-        public CliActionResponse(RestResponse response, object serializeObj)
+        public CliActionResponse(RestResponse response, object? serializeObj)
             : this(response)
         {
             if (serializeObj != null)
@@ -43,11 +43,11 @@ namespace Planar.CLI
             Tables = tables;
         }
 
-        public RestResponse Response { get; private set; }
+        public RestResponse Response { get; private set; } = new();
 
-        public string Message { get; private set; }
+        public string? Message { get; private set; }
 
-        public List<Table> Tables { get; private set; }
+        public List<Table>? Tables { get; private set; }
 
         public static CliActionResponse Empty
         {
@@ -59,7 +59,7 @@ namespace Planar.CLI
 
         protected static string SerializeResponse(object response)
         {
-            if (response == null) return null;
+            if (response == null) { return null; }
             var serializer = new SerializerBuilder().Build();
             var yml = serializer.Serialize(response);
 

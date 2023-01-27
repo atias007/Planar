@@ -5,6 +5,7 @@ using Planar.Service.Exceptions;
 using Planar.Service.Monitor;
 using Quartz;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,9 +15,11 @@ namespace Planar.Service.General
 {
     public static class ServiceUtil
     {
-        public static Dictionary<string, MonitorHookFactory> MonitorHooks { get; private set; } = new();
+        public static ConcurrentDictionary<string, MonitorHookFactory> MonitorHooks { get; private set; } = new();
         private static bool _disposeFlag;
         private static readonly object _locker = new();
+        private const string _monitorHookAssemblyContextName = "MonitorHook_";
+        private const string _monitorHookBaseClassName = "Planar.Monitor.Hook.BaseHook";
 
         internal static string GenerateId()
         {
@@ -27,7 +30,9 @@ namespace Planar.Service.General
         private static void ClearMonitorHooks()
         {
             MonitorHooks.Clear();
-            var contexts = AssemblyLoadContext.All.Where(c => c.IsCollectible && c.Name.StartsWith("MonitorHook_"));
+            var contexts = AssemblyLoadContext.All
+                .Where(c => c.IsCollectible && c.Name.StartsWith(_monitorHookAssemblyContextName));
+
             foreach (var c in contexts)
             {
                 c.Unload();
@@ -49,26 +54,16 @@ namespace Planar.Service.General
             foreach (var dir in directories)
             {
                 var folder = Path.GetDirectoryName(dir);
-                var assemblyContext = AssemblyLoader.CreateAssemblyLoadContext($"MonitorHook_{folder}", true);
+                var assemblyContext = AssemblyLoader.CreateAssemblyLoadContext($"{_monitorHookAssemblyContextName}{folder}", true);
                 var files = Directory.GetFiles(dir, "*.dll");
                 var hasHook = false;
-                const string baseClassName = "Planar.MonitorHook.BaseMonitorHook";
 
                 foreach (var f in files)
                 {
-                    var assembly = AssemblyLoader.LoadFromAssemblyPath(f, assemblyContext);
-                    var types = assembly.GetTypes().Where(t => t.IsInterface == false && t.IsAbstract == false);
+                    var types = GetHookTypesFromFile(assemblyContext, f);
                     foreach (var t in types)
                     {
-                        var isHook = t.BaseType.FullName == baseClassName;
-                        if (isHook)
-                        {
-                            hasHook = true;
-                            var name = new DirectoryInfo(dir).Name;
-                            var hook = new MonitorHookFactory { Name = name, Type = t, AssemblyContext = assemblyContext };
-                            MonitorHooks.Add(name, hook);
-                            logger.LogInformation("Add MonitorHook '{Name}' from type '{FullName}'", name, t.FullName);
-                        }
+                        hasHook = LoadHook(logger, dir, assemblyContext, t);
                     }
                 }
 
@@ -77,6 +72,49 @@ namespace Planar.Service.General
                     assemblyContext.Unload();
                 }
             }
+        }
+
+        private static bool LoadHook<T>(ILogger<T> logger, string dir, AssemblyLoadContext assemblyContext, Type t)
+        {
+            var name = new DirectoryInfo(dir).Name;
+            var hook = new MonitorHookFactory { Name = name, Type = t, AssemblyContext = assemblyContext };
+            var result = MonitorHooks.TryAdd(name, hook);
+            logger.LogInformation("Add MonitorHook '{Name}' from type '{FullName}'", name, t.FullName);
+            return result;
+        }
+
+        private static IEnumerable<Type> GetHookTypesFromFile(AssemblyLoadContext assemblyContext, string file)
+        {
+            var result = new List<Type>();
+            IEnumerable<Type> allTypes;
+
+            try
+            {
+                var assembly = AssemblyLoader.LoadFromAssemblyPath(file, assemblyContext);
+                allTypes = assembly.GetTypes().Where(t => !t.IsInterface && !t.IsAbstract);
+            }
+            catch
+            {
+                return result;
+            }
+
+            foreach (var t in allTypes)
+            {
+                try
+                {
+                    var isHook = t.BaseType.FullName == _monitorHookBaseClassName;
+                    if (isHook)
+                    {
+                        result.Add(t);
+                    }
+                }
+                catch
+                {
+                    // *** DO NOTHING --> SKIP TYPE *** //
+                }
+            }
+
+            return result;
         }
 
         public static string GetJobFolder(string folder)

@@ -2,19 +2,16 @@
 using Planar.TeamsMonitorHook.TeamsCards;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.TeamsMonitorHook
 {
     // https://docs.microsoft.com/en-us/graph/api/chatmessage-post?view=graph-rest-1.0&tabs=powershell
-    public class TeamHook : BaseMonitorHook
+    public class TeamHook : BaseHook
     {
         private const string ImageSource = "https://raw.githubusercontent.com/atias007/Planar/master/hooks/Planar.TeamsMonitorHook/Icons/{0}.png";
 

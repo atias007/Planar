@@ -6,6 +6,7 @@ the options for <command> and [<options>] parameters of service module:
 ----------------------------------------------------------------------------------------
  login             <host> <port> [-s|--ssl] [-u|--user <user>] [-p|--password <password>]
                    [-r|--remember] [-rd|--remember-days] [-it|--iterative]
+ logout
  hc|health-check   
  info              [<key>]
  version
@@ -15,3 +16,4 @@ the options for <command> and [<options>] parameters of service module:
  log-level
  calendars
 ----------------------------------------------------------------------------------------
+

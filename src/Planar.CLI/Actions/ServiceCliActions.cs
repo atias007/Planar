@@ -109,6 +109,28 @@ namespace Planar.CLI.Actions
         [Action("login")]
         public static async Task<CliActionResponse> Login(CliLoginRequest request)
         {
+            InnerLogin(request);
+            ConnectData.SetLoginRequest(request);
+            return await Task.FromResult(CliActionResponse.Empty);
+        }
+
+        [Action("logout")]
+        public static async Task<CliActionResponse> Logout()
+        {
+            ConnectData.Logout();
+            InnerLogin(new CliLoginRequest());
+            return await Task.FromResult(CliActionResponse.Empty);
+        }
+
+        public static void InitializeLogin()
+        {
+            var request = ConnectData.GetLoginRequest();
+            if (request == null) { return; }
+            InnerLogin(request);
+        }
+
+        private static void InnerLogin(CliLoginRequest request)
+        {
             if (string.IsNullOrEmpty(request.Host))
             {
                 request.Host = "127.0.0.1";
@@ -128,15 +150,6 @@ namespace Planar.CLI.Actions
             }
 
             RestProxy.Flush();
-            ConnectData.SetLoginRequest(request);
-            return await Task.FromResult(CliActionResponse.Empty);
-        }
-
-        public static void InitializeLogin()
-        {
-            var request = ConnectData.GetLoginRequest();
-            if (request == null) { return; }
-            Login(request).Wait();
         }
     }
 }

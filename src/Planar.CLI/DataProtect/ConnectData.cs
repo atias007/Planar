@@ -4,30 +4,28 @@ using Newtonsoft.Json;
 using Planar.CLI.Entities;
 using Spectre.Console;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace Planar.CLI.DataProtect
 {
     public static class ConnectData
     {
-        private const string filename = "metadata.dat";
-
         static ConnectData()
         {
+            InitializeMetadataFolder();
             Load();
         }
 
-        private static Dictionary<string, CliLoginRequest> Data { get; set; } = new();
+        private static UserMetadata Data { get; set; } = new UserMetadata { LoginName = GetLoginKey() };
 
-        public static CliLoginRequest GetLoginRequest()
+        private static string MetadataFilename { get; set; } = string.Empty;
+
+        public static CliLoginRequest? GetLoginRequest()
         {
             try
             {
-                var loginName = GetLoginKey();
-                Data.TryGetValue(loginName, out var result);
-                return result;
+                FilterOldItems();
+                return Data?.LoginRequest;
             }
             catch (Exception ex)
             {
@@ -40,21 +38,11 @@ namespace Planar.CLI.DataProtect
         {
             try
             {
-                var loginName = GetLoginKey();
-                RemoveCurrentLogin(loginName);
-
                 if (!request.Remember) { return; }
+                RemoveCurrentLogin();
 
                 request.ConnectDate = DateTimeOffset.Now.Date;
-
-                if (Data.ContainsKey(loginName))
-                {
-                    Data[loginName] = request;
-                }
-                else
-                {
-                    Data.Add(loginName, request);
-                }
+                Data.LoginRequest = request;
 
                 Save();
             }
@@ -66,14 +54,21 @@ namespace Planar.CLI.DataProtect
 
         private static void FilterOldItems()
         {
-            var oldItems = Data.Where(d => d.Value.ConnectDate.AddDays(d.Value.RememberDays) < DateTimeOffset.Now.Date);
-            if (!oldItems.Any()) { return; }
+            var login = Data.LoginRequest;
 
-            foreach (var item in oldItems)
+            if (login == null) { return; }
+
+            if (login.ConnectDate.AddDays(login.RememberDays) < DateTimeOffset.Now.Date)
             {
-                Data.Remove(item.Key);
+                Data.LoginRequest = null;
             }
 
+            Save();
+        }
+
+        public static void Logout()
+        {
+            Data.LoginRequest = null;
             Save();
         }
 
@@ -95,23 +90,25 @@ namespace Planar.CLI.DataProtect
 
         private static void HandleException(Exception ex)
         {
-            AnsiConsole.WriteLine($"{CliTableFormat.WarningColor}fail to read/write saved logins info[/]");
-            AnsiConsole.WriteLine($"{CliTableFormat.WarningColor}exception message: {ex.Message.EscapeMarkup()}[/]");
+            AnsiConsole.MarkupLine($"{CliTableFormat.WarningColor}fail to read/write saved logins info[/]");
+            AnsiConsole.MarkupLine($"{CliTableFormat.WarningColor}exception message: {ex.Message.EscapeMarkup()}[/]");
+            AnsiConsole.WriteLine(string.Empty.PadLeft(80, '-'));
+            AnsiConsole.WriteException(ex);
         }
 
         private static void Load()
         {
             try
             {
-                if (!File.Exists(filename))
+                if (!File.Exists(MetadataFilename))
                 {
                     return;
                 }
 
-                var text = File.ReadAllText(filename);
+                var text = File.ReadAllText(MetadataFilename);
                 var protector = GetProtector();
                 text = protector.Unprotect(text);
-                Data = JsonConvert.DeserializeObject<Dictionary<string, CliLoginRequest>>(text);
+                Data = JsonConvert.DeserializeObject<UserMetadata>(text) ?? new UserMetadata();
                 FilterOldItems();
             }
             catch (Exception ex)
@@ -120,13 +117,30 @@ namespace Planar.CLI.DataProtect
             }
         }
 
-        private static void RemoveCurrentLogin(string loginName)
+        private static void InitializeMetadataFolder()
         {
-            if (Data.ContainsKey(loginName))
+            const string filename = "metadata.dat";
+            var dataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            var folder = Path.Combine(dataFolder, nameof(Planar));
+
+            try
             {
-                Data.Remove(loginName);
+                if (!Directory.Exists(folder))
+                {
+                    Directory.CreateDirectory(folder);
+                }
+            }
+            catch (Exception ex)
+            {
+                HandleException(ex);
             }
 
+            MetadataFilename = Path.Combine(folder, filename);
+        }
+
+        private static void RemoveCurrentLogin()
+        {
+            Data.LoginRequest = null;
             Save();
         }
 
@@ -137,7 +151,7 @@ namespace Planar.CLI.DataProtect
                 var text = JsonConvert.SerializeObject(Data);
                 var protector = GetProtector();
                 text = protector.Protect(text);
-                File.WriteAllText(filename, text);
+                File.WriteAllText(MetadataFilename, text);
             }
             catch (Exception ex)
             {
