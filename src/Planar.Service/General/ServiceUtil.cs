@@ -91,7 +91,7 @@ namespace Planar.Service.General
             try
             {
                 var assembly = AssemblyLoader.LoadFromAssemblyPath(file, assemblyContext);
-                allTypes = assembly.GetTypes().Where(t => t.IsInterface == false && t.IsAbstract == false);
+                allTypes = assembly.GetTypes().Where(t => !t.IsInterface && !t.IsAbstract);
             }
             catch
             {

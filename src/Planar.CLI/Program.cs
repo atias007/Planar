@@ -109,19 +109,18 @@ namespace Planar.CLI
             return true;
         }
 
-        private static CliArgumentsUtil HandleCliCommand(string[] args, IEnumerable<CliActionMetadata> cliActions)
+        private static CliArgumentsUtil? HandleCliCommand(string[] args, IEnumerable<CliActionMetadata> cliActions)
         {
-            if (!args.Any())
-            {
-                return null;
-            }
+            if (!args.Any()) { return null; }
 
-            CliArgumentsUtil cliArgument = null;
+            CliArgumentsUtil? cliArgument = null;
 
             try
             {
                 var action = CliArgumentsUtil.ValidateArgs(ref args, cliActions);
                 cliArgument = new CliArgumentsUtil(args);
+
+                if (action.Method == null || action.Method.DeclaringType == null) { return null; }
 
                 var console = Activator.CreateInstance(action.Method.DeclaringType);
                 var requestType = action.GetRequestType();
@@ -346,6 +345,8 @@ namespace Planar.CLI
 
         private static CliActionResponse? InvokeCliAction(CliActionMetadata action, object console, object param)
         {
+            if (action.Method == null) { return null; }
+
             CliActionResponse? response = null;
             try
             {
@@ -363,8 +364,13 @@ namespace Planar.CLI
             return response;
         }
 
-        private static IEnumerable<string> SplitCommandLine(string commandLine)
+        private static IEnumerable<string> SplitCommandLine(string? commandLine)
         {
+            if (string.IsNullOrEmpty(commandLine))
+            {
+                return new List<string>();
+            }
+
             bool inQuotes = false;
 
             return commandLine.Split(c =>
