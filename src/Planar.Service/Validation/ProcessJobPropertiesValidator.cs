@@ -20,8 +20,8 @@ namespace Planar.Service.Validation
             RuleFor(e => e.Arguments).MaximumLength(1000);
             RuleFor(e => e.OutputEncoding).Must(EncodingExists);
             RuleFor(e => e).Must(ExitCodeValid);
-            RuleFor(e => e.SuccessOutputPattern).MaximumLength(500);
-            RuleFor(e => e.FailOutputPattern).MaximumLength(500);
+            RuleFor(e => e.SuccessOutputRegex).MaximumLength(500);
+            RuleFor(e => e.FailOutputRegex).MaximumLength(500);
             RuleFor(e => e.SuccessExitCodes).Must(c => c == null || c.Count() <= 50).WithMessage("{PropertyName} items count is more then maximum of 50");
             RuleFor(e => e.FailExitCodes).Must(c => c == null || c.Count() <= 50).WithMessage("{PropertyName} items count is more then maximum of 50");
         }
@@ -31,8 +31,8 @@ namespace Planar.Service.Validation
             var counter = 0;
             if (properties.SuccessExitCodes != null && properties.SuccessExitCodes.Any()) { counter++; }
             if (properties.FailExitCodes != null && properties.FailExitCodes.Any()) { counter++; }
-            if (!string.IsNullOrEmpty(properties.SuccessOutputPattern)) { counter++; }
-            if (!string.IsNullOrEmpty(properties.FailOutputPattern)) { counter++; }
+            if (!string.IsNullOrEmpty(properties.SuccessOutputRegex)) { counter++; }
+            if (!string.IsNullOrEmpty(properties.FailOutputRegex)) { counter++; }
 
             if (counter > 1)
             {
@@ -45,6 +45,7 @@ namespace Planar.Service.Validation
 
         private bool EncodingExists(ProcessJobProperties properties, string outputEncoding, ValidationContext<ProcessJobProperties> context)
         {
+            if (outputEncoding == null) { return true; }
             return CommonValidations.EncodingExists(outputEncoding, context);
         }
 

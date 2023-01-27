@@ -6,7 +6,6 @@ using Planar.Common;
 using Quartz;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace CommonJob
 {
@@ -14,6 +13,7 @@ namespace CommonJob
     {
         private static readonly object Locker = new();
         private readonly IJobExecutionContext _context;
+
         public JobMessageBroker(IJobExecutionContext context, Dictionary<string, string> settings)
         {
             _context = context;
@@ -23,8 +23,6 @@ namespace CommonJob
         }
 
         public string Details { get; set; }
-
-        public StringBuilder Log => Metadata.Log;
 
         private LogLevel LogLevel { get; set; }
 

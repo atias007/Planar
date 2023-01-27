@@ -57,7 +57,7 @@ namespace Planar.CLI
             }
         }
 
-        protected static string SerializeResponse(object response)
+        protected static string? SerializeResponse(object response)
         {
             if (response == null) { return null; }
             var serializer = new SerializerBuilder().Build();

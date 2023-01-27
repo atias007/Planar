@@ -41,7 +41,7 @@ namespace Planar.CLI.Actions
         protected static async Task<CliActionResponse> ExecuteTable<T>(RestRequest request, Func<T, Table> tableFunc)
         {
             var result = await RestProxy.Invoke<T>(request);
-            if (result.IsSuccessful)
+            if (result.IsSuccessful && result.Data != null)
             {
                 var table = tableFunc.Invoke(result.Data);
                 return new CliActionResponse(result, table);
@@ -50,7 +50,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        private static object ConvertJTokenToObject(JToken token)
+        private static object? ConvertJTokenToObject(JToken token)
         {
             if (token is JValue value) { return value.Value; }
 

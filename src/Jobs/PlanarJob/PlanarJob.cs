@@ -64,6 +64,7 @@ namespace Planar
         {
             try
             {
+                ValidateMandatoryString(Properties.Path, nameof(Properties.Path));
                 ValidateMandatoryString(Properties.Filename, nameof(Properties.Filename));
                 ValidateMandatoryString(Properties.ClassName, nameof(Properties.ClassName));
 

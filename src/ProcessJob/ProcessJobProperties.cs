@@ -22,14 +22,14 @@ namespace Planar
         [YamlMember(Alias = "success exit codes")]
         public IEnumerable<int> SuccessExitCodes { get; set; } = new List<int>();
 
-        [YamlMember(Alias = "success output pattern")]
-        public string? SuccessOutputPattern { get; set; }
+        [YamlMember(Alias = "success output regex")]
+        public string? SuccessOutputRegex { get; set; }
 
         [YamlMember(Alias = "fail exit codes")]
         public IEnumerable<int> FailExitCodes { get; set; } = new List<int>();
 
-        [YamlMember(Alias = "fail output pattern")]
-        public string? FailOutputPattern { get; set; }
+        [YamlMember(Alias = "fail output regex")]
+        public string? FailOutputRegex { get; set; }
 
         [YamlMember(Alias = "log process information")]
         public bool LogProcessInformation { get; set; } = true;

@@ -28,7 +28,7 @@ namespace Planar.CLI
                                     ?.InformationalVersion
                                     .ToString();
 
-                return result;
+                return result ?? string.Empty;
             }
         }
 
@@ -123,8 +123,13 @@ namespace Planar.CLI
                 if (action.Method == null || action.Method.DeclaringType == null) { return null; }
 
                 var console = Activator.CreateInstance(action.Method.DeclaringType);
+                if (console == null)
+                {
+                    return cliArgument;
+                }
+
                 var requestType = action.GetRequestType();
-                CliActionResponse response;
+                CliActionResponse? response;
 
                 if (requestType == null)
                 {
@@ -173,10 +178,10 @@ namespace Planar.CLI
             return cliArgument;
         }
 
-        private static void HandleCliResponse(CliActionResponse response)
+        private static void HandleCliResponse(CliActionResponse? response)
         {
-            if (response == null) return;
-            if (response.Response == null) return;
+            if (response == null) { return; }
+            if (response.Response == null) { return; }
 
             if (response.Response.IsSuccessful)
             {
@@ -432,11 +437,11 @@ namespace Planar.CLI
             Console.WriteLine();
         }
 
-        private static void WriteInfo(string message)
+        private static void WriteInfo(string? message)
         {
             if (string.IsNullOrEmpty(message) == false) { message = message.Trim(); }
             if (message == "[]") { message = null; }
-            if (string.IsNullOrEmpty(message)) return;
+            if (string.IsNullOrEmpty(message)) { return; }
 
             AnsiConsole.WriteLine(message);
         }
