@@ -145,7 +145,12 @@ namespace Planar.Service.Listeners
         private async Task SafeMonitorJobWasExecuted(IJobExecutionContext context, Exception exception)
         {
             var allTasks = new List<Task>();
-            await SafeScan(MonitorEvents.ExecutionEnd, context, exception);
+            var task0 = SafeScan(MonitorEvents.ExecutionEnd, context, exception);
+            var task6 = SafeScan(MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx, context, exception);
+            var task7 = SafeScan(MonitorEvents.ExecutionEndWithEffectedRowsLessThanx, context, exception);
+            allTasks.Add(task0);
+            allTasks.Add(task6);
+            allTasks.Add(task7);
 
             var success = exception == null;
             if (success)
@@ -166,14 +171,10 @@ namespace Planar.Service.Listeners
                 var task3 = SafeScan(MonitorEvents.ExecutionFail, context, exception);
                 var task4 = SafeScan(MonitorEvents.ExecutionFailxTimesInRow, context, exception);
                 var task5 = SafeScan(MonitorEvents.ExecutionFailxTimesInHour, context, exception);
-                var task6 = SafeScan(MonitorEvents.ExecutionFailWithEffectedRowsGreaterThanx, context, exception);
-                var task7 = SafeScan(MonitorEvents.ExecutionFailWithEffectedRowsLessThanx, context, exception);
 
                 allTasks.Add(task3);
                 allTasks.Add(task4);
                 allTasks.Add(task5);
-                allTasks.Add(task6);
-                allTasks.Add(task7);
             }
 
             await Task.WhenAll(allTasks);

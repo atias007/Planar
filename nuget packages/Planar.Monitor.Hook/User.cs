@@ -1,6 +1,4 @@
-﻿#nullable disable
-
-namespace Planar.Monitor.Hook
+﻿namespace Planar.Monitor.Hook
 {
     public class User : IMonitorUser
     {

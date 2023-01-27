@@ -15,8 +15,8 @@
         ExecutionFailxTimesInRow = 200,
 
         ExecutionFailxTimesInHour = 201,
-        ExecutionFailWithEffectedRowsGreaterThanx = 202,
-        ExecutionFailWithEffectedRowsLessThanx = 203,
+        ExecutionEndWithEffectedRowsGreaterThanx = 202,
+        ExecutionEndWithEffectedRowsLessThanx = 203,
 
         //// -------------------------------------------------------
         JobAdded = 300,
