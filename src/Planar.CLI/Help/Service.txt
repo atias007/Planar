@@ -6,6 +6,7 @@ the options for <command> and [<options>] parameters of service module:
 ----------------------------------------------------------------------------------------
  login             <host> <port> [--ssl|-s] [--user|-s <user>] [--password|w <password>]
                    [--remember|-r] [--remember-days|-rd]
+ logout
  hc|health-check   
  info              [<key>]
  version

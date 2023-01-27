@@ -73,7 +73,7 @@ namespace Planar.CLI
                 }
                 else
                 {
-                    AnsiConsole.MarkupLine($"[red]  - {(item as JValue).Value}[/]");
+                    AnsiConsole.MarkupLine($"[red]  - {(item as JValue)?.Value}[/]");
                 }
             }
         }
@@ -81,11 +81,15 @@ namespace Planar.CLI
         private static bool HandleBadRequestResponse(RestResponse response)
         {
             if (response.StatusCode != HttpStatusCode.BadRequest) { return false; }
+            if (response.Content == null) { return false; }
 
             var entity = JsonConvert.DeserializeObject<BadRequestEntity>(response.Content);
+            if (entity == null) { return false; }
 
             var obj = JObject.Parse(response.Content);
-            var errors = obj["errors"].SelectMany(e => e.ToList()).SelectMany(e => e.ToList());
+            var errors = obj["errors"]?.SelectMany(e => e.ToList()).SelectMany(e => e.ToList());
+            if (errors == null) { return false; }
+
             if (!errors.Any())
             {
                 AnsiConsole.MarkupLine($"[red]validation error: {entity.Detail}[/]");
@@ -95,7 +99,7 @@ namespace Planar.CLI
             if (errors.Count() == 1)
             {
                 var value = errors.First() as JValue;
-                AnsiConsole.MarkupLine($"[red]validation error: {value.Value}[/]");
+                AnsiConsole.MarkupLine($"[red]validation error: {value?.Value}[/]");
                 return true;
             }
 
@@ -246,9 +250,11 @@ namespace Planar.CLI
         private static bool HandleHealthCheckResponse(RestResponse response)
         {
             if (response.StatusCode == HttpStatusCode.ServiceUnavailable &&
+                response.Request != null &&
+                response.Content != null &&
                 response.Request.Resource.ToLower().Contains("service/healthcheck"))
             {
-                var s = JsonConvert.DeserializeObject<string>(response.Content);
+                var s = JsonConvert.DeserializeObject<string>(response.Content) ?? string.Empty;
                 var lines = s.Split("\r", StringSplitOptions.TrimEntries);
                 foreach (var item in lines)
                 {
@@ -319,7 +325,7 @@ namespace Planar.CLI
             const string help = "help";
             while (string.Compare(command, exit, true) != 0)
             {
-                Console.Write($"{RestProxy.Host}:{RestProxy.Port}> ");
+                AnsiConsole.Markup($"[grey58]{RestProxy.Host.EscapeMarkup()}:{RestProxy.Port}> [/]");
                 command = Console.ReadLine();
                 if (string.Compare(command, exit, true) == 0)
                 {
@@ -338,12 +344,16 @@ namespace Planar.CLI
             }
         }
 
-        private static CliActionResponse InvokeCliAction(CliActionMetadata action, object console, object param)
+        private static CliActionResponse? InvokeCliAction(CliActionMetadata action, object console, object param)
         {
-            CliActionResponse response;
+            CliActionResponse? response = null;
             try
             {
-                response = (action.Method.Invoke(console, new[] { param }) as Task<CliActionResponse>).Result;
+                var task = action.Method.Invoke(console, new[] { param }) as Task<CliActionResponse>;
+                if (task != null)
+                {
+                    response = task.Result;
+                }
             }
             catch (Exception ex)
             {

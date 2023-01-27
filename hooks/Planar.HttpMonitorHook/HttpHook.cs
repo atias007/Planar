@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Planar.HttpMonitorHook
 {
-    public class HttpHook : BaseMonitorHook
+    public class HttpHook : BaseHook
     {
         public override Task Handle(IMonitorDetails monitorDetails)
         {

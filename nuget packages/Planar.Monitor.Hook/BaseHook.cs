@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Monitor.Hook
 {
-    public abstract class BaseMonitorHook
+    public abstract class BaseHook
     {
         private MessageBroker _messageBroker;
 
@@ -73,7 +73,7 @@ namespace Planar.Monitor.Hook
             }
             catch (Exception ex)
             {
-                throw new PlanarMonitorException($"Fail to deserialize monitor details context at {nameof(BaseMonitorHook)}.{nameof(ExecuteHandleSystem)}", ex);
+                throw new PlanarMonitorException($"Fail to deserialize monitor details context at {nameof(BaseHook)}.{nameof(ExecuteHandleSystem)}", ex);
             }
         }
 
