@@ -1,0 +1,20 @@
+job type: ProcessJob
+name: DemoProcessJob
+group: Processes
+description: my demo process job
+durable: true
+concurrent: false
+
+properties:
+  path: DemoProcessJob
+  filename: DemoProcessJob.exe
+  timeout: 00:05:00
+  success exit codes:
+    - 0
+  log process information: true
+
+simple triggers:
+  - name: every-5minute-trigger
+    interval: 00:05:00
+    misfire behaviour: FireNow
+    priority: 1

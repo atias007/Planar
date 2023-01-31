@@ -1,6 +1,4 @@
-﻿using Grpc.Core;
-using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -17,8 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Xml.Linq;
-using static Azure.Core.HttpHeader;
+using System.Transactions;
 
 namespace Planar.Service.API
 {
@@ -385,6 +382,8 @@ namespace Planar.Service.API
             var jobKey = await JobKeyHelper.GetJobKey(id);
             var jobId = await JobKeyHelper.GetJobId(jobKey);
             ValidateSystemJob(jobKey);
+
+            using var transaction = GetTransaction();
             await Scheduler.DeleteJob(jobKey);
 
             try
@@ -404,6 +403,8 @@ namespace Planar.Service.API
             {
                 Logger.LogError(ex, "Fail to delete monitor after delete job id {Id}", id);
             }
+
+            transaction.Complete();
         }
 
         public async Task Resume(JobOrTriggerKey request)

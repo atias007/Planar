@@ -16,6 +16,8 @@ namespace Planar
         private long _peakPagedMemorySize64;
         private long _peakVirtualMemorySize64;
         private long _peakWorkingSet64;
+        private Process? _process;
+        private bool _processKilled;
 
         protected ProcessJob(ILogger<ProcessJob> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
         {
@@ -31,18 +33,18 @@ namespace Planar
 
         public override async Task Execute(IJobExecutionContext context)
         {
-            Process? process = null;
-
             try
             {
                 await Initialize(context);
 
                 ValidateProcessJob();
+                context.CancellationToken.Register(() => OnCancel());
 
                 var startInfo = GetProcessStartInfo();
-                process = await StartProcess(startInfo);
-                LogProcessInformation(process);
-                CheckProcessExitCode(process);
+                StartProcess(startInfo);
+
+                LogProcessInformation();
+                CheckProcessExitCode();
             }
             catch (Exception ex)
             {
@@ -52,14 +54,22 @@ namespace Planar
             finally
             {
                 FinalizeJob(context);
-                try { process?.CancelErrorRead(); } catch { }
-                try { process?.CancelOutputRead(); } catch { }
-                try { process?.Close(); } catch { }
-                try { process?.Dispose(); } catch { }
+                FinalizeProcess();
             }
         }
 
-        public void ValidateProcessJob()
+        private void FinalizeProcess()
+        {
+            try { _process?.CancelErrorRead(); } catch { }
+            try { _process?.CancelOutputRead(); } catch { }
+            try { _process?.Close(); } catch { }
+            try { _process?.Dispose(); } catch { }
+            try { if (_process != null) { _process.EnableRaisingEvents = false; } } catch { }
+            try { if (_process != null) { _process.OutputDataReceived -= ProcessOutputDataReceived; } } catch { }
+            try { if (_process != null) { _process.ErrorDataReceived -= ProcessErrorDataReceived; } } catch { }
+        }
+
+        private void ValidateProcessJob()
         {
             try
             {
@@ -68,7 +78,7 @@ namespace Planar
 
                 if (!File.Exists(Filename))
                 {
-                    throw new PlanarJobException($"process filename '{Filename}' could not be found");
+                    throw new ProcessJobException($"process filename '{Filename}' could not be found");
                 }
             }
             catch (Exception ex)
@@ -79,10 +89,29 @@ namespace Planar
             }
         }
 
+        private void OnCancel()
+        {
+            if (_process == null)
+            {
+                return;
+            }
+
+            try
+            {
+                MessageBroker.AppendLog(LogLevel.Warning, "Process was stopped");
+                _processKilled = true;
+                _process.Kill(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to kill process job {Filename}", _process.StartInfo.FileName);
+            }
+        }
+
         private static string FormatBytes(long bytes)
         {
             const int scale = 1024;
-            string[] orders = new string[] { "gb", "mb", "kb", "bytes" };
+            var orders = new string[] { "gb", "mb", "kb", "bytes" };
             var max = (long)Math.Pow(scale, orders.Length - 1);
 
             foreach (string order in orders)
@@ -98,15 +127,21 @@ namespace Planar
             return "0 bytes";
         }
 
-        private void CheckProcessExitCode(Process process)
+        private void CheckProcessExitCode()
         {
-            var exitCode = process.ExitCode;
+            if (_processKilled)
+            {
+                throw new ProcessJobException($"process '{Filename}' was stopped at {DateTimeOffset.Now}");
+            }
+
+            if (_process == null) { return; }
+            var exitCode = _process.ExitCode;
             if (Properties.FailExitCodes.Any())
             {
                 if (Properties.FailExitCodes.Any(f => f == exitCode))
                 {
                     var codes = string.Join(',', Properties.FailExitCodes);
-                    throw new ProcessJobException($"The process ended with exit code {exitCode} which is one of fail exit codes ({codes})");
+                    throw new ProcessJobException($"process '{Filename}' ended with exit code {exitCode} which is one of fail exit codes ({codes})");
                 }
 
                 return;
@@ -117,7 +152,7 @@ namespace Planar
                 if (!Properties.SuccessExitCodes.Any(s => s == exitCode))
                 {
                     var codes = string.Join(',', Properties.SuccessExitCodes);
-                    throw new ProcessJobException($"The process ended with exit code {exitCode} which is not one of success exit codes ({codes})");
+                    throw new ProcessJobException($"process '{Filename}' ended with exit code {exitCode} which is not one of success exit codes ({codes})");
                 }
 
                 return;
@@ -129,7 +164,7 @@ namespace Planar
                 var regex = new Regex(Properties.FailOutputRegex, RegexOptions.None, TimeSpan.FromSeconds(5));
                 if (regex.IsMatch(output))
                 {
-                    throw new ProcessJobException($"The process ended with an output that matched the fail output message '{Properties.SuccessOutputRegex}'");
+                    throw new ProcessJobException($"process '{Filename}' ended with an output that matched the fail output message '{Properties.SuccessOutputRegex}'");
                 }
 
                 return;
@@ -141,7 +176,7 @@ namespace Planar
                 var regex = new Regex(Properties.SuccessOutputRegex, RegexOptions.None, TimeSpan.FromSeconds(5));
                 if (!regex.IsMatch(output))
                 {
-                    throw new ProcessJobException($"The process ended with an output that not matched the success output message '{Properties.SuccessOutputRegex}'");
+                    throw new ProcessJobException($"process '{Filename}' ended with an output that not matched the success output message '{Properties.SuccessOutputRegex}'");
                 }
 
                 return;
@@ -149,7 +184,7 @@ namespace Planar
 
             if (exitCode != 0)
             {
-                throw new ProcessJobException($"The process ended with exit code {exitCode} which is different from success exit code 0");
+                throw new ProcessJobException($"process '{Filename}' ended with exit code {exitCode} which is different from success exit code 0");
             }
         }
 
@@ -178,66 +213,70 @@ namespace Planar
             return startInfo;
         }
 
-        private void LogProcessInformation(Process process)
+        private void LogProcessInformation()
         {
+            if (_process == null) { return; }
             if (!Properties.LogProcessInformation) { return; }
 
             MessageBroker.AppendLog(LogLevel.Information, _seperator);
             MessageBroker.AppendLog(LogLevel.Information, " - Process information:");
             MessageBroker.AppendLog(LogLevel.Information, _seperator);
-            MessageBroker.AppendLog(LogLevel.Information, $"ExitCode: {process.ExitCode}");
-            MessageBroker.AppendLog(LogLevel.Information, $"StartTime: {process.StartTime}");
-            MessageBroker.AppendLog(LogLevel.Information, $"ExitTime: {process.ExitTime}");
-            MessageBroker.AppendLog(LogLevel.Information, $"Id: {process.Id}");
+            MessageBroker.AppendLog(LogLevel.Information, $"ExitCode: {_process.ExitCode}");
+            MessageBroker.AppendLog(LogLevel.Information, $"StartTime: {_process.StartTime}");
+            MessageBroker.AppendLog(LogLevel.Information, $"ExitTime: {_process.ExitTime}");
+            MessageBroker.AppendLog(LogLevel.Information, $"Id: {_process.Id}");
             MessageBroker.AppendLog(LogLevel.Information, $"PeakPagedMemorySize64: {FormatBytes(_peakPagedMemorySize64)}");
             MessageBroker.AppendLog(LogLevel.Information, $"PeakWorkingSet64: {FormatBytes(_peakWorkingSet64)}");
             MessageBroker.AppendLog(LogLevel.Information, $"PeakVirtualMemorySize64: {FormatBytes(_peakVirtualMemorySize64)}");
             MessageBroker.AppendLog(LogLevel.Information, _seperator);
         }
 
-        private async Task<Process> StartProcess(ProcessStartInfo startInfo)
+        private void StartProcess(ProcessStartInfo startInfo)
         {
-            Process? process = Process.Start(startInfo);
-            if (process == null)
+            _process = Process.Start(startInfo);
+            if (_process == null)
             {
                 var filename = Path.Combine(Properties.Path, Properties.Filename);
-                throw new PlanarJobException($"Could not start process {filename}");
+                throw new ProcessJobException($"could not start process {filename}");
             }
 
-            process.EnableRaisingEvents = true;
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            _process.EnableRaisingEvents = true;
+            _process.BeginOutputReadLine();
+            _process.BeginErrorReadLine();
 
-            process.OutputDataReceived += (sender, eventArgs) =>
-            {
-                if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
-                _output.AppendLine(eventArgs.Data);
-                MessageBroker.AppendLog(LogLevel.Information, eventArgs.Data);
-                UpdatePeakVariables(process);
-            };
-
-            process.ErrorDataReceived += (sender, eventArgs) =>
-            {
-                if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
-                _output.AppendLine(eventArgs.Data);
-                MessageBroker.AppendLog(LogLevel.Error, eventArgs.Data);
-                UpdatePeakVariables(process);
-            };
+            _process.OutputDataReceived += ProcessOutputDataReceived;
+            _process.ErrorDataReceived += ProcessErrorDataReceived;
 
             if (Properties.Timeout.HasValue && Properties.Timeout != TimeSpan.Zero)
             {
-                process.WaitForExit(Convert.ToInt32(Properties.Timeout.Value.TotalMilliseconds));
+                _process.WaitForExit(Convert.ToInt32(Properties.Timeout.Value.TotalMilliseconds));
             }
             else
             {
-                await process.WaitForExitAsync();
+                _process.WaitForExit();
             }
-
-            return process;
         }
 
-        private void UpdatePeakVariables(Process process)
+        private void ProcessErrorDataReceived(object sender, DataReceivedEventArgs eventArgs)
         {
+            if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
+            _output.AppendLine(eventArgs.Data);
+            MessageBroker.AppendLog(LogLevel.Error, eventArgs.Data);
+            UpdatePeakVariables(_process);
+        }
+
+        private void ProcessOutputDataReceived(object sender, DataReceivedEventArgs eventArgs)
+        {
+            if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
+            _output.AppendLine(eventArgs.Data);
+            MessageBroker.AppendLog(LogLevel.Information, eventArgs.Data);
+            UpdatePeakVariables(_process);
+        }
+
+        private void UpdatePeakVariables(Process? process)
+        {
+            if (process == null) { return; }
+
             if (!process.HasExited)
             {
                 try

@@ -329,7 +329,19 @@ namespace Planar.CLI
             const string help = "help";
             while (string.Compare(command, exit, true) != 0)
             {
-                AnsiConsole.Markup($"[grey58]{RestProxy.Host.EscapeMarkup()}:{RestProxy.Port}> [/]");
+                // white
+                // yellow
+                // red
+                // lime
+                // aqua
+                // deepskyblue1
+                // black on white
+                // black on yellow
+                // black on red
+                // black on fuchsia
+                // black on aqua
+                // black on springgreen1
+                AnsiConsole.Markup($"[white]{RestProxy.Host.EscapeMarkup()}:{RestProxy.Port}>[/] ");
                 command = Console.ReadLine();
                 if (string.Compare(command, exit, true) == 0)
                 {

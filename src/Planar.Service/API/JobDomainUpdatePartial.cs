@@ -112,15 +112,21 @@ namespace Planar.Service.API
         {
             var metadata = new JobUpdateMetadata();
 
-            try
-            {
-                return await UpdateInner(request, options, metadata);
-            }
-            catch
-            {
-                await RollBack(metadata);
-                throw;
-            }
+            using var transaction = GetTransaction();
+            var result = await UpdateInner(request, options, metadata);
+            transaction.Complete();
+            return result;
+
+            // TODO: check for rollback
+            ////try
+            ////{
+            ////    return await UpdateInner(request, options, metadata);
+            ////}
+            ////catch
+            ////{
+            ////    await RollBack(metadata);
+            ////    throw;
+            ////}
         }
 
         private async Task RollBack(JobUpdateMetadata metadata)

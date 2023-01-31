@@ -72,12 +72,18 @@ namespace Planar.Service.API
             // Build Triggers
             var triggers = BuildTriggers(request);
 
+            // Open transaction
+            using var transaction = GetTransaction();
+
             // Save Job Properties
             var jobPropertiesYml = GetJopPropertiesYml(request);
             await DataLayer.AddJobProperty(new JobProperty { JobId = id, Properties = jobPropertiesYml });
 
             // ScheduleJob
             await Scheduler.ScheduleJob(job, triggers, true);
+
+            // Close Transaction
+            transaction.Complete();
 
             // Return Id
             return new JobIdResponse { Id = id };

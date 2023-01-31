@@ -14,6 +14,9 @@ namespace Planar.CLI
 {
     public class CliArgumentsUtil
     {
+        private const string RegexTemplate = "^[1-9][0-9]*$";
+        private static readonly Regex _historyRegex = new Regex(RegexTemplate, RegexOptions.Compiled, TimeSpan.FromSeconds(2));
+
         public CliArgumentsUtil(string[] args)
         {
             Module = args[0];
@@ -63,6 +66,11 @@ namespace Planar.CLI
             if (list[0].ToLower() == "ls") { list.Insert(0, "job"); }
             if (list[0].ToLower() == "connect") { list.Insert(0, "service"); }
             if (list[0].ToLower() == "cls") { list.Insert(0, "inner"); }
+            if (_historyRegex.IsMatch(list[0]))
+            {
+                list.Insert(0, "history");
+                list.Insert(1, "get");
+            }
 
             if (!cliActionsMetadata.Any(a => a.Module.ToLower() == list[0].ToLower()))
             {
