@@ -59,13 +59,21 @@ namespace Planar.CLI
             return Regex.IsMatch(arg.Key, template, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
         }
 
+        private static IEnumerable<string> GetModuleByArgument(string subArgument, IEnumerable<CliActionMetadata> cliActionsMetadata)
+        {
+            var metadata = cliActionsMetadata
+                .Where(m => m.Command.Any(c => c?.ToLower() == subArgument.ToLower()))
+                .Select(m => m.Module);
+
+            return metadata;
+        }
+
         public static CliActionMetadata ValidateArgs(ref string[] args, IEnumerable<CliActionMetadata> cliActionsMetadata)
         {
             var list = args.ToList();
 
             if (list[0].ToLower() == "ls") { list.Insert(0, "job"); }
-            if (list[0].ToLower() == "connect") { list.Insert(0, "service"); }
-            if (list[0].ToLower() == "cls") { list.Insert(0, "inner"); }
+
             if (_historyRegex.IsMatch(list[0]))
             {
                 list.Insert(0, "history");
@@ -74,7 +82,19 @@ namespace Planar.CLI
 
             if (!cliActionsMetadata.Any(a => a.Module.ToLower() == list[0].ToLower()))
             {
-                throw new CliValidationException($"module '{list[0]}' is not supported");
+                var modules = GetModuleByArgument(list[0], cliActionsMetadata);
+                if (!modules.Any())
+                {
+                    throw new CliValidationException($"module '{list[0]}' is not supported");
+                }
+
+                if (modules.Count() > 1)
+                {
+                    var commands = string.Join(',', modules);
+                    throw new CliValidationException($"module '{list[0]}' is not supported\r\nthe following modules has command '{list[0].Trim()}':\r\n{commands}");
+                }
+
+                list.Insert(0, modules.First());
             }
 
             if (list.Count == 1)
@@ -103,7 +123,7 @@ namespace Planar.CLI
 
         public List<CliArgument> CliArguments { get; set; } = new List<CliArgument>();
 
-        public object GetRequest(Type type, CliActionMetadata action)
+        public object? GetRequest(Type type, CliActionMetadata action)
         {
             if (!CliArguments.Any() && action.AllowNullRequest) { return null; }
 
@@ -144,7 +164,7 @@ namespace Planar.CLI
 
         private static RequestPropertyInfo MatchProperty(CliActionMetadata action, List<RequestPropertyInfo> props, ref int startDefaultOrder, CliArgument a)
         {
-            RequestPropertyInfo matchProp = null;
+            RequestPropertyInfo? matchProp = null;
             if (a.Key.StartsWith("--"))
             {
                 var key = a.Key[2..].ToLower();
@@ -251,7 +271,7 @@ namespace Planar.CLI
                 object objValue = value;
                 if (prop.PropertyType.BaseType == typeof(Enum))
                 {
-                    objValue = Enum.Parse(prop.PropertyType, value);
+                    objValue = ParseEnum(prop.PropertyType, value);
                 }
                 prop.SetValue(instance, Convert.ChangeType(objValue, prop.PropertyType, CultureInfo.CurrentCulture));
             }
@@ -260,9 +280,28 @@ namespace Planar.CLI
                 var attribute = prop.GetCustomAttribute<ActionPropertyAttribute>();
                 attribute ??= new ActionPropertyAttribute();
 
-                var message = $"value '{value}' has wrong format for argument '-{attribute.ShortName}|--{attribute.LongName}'";
+                var message = $"value '{value}' has wrong format for argument {attribute.DisplayName}";
 
                 throw new CliException(message);
+            }
+        }
+
+        private static object ParseEnum(Type type, string value)
+        {
+            try
+            {
+                var result = Enum.Parse(type, value, true);
+                return result;
+            }
+            catch (ArgumentException)
+            {
+                if (value.Contains("-"))
+                {
+                    value = value.Replace("-", string.Empty);
+                    return ParseEnum(type, value);
+                }
+
+                throw;
             }
         }
     }

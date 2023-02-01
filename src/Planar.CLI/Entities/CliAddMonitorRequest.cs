@@ -6,20 +6,20 @@ namespace Planar.CLI.Entities
     {
         [ActionProperty("t", "title")]
         [Required]
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
 
         [ActionProperty("n", "name")]
-        public string JobName { get; set; }
+        public string? JobName { get; set; }
 
         [ActionProperty("jg", "job-group")]
-        public string JobGroup { get; set; }
+        public string? JobGroup { get; set; }
 
         [ActionProperty("e", "event")]
         [Required]
         public int EventId { get; set; }
 
         [ActionProperty("a", "arguments")]
-        public string EventArgument { get; set; }
+        public string? EventArgument { get; set; }
 
         [ActionProperty("g", "group")]
         [Required]
@@ -27,6 +27,6 @@ namespace Planar.CLI.Entities
 
         [ActionProperty("h", "hook")]
         [Required]
-        public string Hook { get; set; }
+        public string Hook { get; set; } = string.Empty;
     }
 }

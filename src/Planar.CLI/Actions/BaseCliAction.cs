@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
+using Planar.CLI.CliGeneral;
 using Planar.CLI.General;
 using RestSharp;
 using Spectre.Console;
@@ -9,7 +10,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -17,6 +17,7 @@ namespace Planar.CLI.Actions
 {
     public abstract class BaseCliAction
     {
+        protected const string CancelOption = "<cancel>";
         protected const string JobFileName = "JobFile.yml";
 
         public static bool InteractiveMode { get; set; }
@@ -95,7 +96,10 @@ namespace Planar.CLI.Actions
             var moduleAttribute = type.GetCustomAttribute<ModuleAttribute>();
 
             var help = typeof(BaseCliAction<T>).GetMethod(nameof(ShowHelp));
-            allActions.Add(help);
+            if (help != null)
+            {
+                allActions.Add(help);
+            }
 
             // TODO: check for moduleAttribute == null;
             foreach (var act in allActions)
@@ -108,7 +112,7 @@ namespace Planar.CLI.Actions
                 {
                     var item = new CliActionMetadata
                     {
-                        Module = moduleAttribute?.Name?.ToLower(),
+                        Module = moduleAttribute?.Name?.ToLower() ?? string.Empty,
                         Method = act,
                         Command = actionAttributes.Select(a => a.Name).Distinct().ToList(),
                         AllowNullRequest = nullRequestAttribute != null
@@ -129,15 +133,9 @@ namespace Planar.CLI.Actions
             var name = typeof(T).Name.Replace("CliActions", string.Empty);
             var header = Program.GetHelpHeader();
             var help = GetHelpResource(name);
-            var response = GetGenericSuccessRestResponse();
+            var response = CliActionResponse.GetGenericSuccessRestResponse();
             var result = new CliActionResponse(response, header + help);
             return await Task.FromResult(result);
-        }
-
-        internal static RestResponse GetGenericSuccessRestResponse()
-        {
-            var response = new RestResponse { StatusCode = HttpStatusCode.OK, ResponseStatus = ResponseStatus.Completed, IsSuccessStatusCode = true };
-            return response;
         }
 
         private static string GetHelpResource(string name)
@@ -188,9 +186,9 @@ namespace Planar.CLI.Actions
             Console.WriteLine(id);
             string message = entity switch
             {
-                "job" => $"{CliTableFormat.WarningColor}Warning! job is in 'pause' state and none of its triggers will fire[/]",
-                "trigger" => $"{CliTableFormat.WarningColor}Warning! trigger is in 'pause' state and it will not fire[/]",
-                _ => null,
+                "job" => CliFormat.GetWarningMarkup("job is in 'pause' state and none of its triggers will fire"),
+                "trigger" => CliFormat.GetWarningMarkup("trigger is in 'pause' state and it will not fire"),
+                _ => string.Empty,
             };
 
             if (!string.IsNullOrEmpty(message))
@@ -232,13 +230,11 @@ namespace Planar.CLI.Actions
 
         protected static string PromptSelection(IEnumerable<string> items, string title, bool addCancelOption = true)
         {
-            const string cancel = "<cancel>";
-
             IEnumerable<string> finalItems;
             if (addCancelOption)
             {
                 var temp = items.ToList();
-                temp.Add(cancel);
+                temp.Add(CancelOption);
                 finalItems = temp;
             }
             else
@@ -253,12 +249,25 @@ namespace Planar.CLI.Actions
                      .MoreChoicesText($"[grey](Move [/][blue]up[/][grey] and [/][blue]down[/] [grey]to reveal more [/][white]{title?.EscapeMarkup()}s[/])")
                      .AddChoices(finalItems));
 
-            if (selectedItem == cancel)
+            CheckForCancelOption(selectedItem);
+
+            return selectedItem;
+        }
+
+        protected static void CheckForCancelOption(string value)
+        {
+            if (value == CancelOption)
             {
                 throw new CliWarningException("operation was canceled");
             }
+        }
 
-            return selectedItem;
+        protected static void CheckForCancelOption(IEnumerable<string> values)
+        {
+            if (values.Any(v => v == CancelOption))
+            {
+                throw new CliWarningException("operation was canceled");
+            }
         }
 
         protected static bool ConfirmAction(string title)

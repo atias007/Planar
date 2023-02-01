@@ -5,11 +5,8 @@
 - bug: reload monitor + reload hooks --> not support cluster
 - bug: job test dont validate that job is exists (run: job text xxxxxxxx)
 - cli: job update, when no folder supplied, show menu
-- cli: define colors & style for each host
 - cli: validate user phone number on cli menu
-- cli: add option to cancel tree options of job update command
-- add transaction to services --> implemented. need to test!
-
+- cli: service status [time scope] dashboard command
 
 - add hook test option
 - add monitor event: cluster health check fail
@@ -85,5 +82,9 @@
 - fix monitor bug (base monitor namespace)
 - fix job update service bug
 - cli: add shortcut to history get
-
+- cli: define colors & style for each host
+- cli: add logout command
+- cli: auto add module by detect command
+- cli: format error & warning messages 
 - add ProcessJob job type
+- cli: add option to cancel tree options of job update command

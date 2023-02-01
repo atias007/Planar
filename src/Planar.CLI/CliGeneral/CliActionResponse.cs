@@ -1,22 +1,19 @@
 ﻿using RestSharp;
 using Spectre.Console;
 using System.Collections.Generic;
+using System.Net;
 using YamlDotNet.Serialization;
 
 namespace Planar.CLI
 {
     public class CliActionResponse
     {
-        private CliActionResponse()
-        {
-        }
-
         public CliActionResponse(RestResponse response)
         {
             Response = response;
         }
 
-        public CliActionResponse(RestResponse response, string message)
+        public CliActionResponse(RestResponse response, string? message)
             : this(response)
         {
             Message = message;
@@ -53,11 +50,18 @@ namespace Planar.CLI
         {
             get
             {
-                return new CliActionResponse();
+                var restResponse = GetGenericSuccessRestResponse();
+                return new CliActionResponse(restResponse);
             }
         }
 
-        protected static string? SerializeResponse(object response)
+        internal static RestResponse GetGenericSuccessRestResponse()
+        {
+            var response = new RestResponse { StatusCode = HttpStatusCode.OK, ResponseStatus = ResponseStatus.Completed, IsSuccessStatusCode = true };
+            return response;
+        }
+
+        private static string? SerializeResponse(object response)
         {
             if (response == null) { return null; }
             var serializer = new SerializerBuilder().Build();

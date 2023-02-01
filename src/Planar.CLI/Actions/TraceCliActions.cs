@@ -17,11 +17,23 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> GetTrace(CliGetTraceRequest request)
         {
             var restRequest = new RestRequest("trace", Method.Get)
-                .AddParameter("Rows", request.Rows == 0 ? null : request.Rows, ParameterType.QueryString)
                 .AddParameter("Ascending", request.Ascending, ParameterType.QueryString)
-                .AddParameter("FromDate", request.FromDate == DateTime.MinValue ? null : request.FromDate, ParameterType.QueryString)
-                .AddParameter("ToDate", request.ToDate == DateTime.MinValue ? null : request.ToDate, ParameterType.QueryString)
                 .AddParameter("Level", request.Level, ParameterType.QueryString);
+
+            if (request.Rows > 0)
+            {
+                restRequest.AddParameter("Rows", request.Rows, ParameterType.QueryString);
+            }
+
+            if (request.FromDate != DateTime.MinValue)
+            {
+                restRequest.AddParameter("FromDate", request.FromDate, ParameterType.QueryString);
+            }
+
+            if (request.ToDate != DateTime.MinValue)
+            {
+                restRequest.AddParameter("ToDate", request.ToDate, ParameterType.QueryString);
+            }
 
             var result = await RestProxy.Invoke<List<LogDetails>>(restRequest);
             var table = CliTableExtensions.GetTable(result.Data);

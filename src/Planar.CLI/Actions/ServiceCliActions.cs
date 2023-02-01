@@ -46,8 +46,7 @@ namespace Planar.CLI.Actions
                 var key = request.Key.Replace(" ", string.Empty).ToLower();
                 if (key == "cliversion")
                 {
-                    var response = GetGenericSuccessRestResponse();
-                    return new CliActionResponse(response);
+                    return CliActionResponse.Empty;
                 }
 
                 var restRequest = new RestRequest("service/{key}", Method.Get);
@@ -110,6 +109,7 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> Login(CliLoginRequest request)
         {
             InnerLogin(request);
+
             ConnectData.SetLoginRequest(request);
             return await Task.FromResult(CliActionResponse.Empty);
         }
@@ -125,12 +125,14 @@ namespace Planar.CLI.Actions
         public static void InitializeLogin()
         {
             var request = ConnectData.GetLoginRequest();
-            if (request == null) { return; }
             InnerLogin(request);
         }
 
-        private static void InnerLogin(CliLoginRequest request)
+        private static void InnerLogin(CliLoginRequest? request)
         {
+            CliGeneral.Login.Set(request);
+            if (request == null) { return; }
+
             if (string.IsNullOrEmpty(request.Host))
             {
                 request.Host = "127.0.0.1";

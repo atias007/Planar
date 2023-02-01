@@ -72,18 +72,21 @@ namespace Planar.Service.API
             // Build Triggers
             var triggers = BuildTriggers(request);
 
-            // Open transaction
-            using var transaction = GetTransaction();
-
             // Save Job Properties
             var jobPropertiesYml = GetJopPropertiesYml(request);
             await DataLayer.AddJobProperty(new JobProperty { JobId = id, Properties = jobPropertiesYml });
 
-            // ScheduleJob
-            await Scheduler.ScheduleJob(job, triggers, true);
-
-            // Close Transaction
-            transaction.Complete();
+            try
+            {
+                // ScheduleJob
+                await Scheduler.ScheduleJob(job, triggers, true);
+            }
+            catch
+            {
+                // roll back
+                await DataLayer.DeleteJobProperty(id);
+                throw;
+            }
 
             // Return Id
             return new JobIdResponse { Id = id };
@@ -681,12 +684,12 @@ namespace Planar.Service.API
             {
                 case nameof(PlanarJob):
                     var properties1 = YmlUtil.Deserialize<PlanarJobProperties>(yml);
-                    await ValidatePlanarJobProperties(properties1);
+                    await ValidateJobProperties(properties1);
                     break;
 
                 case nameof(ProcessJob):
                     var properties2 = YmlUtil.Deserialize<ProcessJobProperties>(yml);
-                    await ValidatePlanarJobProperties(properties2);
+                    await ValidateJobProperties(properties2);
                     break;
 
                 default:
@@ -694,7 +697,7 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task ValidatePlanarJobProperties<TProperties>(TProperties properties)
+        private async Task ValidateJobProperties<TProperties>(TProperties properties)
         {
             if (properties == null)
             {

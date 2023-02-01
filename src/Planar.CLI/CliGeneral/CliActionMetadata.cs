@@ -28,7 +28,7 @@ namespace Planar.CLI
                 if (parameters.Length == 0) { return null; }
                 if (parameters.Length > 1)
                 {
-                    throw new CliException($"cli Error: Action {Method.Name} has more then 1 parameter");
+                    throw new CliException($"cli error: action '{Method.Name}' has more then 1 parameter");
                 }
 
                 _requestType = parameters[0].ParameterType;

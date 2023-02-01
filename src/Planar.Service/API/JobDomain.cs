@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -383,7 +384,6 @@ namespace Planar.Service.API
             var jobId = await JobKeyHelper.GetJobId(jobKey);
             ValidateSystemJob(jobKey);
 
-            using var transaction = GetTransaction();
             await Scheduler.DeleteJob(jobKey);
 
             try
@@ -403,8 +403,6 @@ namespace Planar.Service.API
             {
                 Logger.LogError(ex, "Fail to delete monitor after delete job id {Id}", id);
             }
-
-            transaction.Complete();
         }
 
         public async Task Resume(JobOrTriggerKey request)

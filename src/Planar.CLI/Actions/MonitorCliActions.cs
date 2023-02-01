@@ -59,7 +59,7 @@ namespace Planar.CLI.Actions
             {
                 var restRequest = new RestRequest("monitor", Method.Get);
                 var result = await RestProxy.Invoke<List<MonitorItem>>(restRequest);
-                if (result.IsSuccessful) { data.AddRange(result.Data); }
+                if (result.IsSuccessful && result.Data != null) { data.AddRange(result.Data); }
                 finalResult = result;
             }
             else
@@ -76,8 +76,8 @@ namespace Planar.CLI.Actions
 
                 var result1 = task1.Result;
                 var result2 = task2.Result;
-                if (result1.IsSuccessful) { data.AddRange(result1.Data); }
-                if (result2.IsSuccessful) { data.AddRange(result2.Data); }
+                if (result1.IsSuccessful && result1.Data != null) { data.AddRange(result1.Data); }
+                if (result2.IsSuccessful && result2.Data != null) { data.AddRange(result2.Data); }
 
                 finalResult = SelectRestResponse(result1, result2);
             }
@@ -172,7 +172,7 @@ namespace Planar.CLI.Actions
             return monitorEvent.Id;
         }
 
-        private static string GetEventArguments(int monitorEvent)
+        private static string? GetEventArguments(int monitorEvent)
         {
             var result = MonitorEventsExtensions.IsMonitorEventHasArguments(monitorEvent) ?
                 AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Event argument: [/]").AllowEmpty()) :
@@ -244,7 +244,7 @@ namespace Planar.CLI.Actions
             var groupsTask = RestProxy.Invoke<List<GroupInfo>>(groupsRequest);
 
             var events = await eventsTask;
-            data.Events = events.Data;
+            data.Events = events.Data ?? new List<LovItem>();
             if (!events.IsSuccessful)
             {
                 data.FailResponse = events;
@@ -252,7 +252,7 @@ namespace Planar.CLI.Actions
             }
 
             var hooks = await hooksTask;
-            data.Hooks = hooks.Data;
+            data.Hooks = hooks.Data ?? new List<string>();
             if (!hooks.IsSuccessful)
             {
                 data.FailResponse = hooks;
@@ -260,7 +260,7 @@ namespace Planar.CLI.Actions
             }
 
             var jobs = await jobsTask;
-            data.Jobs = jobs.Data;
+            data.Jobs = jobs.Data ?? new List<JobRowDetails>();
             if (!jobs.IsSuccessful)
             {
                 data.FailResponse = jobs;
@@ -268,24 +268,24 @@ namespace Planar.CLI.Actions
             }
 
             var groups = await groupsTask;
-            data.Groups = groups.Data;
+            data.Groups = groups.Data ?? new List<GroupInfo>();
             if (!groups.IsSuccessful)
             {
                 data.FailResponse = groups;
                 return data;
             }
 
-            if (!jobs.Data.Any())
+            if (!data.Jobs.Any())
             {
                 throw new CliWarningException("there are no jobs for monitoring");
             }
 
-            if (!hooks.Data.Any())
+            if (!data.Hooks.Any())
             {
                 throw new CliWarningException("there are no monitor hooks define in service");
             }
 
-            if (!groups.Data.Any())
+            if (!data.Groups.Any())
             {
                 throw new CliWarningException("there are no distribution groups define in service");
             }
@@ -313,11 +313,11 @@ namespace Planar.CLI.Actions
             return result;
         }
 
-        private static RestResponse SelectRestResponse(params RestResponse[] items)
+        private static RestResponse? SelectRestResponse(params RestResponse[] items)
         {
             if (!items.Any()) { return null; }
             var result = items.FirstOrDefault(i => !i.IsSuccessful && (int)i.StatusCode >= 500);
-            result ??= GetGenericSuccessRestResponse();
+            result ??= CliActionResponse.GetGenericSuccessRestResponse();
 
             return result;
         }

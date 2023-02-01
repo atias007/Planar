@@ -2,6 +2,7 @@
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
+using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using Quartz;
@@ -112,21 +113,15 @@ namespace Planar.Service.API
         {
             var metadata = new JobUpdateMetadata();
 
-            using var transaction = GetTransaction();
-            var result = await UpdateInner(request, options, metadata);
-            transaction.Complete();
-            return result;
-
-            // TODO: check for rollback
-            ////try
-            ////{
-            ////    return await UpdateInner(request, options, metadata);
-            ////}
-            ////catch
-            ////{
-            ////    await RollBack(metadata);
-            ////    throw;
-            ////}
+            try
+            {
+                return await UpdateInner(request, options, metadata);
+            }
+            catch
+            {
+                await RollBack(metadata);
+                throw;
+            }
         }
 
         private async Task RollBack(JobUpdateMetadata metadata)
@@ -138,7 +133,7 @@ namespace Planar.Service.API
             var property = new JobProperty { JobId = metadata.JobId, Properties = metadata.OldJobProperties };
             await Scheduler.ScheduleJob(metadata.OldJobDetails, metadata.OldTriggers, true);
             await Scheduler.PauseJob(metadata.JobKey);
-            await DataLayer.UpdateJobProperty(property);
+            await Resolve<JobData>().UpdateJobProperty(property);
         }
 
         private async Task<JobIdResponse> UpdateInner(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)

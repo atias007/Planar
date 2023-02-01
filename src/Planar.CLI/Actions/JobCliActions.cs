@@ -60,9 +60,9 @@ namespace Planar.CLI.Actions
             return new RequestBuilderWrapper<CliAddJobRequest> { Request = request };
         }
 
-        private static string SelectJobFolder(IEnumerable<AvailableJobToAdd> data)
+        private static string SelectJobFolder(IEnumerable<AvailableJobToAdd>? data)
         {
-            if (!data.Any())
+            if (data == null || !data.Any())
             {
                 throw new CliWarningException("no available jobs found on server");
             }
@@ -116,8 +116,10 @@ namespace Planar.CLI.Actions
                     .AddChoiceGroup("all", new[] { "job details", "job data", "properties", "triggers", "triggers data" })
                     .AddChoiceGroup("all job", new[] { "job details", "job data", "properties" })
                     .AddChoiceGroup("all triggers", new[] { "triggers", "triggers data" })
+                    .AddChoiceGroup(CancelOption)
                     );
 
+            CheckForCancelOption(options);
             var result = MapUpdateJobOptions(options);
             return result;
         }
@@ -204,7 +206,12 @@ namespace Planar.CLI.Actions
             CliActionResponse response;
             if (request.Quiet)
             {
-                message = string.Join('\n', result.Data?.Select(r => r.Id));
+                var ids = result.Data?.Select(r => r.Id);
+                if (ids != null)
+                {
+                    message = string.Join('\n', ids);
+                }
+
                 response = new CliActionResponse(result, message);
             }
             else
@@ -341,7 +348,7 @@ namespace Planar.CLI.Actions
         [Action("delete")]
         public static async Task<CliActionResponse> RemoveJob(CliJobOrTriggerKey jobKey)
         {
-            if (!ConfirmAction($"remove job id {jobKey}")) { return CliActionResponse.Empty; }
+            if (!ConfirmAction($"remove job id {jobKey.Id}")) { return CliActionResponse.Empty; }
 
             var restRequest = new RestRequest("job/{id}", Method.Delete)
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
@@ -592,7 +599,7 @@ namespace Planar.CLI.Actions
 
             RestRequest restRequest;
             RestResponse restResponse;
-            List<RunningJobDetails> resultData = null;
+            List<RunningJobDetails>? resultData = null;
 
             if (string.IsNullOrEmpty(request.FireInstanceId))
             {
