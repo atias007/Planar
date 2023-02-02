@@ -4,8 +4,8 @@ namespace Planar.CLI.Entities
 {
     public class CliGetJobFileRequest
     {
-        [ActionProperty(DefaultOrder = 0, LongName = "jobfile")]
+        [ActionProperty(DefaultOrder = 0)]
         [Required("name argument is required")]
-        public string JobFile { get; set; }
+        public string Name { get; set; } = string.Empty;
     }
 }

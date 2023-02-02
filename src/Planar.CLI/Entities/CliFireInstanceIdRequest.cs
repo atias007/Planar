@@ -4,8 +4,8 @@ namespace Planar.CLI.Entities
 {
     public class CliFireInstanceIdRequest
     {
-        [ActionProperty(DefaultOrder = 0)]
-        [Required("instance id argument is required")]
-        public string FireInstanceId { get; set; }
+        [ActionProperty(DefaultOrder = 0, Name = "fire instance id")]
+        [Required("fire instance id argument is required")]
+        public string FireInstanceId { get; set; } = string.Empty;
     }
 }

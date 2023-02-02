@@ -15,7 +15,7 @@ namespace Planar.CLI
     public class CliArgumentsUtil
     {
         private const string RegexTemplate = "^[1-9][0-9]*$";
-        private static readonly Regex _historyRegex = new Regex(RegexTemplate, RegexOptions.Compiled, TimeSpan.FromSeconds(2));
+        private static readonly Regex _historyRegex = new(RegexTemplate, RegexOptions.Compiled, TimeSpan.FromSeconds(2));
 
         public CliArgumentsUtil(string[] args)
         {
@@ -62,7 +62,7 @@ namespace Planar.CLI
         private static IEnumerable<string> GetModuleByArgument(string subArgument, IEnumerable<CliActionMetadata> cliActionsMetadata)
         {
             var metadata = cliActionsMetadata
-                .Where(m => m.Command.Any(c => c?.ToLower() == subArgument.ToLower()))
+                .Where(m => m.Commands.Any(c => c?.ToLower() == subArgument.ToLower()))
                 .Select(m => m.Module);
 
             return metadata;
@@ -102,12 +102,12 @@ namespace Planar.CLI
                 throw new CliValidationException($"missing command for module '{list[0]}'\r\n. command line format is 'planar-cli <module> <command> [<options>]'");
             }
 
-            if (!cliActionsMetadata.Any(a => a.Command.Any(c => c?.ToLower() == list[1].ToLower())))
+            if (!cliActionsMetadata.Any(a => a.Commands.Any(c => c?.ToLower() == list[1].ToLower())))
             {
                 throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
             }
 
-            var action = cliActionsMetadata.FirstOrDefault(a => a.Command.Any(c => c?.ToLower() == list[1].ToLower() && a.Module == list[0].ToLower()));
+            var action = cliActionsMetadata.FirstOrDefault(a => a.Commands.Any(c => c?.ToLower() == list[1].ToLower() && a.Module == list[0].ToLower()));
             if (action == null)
             {
                 throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
@@ -128,14 +128,14 @@ namespace Planar.CLI
             if (!CliArguments.Any() && action.AllowNullRequest) { return null; }
 
             var result = Activator.CreateInstance(type);
-            var props = action.GetRequestPropertiesInfo();
+            //var props = action.GetRequestPropertiesInfo();
 
-            var defaultProps = props.Where(p => p.Default);
+            var defaultProps = action.Arguments.Where(p => p.Default);
             var startDefaultOrder = defaultProps.Any() ? defaultProps.Min(p => p.DefaultOrder) : -1;
 
             foreach (var a in CliArguments)
             {
-                var matchProp = MatchProperty(action, props, ref startDefaultOrder, a);
+                var matchProp = MatchProperty(action, action.Arguments, ref startDefaultOrder, a);
                 FillJobOrTrigger(action, a, matchProp);
                 SetValue(matchProp.PropertyInfo, result, a.Value);
                 if (!string.IsNullOrEmpty(a.Value))
@@ -144,12 +144,12 @@ namespace Planar.CLI
                 }
             }
 
-            FindMissingRequiredProperties(props);
+            FindMissingRequiredProperties(action.Arguments);
 
             return result;
         }
 
-        private static void FillJobOrTrigger(CliActionMetadata action, CliArgument a, RequestPropertyInfo matchProp)
+        private static void FillJobOrTrigger(CliActionMetadata action, CliArgument a, CliArgumentMetadata matchProp)
         {
             FillLastJobOrTriggerId(matchProp, a);
             if (action.Module?.ToLower() == "job")
@@ -162,15 +162,15 @@ namespace Planar.CLI
             }
         }
 
-        private static RequestPropertyInfo MatchProperty(CliActionMetadata action, List<RequestPropertyInfo> props, ref int startDefaultOrder, CliArgument a)
+        private static CliArgumentMetadata MatchProperty(CliActionMetadata action, List<CliArgumentMetadata> props, ref int startDefaultOrder, CliArgument a)
         {
-            RequestPropertyInfo? matchProp = null;
-            if (a.Key.StartsWith("--"))
+            CliArgumentMetadata? matchProp = null;
+            if (a.Key != null && a.Key.StartsWith("--"))
             {
                 var key = a.Key[2..].ToLower();
                 matchProp = props.FirstOrDefault(p => p.LongName == key);
             }
-            else if (a.Key.StartsWith("-"))
+            else if (a.Key != null && a.Key.StartsWith("-"))
             {
                 var key = a.Key[1..].ToLower();
                 matchProp = props.FirstOrDefault(p => p.ShortName == key);
@@ -188,10 +188,10 @@ namespace Planar.CLI
 
             if (matchProp == null)
             {
-                throw new CliValidationException($"argument '{a.Key}' is not supported with command '{action.Command.FirstOrDefault()}' at module '{action.Module}'");
+                throw new CliValidationException($"argument '{a.Key}' is not supported with command '{action.Commands.FirstOrDefault()}' at module '{action.Module}'");
             }
 
-            if (a.Key.StartsWith("-") && string.IsNullOrEmpty(a.Value))
+            if (a.Key != null && a.Key.StartsWith("-") && string.IsNullOrEmpty(a.Value))
             {
                 a.Value = true.ToString();
             }
@@ -209,7 +209,7 @@ namespace Planar.CLI
             }
         }
 
-        private static async Task FillJobId(RequestPropertyInfo prop, CliArgument arg)
+        private static async Task FillJobId(CliArgumentMetadata prop, CliArgument arg)
         {
             if (prop.JobOrTriggerKey && arg.Value == "?")
             {
@@ -219,7 +219,7 @@ namespace Planar.CLI
             }
         }
 
-        private static async Task FillTriggerId(RequestPropertyInfo prop, CliArgument arg)
+        private static async Task FillTriggerId(CliArgumentMetadata prop, CliArgument arg)
         {
             if (prop.JobOrTriggerKey && arg.Value == "?")
             {
@@ -229,7 +229,7 @@ namespace Planar.CLI
             }
         }
 
-        private static void FillLastJobOrTriggerId(RequestPropertyInfo prop, CliArgument arg)
+        private static void FillLastJobOrTriggerId(CliArgumentMetadata prop, CliArgument arg)
         {
             if (prop.JobOrTriggerKey)
             {
@@ -244,7 +244,7 @@ namespace Planar.CLI
             }
         }
 
-        private static void FindMissingRequiredProperties(IEnumerable<RequestPropertyInfo> props)
+        private static void FindMissingRequiredProperties(IEnumerable<CliArgumentMetadata> props)
         {
             var p = props.FirstOrDefault(v => v.Required && !v.ValueSupplied);
             if (p != null)
@@ -295,7 +295,7 @@ namespace Planar.CLI
             }
             catch (ArgumentException)
             {
-                if (value.Contains("-"))
+                if (value.Contains('-'))
                 {
                     value = value.Replace("-", string.Empty);
                     return ParseEnum(type, value);

@@ -121,6 +121,9 @@ namespace Planar.CLI
             try
             {
                 var action = CliArgumentsUtil.ValidateArgs(ref args, cliActions);
+
+                //var temp = CliHelpGenerator.GetHelpMarkup(action.Module, cliActions);
+
                 cliArgument = new CliArgumentsUtil(args);
 
                 if (action.Method == null || action.Method.DeclaringType == null) { return null; }
@@ -131,10 +134,9 @@ namespace Planar.CLI
                     return cliArgument;
                 }
 
-                var requestType = action.GetRequestType();
                 CliActionResponse? response;
 
-                if (requestType == null)
+                if (action.RequestType == null)
                 {
                     try
                     {
@@ -147,7 +149,7 @@ namespace Planar.CLI
                 }
                 else
                 {
-                    var param = cliArgument.GetRequest(requestType, action);
+                    var param = cliArgument.GetRequest(action.RequestType, action);
                     var itMode = param is IIterative itParam && itParam.Iterative;
 
                     if (itMode)

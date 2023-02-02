@@ -72,7 +72,7 @@ namespace Planar.CLI.Actions
                 e.Name :
                 $"{e.Name} ({e.RelativeFolder})");
 
-            var selectedItem = PromptSelection(folders, "job folder");
+            var selectedItem = PromptSelection(folders, "job folder") ?? string.Empty;
             const string template = @"\(([^)]+)\)";
             var regex = new Regex(template, RegexOptions.None, TimeSpan.FromMilliseconds(500));
             var matches = regex.Matches(selectedItem);
@@ -92,7 +92,7 @@ namespace Planar.CLI.Actions
             }
             else
             {
-                options = MapUpdateJobOptions(request.Options);
+                options = MapUpdateJobOptions(request.Options.Value);
             }
 
             var body = new UpdateJobFolderRequest { Folder = request.Folder, UpdateJobOptions = options };
@@ -124,9 +124,9 @@ namespace Planar.CLI.Actions
             return result;
         }
 
-        private static UpdateJobOptions MapUpdateJobOptions(string options)
+        private static UpdateJobOptions MapUpdateJobOptions(JobUpdateOptions options)
         {
-            var items = options.Split(',');
+            var items = new List<string> { options.ToString() };
             var result = MapUpdateJobOptions(items);
             return result;
         }
@@ -160,7 +160,6 @@ namespace Planar.CLI.Actions
                         result.UpdateTriggersData = true;
                         break;
 
-                    case "job":
                     case "job details":
                         result.UpdateJobDetails = true;
                         break;
@@ -411,7 +410,7 @@ namespace Planar.CLI.Actions
             }
 
             var restRequest = new RestRequest("job/jobfile/{name}", Method.Get)
-                .AddUrlSegment("name", request.JobFile);
+                .AddUrlSegment("name", request.Name);
 
             var result = await RestProxy.Invoke<string>(restRequest);
             return new CliActionResponse(result, message: result.Data);
@@ -427,8 +426,8 @@ namespace Planar.CLI.Actions
                 return new RequestBuilderWrapper<CliGetJobFileRequest> { FailResponse = result };
             }
 
-            var selectedItem = PromptSelection(result.Data, "job file template");
-            var request = new CliGetJobFileRequest { JobFile = selectedItem };
+            var selectedItem = PromptSelection(result.Data, "job file template") ?? string.Empty;
+            var request = new CliGetJobFileRequest { Name = selectedItem };
             return new RequestBuilderWrapper<CliGetJobFileRequest> { Request = request };
         }
 
@@ -469,7 +468,7 @@ namespace Planar.CLI.Actions
             RestResponse result;
             switch (request.Action)
             {
-                case JobDataActions.upsert:
+                case JobDataActions.Upsert:
                     var prm1 = new JobOrTriggerDataRequest
                     {
                         Id = request.Id,
@@ -487,7 +486,7 @@ namespace Planar.CLI.Actions
                     }
                     break;
 
-                case JobDataActions.remove:
+                case JobDataActions.Remove:
                     if (!ConfirmAction($"remove data with key '{request.DataKey}' from job {request.Id}")) { return CliActionResponse.Empty; }
 
                     var restRequest2 = new RestRequest("job/{id}/data/{key}", Method.Delete)
@@ -505,6 +504,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
+        [IgnoreHelp]
         public static async Task<string> ChooseJob()
         {
             var restRequest = new RestRequest("job", Method.Get);
@@ -519,8 +519,11 @@ namespace Planar.CLI.Actions
             return ChooseJob(result.Data);
         }
 
-        public static string ChooseJob(IEnumerable<JobRowDetails> data)
+        [IgnoreHelp]
+        public static string ChooseJob(IEnumerable<JobRowDetails>? data)
         {
+            if (data == null) { return string.Empty; }
+
             if (data.Count() <= 20)
             {
                 return ShowJobsMenu(data);
@@ -530,12 +533,13 @@ namespace Planar.CLI.Actions
             return ShowJobsMenu(data, group);
         }
 
-        public static string ChooseGroup(IEnumerable<JobRowDetails> data)
+        [IgnoreHelp]
+        public static string? ChooseGroup(IEnumerable<JobRowDetails> data)
         {
             return ShowGroupsMenu(data);
         }
 
-        private static string ShowJobsMenu(IEnumerable<JobRowDetails> data, string groupName = null)
+        private static string? ShowJobsMenu(IEnumerable<JobRowDetails> data, string? groupName = null)
         {
             var query = data.AsQueryable();
 
@@ -553,7 +557,7 @@ namespace Planar.CLI.Actions
             return PromptSelection(jobs, "job");
         }
 
-        private static string ShowGroupsMenu(IEnumerable<JobRowDetails> data)
+        private static string? ShowGroupsMenu(IEnumerable<JobRowDetails> data)
         {
             var groups = data
                 .OrderBy(d => d.Group)
@@ -564,6 +568,7 @@ namespace Planar.CLI.Actions
             return PromptSelection(groups, "job group");
         }
 
+        [IgnoreHelp]
         public static async Task<string> ChooseTrigger()
         {
             var jobId = await ChooseJob();

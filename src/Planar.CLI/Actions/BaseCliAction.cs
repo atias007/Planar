@@ -2,6 +2,7 @@
 using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.CliGeneral;
+using Planar.CLI.Entities;
 using Planar.CLI.General;
 using RestSharp;
 using Spectre.Console;
@@ -106,20 +107,78 @@ namespace Planar.CLI.Actions
             {
                 var actionAttributes = act.GetCustomAttributes<ActionAttribute>();
                 var nullRequestAttribute = act.GetCustomAttribute<NullRequestAttribute>();
+                var ignoreHelpAttribute = act.GetCustomAttribute<IgnoreHelpAttribute>();
 
                 // TODO: validate attributes (invalid name...)
-                if (actionAttributes != null)
+                if (actionAttributes == null) { continue; }
+                var requestType = GetRequestType(act);
+                var comnmands = actionAttributes.Select(a => a.Name).Distinct().ToList();
+                var item = new CliActionMetadata
                 {
-                    var item = new CliActionMetadata
-                    {
-                        Module = moduleAttribute?.Name?.ToLower() ?? string.Empty,
-                        Method = act,
-                        Command = actionAttributes.Select(a => a.Name).Distinct().ToList(),
-                        AllowNullRequest = nullRequestAttribute != null
-                    };
+                    Module = moduleAttribute?.Name?.ToLower() ?? string.Empty,
+                    Method = act,
+                    Commands = comnmands,
+                    AllowNullRequest = nullRequestAttribute != null,
+                    RequestType = requestType,
+                    Arguments = GetArguments(requestType),
+                    CommandDisplayName = string.Join('|', comnmands.OrderBy(c => c.Length)),
+                    IgnoreHelp = ignoreHelpAttribute != null
+                };
 
-                    result.Add(item);
-                }
+                item.SetArgumentsDisplayName();
+
+                result.Add(item);
+            }
+
+            return result;
+        }
+
+        private static Type? GetRequestType(MethodInfo? method)
+        {
+            if (method == null) { return null; }
+
+            var parameters = method.GetParameters();
+            if (parameters.Length == 0) { return null; }
+            if (parameters.Length > 1)
+            {
+                throw new CliException($"cli error: action '{method.Name}' has more then 1 parameter");
+            }
+
+            var requestType = parameters[0].ParameterType;
+            return requestType;
+        }
+
+        private static List<CliArgumentMetadata> GetArguments(Type? requestType)
+        {
+            var result = new List<CliArgumentMetadata>();
+            if (requestType == null)
+            {
+                return result;
+            }
+
+            var props = requestType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            var inheritKey =
+                requestType.IsAssignableFrom(typeof(CliJobOrTriggerKey)) ||
+                requestType.IsSubclassOf(typeof(CliJobOrTriggerKey));
+
+            foreach (var item in props)
+            {
+                var att = item.GetCustomAttribute<ActionPropertyAttribute>();
+                var req = item.GetCustomAttribute<RequiredAttribute>();
+                var info = new CliArgumentMetadata
+                {
+                    PropertyInfo = item,
+                    LongName = att?.LongName?.ToLower(),
+                    ShortName = att?.ShortName?.ToLower(),
+                    DisplayName = att?.DisplayName,
+                    Default = (att?.Default).GetValueOrDefault(),
+                    Required = req != null,
+                    RequiredMissingMessage = req?.Message,
+                    DefaultOrder = (att?.DefaultOrder).GetValueOrDefault(),
+                    JobOrTriggerKey = inheritKey && item.Name == nameof(CliJobOrTriggerKey.Id),
+                };
+                result.Add(info);
             }
 
             return result;
@@ -128,6 +187,7 @@ namespace Planar.CLI.Actions
         [Action("help")]
         [Action("--help")]
         [Action("-h")]
+        [IgnoreHelp]
         public static async Task<CliActionResponse> ShowHelp()
         {
             var name = typeof(T).Name.Replace("CliActions", string.Empty);
@@ -181,8 +241,9 @@ namespace Planar.CLI.Actions
             AssertUpdated(id, "trigger");
         }
 
-        protected static void AssertUpdated(string id, string entity)
+        protected static void AssertUpdated(string? id, string entity)
         {
+            if (string.IsNullOrEmpty(id)) { return; }
             Console.WriteLine(id);
             string message = entity switch
             {
@@ -228,8 +289,9 @@ namespace Planar.CLI.Actions
             return prm;
         }
 
-        protected static string PromptSelection(IEnumerable<string> items, string title, bool addCancelOption = true)
+        protected static string? PromptSelection(IEnumerable<string>? items, string title, bool addCancelOption = true)
         {
+            if (items == null) { return null; }
             IEnumerable<string> finalItems;
             if (addCancelOption)
             {

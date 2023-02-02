@@ -6,8 +6,8 @@ namespace Planar.CLI.Entities
     {
         [ActionProperty(DefaultOrder = 1)]
         [Required("value argument is required")]
-        public string Value { get; set; }
+        public string Value { get; set; } = string.Empty;
 
-        public string Type { get; set; }
+        public string? Type { get; set; }
     }
 }

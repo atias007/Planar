@@ -17,6 +17,8 @@ namespace Planar.CLI.Attributes
             LongName = longName;
         }
 
+        public string? Name { get; set; }
+
         public string LongName { get; set; }
 
         public string ShortName { get; set; }
@@ -39,6 +41,11 @@ namespace Planar.CLI.Attributes
         {
             get
             {
+                if (!string.IsNullOrEmpty(Name))
+                {
+                    return Name;
+                }
+
                 if (string.IsNullOrEmpty(LongName) && string.IsNullOrEmpty(ShortName))
                 {
                     return string.Empty;

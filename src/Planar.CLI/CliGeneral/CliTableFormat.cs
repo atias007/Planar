@@ -161,7 +161,7 @@ namespace Planar.CLI
             };
         }
 
-        public static string GetBooleanMarkup(bool value, object display = null)
+        public static string GetBooleanMarkup(bool value, object? display = null)
         {
             display ??= value;
 

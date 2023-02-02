@@ -138,7 +138,7 @@ namespace Planar.CLI.Actions
             RestResponse result;
             switch (request.Action)
             {
-                case JobDataActions.upsert:
+                case JobDataActions.Upsert:
                     var prm1 = new JobOrTriggerDataRequest
                     {
                         Id = request.Id,
@@ -156,7 +156,7 @@ namespace Planar.CLI.Actions
                     }
                     break;
 
-                case JobDataActions.remove:
+                case JobDataActions.Remove:
                     if (!ConfirmAction($"remove data with key '{request.DataKey}' from trigger {request.Id}")) { return CliActionResponse.Empty; }
                     var restRequest2 = new RestRequest("trigger/{id}/data/{key}", Method.Delete)
                         .AddParameter("id", request.Id, ParameterType.UrlSegment)

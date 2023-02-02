@@ -204,7 +204,7 @@ namespace Planar.CLI.Actions
 
             var types = new[] { "single (monitor for single job)", "group (monitor for group of jobs)", "all (monitor for all jobs)" };
 
-            var selectedEvent = PromptSelection(types, "monitor type");
+            var selectedEvent = PromptSelection(types, "monitor type") ?? string.Empty;
 
             selectedEvent = selectedEvent.Split(' ').First();
 
