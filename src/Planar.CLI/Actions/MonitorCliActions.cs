@@ -192,7 +192,7 @@ namespace Planar.CLI.Actions
 
             AnsiConsole.MarkupLine($"[turquoise2]  > Hook: [/] {selectedHook}");
 
-            return selectedHook;
+            return selectedHook ?? string.Empty;
         }
 
         private static AddMonitorJobData GetJob(IEnumerable<JobRowDetails> jobs, int monitorEventId)
@@ -216,7 +216,7 @@ namespace Planar.CLI.Actions
 
             if (selectedEvent == "group")
             {
-                var group = JobCliActions.ChooseGroup(jobs);
+                var group = JobCliActions.ChooseGroup(jobs) ?? string.Empty;
                 AnsiConsole.MarkupLine($"[turquoise2]  > Monitor for: [/] job group '{group}'");
                 return new AddMonitorJobData { JobGroup = group };
             }
@@ -310,7 +310,7 @@ namespace Planar.CLI.Actions
         private static AddMonitorRequest MapAddMonitorRequest(CliAddMonitorRequest request)
         {
             var result = JsonMapper.Map<AddMonitorRequest, CliAddMonitorRequest>(request);
-            return result;
+            return result ?? new AddMonitorRequest();
         }
 
         private static RestResponse? SelectRestResponse(params RestResponse[] items)

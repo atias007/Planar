@@ -539,7 +539,7 @@ namespace Planar.CLI.Actions
             return ShowGroupsMenu(data);
         }
 
-        private static string? ShowJobsMenu(IEnumerable<JobRowDetails> data, string? groupName = null)
+        private static string ShowJobsMenu(IEnumerable<JobRowDetails> data, string? groupName = null)
         {
             var query = data.AsQueryable();
 
@@ -554,7 +554,7 @@ namespace Planar.CLI.Actions
                 .Select(d => $"{d.Group}.{d.Name}")
                 .ToList();
 
-            return PromptSelection(jobs, "job");
+            return PromptSelection(jobs, "job") ?? string.Empty;
         }
 
         private static string? ShowGroupsMenu(IEnumerable<JobRowDetails> data)
@@ -587,7 +587,7 @@ namespace Planar.CLI.Actions
                     )
                     .ToList();
 
-                return PromptSelection(triggers, "trigger");
+                return PromptSelection(triggers, "trigger") ?? string.Empty;
             }
             else
             {
@@ -595,7 +595,7 @@ namespace Planar.CLI.Actions
             }
         }
 
-        internal static async Task<(List<RunningJobDetails>, RestResponse)> GetRunningJobsInner(CliGetRunningJobsRequest request)
+        internal static async Task<(List<RunningJobDetails>?, RestResponse)> GetRunningJobsInner(CliGetRunningJobsRequest request)
         {
             if (request.Iterative && request.Details)
             {
@@ -644,6 +644,7 @@ namespace Planar.CLI.Actions
         private static async Task<RestResponse> InvokeJobInner(CliInvokeJobRequest request)
         {
             var prm = JsonMapper.Map<InvokeJobRequest, CliInvokeJobRequest>(request);
+            prm ??= new InvokeJobRequest();
             if (prm.NowOverrideValue == DateTime.MinValue) { prm.NowOverrideValue = null; }
 
             var restRequest = new RestRequest("job/invoke", Method.Post)
@@ -652,7 +653,7 @@ namespace Planar.CLI.Actions
             return result;
         }
 
-        private static async Task<CliActionResponse> TestStep1InvokeJob(CliInvokeJobRequest request)
+        private static async Task<CliActionResponse?> TestStep1InvokeJob(CliInvokeJobRequest request)
         {
             // (1) Invoke job
             AnsiConsole.MarkupLine(" [gold3_1][[x]][/] Invoke job...");
@@ -665,10 +666,10 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        private static async Task<(CliActionResponse, string, int)> TestStep2GetInstanceId(CliInvokeJobRequest request, DateTime invokeDate)
+        private static async Task<(CliActionResponse?, string?, int)> TestStep2GetInstanceId(CliInvokeJobRequest request, DateTime invokeDate)
         {
             AnsiConsole.Markup(" [gold3_1][[x]][/] Get instance id... ");
-            RestResponse<LastInstanceId> instanceId = null;
+            RestResponse<LastInstanceId>? instanceId = null;
             for (int i = 0; i < 20; i++)
             {
                 instanceId = await GetLastInstanceId(request.Id, invokeDate);
@@ -691,7 +692,7 @@ namespace Planar.CLI.Actions
             return (null, instanceId.Data.InstanceId, instanceId.Data.LogId);
         }
 
-        private static async Task<CliActionResponse> TestStep4GetRunningData(string instanceId, DateTime invokeDate)
+        private static async Task<CliActionResponse?> TestStep4GetRunningData(string instanceId, DateTime invokeDate)
         {
             var restRequest = new RestRequest("job/running/{instanceId}", Method.Get)
                 .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
@@ -719,7 +720,7 @@ namespace Planar.CLI.Actions
             return null;
         }
 
-        private static async Task<CliActionResponse> TestStep6CheckLog(int logId)
+        private static async Task<CliActionResponse?> TestStep6CheckLog(int logId)
         {
             var restTestRequest = new RestRequest("job/testStatus/{id}", Method.Get)
                 .AddParameter("id", logId, ParameterType.UrlSegment);

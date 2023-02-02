@@ -178,23 +178,6 @@ namespace Planar.CLI.Actions
             return result;
         }
 
-        private static string GetHelpResource(string name)
-        {
-            CultureInfo cur = CultureInfo.CurrentCulture;
-            var shortDateFormatString = cur.DateTimeFormat.ShortDatePattern.ToLower();
-            var shortTimeFormatString = cur.DateTimeFormat.LongTimePattern.ToLower();
-
-            using Stream stream = typeof(Program).Assembly.GetManifestResourceStream($"Planar.CLI.Help.{name}.txt");
-            using StreamReader reader = new(stream);
-            var result = reader.ReadToEnd();
-
-            result = result
-                .Replace("{{ShortDatePattern}}", shortDateFormatString)
-                .Replace("{{LongTimePattern}}", shortTimeFormatString);
-
-            return result;
-        }
-
         protected static void AssertCreated(RestResponse<JobIdResponse> response)
         {
             if (!response.IsSuccessful) { return; }
