@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
 using Planar.Service.Model;
+using Planar.Service.Model.DataObjects;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -211,6 +212,20 @@ namespace Planar.Service.Data
                     Duration = l.Duration
                 })
                 .FirstOrDefaultAsync();
+
+            return result;
+        }
+
+        public async Task<HistoryStatusDto> GetHistoryCounter(int hours)
+        {
+            var parameters = new { Hours = hours };
+            var definition = new CommandDefinition(
+                commandText: "[Statistics].[StatusCounter]",
+                parameters: parameters,
+                commandType: CommandType.StoredProcedure);
+
+            var result = await _context.Database.GetDbConnection()
+                .QueryFirstOrDefaultAsync<HistoryStatusDto>(definition);
 
             return result;
         }

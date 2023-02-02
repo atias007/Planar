@@ -96,12 +96,6 @@ namespace Planar.CLI.Actions
             var allActions = type.GetMethods(BindingFlags.Public | BindingFlags.Static).ToList();
             var moduleAttribute = type.GetCustomAttribute<ModuleAttribute>();
 
-            var help = typeof(BaseCliAction<T>).GetMethod(nameof(ShowHelp));
-            if (help != null)
-            {
-                allActions.Add(help);
-            }
-
             // TODO: check for moduleAttribute == null;
             foreach (var act in allActions)
             {
@@ -182,20 +176,6 @@ namespace Planar.CLI.Actions
             }
 
             return result;
-        }
-
-        [Action("help")]
-        [Action("--help")]
-        [Action("-h")]
-        [IgnoreHelp]
-        public static async Task<CliActionResponse> ShowHelp()
-        {
-            var name = typeof(T).Name.Replace("CliActions", string.Empty);
-            var header = Program.GetHelpHeader();
-            var help = GetHelpResource(name);
-            var response = CliActionResponse.GetGenericSuccessRestResponse();
-            var result = new CliActionResponse(response, header + help);
-            return await Task.FromResult(result);
         }
 
         private static string GetHelpResource(string name)

@@ -1,5 +1,6 @@
 ﻿using DbUp;
 using Planar.Service;
+using Planar.Service.Exceptions;
 using System;
 using System.Reflection;
 
@@ -27,6 +28,12 @@ namespace Planar.Startup
             if (!AppSettings.RunDatabaseMigration)
             {
                 Console.WriteLine("[x] Skip database migration");
+                var count = CountScriptsToExecute();
+                if (count > 0)
+                {
+                    throw new PlanarException($"there are {count} script in database migration to run. enable database migrations in settings file or run database migrations manually");
+                }
+
                 return;
             }
 

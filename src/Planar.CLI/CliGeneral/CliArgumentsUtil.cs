@@ -1,7 +1,9 @@
 ﻿using Planar.CLI.Actions;
 using Planar.CLI.Attributes;
+using Planar.CLI.CliGeneral;
 using Planar.CLI.Exceptions;
 using Planar.CLI.General;
+using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -52,37 +54,40 @@ namespace Planar.CLI
             CliArguments = list.Where(l => l.Key != null).ToList();
         }
 
-        private static bool IsKeyArgument(CliArgument arg)
+        public List<CliArgument> CliArguments { get; set; } = new List<CliArgument>();
+
+        public string Command { get; set; }
+
+        public bool HasIterativeArgument
         {
-            if (string.IsNullOrEmpty(arg.Key)) { return false; }
-            const string template = "^-(-?)[a-z,A-Z]";
-            return Regex.IsMatch(arg.Key, template, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+            get
+            {
+                return CliArguments.Any(a =>
+                string.Equals(a.Key, $"-{IterativeActionPropertyAttribute.ShortNameText}", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(a.Key, $"--{IterativeActionPropertyAttribute.LongNameText}", StringComparison.OrdinalIgnoreCase));
+            }
         }
 
-        private static IEnumerable<string> GetModuleByArgument(string subArgument, IEnumerable<CliActionMetadata> cliActionsMetadata)
-        {
-            var metadata = cliActionsMetadata
-                .Where(m => m.Commands.Any(c => c?.ToLower() == subArgument.ToLower()))
-                .Select(m => m.Module);
+        public string Module { get; set; }
 
-            return metadata;
-        }
-
-        public static CliActionMetadata ValidateArgs(ref string[] args, IEnumerable<CliActionMetadata> cliActionsMetadata)
+        public static CliActionMetadata? ValidateArgs(ref string[] args, IEnumerable<CliActionMetadata> actionsMetadata)
         {
             var list = args.ToList();
 
+            // enable to list jons only by type ls
             if (list[0].ToLower() == "ls") { list.Insert(0, "job"); }
 
+            // enable get history only by type history id
             if (_historyRegex.IsMatch(list[0]))
             {
                 list.Insert(0, "history");
                 list.Insert(1, "get");
             }
 
-            if (!cliActionsMetadata.Any(a => a.Module.ToLower() == list[0].ToLower()))
+            // module not found
+            if (!actionsMetadata.Any(a => a.Module.ToLower() == list[0].ToLower()))
             {
-                var modules = GetModuleByArgument(list[0], cliActionsMetadata);
+                var modules = GetModuleByArgument(list[0], actionsMetadata);
                 if (!modules.Any())
                 {
                     throw new CliValidationException($"module '{list[0]}' is not supported");
@@ -102,12 +107,20 @@ namespace Planar.CLI
                 throw new CliValidationException($"missing command for module '{list[0]}'\r\n. command line format is 'planar-cli <module> <command> [<options>]'");
             }
 
-            if (!cliActionsMetadata.Any(a => a.Commands.Any(c => c?.ToLower() == list[1].ToLower())))
+            // command not found
+            if (!actionsMetadata.Any(a => a.Commands.Any(c => c?.ToLower() == list[1].ToLower())))
             {
+                // help command
+                if (IsHelpCommand(list[1]))
+                {
+                    CliHelpGenerator.ShowHelp(list[0], actionsMetadata);
+                    return null;
+                }
+
                 throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
             }
 
-            var action = cliActionsMetadata.FirstOrDefault(a => a.Commands.Any(c => c?.ToLower() == list[1].ToLower() && a.Module == list[0].ToLower()));
+            var action = actionsMetadata.FirstOrDefault(a => a.Commands.Any(c => c?.ToLower() == list[1].ToLower() && a.Module == list[0].ToLower()));
             if (action == null)
             {
                 throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
@@ -116,12 +129,6 @@ namespace Planar.CLI
             args = list.ToArray();
             return action;
         }
-
-        public string Module { get; set; }
-
-        public string Command { get; set; }
-
-        public List<CliArgument> CliArguments { get; set; } = new List<CliArgument>();
 
         public object? GetRequest(Type type, CliActionMetadata action)
         {
@@ -149,6 +156,26 @@ namespace Planar.CLI
             return result;
         }
 
+        private static bool IsHelpCommand(string command)
+        {
+            if (string.IsNullOrEmpty(command)) { return false; }
+            var cmd = command.ToLower();
+            if (cmd == "help") { return true; }
+            if (cmd == "-h") { return true; }
+            if (cmd == "--help") { return true; }
+            return false;
+        }
+
+        private static async Task FillJobId(CliArgumentMetadata prop, CliArgument arg)
+        {
+            if (prop.JobOrTriggerKey && arg.Value == "?")
+            {
+                var jobId = await JobCliActions.ChooseJob();
+                arg.Value = jobId;
+                Util.LastJobOrTriggerId = jobId;
+            }
+        }
+
         private static void FillJobOrTrigger(CliActionMetadata action, CliArgument a, CliArgumentMetadata matchProp)
         {
             FillLastJobOrTriggerId(matchProp, a);
@@ -160,6 +187,61 @@ namespace Planar.CLI
             {
                 FillTriggerId(matchProp, a).Wait();
             }
+        }
+
+        private static void FillLastJobOrTriggerId(CliArgumentMetadata prop, CliArgument arg)
+        {
+            if (prop.JobOrTriggerKey)
+            {
+                if (arg.Value == "!!")
+                {
+                    arg.Value = Util.LastJobOrTriggerId;
+                }
+                else
+                {
+                    Util.LastJobOrTriggerId = arg.Value;
+                }
+            }
+        }
+
+        private static async Task FillTriggerId(CliArgumentMetadata prop, CliArgument arg)
+        {
+            if (prop.JobOrTriggerKey && arg.Value == "?")
+            {
+                var triggerId = await JobCliActions.ChooseTrigger();
+                arg.Value = triggerId;
+                Util.LastJobOrTriggerId = triggerId;
+            }
+        }
+
+        private static void FindMissingRequiredProperties(IEnumerable<CliArgumentMetadata> props)
+        {
+            var p = props.FirstOrDefault(v => v.Required && !v.ValueSupplied);
+            if (p != null)
+            {
+                var message =
+                    string.IsNullOrEmpty(p.RequiredMissingMessage) ?
+                    $"argument {p.Name} is required" :
+                    p.RequiredMissingMessage;
+
+                throw new CliException(message);
+            }
+        }
+
+        private static IEnumerable<string> GetModuleByArgument(string subArgument, IEnumerable<CliActionMetadata> cliActionsMetadata)
+        {
+            var metadata = cliActionsMetadata
+                .Where(m => m.Commands.Any(c => c?.ToLower() == subArgument.ToLower()))
+                .Select(m => m.Module);
+
+            return metadata;
+        }
+
+        private static bool IsKeyArgument(CliArgument arg)
+        {
+            if (string.IsNullOrEmpty(arg.Key)) { return false; }
+            const string template = "^-(-?)[a-z,A-Z]";
+            return Regex.IsMatch(arg.Key, template, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
         }
 
         private static CliArgumentMetadata MatchProperty(CliActionMetadata action, List<CliArgumentMetadata> props, ref int startDefaultOrder, CliArgument a)
@@ -199,95 +281,10 @@ namespace Planar.CLI
             return matchProp;
         }
 
-        public bool HasIterativeArgument
+        private static object? ParseEnum(Type type, string value)
         {
-            get
-            {
-                return CliArguments.Any(a =>
-                string.Equals(a.Key, $"-{IterativeActionPropertyAttribute.ShortNameText}", StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(a.Key, $"--{IterativeActionPropertyAttribute.LongNameText}", StringComparison.OrdinalIgnoreCase));
-            }
-        }
+            if (value == null) { return null; }
 
-        private static async Task FillJobId(CliArgumentMetadata prop, CliArgument arg)
-        {
-            if (prop.JobOrTriggerKey && arg.Value == "?")
-            {
-                var jobId = await JobCliActions.ChooseJob();
-                arg.Value = jobId;
-                Util.LastJobOrTriggerId = jobId;
-            }
-        }
-
-        private static async Task FillTriggerId(CliArgumentMetadata prop, CliArgument arg)
-        {
-            if (prop.JobOrTriggerKey && arg.Value == "?")
-            {
-                var triggerId = await JobCliActions.ChooseTrigger();
-                arg.Value = triggerId;
-                Util.LastJobOrTriggerId = triggerId;
-            }
-        }
-
-        private static void FillLastJobOrTriggerId(CliArgumentMetadata prop, CliArgument arg)
-        {
-            if (prop.JobOrTriggerKey)
-            {
-                if (arg.Value == "!!")
-                {
-                    arg.Value = Util.LastJobOrTriggerId;
-                }
-                else
-                {
-                    Util.LastJobOrTriggerId = arg.Value;
-                }
-            }
-        }
-
-        private static void FindMissingRequiredProperties(IEnumerable<CliArgumentMetadata> props)
-        {
-            var p = props.FirstOrDefault(v => v.Required && !v.ValueSupplied);
-            if (p != null)
-            {
-                var message =
-                    string.IsNullOrEmpty(p.RequiredMissingMessage) ?
-                    $"argument {p.Name} is required" :
-                    p.RequiredMissingMessage;
-
-                throw new CliException(message);
-            }
-        }
-
-        private static void SetValue(PropertyInfo prop, object instance, string value)
-        {
-            if (string.Equals(value, prop.Name, StringComparison.OrdinalIgnoreCase) && prop.PropertyType == typeof(bool))
-            {
-                prop.SetValue(instance, true);
-                return;
-            }
-
-            try
-            {
-                object objValue = value;
-                if (prop.PropertyType.BaseType == typeof(Enum))
-                {
-                    objValue = ParseEnum(prop.PropertyType, value);
-                }
-                prop.SetValue(instance, Convert.ChangeType(objValue, prop.PropertyType, CultureInfo.CurrentCulture));
-            }
-            catch (Exception)
-            {
-                var attribute = prop.GetCustomAttribute<ActionPropertyAttribute>();
-                attribute ??= new ActionPropertyAttribute();
-
-                var message = $"value '{value}' has wrong format for argument {attribute.DisplayName}";
-
-                throw new CliException(message);
-            }
-        }
-
-        private static object ParseEnum(Type type, string value)
-        {
             try
             {
                 var result = Enum.Parse(type, value, true);
@@ -302,6 +299,37 @@ namespace Planar.CLI
                 }
 
                 throw;
+            }
+        }
+
+        private static void SetValue(PropertyInfo? prop, object? instance, string? value)
+        {
+            if (prop == null) { return; }
+            if (instance == null) { return; }
+
+            if (string.Equals(value, prop.Name, StringComparison.OrdinalIgnoreCase) && prop.PropertyType == typeof(bool))
+            {
+                prop.SetValue(instance, true);
+                return;
+            }
+
+            try
+            {
+                object? objValue = value;
+                if (prop.PropertyType.BaseType == typeof(Enum))
+                {
+                    objValue = ParseEnum(prop.PropertyType, value);
+                }
+                prop.SetValue(instance, Convert.ChangeType(objValue, prop.PropertyType, CultureInfo.CurrentCulture));
+            }
+            catch (Exception)
+            {
+                var attribute = prop.GetCustomAttribute<ActionPropertyAttribute>();
+                attribute ??= new ActionPropertyAttribute();
+
+                var message = $"value '{value}' has wrong format for argument {attribute.DisplayName}";
+
+                throw new CliException(message);
             }
         }
     }

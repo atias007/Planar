@@ -88,3 +88,5 @@
 - cli: format error & warning messages 
 - add ProcessJob job type
 - cli: add option to cancel tree options of job update command
+- check for migration where skip migration defined
+- add history count service

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -98,6 +99,18 @@ namespace Planar.Service.API
             {
                 throw new RestNotFoundException($"history with id {id} not found");
             }
+        }
+
+        public async Task<CounterResponse> GetHistoryCounter(CounterRequest request)
+        {
+            var result = new CounterResponse();
+            var data = await DataLayer.GetHistoryCounter(request.Hours);
+            var list = new List<StatisticsCountItem>();
+            list.Add(new StatisticsCountItem { Label = nameof(data.Running), Count = data.Running });
+            list.Add(new StatisticsCountItem { Label = nameof(data.Success), Count = data.Success });
+            list.Add(new StatisticsCountItem { Label = nameof(data.Fail), Count = data.Fail });
+            result.Counter = list;
+            return result;
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Planar.CLI.Actions;
+using Planar.CLI.Attributes;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
@@ -121,8 +122,7 @@ namespace Planar.CLI
             try
             {
                 var action = CliArgumentsUtil.ValidateArgs(ref args, cliActions);
-
-                //var temp = CliHelpGenerator.GetHelpMarkup(action.Module, cliActions);
+                if (action == null) { return null; }
 
                 cliArgument = new CliArgumentsUtil(args);
 
@@ -158,7 +158,10 @@ namespace Planar.CLI
                         switch (name)
                         {
                             case "JobCliActions.GetRunningJobs":
-                                CliIterativeActions.InvokeGetRunnings((CliGetRunningJobsRequest)param).Wait();
+                                if (param is CliGetRunningJobsRequest request)
+                                {
+                                    CliIterativeActions.InvokeGetRunnings(request).Wait();
+                                }
                                 break;
 
                             default:
@@ -366,7 +369,7 @@ namespace Planar.CLI
             }
         }
 
-        private static CliActionResponse? InvokeCliAction(CliActionMetadata action, object console, object param)
+        private static CliActionResponse? InvokeCliAction(CliActionMetadata action, object console, object? param)
         {
             if (action.Method == null) { return null; }
 
@@ -445,7 +448,7 @@ namespace Planar.CLI
                     .Color(Color.SteelBlue1));
 
             Console.WriteLine(GetHelpHeader());
-            Console.WriteLine("usage: planar-cli <module> <command> [<options>]");
+            Console.WriteLine("usage: planar-cli <module> <command> [<arguments>]");
             Console.WriteLine();
             Console.WriteLine("use 'planar-cli <module> --help' to see all avalible commands and options");
 

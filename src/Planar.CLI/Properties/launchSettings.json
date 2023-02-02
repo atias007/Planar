@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Planar.CLI": {
-      "commandName": "Project",
-      "commandLineArgs": "job ls"
+      "commandName": "Project"
     }
   }
 }
