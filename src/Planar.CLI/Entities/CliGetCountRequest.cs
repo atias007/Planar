@@ -2,7 +2,7 @@
 
 namespace Planar.CLI.Entities
 {
-    public class CliGetHistoryCountRequest
+    public class CliGetCountRequest
     {
         [ActionProperty(DefaultOrder = 0, Name = "hours")]
         [Required("hours argument is required")]

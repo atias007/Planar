@@ -313,12 +313,15 @@ namespace Planar.CLI.Actions
             return result ?? new AddMonitorRequest();
         }
 
-        private static RestResponse? SelectRestResponse(params RestResponse[] items)
+        private static RestResponse SelectRestResponse(params RestResponse[] items)
         {
-            if (!items.Any()) { return null; }
-            var result = items.FirstOrDefault(i => !i.IsSuccessful && (int)i.StatusCode >= 500);
-            result ??= CliActionResponse.GetGenericSuccessRestResponse();
+            RestResponse? result = null;
+            if (items.Any())
+            {
+                result = items.FirstOrDefault(i => !i.IsSuccessful && (int)i.StatusCode >= 500);
+            }
 
+            result ??= CliActionResponse.GetGenericSuccessRestResponse();
             return result;
         }
 

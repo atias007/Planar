@@ -22,6 +22,13 @@ namespace Planar.CLI.Actions
     [Module("job")]
     public class JobCliActions : BaseCliAction<JobCliActions>
     {
+        private struct TestData
+        {
+            public CliActionResponse? Response { get; set; }
+            public string? InstanceId { get; set; }
+            public int LogId { get; set; }
+        }
+
         [Action("add")]
         [NullRequest]
         public static async Task<CliActionResponse> AddJob(CliAddJobRequest request)
@@ -445,9 +452,9 @@ namespace Planar.CLI.Actions
 
             // (3) Get instance id
             var step3 = await TestStep2GetInstanceId(request, invokeDate);
-            if (step3.Item1 != null) { return step3.Item1; }
-            var instanceId = step3.Item2;
-            var logId = step3.Item3;
+            if (step3.Response != null) { return step3.Response; }
+            var instanceId = step3.InstanceId;
+            var logId = step3.LogId;
 
             // (4) Get running info
             var step4 = await TestStep4GetRunningData(instanceId, invokeDate);
@@ -666,30 +673,35 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        private static async Task<(CliActionResponse?, string?, int)> TestStep2GetInstanceId(CliInvokeJobRequest request, DateTime invokeDate)
+        private static async Task<TestData> TestStep2GetInstanceId(CliInvokeJobRequest request, DateTime invokeDate)
         {
             AnsiConsole.Markup(" [gold3_1][[x]][/] Get instance id... ");
             RestResponse<LastInstanceId>? instanceId = null;
+            var response = new TestData();
+
             for (int i = 0; i < 20; i++)
             {
                 instanceId = await GetLastInstanceId(request.Id, invokeDate);
                 if (!instanceId.IsSuccessful)
                 {
-                    return (new CliActionResponse(instanceId), null, 0);
+                    response.Response = new CliActionResponse(instanceId);
+                    return response;
                 }
 
-                if (instanceId.Data != null) break;
+                if (instanceId.Data != null) { break; }
                 await Task.Delay(1000);
             }
 
             if (instanceId == null || instanceId.Data == null)
             {
                 AnsiConsole.WriteLine();
-                throw new CliException("could not found running instance id");
+                throw new CliException("could not found running instance id. check whether job is paused or maybe another instance already running");
             }
 
             AnsiConsole.MarkupLine($"[turquoise2]{instanceId.Data.InstanceId}[/]");
-            return (null, instanceId.Data.InstanceId, instanceId.Data.LogId);
+            response.InstanceId = instanceId.Data.InstanceId;
+            response.LogId = instanceId.Data.LogId;
+            return response;
         }
 
         private static async Task<CliActionResponse?> TestStep4GetRunningData(string instanceId, DateTime invokeDate)
@@ -698,7 +710,16 @@ namespace Planar.CLI.Actions
                 .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
             var runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest);
 
-            if (!runResult.IsSuccessful) { return new CliActionResponse(runResult); }
+            if (!runResult.IsSuccessful)
+            {
+                // Not Found: job finish in very short time
+                AnsiConsole.Markup($" [gold3_1][[x]][/] Progress: [green]100%[/]  |  ");
+                if (runResult.StatusCode == HttpStatusCode.NotFound) { return null; }
+
+                // Fail to get running data
+                return new CliActionResponse(runResult);
+            }
+
             Console.WriteLine();
             var sleepTime = 2000;
             while (runResult.Data != null)

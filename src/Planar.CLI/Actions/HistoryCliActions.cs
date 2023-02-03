@@ -106,7 +106,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("count")]
-        public static async Task<CliActionResponse> GetHistoryCount(CliGetHistoryCountRequest request)
+        public static async Task<CliActionResponse> GetHistoryCount(CliGetCountRequest request)
         {
             var restRequest = new RestRequest("history/count", Method.Get)
                 .AddQueryParameter("hours", request.Hours);
@@ -118,11 +118,11 @@ namespace Planar.CLI.Actions
             }
 
             var counter = result.Data.Counter;
-
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine($"[grey54 bold underline]history status count for last {request.Hours} hours[/]");
+            AnsiConsole.WriteLine();
             AnsiConsole.Write(new BarChart()
                 .Width(60)
-                .Label($"[grey54 bold]history status count for last {request.Hours} hours[/]")
-                .LeftAlignLabel()
                 .AddItem(counter[0].Label, counter[0].Count, Color.Gold1)
                 .AddItem(counter[1].Label, counter[1].Count, Color.Green)
                 .AddItem(counter[2].Label, counter[2].Count, Color.Red1));

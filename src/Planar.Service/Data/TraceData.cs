@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
 using Planar.Service.Model;
+using Planar.Service.Model.DataObjects;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -94,6 +95,20 @@ namespace Planar.Service.Data
         public async Task<bool> IsTraceExists(int id)
         {
             return await _context.Traces.AnyAsync(t => t.Id == id);
+        }
+
+        public async Task<TraceStatusDto> GetTraceCounter(int hours)
+        {
+            var parameters = new { Hours = hours };
+            var definition = new CommandDefinition(
+                commandText: "[Statistics].[TraceCounter]",
+                parameters: parameters,
+                commandType: CommandType.StoredProcedure);
+
+            var result = await _context.Database.GetDbConnection()
+                .QueryFirstOrDefaultAsync<TraceStatusDto>(definition);
+
+            return result;
         }
     }
 }

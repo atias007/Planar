@@ -9,11 +9,11 @@ namespace Planar.CLI.General
     {
         public static string? LastJobOrTriggerId { get; set; }
 
-        public static string? BeautifyJson(string json)
+        public static string BeautifyJson(string? json)
         {
             if (string.IsNullOrEmpty(json))
             {
-                return null;
+                return string.Empty;
             }
 
             var result = JToken.Parse(json).ToString(Formatting.Indented);

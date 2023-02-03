@@ -13,7 +13,6 @@
 - job test: in no instance id, check hc and print warning about already running job with no concurent
 - add to jobfile the option to write thr author
 - add to jobfile the option to control the amount of retries
-- cli test: job that finish very fast - the test dont found it in running jobs. it should search in history
 - cli: save output to file
 - cli test cluster command
 - option to pause job after {x} fails in row
@@ -90,3 +89,5 @@
 - cli: add option to cancel tree options of job update command
 - check for migration where skip migration defined
 - add history count service
+- add trace count service
+- cli test: job that finish very fast - the test dont found it in running jobs. it should search in history
