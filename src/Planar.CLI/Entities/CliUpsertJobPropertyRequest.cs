@@ -2,7 +2,7 @@
 
 namespace Planar.CLI.Entities
 {
-    public class CliUpsertJobPropertyRequest : CliJobOrTriggerKey
+    public class CliUpsertJobPropertyRequest : CliJobKey
     {
         [ActionProperty(DefaultOrder = 1, Name = "key")]
         [Required("key argument is required")]

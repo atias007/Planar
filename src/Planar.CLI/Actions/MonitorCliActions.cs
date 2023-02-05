@@ -21,7 +21,7 @@ namespace Planar.CLI.Actions
             if (request == null)
             {
                 var wrapper = await CollectAddMonitorRequestData();
-                if (!wrapper.IsSuccessful)
+                if (!wrapper.IsSuccessful || wrapper.Request == null)
                 {
                     return new CliActionResponse(wrapper.FailResponse);
                 }

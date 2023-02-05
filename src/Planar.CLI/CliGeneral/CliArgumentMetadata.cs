@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Spectre.Console;
+using System;
 using System.Reflection;
 
 namespace Planar.CLI
@@ -47,6 +48,12 @@ namespace Planar.CLI
 
         public PropertyInfo? PropertyInfo { get; set; }
 
-        public bool JobOrTriggerKey { get; set; }
+        public bool JobKey { get; set; }
+
+        public bool TriggerKey { get; set; }
+
+        public bool MissingRequired => Required && !ValueSupplied;
+
+        public bool IsJobOrTriggerKey => JobKey || TriggerKey;
     }
 }

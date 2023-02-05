@@ -18,8 +18,12 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> GetTrace(CliGetTraceRequest request)
         {
             var restRequest = new RestRequest("trace", Method.Get)
-                .AddParameter("Ascending", request.Ascending, ParameterType.QueryString)
-                .AddParameter("Level", request.Level, ParameterType.QueryString);
+                .AddParameter("Ascending", request.Ascending, ParameterType.QueryString);
+
+            if (!string.IsNullOrEmpty(request.Level))
+            {
+                restRequest.AddParameter("Level", request.Level, ParameterType.QueryString);
+            }
 
             if (request.Rows > 0)
             {

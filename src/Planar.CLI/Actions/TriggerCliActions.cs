@@ -16,7 +16,7 @@ namespace Planar.CLI.Actions
     {
         [Action("ls")]
         [Action("list")]
-        public static async Task<CliActionResponse> GetTriggersDetails(CliGetTriggersDetailsRequest request)
+        public static async Task<CliActionResponse> GetTriggersDetails(CliListTriggersRequest request)
         {
             var prm = request.GetKey();
             var restRequest = new RestRequest("trigger/{jobId}/byjob", Method.Get)
@@ -25,7 +25,7 @@ namespace Planar.CLI.Actions
             var result = await RestProxy.Invoke<TriggerRowDetails>(restRequest);
             CliActionResponse response = new(result);
 
-            if (!result.IsSuccessful)
+            if (!result.IsSuccessful || result.Data == null)
             {
                 return response;
             }
@@ -33,7 +33,7 @@ namespace Planar.CLI.Actions
             var message = string.Empty;
             if (request.Quiet)
             {
-                var all = result.Data?.SimpleTriggers
+                var all = result.Data.SimpleTriggers
                     .Select(t => t.Id)
                     .Union(result.Data.CronTriggers.Select(c => c.Id));
 
@@ -79,7 +79,7 @@ namespace Planar.CLI.Actions
 
         [Action("delete")]
         [Action("remove")]
-        public static async Task<CliActionResponse> RemoveTrigger(CliJobOrTriggerKey request)
+        public static async Task<CliActionResponse> RemoveTrigger(CliTriggerKey request)
         {
             if (!ConfirmAction($"remove trigger id {request.Id}")) { return CliActionResponse.Empty; }
 
@@ -90,7 +90,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("pause")]
-        public static async Task<CliActionResponse> PauseTrigger(CliJobOrTriggerKey request)
+        public static async Task<CliActionResponse> PauseTrigger(CliTriggerKey request)
         {
             var restRequest = new RestRequest("trigger/pause", Method.Post)
                 .AddBody(request);
@@ -99,7 +99,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("resume")]
-        public static async Task<CliActionResponse> ResumeTrigger(CliJobOrTriggerKey request)
+        public static async Task<CliActionResponse> ResumeTrigger(CliTriggerKey request)
         {
             var restRequest = new RestRequest("trigger/resume", Method.Post)
                 .AddBody(request);
@@ -133,12 +133,12 @@ namespace Planar.CLI.Actions
         }
 
         [Action("data")]
-        public static async Task<CliActionResponse> UpsertTriggerData(CliJobOrTriggerDataRequest request)
+        public static async Task<CliActionResponse> UpsertTriggerData(CliTriggerDataRequest request)
         {
             RestResponse result;
             switch (request.Action)
             {
-                case JobDataActions.Upsert:
+                case DataActions.Upsert:
                     var prm1 = new JobOrTriggerDataRequest
                     {
                         Id = request.Id,
@@ -156,7 +156,7 @@ namespace Planar.CLI.Actions
                     }
                     break;
 
-                case JobDataActions.Remove:
+                case DataActions.Remove:
                     if (!ConfirmAction($"remove data with key '{request.DataKey}' from trigger {request.Id}")) { return CliActionResponse.Empty; }
                     var restRequest2 = new RestRequest("trigger/{id}/data/{key}", Method.Delete)
                         .AddParameter("id", request.Id, ParameterType.UrlSegment)

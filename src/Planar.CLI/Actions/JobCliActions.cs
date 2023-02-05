@@ -25,7 +25,7 @@ namespace Planar.CLI.Actions
         private struct TestData
         {
             public CliActionResponse? Response { get; set; }
-            public string? InstanceId { get; set; }
+            public string InstanceId { get; set; }
             public int LogId { get; set; }
         }
 
@@ -36,7 +36,7 @@ namespace Planar.CLI.Actions
             if (request == null)
             {
                 var wrapper = await GetCliAddJobRequest();
-                if (!wrapper.IsSuccessful)
+                if (!wrapper.IsSuccessful || wrapper.Request == null)
                 {
                     return new CliActionResponse(wrapper.FailResponse);
                 }
@@ -231,7 +231,7 @@ namespace Planar.CLI.Actions
 
         [Action("get")]
         [Action("inspect")]
-        public static async Task<CliActionResponse> GetJobDetails(CliJobOrTriggerKey jobKey)
+        public static async Task<CliActionResponse> GetJobDetails(CliJobKey jobKey)
         {
             var restRequest = new RestRequest("job/{id}", Method.Get)
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
@@ -242,7 +242,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("next")]
-        public static async Task<CliActionResponse> GetNextRunning(CliJobOrTriggerKey jobKey)
+        public static async Task<CliActionResponse> GetNextRunning(CliJobKey jobKey)
         {
             var restRequest = new RestRequest("job/nextRunning/{id}", Method.Get)
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
@@ -253,7 +253,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("prev")]
-        public static async Task<CliActionResponse> GetPreviousRunning(CliJobOrTriggerKey jobKey)
+        public static async Task<CliActionResponse> GetPreviousRunning(CliJobKey jobKey)
         {
             var restRequest = new RestRequest("job/prevRunning/{id}", Method.Get)
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
@@ -264,7 +264,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("settings")]
-        public static async Task<CliActionResponse> GetJobSettings(CliJobOrTriggerKey jobKey)
+        public static async Task<CliActionResponse> GetJobSettings(CliJobKey jobKey)
         {
             var restRequest = new RestRequest("job/{id}/settings", Method.Get)
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
@@ -341,7 +341,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("pause")]
-        public static async Task<CliActionResponse> PauseJob(CliJobOrTriggerKey jobKey)
+        public static async Task<CliActionResponse> PauseJob(CliJobKey jobKey)
         {
             var restRequest = new RestRequest("job/pause", Method.Post)
                 .AddBody(jobKey);
@@ -352,7 +352,7 @@ namespace Planar.CLI.Actions
 
         [Action("remove")]
         [Action("delete")]
-        public static async Task<CliActionResponse> RemoveJob(CliJobOrTriggerKey jobKey)
+        public static async Task<CliActionResponse> RemoveJob(CliJobKey jobKey)
         {
             if (!ConfirmAction($"remove job id {jobKey.Id}")) { return CliActionResponse.Empty; }
 
@@ -373,7 +373,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("resume")]
-        public static async Task<CliActionResponse> ResumeJob(CliJobOrTriggerKey jobKey)
+        public static async Task<CliActionResponse> ResumeJob(CliJobKey jobKey)
         {
             var restRequest = new RestRequest("job/resume", Method.Post)
                 .AddBody(jobKey);
@@ -408,7 +408,7 @@ namespace Planar.CLI.Actions
             if (request == null)
             {
                 var wrapper = await GetCliGetJobFileRequest();
-                if (!wrapper.IsSuccessful)
+                if (!wrapper.IsSuccessful || wrapper.Request == null)
                 {
                     return new CliActionResponse(wrapper.FailResponse);
                 }
@@ -470,12 +470,12 @@ namespace Planar.CLI.Actions
         }
 
         [Action("data")]
-        public static async Task<CliActionResponse> UpsertJobData(CliJobOrTriggerDataRequest request)
+        public static async Task<CliActionResponse> UpsertJobData(CliJobDataRequest request)
         {
             RestResponse result;
             switch (request.Action)
             {
-                case JobDataActions.Upsert:
+                case DataActions.Upsert:
                     var prm1 = new JobOrTriggerDataRequest
                     {
                         Id = request.Id,
@@ -493,7 +493,7 @@ namespace Planar.CLI.Actions
                     }
                     break;
 
-                case JobDataActions.Remove:
+                case DataActions.Remove:
                     if (!ConfirmAction($"remove data with key '{request.DataKey}' from job {request.Id}")) { return CliActionResponse.Empty; }
 
                     var restRequest2 = new RestRequest("job/{id}/data/{key}", Method.Delete)

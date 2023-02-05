@@ -5,6 +5,6 @@ namespace Planar.CLI.Entities
     public class CliGetMonitorActionsRequest
     {
         [ActionProperty(Default = true)]
-        public string JobIdOrJobGroup { get; set; }
+        public string? JobIdOrJobGroup { get; set; }
     }
 }

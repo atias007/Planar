@@ -3,11 +3,11 @@ using Planar.CLI.Attributes;
 
 namespace Planar.CLI.Entities
 {
-    public class CliJobOrTriggerKey
+    public class CliJobKey
     {
         [Required("id argument is required")]
         [ActionProperty(DefaultOrder = 0)]
-        public virtual string Id { get; set; } = string.Empty;
+        public string Id { get; set; } = string.Empty;
 
         internal JobOrTriggerKey GetKey()
         {

@@ -135,23 +135,37 @@ namespace Planar.CLI
             if (!CliArguments.Any() && action.AllowNullRequest) { return null; }
 
             var result = Activator.CreateInstance(type);
-            //var props = action.GetRequestPropertiesInfo();
-
             var defaultProps = action.Arguments.Where(p => p.Default);
             var startDefaultOrder = defaultProps.Any() ? defaultProps.Min(p => p.DefaultOrder) : -1;
 
-            foreach (var a in CliArguments)
+            CliArgumentMetadata? metadata;
+            foreach (var arg in CliArguments)
             {
-                var matchProp = MatchProperty(action, action.Arguments, ref startDefaultOrder, a);
-                FillJobOrTrigger(action, a, matchProp);
-                SetValue(matchProp.PropertyInfo, result, a.Value);
-                if (!string.IsNullOrEmpty(a.Value))
+                metadata = MatchProperty(action, action.Arguments, ref startDefaultOrder, arg);
+                FillJobOrTrigger(arg, metadata);
+                SetValue(metadata.PropertyInfo, result, arg.Value);
+                if (!string.IsNullOrEmpty(arg.Value))
                 {
-                    matchProp.ValueSupplied = true;
+                    metadata.ValueSupplied = true;
                 }
             }
 
-            FindMissingRequiredProperties(action.Arguments);
+            metadata = action.Arguments.FirstOrDefault(m => m.IsJobOrTriggerKey);
+            if (metadata != null)
+            {
+                var arg = new CliArgument { Key = "?", Value = "?" };
+                FillJobOrTrigger(arg, metadata);
+                SetValue(metadata.PropertyInfo, result, arg.Value);
+                if (!string.IsNullOrEmpty(arg.Value))
+                {
+                    metadata.ValueSupplied = true;
+                }
+            }
+
+            foreach (var item in action.Arguments)
+            {
+                ValidateMissingRequiredProperties(item);
+            }
 
             return result;
         }
@@ -166,9 +180,9 @@ namespace Planar.CLI
             return false;
         }
 
-        private static async Task FillJobId(CliArgumentMetadata prop, CliArgument arg)
+        private static async Task FillJobId(CliArgumentMetadata metadata, CliArgument arg)
         {
-            if (prop.JobOrTriggerKey && arg.Value == "?")
+            if (metadata.JobKey && arg.Value == "?")
             {
                 var jobId = await JobCliActions.ChooseJob();
                 arg.Value = jobId;
@@ -176,22 +190,23 @@ namespace Planar.CLI
             }
         }
 
-        private static void FillJobOrTrigger(CliActionMetadata action, CliArgument a, CliArgumentMetadata matchProp)
+        private static void FillJobOrTrigger(CliArgument a, CliArgumentMetadata metadata)
         {
-            FillLastJobOrTriggerId(matchProp, a);
-            if (action.Module?.ToLower() == "job")
+            FillLastJobOrTriggerId(metadata, a);
+
+            if (metadata.JobKey)
             {
-                FillJobId(matchProp, a).Wait();
+                FillJobId(metadata, a).Wait();
             }
-            else if (action.Module?.ToLower() == "trigger")
+            else if (metadata.TriggerKey)
             {
-                FillTriggerId(matchProp, a).Wait();
+                FillTriggerId(metadata, a).Wait();
             }
         }
 
         private static void FillLastJobOrTriggerId(CliArgumentMetadata prop, CliArgument arg)
         {
-            if (prop.JobOrTriggerKey)
+            if (prop.IsJobOrTriggerKey)
             {
                 if (arg.Value == "!!")
                 {
@@ -206,7 +221,7 @@ namespace Planar.CLI
 
         private static async Task FillTriggerId(CliArgumentMetadata prop, CliArgument arg)
         {
-            if (prop.JobOrTriggerKey && arg.Value == "?")
+            if (prop.TriggerKey && arg.Value == "?")
             {
                 var triggerId = await JobCliActions.ChooseTrigger();
                 arg.Value = triggerId;
@@ -214,15 +229,14 @@ namespace Planar.CLI
             }
         }
 
-        private static void FindMissingRequiredProperties(IEnumerable<CliArgumentMetadata> props)
+        private static void ValidateMissingRequiredProperties(CliArgumentMetadata props)
         {
-            var p = props.FirstOrDefault(v => v.Required && !v.ValueSupplied);
-            if (p != null)
+            if (props.MissingRequired)
             {
                 var message =
-                    string.IsNullOrEmpty(p.RequiredMissingMessage) ?
-                    $"argument {p.Name} is required" :
-                    p.RequiredMissingMessage;
+                    string.IsNullOrEmpty(props.RequiredMissingMessage) ?
+                    $"argument {props.Name} is required" :
+                    props.RequiredMissingMessage;
 
                 throw new CliException(message);
             }
@@ -316,7 +330,7 @@ namespace Planar.CLI
             try
             {
                 object? objValue = value;
-                if (prop.PropertyType.BaseType == typeof(Enum))
+                if (value != null && prop.PropertyType.BaseType == typeof(Enum))
                 {
                     objValue = ParseEnum(prop.PropertyType, value);
                 }

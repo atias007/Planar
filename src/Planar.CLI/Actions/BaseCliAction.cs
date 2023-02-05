@@ -152,9 +152,13 @@ namespace Planar.CLI.Actions
 
             var props = requestType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
-            var inheritKey =
-                requestType.IsAssignableFrom(typeof(CliJobOrTriggerKey)) ||
-                requestType.IsSubclassOf(typeof(CliJobOrTriggerKey));
+            var isJobKey =
+                requestType.IsAssignableFrom(typeof(CliJobKey)) ||
+                requestType.IsSubclassOf(typeof(CliJobKey));
+
+            var isTriggerKey =
+                requestType.IsAssignableFrom(typeof(CliTriggerKey)) ||
+                requestType.IsSubclassOf(typeof(CliTriggerKey));
 
             foreach (var item in props)
             {
@@ -170,7 +174,8 @@ namespace Planar.CLI.Actions
                     Required = req != null,
                     RequiredMissingMessage = req?.Message,
                     DefaultOrder = (att?.DefaultOrder).GetValueOrDefault(),
-                    JobOrTriggerKey = inheritKey && item.Name == nameof(CliJobOrTriggerKey.Id),
+                    JobKey = isJobKey && item.Name == nameof(CliJobKey.Id),
+                    TriggerKey = isTriggerKey && item.Name == nameof(CliTriggerKey.Id),
                 };
                 result.Add(info);
             }

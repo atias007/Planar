@@ -3,7 +3,6 @@
 - add to base test to retrieve log & exception
 
 - bug: reload monitor + reload hooks --> not support cluster
-- bug: job test dont validate that job is exists (run: job text xxxxxxxx)
 - cli: job update, when no folder supplied, show menu
 - cli: validate user phone number on cli menu
 - cli: service status [time scope] dashboard command
@@ -91,3 +90,5 @@
 - add history count service
 - add trace count service
 - cli test: job that finish very fast - the test dont found it in running jobs. it should search in history
+- bug: job test dont validate that job is exists (run: job text xxxxxxxx)
+- upgrade quartz package

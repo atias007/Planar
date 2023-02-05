@@ -389,7 +389,7 @@ namespace Planar.CLI
             return response;
         }
 
-        private static IEnumerable<string?> SplitCommandLine(string? commandLine)
+        private static IEnumerable<string> SplitCommandLine(string? commandLine)
         {
             if (string.IsNullOrEmpty(commandLine))
             {
@@ -405,8 +405,14 @@ namespace Planar.CLI
             });
 
             var final = split
-                .Select(arg => arg?.Trim().TrimMatchingQuotes('\"'))
-                .Where(arg => !string.IsNullOrEmpty(arg));
+                .Where(arg => !string.IsNullOrEmpty(arg))
+                .Select(arg =>
+                {
+                    return
+                    arg == null ?
+                    string.Empty :
+                    arg.Trim().TrimMatchingQuotes('\"');
+                });
 
             return final;
         }

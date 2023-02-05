@@ -2,7 +2,7 @@
 
 namespace Planar.CLI.Entities
 {
-    public class CliGetTriggersDetailsRequest : CliTriggerKey
+    public class CliListTriggersRequest : CliJobKey
     {
         [QuietActionProperty]
         public bool Quiet { get; set; }

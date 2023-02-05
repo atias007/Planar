@@ -18,12 +18,12 @@ namespace Planar.CLI.Entities
         public DateTime ToDate { get; set; }
 
         [ActionProperty(ShortName = "s", LongName = "status")]
-        public string Status { get; set; }
+        public string? Status { get; set; }
 
         [ActionProperty(ShortName = "j", LongName = "job")]
-        public string JobId { get; set; }
+        public string? JobId { get; set; }
 
         [ActionProperty("jg", "job-group")]
-        public string JobGroup { get; set; }
+        public string? JobGroup { get; set; }
     }
 }

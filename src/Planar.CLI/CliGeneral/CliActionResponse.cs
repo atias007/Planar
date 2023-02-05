@@ -8,18 +8,23 @@ namespace Planar.CLI
 {
     public class CliActionResponse
     {
-        public CliActionResponse(RestResponse response)
+        public CliActionResponse(RestResponse? response)
         {
+            if (response == null)
+            {
+                response = GetGenericSuccessRestResponse();
+            }
+
             Response = response;
         }
 
-        public CliActionResponse(RestResponse response, string? message)
+        public CliActionResponse(RestResponse? response, string? message)
             : this(response)
         {
             Message = message;
         }
 
-        public CliActionResponse(RestResponse response, object? serializeObj)
+        public CliActionResponse(RestResponse? response, object? serializeObj)
             : this(response)
         {
             if (serializeObj != null)
@@ -28,13 +33,13 @@ namespace Planar.CLI
             }
         }
 
-        public CliActionResponse(RestResponse response, Table table)
+        public CliActionResponse(RestResponse? response, Table table)
             : this(response)
         {
             Tables = new List<Table> { table };
         }
 
-        public CliActionResponse(RestResponse response, List<Table> tables)
+        public CliActionResponse(RestResponse? response, List<Table> tables)
             : this(response)
         {
             Tables = tables;
@@ -50,8 +55,7 @@ namespace Planar.CLI
         {
             get
             {
-                var restResponse = GetGenericSuccessRestResponse();
-                return new CliActionResponse(restResponse);
+                return new CliActionResponse(null);
             }
         }
 
