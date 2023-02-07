@@ -29,16 +29,16 @@ namespace Planar
             }
         }
 
-        public abstract void Configure(IConfigurationBuilder configurationBuilder, string environment);
+        public abstract void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
         public abstract Task ExecuteJob(IJobExecutionContext context);
 
-        public abstract void RegisterServices(IConfiguration configuration, IServiceCollection services);
+        public abstract void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context);
 
         internal Task Execute(ref object messageBroker)
         {
-            Action<IConfigurationBuilder, string> configureAction = Configure;
-            Action<IConfiguration, IServiceCollection> registerServicesAction = RegisterServices;
+            Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
+            Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
 
             InitializeMessageBroker(messageBroker);
             InitializeConfiguration(_context, configureAction);
@@ -55,8 +55,8 @@ namespace Planar
 
         internal Task ExecuteUnitTest(
             ref object messageBroker,
-            Action<IConfigurationBuilder, string> configureAction,
-            Action<IConfiguration, IServiceCollection> registerServicesAction)
+            Action<IConfigurationBuilder, IJobExecutionContext> configureAction,
+            Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction)
 
         {
             InitializeMessageBroker(messageBroker);
@@ -206,15 +206,15 @@ namespace Planar
             UpdateProgress(value);
         }
 
-        private void InitializeConfiguration(JobExecutionContext context, Action<IConfigurationBuilder, string> configureAction)
+        private void InitializeConfiguration(JobExecutionContext context, Action<IConfigurationBuilder, IJobExecutionContext> configureAction)
         {
             var builder = new ConfigurationBuilder();
             builder.AddInMemoryCollection(context.JobSettings);
-            configureAction.Invoke(builder, context.Environment);
+            configureAction.Invoke(builder, context);
             Configuration = builder.Build();
         }
 
-        private void InitializeDepedencyInjection(JobExecutionContext context, MessageBroker messageBroker, Action<IConfiguration, IServiceCollection> registerServicesAction)
+        private void InitializeDepedencyInjection(JobExecutionContext context, MessageBroker messageBroker, Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction)
         {
             var services = new ServiceCollection();
             services.AddSingleton(Configuration);
@@ -222,7 +222,7 @@ namespace Planar
             services.AddSingleton<ILogger, PlannerLogger>();
             services.AddSingleton(messageBroker);
             services.AddSingleton(typeof(ILogger<>), typeof(PlannerLogger<>));
-            registerServicesAction.Invoke(Configuration, services);
+            registerServicesAction.Invoke(Configuration, services, context);
             _provider = services.BuildServiceProvider();
         }
 

@@ -15,7 +15,7 @@ namespace Planar.Job.Test
 {
     public abstract class BaseJobTest
     {
-        public abstract void Configure(IConfigurationBuilder configurationBuilder, string environment);
+        public abstract void Configure(IConfigurationBuilder configurationBuilder, i);
 
         public abstract void RegisterServices(IConfiguration configuration, IServiceCollection services);
 

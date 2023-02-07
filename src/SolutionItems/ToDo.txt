@@ -4,7 +4,6 @@
 
 - bug: reload monitor + reload hooks --> not support cluster
 - cli: job update, when no folder supplied, show menu
-- cli: validate user phone number on cli menu
 - cli: service status [time scope] dashboard command
 
 - add hook test option
@@ -92,3 +91,5 @@
 - cli test: job that finish very fast - the test dont found it in running jobs. it should search in history
 - bug: job test dont validate that job is exists (run: job text xxxxxxxx)
 - upgrade quartz package
+- update cli to show job/trigger menu when parameter is empty
+- cli: validate user phone number on cli add user wizard

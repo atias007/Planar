@@ -1,4 +1,5 @@
-﻿using RestSharp;
+﻿using Planar.Common;
+using RestSharp;
 using Spectre.Console;
 using System.Collections.Generic;
 using System.Net;
@@ -10,10 +11,7 @@ namespace Planar.CLI
     {
         public CliActionResponse(RestResponse? response)
         {
-            if (response == null)
-            {
-                response = GetGenericSuccessRestResponse();
-            }
+            response ??= GetGenericSuccessRestResponse();
 
             Response = response;
         }
@@ -68,8 +66,7 @@ namespace Planar.CLI
         private static string? SerializeResponse(object response)
         {
             if (response == null) { return null; }
-            var serializer = new SerializerBuilder().Build();
-            var yml = serializer.Serialize(response);
+            var yml = YmlUtil.Serialize(response);
 
             if (!string.IsNullOrEmpty(yml))
             {

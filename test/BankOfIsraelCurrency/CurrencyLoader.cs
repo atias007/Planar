@@ -15,7 +15,7 @@ namespace BankOfIsraelCurrency
     {
         #region Planar Methods
 
-        public override void Configure(IConfigurationBuilder configurationBuilder, string environment)
+        public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
         {
             //// Do Nothig ////
         }
@@ -26,7 +26,7 @@ namespace BankOfIsraelCurrency
             await SaveCurrency();
         }
 
-        public override void RegisterServices(IConfiguration configuration, IServiceCollection services)
+        public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
         {
             //// Do Nothig ////
         }

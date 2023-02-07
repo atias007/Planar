@@ -12,6 +12,7 @@ namespace Planar.Common
 
         public static string Serialize<T>(T item)
         {
+            if (item == null) { return string.Empty; }
             return YmlSerializer.Serialize(item);
         }
 

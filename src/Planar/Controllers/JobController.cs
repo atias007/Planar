@@ -95,7 +95,7 @@ namespace Planar.Controllers
 
         [ApiExplorerSettings(IgnoreApi = true)]
         [HttpGet("available-jobs")]
-        [SwaggerOperation(OperationId = "put_job_folder", Description = "", Summary = "")]
+        [SwaggerOperation(OperationId = "get_job_available_jobs", Description = "", Summary = "")]
         [OkJsonResponse(typeof(List<AvailableJobToAdd>))]
         public async Task<ActionResult<List<AvailableJobToAdd>>> GetAvailableJobsToAdd()
         {

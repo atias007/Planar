@@ -8,7 +8,7 @@ namespace LongRunningJob
 {
     public class Worker : BaseJob
     {
-        public override void Configure(IConfigurationBuilder configurationBuilder, string environment)
+        public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
         {
         }
 
@@ -33,7 +33,7 @@ namespace LongRunningJob
             }
         }
 
-        public override void RegisterServices(IConfiguration configuration, IServiceCollection services)
+        public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
         {
         }
     }

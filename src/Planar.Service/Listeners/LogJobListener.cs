@@ -187,7 +187,7 @@ namespace Planar.Service.Listeners
             var items = Global.ConvertDataMapToDictionary(data);
             if (items?.Count == 0) { return null; }
 
-            var yml = new SerializerBuilder().Build().Serialize(items);
+            var yml = YmlUtil.Serialize(items);
             return yml;
         }
     }

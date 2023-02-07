@@ -9,7 +9,7 @@ namespace RetryDemoJob
 {
     public class Worker : BaseJob
     {
-        public override void Configure(IConfigurationBuilder configurationBuilder, string environment)
+        public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
         {
         }
 
@@ -19,7 +19,7 @@ namespace RetryDemoJob
             throw new PlanarJobException("This is some test exception");
         }
 
-        public override void RegisterServices(IConfiguration configuration, IServiceCollection services)
+        public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
         {
         }
     }

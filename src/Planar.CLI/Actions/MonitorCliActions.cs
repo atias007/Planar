@@ -157,7 +157,7 @@ namespace Planar.CLI.Actions
             var selectedGroup = PromptSelection(groupsNames, "distribution group");
 
             var group = groups.First(e => e.Name == selectedGroup);
-            AnsiConsole.MarkupLine($"[turquoise2]  > Group: [/] {group.Name}");
+            AnsiConsole.MarkupLine($"[turquoise2]  > dist. group: [/] {group.Name}");
             return group.Id;
         }
 
@@ -168,19 +168,19 @@ namespace Planar.CLI.Actions
             var selectedEvent = PromptSelection(eventsName, "monitor event");
 
             var monitorEvent = events.First(e => e.Name == selectedEvent);
-            AnsiConsole.MarkupLine($"[turquoise2]  > Event: [/] {monitorEvent.Name}");
+            AnsiConsole.MarkupLine($"[turquoise2]  > event: [/] {monitorEvent.Name}");
             return monitorEvent.Id;
         }
 
         private static string? GetEventArguments(int monitorEvent)
         {
             var result = MonitorEventsExtensions.IsMonitorEventHasArguments(monitorEvent) ?
-                AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Event argument: [/]").AllowEmpty()) :
+                AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > event argument: [/]").AllowEmpty()) :
                 null;
 
             if (!string.IsNullOrEmpty(result))
             {
-                AnsiConsole.MarkupLine($"[turquoise2]  > Arguments: [/] {result}");
+                AnsiConsole.MarkupLine($"[turquoise2]  > arguments: [/] {result}");
             }
 
             return result;
@@ -190,7 +190,7 @@ namespace Planar.CLI.Actions
         {
             var selectedHook = PromptSelection(hooks, "hook");
 
-            AnsiConsole.MarkupLine($"[turquoise2]  > Hook: [/] {selectedHook}");
+            AnsiConsole.MarkupLine($"[turquoise2]  > hook: [/] {selectedHook}");
 
             return selectedHook ?? string.Empty;
         }
@@ -210,19 +210,19 @@ namespace Planar.CLI.Actions
 
             if (selectedEvent == "all")
             {
-                AnsiConsole.MarkupLine("[turquoise2]  > Monitor for: [/] all jobs");
+                AnsiConsole.MarkupLine("[turquoise2]  > monitor for: [/] all jobs");
                 return new AddMonitorJobData();
             }
 
             if (selectedEvent == "group")
             {
                 var group = JobCliActions.ChooseGroup(jobs) ?? string.Empty;
-                AnsiConsole.MarkupLine($"[turquoise2]  > Monitor for: [/] job group '{group}'");
+                AnsiConsole.MarkupLine($"[turquoise2]  > monitor for: [/] job group '{group}'");
                 return new AddMonitorJobData { JobGroup = group };
             }
 
             var job = JobCliActions.ChooseJob(jobs);
-            AnsiConsole.MarkupLine($"[turquoise2]  > Monitor for: [/] single job '{job}'");
+            AnsiConsole.MarkupLine($"[turquoise2]  > monitor for: [/] single job '{job}'");
             var key = JobKey.Parse(job);
             return new AddMonitorJobData { JobName = key.Name, JobGroup = key.Group };
         }
@@ -296,15 +296,18 @@ namespace Planar.CLI.Actions
         private static string GetTitle()
         {
             // === Title ===
-            return AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Title: [/]")
+            var title = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Title: [/]")
                 .Validate(title =>
                 {
-                    if (string.IsNullOrWhiteSpace(title)) { return ValidationResult.Error("[red]Title is required field[/]"); }
+                    if (string.IsNullOrWhiteSpace(title)) { return ValidationResult.Error("[red]title is required field[/]"); }
                     title = title.Trim();
-                    if (title.Length > 50) { return ValidationResult.Error("[red]Title limited to 50 chars maximum[/]"); }
-                    if (title.Length < 5) { return ValidationResult.Error("[red]Title must have at least 5 chars[/]"); }
+                    if (title.Length > 50) { return ValidationResult.Error("[red]title limited to 50 chars maximum[/]"); }
+                    if (title.Length < 5) { return ValidationResult.Error("[red]title must have at least 5 chars[/]"); }
                     return ValidationResult.Success();
                 }));
+
+            AnsiConsole.MarkupLine($"[turquoise2]  > title: [/] {title}");
+            return title;
         }
 
         private static AddMonitorRequest MapAddMonitorRequest(CliAddMonitorRequest request)

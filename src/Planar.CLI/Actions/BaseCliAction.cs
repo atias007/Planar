@@ -8,10 +8,9 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
@@ -27,6 +26,40 @@ namespace Planar.CLI.Actions
         {
             var result = await RestProxy.Invoke(request);
             return new CliActionResponse(result);
+        }
+
+        protected static string? CollectCliValue(string field, bool required, int minLength, int maxLength, string? regex = null, string? regexErrorMessage = null)
+        {
+            var prompt = new TextPrompt<string>($"[turquoise2]  > {field.EscapeMarkup()}: [/]")
+                .Validate(value =>
+                {
+                    if (required && string.IsNullOrWhiteSpace(value)) { return GetValidationResultError($"{field} is required field"); }
+                    value = value.Trim();
+
+                    if (string.IsNullOrEmpty(value) && !required)
+                    {
+                        return ValidationResult.Success();
+                    }
+
+                    if (value.Length > maxLength) { return GetValidationResultError($"{field} limited to {maxLength} chars maximum"); }
+                    if (value.Length < minLength) { return GetValidationResultError($"{field} must have at least {minLength} chars"); }
+                    if (!string.IsNullOrEmpty(regex))
+                    {
+                        var rx = new Regex(regex, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+                        if (!rx.IsMatch(value))
+                        {
+                            return GetValidationResultError($"{field} {regexErrorMessage}");
+                        }
+                    }
+
+                    return ValidationResult.Success();
+                });
+
+            if (!required) { prompt.AllowEmpty(); }
+
+            var result = AnsiConsole.Prompt(prompt);
+
+            return string.IsNullOrEmpty(result) ? null : result;
         }
 
         protected static async Task<CliActionResponse> ExecuteEntity<T>(RestRequest request)
@@ -67,6 +100,12 @@ namespace Planar.CLI.Actions
             }
 
             throw new InvalidOperationException("unexpected token: " + token);
+        }
+
+        private static ValidationResult GetValidationResultError(string message)
+        {
+            var markup = CliFormat.GetErrorMarkup(message);
+            return ValidationResult.Error(markup);
         }
 
         public static IEnumerable<CliActionMetadata> GetAllActions()
@@ -224,37 +263,6 @@ namespace Planar.CLI.Actions
             {
                 AnsiConsole.MarkupLine(message);
             }
-        }
-
-        protected static TRequest CollectDataFromCli<TRequest>()
-            where TRequest : class, new()
-        {
-            var prm = Activator.CreateInstance<TRequest>();
-            var properties = typeof(TRequest).GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            foreach (var prop in properties)
-            {
-                var type = prop.PropertyType.Name;
-
-                switch (type)
-                {
-                    case "Int32":
-                        var value1 = AnsiConsole.Ask<int>($"[turquoise2]  > {prop.Name}[/]: ");
-                        prop.SetValue(prm, value1);
-                        break;
-
-                    case "String":
-                    default:
-                        var value2 = AnsiConsole.Prompt(new TextPrompt<string>($"[turquoise2]  > {prop.Name}[/]: ").AllowEmpty());
-                        if (string.IsNullOrEmpty(value2)) { value2 = null; }
-                        prop.SetValue(prm, value2);
-                        break;
-                }
-            }
-
-            AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[underline]Result:[/]");
-
-            return prm;
         }
 
         protected static string? PromptSelection(IEnumerable<string>? items, string title, bool addCancelOption = true)

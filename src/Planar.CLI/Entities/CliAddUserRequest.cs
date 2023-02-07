@@ -10,7 +10,7 @@ namespace Planar.CLI.Entities
         public string Username { get; set; } = string.Empty;
 
         [ActionProperty("f", "firstname")]
-        public string? FirstName { get; set; }
+        public string FirstName { get; set; } = string.Empty;
 
         [ActionProperty("l", "lastname")]
         public string? LastName { get; set; }

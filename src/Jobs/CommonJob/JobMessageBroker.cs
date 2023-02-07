@@ -6,12 +6,15 @@ using Planar.Common;
 using Quartz;
 using System;
 using System.Collections.Generic;
+using IJobExecutionContext = Quartz.IJobExecutionContext;
 
 namespace CommonJob
 {
     public class JobMessageBroker
     {
-        private static readonly object Locker = new();
+#pragma warning disable IDE0090 // Use 'new(...)'
+        private static readonly object Locker = new object();
+#pragma warning restore IDE0090 // Use 'new(...)'
         private readonly IJobExecutionContext _context;
 
         public JobMessageBroker(IJobExecutionContext context, Dictionary<string, string> settings)
