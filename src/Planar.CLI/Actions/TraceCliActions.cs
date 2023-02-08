@@ -66,6 +66,11 @@ namespace Planar.CLI.Actions
         [Action("count")]
         public static async Task<CliActionResponse> GetTraceCount(CliGetCountRequest request)
         {
+            if (request.Hours == 0)
+            {
+                request.Hours = GetCounterHours();
+            }
+
             var restRequest = new RestRequest("trace/count", Method.Get)
                 .AddQueryParameter("hours", request.Hours);
 

@@ -1,6 +1,7 @@
 ﻿using Planar.CLI.Attributes;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -26,6 +27,8 @@ namespace Planar.CLI
         public string ArgumentsDisplayName { get; private set; } = string.Empty;
 
         public bool IgnoreHelp { get; set; }
+
+        public bool HasWizard { get; set; }
 
         public void SetArgumentsDisplayName()
         {
@@ -62,6 +65,10 @@ namespace Planar.CLI
                 }
             }
 
+            var ci = CultureInfo.CurrentCulture;
+            string shortDateFormatString = ci.DateTimeFormat.ShortDatePattern;
+            string shortTimeFormatString = ci.DateTimeFormat.LongTimePattern;
+
             foreach (var item in otherArgs)
             {
                 var enumType = item.EnumType;
@@ -70,6 +77,10 @@ namespace Planar.CLI
                 if (info != null && info.PropertyType == typeof(bool))
                 {
                     sb.Append($"[{item.DisplayName}] ");
+                }
+                else if (info != null && (info.PropertyType == typeof(DateTime) || info.PropertyType == typeof(DateTime?)))
+                {
+                    sb.Append($"[{item.DisplayName} <\"{shortDateFormatString} {shortTimeFormatString}>\"] ");
                 }
                 else if (enumType != null)
                 {
@@ -99,7 +110,7 @@ namespace Planar.CLI
                 }
                 else
                 {
-                    parts.Add(ToMinusCase(att.Name));
+                    parts.Add(att.Name);
                 }
             }
 

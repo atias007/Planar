@@ -2,7 +2,7 @@
 
 namespace Planar
 {
-    public class LogEntity
+    internal class LogEntity
     {
         public LogEntity()
         {
@@ -14,7 +14,7 @@ namespace Planar
             Message = message;
         }
 
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
 
         public LogLevel Level { get; set; }
     }

@@ -1,11 +1,7 @@
-﻿using CommonJob;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
-using Planar.Common;
-using Quartz;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
@@ -15,79 +11,27 @@ namespace Planar.Job.Test
 {
     public abstract class BaseJobTest
     {
-        public abstract void Configure(IConfigurationBuilder configurationBuilder, i);
+        protected ExecuteJobBuilder JobRunner => ExecuteJobBuilder.CreateBuilder();
 
-        public abstract void RegisterServices(IConfiguration configuration, IServiceCollection services);
+        public abstract void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-        protected JobInstanceLog ExecuteJob<T>(Dictionary<string, object> dataMap = null, DateTime? overrideNow = null)
+        public abstract void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context);
+
+        protected IJobExecutionResult ExecuteJob<T>()
             where T : class, new()
         {
-            Global.Environment = "UnitTest";
-            var context = new MockJobExecutionContext(dataMap, overrideNow);
-            var type = typeof(T);
-            Validate(type);
-            var method = type.GetMethod("ExecuteUnitTest", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (method == null)
+            var props = new ExecuteJobProperties
             {
-                throw new Exception($"Can not run test. Worker type {typeof(T).FullName} does not inherit BaseJob / does not use Planar.Job nuget pack with version 1.0.4 or higher");
-            }
-
-            var instance = Activator.CreateInstance<T>();
-            MapJobInstanceProperties(context, instance);
-            var settings = JobSettingsLoader.LoadJobSettingsForUnitTest<T>();
-
-            Exception jobException = null;
-            var start = DateTime.Now;
-            JobMessageBroker _broker;
-
-            try
-            {
-                _broker = new JobMessageBroker(context, settings);
-                Action<IConfigurationBuilder, string> configureAction = Configure;
-                Action<IConfiguration, IServiceCollection> registerServicesAction = RegisterServices;
-                var result = method.Invoke(instance, new object[] { _broker, configureAction, registerServicesAction }) as Task;
-                result.ConfigureAwait(false).GetAwaiter().GetResult();
-            }
-            catch (Exception ex)
-            {
-                jobException = ex;
-            }
-            finally
-            {
-                context.JobRunTime = DateTime.Now.Subtract(start);
-            }
-
-            var data = context.MergedJobDataMap.Keys.Count == 0 ? null : JsonSerializer.Serialize(context.MergedJobDataMap);
-            var duration = context.JobRunTime.TotalMilliseconds;
-            var endDate = context.FireTimeUtc.DateTime.Add(context.JobRunTime);
-            var status = jobException == null ? 0 : 1;
-
-            var metadata = context.Result as JobExecutionMetadata;
-
-            var log = new JobInstanceLog
-            {
-                InstanceId = context.FireInstanceId,
-                Data = data,
-                StartDate = context.FireTimeUtc.DateTime,
-                JobName = context.JobDetail.Key.Name,
-                JobGroup = context.JobDetail.Key.Group,
-                JobId = context.JobDetail.JobDataMap.GetString(Consts.JobId),
-                TriggerName = context.Trigger.Key.Name,
-                TriggerGroup = context.Trigger.Key.Group,
-                TriggerId = context.Trigger.JobDataMap.GetString(Consts.TriggerId),
-                Duration = Convert.ToInt32(duration),
-                EndDate = endDate,
-                Exception = jobException?.ToString(),
-                EffectedRows = metadata?.EffectedRows,
-                Log = metadata?.GetLog(),
-                Id = -1,
-                IsStopped = false,
-                Retry = false,
-                StatusTitle = ((StatusMembers)status).ToString(),
-                Status = status
+                JobType = typeof(T)
             };
 
-            return log;
+            return ExecuteJob(props);
+        }
+
+        protected IJobExecutionResult ExecuteJob(ExecuteJobBuilder builder)
+        {
+            var props = builder.Build();
+            return ExecuteJob(props);
         }
 
         private static void MapJobInstanceProperties<T>(IJobExecutionContext context, T instance)
@@ -118,7 +62,7 @@ namespace Planar.Job.Test
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
         }
 
-        private static MethodInfo Validate(Type type)
+        private static MethodInfo ValidateBaseJob(Type type)
         {
             //// ***** Attention: be aware for sync code with Validate on BaseCommonJob *****
 
@@ -147,6 +91,74 @@ namespace Planar.Job.Test
             return method;
 
             //// ***** Attention: be aware for sync code with Validate on BaseCommonJob *****
+        }
+
+        private IJobExecutionResult ExecuteJob(ExecuteJobProperties properties)
+        {
+            var context = new MockJobExecutionContext(properties);
+            ValidateBaseJob(properties.JobType);
+            var method = properties.JobType.GetMethod("ExecuteUnitTest", BindingFlags.NonPublic | BindingFlags.Instance);
+            if (method == null)
+            {
+                throw new Exception($"Can not run test. Worker type {properties.JobType.FullName} does not inherit BaseJob / does not use Planar.Job nuget pack with version 1.0.4 or higher");
+            }
+
+            var instance = Activator.CreateInstance(properties.JobType);
+            MapJobInstanceProperties(context, instance);
+            var settings = JobSettingsLoader.LoadJobSettingsForUnitTest(properties.JobType);
+            settings = settings.Merge(properties.GlobalSettings);
+
+            Exception jobException = null;
+            var start = DateTime.Now;
+            JobMessageBroker _broker;
+
+            try
+            {
+                _broker = new JobMessageBroker(context, settings);
+                Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
+                Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
+                var result = method.Invoke(instance, new object[] { _broker, configureAction, registerServicesAction }) as Task;
+                result.ConfigureAwait(false).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                jobException = ex;
+            }
+            finally
+            {
+                context.JobRunTime = DateTime.Now.Subtract(start);
+            }
+
+            var data = context.MergedJobDataMap.Keys.Count == 0 ? null : JsonSerializer.Serialize(context.MergedJobDataMap);
+            var duration = context.JobRunTime.TotalMilliseconds;
+            var endDate = context.FireTimeUtc.DateTime.Add(context.JobRunTime);
+            var status = jobException == null ? StatusMembers.Success : StatusMembers.Fail;
+
+            var metadata = context.Result as JobExecutionMetadata;
+
+            var log = new JobExecutionResult
+            {
+                InstanceId = context.FireInstanceId,
+                Data = data,
+                StartDate = context.FireTimeUtc.DateTime,
+                JobName = context.JobDetail.Key.Name,
+                JobGroup = context.JobDetail.Key.Group,
+                JobId = context.JobDetail.JobDataMap[Consts.JobId],
+                TriggerName = context.Trigger.Key.Name,
+                TriggerGroup = context.Trigger.Key.Group,
+                TriggerId = context.Trigger.TriggerDataMap[Consts.TriggerId],
+                Duration = Convert.ToInt32(duration),
+                EndDate = endDate,
+                Exception = jobException,
+                EffectedRows = metadata?.EffectedRows,
+                Log = metadata?.GetLog(),
+                Id = -1,
+                IsStopped = false,
+                Retry = false,
+                Status = status
+            };
+
+            return log;
         }
     }
 }

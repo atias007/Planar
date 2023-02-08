@@ -77,8 +77,8 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        [Action("delete")]
         [Action("remove")]
+        [Action("delete")]
         public static async Task<CliActionResponse> RemoveTrigger(CliTriggerKey request)
         {
             if (!ConfirmAction($"remove trigger id {request.Id}")) { return CliActionResponse.Empty; }

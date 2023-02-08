@@ -5,6 +5,8 @@
 - bug: reload monitor + reload hooks --> not support cluster
 - cli: job update, when no folder supplied, show menu
 - cli: service status [time scope] dashboard command
+- verify that user can not set data in object that is system variable
+- add validation to JobRunnerBuilder in test package
 
 - add hook test option
 - add monitor event: cluster health check fail
@@ -93,3 +95,4 @@
 - upgrade quartz package
 - update cli to show job/trigger menu when parameter is empty
 - cli: validate user phone number on cli add user wizard
+- build new test simulator

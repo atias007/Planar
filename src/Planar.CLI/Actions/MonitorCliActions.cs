@@ -16,6 +16,7 @@ namespace Planar.CLI.Actions
     {
         [Action("add")]
         [NullRequest]
+        [ActionWizard]
         public static async Task<CliActionResponse> AddMonitorAction(CliAddMonitorRequest request)
         {
             if (request == null)

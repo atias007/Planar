@@ -16,10 +16,6 @@ namespace Planar.Test
         [Test]
         public void TestPassword()
         {
-            ////CultureInfo us = CultureInfo.CurrentCulture;
-            ////string shortUsDateFormatString = us.DateTimeFormat.ShortDatePattern;
-            ////string shortUsTimeFormatString = us.DateTimeFormat.LongTimePattern;
-
             var password = PasswordGenerator.GeneratePassword(
                new PasswordGeneratorBuilder()
                .IncludeLowercase()

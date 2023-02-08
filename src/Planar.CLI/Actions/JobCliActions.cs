@@ -1,6 +1,4 @@
 ﻿using FluentValidation;
-using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
@@ -14,9 +12,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
-using System.Net.Http.Json;
 using System.Reflection;
-using System.Security.Cryptography.Xml;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -371,6 +367,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("update")]
+        [ActionWizard]
         [NullRequest]
         public static async Task<CliActionResponse> UpdateJob(CliUpdateJobRequest request)
         {

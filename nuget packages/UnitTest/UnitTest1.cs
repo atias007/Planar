@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Planar.Job;
 using Planar.Job.Test;
 using SomeJob;
 
@@ -7,11 +8,11 @@ namespace UnitTest
 {
     public class Tests : BaseJobTest
     {
-        public override void Configure(IConfigurationBuilder configurationBuilder, string environment)
+        public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
         {
         }
 
-        public override void RegisterServices(IConfiguration configuration, IServiceCollection services)
+        public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
         {
         }
 
@@ -23,8 +24,13 @@ namespace UnitTest
         [Test]
         public void Test1()
         {
-            var log = ExecuteJob<Worker>();
-            Assert.That(log.Status, Is.EqualTo(0));
+            var run = JobRunner.ForJob<Worker>()
+                .WithJobData("X", 10)
+                .WithTriggerData("Y", 33)
+                .WithExecutionDate(DateTime.Now.AddDays(-2))
+                .WithGlobalSettings("Port", 1234);
+
+            ExecuteJob(run).AssertSuccess();
         }
     }
 }

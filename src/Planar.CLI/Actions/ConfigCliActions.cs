@@ -33,9 +33,9 @@ namespace Planar.CLI.Actions
         [Action("add")]
         public static async Task<CliActionResponse> Upsert(CliConfigRequest request)
         {
-            request.Type = "string";
+            var data = new { request.Key, request.Value, Type = "string" };
             var restRequest = new RestRequest("config", Method.Post)
-                .AddBody(request);
+                .AddBody(data);
 
             var result = await RestProxy.Invoke(restRequest);
 

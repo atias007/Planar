@@ -1,8 +1,7 @@
-﻿using Planar.Job;
-using System;
+﻿using System;
 using System.Collections.Generic;
 
-namespace Planar
+namespace Planar.Job
 {
     public interface IJobExecutionContext
     {

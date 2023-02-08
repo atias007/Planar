@@ -1,13 +1,11 @@
-﻿using Planar;
-using IJobExecutionContext = Quartz.IJobExecutionContext;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace CommonJob
+namespace Planar.Job.Test
 {
-    public class JobExecutionMetadata
+    internal class JobExecutionMetadata
     {
         public StringBuilder Log { get; set; } = new StringBuilder();
 
@@ -17,7 +15,7 @@ namespace CommonJob
 
         public byte Progress { get; set; }
 
-        private static readonly object Locker = new();
+        private static readonly object Locker = new object();
 
         public string GetLog()
         {
@@ -56,7 +54,7 @@ namespace CommonJob
         public bool IsRunningFail => !IsRunningSuccess;
         public bool IsRunningSuccess => UnhandleException == null;
 
-        public static JobExecutionMetadata GetInstance(IJobExecutionContext context)
+        public static JobExecutionMetadata GetInstance(MockJobExecutionContext context)
         {
             lock (Locker)
             {

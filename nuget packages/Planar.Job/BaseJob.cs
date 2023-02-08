@@ -1,21 +1,20 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Planar.Job;
 using Planar.Job.Logger;
 using System;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace Planar
+namespace Planar.Job
 {
     public abstract class BaseJob
     {
-        private JobExecutionContext _context;
+        private JobExecutionContext _context = new JobExecutionContext();
         private bool? _isNowOverrideValueExists;
-        private MessageBroker _messageBroker;
+        private MessageBroker? _messageBroker;
         private DateTime? _nowOverrideValue;
-        private IServiceProvider _provider;
+        private IServiceProvider? _provider;
 
         protected IConfiguration Configuration { get; private set; }
 
@@ -75,12 +74,12 @@ namespace Planar
         protected void AddAggragateException(Exception ex)
         {
             var message = new ExceptionDto(ex);
-            _messageBroker.Publish(MessageBrokerChannels.AddAggragateException, message);
+            _messageBroker?.Publish(MessageBrokerChannels.AddAggragateException, message);
         }
 
         protected void CheckAggragateException()
         {
-            var text = _messageBroker.Publish(MessageBrokerChannels.GetExceptionsText);
+            var text = _messageBroker?.Publish(MessageBrokerChannels.GetExceptionsText);
             if (string.IsNullOrEmpty(text) == false)
             {
                 var ex = new PlanarJobAggragateException(text);
@@ -90,24 +89,24 @@ namespace Planar
 
         protected bool CheckIfStopRequest()
         {
-            var text = _messageBroker.Publish(MessageBrokerChannels.CheckIfStopRequest);
+            var text = _messageBroker?.Publish(MessageBrokerChannels.CheckIfStopRequest);
             _ = bool.TryParse(text, out var stop);
             return stop;
         }
 
-        protected void FailOnStopRequest(Action stopHandle = default)
+        protected void FailOnStopRequest(Action? stopHandle = default)
         {
             if (stopHandle != default)
             {
                 stopHandle.Invoke();
             }
 
-            _messageBroker.Publish(MessageBrokerChannels.FailOnStopRequest);
+            _messageBroker?.Publish(MessageBrokerChannels.FailOnStopRequest);
         }
 
         protected T GetData<T>(string key)
         {
-            var value = _messageBroker.Publish(MessageBrokerChannels.GetData, key);
+            var value = _messageBroker?.Publish(MessageBrokerChannels.GetData, key);
             var result = (T)Convert.ChangeType(value, typeof(T));
             return result;
         }
@@ -119,19 +118,19 @@ namespace Planar
 
         protected int? GetEffectedRows()
         {
-            var text = _messageBroker.Publish(MessageBrokerChannels.GetEffectedRows);
+            var text = _messageBroker?.Publish(MessageBrokerChannels.GetEffectedRows);
             _ = int.TryParse(text, out var rows);
             return rows;
         }
 
         protected void IncreaseEffectedRows(int delta = 1)
         {
-            _messageBroker.Publish(MessageBrokerChannels.IncreaseEffectedRows, delta);
+            _messageBroker?.Publish(MessageBrokerChannels.IncreaseEffectedRows, delta);
         }
 
         protected bool IsDataExists(string key)
         {
-            var text = _messageBroker.Publish(MessageBrokerChannels.DataContainsKey, key);
+            var text = _messageBroker?.Publish(MessageBrokerChannels.DataContainsKey, key);
             _ = bool.TryParse(text, out var result);
             return result;
         }
@@ -140,7 +139,7 @@ namespace Planar
         {
             get
             {
-                var text = _messageBroker.Publish(MessageBrokerChannels.JobRunTime);
+                var text = _messageBroker?.Publish(MessageBrokerChannels.JobRunTime);
                 var success = double.TryParse(text, out var result);
                 if (success)
                 {
@@ -178,25 +177,25 @@ namespace Planar
         protected void PutJobData(string key, object value)
         {
             var message = new { Key = key, Value = value };
-            _messageBroker.Publish(MessageBrokerChannels.PutJobData, message);
+            _messageBroker?.Publish(MessageBrokerChannels.PutJobData, message);
         }
 
         protected void PutTriggerData(string key, object value)
         {
             var message = new { Key = key, Value = value };
-            _messageBroker.Publish(MessageBrokerChannels.PutTriggerData, message);
+            _messageBroker?.Publish(MessageBrokerChannels.PutTriggerData, message);
         }
 
         protected void SetEffectedRows(int value)
         {
-            _messageBroker.Publish(MessageBrokerChannels.SetEffectedRows, value);
+            _messageBroker?.Publish(MessageBrokerChannels.SetEffectedRows, value);
         }
 
         protected void UpdateProgress(byte value)
         {
             if (value > 100) { value = 100; }
             if (value < 0) { value = 0; }
-            _messageBroker.Publish(MessageBrokerChannels.UpdateProgress, value);
+            _messageBroker?.Publish(MessageBrokerChannels.UpdateProgress, value);
         }
 
         protected void UpdateProgress(int current, int total)
@@ -246,7 +245,13 @@ namespace Planar
                         new TypeMappingConverter<IKey, Key>()
                     }
                 };
-                _context = JsonSerializer.Deserialize<JobExecutionContext>(_messageBroker.Details, options);
+                var ctx = JsonSerializer.Deserialize<JobExecutionContext>(_messageBroker.Details, options);
+                if (ctx == null)
+                {
+                    throw new PlanarJobException("Fail to initialize JobExecutionContext from message broker detials (error 7379)");
+                }
+
+                _context = ctx;
             }
             catch (Exception ex)
             {

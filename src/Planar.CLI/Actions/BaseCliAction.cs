@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
@@ -124,103 +125,6 @@ namespace Planar.CLI.Actions
             result.AddRange(MonitorCliActions.GetActions());
             return result;
         }
-    }
-
-    public class BaseCliAction<T> : BaseCliAction
-    {
-        public static IEnumerable<CliActionMetadata> GetActions()
-        {
-            var result = new List<CliActionMetadata>();
-            var type = typeof(T);
-            var allActions = type.GetMethods(BindingFlags.Public | BindingFlags.Static).ToList();
-            var moduleAttribute = type.GetCustomAttribute<ModuleAttribute>();
-
-            // TODO: check for moduleAttribute == null;
-            foreach (var act in allActions)
-            {
-                var actionAttributes = act.GetCustomAttributes<ActionAttribute>();
-                var nullRequestAttribute = act.GetCustomAttribute<NullRequestAttribute>();
-                var ignoreHelpAttribute = act.GetCustomAttribute<IgnoreHelpAttribute>();
-
-                // TODO: validate attributes (invalid name...)
-                if (actionAttributes == null) { continue; }
-                var requestType = GetRequestType(act);
-                var comnmands = actionAttributes.Select(a => a.Name).Distinct().ToList();
-                var item = new CliActionMetadata
-                {
-                    Module = moduleAttribute?.Name?.ToLower() ?? string.Empty,
-                    Method = act,
-                    Commands = comnmands,
-                    AllowNullRequest = nullRequestAttribute != null,
-                    RequestType = requestType,
-                    Arguments = GetArguments(requestType),
-                    CommandDisplayName = string.Join('|', comnmands.OrderBy(c => c.Length)),
-                    IgnoreHelp = ignoreHelpAttribute != null
-                };
-
-                item.SetArgumentsDisplayName();
-
-                result.Add(item);
-            }
-
-            return result;
-        }
-
-        private static Type? GetRequestType(MethodInfo? method)
-        {
-            if (method == null) { return null; }
-
-            var parameters = method.GetParameters();
-            if (parameters.Length == 0) { return null; }
-            if (parameters.Length > 1)
-            {
-                throw new CliException($"cli error: action '{method.Name}' has more then 1 parameter");
-            }
-
-            var requestType = parameters[0].ParameterType;
-            return requestType;
-        }
-
-        private static List<CliArgumentMetadata> GetArguments(Type? requestType)
-        {
-            var result = new List<CliArgumentMetadata>();
-            if (requestType == null)
-            {
-                return result;
-            }
-
-            var props = requestType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-            var isJobKey =
-                requestType.IsAssignableFrom(typeof(CliJobKey)) ||
-                requestType.IsSubclassOf(typeof(CliJobKey));
-
-            var isTriggerKey =
-                requestType.IsAssignableFrom(typeof(CliTriggerKey)) ||
-                requestType.IsSubclassOf(typeof(CliTriggerKey));
-
-            foreach (var item in props)
-            {
-                var att = item.GetCustomAttribute<ActionPropertyAttribute>();
-                var req = item.GetCustomAttribute<RequiredAttribute>();
-                var info = new CliArgumentMetadata
-                {
-                    PropertyInfo = item,
-                    LongName = att?.LongName?.ToLower(),
-                    ShortName = att?.ShortName?.ToLower(),
-                    DisplayName = att?.DisplayName,
-                    Default = (att?.Default).GetValueOrDefault(),
-                    Required = req != null,
-                    RequiredMissingMessage = req?.Message,
-                    DefaultOrder = (att?.DefaultOrder).GetValueOrDefault(),
-                    JobKey = isJobKey && item.Name == nameof(CliJobKey.Id),
-                    TriggerKey = isTriggerKey && item.Name == nameof(CliTriggerKey.Id),
-                };
-                result.Add(info);
-            }
-
-            return result;
-        }
 
         protected static void AssertCreated(RestResponse<JobIdResponse> response)
         {
@@ -312,6 +216,119 @@ namespace Planar.CLI.Actions
         {
             if (!InteractiveMode) { return true; }
             return AnsiConsole.Confirm($"are you sure that you want to {title}?", false);
+        }
+
+        protected static int GetCounterHours()
+        {
+            var items = new[] { "1 hour", "2 hours", "8 hours", "1 day", "2 days", "3 days", "7 days" };
+            var select = PromptSelection(items, "select time period", true);
+            if (string.IsNullOrEmpty(select)) { return 0; }
+            var parts = select.Split(' ');
+            if (parts.Length != 2) { return 0; }
+            if (!int.TryParse(parts[0], out var num)) { return 0; }
+            if (parts[1].Length < 1) { return 0; }
+            if (parts[1][0] == 'h') { return num; }
+            if (parts[1][0] == 'd') { return num * 24; }
+            return 0;
+        }
+    }
+
+    public class BaseCliAction<T> : BaseCliAction
+    {
+        public static IEnumerable<CliActionMetadata> GetActions()
+        {
+            var result = new List<CliActionMetadata>();
+            var type = typeof(T);
+            var allActions = type.GetMethods(BindingFlags.Public | BindingFlags.Static).ToList();
+            var moduleAttribute = type.GetCustomAttribute<ModuleAttribute>();
+
+            // TODO: check for moduleAttribute == null;
+            foreach (var act in allActions)
+            {
+                var actionAttributes = act.GetCustomAttributes<ActionAttribute>();
+                var nullRequestAttribute = act.GetCustomAttribute<NullRequestAttribute>();
+                var ignoreHelpAttribute = act.GetCustomAttribute<IgnoreHelpAttribute>();
+                var hasWizard = act.GetCustomAttribute<ActionWizardAttribute>();
+
+                // TODO: validate attributes (invalid name...)
+                if (actionAttributes == null) { continue; }
+                var requestType = GetRequestType(act);
+                var comnmands = actionAttributes.Select(a => a.Name).Distinct().ToList();
+                var item = new CliActionMetadata
+                {
+                    Module = moduleAttribute?.Name?.ToLower() ?? string.Empty,
+                    Method = act,
+                    Commands = comnmands,
+                    AllowNullRequest = nullRequestAttribute != null,
+                    RequestType = requestType,
+                    Arguments = GetArguments(requestType),
+                    CommandDisplayName = string.Join('|', comnmands.OrderBy(c => c.Length)),
+                    IgnoreHelp = ignoreHelpAttribute != null,
+                    HasWizard = hasWizard != null
+                };
+
+                item.SetArgumentsDisplayName();
+
+                result.Add(item);
+            }
+
+            return result;
+        }
+
+        private static Type? GetRequestType(MethodInfo? method)
+        {
+            if (method == null) { return null; }
+
+            var parameters = method.GetParameters();
+            if (parameters.Length == 0) { return null; }
+            if (parameters.Length > 1)
+            {
+                throw new CliException($"cli error: action '{method.Name}' has more then 1 parameter");
+            }
+
+            var requestType = parameters[0].ParameterType;
+            return requestType;
+        }
+
+        private static List<CliArgumentMetadata> GetArguments(Type? requestType)
+        {
+            var result = new List<CliArgumentMetadata>();
+            if (requestType == null)
+            {
+                return result;
+            }
+
+            var props = requestType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            var isJobKey =
+                requestType.IsAssignableFrom(typeof(CliJobKey)) ||
+                requestType.IsSubclassOf(typeof(CliJobKey));
+
+            var isTriggerKey =
+                requestType.IsAssignableFrom(typeof(CliTriggerKey)) ||
+                requestType.IsSubclassOf(typeof(CliTriggerKey));
+
+            foreach (var item in props)
+            {
+                var att = item.GetCustomAttribute<ActionPropertyAttribute>();
+                var req = item.GetCustomAttribute<RequiredAttribute>();
+                var info = new CliArgumentMetadata
+                {
+                    PropertyInfo = item,
+                    LongName = att?.LongName?.ToLower(),
+                    ShortName = att?.ShortName?.ToLower(),
+                    DisplayName = att?.DisplayName,
+                    Default = (att?.Default).GetValueOrDefault(),
+                    Required = req != null,
+                    RequiredMissingMessage = req?.Message,
+                    DefaultOrder = (att?.DefaultOrder).GetValueOrDefault(),
+                    JobKey = isJobKey && item.Name == nameof(CliJobKey.Id),
+                    TriggerKey = isTriggerKey && item.Name == nameof(CliTriggerKey.Id),
+                };
+                result.Add(info);
+            }
+
+            return result;
         }
     }
 }

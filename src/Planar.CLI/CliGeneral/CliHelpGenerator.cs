@@ -1,10 +1,7 @@
 ﻿using Spectre.Console;
-using Spectre.Console.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Planar.CLI.CliGeneral
 {
@@ -16,7 +13,7 @@ namespace Planar.CLI.CliGeneral
             const string header2 = "<arguments>";
 
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine($" [invert]usage:[/] planar-cli [lightskyblue1]{module}[/] {header1}[[{header2}]]");
+            AnsiConsole.MarkupLine($" [invert]usage:[/] planar-cli [lightskyblue1]{module}[/] {header1} [[{header2}]]");
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine($" [underline]the options for {header1} and [[{header2}]] parameters of [lightskyblue1]{module}[/] module are:[/]");
             AnsiConsole.WriteLine();
@@ -32,15 +29,20 @@ namespace Planar.CLI.CliGeneral
             grid.AddColumn();
             grid.AddColumn();
             grid.AddRow(new Markup[] {
-                new Markup($" [grey54 underline]{header1}[/]"),
-                new Markup($"[grey54 underline]{header2}[/]")
+                new Markup($" [grey54 underline bold]{header1}[/]"),
+                new Markup($"[grey54 underline bold]{header2}[/]")
             });
 
             foreach (var ac in actions)
             {
+                const string wizardText = "[leave empty to open wizard...]";
+                var mu = ac.HasWizard ?
+                    new Markup($"{ac.ArgumentsDisplayName.EscapeMarkup()}\r\n[black on wheat1]{wizardText.EscapeMarkup()}[/]") :
+                    new Markup($"{ac.ArgumentsDisplayName.EscapeMarkup()}");
+
                 grid.AddRow(new Markup[] {
                     new Markup($" {ac.CommandDisplayName}"),
-                    new Markup($" {ac.ArgumentsDisplayName.EscapeMarkup()}")
+                    mu
                 });
             }
 

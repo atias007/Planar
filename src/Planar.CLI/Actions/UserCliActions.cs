@@ -1,12 +1,9 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
-using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using RestSharp;
-using Spectre.Console;
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
@@ -16,6 +13,7 @@ namespace Planar.CLI.Actions
     {
         [Action("add")]
         [NullRequest]
+        [ActionWizard]
         public static async Task<CliActionResponse> AddUser(CliAddUserRequest request)
         {
             request ??= GetCliAddUserRequest();

@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 
-namespace CommonJob
+namespace Planar.Job
 {
-    public class JobDetail
+    internal class JobDetail : IJobDetail
     {
-        public Key Key { get; set; }
+        public IKey Key { get; set; }
 
         public string Description { get; set; }
 

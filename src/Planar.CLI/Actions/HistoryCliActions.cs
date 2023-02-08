@@ -108,6 +108,11 @@ namespace Planar.CLI.Actions
         [Action("count")]
         public static async Task<CliActionResponse> GetHistoryCount(CliGetCountRequest request)
         {
+            if (request.Hours == 0)
+            {
+                request.Hours = GetCounterHours();
+            }
+
             var restRequest = new RestRequest("history/count", Method.Get)
                 .AddQueryParameter("hours", request.Hours);
 
