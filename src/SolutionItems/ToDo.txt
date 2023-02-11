@@ -5,7 +5,7 @@
 - bug: reload monitor + reload hooks --> not support cluster
 - cli: job update, when no folder supplied, show menu
 - cli: service status [time scope] dashboard command
-- verify that user can not set data in object that is system variable
+- verify that user can not set data in object that is system variable (at job context)
 - add validation to JobRunnerBuilder in test package
 
 - add hook test option

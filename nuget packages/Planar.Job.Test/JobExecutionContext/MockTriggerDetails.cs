@@ -17,10 +17,7 @@ namespace Planar.Job.Test
             _now = DateTimeOffset.Now;
             _triggerKey = new MockKey(UnitTestConsts.Environment, UnitTestConsts.TriggerName);
             _jobKey = new MockKey(UnitTestConsts.Environment, UnitTestConsts.TestMethod);
-            _triggerDataMap = new SortedDictionary<string, string>
-            {
-                { Consts.TriggerId, "UnitTest_TriggerId" }
-            };
+            _triggerDataMap = new SortedDictionary<string, string>();
 
             if (properties.TriggerData != null)
             {

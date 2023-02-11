@@ -36,5 +36,8 @@
       <Pack>True</Pack>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="6.0.7" />
+  </ItemGroup>
 
 </Project>

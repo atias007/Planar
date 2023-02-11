@@ -34,6 +34,7 @@
 		<Compile Include="..\..\src\Planar.API.Common\Entities\StatusMembers.cs" Link="Common\StatusMembers.cs" />
 		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Common\Consts.cs" />
 		<Compile Include="..\..\src\Planar\FolderConsts.cs" Link="Common\FolderConsts.cs" />
+		<Compile Include="..\Planar.Job\Attributes\IgnoreDataMapAttribute.cs" Link="Attributes\IgnoreDataMapAttribute.cs" />
 		<Compile Include="..\Planar.Job\ExceptionDto.cs" Link="Common\ExceptionDto.cs" />
 	</ItemGroup>
 	<ItemGroup>
@@ -47,13 +48,16 @@
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
 		<PackageReference Include="System.Text.Json" Version="6.0.7" />
-		<PackageReference Include="YamlDotNet" Version="12.3.1" />
+		<PackageReference Include="YamlDotNet" Version="13.0.0" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Attributes\" />
 	</ItemGroup>
 
 </Project>

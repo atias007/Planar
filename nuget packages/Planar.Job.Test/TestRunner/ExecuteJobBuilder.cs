@@ -4,20 +4,14 @@ namespace Planar.Job.Test
 {
     public class ExecuteJobBuilder
     {
-        private ExecuteJobBuilder()
+        private ExecuteJobBuilder(Type type)
         {
+            _properties.JobType = type;
         }
 
         private readonly ExecuteJobProperties _properties = new ExecuteJobProperties();
 
-        public static ExecuteJobBuilder CreateBuilder() => new ExecuteJobBuilder();
-
-        public ExecuteJobBuilder ForJob<T>()
-            where T : class, new()
-        {
-            _properties.JobType = typeof(T);
-            return this;
-        }
+        public static ExecuteJobBuilder CreateBuilderForJob<T>() where T : class, new() => new ExecuteJobBuilder(typeof(T));
 
         public ExecuteJobBuilder ForJob(Type type)
         {

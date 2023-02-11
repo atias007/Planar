@@ -1,5 +1,4 @@
-﻿using Planar.Job.Test.Common;
-using Planar.Job.Test.JobExecutionContext;
+﻿using Planar.Job.Test.JobExecutionContext;
 using System.Collections.Generic;
 
 namespace Planar.Job.Test
@@ -11,10 +10,7 @@ namespace Planar.Job.Test
 
         public MockJobDetails(ExecuteJobProperties properties)
         {
-            _jobDataMap = new SortedDictionary<string, string>
-            {
-               { Consts.JobId, "UnitTest_JobId" }
-            };
+            _jobDataMap = new SortedDictionary<string, string>();
 
             if (properties.JobData != null)
             {

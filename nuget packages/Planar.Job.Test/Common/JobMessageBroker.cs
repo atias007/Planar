@@ -1,8 +1,8 @@
 ﻿using CommonJob.MessageBrokerEntities;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 
 namespace Planar.Job.Test
 {
@@ -17,7 +17,7 @@ namespace Planar.Job.Test
             _context = context;
             context.JobSettings = settings;
             SetLogLevel(settings);
-            Details = JsonConvert.SerializeObject(context);
+            Details = JsonSerializer.Serialize(context);
         }
 
         public string Details { get; set; }
@@ -135,7 +135,7 @@ namespace Planar.Job.Test
 
         private static T Deserialize<T>(string message)
         {
-            var result = JsonConvert.DeserializeObject<T>(message);
+            var result = JsonSerializer.Deserialize<T>(message);
             return result;
         }
 

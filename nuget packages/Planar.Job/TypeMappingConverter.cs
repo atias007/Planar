@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Planar.Job
+namespace Planar.Common
 {
     internal class TypeMappingConverter<TType, TImplementation> : JsonConverter<TType>
         where TImplementation : TType

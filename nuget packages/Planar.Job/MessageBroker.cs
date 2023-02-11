@@ -30,9 +30,13 @@ namespace Planar
         private readonly object Locker = new object();
         private readonly MethodInfo _method;
 
+        private MessageBroker()
+        {
+        }
+
         public MessageBroker(object instance)
         {
-            // TODO: check for null instance
+            if (instance == null) { return; }
 
             Instance = instance;
             _method = instance.GetType().GetMethod("Publish");
@@ -44,6 +48,8 @@ namespace Planar
 
             Details = GetProperty<string>(instance.GetType(), nameof(Details));
         }
+
+        public static MessageBroker Empty = new MessageBroker();
 
         public string Details { get; set; }
 

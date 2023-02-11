@@ -24,7 +24,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Include="..\Planar.Job\JobExecutionContext\TypeMappingConverter.cs" Link="TypeMappingConverter.cs" />
+	  <Compile Include="..\Planar.Job\TypeMappingConverter.cs" Link="TypeMappingConverter.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

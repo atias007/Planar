@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Planar.Common;
 using Planar.Job.Logger;
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -12,7 +14,7 @@ namespace Planar.Job
     {
         private JobExecutionContext _context = new JobExecutionContext();
         private bool? _isNowOverrideValueExists;
-        private MessageBroker? _messageBroker;
+        private MessageBroker _messageBroker = MessageBroker.Empty;
         private DateTime? _nowOverrideValue;
         private IServiceProvider? _provider;
 
@@ -251,11 +253,26 @@ namespace Planar.Job
                     throw new PlanarJobException("Fail to initialize JobExecutionContext from message broker detials (error 7379)");
                 }
 
+                FilterJobData(ctx.MergedJobDataMap);
+                FilterJobData(ctx.JobDetails.JobDataMap);
+                FilterJobData(ctx.TriggerDetails.TriggerDataMap);
+
                 _context = ctx;
             }
             catch (Exception ex)
             {
                 throw new ApplicationException("Fail to deserialize job execution context at BaseJob.Execute(string, ref object)", ex);
+            }
+        }
+
+        private static void FilterJobData(SortedDictionary<string, string> dictionary)
+        {
+            foreach (var item in Consts.AllDataKeys)
+            {
+                if (dictionary.ContainsKey(item))
+                {
+                    dictionary.Remove(item);
+                }
             }
         }
     }

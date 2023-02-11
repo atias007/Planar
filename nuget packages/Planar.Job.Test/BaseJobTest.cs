@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Planar.API.Common.Entities;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
@@ -11,11 +11,11 @@ namespace Planar.Job.Test
 {
     public abstract class BaseJobTest
     {
-        protected ExecuteJobBuilder JobRunner => ExecuteJobBuilder.CreateBuilder();
+        private static readonly string _ignoreDataMapAttribute = typeof(IgnoreDataMapAttribute).FullName;
 
-        public abstract void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+        protected abstract void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-        public abstract void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context);
+        protected abstract void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context);
 
         protected IJobExecutionResult ExecuteJob<T>()
             where T : class, new()
@@ -38,25 +38,41 @@ namespace Planar.Job.Test
         {
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
 
-            var propInfo = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
+            var allProperties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
             foreach (var item in context.MergedJobDataMap)
             {
-                if (!item.Key.StartsWith("__"))
+                if (item.Key.StartsWith(Consts.ConstPrefix)) { continue; }
+                var prop = allProperties.FirstOrDefault(p => string.Equals(p.Name, item.Key, StringComparison.OrdinalIgnoreCase));
+                MapProperty(context.JobDetails.Key, instance, prop, item);
+            }
+
+            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
+        }
+
+        private static void MapProperty(IKey jobKey, object instance, PropertyInfo prop, KeyValuePair<string, string> data)
+        {
+            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
+
+            if (prop == null) { return; }
+
+            try
+            {
+                var attributes = prop.GetCustomAttributes();
+                var ignore = attributes.Any(a => a.GetType().FullName == _ignoreDataMapAttribute);
+
+                if (ignore)
                 {
-                    var p = propInfo.FirstOrDefault(p => p.Name == item.Key);
-                    if (p != null)
-                    {
-                        try
-                        {
-                            var value = Convert.ChangeType(item.Value, p.PropertyType);
-                            p.SetValue(instance, value);
-                        }
-                        catch (Exception)
-                        {
-                            // *** DO NOTHING *** //
-                        }
-                    }
+                    Console.WriteLine($"Ignore map data key '{data.Key}' with value {data.Value} to property {prop.Name} of job {jobKey.Group}.{jobKey.Name}");
+                    return;
                 }
+
+                var value = Convert.ChangeType(data.Value, prop.PropertyType);
+                prop.SetValue(instance, value);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Fail to map data key '{data.Key}' with value {data.Value} to property {prop.Name} of job {jobKey.Group}.{jobKey.Name}");
+                Console.WriteLine(ex);
             }
 
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
@@ -143,10 +159,10 @@ namespace Planar.Job.Test
                 StartDate = context.FireTimeUtc.DateTime,
                 JobName = context.JobDetail.Key.Name,
                 JobGroup = context.JobDetail.Key.Group,
-                JobId = context.JobDetail.JobDataMap[Consts.JobId],
+                JobId = "UnitTest_FixedJobId",
                 TriggerName = context.Trigger.Key.Name,
                 TriggerGroup = context.Trigger.Key.Group,
-                TriggerId = context.Trigger.TriggerDataMap[Consts.TriggerId],
+                TriggerId = "UnitTest_FixedTriggerId",
                 Duration = Convert.ToInt32(duration),
                 EndDate = endDate,
                 Exception = jobException,

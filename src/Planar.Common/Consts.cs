@@ -4,8 +4,22 @@ namespace Planar
 {
     internal static class Consts
     {
-        public const string ConstPrefix = "__";
+        public static readonly string[] PreserveGroupNames = new string[] { RetryTriggerGroup, PlanarSystemGroup };
+
+        public static readonly string[] AllDataKeys = new[]
+        {
+            RetryCounter,
+            RetrySpan,
+            RetryTriggerGroup,
+            RetryTriggerNamePrefix,
+            PlanarSystemGroup,
+            JobId,
+            TriggerId,
+            NowOverrideValue
+        };
+
         public const string QuartzPrefix = "QRTZ_";
+        public const string ConstPrefix = "__";
         public const string RetryCounter = "__Job_Retry_Counter";
         public const string RetrySpan = "__Job_Retry_Span";
         public const int MaxRetries = 3;
@@ -13,7 +27,6 @@ namespace Planar
         public const string RetryTriggerGroup = "__RetryTrigger";
         public const string RetryTriggerNamePrefix = "__RetryCount";
         public const string PlanarSystemGroup = "__System";
-        public static readonly string[] PreserveGroupNames = new string[] { RetryTriggerGroup, PlanarSystemGroup };
 
         public const string JobId = "__Job_Id";
         public const string TriggerId = "__Trigger_Id";
