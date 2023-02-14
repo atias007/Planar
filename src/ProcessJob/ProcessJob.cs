@@ -23,11 +23,15 @@ namespace Planar
         {
         }
 
+        private string? _filename;
+
         private string Filename
         {
             get
             {
-                return FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, Properties.Path, Properties.Filename);
+                _filename ??= FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, Properties.Path, Properties.Filename);
+
+                return _filename;
             }
         }
 

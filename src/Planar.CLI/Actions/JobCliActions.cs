@@ -328,6 +328,11 @@ namespace Planar.CLI.Actions
         [Action("stop")]
         public static async Task<CliActionResponse> StopRunningJob(CliFireInstanceIdRequest request)
         {
+            if (string.IsNullOrEmpty(request.FireInstanceId))
+            {
+                request.FireInstanceId = await ChooseRunningJobInstance();
+            }
+
             var restRequest = new RestRequest("job/stop", Method.Post)
                 .AddBody(request);
 
@@ -442,6 +447,29 @@ namespace Planar.CLI.Actions
 
             AssertJobDataUpdated(result, request.Id);
             return new CliActionResponse(result);
+        }
+
+        private static async Task<string> ChooseRunningJobInstance()
+        {
+            var result = await GetRunningJobsInner(new CliGetRunningJobsRequest { });
+
+            if (!result.Item2.IsSuccessful || result.Item1 == null)
+            {
+                throw new CliException($"fail to fetch list of running job instance. error message: {result.Item2.ErrorMessage}");
+            }
+
+            var items = result.Item1
+                .Select(i => $"{i.FireInstanceId} ({i.Group}.{i.Name})  [{i.Progress}%]".EscapeMarkup())
+                .ToList();
+
+            if (!items.Any())
+            {
+                throw new CliWarningException("no running job instance(s)");
+            }
+
+            var selection = PromptSelection(items, "running job instance") ?? string.Empty;
+            var parts = selection.Split(' ');
+            return parts[0];
         }
 
         internal static async Task<(List<RunningJobDetails>?, RestResponse)> GetRunningJobsInner(CliGetRunningJobsRequest request)

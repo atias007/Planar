@@ -96,3 +96,4 @@
 - update cli to show job/trigger menu when parameter is empty
 - cli: validate user phone number on cli add user wizard
 - build new test simulator
+- cli: job stop show running job instace menu
