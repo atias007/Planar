@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 
 namespace Planar
 {
@@ -69,5 +70,10 @@ namespace Planar
         public const string HttpsPortVariableKey = "PLANAR_HTTPSPORT";
         public const string UseHttpsRedirectVariableKey = "PLANAR_HTTPSREDIRECT";
         public const string UseHttpsVariableKey = "PLANAR_HTTPS";
+
+        public static bool IsDataKeyValid(string key)
+        {
+            return !AllDataKeys.Any(k => string.Equals(k, key, StringComparison.OrdinalIgnoreCase));
+        }
     }
 }

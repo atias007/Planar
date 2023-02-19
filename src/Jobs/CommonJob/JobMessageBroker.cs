@@ -48,6 +48,11 @@ namespace CommonJob
             {
                 case "PutJobData":
                     var data1 = Deserialize<KeyValueItem>(message);
+                    if (!Consts.IsDataKeyValid(data1.Key))
+                    {
+                        throw new PlanarJobException($"the data key {data1.Key} in invalid");
+                    }
+
                     lock (Locker)
                     {
                         var value = Convert.ToString(data1.Value);
@@ -57,6 +62,11 @@ namespace CommonJob
 
                 case "PutTriggerData":
                     var data2 = Deserialize<KeyValueItem>(message);
+                    if (!Consts.IsDataKeyValid(data2.Key))
+                    {
+                        throw new PlanarJobException($"the data key {data2.Key} in invalid");
+                    }
+
                     lock (Locker)
                     {
                         var value = Convert.ToString(data2.Value);

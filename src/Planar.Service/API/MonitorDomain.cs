@@ -35,7 +35,6 @@ namespace Planar.Service.API
             }
 
             await DataLayer.AddMonitor(monitor);
-            ServiceUtil.LoadMonitorHooks(Logger);
             return monitor.Id;
         }
 
@@ -46,7 +45,6 @@ namespace Planar.Service.API
             try
             {
                 await DataLayer.DeleteMonitor(monitor);
-                ServiceUtil.LoadMonitorHooks(Logger);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -107,14 +105,16 @@ namespace Planar.Service.API
 
         public async Task<string> Reload()
         {
-            var sb = new StringBuilder();
-
             ServiceUtil.LoadMonitorHooks(Logger);
-            sb.AppendLine($"{ServiceUtil.MonitorHooks.Count} monitor hooks loaded");
+            if (AppSettings.Clustering)
+            {
+                await ClusterUtil.LoadMonitorHooks();
+            }
+
             var monitor = _serviceProvider.GetRequiredService<MonitorUtil>();
             await monitor.Validate();
 
-            return sb.ToString();
+            return $"{ServiceUtil.MonitorHooks.Count} monitor hooks loaded";
         }
 
         public async Task Update(UpdateMonitorRequest request)
@@ -127,7 +127,6 @@ namespace Planar.Service.API
 
             var monitor = Mapper.Map<MonitorAction>(request);
             await DataLayer.UpdateMonitorAction(monitor);
-            ServiceUtil.LoadMonitorHooks(Logger);
         }
 
         public async Task PartialUpdateMonitor(UpdateEntityRequest request)

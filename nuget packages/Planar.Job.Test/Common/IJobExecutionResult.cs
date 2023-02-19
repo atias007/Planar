@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Planar.Job.Test
 {
@@ -19,12 +20,9 @@ namespace Planar.Job.Test
         int? EffectedRows { get; }
         bool Retry { get; }
         bool IsStopped { get; }
-        string Data { get; }
+        IReadOnlyDictionary<string, string> Data { get; }
         string Log { get; }
         Exception Exception { get; }
-
-        void AssertSuccess();
-
-        void AssertFail();
+        AssertPlanarConstraint Assert { get; }
     }
 }

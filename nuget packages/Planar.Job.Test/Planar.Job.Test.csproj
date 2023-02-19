@@ -35,6 +35,8 @@
 		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Common\Consts.cs" />
 		<Compile Include="..\..\src\Planar\FolderConsts.cs" Link="Common\FolderConsts.cs" />
 		<Compile Include="..\Planar.Job\Attributes\IgnoreDataMapAttribute.cs" Link="Attributes\IgnoreDataMapAttribute.cs" />
+		<Compile Include="..\Planar.Job\Attributes\JobDataAttribute.cs" Link="Attributes\JobDataAttribute.cs" />
+		<Compile Include="..\Planar.Job\Attributes\TriggerDataAttribute.cs" Link="Attributes\TriggerDataAttribute.cs" />
 		<Compile Include="..\Planar.Job\ExceptionDto.cs" Link="Common\ExceptionDto.cs" />
 	</ItemGroup>
 	<ItemGroup>

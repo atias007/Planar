@@ -1,5 +1,5 @@
-﻿using Planar.Job.Test.Common;
-using System;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Planar.Job.Test
 {
@@ -20,28 +20,10 @@ namespace Planar.Job.Test
         public int? EffectedRows { get; set; }
         public bool Retry { get; set; }
         public bool IsStopped { get; set; }
-        public string Data { get; set; }
+        public IReadOnlyDictionary<string, string> Data { get; set; }
         public string Log { get; set; }
         public Exception Exception { get; set; }
 
-        public void AssertFail()
-        {
-            if (Status == StatusMembers.Fail) { return; }
-            var message = $"Expect status {StatusMembers.Fail} but status was {Status}";
-            throw new AssertPlanarException(message);
-        }
-
-        public void AssertSuccess()
-        {
-            if (Status == StatusMembers.Success) { return; }
-
-            var message = $"Expect status {StatusMembers.Success} but status was {Status}";
-            if (Exception != null)
-            {
-                message += "Exception:\r\n{Exception}";
-            }
-
-            throw new AssertPlanarException(message);
-        }
+        public AssertPlanarConstraint Assert => new AssertPlanarConstraint(this);
     }
 }

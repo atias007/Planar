@@ -39,7 +39,7 @@ namespace Planar.Service.General
             }
         }
 
-        internal static void LoadMonitorHooks<T>(ILogger<T> logger)
+        public static void LoadMonitorHooks<T>(ILogger<T> logger)
         {
             var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.MonitorHooks);
 

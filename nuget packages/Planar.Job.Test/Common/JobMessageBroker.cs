@@ -1,8 +1,10 @@
 ﻿using CommonJob.MessageBrokerEntities;
 using Microsoft.Extensions.Logging;
+using Planar.Job.Test.Common;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using YamlDotNet.Core.Tokens;
 
 namespace Planar.Job.Test
 {
@@ -45,6 +47,11 @@ namespace Planar.Job.Test
             {
                 case "PutJobData":
                     var data1 = Deserialize<KeyValueItem>(message);
+                    if (!Consts.IsDataKeyValid(data1.Key))
+                    {
+                        throw new PlanarJobTestException($"the data key {data1.Key} in invalid");
+                    }
+
                     lock (Locker)
                     {
                         var value = Convert.ToString(data1.Value);
@@ -54,6 +61,11 @@ namespace Planar.Job.Test
 
                 case "PutTriggerData":
                     var data2 = Deserialize<KeyValueItem>(message);
+                    if (!Consts.IsDataKeyValid(data2.Key))
+                    {
+                        throw new PlanarJobTestException($"the data key {data2.Key} in invalid");
+                    }
+
                     lock (Locker)
                     {
                         var value = Convert.ToString(data2.Value);
@@ -85,8 +97,15 @@ namespace Planar.Job.Test
                     return null;
 
                 case "GetData":
-                    var data = _context.MergedJobDataMap[message];
-                    return Convert.ToString(data);
+                    try
+                    {
+                        var data = _context.MergedJobDataMap[message];
+                        return Convert.ToString(data);
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        throw new PlanarJobTestException($"Key '{message}' was not found in merged data map");
+                    }
 
                 case "IsDataExists":
                     return _context.MergedJobDataMap.ContainsKey(message).ToString();

@@ -23,7 +23,7 @@ namespace Planar.Service.Data
             return await _context.MonitorActions.CountAsync();
         }
 
-        public async Task<List<string>> GetMonitorHooks()
+        public async Task<List<string>> GetMonitorUsedHooks()
         {
             return await _context.MonitorActions.Select(m => m.Hook).Distinct().ToListAsync();
         }

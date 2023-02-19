@@ -1,13 +1,21 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Planar;
 using Planar.Job;
 
 namespace SomeJob
 {
     public class Worker : BaseJob
     {
+        public DateTime? SomeDate { get; set; }
+
+        public int? SomeInt { get; set; }
+
+        public int SimpleInt { get; set; }
+
+        [IgnoreDataMap]
+        public string? IgnoreData { get; set; }
+
         public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
         {
         }
@@ -45,7 +53,12 @@ namespace SomeJob
             await Task.Delay(2000);
             Logger.LogWarning("JobRunTime: {JobRunTime}", JobRunTime);
 
+            Logger.LogInformation("SomeDate: {SomeDate}", SomeDate);
+            SomeDate = Now();
+
             UpdateProgress(66);
+
+            SimpleInt += 5;
         }
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

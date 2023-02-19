@@ -153,12 +153,16 @@ namespace Planar.CLI
             metadata = action.Arguments.FirstOrDefault(m => m.IsJobOrTriggerKey);
             if (metadata != null)
             {
-                var arg = new CliArgument { Key = "?", Value = "?" };
-                FillJobOrTrigger(arg, metadata);
-                SetValue(metadata.PropertyInfo, result, arg.Value);
-                if (!string.IsNullOrEmpty(arg.Value))
+                var value = metadata.PropertyInfo?.GetValue(result);
+                if (value == null || value == string.Empty)
                 {
-                    metadata.ValueSupplied = true;
+                    var arg = new CliArgument { Key = "?", Value = "?" };
+                    FillJobOrTrigger(arg, metadata);
+                    SetValue(metadata.PropertyInfo, result, arg.Value);
+                    if (!string.IsNullOrEmpty(arg.Value))
+                    {
+                        metadata.ValueSupplied = true;
+                    }
                 }
             }
 
@@ -186,6 +190,11 @@ namespace Planar.CLI
             {
                 var jobId = await JobCliActions.ChooseJob();
                 arg.Value = jobId;
+                if (arg.Key == "?")
+                {
+                    arg.Key = jobId;
+                }
+
                 Util.LastJobOrTriggerId = jobId;
             }
         }
@@ -214,7 +223,10 @@ namespace Planar.CLI
                 }
                 else
                 {
-                    Util.LastJobOrTriggerId = arg.Value;
+                    if (arg.Value != "?")
+                    {
+                        Util.LastJobOrTriggerId = arg.Value;
+                    }
                 }
             }
         }

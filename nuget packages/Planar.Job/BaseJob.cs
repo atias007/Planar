@@ -159,10 +159,13 @@ namespace Planar.Job
             if (_isNowOverrideValueExists == null)
             {
                 _isNowOverrideValueExists = IsDataExists(Consts.NowOverrideValue);
-                var value = GetData(Consts.NowOverrideValue);
-                if (DateTime.TryParse(value, out DateTime dateValue))
+                if (_isNowOverrideValueExists.GetValueOrDefault())
                 {
-                    _nowOverrideValue = dateValue;
+                    var value = GetData(Consts.NowOverrideValue);
+                    if (DateTime.TryParse(value, out DateTime dateValue))
+                    {
+                        _nowOverrideValue = dateValue;
+                    }
                 }
             }
 

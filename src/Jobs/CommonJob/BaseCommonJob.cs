@@ -128,7 +128,13 @@ namespace CommonJob
                     return;
                 }
 
-                var value = Convert.ChangeType(data.Value, prop.PropertyType);
+                var underlyingType = Nullable.GetUnderlyingType(prop.PropertyType);
+                var finalType = underlyingType ?? prop.PropertyType;
+
+                // nullable property with null value in data
+                if (underlyingType != null && string.IsNullOrEmpty(Convert.ToString(data.Value))) { return; }
+
+                var value = Convert.ChangeType(data.Value, finalType);
                 prop.SetValue(instance, value);
             }
             catch (Exception ex)
@@ -143,7 +149,7 @@ namespace CommonJob
 
         protected void MapJobInstancePropertiesBack(IJobExecutionContext context, Type targetType, object instance)
         {
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
+            //// ***** Attention: be aware for sync code with MapJobInstancePropertiesBack on Planar.Job.Test *****
 
             try
             {
@@ -161,7 +167,7 @@ namespace CommonJob
                 throw;
             }
 
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
+            //// ***** Attention: be aware for sync code with MapJobInstancePropertiesBack on Planar.Job.Test *****
         }
 
         private void SafePutData(IJobExecutionContext context, object instance, PropertyInfo prop)
@@ -205,6 +211,11 @@ namespace CommonJob
             string value = null;
             try
             {
+                if (!Consts.IsDataKeyValid(prop.Name))
+                {
+                    throw new PlanarJobException($"the data key {prop.Name} in invalid");
+                }
+
                 value = Convert.ToString(prop.GetValue(instance));
                 context.JobDetail.JobDataMap.Put(prop.Name, value);
             }
@@ -226,6 +237,11 @@ namespace CommonJob
             string value = null;
             try
             {
+                if (!Consts.IsDataKeyValid(prop.Name))
+                {
+                    throw new PlanarJobException($"the data key {prop.Name} in invalid");
+                }
+
                 value = Convert.ToString(prop.GetValue(instance));
                 context.Trigger.JobDataMap.Put(prop.Name, value);
             }

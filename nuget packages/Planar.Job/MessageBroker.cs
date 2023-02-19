@@ -57,7 +57,7 @@ namespace Planar
         {
             lock (Locker)
             {
-                var result = _method.Invoke(Instance, new object[] { channel.ToString(), null });
+                var result = _method.Invoke(Instance, new object?[] { channel.ToString(), null });
                 return Convert.ToString(result);
             }
         }

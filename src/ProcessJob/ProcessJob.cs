@@ -168,7 +168,7 @@ namespace Planar
                 var regex = new Regex(Properties.FailOutputRegex, RegexOptions.None, TimeSpan.FromSeconds(5));
                 if (regex.IsMatch(output))
                 {
-                    throw new ProcessJobException($"process '{Filename}' ended with an output that matched the fail output message '{Properties.SuccessOutputRegex}'");
+                    throw new ProcessJobException($"process '{Filename}' ended with an output that matched the fail output message '{Properties.FailOutputRegex}'");
                 }
 
                 return;

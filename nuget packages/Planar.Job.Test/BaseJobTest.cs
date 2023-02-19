@@ -1,17 +1,20 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Planar.Job.Test.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text.Json;
 using System.Threading.Tasks;
+using YamlDotNet.Core.Tokens;
 
 namespace Planar.Job.Test
 {
     public abstract class BaseJobTest
     {
         private static readonly string _ignoreDataMapAttribute = typeof(IgnoreDataMapAttribute).FullName;
+        private static readonly string _jobDataMapAttribute = typeof(JobDataAttribute).FullName;
+        private static readonly string _triggerDataMapAttribute = typeof(TriggerDataAttribute).FullName;
 
         protected abstract void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
@@ -34,16 +37,127 @@ namespace Planar.Job.Test
             return ExecuteJob(props);
         }
 
-        private static void MapJobInstanceProperties<T>(IJobExecutionContext context, T instance)
+        protected void MapJobInstanceProperties(IJobExecutionContext context, Type targetType, object instance)
         {
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
 
-            var allProperties = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
-            foreach (var item in context.MergedJobDataMap)
+            try
             {
-                if (item.Key.StartsWith(Consts.ConstPrefix)) { continue; }
-                var prop = allProperties.FirstOrDefault(p => string.Equals(p.Name, item.Key, StringComparison.OrdinalIgnoreCase));
-                MapProperty(context.JobDetails.Key, instance, prop, item);
+                var allProperties = targetType.GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
+                foreach (var item in context.MergedJobDataMap)
+                {
+                    if (item.Key.StartsWith(Consts.ConstPrefix)) { continue; }
+                    var prop = allProperties.FirstOrDefault(p => string.Equals(p.Name, item.Key, StringComparison.OrdinalIgnoreCase));
+                    MapProperty(context.JobDetails.Key, instance, prop, item);
+                }
+            }
+            catch (Exception)
+            {
+                Console.WriteLine($"Fail at {nameof(MapJobInstanceProperties)} with job {context.JobDetails.Key.Group}.{context.JobDetails.Key.Name}");
+                throw;
+            }
+
+            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
+        }
+
+        protected void MapJobInstancePropertiesBack(IJobExecutionContext context, Type targetType, object instance)
+        {
+            //// ***** Attention: be aware for sync code with MapJobInstancePropertiesBack on BaseCommonJob *****
+
+            try
+            {
+                var propInfo = targetType.GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
+                foreach (var prop in propInfo)
+                {
+                    if (prop.Name.StartsWith(Consts.ConstPrefix)) { continue; }
+                    SafePutData(context, instance, prop);
+                }
+            }
+            catch (Exception)
+            {
+                var source = nameof(MapJobInstancePropertiesBack);
+                Console.WriteLine($"Fail at {source} with job {context.JobDetails.Key.Group}.{context.JobDetails.Key.Name}");
+                throw;
+            }
+
+            //// ***** Attention: be aware for sync code with MapJobInstancePropertiesBack on BaseCommonJob *****
+        }
+
+        private void SafePutData(IJobExecutionContext context, object instance, PropertyInfo prop)
+        {
+            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
+
+            var attributes = prop.GetCustomAttributes();
+            var jobData = attributes.Any(a => a.GetType().FullName == _jobDataMapAttribute);
+            var triggerData = attributes.Any(a => a.GetType().FullName == _jobDataMapAttribute);
+
+            if (jobData)
+            {
+                SafePutJobDataMap(context, instance, prop);
+            }
+
+            if (!jobData && !triggerData)
+            {
+                if (context.JobDetails.JobDataMap.ContainsKey(prop.Name))
+                {
+                    SafePutJobDataMap(context, instance, prop);
+                }
+
+                if (context.TriggerDetails.TriggerDataMap.ContainsKey(prop.Name))
+                {
+                    SafePutTiggerDataMap(context, instance, prop);
+                }
+            }
+
+            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
+        }
+
+        private void SafePutJobDataMap(IJobExecutionContext context, object instance, PropertyInfo prop)
+        {
+            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
+
+            string value = null;
+            try
+            {
+                if (!Consts.IsDataKeyValid(prop.Name))
+                {
+                    throw new PlanarJobTestException($"the data key {prop.Name} in invalid");
+                }
+
+                value = Convert.ToString(prop.GetValue(instance));
+                context.JobDetails.JobDataMap.AddOrUpdate(prop.Name, value);
+                context.MergedJobDataMap.AddOrUpdate(prop.Name, value);
+            }
+            catch (Exception ex)
+            {
+                var jobKey = context.JobDetails.Key;
+                Console.WriteLine($"Fail to save back value {value} from property {prop.Name} to JobDetails at job {jobKey.Group}.{jobKey.Name}");
+                Console.WriteLine(ex);
+            }
+
+            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
+        }
+
+        private void SafePutTiggerDataMap(IJobExecutionContext context, object instance, PropertyInfo prop)
+        {
+            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
+
+            string value = null;
+            try
+            {
+                if (!Consts.IsDataKeyValid(prop.Name))
+                {
+                    throw new PlanarJobTestException($"the data key {prop.Name} in invalid");
+                }
+
+                value = Convert.ToString(prop.GetValue(instance));
+                context.TriggerDetails.TriggerDataMap.AddOrUpdate(prop.Name, value);
+            }
+            catch (Exception ex)
+            {
+                var jobKey = context.TriggerDetails.Key;
+                Console.WriteLine($"Fail to save back value {value} from property {prop.Name} to TriggerDetails at job {jobKey.Group}.{jobKey.Name}");
+                Console.WriteLine(ex);
             }
 
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
@@ -66,7 +180,13 @@ namespace Planar.Job.Test
                     return;
                 }
 
-                var value = Convert.ChangeType(data.Value, prop.PropertyType);
+                var underlyingType = Nullable.GetUnderlyingType(prop.PropertyType);
+                var finalType = underlyingType ?? prop.PropertyType;
+
+                // nullable property with null value in data
+                if (underlyingType != null && string.IsNullOrEmpty(data.Value)) { return; }
+
+                var value = Convert.ChangeType(data.Value, finalType);
                 prop.SetValue(instance, value);
             }
             catch (Exception ex)
@@ -120,7 +240,7 @@ namespace Planar.Job.Test
             }
 
             var instance = Activator.CreateInstance(properties.JobType);
-            MapJobInstanceProperties(context, instance);
+            MapJobInstanceProperties(context, properties.JobType, instance);
             var settings = JobSettingsLoader.LoadJobSettingsForUnitTest(properties.JobType);
             settings = settings.Merge(properties.GlobalSettings);
 
@@ -135,6 +255,7 @@ namespace Planar.Job.Test
                 Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
                 var result = method.Invoke(instance, new object[] { _broker, configureAction, registerServicesAction }) as Task;
                 result.ConfigureAwait(false).GetAwaiter().GetResult();
+                MapJobInstancePropertiesBack(context, properties.JobType, instance);
             }
             catch (Exception ex)
             {
@@ -145,7 +266,6 @@ namespace Planar.Job.Test
                 context.JobRunTime = DateTime.Now.Subtract(start);
             }
 
-            var data = context.MergedJobDataMap.Keys.Count == 0 ? null : JsonSerializer.Serialize(context.MergedJobDataMap);
             var duration = context.JobRunTime.TotalMilliseconds;
             var endDate = context.FireTimeUtc.DateTime.Add(context.JobRunTime);
             var status = jobException == null ? StatusMembers.Success : StatusMembers.Fail;
@@ -155,7 +275,7 @@ namespace Planar.Job.Test
             var log = new JobExecutionResult
             {
                 InstanceId = context.FireInstanceId,
-                Data = data,
+                Data = context.MergedJobDataMap,
                 StartDate = context.FireTimeUtc.DateTime,
                 JobName = context.JobDetail.Key.Name,
                 JobGroup = context.JobDetail.Key.Group,
