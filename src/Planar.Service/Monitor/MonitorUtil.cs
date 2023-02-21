@@ -182,6 +182,7 @@ namespace Planar.Service.Monitor
                 JobDescription = context.JobDetail.Description,
                 JobGroup = context.JobDetail.Key.Group,
                 JobId = JobKeyHelper.GetJobId(context.JobDetail),
+                Author = JobHelper.GetJobAuthor(context.JobDetail),
                 JobName = context.JobDetail.Key.Name,
                 JobRunTime = context.JobRunTime,
                 MergedJobDataMap = Global.ConvertDataMapToDictionary(context.MergedJobDataMap),

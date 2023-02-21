@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar;
 using Planar.Common;
+using Planar.Common.API.Helpers;
 using Planar.Job;
 using Quartz;
 using System;
@@ -18,11 +19,11 @@ namespace CommonJob
     where TProperties : class, new()
     {
         protected readonly ILogger<TInstance> _logger;
-        private readonly IJobPropertyDataLayer _dataLayer;
-        private JobMessageBroker _messageBroker;
         private static readonly string _ignoreDataMapAttribute = typeof(IgnoreDataMapAttribute).FullName;
         private static readonly string _jobDataMapAttribute = typeof(JobDataAttribute).FullName;
         private static readonly string _triggerDataMapAttribute = typeof(TriggerDataAttribute).FullName;
+        private readonly IJobPropertyDataLayer _dataLayer;
+        private JobMessageBroker _messageBroker;
 
         protected BaseCommonJob(ILogger<TInstance> logger, IJobPropertyDataLayer dataLayer)
         {
@@ -30,29 +31,24 @@ namespace CommonJob
             _dataLayer = dataLayer;
         }
 
+        public JobMessageBroker MessageBroker => _messageBroker;
         public TProperties Properties { get; private set; } = new();
 
         public abstract Task Execute(IJobExecutionContext context);
 
-        public JobMessageBroker MessageBroker => _messageBroker;
-
-        private async Task SetProperties(IJobExecutionContext context)
+        protected void FinalizeJob(IJobExecutionContext context)
         {
-            var jobId = GetJobId(context.JobDetail);
-            if (jobId == null)
+            try
             {
-                var key = context.JobDetail.Key;
-                throw new PlanarJobException($"fail to get job id while execute job {key.Group}.{key.Name}");
+                var metadata = JobExecutionMetadata.GetInstance(context);
+                metadata.Progress = 100;
             }
-
-            var properties = await _dataLayer.GetJobProperty(jobId);
-            if (string.IsNullOrEmpty(properties))
+            catch (Exception ex)
             {
-                var key = context.JobDetail.Key;
-                throw new PlanarJobException($"fail to get job properties while execute job {key.Group}.{key.Name} (id: {jobId})");
+                var source = nameof(FinalizeJob);
+                _logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+                throw;
             }
-
-            Properties = YmlUtil.Deserialize<TProperties>(properties);
         }
 
         protected async Task Initialize(IJobExecutionContext context)
@@ -69,17 +65,18 @@ namespace CommonJob
             _messageBroker = new JobMessageBroker(context, settings);
         }
 
-        protected void FinalizeJob(IJobExecutionContext context)
+        protected Dictionary<string, string> LoadJobSettings(string path)
         {
             try
             {
-                var metadata = JobExecutionMetadata.GetInstance(context);
-                metadata.Progress = 100;
+                if (string.IsNullOrEmpty(path)) return new Dictionary<string, string>();
+                var jobSettings = JobSettingsLoader.LoadJobSettings(path);
+                return jobSettings;
             }
             catch (Exception ex)
             {
-                var source = nameof(FinalizeJob);
-                _logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+                var source = nameof(LoadJobSettings);
+                _logger.LogError(ex, "Fail at {Source}", source);
                 throw;
             }
         }
@@ -108,45 +105,6 @@ namespace CommonJob
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
         }
 
-        private void MapProperty(JobKey jobKey, object instance, PropertyInfo prop, KeyValuePair<string, object> data)
-        {
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
-
-            if (prop == null) { return; }
-
-            try
-            {
-                var attributes = prop.GetCustomAttributes();
-                var ignore = attributes.Any(a => a.GetType().FullName == _ignoreDataMapAttribute);
-
-                if (ignore)
-                {
-                    _logger.LogDebug(
-                        "Ignore map data key '{Key}' with value {Value} to property {Name} of job {JobGroup}.{JobName}",
-                        data.Key, data.Value, prop.Name, jobKey.Group, jobKey.Name);
-
-                    return;
-                }
-
-                var underlyingType = Nullable.GetUnderlyingType(prop.PropertyType);
-                var finalType = underlyingType ?? prop.PropertyType;
-
-                // nullable property with null value in data
-                if (underlyingType != null && string.IsNullOrEmpty(Convert.ToString(data.Value))) { return; }
-
-                var value = Convert.ChangeType(data.Value, finalType);
-                prop.SetValue(instance, value);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex,
-                    "Fail to map data key '{Key}' with value {Value} to property {Name} of job {JobGroup}.{JobName}",
-                    data.Key, data.Value, prop.Name, jobKey.Group, jobKey.Name);
-            }
-
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
-        }
-
         protected void MapJobInstancePropertiesBack(IJobExecutionContext context, Type targetType, object instance)
         {
             //// ***** Attention: be aware for sync code with MapJobInstancePropertiesBack on Planar.Job.Test *****
@@ -170,11 +128,93 @@ namespace CommonJob
             //// ***** Attention: be aware for sync code with MapJobInstancePropertiesBack on Planar.Job.Test *****
         }
 
+        protected void ValidateMandatoryString(string value, string propertyName)
+        {
+            if (!string.IsNullOrEmpty(value)) { value = value.Trim(); }
+            if (string.IsNullOrEmpty(value))
+            {
+                throw new PlanarJobException($"property '{propertyName}' is mandatory for job '{GetType().FullName}'");
+            }
+        }
+
+        private bool IsIgnoreProperty(PropertyInfo property, JobKey jobKey, KeyValuePair<string, object> data)
+        {
+            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
+
+            var attributes = property.GetCustomAttributes();
+            var ignore = attributes.Any(a => a.GetType().FullName == _ignoreDataMapAttribute);
+
+            if (ignore)
+            {
+                _logger.LogDebug("Ignore map data key '{DataKey}' with value '{DataValue}' to property '{PropertyName}' of job '{JobGroup}.{JobName}'",
+                    data.Key,
+                    data.Value,
+                    property.Name,
+                    jobKey.Group,
+                    jobKey.Name);
+            }
+
+            return ignore;
+
+            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
+        }
+
+        private bool IsIgnoreProperty(IEnumerable<Attribute> attributes, PropertyInfo property, JobKey jobKey)
+        {
+            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
+
+            var ignore = attributes.Any(a => a.GetType().FullName == _ignoreDataMapAttribute);
+
+            if (ignore)
+            {
+                _logger.LogDebug("Ignore map back property '{PropertyName}' of job '{JobGroup}.{JobName}' to data map",
+                    property.Name,
+                    jobKey.Group,
+                    jobKey.Name);
+            }
+
+            return ignore;
+
+            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
+        }
+
+        private void MapProperty(JobKey jobKey, object instance, PropertyInfo prop, KeyValuePair<string, object> data)
+        {
+            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
+
+            if (prop == null) { return; }
+
+            try
+            {
+                var ignore = IsIgnoreProperty(prop, jobKey, data);
+                if (ignore) { return; }
+
+                var underlyingType = Nullable.GetUnderlyingType(prop.PropertyType);
+                var finalType = underlyingType ?? prop.PropertyType;
+
+                // nullable property with null value in data
+                if (underlyingType != null && string.IsNullOrEmpty(PlanarConvert.ToString(data.Value))) { return; }
+
+                var value = Convert.ChangeType(data.Value, finalType);
+                prop.SetValue(instance, value);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "Fail to map data key '{Key}' with value {Value} to property {Name} of job {JobGroup}.{JobName}",
+                    data.Key, data.Value, prop.Name, jobKey.Group, jobKey.Name);
+            }
+
+            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
+        }
+
         private void SafePutData(IJobExecutionContext context, object instance, PropertyInfo prop)
         {
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
 
             var attributes = prop.GetCustomAttributes();
+            var ignore = IsIgnoreProperty(attributes, prop, context.JobDetail.Key);
+            if (ignore) { return; }
             var jobData = attributes.Any(a => a.GetType().FullName == _jobDataMapAttribute);
             var triggerData = attributes.Any(a => a.GetType().FullName == _jobDataMapAttribute);
 
@@ -216,7 +256,7 @@ namespace CommonJob
                     throw new PlanarJobException($"the data key {prop.Name} in invalid");
                 }
 
-                value = Convert.ToString(prop.GetValue(instance));
+                value = PlanarConvert.ToString(prop.GetValue(instance));
                 context.JobDetail.JobDataMap.Put(prop.Name, value);
             }
             catch (Exception ex)
@@ -242,7 +282,7 @@ namespace CommonJob
                     throw new PlanarJobException($"the data key {prop.Name} in invalid");
                 }
 
-                value = Convert.ToString(prop.GetValue(instance));
+                value = PlanarConvert.ToString(prop.GetValue(instance));
                 context.Trigger.JobDataMap.Put(prop.Name, value);
             }
             catch (Exception ex)
@@ -256,44 +296,23 @@ namespace CommonJob
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
         }
 
-        protected Dictionary<string, string> LoadJobSettings(string path)
+        private async Task SetProperties(IJobExecutionContext context)
         {
-            try
+            var jobId = JobIdHelper.GetJobId(context.JobDetail);
+            if (jobId == null)
             {
-                if (string.IsNullOrEmpty(path)) return new Dictionary<string, string>();
-                var jobSettings = JobSettingsLoader.LoadJobSettings(path);
-                return jobSettings;
-            }
-            catch (Exception ex)
-            {
-                var source = nameof(LoadJobSettings);
-                _logger.LogError(ex, "Fail at {Source}", source);
-                throw;
-            }
-        }
-
-        protected void ValidateMandatoryString(string value, string propertyName)
-        {
-            if (!string.IsNullOrEmpty(value)) { value = value.Trim(); }
-            if (string.IsNullOrEmpty(value))
-            {
-                throw new PlanarJobException($"property '{propertyName}' is mandatory for job '{GetType().FullName}'");
-            }
-        }
-
-        private static string GetJobId(IJobDetail job)
-        {
-            if (job == null)
-            {
-                throw new PlanarJobException("job is null at JobKeyHelper.GetJobId(IJobDetail)");
+                var key = context.JobDetail.Key;
+                throw new PlanarJobException($"fail to get job id while execute job {key.Group}.{key.Name}");
             }
 
-            if (job.JobDataMap.TryGetValue(Consts.JobId, out var id))
+            var properties = await _dataLayer.GetJobProperty(jobId);
+            if (string.IsNullOrEmpty(properties))
             {
-                return Convert.ToString(id);
+                var key = context.JobDetail.Key;
+                throw new PlanarJobException($"fail to get job properties while execute job {key.Group}.{key.Name} (id: {jobId})");
             }
 
-            return null;
+            Properties = YmlUtil.Deserialize<TProperties>(properties);
         }
     }
 }

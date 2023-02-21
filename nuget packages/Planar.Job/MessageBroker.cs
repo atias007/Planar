@@ -53,32 +53,32 @@ namespace Planar
 
         public string Details { get; set; }
 
-        public string Publish(MessageBrokerChannels channel)
+        public string? Publish(MessageBrokerChannels channel)
         {
             lock (Locker)
             {
                 var result = _method.Invoke(Instance, new object?[] { channel.ToString(), null });
-                return Convert.ToString(result);
+                return PlanarConvert.ToString(result);
             }
         }
 
-        public string Publish<T>(MessageBrokerChannels channel, T message)
+        public string? Publish<T>(MessageBrokerChannels channel, T message)
         {
             var messageJson = JsonSerializer.Serialize(message);
 
             lock (Locker)
             {
                 var result = _method.Invoke(Instance, new object[] { channel.ToString(), messageJson });
-                return Convert.ToString(result);
+                return PlanarConvert.ToString(result);
             }
         }
 
-        public string Publish(MessageBrokerChannels channel, string message)
+        public string? Publish(MessageBrokerChannels channel, string message)
         {
             lock (Locker)
             {
                 var result = _method.Invoke(Instance, new object[] { channel.ToString(), message });
-                return Convert.ToString(result);
+                return PlanarConvert.ToString(result);
             }
         }
 

@@ -23,7 +23,7 @@ namespace Planar.Job.Test
         public IReadOnlyDictionary<string, string> Data { get; set; }
         public string Log { get; set; }
         public Exception Exception { get; set; }
-
+        public object Instance { get; set; }
         public AssertPlanarConstraint Assert => new AssertPlanarConstraint(this);
     }
 }

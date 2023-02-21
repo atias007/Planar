@@ -154,7 +154,8 @@ namespace Planar.CLI
             if (metadata != null)
             {
                 var value = metadata.PropertyInfo?.GetValue(result);
-                if (value == null || value == string.Empty)
+                var strValue = Convert.ToString(value);
+                if (strValue == null || strValue == string.Empty)
                 {
                     var arg = new CliArgument { Key = "?", Value = "?" };
                     FillJobOrTrigger(arg, metadata);

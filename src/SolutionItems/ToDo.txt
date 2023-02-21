@@ -4,21 +4,12 @@
 
 V 1.2.0
 ----------
-- bug: cli --> job data ? upsert x y (show 2 times job select menu)
-- bug: unit test, data values 'null' become string empty in dictionary
-- bug: reload monitor + reload hooks --> not support cluster
-- verify that user can not set data in object that is system variable (at job context)
-- verify job data key max 100 chars
-- verify job value max 1000 chars
-- verify Consts.IsDataKeyValid(key) in create & update job
 - add 'author' to hook package
-
-
-
 
 - cli: service status [time scope] dashboard command
 - add validation to JobRunnerBuilder in test package
-
+- add concurent statistics data
+- add total runs statistics data
 - add hook test option
 - add monitor event: cluster health check fail
 - job test: in no instance id, check hc and print warning about already running job with no concurent
@@ -109,3 +100,10 @@ V 1.2.0
 - build new test simulator
 - cli: job stop show running job instace menu
 - cli: job update, when no folder supplied, show menu
+- bug: cli --> job data ? upsert x y (show 2 times job select menu)
+- bug: unit test, data values 'null' become string empty in dictionary
+- verify job data key max 100 chars
+- verify job value max 1000 chars
+- verify Consts.IsDataKeyValid(key) in create & update job
+- verify that user can not set data in object that is system variable (at job context)
+- bug: reload monitor + reload hooks --> not support cluster

@@ -10,15 +10,7 @@ namespace Planar.Job.Test
 
         public MockJobDetails(ExecuteJobProperties properties)
         {
-            _jobDataMap = new SortedDictionary<string, string>();
-
-            if (properties.JobData != null)
-            {
-                foreach (var item in properties.JobData)
-                {
-                    _jobDataMap.TryAdd(item.Key, System.Convert.ToString(item.Value));
-                }
-            }
+            _jobDataMap = DataMapUtils.Convert(properties.JobData);
         }
 
         public IKey Key => _key;

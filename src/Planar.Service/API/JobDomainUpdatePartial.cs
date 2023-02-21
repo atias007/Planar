@@ -1,12 +1,9 @@
-﻿using Azure.Core;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
-using Quartz;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -53,7 +50,7 @@ namespace Planar.Service.API
         {
             foreach (var item in metadata.OldJobDetails.JobDataMap)
             {
-                request.JobData.Upsert(item.Key, Convert.ToString(item.Value));
+                request.JobData.Upsert(item.Key, PlanarConvert.ToString(item.Value));
             }
         }
 
@@ -66,7 +63,7 @@ namespace Planar.Service.API
                 if (updateTrigger == null) { continue; }
                 foreach (var data in oldTrigger.JobDataMap)
                 {
-                    updateTrigger.TriggerData.Upsert(data.Key, Convert.ToString(data.Value));
+                    updateTrigger.TriggerData.Upsert(data.Key, PlanarConvert.ToString(data.Value));
                 }
             }
         }
@@ -84,6 +81,12 @@ namespace Planar.Service.API
             }
 
             BuildJobData(request, metadata.JobDetails);
+
+            if (options.UpdateJobDetails)
+            {
+                metadata.JobDetails.JobDataMap.Put(Consts.Author, request.Author);
+            }
+
             await Task.CompletedTask;
         }
 

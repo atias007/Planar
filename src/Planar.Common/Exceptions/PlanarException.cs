@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace Planar.Service.Exceptions
+namespace Planar.Common.Exceptions
 {
     [Serializable]
     public class PlanarException : Exception

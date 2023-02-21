@@ -504,6 +504,7 @@ namespace Planar.Service.API
 
             SchedulerUtil.MapJobRowDetails(source, target);
             target.Concurrent = !source.ConcurrentExecutionDisallowed;
+            target.Author = JobHelper.GetJobAuthor(source);
             target.Durable = source.Durable;
             target.RequestsRecovery = source.RequestsRecovery;
             target.DataMap = Global.ConvertDataMapToDictionary(dataMap);

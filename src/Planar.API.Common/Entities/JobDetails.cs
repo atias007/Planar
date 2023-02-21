@@ -6,24 +6,27 @@ namespace Planar.API.Common.Entities
     public class JobDetails : JobRowDetails
     {
         [YamlMember(Order = 4)]
-        public bool Durable { get; set; }
+        public string Author { get; set; }
 
         [YamlMember(Order = 5)]
-        public bool RequestsRecovery { get; set; }
+        public bool Durable { get; set; }
 
         [YamlMember(Order = 6)]
-        public bool Concurrent { get; set; }
+        public bool RequestsRecovery { get; set; }
 
         [YamlMember(Order = 7)]
-        public string Properties { get; set; }
+        public bool Concurrent { get; set; }
 
         [YamlMember(Order = 8)]
-        public SortedDictionary<string, string> DataMap { get; set; } = new();
+        public string Properties { get; set; }
 
         [YamlMember(Order = 9)]
-        public List<SimpleTriggerDetails> SimpleTriggers { get; set; } = new();
+        public SortedDictionary<string, string> DataMap { get; set; } = new();
 
         [YamlMember(Order = 10)]
+        public List<SimpleTriggerDetails> SimpleTriggers { get; set; } = new();
+
+        [YamlMember(Order = 11)]
         public List<CronTriggerDetails> CronTriggers { get; set; } = new();
     }
 }

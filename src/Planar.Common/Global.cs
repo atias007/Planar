@@ -51,7 +51,7 @@ namespace Planar.Common
             var dic = map
                 .Where(k => !k.Key.StartsWith(Consts.ConstPrefix) && !k.Key.StartsWith(Consts.QuartzPrefix))
                 .OrderBy(k => k.Key)
-                .ToDictionary(k => k.Key, v => Convert.ToString(v.Value));
+                .ToDictionary(k => k.Key, v => PlanarConvert.ToString(v.Value));
 
             var result = new SortedDictionary<string, string>(dic);
             return result;

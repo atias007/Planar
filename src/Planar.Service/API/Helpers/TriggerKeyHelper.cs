@@ -1,5 +1,6 @@
 ﻿using CommonJob;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Service.Exceptions;
 using Quartz;
 using Quartz.Impl.Matchers;
@@ -70,7 +71,7 @@ namespace Planar.Service.API.Helpers
 
             if (trigger.JobDataMap.TryGetValue(Consts.TriggerId, out var id))
             {
-                return Convert.ToString(id);
+                return PlanarConvert.ToString(id);
             }
 
             return null;

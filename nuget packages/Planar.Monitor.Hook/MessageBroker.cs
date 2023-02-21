@@ -37,7 +37,7 @@ namespace Planar.Monitor.Hook
             lock (Locker)
             {
                 var result = _method.Invoke(Instance, new object[] { exception, message, args });
-                return Convert.ToString(result);
+                return PlanarConvert.ToString(result);
             }
         }
 

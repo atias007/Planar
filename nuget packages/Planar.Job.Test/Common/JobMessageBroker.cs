@@ -54,7 +54,7 @@ namespace Planar.Job.Test
 
                     lock (Locker)
                     {
-                        var value = Convert.ToString(data1.Value);
+                        var value = PlanarConvert.ToString(data1.Value);
                         _context.JobDetails.JobDataMap.AddOrUpdate(data1.Key, value);
                     }
                     return null;
@@ -68,7 +68,7 @@ namespace Planar.Job.Test
 
                     lock (Locker)
                     {
-                        var value = Convert.ToString(data2.Value);
+                        var value = PlanarConvert.ToString(data2.Value);
                         _context.TriggerDetails.TriggerDataMap.AddOrUpdate(data2.Key, value);
                     }
                     return null;
@@ -100,7 +100,7 @@ namespace Planar.Job.Test
                     try
                     {
                         var data = _context.MergedJobDataMap[message];
-                        return Convert.ToString(data);
+                        return PlanarConvert.ToString(data);
                     }
                     catch (KeyNotFoundException)
                     {

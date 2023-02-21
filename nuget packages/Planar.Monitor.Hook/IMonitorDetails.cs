@@ -5,6 +5,7 @@ namespace Planar.Monitor.Hook
 {
     public interface IMonitorDetails : IMonitor
     {
+        string Author { get; }
         string Calendar { get; }
         bool Durable { get; }
         string FireInstanceId { get; }

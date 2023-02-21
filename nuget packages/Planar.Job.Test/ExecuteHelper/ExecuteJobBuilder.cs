@@ -13,12 +13,6 @@ namespace Planar.Job.Test
 
         public static ExecuteJobBuilder CreateBuilderForJob<T>() where T : class, new() => new ExecuteJobBuilder(typeof(T));
 
-        public ExecuteJobBuilder ForJob(Type type)
-        {
-            _properties.JobType = type;
-            return this;
-        }
-
         public ExecuteJobBuilder WithExecutionDate(DateTimeOffset executionDate)
         {
             _properties.ExecutionDate = executionDate;
@@ -39,7 +33,7 @@ namespace Planar.Job.Test
 
         public ExecuteJobBuilder WithGlobalSettings(string key, object value)
         {
-            _properties.GlobalSettings.Add(key, Convert.ToString(value));
+            _properties.GlobalSettings.Add(key, PlanarConvert.ToString(value));
             return this;
         }
 

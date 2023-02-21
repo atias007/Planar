@@ -55,7 +55,7 @@ namespace CommonJob
 
                     lock (Locker)
                     {
-                        var value = Convert.ToString(data1.Value);
+                        var value = PlanarConvert.ToString(data1.Value);
                         _context.JobDetail.JobDataMap.Put(data1.Key, value);
                     }
                     return null;
@@ -69,7 +69,7 @@ namespace CommonJob
 
                     lock (Locker)
                     {
-                        var value = Convert.ToString(data2.Value);
+                        var value = PlanarConvert.ToString(data2.Value);
                         _context.Trigger.JobDataMap.Put(data2.Key, value);
                     }
                     return null;
@@ -100,7 +100,7 @@ namespace CommonJob
 
                 case "GetData":
                     var data = _context.MergedJobDataMap[message];
-                    return Convert.ToString(data);
+                    return PlanarConvert.ToString(data);
 
                 case "IsDataExists":
                     return _context.MergedJobDataMap.ContainsKey(message).ToString();

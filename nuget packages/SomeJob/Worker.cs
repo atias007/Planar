@@ -59,6 +59,7 @@ namespace SomeJob
             UpdateProgress(66);
 
             SimpleInt += 5;
+            IgnoreData = "x";
         }
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

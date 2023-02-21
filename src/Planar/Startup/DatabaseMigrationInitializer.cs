@@ -1,4 +1,5 @@
 ﻿using DbUp;
+using Planar.Common.Exceptions;
 using Planar.Service;
 using Planar.Service.Exceptions;
 using System;

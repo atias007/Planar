@@ -1,5 +1,4 @@
-﻿using Planar.Job.Test.Common;
-using Planar.Job.Test.JobExecutionContext;
+﻿using Planar.Job.Test.JobExecutionContext;
 using System;
 using System.Collections.Generic;
 
@@ -17,16 +16,7 @@ namespace Planar.Job.Test
             _now = DateTimeOffset.Now;
             _triggerKey = new MockKey(UnitTestConsts.Environment, UnitTestConsts.TriggerName);
             _jobKey = new MockKey(UnitTestConsts.Environment, UnitTestConsts.TestMethod);
-            _triggerDataMap = new SortedDictionary<string, string>();
-
-            if (properties.TriggerData != null)
-            {
-                foreach (var item in properties.TriggerData)
-                {
-                    _triggerDataMap.TryAdd(item.Key, Convert.ToString(item.Value));
-                }
-            }
-
+            _triggerDataMap = DataMapUtils.Convert(properties.TriggerData);
             FinalFireTime = _now.AddDays(new Random().Next(1, 30));
         }
 

@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Exceptions;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.Model.DataObjects;

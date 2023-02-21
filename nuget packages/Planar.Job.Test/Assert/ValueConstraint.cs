@@ -20,7 +20,7 @@ namespace Planar.Job.Test.Assert
                 throw new AssertPlanarException(message);
             }
 
-            var stringValue = Convert.ToString(value);
+            var stringValue = PlanarConvert.ToString(value);
             var currentValue = _result.Data[_key];
 
             if (stringValue == currentValue) { return Assert; }
@@ -69,7 +69,7 @@ namespace Planar.Job.Test.Assert
                 throw new AssertPlanarException(message);
             }
 
-            var stringValue = Convert.ToString(value);
+            var stringValue = PlanarConvert.ToString(value);
             var currentValue = _result.Data[_key];
 
             if (stringValue != currentValue) { return Assert; }

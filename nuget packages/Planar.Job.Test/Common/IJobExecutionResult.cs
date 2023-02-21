@@ -24,5 +24,6 @@ namespace Planar.Job.Test
         string Log { get; }
         Exception Exception { get; }
         AssertPlanarConstraint Assert { get; }
+        object Instance { get; }
     }
 }

@@ -3,6 +3,7 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
+using Planar.Common.Exceptions;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;

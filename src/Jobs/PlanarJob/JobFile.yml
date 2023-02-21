@@ -1,7 +1,8 @@
 ﻿job type: PlanarJob                   # Fixed! don't change it
 name: some job name                   # Name of job [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
 group: null or group name             # Group of job [only alphanumeric, dashes & underscore, 5 to 50 characters]
-description: some job description     # Description of job [only alphanumeric, dashes & underscore, up to 100 characters]
+author: israel israeli (sales)        # The author/responsible person of the job [up to 100 characters]
+description: some job description     # Description of job [only alphanumeric, dashes & underscore, up to 200 characters]
 durable: true                         # Boolean [true/false]. Non durable job will be delete from system if no future triggers defined
 concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
 

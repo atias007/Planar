@@ -16,7 +16,8 @@ namespace Planar
             PlanarSystemGroup,
             JobId,
             TriggerId,
-            NowOverrideValue
+            NowOverrideValue,
+            Author
         };
 
         public const string QuartzPrefix = "QRTZ_";
@@ -30,6 +31,7 @@ namespace Planar
         public const string PlanarSystemGroup = "__System";
 
         public const string JobId = "__Job_Id";
+        public const string Author = "__Author";
         public const string TriggerId = "__Trigger_Id";
         public const string NowOverrideValue = "__Now_Override_Value";
 

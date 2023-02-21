@@ -124,6 +124,7 @@ namespace Planar.CLI
             table.AddRow(nameof(response.Id), response.Id.EscapeMarkup());
             table.AddRow(nameof(response.Group), response.Group.EscapeMarkup());
             table.AddRow(nameof(response.Name), response.Name.EscapeMarkup());
+            table.AddRow(nameof(response.Author), response.Author.EscapeMarkup());
             table.AddRow(nameof(response.Description), response.Description.EscapeMarkup());
             table.AddRow(nameof(response.Durable), response.Durable.ToString());
             table.AddRow(nameof(response.RequestsRecovery), response.RequestsRecovery.ToString());

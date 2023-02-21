@@ -64,7 +64,7 @@ namespace UnitTest
             var run = ExecuteJobBuilder
                 .CreateBuilderForJob<Worker>()
                 .WithJobData("X", 10)
-                .WithJobData("IgnoreData", "x");
+                .WithJobData("IgnoreData", null);
 
             var result = ExecuteJob(run);
             result.Assert.Status.Success()

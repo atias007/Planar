@@ -30,6 +30,7 @@
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\TriggerDetail.cs" Link="JobExecutionContext\TriggerDetail.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\LogEntity.cs" Link="LogEntity.cs" />
 		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
+		<Compile Include="..\Planar.Job.Test\Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Include="..\..\res\nuget_logo.png">
