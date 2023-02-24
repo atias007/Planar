@@ -8,12 +8,12 @@ namespace Planar.CLI.Entities
         [Required("id argument is required")]
         public int Id { get; set; }
 
-        [ActionProperty(DefaultOrder = 2)]
-        [Required("propery name argument is required")]
-        public string PropertyName { get; set; }
+        [ActionProperty(DefaultOrder = 2, Name = "name")]
+        [Required("name argument is required")]
+        public string PropertyName { get; set; } = string.Empty;
 
-        [ActionProperty(DefaultOrder = 3)]
-        [Required("propery value argument is required")]
-        public string PropertyValue { get; set; }
+        [ActionProperty(DefaultOrder = 3, Name = "value")]
+        [Required("value argument is required")]
+        public string PropertyValue { get; set; } = string.Empty;
     }
 }

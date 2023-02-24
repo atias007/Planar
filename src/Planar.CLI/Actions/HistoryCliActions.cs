@@ -1,6 +1,8 @@
-﻿using Planar.CLI.Attributes;
+﻿using Planar.API.Common.Entities;
+using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
 using RestSharp;
+using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -101,6 +103,36 @@ namespace Planar.CLI.Actions
             var result = await RestProxy.Invoke<List<CliJobInstanceLog>>(restRequest);
             var table = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, table);
+        }
+
+        [Action("count")]
+        public static async Task<CliActionResponse> GetHistoryCount(CliGetCountRequest request)
+        {
+            if (request.Hours == 0)
+            {
+                request.Hours = GetCounterHours();
+            }
+
+            var restRequest = new RestRequest("history/count", Method.Get)
+                .AddQueryParameter("hours", request.Hours);
+
+            var result = await RestProxy.Invoke<CounterResponse>(restRequest);
+            if (!result.IsSuccessful || result.Data == null)
+            {
+                return new CliActionResponse(result);
+            }
+
+            var counter = result.Data.Counter;
+            AnsiConsole.WriteLine();
+            AnsiConsole.MarkupLine($"[grey54 bold underline]history status count for last {request.Hours} hours[/]");
+            AnsiConsole.WriteLine();
+            AnsiConsole.Write(new BarChart()
+                .Width(60)
+                .AddItem(counter[0].Label, counter[0].Count, Color.Gold1)
+                .AddItem(counter[1].Label, counter[1].Count, Color.Green)
+                .AddItem(counter[2].Label, counter[2].Count, Color.Red1));
+
+            return CliActionResponse.Empty;
         }
     }
 }

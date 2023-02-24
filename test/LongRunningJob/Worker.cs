@@ -1,14 +1,14 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Planar;
+using Planar.Job;
 using System.Threading.Tasks;
 
 namespace LongRunningJob
 {
     public class Worker : BaseJob
     {
-        public override void Configure(IConfigurationBuilder configurationBuilder, string environment)
+        public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
         {
         }
 
@@ -26,14 +26,14 @@ namespace LongRunningJob
 
                 if (i % 10 == 0)
                 {
-                    Logger.LogInformation($"Step {i}");
+                    Logger.LogInformation("Step {Index}", i);
                 }
 
                 await Task.Delay(1000);
             }
         }
 
-        public override void RegisterServices(IConfiguration configuration, IServiceCollection services)
+        public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
         {
         }
     }

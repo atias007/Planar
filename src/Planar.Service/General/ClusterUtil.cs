@@ -3,6 +3,7 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
+using Planar.Common.Exceptions;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
@@ -12,7 +13,9 @@ using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Planar.Service.General
 {
@@ -209,6 +212,26 @@ namespace Planar.Service.General
                 item.HealthCheckDate = DateTime.Now;
                 item.InstanceId = _schedulerUtil.SchedulerInstanceId;
                 await _dal.SaveChangesAsync();
+            }
+        }
+
+        public async Task LoadMonitorHooks()
+        {
+            var nodes = await GetAllNodes();
+            foreach (var node in nodes)
+            {
+                if (node.IsCurrentNode) { continue; }
+
+                try
+                {
+                    await Policy.Handle<RpcException>()
+                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                    .ExecuteAsync(() => CallLoadMonitorHooksService(node));
+                }
+                catch (RpcException ex)
+                {
+                    _logger.LogError(ex, "Fail to load monitor hooks at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                }
             }
         }
 
@@ -447,6 +470,12 @@ namespace Planar.Service.General
 
             node.HealthCheckDate = DateTime.Now;
             await _dal.SaveChangesAsync();
+        }
+
+        private static async Task CallLoadMonitorHooksService(ClusterNode node)
+        {
+            var client = GetClient(node);
+            await client.ReloadMonitorAsync(new Empty(), deadline: GrpcDeadLine);
         }
 
         private static async Task CallStopSchedulerService(ClusterNode node)

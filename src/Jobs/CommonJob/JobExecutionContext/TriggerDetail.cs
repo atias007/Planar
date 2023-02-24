@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace CommonJob
+namespace Planar.Job
 {
-    internal class TriggerDetail
+    internal class TriggerDetail : ITriggerDetail
     {
-        public Key Key { get; set; }
+        public IKey Key { get; set; }
         public string Description { get; set; }
         public string CalendarName { get; set; }
         public SortedDictionary<string, string> TriggerDataMap { get; set; }

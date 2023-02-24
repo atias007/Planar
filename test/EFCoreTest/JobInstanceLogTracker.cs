@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Planar;
+using Planar.Job;
 
 namespace EFCoreTest
 {
@@ -10,7 +10,7 @@ namespace EFCoreTest
     {
         public int LastId { get; set; }
 
-        public override void Configure(IConfigurationBuilder configurationBuilder, string environment)
+        public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
         {
         }
 
@@ -25,7 +25,7 @@ namespace EFCoreTest
             Logger.LogInformation("Last id {Id}", LastId);
         }
 
-        public override void RegisterServices(IConfiguration configuration, IServiceCollection services)
+        public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
         {
             var config = services.BuildServiceProvider().GetRequiredService<IConfiguration>();
             var connectionString = config["Connection String"];

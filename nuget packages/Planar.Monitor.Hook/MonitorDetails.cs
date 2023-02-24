@@ -15,6 +15,7 @@ namespace Planar.Monitor.Hook
         public string TriggerId { get; set; }
         public string TriggerDescription { get; set; }
         public string Calendar { get; set; }
+        public string Author { get; set; }
         public Dictionary<string, string> MergedJobDataMap { get; set; }
         public string FireInstanceId { get; set; }
         public DateTime FireTime { get; set; }

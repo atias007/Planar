@@ -18,6 +18,6 @@ namespace Planar.CLI.Entities
         public DateTime ToDate { get; set; }
 
         [ActionProperty(ShortName = "l", LongName = "level")]
-        public string Level { get; set; }
+        public string? Level { get; set; }
     }
 }

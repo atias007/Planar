@@ -1,5 +1,7 @@
 ﻿using CommonJob;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using System.Data;
 using System.Threading.Tasks;
 
 namespace Planar.Service.Data
@@ -35,6 +37,16 @@ namespace Planar.Service.Data
             }
 
             return 0;
+        }
+
+        public IExecutionStrategy CreateExecutionStrategy()
+        {
+            return _context.Database.CreateExecutionStrategy();
+        }
+
+        public async Task<IDbContextTransaction> BeginTransactionAsync()
+        {
+            return await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
         }
     }
 }

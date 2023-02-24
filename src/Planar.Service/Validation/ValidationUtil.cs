@@ -1,5 +1,4 @@
 ﻿using Planar.Service.API.Helpers;
-using Planar.Service.Data;
 using Planar.Service.General;
 using System;
 using System.Text.RegularExpressions;
@@ -20,7 +19,7 @@ namespace Planar.Service.Validation
         {
             if (value == null) { return true; }
             const string pattern = "^[0-9]+$";
-            var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(5));
+            var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
             return regex.IsMatch(value);
         }
 

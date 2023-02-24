@@ -31,6 +31,18 @@ namespace Planar.Controllers
             return CreatedAtAction(nameof(Get), result, result);
         }
 
+        [HttpPost("process")]
+        [SwaggerOperation(OperationId = "post_job_process_add", Description = "Add new process job", Summary = "Add Process Job")]
+        [JsonConsumes]
+        [CreatedResponse(typeof(JobIdResponse))]
+        [BadRequestResponse]
+        [ConflictResponse]
+        public async Task<ActionResult<JobIdResponse>> AddProcess([FromBody] SetJobRequest<ProcessJobProperties> request)
+        {
+            var result = await BusinesLayer.Add(request);
+            return CreatedAtAction(nameof(Get), result, result);
+        }
+
         [HttpPut("planar")]
         [SwaggerOperation(OperationId = "put_job_planar", Description = "update existing planar job", Summary = "Update Planar Job")]
         [JsonConsumes]
@@ -38,6 +50,18 @@ namespace Planar.Controllers
         [BadRequestResponse]
         [NotFoundResponse]
         public async Task<ActionResult<JobIdResponse>> UpdatePlanar([FromBody] UpdateJobRequest<PlanarJobProperties> request)
+        {
+            var result = await BusinesLayer.Update(request);
+            return CreatedAtAction(nameof(Get), result, result);
+        }
+
+        [HttpPut("process")]
+        [SwaggerOperation(OperationId = "put_job_process", Description = "update existing process job", Summary = "Update Process Job")]
+        [JsonConsumes]
+        [CreatedResponse(typeof(JobIdResponse))]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<ActionResult<JobIdResponse>> UpdateProcess([FromBody] UpdateJobRequest<ProcessJobProperties> request)
         {
             var result = await BusinesLayer.Update(request);
             return CreatedAtAction(nameof(Get), result, result);
@@ -71,7 +95,7 @@ namespace Planar.Controllers
 
         [ApiExplorerSettings(IgnoreApi = true)]
         [HttpGet("available-jobs")]
-        [SwaggerOperation(OperationId = "put_job_folder", Description = "", Summary = "")]
+        [SwaggerOperation(OperationId = "get_job_available_jobs", Description = "", Summary = "")]
         [OkJsonResponse(typeof(List<AvailableJobToAdd>))]
         public async Task<ActionResult<List<AvailableJobToAdd>>> GetAvailableJobsToAdd()
         {

@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace CommonJob
+namespace Planar.Job
 {
-    internal class JobExecutionContext
+    internal class JobExecutionContext : IJobExecutionContext
     {
         public Dictionary<string, string> JobSettings { get; set; }
 
@@ -23,9 +23,9 @@ namespace CommonJob
 
         public int RefireCount { get; set; }
 
-        public JobDetail JobDetails { get; set; }
+        public IJobDetail JobDetails { get; set; }
 
-        public TriggerDetail TriggerDetails { get; set; }
+        public ITriggerDetail TriggerDetails { get; set; }
 
         public string Environment { get; set; }
     }

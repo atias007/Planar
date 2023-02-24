@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Exceptions;
 using Planar.Service.API;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -168,7 +169,7 @@ namespace Planar.Service
         {
             try
             {
-                _logger.LogInformation("Initialize: {Operation}",nameof(LoadMonitorHooks));
+                _logger.LogInformation("Initialize: {Operation}", nameof(LoadMonitorHooks));
 
                 ServiceUtil.LoadMonitorHooks(_logger);
                 using var scope = _serviceProvider.CreateScope();
@@ -278,7 +279,8 @@ namespace Planar.Service
             {
                 if (!MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
 
-                var monitor = _serviceProvider.GetRequiredService<MonitorUtil>();
+                using var scope = _serviceProvider.CreateScope();
+                var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
                 await monitor.Scan(@event, info, exception);
             }
             catch (Exception ex)

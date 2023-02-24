@@ -4,7 +4,17 @@ namespace Planar
 {
     internal class LogEntity
     {
-        public string Message { get; set; }
+        public LogEntity()
+        {
+        }
+
+        public LogEntity(LogLevel level, string message)
+        {
+            Level = level;
+            Message = message;
+        }
+
+        public string Message { get; set; } = string.Empty;
 
         public LogLevel Level { get; set; }
     }

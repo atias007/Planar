@@ -1,4 +1,5 @@
-﻿using Planar.Service.Exceptions;
+﻿using Planar.Common.Exceptions;
+using Planar.Service.Exceptions;
 using System;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;

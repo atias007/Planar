@@ -1,19 +1,17 @@
 --------------------------------------------------------
 - // TODO: add appsettings for UseJobAutoInterrupt at QuartzServiceConfiguration
-- add to base test to retrieve log & exception
 
-- bug: reload monitor + reload hooks --> not support cluster
-- bug: job test dont validate that job is exists (run: job text xxxxxxxx)
-- cli: job update, when no folder supplied, show menu
-
-- add hook test option
+- convert id in sql table JobInstanceLog from int to bigint
+- cli: service status [time scope] dashboard command
+- add validation to JobRunnerBuilder in test package
+- add concurent statistics data
+- add total runs statistics data
 - add monitor event: cluster health check fail
-- job test: in no instance id, check hc and print warning about already running job with no concurent
-- add to jobfile the option to write thr author
+- job test: if no instance id, check hc and print warning about already running job with no concurent
 - add to jobfile the option to control the amount of retries
-- cli test: job that finish very fast - the test dont found it in running jobs. it should search in history
 - cli: save output to file
 - cli test cluster command
+- cli: add string similarity
 - option to pause job after {x} fails in row
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
 
@@ -75,3 +73,37 @@
 - add service to convert cron to readable text https://github.com/bradymholt/cron-expression-descriptor
 - implement GetPausedTriggers
 - api to get demo yml file 
+-----------------------------------------DONE-----------------------------------------
+V 1.2.0
+----------
+- add ProcessJob job type
+- fix cli bug of remember login
+- fix monitor bug (base monitor namespace)
+- fix job update service bug
+- cli: add shortcut to history get
+- cli: define colors & style for each host
+- cli: add logout command
+- cli: auto add module by detect command
+- cli: format error & warning messages 
+- cli: add option to cancel tree options of job update command
+- check for migration where skip migration defined
+- add history count service
+- add trace count service
+- cli test: job that finish very fast - the test dont found it in running jobs. it should search in history
+- bug: job test dont validate that job is exists (run: job text xxxxxxxx)
+- upgrade quartz package
+- update cli to show job/trigger menu when parameter is empty
+- cli: validate user phone number on cli add user wizard
+- build new test simulator
+- cli: job stop show running job instace menu
+- cli: job update, when no folder supplied, show menu
+- bug: cli --> job data ? upsert x y (show 2 times job select menu)
+- bug: unit test, data values 'null' become string empty in dictionary
+- verify job data key max 100 chars
+- verify job value max 1000 chars
+- verify Consts.IsDataKeyValid(key) in create & update job
+- verify that user can not set data in object that is system variable (at job context)
+- bug: reload monitor + reload hooks --> not support cluster
+- add 'author'
+- add hook test option
+- send GlobalConfig dictionary to hook

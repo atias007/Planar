@@ -16,7 +16,7 @@ namespace Planar.CLI
             var data = result.Item1;
             var response = result.Item2;
 
-            if (response.IsSuccessful)
+            if (response.IsSuccessful && data != null)
             {
                 var ids = data.Select(r => r.Id).ToList();
                 var table = CliTableExtensions.GetTable(result.Item1);
@@ -48,7 +48,8 @@ namespace Planar.CLI
 
             if (!refreshResponse.IsSuccessful)
             {
-                throw new PlanarServiceException(refreshResponse.ErrorMessage);
+                var message = refreshResponse.ErrorMessage ?? "fail to get running jobs";
+                throw new PlanarServiceException(message);
             }
 
             for (int i = 0; i < table.Rows.Count; i++)
@@ -56,12 +57,13 @@ namespace Planar.CLI
                 RefreshTable(table, ids, refreshData, i);
             }
 
-            var isAllFinish = refreshData.All(r => r.Progress == 100);
-            return isAllFinish;
+            var isAllFinish = refreshData?.All(r => r.Progress == 100);
+            return isAllFinish.GetValueOrDefault();
         }
 
-        private static void RefreshTable(Table table, List<string> ids, List<API.Common.Entities.RunningJobDetails> refreshData, int i)
+        private static void RefreshTable(Table table, List<string> ids, List<API.Common.Entities.RunningJobDetails>? refreshData, int i)
         {
+            if (refreshData == null) { return; }
             var id = ids[i];
             var item = refreshData.FirstOrDefault(r => r.Id == id.ToString());
             if (item == null || item.Progress == 100)
@@ -78,7 +80,7 @@ namespace Planar.CLI
                     $"{item.RunTime:\\(d\\)\\ hh\\:mm\\:ss}";
 
                 table.UpdateCell(i, 3, $"[gold3_1]{item.Progress}%[/]");
-                table.UpdateCell(i, 4, item.EffectedRows.ToString());
+                table.UpdateCell(i, 4, item.EffectedRows.GetValueOrDefault().ToString());
                 table.UpdateCell(i, 5, runtime);
             }
         }

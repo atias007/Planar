@@ -1,8 +1,9 @@
-﻿using YamlDotNet.Serialization;
+﻿using CommonJob;
+using YamlDotNet.Serialization;
 
 namespace Planar
 {
-    public class PlanarJobProperties
+    public class PlanarJobProperties : IFileJobProperties
     {
         public string Path { get; set; }
 

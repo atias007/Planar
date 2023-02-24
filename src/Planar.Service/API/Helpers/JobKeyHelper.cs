@@ -1,5 +1,7 @@
 ﻿using CommonJob;
 using Planar.API.Common.Entities;
+using Planar.Common;
+using Planar.Common.API.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using Quartz;
@@ -26,17 +28,7 @@ namespace Planar.Service.API.Helpers
 
         public static string GetJobId(IJobDetail job)
         {
-            if (job == null)
-            {
-                throw new PlanarJobException("job is null at JobKeyHelper.GetJobId(IJobDetail)");
-            }
-
-            if (job.JobDataMap.TryGetValue(Consts.JobId, out var id))
-            {
-                return Convert.ToString(id);
-            }
-
-            return null;
+            return JobIdHelper.GetJobId(job);
         }
 
         public static JobKey GetJobKey(SetJobRequest metadata)

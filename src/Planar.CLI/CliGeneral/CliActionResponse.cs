@@ -1,28 +1,28 @@
-﻿using RestSharp;
+﻿using Planar.Common;
+using RestSharp;
 using Spectre.Console;
 using System.Collections.Generic;
+using System.Net;
 using YamlDotNet.Serialization;
 
 namespace Planar.CLI
 {
     public class CliActionResponse
     {
-        private CliActionResponse()
+        public CliActionResponse(RestResponse? response)
         {
-        }
+            response ??= GetGenericSuccessRestResponse();
 
-        public CliActionResponse(RestResponse response)
-        {
             Response = response;
         }
 
-        public CliActionResponse(RestResponse response, string message)
+        public CliActionResponse(RestResponse? response, string? message)
             : this(response)
         {
             Message = message;
         }
 
-        public CliActionResponse(RestResponse response, object? serializeObj)
+        public CliActionResponse(RestResponse? response, object? serializeObj)
             : this(response)
         {
             if (serializeObj != null)
@@ -31,13 +31,13 @@ namespace Planar.CLI
             }
         }
 
-        public CliActionResponse(RestResponse response, Table table)
+        public CliActionResponse(RestResponse? response, Table table)
             : this(response)
         {
             Tables = new List<Table> { table };
         }
 
-        public CliActionResponse(RestResponse response, List<Table> tables)
+        public CliActionResponse(RestResponse? response, List<Table> tables)
             : this(response)
         {
             Tables = tables;
@@ -53,15 +53,20 @@ namespace Planar.CLI
         {
             get
             {
-                return new CliActionResponse();
+                return new CliActionResponse(null);
             }
         }
 
-        protected static string SerializeResponse(object response)
+        internal static RestResponse GetGenericSuccessRestResponse()
+        {
+            var response = new RestResponse { StatusCode = HttpStatusCode.OK, ResponseStatus = ResponseStatus.Completed, IsSuccessStatusCode = true };
+            return response;
+        }
+
+        private static string? SerializeResponse(object response)
         {
             if (response == null) { return null; }
-            var serializer = new SerializerBuilder().Build();
-            var yml = serializer.Serialize(response);
+            var yml = YmlUtil.Serialize(response);
 
             if (!string.IsNullOrEmpty(yml))
             {

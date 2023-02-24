@@ -24,6 +24,7 @@ service PlanarCluster {
   rpc GetPersistanceRunningJobInfo(google.protobuf.Empty) returns (PersistanceRunningJobInfoReply);
   rpc IsJobFolderExist(IsJobAssestsExistRequest) returns (IsJobAssestsExistReply);
   rpc IsJobFileExist(IsJobAssestsExistRequest) returns (IsJobAssestsExistReply);
+  rpc ReloadMonitor(google.protobuf.Empty) returns (google.protobuf.Empty);
 }
 
 message GetRunningJobRequest {

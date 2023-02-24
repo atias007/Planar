@@ -13,9 +13,10 @@ namespace Planar.CLI.Actions
     {
         [Action("add")]
         [NullRequest]
+        [ActionWizard]
         public static async Task<CliActionResponse> AddUser(CliAddUserRequest request)
         {
-            request ??= CollectDataFromCli<CliAddUserRequest>();
+            request ??= GetCliAddUserRequest();
 
             var restRequest = new RestRequest("user", Method.Post)
                 .AddBody(request);
@@ -30,6 +31,30 @@ namespace Planar.CLI.Actions
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
             return await ExecuteEntity<UserDetails>(restRequest);
+        }
+
+        [Action("reset-password")]
+        public static async Task<CliActionResponse> GetUserPassword(CliGetByIdRequest request)
+        {
+            var restRequest = new RestRequest("user/{id}/resetpassword", Method.Patch)
+                .AddParameter("id", request.Id, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<string>(restRequest);
+            if (result.IsSuccessful)
+            {
+                var addResponse = new AddUserResponse
+                {
+                    Id = request.Id,
+                    Password = result.Data
+                };
+
+                var table = CliTableExtensions.GetTable(addResponse);
+                return new CliActionResponse(result, table);
+            }
+            else
+            {
+                return new CliActionResponse(result);
+            }
         }
 
         [Action("ls")]
@@ -61,28 +86,21 @@ namespace Planar.CLI.Actions
             return await Execute(restRequest);
         }
 
-        [Action("reset-password")]
-        public static async Task<CliActionResponse> GetUserPassword(CliGetByIdRequest request)
+        private static CliAddUserRequest GetCliAddUserRequest()
         {
-            var restRequest = new RestRequest("user/{id}/resetpassword", Method.Patch)
-                .AddParameter("id", request.Id, ParameterType.UrlSegment);
+            const string phone_pattern = "^[0-9]+$";
+            const string email_pattern = @"\A(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9]{2,8}(?:[a-z0-9-]*[a-z0-9])?)\Z";
 
-            var result = await RestProxy.Invoke<string>(restRequest);
-            if (result.IsSuccessful)
+            var result = new CliAddUserRequest
             {
-                var addResponse = new AddUserResponse
-                {
-                    Id = request.Id,
-                    Password = result.Data
-                };
+                Username = CollectCliValue("username", true, 2, 50) ?? string.Empty,
+                FirstName = CollectCliValue("first name", true, 2, 50) ?? string.Empty,
+                LastName = CollectCliValue("last name", false, 2, 50),
+                EmailAddress1 = CollectCliValue("email address", false, 5, 250, email_pattern, "is not valid email"),
+                PhoneNumber1 = CollectCliValue("phone number", false, 9, 50, phone_pattern, "is not valid phone number (only digits start with 0)")
+            };
 
-                var table = CliTableExtensions.GetTable(addResponse);
-                return new CliActionResponse(result, table);
-            }
-            else
-            {
-                return new CliActionResponse(result);
-            }
+            return result;
         }
     }
 }

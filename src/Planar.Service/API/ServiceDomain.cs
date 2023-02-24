@@ -73,7 +73,7 @@ namespace Planar.Service.API
             }
 
             var value = prop.GetValue(info);
-            return Convert.ToString(value);
+            return PlanarConvert.ToString(value);
         }
 
         public async Task<string> HealthCheck()

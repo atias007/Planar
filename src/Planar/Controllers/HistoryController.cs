@@ -80,5 +80,15 @@ namespace Planar.Controllers
             var result = await BusinesLayer.GetLastHistoryCallForJob(lastDays);
             return Ok(result);
         }
+
+        [HttpGet("count")]
+        [SwaggerOperation(OperationId = "get_history_count", Description = "Get history count by status", Summary = "Get History Count")]
+        [OkJsonResponse(typeof(CounterResponse))]
+        [BadRequestResponse]
+        public async Task<ActionResult<CounterResponse>> GetHistoryCounter([FromQuery] CounterRequest request)
+        {
+            var result = await BusinesLayer.GetHistoryCounter(request);
+            return Ok(result);
+        }
     }
 }

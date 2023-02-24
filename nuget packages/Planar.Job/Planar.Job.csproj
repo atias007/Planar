@@ -2,13 +2,14 @@
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
-		<Version>1.1.10</Version>
+		<Nullable>enable</Nullable>
+		<Version>1.2.0</Version>
 		<RepositoryType>git</RepositoryType>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-		<Description>Library for writing DotNet jobs for Planar </Description>
+		<Description>Library for writing DotNet jobs for Planar</Description>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-		<Title>Library for writing DotNet jobs for Planar </Title>
+		<Title>Library for writing DotNet jobs for Planar</Title>
 		<PackageProjectUrl>https://github.com/atias007/Planar</PackageProjectUrl>
 		<PackageIcon>nuget_logo.png</PackageIcon>
 		<RepositoryUrl>https://github.com/atias007/Planar</RepositoryUrl>
@@ -23,9 +24,13 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<Compile Include="..\..\src\Jobs\CommonJob\ExceptionDto.cs" Link="ExceptionDto.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\JobDetail.cs" Link="JobExecutionContext\JobDetail.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\JobExecutionContext.cs" Link="JobExecutionContext\JobExecutionContext.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\Key.cs" Link="JobExecutionContext\Key.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\TriggerDetail.cs" Link="JobExecutionContext\TriggerDetail.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\LogEntity.cs" Link="LogEntity.cs" />
 		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
+		<Compile Include="..\Planar.Job.Test\Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Include="..\..\res\nuget_logo.png">
@@ -40,11 +45,14 @@
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
-		<PackageReference Include="System.Text.Json" Version="6.0.7" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <Folder Include="Properties\PublishProfiles\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
 	</ItemGroup>
 
 </Project>

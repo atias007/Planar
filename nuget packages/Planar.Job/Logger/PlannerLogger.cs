@@ -14,15 +14,9 @@ namespace Planar.Job.Logger
 
         protected MessageBroker MessageBroker => _messageBroker;
 
-#pragma warning disable CA1822 // Mark members as static
-
-#pragma warning disable IDE0060 // Remove unused parameter
-
         public IDisposable BeginScope<TState>(TState state) => default;
 
         public bool IsEnabled(LogLevel logLevel) => true;
-
-#pragma warning restore IDE0060 // Remove unused parameter
 
         protected void LogToConsole(string message)
         {
@@ -30,8 +24,6 @@ namespace Planar.Job.Logger
             Console.Out.WriteLineAsync(message);
             Console.ForegroundColor = ConsoleColor.White;
         }
-
-#pragma warning restore CA1822 // Mark members as static
     }
 
     internal class PlannerLogger<TContext> : BaseLogger, ILogger<TContext>
@@ -44,7 +36,7 @@ namespace Planar.Job.Logger
         {
             if (!IsEnabled(logLevel)) { return; }
 
-            var message = $"[{logLevel}] | {typeof(TContext).Name} | {formatter(state, exception)}";
+            var message = $"[{DateTime.Now:HH:mm:ss} {logLevel}] | {typeof(TContext).Name} | {formatter(state, exception)}";
             var entity = new LogEntity { Message = message, Level = logLevel };
             MessageBroker.Publish(MessageBrokerChannels.AppendLog, entity);
             LogToConsole(message);
@@ -61,7 +53,7 @@ namespace Planar.Job.Logger
         {
             if (!IsEnabled(logLevel)) { return; }
 
-            var message = $"[{logLevel}] {formatter(state, exception)}";
+            var message = $"[{DateTime.Now:HH:mm:ss} {logLevel}] {formatter(state, exception)}";
             var entity = new LogEntity { Message = message, Level = logLevel };
             MessageBroker.Publish(MessageBrokerChannels.AppendLog, entity);
             LogToConsole(message);

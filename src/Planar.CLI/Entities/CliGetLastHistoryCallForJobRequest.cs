@@ -4,7 +4,7 @@ namespace Planar.CLI.Entities
 {
     public class CliGetLastHistoryCallForJobRequest
     {
-        [ActionProperty(Default = true)]
+        [ActionProperty(Default = true, Name = "last days")]
         public int LastDays { get; set; }
     }
 }

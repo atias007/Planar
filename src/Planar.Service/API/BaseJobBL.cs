@@ -4,6 +4,7 @@ using Quartz;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Transactions;
 
 namespace Planar.Service.API
 {
@@ -32,6 +33,18 @@ namespace Planar.Service.API
             {
                 throw new RestValidationException("key", "forbidden: this is system job and it should not be modified");
             }
+        }
+
+        protected TransactionScope GetTransaction()
+        {
+            var options = new TransactionOptions
+            {
+                IsolationLevel = IsolationLevel.ReadUncommitted,
+                Timeout = TimeSpan.FromSeconds(10)
+            };
+
+            var transaction = new TransactionScope(TransactionScopeOption.Required, options);
+            return transaction;
         }
 
         protected static void ValidateSystemDataKey(string key)

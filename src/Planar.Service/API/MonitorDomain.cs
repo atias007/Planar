@@ -1,4 +1,6 @@
-﻿using FluentValidation;
+﻿using CommonJob;
+using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
@@ -7,6 +9,8 @@ using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
+using Planar.Service.Monitor.Test;
+using Polly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,7 +39,6 @@ namespace Planar.Service.API
             }
 
             await DataLayer.AddMonitor(monitor);
-            ServiceUtil.LoadMonitorHooks(Logger);
             return monitor.Id;
         }
 
@@ -46,7 +49,6 @@ namespace Planar.Service.API
             try
             {
                 await DataLayer.DeleteMonitor(monitor);
-                ServiceUtil.LoadMonitorHooks(Logger);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -107,14 +109,16 @@ namespace Planar.Service.API
 
         public async Task<string> Reload()
         {
-            var sb = new StringBuilder();
-
             ServiceUtil.LoadMonitorHooks(Logger);
-            sb.AppendLine($"{ServiceUtil.MonitorHooks.Count} monitor hooks loaded");
+            if (AppSettings.Clustering)
+            {
+                await ClusterUtil.LoadMonitorHooks();
+            }
+
             var monitor = _serviceProvider.GetRequiredService<MonitorUtil>();
             await monitor.Validate();
 
-            return sb.ToString();
+            return $"{ServiceUtil.MonitorHooks.Count} monitor hooks loaded";
         }
 
         public async Task Update(UpdateMonitorRequest request)
@@ -127,7 +131,6 @@ namespace Planar.Service.API
 
             var monitor = Mapper.Map<MonitorAction>(request);
             await DataLayer.UpdateMonitorAction(monitor);
-            ServiceUtil.LoadMonitorHooks(Logger);
         }
 
         public async Task PartialUpdateMonitor(UpdateEntityRequest request)
@@ -138,6 +141,51 @@ namespace Planar.Service.API
             var validator = Resolve<IValidator<UpdateMonitorRequest>>();
             await SetEntityProperties(updateMonitor, request, validator);
             await Update(updateMonitor);
+        }
+
+        public async Task Test(MonitorTestRequest request)
+        {
+            var monitorUtil = Resolve<MonitorUtil>();
+            var groupDal = Resolve<GroupData>();
+            var group = await groupDal.GetGroup(request.DistributionGroupId);
+            var monitorEvent = Enum.Parse<MonitorEvents>(request.MonitorEvent.ToString());
+            var exception = new Exception("This is test exception");
+            var action = new MonitorAction
+            {
+                Active = true,
+                EventArgument = null,
+                EventId = (int)request.MonitorEvent,
+                Group = group,
+                GroupId = request.DistributionGroupId,
+                Hook = request.Hook,
+                JobGroup = "TestJobGroup",
+                JobName = "TestJobName",
+                Title = "Test Monitor"
+            };
+
+            ExecuteMonitorResult result;
+            if (MonitorEventsExtensions.IsSystemMonitorEvent(monitorEvent))
+            {
+                var info = new MonitorSystemInfo
+                {
+                    MessageTemplate = $"This is test monitor for system event {monitorEvent}"
+                };
+                result = await monitorUtil.ExecuteMonitor(action, monitorEvent, info, exception);
+            }
+            else if (MonitorEventsExtensions.IsSimpleJobMonitorEvent(monitorEvent))
+            {
+                var context = new TestJobExecutionContext(request);
+                result = await monitorUtil.ExecuteMonitor(action, monitorEvent, context, exception);
+            }
+            else
+            {
+                throw new RestValidationException(nameof(MonitorTestRequest.MonitorEvent), $"monitor enent '{monitorEvent}' is not supported for test");
+            }
+
+            if (!result.Success)
+            {
+                throw new RestValidationException(string.Empty, result.Failure);
+            }
         }
     }
 }

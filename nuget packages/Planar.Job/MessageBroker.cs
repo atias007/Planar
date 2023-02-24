@@ -30,9 +30,13 @@ namespace Planar
         private readonly object Locker = new object();
         private readonly MethodInfo _method;
 
+        private MessageBroker()
+        {
+        }
+
         public MessageBroker(object instance)
         {
-            // TODO: check for null instance
+            if (instance == null) { return; }
 
             Instance = instance;
             _method = instance.GetType().GetMethod("Publish");
@@ -45,34 +49,36 @@ namespace Planar
             Details = GetProperty<string>(instance.GetType(), nameof(Details));
         }
 
+        public static MessageBroker Empty = new MessageBroker();
+
         public string Details { get; set; }
 
-        public string Publish(MessageBrokerChannels channel)
+        public string? Publish(MessageBrokerChannels channel)
         {
             lock (Locker)
             {
-                var result = _method.Invoke(Instance, new object[] { channel.ToString(), null });
-                return Convert.ToString(result);
+                var result = _method.Invoke(Instance, new object?[] { channel.ToString(), null });
+                return PlanarConvert.ToString(result);
             }
         }
 
-        public string Publish<T>(MessageBrokerChannels channel, T message)
+        public string? Publish<T>(MessageBrokerChannels channel, T message)
         {
             var messageJson = JsonSerializer.Serialize(message);
 
             lock (Locker)
             {
                 var result = _method.Invoke(Instance, new object[] { channel.ToString(), messageJson });
-                return Convert.ToString(result);
+                return PlanarConvert.ToString(result);
             }
         }
 
-        public string Publish(MessageBrokerChannels channel, string message)
+        public string? Publish(MessageBrokerChannels channel, string message)
         {
             lock (Locker)
             {
                 var result = _method.Invoke(Instance, new object[] { channel.ToString(), message });
-                return Convert.ToString(result);
+                return PlanarConvert.ToString(result);
             }
         }
 

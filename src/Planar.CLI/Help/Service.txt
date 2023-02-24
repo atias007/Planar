@@ -3,9 +3,11 @@
 the options for <command> and [<options>] parameters of service module:
 
  <command>         <options>
-----------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------
  login             <host> <port> [-s|--ssl] [-u|--user <user>] [-p|--password <password>]
-                   [-r|--remember] [-rd|--remember-days] [-it|--iterative]
+                   [-r|--remember] [-rd|--remember-days] [-it|--iterative] 
+                   [-c|--color <yellow|green|red|lime|aqua|blue|invert-white|invert-yellow|
+                   invert-red|invert-purple|invert-aqua|invert-green>]
  logout
  hc|health-check   
  info              [<key>]
@@ -15,5 +17,4 @@ the options for <command> and [<options>] parameters of service module:
  env
  log-level
  calendars
-----------------------------------------------------------------------------------------
-
+--------------------------------------------------------------------------------------------

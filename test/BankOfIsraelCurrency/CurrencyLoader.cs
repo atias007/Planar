@@ -1,13 +1,10 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Planar;
+using Planar.Job;
 using RestSharp;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace BankOfIsraelCurrency
 {
@@ -15,7 +12,7 @@ namespace BankOfIsraelCurrency
     {
         #region Planar Methods
 
-        public override void Configure(IConfigurationBuilder configurationBuilder, string environment)
+        public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
         {
             //// Do Nothig ////
         }
@@ -26,7 +23,7 @@ namespace BankOfIsraelCurrency
             await SaveCurrency();
         }
 
-        public override void RegisterServices(IConfiguration configuration, IServiceCollection services)
+        public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
         {
             //// Do Nothig ////
         }

@@ -1,0 +1,60 @@
+﻿job type: ProcessJob                 # Fixed! don't change it
+name: some job name                   # Name of job [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+group: null or group name             # Group of job [only alphanumeric, dashes & underscore, 5 to 50 characters]
+description: some job description     # Description of job [only alphanumeric, dashes & underscore, up to 200 characters]
+author: israel israeli (sales)        # The author/responsible person of the job [up to 100 characters]
+durable: true                         # Boolean [true/false]. Non durable job will be delete from system if no future triggers defined
+concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
+
+job data:                             # Key/Value pairs used by job code
+  key1: value1                        # --------------------------------
+  key2: value2
+  key3: value3
+
+properties:                           # Properties for job with 'PlanarJob' type
+  path: HelloWorld                    # Path to process executable file [mandatory, up to 500 characters]
+  filename: HelloWorld.exe            # Name process executable file [mandatory, up to 500 characters]
+  arguments: --port 20                # Process arguments
+  output encoding: utf8               # Process output encoding name (see list here https://learn.microsoft.com/en-us/dotnet/api/system.text.encoding.getencodings?view=net-7.0)
+  timeout: 00:05:00                   # Execution timeout
+  success exit codes:                 # List of codes to define success run (the default is 0)
+    - 0
+    - 99
+  fail exit codes:                    # List of codes to define fail run (the default is 0)
+    - -1
+    - -2
+  success output regex: "[Ss]uccess"  # Regular expression to define success run
+  fail output regex: "[Ee]rror"       # Regular expression to define fail run
+  log process information: true       # Log some data of process (memory usage, exit code, etc.)
+
+global config:                        # Key/Value pairs of global parameters used across different jobs
+  globalkey1: value1                  # ---------------------------------------------------------------
+  globalkey2: value2
+  globalkey3: value3
+
+simple triggers:                      # List of simple triggers
+  - name: every-minute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+    start: 2021-09-19 00:00:00        # Start date
+    end: 2021-09-19 23:59:00          # End date
+    interval: 00:01:00                # Interval
+    repeat count: 100                 # Repeat count
+    misfire behaviour: FireNow        # [ FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount ]
+    priority: 1                       # Priority [value between 0 to 100]
+    calendar: null                    # Calendar name
+    retry span: 01:00:00              # Retry time span
+    trigger data:                     # Key/Value pairs used by job code (merged with job data)
+      key4: value4                    # -------------------------------------------------------
+      key5: value5
+      key6: value6
+
+cron triggers:                               # List of cron triggers
+  - name: some-cron-trigger                  # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+    cron expression: 0 15 10 ? * MON-FRI     # Cron expression [mandatory]
+    misfire behaviour: DoNothing             # [ DoNothing | FireAndProceed | IgnoreMisfires ]
+    priority: 1                              # Priority [value between 0 to 100]
+    calendar: null                           # Calendar name
+    retry span: 01:00:00                     # Retry time span
+    trigger data:                            # Key/Value pairs used by job code (merged with job data)
+      key7: value7                           # -------------------------------------------------------
+      key8: value8
+      key9: value9

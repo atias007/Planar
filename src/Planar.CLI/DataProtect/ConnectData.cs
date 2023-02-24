@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
+using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Spectre.Console;
 using System;
@@ -16,7 +17,7 @@ namespace Planar.CLI.DataProtect
             Load();
         }
 
-        private static UserMetadata Data { get; set; } = new UserMetadata { LoginName = GetLoginKey() };
+        private static UserMetadata Data { get; set; } = new();
 
         private static string MetadataFilename { get; set; } = string.Empty;
 
@@ -72,12 +73,6 @@ namespace Planar.CLI.DataProtect
             Save();
         }
 
-        private static string GetLoginKey()
-        {
-            var loginName = $"{Environment.UserDomainName}|{Environment.UserName}";
-            return loginName;
-        }
-
         private static IDataProtector GetProtector()
         {
             const string purpose = "RememberConnect";
@@ -90,8 +85,8 @@ namespace Planar.CLI.DataProtect
 
         private static void HandleException(Exception ex)
         {
-            AnsiConsole.MarkupLine($"{CliTableFormat.WarningColor}fail to read/write saved logins info[/]");
-            AnsiConsole.MarkupLine($"{CliTableFormat.WarningColor}exception message: {ex.Message.EscapeMarkup()}[/]");
+            AnsiConsole.MarkupLine($"{CliFormat.GetWarningMarkup("fail to read/write saved logins info")}");
+            AnsiConsole.MarkupLine($"[{CliFormat.WarningColor}]exception message: {ex.Message.EscapeMarkup()}[/]");
             AnsiConsole.WriteLine(string.Empty.PadLeft(80, '-'));
             AnsiConsole.WriteException(ex);
         }

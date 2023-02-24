@@ -9,6 +9,7 @@ namespace Planar.Service.MapperProfiles
         public JobProfile()
         {
             CreateMap<SetJobRequest<PlanarJobProperties>, SetJobDynamicRequest>();
+            CreateMap<SetJobRequest<ProcessJobProperties>, SetJobDynamicRequest>();
         }
     }
 }

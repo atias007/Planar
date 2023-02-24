@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
-		<Version>1.1.10</Version>
+		<Version>1.2.0</Version>
 		<Description>Library for writing DotNet unit tests for Planar jobs</Description>
 		<RepositoryType>git</RepositoryType>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -28,21 +28,16 @@
 	  <None Remove="Jobs\**" />
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Include="..\..\src\Jobs\CommonJob\ExceptionDto.cs" Link="ExceptionDto.cs" />
-		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\JobDetail.cs" Link="Common\JobExecutionContext\JobDetail.cs" />
-		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\JobExecutionContext.cs" Link="Common\JobExecutionContext\JobExecutionContext.cs" />
-		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\Key.cs" Link="Common\JobExecutionContext\Key.cs" />
-		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\TriggerDetail.cs" Link="Common\JobExecutionContext\TriggerDetail.cs" />
-		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionMetadata.cs" Link="Common\JobExecutionMetadata.cs" />
-		<Compile Include="..\..\src\Jobs\CommonJob\JobMessageBroker.cs" Link="Common\JobMessageBroker.cs" />
-		<Compile Include="..\..\src\Jobs\CommonJob\LogEntity.cs" Link="LogEntity.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\Key.cs" Link="JobExecutionContext\Key.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\LogEntity.cs" Link="Common\LogEntity.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\MessageBrokerEntities\KeyValueItem.cs" Link="Common\KeyValueItem.cs" />
 		<Compile Include="..\..\src\Planar.API.Common\Entities\StatusMembers.cs" Link="Common\StatusMembers.cs" />
-		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
-		<Compile Include="..\..\src\Planar.Common\Extensions.cs" Link="Common\Extensions.cs" />
-		<Compile Include="..\..\src\Planar.Common\Global.cs" Link="Common\Global.cs" />
-		<Compile Include="..\..\src\Planar.Common\JobSettingsLoader.cs" Link="Common\JobSettingsLoader.cs" />
-		<Compile Include="..\..\src\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
+		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Common\Consts.cs" />
+		<Compile Include="..\..\src\Planar\FolderConsts.cs" Link="Common\FolderConsts.cs" />
+		<Compile Include="..\Planar.Job\Attributes\IgnoreDataMapAttribute.cs" Link="Attributes\IgnoreDataMapAttribute.cs" />
+		<Compile Include="..\Planar.Job\Attributes\JobDataAttribute.cs" Link="Attributes\JobDataAttribute.cs" />
+		<Compile Include="..\Planar.Job\Attributes\TriggerDataAttribute.cs" Link="Attributes\TriggerDataAttribute.cs" />
+		<Compile Include="..\Planar.Job\ExceptionDto.cs" Link="Common\ExceptionDto.cs" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Include="..\..\res\nuget_logo.png">
@@ -54,10 +49,17 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
-		<PackageReference Include="Quartz" Version="3.5.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
 		<PackageReference Include="System.Text.Json" Version="6.0.7" />
-		<PackageReference Include="YamlDotNet" Version="12.3.1" />
+		<PackageReference Include="YamlDotNet" Version="13.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Attributes\" />
 	</ItemGroup>
 
 </Project>

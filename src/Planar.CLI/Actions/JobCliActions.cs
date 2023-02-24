@@ -4,6 +4,7 @@ using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
 using Planar.CLI.General;
+using Planar.Common;
 using RestSharp;
 using Spectre.Console;
 using System;
@@ -29,7 +30,7 @@ namespace Planar.CLI.Actions
             if (request == null)
             {
                 var wrapper = await GetCliAddJobRequest();
-                if (!wrapper.IsSuccessful)
+                if (!wrapper.IsSuccessful || wrapper.Request == null)
                 {
                     return new CliActionResponse(wrapper.FailResponse);
                 }
@@ -46,147 +47,66 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        private static async Task<RequestBuilderWrapper<CliAddJobRequest>> GetCliAddJobRequest()
+        [IgnoreHelp]
+        public static string? ChooseGroup(IEnumerable<JobRowDetails> data)
         {
-            var restRequest = new RestRequest("job/available-jobs", Method.Get);
-            var result = await RestProxy.Invoke<List<AvailableJobToAdd>>(restRequest);
+            return ShowGroupsMenu(data);
+        }
+
+        [IgnoreHelp]
+        public static async Task<string> ChooseJob()
+        {
+            var restRequest = new RestRequest("job", Method.Get);
+            var p = AllJobsMembers.AllUserJobs;
+            restRequest.AddQueryParameter("filter", (int)p);
+            var result = await RestProxy.Invoke<List<JobRowDetails>>(restRequest);
             if (!result.IsSuccessful)
             {
-                return new RequestBuilderWrapper<CliAddJobRequest> { FailResponse = result };
+                throw new CliException($"fail to fetch list of jobs. error message: {result.ErrorMessage}");
             }
 
-            var folder = SelectJobFolder(result.Data);
-            var request = new CliAddJobRequest { Folder = folder };
-            return new RequestBuilderWrapper<CliAddJobRequest> { Request = request };
+            return ChooseJob(result.Data);
         }
 
-        private static string SelectJobFolder(IEnumerable<AvailableJobToAdd> data)
+        [IgnoreHelp]
+        public static string ChooseJob(IEnumerable<JobRowDetails>? data)
         {
-            if (!data.Any())
+            if (data == null) { return string.Empty; }
+
+            if (data.Count() <= 20)
             {
-                throw new CliWarningException("no available jobs found on server");
+                return ShowJobsMenu(data);
             }
 
-            var folders = data.Select(e =>
-                e.Name == e.RelativeFolder ?
-                e.Name :
-                $"{e.Name} ({e.RelativeFolder})");
-
-            var selectedItem = PromptSelection(folders, "job folder");
-            const string template = @"\(([^)]+)\)";
-            var regex = new Regex(template, RegexOptions.None, TimeSpan.FromMilliseconds(500));
-            var matches = regex.Matches(selectedItem);
-
-            var selectedFolder = matches.LastOrDefault();
-            return selectedFolder == null ? selectedItem : selectedFolder.Value[1..^1];
+            var group = ShowGroupsMenu(data);
+            return ShowJobsMenu(data, group);
         }
 
-        [Action("update")]
-        public static async Task<CliActionResponse> UpdateJob(CliUpdateJobRequest request)
+        [IgnoreHelp]
+        public static async Task<string> ChooseTrigger()
         {
-            UpdateJobOptions options;
-
-            if (request.Options == null)
+            var jobId = await ChooseJob();
+            var restRequest = new RestRequest("trigger/{jobId}/byjob", Method.Get);
+            restRequest.AddUrlSegment("jobId", jobId);
+            var result = await RestProxy.Invoke<TriggerRowDetails>(restRequest);
+            if (result.IsSuccessful && result.Data != null)
             {
-                options = MapUpdateJobOptions();
+                var triggers = result.Data.SimpleTriggers
+                    .OrderBy(d => d.Name)
+                    .Select(d => $"{d.Group}.{d.Name}")
+                    .Union(
+                         result.Data.CronTriggers
+                         .OrderBy(d => d.Name)
+                        .Select(d => $"{d.Group}.{d.Name}")
+                    )
+                    .ToList();
+
+                return PromptSelection(triggers, "trigger") ?? string.Empty;
             }
             else
             {
-                options = MapUpdateJobOptions(request.Options);
+                throw new CliException($"fail to fetch list of jobs. error message: {result.ErrorMessage}");
             }
-
-            var body = new UpdateJobFolderRequest { Folder = request.Folder, UpdateJobOptions = options };
-            var restRequest = new RestRequest("job/folder", Method.Put)
-                .AddBody(body);
-
-            var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
-            AssertJobUpdated(result);
-            return new CliActionResponse(result);
-        }
-
-        private static UpdateJobOptions MapUpdateJobOptions()
-        {
-            var options = AnsiConsole.Prompt(
-                new MultiSelectionPrompt<string>()
-                    .Title("select update options:")
-                    .Required() // Not required to have a favorite fruit
-                    .InstructionsText(
-                        "[grey](Press [blue]<space>[/] to toggle a choise, [green]<enter>[/] to accept)[/]")
-                    .PageSize(15)
-                    .AddChoiceGroup("all", new[] { "job details", "job data", "properties", "triggers", "triggers data" })
-                    .AddChoiceGroup("all job", new[] { "job details", "job data", "properties" })
-                    .AddChoiceGroup("all triggers", new[] { "triggers", "triggers data" })
-                    );
-
-            var result = MapUpdateJobOptions(options);
-            return result;
-        }
-
-        private static UpdateJobOptions MapUpdateJobOptions(string options)
-        {
-            var items = options.Split(',');
-            var result = MapUpdateJobOptions(items);
-            return result;
-        }
-
-        private static UpdateJobOptions MapUpdateJobOptions(IEnumerable<string> items)
-        {
-            var result = new UpdateJobOptions();
-
-            foreach (var item in items)
-            {
-                switch (item.ToLower())
-                {
-                    case "all":
-                        result.UpdateJobDetails = true;
-                        result.UpdateJobData = true;
-                        result.UpdateProperties = true;
-                        result.UpdateTriggers = true;
-                        result.UpdateTriggersData = true;
-                        break;
-
-                    case "all job":
-                    case "all-job":
-                        result.UpdateJobDetails = true;
-                        result.UpdateJobData = true;
-                        result.UpdateProperties = true;
-                        break;
-
-                    case "all triggers":
-                    case "all-triggers":
-                        result.UpdateTriggers = true;
-                        result.UpdateTriggersData = true;
-                        break;
-
-                    case "job":
-                    case "job details":
-                        result.UpdateJobDetails = true;
-                        break;
-
-                    case "job-data":
-                    case "job data":
-                        result.UpdateJobData = true;
-                        break;
-
-                    case "properties":
-                        result.UpdateProperties = true;
-                        break;
-
-                    case "triggers":
-                        result.UpdateTriggers = true;
-                        break;
-
-                    case "triggers-data":
-                    case "triggers data":
-                        result.UpdateTriggersData = true;
-                        break;
-
-                    default:
-                        throw new ValidationException($"option {item} is invalid. use one or more from the following options: all,all-job,all-trigger,job,job-data,properties,triggers,triggers-data");
-                }
-            }
-
-            return result;
         }
 
         [Action("ls")]
@@ -204,7 +124,12 @@ namespace Planar.CLI.Actions
             CliActionResponse response;
             if (request.Quiet)
             {
-                message = string.Join('\n', result.Data?.Select(r => r.Id));
+                var ids = result.Data?.Select(r => r.Id);
+                if (ids != null)
+                {
+                    message = string.Join('\n', ids);
+                }
+
                 response = new CliActionResponse(result, message);
             }
             else
@@ -218,7 +143,7 @@ namespace Planar.CLI.Actions
 
         [Action("get")]
         [Action("inspect")]
-        public static async Task<CliActionResponse> GetJobDetails(CliJobOrTriggerKey jobKey)
+        public static async Task<CliActionResponse> GetJobDetails(CliJobKey jobKey)
         {
             var restRequest = new RestRequest("job/{id}", Method.Get)
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
@@ -228,8 +153,50 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, tables);
         }
 
+        [Action("jobfile")]
+        [NullRequest]
+        public static async Task<CliActionResponse> GetJobFile(CliGetJobFileRequest request)
+        {
+            if (request == null)
+            {
+                var wrapper = await GetCliGetJobFileRequest();
+                if (!wrapper.IsSuccessful || wrapper.Request == null)
+                {
+                    return new CliActionResponse(wrapper.FailResponse);
+                }
+
+                request = wrapper.Request;
+            }
+
+            var restRequest = new RestRequest("job/jobfile/{name}", Method.Get)
+                .AddUrlSegment("name", request.Name);
+
+            var result = await RestProxy.Invoke<string>(restRequest);
+            return new CliActionResponse(result, message: result.Data);
+        }
+
+        [Action("jobfiles")]
+        public static async Task<CliActionResponse> GetJobFiles()
+        {
+            var restRequest = new RestRequest("job/jobfiles", Method.Get);
+
+            var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest);
+            return new CliActionResponse(result, result.Data);
+        }
+
+        [Action("settings")]
+        public static async Task<CliActionResponse> GetJobSettings(CliJobKey jobKey)
+        {
+            var restRequest = new RestRequest("job/{id}/settings", Method.Get)
+                .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<IEnumerable<KeyValueItem>>(restRequest);
+            var table = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, table);
+        }
+
         [Action("next")]
-        public static async Task<CliActionResponse> GetNextRunning(CliJobOrTriggerKey jobKey)
+        public static async Task<CliActionResponse> GetNextRunning(CliJobKey jobKey)
         {
             var restRequest = new RestRequest("job/nextRunning/{id}", Method.Get)
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
@@ -240,7 +207,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("prev")]
-        public static async Task<CliActionResponse> GetPreviousRunning(CliJobOrTriggerKey jobKey)
+        public static async Task<CliActionResponse> GetPreviousRunning(CliJobKey jobKey)
         {
             var restRequest = new RestRequest("job/prevRunning/{id}", Method.Get)
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
@@ -248,29 +215,6 @@ namespace Planar.CLI.Actions
             var result = await RestProxy.Invoke<DateTime?>(restRequest);
             var message = $"{result?.Data?.ToShortDateString()} {result?.Data?.ToShortTimeString()}";
             return new CliActionResponse(result, message: message);
-        }
-
-        [Action("settings")]
-        public static async Task<CliActionResponse> GetJobSettings(CliJobOrTriggerKey jobKey)
-        {
-            var restRequest = new RestRequest("job/{id}/settings", Method.Get)
-                .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
-
-            var result = await RestProxy.Invoke<IEnumerable<KeyValueItem>>(restRequest);
-            var table = CliTableExtensions.GetTable(result.Data);
-            return new CliActionResponse(result, table);
-        }
-
-        [Action("running-ex")]
-        public static async Task<CliActionResponse> GetRunningExceptions(CliFireInstanceIdRequest request)
-        {
-            var restRequest = new RestRequest("job/runningData/{instanceId}", Method.Get)
-                .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
-
-            var result = await RestProxy.Invoke<GetRunningDataResponse>(restRequest);
-            if (string.IsNullOrEmpty(result.Data?.Exceptions)) { return new CliActionResponse(result); }
-
-            return new CliActionResponse(result, result.Data?.Exceptions);
         }
 
         [Action("running-log")]
@@ -283,6 +227,18 @@ namespace Planar.CLI.Actions
             if (string.IsNullOrEmpty(result.Data?.Log)) { return new CliActionResponse(result); }
 
             return new CliActionResponse(result, result.Data?.Log);
+        }
+
+        [Action("running-ex")]
+        public static async Task<CliActionResponse> GetRunningExceptions(CliFireInstanceIdRequest request)
+        {
+            var restRequest = new RestRequest("job/runningData/{instanceId}", Method.Get)
+                .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<GetRunningDataResponse>(restRequest);
+            if (string.IsNullOrEmpty(result.Data?.Exceptions)) { return new CliActionResponse(result); }
+
+            return new CliActionResponse(result, result.Data?.Exceptions);
         }
 
         [Action("running")]
@@ -328,7 +284,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("pause")]
-        public static async Task<CliActionResponse> PauseJob(CliJobOrTriggerKey jobKey)
+        public static async Task<CliActionResponse> PauseJob(CliJobKey jobKey)
         {
             var restRequest = new RestRequest("job/pause", Method.Post)
                 .AddBody(jobKey);
@@ -339,9 +295,9 @@ namespace Planar.CLI.Actions
 
         [Action("remove")]
         [Action("delete")]
-        public static async Task<CliActionResponse> RemoveJob(CliJobOrTriggerKey jobKey)
+        public static async Task<CliActionResponse> RemoveJob(CliJobKey jobKey)
         {
-            if (!ConfirmAction($"remove job id {jobKey}")) { return CliActionResponse.Empty; }
+            if (!ConfirmAction($"remove job id {jobKey.Id}")) { return CliActionResponse.Empty; }
 
             var restRequest = new RestRequest("job/{id}", Method.Delete)
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
@@ -360,7 +316,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("resume")]
-        public static async Task<CliActionResponse> ResumeJob(CliJobOrTriggerKey jobKey)
+        public static async Task<CliActionResponse> ResumeJob(CliJobKey jobKey)
         {
             var restRequest = new RestRequest("job/resume", Method.Post)
                 .AddBody(jobKey);
@@ -372,57 +328,16 @@ namespace Planar.CLI.Actions
         [Action("stop")]
         public static async Task<CliActionResponse> StopRunningJob(CliFireInstanceIdRequest request)
         {
+            if (string.IsNullOrEmpty(request.FireInstanceId))
+            {
+                request.FireInstanceId = await ChooseRunningJobInstance();
+            }
+
             var restRequest = new RestRequest("job/stop", Method.Post)
                 .AddBody(request);
 
             var result = await RestProxy.Invoke(restRequest);
             return new CliActionResponse(result);
-        }
-
-        [Action("jobfiles")]
-        public static async Task<CliActionResponse> GetJobFiles()
-        {
-            var restRequest = new RestRequest("job/jobfiles", Method.Get);
-
-            var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest);
-            return new CliActionResponse(result, result.Data);
-        }
-
-        [Action("jobfile")]
-        [NullRequest]
-        public static async Task<CliActionResponse> GetJobFile(CliGetJobFileRequest request)
-        {
-            if (request == null)
-            {
-                var wrapper = await GetCliGetJobFileRequest();
-                if (!wrapper.IsSuccessful)
-                {
-                    return new CliActionResponse(wrapper.FailResponse);
-                }
-
-                request = wrapper.Request;
-            }
-
-            var restRequest = new RestRequest("job/jobfile/{name}", Method.Get)
-                .AddUrlSegment("name", request.JobFile);
-
-            var result = await RestProxy.Invoke<string>(restRequest);
-            return new CliActionResponse(result, message: result.Data);
-        }
-
-        private static async Task<RequestBuilderWrapper<CliGetJobFileRequest>> GetCliGetJobFileRequest()
-        {
-            var restRequest = new RestRequest("job/jobfiles", Method.Get);
-
-            var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest);
-            if (!result.IsSuccessful)
-            {
-                return new RequestBuilderWrapper<CliGetJobFileRequest> { FailResponse = result };
-            }
-
-            var selectedItem = PromptSelection(result.Data, "job file template");
-            var request = new CliGetJobFileRequest { JobFile = selectedItem };
-            return new RequestBuilderWrapper<CliGetJobFileRequest> { Request = request };
         }
 
         [Action("test")]
@@ -439,9 +354,9 @@ namespace Planar.CLI.Actions
 
             // (3) Get instance id
             var step3 = await TestStep2GetInstanceId(request, invokeDate);
-            if (step3.Item1 != null) { return step3.Item1; }
-            var instanceId = step3.Item2;
-            var logId = step3.Item3;
+            if (step3.Response != null) { return step3.Response; }
+            var instanceId = step3.InstanceId;
+            var logId = step3.LogId;
 
             // (4) Get running info
             var step4 = await TestStep4GetRunningData(instanceId, invokeDate);
@@ -456,13 +371,49 @@ namespace Planar.CLI.Actions
             return CliActionResponse.Empty;
         }
 
+        [Action("update")]
+        [ActionWizard]
+        [NullRequest]
+        public static async Task<CliActionResponse> UpdateJob(CliUpdateJobRequest request)
+        {
+            if (request == null)
+            {
+                var wrapper = await GetCliUpdateJobRequest();
+                if (!wrapper.IsSuccessful || wrapper.Request == null)
+                {
+                    return new CliActionResponse(wrapper.FailResponse);
+                }
+
+                request = wrapper.Request;
+            }
+
+            UpdateJobOptions options;
+
+            if (request.Options == null)
+            {
+                options = MapUpdateJobOptions();
+            }
+            else
+            {
+                options = MapUpdateJobOptions(request.Options.Value);
+            }
+
+            var body = new UpdateJobFolderRequest { Folder = request.Folder, UpdateJobOptions = options };
+            var restRequest = new RestRequest("job/folder", Method.Put)
+                .AddBody(body);
+
+            var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
+            AssertJobUpdated(result);
+            return new CliActionResponse(result);
+        }
+
         [Action("data")]
-        public static async Task<CliActionResponse> UpsertJobData(CliJobOrTriggerDataRequest request)
+        public static async Task<CliActionResponse> UpsertJobData(CliJobDataRequest request)
         {
             RestResponse result;
             switch (request.Action)
             {
-                case JobDataActions.upsert:
+                case DataActions.Upsert:
                     var prm1 = new JobOrTriggerDataRequest
                     {
                         Id = request.Id,
@@ -480,7 +431,7 @@ namespace Planar.CLI.Actions
                     }
                     break;
 
-                case JobDataActions.remove:
+                case DataActions.Remove:
                     if (!ConfirmAction($"remove data with key '{request.DataKey}' from job {request.Id}")) { return CliActionResponse.Empty; }
 
                     var restRequest2 = new RestRequest("job/{id}/data/{key}", Method.Delete)
@@ -498,92 +449,30 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        public static async Task<string> ChooseJob()
+        private static async Task<string> ChooseRunningJobInstance()
         {
-            var restRequest = new RestRequest("job", Method.Get);
-            var p = AllJobsMembers.AllUserJobs;
-            restRequest.AddQueryParameter("filter", (int)p);
-            var result = await RestProxy.Invoke<List<JobRowDetails>>(restRequest);
-            if (!result.IsSuccessful)
+            var result = await GetRunningJobsInner(new CliGetRunningJobsRequest { });
+
+            if (!result.Item2.IsSuccessful || result.Item1 == null)
             {
-                throw new CliException($"fail to fetch list of jobs. error message: {result.ErrorMessage}");
+                throw new CliException($"fail to fetch list of running job instance. error message: {result.Item2.ErrorMessage}");
             }
 
-            return ChooseJob(result.Data);
-        }
-
-        public static string ChooseJob(IEnumerable<JobRowDetails> data)
-        {
-            if (data.Count() <= 20)
-            {
-                return ShowJobsMenu(data);
-            }
-
-            var group = ShowGroupsMenu(data);
-            return ShowJobsMenu(data, group);
-        }
-
-        public static string ChooseGroup(IEnumerable<JobRowDetails> data)
-        {
-            return ShowGroupsMenu(data);
-        }
-
-        private static string ShowJobsMenu(IEnumerable<JobRowDetails> data, string groupName = null)
-        {
-            var query = data.AsQueryable();
-
-            if (!string.IsNullOrEmpty(groupName))
-            {
-                query = query.Where(d => d.Group.ToLower() == groupName.ToLower());
-            }
-
-            var jobs = query
-                .OrderBy(d => d.Group)
-                .ThenBy(d => d.Name)
-                .Select(d => $"{d.Group}.{d.Name}")
+            var items = result.Item1
+                .Select(i => $"{i.FireInstanceId} ({i.Group}.{i.Name})  [{i.Progress}%]".EscapeMarkup())
                 .ToList();
 
-            return PromptSelection(jobs, "job");
-        }
-
-        private static string ShowGroupsMenu(IEnumerable<JobRowDetails> data)
-        {
-            var groups = data
-                .OrderBy(d => d.Group)
-                .Select(d => $"{d.Group}")
-                .Distinct()
-                .ToList();
-
-            return PromptSelection(groups, "job group");
-        }
-
-        public static async Task<string> ChooseTrigger()
-        {
-            var jobId = await ChooseJob();
-            var restRequest = new RestRequest("trigger/{jobId}/byjob", Method.Get);
-            restRequest.AddUrlSegment("jobId", jobId);
-            var result = await RestProxy.Invoke<TriggerRowDetails>(restRequest);
-            if (result.IsSuccessful && result.Data != null)
+            if (!items.Any())
             {
-                var triggers = result.Data.SimpleTriggers
-                    .OrderBy(d => d.Name)
-                    .Select(d => $"{d.Group}.{d.Name}")
-                    .Union(
-                         result.Data.CronTriggers
-                         .OrderBy(d => d.Name)
-                        .Select(d => $"{d.Group}.{d.Name}")
-                    )
-                    .ToList();
+                throw new CliWarningException("no running job instance(s)");
+            }
 
-                return PromptSelection(triggers, "trigger");
-            }
-            else
-            {
-                throw new CliException($"fail to fetch list of jobs. error message: {result.ErrorMessage}");
-            }
+            var selection = PromptSelection(items, "running job instance") ?? string.Empty;
+            var parts = selection.Split(' ');
+            return parts[0];
         }
 
-        internal static async Task<(List<RunningJobDetails>, RestResponse)> GetRunningJobsInner(CliGetRunningJobsRequest request)
+        internal static async Task<(List<RunningJobDetails>?, RestResponse)> GetRunningJobsInner(CliGetRunningJobsRequest request)
         {
             if (request.Iterative && request.Details)
             {
@@ -592,7 +481,7 @@ namespace Planar.CLI.Actions
 
             RestRequest restRequest;
             RestResponse restResponse;
-            List<RunningJobDetails> resultData = null;
+            List<RunningJobDetails>? resultData = null;
 
             if (string.IsNullOrEmpty(request.FireInstanceId))
             {
@@ -617,6 +506,62 @@ namespace Planar.CLI.Actions
             return (resultData, restResponse);
         }
 
+        private static async Task<RequestBuilderWrapper<CliAddJobRequest>> GetCliAddJobRequest()
+        {
+            var restRequest = new RestRequest("job/available-jobs", Method.Get);
+            var result = await RestProxy.Invoke<List<AvailableJobToAdd>>(restRequest);
+            if (!result.IsSuccessful)
+            {
+                return new RequestBuilderWrapper<CliAddJobRequest> { FailResponse = result };
+            }
+
+            var folder = SelectJobFolder(result.Data);
+            var request = new CliAddJobRequest { Folder = folder };
+            return new RequestBuilderWrapper<CliAddJobRequest> { Request = request };
+        }
+
+        private static async Task<RequestBuilderWrapper<CliGetJobFileRequest>> GetCliGetJobFileRequest()
+        {
+            var restRequest = new RestRequest("job/jobfiles", Method.Get);
+
+            var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest);
+            if (!result.IsSuccessful)
+            {
+                return new RequestBuilderWrapper<CliGetJobFileRequest> { FailResponse = result };
+            }
+
+            var selectedItem = PromptSelection(result.Data, "job file template") ?? string.Empty;
+            var request = new CliGetJobFileRequest { Name = selectedItem };
+            return new RequestBuilderWrapper<CliGetJobFileRequest> { Request = request };
+        }
+
+        private static async Task<RequestBuilderWrapper<CliUpdateJobRequest>> GetCliUpdateJobRequest()
+        {
+            var jobId = await ChooseJob();
+
+            var restRequest = new RestRequest("job/{id}", Method.Get)
+                 .AddParameter("id", jobId, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<JobDetails>(restRequest);
+
+            if (!result.IsSuccessful || result.Data == null)
+            {
+                return new RequestBuilderWrapper<CliUpdateJobRequest> { FailResponse = result };
+            }
+
+            var dict = YmlUtil.Deserialize<Dictionary<string, string>>(result.Data.Properties);
+            var key = dict?.Keys.FirstOrDefault(k => string.Equals(k, "path", StringComparison.OrdinalIgnoreCase));
+            var folder = dict?[key ?? string.Empty];
+
+            if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(folder))
+            {
+                throw new CliException($"fail to get folder of job id {jobId}");
+            }
+
+            var request = new CliUpdateJobRequest { Folder = folder };
+            return new RequestBuilderWrapper<CliUpdateJobRequest> { Request = request };
+        }
+
         private static async Task<RestResponse<LastInstanceId>> GetLastInstanceId(string id, DateTime invokeDate)
         {
             // UTC
@@ -632,6 +577,7 @@ namespace Planar.CLI.Actions
         private static async Task<RestResponse> InvokeJobInner(CliInvokeJobRequest request)
         {
             var prm = JsonMapper.Map<InvokeJobRequest, CliInvokeJobRequest>(request);
+            prm ??= new InvokeJobRequest();
             if (prm.NowOverrideValue == DateTime.MinValue) { prm.NowOverrideValue = null; }
 
             var restRequest = new RestRequest("job/invoke", Method.Post)
@@ -640,7 +586,143 @@ namespace Planar.CLI.Actions
             return result;
         }
 
-        private static async Task<CliActionResponse> TestStep1InvokeJob(CliInvokeJobRequest request)
+        private static UpdateJobOptions MapUpdateJobOptions()
+        {
+            var options = AnsiConsole.Prompt(
+                new MultiSelectionPrompt<string>()
+                    .Title("select update options:")
+                    .Required() // Not required to have a favorite fruit
+                    .InstructionsText(
+                        "[grey](Press [blue]<space>[/] to toggle a choise, [green]<enter>[/] to accept)[/]")
+                    .PageSize(15)
+                    .AddChoiceGroup("all", new[] { "job details", "job data", "properties", "triggers", "triggers data" })
+                    .AddChoiceGroup("all job", new[] { "job details", "job data", "properties" })
+                    .AddChoiceGroup("all triggers", new[] { "triggers", "triggers data" })
+                    .AddChoiceGroup(CancelOption)
+                    );
+
+            CheckForCancelOption(options);
+            var result = MapUpdateJobOptions(options);
+            return result;
+        }
+
+        private static UpdateJobOptions MapUpdateJobOptions(JobUpdateOptions options)
+        {
+            var items = new List<string> { options.ToString() };
+            var result = MapUpdateJobOptions(items);
+            return result;
+        }
+
+        private static UpdateJobOptions MapUpdateJobOptions(IEnumerable<string> items)
+        {
+            var result = new UpdateJobOptions();
+
+            foreach (var item in items)
+            {
+                switch (item.ToLower())
+                {
+                    case "all":
+                        result.UpdateJobDetails = true;
+                        result.UpdateJobData = true;
+                        result.UpdateProperties = true;
+                        result.UpdateTriggers = true;
+                        result.UpdateTriggersData = true;
+                        break;
+
+                    case "all job":
+                    case "all-job":
+                        result.UpdateJobDetails = true;
+                        result.UpdateJobData = true;
+                        result.UpdateProperties = true;
+                        break;
+
+                    case "all triggers":
+                    case "all-triggers":
+                        result.UpdateTriggers = true;
+                        result.UpdateTriggersData = true;
+                        break;
+
+                    case "job details":
+                        result.UpdateJobDetails = true;
+                        break;
+
+                    case "job-data":
+                    case "job data":
+                        result.UpdateJobData = true;
+                        break;
+
+                    case "properties":
+                        result.UpdateProperties = true;
+                        break;
+
+                    case "triggers":
+                        result.UpdateTriggers = true;
+                        break;
+
+                    case "triggers-data":
+                    case "triggers data":
+                        result.UpdateTriggersData = true;
+                        break;
+
+                    default:
+                        throw new ValidationException($"option {item} is invalid. use one or more from the following options: all,all-job,all-trigger,job,job-data,properties,triggers,triggers-data");
+                }
+            }
+
+            return result;
+        }
+
+        private static string SelectJobFolder(IEnumerable<AvailableJobToAdd>? data)
+        {
+            if (data == null || !data.Any())
+            {
+                throw new CliWarningException("no available jobs found on server");
+            }
+
+            var folders = data.Select(e =>
+                e.Name == e.RelativeFolder ?
+                e.Name :
+                $"{e.Name} ({e.RelativeFolder})");
+
+            var selectedItem = PromptSelection(folders, "job folder") ?? string.Empty;
+            const string template = @"\(([^)]+)\)";
+            var regex = new Regex(template, RegexOptions.None, TimeSpan.FromMilliseconds(500));
+            var matches = regex.Matches(selectedItem);
+
+            var selectedFolder = matches.LastOrDefault();
+            return selectedFolder == null ? selectedItem : selectedFolder.Value[1..^1];
+        }
+
+        private static string? ShowGroupsMenu(IEnumerable<JobRowDetails> data)
+        {
+            var groups = data
+                .OrderBy(d => d.Group)
+                .Select(d => $"{d.Group}")
+                .Distinct()
+                .ToList();
+
+            return PromptSelection(groups, "job group");
+        }
+
+        private static string ShowJobsMenu(IEnumerable<JobRowDetails> data, string? groupName = null)
+        {
+            var query = data.AsQueryable();
+
+            if (!string.IsNullOrEmpty(groupName))
+            {
+                query = query.Where(d => d.Group.ToLower() == groupName.ToLower());
+            }
+
+            var jobs = query
+                .OrderBy(d => d.Group)
+                .ThenBy(d => d.Name)
+                .Select(d => $"{d.Group}.{d.Name}")
+                .ToList();
+
+            return PromptSelection(jobs, "job") ?? string.Empty;
+        }
+
+        private static async Task<CliActionResponse?> TestStep1InvokeJob(CliInvokeJobRequest request)
         {
             // (1) Invoke job
             AnsiConsole.MarkupLine(" [gold3_1][[x]][/] Invoke job...");
@@ -653,39 +735,53 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        private static async Task<(CliActionResponse, string, int)> TestStep2GetInstanceId(CliInvokeJobRequest request, DateTime invokeDate)
+        private static async Task<TestData> TestStep2GetInstanceId(CliInvokeJobRequest request, DateTime invokeDate)
         {
             AnsiConsole.Markup(" [gold3_1][[x]][/] Get instance id... ");
-            RestResponse<LastInstanceId> instanceId = null;
+            RestResponse<LastInstanceId>? instanceId = null;
+            var response = new TestData();
+
             for (int i = 0; i < 20; i++)
             {
                 instanceId = await GetLastInstanceId(request.Id, invokeDate);
                 if (!instanceId.IsSuccessful)
                 {
-                    return (new CliActionResponse(instanceId), null, 0);
+                    response.Response = new CliActionResponse(instanceId);
+                    return response;
                 }
 
-                if (instanceId.Data != null) break;
+                if (instanceId.Data != null) { break; }
                 await Task.Delay(1000);
             }
 
             if (instanceId == null || instanceId.Data == null)
             {
                 AnsiConsole.WriteLine();
-                throw new CliException("could not found running instance id");
+                throw new CliException("could not found running instance id. check whether job is paused or maybe another instance already running");
             }
 
             AnsiConsole.MarkupLine($"[turquoise2]{instanceId.Data.InstanceId}[/]");
-            return (null, instanceId.Data.InstanceId, instanceId.Data.LogId);
+            response.InstanceId = instanceId.Data.InstanceId;
+            response.LogId = instanceId.Data.LogId;
+            return response;
         }
 
-        private static async Task<CliActionResponse> TestStep4GetRunningData(string instanceId, DateTime invokeDate)
+        private static async Task<CliActionResponse?> TestStep4GetRunningData(string instanceId, DateTime invokeDate)
         {
             var restRequest = new RestRequest("job/running/{instanceId}", Method.Get)
                 .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
             var runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest);
 
-            if (!runResult.IsSuccessful) { return new CliActionResponse(runResult); }
+            if (!runResult.IsSuccessful)
+            {
+                // Not Found: job finish in very short time
+                AnsiConsole.Markup($" [gold3_1][[x]][/] Progress: [green]100%[/]  |  ");
+                if (runResult.StatusCode == HttpStatusCode.NotFound) { return null; }
+
+                // Fail to get running data
+                return new CliActionResponse(runResult);
+            }
+
             Console.WriteLine();
             var sleepTime = 2000;
             while (runResult.Data != null)
@@ -707,7 +803,7 @@ namespace Planar.CLI.Actions
             return null;
         }
 
-        private static async Task<CliActionResponse> TestStep6CheckLog(int logId)
+        private static async Task<CliActionResponse?> TestStep6CheckLog(int logId)
         {
             var restTestRequest = new RestRequest("job/testStatus/{id}", Method.Get)
                 .AddParameter("id", logId, ParameterType.UrlSegment);
@@ -751,6 +847,13 @@ namespace Planar.CLI.Actions
             AnsiConsole.Write(table);
 
             return null;
+        }
+
+        private struct TestData
+        {
+            public string InstanceId { get; set; }
+            public int LogId { get; set; }
+            public CliActionResponse? Response { get; set; }
         }
     }
 }

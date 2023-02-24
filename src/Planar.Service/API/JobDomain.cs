@@ -1,6 +1,5 @@
-﻿using Grpc.Core;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -17,8 +16,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Xml.Linq;
-using static Azure.Core.HttpHeader;
 
 namespace Planar.Service.API
 {
@@ -165,7 +162,7 @@ namespace Planar.Service.API
 
         public IEnumerable<string> GetJobFileTemplates()
         {
-            return new[] { "PlanarJob" };
+            return new[] { "PlanarJob", "ProcessJob" };
         }
 
         public string GetJobFileTemplate(string typeName)
@@ -385,6 +382,7 @@ namespace Planar.Service.API
             var jobKey = await JobKeyHelper.GetJobKey(id);
             var jobId = await JobKeyHelper.GetJobId(jobKey);
             ValidateSystemJob(jobKey);
+
             await Scheduler.DeleteJob(jobKey);
 
             try
@@ -506,6 +504,7 @@ namespace Planar.Service.API
 
             SchedulerUtil.MapJobRowDetails(source, target);
             target.Concurrent = !source.ConcurrentExecutionDisallowed;
+            target.Author = JobHelper.GetJobAuthor(source);
             target.Durable = source.Durable;
             target.RequestsRecovery = source.RequestsRecovery;
             target.DataMap = Global.ConvertDataMapToDictionary(dataMap);

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar;
+using Planar.Job;
 using System;
 using System.Threading.Tasks;
 
@@ -15,7 +16,7 @@ namespace TestAction
 
         public int MaxId { get; set; }
 
-        public override void Configure(IConfigurationBuilder configurationBuilder, string environment)
+        public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
         {
         }
 
@@ -55,7 +56,7 @@ namespace TestAction
             PutJobData(nameof(MaxId), ++MaxId);
         }
 
-        public override void RegisterServices(IConfiguration configuration, IServiceCollection services)
+        public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
         {
         }
     }

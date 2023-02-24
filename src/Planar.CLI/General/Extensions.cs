@@ -5,7 +5,7 @@ namespace Planar.CLI.General
 {
     internal static class Extensions
     {
-        public static IEnumerable<string> Split(this string str, Func<char, bool> controller)
+        public static IEnumerable<string?> Split(this string str, Func<char, bool> controller)
         {
             if (str == null)
             {

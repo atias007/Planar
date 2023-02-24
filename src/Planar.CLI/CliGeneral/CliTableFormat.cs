@@ -1,4 +1,5 @@
 ﻿using Planar.API.Common.Entities;
+using Planar.CLI.CliGeneral;
 using Spectre.Console;
 using System;
 
@@ -6,10 +7,6 @@ namespace Planar.CLI
 {
     public static class CliTableFormat
     {
-        internal const string WarningColor = "[khaki3]";
-        internal const string OkColor = "[green]";
-        internal const string ErrorColor = "[Red]";
-
         public static string FormatClusterHealthCheck(TimeSpan? span, TimeSpan? deviation)
         {
             var title = FromatDurationUpToSecond(span).EscapeMarkup();
@@ -17,15 +14,15 @@ namespace Planar.CLI
             {
                 if (deviation.Value.TotalMilliseconds < 3000)
                 {
-                    return $"{OkColor}{title}[/]";
+                    return $"[{CliFormat.OkColor}]{title}[/]";
                 }
 
                 if (deviation.Value.TotalMilliseconds > 3000 && deviation.Value.TotalMilliseconds <= 6000)
                 {
-                    return $"{WarningColor}{title}[/]";
+                    return $"[{CliFormat.WarningColor}]{title}[/]";
                 }
 
-                return $"{ErrorColor}{title}[/]";
+                return $"[{CliFormat.ErrorColor}]{title}[/]";
             }
 
             return title;
@@ -156,31 +153,31 @@ namespace Planar.CLI
             var statusEnum = (StatusMembers)status;
             return statusEnum switch
             {
-                StatusMembers.Running => $"{WarningColor}{statusEnum}[/]",
-                StatusMembers.Success => $"{OkColor}{statusEnum}[/]",
-                StatusMembers.Fail => $"{ErrorColor}{statusEnum}[/]",
+                StatusMembers.Running => $"[{CliFormat.WarningColor}]{statusEnum}[/]",
+                StatusMembers.Success => $"[{CliFormat.OkColor}]{statusEnum}[/]",
+                StatusMembers.Fail => $"[{CliFormat.ErrorColor}]{statusEnum}[/]",
                 StatusMembers.Veto => $"[aqua]{statusEnum}[/]",
                 _ => $"[silver]{statusEnum}[/]",
             };
         }
 
-        public static string GetBooleanMarkup(bool value, object display = null)
+        public static string GetBooleanMarkup(bool value, object? display = null)
         {
             display ??= value;
 
             return value ?
-                $"{OkColor}{display}[/]" :
-                $"{ErrorColor}{display}[/]";
+                $"[{CliFormat.OkColor}]{display}[/]" :
+                $"[{CliFormat.ErrorColor}]{display}[/]";
         }
 
         public static string GetLevelMarkup(string level)
         {
             return level switch
             {
-                "Warning" => $"{WarningColor}{level}[/]",
-                "Information" => $"{OkColor}{level}[/]",
-                "Error" => $"{ErrorColor}{level}[/]",
-                "Fatal" => $"{ErrorColor}{level}[/]",
+                "Warning" => $"[{CliFormat.WarningColor}]{level}[/]",
+                "Information" => $"[{CliFormat.OkColor}]{level}[/]",
+                "Error" => $"[{CliFormat.ErrorColor}]{level}[/]",
+                "Fatal" => $"[{CliFormat.ErrorColor}]{level}[/]",
                 "Debug" => $"[aqua]{level}[/]",
                 "Verbose" => $"[silver]{level}[/]",
                 _ => $"[silver]{level}[/]",

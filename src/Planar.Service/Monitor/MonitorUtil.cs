@@ -36,7 +36,7 @@ namespace Planar.Service.Monitor
                 _logger.LogWarning("There is no monitor items. Service does not have any monitor");
             }
 
-            var hooks = await dal.GetMonitorHooks();
+            var hooks = await dal.GetMonitorUsedHooks();
             var missingHooks = hooks.Where(h => !ServiceUtil.MonitorHooks.ContainsKey(h)).ToList();
             missingHooks.ForEach(h => _logger.LogWarning("Monitor with hook '{Hook}' is invalid. Missing hook in service", h));
         }
@@ -108,53 +108,63 @@ namespace Planar.Service.Monitor
             }
         }
 
-        private async Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception exception)
+        internal async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception exception)
         {
             try
             {
                 var toBeContinue = await Analyze(@event, action, context);
-                if (!toBeContinue) { return; }
+                if (!toBeContinue) { return ExecuteMonitorResult.Ok; }
 
                 var hookInstance = GetMonitorHookInstance(action.Hook);
                 if (hookInstance == null)
                 {
                     _logger.LogWarning("Hook {Hook} in monitor item id: {Id}, title: '{Title}' does not exist in service", action.Hook, action.Id, action.Title);
+                    var message = $"Hook {action.Hook} in monitor item id: {action.Id}, title: '{action.Title}' does not exist in service";
+                    return ExecuteMonitorResult.Fail(message);
                 }
                 else
                 {
                     var details = GetMonitorDetails(action, context, exception);
-                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook {Hook}", action.Id, action.Title, @event, action.Hook);
+                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook}", action.Id, action.Title, @event, action.Hook);
                     await hookInstance.Handle(details, _logger);
+                    return ExecuteMonitorResult.Ok;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
+                _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook: {Hook}", action.Id, action.Title, action.Hook);
+                var message = $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook: {action.Hook}. Error message: {ex.Message}";
+                return ExecuteMonitorResult.Fail(message);
             }
         }
 
-        private async Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception exception)
+        internal async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception exception)
         {
             try
             {
                 var toBeContinue = await Analyze(@event, action, null);
-                if (!toBeContinue) { return; }
+                if (!toBeContinue) { return ExecuteMonitorResult.Ok; }
 
                 var hookInstance = GetMonitorHookInstance(action.Hook);
                 if (hookInstance == null)
                 {
                     _logger.LogWarning("Hook {Hook} in monitor item id: {Id}, title: '{Title}' does not exist in service", action.Hook, action.Id, action.Title);
+                    var message = $"Hook {action.Hook} in monitor item id: {action.Id}, title: '{action.Title}' does not exist in service";
+                    return ExecuteMonitorResult.Fail(message);
                 }
                 else
                 {
                     var details = GetMonitorDetails(action, info, exception);
-                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook {Hook}", action.Id, action.Title, @event, action.Hook);
+                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook}", action.Id, action.Title, @event, action.Hook);
                     await hookInstance.HandleSystem(details, _logger);
+                    return ExecuteMonitorResult.Ok;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
+                _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook: {Hook}", action.Id, action.Title, action.Hook);
+                var message = $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook: {action.Hook}. Error message: {ex.Message}";
+                return ExecuteMonitorResult.Fail(message);
             }
         }
 
@@ -173,6 +183,7 @@ namespace Planar.Service.Monitor
 
         private static MonitorDetails GetMonitorDetails(MonitorAction action, IJobExecutionContext context, Exception exception)
         {
+            // ****** ATTENTION: any changes should reflect in TestJobExecutionContext ******
             var result = new MonitorDetails
             {
                 Calendar = context.Trigger.CalendarName,
@@ -182,6 +193,7 @@ namespace Planar.Service.Monitor
                 JobDescription = context.JobDetail.Description,
                 JobGroup = context.JobDetail.Key.Group,
                 JobId = JobKeyHelper.GetJobId(context.JobDetail),
+                Author = JobHelper.GetJobAuthor(context.JobDetail),
                 JobName = context.JobDetail.Key.Name,
                 JobRunTime = context.JobRunTime,
                 MergedJobDataMap = Global.ConvertDataMapToDictionary(context.MergedJobDataMap),
@@ -195,6 +207,8 @@ namespace Planar.Service.Monitor
             FillMonitor(result, action, exception);
 
             return result;
+
+            // ****** ATTENTION: any changes should reflect in TestJobExecutionContext ******
         }
 
         private static MonitorSystemDetails GetMonitorDetails(MonitorAction action, MonitorSystemInfo details, Exception exception)
@@ -202,7 +216,7 @@ namespace Planar.Service.Monitor
             var result = new MonitorSystemDetails
             {
                 MessageTemplate = details.MessageTemplate,
-                MessagesParameters = details.MessagesParameters
+                MessagesParameters = details.MessagesParameters,
             };
 
             result.MessagesParameters ??= new();
@@ -225,6 +239,7 @@ namespace Planar.Service.Monitor
             monitor.MonitorTitle = action.Title;
             monitor.Users.AddRange(action.Group.Users.Select(u => new MonitorUser(u)).ToList());
             monitor.Exception = exception;
+            monitor.GlobalConfig = Global.GlobalConfig;
         }
 
         private async Task<List<MonitorAction>> LoadMonitorItems(MonitorEvents @event, IJobExecutionContext context)

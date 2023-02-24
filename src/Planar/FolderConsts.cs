@@ -24,6 +24,29 @@ namespace Planar
 
         public const string JobFileName = "JobFile.yml";
 
+        public static string GetAbsoluteSpecialFilePath(PlanarSpecialFolder planarFolder, params string[] paths)
+        {
+            var specialPath = planarFolder switch
+            {
+                PlanarSpecialFolder.Settings => Settings,
+                PlanarSpecialFolder.Calendars => Calendars,
+                PlanarSpecialFolder.Jobs => Jobs,
+                PlanarSpecialFolder.MonitorHooks => MonitorHooks,
+                _ => throw new ArgumentNullException($"Special folder {planarFolder} is not supported"),
+            };
+
+            var folder = Path.Combine(Data, specialPath);
+            if (paths == null || !paths.Any())
+            {
+                return folder;
+            }
+
+            var parts = paths.ToList();
+            parts.Insert(0, folder);
+            var result = Path.Combine(parts.ToArray());
+            return result;
+        }
+
         public static string GetSpecialFilePath(PlanarSpecialFolder planarFolder, params string[] paths)
         {
             var specialPath = planarFolder switch

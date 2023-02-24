@@ -8,6 +8,8 @@ namespace Planar.API.Common.Entities
         [YamlMember(Alias = "job type")]
         public string JobType { get; set; }
 
+        public string Author { get; set; }
+
         public string Name { get; set; }
 
         public string Group { get; set; }

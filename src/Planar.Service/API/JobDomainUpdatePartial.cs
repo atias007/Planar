@@ -1,11 +1,9 @@
-﻿using Azure.Core;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.API.Helpers;
+using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
-using Quartz;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -52,7 +50,7 @@ namespace Planar.Service.API
         {
             foreach (var item in metadata.OldJobDetails.JobDataMap)
             {
-                request.JobData.Upsert(item.Key, Convert.ToString(item.Value));
+                request.JobData.Upsert(item.Key, PlanarConvert.ToString(item.Value));
             }
         }
 
@@ -65,7 +63,7 @@ namespace Planar.Service.API
                 if (updateTrigger == null) { continue; }
                 foreach (var data in oldTrigger.JobDataMap)
                 {
-                    updateTrigger.TriggerData.Upsert(data.Key, Convert.ToString(data.Value));
+                    updateTrigger.TriggerData.Upsert(data.Key, PlanarConvert.ToString(data.Value));
                 }
             }
         }
@@ -74,15 +72,32 @@ namespace Planar.Service.API
         {
             if (options.UpdateJobData)
             {
+                // Preserve the same id
                 request.JobData.Add(Consts.JobId, metadata.JobId);
             }
             else
             {
+                // Sync the old data including the id
                 request.JobData.Clear();
                 SyncJobData(request, metadata);
             }
 
             BuildJobData(request, metadata.JobDetails);
+
+            await Task.CompletedTask;
+        }
+
+        private static async Task UpdateJobAuthor(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+        {
+            if (options.UpdateJobDetails)
+            {
+                metadata.JobDetails.JobDataMap.Put(Consts.Author, request.Author);
+            }
+            else
+            {
+                metadata.JobDetails.JobDataMap.Put(Consts.Author, metadata.Author);
+            }
+
             await Task.CompletedTask;
         }
 
@@ -106,6 +121,7 @@ namespace Planar.Service.API
             await Scheduler.DeleteJob(metadata.JobKey);
             metadata.EnableRollback();
             metadata.OldJobProperties = await DataLayer.GetJobProperty(metadata.JobId);
+            metadata.Author = JobHelper.GetJobAuthor(metadata.OldJobDetails);
         }
 
         private async Task<JobIdResponse> Update(SetJobDynamicRequest request, UpdateJobOptions options)
@@ -132,7 +148,7 @@ namespace Planar.Service.API
             var property = new JobProperty { JobId = metadata.JobId, Properties = metadata.OldJobProperties };
             await Scheduler.ScheduleJob(metadata.OldJobDetails, metadata.OldTriggers, true);
             await Scheduler.PauseJob(metadata.JobKey);
-            await DataLayer.UpdateJobProperty(property);
+            await Resolve<JobData>().UpdateJobProperty(property);
         }
 
         private async Task<JobIdResponse> UpdateInner(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
@@ -143,11 +159,14 @@ namespace Planar.Service.API
             // Save for rollback
             await FillRollbackData(metadata);
 
-            // Update Job Details
+            // Update Job Details (JobType+Concurent, JobGroup, JobName, Description, Durable)
             await UpdateJobDetails(request, options, metadata);
 
             // Sync Job Data
             await UpdateJobData(request, options, metadata);
+
+            // Update the author
+            await UpdateJobAuthor(request, options, metadata);
 
             // Update Triggers
             await UpdateTriggers(request, options, metadata);
@@ -172,7 +191,7 @@ namespace Planar.Service.API
             }
             else
             {
-                metadata.JobDetails = metadata.OldJobDetails;
+                metadata.JobDetails = CloneJobDetails(metadata.OldJobDetails);
             }
         }
 

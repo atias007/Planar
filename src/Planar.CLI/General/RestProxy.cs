@@ -11,7 +11,7 @@ namespace Planar.CLI
         public static string Host { get; set; } = "localhost";
         public static int Port { get; set; } = 2306;
 
-        private static RestClient _client;
+        private static RestClient? _client;
         private static readonly object _lock = new();
 
         public static void Flush()

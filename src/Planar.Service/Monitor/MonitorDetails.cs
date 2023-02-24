@@ -15,6 +15,7 @@ namespace Planar.Service.Monitor
         public string TriggerId { get; set; }
         public string TriggerDescription { get; set; }
         public string Calendar { get; set; }
+        public string Author { get; set; }
         public SortedDictionary<string, string> MergedJobDataMap { get; set; } = new();
         public string FireInstanceId { get; set; }
         public DateTime FireTime { get; set; }

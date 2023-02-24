@@ -1,22 +1,24 @@
 ﻿using Newtonsoft.Json.Linq;
 using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
+using Planar.CLI.CliGeneral;
+using Planar.CLI.Entities;
 using Planar.CLI.General;
 using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Net;
 using System.Reflection;
+using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
     public abstract class BaseCliAction
     {
+        protected const string CancelOption = "<cancel>";
         protected const string JobFileName = "JobFile.yml";
 
         public static bool InteractiveMode { get; set; }
@@ -25,6 +27,40 @@ namespace Planar.CLI.Actions
         {
             var result = await RestProxy.Invoke(request);
             return new CliActionResponse(result);
+        }
+
+        protected static string? CollectCliValue(string field, bool required, int minLength, int maxLength, string? regex = null, string? regexErrorMessage = null)
+        {
+            var prompt = new TextPrompt<string>($"[turquoise2]  > {field.EscapeMarkup()}: [/]")
+                .Validate(value =>
+                {
+                    if (required && string.IsNullOrWhiteSpace(value)) { return GetValidationResultError($"{field} is required field"); }
+                    value = value.Trim();
+
+                    if (string.IsNullOrEmpty(value) && !required)
+                    {
+                        return ValidationResult.Success();
+                    }
+
+                    if (value.Length > maxLength) { return GetValidationResultError($"{field} limited to {maxLength} chars maximum"); }
+                    if (value.Length < minLength) { return GetValidationResultError($"{field} must have at least {minLength} chars"); }
+                    if (!string.IsNullOrEmpty(regex))
+                    {
+                        var rx = new Regex(regex, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+                        if (!rx.IsMatch(value))
+                        {
+                            return GetValidationResultError($"{field} {regexErrorMessage}");
+                        }
+                    }
+
+                    return ValidationResult.Success();
+                });
+
+            if (!required) { prompt.AllowEmpty(); }
+
+            var result = AnsiConsole.Prompt(prompt);
+
+            return string.IsNullOrEmpty(result) ? null : result;
         }
 
         protected static async Task<CliActionResponse> ExecuteEntity<T>(RestRequest request)
@@ -41,7 +77,7 @@ namespace Planar.CLI.Actions
         protected static async Task<CliActionResponse> ExecuteTable<T>(RestRequest request, Func<T, Table> tableFunc)
         {
             var result = await RestProxy.Invoke<T>(request);
-            if (result.IsSuccessful)
+            if (result.IsSuccessful && result.Data != null)
             {
                 var table = tableFunc.Invoke(result.Data);
                 return new CliActionResponse(result, table);
@@ -50,7 +86,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        private static object ConvertJTokenToObject(JToken token)
+        private static object? ConvertJTokenToObject(JToken token)
         {
             if (token is JValue value) { return value.Value; }
 
@@ -67,6 +103,12 @@ namespace Planar.CLI.Actions
             throw new InvalidOperationException("unexpected token: " + token);
         }
 
+        private static ValidationResult GetValidationResultError(string message)
+        {
+            var markup = CliFormat.GetErrorMarkup(message);
+            return ValidationResult.Error(markup);
+        }
+
         public static IEnumerable<CliActionMetadata> GetAllActions()
         {
             var result = new List<CliActionMetadata>();
@@ -81,79 +123,6 @@ namespace Planar.CLI.Actions
             result.AddRange(GroupCliActions.GetActions());
             result.AddRange(ClusterCliActions.GetActions());
             result.AddRange(MonitorCliActions.GetActions());
-            return result;
-        }
-    }
-
-    public class BaseCliAction<T> : BaseCliAction
-    {
-        public static IEnumerable<CliActionMetadata> GetActions()
-        {
-            var result = new List<CliActionMetadata>();
-            var type = typeof(T);
-            var allActions = type.GetMethods(BindingFlags.Public | BindingFlags.Static).ToList();
-            var moduleAttribute = type.GetCustomAttribute<ModuleAttribute>();
-
-            var help = typeof(BaseCliAction<T>).GetMethod(nameof(ShowHelp));
-            allActions.Add(help);
-
-            // TODO: check for moduleAttribute == null;
-            foreach (var act in allActions)
-            {
-                var actionAttributes = act.GetCustomAttributes<ActionAttribute>();
-                var nullRequestAttribute = act.GetCustomAttribute<NullRequestAttribute>();
-
-                // TODO: validate attributes (invalid name...)
-                if (actionAttributes != null)
-                {
-                    var item = new CliActionMetadata
-                    {
-                        Module = moduleAttribute?.Name?.ToLower(),
-                        Method = act,
-                        Command = actionAttributes.Select(a => a.Name).Distinct().ToList(),
-                        AllowNullRequest = nullRequestAttribute != null
-                    };
-
-                    result.Add(item);
-                }
-            }
-
-            return result;
-        }
-
-        [Action("help")]
-        [Action("--help")]
-        [Action("-h")]
-        public static async Task<CliActionResponse> ShowHelp()
-        {
-            var name = typeof(T).Name.Replace("CliActions", string.Empty);
-            var header = Program.GetHelpHeader();
-            var help = GetHelpResource(name);
-            var response = GetGenericSuccessRestResponse();
-            var result = new CliActionResponse(response, header + help);
-            return await Task.FromResult(result);
-        }
-
-        internal static RestResponse GetGenericSuccessRestResponse()
-        {
-            var response = new RestResponse { StatusCode = HttpStatusCode.OK, ResponseStatus = ResponseStatus.Completed, IsSuccessStatusCode = true };
-            return response;
-        }
-
-        private static string GetHelpResource(string name)
-        {
-            CultureInfo cur = CultureInfo.CurrentCulture;
-            var shortDateFormatString = cur.DateTimeFormat.ShortDatePattern.ToLower();
-            var shortTimeFormatString = cur.DateTimeFormat.LongTimePattern.ToLower();
-
-            using Stream stream = typeof(Program).Assembly.GetManifestResourceStream($"Planar.CLI.Help.{name}.txt");
-            using StreamReader reader = new(stream);
-            var result = reader.ReadToEnd();
-
-            result = result
-                .Replace("{{ShortDatePattern}}", shortDateFormatString)
-                .Replace("{{LongTimePattern}}", shortTimeFormatString);
-
             return result;
         }
 
@@ -183,14 +152,15 @@ namespace Planar.CLI.Actions
             AssertUpdated(id, "trigger");
         }
 
-        protected static void AssertUpdated(string id, string entity)
+        protected static void AssertUpdated(string? id, string entity)
         {
+            if (string.IsNullOrEmpty(id)) { return; }
             Console.WriteLine(id);
             string message = entity switch
             {
-                "job" => $"{CliTableFormat.WarningColor}Warning! job is in 'pause' state and none of its triggers will fire[/]",
-                "trigger" => $"{CliTableFormat.WarningColor}Warning! trigger is in 'pause' state and it will not fire[/]",
-                _ => null,
+                "job" => CliFormat.GetWarningMarkup("job is in 'pause' state and none of its triggers will fire"),
+                "trigger" => CliFormat.GetWarningMarkup("trigger is in 'pause' state and it will not fire"),
+                _ => string.Empty,
             };
 
             if (!string.IsNullOrEmpty(message))
@@ -199,46 +169,14 @@ namespace Planar.CLI.Actions
             }
         }
 
-        protected static TRequest CollectDataFromCli<TRequest>()
-            where TRequest : class, new()
+        protected static string? PromptSelection(IEnumerable<string>? items, string title, bool addCancelOption = true)
         {
-            var prm = Activator.CreateInstance<TRequest>();
-            var properties = typeof(TRequest).GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            foreach (var prop in properties)
-            {
-                var type = prop.PropertyType.Name;
-
-                switch (type)
-                {
-                    case "Int32":
-                        var value1 = AnsiConsole.Ask<int>($"[turquoise2]  > {prop.Name}[/]: ");
-                        prop.SetValue(prm, value1);
-                        break;
-
-                    case "String":
-                    default:
-                        var value2 = AnsiConsole.Prompt(new TextPrompt<string>($"[turquoise2]  > {prop.Name}[/]: ").AllowEmpty());
-                        if (string.IsNullOrEmpty(value2)) { value2 = null; }
-                        prop.SetValue(prm, value2);
-                        break;
-                }
-            }
-
-            AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine("[underline]Result:[/]");
-
-            return prm;
-        }
-
-        protected static string PromptSelection(IEnumerable<string> items, string title, bool addCancelOption = true)
-        {
-            const string cancel = "<cancel>";
-
+            if (items == null) { return null; }
             IEnumerable<string> finalItems;
             if (addCancelOption)
             {
                 var temp = items.ToList();
-                temp.Add(cancel);
+                temp.Add(CancelOption);
                 finalItems = temp;
             }
             else
@@ -253,18 +191,144 @@ namespace Planar.CLI.Actions
                      .MoreChoicesText($"[grey](Move [/][blue]up[/][grey] and [/][blue]down[/] [grey]to reveal more [/][white]{title?.EscapeMarkup()}s[/])")
                      .AddChoices(finalItems));
 
-            if (selectedItem == cancel)
+            CheckForCancelOption(selectedItem);
+
+            return selectedItem;
+        }
+
+        protected static void CheckForCancelOption(string value)
+        {
+            if (value == CancelOption)
             {
                 throw new CliWarningException("operation was canceled");
             }
+        }
 
-            return selectedItem;
+        protected static void CheckForCancelOption(IEnumerable<string> values)
+        {
+            if (values.Any(v => v == CancelOption))
+            {
+                throw new CliWarningException("operation was canceled");
+            }
         }
 
         protected static bool ConfirmAction(string title)
         {
             if (!InteractiveMode) { return true; }
             return AnsiConsole.Confirm($"are you sure that you want to {title}?", false);
+        }
+
+        protected static int GetCounterHours()
+        {
+            var items = new[] { "1 hour", "2 hours", "8 hours", "1 day", "2 days", "3 days", "7 days" };
+            var select = PromptSelection(items, "select time period", true);
+            if (string.IsNullOrEmpty(select)) { return 0; }
+            var parts = select.Split(' ');
+            if (parts.Length != 2) { return 0; }
+            if (!int.TryParse(parts[0], out var num)) { return 0; }
+            if (parts[1].Length < 1) { return 0; }
+            if (parts[1][0] == 'h') { return num; }
+            if (parts[1][0] == 'd') { return num * 24; }
+            return 0;
+        }
+    }
+
+    public class BaseCliAction<T> : BaseCliAction
+    {
+        public static IEnumerable<CliActionMetadata> GetActions()
+        {
+            var result = new List<CliActionMetadata>();
+            var type = typeof(T);
+            var allActions = type.GetMethods(BindingFlags.Public | BindingFlags.Static).ToList();
+            var moduleAttribute = type.GetCustomAttribute<ModuleAttribute>();
+
+            // TODO: check for moduleAttribute == null;
+            foreach (var act in allActions)
+            {
+                var actionAttributes = act.GetCustomAttributes<ActionAttribute>();
+                var nullRequestAttribute = act.GetCustomAttribute<NullRequestAttribute>();
+                var ignoreHelpAttribute = act.GetCustomAttribute<IgnoreHelpAttribute>();
+                var hasWizard = act.GetCustomAttribute<ActionWizardAttribute>();
+
+                // TODO: validate attributes (invalid name...)
+                if (actionAttributes == null) { continue; }
+                var requestType = GetRequestType(act);
+                var comnmands = actionAttributes.Select(a => a.Name).Distinct().ToList();
+                var item = new CliActionMetadata
+                {
+                    Module = moduleAttribute?.Name?.ToLower() ?? string.Empty,
+                    Method = act,
+                    Commands = comnmands,
+                    AllowNullRequest = nullRequestAttribute != null,
+                    RequestType = requestType,
+                    Arguments = GetArguments(requestType),
+                    CommandDisplayName = string.Join('|', comnmands.OrderBy(c => c.Length)),
+                    IgnoreHelp = ignoreHelpAttribute != null,
+                    HasWizard = hasWizard != null
+                };
+
+                item.SetArgumentsDisplayName();
+
+                result.Add(item);
+            }
+
+            return result;
+        }
+
+        private static Type? GetRequestType(MethodInfo? method)
+        {
+            if (method == null) { return null; }
+
+            var parameters = method.GetParameters();
+            if (parameters.Length == 0) { return null; }
+            if (parameters.Length > 1)
+            {
+                throw new CliException($"cli error: action '{method.Name}' has more then 1 parameter");
+            }
+
+            var requestType = parameters[0].ParameterType;
+            return requestType;
+        }
+
+        private static List<CliArgumentMetadata> GetArguments(Type? requestType)
+        {
+            var result = new List<CliArgumentMetadata>();
+            if (requestType == null)
+            {
+                return result;
+            }
+
+            var props = requestType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+            var isJobKey =
+                requestType.IsAssignableFrom(typeof(CliJobKey)) ||
+                requestType.IsSubclassOf(typeof(CliJobKey));
+
+            var isTriggerKey =
+                requestType.IsAssignableFrom(typeof(CliTriggerKey)) ||
+                requestType.IsSubclassOf(typeof(CliTriggerKey));
+
+            foreach (var item in props)
+            {
+                var att = item.GetCustomAttribute<ActionPropertyAttribute>();
+                var req = item.GetCustomAttribute<RequiredAttribute>();
+                var info = new CliArgumentMetadata
+                {
+                    PropertyInfo = item,
+                    LongName = att?.LongName?.ToLower(),
+                    ShortName = att?.ShortName?.ToLower(),
+                    DisplayName = att?.DisplayName,
+                    Default = (att?.Default).GetValueOrDefault(),
+                    Required = req != null,
+                    RequiredMissingMessage = req?.Message,
+                    DefaultOrder = (att?.DefaultOrder).GetValueOrDefault(),
+                    JobKey = isJobKey && item.Name == nameof(CliJobKey.Id),
+                    TriggerKey = isTriggerKey && item.Name == nameof(CliTriggerKey.Id),
+                };
+                result.Add(info);
+            }
+
+            return result;
         }
     }
 }

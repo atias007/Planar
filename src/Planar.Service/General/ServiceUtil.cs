@@ -1,6 +1,7 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
+using Planar.Common.Exceptions;
 using Planar.Service.Exceptions;
 using Planar.Service.Monitor;
 using Quartz;
@@ -39,7 +40,7 @@ namespace Planar.Service.General
             }
         }
 
-        internal static void LoadMonitorHooks<T>(ILogger<T> logger)
+        public static void LoadMonitorHooks<T>(ILogger<T> logger)
         {
             var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.MonitorHooks);
 
@@ -48,6 +49,8 @@ namespace Planar.Service.General
                 logger.LogWarning("monitor hooks path {Path} could not be found. Service does not have any monitor", path);
                 return;
             }
+
+            logger.LogInformation("load monitor hooks at node {MachineName}", Environment.MachineName);
 
             ClearMonitorHooks();
             var directories = Directory.GetDirectories(path);
@@ -79,7 +82,12 @@ namespace Planar.Service.General
             var name = new DirectoryInfo(dir).Name;
             var hook = new MonitorHookFactory { Name = name, Type = t, AssemblyContext = assemblyContext };
             var result = MonitorHooks.TryAdd(name, hook);
-            logger.LogInformation("Add MonitorHook '{Name}' from type '{FullName}'", name, t.FullName);
+
+            if (result)
+            {
+                logger.LogInformation("Add MonitorHook '{Name}' from type '{FullName}'", name, t.FullName);
+            }
+
             return result;
         }
 

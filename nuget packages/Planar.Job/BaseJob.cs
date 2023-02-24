@@ -1,21 +1,22 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Planar.Job;
+using Planar.Common;
 using Planar.Job.Logger;
 using System;
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace Planar
+namespace Planar.Job
 {
     public abstract class BaseJob
     {
-        private JobExecutionContext _context;
+        private JobExecutionContext _context = new JobExecutionContext();
         private bool? _isNowOverrideValueExists;
-        private MessageBroker _messageBroker;
+        private MessageBroker _messageBroker = MessageBroker.Empty;
         private DateTime? _nowOverrideValue;
-        private IServiceProvider _provider;
+        private IServiceProvider? _provider;
 
         protected IConfiguration Configuration { get; private set; }
 
@@ -29,16 +30,16 @@ namespace Planar
             }
         }
 
-        public abstract void Configure(IConfigurationBuilder configurationBuilder, string environment);
+        public abstract void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
         public abstract Task ExecuteJob(IJobExecutionContext context);
 
-        public abstract void RegisterServices(IConfiguration configuration, IServiceCollection services);
+        public abstract void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context);
 
         internal Task Execute(ref object messageBroker)
         {
-            Action<IConfigurationBuilder, string> configureAction = Configure;
-            Action<IConfiguration, IServiceCollection> registerServicesAction = RegisterServices;
+            Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
+            Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
 
             InitializeMessageBroker(messageBroker);
             InitializeConfiguration(_context, configureAction);
@@ -55,8 +56,8 @@ namespace Planar
 
         internal Task ExecuteUnitTest(
             ref object messageBroker,
-            Action<IConfigurationBuilder, string> configureAction,
-            Action<IConfiguration, IServiceCollection> registerServicesAction)
+            Action<IConfigurationBuilder, IJobExecutionContext> configureAction,
+            Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction)
 
         {
             InitializeMessageBroker(messageBroker);
@@ -75,12 +76,12 @@ namespace Planar
         protected void AddAggragateException(Exception ex)
         {
             var message = new ExceptionDto(ex);
-            _messageBroker.Publish(MessageBrokerChannels.AddAggragateException, message);
+            _messageBroker?.Publish(MessageBrokerChannels.AddAggragateException, message);
         }
 
         protected void CheckAggragateException()
         {
-            var text = _messageBroker.Publish(MessageBrokerChannels.GetExceptionsText);
+            var text = _messageBroker?.Publish(MessageBrokerChannels.GetExceptionsText);
             if (string.IsNullOrEmpty(text) == false)
             {
                 var ex = new PlanarJobAggragateException(text);
@@ -90,24 +91,24 @@ namespace Planar
 
         protected bool CheckIfStopRequest()
         {
-            var text = _messageBroker.Publish(MessageBrokerChannels.CheckIfStopRequest);
+            var text = _messageBroker?.Publish(MessageBrokerChannels.CheckIfStopRequest);
             _ = bool.TryParse(text, out var stop);
             return stop;
         }
 
-        protected void FailOnStopRequest(Action stopHandle = default)
+        protected void FailOnStopRequest(Action? stopHandle = default)
         {
             if (stopHandle != default)
             {
                 stopHandle.Invoke();
             }
 
-            _messageBroker.Publish(MessageBrokerChannels.FailOnStopRequest);
+            _messageBroker?.Publish(MessageBrokerChannels.FailOnStopRequest);
         }
 
         protected T GetData<T>(string key)
         {
-            var value = _messageBroker.Publish(MessageBrokerChannels.GetData, key);
+            var value = _messageBroker?.Publish(MessageBrokerChannels.GetData, key);
             var result = (T)Convert.ChangeType(value, typeof(T));
             return result;
         }
@@ -119,19 +120,19 @@ namespace Planar
 
         protected int? GetEffectedRows()
         {
-            var text = _messageBroker.Publish(MessageBrokerChannels.GetEffectedRows);
+            var text = _messageBroker?.Publish(MessageBrokerChannels.GetEffectedRows);
             _ = int.TryParse(text, out var rows);
             return rows;
         }
 
         protected void IncreaseEffectedRows(int delta = 1)
         {
-            _messageBroker.Publish(MessageBrokerChannels.IncreaseEffectedRows, delta);
+            _messageBroker?.Publish(MessageBrokerChannels.IncreaseEffectedRows, delta);
         }
 
         protected bool IsDataExists(string key)
         {
-            var text = _messageBroker.Publish(MessageBrokerChannels.DataContainsKey, key);
+            var text = _messageBroker?.Publish(MessageBrokerChannels.DataContainsKey, key);
             _ = bool.TryParse(text, out var result);
             return result;
         }
@@ -140,7 +141,7 @@ namespace Planar
         {
             get
             {
-                var text = _messageBroker.Publish(MessageBrokerChannels.JobRunTime);
+                var text = _messageBroker?.Publish(MessageBrokerChannels.JobRunTime);
                 var success = double.TryParse(text, out var result);
                 if (success)
                 {
@@ -158,10 +159,13 @@ namespace Planar
             if (_isNowOverrideValueExists == null)
             {
                 _isNowOverrideValueExists = IsDataExists(Consts.NowOverrideValue);
-                var value = GetData(Consts.NowOverrideValue);
-                if (DateTime.TryParse(value, out DateTime dateValue))
+                if (_isNowOverrideValueExists.GetValueOrDefault())
                 {
-                    _nowOverrideValue = dateValue;
+                    var value = GetData(Consts.NowOverrideValue);
+                    if (DateTime.TryParse(value, out DateTime dateValue))
+                    {
+                        _nowOverrideValue = dateValue;
+                    }
                 }
             }
 
@@ -178,25 +182,25 @@ namespace Planar
         protected void PutJobData(string key, object value)
         {
             var message = new { Key = key, Value = value };
-            _messageBroker.Publish(MessageBrokerChannels.PutJobData, message);
+            _messageBroker?.Publish(MessageBrokerChannels.PutJobData, message);
         }
 
         protected void PutTriggerData(string key, object value)
         {
             var message = new { Key = key, Value = value };
-            _messageBroker.Publish(MessageBrokerChannels.PutTriggerData, message);
+            _messageBroker?.Publish(MessageBrokerChannels.PutTriggerData, message);
         }
 
         protected void SetEffectedRows(int value)
         {
-            _messageBroker.Publish(MessageBrokerChannels.SetEffectedRows, value);
+            _messageBroker?.Publish(MessageBrokerChannels.SetEffectedRows, value);
         }
 
         protected void UpdateProgress(byte value)
         {
             if (value > 100) { value = 100; }
             if (value < 0) { value = 0; }
-            _messageBroker.Publish(MessageBrokerChannels.UpdateProgress, value);
+            _messageBroker?.Publish(MessageBrokerChannels.UpdateProgress, value);
         }
 
         protected void UpdateProgress(int current, int total)
@@ -206,15 +210,15 @@ namespace Planar
             UpdateProgress(value);
         }
 
-        private void InitializeConfiguration(JobExecutionContext context, Action<IConfigurationBuilder, string> configureAction)
+        private void InitializeConfiguration(JobExecutionContext context, Action<IConfigurationBuilder, IJobExecutionContext> configureAction)
         {
             var builder = new ConfigurationBuilder();
             builder.AddInMemoryCollection(context.JobSettings);
-            configureAction.Invoke(builder, context.Environment);
+            configureAction.Invoke(builder, context);
             Configuration = builder.Build();
         }
 
-        private void InitializeDepedencyInjection(JobExecutionContext context, MessageBroker messageBroker, Action<IConfiguration, IServiceCollection> registerServicesAction)
+        private void InitializeDepedencyInjection(JobExecutionContext context, MessageBroker messageBroker, Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction)
         {
             var services = new ServiceCollection();
             services.AddSingleton(Configuration);
@@ -222,7 +226,7 @@ namespace Planar
             services.AddSingleton<ILogger, PlannerLogger>();
             services.AddSingleton(messageBroker);
             services.AddSingleton(typeof(ILogger<>), typeof(PlannerLogger<>));
-            registerServicesAction.Invoke(Configuration, services);
+            registerServicesAction.Invoke(Configuration, services, context);
             _provider = services.BuildServiceProvider();
         }
 
@@ -246,11 +250,32 @@ namespace Planar
                         new TypeMappingConverter<IKey, Key>()
                     }
                 };
-                _context = JsonSerializer.Deserialize<JobExecutionContext>(_messageBroker.Details, options);
+                var ctx = JsonSerializer.Deserialize<JobExecutionContext>(_messageBroker.Details, options);
+                if (ctx == null)
+                {
+                    throw new PlanarJobException("Fail to initialize JobExecutionContext from message broker detials (error 7379)");
+                }
+
+                FilterJobData(ctx.MergedJobDataMap);
+                FilterJobData(ctx.JobDetails.JobDataMap);
+                FilterJobData(ctx.TriggerDetails.TriggerDataMap);
+
+                _context = ctx;
             }
             catch (Exception ex)
             {
                 throw new ApplicationException("Fail to deserialize job execution context at BaseJob.Execute(string, ref object)", ex);
+            }
+        }
+
+        private static void FilterJobData(SortedDictionary<string, string> dictionary)
+        {
+            foreach (var item in Consts.AllDataKeys)
+            {
+                if (dictionary.ContainsKey(item))
+                {
+                    dictionary.Remove(item);
+                }
             }
         }
     }

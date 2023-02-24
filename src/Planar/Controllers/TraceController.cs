@@ -46,5 +46,15 @@ namespace Planar.Controllers
             var result = await BusinesLayer.GetProperties(id);
             return Ok(result);
         }
+
+        [HttpGet("count")]
+        [SwaggerOperation(OperationId = "get_trace_count", Description = "Get trace count by level", Summary = "Get Trace Count")]
+        [OkJsonResponse(typeof(CounterResponse))]
+        [BadRequestResponse]
+        public async Task<ActionResult<CounterResponse>> GetTraceCounter([FromQuery] CounterRequest request)
+        {
+            var result = await BusinesLayer.GetTraceCounter(request);
+            return Ok(result);
+        }
     }
 }

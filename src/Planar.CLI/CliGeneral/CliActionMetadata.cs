@@ -1,105 +1,150 @@
 ﻿using Planar.CLI.Attributes;
-using Planar.CLI.Entities;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Reflection;
+using System.Text;
 
 namespace Planar.CLI
 {
     public class CliActionMetadata
     {
-        private Type? _requestType;
-
         public string Module { get; set; } = string.Empty;
 
-        public List<string> Command { get; set; } = new();
+        public List<string> Commands { get; set; } = new();
 
         public MethodInfo? Method { get; set; }
 
         public bool AllowNullRequest { get; set; }
 
-        public Type? GetRequestType()
-        {
-            if (Method == null) { return null; }
+        public List<CliArgumentMetadata> Arguments { get; set; } = new();
 
-            if (_requestType == null)
+        public Type? RequestType { get; set; }
+
+        public string CommandDisplayName { get; set; } = string.Empty;
+
+        public string ArgumentsDisplayName { get; private set; } = string.Empty;
+
+        public bool IgnoreHelp { get; set; }
+
+        public bool HasWizard { get; set; }
+
+        public void SetArgumentsDisplayName()
+        {
+            var sb = new StringBuilder();
+            var defaultArgs = Arguments
+                .Where(a => a.Default)
+                .OrderBy(a => a.DefaultOrder);
+
+            var otherArgs = Arguments
+                .Where(a => !a.Default)
+                .OrderBy(a => a.DisplayName);
+
+            foreach (var item in defaultArgs)
             {
-                var parameters = Method.GetParameters();
-                if (parameters.Length == 0) { return null; }
-                if (parameters.Length > 1)
+                var title = string.IsNullOrEmpty(item.DisplayName) ? item.Name?.ToLower() : item.DisplayName.ToLower();
+                var enumType = item.EnumType;
+
+                if (enumType != null)
                 {
-                    throw new CliException($"cli Error: Action {Method.Name} has more then 1 parameter");
+                    var options = GetEnumOptions(enumType);
+                    if (!string.IsNullOrEmpty(options))
+                    {
+                        title = options;
+                    }
                 }
 
-                _requestType = parameters[0].ParameterType;
-            }
-
-            return _requestType;
-        }
-
-        public List<RequestPropertyInfo> GetRequestPropertiesInfo()
-        {
-            var requestType = GetRequestType();
-            var result = new List<RequestPropertyInfo>();
-            if (requestType == null)
-            {
-                return result;
-            }
-
-            var props = requestType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-
-            var inheritKey =
-                requestType.IsAssignableFrom(typeof(CliJobOrTriggerKey)) ||
-                requestType.IsSubclassOf(typeof(CliJobOrTriggerKey));
-
-            foreach (var item in props)
-            {
-                var att = item.GetCustomAttribute<ActionPropertyAttribute>();
-                var req = item.GetCustomAttribute<RequiredAttribute>();
-                var info = new RequestPropertyInfo
+                if (item.Required)
                 {
-                    PropertyInfo = item,
-                    LongName = att?.LongName?.ToLower(),
-                    ShortName = att?.ShortName?.ToLower(),
-                    Default = (att?.Default).GetValueOrDefault(),
-                    Required = req != null,
-                    RequiredMissingMessage = req?.Message,
-                    DefaultOrder = (att?.DefaultOrder).GetValueOrDefault(),
-                    JobOrTriggerKey = inheritKey && item.Name == nameof(CliJobOrTriggerKey.Id)
-                };
-                result.Add(info);
+                    sb.Append($"<{title}> ");
+                }
+                else
+                {
+                    sb.Append($"[<{title}>] ");
+                }
             }
 
-            return result;
-        }
-    }
+            var ci = CultureInfo.CurrentCulture;
+            string shortDateFormatString = ci.DateTimeFormat.ShortDatePattern;
+            string shortTimeFormatString = ci.DateTimeFormat.LongTimePattern;
 
-    public class RequestPropertyInfo
-    {
-        public string? Name
-        {
-            get
+            foreach (var item in otherArgs)
             {
-                return PropertyInfo?.Name?.ToLower();
+                var enumType = item.EnumType;
+                var info = item.PropertyInfo;
+
+                if (info != null && info.PropertyType == typeof(bool))
+                {
+                    sb.Append($"[{item.DisplayName}] ");
+                }
+                else if (info != null && (info.PropertyType == typeof(DateTime) || info.PropertyType == typeof(DateTime?)))
+                {
+                    sb.Append($"[{item.DisplayName} <\"{shortDateFormatString} {shortTimeFormatString}>\"] ");
+                }
+                else if (enumType != null)
+                {
+                    var options = GetEnumOptions(enumType);
+                    sb.Append($"[{item.DisplayName} <{options}>] ");
+                }
+                else
+                {
+                    sb.Append($"[{item.DisplayName} <value>] ");
+                }
             }
+
+            ArgumentsDisplayName = sb.ToString().Trim();
         }
 
-        public string? ShortName { get; set; }
+        private static string GetEnumOptions(Type type)
+        {
+            var parts = new List<string>();
+            var items = type.GetMembers(BindingFlags.Public | BindingFlags.Static);
+            foreach (var item in items)
+            {
+                if (item == null) { continue; }
+                var att = item.GetCustomAttribute<ActionEnumOptionAttribute>();
+                if (att == null)
+                {
+                    parts.Add(ToMinusCase(item.Name));
+                }
+                else
+                {
+                    parts.Add(att.Name);
+                }
+            }
 
-        public string? LongName { get; set; }
+            return string.Join('|', parts);
+        }
 
-        public bool Default { get; set; }
+        public static string ToMinusCase(string text)
+        {
+            if (text == null)
+            {
+                throw new ArgumentNullException(nameof(text));
+            }
 
-        public int DefaultOrder { get; set; }
+            if (text.Length < 2)
+            {
+                return text;
+            }
 
-        public bool Required { get; set; }
-
-        public string? RequiredMissingMessage { get; set; }
-
-        public bool ValueSupplied { get; set; }
-
-        public PropertyInfo? PropertyInfo { get; set; }
-
-        public bool JobOrTriggerKey { get; set; }
+            var sb = new StringBuilder();
+            sb.Append(char.ToLowerInvariant(text[0]));
+            for (int i = 1; i < text.Length; ++i)
+            {
+                char c = text[i];
+                if (char.IsUpper(c))
+                {
+                    sb.Append('-');
+                    sb.Append(char.ToLowerInvariant(c));
+                }
+                else
+                {
+                    sb.Append(c);
+                }
+            }
+            return sb.ToString();
+        }
     }
 }

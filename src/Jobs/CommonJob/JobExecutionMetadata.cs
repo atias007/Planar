@@ -1,5 +1,5 @@
 ﻿using Planar;
-using Quartz;
+using IJobExecutionContext = Quartz.IJobExecutionContext;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +17,7 @@ namespace CommonJob
 
         public byte Progress { get; set; }
 
-        private static readonly object Locker = new object();
+        private static readonly object Locker = new();
 
         public string GetLog()
         {

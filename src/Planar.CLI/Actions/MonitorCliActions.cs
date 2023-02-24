@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using YamlDotNet.Core.Tokens;
 
 namespace Planar.CLI.Actions
 {
@@ -16,12 +17,13 @@ namespace Planar.CLI.Actions
     {
         [Action("add")]
         [NullRequest]
+        [ActionWizard]
         public static async Task<CliActionResponse> AddMonitorAction(CliAddMonitorRequest request)
         {
             if (request == null)
             {
                 var wrapper = await CollectAddMonitorRequestData();
-                if (!wrapper.IsSuccessful)
+                if (!wrapper.IsSuccessful || wrapper.Request == null)
                 {
                     return new CliActionResponse(wrapper.FailResponse);
                 }
@@ -59,7 +61,7 @@ namespace Planar.CLI.Actions
             {
                 var restRequest = new RestRequest("monitor", Method.Get);
                 var result = await RestProxy.Invoke<List<MonitorItem>>(restRequest);
-                if (result.IsSuccessful) { data.AddRange(result.Data); }
+                if (result.IsSuccessful && result.Data != null) { data.AddRange(result.Data); }
                 finalResult = result;
             }
             else
@@ -76,8 +78,8 @@ namespace Planar.CLI.Actions
 
                 var result1 = task1.Result;
                 var result2 = task2.Result;
-                if (result1.IsSuccessful) { data.AddRange(result1.Data); }
-                if (result2.IsSuccessful) { data.AddRange(result2.Data); }
+                if (result1.IsSuccessful && result1.Data != null) { data.AddRange(result1.Data); }
+                if (result2.IsSuccessful && result2.Data != null) { data.AddRange(result2.Data); }
 
                 finalResult = SelectRestResponse(result1, result2);
             }
@@ -120,6 +122,49 @@ namespace Planar.CLI.Actions
             return await Execute(restRequest);
         }
 
+        [Action("test")]
+        [NullRequest]
+        public static async Task<CliActionResponse> TestMonitor(CliMonitorTestRequest request)
+        {
+            if (request == null)
+            {
+                var wrapper = await CollectTestMonitorRequestData();
+                if (!wrapper.IsSuccessful || wrapper.Request == null)
+                {
+                    return new CliActionResponse(wrapper.FailResponse);
+                }
+
+                request = wrapper.Request;
+            }
+
+            var restRequest = new RestRequest("monitor/test", Method.Post)
+                .AddBody(request);
+
+            return await Execute(restRequest);
+        }
+
+        private static async Task<RequestBuilderWrapper<CliMonitorTestRequest>> CollectTestMonitorRequestData()
+        {
+            var data = await GetTestMonitorData();
+            if (!data.IsSuccessful)
+            {
+                return new RequestBuilderWrapper<CliMonitorTestRequest> { FailResponse = data.FailResponse };
+            }
+
+            var hookName = GetHook(data.Hooks);
+            var eventName = GetEventForTest();
+            var groupId = GetDistributionGroup(data.Groups);
+
+            var monitor = new CliMonitorTestRequest
+            {
+                DistributionGroupId = groupId,
+                Hook = hookName,
+                MonitorEvent = eventName
+            };
+
+            return new RequestBuilderWrapper<CliMonitorTestRequest> { Request = monitor };
+        }
+
         private static async Task<RequestBuilderWrapper<CliAddMonitorRequest>> CollectAddMonitorRequestData()
         {
             var data = await GetMonitorData();
@@ -134,8 +179,6 @@ namespace Planar.CLI.Actions
             var groupId = GetDistributionGroup(data.Groups);
             var hookName = GetHook(data.Hooks);
             var title = GetTitle();
-
-            AnsiConsole.Write(new Rule());
 
             var monitor = new CliAddMonitorRequest
             {
@@ -157,7 +200,7 @@ namespace Planar.CLI.Actions
             var selectedGroup = PromptSelection(groupsNames, "distribution group");
 
             var group = groups.First(e => e.Name == selectedGroup);
-            AnsiConsole.MarkupLine($"[turquoise2]  > Group: [/] {group.Name}");
+            AnsiConsole.MarkupLine($"[turquoise2]  > dist. group:[/] {group.Name}");
             return group.Id;
         }
 
@@ -168,19 +211,34 @@ namespace Planar.CLI.Actions
             var selectedEvent = PromptSelection(eventsName, "monitor event");
 
             var monitorEvent = events.First(e => e.Name == selectedEvent);
-            AnsiConsole.MarkupLine($"[turquoise2]  > Event: [/] {monitorEvent.Name}");
+            AnsiConsole.MarkupLine($"[turquoise2]  > event:[/] {monitorEvent.Name}");
             return monitorEvent.Id;
         }
 
-        private static string GetEventArguments(int monitorEvent)
+        private static TestMonitorEvents GetEventForTest()
+        {
+            var names = Enum.GetNames(typeof(TestMonitorEvents));
+            var selectedEvent = PromptSelection(names, "monitor event");
+
+            if (string.IsNullOrEmpty(selectedEvent))
+            {
+                throw new CliWarningException("monitor event is not selected");
+            }
+
+            var monitorEvent = Enum.Parse<TestMonitorEvents>(selectedEvent);
+            AnsiConsole.MarkupLine($"[turquoise2]  > event:[/] {selectedEvent}");
+            return monitorEvent;
+        }
+
+        private static string? GetEventArguments(int monitorEvent)
         {
             var result = MonitorEventsExtensions.IsMonitorEventHasArguments(monitorEvent) ?
-                AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Event argument: [/]").AllowEmpty()) :
+                AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > event argument:[/] ").AllowEmpty()) :
                 null;
 
             if (!string.IsNullOrEmpty(result))
             {
-                AnsiConsole.MarkupLine($"[turquoise2]  > Arguments: [/] {result}");
+                AnsiConsole.MarkupLine($"[turquoise2]  > arguments:[/] {result}");
             }
 
             return result;
@@ -190,9 +248,9 @@ namespace Planar.CLI.Actions
         {
             var selectedHook = PromptSelection(hooks, "hook");
 
-            AnsiConsole.MarkupLine($"[turquoise2]  > Hook: [/] {selectedHook}");
+            AnsiConsole.MarkupLine($"[turquoise2]  > hook: [/] {selectedHook}");
 
-            return selectedHook;
+            return selectedHook ?? string.Empty;
         }
 
         private static AddMonitorJobData GetJob(IEnumerable<JobRowDetails> jobs, int monitorEventId)
@@ -204,27 +262,65 @@ namespace Planar.CLI.Actions
 
             var types = new[] { "single (monitor for single job)", "group (monitor for group of jobs)", "all (monitor for all jobs)" };
 
-            var selectedEvent = PromptSelection(types, "monitor type");
+            var selectedEvent = PromptSelection(types, "monitor type") ?? string.Empty;
 
             selectedEvent = selectedEvent.Split(' ').First();
 
             if (selectedEvent == "all")
             {
-                AnsiConsole.MarkupLine("[turquoise2]  > Monitor for: [/] all jobs");
+                AnsiConsole.MarkupLine("[turquoise2]  > monitor for: [/] all jobs");
                 return new AddMonitorJobData();
             }
 
             if (selectedEvent == "group")
             {
-                var group = JobCliActions.ChooseGroup(jobs);
-                AnsiConsole.MarkupLine($"[turquoise2]  > Monitor for: [/] job group '{group}'");
+                var group = JobCliActions.ChooseGroup(jobs) ?? string.Empty;
+                AnsiConsole.MarkupLine($"[turquoise2]  > monitor for:[/] job group '{group}'");
                 return new AddMonitorJobData { JobGroup = group };
             }
 
             var job = JobCliActions.ChooseJob(jobs);
-            AnsiConsole.MarkupLine($"[turquoise2]  > Monitor for: [/] single job '{job}'");
+            AnsiConsole.MarkupLine($"[turquoise2]  > monitor for:[/] single job '{job}'");
             var key = JobKey.Parse(job);
             return new AddMonitorJobData { JobName = key.Name, JobGroup = key.Group };
+        }
+
+        private static async Task<TestMonitorData> GetTestMonitorData()
+        {
+            var data = new TestMonitorData();
+            var hooksRequest = new RestRequest("monitor/hooks", Method.Get);
+            var hooksTask = RestProxy.Invoke<List<string>>(hooksRequest);
+
+            var groupsRequest = new RestRequest("group", Method.Get);
+            var groupsTask = RestProxy.Invoke<List<GroupInfo>>(groupsRequest);
+
+            var hooks = await hooksTask;
+            data.Hooks = hooks.Data ?? new List<string>();
+            if (!hooks.IsSuccessful)
+            {
+                data.FailResponse = hooks;
+                return data;
+            }
+
+            var groups = await groupsTask;
+            data.Groups = groups.Data ?? new List<GroupInfo>();
+            if (!groups.IsSuccessful)
+            {
+                data.FailResponse = groups;
+                return data;
+            }
+
+            if (!data.Hooks.Any())
+            {
+                throw new CliWarningException("there are no monitor hooks define in service");
+            }
+
+            if (!data.Groups.Any())
+            {
+                throw new CliWarningException("there are no distribution groups define in service");
+            }
+
+            return data;
         }
 
         private static async Task<MonitorRequestData> GetMonitorData()
@@ -244,7 +340,7 @@ namespace Planar.CLI.Actions
             var groupsTask = RestProxy.Invoke<List<GroupInfo>>(groupsRequest);
 
             var events = await eventsTask;
-            data.Events = events.Data;
+            data.Events = events.Data ?? new List<LovItem>();
             if (!events.IsSuccessful)
             {
                 data.FailResponse = events;
@@ -252,7 +348,7 @@ namespace Planar.CLI.Actions
             }
 
             var hooks = await hooksTask;
-            data.Hooks = hooks.Data;
+            data.Hooks = hooks.Data ?? new List<string>();
             if (!hooks.IsSuccessful)
             {
                 data.FailResponse = hooks;
@@ -260,7 +356,7 @@ namespace Planar.CLI.Actions
             }
 
             var jobs = await jobsTask;
-            data.Jobs = jobs.Data;
+            data.Jobs = jobs.Data ?? new List<JobRowDetails>();
             if (!jobs.IsSuccessful)
             {
                 data.FailResponse = jobs;
@@ -268,24 +364,24 @@ namespace Planar.CLI.Actions
             }
 
             var groups = await groupsTask;
-            data.Groups = groups.Data;
+            data.Groups = groups.Data ?? new List<GroupInfo>();
             if (!groups.IsSuccessful)
             {
                 data.FailResponse = groups;
                 return data;
             }
 
-            if (!jobs.Data.Any())
+            if (!data.Jobs.Any())
             {
                 throw new CliWarningException("there are no jobs for monitoring");
             }
 
-            if (!hooks.Data.Any())
+            if (!data.Hooks.Any())
             {
                 throw new CliWarningException("there are no monitor hooks define in service");
             }
 
-            if (!groups.Data.Any())
+            if (!data.Groups.Any())
             {
                 throw new CliWarningException("there are no distribution groups define in service");
             }
@@ -296,30 +392,44 @@ namespace Planar.CLI.Actions
         private static string GetTitle()
         {
             // === Title ===
-            return AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Title: [/]")
+            var title = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Title: [/]")
                 .Validate(title =>
                 {
-                    if (string.IsNullOrWhiteSpace(title)) { return ValidationResult.Error("[red]Title is required field[/]"); }
+                    if (string.IsNullOrWhiteSpace(title)) { return ValidationResult.Error("[red]title is required field[/]"); }
                     title = title.Trim();
-                    if (title.Length > 50) { return ValidationResult.Error("[red]Title limited to 50 chars maximum[/]"); }
-                    if (title.Length < 5) { return ValidationResult.Error("[red]Title must have at least 5 chars[/]"); }
+                    if (title.Length > 50) { return ValidationResult.Error("[red]title limited to 50 chars maximum[/]"); }
+                    if (title.Length < 5) { return ValidationResult.Error("[red]title must have at least 5 chars[/]"); }
                     return ValidationResult.Success();
                 }));
+
+            AnsiConsole.MarkupLine($"[turquoise2]  > title:[/] {title}");
+            return title;
         }
 
         private static AddMonitorRequest MapAddMonitorRequest(CliAddMonitorRequest request)
         {
             var result = JsonMapper.Map<AddMonitorRequest, CliAddMonitorRequest>(request);
-            return result;
+            return result ?? new AddMonitorRequest();
         }
 
         private static RestResponse SelectRestResponse(params RestResponse[] items)
         {
-            if (!items.Any()) { return null; }
-            var result = items.FirstOrDefault(i => !i.IsSuccessful && (int)i.StatusCode >= 500);
-            result ??= GetGenericSuccessRestResponse();
+            RestResponse? result = null;
+            if (items.Any())
+            {
+                result = items.FirstOrDefault(i => !i.IsSuccessful && (int)i.StatusCode >= 500);
+            }
 
+            result ??= CliActionResponse.GetGenericSuccessRestResponse();
             return result;
+        }
+
+        private struct TestMonitorData
+        {
+            public List<GroupInfo> Groups { get; set; }
+            public List<string> Hooks { get; set; }
+            public RestResponse FailResponse { get; set; }
+            public bool IsSuccessful => FailResponse == null;
         }
 
         private struct MonitorRequestData

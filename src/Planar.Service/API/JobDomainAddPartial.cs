@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Exceptions;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
@@ -23,7 +24,7 @@ namespace Planar.Service.API
     {
         private const int MinNameLength = 3;
         private const int MaxNameLength = 50;
-        private const string NameRegexTemplate = @"^[a-zA-Z0-9\-_]{@MinNameLength@,@MaxNameLength@}$";
+        private const string NameRegexTemplate = @"^[a-zA-Z0-9\-_\s]{@MinNameLength@,@MaxNameLength@}$";
 
         private static readonly Regex _regex = new(
             NameRegexTemplate
@@ -60,8 +61,11 @@ namespace Planar.Service.API
             await ValidateGlobalConfig(config);
             await UpsertGlobalConfig(config);
 
-            // Create Job
+            // Create Job (JobType+Concurent, JobGroup, JobName, Description, Durable)
             var job = BuildJobDetails(request, jobKey);
+
+            // Add Author
+            AddAuthor(request, job);
 
             // Build Data
             BuildJobData(request, job);
@@ -76,13 +80,23 @@ namespace Planar.Service.API
             var jobPropertiesYml = GetJopPropertiesYml(request);
             await DataLayer.AddJobProperty(new JobProperty { JobId = id, Properties = jobPropertiesYml });
 
-            // ScheduleJob
-            await Scheduler.ScheduleJob(job, triggers, true);
+            try
+            {
+                // ScheduleJob
+                await Scheduler.ScheduleJob(job, triggers, true);
+            }
+            catch
+            {
+                // roll back
+                await DataLayer.DeleteJobProperty(id);
+                throw;
+            }
 
             // Return Id
             return new JobIdResponse { Id = id };
         }
 
+        // JobType+Concurent, JobGroup, JobName, Description, Durable
         private static IJobDetail BuildJobDetails(SetJobDynamicRequest request, JobKey jobKey)
         {
             var jobType = GetJobType(request);
@@ -92,6 +106,23 @@ namespace Planar.Service.API
                 .RequestRecovery();
 
             if (request.Durable.GetValueOrDefault())
+            {
+                jobBuilder = jobBuilder.StoreDurably(true);
+            }
+
+            var job = jobBuilder.Build();
+            return job;
+        }
+
+        // JobType+Concurent, JobGroup, JobName, Description, Durable
+        private static IJobDetail CloneJobDetails(IJobDetail source)
+        {
+            var jobBuilder = JobBuilder.Create(source.JobType)
+                .WithIdentity(source.Key)
+                .WithDescription(source.Description)
+                .RequestRecovery();
+
+            if (source.Durable)
             {
                 jobBuilder = jobBuilder.StoreDurably(true);
             }
@@ -365,13 +396,20 @@ namespace Planar.Service.API
 
         private static void BuildJobData(SetJobRequest metadata, IJobDetail job)
         {
-            // job data
             if (metadata.JobData != null)
             {
                 foreach (var item in metadata.JobData)
                 {
                     job.JobDataMap[item.Key] = item.Value;
                 }
+            }
+        }
+
+        private static void AddAuthor(SetJobRequest metadata, IJobDetail job)
+        {
+            if (!string.IsNullOrEmpty(metadata.Author))
+            {
+                job.JobDataMap[Consts.Author] = metadata.Author;
             }
         }
 
@@ -411,6 +449,8 @@ namespace Planar.Service.API
 
         private static JobKey ValidateJobMetadata(SetJobRequest metadata)
         {
+            metadata.JobData ??= new Dictionary<string, string>();
+
             #region Trim
 
             metadata.Name = metadata.Name.SafeTrim();
@@ -424,6 +464,11 @@ namespace Planar.Service.API
 
             if (string.IsNullOrEmpty(metadata.Name)) throw new RestValidationException("name", "job name is mandatory");
             if (string.IsNullOrEmpty(metadata.JobType)) throw new RestValidationException("type", "job type is mandatory");
+
+            foreach (var item in metadata.JobData)
+            {
+                if (string.IsNullOrEmpty(item.Key)) throw new RestValidationException("key", "job data key must have value");
+            }
 
             #endregion Mandatory
 
@@ -445,7 +490,14 @@ namespace Planar.Service.API
 
             if (metadata.Name.Length > 50) throw new RestValidationException("name", "job name length is invalid. max length is 50");
             if (metadata.Group?.Length > 50) throw new RestValidationException("group", "job group length is invalid. max length is 50");
+            if (metadata.Author?.Length > 200) throw new RestValidationException("author", "author length is invalid. max length is 200");
             if (metadata.Description?.Length > 100) throw new RestValidationException("description", "job description length is invalid. max length is 100");
+
+            foreach (var item in metadata.JobData)
+            {
+                if (item.Key.Length > 100) throw new RestValidationException("key", "job data key length is invalid. max length is 100");
+                if (item.Value != null && item.Value.Length > 1000) throw new RestValidationException("value", "job data value length is invalid. max length is 1000");
+            }
 
             #endregion Max Chars
 
@@ -463,6 +515,11 @@ namespace Planar.Service.API
             if (metadata.JobData != null && metadata.JobData.Any() && metadata.Concurrent)
             {
                 throw new RestValidationException("concurrent", $"job with concurrent=true can not have data. persist data with concurent running may cause unexpected results");
+            }
+
+            foreach (var item in metadata.JobData)
+            {
+                if (!Consts.IsDataKeyValid(item.Key)) throw new RestValidationException("key", $"job data key '{item.Key}' is invalid");
             }
 
             var triggersCount = metadata.CronTriggers?.Count + metadata.SimpleTriggers?.Count;
@@ -550,13 +607,23 @@ namespace Planar.Service.API
         {
             container.SimpleTriggers?.ForEach(t =>
             {
+                t.TriggerData ??= new Dictionary<string, string>();
                 if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"simple trigger group '{t.Group}' is invalid (preserved value)"); }
                 if (t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"simple trigger name '{t.Name}' has invalid prefix"); }
+                foreach (var item in t.TriggerData)
+                {
+                    if (!Consts.IsDataKeyValid(item.Key)) throw new RestValidationException("key", $"trigger data key '{item.Key}' is invalid");
+                }
             });
             container.CronTriggers?.ForEach(t =>
             {
+                t.TriggerData ??= new Dictionary<string, string>();
                 if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"cron trigger group '{t.Group}' is invalid (preserved value)"); }
                 if (t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"cron trigger name '{t.Name}' has invalid prefix"); }
+                foreach (var item in t.TriggerData)
+                {
+                    if (!Consts.IsDataKeyValid(item.Key)) throw new RestValidationException("key", $"trigger data key '{item.Key}' is invalid");
+                }
             });
         }
 
@@ -564,17 +631,32 @@ namespace Planar.Service.API
         {
             container.SimpleTriggers?.ForEach(t =>
             {
+                t.TriggerData ??= new Dictionary<string, string>();
                 if (t.Name.Length > 50) throw new RestValidationException("name", "trigger name length is invalid. max length is 50");
                 if (t.Name.Length < 5) throw new RestValidationException("name", "trigger name length is invalid. min length is 5");
                 if (t.Group?.Length > 50) throw new RestValidationException("group", "trigger group length is invalid. max length is 50");
                 if (!string.IsNullOrEmpty(t.Group) && t.Group?.Length < 5) throw new RestValidationException("group", "trigger group length is invalid. max length is 5");
+
+                foreach (var item in t.TriggerData)
+                {
+                    if (item.Key.Length > 100) throw new RestValidationException("key", "trigger data key length is invalid. max length is 100");
+                    if (item.Value != null && item.Value.Length > 1000) throw new RestValidationException("value", "trigger data value length is invalid. max length is 1000");
+                }
             });
+
             container.CronTriggers?.ForEach(t =>
             {
+                t.TriggerData ??= new Dictionary<string, string>();
                 if (t.Name.Length > 50) throw new RestValidationException("name", "trigger name length is invalid. max length is 50");
                 if (t.Name.Length < 5) throw new RestValidationException("name", "trigger name length is invalid. min length is 5");
                 if (t.Group?.Length > 50) throw new RestValidationException("group", "trigger group length is invalid. max length is 50");
                 if (!string.IsNullOrEmpty(t.Group) && t.Group?.Length < 5) throw new RestValidationException("group", "trigger group length is invalid. max length is 5");
+
+                foreach (var item in t.TriggerData)
+                {
+                    if (item.Key.Length > 100) throw new RestValidationException("key", "trigger data key length is invalid. max length is 100");
+                    if (item.Value != null && item.Value.Length > 1000) throw new RestValidationException("value", "trigger data value length is invalid. max length is 1000");
+                }
             });
         }
 
@@ -596,10 +678,16 @@ namespace Planar.Service.API
         {
             container.SimpleTriggers?.ForEach(t =>
             {
+                t.TriggerData ??= new Dictionary<string, string>();
                 if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
+                foreach (var item in t.TriggerData)
+                {
+                    if (string.IsNullOrEmpty(item.Key)) throw new RestValidationException("key", "trigger data key must have value");
+                }
             });
             container.CronTriggers?.ForEach(t =>
             {
+                t.TriggerData ??= new Dictionary<string, string>();
                 if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
             });
         }
@@ -622,33 +710,25 @@ namespace Planar.Service.API
 
         private static Type GetJobType(SetJobRequest job)
         {
-            Assembly assembly;
             string typeName;
+            Assembly assembly;
 
-            switch (job.JobType)
+            try
             {
-                case nameof(PlanarJob):
-                    try
-                    {
-                        assembly = Assembly.Load(nameof(PlanarJob));
+                assembly = Assembly.Load(job.JobType);
+            }
+            catch (Exception ex)
+            {
+                throw new RestValidationException("jobType", $"fail to load assemly {job.JobType} ({ex.Message})");
+            }
 
-                        if (job.Concurrent)
-                        {
-                            typeName = $"Planar.{nameof(PlanarJobConcurent)}";
-                        }
-                        else
-                        {
-                            typeName = $"Planar.{nameof(PlanarJobNoConcurent)}";
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new RestValidationException("jobType", $"fail to load assemly {nameof(PlanarJob)} ({ex.Message})");
-                    }
-                    break;
-
-                default:
-                    throw new RestValidationException("jobType", $"job type '{job.JobType}' is not supported");
+            if (job.Concurrent)
+            {
+                typeName = $"Planar.{job.JobType}Concurent";
+            }
+            else
+            {
+                typeName = $"Planar.{job.JobType}NoConcurent";
             }
 
             try
@@ -682,8 +762,13 @@ namespace Planar.Service.API
             switch (request.JobType)
             {
                 case nameof(PlanarJob):
-                    var properties = YmlUtil.Deserialize<PlanarJobProperties>(yml);
-                    await ValidatePlanarJobProperties(properties);
+                    var properties1 = YmlUtil.Deserialize<PlanarJobProperties>(yml);
+                    await ValidateJobProperties(properties1);
+                    break;
+
+                case nameof(ProcessJob):
+                    var properties2 = YmlUtil.Deserialize<ProcessJobProperties>(yml);
+                    await ValidateJobProperties(properties2);
                     break;
 
                 default:
@@ -691,7 +776,7 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task ValidatePlanarJobProperties<TProperties>(TProperties properties)
+        private async Task ValidateJobProperties<TProperties>(TProperties properties)
         {
             if (properties == null)
             {

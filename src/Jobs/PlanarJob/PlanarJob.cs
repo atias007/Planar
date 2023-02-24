@@ -25,7 +25,7 @@ namespace Planar
 
             try
             {
-                await SetProperties(context);
+                await Initialize(context);
                 AssemblyFilename = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, Properties.Path, Properties.Filename);
 
                 ValidatePlanarJob();
@@ -44,9 +44,7 @@ namespace Planar
 
                 MapJobInstanceProperties(context, type, instance);
 
-                var settings = LoadJobSettings(Properties.Path);
-                var _broker = new JobMessageBroker(context, settings);
-                await (method.Invoke(instance, new object[] { _broker }) as Task);
+                await (method.Invoke(instance, new object[] { MessageBroker }) as Task);
 
                 MapJobInstancePropertiesBack(context, type, instance);
             }
@@ -66,6 +64,7 @@ namespace Planar
         {
             try
             {
+                ValidateMandatoryString(Properties.Path, nameof(Properties.Path));
                 ValidateMandatoryString(Properties.Filename, nameof(Properties.Filename));
                 ValidateMandatoryString(Properties.ClassName, nameof(Properties.ClassName));
 

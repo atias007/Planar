@@ -6,6 +6,6 @@ namespace Planar.CLI.Entities
     {
         [Required("expression argument is required")]
         [ActionProperty(DefaultOrder = 0)]
-        public string Expression { get; set; }
+        public string Expression { get; set; } = string.Empty;
     }
 }

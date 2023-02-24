@@ -14,8 +14,10 @@ namespace Planar.Service.Monitor
 
             Users = JsonSerializer.Serialize(details.Users);
             Group = JsonSerializer.Serialize(details.Group);
+            GlobalConfig = JsonSerializer.Serialize(details.GlobalConfig);
             details.Users = null;
             details.Group = null;
+            details.GlobalConfig = null;
             Details = JsonSerializer.Serialize(details);
         }
 
@@ -25,8 +27,10 @@ namespace Planar.Service.Monitor
 
             Users = JsonSerializer.Serialize(details.Users);
             Group = JsonSerializer.Serialize(details.Group);
+            GlobalConfig = JsonSerializer.Serialize(details.GlobalConfig);
             details.Users = null;
             details.Group = null;
+            details.GlobalConfig = null;
             Details = JsonSerializer.Serialize(details);
         }
 
@@ -35,6 +39,8 @@ namespace Planar.Service.Monitor
         public string Group { get; set; }
 
         public string Details { get; set; }
+
+        public string GlobalConfig { get; set; }
 
         public void LogError(Exception exception, string message, params object[] args)
         {

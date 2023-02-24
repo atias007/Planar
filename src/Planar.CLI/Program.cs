@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Planar.CLI.Actions;
+using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
 using Planar.CLI.General;
@@ -28,7 +29,7 @@ namespace Planar.CLI
                                     ?.InformationalVersion
                                     .ToString();
 
-                return result;
+                return result ?? string.Empty;
             }
         }
 
@@ -47,6 +48,8 @@ namespace Planar.CLI
 
         public static void Main(string[] args)
         {
+            Console.CancelKeyPress += Console_CancelKeyPress;
+
             try
             {
                 Start(args);
@@ -55,6 +58,15 @@ namespace Planar.CLI
             {
                 WriteException(ex);
             }
+            finally
+            {
+                Console.CancelKeyPress -= Console_CancelKeyPress;
+            }
+        }
+
+        private static void Console_CancelKeyPress(object? sender, ConsoleCancelEventArgs e)
+        {
+            e.Cancel = true;
         }
 
         private static void DisplayValidationErrors(IEnumerable<JToken> errors)
@@ -92,41 +104,52 @@ namespace Planar.CLI
 
             if (!errors.Any())
             {
-                AnsiConsole.MarkupLine($"[red]validation error: {entity.Detail}[/]");
+                AnsiConsole.MarkupLine(CliFormat.GetValidationErrorMarkup(entity.Detail));
                 return true;
             }
 
             if (errors.Count() == 1)
             {
                 var value = errors.First() as JValue;
-                AnsiConsole.MarkupLine($"[red]validation error: {value?.Value}[/]");
+                var strValue = Convert.ToString(value?.Value);
+                AnsiConsole.MarkupLine(CliFormat.GetValidationErrorMarkup(strValue));
                 return true;
             }
 
-            AnsiConsole.MarkupLine("[red]validation error:[/]");
+            AnsiConsole.MarkupLine(CliFormat.GetValidationErrorMarkup(string.Empty));
             DisplayValidationErrors(errors);
 
             return true;
         }
 
-        private static CliArgumentsUtil? HandleCliCommand(string[] args, IEnumerable<CliActionMetadata> cliActions)
+        private static CliArgumentsUtil? HandleCliCommand(string[]? args, IEnumerable<CliActionMetadata> cliActions)
         {
-            if (!args.Any()) { return null; }
+            if (args == null || !args.Any())
+            {
+                Console.WriteLine();
+                return null;
+            }
 
             CliArgumentsUtil? cliArgument = null;
 
             try
             {
                 var action = CliArgumentsUtil.ValidateArgs(ref args, cliActions);
+                if (action == null) { return null; }
+
                 cliArgument = new CliArgumentsUtil(args);
 
                 if (action.Method == null || action.Method.DeclaringType == null) { return null; }
 
                 var console = Activator.CreateInstance(action.Method.DeclaringType);
-                var requestType = action.GetRequestType();
-                CliActionResponse response;
+                if (console == null)
+                {
+                    return cliArgument;
+                }
 
-                if (requestType == null)
+                CliActionResponse? response;
+
+                if (action.RequestType == null)
                 {
                     try
                     {
@@ -139,7 +162,7 @@ namespace Planar.CLI
                 }
                 else
                 {
-                    var param = cliArgument.GetRequest(requestType, action);
+                    var param = cliArgument.GetRequest(action.RequestType, action);
                     var itMode = param is IIterative itParam && itParam.Iterative;
 
                     if (itMode)
@@ -148,7 +171,10 @@ namespace Planar.CLI
                         switch (name)
                         {
                             case "JobCliActions.GetRunningJobs":
-                                CliIterativeActions.InvokeGetRunnings((CliGetRunningJobsRequest)param).Wait();
+                                if (param is CliGetRunningJobsRequest request)
+                                {
+                                    CliIterativeActions.InvokeGetRunnings(request).Wait();
+                                }
                                 break;
 
                             default:
@@ -167,16 +193,16 @@ namespace Planar.CLI
             }
             catch (Exception ex)
             {
-                HandleException(ex);
+                HandleExceptionSafe(ex);
             }
 
             return cliArgument;
         }
 
-        private static void HandleCliResponse(CliActionResponse response)
+        private static void HandleCliResponse(CliActionResponse? response)
         {
-            if (response == null) return;
-            if (response.Response == null) return;
+            if (response == null) { return; }
+            if (response.Response == null) { return; }
 
             if (response.Response.IsSuccessful)
             {
@@ -195,6 +221,18 @@ namespace Planar.CLI
             }
         }
 
+        private static void HandleExceptionSafe(Exception ex)
+        {
+            try
+            {
+                HandleException(ex);
+            }
+            catch (Exception ex2)
+            {
+                WriteException(ex2);
+            }
+        }
+
         private static void HandleException(Exception ex)
         {
             if (ex == null) { return; }
@@ -209,18 +247,18 @@ namespace Planar.CLI
 
             if (finaleException.InnerException != null)
             {
-                HandleException(finaleException.InnerException);
+                HandleExceptionSafe(finaleException.InnerException);
             }
 
             if (string.IsNullOrEmpty(finaleException.Message) == false)
             {
                 if (finaleException is CliWarningException)
                 {
-                    AnsiConsole.MarkupLine($"{CliTableFormat.WarningColor}warning: {Markup.Escape(finaleException.Message)}[/]");
+                    AnsiConsole.MarkupLine(CliFormat.GetWarningMarkup(Markup.Escape(finaleException.Message)));
                 }
                 else
                 {
-                    AnsiConsole.MarkupLine($"{CliTableFormat.ErrorColor}error: {Markup.Escape(finaleException.Message)}[/]");
+                    AnsiConsole.MarkupLine(CliFormat.GetErrorMarkup(Markup.Escape(finaleException.Message)));
                 }
             }
         }
@@ -229,15 +267,15 @@ namespace Planar.CLI
         {
             if (response.ErrorMessage != null && response.ErrorMessage.Contains("No connection could be made"))
             {
-                AnsiConsole.MarkupLine($"[red]error: no connection could be made to planar deamon ({RestProxy.Host}:{RestProxy.Port})[/]");
+                AnsiConsole.MarkupLine(CliFormat.GetErrorMarkup($"no connection could be made to planar deamon ({RestProxy.Host}:{RestProxy.Port})"));
             }
             else if (response.ErrorMessage != null && response.ErrorMessage.Contains("No such host is known"))
             {
-                AnsiConsole.MarkupLine($"[red]{response.ErrorMessage.ToLower()}[/]");
+                AnsiConsole.MarkupLine(CliFormat.GetErrorMarkup(response.ErrorMessage.ToLower()));
             }
             else
             {
-                AnsiConsole.MarkupLine("[red]error: general error[/]");
+                AnsiConsole.MarkupLine(CliFormat.GetErrorMarkup("general error"));
             }
 
             if (!string.IsNullOrEmpty(response.StatusDescription))
@@ -281,7 +319,7 @@ namespace Planar.CLI
                     "server return conflict status" :
                     JsonConvert.DeserializeObject<string>(response.Content);
 
-                AnsiConsole.MarkupLine($"[red]conflict error: {message}[/]");
+                AnsiConsole.MarkupLine(CliFormat.GetConflictErrorMarkup(message));
                 return true;
             }
 
@@ -306,7 +344,7 @@ namespace Planar.CLI
                     "server return not found status" :
                     JsonConvert.DeserializeObject<string>(response.Content);
 
-                AnsiConsole.MarkupLine($"[red]validation error: {message}[/]");
+                AnsiConsole.MarkupLine(CliFormat.GetValidationErrorMarkup(message));
                 return true;
             }
 
@@ -324,7 +362,8 @@ namespace Planar.CLI
             const string help = "help";
             while (string.Compare(command, exit, true) != 0)
             {
-                AnsiConsole.Markup($"[grey58]{RestProxy.Host.EscapeMarkup()}:{RestProxy.Port}> [/]");
+                var color = Login.Current.GetCliMarkupColor();
+                AnsiConsole.Markup($"[{color}]{RestProxy.Host.EscapeMarkup()}:{RestProxy.Port}[/]> ");
                 command = Console.ReadLine();
                 if (string.Compare(command, exit, true) == 0)
                 {
@@ -343,15 +382,14 @@ namespace Planar.CLI
             }
         }
 
-        private static CliActionResponse? InvokeCliAction(CliActionMetadata action, object console, object param)
+        private static CliActionResponse? InvokeCliAction(CliActionMetadata action, object console, object? param)
         {
             if (action.Method == null) { return null; }
 
             CliActionResponse? response = null;
             try
             {
-                var task = action.Method.Invoke(console, new[] { param }) as Task<CliActionResponse>;
-                if (task != null)
+                if (action.Method.Invoke(console, new[] { param }) is Task<CliActionResponse> task)
                 {
                     response = task.Result;
                 }
@@ -373,15 +411,23 @@ namespace Planar.CLI
 
             bool inQuotes = false;
 
-            return commandLine.Split(c =>
+            var split = commandLine.Split(c =>
             {
-                if (c == '\"')
-                    inQuotes = !inQuotes;
-
+                if (c == '\"') { inQuotes = !inQuotes; }
                 return !inQuotes && c == ' ';
-            })
-                .Select(arg => arg?.Trim().TrimMatchingQuotes('\"'))
-                .Where(arg => !string.IsNullOrEmpty(arg));
+            });
+
+            var final = split
+                .Where(arg => !string.IsNullOrEmpty(arg))
+                .Select(arg =>
+                {
+                    return
+                    arg == null ?
+                    string.Empty :
+                    arg.Trim().TrimMatchingQuotes('\"');
+                });
+
+            return final;
         }
 
         private static void Start(string[] args)
@@ -421,22 +467,23 @@ namespace Planar.CLI
                     .Color(Color.SteelBlue1));
 
             Console.WriteLine(GetHelpHeader());
-            Console.WriteLine("usage: planar-cli <module> <command> [<options>]");
+            Console.WriteLine("usage: planar-cli <module> <command> [<arguments>]");
             Console.WriteLine();
             Console.WriteLine("use 'planar-cli <module> --help' to see all avalible commands and options");
 
-            using Stream stream = typeof(Program).Assembly.GetManifestResourceStream("Planar.CLI.Help.Modules.txt");
+            using Stream? stream = typeof(Program).Assembly.GetManifestResourceStream("Planar.CLI.Help.Modules.txt");
+            if (stream == null) { return; }
             using StreamReader reader = new(stream);
             string result = reader.ReadToEnd();
             Console.WriteLine(result);
             Console.WriteLine();
         }
 
-        private static void WriteInfo(string message)
+        private static void WriteInfo(string? message)
         {
             if (string.IsNullOrEmpty(message) == false) { message = message.Trim(); }
             if (message == "[]") { message = null; }
-            if (string.IsNullOrEmpty(message)) return;
+            if (string.IsNullOrEmpty(message)) { return; }
 
             AnsiConsole.WriteLine(message);
         }

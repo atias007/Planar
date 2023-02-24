@@ -7,6 +7,8 @@ namespace Planar.CLI.Attributes
     {
         public ActionPropertyAttribute()
         {
+            ShortName = string.Empty;
+            LongName = string.Empty;
         }
 
         public ActionPropertyAttribute(string shortName, string longName)
@@ -14,6 +16,8 @@ namespace Planar.CLI.Attributes
             ShortName = shortName;
             LongName = longName;
         }
+
+        public string? Name { get; set; }
 
         public string LongName { get; set; }
 
@@ -30,6 +34,34 @@ namespace Planar.CLI.Attributes
             {
                 _defaultOrder = value;
                 Default = true;
+            }
+        }
+
+        public string DisplayName
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(Name))
+                {
+                    return Name;
+                }
+
+                if (string.IsNullOrEmpty(LongName) && string.IsNullOrEmpty(ShortName))
+                {
+                    return string.Empty;
+                }
+
+                if (string.IsNullOrEmpty(LongName))
+                {
+                    return $"-{ShortName}";
+                }
+
+                if (string.IsNullOrEmpty(ShortName))
+                {
+                    return $"--{LongName}";
+                }
+
+                return $"-{ShortName}|--{LongName}";
             }
         }
     }

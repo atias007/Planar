@@ -6,6 +6,6 @@ namespace Planar.CLI.Entities
     {
         [ActionProperty(DefaultOrder = 0)]
         [Required("key argument is required")]
-        public string Key { get; set; }
+        public string Key { get; set; } = string.Empty;
     }
 }

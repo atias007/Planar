@@ -110,12 +110,12 @@ namespace Planar.Service.Listeners.Base
             }
         }
 
-        protected bool IsSystemJobKey(JobKey jobKey)
+        protected static bool IsSystemJobKey(JobKey jobKey)
         {
             return JobKeyHelper.IsSystemJobKey(jobKey);
         }
 
-        protected bool IsSystemTriggerKey(TriggerKey triggerKey)
+        protected static bool IsSystemTriggerKey(TriggerKey triggerKey)
         {
             return TriggerKeyHelper.IsSystemTriggerKey(triggerKey);
         }

@@ -61,5 +61,20 @@ namespace Planar.Service.API
 
             return result;
         }
+
+        public async Task<CounterResponse> GetTraceCounter(CounterRequest request)
+        {
+            var result = new CounterResponse();
+            var data = await DataLayer.GetTraceCounter(request.Hours);
+            var list = new List<StatisticsCountItem>();
+            list.Add(new StatisticsCountItem { Label = nameof(data.Fatal), Count = data.Fatal });
+            list.Add(new StatisticsCountItem { Label = nameof(data.Error), Count = data.Error });
+            list.Add(new StatisticsCountItem { Label = nameof(data.Warning), Count = data.Warning });
+            list.Add(new StatisticsCountItem { Label = nameof(data.Information), Count = data.Information });
+            list.Add(new StatisticsCountItem { Label = nameof(data.Debug), Count = data.Debug });
+
+            result.Counter = list;
+            return result;
+        }
     }
 }
