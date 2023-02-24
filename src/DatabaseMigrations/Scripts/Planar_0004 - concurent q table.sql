@@ -23,8 +23,7 @@ GO
 
 CREATE TABLE [Statistics].[ConcurentExecution](
 	[Id] [bigint] IDENTITY(1,1) NOT NULL,
-	[RecordDate] [date] NOT NULL,
-	[RecordHour] [tinyint] NOT NULL,
+	[RecordDate] [datetime] NOT NULL,
 	[Server] [nvarchar](100) NOT NULL,
 	[InstanceId] [nvarchar](100) NOT NULL,
 	[MaxConcurent] [int] NOT NULL,
@@ -37,21 +36,33 @@ GO
 
 CREATE PROC [Statistics].[SetMaxConcurentExecution]
 AS
+DECLARE @today datetime = CONVERT(DATE, GETDATE())
+DECLARE @hour tinyint = DATEPART(HOUR, GETDATE())
+DECLARE @current datetime = DATEADD(HOUR, @hour, @today)
+
+BEGIN TRANSACTION
+;
 WITH CTE([RecordDate],[RecordHour],[Server],[InstanceId],[ConcurentValue])
 AS
 (
 SELECT 
-	CONVERT(DATE, RecordDate) [RecordDate],
+	CONVERT(DATETIME, CONVERT(DATE, RecordDate)) [RecordDate],
 	DATEPART(HOUR, RecordDate) [RecordHour],
 	[Server],
 	[InstanceId],
 	[ConcurentValue]
   FROM [Statistics].[ConcurentQueue]
+  WHERE RecordDate < @current
 )
 
+
+INSERT INTO [Statistics].[ConcurentExecution]
+           ([RecordDate]
+           ,[Server]
+           ,[InstanceId]
+           ,[MaxConcurent])
 SELECT 
-	[RecordDate],
-	[RecordHour],
+	DATEADD(HOUR,[RecordHour],[RecordDate]) [RecordDate],
 	[Server],
 	[InstanceId],
 	MAX([ConcurentValue]) [ConcurentValue]
@@ -61,3 +72,8 @@ GROUP BY
 	[RecordHour],
 	[Server],
 	[InstanceId]
+
+DELETE FROM [Statistics].[ConcurentQueue]
+WHERE RecordDate < @current
+
+COMMIT
