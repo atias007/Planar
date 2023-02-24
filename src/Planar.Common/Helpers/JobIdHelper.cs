@@ -3,7 +3,7 @@ using Quartz;
 
 namespace Planar.Common.API.Helpers
 {
-    public class JobIdHelper
+    public static class JobIdHelper
     {
         public static string GetJobId(IJobDetail job)
         {

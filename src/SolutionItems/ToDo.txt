@@ -1,6 +1,5 @@
 --------------------------------------------------------
 - // TODO: add appsettings for UseJobAutoInterrupt at QuartzServiceConfiguration
-- add to base test to retrieve log & exception
 
 - convert id in sql table JobInstanceLog from int to bigint
 - cli: service status [time scope] dashboard command
@@ -107,3 +106,4 @@ V 1.2.0
 - bug: reload monitor + reload hooks --> not support cluster
 - add 'author'
 - add hook test option
+- send GlobalConfig dictionary to hook

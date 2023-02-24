@@ -9,19 +9,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using IJobDetail = Quartz.IJobDetail;
 using IJobExecutionContext = Quartz.IJobExecutionContext;
 
 namespace CommonJob
 {
-    public abstract class BaseCommonJob<TInstance, TProperties> : IJob
+    public abstract class BaseCommonJob
+    {
+        protected static readonly string IgnoreDataMapAttribute = typeof(IgnoreDataMapAttribute).FullName;
+        protected static readonly string JobDataMapAttribute = typeof(JobDataAttribute).FullName;
+        protected static readonly string TriggerDataMapAttribute = typeof(TriggerDataAttribute).FullName;
+    }
+
+    public abstract class BaseCommonJob<TInstance, TProperties> : BaseCommonJob, IJob
     where TInstance : class
     where TProperties : class, new()
     {
         protected readonly ILogger<TInstance> _logger;
-        private static readonly string _ignoreDataMapAttribute = typeof(IgnoreDataMapAttribute).FullName;
-        private static readonly string _jobDataMapAttribute = typeof(JobDataAttribute).FullName;
-        private static readonly string _triggerDataMapAttribute = typeof(TriggerDataAttribute).FullName;
         private readonly IJobPropertyDataLayer _dataLayer;
         private JobMessageBroker _messageBroker;
 
@@ -142,7 +145,7 @@ namespace CommonJob
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
 
             var attributes = property.GetCustomAttributes();
-            var ignore = attributes.Any(a => a.GetType().FullName == _ignoreDataMapAttribute);
+            var ignore = attributes.Any(a => a.GetType().FullName == IgnoreDataMapAttribute);
 
             if (ignore)
             {
@@ -163,7 +166,7 @@ namespace CommonJob
         {
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
 
-            var ignore = attributes.Any(a => a.GetType().FullName == _ignoreDataMapAttribute);
+            var ignore = attributes.Any(a => a.GetType().FullName == IgnoreDataMapAttribute);
 
             if (ignore)
             {
@@ -215,8 +218,8 @@ namespace CommonJob
             var attributes = prop.GetCustomAttributes();
             var ignore = IsIgnoreProperty(attributes, prop, context.JobDetail.Key);
             if (ignore) { return; }
-            var jobData = attributes.Any(a => a.GetType().FullName == _jobDataMapAttribute);
-            var triggerData = attributes.Any(a => a.GetType().FullName == _jobDataMapAttribute);
+            var jobData = attributes.Any(a => a.GetType().FullName == JobDataMapAttribute);
+            var triggerData = attributes.Any(a => a.GetType().FullName == JobDataMapAttribute);
 
             if (jobData)
             {

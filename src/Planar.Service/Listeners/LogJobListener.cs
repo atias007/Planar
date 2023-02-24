@@ -29,7 +29,6 @@ namespace Planar.Service.Listeners
 
         public async Task JobExecutionVetoed(IJobExecutionContext context, CancellationToken cancellationToken = default)
         {
-            var result = Task.CompletedTask;
             try
             {
                 if (IsSystemJob(context.JobDetail)) { return; }
@@ -41,7 +40,7 @@ namespace Planar.Service.Listeners
             }
             finally
             {
-                result = SafeScan(MonitorEvents.ExecutionVetoed, context, null);
+                await SafeScan(MonitorEvents.ExecutionVetoed, context, null);
             }
         }
 
@@ -203,8 +202,7 @@ namespace Planar.Service.Listeners
         {
             var first = await scheduler.GetCurrentlyExecutingJobs();
             var second = first.Select(f => f.JobDetail.Key)
-                .Where(f => !IsSystemJobKey(f))
-                .Count();
+                .Count(f => !IsSystemJobKey(f));
 
             return second;
         }

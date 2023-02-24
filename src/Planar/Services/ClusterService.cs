@@ -13,8 +13,6 @@ namespace Planar
 {
     internal class ClusterService : PlanarCluster.PlanarClusterBase
     {
-        //private readonly SchedulerUtil _schedulerUtil;
-
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
         public ClusterService(IServiceScopeFactory serviceScopeFactory)

@@ -64,13 +64,18 @@ namespace Planar
 
         private void FinalizeProcess()
         {
-            try { _process?.CancelErrorRead(); } catch { }
-            try { _process?.CancelOutputRead(); } catch { }
-            try { _process?.Close(); } catch { }
-            try { _process?.Dispose(); } catch { }
-            try { if (_process != null) { _process.EnableRaisingEvents = false; } } catch { }
-            try { if (_process != null) { _process.OutputDataReceived -= ProcessOutputDataReceived; } } catch { }
-            try { if (_process != null) { _process.ErrorDataReceived -= ProcessErrorDataReceived; } } catch { }
+            try { _process?.CancelErrorRead(); } catch { DoNothingMethod(); }
+            try { _process?.CancelOutputRead(); } catch { DoNothingMethod(); }
+            try { _process?.Close(); } catch { DoNothingMethod(); }
+            try { _process?.Dispose(); } catch { DoNothingMethod(); }
+            try { if (_process != null) { _process.EnableRaisingEvents = false; } } catch { DoNothingMethod(); }
+            try { if (_process != null) { _process.OutputDataReceived -= ProcessOutputDataReceived; } } catch { DoNothingMethod(); }
+            try { if (_process != null) { _process.ErrorDataReceived -= ProcessErrorDataReceived; } } catch { DoNothingMethod(); }
+        }
+
+        private static void DoNothingMethod()
+        {
+            //// *** Do Nothing Method *** ////
         }
 
         private void ValidateProcessJob()

@@ -73,12 +73,6 @@ namespace Planar.CLI.DataProtect
             Save();
         }
 
-        private static string GetLoginKey()
-        {
-            var loginName = $"{Environment.UserDomainName}|{Environment.UserName}";
-            return loginName;
-        }
-
         private static IDataProtector GetProtector()
         {
             const string purpose = "RememberConnect";

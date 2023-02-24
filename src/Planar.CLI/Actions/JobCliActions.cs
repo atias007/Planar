@@ -550,7 +550,7 @@ namespace Planar.CLI.Actions
             }
 
             var dict = YmlUtil.Deserialize<Dictionary<string, string>>(result.Data.Properties);
-            var key = dict?.Keys.Where(k => string.Equals(k, "path", StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+            var key = dict?.Keys.FirstOrDefault(k => string.Equals(k, "path", StringComparison.OrdinalIgnoreCase));
             var folder = dict?[key ?? string.Empty];
 
             if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(folder))
