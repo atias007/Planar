@@ -72,19 +72,30 @@ namespace Planar.Service.API
         {
             if (options.UpdateJobData)
             {
+                // Preserve the same id
                 request.JobData.Add(Consts.JobId, metadata.JobId);
             }
             else
             {
+                // Sync the old data including the id
                 request.JobData.Clear();
                 SyncJobData(request, metadata);
             }
 
             BuildJobData(request, metadata.JobDetails);
 
+            await Task.CompletedTask;
+        }
+
+        private static async Task UpdateJobAuthor(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+        {
             if (options.UpdateJobDetails)
             {
                 metadata.JobDetails.JobDataMap.Put(Consts.Author, request.Author);
+            }
+            else
+            {
+                metadata.JobDetails.JobDataMap.Put(Consts.Author, metadata.Author);
             }
 
             await Task.CompletedTask;
@@ -110,6 +121,7 @@ namespace Planar.Service.API
             await Scheduler.DeleteJob(metadata.JobKey);
             metadata.EnableRollback();
             metadata.OldJobProperties = await DataLayer.GetJobProperty(metadata.JobId);
+            metadata.Author = JobHelper.GetJobAuthor(metadata.OldJobDetails);
         }
 
         private async Task<JobIdResponse> Update(SetJobDynamicRequest request, UpdateJobOptions options)
@@ -147,11 +159,14 @@ namespace Planar.Service.API
             // Save for rollback
             await FillRollbackData(metadata);
 
-            // Update Job Details
+            // Update Job Details (JobType+Concurent, JobGroup, JobName, Description, Durable)
             await UpdateJobDetails(request, options, metadata);
 
             // Sync Job Data
             await UpdateJobData(request, options, metadata);
+
+            // Update the author
+            await UpdateJobAuthor(request, options, metadata);
 
             // Update Triggers
             await UpdateTriggers(request, options, metadata);
@@ -176,7 +191,7 @@ namespace Planar.Service.API
             }
             else
             {
-                metadata.JobDetails = metadata.OldJobDetails;
+                metadata.JobDetails = CloneJobDetails(metadata.OldJobDetails);
             }
         }
 

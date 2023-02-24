@@ -87,6 +87,7 @@ namespace Planar.Service
             services.AddTransient<HistoryData>();
             services.AddTransient<TraceData>();
             services.AddTransient<ServiceData>();
+            services.AddTransient<StatisticsData>();
             services.AddTransient<JobData>();
             services.AddTransient<IJobPropertyDataLayer, JobData>();
 

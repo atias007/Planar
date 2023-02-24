@@ -117,7 +117,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("reload")]
-        [SwaggerOperation(OperationId = "post_monitor_reload", Description = "Refresh monitor cache", Summary = "Refresh Monitor Cache")]
+        [SwaggerOperation(OperationId = "post_monitor_reload", Description = "Refresh monitor hooks", Summary = "Refresh Monitor Hooks")]
         [OkJsonResponse(typeof(string))]
         public async Task<ActionResult<string>> Reload()
         {
@@ -132,6 +132,16 @@ namespace Planar.Controllers
         {
             var result = BusinesLayer.GetHooks();
             return Ok(result);
+        }
+
+        [HttpPost("test")]
+        [SwaggerOperation(OperationId = "post_monitor_test", Description = "Test monitor", Summary = "Test Monitor")]
+        [NoContentResponse]
+        [BadRequestResponse]
+        public async Task<ActionResult> Test(MonitorTestRequest request)
+        {
+            await BusinesLayer.Test(request);
+            return NoContent();
         }
     }
 }

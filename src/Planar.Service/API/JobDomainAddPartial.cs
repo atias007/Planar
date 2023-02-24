@@ -61,7 +61,7 @@ namespace Planar.Service.API
             await ValidateGlobalConfig(config);
             await UpsertGlobalConfig(config);
 
-            // Create Job
+            // Create Job (JobType+Concurent, JobGroup, JobName, Description, Durable)
             var job = BuildJobDetails(request, jobKey);
 
             // Add Author
@@ -96,6 +96,7 @@ namespace Planar.Service.API
             return new JobIdResponse { Id = id };
         }
 
+        // JobType+Concurent, JobGroup, JobName, Description, Durable
         private static IJobDetail BuildJobDetails(SetJobDynamicRequest request, JobKey jobKey)
         {
             var jobType = GetJobType(request);
@@ -105,6 +106,23 @@ namespace Planar.Service.API
                 .RequestRecovery();
 
             if (request.Durable.GetValueOrDefault())
+            {
+                jobBuilder = jobBuilder.StoreDurably(true);
+            }
+
+            var job = jobBuilder.Build();
+            return job;
+        }
+
+        // JobType+Concurent, JobGroup, JobName, Description, Durable
+        private static IJobDetail CloneJobDetails(IJobDetail source)
+        {
+            var jobBuilder = JobBuilder.Create(source.JobType)
+                .WithIdentity(source.Key)
+                .WithDescription(source.Description)
+                .RequestRecovery();
+
+            if (source.Durable)
             {
                 jobBuilder = jobBuilder.StoreDurably(true);
             }
@@ -378,11 +396,6 @@ namespace Planar.Service.API
 
         private static void BuildJobData(SetJobRequest metadata, IJobDetail job)
         {
-            if (!string.IsNullOrEmpty(metadata.Author))
-            {
-                job.JobDataMap[Consts.Author] = metadata.Author;
-            }
-
             if (metadata.JobData != null)
             {
                 foreach (var item in metadata.JobData)

@@ -7,12 +7,14 @@ using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.General;
 using Planar.Service.Listeners.Base;
+using Planar.Service.Model;
+using Polly;
 using Quartz;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using YamlDotNet.Serialization;
 using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
 
 namespace Planar.Service.Listeners
@@ -25,13 +27,13 @@ namespace Planar.Service.Listeners
 
         public string Name => nameof(LogJobListener);
 
-        public Task JobExecutionVetoed(IJobExecutionContext context, CancellationToken cancellationToken = default)
+        public async Task JobExecutionVetoed(IJobExecutionContext context, CancellationToken cancellationToken = default)
         {
             var result = Task.CompletedTask;
             try
             {
-                if (IsSystemJob(context.JobDetail)) { return result; }
-                ExecuteDal<HistoryData>(d => d.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto)).Wait(cancellationToken);
+                if (IsSystemJob(context.JobDetail)) { return; }
+                await ExecuteDal<HistoryData>(d => d.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto));
             }
             catch (Exception ex)
             {
@@ -41,18 +43,14 @@ namespace Planar.Service.Listeners
             {
                 result = SafeScan(MonitorEvents.ExecutionVetoed, context, null);
             }
-
-            return result;
         }
 
-        public Task JobToBeExecuted(IJobExecutionContext context, CancellationToken cancellationToken = default)
+        public async Task JobToBeExecuted(IJobExecutionContext context, CancellationToken cancellationToken = default)
         {
-            var result = Task.CompletedTask;
-
             try
             {
-                if (IsSystemJob(context.JobDetail)) { return result; }
-
+                if (IsSystemJob(context.JobDetail)) { return; }
+                var statisticsTask = AddConcurentStatistics(context);
                 string data = GetJobDataForLogging(context.MergedJobDataMap);
 
                 var log = new DbJobInstanceLog
@@ -83,7 +81,8 @@ namespace Planar.Service.Listeners
                 if (log.InstanceId.Length > 250) { log.InstanceId = log.InstanceId[0..250]; }
                 if (log.ServerName.Length > 50) { log.ServerName = log.ServerName[0..50]; }
 
-                ExecuteDal<HistoryData>(d => d.CreateJobInstanceLog(log)).Wait(cancellationToken);
+                await ExecuteDal<HistoryData>(d => d.CreateJobInstanceLog(log));
+                await statisticsTask;
             }
             catch (Exception ex)
             {
@@ -91,20 +90,17 @@ namespace Planar.Service.Listeners
             }
             finally
             {
-                result = SafeScan(MonitorEvents.ExecutionStart, context, null);
+                await SafeScan(MonitorEvents.ExecutionStart, context, null);
             }
-
-            return result;
         }
 
-        public Task JobWasExecuted(IJobExecutionContext context, JobExecutionException jobException, CancellationToken cancellationToken = default)
+        public async Task JobWasExecuted(IJobExecutionContext context, JobExecutionException jobException, CancellationToken cancellationToken = default)
         {
-            var result = Task.CompletedTask;
             Exception executionException = null;
 
             try
             {
-                if (IsSystemJob(context.JobDetail)) { return result; }
+                if (IsSystemJob(context.JobDetail)) { return; }
 
                 var unhadleException = JobExecutionMetadata.GetInstance(context)?.UnhandleException;
                 executionException = unhadleException ?? jobException;
@@ -128,7 +124,7 @@ namespace Planar.Service.Listeners
                     IsStopped = context.CancellationToken.IsCancellationRequested
                 };
 
-                ExecuteDal<HistoryData>(d => d.UpdateHistoryJobRunLog(log)).Wait(cancellationToken);
+                await ExecuteDal<HistoryData>(d => d.UpdateHistoryJobRunLog(log));
             }
             catch (Exception ex)
             {
@@ -136,10 +132,8 @@ namespace Planar.Service.Listeners
             }
             finally
             {
-                result = SafeMonitorJobWasExecuted(context, executionException);
+                await SafeMonitorJobWasExecuted(context, executionException);
             }
-
-            return result;
         }
 
         private async Task SafeMonitorJobWasExecuted(IJobExecutionContext context, Exception exception)
@@ -189,6 +183,30 @@ namespace Planar.Service.Listeners
 
             var yml = YmlUtil.Serialize(items);
             return yml;
+        }
+
+        private async Task AddConcurentStatistics(IJobExecutionContext context)
+        {
+            var count = await CountConcurentExecutionJob(context.Scheduler);
+            var item = new ConcurentQueue
+            {
+                ConcurentValue = Convert.ToInt16(count + 1),
+                Server = Environment.MachineName,
+                InstanceId = context.Scheduler.SchedulerInstanceId,
+                RecordDate = DateTimeOffset.Now.DateTime
+            };
+
+            await ExecuteDal<StatisticsData>(d => d.AddCocurentQueueItem(item));
+        }
+
+        private static async Task<int> CountConcurentExecutionJob(IScheduler scheduler)
+        {
+            var first = await scheduler.GetCurrentlyExecutingJobs();
+            var second = first.Select(f => f.JobDetail.Key)
+                .Where(f => !IsSystemJobKey(f))
+                .Count();
+
+            return second;
         }
     }
 }

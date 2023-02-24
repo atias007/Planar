@@ -172,10 +172,5 @@ namespace Planar.TeamsMonitorHook
             if (ex.InnerException == null) { return ex; }
             return GetMostInnerException(ex.InnerException);
         }
-
-        public override Task Test(IMonitorDetails monitorDetails)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

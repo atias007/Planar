@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using YamlDotNet.Core.Tokens;
 
 namespace Planar.CLI.Actions
 {
@@ -121,6 +122,49 @@ namespace Planar.CLI.Actions
             return await Execute(restRequest);
         }
 
+        [Action("test")]
+        [NullRequest]
+        public static async Task<CliActionResponse> TestMonitor(CliMonitorTestRequest request)
+        {
+            if (request == null)
+            {
+                var wrapper = await CollectTestMonitorRequestData();
+                if (!wrapper.IsSuccessful || wrapper.Request == null)
+                {
+                    return new CliActionResponse(wrapper.FailResponse);
+                }
+
+                request = wrapper.Request;
+            }
+
+            var restRequest = new RestRequest("monitor/test", Method.Post)
+                .AddBody(request);
+
+            return await Execute(restRequest);
+        }
+
+        private static async Task<RequestBuilderWrapper<CliMonitorTestRequest>> CollectTestMonitorRequestData()
+        {
+            var data = await GetTestMonitorData();
+            if (!data.IsSuccessful)
+            {
+                return new RequestBuilderWrapper<CliMonitorTestRequest> { FailResponse = data.FailResponse };
+            }
+
+            var hookName = GetHook(data.Hooks);
+            var eventName = GetEventForTest();
+            var groupId = GetDistributionGroup(data.Groups);
+
+            var monitor = new CliMonitorTestRequest
+            {
+                DistributionGroupId = groupId,
+                Hook = hookName,
+                MonitorEvent = eventName
+            };
+
+            return new RequestBuilderWrapper<CliMonitorTestRequest> { Request = monitor };
+        }
+
         private static async Task<RequestBuilderWrapper<CliAddMonitorRequest>> CollectAddMonitorRequestData()
         {
             var data = await GetMonitorData();
@@ -135,8 +179,6 @@ namespace Planar.CLI.Actions
             var groupId = GetDistributionGroup(data.Groups);
             var hookName = GetHook(data.Hooks);
             var title = GetTitle();
-
-            AnsiConsole.Write(new Rule());
 
             var monitor = new CliAddMonitorRequest
             {
@@ -158,7 +200,7 @@ namespace Planar.CLI.Actions
             var selectedGroup = PromptSelection(groupsNames, "distribution group");
 
             var group = groups.First(e => e.Name == selectedGroup);
-            AnsiConsole.MarkupLine($"[turquoise2]  > dist. group: [/] {group.Name}");
+            AnsiConsole.MarkupLine($"[turquoise2]  > dist. group:[/] {group.Name}");
             return group.Id;
         }
 
@@ -169,19 +211,34 @@ namespace Planar.CLI.Actions
             var selectedEvent = PromptSelection(eventsName, "monitor event");
 
             var monitorEvent = events.First(e => e.Name == selectedEvent);
-            AnsiConsole.MarkupLine($"[turquoise2]  > event: [/] {monitorEvent.Name}");
+            AnsiConsole.MarkupLine($"[turquoise2]  > event:[/] {monitorEvent.Name}");
             return monitorEvent.Id;
+        }
+
+        private static TestMonitorEvents GetEventForTest()
+        {
+            var names = Enum.GetNames(typeof(TestMonitorEvents));
+            var selectedEvent = PromptSelection(names, "monitor event");
+
+            if (string.IsNullOrEmpty(selectedEvent))
+            {
+                throw new CliWarningException("monitor event is not selected");
+            }
+
+            var monitorEvent = Enum.Parse<TestMonitorEvents>(selectedEvent);
+            AnsiConsole.MarkupLine($"[turquoise2]  > event:[/] {selectedEvent}");
+            return monitorEvent;
         }
 
         private static string? GetEventArguments(int monitorEvent)
         {
             var result = MonitorEventsExtensions.IsMonitorEventHasArguments(monitorEvent) ?
-                AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > event argument: [/]").AllowEmpty()) :
+                AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > event argument:[/] ").AllowEmpty()) :
                 null;
 
             if (!string.IsNullOrEmpty(result))
             {
-                AnsiConsole.MarkupLine($"[turquoise2]  > arguments: [/] {result}");
+                AnsiConsole.MarkupLine($"[turquoise2]  > arguments:[/] {result}");
             }
 
             return result;
@@ -218,14 +275,52 @@ namespace Planar.CLI.Actions
             if (selectedEvent == "group")
             {
                 var group = JobCliActions.ChooseGroup(jobs) ?? string.Empty;
-                AnsiConsole.MarkupLine($"[turquoise2]  > monitor for: [/] job group '{group}'");
+                AnsiConsole.MarkupLine($"[turquoise2]  > monitor for:[/] job group '{group}'");
                 return new AddMonitorJobData { JobGroup = group };
             }
 
             var job = JobCliActions.ChooseJob(jobs);
-            AnsiConsole.MarkupLine($"[turquoise2]  > monitor for: [/] single job '{job}'");
+            AnsiConsole.MarkupLine($"[turquoise2]  > monitor for:[/] single job '{job}'");
             var key = JobKey.Parse(job);
             return new AddMonitorJobData { JobName = key.Name, JobGroup = key.Group };
+        }
+
+        private static async Task<TestMonitorData> GetTestMonitorData()
+        {
+            var data = new TestMonitorData();
+            var hooksRequest = new RestRequest("monitor/hooks", Method.Get);
+            var hooksTask = RestProxy.Invoke<List<string>>(hooksRequest);
+
+            var groupsRequest = new RestRequest("group", Method.Get);
+            var groupsTask = RestProxy.Invoke<List<GroupInfo>>(groupsRequest);
+
+            var hooks = await hooksTask;
+            data.Hooks = hooks.Data ?? new List<string>();
+            if (!hooks.IsSuccessful)
+            {
+                data.FailResponse = hooks;
+                return data;
+            }
+
+            var groups = await groupsTask;
+            data.Groups = groups.Data ?? new List<GroupInfo>();
+            if (!groups.IsSuccessful)
+            {
+                data.FailResponse = groups;
+                return data;
+            }
+
+            if (!data.Hooks.Any())
+            {
+                throw new CliWarningException("there are no monitor hooks define in service");
+            }
+
+            if (!data.Groups.Any())
+            {
+                throw new CliWarningException("there are no distribution groups define in service");
+            }
+
+            return data;
         }
 
         private static async Task<MonitorRequestData> GetMonitorData()
@@ -307,7 +402,7 @@ namespace Planar.CLI.Actions
                     return ValidationResult.Success();
                 }));
 
-            AnsiConsole.MarkupLine($"[turquoise2]  > title: [/] {title}");
+            AnsiConsole.MarkupLine($"[turquoise2]  > title:[/] {title}");
             return title;
         }
 
@@ -327,6 +422,14 @@ namespace Planar.CLI.Actions
 
             result ??= CliActionResponse.GetGenericSuccessRestResponse();
             return result;
+        }
+
+        private struct TestMonitorData
+        {
+            public List<GroupInfo> Groups { get; set; }
+            public List<string> Hooks { get; set; }
+            public RestResponse FailResponse { get; set; }
+            public bool IsSuccessful => FailResponse == null;
         }
 
         private struct MonitorRequestData

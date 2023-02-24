@@ -108,7 +108,7 @@ namespace Planar.Service.Monitor
             }
         }
 
-        private async Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception exception)
+        internal async Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception exception)
         {
             try
             {
@@ -133,7 +133,7 @@ namespace Planar.Service.Monitor
             }
         }
 
-        private async Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception exception)
+        internal async Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception exception)
         {
             try
             {
@@ -173,6 +173,7 @@ namespace Planar.Service.Monitor
 
         private static MonitorDetails GetMonitorDetails(MonitorAction action, IJobExecutionContext context, Exception exception)
         {
+            // ****** ATTENTION: any changes should reflect in TestJobExecutionContext ******
             var result = new MonitorDetails
             {
                 Calendar = context.Trigger.CalendarName,
@@ -196,6 +197,8 @@ namespace Planar.Service.Monitor
             FillMonitor(result, action, exception);
 
             return result;
+
+            // ****** ATTENTION: any changes should reflect in TestJobExecutionContext ******
         }
 
         private static MonitorSystemDetails GetMonitorDetails(MonitorAction action, MonitorSystemInfo details, Exception exception)
@@ -203,7 +206,7 @@ namespace Planar.Service.Monitor
             var result = new MonitorSystemDetails
             {
                 MessageTemplate = details.MessageTemplate,
-                MessagesParameters = details.MessagesParameters
+                MessagesParameters = details.MessagesParameters,
             };
 
             result.MessagesParameters ??= new();
@@ -226,6 +229,7 @@ namespace Planar.Service.Monitor
             monitor.MonitorTitle = action.Title;
             monitor.Users.AddRange(action.Group.Users.Select(u => new MonitorUser(u)).ToList());
             monitor.Exception = exception;
+            monitor.GlobalConfig = Global.GlobalConfig;
         }
 
         private async Task<List<MonitorAction>> LoadMonitorItems(MonitorEvents @event, IJobExecutionContext context)

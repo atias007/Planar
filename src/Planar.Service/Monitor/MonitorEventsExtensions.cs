@@ -4,6 +4,17 @@ namespace Planar
 {
     internal static class MonitorEventsExtensions
     {
+        public static bool IsSimpleJobMonitorEvent(MonitorEvents @event)
+        {
+            var eventId = (int)@event;
+            return IsSimpleJobMonitorEvent(eventId);
+        }
+
+        public static bool IsSimpleJobMonitorEvent(int eventId)
+        {
+            return eventId >= 100 && eventId < 200;
+        }
+
         public static bool IsMonitorEventHasArguments(MonitorEvents @event)
         {
             var eventId = (int)@event;

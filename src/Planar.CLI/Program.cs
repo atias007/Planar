@@ -1,7 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Planar.CLI.Actions;
-using Planar.CLI.Attributes;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
@@ -49,6 +48,8 @@ namespace Planar.CLI
 
         public static void Main(string[] args)
         {
+            Console.CancelKeyPress += Console_CancelKeyPress;
+
             try
             {
                 Start(args);
@@ -57,6 +58,15 @@ namespace Planar.CLI
             {
                 WriteException(ex);
             }
+            finally
+            {
+                Console.CancelKeyPress -= Console_CancelKeyPress;
+            }
+        }
+
+        private static void Console_CancelKeyPress(object? sender, ConsoleCancelEventArgs e)
+        {
+            e.Cancel = true;
         }
 
         private static void DisplayValidationErrors(IEnumerable<JToken> errors)
@@ -114,8 +124,11 @@ namespace Planar.CLI
 
         private static CliArgumentsUtil? HandleCliCommand(string[]? args, IEnumerable<CliActionMetadata> cliActions)
         {
-            if (args == null) { return null; }
-            if (!args.Any()) { return null; }
+            if (args == null || !args.Any())
+            {
+                Console.WriteLine();
+                return null;
+            }
 
             CliArgumentsUtil? cliArgument = null;
 

@@ -8,7 +8,7 @@ namespace Planar.Monitor.Hook
 {
     public abstract class BaseHook
     {
-        private MessageBroker _messageBroker;
+        private MessageBroker? _messageBroker;
 
         internal Task ExecuteHandleSystem(ref object messageBroker)
         {
@@ -44,8 +44,8 @@ namespace Planar.Monitor.Hook
             _messageBroker = new MessageBroker(messageBroker);
         }
 
-        private static T InitializeMessageDetails<T>(MessageBroker messageBroker)
-            where T : Monitor
+        private static T InitializeMessageDetails<T>(MessageBroker? messageBroker)
+            where T : Monitor, new()
         {
             var options = new JsonSerializerOptions
             {
@@ -55,22 +55,34 @@ namespace Planar.Monitor.Hook
                 }
             };
 
+            var monitorDetails = SafeDeserialize<T>(messageBroker?.Details, options);
+            monitorDetails.Users = SafeDeserialize<List<User>>(messageBroker?.Users);
+            monitorDetails.Group = SafeDeserialize<Group>(messageBroker?.Group);
+            monitorDetails.GlobalConfig = SafeDeserialize<Dictionary<string, string>>(messageBroker?.GlobalConfig);
+            return monitorDetails;
+        }
+
+        private static T SafeDeserialize<T>(string? json, JsonSerializerOptions? options = null)
+            where T : class, new()
+        {
             try
             {
-                var monitorDetails = JsonSerializer.Deserialize<T>(messageBroker.Details, options);
-                if (!string.IsNullOrEmpty(messageBroker.Users))
+                if (string.IsNullOrEmpty(json))
                 {
-                    var users = JsonSerializer.Deserialize<List<User>>(messageBroker.Users);
-                    monitorDetails.Users = users;
+                    throw new PlanarMonitorException($"Fail to deserialize {typeof(T).Name}. Json is null or empty");
                 }
 
-                if (!string.IsNullOrEmpty(messageBroker.Group))
+                var result =
+                    options == null ?
+                    JsonSerializer.Deserialize<T>(json) :
+                    JsonSerializer.Deserialize<T>(json, options);
+
+                if (result == null)
                 {
-                    var group = JsonSerializer.Deserialize<Group>(messageBroker.Group);
-                    monitorDetails.Group = group;
+                    throw new PlanarMonitorException($"Fail to deserialize {typeof(T).Name}. Result was null");
                 }
 
-                return monitorDetails;
+                return result;
             }
             catch (Exception ex)
             {
@@ -80,7 +92,7 @@ namespace Planar.Monitor.Hook
 
         protected void LogError(Exception exception, string message, params object[] args)
         {
-            _messageBroker.Publish(exception, message, args);
+            _messageBroker?.Publish(exception, message, args);
         }
 
         protected static bool IsValidUri(string url)
@@ -91,7 +103,5 @@ namespace Planar.Monitor.Hook
         public abstract Task Handle(IMonitorDetails monitorDetails);
 
         public abstract Task HandleSystem(IMonitorSystemDetails monitorDetails);
-
-        public abstract Task Test(IMonitorDetails monitorDetails);
     }
 }

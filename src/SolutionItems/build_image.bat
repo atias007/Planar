@@ -1,1 +1,1 @@
-docker build . -t planar:1.1.2
+docker build . -t planar:1.2.0

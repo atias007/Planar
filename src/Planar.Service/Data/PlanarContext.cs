@@ -18,6 +18,7 @@ namespace Planar.Service.Data
         }
 
         public virtual DbSet<ClusterNode> ClusterNodes { get; set; }
+        public virtual DbSet<ConcurentQueue> ConcurentQueues { get; set; }
         public virtual DbSet<GlobalConfig> GlobalConfigs { get; set; }
         public virtual DbSet<Group> Groups { get; set; }
         public virtual DbSet<JobInstanceLog> JobInstanceLogs { get; set; }

@@ -26,13 +26,15 @@ namespace Planar.Monitor.Hook
             Details = GetProperty<string>(type, nameof(Details));
             Users = GetProperty<string>(type, nameof(Users));
             Group = GetProperty<string>(type, nameof(Group));
+            GlobalConfig = GetProperty<string>(type, nameof(GlobalConfig));
         }
 
         public string Details { get; set; }
         public string Users { get; set; }
         public string Group { get; set; }
+        public string GlobalConfig { get; set; }
 
-        public string Publish(Exception exception, string message, params object[] args)
+        public string? Publish(Exception exception, string message, params object[] args)
         {
             lock (Locker)
             {

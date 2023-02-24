@@ -11,5 +11,6 @@ namespace Planar.Service.Monitor
         public MonitorGroup Group { get; set; }
         public List<MonitorUser> Users { get; set; } = new();
         public Exception Exception { get; set; }
+        public Dictionary<string, string> GlobalConfig { get; set; }
     }
 }
