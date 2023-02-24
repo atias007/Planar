@@ -135,10 +135,11 @@ namespace Planar.Controllers
         }
 
         [HttpPost("test")]
+        [JsonConsumes]
         [SwaggerOperation(OperationId = "post_monitor_test", Description = "Test monitor", Summary = "Test Monitor")]
         [NoContentResponse]
         [BadRequestResponse]
-        public async Task<ActionResult> Test(MonitorTestRequest request)
+        public async Task<ActionResult<ExecuteMonitorResult>> Test(MonitorTestRequest request)
         {
             await BusinesLayer.Test(request);
             return NoContent();

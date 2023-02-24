@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Planar;
+using Planar.Job;
 using System.Threading.Tasks;
 
 namespace LongRunningJob
@@ -26,7 +26,7 @@ namespace LongRunningJob
 
                 if (i % 10 == 0)
                 {
-                    Logger.LogInformation($"Step {i}");
+                    Logger.LogInformation("Step {Index}", i);
                 }
 
                 await Task.Delay(1000);

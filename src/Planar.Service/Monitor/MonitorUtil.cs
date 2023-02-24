@@ -108,53 +108,63 @@ namespace Planar.Service.Monitor
             }
         }
 
-        internal async Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception exception)
+        internal async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception exception)
         {
             try
             {
                 var toBeContinue = await Analyze(@event, action, context);
-                if (!toBeContinue) { return; }
+                if (!toBeContinue) { return ExecuteMonitorResult.Ok; }
 
                 var hookInstance = GetMonitorHookInstance(action.Hook);
                 if (hookInstance == null)
                 {
                     _logger.LogWarning("Hook {Hook} in monitor item id: {Id}, title: '{Title}' does not exist in service", action.Hook, action.Id, action.Title);
+                    var message = $"Hook {action.Hook} in monitor item id: {action.Id}, title: '{action.Title}' does not exist in service";
+                    return ExecuteMonitorResult.Fail(message);
                 }
                 else
                 {
                     var details = GetMonitorDetails(action, context, exception);
-                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook {Hook}", action.Id, action.Title, @event, action.Hook);
+                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook}", action.Id, action.Title, @event, action.Hook);
                     await hookInstance.Handle(details, _logger);
+                    return ExecuteMonitorResult.Ok;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
+                _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook: {Hook}", action.Id, action.Title, action.Hook);
+                var message = $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook: {action.Hook}. Error message: {ex.Message}";
+                return ExecuteMonitorResult.Fail(message);
             }
         }
 
-        internal async Task ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception exception)
+        internal async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception exception)
         {
             try
             {
                 var toBeContinue = await Analyze(@event, action, null);
-                if (!toBeContinue) { return; }
+                if (!toBeContinue) { return ExecuteMonitorResult.Ok; }
 
                 var hookInstance = GetMonitorHookInstance(action.Hook);
                 if (hookInstance == null)
                 {
                     _logger.LogWarning("Hook {Hook} in monitor item id: {Id}, title: '{Title}' does not exist in service", action.Hook, action.Id, action.Title);
+                    var message = $"Hook {action.Hook} in monitor item id: {action.Id}, title: '{action.Title}' does not exist in service";
+                    return ExecuteMonitorResult.Fail(message);
                 }
                 else
                 {
                     var details = GetMonitorDetails(action, info, exception);
-                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook {Hook}", action.Id, action.Title, @event, action.Hook);
+                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook}", action.Id, action.Title, @event, action.Hook);
                     await hookInstance.HandleSystem(details, _logger);
+                    return ExecuteMonitorResult.Ok;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook {Hook}", action.Id, action.Title, action.Hook);
+                _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook: {Hook}", action.Id, action.Title, action.Hook);
+                var message = $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook: {action.Hook}. Error message: {ex.Message}";
+                return ExecuteMonitorResult.Fail(message);
             }
         }
 

@@ -163,22 +163,28 @@ namespace Planar.Service.API
                 Title = "Test Monitor"
             };
 
+            ExecuteMonitorResult result;
             if (MonitorEventsExtensions.IsSystemMonitorEvent(monitorEvent))
             {
                 var info = new MonitorSystemInfo
                 {
                     MessageTemplate = $"This is test monitor for system event {monitorEvent}"
                 };
-                await monitorUtil.ExecuteMonitor(action, monitorEvent, info, exception);
+                result = await monitorUtil.ExecuteMonitor(action, monitorEvent, info, exception);
             }
             else if (MonitorEventsExtensions.IsSimpleJobMonitorEvent(monitorEvent))
             {
                 var context = new TestJobExecutionContext(request);
-                await monitorUtil.ExecuteMonitor(action, monitorEvent, context, exception);
+                result = await monitorUtil.ExecuteMonitor(action, monitorEvent, context, exception);
             }
             else
             {
                 throw new RestValidationException(nameof(MonitorTestRequest.MonitorEvent), $"monitor enent '{monitorEvent}' is not supported for test");
+            }
+
+            if (!result.Success)
+            {
+                throw new RestValidationException(string.Empty, result.Failure);
             }
         }
     }
