@@ -41,6 +41,16 @@ namespace Planar.Service.Data
             return result;
         }
 
+        public async Task<Group> GetGroupWithUsers(int id)
+        {
+            var result = await _context.Groups
+                .Include(g => g.Users)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(g => g.Id == id);
+
+            return result;
+        }
+
         public async Task<List<GroupInfo>> GetGroups()
         {
             var result = await _context.Groups

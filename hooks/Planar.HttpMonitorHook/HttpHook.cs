@@ -6,6 +6,8 @@ namespace Planar.HttpMonitorHook
 {
     public class HttpHook : BaseHook
     {
+        public override string Name => "Http";
+
         public override Task Handle(IMonitorDetails monitorDetails)
         {
             throw new NotImplementedException();

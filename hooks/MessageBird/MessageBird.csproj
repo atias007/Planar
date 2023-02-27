@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net6.0</TargetFrameworks>
+    <Product>MessageBird</Product>
+    <Title>MessageBird</Title>
+    <Company>MessageBird</Company>
+    <Copyright>Copyright © 2022</Copyright>
+ 
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="JWT" Version="8.2.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+      <_Parameter1>MessageBirdUnitTests</_Parameter1>
+    </AssemblyAttribute>
+</ItemGroup>
+</Project>

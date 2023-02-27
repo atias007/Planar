@@ -1,6 +1,4 @@
-﻿using CommonJob;
-using FluentValidation;
-using Microsoft.AspNetCore.Mvc;
+﻿using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
@@ -10,12 +8,10 @@ using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.Monitor.Test;
-using Polly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -147,7 +143,7 @@ namespace Planar.Service.API
         {
             var monitorUtil = Resolve<MonitorUtil>();
             var groupDal = Resolve<GroupData>();
-            var group = await groupDal.GetGroup(request.DistributionGroupId);
+            var group = await groupDal.GetGroupWithUsers(request.DistributionGroupId);
             var monitorEvent = Enum.Parse<MonitorEvents>(request.MonitorEvent.ToString());
             var exception = new Exception("This is test exception");
             var action = new MonitorAction

@@ -14,36 +14,41 @@ namespace Planar.TeamsMonitorHook
     public class TeamHook : BaseHook
     {
         private const string ImageSource = "https://raw.githubusercontent.com/atias007/Planar/master/hooks/Planar.TeamsMonitorHook/Icons/{0}.png";
+        private const string HookKey = "TeamsMonitorHook.ChannelUrl";
+
+        public override string Name => "Teams";
 
         public override async Task Handle(IMonitorDetails monitorDetails)
         {
-            var valid = ValidateGroup(monitorDetails);
-            if (!valid) { return; }
+            var url = GetHookParameter(HookKey, monitorDetails);
+            if (url == null) { return; }
+            if (!IsValidUrl(url, monitorDetails.Group)) { return; }
 
             var message = GetMessageText(monitorDetails);
-            await SendMessageToChannel(monitorDetails.Group.Reference1, message);
+            await SendMessageToChannel(url, message);
         }
 
         public override async Task HandleSystem(IMonitorSystemDetails monitorDetails)
         {
-            var valid = ValidateGroup(monitorDetails);
-            if (!valid) { return; }
+            var url = GetHookParameter(HookKey, monitorDetails);
+            if (url == null) { return; }
+            if (!IsValidUrl(url, monitorDetails.Group)) { return; }
 
             var message = GetSystemMessageText(monitorDetails);
-            await SendMessageToChannel(monitorDetails.Group.Reference1, message);
+            await SendMessageToChannel(url, message);
         }
 
-        private bool ValidateGroup(IMonitor details)
+        private bool IsValidUrl(string? url, IMonitorGroup group)
         {
-            if (string.IsNullOrEmpty(details.Group.Reference1))
+            if (string.IsNullOrEmpty(url))
             {
-                LogError(null, "Group '{Name}' is invalid for Teams monitor hook. Reference1 is null or empty", details.Group.Name);
+                LogError(null, "Group '{Name}' has invalid uri value (null or empty) at reference property", group.Name);
                 return false;
             }
 
-            if (!IsValidUri(details.Group.Reference1))
+            if (!IsValidUri(url))
             {
-                LogError(null, "Group '{Name}' has invalid uri value '{Reference1}' at 'Reference1' property", details.Group.Name, details.Group.Reference1);
+                LogError(null, "Group '{Name}' has invalid url value '{Reference}' at reference property", group.Name, url);
                 return false;
             }
 

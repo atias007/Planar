@@ -12,12 +12,15 @@ namespace Planar.Service.SystemJobs
     {
         private readonly ILogger<ClearTraceTableJob> _logger;
 
-        private readonly TraceData _dal;
+        private readonly TraceData _traceData;
+
+        private readonly StatisticsData _statisticsData;
 
         public ClearTraceTableJob(IServiceProvider serviceProvider)
         {
             _logger = serviceProvider.GetRequiredService<ILogger<ClearTraceTableJob>>();
-            _dal = serviceProvider.GetRequiredService<TraceData>();
+            _traceData = serviceProvider.GetRequiredService<TraceData>();
+            _statisticsData = serviceProvider.GetRequiredService<StatisticsData>();
         }
 
         public Task Execute(IJobExecutionContext context)
@@ -43,8 +46,11 @@ namespace Planar.Service.SystemJobs
 
         private async Task DoWork()
         {
-            await _dal?.ClearTraceTable(AppSettings.ClearTraceTableOverDays);
+            await _traceData?.ClearTraceTable(AppSettings.ClearTraceTableOverDays);
             _logger.LogInformation("Clear trace table rows (older then {Days} days)", AppSettings.ClearTraceTableOverDays);
+
+            await _statisticsData?.ClearStatisticsTables(AppSettings.ClearTraceTableOverDays);
+            _logger.LogInformation("Clear statistics table rows (older then {Days} days)", AppSettings.ClearTraceTableOverDays);
         }
     }
 }

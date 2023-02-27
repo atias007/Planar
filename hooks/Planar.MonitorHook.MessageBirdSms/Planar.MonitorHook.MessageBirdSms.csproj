@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\nuget packages\Planar.Monitor.Hook\Planar.Monitor.Hook.csproj" />
+    <ProjectReference Include="..\MessageBird\MessageBird.csproj" />
+  </ItemGroup>
+
+</Project>

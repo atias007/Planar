@@ -34,6 +34,37 @@ CREATE TABLE [Statistics].[ConcurentExecution](
 ) ON [PRIMARY]
 GO
 
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [Statistics].[ClearStatistics]
+@OverDays int = 365
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+    DECLARE @BatchSize INT = 5000
+	WHILE 1 = 1
+	BEGIN
+		DELETE TOP (@BatchSize)
+		FROM [Statistics].[ConcurentQueue]
+		WHERE DATEDIFF(DAY, [RecordDate], GETDATE()) > @OverDays
+		IF @@ROWCOUNT < @BatchSize BREAK
+	END
+
+	WHILE 1 = 1
+	BEGIN
+		DELETE TOP (@BatchSize)
+		FROM [Statistics].[ConcurentExecution]
+		WHERE DATEDIFF(DAY, [RecordDate], GETDATE()) > @OverDays
+		IF @@ROWCOUNT < @BatchSize BREAK
+	END
+END
+
+GO
+
 CREATE PROC [Statistics].[SetMaxConcurentExecution]
 AS
 DECLARE @today datetime = CONVERT(DATE, GETDATE())

@@ -34,7 +34,7 @@ namespace Planar.Monitor.Hook
         public string Group { get; set; }
         public string GlobalConfig { get; set; }
 
-        public string? Publish(Exception exception, string message, params object[] args)
+        public string? Publish(Exception? exception, string message, params object[] args)
         {
             lock (Locker)
             {
