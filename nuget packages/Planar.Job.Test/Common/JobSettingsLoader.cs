@@ -10,9 +10,9 @@ namespace Planar.Job.Test
         private const string SettingsFilename1 = "JobSettings.yml";
         private const string SettingsFilename2 = "JobSettings.UnitTest.yml";
 
-        public static Dictionary<string, string> LoadJobSettingsForUnitTest()
+        public static Dictionary<string, string> LoadJobSettingsForUnitTest(Type type)
         {
-            var directory = new FileInfo(Environment.CurrentDirectory).Directory;
+            var directory = new FileInfo(type.Assembly.Location).Directory;
 
             // Load job global config
             var jobSettings = new Dictionary<string, string>();

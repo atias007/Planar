@@ -34,12 +34,12 @@ namespace Planar.Job.Test
             }
         }
 
-        public void AppendLog(LogLevel level, string messag)
-        {
-            var formatedMessage = $"[{level}] | {messag}";
-            var log = new LogEntity(level, formatedMessage);
-            LogData(log);
-        }
+        ////public void AppendLog(LogLevel level, string messag)
+        ////{
+        ////    var formatedMessage = $"[{level}] | {messag}";
+        ////    var log = new LogEntity(level, formatedMessage);
+        ////    LogData(log);
+        ////}
 
         public string Publish(string channel, string message)
         {

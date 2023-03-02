@@ -187,7 +187,7 @@ namespace Planar.Job.Test
 
             var instance = Activator.CreateInstance(properties.JobType);
             MapJobInstanceProperties(context, properties.JobType, instance);
-            var settings = JobSettingsLoader.LoadJobSettingsForUnitTest();
+            var settings = JobSettingsLoader.LoadJobSettingsForUnitTest(properties.JobType);
             settings = settings.Merge(properties.GlobalSettings);
 
             Exception jobException = null;
