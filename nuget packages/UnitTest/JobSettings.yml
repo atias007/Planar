@@ -1,0 +1,7 @@
+﻿Servers:
+  - xx
+  - yy
+Ports:
+  - 9000
+  - 8000
+Max Diffrance Hours: 100
