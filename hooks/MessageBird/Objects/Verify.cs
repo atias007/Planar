@@ -12,12 +12,16 @@ namespace MessageBird.Objects
     {
         [EnumMember(Value = "sent")]
         Sent,
+
         [EnumMember(Value = "verified")]
         Verified,
+
         [EnumMember(Value = "active")]
         Active,
+
         [EnumMember(Value = "expired")]
         Expired,
+
         [EnumMember(Value = "failed")]
         Failed,
     }
@@ -75,6 +79,7 @@ namespace MessageBird.Objects
         public DateTime? ValidUntil { get; set; }
 
         private string originator;
+
         [JsonProperty("originator")]
         public string Originator
         {
@@ -86,7 +91,7 @@ namespace MessageBird.Objects
             {
                 Utilities.ParameterValidator.IsValidOriginator(value);
 
-                var numeric = new Regex("^\\+?[0-9]+$");
+                var numeric = new Regex("^\\+?[0-9]+$", RegexOptions.None, TimeSpan.FromMilliseconds(300));
                 if (!string.IsNullOrEmpty(value) && numeric.IsMatch(value))
                 {
                     value = value.TrimStart(new[] { '+' });
@@ -147,7 +152,7 @@ namespace MessageBird.Objects
             Recipient = recipientMsisdn;
         }
 
-        public Verify(string recipient, VerifyOptionalArguments arguments = null) : this(arguments)
+        public Verify(string recipient, VerifyOptionalArguments arguments) : this(arguments)
         {
             long recipientMsisdn;
             if (long.TryParse(recipient, out recipientMsisdn))
@@ -160,9 +165,9 @@ namespace MessageBird.Objects
             }
         }
 
-        private Verify(VerifyOptionalArguments arguments = null)
+        private Verify(VerifyOptionalArguments arguments) : this()
         {
-            arguments = arguments ?? new VerifyOptionalArguments();
+            arguments ??= new VerifyOptionalArguments();
 
             Template = arguments.Template;
             Encoding = arguments.Encoding;

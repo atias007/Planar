@@ -22,7 +22,7 @@ namespace MessageBird.Utilities
             }
         }
 
-        public static void ContainsAtLeast<T>(T [] param, int n, string paramName)
+        public static void ContainsAtLeast<T>(T[] param, int n, string paramName)
         {
             if (n < 0)
             {
@@ -36,17 +36,16 @@ namespace MessageBird.Utilities
 
             if (param.Length < n)
             {
-                throw new ArgumentException(String.Format("The array contains {0} elements, but at least {1} were expected", param.Length, n), paramName);  
+                throw new ArgumentException(String.Format("The array contains {0} elements, but at least {1} were expected", param.Length, n), paramName);
             }
         }
 
         public static void IsValidMessageType(MessageType messagetype)
         {
-            if(messagetype == MessageType.Tts)
+            if (messagetype == MessageType.Tts)
             {
                 throw new ArgumentException(String.Format("Messagetype not supported : {0}", messagetype));
             }
-
         }
 
         public static void IsValidOriginator(string originator)
@@ -59,11 +58,11 @@ namespace MessageBird.Utilities
 
             if (!string.IsNullOrEmpty(originator))
             {
-                var numeric = new Regex("^\\+?[0-9]+$");
-                var alphanumericWithWhitespace = new Regex("^[A-Za-z0-9]+(?:\\s[A-Za-z0-9]+)*$");
+                var numeric = new Regex("^\\+?[0-9]+$", RegexOptions.None, TimeSpan.FromMilliseconds(300));
+                var alphanumericWithWhitespace = new Regex("^[A-Za-z0-9]+(?:\\s[A-Za-z0-9]+)*$", RegexOptions.None, TimeSpan.FromMilliseconds(300));
                 var isNumeric = numeric.IsMatch(originator);
                 var isAlphanumericWithWhitespace = alphanumericWithWhitespace.IsMatch(originator);
-                var email = new Regex(@"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$");
+                var email = new Regex(@"^([\w\.\-]+)@([\w\-]+)((\.(\w){2,3})+)$", RegexOptions.None, TimeSpan.FromMilliseconds(300));
                 var isEmail = email.IsMatch(originator);
 
                 if (!isNumeric && !isAlphanumericWithWhitespace && !isEmail)

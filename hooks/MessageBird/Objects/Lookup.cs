@@ -9,26 +9,37 @@ namespace MessageBird.Objects
     {
         [EnumMember(Value = "fixed line")]
         FixedLine,
+
         [EnumMember(Value = "mobile")]
         Mobile,
+
         [EnumMember(Value = "fixed line or mobile")]
         FixedLineOrMobile,
+
         [EnumMember(Value = "toll free")]
         TollFree,
+
         [EnumMember(Value = "premium rate")]
         PremiumRate,
+
         [EnumMember(Value = "shared cost")]
         SharedCost,
+
         [EnumMember(Value = "voip")]
         Voip,
+
         [EnumMember(Value = "personal number")]
         PersonalNumber,
+
         [EnumMember(Value = "pager")]
         Pager,
+
         [EnumMember(Value = "universal access number")]
         UniversalAccessNumber,
+
         [EnumMember(Value = "voice mail")]
         VoiceMail,
+
         [EnumMember(Value = "unknown")]
         Unknown
     };
@@ -78,11 +89,6 @@ namespace MessageBird.Objects
 
         public Lookup()
         {
-        }
-
-        public Lookup(long phoneNumber)
-        {
-            PhoneNumber = phoneNumber;
         }
 
         public Lookup(long phoneNumber, LookupOptionalArguments optionalArguments = null)

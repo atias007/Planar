@@ -8,41 +8,52 @@ using Newtonsoft.Json.Converters;
 
 using MessageBird.Json.Converters;
 
-
 namespace MessageBird.Objects
 {
     public enum Direction
     {
         [EnumMember(Value = "mt")]
         MobileTerminated,
+
         [EnumMember(Value = "mo")]
         MobileOriginated
     };
+
     public enum MessageType
     {
         [EnumMember(Value = "sms")]
         Sms,
+
         [EnumMember(Value = "binary")]
         Binary,
+
         [EnumMember(Value = "premium")]
         Premium,
+
         [EnumMember(Value = "flash")]
         Flash,
-        [EnumMember(Value ="tts")]
+
+        [EnumMember(Value = "tts")]
         Tts,
-        [EnumMember(Value ="email")]
+
+        [EnumMember(Value = "email")]
         Email
     };
+
     public enum DataEncoding
     {
         [EnumMember(Value = "plain")]
         Plain,
+
         [EnumMember(Value = "unicode")]
         Unicode,
+
         [EnumMember(Value = "auto")]
         Auto
     };
-    public enum MessageClass { Flash = 0, Normal };
+
+    public enum MessageClass
+    { Flash = 0, Normal };
 
     public class MessageOptionalArguments
     {
@@ -81,6 +92,7 @@ namespace MessageBird.Objects
         public MessageType Type { get; set; }
 
         private string originator;
+
         [JsonProperty("originator")]
         public string Originator
         {
@@ -92,7 +104,7 @@ namespace MessageBird.Objects
             {
                 Utilities.ParameterValidator.IsValidOriginator(value);
 
-                var numeric = new Regex("^\\+?[0-9]+$");
+                var numeric = new Regex("^\\+?[0-9]+$", RegexOptions.None, TimeSpan.FromMilliseconds(300));
                 if (string.IsNullOrEmpty(value) || numeric.IsMatch(value))
                 {
                     value = value.TrimStart(new[] { '+' });
@@ -172,7 +184,7 @@ namespace MessageBird.Objects
             Recipients.SerializeMsisdnsOnly = false;
             var settings = new JsonSerializerSettings
             {
-                Formatting =  Formatting.Indented,
+                Formatting = Formatting.Indented,
                 NullValueHandling = NullValueHandling.Ignore
             };
             string serializedMessage = JsonConvert.SerializeObject(this, settings);

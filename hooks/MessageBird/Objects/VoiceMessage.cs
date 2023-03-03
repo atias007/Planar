@@ -11,8 +11,10 @@ namespace MessageBird.Objects
     {
         [EnumMember(Value = "continue")]
         Continue,
+
         [EnumMember(Value = "delay")]
         Delay,
+
         [EnumMember(Value = "hangup")]
         Hangup
     }
@@ -52,6 +54,7 @@ namespace MessageBird.Objects
         public string ReportUrl { get; set; }
 
         private string originator;
+
         [JsonProperty("originator")]
         public string Originator
         {
@@ -61,7 +64,7 @@ namespace MessageBird.Objects
             }
             set
             {
-                var numeric = new Regex("^\\+?[0-9]+$");
+                var numeric = new Regex("^\\+?[0-9]+$", RegexOptions.None, TimeSpan.FromMilliseconds(300));
                 if (!String.IsNullOrEmpty(value) && !numeric.IsMatch(value))
                 {
                     throw new ArgumentException("Originator can only contain numeric characters.");
@@ -80,6 +83,7 @@ namespace MessageBird.Objects
         }
 
         private string body;
+
         [JsonProperty("body")]
         public string Body
         {

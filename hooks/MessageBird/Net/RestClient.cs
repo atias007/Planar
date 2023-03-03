@@ -19,7 +19,7 @@ namespace MessageBird.Net
 
         public string ClientVersion
         {
-            get { return "3.1.0.0"; }
+            get { return "3.1"; }
         }
 
         public string ApiVersion
@@ -63,7 +63,7 @@ namespace MessageBird.Net
 
             return RequestWithResource("POST", uri, resource, HttpStatusCode.Created);
         }
-        
+
         /// <summary>
         /// Updates a resource. HTTP method is determined by
         /// RestClientOptions.UpdateMode.
@@ -187,11 +187,12 @@ namespace MessageBird.Net
                 case HttpStatusCode.NetworkReadTimeoutError:
                 case HttpStatusCode.NetworkConnectTimeoutError:
                     return new ErrorException("Something went wrong on our end, please try again", e);
+
                 default:
                     return new ErrorException(String.Format("Unhandled status code {0}", statusCode), e);
             }
         }
-               
+
         public virtual T PerformHttpRequest<T>(string method, string uri, string body, HttpStatusCode expectedStatusCode, string baseUrl, Func<HttpWebRequest, HttpStatusCode, T> processRequest)
         {
             var request = PrepareRequest(method, uri, baseUrl);
@@ -227,7 +228,7 @@ namespace MessageBird.Net
         {
             return PerformHttpRequest(method, uri, null, expectedStatusCode, baseUrl);
         }
-        
+
         public virtual string PerformHttpRequest(string method, string uri, string body, HttpStatusCode expectedStatusCode)
         {
             return PerformHttpRequest(method, uri, body, expectedStatusCode, Endpoint);
