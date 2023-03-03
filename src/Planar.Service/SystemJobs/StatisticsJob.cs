@@ -27,7 +27,7 @@ namespace Planar.Service.SystemJobs
 
         public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
         {
-            const string description = "System job for save statistics data to database";
+            const string description = "System job for saving statistics data to database";
             var span = TimeSpan.FromHours(1);
             var start = DateTime.Now.Date.AddMinutes(1);
             await Schedule<ClearTraceTableJob>(scheduler, description, span, start, stoppingToken);

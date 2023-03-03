@@ -11,11 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "package", "package", "{1764
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Monitor.Hook", "..\nuget packages\Planar.Monitor.Hook\Planar.Monitor.Hook.csproj", "{A7880C13-111A-4FFC-A89C-49DB6630A624}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planar.MonitorHook.MessageBirdSms", "Planar.MonitorHook.MessageBirdSms\Planar.MonitorHook.MessageBirdSms.csproj", "{DDF803AB-C722-4E01-8147-2A3C0D916856}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ThirdParty", "ThirdParty", "{E418431B-0181-4B6C-A475-B6EBFB3FBADA}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MessageBird", "MessageBird\MessageBird.csproj", "{0A8BA895-706A-4EB3-826A-9457C59E6B7D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.MonitorHook.MessageBirdSms", "Planar.MonitorHook.MessageBirdSms\Planar.MonitorHook.MessageBirdSms.csproj", "{DDF803AB-C722-4E01-8147-2A3C0D916856}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,17 +35,12 @@ Global
 		{DDF803AB-C722-4E01-8147-2A3C0D916856}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DDF803AB-C722-4E01-8147-2A3C0D916856}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DDF803AB-C722-4E01-8147-2A3C0D916856}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0A8BA895-706A-4EB3-826A-9457C59E6B7D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0A8BA895-706A-4EB3-826A-9457C59E6B7D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0A8BA895-706A-4EB3-826A-9457C59E6B7D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0A8BA895-706A-4EB3-826A-9457C59E6B7D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A7880C13-111A-4FFC-A89C-49DB6630A624} = {1764F5AF-6662-4E39-9E43-E09C28B8120E}
-		{0A8BA895-706A-4EB3-826A-9457C59E6B7D} = {E418431B-0181-4B6C-A475-B6EBFB3FBADA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AB111D60-C98F-4AB0-A563-57AFA8FCF45F}
