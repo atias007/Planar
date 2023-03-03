@@ -16,7 +16,7 @@ CREATE TABLE [Statistics].[ConcurentQueue](
  CONSTRAINT [PK_ConcurentQueue] PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
 
@@ -30,7 +30,7 @@ CREATE TABLE [Statistics].[ConcurentExecution](
  CONSTRAINT [PK_ConcurentExecution] PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
 
@@ -77,8 +77,8 @@ WITH CTE([RecordDate],[RecordHour],[Server],[InstanceId],[ConcurentValue])
 AS
 (
 SELECT 
-	CONVERT(DATETIME, CONVERT(DATE, RecordDate)) [RecordDate],
-	DATEPART(HOUR, RecordDate) [RecordHour],
+	CONVERT(DATETIME, CONVERT(DATE, [RecordDate])) [RecordDate],
+	DATEPART(HOUR, [RecordDate]) [RecordHour],
 	[Server],
 	[InstanceId],
 	[ConcurentValue]
@@ -108,3 +108,56 @@ DELETE FROM [Statistics].[ConcurentQueue]
 WHERE RecordDate < @current
 
 COMMIT
+
+GO
+
+CREATE TABLE [Statistics].[MaxDurationExecution] (
+    [Id] [bigint] IDENTITY(1,1) NOT NULL,
+	[RecordDate] [datetime] NOT NULL,
+	[MaxDuration] [int] NOT NULL,
+ CONSTRAINT [PK_MaxDurationExecution] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+CREATE PROC [Statistics].[SetMaxDurationExecution]
+AS
+
+DECLARE @StartDate datetime
+SELECT @StartDate = MAX([RecordDate]) FROM [Statistics].[MaxDurationExecution]
+SET @StartDate = COALESCE(@StartDate, DATEADD(YEAR, -10, GETDATE()))
+SET @StartDate = DATEADD(HOUR, 1, @StartDate)
+
+DECLARE @today datetime = CONVERT(DATE, GETDATE())
+DECLARE @hour tinyint = DATEPART(HOUR, GETDATE())
+DECLARE @current datetime = DATEADD(HOUR, @hour, @today)
+
+;
+WITH CTE([RecordDate],[RecordHour],[Duration])
+AS
+(
+	SELECT 
+		CONVERT(DATETIME, CONVERT(DATE, [StartDate])) [RecordDate],
+		DATEPART(HOUR, [StartDate]) [RecordHour],
+		[Duration]
+	FROM 
+		[dbo].[JobInstanceLog]
+	WHERE 
+	    [Duration] IS NOT NULL 
+		AND [StartDate] > @StartDate 
+		AND [StartDate] < @current
+)
+INSERT INTO [Statistics].[MaxDurationExecution]
+	([RecordDate], [MaxDuration])
+SELECT 
+	DATEADD(HOUR,[RecordHour],[RecordDate]) [RecordDate],
+	MAX([Duration]) [MaxDuration]
+FROM CTE
+GROUP BY
+	[RecordDate],
+	[RecordHour]
+ORDER BY
+	[RecordDate],
+	[RecordHour]

@@ -107,7 +107,7 @@ namespace MessageBird.Objects
                 var numeric = new Regex("^\\+?[0-9]+$", RegexOptions.None, TimeSpan.FromMilliseconds(300));
                 if (string.IsNullOrEmpty(value) || numeric.IsMatch(value))
                 {
-                    value = value.TrimStart(new[] { '+' });
+                    value = value?.TrimStart(new[] { '+' });
                 }
 
                 originator = value;

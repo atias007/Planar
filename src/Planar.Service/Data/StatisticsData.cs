@@ -18,7 +18,7 @@ namespace Planar.Service.Data
             await SaveChangesAsync();
         }
 
-        public async Task ClearStatisticsTables(int overDays)
+        public async Task<int> ClearStatisticsTables(int overDays)
         {
             var parameters = new { OverDays = overDays };
             using var conn = _context.Database.GetDbConnection();
@@ -27,7 +27,27 @@ namespace Planar.Service.Data
                 commandType: CommandType.StoredProcedure,
                 parameters: parameters);
 
-            await conn.ExecuteAsync(cmd);
+            return await conn.ExecuteAsync(cmd);
+        }
+
+        public async Task<int> SetMaxConcurentExecution()
+        {
+            using var conn = _context.Database.GetDbConnection();
+            var cmd = new CommandDefinition(
+                commandText: "Statistics.SetMaxConcurentExecution",
+                commandType: CommandType.StoredProcedure);
+
+            return await conn.ExecuteAsync(cmd);
+        }
+
+        public async Task<int> SetMaxDurationExecution()
+        {
+            using var conn = _context.Database.GetDbConnection();
+            var cmd = new CommandDefinition(
+                commandText: "[Statistics].[MaxDurationExecution]",
+                commandType: CommandType.StoredProcedure);
+
+            return await conn.ExecuteAsync(cmd);
         }
     }
 }

@@ -25,15 +25,7 @@ namespace Planar.Service.SystemJobs
 
         public Task Execute(IJobExecutionContext context)
         {
-            try
-            {
-                return DoWork();
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Fail to clear trace table: {Message}", ex.Message);
-                return Task.CompletedTask;
-            }
+            return SafeDoWork();
         }
 
         public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
@@ -44,13 +36,27 @@ namespace Planar.Service.SystemJobs
             await Schedule<ClearTraceTableJob>(scheduler, description, span, start, stoppingToken);
         }
 
-        private async Task DoWork()
+        private async Task SafeDoWork()
         {
-            await _traceData?.ClearTraceTable(AppSettings.ClearTraceTableOverDays);
-            _logger.LogInformation("Clear trace table rows (older then {Days} days)", AppSettings.ClearTraceTableOverDays);
+            try
+            {
+                await _traceData?.ClearTraceTable(AppSettings.ClearTraceTableOverDays);
+                _logger.LogInformation("Clear trace table rows (older then {Days} days)", AppSettings.ClearTraceTableOverDays);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to clear trace table rows (older then {Days} days)", AppSettings.ClearTraceTableOverDays);
+            }
 
-            await _statisticsData?.ClearStatisticsTables(AppSettings.ClearTraceTableOverDays);
-            _logger.LogInformation("Clear statistics table rows (older then {Days} days)", AppSettings.ClearTraceTableOverDays);
+            try
+            {
+                await _statisticsData?.ClearStatisticsTables(AppSettings.ClearTraceTableOverDays);
+                _logger.LogInformation("Clear statistics table rows (older then {Days} days)", AppSettings.ClearTraceTableOverDays);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to clear statistics table rows (older then {Days} days)", AppSettings.ClearTraceTableOverDays);
+            }
         }
     }
 }
