@@ -5,23 +5,26 @@ namespace Planar.CLI.Entities
 {
     public class CliGetHistoryRequest
     {
-        [ActionProperty(ShortName = "r", LongName = "rows")]
+        [ActionProperty("r", "rows")]
         public int Rows { get; set; }
 
-        [ActionProperty(ShortName = "f", LongName = "from")]
+        [ActionProperty("f", "from")]
         public DateTime FromDate { get; set; }
 
-        [ActionProperty(ShortName = "a", LongName = "asc")]
+        [ActionProperty("a", "asc")]
         public bool Ascending { get; set; }
 
-        [ActionProperty(ShortName = "t", LongName = "to")]
+        [ActionProperty("t", "to")]
         public DateTime ToDate { get; set; }
 
-        [ActionProperty(ShortName = "s", LongName = "status")]
+        [ActionProperty("s", "status")]
         public string? Status { get; set; }
 
-        [ActionProperty(ShortName = "j", LongName = "job")]
+        [ActionProperty("j", "job")]
         public string? JobId { get; set; }
+
+        [ActionProperty("jt", "job-type")]
+        public string? JobType { get; set; }
 
         [ActionProperty("jg", "job-group")]
         public string? JobGroup { get; set; }

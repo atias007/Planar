@@ -107,3 +107,6 @@ V 1.2.0
 - add 'author'
 - add hook test option
 - send GlobalConfig dictionary to hook
+- add JobType property to job / history
+- add JobType argument to cli job ls
+- add JobType argument to cli history ls

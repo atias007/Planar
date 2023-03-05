@@ -121,6 +121,13 @@ namespace Planar.Service.API
                 result.Add(details);
             }
 
+            if (!string.IsNullOrEmpty(request.JobType))
+            {
+                result = result
+                    .Where(r => string.Equals(r.JobType, request.JobType, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
             result = result
                 .OrderBy(r => r.Group)
                 .ThenBy(r => r.Name)

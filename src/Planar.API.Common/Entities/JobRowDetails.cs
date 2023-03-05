@@ -14,6 +14,9 @@ namespace Planar.API.Common.Entities
         public string Name { get; set; }
 
         [YamlMember(Order = 3)]
+        public string JobType { get; set; }
+
+        [YamlMember(Order = 4)]
         public string Description { get; set; }
     }
 }

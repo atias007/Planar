@@ -70,8 +70,8 @@ namespace Planar.CLI
         {
             var table = new Table();
             if (response == null) { return table; }
-            table.AddColumns("JobId", "Key (Group.Name)", "Description");
-            response.ForEach(r => table.AddRow(r.Id, $"{r.Group}.{r.Name}".EscapeMarkup(), r.Description.EscapeMarkup()));
+            table.AddColumns("JobId", "Key (Group.Name)", "JobType", "Description");
+            response.ForEach(r => table.AddRow(r.Id, $"{r.Group}.{r.Name}".EscapeMarkup(), r.JobType, r.Description.EscapeMarkup()));
             return table;
         }
 
@@ -125,6 +125,7 @@ namespace Planar.CLI
             table.AddRow(nameof(response.Group), response.Group.EscapeMarkup());
             table.AddRow(nameof(response.Name), response.Name.EscapeMarkup());
             table.AddRow(nameof(response.Author), response.Author.EscapeMarkup());
+            table.AddRow(nameof(response.JobType), response.JobType.EscapeMarkup());
             table.AddRow(nameof(response.Description), response.Description.EscapeMarkup());
             table.AddRow(nameof(response.Durable), response.Durable.ToString());
             table.AddRow(nameof(response.RequestsRecovery), response.RequestsRecovery.ToString());

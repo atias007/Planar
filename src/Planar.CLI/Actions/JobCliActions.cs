@@ -119,6 +119,11 @@ namespace Planar.CLI.Actions
             if (request.All) { p = AllJobsMembers.All; }
             restRequest.AddQueryParameter("filter", (int)p);
 
+            if (!string.IsNullOrEmpty(request.JobType))
+            {
+                restRequest.AddQueryParameter("jobType", request.JobType);
+            }
+
             var result = await RestProxy.Invoke<List<JobRowDetails>>(restRequest);
             var message = string.Empty;
             CliActionResponse response;

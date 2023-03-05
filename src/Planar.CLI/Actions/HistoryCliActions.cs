@@ -57,6 +57,11 @@ namespace Planar.CLI.Actions
                 restRequest.AddQueryParameter("jobgroup", request.JobGroup);
             }
 
+            if (!string.IsNullOrEmpty(request.JobType))
+            {
+                restRequest.AddQueryParameter("jobtype", request.JobType);
+            }
+
             restRequest.AddQueryParameter("ascending", request.Ascending);
 
             var result = await RestProxy.Invoke<List<CliJobInstanceLog>>(restRequest);
