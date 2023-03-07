@@ -40,11 +40,10 @@ namespace Planar.Service
                 // convert time zones using converter that can handle Windows/Linux differences
                 q.UseTimeZoneConverter();
 
-                ////q.UseJobAutoInterrupt(options =>
-                ////{
-                ////    // this is the default
-                ////    options.DefaultMaxRunTime = TimeSpan.FromMinutes(5);
-                ////});
+                q.UseJobAutoInterrupt(options =>
+                {
+                    options.DefaultMaxRunTime = AppSettings.JobAutoStopSpan;
+                });
 
                 q.AddJobListener<LogJobListener>();
                 q.AddTriggerListener<RetryTriggerListener>();
@@ -55,7 +54,7 @@ namespace Planar.Service
                 {
                     x.PerformSchemaValidation = true; // default
 
-                    x.RetryInterval = TimeSpan.FromSeconds(10);
+                    x.RetryInterval = TimeSpan.FromSeconds(2);
 
                     // force job data map values to be considered as strings
                     // prevents nasty surprises if object is accidentally serialized and then

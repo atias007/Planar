@@ -9,7 +9,7 @@ namespace Planar.Validation
         public AddJobFoldeRequestValidator()
         {
             RuleFor(r => r.Folder).NotEmpty().Length(2, 500).Path();
-            RuleFor(r => r.JobFileName).NotEmpty().Length(2, 500);
+            RuleFor(r => r.JobFileName).MaximumLength(500);
         }
     }
 }

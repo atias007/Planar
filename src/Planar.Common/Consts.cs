@@ -50,6 +50,7 @@ namespace Planar
         public const string ConnectionStringVariableKey = "PLANAR_DBCONNSTRING";
         public const string DatabaseProviderVariableKey = "PLANAR_DBPROVIDER";
         public const string MaxConcurrencyVariableKey = "PLANAR_MAXCONCURRENCY";
+        public const string JobAutoStopSpanVariableKey = "PLANAR_AUTOSTOPSPAN";
         public const string PersistRunningJobsSpanVariableKey = "PLANAR_PERSISTSPAN";
         public const string ClearTraceTableOverDaysVariableKey = "PLANAR_CLEARTRACEDAYS";
         public const string ClearJobLogTableOverDaysVariableKey = "PLANAR_CLEARJOBLOGYDAYS";

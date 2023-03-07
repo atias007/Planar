@@ -39,7 +39,7 @@ namespace Planar.CLI.Actions
             }
 
             var body = new SetJobPathRequest { Folder = request.Folder };
-            var restRequest = new RestRequest("job/folder", Method.Post)
+            var restRequest = new RestRequest("job/path", Method.Post)
                 .AddBody(body);
             var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
 

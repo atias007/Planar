@@ -1,0 +1,19 @@
+job type: ProcessJob
+name: LongRunningProcess
+group: Processes
+description: Process running for 30 minutes
+durable: true
+concurrent: false
+
+properties:
+  path: LongRunningProcess
+  filename: LongRunningProcess.exe
+  success exit codes:
+    - 0
+  log process information: true
+
+simple triggers:
+  - name: every-2hour-trigger
+    interval: 02:00:00
+    misfire behaviour: FireNow
+    priority: 1

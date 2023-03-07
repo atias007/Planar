@@ -29,6 +29,8 @@ namespace Planar.Service
 
         public static bool Clustering { get; set; }
 
+        public static TimeSpan JobAutoStopSpan { get; set; }
+
         public static TimeSpan ClusteringCheckinInterval { get; set; }
 
         public static TimeSpan ClusteringCheckinMisfireThreshold { get; set; }
@@ -88,6 +90,7 @@ namespace Planar.Service
             InstanceId = GetSettings(configuration, Consts.InstanceIdVariableKey, nameof(InstanceId), "AUTO");
             ServiceName = GetSettings(configuration, Consts.ServiceNameVariableKey, nameof(ServiceName), "PlanarService");
             Clustering = GetSettings(configuration, Consts.ClusteringVariableKey, nameof(Clustering), false);
+            JobAutoStopSpan = GetSettings(configuration, Consts.JobAutoStopSpanVariableKey, nameof(JobAutoStopSpan), TimeSpan.FromHours(2));
             ClusteringCheckinInterval = GetSettings(configuration, Consts.ClusteringCheckinIntervalVariableKey, nameof(ClusteringCheckinInterval), TimeSpan.FromSeconds(5));
             ClusteringCheckinMisfireThreshold = GetSettings(configuration, Consts.ClusteringCheckinMisfireThresholdVariableKey, nameof(ClusteringCheckinMisfireThreshold), TimeSpan.FromSeconds(5));
             ClusterHealthCheckInterval = GetSettings(configuration, Consts.ClusterHealthCheckIntervalVariableKey, nameof(ClusterHealthCheckInterval), TimeSpan.FromMinutes(1));

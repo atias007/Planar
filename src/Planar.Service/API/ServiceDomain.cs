@@ -40,6 +40,7 @@ namespace Planar.Service.API
                 DatabaseProvider = (await metadata).JobStoreType.FullName,
                 RunningSince = (await metadata).RunningSince?.DateTime,
                 QuartzVersion = (await metadata).Version,
+                JobAutoStopSpan = AppSettings.JobAutoStopSpan,
                 ClusteringCheckinInterval = AppSettings.ClusteringCheckinInterval,
                 ClusteringCheckinMisfireThreshold = AppSettings.ClusteringCheckinMisfireThreshold,
                 ClusterPort = AppSettings.ClusterPort,
