@@ -147,7 +147,7 @@ namespace Planar.CLI.Actions
 
                     if (request.DataValue != null)
                     {
-                        request.DataValue = request.DataValue;
+                        prm1.DataValue = request.DataValue;
                     }
 
                     var restRequest1 = new RestRequest("trigger/data", Method.Post).AddBody(prm1);

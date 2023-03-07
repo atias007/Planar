@@ -170,7 +170,7 @@ namespace Planar.CLI
                 $"[{CliFormat.ErrorColor}]{display}[/]";
         }
 
-        public static string GetLevelMarkup(string level)
+        public static string GetLevelMarkup(string? level)
         {
             return level switch
             {

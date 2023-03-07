@@ -13,13 +13,13 @@ namespace Planar.API.Common.Entities
         public DateTime? End { get; set; }
 
         [YamlMember(Order = 7)]
-        public string CalendarName { get; set; }
+        public string? CalendarName { get; set; }
 
         [YamlMember(Order = 8)]
         public TimeSpan? RetrySpan { get; set; }
 
         [YamlMember(Order = 9)]
-        public string MisfireBehaviour { get; set; }
+        public string? MisfireBehaviour { get; set; }
 
         [YamlMember(Order = 10)]
         public int Priority { get; set; }
@@ -37,9 +37,9 @@ namespace Planar.API.Common.Entities
         public DateTime? FinalFire { get; set; }
 
         [YamlMember(Order = 99)]
-        public SortedDictionary<string, string> DataMap { get; set; }
+        public SortedDictionary<string, string> DataMap { get; set; } = new SortedDictionary<string, string>();
 
         [YamlMember(Order = 100)]
-        public string State { get; set; }
+        public string? State { get; set; }
     }
 }

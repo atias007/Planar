@@ -427,7 +427,7 @@ namespace Planar.CLI.Actions
 
                     if (request.DataValue != null)
                     {
-                        request.DataValue = request.DataValue;
+                        prm1.DataValue = request.DataValue;
                     }
 
                     var restRequest1 = new RestRequest("job/data", Method.Post).AddBody(prm1);
@@ -690,7 +690,7 @@ namespace Planar.CLI.Actions
 
             var folders = data.Select(e =>
                 e.Name == e.RelativeFolder ?
-                e.Name :
+                e.Name ?? string.Empty :
                 $"{e.Name} ({e.RelativeFolder})");
 
             var selectedItem = PromptSelection(folders, "job folder") ?? string.Empty;

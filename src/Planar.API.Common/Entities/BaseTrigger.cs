@@ -6,14 +6,14 @@ namespace Planar.API.Common.Entities
 {
     public class BaseTrigger
     {
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
 
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
-        public string Group { get; set; }
+        public string? Group { get; set; }
 
         [YamlMember(Alias = "misfire behaviour")]
-        public string MisfireBehaviour { get; set; }
+        public string? MisfireBehaviour { get; set; }
 
         public int? Priority { get; set; }
 
@@ -21,8 +21,8 @@ namespace Planar.API.Common.Entities
         public TimeSpan? RetrySpan { get; set; }
 
         [YamlMember(Alias = "trigger data")]
-        public Dictionary<string, string> TriggerData { get; set; }
+        public Dictionary<string, string> TriggerData { get; set; } = new Dictionary<string, string>();
 
-        public string Calendar { get; set; }
+        public string? Calendar { get; set; }
     }
 }

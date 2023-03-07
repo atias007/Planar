@@ -6,7 +6,7 @@ namespace Planar.API.Common.Entities
     public class GetServiceInfoResponse
     {
         [YamlMember(Order = 0)]
-        public string Environment { get; set; }
+        public string Environment { get; set; } = string.Empty;
 
         [YamlMember(Order = 1)]
         public bool IsStarted { get; set; }
@@ -54,7 +54,7 @@ namespace Planar.API.Common.Entities
         public short ClusterPort { get; set; }
 
         [YamlMember(Order = 18)]
-        public string LogLevel { get; set; }
+        public string LogLevel { get; set; } = string.Empty;
 
         [YamlMember(Order = 19)]
         public bool SwaggerUI { get; set; }
@@ -78,15 +78,15 @@ namespace Planar.API.Common.Entities
         public int TotalGroups { get; set; }
 
         [YamlMember(Order = 99)]
-        public string DatabaseProvider { get; set; }
+        public string DatabaseProvider { get; set; } = string.Empty;
 
         [YamlMember(Order = 100)]
-        public string QuartzVersion { get; set; }
+        public string QuartzVersion { get; set; } = string.Empty;
 
         [YamlMember(Order = 101)]
-        public string ServiceVersion { get; set; }
+        public string ServiceVersion { get; set; } = string.Empty;
 
         [YamlMember(Order = 102)]
-        public string CliVersion { get; set; }
+        public string CliVersion { get; set; } = string.Empty;
     }
 }

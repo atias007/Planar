@@ -16,7 +16,7 @@ namespace Planar.TeamsMonitorHook.TeamsCards
         public string Summary => "Planar monitor notification";
         public string ThemeColor => "0078D7";
 
-        public string Title { get; set; }
+        public string? Title { get; set; }
 
         public List<Section> Sections { get; set; } = new();
     }
@@ -25,12 +25,12 @@ namespace Planar.TeamsMonitorHook.TeamsCards
 
     public class Section
     {
-        public string ActivityTitle { get; set; }
-        public string ActivitySubtitle { get; set; }
-        public string ActivityImage { get; set; }
+        public string? ActivityTitle { get; set; }
+        public string? ActivitySubtitle { get; set; }
+        public string? ActivityImage { get; set; }
 
         public List<Fact> Facts { get; set; } = new();
-        public string Text { get; set; }
+        public string? Text { get; set; }
     }
 
     public class Fact

@@ -107,8 +107,8 @@ namespace Planar.CLI
             var table = new Table();
             if (response == null) { return table; }
             table.AddColumns("Trigger Id", "Job Key", "State", "Next Fire Time", "Interval/Cron");
-            response.SimpleTriggers.ForEach(r => table.AddRow($"{r.Id}", $"{r.TriggerGroup}.{r.TriggerName}".EscapeMarkup(), r.State, CliTableFormat.FormatDateTime(r.NextFireTime), CliTableFormat.FormatTimeSpan(r.RepeatInterval)));
-            response.CronTriggers.ForEach(r => table.AddRow($"{r.Id}", $"{r.TriggerGroup}.{r.TriggerName}".EscapeMarkup(), r.State, CliTableFormat.FormatDateTime(r.NextFireTime), r.CronExpression.EscapeMarkup()));
+            response.SimpleTriggers.ForEach(r => table.AddRow($"{r.Id}", $"{r.TriggerGroup}.{r.TriggerName}".EscapeMarkup(), r.State ?? string.Empty, CliTableFormat.FormatDateTime(r.NextFireTime), CliTableFormat.FormatTimeSpan(r.RepeatInterval)));
+            response.CronTriggers.ForEach(r => table.AddRow($"{r.Id}", $"{r.TriggerGroup}.{r.TriggerName}".EscapeMarkup(), r.State ?? string.Empty, CliTableFormat.FormatDateTime(r.NextFireTime), r.CronExpression.EscapeMarkup()));
             return table;
         }
 

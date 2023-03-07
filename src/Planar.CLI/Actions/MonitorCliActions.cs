@@ -196,7 +196,7 @@ namespace Planar.CLI.Actions
 
         private static int GetDistributionGroup(IEnumerable<GroupInfo> groups)
         {
-            var groupsNames = groups.Select(group => group.Name);
+            var groupsNames = groups.Select(group => group.Name ?? string.Empty);
             var selectedGroup = PromptSelection(groupsNames, "distribution group");
 
             var group = groups.First(e => e.Name == selectedGroup);
