@@ -39,20 +39,18 @@ namespace Planar.CLI.CliGeneral
             grid.AddColumn();
             grid.AddColumn();
 
-            grid.AddRow(new Markup[] {
+            grid.AddRow(
                 new Markup($"{space}"),
                 new Markup($"[underline bold]{header11}[/]"),
-                new Markup($"[underline bold]{header22}[/]")
-            });
+                new Markup($"[underline bold]{header22}[/]"));
 
             var modules = BaseCliAction.GetModules();
             foreach (var m in modules)
             {
-                grid.AddRow(new Markup[] {
+                grid.AddRow(
                     new Markup($"{space}"),
                     new Markup($"[cornsilk1]{m.Name}{space}[/]"),
-                    new Markup($"{m.Description.EscapeMarkup()}")
-                });
+                    new Markup($"{m.Description.EscapeMarkup()}"));
             }
 
             grid.AddEmptyRow();
@@ -79,11 +77,11 @@ namespace Planar.CLI.CliGeneral
             grid.AddColumn();
             grid.AddColumn();
             grid.AddColumn();
-            grid.AddRow(new Markup[] {
+            grid.AddRow(
                 new Markup($"{space}"),
                 new Markup($"[underline bold]{header1}[/]"),
                 new Markup($"[underline bold]{header2}[/]")
-            });
+            );
 
             foreach (var ac in actions)
             {
@@ -92,11 +90,11 @@ namespace Planar.CLI.CliGeneral
                     new Markup($"{ac.ArgumentsDisplayName.EscapeMarkup()}\r\n[black on lightskyblue1]{wizardText.EscapeMarkup()}[/]") :
                     new Markup($"{ac.ArgumentsDisplayName.EscapeMarkup()}");
 
-                grid.AddRow(new Markup[] {
+                grid.AddRow(
                     new Markup($"{space}"),
                     new Markup($"[cornsilk1]{ac.CommandDisplayName}{space}[/]"),
                     mu
-                });
+                );
             }
 
             grid.AddEmptyRow();
