@@ -97,7 +97,7 @@ namespace Planar.TeamsMonitorHook
                         ActivityTitle = $"For job: {details.JobGroup}.{details.JobName}",
                         ActivitySubtitle = details.JobDescription,
                         ActivityImage = image,
-                        Text= details.Exception?.Message,
+                        Text = details.Exception?.Message ?? string.Empty,
                         Facts = new List<Fact>
                         {
                             new Fact("Fire time:", $"{details.FireTime:g}"),

@@ -44,7 +44,7 @@ namespace Planar.Service.Data
         {
             using var conn = _context.Database.GetDbConnection();
             var cmd = new CommandDefinition(
-                commandText: "[Statistics].[MaxDurationExecution]",
+                commandText: "Statistics.SetMaxDurationExecution",
                 commandType: CommandType.StoredProcedure);
 
             return await conn.ExecuteAsync(cmd);

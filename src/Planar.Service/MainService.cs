@@ -156,7 +156,8 @@ namespace Planar.Service
                 _logger.LogInformation("Initialize: {Operation}", nameof(ScheduleSystemJobs));
                 await PersistDataJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
                 await ClusterHealthCheckJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
-                await ClearTraceTableJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
+                await ClearHistoryJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
+                await StatisticsJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
             }
             catch (Exception ex)
             {

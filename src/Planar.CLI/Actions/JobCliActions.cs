@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("job")]
+    [Module("job", "Actions to add, remove, list, update and operate jobs")]
     public class JobCliActions : BaseCliAction<JobCliActions>
     {
         [Action("add")]
@@ -38,7 +38,7 @@ namespace Planar.CLI.Actions
                 request = wrapper.Request;
             }
 
-            var body = new SetJobFoldeRequest { Folder = request.Folder };
+            var body = new SetJobPathRequest { Folder = request.Folder };
             var restRequest = new RestRequest("job/folder", Method.Post)
                 .AddBody(body);
             var result = await RestProxy.Invoke<JobIdResponse>(restRequest);
@@ -92,12 +92,12 @@ namespace Planar.CLI.Actions
             if (result.IsSuccessful && result.Data != null)
             {
                 var triggers = result.Data.SimpleTriggers
-                    .OrderBy(d => d.Name)
-                    .Select(d => $"{d.Group}.{d.Name}")
+                    .OrderBy(d => d.TriggerName)
+                    .Select(d => $"{d.TriggerGroup}.{d.TriggerName}")
                     .Union(
                          result.Data.CronTriggers
-                         .OrderBy(d => d.Name)
-                        .Select(d => $"{d.Group}.{d.Name}")
+                         .OrderBy(d => d.TriggerName)
+                        .Select(d => $"{d.TriggerGroup}.{d.TriggerName}")
                     )
                     .ToList();
 
@@ -403,7 +403,7 @@ namespace Planar.CLI.Actions
                 options = MapUpdateJobOptions(request.Options.Value);
             }
 
-            var body = new UpdateJobFolderRequest { Folder = request.Folder, UpdateJobOptions = options };
+            var body = new UpdateJobPathRequest { Folder = request.Folder, UpdateJobOptions = options };
             var restRequest = new RestRequest("job/folder", Method.Put)
                 .AddBody(body);
 
@@ -423,8 +423,12 @@ namespace Planar.CLI.Actions
                     {
                         Id = request.Id,
                         DataKey = request.DataKey,
-                        DataValue = request.DataValue
                     };
+
+                    if (request.DataValue != null)
+                    {
+                        request.DataValue = request.DataValue;
+                    }
 
                     var restRequest1 = new RestRequest("job/data", Method.Post).AddBody(prm1);
                     result = await RestProxy.Invoke(restRequest1);

@@ -28,6 +28,18 @@ namespace Planar.Service.Data
             await conn.ExecuteAsync(cmd);
         }
 
+        public async Task ClearJobLogTable(int overDays)
+        {
+            var parameters = new { OverDays = overDays };
+            using var conn = _context.Database.GetDbConnection();
+            var cmd = new CommandDefinition(
+                commandText: "dbo.ClearLogInstance",
+                commandType: CommandType.StoredProcedure,
+                parameters: parameters);
+
+            await conn.ExecuteAsync(cmd);
+        }
+
         public Trace GetTrace(int key)
         {
             return _context.Traces.Find(key);

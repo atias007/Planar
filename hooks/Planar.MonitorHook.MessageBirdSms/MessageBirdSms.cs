@@ -30,12 +30,6 @@ namespace Planar.MonitorHook.MessageBirdSms
         public override Task HandleSystem(IMonitorSystemDetails monitorDetails)
         {
             var message = $"{monitorDetails.EventTitle}: {monitorDetails.Message}" + $"\r\nFireTime: {DateTime.Now:g}";
-
-            if (monitorDetails.Exception != null)
-            {
-                //message += $" Error: {monitorDetails.Exception.Message}";
-            }
-
             SendMessage(message, monitorDetails);
             return Task.CompletedTask;
         }
@@ -53,6 +47,7 @@ namespace Planar.MonitorHook.MessageBirdSms
 
             if (!ValidatePrefix(prefix)) { return; }
             if (!ValidateAccessKey(accessKey)) { return; }
+            if (accessKey == null) { return; }
 
             var phones = monitor.Users.Select(p => p.PhoneNumber1)
                 .Union(monitor.Users.Select(p => p.PhoneNumber2))
@@ -71,7 +66,7 @@ namespace Planar.MonitorHook.MessageBirdSms
 
                 foreach (var item in result.Recipients.Items)
                 {
-                    if (item.Status != MessageBird.Objects.Recipient.RecipientStatus.Sent)
+                    if (item.Status != Recipient.RecipientStatus.Sent)
                     {
                         LogError(null, "sms message to {Phone} fail with status {Status}", item.Msisdn, item.Status.ToString());
                     }
@@ -83,7 +78,7 @@ namespace Planar.MonitorHook.MessageBirdSms
             }
         }
 
-        private bool ValidatePrefix(string? prefix)
+        private static bool ValidatePrefix(string? prefix)
         {
             if (string.IsNullOrEmpty(prefix)) { return true; }
             return true;

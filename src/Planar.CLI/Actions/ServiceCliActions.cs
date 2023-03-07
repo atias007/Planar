@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("service")]
+    [Module("service", "Actions to operate service, check alive, list calendars and more")]
     public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     {
         [Action("stop")]

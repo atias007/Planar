@@ -45,6 +45,10 @@ namespace Planar.Service
 
         public static int ClearTraceTableOverDays { get; set; }
 
+        public static int ClearJobLogTableOverDays { get; set; }
+
+        public static int ClearStatisticsTablesOverDays { get; set; }
+
         public static short HttpPort { get; set; }
 
         public static short HttpsPort { get; set; }
@@ -90,6 +94,8 @@ namespace Planar.Service
             ClusterPort = GetSettings<short>(configuration, Consts.ClusterPortVariableKey, nameof(ClusterPort), 12306);
             DatabaseProvider = GetSettings(configuration, Consts.DatabaseProviderVariableKey, nameof(DatabaseProvider), "Npgsql");
             ClearTraceTableOverDays = GetSettings(configuration, Consts.ClearTraceTableOverDaysVariableKey, nameof(ClearTraceTableOverDays), 365);
+            ClearJobLogTableOverDays = GetSettings(configuration, Consts.ClearJobLogTableOverDaysVariableKey, nameof(ClearJobLogTableOverDays), 365);
+            ClearStatisticsTablesOverDays = GetSettings(configuration, Consts.ClearStatisticsTablesOverDaysVariableKey, nameof(ClearStatisticsTablesOverDays), 365);
             SwaggerUI = GetSettings(configuration, Consts.SwaggerUIVariableKey, nameof(SwaggerUI), true);
             OpenApiUI = GetSettings(configuration, Consts.OpenApiUIVariableKey, nameof(OpenApiUI), true);
             DeveloperExceptionPage = GetSettings(configuration, Consts.DeveloperExceptionPageVariableKey, nameof(DeveloperExceptionPage), true);

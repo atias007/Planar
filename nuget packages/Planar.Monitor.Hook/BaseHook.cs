@@ -91,7 +91,7 @@ namespace Planar.Monitor.Hook
             }
         }
 
-        protected void LogError(Exception? exception, string message, params object[] args)
+        protected void LogError(Exception? exception, string message, params object?[] args)
         {
             _messageBroker?.Publish(exception, message, args);
         }

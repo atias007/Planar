@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs
 {
-    public abstract class BaseSystemJob
+    public abstract class SystemJob
     {
         protected static async Task<JobKey> Schedule<T>(IScheduler scheduler, string description, TimeSpan span, DateTime? startDate = null, CancellationToken stoppingToken = default)
             where T : IJob

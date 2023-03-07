@@ -23,6 +23,9 @@
     <None Remove="Scripts\Planar_0003 - add stat trace sp.sql" />
     <None Remove="Scripts\Planar_0004 - concurent q table.sql" />
     <None Remove="Scripts\Planar_0005 - add jobtype col.sql" />
+    <None Remove="Scripts\Planar_0006 - add sp reset system.sql" />
+    <None Remove="Scripts\Planar_0007 - reset system jobs.sql" />
+    <None Remove="Scripts\Planar_0008 - sp clear job log.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -30,5 +33,8 @@
     <EmbeddedResource Include="Scripts\Planar_0003 - add stat trace sp.sql" />
     <EmbeddedResource Include="Scripts\Planar_0004 - concurent q table.sql" />
     <EmbeddedResource Include="Scripts\Planar_0005 - add jobtype col.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0006 - add sp reset system.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0007 - reset system jobs.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0008 - sp clear job log.sql" />
   </ItemGroup>
 </Project>

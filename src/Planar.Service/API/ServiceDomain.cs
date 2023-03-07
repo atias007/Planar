@@ -44,6 +44,8 @@ namespace Planar.Service.API
                 ClusteringCheckinMisfireThreshold = AppSettings.ClusteringCheckinMisfireThreshold,
                 ClusterPort = AppSettings.ClusterPort,
                 ClearTraceTableOverDays = AppSettings.ClearTraceTableOverDays,
+                ClearJobLogTableOverDays = AppSettings.ClearJobLogTableOverDays,
+                ClearStatisticsTablesOverDays = AppSettings.ClearStatisticsTablesOverDays,
                 HttpPort = AppSettings.HttpPort,
                 HttpsPort = AppSettings.HttpsPort,
                 MaxConcurrency = AppSettings.MaxConcurrency,

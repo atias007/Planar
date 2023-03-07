@@ -39,11 +39,11 @@ namespace Planar.Service.API
             return await Add(request);
         }
 
-        public async Task<JobIdResponse> AddByFolder(SetJobFoldeRequest request)
+        public async Task<JobIdResponse> AddByPath(SetJobPathRequest request)
         {
-            await ValidateAddFolder(request);
+            await ValidateAddPath(request);
             var yml = await GetJobFileContent(request);
-            var dynamicRequest = GetJobDynamicRequest(yml, request.Folder);
+            var dynamicRequest = GetJobDynamicRequest(yml, request);
             var response = await Add(dynamicRequest);
             return response;
         }
@@ -139,7 +139,7 @@ namespace Planar.Service.API
             }
         }
 
-        private static SetJobDynamicRequest GetJobDynamicRequest(string yml, string folder)
+        private static SetJobDynamicRequest GetJobDynamicRequest(string yml, SetJobPathRequest request)
         {
             SetJobDynamicRequest dynamicRequest;
 
@@ -149,18 +149,18 @@ namespace Planar.Service.API
             }
             catch (Exception ex)
             {
-                var filename = GetJobFileFullName(folder);
+                var filename = GetJobFileFullName(request);
                 throw new RestGeneralException($"fail to deserialize file: {filename}", ex);
             }
 
             return dynamicRequest;
         }
 
-        private async Task<string> GetJobFileContent(SetJobFoldeRequest request)
+        private async Task<string> GetJobFileContent(SetJobPathRequest request)
         {
-            await ValidateAddFolder(request);
+            await ValidateAddPath(request);
             string yml;
-            var filename = GetJobFileFullName(request.Folder);
+            var filename = GetJobFileFullName(request);
             try
             {
                 yml = File.ReadAllText(filename);
@@ -173,9 +173,9 @@ namespace Planar.Service.API
             return yml;
         }
 
-        private static string GetJobFileFullName(string folder)
+        private static string GetJobFileFullName(SetJobPathRequest request)
         {
-            var filename = ServiceUtil.GetJobFilename(folder, FolderConsts.JobFileName);
+            var filename = ServiceUtil.GetJobFilename(request.Folder, request.JobFileName);
             return filename;
         }
 
@@ -190,9 +190,10 @@ namespace Planar.Service.API
             return yml;
         }
 
-        private async Task ValidateAddFolder(SetJobFoldeRequest request)
+        private async Task ValidateAddPath(SetJobPathRequest request)
         {
             ValidateRequestNoNull(request);
+            if (string.IsNullOrEmpty(request.JobFileName)) { request.JobFileName = FolderConsts.JobFileName; }
 
             try
             {
@@ -207,9 +208,9 @@ namespace Planar.Service.API
 
             try
             {
-                ServiceUtil.ValidateJobFileExists(request.Folder, FolderConsts.JobFileName);
+                ServiceUtil.ValidateJobFileExists(request.Folder, request.JobFileName);
                 var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-                await util.ValidateJobFileExists(request.Folder, FolderConsts.JobFileName);
+                await util.ValidateJobFileExists(request.Folder, request.JobFileName);
             }
             catch (PlanarException ex)
             {

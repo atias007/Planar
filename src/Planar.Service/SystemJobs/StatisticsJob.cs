@@ -8,16 +8,15 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs
 {
-    public class StatisticsJob : BaseSystemJob, IJob
+    public class StatisticsJob : SystemJob, IJob
     {
         private readonly ILogger<StatisticsJob> _logger;
-
-        private readonly StatisticsData _statisticsData;
+        private readonly IServiceProvider _serviceProvider;
 
         public StatisticsJob(IServiceProvider serviceProvider)
         {
             _logger = serviceProvider.GetRequiredService<ILogger<StatisticsJob>>();
-            _statisticsData = serviceProvider.GetRequiredService<StatisticsData>();
+            _serviceProvider = serviceProvider;
         }
 
         public Task Execute(IJobExecutionContext context)
@@ -30,14 +29,15 @@ namespace Planar.Service.SystemJobs
             const string description = "System job for saving statistics data to database";
             var span = TimeSpan.FromHours(1);
             var start = DateTime.Now.Date.AddMinutes(1);
-            await Schedule<ClearTraceTableJob>(scheduler, description, span, start, stoppingToken);
+            await Schedule<StatisticsJob>(scheduler, description, span, start, stoppingToken);
         }
 
         private async Task SafeDoWork()
         {
             try
             {
-                await _statisticsData.SetMaxConcurentExecution();
+                var data = _serviceProvider.GetRequiredService<StatisticsData>();
+                await data.SetMaxConcurentExecution();
             }
             catch (Exception ex)
             {
@@ -46,7 +46,8 @@ namespace Planar.Service.SystemJobs
 
             try
             {
-                await _statisticsData.SetMaxDurationExecution();
+                var data = _serviceProvider.GetRequiredService<StatisticsData>();
+                await data.SetMaxDurationExecution();
             }
             catch (Exception ex)
             {

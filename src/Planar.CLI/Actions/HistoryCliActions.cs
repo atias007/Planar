@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("history")]
+    [Module("history", "Actions to inspect history runs of actions")]
     public class HistoryCliActions : BaseCliAction<HistoryCliActions>
     {
         [Action("get")]

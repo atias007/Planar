@@ -13,7 +13,7 @@ using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
 
 namespace Planar.Service.SystemJobs
 {
-    public class PersistDataJob : BaseSystemJob, IJob
+    public class PersistDataJob : SystemJob, IJob
     {
         private readonly ILogger<PersistDataJob> _logger;
 

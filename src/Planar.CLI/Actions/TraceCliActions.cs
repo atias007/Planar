@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("trace")]
+    [Module("trace", "Actions to list trace log info")]
     public class TraceCliActions : BaseCliAction<TraceCliActions>
     {
         [Action("ls")]

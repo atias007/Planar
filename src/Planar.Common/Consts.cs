@@ -52,6 +52,8 @@ namespace Planar
         public const string MaxConcurrencyVariableKey = "PLANAR_MAXCONCURRENCY";
         public const string PersistRunningJobsSpanVariableKey = "PLANAR_PERSISTSPAN";
         public const string ClearTraceTableOverDaysVariableKey = "PLANAR_CLEARTRACEDAYS";
+        public const string ClearJobLogTableOverDaysVariableKey = "PLANAR_CLEARJOBLOGYDAYS";
+        public const string ClearStatisticsTablesOverDaysVariableKey = "PLANAR_CLEARSTATSDAYS";
         public const string SwaggerUIVariableKey = "PLANAR_SWAGGERUI";
         public const string OpenApiUIVariableKey = "PLANAR_OPENAPIUI";
         public const string DeveloperExceptionPageVariableKey = "PLANAR_DEVEXPAGE";

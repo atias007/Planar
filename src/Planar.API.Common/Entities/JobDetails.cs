@@ -6,7 +6,7 @@ namespace Planar.API.Common.Entities
     public class JobDetails : JobRowDetails
     {
         [YamlMember(Order = 10)]
-        public string Author { get; set; }
+        public string? Author { get; set; }
 
         [YamlMember(Order = 11)]
         public bool Durable { get; set; }
@@ -18,7 +18,7 @@ namespace Planar.API.Common.Entities
         public bool Concurrent { get; set; }
 
         [YamlMember(Order = 14)]
-        public string Properties { get; set; }
+        public string Properties { get; set; } = string.Empty;
 
         [YamlMember(Order = 15)]
         public SortedDictionary<string, string> DataMap { get; set; } = new();

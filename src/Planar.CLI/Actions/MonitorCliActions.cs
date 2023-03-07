@@ -12,7 +12,7 @@ using YamlDotNet.Core.Tokens;
 
 namespace Planar.CLI.Actions
 {
-    [Module("monitor")]
+    [Module("monitor", "Actions to handle monitoring and monitor hooks")]
     public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     {
         [Action("add")]

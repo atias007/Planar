@@ -32,35 +32,41 @@ namespace Planar.API.Common.Entities
         [YamlMember(Order = 10)]
         public int ClearTraceTableOverDays { get; set; }
 
+        [YamlMember(Order = 11)]
+        public int ClearJobLogTableOverDays { get; set; }
+
         [YamlMember(Order = 12)]
-        public short HttpPort { get; set; }
+        public int ClearStatisticsTablesOverDays { get; set; }
 
         [YamlMember(Order = 13)]
-        public short HttpsPort { get; set; }
+        public short HttpPort { get; set; }
 
         [YamlMember(Order = 14)]
-        public bool UseHttpsRedirect { get; set; }
+        public short HttpsPort { get; set; }
 
         [YamlMember(Order = 15)]
-        public bool UseHttps { get; set; }
+        public bool UseHttpsRedirect { get; set; }
 
         [YamlMember(Order = 16)]
-        public short ClusterPort { get; set; }
+        public bool UseHttps { get; set; }
 
         [YamlMember(Order = 17)]
-        public string LogLevel { get; set; }
+        public short ClusterPort { get; set; }
 
         [YamlMember(Order = 18)]
-        public bool SwaggerUI { get; set; }
+        public string LogLevel { get; set; }
 
         [YamlMember(Order = 19)]
-        public bool OpenApiUI { get; set; }
+        public bool SwaggerUI { get; set; }
 
         [YamlMember(Order = 20)]
-        public bool DeveloperExceptionPage { get; set; }
+        public bool OpenApiUI { get; set; }
 
         [YamlMember(Order = 21)]
-        public string AuthenticationMode { get; set; }
+        public bool DeveloperExceptionPage { get; set; }
+
+        [YamlMember(Order = 22)]
+        public string? AuthenticationMode { get; set; }
 
         [YamlMember(Order = 96)]
         public DateTime? RunningSince { get; set; }

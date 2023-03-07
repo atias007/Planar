@@ -11,6 +11,6 @@ namespace Planar.Monitor.Hook
         IMonitorGroup Group { get; }
         IEnumerable<IMonitorUser> Users { get; }
         Dictionary<string, string> GlobalConfig { get; }
-        Exception Exception { get; }
+        Exception? Exception { get; }
     }
 }
