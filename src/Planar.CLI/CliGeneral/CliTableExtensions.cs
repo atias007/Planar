@@ -70,8 +70,8 @@ namespace Planar.CLI
         {
             var table = new Table();
             if (response == null) { return table; }
-            table.AddColumns("JobId", "Key (Group.Name)", "Description");
-            response.ForEach(r => table.AddRow(r.Id, $"{r.Group}.{r.Name}".EscapeMarkup(), r.Description.EscapeMarkup()));
+            table.AddColumns("Job Id", "Job Key", "Job Type", "Description");
+            response.ForEach(r => table.AddRow(r.Id, $"{r.Group}.{r.Name}".EscapeMarkup(), r.JobType, r.Description.EscapeMarkup()));
             return table;
         }
 
@@ -79,7 +79,7 @@ namespace Planar.CLI
         {
             var table = new Table();
             if (response == null) { return table; }
-            table.AddColumns("FireInstanceId", "JobId", "Key (Group.Name)", "Progress", "EffectedRows", "RunTime");
+            table.AddColumns("Fire Instance Id", "Job Id", "Job Key", "Progress", "Effected Rows", "Run Time");
             response.ForEach(r => table.AddRow(CliTableFormat.GetFireInstanceIdMarkup(r.FireInstanceId), $"{r.Id}", $"{r.Group}.{r.Name}".EscapeMarkup(), CliTableFormat.GetProgressMarkup(r.Progress), $"{r.EffectedRows}", CliTableFormat.FormatTimeSpan(r.RunTime)));
             return table;
         }
@@ -88,7 +88,7 @@ namespace Planar.CLI
         {
             var table = new Table();
             if (response == null) { return table; }
-            table.AddColumns("Id", "JobId", "Key (Group.Name)", "TriggerId", "Status", "StartDate", "Duration", "EffectedRows");
+            table.AddColumns("Id", "Job Id", "Job Key", "Trigger Id", "Status", "Start Date", "Duration", "Effected Rows");
             response.ForEach(r => table.AddRow($"{r.Id}", r.JobId, $"{r.JobGroup}.{r.JobName}".EscapeMarkup(), CliTableFormat.GetTriggerIdMarkup(r.TriggerId), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FormatNumber(r.EffectedRows)));
             return table;
         }
@@ -97,7 +97,7 @@ namespace Planar.CLI
         {
             var table = new Table();
             if (response == null) { return table; }
-            table.AddColumns("Id", "Message", "Level", "TimeStamp");
+            table.AddColumns("Id", "Message", "Level", "Time Stamp");
             response.ForEach(r => table.AddRow($"{r.Id}", r.Message.EscapeMarkup(), CliTableFormat.GetLevelMarkup(r.Level), CliTableFormat.FormatDateTime(r.TimeStamp)));
             return table;
         }
@@ -106,9 +106,9 @@ namespace Planar.CLI
         {
             var table = new Table();
             if (response == null) { return table; }
-            table.AddColumns("TriggerId", "Key (Group.Name)", "State", "NextFireTime", "Interval/Cron");
-            response.SimpleTriggers.ForEach(r => table.AddRow($"{r.Id}", $"{r.Group}.{r.Name}".EscapeMarkup(), r.State, CliTableFormat.FormatDateTime(r.NextFireTime), CliTableFormat.FormatTimeSpan(r.RepeatInterval)));
-            response.CronTriggers.ForEach(r => table.AddRow($"{r.Id}", $"{r.Group}.{r.Name}".EscapeMarkup(), r.State, CliTableFormat.FormatDateTime(r.NextFireTime), r.CronExpression.EscapeMarkup()));
+            table.AddColumns("Trigger Id", "Job Key", "State", "Next Fire Time", "Interval/Cron");
+            response.SimpleTriggers.ForEach(r => table.AddRow($"{r.Id}", $"{r.TriggerGroup}.{r.TriggerName}".EscapeMarkup(), r.State ?? string.Empty, CliTableFormat.FormatDateTime(r.NextFireTime), CliTableFormat.FormatTimeSpan(r.RepeatInterval)));
+            response.CronTriggers.ForEach(r => table.AddRow($"{r.Id}", $"{r.TriggerGroup}.{r.TriggerName}".EscapeMarkup(), r.State ?? string.Empty, CliTableFormat.FormatDateTime(r.NextFireTime), r.CronExpression.EscapeMarkup()));
             return table;
         }
 
@@ -125,6 +125,7 @@ namespace Planar.CLI
             table.AddRow(nameof(response.Group), response.Group.EscapeMarkup());
             table.AddRow(nameof(response.Name), response.Name.EscapeMarkup());
             table.AddRow(nameof(response.Author), response.Author.EscapeMarkup());
+            table.AddRow(nameof(response.JobType), response.JobType.EscapeMarkup());
             table.AddRow(nameof(response.Description), response.Description.EscapeMarkup());
             table.AddRow(nameof(response.Durable), response.Durable.ToString());
             table.AddRow(nameof(response.RequestsRecovery), response.RequestsRecovery.ToString());
@@ -150,7 +151,7 @@ namespace Planar.CLI
         {
             var table = new Table();
             if (response == null) { return table; }
-            table.AddColumns("Server", "Port", "InstanceId", "ClusterPort", "JoinDate", "HealthCheck");
+            table.AddColumns("Server", "Port", "Instance Id", "Cluster Port", "Join Date", "Health Check");
             response.ForEach(r =>
             {
                 var hcTitle = CliTableFormat.FormatClusterHealthCheck(r.HealthCheckGap, r.HealthCheckGapDeviation);
@@ -182,7 +183,7 @@ namespace Planar.CLI
         {
             var table = new Table();
             if (data == null) { return table; }
-            table.AddColumns("Id", "Name", "UserCount");
+            table.AddColumns("Id", "Name", "User Count");
             data.ForEach(r => table.AddRow($"{r.Id}", r.Name.EscapeMarkup(), $"{r.UsersCount}"));
             return table;
         }
@@ -191,7 +192,7 @@ namespace Planar.CLI
         {
             var table = new Table();
             if (data == null) { return table; }
-            table.AddColumns("Id", "FirstName", "LastName", "Username", "EmailAddress1", "PhoneNumber1");
+            table.AddColumns("Id", "First Name", "Last Name", "Username", "Email Address 1", "Phone Number 1");
             data.ForEach(r => table.AddRow($"{r.Id}", r.FirstName.EscapeMarkup(), r.LastName.EscapeMarkup(), r.Username.EscapeMarkup(), r.EmailAddress1.EscapeMarkup(), r.PhoneNumber1.EscapeMarkup()));
             return table;
         }
@@ -200,8 +201,8 @@ namespace Planar.CLI
         {
             var table = new Table();
             if (response == null) { return table; }
-            table.AddColumns("Trigger Id", "Key (Group.Name)", "Description", "Job Id");
-            response.ForEach(r => table.AddRow(r.Id.EscapeMarkup(), $"{r.Group}.{r.Name}".EscapeMarkup(), r.Description.EscapeMarkup(), r.Id.EscapeMarkup()));
+            table.AddColumns("Trigger Id", "Trigger Key", "Job Id", "Job Key");
+            response.ForEach(r => table.AddRow(r.Id.EscapeMarkup(), $"{r.TriggerGroup}.{r.TriggerName}".EscapeMarkup(), r.JobId.EscapeMarkup(), $"{r.JobGroup}.{r.JobName}".EscapeMarkup()));
             return table;
         }
 

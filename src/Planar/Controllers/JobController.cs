@@ -44,7 +44,7 @@ namespace Planar.Controllers
         }
 
         [HttpPut("planar")]
-        [SwaggerOperation(OperationId = "put_job_planar", Description = "update existing planar job", Summary = "Update Planar Job")]
+        [SwaggerOperation(OperationId = "put_job_planar", Description = "Update existing planar job", Summary = "Update Planar Job")]
         [JsonConsumes]
         [CreatedResponse(typeof(JobIdResponse))]
         [BadRequestResponse]
@@ -56,7 +56,7 @@ namespace Planar.Controllers
         }
 
         [HttpPut("process")]
-        [SwaggerOperation(OperationId = "put_job_process", Description = "update existing process job", Summary = "Update Process Job")]
+        [SwaggerOperation(OperationId = "put_job_process", Description = "Update existing process job", Summary = "Update Process Job")]
         [JsonConsumes]
         [CreatedResponse(typeof(JobIdResponse))]
         [BadRequestResponse]
@@ -67,29 +67,27 @@ namespace Planar.Controllers
             return CreatedAtAction(nameof(Get), result, result);
         }
 
-        [ApiExplorerSettings(IgnoreApi = true)]
-        [HttpPost("folder")]
-        [SwaggerOperation(OperationId = "post_job_folder", Description = "", Summary = "")]
+        [HttpPost("path")]
+        [SwaggerOperation(OperationId = "post_job_folder", Description = "Add job by yml job file", Summary = "Add Job By Yml")]
         [JsonConsumes]
         [CreatedResponse(typeof(JobIdResponse))]
         [BadRequestResponse]
         [ConflictResponse]
-        public async Task<ActionResult<JobIdResponse>> AddByFolder([FromBody] SetJobFoldeRequest request)
+        public async Task<ActionResult<JobIdResponse>> AddByPath([FromBody] SetJobPathRequest request)
         {
-            var result = await BusinesLayer.AddByFolder(request);
+            var result = await BusinesLayer.AddByPath(request);
             return CreatedAtAction(nameof(Get), result, result);
         }
 
-        [ApiExplorerSettings(IgnoreApi = true)]
         [HttpPut("folder")]
-        [SwaggerOperation(OperationId = "put_job_folder", Description = "", Summary = "")]
+        [SwaggerOperation(OperationId = "put_job_folder", Description = "Update job by yml job file", Summary = "Update Job By Yml")]
         [JsonConsumes]
         [CreatedResponse(typeof(JobIdResponse))]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<JobIdResponse>> UpdateByFolder([FromBody] UpdateJobFolderRequest request)
+        public async Task<ActionResult<JobIdResponse>> UpdateByPath([FromBody] UpdateJobPathRequest request)
         {
-            var result = await BusinesLayer.UpdateByFolder(request);
+            var result = await BusinesLayer.UpdateByPath(request);
             return CreatedAtAction(nameof(Get), result, result);
         }
 

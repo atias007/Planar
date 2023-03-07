@@ -1,0 +1,19 @@
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[ClearLogInstance]
+@OverDays int = 365
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+    DECLARE @BatchSize INT = 5000
+	WHILE 1 = 1
+	BEGIN
+		DELETE TOP (@BatchSize)
+		FROM [dbo].[JobInstanceLog]
+		WHERE DATEDIFF(DAY, [StartDate], GETDATE()) > @OverDays
+		IF @@ROWCOUNT < @BatchSize BREAK
+	END
+END

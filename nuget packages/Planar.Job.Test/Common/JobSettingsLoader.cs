@@ -1,16 +1,14 @@
-﻿using System;
+﻿using NetEscapades.Configuration.Yaml;
+using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using YamlDotNet.Serialization;
 
 namespace Planar.Job.Test
 {
     internal static class JobSettingsLoader
     {
-        private const string SettingsFilename = "JobSettings.yml";
-        private const string EnvironmentPlaceholder = "{environment}";
-        private static readonly string EnvironmntSettingsFilename = $"JobSettings.{EnvironmentPlaceholder}.yml";
+        private const string SettingsFilename1 = "JobSettings.yml";
+        private const string SettingsFilename2 = "JobSettings.UnitTest.yml";
 
         public static Dictionary<string, string> LoadJobSettingsForUnitTest(Type type)
         {
@@ -31,34 +29,16 @@ namespace Planar.Job.Test
             var result = new Dictionary<string, string>();
 
             // JobSettings.yml
-            var files = GetFiles(path, SettingsFilename);
+            var file = Path.Combine(path, SettingsFilename1);
+            var temp = ReadSettingsFile(file);
+            result = result.Merge(temp);
 
-            foreach (var f in files)
-            {
-                var temp = ReadSettingsFile(f);
-                result = result.Merge(temp);
-            }
-
-            // JobSettings.{environment}.yml
-            var filename = EnvironmntSettingsFilename.Replace(EnvironmentPlaceholder, UnitTestConsts.Environment);
-            files = GetFiles(path, filename);
-
-            foreach (var f in files)
-            {
-                var temp = ReadSettingsFile(f);
-                result = result.Merge(temp);
-            }
+            // JobSettings.UnitTest.yml
+            file = Path.Combine(path, SettingsFilename2);
+            temp = ReadSettingsFile(file);
+            result = result.Merge(temp);
 
             return result;
-        }
-
-        private static IEnumerable<string> GetFiles(string path, string filename)
-        {
-            var files = Directory
-                .GetFiles(path, filename, SearchOption.AllDirectories)
-                .OrderByDescending(f => f);
-
-            return files;
         }
 
         private static Dictionary<string, string> ReadSettingsFile(string filename)
@@ -68,15 +48,18 @@ namespace Planar.Job.Test
             try
             {
                 if (!File.Exists(filename)) { return dict; }
-
                 var yml = File.ReadAllText(filename);
-                if (yml == null) { return dict; }
+                if (string.IsNullOrWhiteSpace(yml)) { return dict; }
 
-                yml = yml.Trim();
-                if (string.IsNullOrEmpty(yml)) { return dict; }
+                using var stream = new MemoryStream();
+                using var writer = new StreamWriter(stream);
+                writer.Write(yml.Trim());
+                writer.Flush();
+                stream.Position = 0;
+                var parser = new YamlConfigurationFileParser();
+                var items = parser.Parse(stream);
+                dict = new Dictionary<string, string>(items);
 
-                var serializer = new DeserializerBuilder().Build();
-                dict = serializer.Deserialize<Dictionary<string, string>>(yml);
                 return dict;
             }
             catch (Exception ex)

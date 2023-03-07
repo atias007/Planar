@@ -1,7 +1,10 @@
 --------------------------------------------------------
 - // TODO: add appsettings for UseJobAutoInterrupt at QuartzServiceConfiguration
 
+- add statistics for: max effected rows, count runs per day, count seccess retry per day, count fail retry per day, count recovering runs per day
 - convert id in sql table JobInstanceLog from int to bigint
+- do not allow to 'job test' system jobs
+- correct the job type of system job
 - cli: service status [time scope] dashboard command
 - add validation to JobRunnerBuilder in test package
 - add concurent statistics data
@@ -107,3 +110,9 @@ V 1.2.0
 - add 'author'
 - add hook test option
 - send GlobalConfig dictionary to hook
+- add JobType property to job / history
+- add JobType argument to cli job ls
+- add JobType argument to cli history ls
+- add settings for clear job log
+- add settings for statistics log
+- add max concurent & max duration statistics

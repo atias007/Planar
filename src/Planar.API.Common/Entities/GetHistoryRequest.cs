@@ -4,9 +4,11 @@ namespace Planar.API.Common.Entities
 {
     public class GetHistoryRequest
     {
-        public string JobId { get; set; }
+        public string? JobId { get; set; }
 
-        public string JobGroup { get; set; }
+        public string? JobGroup { get; set; }
+
+        public string? JobType { get; set; }
 
         public int? Rows { get; set; }
 

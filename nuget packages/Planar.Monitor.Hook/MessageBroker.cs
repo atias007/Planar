@@ -34,11 +34,11 @@ namespace Planar.Monitor.Hook
         public string Group { get; set; }
         public string GlobalConfig { get; set; }
 
-        public string? Publish(Exception exception, string message, params object[] args)
+        public string? Publish(Exception? exception, string message, params object?[] args)
         {
             lock (Locker)
             {
-                var result = _method.Invoke(Instance, new object[] { exception, message, args });
+                var result = _method.Invoke(Instance, new object?[] { exception, message, args });
                 return PlanarConvert.ToString(result);
             }
         }

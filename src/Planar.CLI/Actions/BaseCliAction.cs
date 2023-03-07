@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
@@ -111,18 +110,71 @@ namespace Planar.CLI.Actions
 
         public static IEnumerable<CliActionMetadata> GetAllActions()
         {
+            var modules = GetModules();
             var result = new List<CliActionMetadata>();
             result.AddRange(InnerCliActions.GetActions());
-            result.AddRange(JobCliActions.GetActions());
-            result.AddRange(ServiceCliActions.GetActions());
-            result.AddRange(TriggerCliActions.GetActions());
-            result.AddRange(TraceCliActions.GetActions());
-            result.AddRange(ConfigCliActions.GetActions());
-            result.AddRange(HistoryCliActions.GetActions());
-            result.AddRange(UserCliActions.GetActions());
-            result.AddRange(GroupCliActions.GetActions());
-            result.AddRange(ClusterCliActions.GetActions());
-            result.AddRange(MonitorCliActions.GetActions());
+
+            foreach (var item in modules)
+            {
+                result.AddRange(item.Actions);
+            }
+
+            return result;
+        }
+
+        private static IEnumerable<CliModule>? _modules;
+
+        public static IEnumerable<CliModule> GetModules()
+        {
+            if (_modules != null)
+            {
+                return _modules;
+            }
+
+            _modules = new List<CliModule>
+            {
+                GetModule<JobCliActions>(),
+                GetModule<ServiceCliActions>(),
+                GetModule<TriggerCliActions>(),
+                GetModule<TraceCliActions>(),
+                GetModule<ConfigCliActions>(),
+                GetModule<HistoryCliActions>(),
+                GetModule<UserCliActions>(),
+                GetModule<GroupCliActions>(),
+                GetModule<ClusterCliActions>(),
+                GetModule<MonitorCliActions>()
+            }
+            .OrderBy(m => m.Name);
+
+            return _modules;
+        }
+
+        private static CliModule GetModule<T>()
+            where T : BaseCliAction<T>
+        {
+            var result = new CliModule();
+            var type = typeof(T);
+
+            // actions
+            var method = type.GetMethod("GetActions",
+                    BindingFlags.Static |
+                    BindingFlags.FlattenHierarchy |
+                    BindingFlags.InvokeMethod |
+                    BindingFlags.Public);
+
+            if (method?.Invoke(null, null) is IEnumerable<CliActionMetadata> actions)
+            {
+                result.Actions = actions;
+            }
+
+            // name and description
+            var attribute = type.GetCustomAttribute<ModuleAttribute>();
+            if (attribute != null)
+            {
+                result.Name = attribute.Name;
+                result.Description = attribute.Description;
+            }
+
             return result;
         }
 

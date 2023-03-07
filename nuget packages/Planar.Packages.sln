@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SomeJob", "SomeJob\SomeJob.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Monitor.Hook", "Planar.Monitor.Hook\Planar.Monitor.Hook.csproj", "{896C13C2-55DD-4CF3-9168-C271DC3B9768}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planar.Common", "Planar.Common\Planar.Common.csproj", "{71487E4E-0C31-4D88-8CAC-6C2DA15DF4D2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Common", "Planar.Common\Planar.Common.csproj", "{71487E4E-0C31-4D88-8CAC-6C2DA15DF4D2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

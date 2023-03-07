@@ -200,6 +200,33 @@ namespace Planar.Service.General
             target.Name = source.Key.Name;
             target.Group = source.Key.Group;
             target.Description = source.Description;
+            target.JobType = GetJobTypeName(source.JobType);
+        }
+
+        public static string GetJobTypeName(Type type)
+        {
+            const string defaultTypeName = "Unknown";
+            var jobType = GetJobType(type);
+            if (jobType == null) { return defaultTypeName; }
+
+            return jobType.Name;
+        }
+
+        private static Type GetJobType(Type type)
+        {
+            if (type == null) { return null; }
+
+            var list = new List<Type>();
+            Type localType = type;
+            while (localType != null)
+            {
+                list.Add(localType);
+                localType = localType.BaseType;
+            }
+
+            list = list.Where(l => !l.Name.StartsWith("BaseCommonJob") && l.Name != nameof(Object)).ToList();
+
+            return list.LastOrDefault();
         }
 
         private static void MapJobExecutionContext(IJobExecutionContext source, RunningJobDetails target)

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("inner")]
+    [Module("inner", "x")]
     public class InnerCliActions : BaseCliAction<InnerCliActions>
     {
         [Action("cls")]

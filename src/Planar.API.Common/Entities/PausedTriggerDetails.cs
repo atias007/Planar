@@ -5,18 +5,21 @@ namespace Planar.API.Common.Entities
     public class PausedTriggerDetails
     {
         [YamlMember(Order = 0)]
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
 
         [YamlMember(Order = 1)]
-        public string Name { get; set; }
+        public string TriggerName { get; set; } = string.Empty;
 
         [YamlMember(Order = 2)]
-        public string Group { get; set; }
+        public string TriggerGroup { get; set; } = string.Empty;
 
         [YamlMember(Order = 3)]
-        public string Description { get; set; }
+        public string JobId { get; set; } = string.Empty;
 
         [YamlMember(Order = 4)]
-        public string JobId { get; set; }
+        public string JobName { get; set; } = string.Empty;
+
+        [YamlMember(Order = 5)]
+        public string JobGroup { get; set; } = string.Empty;
     }
 }

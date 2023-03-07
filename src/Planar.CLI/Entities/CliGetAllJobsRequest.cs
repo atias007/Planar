@@ -7,10 +7,13 @@ namespace Planar.CLI.Entities
         [QuietActionProperty]
         public bool Quiet { get; set; }
 
-        [ActionProperty(ShortName = "a", LongName = "all")]
+        [ActionProperty("a", "all")]
         public bool All { get; set; }
 
-        [ActionProperty(ShortName = "s", LongName = "system")]
+        [ActionProperty("s", "system")]
         public bool System { get; set; }
+
+        [ActionProperty("t", "type")]
+        public string? JobType { get; set; }
     }
 }

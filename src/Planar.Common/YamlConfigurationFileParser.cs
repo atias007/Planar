@@ -5,12 +5,13 @@ using System.IO;
 using System.Linq;
 using YamlDotNet.RepresentationModel;
 
+// https://raw.githubusercontent.com/andrewlock/NetEscapades.Configuration/master/src/NetEscapades.Configuration.Yaml/YamlConfigurationFileParser.cs
 namespace NetEscapades.Configuration.Yaml
 {
     public class YamlConfigurationFileParser
     {
         private readonly IDictionary<string, string> _data = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        private readonly Stack<string> _context = new();
+        private readonly Stack<string> _context = new Stack<string>();
         private string _currentPath;
 
         public IDictionary<string, string> Parse(Stream input)

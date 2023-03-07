@@ -7,7 +7,7 @@ namespace Planar.API.Common.Entities
     public class RunningJobDetails : JobRowDetails
     {
         [YamlMember(Order = 20)]
-        public string FireInstanceId { get; set; }
+        public string FireInstanceId { get; set; } = string.Empty;
 
         [YamlMember(Order = 21)]
         public DateTime? ScheduledFireTime { get; set; }
@@ -28,16 +28,16 @@ namespace Planar.API.Common.Entities
         public int RefireCount { get; set; }
 
         [YamlMember(Order = 27)]
-        public string TriggerName { get; set; }
+        public string TriggerName { get; set; } = string.Empty;
 
         [YamlMember(Order = 28)]
-        public string TriggerGroup { get; set; }
+        public string TriggerGroup { get; set; } = string.Empty;
 
         [YamlMember(Order = 29)]
-        public string TriggerId { get; set; }
+        public string TriggerId { get; set; } = string.Empty;
 
         [YamlMember(Order = 30)]
-        public SortedDictionary<string, string> DataMap { get; set; }
+        public SortedDictionary<string, string> DataMap { get; set; } = new SortedDictionary<string, string>();
 
         [YamlMember(Order = 998)]
         public int? EffectedRows { get; set; }

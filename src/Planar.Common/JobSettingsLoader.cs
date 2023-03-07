@@ -1,8 +1,8 @@
-﻿using System;
+﻿using NetEscapades.Configuration.Yaml;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using YamlDotNet.Serialization;
 
 namespace Planar.Common
 {
@@ -24,22 +24,6 @@ namespace Planar.Common
             if (!location.Exists) { return final; }
 
             var jobSettings = LoadJobSettingsFiles(location.FullName);
-            final = final.Merge(jobSettings);
-            return final;
-        }
-
-        public static Dictionary<string, string> LoadJobSettingsForUnitTest<T>()
-            where T : class
-        {
-            var directory = new FileInfo(typeof(T).Assembly.Location).Directory;
-
-            // Load job global config
-            var final = Global.GlobalConfig;
-
-            // Merge settings yml file
-            if (directory == null || !directory.Exists) { return final; }
-
-            var jobSettings = LoadJobSettingsFiles(directory.FullName);
             final = final.Merge(jobSettings);
             return final;
         }
@@ -86,15 +70,17 @@ namespace Planar.Common
             try
             {
                 if (!File.Exists(filename)) { return dict; }
-
                 var yml = File.ReadAllText(filename);
-                if (yml == null) { return dict; }
+                if (string.IsNullOrWhiteSpace(yml)) { return dict; }
 
-                yml = yml.Trim();
-                if (string.IsNullOrEmpty(yml)) { return dict; }
-
-                var serializer = new DeserializerBuilder().Build();
-                dict = serializer.Deserialize<Dictionary<string, string>>(yml);
+                using var stream = new MemoryStream();
+                using var writer = new StreamWriter(stream);
+                writer.Write(yml.Trim());
+                writer.Flush();
+                stream.Position = 0;
+                var parser = new YamlConfigurationFileParser();
+                var items = parser.Parse(stream);
+                dict = new Dictionary<string, string>(items);
                 return dict;
             }
             catch (Exception ex)

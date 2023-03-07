@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs
 {
-    public abstract class BaseSystemJob
+    public abstract class SystemJob
     {
         protected static async Task<JobKey> Schedule<T>(IScheduler scheduler, string description, TimeSpan span, DateTime? startDate = null, CancellationToken stoppingToken = default)
             where T : IJob
@@ -15,18 +15,17 @@ namespace Planar.Service.SystemJobs
             var jobKey = new JobKey(name, Consts.PlanarSystemGroup);
             var job = await scheduler.GetJobDetail(jobKey, stoppingToken);
 
-            if (job == null)
-            {
-                var jobId = ServiceUtil.GenerateId();
-                job = JobBuilder.Create(typeof(T))
-                .WithIdentity(jobKey)
-                .UsingJobData(Consts.JobId, jobId)
-                .DisallowConcurrentExecution()
-                .PersistJobDataAfterExecution()
-                .WithDescription(description)
-                .StoreDurably(true)
-                .Build();
-            }
+            if (job != null) { return jobKey; }
+
+            var jobId = ServiceUtil.GenerateId();
+            job = JobBuilder.Create(typeof(T))
+            .WithIdentity(jobKey)
+            .UsingJobData(Consts.JobId, jobId)
+            .DisallowConcurrentExecution()
+            .PersistJobDataAfterExecution()
+            .WithDescription(description)
+            .StoreDurably(true)
+            .Build();
 
             var triggerId = ServiceUtil.GenerateId();
             DateTimeOffset jobStart;
@@ -50,7 +49,7 @@ namespace Planar.Service.SystemJobs
                     .RepeatForever()
                     .WithMisfireHandlingInstructionNextWithExistingCount()
                 )
-                .WithPriority(int.MaxValue)
+                .WithPriority(int.MinValue)
                 .Build();
 
             await scheduler.ScheduleJob(job, new[] { trigger }, true, stoppingToken);

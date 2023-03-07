@@ -12,11 +12,11 @@ namespace Planar.Service.API
 {
     public partial class JobDomain
     {
-        public async Task<JobIdResponse> UpdateByFolder(UpdateJobFolderRequest request)
+        public async Task<JobIdResponse> UpdateByPath(UpdateJobPathRequest request)
         {
-            await ValidateAddFolder(request);
+            await ValidateAddPath(request);
             var yml = await GetJobFileContent(request);
-            var dynamicRequest = GetJobDynamicRequest(yml, request.Folder);
+            var dynamicRequest = GetJobDynamicRequest(yml, request);
             var response = await Update(dynamicRequest, request.UpdateJobOptions);
             return response;
         }

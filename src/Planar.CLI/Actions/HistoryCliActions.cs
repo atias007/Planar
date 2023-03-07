@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("history")]
+    [Module("history", "Actions to inspect history runs of actions")]
     public class HistoryCliActions : BaseCliAction<HistoryCliActions>
     {
         [Action("get")]
@@ -55,6 +55,11 @@ namespace Planar.CLI.Actions
             if (!string.IsNullOrEmpty(request.JobGroup))
             {
                 restRequest.AddQueryParameter("jobgroup", request.JobGroup);
+            }
+
+            if (!string.IsNullOrEmpty(request.JobType))
+            {
+                restRequest.AddQueryParameter("jobtype", request.JobType);
             }
 
             restRequest.AddQueryParameter("ascending", request.Ascending);

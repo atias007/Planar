@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -31,19 +32,6 @@ namespace Planar.CLI
 
                 return result ?? string.Empty;
             }
-        }
-
-        public static string GetHelpHeader()
-        {
-            var title = $" planar cli v{Version}";
-            var seperator = string.Empty.PadLeft(title.Length + 1, '-');
-
-            var sb = new StringBuilder();
-            sb.AppendLine();
-            sb.AppendLine(seperator);
-            sb.AppendLine(title);
-            sb.AppendLine(seperator);
-            return sb.ToString();
         }
 
         public static void Main(string[] args)
@@ -356,7 +344,7 @@ namespace Planar.CLI
             BaseCliAction.InteractiveMode = true;
             var command = string.Empty;
             Console.Clear();
-            WriteInfo();
+            CliHelpGenerator.ShowModules();
 
             const string exit = "exit";
             const string help = "help";
@@ -372,7 +360,7 @@ namespace Planar.CLI
 
                 if (string.Compare(command, help, true) == 0)
                 {
-                    WriteInfo();
+                    CliHelpGenerator.ShowModules();
                 }
                 else
                 {
@@ -458,25 +446,6 @@ namespace Planar.CLI
             AnsiConsole.WriteException(ex,
                 ExceptionFormats.ShortenPaths | ExceptionFormats.ShortenTypes |
                 ExceptionFormats.ShortenMethods | ExceptionFormats.ShowLinks);
-        }
-
-        private static void WriteInfo()
-        {
-            AnsiConsole.Write(new FigletText("Planar")
-                    .LeftJustified()
-                    .Color(Color.SteelBlue1));
-
-            Console.WriteLine(GetHelpHeader());
-            Console.WriteLine("usage: planar-cli <module> <command> [<arguments>]");
-            Console.WriteLine();
-            Console.WriteLine("use 'planar-cli <module> --help' to see all avalible commands and options");
-
-            using Stream? stream = typeof(Program).Assembly.GetManifestResourceStream("Planar.CLI.Help.Modules.txt");
-            if (stream == null) { return; }
-            using StreamReader reader = new(stream);
-            string result = reader.ReadToEnd();
-            Console.WriteLine(result);
-            Console.WriteLine();
         }
 
         private static void WriteInfo(string? message)

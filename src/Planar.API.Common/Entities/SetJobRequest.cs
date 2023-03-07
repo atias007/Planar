@@ -6,15 +6,15 @@ namespace Planar.API.Common.Entities
     public abstract class SetJobRequest : ITriggersContainer
     {
         [YamlMember(Alias = "job type")]
-        public string JobType { get; set; }
+        public string? JobType { get; set; }
 
-        public string Author { get; set; }
+        public string? Author { get; set; }
 
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
-        public string Group { get; set; }
+        public string? Group { get; set; }
 
-        public string Description { get; set; }
+        public string? Description { get; set; }
 
         public bool? Durable { get; set; }
 

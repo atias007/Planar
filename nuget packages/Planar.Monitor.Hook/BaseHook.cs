@@ -1,4 +1,5 @@
-﻿using Planar.Common;
+﻿using Microsoft.Extensions.Logging;
+using Planar.Common;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -90,7 +91,7 @@ namespace Planar.Monitor.Hook
             }
         }
 
-        protected void LogError(Exception exception, string message, params object[] args)
+        protected void LogError(Exception? exception, string message, params object?[] args)
         {
             _messageBroker?.Publish(exception, message, args);
         }
@@ -100,8 +101,62 @@ namespace Planar.Monitor.Hook
             return Uri.TryCreate(url, UriKind.Absolute, out _);
         }
 
+        protected string? GetHookParameter(string key, IMonitor details)
+        {
+            if (string.IsNullOrEmpty(key))
+            {
+                LogError(null, "GetHookParameter with key null or empty is invalid");
+                return null;
+            }
+
+            if (details.GlobalConfig.ContainsKey(key))
+            {
+                return details.GlobalConfig[key];
+            }
+
+            return GetHookParameterFromGroup(key, details.Group);
+        }
+
+        private static string? GetHookParameterFromGroup(string key, IMonitorGroup group)
+        {
+            string? url;
+
+            url = GetHookParameterReference(key, group.Reference1);
+            if (url != null) { return url; }
+
+            url = GetHookParameterReference(key, group.Reference2);
+            if (url != null) { return url; }
+
+            url = GetHookParameterReference(key, group.Reference3);
+            if (url != null) { return url; }
+
+            url = GetHookParameterReference(key, group.Reference4);
+            if (url != null) { return url; }
+
+            url = GetHookParameterReference(key, group.Reference5);
+            if (url != null) { return url; }
+
+            return null;
+        }
+
+        private static string? GetHookParameterReference(string key, string reference)
+        {
+            if (!string.IsNullOrEmpty(reference) && reference.StartsWith(key))
+            {
+                var url = reference[key.Length..];
+                if (url.StartsWith(':') || url.StartsWith('=') || url.StartsWith(' '))
+                {
+                    return url[1..];
+                }
+            }
+
+            return null;
+        }
+
         public abstract Task Handle(IMonitorDetails monitorDetails);
 
         public abstract Task HandleSystem(IMonitorSystemDetails monitorDetails);
+
+        public abstract string Name { get; }
     }
 }

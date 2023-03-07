@@ -12,7 +12,7 @@ using YamlDotNet.Core.Tokens;
 
 namespace Planar.CLI.Actions
 {
-    [Module("monitor")]
+    [Module("monitor", "Actions to handle monitoring and monitor hooks")]
     public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     {
         [Action("add")]
@@ -196,7 +196,7 @@ namespace Planar.CLI.Actions
 
         private static int GetDistributionGroup(IEnumerable<GroupInfo> groups)
         {
-            var groupsNames = groups.Select(group => group.Name);
+            var groupsNames = groups.Select(group => group.Name ?? string.Empty);
             var selectedGroup = PromptSelection(groupsNames, "distribution group");
 
             var group = groups.First(e => e.Name == selectedGroup);

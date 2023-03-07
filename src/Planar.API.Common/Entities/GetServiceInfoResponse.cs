@@ -6,7 +6,7 @@ namespace Planar.API.Common.Entities
     public class GetServiceInfoResponse
     {
         [YamlMember(Order = 0)]
-        public string Environment { get; set; }
+        public string Environment { get; set; } = string.Empty;
 
         [YamlMember(Order = 1)]
         public bool IsStarted { get; set; }
@@ -32,35 +32,41 @@ namespace Planar.API.Common.Entities
         [YamlMember(Order = 10)]
         public int ClearTraceTableOverDays { get; set; }
 
+        [YamlMember(Order = 11)]
+        public int ClearJobLogTableOverDays { get; set; }
+
         [YamlMember(Order = 12)]
-        public short HttpPort { get; set; }
+        public int ClearStatisticsTablesOverDays { get; set; }
 
         [YamlMember(Order = 13)]
-        public short HttpsPort { get; set; }
+        public short HttpPort { get; set; }
 
         [YamlMember(Order = 14)]
-        public bool UseHttpsRedirect { get; set; }
+        public short HttpsPort { get; set; }
 
         [YamlMember(Order = 15)]
-        public bool UseHttps { get; set; }
+        public bool UseHttpsRedirect { get; set; }
 
         [YamlMember(Order = 16)]
-        public short ClusterPort { get; set; }
+        public bool UseHttps { get; set; }
 
         [YamlMember(Order = 17)]
-        public string LogLevel { get; set; }
+        public short ClusterPort { get; set; }
 
         [YamlMember(Order = 18)]
-        public bool SwaggerUI { get; set; }
+        public string LogLevel { get; set; } = string.Empty;
 
         [YamlMember(Order = 19)]
-        public bool OpenApiUI { get; set; }
+        public bool SwaggerUI { get; set; }
 
         [YamlMember(Order = 20)]
-        public bool DeveloperExceptionPage { get; set; }
+        public bool OpenApiUI { get; set; }
 
         [YamlMember(Order = 21)]
-        public string AuthenticationMode { get; set; }
+        public bool DeveloperExceptionPage { get; set; }
+
+        [YamlMember(Order = 22)]
+        public string? AuthenticationMode { get; set; }
 
         [YamlMember(Order = 96)]
         public DateTime? RunningSince { get; set; }
@@ -72,15 +78,15 @@ namespace Planar.API.Common.Entities
         public int TotalGroups { get; set; }
 
         [YamlMember(Order = 99)]
-        public string DatabaseProvider { get; set; }
+        public string DatabaseProvider { get; set; } = string.Empty;
 
         [YamlMember(Order = 100)]
-        public string QuartzVersion { get; set; }
+        public string QuartzVersion { get; set; } = string.Empty;
 
         [YamlMember(Order = 101)]
-        public string ServiceVersion { get; set; }
+        public string ServiceVersion { get; set; } = string.Empty;
 
         [YamlMember(Order = 102)]
-        public string CliVersion { get; set; }
+        public string CliVersion { get; set; } = string.Empty;
     }
 }

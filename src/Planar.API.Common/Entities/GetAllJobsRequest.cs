@@ -10,5 +10,7 @@
     public class GetAllJobsRequest
     {
         public AllJobsMembers Filter { get; set; }
+
+        public string? JobType { get; set; }
     }
 }

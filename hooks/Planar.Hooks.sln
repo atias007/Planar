@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "package", "package", "{1764
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Monitor.Hook", "..\nuget packages\Planar.Monitor.Hook\Planar.Monitor.Hook.csproj", "{A7880C13-111A-4FFC-A89C-49DB6630A624}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.MonitorHook.MessageBirdSms", "Planar.MonitorHook.MessageBirdSms\Planar.MonitorHook.MessageBirdSms.csproj", "{DDF803AB-C722-4E01-8147-2A3C0D916856}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -29,6 +31,10 @@ Global
 		{A7880C13-111A-4FFC-A89C-49DB6630A624}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A7880C13-111A-4FFC-A89C-49DB6630A624}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A7880C13-111A-4FFC-A89C-49DB6630A624}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DDF803AB-C722-4E01-8147-2A3C0D916856}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DDF803AB-C722-4E01-8147-2A3C0D916856}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DDF803AB-C722-4E01-8147-2A3C0D916856}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DDF803AB-C722-4E01-8147-2A3C0D916856}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -62,6 +62,7 @@ namespace Planar.Service.Listeners
                     JobId = JobKeyHelper.GetJobId(context.JobDetail),
                     JobName = context.JobDetail.Key.Name,
                     JobGroup = context.JobDetail.Key.Group,
+                    JobType = SchedulerUtil.GetJobTypeName(context.JobDetail.JobType),
                     TriggerId = TriggerKeyHelper.GetTriggerId(context.Trigger),
                     TriggerName = context.Trigger.Key.Name,
                     TriggerGroup = context.Trigger.Key.Group,
@@ -74,6 +75,7 @@ namespace Planar.Service.Listeners
                 if (log.JobId?.Length > 20) { log.JobId = log.JobId[0..20]; }
                 if (log.JobName.Length > 50) { log.JobName = log.JobName[0..50]; }
                 if (log.JobGroup.Length > 50) { log.JobGroup = log.JobGroup[0..50]; }
+                if (log.JobType.Length > 50) { log.JobType = log.JobType[0..50]; }
                 if (log.TriggerId.Length > 20) { log.TriggerId = log.TriggerId[0..20]; }
                 if (log.TriggerName.Length > 50) { log.TriggerName = log.TriggerName[0..50]; }
                 if (log.TriggerGroup.Length > 50) { log.TriggerGroup = log.TriggerGroup[0..50]; }

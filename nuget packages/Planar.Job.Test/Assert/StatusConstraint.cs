@@ -22,7 +22,7 @@ namespace Planar.Job.Test
             var message = $"Expect status '{StatusMembers.Success}' but status was '{_result.Status}'";
             if (_result.Exception != null)
             {
-                message += "Exception:\r\n{Exception}";
+                message += $"\r\nException:\r\n{_result.Exception}";
             }
 
             throw new AssertPlanarException(message);

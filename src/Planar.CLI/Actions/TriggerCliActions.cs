@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("trigger")]
+    [Module("trigger", "Actions to add, remove, list, update and operate triggers of job")]
     public class TriggerCliActions : BaseCliAction<TriggerCliActions>
     {
         [Action("ls")]
@@ -122,7 +122,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        [Action("all-paused")]
+        [Action("paused")]
         public static async Task<CliActionResponse> GetAllPausedTriggers()
         {
             var restRequest = new RestRequest("trigger/paused", Method.Get);
@@ -142,9 +142,13 @@ namespace Planar.CLI.Actions
                     var prm1 = new JobOrTriggerDataRequest
                     {
                         Id = request.Id,
-                        DataKey = request.DataKey,
-                        DataValue = request.DataValue
+                        DataKey = request.DataKey
                     };
+
+                    if (request.DataValue != null)
+                    {
+                        prm1.DataValue = request.DataValue;
+                    }
 
                     var restRequest1 = new RestRequest("trigger/data", Method.Post).AddBody(prm1);
                     result = await RestProxy.Invoke(restRequest1);

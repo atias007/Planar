@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("group")]
+    [Module("group", "Actions to handle groups")]
     public class GroupCliActions : BaseCliAction<GroupCliActions>
     {
         [Action("add")]

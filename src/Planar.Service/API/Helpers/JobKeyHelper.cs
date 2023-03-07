@@ -1,6 +1,4 @@
-﻿using CommonJob;
-using Planar.API.Common.Entities;
-using Planar.Common;
+﻿using Planar.API.Common.Entities;
 using Planar.Common.API.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;

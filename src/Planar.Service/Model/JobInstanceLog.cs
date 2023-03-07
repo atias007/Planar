@@ -28,6 +28,10 @@ namespace Planar.Service.Model
         [Unicode(false)]
         public string JobGroup { get; set; }
         [Required]
+        [StringLength(50)]
+        [Unicode(false)]
+        public string JobType { get; set; }
+        [Required]
         [StringLength(20)]
         [Unicode(false)]
         public string TriggerId { get; set; }

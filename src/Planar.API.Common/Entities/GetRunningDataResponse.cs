@@ -2,8 +2,8 @@
 {
     public class GetRunningDataResponse
     {
-        public string Log { get; set; }
+        public string? Log { get; set; }
 
-        public string Exceptions { get; set; }
+        public string? Exceptions { get; set; }
     }
 }
