@@ -2,7 +2,7 @@
 {
     public class LastInstanceId
     {
-        public string InstanceId { get; set; }
+        public string InstanceId { get; set; } = string.Empty;
 
         public int LogId { get; set; }
     }

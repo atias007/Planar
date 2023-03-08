@@ -5,14 +5,14 @@ namespace Planar.Job.Test
 {
     internal class ExecuteJobProperties
     {
-        public Type JobType { get; set; }
+        public Type? JobType { get; set; }
 
         public DateTimeOffset? ExecutionDate { get; set; }
 
-        public Dictionary<string, object> TriggerData { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object?> TriggerData { get; set; } = new Dictionary<string, object?>();
 
-        public Dictionary<string, object> JobData { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object?> JobData { get; set; } = new Dictionary<string, object?>();
 
-        public Dictionary<string, string> GlobalSettings { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, string?> GlobalSettings { get; set; } = new Dictionary<string, string?>();
     }
 }

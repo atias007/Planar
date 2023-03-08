@@ -6,6 +6,7 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
@@ -15,7 +16,7 @@ namespace Planar.CLI.Actions
     {
         [Action("ls")]
         [Action("list")]
-        public static async Task<CliActionResponse> GetTrace(CliGetTraceRequest request)
+        public static async Task<CliActionResponse> GetTrace(CliGetTraceRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("trace", Method.Get)
                 .AddParameter("Ascending", request.Ascending, ParameterType.QueryString);
@@ -40,31 +41,31 @@ namespace Planar.CLI.Actions
                 restRequest.AddParameter("ToDate", request.ToDate, ParameterType.QueryString);
             }
 
-            var result = await RestProxy.Invoke<List<LogDetails>>(restRequest);
+            var result = await RestProxy.Invoke<List<LogDetails>>(restRequest, cancellationToken);
             var table = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, table);
         }
 
         [Action("ex")]
-        public static async Task<CliActionResponse> GetTraceException(CliGetByIdRequest request)
+        public static async Task<CliActionResponse> GetTraceException(CliGetByIdRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("trace/{id}/exception", Method.Get)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
-            return await ExecuteEntity<string>(restRequest);
+            return await ExecuteEntity<string>(restRequest, cancellationToken);
         }
 
         [Action("prop")]
-        public static async Task<CliActionResponse> GetTraceProperties(CliGetByIdRequest request)
+        public static async Task<CliActionResponse> GetTraceProperties(CliGetByIdRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("trace/{id}/properties", Method.Get)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
-            var result = await RestProxy.Invoke<string>(restRequest);
+            var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
             var data = Util.BeautifyJson(result.Data);
             return new CliActionResponse(result, message: data);
         }
 
         [Action("count")]
-        public static async Task<CliActionResponse> GetTraceCount(CliGetCountRequest request)
+        public static async Task<CliActionResponse> GetTraceCount(CliGetCountRequest request, CancellationToken cancellationToken = default)
         {
             if (request.Hours == 0)
             {
@@ -74,7 +75,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("trace/count", Method.Get)
                 .AddQueryParameter("hours", request.Hours);
 
-            var result = await RestProxy.Invoke<CounterResponse>(restRequest);
+            var result = await RestProxy.Invoke<CounterResponse>(restRequest, cancellationToken);
             if (!result.IsSuccessful || result.Data == null)
             {
                 return new CliActionResponse(result);

@@ -10,6 +10,7 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.CLI
@@ -130,7 +131,7 @@ namespace Planar.CLI
             return action;
         }
 
-        public object? GetRequest(Type type, CliActionMetadata action)
+        public object? GetRequest(Type type, CliActionMetadata action, CancellationToken cancellationToken)
         {
             if (!CliArguments.Any() && action.AllowNullRequest) { return null; }
 
@@ -142,7 +143,7 @@ namespace Planar.CLI
             foreach (var arg in CliArguments)
             {
                 metadata = MatchProperty(action, action.Arguments, ref startDefaultOrder, arg);
-                FillJobOrTrigger(arg, metadata);
+                FillJobOrTrigger(arg, metadata, cancellationToken);
                 SetValue(metadata.PropertyInfo, result, arg.Value);
                 if (!string.IsNullOrEmpty(arg.Value))
                 {
@@ -158,7 +159,7 @@ namespace Planar.CLI
                 if (strValue == null || strValue == string.Empty)
                 {
                     var arg = new CliArgument { Key = "?", Value = "?" };
-                    FillJobOrTrigger(arg, metadata);
+                    FillJobOrTrigger(arg, metadata, cancellationToken);
                     SetValue(metadata.PropertyInfo, result, arg.Value);
                     if (!string.IsNullOrEmpty(arg.Value))
                     {
@@ -185,11 +186,11 @@ namespace Planar.CLI
             return false;
         }
 
-        private static async Task FillJobId(CliArgumentMetadata metadata, CliArgument arg)
+        private static async Task FillJobId(CliArgumentMetadata metadata, CliArgument arg, CancellationToken cancellationToken)
         {
             if (metadata.JobKey && arg.Value == "?")
             {
-                var jobId = await JobCliActions.ChooseJob();
+                var jobId = await JobCliActions.ChooseJob(cancellationToken);
                 arg.Value = jobId;
                 if (arg.Key == "?")
                 {
@@ -200,17 +201,17 @@ namespace Planar.CLI
             }
         }
 
-        private static void FillJobOrTrigger(CliArgument a, CliArgumentMetadata metadata)
+        private static void FillJobOrTrigger(CliArgument a, CliArgumentMetadata metadata, CancellationToken cancellationToken)
         {
             FillLastJobOrTriggerId(metadata, a);
 
             if (metadata.JobKey)
             {
-                FillJobId(metadata, a).Wait();
+                FillJobId(metadata, a, cancellationToken).Wait(cancellationToken);
             }
             else if (metadata.TriggerKey)
             {
-                FillTriggerId(metadata, a).Wait();
+                FillTriggerId(metadata, a).Wait(cancellationToken);
             }
         }
 
@@ -218,7 +219,7 @@ namespace Planar.CLI
         {
             if (prop.IsJobOrTriggerKey)
             {
-                if (arg.Value == "!!")
+                if (arg.Value == "!")
                 {
                     arg.Value = Util.LastJobOrTriggerId;
                 }

@@ -22,6 +22,8 @@ namespace Planar
         public override async Task Execute(IJobExecutionContext context)
         {
             AssemblyLoadContext assemblyContext = null;
+            Type type = null;
+            object instance = null;
 
             try
             {
@@ -33,20 +35,22 @@ namespace Planar
                 assemblyContext = AssemblyLoader.CreateAssemblyLoadContext(context.FireInstanceId, true);
                 var assembly = AssemblyLoader.LoadFromAssemblyPath(AssemblyFilename, assemblyContext);
 
-                var type = assembly.GetType(Properties.ClassName);
+                type = assembly.GetType(Properties.ClassName);
                 if (type == null)
                 {
                     type = assembly.GetTypes().FirstOrDefault(t => t.FullName == Properties.ClassName);
                 }
 
                 var method = ValidateBaseJob(type);
-                var instance = assembly.CreateInstance(Properties.ClassName);
+                instance = assembly.CreateInstance(Properties.ClassName);
 
                 MapJobInstanceProperties(context, type, instance);
 
-                await (method.Invoke(instance, new object[] { MessageBroker }) as Task);
-
-                MapJobInstancePropertiesBack(context, type, instance);
+                var finish = (method.Invoke(instance, new object[] { MessageBroker }) as Task).Wait(AppSettings.JobAutoStopSpan);
+                if (finish == false)
+                {
+                    await context.Scheduler.Interrupt(context.JobDetail.Key);
+                }
             }
             catch (Exception ex)
             {
@@ -55,6 +59,7 @@ namespace Planar
             }
             finally
             {
+                MapJobInstancePropertiesBack(context, type, instance);
                 FinalizeJob(context);
                 assemblyContext?.Unload();
             }

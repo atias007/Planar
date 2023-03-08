@@ -2,7 +2,7 @@
 {
     public class JobOrTriggerKey
     {
-        public string Id { get; set; }
+        public string Id { get; set; } = string.Empty;
 
         public bool IsEmpty
         {

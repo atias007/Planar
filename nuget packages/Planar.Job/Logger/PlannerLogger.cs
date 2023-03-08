@@ -14,9 +14,19 @@ namespace Planar.Job.Logger
 
         protected MessageBroker MessageBroker => _messageBroker;
 
+#pragma warning disable CS8603 // Possible null reference return.
+#pragma warning disable IDE0060 // Remove unused parameter
+
         public IDisposable BeginScope<TState>(TState state) => default;
 
+#pragma warning restore IDE0060 // Remove unused parameter
+#pragma warning restore CS8603 // Possible null reference return.
+
+#pragma warning disable IDE0060 // Remove unused parameter
+
         public bool IsEnabled(LogLevel logLevel) => true;
+
+#pragma warning restore IDE0060 // Remove unused parameter
 
         protected void LogToConsole(string message)
         {
@@ -32,7 +42,7 @@ namespace Planar.Job.Logger
         {
         }
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
             if (!IsEnabled(logLevel)) { return; }
 
@@ -49,7 +59,7 @@ namespace Planar.Job.Logger
         {
         }
 
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
         {
             if (!IsEnabled(logLevel)) { return; }
 

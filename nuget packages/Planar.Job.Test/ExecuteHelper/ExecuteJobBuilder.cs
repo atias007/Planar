@@ -19,19 +19,19 @@ namespace Planar.Job.Test
             return this;
         }
 
-        public ExecuteJobBuilder WithJobData(string key, object value)
+        public ExecuteJobBuilder WithJobData(string key, object? value)
         {
             _properties.JobData.Add(key, value);
             return this;
         }
 
-        public ExecuteJobBuilder WithTriggerData(string key, object value)
+        public ExecuteJobBuilder WithTriggerData(string key, object? value)
         {
             _properties.TriggerData.Add(key, value);
             return this;
         }
 
-        public ExecuteJobBuilder WithGlobalSettings(string key, object value)
+        public ExecuteJobBuilder WithGlobalSettings(string key, object? value)
         {
             _properties.GlobalSettings.Add(key, PlanarConvert.ToString(value));
             return this;

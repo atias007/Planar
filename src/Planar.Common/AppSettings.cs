@@ -1,16 +1,14 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Planar.Common;
-using Planar.Service.Exceptions;
+using Planar.Common.Exceptions;
 using Polly;
 using System;
 using System.Data;
 using System.Text;
 
-namespace Planar.Service
+namespace Planar.Common
 {
     public enum AuthMode
     {

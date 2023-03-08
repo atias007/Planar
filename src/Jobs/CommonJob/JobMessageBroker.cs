@@ -42,7 +42,7 @@ namespace CommonJob
             LogData(log);
         }
 
-        public string Publish(string channel, string message)
+        public string? Publish(string channel, string message)
         {
             switch (channel)
             {

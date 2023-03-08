@@ -22,7 +22,7 @@ namespace Planar.Job.Test
             return Log.ToString();
         }
 
-        public string GetExceptionsText()
+        public string? GetExceptionsText()
         {
             var exceptions = Exceptions;
             if (exceptions == null || !exceptions.Any())
@@ -49,12 +49,12 @@ namespace Planar.Job.Test
             return sb.ToString();
         }
 
-        public Exception UnhandleException { get; set; }
+        public Exception? UnhandleException { get; set; }
 
         public bool IsRunningFail => !IsRunningSuccess;
         public bool IsRunningSuccess => UnhandleException == null;
 
-        public static JobExecutionMetadata GetInstance(MockJobExecutionContext context)
+        public static JobExecutionMetadata? GetInstance(MockJobExecutionContext context)
         {
             lock (Locker)
             {

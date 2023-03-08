@@ -1,5 +1,4 @@
-﻿using Planar.Job.Test.Common;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
@@ -34,7 +33,7 @@ namespace Planar.Job.Test
             FireInstanceId = $"JobTest_{System.Environment.MachineName}_{System.Environment.UserName}_{GenerateFireInstanceId()}";
         }
 
-        public Dictionary<string, string> JobSettings { get; set; }
+        public Dictionary<string, string?> JobSettings { get; set; } = new Dictionary<string, string?>();
 
         public bool Recovering => false;
 
@@ -71,9 +70,9 @@ namespace Planar.Job.Test
 
         public ITriggerDetail Trigger => _triggerDetail;
 
-        public object Result { get; set; }
+        public object? Result { get; set; }
 
-        public SortedDictionary<string, string> MergedJobDataMap { get; private set; }
+        public SortedDictionary<string, string?> MergedJobDataMap { get; private set; }
 
         public DateTimeOffset FireTime => _now;
 

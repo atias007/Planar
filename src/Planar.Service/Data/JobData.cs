@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Planar.Common;
 using Planar.Service.Model;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -18,6 +19,16 @@ namespace Planar.Service.Data
                 .Where(j => j.JobId == jobId)
                 .Select(j => j.Properties)
                 .FirstOrDefaultAsync();
+
+            return properties;
+        }
+
+        public async Task<IEnumerable<string>> GetJobPropertiesIds()
+        {
+            var properties = await _context.JobProperties
+                .AsNoTracking()
+                .Select(j => j.JobId)
+                .ToListAsync();
 
             return properties;
         }

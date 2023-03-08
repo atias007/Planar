@@ -6,7 +6,7 @@ namespace Planar.Job.Test
 {
     internal class MockTriggerDetails : ITriggerDetail
     {
-        private readonly SortedDictionary<string, string> _triggerDataMap;
+        private readonly SortedDictionary<string, string?> _triggerDataMap;
         private readonly DateTimeOffset _now;
         private readonly MockKey _triggerKey;
         private readonly MockKey _jobKey;
@@ -26,10 +26,10 @@ namespace Planar.Job.Test
         public DateTimeOffset? EndTimeUtc => _now;
         public DateTimeOffset? FinalFireTimeUtc => _now;
         public DateTimeOffset StartTimeUtc => _now;
-        public string CalendarName => null;
+        public string? CalendarName => null;
         public string Description => "This is UnitTest trigger description";
         public IKey JobKey => _jobKey;
-        public SortedDictionary<string, string> TriggerDataMap => _triggerDataMap;
+        public SortedDictionary<string, string?> TriggerDataMap => _triggerDataMap;
         public IKey Key => _triggerKey;
         public DateTimeOffset? EndTime => null;
         public DateTimeOffset? FinalFireTime { get; private set; }

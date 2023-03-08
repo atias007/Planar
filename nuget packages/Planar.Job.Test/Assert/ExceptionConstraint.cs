@@ -37,21 +37,24 @@ namespace Planar.Job.Test.Assert
 
             if (HasExceptionType<TException>(_result.Exception)) { return Assert; }
 
-            var message = $"Expect exception of type {typeof(TException).FullName} there is exception of type {_result.Exception.GetType().FullName}";
+            var message = $"Expect exception of type {typeof(TException).FullName} there is exception of type {_result.Exception?.GetType().FullName}";
             throw new AssertPlanarException(message);
         }
 
-        private static bool HasExceptionType<TException>(Exception ex)
+        private static bool HasExceptionType<TException>(Exception? ex)
             where TException : Exception
         {
+            if (ex == null) { return false; }
             if (ex is TException) { return true; }
             if (ex.InnerException == null) { return false; }
             return HasExceptionType<TException>(ex.InnerException);
         }
 
-        private static bool HasExceptionType<TException>(AggregateException ex)
+        private static bool HasExceptionType<TException>(AggregateException? ex)
             where TException : Exception
         {
+            if (ex == null) { return false; }
+
             var all = ex.Flatten().InnerExceptions;
 
             foreach (var item in all)

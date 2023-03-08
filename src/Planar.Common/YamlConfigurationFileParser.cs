@@ -10,11 +10,11 @@ namespace NetEscapades.Configuration.Yaml
 {
     public class YamlConfigurationFileParser
     {
-        private readonly IDictionary<string, string> _data = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private readonly IDictionary<string, string?> _data = new SortedDictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
         private readonly Stack<string> _context = new Stack<string>();
-        private string _currentPath;
+        private string _currentPath = string.Empty;
 
-        public IDictionary<string, string> Parse(Stream input)
+        public IDictionary<string, string?> Parse(Stream input)
         {
             _data.Clear();
             _context.Clear();
@@ -36,7 +36,7 @@ namespace NetEscapades.Configuration.Yaml
 
         private void VisitYamlNodePair(KeyValuePair<YamlNode, YamlNode> yamlNodePair)
         {
-            var context = ((YamlScalarNode)yamlNodePair.Key).Value;
+            var context = ((YamlScalarNode)yamlNodePair.Key).Value ?? string.Empty;
             VisitYamlNode(context, yamlNodePair.Value);
         }
 

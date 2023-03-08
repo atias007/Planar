@@ -271,18 +271,13 @@ namespace Planar
             _process.OutputDataReceived += ProcessOutputDataReceived;
             _process.ErrorDataReceived += ProcessErrorDataReceived;
 
-            if (Properties.Timeout.HasValue && Properties.Timeout != TimeSpan.Zero)
+            var timeout = GetTimeout(Properties.Timeout);
+
+            _process.WaitForExit(timeout);
+            if (!_process.HasExited)
             {
-                _process.WaitForExit(Convert.ToInt32(Properties.Timeout.Value.TotalMilliseconds));
-                if (!_process.HasExited)
-                {
-                    MessageBroker.AppendLog(LogLevel.Error, $"Process timeout expire. Timeout was {Properties.Timeout.Value:hh\\:mm\\:ss}");
-                    return false;
-                }
-            }
-            else
-            {
-                _process.WaitForExit();
+                MessageBroker.AppendLog(LogLevel.Error, $"Process timeout expire. Timeout was {timeout:hh\\:mm\\:ss}");
+                return false;
             }
 
             return true;

@@ -7,6 +7,7 @@ using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using YamlDotNet.Core.Tokens;
 
@@ -18,7 +19,7 @@ namespace Planar.CLI.Actions
         [Action("add")]
         [NullRequest]
         [ActionWizard]
-        public static async Task<CliActionResponse> AddMonitorAction(CliAddMonitorRequest request)
+        public static async Task<CliActionResponse> AddMonitorAction(CliAddMonitorRequest request, CancellationToken cancellationToken = default)
         {
             if (request == null)
             {
@@ -34,25 +35,25 @@ namespace Planar.CLI.Actions
             var mappedRequest = MapAddMonitorRequest(request);
             var restRequestAdd = new RestRequest("monitor", Method.Post)
                 .AddBody(mappedRequest);
-            var resultAdd = await RestProxy.Invoke<EntityIdResponse>(restRequestAdd);
+            var resultAdd = await RestProxy.Invoke<EntityIdResponse>(restRequestAdd, cancellationToken);
 
             return new CliActionResponse(resultAdd, message: Convert.ToString(resultAdd.Data?.Id));
         }
 
         [Action("remove")]
         [Action("delete")]
-        public static async Task<CliActionResponse> DeleteMonitor(CliGetByIdRequest request)
+        public static async Task<CliActionResponse> DeleteMonitor(CliGetByIdRequest request, CancellationToken cancellationToken = default)
         {
             if (!ConfirmAction($"remove monitor id {request.Id}")) { return CliActionResponse.Empty; }
 
             var restRequest = new RestRequest("monitor/{id}", Method.Delete)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
-            var result = await RestProxy.Invoke(restRequest);
+            var result = await RestProxy.Invoke(restRequest, cancellationToken);
             return new CliActionResponse(result);
         }
 
         [Action("ls")]
-        public static async Task<CliActionResponse> GetMonitorActions(CliGetMonitorActionsRequest request)
+        public static async Task<CliActionResponse> GetMonitorActions(CliGetMonitorActionsRequest request, CancellationToken cancellationToken = default)
         {
             var data = new List<MonitorItem>();
             RestResponse finalResult;
@@ -60,7 +61,7 @@ namespace Planar.CLI.Actions
             if (string.IsNullOrEmpty(request.JobIdOrJobGroup))
             {
                 var restRequest = new RestRequest("monitor", Method.Get);
-                var result = await RestProxy.Invoke<List<MonitorItem>>(restRequest);
+                var result = await RestProxy.Invoke<List<MonitorItem>>(restRequest, cancellationToken);
                 if (result.IsSuccessful && result.Data != null) { data.AddRange(result.Data); }
                 finalResult = result;
             }
@@ -72,8 +73,8 @@ namespace Planar.CLI.Actions
                 var restRequest2 = new RestRequest("monitor/byGroup/{group}", Method.Get)
                     .AddParameter("group", request.JobIdOrJobGroup, ParameterType.UrlSegment);
 
-                var task1 = RestProxy.Invoke<List<MonitorItem>>(restRequest1);
-                var task2 = RestProxy.Invoke<List<MonitorItem>>(restRequest2);
+                var task1 = RestProxy.Invoke<List<MonitorItem>>(restRequest1, cancellationToken);
+                var task2 = RestProxy.Invoke<List<MonitorItem>>(restRequest2, cancellationToken);
                 await Task.WhenAll(task1, task2);
 
                 var result1 = task1.Result;
@@ -89,42 +90,42 @@ namespace Planar.CLI.Actions
         }
 
         [Action("events")]
-        public static async Task<CliActionResponse> GetMonitorEvents()
+        public static async Task<CliActionResponse> GetMonitorEvents(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("monitor/events", Method.Get);
-            var result = await RestProxy.Invoke<List<LovItem>>(restRequest);
+            var result = await RestProxy.Invoke<List<LovItem>>(restRequest, cancellationToken);
             var table = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, table);
         }
 
         [Action("hooks")]
-        public static async Task<CliActionResponse> GetMonitorHooks()
+        public static async Task<CliActionResponse> GetMonitorHooks(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("monitor/hooks", Method.Get);
-            var result = await RestProxy.Invoke<List<string>>(restRequest);
+            var result = await RestProxy.Invoke<List<string>>(restRequest, cancellationToken);
             return new CliActionResponse(result, serializeObj: result.Data);
         }
 
         [Action("reload")]
-        public static async Task<CliActionResponse> ReloadMonitor()
+        public static async Task<CliActionResponse> ReloadMonitor(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("monitor/reload", Method.Post);
-            var result = await RestProxy.Invoke<string>(restRequest);
+            var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
             return new CliActionResponse(result, message: result.Data);
         }
 
         [Action("update")]
-        public static async Task<CliActionResponse> UpdateMonitor(CliUpdateEntityRequest request)
+        public static async Task<CliActionResponse> UpdateMonitor(CliUpdateEntityRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("monitor", Method.Patch)
                 .AddBody(request);
 
-            return await Execute(restRequest);
+            return await Execute(restRequest, cancellationToken);
         }
 
         [Action("test")]
         [NullRequest]
-        public static async Task<CliActionResponse> TestMonitor(CliMonitorTestRequest request)
+        public static async Task<CliActionResponse> TestMonitor(CliMonitorTestRequest request, CancellationToken cancellationToken = default)
         {
             if (request == null)
             {
@@ -140,7 +141,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("monitor/test", Method.Post)
                 .AddBody(request);
 
-            return await Execute(restRequest);
+            return await Execute(restRequest, cancellationToken);
         }
 
         private static async Task<RequestBuilderWrapper<CliMonitorTestRequest>> CollectTestMonitorRequestData()

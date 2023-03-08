@@ -1,5 +1,6 @@
 ﻿using Planar.CLI.Attributes;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
@@ -8,7 +9,7 @@ namespace Planar.CLI.Actions
     public class InnerCliActions : BaseCliAction<InnerCliActions>
     {
         [Action("cls")]
-        public static async Task<CliActionResponse> GetParameter()
+        public static async Task<CliActionResponse> GetParameter(CancellationToken cancellationToken = default)
         {
             Console.Clear();
             return await Task.FromResult(CliActionResponse.Empty);

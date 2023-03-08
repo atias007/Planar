@@ -1,7 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Planar.Calendar.Hebrew;
+using Planar.Common;
 using Planar.Service.Listeners;
 using Quartz;
+using Quartz.Plugin.Interrupt;
 using Quartz.Simpl;
 using System;
 
@@ -39,11 +41,10 @@ namespace Planar.Service
 
                 // convert time zones using converter that can handle Windows/Linux differences
                 q.UseTimeZoneConverter();
-
-                q.UseJobAutoInterrupt(options =>
-                {
-                    options.DefaultMaxRunTime = AppSettings.JobAutoStopSpan;
-                });
+                ////q.UseJobAutoInterrupt(options =>
+                ////{
+                ////    options.DefaultMaxRunTime = TimeSpan.FromSeconds(30);
+                ////});
 
                 q.AddJobListener<LogJobListener>();
                 q.AddTriggerListener<RetryTriggerListener>();

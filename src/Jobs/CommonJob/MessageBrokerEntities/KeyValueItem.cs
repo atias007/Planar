@@ -2,8 +2,8 @@
 {
     internal class KeyValueItem
     {
-        public string Key { get; set; }
+        public string Key { get; set; } = string.Empty;
 
-        public object Value { get; set; }
+        public object? Value { get; set; }
     }
 }

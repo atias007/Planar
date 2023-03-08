@@ -5,6 +5,7 @@ using Planar.CLI.Entities;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
@@ -13,26 +14,26 @@ namespace Planar.CLI.Actions
     public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     {
         [Action("stop")]
-        public static async Task<CliActionResponse> StopScheduler()
+        public static async Task<CliActionResponse> StopScheduler(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("service/stop", Method.Post);
-            return await Execute(restRequest);
+            return await Execute(restRequest, cancellationToken);
         }
 
         [Action("start")]
-        public static async Task<CliActionResponse> StartScheduler()
+        public static async Task<CliActionResponse> StartScheduler(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("service/start", Method.Post);
-            return await Execute(restRequest);
+            return await Execute(restRequest, cancellationToken);
         }
 
         [Action("info")]
-        public static async Task<CliActionResponse> GetInfo(CliGetInfoRequest request)
+        public static async Task<CliActionResponse> GetInfo(CliGetInfoRequest request, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrEmpty(request.Key))
             {
                 var restRequest = new RestRequest("service", Method.Get);
-                var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest);
+                var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest, cancellationToken);
 
                 if (result.IsSuccessful && result.Data != null)
                 {
@@ -51,16 +52,16 @@ namespace Planar.CLI.Actions
 
                 var restRequest = new RestRequest("service/{key}", Method.Get);
                 restRequest.AddUrlSegment("key", request.Key);
-                var result = await RestProxy.Invoke<string>(restRequest);
+                var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
                 return new CliActionResponse(result, result.Data);
             }
         }
 
         [Action("version")]
-        public static async Task<CliActionResponse> GetVersion()
+        public static async Task<CliActionResponse> GetVersion(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("service", Method.Get);
-            var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest);
+            var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest, cancellationToken);
 
             if (result.IsSuccessful && result.Data != null)
             {
@@ -75,39 +76,40 @@ namespace Planar.CLI.Actions
 
         [Action("hc")]
         [Action("health-check")]
-        public static async Task<CliActionResponse> HealthCheck()
+        public static async Task<CliActionResponse> HealthCheck(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("service/healthCheck", Method.Get);
-            var result = await RestProxy.Invoke<string>(restRequest);
+            var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
             return new CliActionResponse(result, result.Data);
         }
 
         [Action("env")]
-        public static async Task<CliActionResponse> GetEnvironment()
+        public static async Task<CliActionResponse> GetEnvironment(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("service", Method.Get);
-            var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest);
+            var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest, cancellationToken);
             return new CliActionResponse(result, message: result.Data?.Environment);
         }
 
         [Action("log-level")]
-        public static async Task<CliActionResponse> GetLogLevel()
+        public static async Task<CliActionResponse> GetLogLevel(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("service", Method.Get);
-            var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest);
+            var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest, cancellationToken);
             return new CliActionResponse(result, message: result.Data?.LogLevel);
         }
 
         [Action("calendars")]
-        public static async Task<CliActionResponse> GetAllCalendars()
+        public static async Task<CliActionResponse> GetAllCalendars(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("service/calendars", Method.Get);
-            return await ExecuteEntity<List<string>>(restRequest);
+            return await ExecuteEntity<List<string>>(restRequest, cancellationToken);
         }
 
         [Action("login")]
-        public static async Task<CliActionResponse> Login(CliLoginRequest request)
+        public static async Task<CliActionResponse> Login(CliLoginRequest request, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             InnerLogin(request);
 
             ConnectData.SetLoginRequest(request);
@@ -115,8 +117,9 @@ namespace Planar.CLI.Actions
         }
 
         [Action("logout")]
-        public static async Task<CliActionResponse> Logout()
+        public static async Task<CliActionResponse> Logout(CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ConnectData.Logout();
             InnerLogin(new CliLoginRequest());
             return await Task.FromResult(CliActionResponse.Empty);

@@ -114,3 +114,6 @@ V 1.2.0
 - add settings for statistics log
 - add max concurent & max duration statistics
 - correct the job type of system job
+- cli: support cancel operation (cancallation token)
+- option for job timeout & general system timeout
+- clear old properties from system clear job

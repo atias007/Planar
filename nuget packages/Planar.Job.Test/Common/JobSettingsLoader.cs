@@ -10,12 +10,12 @@ namespace Planar.Job.Test
         private const string SettingsFilename1 = "JobSettings.yml";
         private const string SettingsFilename2 = "JobSettings.UnitTest.yml";
 
-        public static Dictionary<string, string> LoadJobSettingsForUnitTest(Type type)
+        public static Dictionary<string, string?> LoadJobSettingsForUnitTest(Type type)
         {
             var directory = new FileInfo(type.Assembly.Location).Directory;
 
             // Load job global config
-            var jobSettings = new Dictionary<string, string>();
+            var jobSettings = new Dictionary<string, string?>();
 
             // Merge settings yml file
             if (directory == null || !directory.Exists) { return jobSettings; }
@@ -24,9 +24,9 @@ namespace Planar.Job.Test
             return jobSettings;
         }
 
-        private static Dictionary<string, string> LoadJobSettingsFiles(string path)
+        private static Dictionary<string, string?> LoadJobSettingsFiles(string path)
         {
-            var result = new Dictionary<string, string>();
+            var result = new Dictionary<string, string?>();
 
             // JobSettings.yml
             var file = Path.Combine(path, SettingsFilename1);
@@ -41,9 +41,9 @@ namespace Planar.Job.Test
             return result;
         }
 
-        private static Dictionary<string, string> ReadSettingsFile(string filename)
+        private static Dictionary<string, string?> ReadSettingsFile(string filename)
         {
-            var dict = new Dictionary<string, string>();
+            var dict = new Dictionary<string, string?>();
 
             try
             {
@@ -58,7 +58,7 @@ namespace Planar.Job.Test
                 stream.Position = 0;
                 var parser = new YamlConfigurationFileParser();
                 var items = parser.Parse(stream);
-                dict = new Dictionary<string, string>(items);
+                dict = new Dictionary<string, string?>(items);
 
                 return dict;
             }
