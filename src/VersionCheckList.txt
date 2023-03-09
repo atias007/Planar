@@ -7,3 +7,5 @@
 - Remove unsused nuget packages
 - build with 0 0 0 (error, warning, info)
 - publish nuget packages
+- create pull request to master
+- approve pull request

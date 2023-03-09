@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Planar.Common;
+﻿using Planar.Common;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
