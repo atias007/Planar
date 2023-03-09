@@ -25,19 +25,15 @@ namespace Planar.CLI
                 {
                     context.Refresh();
                     if (ids.Count == 0) { return; }
-                    // if (cancellationToken.IsCancellationRequested) { return; }
                     await Task.Delay(2000, cancellationToken);
 
                     var counter = 0;
                     while (counter < 1000)
                     {
-                        // if (cancellationToken.IsCancellationRequested) { return; }
                         var isAllFinish = await LoopGetRunnings(param, table, ids, cancellationToken);
                         context.Refresh();
-                        //if (cancellationToken.IsCancellationRequested) { return; }
 
                         if (isAllFinish) { break; }
-                        //if (cancellationToken.IsCancellationRequested) { return; }
                         await Task.Delay(2000, cancellationToken);
                         counter++;
                     }

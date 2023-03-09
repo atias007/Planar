@@ -351,7 +351,11 @@ namespace Planar.CLI.Actions
                 throw new CliException($"cli error: action '{method.Name}' has no CancellationToken parameter");
             }
 
-            var requestType = parameters.First().ParameterType;
+            var requestType =
+                parameters.Count() == 1 ?
+                null :
+                parameters.First().ParameterType;
+
             return requestType;
         }
 

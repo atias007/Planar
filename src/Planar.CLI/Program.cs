@@ -228,14 +228,7 @@ namespace Planar.CLI
         private static void HandleException(Exception ex)
         {
             if (ex == null) { return; }
-
-            if (HasCancelException(ex))
-            {
-                if (Console.CursorLeft > 0) { AnsiConsole.WriteLine(); }
-                AnsiConsole.MarkupLine(CliFormat.GetWarningMarkup("operation was canceled"));
-                TokenManager.Reset();
-                return;
-            }
+            if (HandleCancelException(ex)) { return; }
 
             var finaleException = ex;
             if (ex is AggregateException exception)
@@ -263,6 +256,19 @@ namespace Planar.CLI
             }
         }
 
+        private static bool HandleCancelException(Exception? ex)
+        {
+            if (HasCancelException(ex))
+            {
+                if (Console.CursorLeft > 0) { AnsiConsole.WriteLine(); }
+                AnsiConsole.MarkupLine(CliFormat.GetWarningMarkup("operation was canceled"));
+                TokenManager.Reset();
+                return true;
+            }
+
+            return false;
+        }
+
         private static bool HasCancelException(Exception? ex)
         {
             if (ex == null) { return false; }
@@ -280,6 +286,8 @@ namespace Planar.CLI
 
         private static void HandleGeneralError(RestResponse response)
         {
+            if (HandleCancelException(response.ErrorException)) { return; }
+
             if (response.ErrorMessage != null && response.ErrorMessage.Contains("No connection could be made"))
             {
                 AnsiConsole.MarkupLine(CliFormat.GetErrorMarkup($"no connection could be made to planar deamon ({RestProxy.Host}:{RestProxy.Port})"));

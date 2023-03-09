@@ -11,6 +11,7 @@ namespace Planar.CLI.Actions
         [Action("cls")]
         public static async Task<CliActionResponse> GetParameter(CancellationToken cancellationToken = default)
         {
+            if (cancellationToken.IsCancellationRequested) { throw new TaskCanceledException("task was canceled"); }
             Console.Clear();
             return await Task.FromResult(CliActionResponse.Empty);
         }
