@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;

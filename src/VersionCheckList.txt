@@ -1,0 +1,9 @@
+* Planar
+* Planar.Packages
+* Planar.Hooks
+* Planar.Test
+----------------------------------------
+- update nuget packages
+- Remove unsused nuget packages
+- build with 0 0 0 (error, warning, info)
+- publish nuget packages

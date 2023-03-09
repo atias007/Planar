@@ -352,7 +352,7 @@ namespace Planar.CLI.Actions
             }
 
             var requestType =
-                parameters.Count() == 1 ?
+                parameters.Length == 1 ?
                 null :
                 parameters.First().ParameterType;
 

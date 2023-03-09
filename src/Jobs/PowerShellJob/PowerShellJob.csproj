@@ -18,12 +18,5 @@
 	<ItemGroup>
 	  <None Include="PowerShellJob.cs" />
 	</ItemGroup>
-	<ItemGroup>
-		<PackageReference Include="System.Management.Automation" Version="7.2.9" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="..\CommonJob\CommonJob.csproj" />
-	</ItemGroup>
 
 </Project>

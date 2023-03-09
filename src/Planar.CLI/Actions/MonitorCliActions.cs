@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using YamlDotNet.Core.Tokens;
 
 namespace Planar.CLI.Actions
 {
@@ -23,7 +22,7 @@ namespace Planar.CLI.Actions
         {
             if (request == null)
             {
-                var wrapper = await CollectAddMonitorRequestData();
+                var wrapper = await CollectAddMonitorRequestData(cancellationToken);
                 if (!wrapper.IsSuccessful || wrapper.Request == null)
                 {
                     return new CliActionResponse(wrapper.FailResponse);
@@ -129,7 +128,7 @@ namespace Planar.CLI.Actions
         {
             if (request == null)
             {
-                var wrapper = await CollectTestMonitorRequestData();
+                var wrapper = await CollectTestMonitorRequestData(cancellationToken);
                 if (!wrapper.IsSuccessful || wrapper.Request == null)
                 {
                     return new CliActionResponse(wrapper.FailResponse);
@@ -144,9 +143,9 @@ namespace Planar.CLI.Actions
             return await Execute(restRequest, cancellationToken);
         }
 
-        private static async Task<RequestBuilderWrapper<CliMonitorTestRequest>> CollectTestMonitorRequestData()
+        private static async Task<RequestBuilderWrapper<CliMonitorTestRequest>> CollectTestMonitorRequestData(CancellationToken cancellationToken = default)
         {
-            var data = await GetTestMonitorData();
+            var data = await GetTestMonitorData(cancellationToken);
             if (!data.IsSuccessful)
             {
                 return new RequestBuilderWrapper<CliMonitorTestRequest> { FailResponse = data.FailResponse };
@@ -166,9 +165,9 @@ namespace Planar.CLI.Actions
             return new RequestBuilderWrapper<CliMonitorTestRequest> { Request = monitor };
         }
 
-        private static async Task<RequestBuilderWrapper<CliAddMonitorRequest>> CollectAddMonitorRequestData()
+        private static async Task<RequestBuilderWrapper<CliAddMonitorRequest>> CollectAddMonitorRequestData(CancellationToken cancellationToken)
         {
-            var data = await GetMonitorData();
+            var data = await GetMonitorData(cancellationToken);
             if (!data.IsSuccessful)
             {
                 return new RequestBuilderWrapper<CliAddMonitorRequest> { FailResponse = data.FailResponse };
@@ -286,14 +285,14 @@ namespace Planar.CLI.Actions
             return new AddMonitorJobData { JobName = key.Name, JobGroup = key.Group };
         }
 
-        private static async Task<TestMonitorData> GetTestMonitorData()
+        private static async Task<TestMonitorData> GetTestMonitorData(CancellationToken cancellationToken)
         {
             var data = new TestMonitorData();
             var hooksRequest = new RestRequest("monitor/hooks", Method.Get);
-            var hooksTask = RestProxy.Invoke<List<string>>(hooksRequest);
+            var hooksTask = RestProxy.Invoke<List<string>>(hooksRequest, cancellationToken);
 
             var groupsRequest = new RestRequest("group", Method.Get);
-            var groupsTask = RestProxy.Invoke<List<GroupInfo>>(groupsRequest);
+            var groupsTask = RestProxy.Invoke<List<GroupInfo>>(groupsRequest, cancellationToken);
 
             var hooks = await hooksTask;
             data.Hooks = hooks.Data ?? new List<string>();
@@ -324,21 +323,21 @@ namespace Planar.CLI.Actions
             return data;
         }
 
-        private static async Task<MonitorRequestData> GetMonitorData()
+        private static async Task<MonitorRequestData> GetMonitorData(CancellationToken cancellationToken)
         {
             var data = new MonitorRequestData();
             var eventsRequest = new RestRequest("monitor/events", Method.Get);
-            var eventsTask = RestProxy.Invoke<List<LovItem>>(eventsRequest);
+            var eventsTask = RestProxy.Invoke<List<LovItem>>(eventsRequest, cancellationToken);
 
             var hooksRequest = new RestRequest("monitor/hooks", Method.Get);
-            var hooksTask = RestProxy.Invoke<List<string>>(hooksRequest);
+            var hooksTask = RestProxy.Invoke<List<string>>(hooksRequest, cancellationToken);
 
             var jobsRequest = new RestRequest("job", Method.Get)
                 .AddQueryParameter("filter", (int)AllJobsMembers.AllUserJobs);
-            var jobsTask = RestProxy.Invoke<List<JobRowDetails>>(jobsRequest);
+            var jobsTask = RestProxy.Invoke<List<JobRowDetails>>(jobsRequest, cancellationToken);
 
             var groupsRequest = new RestRequest("group", Method.Get);
-            var groupsTask = RestProxy.Invoke<List<GroupInfo>>(groupsRequest);
+            var groupsTask = RestProxy.Invoke<List<GroupInfo>>(groupsRequest, cancellationToken);
 
             var events = await eventsTask;
             data.Events = events.Data ?? new List<LovItem>();

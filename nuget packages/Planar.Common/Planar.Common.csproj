@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <Nullable>enable</Nullable>
-	<Version>1.2.3</Version>
+	<Version>1.2.5</Version>
 	  <RepositoryType>git</RepositoryType>
 	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
 	  <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
@@ -35,9 +35,6 @@
       <PackagePath>\</PackagePath>
       <Pack>True</Pack>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="6.0.7" />
   </ItemGroup>
 
 </Project>

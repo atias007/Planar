@@ -1,5 +1,4 @@
-﻿using FluentValidation;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
@@ -29,7 +28,7 @@ namespace Planar.CLI.Actions
         {
             if (request == null)
             {
-                var wrapper = await GetCliAddJobRequest();
+                var wrapper = await GetCliAddJobRequest(cancellationToken);
                 if (!wrapper.IsSuccessful || wrapper.Request == null)
                 {
                     return new CliActionResponse(wrapper.FailResponse);
@@ -164,7 +163,7 @@ namespace Planar.CLI.Actions
         {
             if (request == null)
             {
-                var wrapper = await GetCliGetJobFileRequest();
+                var wrapper = await GetCliGetJobFileRequest(cancellationToken);
                 if (!wrapper.IsSuccessful || wrapper.Request == null)
                 {
                     return new CliActionResponse(wrapper.FailResponse);
@@ -515,10 +514,10 @@ namespace Planar.CLI.Actions
             return (resultData, restResponse);
         }
 
-        private static async Task<RequestBuilderWrapper<CliAddJobRequest>> GetCliAddJobRequest()
+        private static async Task<RequestBuilderWrapper<CliAddJobRequest>> GetCliAddJobRequest(CancellationToken cancellationToken)
         {
             var restRequest = new RestRequest("job/available-jobs", Method.Get);
-            var result = await RestProxy.Invoke<List<AvailableJobToAdd>>(restRequest);
+            var result = await RestProxy.Invoke<List<AvailableJobToAdd>>(restRequest, cancellationToken);
             if (!result.IsSuccessful)
             {
                 return new RequestBuilderWrapper<CliAddJobRequest> { FailResponse = result };
@@ -529,11 +528,11 @@ namespace Planar.CLI.Actions
             return new RequestBuilderWrapper<CliAddJobRequest> { Request = request };
         }
 
-        private static async Task<RequestBuilderWrapper<CliGetJobFileRequest>> GetCliGetJobFileRequest()
+        private static async Task<RequestBuilderWrapper<CliGetJobFileRequest>> GetCliGetJobFileRequest(CancellationToken cancellationToken)
         {
             var restRequest = new RestRequest("job/jobfiles", Method.Get);
 
-            var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest);
+            var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
             if (!result.IsSuccessful)
             {
                 return new RequestBuilderWrapper<CliGetJobFileRequest> { FailResponse = result };
@@ -551,7 +550,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("job/{id}", Method.Get)
                  .AddParameter("id", jobId, ParameterType.UrlSegment);
 
-            var result = await RestProxy.Invoke<JobDetails>(restRequest);
+            var result = await RestProxy.Invoke<JobDetails>(restRequest, cancellationToken);
 
             if (!result.IsSuccessful || result.Data == null)
             {
@@ -675,7 +674,7 @@ namespace Planar.CLI.Actions
                         break;
 
                     default:
-                        throw new ValidationException($"option {item} is invalid. use one or more from the following options: all,all-job,all-trigger,job,job-data,properties,triggers,triggers-data");
+                        throw new CliValidationException($"option {item} is invalid. use one or more from the following options: all,all-job,all-trigger,job,job-data,properties,triggers,triggers-data");
                 }
             }
 

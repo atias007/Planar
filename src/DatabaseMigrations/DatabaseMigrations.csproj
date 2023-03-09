@@ -11,7 +11,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="dbup-sqlserver" Version="5.0.8" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Spectre.Console" Version="0.46.0" />
   </ItemGroup>
   <ItemGroup>

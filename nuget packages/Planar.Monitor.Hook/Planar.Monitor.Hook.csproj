@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
-		<Version>1.2.3</Version>
+		<Version>1.2.5</Version>
 		<Description>Library for writing monitor hooks for Planar jobs</Description>
 		<RepositoryType>git</RepositoryType>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -36,7 +36,6 @@
 	  </None>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
 		<PackageReference Include="System.Text.Json" Version="6.0.7" />
 	</ItemGroup>
 

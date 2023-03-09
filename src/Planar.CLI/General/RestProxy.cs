@@ -54,13 +54,13 @@ namespace Planar.CLI
             }
         }
 
-        public static async Task<RestResponse<TResponse>> Invoke<TResponse>(RestRequest request, CancellationToken cancellationToken = default)
+        public static async Task<RestResponse<TResponse>> Invoke<TResponse>(RestRequest request, CancellationToken cancellationToken)
         {
             var response = await Proxy.ExecuteAsync<TResponse>(request, cancellationToken);
             return response;
         }
 
-        public static async Task<RestResponse> Invoke(RestRequest request, CancellationToken cancellationToken = default)
+        public static async Task<RestResponse> Invoke(RestRequest request, CancellationToken cancellationToken)
         {
             var response = await Proxy.ExecuteAsync(request, cancellationToken);
             return response;
