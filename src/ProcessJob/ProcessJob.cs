@@ -276,7 +276,8 @@ namespace Planar
             _process.WaitForExit(timeout);
             if (!_process.HasExited)
             {
-                MessageBroker.AppendLog(LogLevel.Error, $"Process timeout expire. Timeout was {timeout:hh\\:mm\\:ss}");
+                var span = TimeSpan.FromMilliseconds(timeout);
+                MessageBroker.AppendLog(LogLevel.Error, $"Process timeout expire. Timeout was {span:hh\\:mm\\:ss}");
                 return false;
             }
 
