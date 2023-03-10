@@ -164,7 +164,7 @@ namespace Planar.CLI
                             case "JobCliActions.GetRunningJobs":
                                 if (param is CliGetRunningJobsRequest request)
                                 {
-                                    var scope = new TokenManagerScope();
+                                    using var scope = new TokenManagerScope();
                                     CliIterativeActions.InvokeGetRunnings(request, TokenManagerScope.Token).Wait();
                                 }
                                 break;

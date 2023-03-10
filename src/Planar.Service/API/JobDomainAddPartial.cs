@@ -179,7 +179,7 @@ namespace Planar.Service.API
             return filename;
         }
 
-        private static string GetJopPropertiesYml(SetJobDynamicRequest request)
+        private static string? GetJopPropertiesYml(SetJobDynamicRequest request)
         {
             if (request.Properties == null)
             {
@@ -423,7 +423,7 @@ namespace Planar.Service.API
             return id;
         }
 
-        private static IEnumerable<GlobalConfig> ConvertToGlobalConfig(Dictionary<string, string> config)
+        private static IEnumerable<GlobalConfig> ConvertToGlobalConfig(Dictionary<string, string?> config)
         {
             if (config == null) { return Array.Empty<GlobalConfig>(); }
             var result = config.Select(c => new GlobalConfig { Key = c.Key, Value = c.Value, Type = "string" });
@@ -532,9 +532,9 @@ namespace Planar.Service.API
             return jobKey;
         }
 
-        private static bool IsRegexMatch(Regex regex, string value)
+        private static bool IsRegexMatch(Regex regex, string? value)
         {
-            if (value == null) return true;
+            if (value == null) { return true; }
             return regex.IsMatch(value);
         }
 

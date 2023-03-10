@@ -181,7 +181,7 @@ namespace Planar.Service.API
                 throw new RestNotFoundException($"type '{typeName}' could not be found");
             }
 
-            using Stream stream = assembly.GetManifestResourceStream($"{typeName}.JobFile.yml");
+            using Stream? stream = assembly.GetManifestResourceStream($"{typeName}.JobFile.yml");
             {
                 if (stream == null)
                 {
