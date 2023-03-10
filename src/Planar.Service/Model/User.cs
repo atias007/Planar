@@ -16,44 +16,40 @@ namespace Planar.Service.Model
 
         [Key]
         public int Id { get; set; }
-        [Required]
         [StringLength(50)]
         [Unicode(false)]
-        public string Username { get; set; }
-        [Required]
+        public string Username { get; set; } = null!;
         [MaxLength(128)]
-        public byte[] Password { get; set; }
-        [Required]
+        public byte[] Password { get; set; } = null!;
         [MaxLength(128)]
-        public byte[] Salt { get; set; }
+        public byte[] Salt { get; set; } = null!;
         public int RoleId { get; set; }
-        [Required]
         [StringLength(50)]
-        public string FirstName { get; set; }
+        public string FirstName { get; set; } = null!;
         [StringLength(50)]
-        public string LastName { get; set; }
+        public string? LastName { get; set; }
         [StringLength(250)]
-        public string EmailAddress1 { get; set; }
+        public string? EmailAddress1 { get; set; }
         [StringLength(250)]
-        public string EmailAddress2 { get; set; }
+        public string? EmailAddress2 { get; set; }
         [StringLength(250)]
-        public string EmailAddress3 { get; set; }
+        public string? EmailAddress3 { get; set; }
         [StringLength(50)]
-        public string PhoneNumber1 { get; set; }
+        public string? PhoneNumber1 { get; set; }
         [StringLength(50)]
-        public string PhoneNumber2 { get; set; }
+        public string? PhoneNumber2 { get; set; }
         [StringLength(50)]
-        public string PhoneNumber3 { get; set; }
+        public string? PhoneNumber3 { get; set; }
         [StringLength(500)]
-        public string Reference1 { get; set; }
+        public string? Reference1 { get; set; }
         [StringLength(500)]
-        public string Reference2 { get; set; }
+        public string? Reference2 { get; set; }
         [StringLength(500)]
-        public string Reference3 { get; set; }
+        public string? Reference3 { get; set; }
         [StringLength(500)]
-        public string Reference4 { get; set; }
+        public string? Reference4 { get; set; }
         [StringLength(500)]
-        public string Reference5 { get; set; }
+        public string? Reference5 { get; set; }
 
         [ForeignKey("UserId")]
         [InverseProperty("Users")]

@@ -17,16 +17,16 @@ namespace Planar.Service.Data
         {
         }
 
-        public virtual DbSet<ClusterNode> ClusterNodes { get; set; }
-        public virtual DbSet<ConcurentQueue> ConcurentQueues { get; set; }
-        public virtual DbSet<GlobalConfig> GlobalConfigs { get; set; }
-        public virtual DbSet<Group> Groups { get; set; }
-        public virtual DbSet<JobInstanceLog> JobInstanceLogs { get; set; }
-        public virtual DbSet<JobProperty> JobProperties { get; set; }
-        public virtual DbSet<MonitorAction> MonitorActions { get; set; }
-        public virtual DbSet<Role> Roles { get; set; }
-        public virtual DbSet<Trace> Traces { get; set; }
-        public virtual DbSet<User> Users { get; set; }
+        public virtual DbSet<ClusterNode> ClusterNodes { get; set; } = null!;
+        public virtual DbSet<ConcurentQueue> ConcurentQueues { get; set; } = null!;
+        public virtual DbSet<GlobalConfig> GlobalConfigs { get; set; } = null!;
+        public virtual DbSet<Group> Groups { get; set; } = null!;
+        public virtual DbSet<JobInstanceLog> JobInstanceLogs { get; set; } = null!;
+        public virtual DbSet<JobProperty> JobProperties { get; set; } = null!;
+        public virtual DbSet<MonitorAction> MonitorActions { get; set; } = null!;
+        public virtual DbSet<Role> Roles { get; set; } = null!;
+        public virtual DbSet<Trace> Traces { get; set; } = null!;
+        public virtual DbSet<User> Users { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -11,12 +11,11 @@ namespace Planar.Service.Model
     {
         [Key]
         [StringLength(100)]
-        public string Server { get; set; }
+        public string Server { get; set; } = null!;
         [Key]
         public short Port { get; set; }
-        [Required]
         [StringLength(100)]
-        public string InstanceId { get; set; }
+        public string InstanceId { get; set; } = null!;
         public short ClusterPort { get; set; }
         [Column(TypeName = "datetime")]
         public DateTime JoinDate { get; set; }

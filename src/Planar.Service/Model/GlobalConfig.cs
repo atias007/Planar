@@ -11,13 +11,11 @@ namespace Planar.Service.Model
     {
         [Key]
         [StringLength(50)]
-        public string Key { get; set; }
-        [Required]
+        public string Key { get; set; } = null!;
         [StringLength(1000)]
-        public string Value { get; set; }
-        [Required]
+        public string Value { get; set; } = null!;
         [StringLength(10)]
         [Unicode(false)]
-        public string Type { get; set; }
+        public string Type { get; set; } = null!;
     }
 }

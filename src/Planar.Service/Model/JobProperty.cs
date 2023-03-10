@@ -11,7 +11,7 @@ namespace Planar.Service.Model
         [Key]
         [StringLength(20)]
         [Unicode(false)]
-        public string JobId { get; set; }
-        public string Properties { get; set; }
+        public string JobId { get; set; } = null!;
+        public string? Properties { get; set; }
     }
 }

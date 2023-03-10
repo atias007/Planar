@@ -17,24 +17,23 @@ namespace Planar.Service.Model
 
         [Key]
         public int Id { get; set; }
-        [Required]
         [StringLength(50)]
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
         [StringLength(500)]
-        public string Reference1 { get; set; }
+        public string? Reference1 { get; set; }
         [StringLength(500)]
-        public string Reference2 { get; set; }
+        public string? Reference2 { get; set; }
         [StringLength(500)]
-        public string Reference3 { get; set; }
+        public string? Reference3 { get; set; }
         [StringLength(500)]
-        public string Reference4 { get; set; }
+        public string? Reference4 { get; set; }
         [StringLength(500)]
-        public string Reference5 { get; set; }
+        public string? Reference5 { get; set; }
         public int RoleId { get; set; }
 
         [ForeignKey("RoleId")]
         [InverseProperty("Groups")]
-        public virtual Role Role { get; set; }
+        public virtual Role Role { get; set; } = null!;
         [InverseProperty("Group")]
         public virtual ICollection<MonitorAction> MonitorActions { get; set; }
 

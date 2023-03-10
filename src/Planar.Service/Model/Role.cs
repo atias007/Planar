@@ -15,10 +15,9 @@ namespace Planar.Service.Model
 
         [Key]
         public int Id { get; set; }
-        [Required]
         [StringLength(50)]
         [Unicode(false)]
-        public string Name { get; set; }
+        public string Name { get; set; } = null!;
 
         [InverseProperty("Role")]
         public virtual ICollection<Group> Groups { get; set; }

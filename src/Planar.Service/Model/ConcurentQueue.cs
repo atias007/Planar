@@ -13,12 +13,10 @@ namespace Planar.Service.Model
         public long Id { get; set; }
         [Column(TypeName = "datetime")]
         public DateTime RecordDate { get; set; }
-        [Required]
         [StringLength(100)]
-        public string Server { get; set; }
-        [Required]
+        public string Server { get; set; } = null!;
         [StringLength(100)]
-        public string InstanceId { get; set; }
+        public string InstanceId { get; set; } = null!;
         public int ConcurentValue { get; set; }
     }
 }
