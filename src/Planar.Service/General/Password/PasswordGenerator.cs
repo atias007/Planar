@@ -31,7 +31,7 @@ namespace Planar.Service.General.Password
 
             if (properties.Length < PASSWORD_LENGTH_MIN || properties.Length > PASSWORD_LENGTH_MAX)
             {
-                throw new PlanarException("Password length must be between 8 and 128.");
+                throw new PlanarException("password length must be between 8 and 128.");
             }
 
             string characterSet = "";

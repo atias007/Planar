@@ -35,80 +35,10 @@ namespace Planar.Common
             Upsert<string>(dictionary, key, value);
         }
 
-        public static TValue Get<TValue>(this Dictionary<string, TValue> dictionary, string key, bool ignoreCase)
-        {
-            if (key == null)
-            {
-                throw new ArgumentNullException(nameof(key));
-            }
-
-            if (ignoreCase)
-            {
-                var thekey = dictionary.Keys.FirstOrDefault(k => k.ToLower() == key.ToLower());
-                return dictionary[thekey];
-            }
-            else
-            {
-                return dictionary[key];
-            }
-        }
-
-        public static void Set<TValue>(this Dictionary<string, TValue> dictionary, string key, TValue value, bool ignoreCase)
-        {
-            if (key == null)
-            {
-                throw new ArgumentNullException(nameof(key));
-            }
-
-            if (ignoreCase)
-            {
-                var thekey = dictionary.Keys.FirstOrDefault(k => k.ToLower() == key.ToLower());
-                dictionary[thekey] = value;
-            }
-            else
-            {
-                dictionary[key] = value;
-            }
-        }
-
-        public static void Set(this Dictionary<string, string> dictionary, string key, string value, bool ignoreCase)
-        {
-            if (key == null)
-            {
-                throw new ArgumentNullException(nameof(key));
-            }
-
-            if (ignoreCase)
-            {
-                var thekey = dictionary.Keys.FirstOrDefault(k => k.ToLower() == key.ToLower());
-                dictionary[thekey] = value;
-            }
-            else
-            {
-                dictionary[key] = value;
-            }
-        }
-
-        public static bool ContainsKey<TValue>(this Dictionary<string, TValue> dictionary, string key, bool ignoreCase)
-        {
-            if (dictionary == null) { return false; }
-            if (string.IsNullOrEmpty(key)) { return false; }
-
-            if (ignoreCase)
-            {
-                var result = dictionary.Keys.Any(k => k.ToLower() == key.ToLower());
-                return result;
-            }
-            else
-            {
-                return dictionary.ContainsKey(key);
-            }
-        }
-
-        public static Dictionary<string, string> Merge(this Dictionary<string, string> source, Dictionary<string, string> target)
+        public static Dictionary<string, string?> Merge(this Dictionary<string, string?> source, Dictionary<string, string?> target)
         {
             if (target == null) { return source; }
-            source ??= new Dictionary<string, string>();
+            source ??= new Dictionary<string, string?>();
 
             foreach (var item in target)
             {

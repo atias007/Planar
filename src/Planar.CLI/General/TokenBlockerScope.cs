@@ -2,7 +2,7 @@
 
 namespace Planar.CLI.General
 {
-    public class TokenBlockerScope : IDisposable
+    public sealed class TokenBlockerScope : IDisposable
     {
         public TokenBlockerScope()
         {
@@ -11,7 +11,6 @@ namespace Planar.CLI.General
 
         public void Dispose()
         {
-            GC.SuppressFinalize(this);
             TokenManager.Release();
         }
     }

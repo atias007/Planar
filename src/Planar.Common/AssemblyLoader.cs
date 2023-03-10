@@ -15,7 +15,7 @@ namespace Planar.Common
             "Microsoft.Data.SqlClient.dll"
         };
 
-        public static Assembly LoadFromAssemblyPath(string assemblyFullPath, AssemblyLoadContext context = null)
+        public static Assembly? LoadFromAssemblyPath(string assemblyFullPath, AssemblyLoadContext context)
         {
             var fileNameWithOutExtension = Path.GetFileNameWithoutExtension(assemblyFullPath);
 
@@ -30,6 +30,12 @@ namespace Planar.Common
             {
                 var fileName = Path.GetFileName(assemblyFullPath);
                 var directory = Path.GetDirectoryName(assemblyFullPath);
+
+                if (string.IsNullOrEmpty(directory))
+                {
+                    throw new ArgumentException($"{nameof(assemblyFullPath)} argument is not valid at {nameof(AssemblyLoader)}.{nameof(LoadFromAssemblyPath)}(string, AssemblyLoadContext)");
+                }
+
                 LoadReferencedAssemblies(assembly, context, fileName, directory);
             }
 
@@ -42,7 +48,7 @@ namespace Planar.Common
             return context;
         }
 
-        private static Assembly LoadAssemblyFile(string filename, AssemblyLoadContext context)
+        private static Assembly? LoadAssemblyFile(string filename, AssemblyLoadContext context)
         {
             context ??= AssemblyLoadContext.Default;
 
@@ -54,7 +60,6 @@ namespace Planar.Common
             using var stream = File.OpenRead(filename);
             var result = context.LoadFromStream(stream);
 
-            //// var result = context.LoadFromAssemblyPath(filename);
             return result;
         }
 
@@ -77,6 +82,7 @@ namespace Planar.Common
 
             foreach (var reference in references)
             {
+                if (reference.Name == null) { continue; }
                 if (filesInDirectory.ContainsKey(reference.Name))
                 {
                     var path = filesInDirectory[reference.Name];

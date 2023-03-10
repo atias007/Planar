@@ -3,21 +3,20 @@ using System.Threading;
 
 namespace Planar.CLI.General
 {
-    public class TokenManagerScope : IDisposable
+    public sealed class TokenManagerScope : IDisposable
     {
         public TokenManagerScope()
         {
             TokenManager.Reset();
         }
 
-        public CancellationToken Token
+        public static CancellationToken Token
         {
             get { return TokenManager.Token; }
         }
 
         public void Dispose()
         {
-            GC.SuppressFinalize(this);
             TokenManager.Reset();
             TokenManager.Release();
         }

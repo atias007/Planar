@@ -64,7 +64,7 @@ namespace NetEscapades.Configuration.Yaml
 
             if (_data.ContainsKey(currentKey))
             {
-                throw new FormatException("xxxxx");
+                throw new FormatException($"key {currentKey} is duplicated");
             }
 
             _data[currentKey] = IsNullValue(yamlValue) ? null : yamlValue.Value;

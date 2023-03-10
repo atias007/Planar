@@ -33,6 +33,10 @@
 	  <None Remove="Data\Setup\EnvironmentVariable.ps1" />
 	  <None Remove="planar_openapi.html" />
 	</ItemGroup>
+	<ItemGroup>
+	  <_WebToolingArtifacts Remove="Properties\PublishProfiles\dev.pubxml" />
+	  <_WebToolingArtifacts Remove="Properties\PublishProfiles\net6_selfcontained_x64.pubxml" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />

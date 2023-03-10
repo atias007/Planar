@@ -5,6 +5,7 @@
 		<AssemblyName>Planar.Common</AssemblyName>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<Version>1.2.0</Version>
+		<Nullable>enable</Nullable>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>

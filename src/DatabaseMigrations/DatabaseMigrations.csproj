@@ -15,7 +15,7 @@
     <PackageReference Include="Spectre.Console" Version="0.46.0" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="appsettings.Local.json">
+    <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Remove="Scripts\Planar_0001 - startup_v1_1_0.sql" />

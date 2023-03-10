@@ -6,7 +6,7 @@ namespace Planar.CLI.General
     {
         private static readonly object Lock = new();
         private static CancellationTokenSource? _tokenSource;
-        public static bool _blocked;
+        private static bool _blocked;
 
         public static CancellationToken Token
         {
@@ -30,7 +30,7 @@ namespace Planar.CLI.General
                     return;
                 }
 
-                if (_tokenSource.TryReset() == false)
+                if (!_tokenSource.TryReset())
                 {
                     _tokenSource = new CancellationTokenSource();
                 }

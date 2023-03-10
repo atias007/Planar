@@ -9,3 +9,7 @@
 - publish nuget packages
 - create pull request to master
 - approve pull request
+- fix sonar issues
+- publish cli all versions
+- publish planar all versions
+- publish DatabaseMigrations version

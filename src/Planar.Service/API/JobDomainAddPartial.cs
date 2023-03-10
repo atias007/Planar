@@ -518,9 +518,12 @@ namespace Planar.Service.API
                 throw new RestValidationException("concurrent", $"job with concurrent=true can not have data. persist data with concurent running may cause unexpected results");
             }
 
-            foreach (var item in metadata.JobData)
+            if (metadata.JobData != null)
             {
-                if (!Consts.IsDataKeyValid(item.Key)) throw new RestValidationException("key", $"job data key '{item.Key}' is invalid");
+                foreach (var item in metadata.JobData)
+                {
+                    if (!Consts.IsDataKeyValid(item.Key)) throw new RestValidationException("key", $"job data key '{item.Key}' is invalid");
+                }
             }
 
             var triggersCount = metadata.CronTriggers?.Count + metadata.SimpleTriggers?.Count;
@@ -610,7 +613,7 @@ namespace Planar.Service.API
             {
                 t.TriggerData ??= new Dictionary<string, string>();
                 if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"simple trigger group '{t.Group}' is invalid (preserved value)"); }
-                if (t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"simple trigger name '{t.Name}' has invalid prefix"); }
+                if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"simple trigger name '{t.Name}' has invalid prefix"); }
                 foreach (var item in t.TriggerData)
                 {
                     if (!Consts.IsDataKeyValid(item.Key)) throw new RestValidationException("key", $"trigger data key '{item.Key}' is invalid");
@@ -620,7 +623,7 @@ namespace Planar.Service.API
             {
                 t.TriggerData ??= new Dictionary<string, string>();
                 if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"cron trigger group '{t.Group}' is invalid (preserved value)"); }
-                if (t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"cron trigger name '{t.Name}' has invalid prefix"); }
+                if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"cron trigger name '{t.Name}' has invalid prefix"); }
                 foreach (var item in t.TriggerData)
                 {
                     if (!Consts.IsDataKeyValid(item.Key)) throw new RestValidationException("key", $"trigger data key '{item.Key}' is invalid");

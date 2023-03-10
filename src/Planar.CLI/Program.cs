@@ -151,7 +151,7 @@ namespace Planar.CLI
                     object? param;
                     using (var scope = new TokenManagerScope())
                     {
-                        param = cliArgument.GetRequest(action.RequestType, action, scope.Token);
+                        param = cliArgument.GetRequest(action.RequestType, action, TokenManagerScope.Token);
                     }
 
                     var itMode = param is IIterative itParam && itParam.Iterative;
@@ -165,7 +165,7 @@ namespace Planar.CLI
                                 if (param is CliGetRunningJobsRequest request)
                                 {
                                     var scope = new TokenManagerScope();
-                                    CliIterativeActions.InvokeGetRunnings(request, scope.Token).Wait();
+                                    CliIterativeActions.InvokeGetRunnings(request, TokenManagerScope.Token).Wait();
                                 }
                                 break;
 
@@ -275,10 +275,8 @@ namespace Planar.CLI
             if (ex is OperationCanceledException || ex is TaskCanceledException) { return true; }
             if (ex is AggregateException aggEx)
             {
-                foreach (var item in aggEx.InnerExceptions)
-                {
-                    if (HasCancelException(item)) { return true; }
-                }
+                var hasCancel = aggEx.InnerExceptions.Any(item => HasCancelException(item));
+                if (hasCancel) { return true; }
             }
 
             return HasCancelException(ex.InnerException);
@@ -413,7 +411,7 @@ namespace Planar.CLI
             try
             {
                 using var scope = new TokenManagerScope();
-                var args = noParameters ? new object[] { scope.Token } : new[] { param, scope.Token };
+                var args = noParameters ? new object[] { TokenManagerScope.Token } : new[] { param, TokenManagerScope.Token };
                 if (action.Method.Invoke(console, args) is Task<CliActionResponse> task)
                 {
                     response = task.ConfigureAwait(false).GetAwaiter().GetResult();

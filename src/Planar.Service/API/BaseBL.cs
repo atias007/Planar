@@ -116,8 +116,10 @@ namespace Planar.Service.API
             }
         }
 
-        protected static async Task SetEntityProperties<T>(T entity, UpdateEntityRequest request, IValidator<T> validator = null)
+        protected static async Task SetEntityProperties<T>(T entity, UpdateEntityRequest request, IValidator<T>? validator = null)
         {
+            if (request.PropertyValue == null) { return; }
+
             var type = typeof(T);
             var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
             var prop = properties.FirstOrDefault(p => string.Compare(p.Name, request.PropertyName, true) == 0);

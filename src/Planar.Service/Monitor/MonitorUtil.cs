@@ -168,13 +168,15 @@ namespace Planar.Service.Monitor
             }
         }
 
-        private static HookInstance GetMonitorHookInstance(string hook)
+        private static HookInstance? GetMonitorHookInstance(string hook)
         {
             var factory = ServiceUtil.MonitorHooks[hook];
             if (factory == null) { return null; }
             if (factory.Type == null) { return null; }
 
             var instance = Activator.CreateInstance(factory.Type);
+            if (instance == null) { return null; }
+
             var method1 = instance.GetType().GetMethod(HookInstance.HandleMethodName, BindingFlags.NonPublic | BindingFlags.Instance);
             var method2 = instance.GetType().GetMethod(HookInstance.HandleSystemMethodName, BindingFlags.NonPublic | BindingFlags.Instance);
             var result = new HookInstance { Instance = instance, HandleMethod = method1, HandleSystemMethod = method2 };

@@ -6,8 +6,8 @@
         {
         }
 
-        public string Message { get; set; }
+        public string? Message { get; set; }
 
-        public string ExceptionText { get; set; }
+        public string? ExceptionText { get; set; }
     }
 }

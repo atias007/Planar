@@ -21,7 +21,7 @@ namespace Planar.Service.General
             // task has completed. Instead of returning a result, we
             // just throw an exception.
             if (IsCompleted) throw new OperationCanceledException();
-            else throw new InvalidOperationException("The cancellation token has not yet been cancelled.");
+            else throw new InvalidOperationException("the cancellation token has not yet been cancelled.");
         }
 
         // called by compiler generated/.net internals to check

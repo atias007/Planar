@@ -52,7 +52,7 @@ namespace Planar.Service.SystemJobs
             try
             {
                 var data = _serviceProvider.GetRequiredService<StatisticsData>();
-                await data?.ClearStatisticsTables(AppSettings.ClearStatisticsTablesOverDays);
+                await data.ClearStatisticsTables(AppSettings.ClearStatisticsTablesOverDays);
                 _logger.LogInformation("Clear statistics tables rows (older then {Days} days)", AppSettings.ClearStatisticsTablesOverDays);
             }
             catch (Exception ex)

@@ -154,6 +154,7 @@ namespace Planar.Service.API
                     if (details == null)
                     {
                         var fullFolder = new FileInfo(f).Directory;
+                        if (fullFolder == null) { continue; }
                         var relativeFolder = fullFolder.FullName[(folder.Length + 1)..];
                         result.Add(new AvailableJobToAdd { RelativeFolder = relativeFolder, Name = fullFolder.Name });
                     }
@@ -184,7 +185,7 @@ namespace Planar.Service.API
             {
                 if (stream == null)
                 {
-                    throw new RestNotFoundException("JobFile.yml resource could not be found");
+                    throw new RestNotFoundException("jobfile.yml resource could not be found");
                 }
 
                 using StreamReader reader = new(stream);
@@ -192,7 +193,7 @@ namespace Planar.Service.API
 
                 if (string.IsNullOrEmpty(result))
                 {
-                    throw new RestNotFoundException("JobFile.yml resource could not be found");
+                    throw new RestNotFoundException("jobfile.yml resource could not be found");
                 }
 
                 return result;
@@ -364,6 +365,8 @@ namespace Planar.Service.API
             if (request.NowOverrideValue.HasValue)
             {
                 var job = await Scheduler.GetJobDetail(jobKey);
+                if (job == null) { return; }
+
                 job.JobDataMap.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value);
                 await Scheduler.TriggerJob(jobKey, job.JobDataMap);
             }
