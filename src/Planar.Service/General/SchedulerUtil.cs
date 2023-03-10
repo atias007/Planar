@@ -33,23 +33,23 @@ namespace Planar.Service.General
         {
             get
             {
-                return _scheduler?.SchedulerInstanceId;
+                return _scheduler.SchedulerInstanceId;
             }
         }
 
         public async Task Start(CancellationToken cancellationToken = default)
         {
-            await _scheduler?.Start(cancellationToken);
+            await _scheduler.Start(cancellationToken);
         }
 
         public async Task Shutdown(CancellationToken cancellationToken = default)
         {
-            await _scheduler?.Shutdown(true, cancellationToken);
+            await _scheduler.Shutdown(true, cancellationToken);
         }
 
         public async Task Stop(CancellationToken cancellationToken = default)
         {
-            await _scheduler?.Standby(cancellationToken);
+            await _scheduler.Standby(cancellationToken);
         }
 
         public void HealthCheck(ILogger logger = null)
@@ -58,7 +58,7 @@ namespace Planar.Service.General
             {
                 logger?.LogError("HealthCheck fail. IsShutdown={IsShutdown}, InStandbyMode={InStandbyMode}, IsStarted={IsStarted}",
                     _scheduler.IsShutdown, _scheduler.InStandbyMode, _scheduler.IsStarted);
-                throw new PlanarException("Scheduler is not running");
+                throw new PlanarException("scheduler is not running");
             }
         }
 

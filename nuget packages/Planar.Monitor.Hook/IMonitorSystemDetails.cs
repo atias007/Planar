@@ -7,6 +7,6 @@ namespace Planar.Monitor.Hook
     {
         string MessageTemplate { get; }
         string Message { get; }
-        IReadOnlyDictionary<string, string> MessagesParameters { get; }
+        IReadOnlyDictionary<string, string?> MessagesParameters { get; }
     }
 }

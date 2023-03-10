@@ -2,7 +2,7 @@
 {
     public class MonitorTestRequest
     {
-        public string Hook { get; set; }
+        public string Hook { get; set; } = string.Empty;
 
         public TestMonitorEvents MonitorEvent { get; set; }
 

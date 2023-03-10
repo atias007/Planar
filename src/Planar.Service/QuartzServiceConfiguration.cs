@@ -1,7 +1,9 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Planar.Calendar.Hebrew;
+using Planar.Common;
 using Planar.Service.Listeners;
 using Quartz;
+using Quartz.Plugin.Interrupt;
 using Quartz.Simpl;
 using System;
 
@@ -39,11 +41,9 @@ namespace Planar.Service
 
                 // convert time zones using converter that can handle Windows/Linux differences
                 q.UseTimeZoneConverter();
-
                 ////q.UseJobAutoInterrupt(options =>
                 ////{
-                ////    // this is the default
-                ////    options.DefaultMaxRunTime = TimeSpan.FromMinutes(5);
+                ////    options.DefaultMaxRunTime = TimeSpan.FromSeconds(30);
                 ////});
 
                 q.AddJobListener<LogJobListener>();
@@ -55,7 +55,7 @@ namespace Planar.Service
                 {
                     x.PerformSchemaValidation = true; // default
 
-                    x.RetryInterval = TimeSpan.FromSeconds(10);
+                    x.RetryInterval = TimeSpan.FromSeconds(2);
 
                     // force job data map values to be considered as strings
                     // prevents nasty surprises if object is accidentally serialized and then

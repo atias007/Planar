@@ -1,0 +1,15 @@
+* Planar
+* Planar.Packages
+* Planar.Hooks
+* Planar.Test
+----------------------------------------
+- update nuget packages
+- Remove unsused nuget packages
+- build with 0 0 0 (error, warning, info)
+- publish nuget packages
+- create pull request to master
+- approve pull request
+- fix sonar issues
+- publish cli all versions
+- publish planar all versions
+- publish DatabaseMigrations version

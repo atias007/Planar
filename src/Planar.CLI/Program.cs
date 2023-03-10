@@ -9,12 +9,9 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
-using System.Reflection.Metadata;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Planar.CLI
@@ -54,6 +51,7 @@ namespace Planar.CLI
 
         private static void Console_CancelKeyPress(object? sender, ConsoleCancelEventArgs e)
         {
+            TokenManager.Cancel();
             e.Cancel = true;
         }
 
@@ -141,7 +139,7 @@ namespace Planar.CLI
                 {
                     try
                     {
-                        response = (action.Method.Invoke(console, null) as Task<CliActionResponse>)?.Result;
+                        response = InvokeCliAction(action, console, noParameters: true);
                     }
                     catch (Exception ex)
                     {
@@ -150,7 +148,12 @@ namespace Planar.CLI
                 }
                 else
                 {
-                    var param = cliArgument.GetRequest(action.RequestType, action);
+                    object? param;
+                    using (var scope = new TokenManagerScope())
+                    {
+                        param = cliArgument.GetRequest(action.RequestType, action, TokenManagerScope.Token);
+                    }
+
                     var itMode = param is IIterative itParam && itParam.Iterative;
 
                     if (itMode)
@@ -161,7 +164,8 @@ namespace Planar.CLI
                             case "JobCliActions.GetRunningJobs":
                                 if (param is CliGetRunningJobsRequest request)
                                 {
-                                    CliIterativeActions.InvokeGetRunnings(request).Wait();
+                                    using var scope = new TokenManagerScope();
+                                    CliIterativeActions.InvokeGetRunnings(request, TokenManagerScope.Token).Wait();
                                 }
                                 break;
 
@@ -224,6 +228,7 @@ namespace Planar.CLI
         private static void HandleException(Exception ex)
         {
             if (ex == null) { return; }
+            if (HandleCancelException(ex)) { return; }
 
             var finaleException = ex;
             if (ex is AggregateException exception)
@@ -251,8 +256,36 @@ namespace Planar.CLI
             }
         }
 
+        private static bool HandleCancelException(Exception? ex)
+        {
+            if (HasCancelException(ex))
+            {
+                if (Console.CursorLeft > 0) { AnsiConsole.WriteLine(); }
+                AnsiConsole.MarkupLine(CliFormat.GetWarningMarkup("operation was canceled"));
+                TokenManager.Reset();
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool HasCancelException(Exception? ex)
+        {
+            if (ex == null) { return false; }
+            if (ex is OperationCanceledException || ex is TaskCanceledException) { return true; }
+            if (ex is AggregateException aggEx)
+            {
+                var hasCancel = aggEx.InnerExceptions.Any(item => HasCancelException(item));
+                if (hasCancel) { return true; }
+            }
+
+            return HasCancelException(ex.InnerException);
+        }
+
         private static void HandleGeneralError(RestResponse response)
         {
+            if (HandleCancelException(response.ErrorException)) { return; }
+
             if (response.ErrorMessage != null && response.ErrorMessage.Contains("No connection could be made"))
             {
                 AnsiConsole.MarkupLine(CliFormat.GetErrorMarkup($"no connection could be made to planar deamon ({RestProxy.Host}:{RestProxy.Port})"));
@@ -370,16 +403,18 @@ namespace Planar.CLI
             }
         }
 
-        private static CliActionResponse? InvokeCliAction(CliActionMetadata action, object console, object? param)
+        private static CliActionResponse? InvokeCliAction(CliActionMetadata action, object console, object? param = null, bool noParameters = false)
         {
             if (action.Method == null) { return null; }
 
             CliActionResponse? response = null;
             try
             {
-                if (action.Method.Invoke(console, new[] { param }) is Task<CliActionResponse> task)
+                using var scope = new TokenManagerScope();
+                var args = noParameters ? new object[] { TokenManagerScope.Token } : new[] { param, TokenManagerScope.Token };
+                if (action.Method.Invoke(console, args) is Task<CliActionResponse> task)
                 {
-                    response = task.Result;
+                    response = task.ConfigureAwait(false).GetAwaiter().GetResult();
                 }
             }
             catch (Exception ex)

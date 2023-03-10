@@ -29,12 +29,12 @@ namespace CommonJob
             var exceptions = Exceptions;
             if (exceptions == null || !exceptions.Any())
             {
-                return null;
+                return string.Empty;
             }
 
             if (exceptions.Count == 1)
             {
-                return exceptions.First().ExceptionText;
+                return exceptions.First().ExceptionText ?? string.Empty;
             }
 
             var seperator = string.Empty.PadLeft(80, '-');
@@ -51,7 +51,7 @@ namespace CommonJob
             return sb.ToString();
         }
 
-        public Exception UnhandleException { get; set; }
+        public Exception? UnhandleException { get; set; }
 
         public bool IsRunningFail => !IsRunningSuccess;
         public bool IsRunningSuccess => UnhandleException == null;
@@ -60,14 +60,13 @@ namespace CommonJob
         {
             lock (Locker)
             {
-                var result = context.Result;
-                if (result == null)
+                if (context.Result is not JobExecutionMetadata result)
                 {
                     result = new JobExecutionMetadata();
                     context.Result = result;
                 }
 
-                return result as JobExecutionMetadata;
+                return result;
             }
         }
     }

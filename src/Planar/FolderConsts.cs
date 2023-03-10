@@ -32,7 +32,7 @@ namespace Planar
                 PlanarSpecialFolder.Calendars => Calendars,
                 PlanarSpecialFolder.Jobs => Jobs,
                 PlanarSpecialFolder.MonitorHooks => MonitorHooks,
-                _ => throw new ArgumentNullException($"Special folder {planarFolder} is not supported"),
+                _ => throw new ArgumentNullException($"special folder {planarFolder} is not supported"),
             };
 
             var folder = Path.Combine(Data, specialPath);
@@ -55,7 +55,7 @@ namespace Planar
                 PlanarSpecialFolder.Calendars => Calendars,
                 PlanarSpecialFolder.Jobs => Jobs,
                 PlanarSpecialFolder.MonitorHooks => MonitorHooks,
-                _ => throw new ArgumentNullException($"Special folder {planarFolder} is not supported"),
+                _ => throw new ArgumentNullException($"special folder {planarFolder} is not supported"),
             };
 
             var folder = Path.Combine(BasePath, Data, specialPath);

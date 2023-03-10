@@ -11,11 +11,11 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="dbup-sqlserver" Version="5.0.8" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Spectre.Console" Version="0.46.0" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="appsettings.Local.json">
+    <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Remove="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -26,6 +26,7 @@
     <None Remove="Scripts\Planar_0006 - add sp reset system.sql" />
     <None Remove="Scripts\Planar_0007 - reset system jobs.sql" />
     <None Remove="Scripts\Planar_0008 - sp clear job log.sql" />
+    <None Remove="Scripts\Planar_0009 - fix last_history sp.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -36,5 +37,6 @@
     <EmbeddedResource Include="Scripts\Planar_0006 - add sp reset system.sql" />
     <EmbeddedResource Include="Scripts\Planar_0007 - reset system jobs.sql" />
     <EmbeddedResource Include="Scripts\Planar_0008 - sp clear job log.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0009 - fix last_history sp.sql" />
   </ItemGroup>
 </Project>

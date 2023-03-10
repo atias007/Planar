@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Planar.Common;
+﻿using Planar.Common;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -59,7 +58,7 @@ namespace Planar.Monitor.Hook
             var monitorDetails = SafeDeserialize<T>(messageBroker?.Details, options);
             monitorDetails.Users = SafeDeserialize<List<User>>(messageBroker?.Users);
             monitorDetails.Group = SafeDeserialize<Group>(messageBroker?.Group);
-            monitorDetails.GlobalConfig = SafeDeserialize<Dictionary<string, string>>(messageBroker?.GlobalConfig);
+            monitorDetails.GlobalConfig = SafeDeserialize<Dictionary<string, string?>>(messageBroker?.GlobalConfig);
             return monitorDetails;
         }
 
@@ -139,7 +138,7 @@ namespace Planar.Monitor.Hook
             return null;
         }
 
-        private static string? GetHookParameterReference(string key, string reference)
+        private static string? GetHookParameterReference(string key, string? reference)
         {
             if (!string.IsNullOrEmpty(reference) && reference.StartsWith(key))
             {

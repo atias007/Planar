@@ -12,7 +12,7 @@ namespace Planar.Common
         private const string EnvironmentPlaceholder = "{environment}";
         private static readonly string EnvironmntSettingsFilename = $"JobSettings.{EnvironmentPlaceholder}.yml";
 
-        public static Dictionary<string, string> LoadJobSettings(string jobPath)
+        public static Dictionary<string, string?> LoadJobSettings(string jobPath)
         {
             // Load job global config
             var final = Global.GlobalConfig;
@@ -28,9 +28,9 @@ namespace Planar.Common
             return final;
         }
 
-        private static Dictionary<string, string> LoadJobSettingsFiles(string path)
+        private static Dictionary<string, string?> LoadJobSettingsFiles(string path)
         {
-            var result = new Dictionary<string, string>();
+            var result = new Dictionary<string, string?>();
 
             // JobSettings.yml
             var files = GetFiles(path, SettingsFilename);
@@ -63,9 +63,9 @@ namespace Planar.Common
             return files;
         }
 
-        private static Dictionary<string, string> ReadSettingsFile(string filename)
+        private static Dictionary<string, string?> ReadSettingsFile(string filename)
         {
-            var dict = new Dictionary<string, string>();
+            var dict = new Dictionary<string, string?>();
 
             try
             {
@@ -80,7 +80,7 @@ namespace Planar.Common
                 stream.Position = 0;
                 var parser = new YamlConfigurationFileParser();
                 var items = parser.Parse(stream);
-                dict = new Dictionary<string, string>(items);
+                dict = new Dictionary<string, string?>(items);
                 return dict;
             }
             catch (Exception ex)

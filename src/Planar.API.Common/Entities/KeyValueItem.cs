@@ -6,7 +6,7 @@
         {
         }
 
-        public KeyValueItem(string key, string value)
+        public KeyValueItem(string key, string? value)
         {
             Key = key;
             Value = value;

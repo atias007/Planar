@@ -4,6 +4,7 @@ using Planar.CLI.Entities;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
@@ -14,32 +15,32 @@ namespace Planar.CLI.Actions
         [Action("add")]
         [NullRequest]
         [ActionWizard]
-        public static async Task<CliActionResponse> AddUser(CliAddUserRequest request)
+        public static async Task<CliActionResponse> AddUser(CliAddUserRequest request, CancellationToken cancellationToken = default)
         {
             request ??= GetCliAddUserRequest();
 
             var restRequest = new RestRequest("user", Method.Post)
                 .AddBody(request);
 
-            return await ExecuteTable<AddUserResponse>(restRequest, CliTableExtensions.GetTable);
+            return await ExecuteTable<AddUserResponse>(restRequest, CliTableExtensions.GetTable, cancellationToken);
         }
 
         [Action("get")]
-        public static async Task<CliActionResponse> GetUserById(CliGetByIdRequest request)
+        public static async Task<CliActionResponse> GetUserById(CliGetByIdRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("user/{id}", Method.Get)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
-            return await ExecuteEntity<UserDetails>(restRequest);
+            return await ExecuteEntity<UserDetails>(restRequest, cancellationToken);
         }
 
         [Action("reset-password")]
-        public static async Task<CliActionResponse> GetUserPassword(CliGetByIdRequest request)
+        public static async Task<CliActionResponse> GetUserPassword(CliGetByIdRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("user/{id}/resetpassword", Method.Patch)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
-            var result = await RestProxy.Invoke<string>(restRequest);
+            var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
             if (result.IsSuccessful)
             {
                 var addResponse = new AddUserResponse
@@ -59,31 +60,31 @@ namespace Planar.CLI.Actions
 
         [Action("ls")]
         [Action("list")]
-        public static async Task<CliActionResponse> GetUsers()
+        public static async Task<CliActionResponse> GetUsers(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("user", Method.Get);
-            return await ExecuteTable<List<UserRowDetails>>(restRequest, CliTableExtensions.GetTable);
+            return await ExecuteTable<List<UserRowDetails>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
         }
 
         [Action("remove")]
         [Action("delete")]
-        public static async Task<CliActionResponse> RemoveUserById(CliGetByIdRequest request)
+        public static async Task<CliActionResponse> RemoveUserById(CliGetByIdRequest request, CancellationToken cancellationToken = default)
         {
             if (!ConfirmAction($"remove user id {request.Id}")) { return CliActionResponse.Empty; }
 
             var restRequest = new RestRequest("user/{id}", Method.Delete)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
-            return await Execute(restRequest);
+            return await Execute(restRequest, cancellationToken);
         }
 
         [Action("update")]
-        public static async Task<CliActionResponse> UpdateUser(CliUpdateEntityRequest request)
+        public static async Task<CliActionResponse> UpdateUser(CliUpdateEntityRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("user", Method.Patch)
                 .AddBody(request);
 
-            return await Execute(restRequest);
+            return await Execute(restRequest, cancellationToken);
         }
 
         private static CliAddUserRequest GetCliAddUserRequest()

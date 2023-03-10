@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
@@ -22,9 +23,9 @@ namespace Planar.CLI.Actions
 
         public static bool InteractiveMode { get; set; }
 
-        protected static async Task<CliActionResponse> Execute(RestRequest request)
+        protected static async Task<CliActionResponse> Execute(RestRequest request, CancellationToken cancellationToken = default)
         {
-            var result = await RestProxy.Invoke(request);
+            var result = await RestProxy.Invoke(request, cancellationToken);
             return new CliActionResponse(result);
         }
 
@@ -62,9 +63,9 @@ namespace Planar.CLI.Actions
             return string.IsNullOrEmpty(result) ? null : result;
         }
 
-        protected static async Task<CliActionResponse> ExecuteEntity<T>(RestRequest request)
+        protected static async Task<CliActionResponse> ExecuteEntity<T>(RestRequest request, CancellationToken cancellationToken = default)
         {
-            var result = await RestProxy.Invoke<T>(request);
+            var result = await RestProxy.Invoke<T>(request, cancellationToken);
             if (result.IsSuccessful)
             {
                 return new CliActionResponse(result, serializeObj: result.Data);
@@ -73,9 +74,9 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        protected static async Task<CliActionResponse> ExecuteTable<T>(RestRequest request, Func<T, Table> tableFunc)
+        protected static async Task<CliActionResponse> ExecuteTable<T>(RestRequest request, Func<T, Table> tableFunc, CancellationToken cancellationToken = default)
         {
-            var result = await RestProxy.Invoke<T>(request);
+            var result = await RestProxy.Invoke<T>(request, cancellationToken);
             if (result.IsSuccessful && result.Data != null)
             {
                 var table = tableFunc.Invoke(result.Data);
@@ -236,6 +237,7 @@ namespace Planar.CLI.Actions
                 finalItems = items;
             }
 
+            using var _ = new TokenBlockerScope();
             var selectedItem = AnsiConsole.Prompt(
                  new SelectionPrompt<string>()
                      .Title($"[underline][gray]select [/][white]{title?.EscapeMarkup()}[/][gray] from the following list (press [/][blue]enter[/][gray] to select):[/][/]")
@@ -303,7 +305,8 @@ namespace Planar.CLI.Actions
                 var hasWizard = act.GetCustomAttribute<ActionWizardAttribute>();
 
                 // TODO: validate attributes (invalid name...)
-                if (actionAttributes == null) { continue; }
+                if (actionAttributes == null || !actionAttributes.Any()) { continue; }
+
                 var requestType = GetRequestType(act);
                 var comnmands = actionAttributes.Select(a => a.Name).Distinct().ToList();
                 var item = new CliActionMetadata
@@ -332,13 +335,27 @@ namespace Planar.CLI.Actions
             if (method == null) { return null; }
 
             var parameters = method.GetParameters();
-            if (parameters.Length == 0) { return null; }
-            if (parameters.Length > 1)
+            if (parameters.Length == 0)
             {
-                throw new CliException($"cli error: action '{method.Name}' has more then 1 parameter");
+                throw new CliException($"cli error: action '{method.Name}' has no parameters");
             }
 
-            var requestType = parameters[0].ParameterType;
+            if (parameters.Length > 2)
+            {
+                throw new CliException($"cli error: action '{method.Name}' has more then 2 parameter");
+            }
+
+            var last = parameters.Last();
+            if (last.ParameterType != typeof(CancellationToken))
+            {
+                throw new CliException($"cli error: action '{method.Name}' has no CancellationToken parameter");
+            }
+
+            var requestType =
+                parameters.Length == 1 ?
+                null :
+                parameters.First().ParameterType;
+
             return requestType;
         }
 

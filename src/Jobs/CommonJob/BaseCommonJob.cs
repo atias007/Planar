@@ -15,9 +15,9 @@ namespace CommonJob
 {
     public abstract class BaseCommonJob
     {
-        protected static readonly string IgnoreDataMapAttribute = typeof(IgnoreDataMapAttribute).FullName;
-        protected static readonly string JobDataMapAttribute = typeof(JobDataAttribute).FullName;
-        protected static readonly string TriggerDataMapAttribute = typeof(TriggerDataAttribute).FullName;
+        protected static readonly string? IgnoreDataMapAttribute = typeof(IgnoreDataMapAttribute).FullName;
+        protected static readonly string? JobDataMapAttribute = typeof(JobDataAttribute).FullName;
+        protected static readonly string? TriggerDataMapAttribute = typeof(TriggerDataAttribute).FullName;
     }
 
     public abstract class BaseCommonJob<TInstance, TProperties> : BaseCommonJob, IJob
@@ -26,7 +26,7 @@ namespace CommonJob
     {
         protected readonly ILogger<TInstance> _logger;
         private readonly IJobPropertyDataLayer _dataLayer;
-        private JobMessageBroker _messageBroker;
+        private JobMessageBroker? _messageBroker;
 
         protected BaseCommonJob(ILogger<TInstance> logger, IJobPropertyDataLayer dataLayer)
         {
@@ -34,7 +34,15 @@ namespace CommonJob
             _dataLayer = dataLayer;
         }
 
-        public JobMessageBroker MessageBroker => _messageBroker;
+        public JobMessageBroker MessageBroker
+        {
+            get
+            {
+                if (_messageBroker == null) { throw new ArgumentNullException(nameof(MessageBroker)); }
+                return _messageBroker;
+            }
+        }
+
         public TProperties Properties { get; private set; } = new();
 
         public abstract Task Execute(IJobExecutionContext context);
@@ -58,7 +66,7 @@ namespace CommonJob
         {
             await SetProperties(context);
 
-            string path = null;
+            string? path = null;
             if (Properties is IPathJobProperties pathProperties)
             {
                 path = pathProperties.Path;
@@ -68,11 +76,11 @@ namespace CommonJob
             _messageBroker = new JobMessageBroker(context, settings);
         }
 
-        protected Dictionary<string, string> LoadJobSettings(string path)
+        protected Dictionary<string, string?> LoadJobSettings(string? path)
         {
             try
             {
-                if (string.IsNullOrEmpty(path)) return new Dictionary<string, string>();
+                if (string.IsNullOrEmpty(path)) return new Dictionary<string, string?>();
                 var jobSettings = JobSettingsLoader.LoadJobSettings(path);
                 return jobSettings;
             }
@@ -82,6 +90,16 @@ namespace CommonJob
                 _logger.LogError(ex, "Fail at {Source}", source);
                 throw;
             }
+        }
+
+        protected static int GetTimeout(TimeSpan? specificTimeout = null)
+        {
+            if (specificTimeout.HasValue && specificTimeout != TimeSpan.Zero)
+            {
+                return Convert.ToInt32(specificTimeout.Value.TotalMilliseconds);
+            }
+
+            return Convert.ToInt32(AppSettings.JobAutoStopSpan.TotalMilliseconds);
         }
 
         protected void MapJobInstanceProperties(IJobExecutionContext context, Type targetType, object instance)
@@ -108,12 +126,16 @@ namespace CommonJob
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
         }
 
-        protected void MapJobInstancePropertiesBack(IJobExecutionContext context, Type targetType, object instance)
+        protected void MapJobInstancePropertiesBack(IJobExecutionContext context, Type? targetType, object? instance)
         {
             //// ***** Attention: be aware for sync code with MapJobInstancePropertiesBack on Planar.Job.Test *****
 
             try
             {
+                if (context == null) { return; }
+                if (targetType == null) { return; }
+                if (instance == null) { return; }
+
                 var propInfo = targetType.GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
                 foreach (var prop in propInfo)
                 {
@@ -131,7 +153,7 @@ namespace CommonJob
             //// ***** Attention: be aware for sync code with MapJobInstancePropertiesBack on Planar.Job.Test *****
         }
 
-        protected void ValidateMandatoryString(string value, string propertyName)
+        protected void ValidateMandatoryString(string? value, string propertyName)
         {
             if (!string.IsNullOrEmpty(value)) { value = value.Trim(); }
             if (string.IsNullOrEmpty(value))
@@ -181,7 +203,7 @@ namespace CommonJob
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
         }
 
-        private void MapProperty(JobKey jobKey, object instance, PropertyInfo prop, KeyValuePair<string, object> data)
+        private void MapProperty(JobKey jobKey, object instance, PropertyInfo? prop, KeyValuePair<string, object> data)
         {
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
 
@@ -251,7 +273,7 @@ namespace CommonJob
         {
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
 
-            string value = null;
+            string? value = null;
             try
             {
                 if (!Consts.IsDataKeyValid(prop.Name))
@@ -277,7 +299,7 @@ namespace CommonJob
         {
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
 
-            string value = null;
+            string? value = null;
             try
             {
                 if (!Consts.IsDataKeyValid(prop.Name))

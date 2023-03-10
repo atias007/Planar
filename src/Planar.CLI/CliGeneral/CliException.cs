@@ -10,6 +10,10 @@ namespace Planar.CLI
         {
         }
 
+        public CliException(string message, Exception? innerException) : base(message, innerException)
+        {
+        }
+
         protected CliException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }

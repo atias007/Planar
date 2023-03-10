@@ -1,16 +1,14 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Planar.Common;
-using Planar.Service.Exceptions;
+using Planar.Common.Exceptions;
 using Polly;
 using System;
 using System.Data;
 using System.Text;
 
-namespace Planar.Service
+namespace Planar.Common
 {
     public enum AuthMode
     {
@@ -23,11 +21,13 @@ namespace Planar.Service
     {
         public static int MaxConcurrency { get; set; }
 
-        public static string ServiceName { get; set; }
+        public static string ServiceName { get; set; } = string.Empty;
 
-        public static string InstanceId { get; set; }
+        public static string InstanceId { get; set; } = string.Empty;
 
         public static bool Clustering { get; set; }
+
+        public static TimeSpan JobAutoStopSpan { get; set; }
 
         public static TimeSpan ClusteringCheckinInterval { get; set; }
 
@@ -37,9 +37,9 @@ namespace Planar.Service
 
         public static short ClusterPort { get; set; }
 
-        public static string DatabaseConnectionString { get; set; }
+        public static string? DatabaseConnectionString { get; set; }
 
-        public static string DatabaseProvider { get; set; }
+        public static string DatabaseProvider { get; set; } = string.Empty;
 
         public static TimeSpan PersistRunningJobsSpan { get; set; }
 
@@ -57,7 +57,7 @@ namespace Planar.Service
 
         public static bool UseHttps { get; set; }
 
-        public static string Environment { get; set; }
+        public static string Environment { get; set; } = string.Empty;
 
         public static bool SwaggerUI { get; set; }
 
@@ -88,6 +88,7 @@ namespace Planar.Service
             InstanceId = GetSettings(configuration, Consts.InstanceIdVariableKey, nameof(InstanceId), "AUTO");
             ServiceName = GetSettings(configuration, Consts.ServiceNameVariableKey, nameof(ServiceName), "PlanarService");
             Clustering = GetSettings(configuration, Consts.ClusteringVariableKey, nameof(Clustering), false);
+            JobAutoStopSpan = GetSettings(configuration, Consts.JobAutoStopSpanVariableKey, nameof(JobAutoStopSpan), TimeSpan.FromHours(2));
             ClusteringCheckinInterval = GetSettings(configuration, Consts.ClusteringCheckinIntervalVariableKey, nameof(ClusteringCheckinInterval), TimeSpan.FromSeconds(5));
             ClusteringCheckinMisfireThreshold = GetSettings(configuration, Consts.ClusteringCheckinMisfireThresholdVariableKey, nameof(ClusteringCheckinMisfireThreshold), TimeSpan.FromSeconds(5));
             ClusterHealthCheckInterval = GetSettings(configuration, Consts.ClusterHealthCheckIntervalVariableKey, nameof(ClusterHealthCheckInterval), TimeSpan.FromMinutes(1));
@@ -153,7 +154,7 @@ namespace Planar.Service
 
         private static void InitializeConnectionString(IConfiguration configuration)
         {
-            DatabaseConnectionString = GetSettings(configuration, Consts.ConnectionStringVariableKey, nameof(DatabaseConnectionString));
+            DatabaseConnectionString = GetSettings(configuration, Consts.ConnectionStringVariableKey, nameof(DatabaseConnectionString), string.Empty);
 
             if (string.IsNullOrEmpty(DatabaseConnectionString))
             {
@@ -191,6 +192,11 @@ namespace Planar.Service
         public static void TestConnectionString()
         {
             var connectionString = DatabaseConnectionString;
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                throw new AppSettingsException("connection string is null or empty");
+            }
+
             if (!connectionString.ToLower().Contains("Connection Timeout"))
             {
                 connectionString = $"{connectionString};Connection Timeout=3";
@@ -234,7 +240,7 @@ namespace Planar.Service
 
         private static void InitializeLogLevel(IConfiguration configuration)
         {
-            var level = GetSettings(configuration, Consts.LogLevelVariableKey, nameof(AuthenticationMode));
+            var level = GetSettings(configuration, Consts.LogLevelVariableKey, nameof(AuthenticationMode), LogLevel.Information.ToString());
             if (Enum.TryParse<LogLevel>(level, true, out var tempLevel))
             {
                 LogLevel = tempLevel;
@@ -249,7 +255,7 @@ namespace Planar.Service
 
         private static void InitializeAuthenticationMode(IConfiguration configuration)
         {
-            var mode = GetSettings(configuration, Consts.AuthenticationModeVariableKey, nameof(AuthenticationMode));
+            var mode = GetSettings(configuration, Consts.AuthenticationModeVariableKey, nameof(AuthenticationMode), AuthMode.AllAnonymous.ToString());
             if (Enum.TryParse<AuthMode>(mode, true, out var tempMode))
             {
                 AuthenticationMode = tempMode;
@@ -271,7 +277,7 @@ namespace Planar.Service
             return property.GetValueOrDefault();
         }
 
-        private static string GetSettings(IConfiguration configuration, string environmentKey, string appSettingsKey, string defaultValue = null)
+        private static string GetSettings(IConfiguration configuration, string environmentKey, string appSettingsKey, string defaultValue)
         {
             // Environment Variable
             var property = configuration.GetValue<string>(environmentKey);

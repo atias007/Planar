@@ -5,11 +5,11 @@ namespace Planar.Job
 {
     internal class JobExecutionContext : IJobExecutionContext
     {
-        public Dictionary<string, string> JobSettings { get; set; }
+        public Dictionary<string, string?> JobSettings { get; set; } = new Dictionary<string, string?>();
 
-        public SortedDictionary<string, string> MergedJobDataMap { get; set; }
+        public SortedDictionary<string, string?> MergedJobDataMap { get; set; } = new SortedDictionary<string, string?>();
 
-        public string FireInstanceId { get; set; }
+        public string FireInstanceId { get; set; } = string.Empty;
 
         public DateTimeOffset FireTime { get; set; }
 
@@ -23,10 +23,10 @@ namespace Planar.Job
 
         public int RefireCount { get; set; }
 
-        public IJobDetail JobDetails { get; set; }
+        public IJobDetail JobDetails { get; set; } = new JobDetail();
 
-        public ITriggerDetail TriggerDetails { get; set; }
+        public ITriggerDetail TriggerDetails { get; set; } = new TriggerDetail();
 
-        public string Environment { get; set; }
+        public string Environment { get; set; } = string.Empty;
     }
 }

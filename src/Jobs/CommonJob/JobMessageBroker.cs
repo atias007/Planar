@@ -15,7 +15,7 @@ namespace CommonJob
         private static readonly object Locker = new();
         private readonly IJobExecutionContext _context;
 
-        public JobMessageBroker(IJobExecutionContext context, Dictionary<string, string> settings)
+        public JobMessageBroker(IJobExecutionContext context, Dictionary<string, string?> settings)
         {
             _context = context;
             var mapContext = MapContext(context, settings);
@@ -42,12 +42,13 @@ namespace CommonJob
             LogData(log);
         }
 
-        public string Publish(string channel, string message)
+        public string? Publish(string channel, string message)
         {
             switch (channel)
             {
                 case "PutJobData":
                     var data1 = Deserialize<KeyValueItem>(message);
+                    if (data1 == null) { return null; }
                     if (!Consts.IsDataKeyValid(data1.Key))
                     {
                         throw new PlanarJobException($"the data key {data1.Key} in invalid");
@@ -62,6 +63,7 @@ namespace CommonJob
 
                 case "PutTriggerData":
                     var data2 = Deserialize<KeyValueItem>(message);
+                    if (data2 == null) { return null; }
                     if (!Consts.IsDataKeyValid(data2.Key))
                     {
                         throw new PlanarJobException($"the data key {data2.Key} in invalid");
@@ -76,6 +78,7 @@ namespace CommonJob
 
                 case "AddAggragateException":
                     var data3 = Deserialize<ExceptionDto>(message);
+                    if (data3 == null) { return null; }
                     lock (Locker)
                     {
                         Metadata.Exceptions.Add(data3);
@@ -84,6 +87,7 @@ namespace CommonJob
 
                 case "AppendLog":
                     var data4 = Deserialize<LogEntity>(message);
+                    if (data4 == null) { return null; }
                     LogData(data4);
                     return null;
 
@@ -147,13 +151,13 @@ namespace CommonJob
             }
         }
 
-        private static T Deserialize<T>(string message)
+        private static T? Deserialize<T>(string message)
         {
             var result = JsonConvert.DeserializeObject<T>(message);
             return result;
         }
 
-        private static JobExecutionContext MapContext(IJobExecutionContext context, Dictionary<string, string> settings)
+        private static JobExecutionContext MapContext(IJobExecutionContext context, Dictionary<string, string?> settings)
         {
             var hasRetry = context.Trigger.JobDataMap.Contains(Consts.RetrySpan);
             bool? lastRetry = null;
@@ -176,7 +180,7 @@ namespace CommonJob
                 JobDetails = new JobDetail
                 {
                     ConcurrentExecutionDisallowed = context.JobDetail.ConcurrentExecutionDisallowed,
-                    Description = context.JobDetail.Description,
+                    Description = context.JobDetail.Description ?? string.Empty,
                     Durable = context.JobDetail.Durable,
                     JobDataMap = Global.ConvertDataMapToDictionary(context.JobDetail.JobDataMap),
                     Key = new Key
@@ -212,7 +216,7 @@ namespace CommonJob
             return result;
         }
 
-        private bool HasSettings(Dictionary<string, string> settings, string key)
+        private bool HasSettings(Dictionary<string, string?> settings, string key)
         {
             if (settings == null) { return false; }
             if (settings.ContainsKey(key))
@@ -239,7 +243,7 @@ namespace CommonJob
             }
         }
 
-        private void SetLogLevel(Dictionary<string, string> settings)
+        private void SetLogLevel(Dictionary<string, string?> settings)
         {
             if (HasSettings(settings, Consts.LogLevelSettingsKey1)) { return; }
             if (HasSettings(settings, Consts.LogLevelSettingsKey2)) { return; }

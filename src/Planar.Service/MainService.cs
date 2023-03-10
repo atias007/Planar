@@ -239,7 +239,7 @@ namespace Planar.Service
                 else
                 {
                     await _schedulerUtil.Stop(stoppingToken);
-                    throw new PlanarException("Cluster health check fail. Could not join to cluster. See previous errors for more details");
+                    throw new PlanarException("cluster health check fail. Could not join to cluster. See previous errors for more details");
                 }
             }
             catch (Exception ex)

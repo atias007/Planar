@@ -1,8 +1,13 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using FluentValidation.Results;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Planar.Common;
+using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Quartz;
+using Quartz.Impl.Matchers;
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -37,7 +42,8 @@ namespace Planar.Service.SystemJobs
             await Task.WhenAll(
                 ClearTrace(),
                 ClearJobLog(),
-                ClearStatistics()
+                ClearStatistics(),
+                ClearProperties()
                 );
         }
 
@@ -46,7 +52,7 @@ namespace Planar.Service.SystemJobs
             try
             {
                 var data = _serviceProvider.GetRequiredService<StatisticsData>();
-                await data?.ClearStatisticsTables(AppSettings.ClearStatisticsTablesOverDays);
+                await data.ClearStatisticsTables(AppSettings.ClearStatisticsTablesOverDays);
                 _logger.LogInformation("Clear statistics tables rows (older then {Days} days)", AppSettings.ClearStatisticsTablesOverDays);
             }
             catch (Exception ex)
@@ -80,6 +86,33 @@ namespace Planar.Service.SystemJobs
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Fail to clear trace table rows (older then {Days} days)", AppSettings.ClearTraceTableOverDays);
+            }
+        }
+
+        private async Task ClearProperties()
+        {
+            try
+            {
+                var data = _serviceProvider.GetRequiredService<JobData>();
+                var ids = await data.GetJobPropertiesIds();
+                var scheduler = _serviceProvider.GetRequiredService<IScheduler>();
+                var existsKeys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+                var filterKeys = existsKeys.Where(x => x.Group != Consts.PlanarSystemGroup).ToList();
+                var existsIds = filterKeys.Select(k => JobKeyHelper.GetJobId(scheduler.GetJobDetail(k).Result)).ToList();
+
+                foreach (var id in ids)
+                {
+                    if (!existsIds.Contains(id))
+                    {
+                        await data.DeleteJobProperty(id);
+                        _logger.LogDebug("delete job property for job id {JobId}", id);
+                    }
+                }
+                _logger.LogInformation("Clear properties table rows");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to clear properties table rows");
             }
         }
     }

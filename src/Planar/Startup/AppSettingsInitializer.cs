@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Planar.Service;
-using Planar.Service.Exceptions;
+using Planar.Common;
+using Planar.Common.Exceptions;
 using System;
 using System.Threading;
 
@@ -10,8 +10,7 @@ namespace Planar.Startup
     {
         public static void Initialize()
         {
-            var file1 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.json");
-            var file2 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, $"AppSettings.{AppSettings.Environment}.json");
+            var file = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.json");
 
             IConfiguration config = null;
 
@@ -20,8 +19,7 @@ namespace Planar.Startup
                 Console.WriteLine("[x] Read AppSettings files");
 
                 config = new ConfigurationBuilder()
-                    .AddJsonFile(file1, optional: false, reloadOnChange: true)
-                    .AddJsonFile(file2, optional: true, reloadOnChange: true)
+                    .AddJsonFile(file, optional: false, reloadOnChange: true)
                     .AddEnvironmentVariables()
                     .Build();
             }

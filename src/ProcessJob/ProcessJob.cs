@@ -45,7 +45,11 @@ namespace Planar
                 context.CancellationToken.Register(() => OnCancel());
 
                 var startInfo = GetProcessStartInfo();
-                StartProcess(startInfo);
+                var success = StartProcess(startInfo);
+                if (!success)
+                {
+                    OnTimeout();
+                }
 
                 LogProcessInformation();
                 CheckProcessExitCode();
@@ -100,6 +104,16 @@ namespace Planar
 
         private void OnCancel()
         {
+            Kill("request for stop");
+        }
+
+        private void OnTimeout()
+        {
+            Kill("timeout expire");
+        }
+
+        private void Kill(string reason)
+        {
             if (_process == null)
             {
                 return;
@@ -107,7 +121,7 @@ namespace Planar
 
             try
             {
-                MessageBroker.AppendLog(LogLevel.Warning, "Process was stopped");
+                MessageBroker.AppendLog(LogLevel.Warning, $"Process was stopped. Reason: {reason}");
                 _processKilled = true;
                 _process.Kill(true);
             }
@@ -226,6 +240,7 @@ namespace Planar
         {
             if (_process == null) { return; }
             if (!Properties.LogProcessInformation) { return; }
+            if (!_process.HasExited) { return; }
 
             MessageBroker.AppendLog(LogLevel.Information, _seperator);
             MessageBroker.AppendLog(LogLevel.Information, " - Process information:");
@@ -240,7 +255,7 @@ namespace Planar
             MessageBroker.AppendLog(LogLevel.Information, _seperator);
         }
 
-        private void StartProcess(ProcessStartInfo startInfo)
+        private bool StartProcess(ProcessStartInfo startInfo)
         {
             _process = Process.Start(startInfo);
             if (_process == null)
@@ -256,14 +271,17 @@ namespace Planar
             _process.OutputDataReceived += ProcessOutputDataReceived;
             _process.ErrorDataReceived += ProcessErrorDataReceived;
 
-            if (Properties.Timeout.HasValue && Properties.Timeout != TimeSpan.Zero)
+            var timeout = GetTimeout(Properties.Timeout);
+
+            _process.WaitForExit(timeout);
+            if (!_process.HasExited)
             {
-                _process.WaitForExit(Convert.ToInt32(Properties.Timeout.Value.TotalMilliseconds));
+                var span = TimeSpan.FromMilliseconds(timeout);
+                MessageBroker.AppendLog(LogLevel.Error, $"Process timeout expire. Timeout was {span:hh\\:mm\\:ss}");
+                return false;
             }
-            else
-            {
-                _process.WaitForExit();
-            }
+
+            return true;
         }
 
         private void ProcessErrorDataReceived(object sender, DataReceivedEventArgs eventArgs)

@@ -26,9 +26,9 @@ namespace Planar
 
     internal class MessageBroker
     {
-        private object Instance { get; set; }
+        private object Instance { get; set; } = new object();
         private readonly object Locker = new object();
-        private readonly MethodInfo _method;
+        private readonly MethodInfo? _method;
 
         private MessageBroker()
         {
@@ -51,13 +51,13 @@ namespace Planar
 
         public static MessageBroker Empty = new MessageBroker();
 
-        public string Details { get; set; }
+        public string Details { get; set; } = string.Empty;
 
         public string? Publish(MessageBrokerChannels channel)
         {
             lock (Locker)
             {
-                var result = _method.Invoke(Instance, new object?[] { channel.ToString(), null });
+                var result = _method?.Invoke(Instance, new object?[] { channel.ToString(), null });
                 return PlanarConvert.ToString(result);
             }
         }
@@ -68,7 +68,7 @@ namespace Planar
 
             lock (Locker)
             {
-                var result = _method.Invoke(Instance, new object[] { channel.ToString(), messageJson });
+                var result = _method?.Invoke(Instance, new object[] { channel.ToString(), messageJson });
                 return PlanarConvert.ToString(result);
             }
         }
@@ -77,7 +77,7 @@ namespace Planar
         {
             lock (Locker)
             {
-                var result = _method.Invoke(Instance, new object[] { channel.ToString(), message });
+                var result = _method?.Invoke(Instance, new object[] { channel.ToString(), message });
                 return PlanarConvert.ToString(result);
             }
         }

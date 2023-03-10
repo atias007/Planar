@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;

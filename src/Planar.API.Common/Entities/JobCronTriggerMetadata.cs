@@ -5,6 +5,6 @@ namespace Planar.API.Common.Entities
     public class JobCronTriggerMetadata : BaseTrigger
     {
         [YamlMember(Alias = "cron expression")]
-        public string CronExpression { get; set; }
+        public string CronExpression { get; set; } = string.Empty;
     }
 }

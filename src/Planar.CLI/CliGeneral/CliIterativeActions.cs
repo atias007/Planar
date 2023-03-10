@@ -4,15 +4,16 @@ using Planar.CLI.Exceptions;
 using Spectre.Console;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.CLI
 {
     public static class CliIterativeActions
     {
-        public static async Task InvokeGetRunnings(CliGetRunningJobsRequest param)
+        public static async Task InvokeGetRunnings(CliGetRunningJobsRequest param, CancellationToken cancellationToken)
         {
-            var result = await JobCliActions.GetRunningJobsInner(param);
+            var result = await JobCliActions.GetRunningJobsInner(param, cancellationToken);
             var data = result.Item1;
             var response = result.Item2;
 
@@ -23,26 +24,26 @@ namespace Planar.CLI
                 await AnsiConsole.Live(table).StartAsync(async context =>
                 {
                     context.Refresh();
-                    if (ids.Count == 0) return;
-                    await Task.Delay(2000);
+                    if (ids.Count == 0) { return; }
+                    await Task.Delay(2000, cancellationToken);
 
                     var counter = 0;
                     while (counter < 1000)
                     {
-                        var isAllFinish = await LoopGetRunnings(param, table, ids);
+                        var isAllFinish = await LoopGetRunnings(param, table, ids, cancellationToken);
                         context.Refresh();
 
                         if (isAllFinish) { break; }
-                        await Task.Delay(2000);
+                        await Task.Delay(2000, cancellationToken);
                         counter++;
                     }
                 });
             }
         }
 
-        private static async Task<bool> LoopGetRunnings(CliGetRunningJobsRequest param, Table table, List<string> ids)
+        private static async Task<bool> LoopGetRunnings(CliGetRunningJobsRequest param, Table table, List<string> ids, CancellationToken cancellationToken)
         {
-            var refreshResult = await JobCliActions.GetRunningJobsInner(param);
+            var refreshResult = await JobCliActions.GetRunningJobsInner(param, cancellationToken);
             var refreshData = refreshResult.Item1;
             var refreshResponse = refreshResult.Item2;
 

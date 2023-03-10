@@ -21,7 +21,7 @@ namespace Planar.API.Common.Entities
         public TimeSpan? RetrySpan { get; set; }
 
         [YamlMember(Alias = "trigger data")]
-        public Dictionary<string, string> TriggerData { get; set; } = new Dictionary<string, string>();
+        public Dictionary<string, string?> TriggerData { get; set; } = new Dictionary<string, string?>();
 
         public string? Calendar { get; set; }
     }

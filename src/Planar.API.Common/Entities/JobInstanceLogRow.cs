@@ -6,6 +6,7 @@ namespace Planar.API.Common.Entities
     {
         public int Id { get; set; }
         public string? JobId { get; set; }
+        public string? JobType { get; set; }
         public string? JobName { get; set; }
         public string? JobGroup { get; set; }
         public string? TriggerId { get; set; }

@@ -4,6 +4,7 @@ using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
@@ -12,59 +13,59 @@ namespace Planar.CLI.Actions
     public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     {
         [Action("get")]
-        public static async Task<CliActionResponse> GetConfig(CliConfigKeyRequest request)
+        public static async Task<CliActionResponse> GetConfig(CliConfigKeyRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("config/{key}", Method.Get)
                 .AddParameter("key", request.Key, ParameterType.UrlSegment);
-            var result = await RestProxy.Invoke<CliGlobalConfig>(restRequest);
+            var result = await RestProxy.Invoke<CliGlobalConfig>(restRequest, cancellationToken);
 
             return new CliActionResponse(result, message: result.Data?.Value);
         }
 
         [Action("ls")]
         [Action("list")]
-        public static async Task<CliActionResponse> GetAllConfiguration()
+        public static async Task<CliActionResponse> GetAllConfiguration(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("config", Method.Get);
-            return await ExecuteTable<List<CliGlobalConfig>>(restRequest, CliTableExtensions.GetTable);
+            return await ExecuteTable<List<CliGlobalConfig>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
         }
 
         [Action("upsert")]
         [Action("add")]
-        public static async Task<CliActionResponse> Upsert(CliConfigRequest request)
+        public static async Task<CliActionResponse> Upsert(CliConfigRequest request, CancellationToken cancellationToken = default)
         {
             var data = new { request.Key, request.Value, Type = "string" };
             var restRequest = new RestRequest("config", Method.Post)
                 .AddBody(data);
 
-            var result = await RestProxy.Invoke(restRequest);
+            var result = await RestProxy.Invoke(restRequest, cancellationToken);
 
             if (result.StatusCode == HttpStatusCode.Conflict)
             {
                 restRequest = new RestRequest("config", Method.Put)
                     .AddBody(request);
-                result = await RestProxy.Invoke(restRequest);
+                result = await RestProxy.Invoke(restRequest, cancellationToken);
             }
 
             return new CliActionResponse(result);
         }
 
         [Action("flush")]
-        public static async Task<CliActionResponse> Flush()
+        public static async Task<CliActionResponse> Flush(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("config/flush", Method.Post);
-            return await Execute(restRequest);
+            return await Execute(restRequest, cancellationToken);
         }
 
         [Action("remove")]
         [Action("delete")]
-        public static async Task<CliActionResponse> RemoveConfig(CliConfigKeyRequest request)
+        public static async Task<CliActionResponse> RemoveConfig(CliConfigKeyRequest request, CancellationToken cancellationToken = default)
         {
             if (!ConfirmAction($"remove config '{request.Key}'")) { return CliActionResponse.Empty; }
 
             var restRequest = new RestRequest("config/{key}", Method.Delete)
                 .AddParameter("key", request.Key, ParameterType.UrlSegment);
-            return await Execute(restRequest);
+            return await Execute(restRequest, cancellationToken);
         }
     }
 }

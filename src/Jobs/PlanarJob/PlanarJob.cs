@@ -17,36 +17,63 @@ namespace Planar
         {
         }
 
-        private string AssemblyFilename { get; set; }
+        private string? AssemblyFilename { get; set; }
 
         public override async Task Execute(IJobExecutionContext context)
         {
-            AssemblyLoadContext assemblyContext = null;
+            AssemblyLoadContext? assemblyContext = null;
+            Type? type = null;
+            object? instance = null;
 
             try
             {
                 await Initialize(context);
-                AssemblyFilename = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, Properties.Path, Properties.Filename);
+                AssemblyFilename = FolderConsts.GetSpecialFilePath(
+                    PlanarSpecialFolder.Jobs,
+                    Properties.Path ?? string.Empty,
+                    Properties.Filename ?? string.Empty);
 
                 ValidatePlanarJob();
+                if (Properties.ClassName == null) { return; }
 
                 assemblyContext = AssemblyLoader.CreateAssemblyLoadContext(context.FireInstanceId, true);
                 var assembly = AssemblyLoader.LoadFromAssemblyPath(AssemblyFilename, assemblyContext);
 
-                var type = assembly.GetType(Properties.ClassName);
+                if (assembly == null)
+                {
+                    throw new PlanarJobException($"could not load assembly {AssemblyFilename}");
+                }
+
+                type = assembly.GetType(Properties.ClassName);
                 if (type == null)
                 {
                     type = assembly.GetTypes().FirstOrDefault(t => t.FullName == Properties.ClassName);
                 }
 
+                if (type == null)
+                {
+                    throw new PlanarJobException($"could not load type {Properties.ClassName} from assembly {AssemblyFilename}");
+                }
+
                 var method = ValidateBaseJob(type);
-                var instance = assembly.CreateInstance(Properties.ClassName);
+                instance = assembly.CreateInstance(Properties.ClassName);
+                if (instance == null)
+                {
+                    throw new PlanarJobException($"could not create {Properties.ClassName} from assembly {AssemblyFilename}");
+                }
 
                 MapJobInstanceProperties(context, type, instance);
 
-                await (method.Invoke(instance, new object[] { MessageBroker }) as Task);
+                if (method.Invoke(instance, new object[] { MessageBroker }) is not Task task)
+                {
+                    throw new PlanarJobException($"method {method.Name} invoked but not return System.Task type");
+                }
 
-                MapJobInstancePropertiesBack(context, type, instance);
+                var finish = task.Wait(AppSettings.JobAutoStopSpan);
+                if (!finish)
+                {
+                    await context.Scheduler.Interrupt(context.JobDetail.Key);
+                }
             }
             catch (Exception ex)
             {
@@ -55,6 +82,7 @@ namespace Planar
             }
             finally
             {
+                MapJobInstancePropertiesBack(context, type, instance);
                 FinalizeJob(context);
                 assemblyContext?.Unload();
             }

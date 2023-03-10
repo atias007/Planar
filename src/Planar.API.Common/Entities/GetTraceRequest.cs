@@ -12,6 +12,6 @@ namespace Planar.API.Common.Entities
 
         public DateTime? ToDate { get; set; }
 
-        public string Level { get; set; }
+        public string Level { get; set; } = string.Empty;
     }
 }

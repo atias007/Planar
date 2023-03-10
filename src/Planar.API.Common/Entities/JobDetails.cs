@@ -21,7 +21,7 @@ namespace Planar.API.Common.Entities
         public string Properties { get; set; } = string.Empty;
 
         [YamlMember(Order = 15)]
-        public SortedDictionary<string, string> DataMap { get; set; } = new();
+        public SortedDictionary<string, string?> DataMap { get; set; } = new();
 
         [YamlMember(Order = 16)]
         public List<SimpleTriggerDetails> SimpleTriggers { get; set; } = new();

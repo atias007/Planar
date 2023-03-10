@@ -1179,7 +1179,7 @@ namespace Planar.Calendar.Hebrew
             set
             {
                 if (string.IsNullOrEmpty(value))
-                    throw new ArgumentException("Year can not be null or empty");
+                    throw new ArgumentException("year can not be null or empty");
 
                 const string val = "א' תשרי ";
                 if (!value.Contains('"') && value.Length > 1)
@@ -1190,7 +1190,7 @@ namespace Planar.Calendar.Hebrew
                 var dateString = val + value;
                 if (!DateTime.TryParse(dateString, _ci, DateTimeStyles.None, out DateTime _))
                 {
-                    throw new ArgumentException("Year is not valid hebrew year");
+                    throw new ArgumentException("year is not valid hebrew year");
                 }
 
                 _year = val;

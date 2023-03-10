@@ -32,7 +32,7 @@ namespace Planar.Service.General
         {
             MonitorHooks.Clear();
             var contexts = AssemblyLoadContext.All
-                .Where(c => c.IsCollectible && c.Name.StartsWith(_monitorHookAssemblyContextName));
+                .Where(c => c.IsCollectible && c.Name != null && c.Name.StartsWith(_monitorHookAssemblyContextName));
 
             foreach (var c in contexts)
             {
@@ -94,11 +94,12 @@ namespace Planar.Service.General
         private static IEnumerable<Type> GetHookTypesFromFile(AssemblyLoadContext assemblyContext, string file)
         {
             var result = new List<Type>();
-            IEnumerable<Type> allTypes;
+            IEnumerable<Type> allTypes = new List<Type>();
 
             try
             {
                 var assembly = AssemblyLoader.LoadFromAssemblyPath(file, assemblyContext);
+                if (assembly == null) { return allTypes; }
                 allTypes = assembly.GetTypes().Where(t => !t.IsInterface && !t.IsAbstract);
             }
             catch
@@ -110,7 +111,7 @@ namespace Planar.Service.General
             {
                 try
                 {
-                    var isHook = t.BaseType.FullName == _monitorHookBaseClassName;
+                    var isHook = t.BaseType != null && t.BaseType.FullName == _monitorHookBaseClassName;
                     if (isHook)
                     {
                         result.Add(t);

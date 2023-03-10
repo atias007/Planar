@@ -5,11 +5,11 @@ namespace Planar
 {
     public class PlanarJobProperties : IFileJobProperties
     {
-        public string Path { get; set; }
+        public string? Path { get; set; }
 
-        public string Filename { get; set; }
+        public string? Filename { get; set; }
 
         [YamlMember(Alias = "class name")]
-        public string ClassName { get; set; }
+        public string? ClassName { get; set; }
     }
 }

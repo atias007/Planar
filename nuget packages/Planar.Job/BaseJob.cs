@@ -18,14 +18,49 @@ namespace Planar.Job
         private DateTime? _nowOverrideValue;
         private IServiceProvider? _provider;
 
-        protected IConfiguration Configuration { get; private set; }
+        private IConfiguration? _configuration;
 
-        protected ILogger Logger { get; private set; }
+        protected IConfiguration Configuration
+        {
+            get
+            {
+                if (_configuration == null)
+                {
+                    throw new ArgumentException(nameof(Configuration));
+                }
+
+                return _configuration;
+            }
+            private set
+            {
+                _configuration = value;
+            }
+        }
+
+        private ILogger? _logger;
+
+        protected ILogger Logger
+        {
+            get
+            {
+                if (_logger == null)
+                {
+                    throw new ArgumentException(nameof(Logger));
+                }
+
+                return _logger;
+            }
+            private set
+            {
+                _logger = value;
+            }
+        }
 
         protected IServiceProvider ServiceProvider
         {
             get
             {
+                if (_provider == null) { throw new ArgumentNullException(nameof(ServiceProvider)); }
                 return _provider;
             }
         }
@@ -268,7 +303,7 @@ namespace Planar.Job
             }
         }
 
-        private static void FilterJobData(SortedDictionary<string, string> dictionary)
+        private static void FilterJobData(SortedDictionary<string, string?> dictionary)
         {
             foreach (var item in Consts.AllDataKeys)
             {

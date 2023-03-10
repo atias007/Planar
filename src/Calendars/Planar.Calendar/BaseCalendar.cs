@@ -16,9 +16,13 @@ namespace Planar.Calendar
         {
         }
 
-        protected TSettings LoadSettings<TSettings>()
+        protected TSettings? LoadSettings<TSettings>()
+            where TSettings : class
         {
-            var parts = GetType().FullName.Split('.');
+            var fullname = GetType().FullName;
+            if (string.IsNullOrEmpty(fullname)) { return default; }
+
+            var parts = fullname.Split('.');
             var name = parts[^1].Replace("Settings", string.Empty);
             var filename = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Calendars, $"{parts[^2]}", $"{name}.json");
 

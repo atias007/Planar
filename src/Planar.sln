@@ -26,6 +26,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		SolutionItems\run_cluster.bat = SolutionItems\run_cluster.bat
 		SolutionItems\Scaffold-DbContext.txt = SolutionItems\Scaffold-DbContext.txt
 		SolutionItems\ToDo.txt = SolutionItems\ToDo.txt
+		VersionCheckList.txt = VersionCheckList.txt
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.API.Common", "Planar.API.Common\Planar.API.Common.csproj", "{A0B58A23-181D-4BFA-A9DA-0652DBDDF7A3}"
@@ -44,7 +45,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Calendar.Hebrew", "C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Test", "Planar.Test\Planar.Test.csproj", "{30B62187-2BF4-40AA-AB33-EDA20EBC2269}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProcessJob", "ProcessJob\ProcessJob.csproj", "{61579251-E63C-46C0-861E-8553D31AB9C3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ProcessJob", "ProcessJob\ProcessJob.csproj", "{61579251-E63C-46C0-861E-8553D31AB9C3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

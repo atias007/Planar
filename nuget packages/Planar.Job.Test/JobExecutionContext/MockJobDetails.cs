@@ -5,7 +5,7 @@ namespace Planar.Job.Test
 {
     internal class MockJobDetails : IJobDetail
     {
-        private readonly SortedDictionary<string, string> _jobDataMap;
+        private readonly SortedDictionary<string, string?> _jobDataMap;
         private readonly IKey _key = new MockKey(UnitTestConsts.Environment, UnitTestConsts.TestMethod);
 
         public MockJobDetails(ExecuteJobProperties properties)
@@ -17,7 +17,7 @@ namespace Planar.Job.Test
 
         public string Description => "This is UnitTest job description";
 
-        public SortedDictionary<string, string> JobDataMap => _jobDataMap;
+        public SortedDictionary<string, string?> JobDataMap => _jobDataMap;
 
         public bool Durable => false;
 

@@ -14,7 +14,7 @@ namespace Planar.Job.Test
         private static readonly object Locker = new object();
         private readonly MockJobExecutionContext _context;
 
-        public JobMessageBroker(MockJobExecutionContext context, Dictionary<string, string> settings)
+        public JobMessageBroker(MockJobExecutionContext context, Dictionary<string, string?> settings)
         {
             _context = context;
             context.JobSettings = settings;
@@ -30,18 +30,17 @@ namespace Planar.Job.Test
         {
             get
             {
-                return JobExecutionMetadata.GetInstance(_context);
+                var result = JobExecutionMetadata.GetInstance(_context);
+                if (result == null)
+                {
+                    throw new NullReferenceException(nameof(Metadata));
+                }
+
+                return result;
             }
         }
 
-        ////public void AppendLog(LogLevel level, string messag)
-        ////{
-        ////    var formatedMessage = $"[{level}] | {messag}";
-        ////    var log = new LogEntity(level, formatedMessage);
-        ////    LogData(log);
-        ////}
-
-        public string Publish(string channel, string message)
+        public string? Publish(string channel, string message)
         {
             switch (channel)
             {
@@ -153,12 +152,14 @@ namespace Planar.Job.Test
         }
 
         private static T Deserialize<T>(string message)
+            where T : class, new()
         {
             var result = JsonSerializer.Deserialize<T>(message);
+            result ??= Activator.CreateInstance<T>();
             return result;
         }
 
-        private bool HasSettings(Dictionary<string, string> settings, string key)
+        private bool HasSettings(Dictionary<string, string?> settings, string key)
         {
             if (settings == null) { return false; }
             if (settings.ContainsKey(key))
@@ -185,7 +186,7 @@ namespace Planar.Job.Test
             }
         }
 
-        private void SetLogLevel(Dictionary<string, string> settings)
+        private void SetLogLevel(Dictionary<string, string?> settings)
         {
             if (HasSettings(settings, Consts.LogLevelSettingsKey1)) { return; }
             if (HasSettings(settings, Consts.LogLevelSettingsKey2)) { return; }

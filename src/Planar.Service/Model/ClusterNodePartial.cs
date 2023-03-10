@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Planar.Common;
+using System;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Planar.Service.Model

@@ -6,13 +6,13 @@ namespace Planar.Job.Test
     internal class JobExecutionResult : IJobExecutionResult
     {
         public int Id { get; set; }
-        public string InstanceId { get; set; }
-        public string JobId { get; set; }
-        public string JobName { get; set; }
-        public string JobGroup { get; set; }
-        public string TriggerId { get; set; }
-        public string TriggerName { get; set; }
-        public string TriggerGroup { get; set; }
+        public string InstanceId { get; set; } = string.Empty;
+        public string JobId { get; set; } = string.Empty;
+        public string JobName { get; set; } = string.Empty;
+        public string JobGroup { get; set; } = string.Empty;
+        public string TriggerId { get; set; } = string.Empty;
+        public string TriggerName { get; set; } = string.Empty;
+        public string TriggerGroup { get; set; } = string.Empty;
         public StatusMembers Status { get; set; }
         public DateTime StartDate { get; set; }
         public DateTime? EndDate { get; set; }
@@ -20,10 +20,12 @@ namespace Planar.Job.Test
         public int? EffectedRows { get; set; }
         public bool Retry { get; set; }
         public bool IsStopped { get; set; }
-        public IReadOnlyDictionary<string, string> Data { get; set; }
-        public string Log { get; set; }
-        public Exception Exception { get; set; }
-        public object Instance { get; set; }
+        public IReadOnlyDictionary<string, string?> Data { get; set; } = new Dictionary<string, string?>();
+        public string? Log { get; set; }
+        public Exception? Exception { get; set; }
+        public object? Instance { get; set; }
         public AssertPlanarConstraint Assert => new AssertPlanarConstraint(this);
+
+        public static JobExecutionResult Empty => new JobExecutionResult();
     }
 }

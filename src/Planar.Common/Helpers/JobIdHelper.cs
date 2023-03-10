@@ -5,7 +5,7 @@ namespace Planar.Common.API.Helpers
 {
     public static class JobIdHelper
     {
-        public static string GetJobId(IJobDetail job)
+        public static string? GetJobId(IJobDetail job)
         {
             if (job == null)
             {

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 
 namespace Planar.Job.Test
@@ -63,6 +64,10 @@ namespace Planar.Job.Test
 
             try
             {
+                if (context == null) { return; }
+                if (targetType == null) { return; }
+                if (instance == null) { return; }
+
                 var propInfo = targetType.GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
                 foreach (var prop in propInfo)
                 {
@@ -82,7 +87,7 @@ namespace Planar.Job.Test
 
         protected abstract void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context);
 
-        private static bool IsIgnoreProperty(PropertyInfo property, IKey jobKey, KeyValuePair<string, string> data)
+        private static bool IsIgnoreProperty(PropertyInfo property, IKey jobKey, KeyValuePair<string, string?> data)
         {
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
 
@@ -115,7 +120,7 @@ namespace Planar.Job.Test
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
         }
 
-        private static void MapProperty(IKey jobKey, object instance, PropertyInfo prop, KeyValuePair<string, string> data)
+        private static void MapProperty(IKey jobKey, object instance, PropertyInfo prop, KeyValuePair<string, string?> data)
         {
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
 
@@ -144,9 +149,14 @@ namespace Planar.Job.Test
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
         }
 
-        private static MethodInfo ValidateBaseJob(Type type)
+        private static MethodInfo ValidateBaseJob(Type? type)
         {
             //// ***** Attention: be aware for sync code with Validate on BaseCommonJob *****
+
+            if (type == null)
+            {
+                throw new PlanarJobTestException("Job type is null");
+            }
 
             var method = type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance);
             if (method == null)
@@ -179,6 +189,8 @@ namespace Planar.Job.Test
         {
             var context = new MockJobExecutionContext(properties);
             ValidateBaseJob(properties.JobType);
+            if (properties.JobType == null) { return JobExecutionResult.Empty; }
+
             var method = properties.JobType.GetMethod("ExecuteUnitTest", BindingFlags.NonPublic | BindingFlags.Instance);
             if (method == null)
             {
@@ -190,7 +202,7 @@ namespace Planar.Job.Test
             var settings = JobSettingsLoader.LoadJobSettingsForUnitTest(properties.JobType);
             settings = settings.Merge(properties.GlobalSettings);
 
-            Exception jobException = null;
+            Exception? jobException = null;
             var start = DateTime.Now;
             JobMessageBroker _broker;
 
@@ -200,8 +212,7 @@ namespace Planar.Job.Test
                 Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
                 Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
                 var result = method.Invoke(instance, new object[] { _broker, configureAction, registerServicesAction }) as Task;
-                result.ConfigureAwait(false).GetAwaiter().GetResult();
-                MapJobInstancePropertiesBack(context, properties.JobType, instance);
+                result?.ConfigureAwait(false).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
@@ -209,6 +220,7 @@ namespace Planar.Job.Test
             }
             finally
             {
+                MapJobInstancePropertiesBack(context, properties.JobType, instance);
                 context.JobRunTime = DateTime.Now.Subtract(start);
             }
 
@@ -279,7 +291,7 @@ namespace Planar.Job.Test
         {
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
 
-            string value = null;
+            string? value = null;
             try
             {
                 if (!Consts.IsDataKeyValid(prop.Name))
@@ -305,7 +317,7 @@ namespace Planar.Job.Test
         {
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
 
-            string value = null;
+            string? value = null;
             try
             {
                 if (!Consts.IsDataKeyValid(prop.Name))

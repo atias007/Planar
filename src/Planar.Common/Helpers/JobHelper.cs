@@ -6,7 +6,7 @@ namespace Planar.Service.API.Helpers
 {
     public static class JobHelper
     {
-        public static string GetJobAuthor(IJobDetail job)
+        public static string? GetJobAuthor(IJobDetail job)
         {
             if (job == null)
             {

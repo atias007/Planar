@@ -158,19 +158,19 @@ namespace DatabaseMigrations
 
         private static string GetConnectionString(RunningEnvironment environment)
         {
-            var settingsFile = Path.Combine(RunningPath, $"AppSettings.{environment}.json");
+            var settingsFile = Path.Combine(RunningPath, $"AppSettings.json");
             if (File.Exists(settingsFile) == false)
             {
-                WriteError($"Could not found appsettings.{environment}.json file");
+                WriteError("Could not found appsettings.json file");
                 AssertStatus();
             }
 
             var json = JObject.Parse(File.ReadAllText(settingsFile));
-            var connectionString = json["DatabaseConnectionString"].ToString();
+            var connectionString = Convert.ToString(json[environment.ToString()]);
 
             if (string.IsNullOrEmpty(connectionString))
             {
-                WriteError($"Could not found connection string with name start with '{ModuleName}'");
+                WriteError($"Could not found connection with name '{environment}'");
                 AssertStatus();
             }
 

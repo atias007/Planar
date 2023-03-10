@@ -62,7 +62,7 @@ namespace Planar.Service.Monitor.Test
 
         public string FireInstanceId => "NON_CLUSTERED638093344653612239";
 
-        public object Result { get; set; }
+        public object? Result { get; set; }
 
         public TimeSpan JobRunTime => TimeSpan.FromMinutes(5);
 

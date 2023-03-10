@@ -2,6 +2,6 @@
 {
     public class FireInstanceIdRequest
     {
-        public string FireInstanceId { get; set; }
+        public string FireInstanceId { get; set; } = string.Empty;
     }
 }
