@@ -60,13 +60,13 @@ namespace Planar.Common
             return span.ToString(@"hh\:mm\:ss");
         }
 
-        public static string SafeTrim(this string value)
+        public static string? SafeTrim(this string? value)
         {
             if (string.IsNullOrEmpty(value)) return value;
             return value.Trim();
         }
 
-        public static bool HasValue(this string value)
+        public static bool HasValue(this string? value)
         {
             return !string.IsNullOrEmpty(value);
         }

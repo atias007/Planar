@@ -450,7 +450,7 @@ namespace Planar.Service.API
 
         private static JobKey ValidateJobMetadata(SetJobRequest metadata)
         {
-            metadata.JobData ??= new Dictionary<string, string>();
+            metadata.JobData ??= new Dictionary<string, string?>();
 
             #region Trim
 
@@ -489,24 +489,18 @@ namespace Planar.Service.API
 
             #region Max Chars
 
-            if (metadata.Name.Length > 50) throw new RestValidationException("name", "job name length is invalid. max length is 50");
-            if (metadata.Group?.Length > 50) throw new RestValidationException("group", "job group length is invalid. max length is 50");
-            if (metadata.Author?.Length > 200) throw new RestValidationException("author", "author length is invalid. max length is 200");
-            if (metadata.Description?.Length > 100) throw new RestValidationException("description", "job description length is invalid. max length is 100");
+            ValidateRange(metadata.Name, 5, 50, "name", "job");
+            ValidateRange(metadata.Group, 5, 50, "group", "job");
+            ValidateMaxLength(metadata.Author, 200, "author", "job");
+            ValidateMaxLength(metadata.Description, 100, "description", "job");
 
             foreach (var item in metadata.JobData)
             {
-                if (item.Key.Length > 100) throw new RestValidationException("key", "job data key length is invalid. max length is 100");
-                if (item.Value != null && item.Value.Length > 1000) throw new RestValidationException("value", "job data value length is invalid. max length is 1000");
+                ValidateMaxLength(item.Key, 100, "key", "job data");
+                ValidateMaxLength(item.Value, 1000, "value", "job data");
             }
 
             #endregion Max Chars
-
-            #region Min Chars
-
-            if (metadata.Name.Length < 5) throw new RestValidationException("name", "job name length is invalid. min length is 5");
-
-            #endregion Min Chars
 
             if (Consts.PreserveGroupNames.Contains(metadata.Group))
             {
@@ -571,7 +565,7 @@ namespace Planar.Service.API
             var simpleValues = new[] { "firenow", "ignoremisfires", "nextwithexistingcount", "nextwithremainingcount", "nowwithexistingcount", "nowwithremainingcount" };
             container.SimpleTriggers?.ForEach(t =>
             {
-                if (t.MisfireBehaviour.HasValue() && simpleValues.NotContains(t.MisfireBehaviour.ToLower()))
+                if (t.MisfireBehaviour.HasValue() && simpleValues.NotContains(t.MisfireBehaviour?.ToLower()))
                 {
                     throw new RestValidationException("misfireBehaviour", $"value {t.MisfireBehaviour} is not valid value for simple trigger misfire behaviour");
                 }
@@ -580,7 +574,7 @@ namespace Planar.Service.API
             var cronValues = new[] { "donothing", "fireandproceed", "ignoremisfires" };
             container.CronTriggers?.ForEach(t =>
             {
-                if (t.MisfireBehaviour.HasValue() && cronValues.NotContains(t.MisfireBehaviour.ToLower()))
+                if (t.MisfireBehaviour.HasValue() && cronValues.NotContains(t.MisfireBehaviour?.ToLower()))
                 {
                     throw new RestValidationException("misfireBehaviour", $"value {t.MisfireBehaviour} is not valid value for cron trigger misfire behaviour");
                 }
@@ -611,7 +605,7 @@ namespace Planar.Service.API
         {
             container.SimpleTriggers?.ForEach(t =>
             {
-                t.TriggerData ??= new Dictionary<string, string>();
+                t.TriggerData ??= new Dictionary<string, string?>();
                 if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"simple trigger group '{t.Group}' is invalid (preserved value)"); }
                 if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"simple trigger name '{t.Name}' has invalid prefix"); }
                 foreach (var item in t.TriggerData)
@@ -621,7 +615,7 @@ namespace Planar.Service.API
             });
             container.CronTriggers?.ForEach(t =>
             {
-                t.TriggerData ??= new Dictionary<string, string>();
+                t.TriggerData ??= new Dictionary<string, string?>();
                 if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"cron trigger group '{t.Group}' is invalid (preserved value)"); }
                 if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"cron trigger name '{t.Name}' has invalid prefix"); }
                 foreach (var item in t.TriggerData)
@@ -635,31 +629,27 @@ namespace Planar.Service.API
         {
             container.SimpleTriggers?.ForEach(t =>
             {
-                t.TriggerData ??= new Dictionary<string, string>();
-                if (t.Name.Length > 50) throw new RestValidationException("name", "trigger name length is invalid. max length is 50");
-                if (t.Name.Length < 5) throw new RestValidationException("name", "trigger name length is invalid. min length is 5");
-                if (t.Group?.Length > 50) throw new RestValidationException("group", "trigger group length is invalid. max length is 50");
-                if (!string.IsNullOrEmpty(t.Group) && t.Group?.Length < 5) throw new RestValidationException("group", "trigger group length is invalid. max length is 5");
+                t.TriggerData ??= new Dictionary<string, string?>();
+                ValidateRange(t.Name, 5, 50, "name", "trigger");
+                ValidateRange(t.Group, 5, 50, "group", "trigger");
 
                 foreach (var item in t.TriggerData)
                 {
-                    if (item.Key.Length > 100) throw new RestValidationException("key", "trigger data key length is invalid. max length is 100");
-                    if (item.Value != null && item.Value.Length > 1000) throw new RestValidationException("value", "trigger data value length is invalid. max length is 1000");
+                    ValidateMaxLength(item.Key, 100, "key", "trigger data");
+                    ValidateMaxLength(item.Value, 1000, "value", "trigger data");
                 }
             });
 
             container.CronTriggers?.ForEach(t =>
             {
-                t.TriggerData ??= new Dictionary<string, string>();
-                if (t.Name.Length > 50) throw new RestValidationException("name", "trigger name length is invalid. max length is 50");
-                if (t.Name.Length < 5) throw new RestValidationException("name", "trigger name length is invalid. min length is 5");
-                if (t.Group?.Length > 50) throw new RestValidationException("group", "trigger group length is invalid. max length is 50");
-                if (!string.IsNullOrEmpty(t.Group) && t.Group?.Length < 5) throw new RestValidationException("group", "trigger group length is invalid. max length is 5");
+                t.TriggerData ??= new Dictionary<string, string?>();
+                ValidateRange(t.Name, 5, 50, "name", "trigger");
+                ValidateRange(t.Group, 5, 50, "group", "trigger");
 
                 foreach (var item in t.TriggerData)
                 {
-                    if (item.Key.Length > 100) throw new RestValidationException("key", "trigger data key length is invalid. max length is 100");
-                    if (item.Value != null && item.Value.Length > 1000) throw new RestValidationException("value", "trigger data value length is invalid. max length is 1000");
+                    ValidateMaxLength(item.Key, 100, "key", "trigger data");
+                    ValidateMaxLength(item.Value, 1000, "value", "trigger data");
                 }
             });
         }
@@ -796,6 +786,23 @@ namespace Planar.Service.API
             }
 
             await validator.ValidateAndThrowAsync(properties);
+        }
+
+        private static void ValidateRange(string? value, int from, int to, string name, string parent)
+        {
+            ValidateMinLength(value, from, name, parent);
+            ValidateMaxLength(value, to, name, parent);
+        }
+
+        private static void ValidateMaxLength(string? value, int length, string name, string parent)
+        {
+            if (value != null && value.Length > length) throw new RestValidationException(name, $"{parent} {name} length is invalid. maximum length is {length}");
+        }
+
+        private static void ValidateMinLength(string? value, int length, string name, string parent)
+        {
+            if (value == null) { return; }
+            if (value.Length < length) throw new RestValidationException(name, $"{parent} {name} length is invalid. minimum length is {length}");
         }
     }
 }
