@@ -24,7 +24,7 @@ namespace Planar.Service.API.Helpers
             return jobKeyA.Name == jobKeyB.Name && jobKeyA.Group == jobKeyB.Group;
         }
 
-        public static string GetJobId(IJobDetail job)
+        public static string? GetJobId(IJobDetail? job)
         {
             return JobIdHelper.GetJobId(job);
         }

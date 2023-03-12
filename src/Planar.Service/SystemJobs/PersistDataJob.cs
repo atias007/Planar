@@ -8,6 +8,7 @@ using Polly;
 using Quartz;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
@@ -65,6 +66,12 @@ namespace Planar.Service.SystemJobs
                 }
             }
 
+            if (!runningJobs.Any())
+            {
+                _logger.LogDebug("persist data system job has no running jobs");
+                return;
+            }
+
             foreach (var context in runningJobs)
             {
                 var log = new DbJobInstanceLog
@@ -75,7 +82,7 @@ namespace Planar.Service.SystemJobs
                     Duration = context.Duration,
                 };
 
-                _logger?.LogInformation("Persist data for job {Group}.{Name}", context.Group, context.Name);
+                _logger?.LogDebug("persist data for job {Group}.{Name}", context.Group, context.Name);
                 await Policy.Handle<Exception>()
                         .WaitAndRetryAsync(3, i => TimeSpan.FromSeconds(1 * i))
                         .ExecuteAsync(() => _dal?.PersistJobInstanceData(log));

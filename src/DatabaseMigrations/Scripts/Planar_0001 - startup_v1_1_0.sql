@@ -1,5 +1,3 @@
-USE [Planar]
-GO
 -- Object:  Schema [Admin]    Script Date: 15/01/2023 0:44:07 ******/
 CREATE SCHEMA [Admin]
 GO

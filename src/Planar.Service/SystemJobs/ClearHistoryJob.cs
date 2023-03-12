@@ -1,5 +1,4 @@
-﻿using FluentValidation.Results;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -52,12 +51,12 @@ namespace Planar.Service.SystemJobs
             try
             {
                 var data = _serviceProvider.GetRequiredService<StatisticsData>();
-                await data.ClearStatisticsTables(AppSettings.ClearStatisticsTablesOverDays);
-                _logger.LogInformation("Clear statistics tables rows (older then {Days} days)", AppSettings.ClearStatisticsTablesOverDays);
+                var rows = await data.ClearStatisticsTables(AppSettings.ClearStatisticsTablesOverDays);
+                _logger.LogDebug("clear statistics tables rows (older then {Days} days) with {Total} effected row(s)", AppSettings.ClearStatisticsTablesOverDays, rows);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to clear statistics tables rows (older then {Days} days)", AppSettings.ClearStatisticsTablesOverDays);
+                _logger.LogError(ex, "fail to clear statistics tables rows (older then {Days} days)", AppSettings.ClearStatisticsTablesOverDays);
             }
         }
 
@@ -66,12 +65,12 @@ namespace Planar.Service.SystemJobs
             try
             {
                 var data = _serviceProvider.GetRequiredService<TraceData>();
-                await data.ClearJobLogTable(AppSettings.ClearJobLogTableOverDays);
-                _logger.LogInformation("Clear job log table rows (older then {Days} days)", AppSettings.ClearJobLogTableOverDays);
+                var rows = await data.ClearJobLogTable(AppSettings.ClearJobLogTableOverDays);
+                _logger.LogDebug("clear job log table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.ClearJobLogTableOverDays, rows);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to clear job log table rows (older then {Days} days)", AppSettings.ClearJobLogTableOverDays);
+                _logger.LogError(ex, "fail to clear job log table rows (older then {Days} days)", AppSettings.ClearJobLogTableOverDays);
             }
         }
 
@@ -80,12 +79,12 @@ namespace Planar.Service.SystemJobs
             try
             {
                 var data = _serviceProvider.GetRequiredService<TraceData>();
-                await data.ClearTraceTable(AppSettings.ClearTraceTableOverDays);
-                _logger.LogInformation("Clear trace table rows (older then {Days} days)", AppSettings.ClearTraceTableOverDays);
+                var rows = await data.ClearTraceTable(AppSettings.ClearTraceTableOverDays);
+                _logger.LogDebug("clear trace table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.ClearTraceTableOverDays, rows);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to clear trace table rows (older then {Days} days)", AppSettings.ClearTraceTableOverDays);
+                _logger.LogError(ex, "fail to clear trace table rows (older then {Days} days)", AppSettings.ClearTraceTableOverDays);
             }
         }
 
@@ -98,17 +97,23 @@ namespace Planar.Service.SystemJobs
                 var scheduler = _serviceProvider.GetRequiredService<IScheduler>();
                 var existsKeys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
                 var filterKeys = existsKeys.Where(x => x.Group != Consts.PlanarSystemGroup).ToList();
-                var existsIds = filterKeys.Select(k => JobKeyHelper.GetJobId(scheduler.GetJobDetail(k).Result)).ToList();
+                var jobDetails = filterKeys.Select(k => scheduler.GetJobDetail(k).Result);
+                var existsIds = jobDetails
+                    .Where(d => d != null)
+                    .Select(d => JobKeyHelper.GetJobId(d)).ToList();
 
+                var rows = 0;
                 foreach (var id in ids)
                 {
                     if (!existsIds.Contains(id))
                     {
                         await data.DeleteJobProperty(id);
                         _logger.LogDebug("delete job property for job id {JobId}", id);
+                        rows++;
                     }
                 }
-                _logger.LogInformation("Clear properties table rows");
+
+                _logger.LogDebug("clear properties table rows with {Total} effected row(s)", rows);
             }
             catch (Exception ex)
             {

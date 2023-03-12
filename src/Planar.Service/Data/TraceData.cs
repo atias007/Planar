@@ -16,7 +16,7 @@ namespace Planar.Service.Data
         {
         }
 
-        public async Task ClearTraceTable(int overDays)
+        public async Task<int> ClearTraceTable(int overDays)
         {
             var parameters = new { OverDays = overDays };
             using var conn = _context.Database.GetDbConnection();
@@ -25,10 +25,10 @@ namespace Planar.Service.Data
                 commandType: CommandType.StoredProcedure,
                 parameters: parameters);
 
-            await conn.ExecuteAsync(cmd);
+            return await conn.ExecuteAsync(cmd);
         }
 
-        public async Task ClearJobLogTable(int overDays)
+        public async Task<int> ClearJobLogTable(int overDays)
         {
             var parameters = new { OverDays = overDays };
             using var conn = _context.Database.GetDbConnection();
@@ -37,10 +37,10 @@ namespace Planar.Service.Data
                 commandType: CommandType.StoredProcedure,
                 parameters: parameters);
 
-            await conn.ExecuteAsync(cmd);
+            return await conn.ExecuteAsync(cmd);
         }
 
-        public Trace GetTrace(int key)
+        public Trace? GetTrace(int key)
         {
             return _context.Traces.Find(key);
         }

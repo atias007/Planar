@@ -37,7 +37,8 @@ namespace Planar.Service.SystemJobs
             try
             {
                 var data = _serviceProvider.GetRequiredService<StatisticsData>();
-                await data.SetMaxConcurentExecution();
+                var rows = await data.SetMaxConcurentExecution();
+                _logger.LogDebug("statistics job execute {Method} with {Total} effected row(s)", nameof(data.SetMaxConcurentExecution), rows);
             }
             catch (Exception ex)
             {
@@ -47,7 +48,8 @@ namespace Planar.Service.SystemJobs
             try
             {
                 var data = _serviceProvider.GetRequiredService<StatisticsData>();
-                await data.SetMaxDurationExecution();
+                var rows = await data.SetMaxDurationExecution();
+                _logger.LogDebug("statistics job execute {Method} with {Total} effected row(s)", nameof(data.SetMaxDurationExecution), rows);
             }
             catch (Exception ex)
             {

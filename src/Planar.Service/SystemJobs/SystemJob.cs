@@ -44,17 +44,29 @@ namespace Planar.Service.SystemJobs
                 .WithIdentity(jobKey.Name, jobKey.Group)
                 .StartAt(jobStart)
                 .UsingJobData(Consts.TriggerId, triggerId)
-                .WithSimpleSchedule(s => s
-                    .WithInterval(span)
-                    .RepeatForever()
-                    .WithMisfireHandlingInstructionNextWithExistingCount()
-                )
+                .WithSimpleSchedule(s => BuildScheduler(s, span))
                 .WithPriority(int.MinValue)
                 .Build();
 
             await scheduler.ScheduleJob(job, new[] { trigger }, true, stoppingToken);
 
             return jobKey;
+        }
+
+        private static void BuildScheduler(SimpleScheduleBuilder builder, TimeSpan span)
+        {
+            builder
+                .WithInterval(span)
+                .RepeatForever();
+
+            if (span.TotalMinutes > 15)
+            {
+                builder.WithMisfireHandlingInstructionFireNow();
+            }
+            else
+            {
+                builder.WithMisfireHandlingInstructionNextWithExistingCount();
+            }
         }
     }
 }

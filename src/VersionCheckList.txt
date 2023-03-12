@@ -3,6 +3,10 @@
 * Planar.Hooks
 * Planar.Test
 ----------------------------------------
+- run database migrations on Planar_Test
+- run SqlSchemaCompare
+- run SqlDataCompare (Roles table)
+
 - update nuget packages
 - Remove unsused nuget packages
 - build with 0 0 0 (error, warning, info)

@@ -1,6 +1,3 @@
-USE [Planar]
-GO
-
 SET ANSI_NULLS ON
 GO
 
@@ -139,15 +136,16 @@ WITH CTE([RecordDate],[RecordHour],[Duration])
 AS
 (
 	SELECT 
-		CONVERT(DATETIME, CONVERT(DATE, [StartDate])) [RecordDate],
-		DATEPART(HOUR, [StartDate]) [RecordHour],
+		CONVERT(DATETIME, CONVERT(DATE, [EndDate])) [RecordDate],
+		DATEPART(HOUR, [EndDate]) [RecordHour],
 		[Duration]
 	FROM 
 		[dbo].[JobInstanceLog]
 	WHERE 
 	    [Duration] IS NOT NULL 
-		AND [StartDate] > @StartDate 
-		AND [StartDate] < @current
+		AND [EndDate] > @StartDate 
+		AND [EndDate] < @current
+		AND [Status] >= 0
 )
 INSERT INTO [Statistics].[MaxDurationExecution]
 	([RecordDate], [MaxDuration])

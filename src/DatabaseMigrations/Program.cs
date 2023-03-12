@@ -1,4 +1,5 @@
 ﻿using DbUp;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Linq;
 using Spectre.Console;
 using System;
@@ -158,16 +159,11 @@ namespace DatabaseMigrations
 
         private static string GetConnectionString(RunningEnvironment environment)
         {
-            var settingsFile = Path.Combine(RunningPath, $"AppSettings.json");
-            if (File.Exists(settingsFile) == false)
-            {
-                WriteError("Could not found appsettings.json file");
-                AssertStatus();
-            }
+            var builder = new ConfigurationBuilder();
+            builder.AddJsonFile("appsettings.json");
+            var configuration = builder.Build();
 
-            var json = JObject.Parse(File.ReadAllText(settingsFile));
-            var connectionString = Convert.ToString(json[environment.ToString()]);
-
+            var connectionString = configuration[environment.ToString()];
             if (string.IsNullOrEmpty(connectionString))
             {
                 WriteError($"Could not found connection with name '{environment}'");
@@ -177,41 +173,14 @@ namespace DatabaseMigrations
             return connectionString;
         }
 
-        private static RunningEnvironment GetRunningEnvironment(string[] args)
-        {
-            string envText;
-
-            if (args.FirstOrDefault() == null || args.Length < 2)
-            {
-                var rule = new Rule("Choose running environment")
-                {
-                    Justification = Justify.Left
-                };
-                AnsiConsole.Write(rule);
-
-                var members = Enum.GetNames(typeof(RunningEnvironment));
-                envText = AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                    .AddChoices(members));
-            }
-            else
-            {
-                envText = args[1];
-            }
-
-            var success = Enum.TryParse<RunningEnvironment>(envText, out var env);
-            if (!success)
-            {
-                WriteError($"argument '{envText}' is not valid running environment");
-                AssertStatus();
-            }
-
-            return env;
-        }
-
         private static RunningMode GetRunningMode(string[] args)
         {
             string modeText;
+#if DEBUG
+            var modes = new[] { "Ensure Database", "Add Script", "Validate", "List Scripts", "Demo Execute", "Execute" };
+#else
+            var modes = new[] { "Ensure Database", "List Scripts", "Demo Execute", "Execute" };
+#endif
             if (args.FirstOrDefault() == null)
             {
                 var rule = new Rule("Choose running mode")
@@ -221,16 +190,7 @@ namespace DatabaseMigrations
                 AnsiConsole.Write(rule);
 
                 modeText = AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                    .AddChoices(new[]
-                    {
-                        "Add Script",
-                        "Validate",
-                        "List Scripts",
-                        "Demo Execute",
-                        "Execute",
-                        "Ensure Database"
-                    }));
+                new SelectionPrompt<string>().AddChoices(modes));
             }
             else
             {
@@ -278,7 +238,11 @@ namespace DatabaseMigrations
                 return;
             }
 
-            var environment = GetRunningEnvironment(args);
+#if DEBUG
+            var environment = RunningEnvironment.Test;
+#else
+            var environment = RunningEnvironment.Local;
+#endif
             var connectionString = GetConnectionString(environment);
 
             if (mode == RunningMode.EnsureDatabase)
