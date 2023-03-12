@@ -1,19 +1,31 @@
+----------------------------------------
+Solutions
+----------------------------------------
 * Planar
 * Planar.Packages
 * Planar.Hooks
 * Planar.Test
+
 ----------------------------------------
+Check List
+----------------------------------------
+- update nuget packages
+- Remove unsused nuget packages
 - run database migrations on Planar_Test
 - run SqlSchemaCompare
 - run SqlDataCompare (Roles table)
-
-- update nuget packages
-- Remove unsused nuget packages
-- build with 0 0 0 (error, warning, info)
+- drop Planar_Test database
+- build all solutions with 0 0 0 (error, warning, info)
 - publish nuget packages
 - create pull request to master
-- approve pull request
 - fix sonar issues
+- approve pull request
 - publish cli all versions
 - publish planar all versions
 - publish DatabaseMigrations version
+- Zip all published at C:\temp\Planar\publish
+
+Docker
+------
+- update the version number on script DockerBuildScript.bat
+- run build script DockerBuildScript.bat

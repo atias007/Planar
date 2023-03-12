@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using Planar.Startup.Logging;
 using Planar.Common;
+using Serilog.Sinks.MSSqlServer;
 
 namespace Planar.Startup
 {
@@ -31,25 +32,30 @@ namespace Planar.Startup
                         .AddEnvironmentVariables()
                         .Build();
 
-            var sections = configuration.GetSection("Serilog:WriteTo").GetChildren();
-            foreach (var item in sections)
+            var sqlSink = new MSSqlServerSinkOptions
             {
-                var name = item.GetValue<string>("Name");
-                if (name == "MSSqlServer")
-                {
-                    var connSection = item.GetSection("Args:connectionString");
-                    if (connSection == null) { continue; }
-                    if (string.IsNullOrEmpty(connSection.Value))
-                    {
-                        connSection.Value = AppSettings.DatabaseConnectionString;
-                    }
-                }
-            }
+                TableName = "Trace",
+                AutoCreateSqlTable = false,
+                SchemaName = "dbo",
+            };
+
+            var sqlColumns = new ColumnOptions();
+            sqlColumns.Store.Remove(StandardColumn.MessageTemplate);
+            sqlColumns.Store.Remove(StandardColumn.Properties);
+            sqlColumns.Store.Add(StandardColumn.LogEvent);
+            sqlColumns.LogEvent.ExcludeStandardColumns = true;
 
             config.ReadFrom.Configuration(configuration);
+            config.WriteTo.MSSqlServer(
+                connectionString: AppSettings.DatabaseConnectionString,
+                sinkOptions: sqlSink,
+                columnOptions: sqlColumns);
+
             config.Enrich.WithPlanarEnricher();
             config.Enrich.FromGlobalLogContext();
             config.Filter.WithPlanarFilter();
+
+            SelfLog.Enable(Console.Out);
         }
     }
 }

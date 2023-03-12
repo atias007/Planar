@@ -49,7 +49,7 @@ namespace Planar.Service.Validation
             return true;
         }
 
-        private bool EncodingExists(ProcessJobProperties properties, string outputEncoding, ValidationContext<ProcessJobProperties> context)
+        private bool EncodingExists(ProcessJobProperties properties, string? outputEncoding, ValidationContext<ProcessJobProperties> context)
         {
             if (outputEncoding == null) { return true; }
             return CommonValidations.EncodingExists(outputEncoding, context);

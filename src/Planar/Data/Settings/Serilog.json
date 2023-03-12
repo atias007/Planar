@@ -14,23 +14,8 @@
     },
     "WriteTo": [
       {
-        "Name": "MSSqlServer",
-        "Args": {
-          "connectionString": "",
-          "tableName": "Trace",
-          "columnOptionsSection": {
-            "addStandardColumns": [ "LogEvent" ],
-            "removeStandardColumns": [ "MessageTemplate", "Properties" ],
-            "logEvent": {
-              "excludeStandardColumns": true
-            }
-          }
-        }
-      },
-      {
         "Name": "Console"
       }
-    ],
-    "Filter": []
+    ]
   }
 }

@@ -15,9 +15,8 @@
   <ItemGroup>
     <None Remove="JobFile.yml" />
   </ItemGroup>
-
   <ItemGroup>
-    <Compile Include="..\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
+    <Compile Include="..\..\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Jobs\CommonJob\CommonJob.csproj" />
+    <ProjectReference Include="..\CommonJob\CommonJob.csproj" />
   </ItemGroup>
 
 </Project>

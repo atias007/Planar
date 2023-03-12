@@ -66,11 +66,7 @@ namespace Planar.Service.SystemJobs
                 }
             }
 
-            if (!runningJobs.Any())
-            {
-                _logger.LogDebug("persist data system job has no running jobs");
-                return;
-            }
+            if (!runningJobs.Any()) { return; }
 
             foreach (var context in runningJobs)
             {
@@ -82,7 +78,6 @@ namespace Planar.Service.SystemJobs
                     Duration = context.Duration,
                 };
 
-                _logger?.LogDebug("persist data for job {Group}.{Name}", context.Group, context.Name);
                 await Policy.Handle<Exception>()
                         .WaitAndRetryAsync(3, i => TimeSpan.FromSeconds(1 * i))
                         .ExecuteAsync(() => _dal?.PersistJobInstanceData(log));

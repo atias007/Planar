@@ -12,9 +12,6 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<Compile Include="..\..\..\nuget packages\Planar.Job\Attributes\IgnoreDataMapAttribute.cs" Link="Attributes\IgnoreDataMapAttribute.cs" />
-		<Compile Include="..\..\..\nuget packages\Planar.Job\Attributes\JobDataAttribute.cs" Link="Attributes\JobDataAttribute.cs" />
-		<Compile Include="..\..\..\nuget packages\Planar.Job\Attributes\TriggerDataAttribute.cs" Link="Attributes\TriggerDataAttribute.cs" />
 		<Compile Include="..\..\Planar.Common\Consts.cs" Link="Consts.cs" />
 		<Compile Include="..\..\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
 	</ItemGroup>
@@ -25,9 +22,5 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\Planar.Common\Planar.Common.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Attributes\" />
 	</ItemGroup>
 </Project>
