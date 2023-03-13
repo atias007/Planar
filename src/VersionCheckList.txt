@@ -29,3 +29,4 @@ Docker
 ------
 - update the version number on script DockerBuildScript.bat
 - run build script DockerBuildScript.bat
+- check the docker version

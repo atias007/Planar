@@ -1,20 +1,40 @@
 --------------------------------------------------------
-- // TODO: add appsettings for UseJobAutoInterrupt at QuartzServiceConfiguration
+PLAN FOR V 1.3.0
+----------------
+- documentation
+- authorization
+- add SqlJob
+- add statistics for: 
+	* max effected rows, 
+	* count runs per day, 
+	* count seccess retry per day, 
+	* count fail retry per day, 
+	* count recovering runs per day
 
-- add statistics for: max effected rows, count runs per day, count seccess retry per day, count fail retry per day, count recovering runs per day
-- convert id in sql table JobInstanceLog from int to bigint
+- feature: job data (change upsert to put) 
+- feature: cli history ls (status parameter to be enum)
+- feature: cli job type in job ls or history ls to be enum
+- feature: cli settings --> key instead of id
+- feature: cli job stop --> instance id is required
+- add timeout parameter to trigger
 - do not allow to 'job test' system jobs
-- cli: service status [time scope] dashboard command
-- add validation to JobRunnerBuilder in test package
-- add monitor event: cluster health check fail
+- job test: do not allow test already running jobs
 - job test: if no instance id, check hc and print warning about already running job with no concurent
+- convert id in sql table JobInstanceLog from int to bigint
+- add validation to JobRunnerBuilder in test package
 - add to jobfile the option to control the amount of retries
+- cli: service status [time scope] dashboard command
+- add monitor event: cluster health check fail
 - cli: save output to file
+
+- BACKLOG ----------------------------------------------------------------------------
+
+- add angular dashboard
+- add RestJob
 - cli test cluster command
 - cli: add string similarity (https://github.com/glienard/StringSimilarity.NET)
 - option to pause job after {x} fails in row
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
-
 
 -----------------------------------------DONE-----------------------------------------
 - cli login with option to remember
@@ -117,3 +137,4 @@ V 1.2.0
 - cli: support cancel operation (cancallation token)
 - option for job timeout & general system timeout
 - clear old properties from system clear job
+- add appsettings for UseJobAutoInterrupt at QuartzServiceConfiguration
