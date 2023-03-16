@@ -7,8 +7,7 @@ Scheduler engine is based on [Quartz.NET](http://www.quartz-scheduler.org/)
 
 Below you can see the main key features of Planar:
 
-![flyer](https://github.com/atias007/Planar/blob/8c7222d689590a97414b987517000ce4dc1ef526/res/characters.jpg)
-
+![flyer](https://github.com/atias007/Planar/blob/c7a1363de89e3d43eac18376230902534ded20d6/res/characters_v2.jpg?raw=true)
 ---
 
 ### Get Started
@@ -41,6 +40,10 @@ Docker is an open source [containerization](https://www.ibm.com/in-en/cloud/lear
    ```PowerShell
    planar-cli
    ```
+
+4. The following CLI welcome screen should appear
+
+![CLI welcome](https://github.com/atias007/Planar/blob/c7a1363de89e3d43eac18376230902534ded20d6/res/planar_cli_screenshot.jpg?raw=true)
 
 ---
 [^1]: This may need to be run with sudo if docker and docker-compose aren't accessible by the user. 
