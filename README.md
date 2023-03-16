@@ -22,11 +22,10 @@ Docker is an open source [containerization](https://www.ibm.com/in-en/cloud/lear
 3. Download the [docker-compose.yml](https://github.com/atias007/Planar/releases/download/version_1.2.0/docker-compose.yml) file and place it into the `Planar` installation folder.
 4. Start the Docker container by running the command below.[^1][^2]
  
-   `docker-compose -p planar up -d`
-
-   [^1]: This may need to be run with sudo if docker and docker-compose aren't accessible by the user. 
-   [^2]: If the image doesn't exist locally, this command downloads the necessary Docker image and starts the container.
-
+   ```PowerShell
+   docker-compose -p planar up -d
+   ```
+   
 ---
 
 ### Test The Installation
@@ -42,3 +41,7 @@ Docker is an open source [containerization](https://www.ibm.com/in-en/cloud/lear
    ```PowerShell
    planar-cli
    ```
+
+---
+[^1]: This may need to be run with sudo if docker and docker-compose aren't accessible by the user. 
+[^2]: If the image doesn't exist locally, this command downloads the necessary Docker image and starts the container.
