@@ -23,7 +23,22 @@ Docker is an open source [containerization](https://www.ibm.com/in-en/cloud/lear
 4. Start the Docker container by running the command below.[^1][^2]
  
    `docker-compose -p planar up -d`
-   
+
    [^1]: This may need to be run with sudo if docker and docker-compose aren't accessible by the user. 
    [^2]: If the image doesn't exist locally, this command downloads the necessary Docker image and starts the container.
+
 ---
+
+### Test The Installation
+
+1. Open terminal or command line
+2. Connect to service container shell by running the command below
+
+   ```PowerShell
+   docker exec -it planar-service sh
+   ```
+3. Run the Planae CLI by running the command below
+
+   ```PowerShell
+   planar-cli
+   ```
