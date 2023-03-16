@@ -23,8 +23,10 @@ namespace Planar.CLI.CliGeneral
                     .LeftJustified()
                     .Color(Color.SteelBlue));
 
-            var panel = new Panel($" [steelblue]planar cli v{Program.Version}[/]");
-            panel.Border = BoxBorder.Ascii;
+            var panel = new Panel($" [steelblue]planar cli v{Program.Version}[/]")
+            {
+                Border = BoxBorder.Ascii
+            };
             panel.BorderColor(Color.SteelBlue);
 
             AnsiConsole.Write(panel);

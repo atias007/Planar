@@ -38,7 +38,6 @@ namespace Planar.CLI
                         };
 
                         _client = new RestClient(options);
-                        _client.UseNewtonsoftJson();
                     }
 
                     return _client;
