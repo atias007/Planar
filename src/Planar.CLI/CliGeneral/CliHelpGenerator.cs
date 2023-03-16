@@ -1,8 +1,11 @@
-﻿using Planar.CLI.Actions;
+﻿using Microsoft.Extensions.Primitives;
+using Planar.CLI.Actions;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Web;
 
 namespace Planar.CLI.CliGeneral
 {
@@ -23,8 +26,10 @@ namespace Planar.CLI.CliGeneral
                     .LeftJustified()
                     .Color(Color.SteelBlue));
 
-            var panel = new Panel($" [steelblue]planar cli v{Program.Version}[/]");
-            panel.Border = BoxBorder.Ascii;
+            var panel = new Panel($" [steelblue]planar cli v{Program.Version}[/]")
+            {
+                Border = BoxBorder.Ascii
+            };
             panel.BorderColor(Color.SteelBlue);
 
             AnsiConsole.Write(panel);
@@ -66,12 +71,7 @@ namespace Planar.CLI.CliGeneral
             AnsiConsole.MarkupLine($" [invert]usage:[/] {cliCommand}[lightskyblue1]{module}[/] [cornsilk1]{header1}[/] [[{header2}]]");
             AnsiConsole.WriteLine();
 
-            var actions = allActions
-                .Where(a =>
-                    string.Equals(a.Module, module, StringComparison.OrdinalIgnoreCase) &&
-                    !string.IsNullOrEmpty(a.CommandDisplayName) &&
-                    !a.IgnoreHelp)
-                .OrderBy(a => a.CommandDisplayName);
+            var actions = GetActionsByModule(module, allActions);
 
             var grid = new Grid();
             grid.AddColumn();
@@ -100,6 +100,62 @@ namespace Planar.CLI.CliGeneral
             grid.AddEmptyRow();
 
             AnsiConsole.Write(grid);
+        }
+
+        public static string GetHelpMD(IEnumerable<CliActionMetadata> allActions)
+        {
+            var sb = new StringBuilder();
+            var modules = BaseCliAction.GetModules();
+            foreach (var item in modules)
+            {
+                var md = GetModuleMD(item.Name, allActions);
+                sb.AppendLine(md);
+            }
+
+            return sb.ToString();
+        }
+
+        public static string GetModuleMD(string module, IEnumerable<CliActionMetadata> allActions)
+        {
+            var actions = GetActionsByModule(module, allActions);
+            var sb = new StringBuilder();
+            sb.AppendLine($"### {module}");
+            sb.AppendLine("<table>");
+
+            foreach (var ac in actions)
+            {
+                var command = HttpUtility.HtmlEncode(ac.CommandDisplayName);
+                sb.AppendLine("\t<tr>");
+                sb.AppendLine($"\t\t<td width=\"200px\"><code>{command}</code></td>");
+                if (ac.ArgumentsDisplayNameItems.Any())
+                {
+                    var items = ac.ArgumentsDisplayNameItems.Select(i => $"<code>{HttpUtility.HtmlEncode(i)}</code>");
+                    var itemsTitle = string.Join(' ', items);
+                    sb.AppendLine($"\t\t<td>{itemsTitle}</td>");
+                }
+                else
+                {
+                    sb.AppendLine("\t\t<td></td>");
+                }
+
+                sb.AppendLine("\t</tr>");
+            }
+
+            sb.AppendLine("</table>");
+            sb.AppendLine("<br/>");
+            return sb.ToString();
+        }
+
+        private static IOrderedEnumerable<CliActionMetadata> GetActionsByModule(string module, IEnumerable<CliActionMetadata> allActions)
+        {
+            var actions = allActions
+                .Where(a =>
+                    string.Equals(a.Module, module, StringComparison.OrdinalIgnoreCase) &&
+                    !string.IsNullOrEmpty(a.CommandDisplayName) &&
+                    !a.IgnoreHelp)
+                .OrderBy(a => a.CommandDisplayName);
+
+            return actions;
         }
     }
 }

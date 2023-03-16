@@ -1,5 +1,4 @@
 ﻿using RestSharp;
-using RestSharp.Serializers.NewtonsoftJson;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,7 +37,6 @@ namespace Planar.CLI
                         };
 
                         _client = new RestClient(options);
-                        _client.UseNewtonsoftJson();
                     }
 
                     return _client;

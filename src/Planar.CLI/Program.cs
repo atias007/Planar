@@ -456,6 +456,11 @@ namespace Planar.CLI
         private static void Start(string[] args)
         {
             var cliActions = BaseCliAction.GetAllActions();
+
+#if DEBUG
+            var md = CliHelpGenerator.GetHelpMD(cliActions);
+#endif
+
             ServiceCliActions.InitializeLogin();
 
             if (args.Length == 0)

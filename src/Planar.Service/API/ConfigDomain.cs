@@ -55,7 +55,7 @@ namespace Planar.Service.API
             return data;
         }
 
-        public async Task Upsert(GlobalConfig request)
+        public async Task Put(GlobalConfig request)
         {
             var exists = await DataLayer.IsGlobalConfigExists(request.Key);
             if (exists)

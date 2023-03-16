@@ -330,12 +330,13 @@ namespace Planar.CLI.Actions
         }
 
         [Action("stop")]
+        [NullRequest]
         public static async Task<CliActionResponse> StopRunningJob(CliFireInstanceIdRequest request, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(request.FireInstanceId))
+            request ??= new CliFireInstanceIdRequest
             {
-                request.FireInstanceId = await ChooseRunningJobInstance();
-            }
+                FireInstanceId = await ChooseRunningJobInstance()
+            };
 
             var restRequest = new RestRequest("job/stop", Method.Post)
                 .AddBody(request);
@@ -412,12 +413,12 @@ namespace Planar.CLI.Actions
         }
 
         [Action("data")]
-        public static async Task<CliActionResponse> UpsertJobData(CliJobDataRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> PutJobData(CliJobDataRequest request, CancellationToken cancellationToken = default)
         {
             RestResponse result;
             switch (request.Action)
             {
-                case DataActions.Upsert:
+                case DataActions.Put:
                     var prm1 = new JobOrTriggerDataRequest
                     {
                         Id = request.Id,

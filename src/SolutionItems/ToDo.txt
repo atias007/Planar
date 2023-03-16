@@ -11,11 +11,10 @@ PLAN FOR V 1.3.0
 	* count fail retry per day, 
 	* count recovering runs per day
 
-- feature: job data (change upsert to put) 
+
 - feature: cli history ls (status parameter to be enum)
 - feature: cli job type in job ls or history ls to be enum
-- feature: cli settings --> key instead of id
-- feature: cli job stop --> instance id is required
+
 - add timeout parameter to trigger
 - do not allow to 'job test' system jobs
 - job test: do not allow test already running jobs
@@ -138,3 +137,8 @@ V 1.2.0
 - option for job timeout & general system timeout
 - clear old properties from system clear job
 - add appsettings for UseJobAutoInterrupt at QuartzServiceConfiguration
+
+V 1.2.1
+----------
+- cli job data (change upsert to put) 
+- feature: cli job stop --> instance id is required

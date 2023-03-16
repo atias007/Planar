@@ -50,7 +50,7 @@ namespace Planar.Service.API
         {
             foreach (var item in metadata.OldJobDetails.JobDataMap)
             {
-                request.JobData.Upsert(item.Key, PlanarConvert.ToString(item.Value));
+                request.JobData.Put(item.Key, PlanarConvert.ToString(item.Value));
             }
         }
 
@@ -63,7 +63,7 @@ namespace Planar.Service.API
                 if (updateTrigger == null) { continue; }
                 foreach (var data in oldTrigger.JobDataMap)
                 {
-                    updateTrigger.TriggerData.Upsert(data.Key, PlanarConvert.ToString(data.Value));
+                    updateTrigger.TriggerData.Put(data.Key, PlanarConvert.ToString(data.Value));
                 }
             }
         }

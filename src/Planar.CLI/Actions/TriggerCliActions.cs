@@ -134,12 +134,12 @@ namespace Planar.CLI.Actions
         }
 
         [Action("data")]
-        public static async Task<CliActionResponse> UpsertTriggerData(CliTriggerDataRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> PutTriggerData(CliTriggerDataRequest request, CancellationToken cancellationToken = default)
         {
             RestResponse result;
             switch (request.Action)
             {
-                case DataActions.Upsert:
+                case DataActions.Put:
                     var prm1 = new JobOrTriggerDataRequest
                     {
                         Id = request.Id,

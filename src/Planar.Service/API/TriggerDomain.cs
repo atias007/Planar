@@ -34,14 +34,14 @@ namespace Planar.Service.API
             await Scheduler.PauseJob(info.JobKey);
         }
 
-        public async Task UpsertData(JobOrTriggerDataRequest request, UpsertMode mode)
+        public async Task PutData(JobOrTriggerDataRequest request, PutMode mode)
         {
             var info = await GetTriggerDetailsForDataCommands(request.Id, request.DataKey);
             if (info.Trigger == null || info.JobDetails == null) { return; }
 
             if (info.Trigger.JobDataMap.ContainsKey(request.DataKey))
             {
-                if (mode == UpsertMode.Add)
+                if (mode == PutMode.Add)
                 {
                     throw new RestConflictException($"data with key '{request.DataKey}' already exists");
                 }
@@ -50,7 +50,7 @@ namespace Planar.Service.API
             }
             else
             {
-                if (mode == UpsertMode.Update)
+                if (mode == PutMode.Update)
                 {
                     throw new RestNotFoundException($"data with key '{request.DataKey}' not found");
                 }

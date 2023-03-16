@@ -155,14 +155,14 @@ namespace Planar.Controllers
         }
 
         [HttpPost("data")]
-        [SwaggerOperation(OperationId = "post_job_data", Description = "Update job data", Summary = "Update Job Data")]
+        [SwaggerOperation(OperationId = "post_job_data", Description = "Add job data", Summary = "Add Job Data")]
         [JsonConsumes]
         [CreatedResponse]
         [BadRequestResponse]
         [NotFoundResponse]
         public async Task<IActionResult> AddData([FromBody] JobOrTriggerDataRequest request)
         {
-            await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Add);
+            await BusinesLayer.PutData(request, JobDomain.PutMode.Add);
             return CreatedAtAction(nameof(Get), new { request.Id }, null);
         }
 
@@ -174,7 +174,7 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public async Task<IActionResult> UpdateData([FromBody] JobOrTriggerDataRequest request)
         {
-            await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Update);
+            await BusinesLayer.PutData(request, JobDomain.PutMode.Update);
             return CreatedAtAction(nameof(Get), new { request.Id }, null);
         }
 

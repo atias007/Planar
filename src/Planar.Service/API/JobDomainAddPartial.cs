@@ -59,7 +59,7 @@ namespace Planar.Service.API
             // Global Config
             var config = ConvertToGlobalConfig(request.GlobalConfig);
             await ValidateGlobalConfig(config);
-            await UpsertGlobalConfig(config);
+            await PutGlobalConfig(config);
 
             // Create Job (JobType+Concurent, JobGroup, JobName, Description, Durable)
             var job = BuildJobDetails(request, jobKey);
@@ -439,12 +439,12 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task UpsertGlobalConfig(IEnumerable<GlobalConfig> config)
+        private async Task PutGlobalConfig(IEnumerable<GlobalConfig> config)
         {
             var configDomain = Resolve<ConfigDomain>();
             foreach (var p in config)
             {
-                await configDomain.Upsert(p);
+                await configDomain.Put(p);
             }
         }
 

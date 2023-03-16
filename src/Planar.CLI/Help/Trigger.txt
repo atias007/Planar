@@ -9,7 +9,7 @@ the options for <command> and [<options>] parameters of trigger module:
  pause           <trigger id>
  resume          <trigger id>
  remove|delete   <trigger id>
- data            <trigger id> <upsert|remove|clear> [<key>] [<value>]
+ data            <trigger id> <put|remove> [<key>] [<value>]
  cronexpr        <cron expression>
  all-paused
 ------------------------------------------------------------------------------

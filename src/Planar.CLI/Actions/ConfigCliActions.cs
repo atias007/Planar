@@ -30,9 +30,9 @@ namespace Planar.CLI.Actions
             return await ExecuteTable<List<CliGlobalConfig>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
         }
 
-        [Action("upsert")]
+        [Action("put")]
         [Action("add")]
-        public static async Task<CliActionResponse> Upsert(CliConfigRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> Put(CliConfigRequest request, CancellationToken cancellationToken = default)
         {
             var data = new { request.Key, request.Value, Type = "string" };
             var restRequest = new RestRequest("config", Method.Post)
