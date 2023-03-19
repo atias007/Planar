@@ -1,5 +1,11 @@
 ![Logo](https://github.com/atias007/Planar/blob/437265e8b34d94e09bb81f1aa7d9b28103d3ed14/res/planar_logo_full.png)
+
 ***
+
+[![MIT license](https://img.shields.io/badge/License-MIT-blue.svg)](https://lbesson.mit-license.org/)
+[![NuGet latest version](https://badgen.net/nuget/v/Planar.Job)](https://www.nuget.org/packages/Planar.Job/)
+[![Ask Me Anything !](https://img.shields.io/badge/Ask%20me-anything-1abc9c.svg)](mailto:admin@planar.me)
+
 
 Planar is an enterprise scheduler service. 
 It’s providing peripheral tools and infrastructure to met all of schedule jobs needs (small to enterprise systems).\
