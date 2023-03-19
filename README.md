@@ -45,6 +45,14 @@ Docker is an open source [containerization](https://www.ibm.com/in-en/cloud/lear
 
 ![CLI welcome](https://github.com/atias007/Planar/blob/c7a1363de89e3d43eac18376230902534ded20d6/res/planar_cli_screenshot.jpg?raw=true)
 
+5. Run `trace ls` connad in Planar CLI to see list of logs
+6. Open http://localhost:2306 to get the api documentation. 
+7. Open http://localhost:2306/swagger to get swagger page
+
+### What next?
+
+Follow the Hello World Planar Job documatation to create, test, deploy & invoke your first planar job.
+
 ---
 [^1]: This may need to be run with sudo if docker and docker-compose aren't accessible by the user. 
 [^2]: If the image doesn't exist locally, this command downloads the necessary Docker image and starts the container.
