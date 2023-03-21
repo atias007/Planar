@@ -118,11 +118,11 @@ namespace Planar
                 throw new PlanarJobException($"type '{Properties.ClassName}' could not be found at assembly '{AssemblyFilename}'");
             }
 
-            var baseTypeName = type.BaseType?.FullName;
-            if (baseTypeName != $"{nameof(Planar)}.BaseJob")
-            {
-                throw new PlanarJobException($"type '{Properties.ClassName}' from assembly '{AssemblyFilename}' not inherit 'Planar.Job.BaseJob' type");
-            }
+            ////var baseTypeName = type.BaseType?.FullName;
+            ////if (baseTypeName != $"{nameof(Planar)}.BaseJob")
+            ////{
+            ////    throw new PlanarJobException($"type '{Properties.ClassName}' from assembly '{AssemblyFilename}' not inherit 'Planar.Job.BaseJob' type");
+            ////}
 
             var method = type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance);
             if (method == null)
