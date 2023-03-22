@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using CommonJob;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
@@ -473,6 +474,15 @@ namespace Planar.Service.API
 
             #endregion Mandatory
 
+            #region JobType
+
+            if (!BaseCommonJob.JobTypes.Contains(metadata.JobType))
+            {
+                throw new RestValidationException("job type", $"job type '{metadata.JobType}' is not supported");
+            }
+
+            #endregion JobType
+
             #region Valid Name & Group
 
             if (!IsRegexMatch(_regex, metadata.Name))
@@ -483,6 +493,11 @@ namespace Planar.Service.API
             if (!IsRegexMatch(_regex, metadata.Group))
             {
                 throw new RestValidationException("group", $"job group '{metadata.Group}' is invalid. use only alphanumeric, dashes & underscore");
+            }
+
+            if (Consts.PreserveGroupNames.Contains(metadata.Group))
+            {
+                throw new RestValidationException("group", $"job group '{metadata.Group}' is invalid (preserved value)");
             }
 
             #endregion Valid Name & Group
@@ -502,10 +517,7 @@ namespace Planar.Service.API
 
             #endregion Max Chars
 
-            if (Consts.PreserveGroupNames.Contains(metadata.Group))
-            {
-                throw new RestValidationException("group", $"job group '{metadata.Group}' is invalid (preserved value)");
-            }
+            #region JobData
 
             if (metadata.JobData != null && metadata.JobData.Any() && metadata.Concurrent)
             {
@@ -519,6 +531,8 @@ namespace Planar.Service.API
                     if (!Consts.IsDataKeyValid(item.Key)) throw new RestValidationException("key", $"job data key '{item.Key}' is invalid");
                 }
             }
+
+            #endregion JobData
 
             var triggersCount = metadata.CronTriggers?.Count + metadata.SimpleTriggers?.Count;
             if (triggersCount == 0 && metadata.Durable == false)
