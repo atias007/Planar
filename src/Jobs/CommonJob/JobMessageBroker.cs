@@ -15,7 +15,7 @@ namespace CommonJob
         private static readonly object Locker = new();
         private readonly IJobExecutionContext _context;
 
-        public JobMessageBroker(IJobExecutionContext context, Dictionary<string, string?> settings)
+        public JobMessageBroker(IJobExecutionContext context, IDictionary<string, string?> settings)
         {
             _context = context;
             var mapContext = MapContext(context, settings);
@@ -157,7 +157,7 @@ namespace CommonJob
             return result;
         }
 
-        private static JobExecutionContext MapContext(IJobExecutionContext context, Dictionary<string, string?> settings)
+        private static JobExecutionContext MapContext(IJobExecutionContext context, IDictionary<string, string?> settings)
         {
             var hasRetry = context.Trigger.JobDataMap.Contains(Consts.RetrySpan);
             bool? lastRetry = null;
@@ -168,7 +168,7 @@ namespace CommonJob
 
             var result = new JobExecutionContext
             {
-                JobSettings = settings,
+                JobSettings = new Dictionary<string, string?>(settings),
                 MergedJobDataMap = Global.ConvertDataMapToDictionary(context.MergedJobDataMap),
                 FireInstanceId = context.FireInstanceId,
                 FireTime = context.FireTimeUtc,
@@ -216,7 +216,7 @@ namespace CommonJob
             return result;
         }
 
-        private bool HasSettings(Dictionary<string, string?> settings, string key)
+        private bool HasSettings(IDictionary<string, string?> settings, string key)
         {
             if (settings == null) { return false; }
             if (settings.ContainsKey(key))
@@ -243,7 +243,7 @@ namespace CommonJob
             }
         }
 
-        private void SetLogLevel(Dictionary<string, string?> settings)
+        private void SetLogLevel(IDictionary<string, string?> settings)
         {
             if (HasSettings(settings, Consts.LogLevelSettingsKey1)) { return; }
             if (HasSettings(settings, Consts.LogLevelSettingsKey2)) { return; }

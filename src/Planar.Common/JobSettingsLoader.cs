@@ -12,7 +12,7 @@ namespace Planar.Common
         private const string EnvironmentPlaceholder = "{environment}";
         private static readonly string EnvironmntSettingsFilename = $"JobSettings.{EnvironmentPlaceholder}.yml";
 
-        public static Dictionary<string, string?> LoadJobSettings(string jobPath)
+        public static IDictionary<string, string?> LoadJobSettings(string jobPath)
         {
             // Load job global config
             var final = Global.GlobalConfig;
@@ -25,7 +25,9 @@ namespace Planar.Common
 
             var jobSettings = LoadJobSettingsFiles(location.FullName);
             final = final.Merge(jobSettings);
-            return final;
+
+            var result = new SortedDictionary<string, string?>(final);
+            return result;
         }
 
         private static Dictionary<string, string?> LoadJobSettingsFiles(string path)

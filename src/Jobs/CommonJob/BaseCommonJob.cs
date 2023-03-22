@@ -76,7 +76,7 @@ namespace CommonJob
             _messageBroker = new JobMessageBroker(context, settings);
         }
 
-        protected Dictionary<string, string?> LoadJobSettings(string? path)
+        protected IDictionary<string, string?> LoadJobSettings(string? path)
         {
             try
             {
