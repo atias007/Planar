@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using CommonJob;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
@@ -169,7 +170,7 @@ namespace Planar.Service.API
 
         public IEnumerable<string> GetJobFileTemplates()
         {
-            return new[] { "PlanarJob", "ProcessJob" };
+            return BaseCommonJob.JobTypes;
         }
 
         public string GetJobFileTemplate(string typeName)

@@ -1,7 +1,9 @@
--- Object:  Schema [Admin]    Script Date: 15/01/2023 0:44:07 ******/
-CREATE SCHEMA [Admin]
+IF NOT EXISTS ( SELECT  *
+                FROM    sys.schemas
+                WHERE   name = N'Admin' )
+    EXEC('CREATE SCHEMA [Admin]');
 GO
--- Object:  Table [dbo].[ClusterNodes]    Script Date: 15/01/2023 0:44:07 ******/
+
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON

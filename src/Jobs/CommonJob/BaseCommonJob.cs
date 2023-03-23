@@ -18,6 +18,8 @@ namespace CommonJob
         protected static readonly string? IgnoreDataMapAttribute = typeof(IgnoreDataMapAttribute).FullName;
         protected static readonly string? JobDataMapAttribute = typeof(JobDataAttribute).FullName;
         protected static readonly string? TriggerDataMapAttribute = typeof(TriggerDataAttribute).FullName;
+
+        public static IEnumerable<string> JobTypes => new[] { "PlanarJob", "ProcessJob" };
     }
 
     public abstract class BaseCommonJob<TInstance, TProperties> : BaseCommonJob, IJob
@@ -76,7 +78,7 @@ namespace CommonJob
             _messageBroker = new JobMessageBroker(context, settings);
         }
 
-        protected Dictionary<string, string?> LoadJobSettings(string? path)
+        protected IDictionary<string, string?> LoadJobSettings(string? path)
         {
             try
             {

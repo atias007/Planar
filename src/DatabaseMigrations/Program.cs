@@ -299,7 +299,6 @@ namespace DatabaseMigrations
                     break;
 
                 case RunningMode.Execute:
-                    Validate(assembly);
                     if (_status != Status.Success)
                     {
                         AssertStatus();
