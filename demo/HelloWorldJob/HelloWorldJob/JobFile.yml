@@ -1,0 +1,15 @@
+﻿job type: PlanarJob
+name: HelloWorld
+group: Demos
+author: Jon Doh
+description: Demonstrate running planar job
+concurrent: false
+
+properties:
+  path: HelloWorld
+  filename: HelloWorldJob.dll
+  class name: HelloWorldJob.Job
+
+simple triggers:
+  - name: every-5minutes
+    interval: 00:05:00
