@@ -151,7 +151,7 @@ namespace Planar.CLI
                     object? param;
                     using (var scope = new TokenManagerScope())
                     {
-                        param = cliArgument.GetRequest(action.RequestType, action, TokenManagerScope.Token);
+                        param = cliArgument.GetRequest(action, TokenManagerScope.Token);
                     }
 
                     var itMode = param is IIterative itParam && itParam.Iterative;
@@ -458,7 +458,7 @@ namespace Planar.CLI
             var cliActions = BaseCliAction.GetAllActions();
 
 #if DEBUG
-            var md = CliHelpGenerator.GetHelpMD(cliActions);
+            //// var md = CliHelpGenerator.GetHelpMD(cliActions);
 #endif
 
             ServiceCliActions.InitializeLogin();

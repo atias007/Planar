@@ -44,5 +44,8 @@ namespace Planar.API.Common.Entities
 
         [YamlMember(Order = 999)]
         public int Progress { get; set; }
+
+        [YamlMember(Order = 1000)]
+        public TimeSpan? EstimatedEndTime { get; set; }
     }
 }

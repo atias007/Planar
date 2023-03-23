@@ -203,6 +203,12 @@ namespace Planar.Service.API
         public async Task<LastInstanceId> GetLastInstanceId(string id, DateTime invokeDate)
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
+
+            if (Helpers.JobKeyHelper.IsSystemJobKey(jobKey))
+            {
+                throw new RestValidationException("id", "this is system job and it does not have instance id");
+            }
+
             var dal = Resolve<HistoryData>();
             var result = await dal.GetLastInstanceId(jobKey, invokeDate);
             return result;
@@ -278,6 +284,8 @@ namespace Planar.Service.API
                 }
             }
 
+            FillEstimatedEndTime(result);
+
             return result;
         }
 
@@ -293,6 +301,8 @@ namespace Planar.Service.API
             {
                 throw new RestNotFoundException();
             }
+
+            FillEstimatedEndTime(result);
 
             return result;
         }
@@ -519,6 +529,22 @@ namespace Planar.Service.API
             target.RequestsRecovery = source.RequestsRecovery;
             target.DataMap = Global.ConvertDataMapToDictionary(dataMap);
             target.Properties = await DataLayer.GetJobProperty(target.Id);
+        }
+
+        private void FillEstimatedEndTime(List<RunningJobDetails> runningJobs)
+        {
+            foreach (var item in runningJobs)
+            {
+                FillEstimatedEndTime(item);
+            }
+        }
+
+        private void FillEstimatedEndTime(RunningJobDetails runningJob)
+        {
+            if (runningJob.Progress < 1) { return; }
+            var factor = 100 - runningJob.Progress;
+            var ms = (runningJob.RunTime.TotalMilliseconds / runningJob.Progress) * factor;
+            runningJob.EstimatedEndTime = TimeSpan.FromMilliseconds(ms);
         }
     }
 }

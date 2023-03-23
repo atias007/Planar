@@ -17,7 +17,7 @@ namespace Planar.CLI
 {
     public class CliArgumentsUtil
     {
-        private const string RegexTemplate = "^[1-9][0-9]*$";
+        private const string RegexTemplate = "^[1-9][0-9]{0,8}$";
         private static readonly Regex _historyRegex = new(RegexTemplate, RegexOptions.Compiled, TimeSpan.FromSeconds(2));
 
         public CliArgumentsUtil(string[] args)
@@ -55,9 +55,11 @@ namespace Planar.CLI
             CliArguments = list.Where(l => l.Key != null).ToList();
         }
 
-        public List<CliArgument> CliArguments { get; set; } = new List<CliArgument>();
+        public List<CliArgument> CliArguments { get; set; }
 
         public string Command { get; set; }
+
+        public string? OutputFile { get; set; }
 
         public bool HasIterativeArgument
         {
@@ -128,14 +130,16 @@ namespace Planar.CLI
             }
 
             args = list.ToArray();
+
             return action;
         }
 
-        public object? GetRequest(Type type, CliActionMetadata action, CancellationToken cancellationToken)
+        public object? GetRequest(CliActionMetadata action, CancellationToken cancellationToken)
         {
             if (!CliArguments.Any() && action.AllowNullRequest) { return null; }
+            if (action.RequestType == null) { return null; }
 
-            var result = Activator.CreateInstance(type);
+            var result = Activator.CreateInstance(action.RequestType);
             var defaultProps = action.Arguments.Where(p => p.Default);
             var startDefaultOrder = defaultProps.Any() ? defaultProps.Min(p => p.DefaultOrder) : -1;
 

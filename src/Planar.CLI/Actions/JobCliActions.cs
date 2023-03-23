@@ -756,6 +756,7 @@ namespace Planar.CLI.Actions
                 instanceId = await GetLastInstanceId(request.Id, invokeDate, cancellationToken);
                 if (!instanceId.IsSuccessful)
                 {
+                    AnsiConsole.WriteLine();
                     response.Response = new CliActionResponse(instanceId);
                     return response;
                 }
