@@ -8,7 +8,9 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
@@ -172,11 +174,33 @@ namespace Planar.CLI.Actions
                 request = wrapper.Request;
             }
 
+            var output = !string.IsNullOrEmpty(request.OutputFilename);
+
+            if (!output && Path.GetInvalidFileNameChars().Any(c => request.OutputFilename != null && request.OutputFilename.Contains(c)))
+            {
+                throw new CliValidationException($"output filename '{request.OutputFilename}' is invalid");
+            }
+
             var restRequest = new RestRequest("job/jobfile/{name}", Method.Get)
                 .AddUrlSegment("name", request.Name);
 
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
+
+            if (result.IsSuccessStatusCode && output)
+            {
+                var filename = request.OutputFilename ?? string.Empty;
+                if (!filename.Contains('.')) { filename = $"{filename}.yml"; }
+                await SaveData(result.Data, filename, cancellationToken);
+                return new CliActionResponse(result, message: $"file '{new FileInfo(filename).FullName}' created");
+            }
+
             return new CliActionResponse(result, message: result.Data);
+        }
+
+        private static async Task SaveData(string? content, string filename, CancellationToken cancellationToken)
+        {
+            if (filename == null) { return; }
+            await File.AppendAllTextAsync(filename, content, cancellationToken);
         }
 
         [Action("jobfiles")]
