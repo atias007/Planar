@@ -1,10 +1,12 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Google.Protobuf.WellKnownTypes;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Service.Data;
 using Quartz;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace Planar.Service.SystemJobs
 {
@@ -55,6 +57,32 @@ namespace Planar.Service.SystemJobs
             {
                 _logger.LogError(ex, "Fail to set max duration execution");
             }
+
+            try
+            {
+                var data = _serviceProvider.GetRequiredService<StatisticsData>();
+                var rows = await data.BuildJobStatistics();
+                _logger.LogDebug("statistics job execute {Method} with {Total} effected row(s)", nameof(data.BuildJobStatistics), rows);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to build job statistics execution");
+            }
+        }
+
+        private static double GetZScore(double value, double avg, double stdev)
+        {
+            return (value - avg) / stdev;
+        }
+
+        private static double GetZScore(int value, double avg, double stdev)
+        {
+            return GetZScore(value * 1.0, avg, stdev);
+        }
+
+        private static bool IsOutlier(double zscore)
+        {
+            return zscore > 1.96 || zscore < -1.96;
         }
     }
 }

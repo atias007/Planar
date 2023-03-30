@@ -28,6 +28,7 @@ namespace Planar.CLI
             var list = new List<CliArgument>();
             for (int i = 2; i < args.Length; i++)
             {
+                if (args[i] == ">") { args[i] = "--output"; }
                 list.Add(new CliArgument { Key = args[i] });
             }
 

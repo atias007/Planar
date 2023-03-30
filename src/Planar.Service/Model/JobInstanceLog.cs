@@ -53,5 +53,6 @@ namespace Planar.Service.Model
         public string? Exception { get; set; }
         public bool Retry { get; set; }
         public bool IsStopped { get; set; }
+        public bool? Anomaly { get; set; }
     }
 }

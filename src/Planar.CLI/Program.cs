@@ -9,9 +9,11 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.CLI
@@ -181,7 +183,7 @@ namespace Planar.CLI
                     }
                 }
 
-                HandleCliResponse(response);
+                HandleCliResponse(response).Wait();
             }
             catch (Exception ex)
             {
@@ -191,7 +193,7 @@ namespace Planar.CLI
             return cliArgument;
         }
 
-        private static void HandleCliResponse(CliActionResponse? response)
+        private static async Task HandleCliResponse(CliActionResponse? response)
         {
             if (response == null) { return; }
             if (response.Response == null) { return; }
@@ -204,7 +206,7 @@ namespace Planar.CLI
                 }
                 else
                 {
-                    WriteInfo(response.Message);
+                    await WriteInfo(response);
                 }
             }
             else
@@ -243,7 +245,7 @@ namespace Planar.CLI
                 HandleExceptionSafe(finaleException.InnerException);
             }
 
-            if (string.IsNullOrEmpty(finaleException.Message) == false)
+            if (!string.IsNullOrEmpty(finaleException.Message))
             {
                 if (finaleException is CliWarningException)
                 {
@@ -488,13 +490,30 @@ namespace Planar.CLI
                 ExceptionFormats.ShortenMethods | ExceptionFormats.ShowLinks);
         }
 
-        private static void WriteInfo(string? message)
+        private static async Task WriteInfo(CliActionResponse response)
         {
-            if (string.IsNullOrEmpty(message) == false) { message = message.Trim(); }
+            var message = response.Message;
+            if (!string.IsNullOrEmpty(message)) { message = message.Trim(); }
             if (message == "[]") { message = null; }
             if (string.IsNullOrEmpty(message)) { return; }
 
-            AnsiConsole.WriteLine(message);
+            if (response.OutputFilename == null)
+            {
+                AnsiConsole.WriteLine(message);
+            }
+            else
+            {
+                var filename = response.OutputFilename ?? string.Empty;
+                if (!filename.Contains('.')) { filename = $"{filename}.txt"; }
+                await SaveData(message, filename);
+                AnsiConsole.WriteLine($"file '{new FileInfo(filename).FullName}' created");
+            }
+        }
+
+        private static async Task SaveData(string? content, string filename)
+        {
+            if (filename == null) { return; }
+            await File.AppendAllTextAsync(filename, content);
         }
     }
 }

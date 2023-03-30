@@ -1,9 +1,9 @@
-﻿using Planar.Common;
+﻿using Planar.CLI.Entities;
+using Planar.Common;
 using RestSharp;
 using Spectre.Console;
 using System.Collections.Generic;
 using System.Net;
-using YamlDotNet.Serialization;
 
 namespace Planar.CLI
 {
@@ -37,15 +37,26 @@ namespace Planar.CLI
             Tables = new List<Table> { table };
         }
 
+        public CliActionResponse(CliOutputFilenameRequest request, RestResponse<string> response)
+            : this(response, message: response.Data)
+        {
+            if (request.HasOutputFilename)
+            {
+                OutputFilename = request.OutputFilename;
+            }
+        }
+
         public CliActionResponse(RestResponse? response, List<Table> tables)
             : this(response)
         {
             Tables = tables;
         }
 
-        public RestResponse Response { get; private set; } = new();
+        public RestResponse Response { get; private set; }
 
         public string? Message { get; private set; }
+
+        public string? OutputFilename { get; private set; }
 
         public List<Table>? Tables { get; private set; }
 

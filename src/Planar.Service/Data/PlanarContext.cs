@@ -23,6 +23,7 @@ namespace Planar.Service.Data
         public virtual DbSet<Group> Groups { get; set; } = null!;
         public virtual DbSet<JobInstanceLog> JobInstanceLogs { get; set; } = null!;
         public virtual DbSet<JobProperty> JobProperties { get; set; } = null!;
+        public virtual DbSet<JobStatistic> JobStatistics { get; set; } = null!;
         public virtual DbSet<MonitorAction> MonitorActions { get; set; } = null!;
         public virtual DbSet<Role> Roles { get; set; } = null!;
         public virtual DbSet<Trace> Traces { get; set; } = null!;

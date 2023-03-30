@@ -49,5 +49,15 @@ namespace Planar.Service.Data
 
             return await conn.ExecuteAsync(cmd);
         }
+
+        public async Task<int> BuildJobStatistics()
+        {
+            using var conn = _context.Database.GetDbConnection();
+            var cmd = new CommandDefinition(
+                commandText: "Statistics.BuildJobStatistics",
+                commandType: CommandType.StoredProcedure);
+
+            return await conn.ExecuteAsync(cmd);
+        }
     }
 }

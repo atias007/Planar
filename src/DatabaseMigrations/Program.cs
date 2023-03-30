@@ -239,9 +239,9 @@ namespace DatabaseMigrations
             }
 
 #if DEBUG
-            var environment = RunningEnvironment.Test;
-#else
             var environment = RunningEnvironment.Local;
+#else
+            var environment = RunningEnvironment.Test;
 #endif
             var connectionString = GetConnectionString(environment);
 
