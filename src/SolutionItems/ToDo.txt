@@ -143,4 +143,4 @@ V 1.2.1
 - feature: cli job stop --> instance id is required
 - add estimated end run
 - do not allow to 'job test' system jobs
-- add option to save cli jobfile command output
+- add option to save cli command output

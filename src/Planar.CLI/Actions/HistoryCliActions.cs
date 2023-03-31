@@ -20,7 +20,7 @@ namespace Planar.CLI.Actions
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<CliJobInstanceLog>(restRequest, cancellationToken);
-            return new CliActionResponse(result, serializeObj: result.Data);
+            return new CliActionResponse(result, serializeObj: result.Data, request);
         }
 
         [Action("ls")]
@@ -77,7 +77,7 @@ namespace Planar.CLI.Actions
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
-            return new CliActionResponse(result, serializeObj: result.Data);
+            return new CliActionResponse(result, serializeObj: result.Data, request);
         }
 
         [Action("log")]
@@ -87,7 +87,7 @@ namespace Planar.CLI.Actions
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
-            return new CliActionResponse(result, serializeObj: result.Data);
+            return new CliActionResponse(result, serializeObj: result.Data, request);
         }
 
         [Action("ex")]
@@ -97,7 +97,7 @@ namespace Planar.CLI.Actions
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
-            return new CliActionResponse(result, serializeObj: result.Data);
+            return new CliActionResponse(result, serializeObj: result.Data, request);
         }
 
         [Action("last")]

@@ -20,6 +20,6 @@ namespace Planar.CLI.Entities
             }
         }
 
-        public bool HasOutputFilename => !string.IsNullOrEmpty(OutputFilename);
+        internal bool HasOutputFilename => !string.IsNullOrEmpty(OutputFilename);
     }
 }

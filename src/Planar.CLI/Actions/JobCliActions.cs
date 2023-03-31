@@ -181,7 +181,7 @@ namespace Planar.CLI.Actions
 
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
 
-            return new CliActionResponse(request, result);
+            return new CliActionResponse(result, result.Data, request);
         }
 
         [Action("jobfiles")]
