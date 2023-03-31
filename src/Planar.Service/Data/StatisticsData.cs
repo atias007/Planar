@@ -1,7 +1,9 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Planar.Service.Model;
+using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Service.Data
@@ -58,6 +60,29 @@ namespace Planar.Service.Data
                 commandType: CommandType.StoredProcedure);
 
             return await conn.ExecuteAsync(cmd);
+        }
+
+        public async Task<IEnumerable<JobStatistic>> GetJobStatistics()
+        {
+            return await _context.JobStatistics
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public IQueryable<JobInstanceLog> GetNullAnomaly()
+        {
+            return _context.JobInstanceLogs
+                .AsNoTracking()
+                .Where(j => j.Anomaly == null);
+        }
+
+        public void SetAnomaly(IEnumerable<JobInstanceLog> logs)
+        {
+            foreach (var log in logs)
+            {
+                _context.Attach(log);
+                _context.Entry(log).Property(l => l.Anomaly).IsModified = true;
+            }
         }
     }
 }
