@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Service.Data;
@@ -85,6 +86,19 @@ namespace Planar.Service.SystemJobs
             }
         }
 
+        private void SafeSetStatisticsCache(IEnumerable<JobStatistic> statistics)
+        {
+            try
+            {
+                var cache = _serviceProvider.GetRequiredService<IMemoryCache>();
+                cache.Set(nameof(StatisticsData.GetJobStatistics), statistics, TimeSpan.FromMinutes(65));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"fail to save statistics cache while running system job: {nameof(StatisticsJob)}");
+            }
+        }
+
         private async Task<int> FillAnomaly()
         {
             var data = _serviceProvider.GetRequiredService<StatisticsData>();
@@ -93,6 +107,7 @@ namespace Planar.Service.SystemJobs
             var mapper = config.CreateMapper();
             var logs = await mapper.ProjectTo<JobInstanceLogForStatistics>(logsQuery).ToListAsync();
             var statistics = await data.GetJobStatistics();
+            SafeSetStatisticsCache(statistics);
 
             foreach (var item in logs)
             {

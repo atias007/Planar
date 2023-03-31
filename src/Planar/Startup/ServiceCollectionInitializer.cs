@@ -42,6 +42,7 @@ namespace Planar.Startup
                 });
             }
 
+            services.AddMemoryCache();
             services.AddPlanarServices();
             services.AddGrpc();
         }

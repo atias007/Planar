@@ -1,6 +1,5 @@
 using NUnit.Framework;
 using Planar.Service.General.Password;
-using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -16,6 +15,8 @@ namespace Planar.Test
         [Test]
         public void TestPassword()
         {
+            //// var x = Normal.InvCDF(0, 1, 0.975);
+
             var password = PasswordGenerator.GeneratePassword(
                new PasswordGeneratorBuilder()
                .IncludeLowercase()
