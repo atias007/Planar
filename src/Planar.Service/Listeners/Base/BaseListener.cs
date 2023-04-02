@@ -24,7 +24,9 @@ namespace Planar.Service.Listeners.Base
             _logger = logger;
         }
 
-        protected async Task SafeSystemScan(MonitorEvents @event, MonitorSystemInfo details, Exception exception = default)
+        protected IServiceScopeFactory ServiceScopeFactory => _serviceScopeFactory;
+
+        protected async Task SafeSystemScan(MonitorEvents @event, MonitorSystemInfo details, Exception? exception = default)
         {
             try
             {
@@ -45,7 +47,7 @@ namespace Planar.Service.Listeners.Base
             }
         }
 
-        protected async Task SafeScan(MonitorEvents @event, IJobExecutionContext context, Exception exception = default)
+        protected async Task SafeScan(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
         {
             try
             {
@@ -91,6 +93,46 @@ namespace Planar.Service.Listeners.Base
             }
         }
 
+        protected async Task<TResponse> ExecuteDal<TDataLayer, TResponse>(Expression<Func<TDataLayer, Task<TResponse>>> exp)
+            where TDataLayer : BaseDataLayer
+        {
+            try
+            {
+                using var scope = _serviceScopeFactory.CreateScope();
+                var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
+                return await exp.Compile().Invoke(dal);
+            }
+            catch (ObjectDisposedException)
+            {
+                return await ExecuteDalOnObjectDisposedException(exp);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, $"Error initialize/Execute DataLayer at {nameof(BaseListener<T>)}");
+                throw;
+            }
+        }
+
+        protected void ExecuteDal<TDataLayer>(Expression<Action<TDataLayer>> exp)
+            where TDataLayer : BaseDataLayer
+        {
+            try
+            {
+                using var scope = _serviceScopeFactory.CreateScope();
+                var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
+                exp.Compile().Invoke(dal);
+            }
+            catch (ObjectDisposedException)
+            {
+                ExecuteDalOnObjectDisposedException(exp);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, $"Error initialize/Execute DataLayer at {nameof(BaseListener<T>)}");
+                throw;
+            }
+        }
+
         private async Task ExecuteDalOnObjectDisposedException<TDataLayer>(Expression<Func<TDataLayer, Task>> exp)
             where TDataLayer : BaseDataLayer
         {
@@ -102,6 +144,44 @@ namespace Planar.Service.Listeners.Base
                 using var scope = provider.CreateScope();
                 var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
                 await exp.Compile().Invoke(dal);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, $"Error initialize/Execute DataLayer at {nameof(BaseListener<T>)}");
+                throw;
+            }
+        }
+
+        private async Task<TResponse> ExecuteDalOnObjectDisposedException<TDataLayer, TResponse>(Expression<Func<TDataLayer, Task<TResponse>>> exp)
+            where TDataLayer : BaseDataLayer
+        {
+            try
+            {
+                var services = new ServiceCollection();
+                services.AddPlanarDataLayerWithContext();
+                var provider = services.BuildServiceProvider();
+                using var scope = provider.CreateScope();
+                var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
+                return await exp.Compile().Invoke(dal);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, $"Error initialize/Execute DataLayer at {nameof(BaseListener<T>)}");
+                throw;
+            }
+        }
+
+        private void ExecuteDalOnObjectDisposedException<TDataLayer>(Expression<Action<TDataLayer>> exp)
+            where TDataLayer : BaseDataLayer
+        {
+            try
+            {
+                var services = new ServiceCollection();
+                services.AddPlanarDataLayerWithContext();
+                var provider = services.BuildServiceProvider();
+                using var scope = provider.CreateScope();
+                var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
+                exp.Compile().Invoke(dal);
             }
             catch (Exception ex)
             {

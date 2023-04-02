@@ -4,6 +4,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Service.Data;
+using Planar.Service.General;
 using Planar.Service.MapperProfiles;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
@@ -86,17 +87,54 @@ namespace Planar.Service.SystemJobs
             }
         }
 
-        private void SafeSetStatisticsCache(IEnumerable<JobStatistic> statistics)
+        private async Task<JobStatistics> SafeSetStatisticsCache()
         {
+            var task1 = SafeSetDurationStatisticsCache();
+            var task2 = SafeSetEffectedRowsStatisticsCache();
+            var result = new JobStatistics
+            {
+                JobDurationStatistics = await task1,
+                JobEffectedRowsStatistic = await task2,
+            };
+
+            return result;
+        }
+
+        private async Task<IEnumerable<JobDurationStatistic>> SafeSetDurationStatisticsCache()
+        {
+            IEnumerable<JobDurationStatistic> statistics = new List<JobDurationStatistic>();
             try
             {
+                var data = _serviceProvider.GetRequiredService<StatisticsData>();
+                statistics = await data.GetJobDurationStatistics();
                 var cache = _serviceProvider.GetRequiredService<IMemoryCache>();
-                cache.Set(nameof(StatisticsData.GetJobStatistics), statistics, TimeSpan.FromMinutes(65));
+                cache.Set(nameof(StatisticsData.GetJobDurationStatistics), statistics, StatisticsUtil.DefaultCacheSpan);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"fail to save statistics cache while running system job: {nameof(StatisticsJob)}");
+                _logger.LogError(ex, $"fail to save job duration statistics cache while running system job: {nameof(StatisticsJob)}");
             }
+
+            return statistics;
+        }
+
+        private async Task<IEnumerable<JobEffectedRowsStatistic>> SafeSetEffectedRowsStatisticsCache()
+        {
+            IEnumerable<JobEffectedRowsStatistic> statistics = new List<JobEffectedRowsStatistic>();
+
+            try
+            {
+                var data = _serviceProvider.GetRequiredService<StatisticsData>();
+                statistics = await data.GetJobEffectedRowsStatistics();
+                var cache = _serviceProvider.GetRequiredService<IMemoryCache>();
+                cache.Set(nameof(StatisticsData.GetJobEffectedRowsStatistics), statistics, StatisticsUtil.DefaultCacheSpan);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"fail to save job duration statistics cache while running system job: {nameof(StatisticsJob)}");
+            }
+
+            return statistics;
         }
 
         private async Task<int> FillAnomaly()
@@ -106,86 +144,20 @@ namespace Planar.Service.SystemJobs
             var config = new MapperConfiguration(cfg => cfg.AddProfile<JobInstanceLogForStatisticsProfile>());
             var mapper = config.CreateMapper();
             var logs = await mapper.ProjectTo<JobInstanceLogForStatistics>(logsQuery).ToListAsync();
-            var statistics = await data.GetJobStatistics();
-            SafeSetStatisticsCache(statistics);
+            var statistics = await SafeSetStatisticsCache();
 
             foreach (var item in logs)
             {
-                if (item.Status == -1) { continue; }
-
-                if (item.IsStopped || item.Status == 1)
-                {
-                    item.Anomaly = true;
-                    continue;
-                }
-
-                var durationAnomaly = IsDurationAnomaly(item, statistics);
-                if (durationAnomaly)
-                {
-                    item.Anomaly = true;
-                    continue;
-                }
-
-                var effectedRowsAnomaly = IsEffectedRowsAnomaly(item, statistics);
-                if (effectedRowsAnomaly)
-                {
-                    item.Anomaly = true;
-                    continue;
-                }
-
-                item.Anomaly = false;
+                StatisticsUtil.SetAnomaly(item, statistics);
             }
 
             var notNullLogs = logs.Where(l => l.Anomaly != null).ToList();
-            var logsToSave = mapper.Map<IEnumerable<JobInstanceLog>>(notNullLogs);
+            var logsToSave = mapper.Map<IEnumerable<JobInstanceLog>>(notNullLogs)
+                .Where(l => l.Anomaly != null);
+
             data.SetAnomaly(logsToSave);
             await data.SaveChangesAsync();
             return logs.Count;
-        }
-
-        private static decimal GetZScore(decimal value, decimal avg, decimal stdev)
-        {
-            return (value - avg) / stdev;
-        }
-
-        private static decimal GetZScore(int value, decimal avg, decimal stdev)
-        {
-            var decValue = Convert.ToDecimal(value);
-            return GetZScore(decValue, avg, stdev);
-        }
-
-        private static bool IsOutlier(decimal zscore, decimal lowerBound = -1.96M, decimal upperBound = 1.96M)
-        {
-            return zscore > upperBound || zscore < lowerBound;
-        }
-
-        private static bool IsDurationAnomaly(JobInstanceLogForStatistics? log, IEnumerable<JobStatistic> statistics)
-        {
-            if (log == null) { return false; }
-
-            var stat = statistics.FirstOrDefault(j => j.JobId == log.JobId);
-            if (stat == null) { return false; }
-
-            var duration = log.Duration.GetValueOrDefault();
-            var durationScore = GetZScore(duration, stat.AvgDuration, stat.StdevDuration);
-            var durationAnomaly = IsOutlier(durationScore);
-            return durationAnomaly;
-        }
-
-        private static bool IsEffectedRowsAnomaly(JobInstanceLogForStatistics? log, IEnumerable<JobStatistic> statistics)
-        {
-            if (log == null) { return false; }
-
-            var stat = statistics.FirstOrDefault(j => j.JobId == log.JobId);
-            if (stat == null) { return false; }
-            if (stat.AvgEffectedRows == null) { return false; }
-            if (stat.StdevEffectedRows == null) { return false; }
-            if (stat.StdevEffectedRows == 0) { return false; }
-
-            var effectedRows = log.EffectedRows.GetValueOrDefault();
-            var effectedRowsScore = GetZScore(effectedRows, stat.AvgEffectedRows.Value, stat.StdevEffectedRows.Value);
-            var durationAnomaly = IsOutlier(effectedRowsScore);
-            return durationAnomaly;
         }
     }
 }

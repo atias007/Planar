@@ -98,6 +98,10 @@ namespace Planar.Service.API
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
             var info = await Scheduler.GetJobDetail(jobKey);
+            if (info == null)
+            {
+                throw new RestNotFoundException($"job with key {jobKey.Group}.{jobKey.Name} does not exist");
+            }
 
             var result = new JobDetails();
             await MapJobDetails(info, result);
@@ -116,6 +120,7 @@ namespace Planar.Service.API
             foreach (var jobKey in await GetJobKeys(request.Filter))
             {
                 var info = await Scheduler.GetJobDetail(jobKey);
+                if (info == null) { continue; }
                 var details = new JobRowDetails();
                 SchedulerUtil.MapJobRowDetails(info, details);
                 result.Add(details);
@@ -422,6 +427,15 @@ namespace Planar.Service.API
             {
                 Logger.LogError(ex, "Fail to delete monitor after delete job id {Id}", id);
             }
+
+            try
+            {
+                await DeleteJobStatistics(jobId);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Fail to delete job statistics after delete job id {Id}", id);
+            }
         }
 
         public async Task Resume(JobOrTriggerKey request)
@@ -467,6 +481,15 @@ namespace Planar.Service.API
             {
                 await dal.DeleteMonitorByJobGroup(jobKey.Group);
             }
+        }
+
+        private async Task DeleteJobStatistics(string jobId)
+        {
+            var dal = Resolve<StatisticsData>();
+            var s1 = new JobDurationStatistic { JobId = jobId };
+            await dal.DeleteJobStatistic(s1);
+            var s2 = new JobEffectedRowsStatistic { JobId = jobId };
+            await dal.DeleteJobStatistic(s2);
         }
 
         private async Task<IReadOnlyCollection<JobKey>> GetJobKeys(AllJobsMembers members)
@@ -518,7 +541,7 @@ namespace Planar.Service.API
             return allGroups.Contains(jobGroup);
         }
 
-        private async Task MapJobDetails(IJobDetail source, JobDetails target, JobDataMap dataMap = null)
+        private async Task MapJobDetails(IJobDetail source, JobDetails target, JobDataMap? dataMap = null)
         {
             dataMap ??= source.JobDataMap;
 
@@ -531,7 +554,7 @@ namespace Planar.Service.API
             target.Properties = await DataLayer.GetJobProperty(target.Id);
         }
 
-        private void FillEstimatedEndTime(List<RunningJobDetails> runningJobs)
+        private static void FillEstimatedEndTime(List<RunningJobDetails> runningJobs)
         {
             foreach (var item in runningJobs)
             {
@@ -539,7 +562,7 @@ namespace Planar.Service.API
             }
         }
 
-        private void FillEstimatedEndTime(RunningJobDetails runningJob)
+        private static void FillEstimatedEndTime(RunningJobDetails runningJob)
         {
             if (runningJob.Progress < 1) { return; }
             var factor = 100 - runningJob.Progress;

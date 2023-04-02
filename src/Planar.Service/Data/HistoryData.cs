@@ -165,6 +165,16 @@ namespace Planar.Service.Data
             await _context.Database.GetDbConnection().ExecuteAsync(cmd);
         }
 
+        public async Task SetAnomaly(object parameters)
+        {
+            var cmd = new CommandDefinition(
+                commandText: "dbo.UpdateJobInstanceLogAnomaly",
+                commandType: CommandType.StoredProcedure,
+                parameters: parameters);
+
+            await _context.Database.GetDbConnection().ExecuteAsync(cmd);
+        }
+
         public async Task PersistJobInstanceData(JobInstanceLog log)
         {
             var parameters = new
@@ -192,7 +202,7 @@ namespace Planar.Service.Data
             await _context.Database.ExecuteSqlRawAsync($"dbo.SetJobInstanceLogStatus @InstanceId,  @Status, @StatusTitle", paramInstanceId, paramStatus, paramTitle);
         }
 
-        public async Task<LastInstanceId> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime)
+        public async Task<LastInstanceId?> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime)
         {
             var result = await _context.JobInstanceLogs
                 .Where(l => l.JobName == jobKey.Name && l.JobGroup == jobKey.Group && l.StartDate >= invokeDateTime && l.TriggerId == Consts.ManualTriggerId)

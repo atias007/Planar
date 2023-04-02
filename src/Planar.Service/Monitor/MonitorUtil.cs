@@ -41,9 +41,15 @@ namespace Planar.Service.Monitor
             missingHooks.ForEach(h => _logger.LogWarning("Monitor with hook '{Hook}' is invalid. Missing hook in service", h));
         }
 
-        internal async Task Scan(MonitorEvents @event, IJobExecutionContext context, Exception exception = default)
+        internal async Task Scan(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
         {
-            if (context != null && context.JobDetail.Key.Group.StartsWith(Consts.PlanarSystemGroup))
+            if (context == null)
+            {
+                _logger.LogWarning($"IJobExecutionContext is null in {nameof(MonitorUtil)}.{nameof(MonitorUtil.Scan)}. Scan skipped");
+                return;
+            }
+
+            if (context.JobDetail.Key.Group.StartsWith(Consts.PlanarSystemGroup))
             {
                 return;
             }
@@ -77,7 +83,7 @@ namespace Planar.Service.Monitor
             }
         }
 
-        internal async Task Scan(MonitorEvents @event, MonitorSystemInfo info, Exception exception = default)
+        internal async Task Scan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default)
         {
             List<MonitorAction> items;
             var hookTasks = new List<Task>();
@@ -108,7 +114,7 @@ namespace Planar.Service.Monitor
             }
         }
 
-        internal async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception exception)
+        internal async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception? exception)
         {
             try
             {
@@ -138,7 +144,7 @@ namespace Planar.Service.Monitor
             }
         }
 
-        internal async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception exception)
+        internal async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception? exception)
         {
             try
             {
@@ -213,7 +219,7 @@ namespace Planar.Service.Monitor
             // ****** ATTENTION: any changes should reflect in TestJobExecutionContext ******
         }
 
-        private static MonitorSystemDetails GetMonitorDetails(MonitorAction action, MonitorSystemInfo details, Exception exception)
+        private static MonitorSystemDetails GetMonitorDetails(MonitorAction action, MonitorSystemInfo details, Exception? exception)
         {
             var result = new MonitorSystemDetails
             {
@@ -233,7 +239,7 @@ namespace Planar.Service.Monitor
             return result;
         }
 
-        private static void FillMonitor(Monitor monitor, MonitorAction action, Exception exception)
+        private static void FillMonitor(Monitor monitor, MonitorAction action, Exception? exception)
         {
             monitor.EventId = action.EventId;
             monitor.EventTitle = ((MonitorEvents)action.EventId).ToString();

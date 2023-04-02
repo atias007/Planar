@@ -3,7 +3,8 @@ AS
 
 BEGIN TRANSACTION
 
-TRUNCATE TABLE [Statistics].[JobStatistics]
+TRUNCATE TABLE [Statistics].[JobDurationStatistics]
+TRUNCATE TABLE [Statistics].[JobEffectedRowsStatistics]
 ;
 WITH CTEDuration
 AS
@@ -13,45 +14,63 @@ AS
 	WHERE 
 		[Status] = 0 
 		AND [IsStopped] = 0
-		AND ([Anomaly] IS NULL OR [Anomaly] = 0)
+		AND [Anomaly] = 0
 	GROUP BY [JobId]
-),
-CTEEffectedRows
+)
+
+INSERT INTO [Statistics].[JobDurationStatistics]
+           ([JobId]
+           ,[AvgDuration]
+           ,[StdevDuration]
+		   ,[Rows])
+
+SELECT 
+	[JobId], 
+	[AvgDuration], 
+	[StdevDuration],
+	[Rows]
+FROM
+	CTEDuration
+WHERE
+	[Rows] > 30 AND
+	[AvgDuration] IS NOT NULL AND
+	[StdevDuration] IS NOT NULL AND
+	[AvgDuration] > 0 AND
+	[StdevDuration] > 0
+
+-------------------------------------------------------------------------------------------------------
+;
+WITH CTEEffectedRows
 AS
 (
-	SELECT [JobId], AVG([EffectedRows]) [AvgEffectedRows], STDEV([EffectedRows]) [StdevEffectedRows]
+	SELECT [JobId], AVG([EffectedRows]) [AvgEffectedRows], STDEV([EffectedRows]) [StdevEffectedRows], COUNT(*) [Rows]
 	FROM [dbo].[JobInstanceLog]
 	WHERE 
 		[Status] = 0 
 		AND [IsStopped] = 0
-		AND ([Anomaly] IS NULL OR [Anomaly] = 0)
+		AND [Anomaly] = 0
 		AND [EffectedRows] IS NOT NULL
 	GROUP BY [JobId]
 )
 
-INSERT INTO [Statistics].[JobStatistics]
+INSERT INTO [Statistics].[JobEffectedRowsStatistics]
            ([JobId]
-           ,[AvgDuration]
-           ,[StdevDuration]
            ,[AvgEffectedRows]
            ,[StdevEffectedRows]
 		   ,[Rows])
 
 SELECT 
-	D.[JobId], 
-	D.[AvgDuration], 
-	D.[StdevDuration],
-	E.[AvgEffectedRows],
-	E.[StdevEffectedRows], 
-	D.[Rows]
+	[JobId], 
+	[AvgEffectedRows], 
+	[StdevEffectedRows],
+	[Rows]
 FROM
-	CTEDuration D LEFT OUTER JOIN
-	CTEEffectedRows E ON D.[JobId]=E.[JobId]
+	CTEEffectedRows
 WHERE
-	D.[Rows] > 30 AND
-	D.[AvgDuration] IS NOT NULL AND
-	D.[StdevDuration] IS NOT NULL AND
-	D.[AvgDuration] > 0 AND
-	D.[StdevDuration] > 0
+	[Rows] > 30 AND
+	[AvgEffectedRows] IS NOT NULL AND
+	[StdevEffectedRows] IS NOT NULL AND
+	[AvgEffectedRows] > 0 AND
+	[StdevEffectedRows] > 0
 
 COMMIT

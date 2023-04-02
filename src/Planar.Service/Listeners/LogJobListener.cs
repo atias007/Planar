@@ -1,4 +1,5 @@
 ﻿using CommonJob;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
@@ -8,6 +9,7 @@ using Planar.Service.Data;
 using Planar.Service.General;
 using Planar.Service.Listeners.Base;
 using Planar.Service.Model;
+using Planar.Service.Model.DataObjects;
 using Polly;
 using Quartz;
 using System;
@@ -95,9 +97,9 @@ namespace Planar.Service.Listeners
             }
         }
 
-        public async Task JobWasExecuted(IJobExecutionContext context, JobExecutionException jobException, CancellationToken cancellationToken = default)
+        public async Task JobWasExecuted(IJobExecutionContext context, JobExecutionException? jobException, CancellationToken cancellationToken = default)
         {
-            Exception executionException = null;
+            Exception? executionException = null;
 
             try
             {
@@ -126,6 +128,7 @@ namespace Planar.Service.Listeners
                 };
 
                 await ExecuteDal<HistoryData>(d => d.UpdateHistoryJobRunLog(log));
+                await SafeFillAnomaly(log);
             }
             catch (Exception ex)
             {
@@ -137,7 +140,7 @@ namespace Planar.Service.Listeners
             }
         }
 
-        private async Task SafeMonitorJobWasExecuted(IJobExecutionContext context, Exception exception)
+        private async Task SafeMonitorJobWasExecuted(IJobExecutionContext context, Exception? exception)
         {
             var allTasks = new List<Task>();
             var task0 = SafeScan(MonitorEvents.ExecutionEnd, context, exception);
@@ -175,7 +178,7 @@ namespace Planar.Service.Listeners
             await Task.WhenAll(allTasks);
         }
 
-        private static string GetJobDataForLogging(JobDataMap data)
+        private static string? GetJobDataForLogging(JobDataMap data)
         {
             if (data?.Count == 0) { return null; }
 
@@ -207,6 +210,58 @@ namespace Planar.Service.Listeners
                 .Count(f => !IsSystemJobKey(f));
 
             return second;
+        }
+
+        private async Task<JobStatistics> GetJobStatistics()
+        {
+            var durationKey = nameof(StatisticsData.GetJobDurationStatistics);
+            var effectedKey = nameof(StatisticsData.GetJobEffectedRowsStatistics);
+            using var scope = ServiceScopeFactory.CreateScope();
+            var cache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
+
+            var exists = cache.TryGetValue<IEnumerable<JobDurationStatistic>>(durationKey, out var durationStatistics);
+            if (!exists)
+            {
+                durationStatistics = await ExecuteDal<StatisticsData, IEnumerable<JobDurationStatistic>>(d => d.GetJobDurationStatistics());
+                cache.Set(durationKey, durationStatistics, StatisticsUtil.DefaultCacheSpan);
+            }
+
+            exists = cache.TryGetValue<IEnumerable<JobEffectedRowsStatistic>>(durationKey, out var effectedStatistics);
+            if (!exists)
+            {
+                effectedStatistics = await ExecuteDal<StatisticsData, IEnumerable<JobEffectedRowsStatistic>>(d => d.GetJobEffectedRowsStatistics());
+                cache.Set(effectedKey, effectedStatistics, StatisticsUtil.DefaultCacheSpan);
+            }
+
+            return new JobStatistics
+            {
+                JobDurationStatistics = durationStatistics,
+                JobEffectedRowsStatistic = effectedStatistics
+            };
+        }
+
+        private async Task SafeFillAnomaly(DbJobInstanceLog item)
+        {
+            try
+            {
+                await FillAnomaly(item);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Fail to invoke {nameof(FillAnomaly)} in {nameof(LogJobListener)}");
+            }
+        }
+
+        private async Task FillAnomaly(DbJobInstanceLog item)
+        {
+            var statistics = await GetJobStatistics();
+            StatisticsUtil.SetAnomaly(item, statistics);
+
+            if (item.Anomaly != null)
+            {
+                var parameters = new { item.InstanceId, item.Anomaly };
+                await ExecuteDal<HistoryData>(d => d.SetAnomaly(parameters));
+            }
         }
     }
 }

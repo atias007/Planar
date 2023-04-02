@@ -62,11 +62,46 @@ namespace Planar.Service.Data
             return await conn.ExecuteAsync(cmd);
         }
 
-        public async Task<IEnumerable<JobStatistic>> GetJobStatistics()
+        public async Task<IEnumerable<JobDurationStatistic>> GetJobDurationStatistics()
         {
-            return await _context.JobStatistics
+            return await _context.JobDurationStatistics
                 .AsNoTracking()
                 .ToListAsync();
+        }
+
+        public async Task<IEnumerable<JobEffectedRowsStatistic>> GetJobEffectedRowsStatistics()
+        {
+            return await _context.JobEffectedRowsStatistics
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<string>> GetJobDurationStatisticsIds()
+        {
+            return await _context.JobDurationStatistics
+                .AsNoTracking()
+                .Select(j => j.JobId)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<string>> GetJobEffectedRowsStatisticsIds()
+        {
+            return await _context.JobEffectedRowsStatistics
+                .AsNoTracking()
+                .Select(j => j.JobId)
+                .ToListAsync();
+        }
+
+        public async Task DeleteJobStatistic(JobDurationStatistic item)
+        {
+            _context.JobDurationStatistics.Remove(item);
+            await SaveChangesWithoutConcurrency();
+        }
+
+        public async Task DeleteJobStatistic(JobEffectedRowsStatistic item)
+        {
+            _context.JobEffectedRowsStatistics.Remove(item);
+            await SaveChangesWithoutConcurrency();
         }
 
         public IQueryable<JobInstanceLog> GetNullAnomaly()
