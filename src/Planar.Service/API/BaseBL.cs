@@ -60,7 +60,7 @@ namespace Planar.Service.API
 
         protected TriggerKeyHelper TriggerKeyHelper => _serviceProvider.GetRequiredService<TriggerKeyHelper>();
 
-        protected string ServiceVersion
+        protected string? ServiceVersion
         {
             get
             {
@@ -77,20 +77,9 @@ namespace Planar.Service.API
         protected IMapper Mapper => _serviceProvider.GetRequiredService<IMapper>();
 
         protected T Resolve<T>()
+            where T : notnull
         {
             return _serviceProvider.GetRequiredService<T>();
-        }
-
-        protected static T DeserializeObject<T>(string json)
-        {
-            var entity = JsonConvert.DeserializeObject<T>(json);
-            return entity;
-        }
-
-        protected static string SerializeObject(object obj)
-        {
-            var entity = JsonConvert.SerializeObject(obj);
-            return entity;
         }
 
         protected static void ValidateExistingEntity<T>(T entity, string entityName)

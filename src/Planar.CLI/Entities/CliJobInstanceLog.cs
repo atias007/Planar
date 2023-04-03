@@ -25,5 +25,9 @@ namespace Planar.CLI.Entities
         public string Exception { get; set; }
         public bool Retry { get; set; }
         public bool IsStopped { get; set; }
+        public bool? IsOutlier { get; set; }
+
+        public byte? Anomaly { get; set; }
+        public string AnomalyTitle { get; set; }
     }
 }

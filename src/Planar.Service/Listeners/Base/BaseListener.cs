@@ -8,7 +8,6 @@ using Planar.Service.Monitor;
 using Quartz;
 using System;
 using System.Linq.Expressions;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.Listeners.Base
@@ -73,8 +72,10 @@ namespace Planar.Service.Listeners.Base
             _logger.LogCritical(ex, "Error handle {Module}.{Source}: {Message}", typeof(T).Name, source, ex.Message);
         }
 
+        #region Execute Data Layer
+
         protected async Task ExecuteDal<TDataLayer>(Expression<Func<TDataLayer, Task>> exp)
-            where TDataLayer : BaseDataLayer
+    where TDataLayer : BaseDataLayer
         {
             try
             {
@@ -189,6 +190,8 @@ namespace Planar.Service.Listeners.Base
                 throw;
             }
         }
+
+        #endregion Execute Data Layer
 
         protected static bool IsSystemJobKey(JobKey jobKey)
         {

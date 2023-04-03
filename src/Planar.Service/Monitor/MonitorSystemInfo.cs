@@ -5,10 +5,6 @@ namespace Planar.Service.Monitor
 {
     public class MonitorSystemInfo
     {
-        public MonitorSystemInfo()
-        {
-        }
-
         public MonitorSystemInfo(string messageTemplate)
         {
             MessageTemplate = messageTemplate;
@@ -16,7 +12,7 @@ namespace Planar.Service.Monitor
 
         public string MessageTemplate { get; set; }
 
-        public Dictionary<string, string> MessagesParameters { get; private set; } = new();
+        public Dictionary<string, string?> MessagesParameters { get; private set; } = new();
 
         public void AddMachineName()
         {

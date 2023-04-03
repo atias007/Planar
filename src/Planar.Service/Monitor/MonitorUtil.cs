@@ -189,7 +189,7 @@ namespace Planar.Service.Monitor
             return result;
         }
 
-        private static MonitorDetails GetMonitorDetails(MonitorAction action, IJobExecutionContext context, Exception exception)
+        private static MonitorDetails GetMonitorDetails(MonitorAction action, IJobExecutionContext context, Exception? exception)
         {
             // ****** ATTENTION: any changes should reflect in TestJobExecutionContext ******
             var result = new MonitorDetails

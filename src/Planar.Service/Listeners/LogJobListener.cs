@@ -52,7 +52,7 @@ namespace Planar.Service.Listeners
             {
                 if (IsSystemJob(context.JobDetail)) { return; }
                 var statisticsTask = AddConcurentStatistics(context);
-                string data = GetJobDataForLogging(context.MergedJobDataMap);
+                var data = GetJobDataForLogging(context.MergedJobDataMap);
 
                 var log = new DbJobInstanceLog
                 {
@@ -61,7 +61,7 @@ namespace Planar.Service.Listeners
                     StartDate = context.FireTimeUtc.ToLocalTime().DateTime,
                     Status = (int)StatusMembers.Running,
                     StatusTitle = StatusMembers.Running.ToString(),
-                    JobId = JobKeyHelper.GetJobId(context.JobDetail),
+                    JobId = JobKeyHelper.GetJobId(context.JobDetail) ?? string.Empty,
                     JobName = context.JobDetail.Key.Name,
                     JobGroup = context.JobDetail.Key.Group,
                     JobType = SchedulerUtil.GetJobTypeName(context.JobDetail.JobType),

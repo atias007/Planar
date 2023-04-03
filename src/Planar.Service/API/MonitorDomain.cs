@@ -164,9 +164,9 @@ namespace Planar.Service.API
             if (MonitorEventsExtensions.IsSystemMonitorEvent(monitorEvent))
             {
                 var info = new MonitorSystemInfo
-                {
-                    MessageTemplate = $"This is test monitor for system event {monitorEvent}"
-                };
+                (
+                    $"This is test monitor for system event {monitorEvent}"
+                );
                 result = await monitorUtil.ExecuteMonitor(action, monitorEvent, info, exception);
             }
             else if (MonitorEventsExtensions.IsSimpleJobMonitorEvent(monitorEvent))
