@@ -26,12 +26,6 @@ namespace Planar.Service.API
         public IQueryable<JobInstanceLog> GetHistory(int key)
         {
             var history = DataLayer.GetHistory(key);
-
-            if (history == null)
-            {
-                throw new RestNotFoundException();
-            }
-
             return history;
         }
 
