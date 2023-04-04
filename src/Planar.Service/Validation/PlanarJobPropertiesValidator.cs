@@ -19,12 +19,12 @@ namespace Planar.Service.Validation
             RuleFor(e => e.ClassName).NotEmpty().MaximumLength(500);
         }
 
-        private async Task<bool> PathExists(PlanarJobProperties properties, string path, ValidationContext<PlanarJobProperties> context, CancellationToken cancellationToken = default)
+        private async Task<bool> PathExists(PlanarJobProperties properties, string? path, ValidationContext<PlanarJobProperties> context, CancellationToken cancellationToken = default)
         {
             return await CommonValidations.PathExists(path, _cluster, context);
         }
 
-        private async Task<bool> FilenameExists(PlanarJobProperties properties, string filename, ValidationContext<PlanarJobProperties> context, CancellationToken cancellationToken = default)
+        private async Task<bool> FilenameExists(PlanarJobProperties properties, string? filename, ValidationContext<PlanarJobProperties> context, CancellationToken cancellationToken = default)
         {
             return await CommonValidations.FilenameExists(properties, filename, _cluster, context);
         }

@@ -43,6 +43,18 @@ namespace Planar.Controllers
             return CreatedAtAction(nameof(Get), result, result);
         }
 
+        [HttpPost("sql")]
+        [SwaggerOperation(OperationId = "post_job_sql_add", Description = "Add new sql job", Summary = "Add Sql Job")]
+        [JsonConsumes]
+        [CreatedResponse(typeof(JobIdResponse))]
+        [BadRequestResponse]
+        [ConflictResponse]
+        public async Task<ActionResult<JobIdResponse>> AddSql([FromBody] SetJobRequest<SqlJobProperties> request)
+        {
+            var result = await BusinesLayer.Add(request);
+            return CreatedAtAction(nameof(Get), result, result);
+        }
+
         [HttpPut("planar")]
         [SwaggerOperation(OperationId = "put_job_planar", Description = "Update existing planar job", Summary = "Update Planar Job")]
         [JsonConsumes]
@@ -62,6 +74,18 @@ namespace Planar.Controllers
         [BadRequestResponse]
         [NotFoundResponse]
         public async Task<ActionResult<JobIdResponse>> UpdateProcess([FromBody] UpdateJobRequest<ProcessJobProperties> request)
+        {
+            var result = await BusinesLayer.Update(request);
+            return CreatedAtAction(nameof(Get), result, result);
+        }
+
+        [HttpPut("sql")]
+        [SwaggerOperation(OperationId = "put_job_sql", Description = "Update existing sql job", Summary = "Update Sql Job")]
+        [JsonConsumes]
+        [CreatedResponse(typeof(JobIdResponse))]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<ActionResult<JobIdResponse>> UpdateSql([FromBody] UpdateJobRequest<SqlJobProperties> request)
         {
             var result = await BusinesLayer.Update(request);
             return CreatedAtAction(nameof(Get), result, result);

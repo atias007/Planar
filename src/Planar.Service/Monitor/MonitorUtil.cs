@@ -241,6 +241,7 @@ namespace Planar.Service.Monitor
 
         private static void FillMonitor(Monitor monitor, MonitorAction action, Exception? exception)
         {
+            monitor.Users = new List<MonitorUser>();
             monitor.EventId = action.EventId;
             monitor.EventTitle = ((MonitorEvents)action.EventId).ToString();
             monitor.Group = new MonitorGroup(action.Group);
@@ -313,7 +314,7 @@ namespace Planar.Service.Monitor
             return result;
         }
 
-        private async Task<bool> Analyze(MonitorEvents @event, MonitorAction action, IJobExecutionContext context)
+        private async Task<bool> Analyze(MonitorEvents @event, MonitorAction action, IJobExecutionContext? context)
         {
             switch (@event)
             {
@@ -327,7 +328,8 @@ namespace Planar.Service.Monitor
                     return true;
 
                 case MonitorEvents.ExecutionSuccessWithNoEffectedRows:
-                    return ServiceUtil.GetEffectedRows(context) == 0;
+                    var rows = ServiceUtil.GetEffectedRows(context);
+                    return rows != null && rows == 0;
             }
 
             if (MonitorEventsExtensions.IsSystemMonitorEvent(@event))
@@ -343,7 +345,7 @@ namespace Planar.Service.Monitor
             return false;
         }
 
-        private async Task<bool> AnalyzeMonitorEventsWithArguments(MonitorEvents @event, MonitorAction action, IJobExecutionContext context)
+        private async Task<bool> AnalyzeMonitorEventsWithArguments(MonitorEvents @event, MonitorAction action, IJobExecutionContext? context)
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var jobKeyHelper = scope.ServiceProvider.GetRequiredService<JobKeyHelper>();
@@ -365,11 +367,12 @@ namespace Planar.Service.Monitor
                     return count2 >= args.Arg;
 
                 case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx:
-
-                    return ServiceUtil.GetEffectedRows(context) > args.Arg;
+                    var rows = ServiceUtil.GetEffectedRows(context);
+                    return rows != null && rows > args.Arg;
 
                 case MonitorEvents.ExecutionEndWithEffectedRowsLessThanx:
-                    return ServiceUtil.GetEffectedRows(context) < args.Arg;
+                    var rows1 = ServiceUtil.GetEffectedRows(context);
+                    return rows1 != null && rows1 < args.Arg;
             }
         }
     }

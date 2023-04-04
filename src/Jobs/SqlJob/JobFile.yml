@@ -1,21 +1,32 @@
-﻿job type: PlanarJob                   # Fixed! don't change it
+﻿job type: SqlJob                 # Fixed! don't change it
 name: some job name                   # Name of job [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
 group: null or group name             # Group of job [only alphanumeric, dashes & underscore, 1 to 50 characters]
-author: israel israeli (sales)        # The author/responsible person of the job [up to 100 characters]
 description: some job description     # Description of job [only alphanumeric, dashes & underscore, up to 200 characters]
+author: israel israeli (sales)        # The author/responsible person of the job [up to 100 characters]
 durable: true                         # Boolean [true/false]. Non durable job will be delete from system if no future triggers defined
 concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
 
-job data:                             # Key/Value pairs used by job code
-  key1: value1                        # --------------------------------
+job data:                             # Key/Value pairs used to replace placeholder in script file (i.e {{key1}})
+  key1: value1                        # -------------------------------------------------------------------------
   key2: value2                        # key 1 to 100
   key3: value3                        # value up to 1000 characters
 
 properties:                           # Properties for job with 'PlanarJob' type
-  path: HelloWorld                    # Path to assembly file(s) [mandatory, up to 500 characters]
-  filename: HelloWorld.dll            # Name of assembly file [mandatory, up to 500 characters]
-  class name: HelloWorld.DemoJob      # Full class name (with namespace) [mandatory, up to 500 characters]
-
+  connection string: <connection>     # Default connection string to sql server database [mandatory if some step has no connection string]
+  path: c:\some_path                  # Path of script files [1 to 1000 characters]
+  transaction: false                  # Use transaction for all steps
+  isolation level: Unspecified        # The isolation level of transaction. The default is Unspecified [Unspecified, Chaos, ...
+                                      # ,ReadUncommitted, ReadCommitted, RepeatableRead, Serializable, Snapshot]
+  continue on error: false            # Continue to next step if error occur. The defualt is false
+  steps:                              # list of scripts to execute
+    - name: Step1                     # Name of step [1 to 50 characters]
+      filename: step1.sql             # Script filename [1 to 100 characters]
+      connection string: <connection> # Specific connection string to sql server database [mandatory if no default connection string]
+      timeout: 00:00:30               # Timeout span for step. The default is 30 seconds
+    - name: Step2
+      filename: step2.sql
+      connection string: <connection>
+      timeout: 00:00:30
 global config:                        # Key/Value pairs of global parameters used across different jobs
   globalkey1: value1                  # ---------------------------------------------------------------
   globalkey2: value2                  # key 1 to 100

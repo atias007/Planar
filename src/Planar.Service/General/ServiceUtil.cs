@@ -2,12 +2,12 @@
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Common.Exceptions;
-using Planar.Service.Exceptions;
 using Planar.Service.Monitor;
 using Quartz;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.Loader;
@@ -44,7 +44,7 @@ namespace Planar.Service.General
         {
             var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.MonitorHooks);
 
-            if (Directory.Exists(path) == false)
+            if (!Directory.Exists(path))
             {
                 logger.LogWarning("monitor hooks path {Path} could not be found. Service does not have any monitor", path);
                 return;
@@ -70,7 +70,7 @@ namespace Planar.Service.General
                     }
                 }
 
-                if (hasHook == false)
+                if (!hasHook)
                 {
                     assemblyContext.Unload();
                 }
@@ -177,8 +177,9 @@ namespace Planar.Service.General
             }
         }
 
-        public static int? GetEffectedRows(IJobExecutionContext context)
+        public static int? GetEffectedRows(IJobExecutionContext? context)
         {
+            if (context == null) { return null; }
             var metadata = context.Result as JobExecutionMetadata;
             var result = metadata?.EffectedRows.GetValueOrDefault();
             return result;

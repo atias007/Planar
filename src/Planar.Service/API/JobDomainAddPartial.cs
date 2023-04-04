@@ -357,11 +357,11 @@ namespace Planar.Service.API
 
             if (string.IsNullOrEmpty(jobTrigger.Group))
             {
-                trigger = trigger.WithIdentity(jobTrigger.Name);
+                trigger = trigger.WithIdentity(jobTrigger.Name ?? string.Empty);
             }
             else
             {
-                trigger = trigger.WithIdentity(jobTrigger.Name, jobTrigger.Group);
+                trigger = trigger.WithIdentity(jobTrigger.Name ?? string.Empty, jobTrigger.Group);
             }
 
             // Priority
@@ -377,7 +377,7 @@ namespace Planar.Service.API
             }
 
             // Data
-            jobTrigger.TriggerData ??= new Dictionary<string, string>();
+            jobTrigger.TriggerData ??= new Dictionary<string, string?>();
 
             if (jobTrigger.TriggerData.Count > 0)
             {
@@ -505,13 +505,13 @@ namespace Planar.Service.API
             #region Max Chars
 
             ValidateRange(metadata.Name, 5, 50, "name", "job");
-            ValidateRange(metadata.Group, 5, 50, "group", "job");
+            ValidateRange(metadata.Group, 1, 50, "group", "job");
             ValidateMaxLength(metadata.Author, 200, "author", "job");
             ValidateMaxLength(metadata.Description, 100, "description", "job");
 
             foreach (var item in metadata.JobData)
             {
-                ValidateMaxLength(item.Key, 100, "key", "job data");
+                ValidateRange(item.Key, 1, 100, "key", "job data");
                 ValidateMaxLength(item.Value, 1000, "value", "job data");
             }
 
@@ -533,6 +533,16 @@ namespace Planar.Service.API
             }
 
             #endregion JobData
+
+            #region GlobalConfig
+
+            foreach (var item in metadata.GlobalConfig)
+            {
+                ValidateRange(item.Key, 1, 100, "key", "job global config");
+                ValidateMaxLength(item.Value, 1000, "value", "job global config");
+            }
+
+            #endregion GlobalConfig
 
             var triggersCount = metadata.CronTriggers?.Count + metadata.SimpleTriggers?.Count;
             if (triggersCount == 0 && metadata.Durable == false)
@@ -645,11 +655,11 @@ namespace Planar.Service.API
             {
                 t.TriggerData ??= new Dictionary<string, string?>();
                 ValidateRange(t.Name, 5, 50, "name", "trigger");
-                ValidateRange(t.Group, 5, 50, "group", "trigger");
+                ValidateRange(t.Group, 1, 50, "group", "trigger");
 
                 foreach (var item in t.TriggerData)
                 {
-                    ValidateMaxLength(item.Key, 100, "key", "trigger data");
+                    ValidateRange(item.Key, 1, 100, "key", "trigger data");
                     ValidateMaxLength(item.Value, 1000, "value", "trigger data");
                 }
             });
@@ -658,11 +668,11 @@ namespace Planar.Service.API
             {
                 t.TriggerData ??= new Dictionary<string, string?>();
                 ValidateRange(t.Name, 5, 50, "name", "trigger");
-                ValidateRange(t.Group, 5, 50, "group", "trigger");
+                ValidateRange(t.Group, 1, 50, "group", "trigger");
 
                 foreach (var item in t.TriggerData)
                 {
-                    ValidateMaxLength(item.Key, 100, "key", "trigger data");
+                    ValidateRange(item.Key, 1, 100, "key", "trigger data");
                     ValidateMaxLength(item.Value, 1000, "value", "trigger data");
                 }
             });
@@ -686,7 +696,7 @@ namespace Planar.Service.API
         {
             container.SimpleTriggers?.ForEach(t =>
             {
-                t.TriggerData ??= new Dictionary<string, string>();
+                t.TriggerData ??= new Dictionary<string, string?>();
                 if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
                 foreach (var item in t.TriggerData)
                 {
@@ -695,7 +705,7 @@ namespace Planar.Service.API
             });
             container.CronTriggers?.ForEach(t =>
             {
-                t.TriggerData ??= new Dictionary<string, string>();
+                t.TriggerData ??= new Dictionary<string, string?>();
                 if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
             });
         }
@@ -723,6 +733,7 @@ namespace Planar.Service.API
 
             try
             {
+                if (job.JobType == null) { return typeof(object); }
                 assembly = Assembly.Load(job.JobType);
             }
             catch (Exception ex)
@@ -742,8 +753,7 @@ namespace Planar.Service.API
             try
             {
                 var type = assembly.GetType(typeName);
-                if (type == null) throw new RestValidationException("jobType", $"type {typeName} is not supported");
-                return type;
+                return type ?? throw new RestValidationException("jobType", $"type {typeName} is not supported");
             }
             catch (Exception ex)
             {
@@ -770,13 +780,15 @@ namespace Planar.Service.API
             switch (request.JobType)
             {
                 case nameof(PlanarJob):
-                    var properties1 = YmlUtil.Deserialize<PlanarJobProperties>(yml);
-                    await ValidateJobProperties(properties1);
+                    await ValidateJobProperties<PlanarJobProperties>(yml);
                     break;
 
                 case nameof(ProcessJob):
-                    var properties2 = YmlUtil.Deserialize<ProcessJobProperties>(yml);
-                    await ValidateJobProperties(properties2);
+                    await ValidateJobProperties<ProcessJobProperties>(yml);
+                    break;
+
+                case nameof(SqlJob):
+                    await ValidateJobProperties<SqlJobProperties>(yml);
                     break;
 
                 default:
@@ -784,12 +796,15 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task ValidateJobProperties<TProperties>(TProperties properties)
+        private async Task ValidateJobProperties<TProperties>(string? yml)
         {
-            if (properties == null)
+            if (yml == null)
             {
                 throw new RestValidationException("properties", "properties is null or empty");
             }
+
+            var properties = YmlUtil.Deserialize<TProperties>(yml) ??
+                throw new RestValidationException("properties", "properties is null or empty");
 
             var validator = _serviceProvider.GetService<IValidator<TProperties>>();
 
@@ -810,7 +825,10 @@ namespace Planar.Service.API
 
         private static void ValidateMaxLength(string? value, int length, string name, string parent)
         {
-            if (value != null && value.Length > length) throw new RestValidationException(name, $"{parent} {name} length is invalid. maximum length is {length}");
+            if (value != null && value.Length > length)
+            {
+                throw new RestValidationException(name, $"{parent} {name} length is invalid. maximum length is {length}");
+            }
         }
 
         private static void ValidateMinLength(string? value, int length, string name, string parent)

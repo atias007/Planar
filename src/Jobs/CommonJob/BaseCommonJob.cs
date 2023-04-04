@@ -19,7 +19,7 @@ namespace CommonJob
         protected static readonly string? JobDataMapAttribute = typeof(JobDataAttribute).FullName;
         protected static readonly string? TriggerDataMapAttribute = typeof(TriggerDataAttribute).FullName;
 
-        public static IEnumerable<string> JobTypes => new[] { "PlanarJob", "ProcessJob" };
+        public static IEnumerable<string> JobTypes => new[] { "PlanarJob", "ProcessJob", "SqlJob" };
     }
 
     public abstract class BaseCommonJob<TInstance, TProperties> : BaseCommonJob, IJob

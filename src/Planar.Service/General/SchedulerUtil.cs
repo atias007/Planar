@@ -52,7 +52,7 @@ namespace Planar.Service.General
             await _scheduler.Standby(cancellationToken);
         }
 
-        public void HealthCheck(ILogger logger = null)
+        public void HealthCheck(ILogger? logger = null)
         {
             if (!IsSchedulerRunning)
             {
@@ -77,7 +77,7 @@ namespace Planar.Service.General
             return result;
         }
 
-        public async Task<RunningJobDetails> GetRunningJob(string instanceId, CancellationToken cancellationToken = default)
+        public async Task<RunningJobDetails?> GetRunningJob(string instanceId, CancellationToken cancellationToken = default)
         {
             var jobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
             var context = jobs.FirstOrDefault(j => j.FireInstanceId == instanceId);
@@ -105,7 +105,7 @@ namespace Planar.Service.General
             return response;
         }
 
-        public async Task<GetRunningDataResponse> GetRunningData(string instanceId, CancellationToken cancellationToken = default)
+        public async Task<GetRunningDataResponse?> GetRunningData(string instanceId, CancellationToken cancellationToken = default)
         {
             var context = (await _scheduler.GetCurrentlyExecutingJobs(cancellationToken))
                 .FirstOrDefault(j => j.FireInstanceId == instanceId);
@@ -196,7 +196,7 @@ namespace Planar.Service.General
 
         public static void MapJobRowDetails(IJobDetail source, JobRowDetails target)
         {
-            target.Id = JobKeyHelper.GetJobId(source);
+            target.Id = JobKeyHelper.GetJobId(source) ?? string.Empty;
             target.Name = source.Key.Name;
             target.Group = source.Key.Group;
             target.Description = source.Description;
@@ -212,12 +212,12 @@ namespace Planar.Service.General
             return jobType.Name;
         }
 
-        private static Type GetJobType(Type type)
+        private static Type? GetJobType(Type type)
         {
             if (type == null) { return null; }
 
             var list = new List<Type>();
-            Type localType = type;
+            Type? localType = type;
             while (localType != null)
             {
                 list.Add(localType);
