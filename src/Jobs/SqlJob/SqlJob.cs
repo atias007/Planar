@@ -6,12 +6,15 @@ using Quartz;
 using SqlJob;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Text;
 
 namespace Planar
 {
     public abstract class SqlJob : BaseCommonJob<SqlJob, SqlJobProperties>
     {
+        private readonly List<SqlJobException> _exceptions = new();
+
         protected SqlJob(ILogger<SqlJob> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
         {
         }
@@ -42,7 +45,7 @@ namespace Planar
                 Properties.Steps = new List<SqlStep>();
             }
 
-            // TODO: log start and total steps
+            MessageBroker.AppendLog(LogLevel.Information, $"Start sql job with {Properties.Steps} steps");
             var isDefaultConnection =
                 !string.IsNullOrWhiteSpace(Properties.ConnectionString) &&
                 Properties.Steps.Any(s => string.IsNullOrWhiteSpace(s.ConnectionString));
@@ -66,6 +69,11 @@ namespace Planar
                 foreach (var step in Properties.Steps)
                 {
                     await ExecuteSqlStep(context, step, defaultConnection);
+                }
+
+                if (_exceptions.Any())
+                {
+                    throw new AggregateException("There is one or more error(s) in sql job steps. See inner exceptions for more details", _exceptions);
                 }
 
                 transaction?.Commit();
@@ -100,28 +108,36 @@ namespace Planar
 
             try
             {
+                MessageBroker.AppendLog(LogLevel.Information, $"Start execute step name '{step.Name}'...");
+
                 var cmd = connection.CreateCommand();
-                cmd.CommandText = step.Script;
+                var script = GetScript(context, step);
+                cmd.CommandText = script;
                 cmd.CommandType = CommandType.Text;
                 if (step.Timeout != null)
                 {
                     cmd.CommandTimeout = Convert.ToInt32(Math.Floor(step.Timeout.Value.TotalSeconds));
                 }
 
-                // TODO: replace parameters in script
-                // TODO: log replaces variables
+                var timer = new Stopwatch();
+                timer.Start();
                 var rows = await cmd.ExecuteNonQueryAsync(context.CancellationToken);
-                // TODO: change all logger write
-                _logger.LogInformation("step name '{Name}' executed with {Rows} effected rows", step.Name, rows);
-                // TODO: log the execution time
+                timer.Stop();
+                var elapsedTitle =
+                    timer.ElapsedMilliseconds < 60000 ?
+                    $"{timer.Elapsed.Seconds}.{timer.Elapsed.Milliseconds:000}ms" :
+                    $"{timer.Elapsed:hh\\:mm\\:ss}";
+
+                MessageBroker.AppendLog(LogLevel.Information, $"Step name '{step.Name}' executed with {rows} effected row(s). Elapsed: {elapsedTitle}");
             }
             catch (Exception ex)
             {
                 var sqlEx = new SqlJobException($"Fail to execute step name '{step.Name}'", ex);
-                _logger.LogError(ex, "fail to execute step name '{Name}'", step.Name);
+                _logger.LogError(ex, "Fail to execute step name '{Name}'", step.Name);
+                MessageBroker.AppendLog(LogLevel.Error, $"Fail to execute step name '{step.Name}'. {ex.Message}");
                 if (Properties.ContinueOnError)
                 {
-                    // TODO: add aggregate exception
+                    _exceptions.Add(sqlEx);
                 }
                 else
                 {
@@ -138,6 +154,34 @@ namespace Planar
             }
         }
 
+        private string GetScript(IJobExecutionContext context, SqlStep step)
+        {
+            var result = step.Script;
+            if (string.IsNullOrEmpty(result))
+            {
+                MessageBroker.AppendLog(LogLevel.Warning, $"Script filename '{step.Filename}' in step '{step.Name}' has no content");
+                return string.Empty;
+            }
+
+            foreach (var item in context.MergedJobDataMap)
+            {
+                var key = $"{{{{{item.Key}}}}}";
+                var value = Convert.ToString(item.Value);
+                if (step.Script.Contains(key))
+                {
+                    result = result.Replace(key, value);
+                    MessageBroker.AppendLog(LogLevel.Information, $"  - Placeholder '{key}' was replaced by value '{value}'");
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(result))
+            {
+                MessageBroker.AppendLog(LogLevel.Warning, $"Script filename '{step.Filename}' in step '{step.Name}' has no content after placeholder replace");
+            }
+
+            return result;
+        }
+
         private void ValidateSqlJob()
         {
             try
@@ -149,6 +193,7 @@ namespace Planar
             {
                 var source = nameof(ValidateSqlJob);
                 _logger.LogError(ex, "Fail at {Source}", source);
+                MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
                 throw;
             }
         }
@@ -174,6 +219,7 @@ namespace Planar
             {
                 var source = nameof(ValidateSqlStep);
                 _logger.LogError(ex, "Fail at {Source}", source);
+                MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
                 throw;
             }
         }

@@ -1,7 +1,6 @@
 ﻿using CommonJob;
 using FluentValidation;
 using Planar.Common.Exceptions;
-using Planar.Service.Exceptions;
 using Planar.Service.General;
 using System.IO;
 using System.Linq;
@@ -40,7 +39,7 @@ namespace Planar.Service.Validation
             }
         }
 
-        public static async Task<bool> FilenameExists<T>(IFileJobProperties properties, string? filename, ClusterUtil clusterUtil, ValidationContext<T> context)
+        public static async Task<bool> FilenameExists<T>(IPathJobProperties properties, string? filename, ClusterUtil clusterUtil, ValidationContext<T> context)
         {
             try
             {
@@ -49,24 +48,6 @@ namespace Planar.Service.Validation
 
                 ServiceUtil.ValidateJobFileExists(properties.Path, filename);
                 await clusterUtil.ValidateJobFileExists(properties.Path, filename);
-                return true;
-            }
-            catch (PlanarException ex)
-            {
-                context.AddFailure("filename", ex.Message);
-                return false;
-            }
-        }
-
-        public static async Task<bool> FilenameExists<T>(string? filename, ClusterUtil clusterUtil, ValidationContext<T> context)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(filename)) { return false; }
-                var fi = new FileInfo(filename);
-                var path = fi.DirectoryName ?? string.Empty;
-                ServiceUtil.ValidateJobFileExists(path, filename);
-                await clusterUtil.ValidateJobFileExists(path, filename);
                 return true;
             }
             catch (PlanarException ex)

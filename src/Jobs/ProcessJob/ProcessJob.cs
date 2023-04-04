@@ -98,6 +98,7 @@ namespace Planar
             {
                 var source = nameof(ValidateProcessJob);
                 _logger.LogError(ex, "Fail at {Source}", source);
+                MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
                 throw;
             }
         }
@@ -128,6 +129,7 @@ namespace Planar
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Fail to kill process job {Filename}", _process.StartInfo.FileName);
+                MessageBroker.AppendLog(LogLevel.Error, $"Fail to kill process job {_process.StartInfo.FileName}. {ex.Message}");
             }
         }
 

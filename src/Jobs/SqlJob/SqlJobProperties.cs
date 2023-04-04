@@ -1,9 +1,10 @@
-﻿using System.Data;
+﻿using CommonJob;
+using System.Data;
 using YamlDotNet.Serialization;
 
 namespace Planar
 {
-    public class SqlJobProperties
+    public class SqlJobProperties : IPathJobProperties
     {
         [YamlMember(Alias = "connection string")]
         public string? ConnectionString { get; set; }
