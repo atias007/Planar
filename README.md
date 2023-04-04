@@ -57,7 +57,7 @@ Docker is an open source [containerization](https://www.ibm.com/in-en/cloud/lear
 
 ### What next?
 
-Follow the [Write Your First Planar Job](https://github.com/atias007/Planar/wiki/2.-Write-your-first-Planar-Job) WiKi documatation to create, test, deploy & invoke your first planar job.
+Follow the [Write Your First Planar Job](https://github.com/atias007/Planar/wiki/02.-Write-your-first-Planar-Job) WiKi documatation to create, test, deploy & invoke your first planar job.
 atias007/Planar/wiki/02.-Write-your-first-Planar-Job
 
 ---
