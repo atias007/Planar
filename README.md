@@ -41,7 +41,7 @@ Docker is an open source [containerization](https://www.ibm.com/in-en/cloud/lear
    ```PowerShell
    docker exec -it planar-service sh
    ```
-3. Run the Planae CLI by running the command below
+3. Run the Planar CLI by running the command below
 
    ```PowerShell
    planar-cli
@@ -51,14 +51,14 @@ Docker is an open source [containerization](https://www.ibm.com/in-en/cloud/lear
 
 ![CLI welcome](https://github.com/atias007/Planar/blob/c7a1363de89e3d43eac18376230902534ded20d6/res/planar_cli_screenshot.jpg?raw=true)
 
-5. Run `trace ls` connad in Planar CLI to see list of logs
+5. Run `trace ls` command in Planar CLI to see list of logs
 6. Open http://localhost:2306 to get the api documentation. 
 7. Open http://localhost:2306/swagger to get swagger page
 
 ### What next?
 
 Follow the [Write Your First Planar Job](https://github.com/atias007/Planar/wiki/2.-Write-your-first-Planar-Job) WiKi documatation to create, test, deploy & invoke your first planar job.
-atias007/Planar/wiki/2.-Write-your-first-Planar-Job
+atias007/Planar/wiki/02.-Write-your-first-Planar-Job
 
 ---
 [^1]: This may need to be run with sudo if docker and docker-compose aren't accessible by the user. 
