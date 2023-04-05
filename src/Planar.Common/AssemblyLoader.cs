@@ -17,6 +17,7 @@ namespace Planar.Common
 
         public static Assembly? LoadFromAssemblyPath(string assemblyFullPath, AssemblyLoadContext context)
         {
+            if (DependencyContext.Default == null) { return null; }
             var fileNameWithOutExtension = Path.GetFileNameWithoutExtension(assemblyFullPath);
 
             var inCompileLibraries = DependencyContext.Default.CompileLibraries.Any(l => l.Name.Equals(fileNameWithOutExtension, StringComparison.OrdinalIgnoreCase));

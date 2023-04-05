@@ -1,6 +1,5 @@
 ﻿using DbUp;
 using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json.Linq;
 using Spectre.Console;
 using System;
 using System.Diagnostics;
