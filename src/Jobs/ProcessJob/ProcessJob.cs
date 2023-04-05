@@ -77,11 +77,6 @@ namespace Planar
             try { if (_process != null) { _process.ErrorDataReceived -= ProcessErrorDataReceived; } } catch { DoNothingMethod(); }
         }
 
-        private static void DoNothingMethod()
-        {
-            //// *** Do Nothing Method *** ////
-        }
-
         private void ValidateProcessJob()
         {
             try

@@ -45,12 +45,13 @@ namespace Planar
                 Properties.Steps = new List<SqlStep>();
             }
 
-            MessageBroker.AppendLog(LogLevel.Information, $"Start sql job with {Properties.Steps} steps");
+            var total = Properties.Steps.Count;
+            MessageBroker.AppendLog(LogLevel.Information, $"Start sql job with {total} steps");
             var isDefaultConnection =
                 !string.IsNullOrWhiteSpace(Properties.ConnectionString) &&
                 Properties.Steps.Any(s => string.IsNullOrWhiteSpace(s.ConnectionString));
 
-            SqlConnection? defaultConnection = null;
+            DbConnection? defaultConnection = null;
             DbTransaction? transaction = null;
 
             try
@@ -63,12 +64,17 @@ namespace Planar
                     {
                         var isolation = Properties.IsolationLevel ?? IsolationLevel.Unspecified;
                         transaction = await defaultConnection.BeginTransactionAsync(isolation, context.CancellationToken);
+                        MessageBroker.AppendLog(LogLevel.Information, @"Begin transaction with isolation level {isolation}");
                     }
                 }
+                var counter = 0;
 
                 foreach (var step in Properties.Steps)
                 {
-                    await ExecuteSqlStep(context, step, defaultConnection);
+                    await ExecuteSqlStep(context, step, defaultConnection, transaction);
+                    counter++;
+                    var progress = Convert.ToByte(counter * 100.0 / total);
+                    MessageBroker.UpdateProgress(progress);
                 }
 
                 if (_exceptions.Any())
@@ -76,23 +82,32 @@ namespace Planar
                     throw new AggregateException("There is one or more error(s) in sql job steps. See inner exceptions for more details", _exceptions);
                 }
 
-                transaction?.Commit();
+                if (transaction != null)
+                {
+                    await transaction.CommitAsync();
+                    MessageBroker.AppendLog(LogLevel.Information, "Commit transaction");
+                }
             }
             catch
             {
-                transaction?.Rollback();
+                if (transaction != null)
+                {
+                    await transaction.RollbackAsync();
+                    MessageBroker.AppendLog(LogLevel.Warning, "Rollback transaction due to error in one of the steps");
+                }
+                throw;
             }
             finally
             {
-                transaction?.Dispose();
-                defaultConnection?.Close();
-                defaultConnection?.Dispose();
+                try { transaction?.Dispose(); } catch { DoNothingMethod(); }
+                try { defaultConnection?.Close(); } catch { DoNothingMethod(); }
+                try { defaultConnection?.Dispose(); } catch { DoNothingMethod(); }
             }
         }
 
-        private async Task ExecuteSqlStep(IJobExecutionContext context, SqlStep step, SqlConnection? defaultConnection)
+        private async Task ExecuteSqlStep(IJobExecutionContext context, SqlStep step, DbConnection? defaultConnection, DbTransaction? transaction)
         {
-            SqlConnection connection;
+            DbConnection connection;
             var finalizeConnection = false;
             if (string.IsNullOrWhiteSpace(step.ConnectionString))
             {
@@ -110,13 +125,18 @@ namespace Planar
             {
                 MessageBroker.AppendLog(LogLevel.Information, $"Start execute step name '{step.Name}'...");
 
-                var cmd = connection.CreateCommand();
+                DbCommand cmd = connection.CreateCommand();
                 var script = GetScript(context, step);
                 cmd.CommandText = script;
                 cmd.CommandType = CommandType.Text;
                 if (step.Timeout != null)
                 {
                     cmd.CommandTimeout = Convert.ToInt32(Math.Floor(step.Timeout.Value.TotalSeconds));
+                }
+
+                if (transaction != null)
+                {
+                    cmd.Transaction = transaction;
                 }
 
                 var timer = new Stopwatch();
@@ -129,6 +149,7 @@ namespace Planar
                     $"{timer.Elapsed:hh\\:mm\\:ss}";
 
                 MessageBroker.AppendLog(LogLevel.Information, $"Step name '{step.Name}' executed with {rows} effected row(s). Elapsed: {elapsedTitle}");
+                MessageBroker.IncreaseEffectedRows(rows);
             }
             catch (Exception ex)
             {
@@ -148,8 +169,8 @@ namespace Planar
             {
                 if (finalizeConnection)
                 {
-                    connection?.Close();
-                    connection?.Dispose();
+                    try { connection?.Close(); } catch { DoNothingMethod(); }
+                    try { connection?.Dispose(); } catch { DoNothingMethod(); }
                 }
             }
         }

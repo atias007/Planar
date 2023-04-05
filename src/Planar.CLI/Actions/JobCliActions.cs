@@ -563,17 +563,27 @@ namespace Planar.CLI.Actions
                 return new RequestBuilderWrapper<CliUpdateJobRequest> { FailResponse = result };
             }
 
-            var dict = YmlUtil.Deserialize<Dictionary<string, string>>(result.Data.Properties);
-            var key = dict?.Keys.FirstOrDefault(k => string.Equals(k, "path", StringComparison.OrdinalIgnoreCase));
-            var folder = dict?[key ?? string.Empty];
+            var folder = GetPathFromProperties(result.Data.Properties);
 
-            if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(folder))
+            if (string.IsNullOrEmpty(folder))
             {
-                throw new CliException($"fail to get folder of job id {jobId}");
+                throw new CliException($"could not find the path of the job id {jobId}");
             }
 
             var request = new CliUpdateJobRequest { Folder = folder };
             return new RequestBuilderWrapper<CliUpdateJobRequest> { Request = request };
+        }
+
+        private static string GetPathFromProperties(string yml)
+        {
+            const string path = "path:";
+            if (string.IsNullOrEmpty(yml)) { return string.Empty; }
+
+            var lines = yml.Split('\n');
+            var pathLine = lines.FirstOrDefault(p => p.ToLower().StartsWith(path));
+            if (string.IsNullOrEmpty(pathLine)) { return string.Empty; }
+
+            return pathLine[path.Length..].Trim();
         }
 
         private static async Task<RestResponse<LastInstanceId>> GetLastInstanceId(string id, DateTime invokeDate, CancellationToken cancellationToken = default)

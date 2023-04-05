@@ -42,6 +42,22 @@ namespace CommonJob
             LogData(log);
         }
 
+        public void IncreaseEffectedRows(int delta = 1)
+        {
+            lock (Locker)
+            {
+                Metadata.EffectedRows = Metadata.EffectedRows.GetValueOrDefault() + delta;
+            }
+        }
+
+        public void UpdateProgress(byte progress)
+        {
+            lock (Locker)
+            {
+                Metadata.Progress = progress;
+            }
+        }
+
         public string? Publish(string channel, string message)
         {
             switch (channel)
@@ -77,6 +93,7 @@ namespace CommonJob
                     return null;
 
                 case "AddAggragateException":
+                case "AddAggregateException":
                     var data3 = Deserialize<ExceptionDto>(message);
                     if (data3 == null) { return null; }
                     lock (Locker)

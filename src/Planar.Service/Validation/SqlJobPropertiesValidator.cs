@@ -1,10 +1,8 @@
 ﻿using FluentValidation;
 using Planar.Service.General;
-using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Threading;
-using Polly;
+using System.Threading.Tasks;
 
 namespace Planar.Service.Validation
 {
@@ -17,15 +15,22 @@ namespace Planar.Service.Validation
             _cluster = cluster;
 
             RuleFor(j => j.IsolationLevel).IsInEnum();
-            RuleFor(j => j.ConnectionString).NotEmpty()
+            RuleFor(j => j.ConnectionString)
+                .NotEmpty()
                 .When(j => j.Steps != null && j.Steps.Any(s => string.IsNullOrWhiteSpace(s.ConnectionString)));
             RuleFor(s => s.Path).NotEmpty().Length(1, 1000);
-            RuleFor(s => s.Transaction).Must(t => false)
+            RuleFor(s => s.Transaction)
+                .Equal(false)
                 .When(p => p.Steps != null && p.Steps.Any(s => !string.IsNullOrWhiteSpace(s.ConnectionString)))
                 .WithMessage("{PropertyName} must be false when there is step with specific connection string");
             RuleFor(j => j.Steps).NotEmpty();
+            RuleFor(j => j.ContinueOnError)
+                .Equal(false)
+                .When(j => j.Transaction)
+                .WithMessage("{PropertyName} must be false when transaction is true");
             RuleForEach(j => j.Steps).SetValidator((a, b) => new SqlStepValidator());
-            RuleForEach(j => j.Steps).Must(s => !string.IsNullOrWhiteSpace(s.ConnectionString))
+            RuleForEach(j => j.Steps)
+                .Must(s => !string.IsNullOrWhiteSpace(s.ConnectionString))
                 .When(p => string.IsNullOrWhiteSpace(p.ConnectionString))
                 .WithMessage("connection string property for sql job step must have value when no default connection string");
             RuleForEach(j => j.Steps).MustAsync(FilenameExists);
