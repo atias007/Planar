@@ -176,6 +176,7 @@ namespace Planar.Service.API
 
         private static string GetJobFileFullName(SetJobPathRequest request)
         {
+            if (request.JobFileName == null) { return string.Empty; }
             var filename = ServiceUtil.GetJobFilename(request.Folder, request.JobFileName);
             return filename;
         }
@@ -402,7 +403,7 @@ namespace Planar.Service.API
             {
                 foreach (var item in metadata.JobData)
                 {
-                    job.JobDataMap[item.Key] = item.Value;
+                    job.JobDataMap.Put(item.Key, item.Value);
                 }
             }
         }
@@ -411,7 +412,7 @@ namespace Planar.Service.API
         {
             if (!string.IsNullOrEmpty(metadata.Author))
             {
-                job.JobDataMap[Consts.Author] = metadata.Author;
+                job.JobDataMap.Put(Consts.Author, metadata.Author);
             }
         }
 
@@ -476,7 +477,7 @@ namespace Planar.Service.API
 
             #region JobType
 
-            if (!BaseCommonJob.JobTypes.Contains(metadata.JobType))
+            if (!ServiceUtil.JobTypes.Contains(metadata.JobType))
             {
                 throw new RestValidationException("job type", $"job type '{metadata.JobType}' is not supported");
             }

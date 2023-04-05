@@ -20,7 +20,7 @@ namespace Planar.Service.API.Helpers
 
         public async Task<TriggerKey> GetTriggerKey(JobOrTriggerKey key)
         {
-            TriggerKey result;
+            TriggerKey? result;
             if (key.Id.Contains('.'))
             {
                 result = GetTriggerKeyByKey(key.Id);
@@ -44,9 +44,9 @@ namespace Planar.Service.API.Helpers
             return await GetTriggerKey(new JobOrTriggerKey { Id = id });
         }
 
-        public async Task<TriggerKey> GetTriggerKeyById(string triggerId)
+        public async Task<TriggerKey?> GetTriggerKeyById(string triggerId)
         {
-            TriggerKey result = null;
+            TriggerKey? result = null;
             var keys = await _scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
             foreach (var k in keys)
             {
@@ -62,7 +62,7 @@ namespace Planar.Service.API.Helpers
             return result;
         }
 
-        public static string GetTriggerId(ITrigger trigger)
+        public static string? GetTriggerId(ITrigger? trigger)
         {
             if (trigger == null)
             {
@@ -77,7 +77,7 @@ namespace Planar.Service.API.Helpers
             return null;
         }
 
-        public static string GetTriggerId(IJobExecutionContext context)
+        public static string? GetTriggerId(IJobExecutionContext context)
         {
             return GetTriggerId(context.Trigger);
         }
@@ -92,13 +92,7 @@ namespace Planar.Service.API.Helpers
         public async Task<ITrigger> ValidateTriggerExists(TriggerKey triggerKey)
         {
             var exists = await _scheduler.GetTrigger(triggerKey);
-
-            if (exists == null)
-            {
-                throw new RestNotFoundException($"trigger with key {triggerKey.Group}.{triggerKey.Name} does not exist");
-            }
-
-            return exists;
+            return exists ?? throw new RestNotFoundException($"trigger with key {triggerKey.Group}.{triggerKey.Name} does not exist");
         }
 
         public static bool IsSystemTriggerKey(TriggerKey triggerKey)
@@ -106,9 +100,9 @@ namespace Planar.Service.API.Helpers
             return triggerKey.Group == Consts.PlanarSystemGroup;
         }
 
-        private static TriggerKey GetTriggerKeyByKey(string key)
+        private static TriggerKey? GetTriggerKeyByKey(string key)
         {
-            TriggerKey result = null;
+            TriggerKey? result = null;
             if (key != null)
             {
                 var index = key.IndexOf(".");

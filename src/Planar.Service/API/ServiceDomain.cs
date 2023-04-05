@@ -63,17 +63,14 @@ namespace Planar.Service.API
             return response;
         }
 
-        public async Task<string> GetServiceInfo(string key)
+        public async Task<string?> GetServiceInfo(string key)
         {
             var lowerKey = key.Replace(" ", string.Empty).ToLower();
             var info = await GetServiceInfo();
             var props = info.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            var prop = props.FirstOrDefault(p => p.Name.ToLower() == lowerKey);
-
-            if (prop == null)
-            {
+            var prop =
+                props.FirstOrDefault(p => p.Name.ToLower() == lowerKey) ??
                 throw new RestNotFoundException($"key '{key}' was not found in service information");
-            }
 
             var value = prop.GetValue(info);
             return PlanarConvert.ToString(value);
@@ -165,6 +162,7 @@ namespace Planar.Service.API
         {
             var user = await Resolve<UserData>().GetUserByUsername(request.Username);
             ValidateExistingEntity(user, "user");
+            if (user == null) { return string.Empty; }
 
             var verify = HashUtil.VerifyHash(request.Password, user.Password, user.Salt);
             if (!verify)

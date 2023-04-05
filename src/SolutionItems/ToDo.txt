@@ -4,14 +4,11 @@ PLAN FOR V 1.3.0
 - documentation
 - authorization
 - add statistics for: 
-	* max effected rows, 
 	* count runs per day, 
 	* count success retry per day, 
 	* count fail retry per day, 
 	* count recovering runs per day
 
-- feature: cli history ls (status parameter to be enum)
-- feature: cli job type in job ls or history ls to be enum
 
 - add timeout parameter to trigger
 - job test: do not allow test already running jobs
@@ -23,8 +20,11 @@ PLAN FOR V 1.3.0
 
 - BACKLOG ----------------------------------------------------------------------------
 - cli: service status [time scope] dashboard command
+- add job audit
 - add monitor event: cluster health check fail
-- add option to save cli history get/ex/log command output
+- build anomaly job statistics only for 365 days ago
+- add statistics module with rest apis and cli plot charts
+- add anomaly monitor events
 - add angular dashboard
 - add RestJob
 - cli test cluster command
@@ -145,3 +145,4 @@ V 1.2.1
 V 1.2.3
 ----------
  - add SqlJob
+ - feature: cli history ls (status parameter to be enum)

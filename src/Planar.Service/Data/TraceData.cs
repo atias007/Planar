@@ -92,13 +92,13 @@ namespace Planar.Service.Data
             return _context.Traces.AsQueryable();
         }
 
-        public async Task<string> GetTraceException(int id)
+        public async Task<string?> GetTraceException(int id)
         {
             var result = (await _context.Traces.FindAsync(id))?.Exception;
             return result;
         }
 
-        public async Task<string> GetTraceProperties(int id)
+        public async Task<string?> GetTraceProperties(int id)
         {
             var result = (await _context.Traces.FindAsync(id))?.LogEvent;
             return result;

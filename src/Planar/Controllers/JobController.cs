@@ -330,12 +330,12 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("jobfiles")]
-        [SwaggerOperation(OperationId = "get_job_jobfiles", Description = "Get list of all job files templates", Summary = "Get All Job Files Templates")]
+        [HttpGet("types")]
+        [SwaggerOperation(OperationId = "get_job_types", Description = "Get all job types", Summary = "Get All Job Types")]
         [OkJsonResponse(typeof(IEnumerable<string>))]
-        public ActionResult<IEnumerable<string>> GetJobFileTemplates()
+        public ActionResult<IEnumerable<string>> GetJobTypes()
         {
-            var result = BusinesLayer.GetJobFileTemplates();
+            var result = BusinesLayer.GetJobTypes();
             return Ok(result);
         }
 

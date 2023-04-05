@@ -37,12 +37,9 @@ namespace Planar
                 if (Properties.ClassName == null) { return; }
 
                 assemblyContext = AssemblyLoader.CreateAssemblyLoadContext(context.FireInstanceId, true);
-                var assembly = AssemblyLoader.LoadFromAssemblyPath(AssemblyFilename, assemblyContext);
-
-                if (assembly == null)
-                {
+                var assembly =
+                    AssemblyLoader.LoadFromAssemblyPath(AssemblyFilename, assemblyContext) ??
                     throw new PlanarJobException($"could not load assembly {AssemblyFilename}");
-                }
 
                 type = assembly.GetType(Properties.ClassName);
                 if (type == null)
@@ -124,11 +121,11 @@ namespace Planar
             ////    throw new PlanarJobException($"type '{Properties.ClassName}' from assembly '{AssemblyFilename}' not inherit 'Planar.Job.BaseJob' type");
             ////}
 
-            var method = type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (method == null)
-            {
+#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
+            var method =
+                type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance) ??
                 throw new PlanarJobException($"type '{Properties.ClassName}' from assembly '{AssemblyFilename}' has no 'Execute' method");
-            }
+#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
 
             if (method.ReturnType != typeof(Task))
             {

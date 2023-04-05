@@ -7,7 +7,6 @@ using Quartz;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.Loader;
@@ -21,6 +20,8 @@ namespace Planar.Service.General
         private static readonly object _locker = new();
         private const string _monitorHookAssemblyContextName = "MonitorHook_";
         private const string _monitorHookBaseClassName = "Planar.Monitor.Hook.BaseHook";
+
+        public static IEnumerable<string> JobTypes => new[] { nameof(PlanarJob), nameof(ProcessJob), nameof(SqlJob) };
 
         internal static string GenerateId()
         {
@@ -126,7 +127,7 @@ namespace Planar.Service.General
             return result;
         }
 
-        public static string GetJobFolder(string folder)
+        public static string GetJobFolder(string? folder)
         {
             var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, folder);
             return path;
@@ -138,14 +139,14 @@ namespace Planar.Service.General
             return path;
         }
 
-        public static string GetJobFilename(string folder, string filename)
+        public static string GetJobFilename(string? folder, string filename)
         {
             var path = GetJobFolder(folder);
             var fullname = Path.Combine(path, filename);
             return fullname;
         }
 
-        public static bool IsJobFolderExists(string folder)
+        public static bool IsJobFolderExists(string? folder)
         {
             var path = GetJobFolder(folder);
             var result = Directory.Exists(path);
@@ -159,7 +160,7 @@ namespace Planar.Service.General
             return result;
         }
 
-        public static void ValidateJobFolderExists(string folder)
+        public static void ValidateJobFolderExists(string? folder)
         {
             if (!IsJobFolderExists(folder))
             {

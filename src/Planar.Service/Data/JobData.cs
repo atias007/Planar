@@ -13,7 +13,7 @@ namespace Planar.Service.Data
         {
         }
 
-        public async Task<string> GetJobProperty(string jobId)
+        public async Task<string?> GetJobProperty(string jobId)
         {
             var properties = await _context.JobProperties
                 .Where(j => j.JobId == jobId)

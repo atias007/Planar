@@ -97,11 +97,9 @@ namespace Planar.Service.API
         public async Task<JobDetails> Get(string id)
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
-            var info = await Scheduler.GetJobDetail(jobKey);
-            if (info == null)
-            {
+            var info =
+                await Scheduler.GetJobDetail(jobKey) ??
                 throw new RestNotFoundException($"job with key {jobKey.Group}.{jobKey.Name} does not exist");
-            }
 
             var result = new JobDetails();
             await MapJobDetails(info, result);
@@ -173,18 +171,16 @@ namespace Planar.Service.API
             return result;
         }
 
-        public IEnumerable<string> GetJobFileTemplates()
+        public IEnumerable<string> GetJobTypes()
         {
-            return BaseCommonJob.JobTypes;
+            return ServiceUtil.JobTypes;
         }
 
         public string GetJobFileTemplate(string typeName)
         {
-            var assembly = Assembly.Load(typeName);
-            if (assembly == null)
-            {
+            var assembly =
+                Assembly.Load(typeName) ??
                 throw new RestNotFoundException($"type '{typeName}' could not be found");
-            }
 
             using Stream? stream = assembly.GetManifestResourceStream($"{typeName}.JobFile.yml");
             {
@@ -365,12 +361,7 @@ namespace Planar.Service.API
         {
             var dal = Resolve<HistoryData>();
             var result = await dal.GetTestStatus(id);
-            if (result == null)
-            {
-                throw new RestNotFoundException($"test with id {id} not found");
-            }
-
-            return result;
+            return result ?? throw new RestNotFoundException($"test with id {id} not found");
         }
 
         public async Task Invoke(InvokeJobRequest request)

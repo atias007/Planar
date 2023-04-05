@@ -353,6 +353,16 @@ namespace Planar.CLI
                 {
                     objValue = ParseEnum(prop.PropertyType, value);
                 }
+
+                if (value != null &&
+                    prop.PropertyType.GenericTypeArguments.Length == 1 &&
+                    prop.PropertyType.GenericTypeArguments[0].BaseType == typeof(Enum))
+                {
+                    objValue = ParseEnum(prop.PropertyType.GenericTypeArguments[0], value);
+                    prop.SetValue(instance, objValue);
+                    return;
+                }
+
                 prop.SetValue(instance, Convert.ChangeType(objValue, prop.PropertyType, CultureInfo.CurrentCulture));
             }
             catch (Exception)

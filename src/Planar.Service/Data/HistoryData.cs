@@ -89,7 +89,7 @@ namespace Planar.Service.Data
             return query;
         }
 
-        public async Task<string> GetHistoryDataById(int id)
+        public async Task<string?> GetHistoryDataById(int id)
         {
             var result = await _context.JobInstanceLogs
                 .Where(l => l.Id == id)
@@ -99,7 +99,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<string> GetHistoryLogById(int id)
+        public async Task<string?> GetHistoryLogById(int id)
         {
             var result = await _context.JobInstanceLogs
                 .Where(l => l.Id == id)
@@ -109,7 +109,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<string> GetHistoryExceptionById(int id)
+        public async Task<string?> GetHistoryExceptionById(int id)
         {
             var result = await _context.JobInstanceLogs
                 .Where(l => l.Id == id)
@@ -119,7 +119,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<JobInstanceLog> GetHistoryById(int id)
+        public async Task<JobInstanceLog?> GetHistoryById(int id)
         {
             var result = await _context.JobInstanceLogs
                 .Where(l => l.Id == id)
@@ -216,7 +216,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<GetTestStatusResponse> GetTestStatus(int id)
+        public async Task<GetTestStatusResponse?> GetTestStatus(int id)
         {
             var result = await _context.JobInstanceLogs
                 .Where(l => l.Id == id)

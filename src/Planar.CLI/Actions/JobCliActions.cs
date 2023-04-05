@@ -167,7 +167,7 @@ namespace Planar.CLI.Actions
 
             if (request == null)
             {
-                var wrapper = await GetCliGetJobFileRequest(cancellationToken);
+                var wrapper = await GetCliGetJobTypesRequest(cancellationToken);
                 if (!wrapper.IsSuccessful || wrapper.Request == null)
                 {
                     return new CliActionResponse(wrapper.FailResponse);
@@ -184,10 +184,10 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, result.Data, request);
         }
 
-        [Action("jobfiles")]
-        public static async Task<CliActionResponse> GetJobFiles(CancellationToken cancellationToken = default)
+        [Action("types")]
+        public static async Task<CliActionResponse> GetJobTypes(CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("job/jobfiles", Method.Get);
+            var restRequest = new RestRequest("job/types", Method.Get);
 
             var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
             return new CliActionResponse(result, result.Data);
@@ -534,9 +534,9 @@ namespace Planar.CLI.Actions
             return new RequestBuilderWrapper<CliAddJobRequest> { Request = request };
         }
 
-        private static async Task<RequestBuilderWrapper<CliGetJobFileRequest>> GetCliGetJobFileRequest(CancellationToken cancellationToken)
+        private static async Task<RequestBuilderWrapper<CliGetJobFileRequest>> GetCliGetJobTypesRequest(CancellationToken cancellationToken)
         {
-            var restRequest = new RestRequest("job/jobfiles", Method.Get);
+            var restRequest = new RestRequest("job/types", Method.Get);
 
             var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
             if (!result.IsSuccessful)

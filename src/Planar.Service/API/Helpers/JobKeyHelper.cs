@@ -5,6 +5,7 @@ using Planar.Service.Model;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -29,27 +30,31 @@ namespace Planar.Service.API.Helpers
             return JobIdHelper.GetJobId(job);
         }
 
-        public static JobKey GetJobKey(SetJobRequest metadata)
+        public static JobKey? GetJobKey(SetJobRequest metadata)
         {
+            if (metadata.Name == null) { return null; }
+
             return string.IsNullOrEmpty(metadata.Group) ?
                             new JobKey(metadata.Name) :
                             new JobKey(metadata.Name, metadata.Group);
         }
 
-        public async Task<string> GetJobId(JobKey jobKey)
+        public async Task<string?> GetJobId(JobKey jobKey)
         {
             var job = await ValidateJobExists(jobKey);
             return GetJobId(job);
         }
 
-        public async Task<string> GetJobId(string id)
+        public async Task<string?> GetJobId(string id)
         {
             var jobKey = await GetJobKey(id);
+            if (jobKey == null) { return null; }
+
             var jobId = await GetJobId(jobKey);
             return jobId;
         }
 
-        public async Task<string> GetJobId(MonitorAction action)
+        public async Task<string?> GetJobId(MonitorAction action)
         {
             var key = $"{action.JobGroup}.{action.JobName}";
             return await GetJobId(key);
@@ -62,7 +67,7 @@ namespace Planar.Service.API.Helpers
 
         public async Task<JobKey> GetJobKey(JobOrTriggerKey key)
         {
-            JobKey result;
+            JobKey? result;
             if (key.Id.Contains('.'))
             {
                 result = GetJobKeyByKey(key.Id);
@@ -74,13 +79,13 @@ namespace Planar.Service.API.Helpers
             }
 
             await ValidateJobExists(result);
-
+            if (result == null) { throw new RestNotFoundException($"job does not exist"); }
             return result;
         }
 
-        public async Task<JobKey> GetJobKeyById(string jobId)
+        public async Task<JobKey?> GetJobKeyById(string jobId)
         {
-            JobKey result = null;
+            JobKey? result = null;
             var keys = await _scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
             foreach (var k in keys)
             {
@@ -105,16 +110,11 @@ namespace Planar.Service.API.Helpers
             return all.Contains(group);
         }
 
-        public async Task<IJobDetail> ValidateJobExists(JobKey jobKey)
+        public async Task<IJobDetail> ValidateJobExists(JobKey? jobKey)
         {
+            if (jobKey == null) { throw new RestNotFoundException($"job does not exist"); }
             var exists = await _scheduler.GetJobDetail(jobKey);
-
-            if (exists == null)
-            {
-                throw new RestNotFoundException($"job with key {jobKey.Group}.{jobKey.Name} does not exist");
-            }
-
-            return exists;
+            return exists ?? throw new RestNotFoundException($"job with key {jobKey.Group}.{jobKey.Name} does not exist");
         }
 
         public static bool IsSystemJobKey(JobKey jobKey)
@@ -122,9 +122,9 @@ namespace Planar.Service.API.Helpers
             return jobKey.Group == Consts.PlanarSystemGroup;
         }
 
-        private static JobKey GetJobKeyByKey(string key)
+        private static JobKey? GetJobKeyByKey(string key)
         {
-            JobKey result = null;
+            JobKey? result = null;
             if (key != null)
             {
                 var index = key.IndexOf(".");

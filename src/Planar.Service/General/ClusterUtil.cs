@@ -302,7 +302,7 @@ namespace Planar.Service.General
             return false;
         }
 
-        public async Task<RunningJobDetails> GetRunningJob(string instanceId)
+        public async Task<RunningJobDetails?> GetRunningJob(string instanceId)
         {
             var nodes = await GetAllNodes();
             foreach (var node in nodes)
@@ -329,7 +329,7 @@ namespace Planar.Service.General
             return null;
         }
 
-        public async Task<GetRunningDataResponse> GetRunningData(string instanceId)
+        public async Task<GetRunningDataResponse?> GetRunningData(string instanceId)
         {
             var nodes = await GetAllNodes();
             foreach (var node in nodes)
@@ -529,7 +529,7 @@ namespace Planar.Service.General
             return response;
         }
 
-        private static async Task<RunningJobDetails> CallGetRunningJob(ClusterNode node, string instanceId)
+        private static async Task<RunningJobDetails?> CallGetRunningJob(ClusterNode node, string instanceId)
         {
             var client = GetClient(node);
             var request = new GetRunningJobRequest { InstanceId = instanceId };
@@ -544,7 +544,7 @@ namespace Planar.Service.General
             return response;
         }
 
-        private static async Task<GetRunningDataResponse> CallGetRunningData(ClusterNode node, string instanceId)
+        private static async Task<GetRunningDataResponse?> CallGetRunningData(ClusterNode node, string instanceId)
         {
             var client = GetClient(node);
             var request = new GetRunningJobRequest { InstanceId = instanceId };

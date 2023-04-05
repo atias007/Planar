@@ -19,8 +19,6 @@ namespace CommonJob
         protected static readonly string? JobDataMapAttribute = typeof(JobDataAttribute).FullName;
         protected static readonly string? TriggerDataMapAttribute = typeof(TriggerDataAttribute).FullName;
 
-        public static IEnumerable<string> JobTypes => new[] { "PlanarJob", "ProcessJob", "SqlJob" };
-
         protected static void DoNothingMethod()
         {
             //// *** Do Nothing Method *** ////

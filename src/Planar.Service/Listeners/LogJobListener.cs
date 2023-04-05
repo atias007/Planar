@@ -65,14 +65,14 @@ namespace Planar.Service.Listeners
                     JobName = context.JobDetail.Key.Name,
                     JobGroup = context.JobDetail.Key.Group,
                     JobType = SchedulerUtil.GetJobTypeName(context.JobDetail.JobType),
-                    TriggerId = TriggerKeyHelper.GetTriggerId(context.Trigger),
+                    TriggerId = TriggerKeyHelper.GetTriggerId(context.Trigger) ?? Consts.ManualTriggerId,
                     TriggerName = context.Trigger.Key.Name,
                     TriggerGroup = context.Trigger.Key.Group,
                     Retry = context.Trigger.Key.Group == Consts.RetryTriggerGroup,
                     ServerName = Environment.MachineName
                 };
 
-                log.TriggerId ??= Consts.ManualTriggerId;
+                if (log.InstanceId.Length > 250) { log.InstanceId = log.InstanceId[0..250]; }
                 if (log.Data?.Length > 4000) { log.Data = log.Data[0..4000]; }
                 if (log.JobId?.Length > 20) { log.JobId = log.JobId[0..20]; }
                 if (log.JobName.Length > 50) { log.JobName = log.JobName[0..50]; }
@@ -81,7 +81,6 @@ namespace Planar.Service.Listeners
                 if (log.TriggerId.Length > 20) { log.TriggerId = log.TriggerId[0..20]; }
                 if (log.TriggerName.Length > 50) { log.TriggerName = log.TriggerName[0..50]; }
                 if (log.TriggerGroup.Length > 50) { log.TriggerGroup = log.TriggerGroup[0..50]; }
-                if (log.InstanceId.Length > 250) { log.InstanceId = log.InstanceId[0..250]; }
                 if (log.ServerName.Length > 50) { log.ServerName = log.ServerName[0..50]; }
 
                 await ExecuteDal<HistoryData>(d => d.CreateJobInstanceLog(log));
@@ -126,6 +125,8 @@ namespace Planar.Service.Listeners
                     StatusTitle = status.ToString(),
                     IsStopped = context.CancellationToken.IsCancellationRequested
                 };
+
+                if (log.StatusTitle.Length > 10) { log.StatusTitle = log.StatusTitle[0..10]; }
 
                 await ExecuteDal<HistoryData>(d => d.UpdateHistoryJobRunLog(log));
                 await SafeFillAnomaly(log);
@@ -220,14 +221,14 @@ namespace Planar.Service.Listeners
             var cache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
 
             var exists = cache.TryGetValue<IEnumerable<JobDurationStatistic>>(durationKey, out var durationStatistics);
-            if (!exists)
+            if (!exists || durationStatistics == null)
             {
                 durationStatistics = await ExecuteDal<StatisticsData, IEnumerable<JobDurationStatistic>>(d => d.GetJobDurationStatistics());
                 cache.Set(durationKey, durationStatistics, StatisticsUtil.DefaultCacheSpan);
             }
 
             exists = cache.TryGetValue<IEnumerable<JobEffectedRowsStatistic>>(durationKey, out var effectedStatistics);
-            if (!exists)
+            if (!exists || effectedStatistics == null)
             {
                 effectedStatistics = await ExecuteDal<StatisticsData, IEnumerable<JobEffectedRowsStatistic>>(d => d.GetJobEffectedRowsStatistics());
                 cache.Set(effectedKey, effectedStatistics, StatisticsUtil.DefaultCacheSpan);

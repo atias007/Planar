@@ -31,7 +31,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<Group> GetGroup(int id)
+        public async Task<Group?> GetGroup(int id)
         {
             var result = await _context.Groups
                 .Include(g => g.Role)
@@ -41,7 +41,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<Group> GetGroupWithUsers(int id)
+        public async Task<Group?> GetGroupWithUsers(int id)
         {
             var result = await _context.Groups
                 .Include(g => g.Users)

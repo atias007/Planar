@@ -71,6 +71,7 @@ namespace Planar.Service.API
         public async Task<List<MonitorItem>> GetByJob(string jobId)
         {
             var jobKey = await JobKeyHelper.GetJobKey(jobId);
+            if (jobKey == null) { return new List<MonitorItem>(); }
             var items = await DataLayer.GetMonitorActionsByJob(jobKey.Group, jobKey.Name);
             var result = Mapper.Map<List<MonitorItem>>(items);
             return result;

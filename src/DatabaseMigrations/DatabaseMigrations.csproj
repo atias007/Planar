@@ -30,6 +30,7 @@
     <None Remove="Scripts\Planar_0010 - statistics_job.sql" />
     <None Remove="Scripts\Planar_0011 - build_statistics.sql" />
     <None Remove="Scripts\Planar_0012 - UpdateAnomalySP.sql" />
+    <None Remove="Scripts\Planar_0013 - stat_counters_table.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -44,5 +45,6 @@
     <EmbeddedResource Include="Scripts\Planar_0010 - statistics_job.sql" />
     <EmbeddedResource Include="Scripts\Planar_0011 - build_statistics.sql" />
     <EmbeddedResource Include="Scripts\Planar_0012 - UpdateAnomalySP.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0013 - stat_counters_table.sql" />
   </ItemGroup>
 </Project>

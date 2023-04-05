@@ -11,7 +11,7 @@ namespace Planar.Service.Data
         {
         }
 
-        public async Task<ClusterNode> GetClusterNode(ClusterNode item)
+        public async Task<ClusterNode?> GetClusterNode(ClusterNode item)
         {
             return await _context.ClusterNodes.FirstOrDefaultAsync(c => c.Server == item.Server && c.Port == item.Port);
         }

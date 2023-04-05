@@ -30,7 +30,7 @@ namespace Planar.Service.Validation
             return key != null;
         }
 
-        public static bool IsHookExists(string hook)
+        public static bool IsHookExists(string? hook)
         {
             if (hook == null) { return true; }
             var exists = ServiceUtil.MonitorHooks.ContainsKey(hook);

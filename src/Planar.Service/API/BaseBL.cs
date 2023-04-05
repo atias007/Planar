@@ -82,7 +82,7 @@ namespace Planar.Service.API
             return _serviceProvider.GetRequiredService<T>();
         }
 
-        protected static void ValidateExistingEntity<T>(T entity, string entityName)
+        protected static void ValidateExistingEntity<T>(T? entity, string entityName)
             where T : class
         {
             if (entity == null)
@@ -98,11 +98,7 @@ namespace Planar.Service.API
 
         protected async Task ValidateExistingTrigger(TriggerKey entity, string triggerId)
         {
-            var details = await Scheduler.GetTrigger(entity);
-            if (details == null)
-            {
-                throw new RestNotFoundException($"trigger with id/key {triggerId} could not be found");
-            }
+            _ = await Scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id/key {triggerId} could not be found");
         }
 
         protected static async Task SetEntityProperties<T>(T entity, UpdateEntityRequest request, IValidator<T>? validator = null)
@@ -111,11 +107,9 @@ namespace Planar.Service.API
 
             var type = typeof(T);
             var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            var prop = properties.FirstOrDefault(p => string.Compare(p.Name, request.PropertyName, true) == 0);
-            if (prop == null)
-            {
+            var prop =
+                properties.FirstOrDefault(p => string.Compare(p.Name, request.PropertyName, true) == 0) ??
                 throw new RestValidationException("propertyName", $"property name '{request.PropertyName}' could not be found");
-            }
 
             try
             {
