@@ -124,11 +124,9 @@ namespace Planar.CLI
                 throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
             }
 
-            var action = actionsMetadata.FirstOrDefault(a => a.Commands.Any(c => c?.ToLower() == list[1].ToLower() && a.Module == list[0].ToLower()));
-            if (action == null)
-            {
+            var action =
+                actionsMetadata.FirstOrDefault(a => a.Commands.Any(c => c?.ToLower() == list[1].ToLower() && a.Module == list[0].ToLower())) ??
                 throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
-            }
 
             args = list.ToArray();
 

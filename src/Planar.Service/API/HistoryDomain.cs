@@ -98,10 +98,12 @@ namespace Planar.Service.API
         {
             var result = new CounterResponse();
             var data = await DataLayer.GetHistoryCounter(request.Hours);
-            var list = new List<StatisticsCountItem>();
-            list.Add(new StatisticsCountItem { Label = nameof(data.Running), Count = data.Running });
-            list.Add(new StatisticsCountItem { Label = nameof(data.Success), Count = data.Success });
-            list.Add(new StatisticsCountItem { Label = nameof(data.Fail), Count = data.Fail });
+            var list = new List<StatisticsCountItem>
+            {
+                new StatisticsCountItem { Label = nameof(data.Running), Count = data.Running },
+                new StatisticsCountItem { Label = nameof(data.Success), Count = data.Success },
+                new StatisticsCountItem { Label = nameof(data.Fail), Count = data.Fail }
+            };
             result.Counter = list;
             return result;
         }

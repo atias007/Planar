@@ -185,12 +185,7 @@ namespace Planar.Service.API
                 Assembly.Load(typeName) ??
                 throw new RestNotFoundException($"type '{typeName}' could not be found");
 
-            using Stream? stream = assembly.GetManifestResourceStream($"{typeName}.JobFile.yml");
-            if (stream == null)
-            {
-                throw new RestNotFoundException("jobfile.yml resource could not be found");
-            }
-
+            using Stream? stream = assembly.GetManifestResourceStream($"{typeName}.JobFile.yml") ?? throw new RestNotFoundException("jobfile.yml resource could not be found");
             using StreamReader reader = new(stream);
             var result = reader.ReadToEnd();
 

@@ -465,12 +465,12 @@ namespace Planar.Service.API
 
             #region Mandatory
 
-            if (string.IsNullOrEmpty(metadata.Name)) throw new RestValidationException("name", "job name is mandatory");
-            if (string.IsNullOrEmpty(metadata.JobType)) throw new RestValidationException("type", "job type is mandatory");
+            if (string.IsNullOrWhiteSpace(metadata.Name)) throw new RestValidationException("name", "job name is mandatory");
+            if (string.IsNullOrWhiteSpace(metadata.JobType)) throw new RestValidationException("type", "job type is mandatory");
 
-            foreach (var item in metadata.JobData)
+            if (metadata.JobData.Any(item => string.IsNullOrWhiteSpace(item.Key)))
             {
-                if (string.IsNullOrEmpty(item.Key)) throw new RestValidationException("key", "job data key must have value");
+                throw new RestValidationException("key", "job data key must have value");
             }
 
             #endregion Mandatory

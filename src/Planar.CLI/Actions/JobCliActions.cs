@@ -259,10 +259,7 @@ namespace Planar.CLI.Actions
             {
                 var data = result.Item1?.Select(i => i.FireInstanceId).ToList();
                 var sb = new StringBuilder();
-                if (data != null)
-                {
-                    data.ForEach(m => sb.AppendLine(m));
-                }
+                data?.ForEach(m => sb.AppendLine(m));
 
                 return new CliActionResponse(result.Item2, message: sb.ToString());
             }
@@ -620,9 +617,9 @@ namespace Planar.CLI.Actions
                     .InstructionsText(
                         "[grey](Press [blue]<space>[/] to toggle a choise, [green]<enter>[/] to accept)[/]")
                     .PageSize(15)
-                    .AddChoiceGroup("all", new[] { "job details", "job data", "properties", "triggers", "triggers data" })
-                    .AddChoiceGroup("all job", new[] { "job details", "job data", "properties" })
-                    .AddChoiceGroup("all triggers", new[] { "triggers", "triggers data" })
+                    .AddChoiceGroup("all", "job details", "job data", "properties", "triggers", "triggers data")
+                    .AddChoiceGroup("all job", "job details", "job data", "properties")
+                    .AddChoiceGroup("all triggers", "triggers", "triggers data")
                     .AddChoiceGroup(CancelOption)
                     );
 

@@ -36,7 +36,7 @@ namespace DatabaseMigrations
                 }));
 
             name = name.Trim();
-            if (name.ToLower().EndsWith(".sql") == false)
+            if (!name.ToLower().EndsWith(".sql"))
             {
                 name += ".sql";
             }
@@ -90,7 +90,7 @@ namespace DatabaseMigrations
                 }
             }
 
-            if (handleNone == false)
+            if (!handleNone)
             {
                 var element = new XElement("ItemGroup");
                 var subElement = new XElement("None");
@@ -101,7 +101,7 @@ namespace DatabaseMigrations
                 doc.Root.Add(element);
             }
 
-            if (handleEmbedded == false)
+            if (!handleEmbedded)
             {
                 var element = new XElement("ItemGroup");
                 var subElement = new XElement("EmbeddedResource");
@@ -359,7 +359,7 @@ namespace DatabaseMigrations
 
         private static void ValidateAllSqlFiles()
         {
-            if (Directory.Exists(ScriptsPath) == false)
+            if (!Directory.Exists(ScriptsPath))
             {
                 WriteError("Folder 'Scripts' does not exists in project");
                 return;
@@ -368,7 +368,7 @@ namespace DatabaseMigrations
             Console.WriteLine(" [x] validate all files is .sql extension");
             var files = Directory.GetFiles(ScriptsPath, "*.*", SearchOption.AllDirectories)
                 .Select(f => new FileInfo(f))
-                .Where(f => f.Extension.Equals(".sql", StringComparison.CurrentCultureIgnoreCase) == false)
+                .Where(f => !f.Extension.Equals(".sql", StringComparison.CurrentCultureIgnoreCase))
                 .ToList();
 
             if (files.Any())
