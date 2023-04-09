@@ -65,8 +65,13 @@ namespace Planar.Service.General
             return result;
         }
 
-        public async Task ValidateJobFolderExists(string folder)
+        public async Task ValidateJobFolderExists(string? folder)
         {
+            if (folder == null)
+            {
+                throw new PlanarException("job folder has invalid value of null");
+            }
+
             var nodes = await GetAllNodes();
             foreach (var node in nodes)
             {

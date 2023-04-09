@@ -153,7 +153,7 @@ namespace Planar.Service.General
             return result;
         }
 
-        public static bool IsJobFileExists(string folder, string filename)
+        public static bool IsJobFileExists(string? folder, string filename)
         {
             var fullname = GetJobFilename(folder, filename);
             var result = File.Exists(fullname);
@@ -169,7 +169,7 @@ namespace Planar.Service.General
             }
         }
 
-        public static void ValidateJobFileExists(string folder, string filename)
+        public static void ValidateJobFileExists(string? folder, string filename)
         {
             if (!IsJobFileExists(folder, filename))
             {

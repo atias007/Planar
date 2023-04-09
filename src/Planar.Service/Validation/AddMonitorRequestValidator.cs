@@ -27,7 +27,7 @@ namespace Planar.Service.Validation
 
             RuleFor(r => r.JobGroup).Empty()
                 .When(r => r.EventId != null && MonitorEventsExtensions.IsSystemMonitorEvent(r.EventId.GetValueOrDefault()))
-                .WithMessage(r => $"{{PropertyName}} must be null when 'Event Id' is {(int)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
+                .WithMessage(r => $"{{PropertyName}} must be null when 'Event Id' is {(int?)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
 
             RuleFor(r => r.GroupId).GreaterThan(0)
                 .Must(g => dal.IsGroupExists(g).Result)
@@ -39,19 +39,19 @@ namespace Planar.Service.Validation
 
             RuleFor(r => r.EventArgument).NotEmpty()
                 .When(r => MonitorEventsExtensions.IsMonitorEventHasArguments(r.EventId.GetValueOrDefault()))
-                .WithMessage(r => $"'{{PropertyName}}' must have value when 'Event Id' is {(int)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
+                .WithMessage(r => $"'{{PropertyName}}' must have value when 'Event Id' is {(int?)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
 
             RuleFor(r => r.EventArgument).Empty()
                 .When(r => !MonitorEventsExtensions.IsMonitorEventHasArguments(r.EventId.GetValueOrDefault()))
-                .WithMessage(r => $"'{{PropertyName}}' must be empty when 'Event Id' is {(int)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
+                .WithMessage(r => $"'{{PropertyName}}' must be empty when 'Event Id' is {(int?)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
 
             RuleFor(r => r.JobName).NotEmpty()
                 .When(r => MonitorEventsExtensions.IsMonitorEventHasArguments(r.EventId.GetValueOrDefault()))
-                .WithMessage(r => $"{{PropertyName}} and 'Job Group' must have value when 'Event Id' is {(int)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
+                .WithMessage(r => $"{{PropertyName}} and 'Job Group' must have value when 'Event Id' is {(int?)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
 
             RuleFor(r => r.JobName).Empty()
                 .When(r => r.EventId != null && MonitorEventsExtensions.IsSystemMonitorEvent(r.EventId.GetValueOrDefault()))
-                .WithMessage(r => $"{{PropertyName}} must be null when 'Event Id' is {(int)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
+                .WithMessage(r => $"{{PropertyName}} must be null when 'Event Id' is {(int?)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
         }
 
         private static bool JobAndGroupExists(AddMonitorRequest request, JobKeyHelper jobKeyHelper, ValidationContext<AddMonitorRequest> context)

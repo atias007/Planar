@@ -20,16 +20,17 @@ namespace Planar.Service.Exceptions
             Detail.Add(detail);
         }
 
-        public string Field { get; set; }
+        public string? Field { get; set; }
 
         public List<string> Detail { get; set; } = new();
 
-        public bool Equals(RestProblem other)
+        public bool Equals(RestProblem? other)
         {
-            return Field.Equals(other.Field);
+            if (Field == null) { return other == null; }
+            return Field.Equals(other?.Field);
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is RestProblem prob)
             {

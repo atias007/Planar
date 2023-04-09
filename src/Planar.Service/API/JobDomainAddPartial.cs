@@ -1,5 +1,7 @@
 ﻿using CommonJob;
 using FluentValidation;
+using Grpc.Core;
+using Microsoft.EntityFrameworkCore.SqlServer.Query.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
@@ -422,13 +424,13 @@ namespace Planar.Service.API
             var id = ServiceUtil.GenerateId();
             job.JobDataMap.Add(Consts.JobId, id);
 
-            return id;
+            return id ?? string.Empty;
         }
 
         private static IEnumerable<GlobalConfig> ConvertToGlobalConfig(Dictionary<string, string?> config)
         {
             if (config == null) { return Array.Empty<GlobalConfig>(); }
-            var result = config.Select(c => new GlobalConfig { Key = c.Key, Value = c.Value, Type = "string" });
+            var result = config.Select(c => new GlobalConfig { Key = c.Key, Value = c.Value ?? string.Empty, Type = "string" });
             return result;
         }
 
@@ -525,13 +527,7 @@ namespace Planar.Service.API
                 throw new RestValidationException("concurrent", $"job with concurrent=true can not have data. persist data with concurent running may cause unexpected results");
             }
 
-            if (metadata.JobData != null)
-            {
-                foreach (var item in metadata.JobData)
-                {
-                    if (!Consts.IsDataKeyValid(item.Key)) throw new RestValidationException("key", $"job data key '{item.Key}' is invalid");
-                }
-            }
+            CheckForInvalidDataKeys(metadata.JobData, "job");
 
             #endregion JobData
 
@@ -553,7 +549,10 @@ namespace Planar.Service.API
 
             ValidateTriggerMetadata(metadata);
 
-            var jobKey = JobKeyHelper.GetJobKey(metadata);
+            var jobKey =
+                JobKeyHelper.GetJobKey(metadata) ??
+                throw new RestGeneralException($"fail to create job key from job group '{metadata.Group}' and job name '{metadata.Name}'");
+
             return jobKey;
         }
 
@@ -626,6 +625,22 @@ namespace Planar.Service.API
             });
         }
 
+        private static void CheckForInvalidDataKeys(Dictionary<string, string?>? data, string title)
+        {
+            if (data == null) { return; }
+
+            var invalidKeys = data
+                    .Where(item => !Consts.IsDataKeyValid(item.Key))
+                    .Select(item => item.Key)
+                    .ToList();
+
+            if (invalidKeys.Count > 0)
+            {
+                var keys = string.Join(',', invalidKeys);
+                throw new RestValidationException("key", $"{title} data key(s) '{keys}' is invalid");
+            }
+        }
+
         private static void ValidatePreserveWordsTriggerProperties(ITriggersContainer container)
         {
             container.SimpleTriggers?.ForEach(t =>
@@ -633,20 +648,14 @@ namespace Planar.Service.API
                 t.TriggerData ??= new Dictionary<string, string?>();
                 if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"simple trigger group '{t.Group}' is invalid (preserved value)"); }
                 if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"simple trigger name '{t.Name}' has invalid prefix"); }
-                foreach (var item in t.TriggerData)
-                {
-                    if (!Consts.IsDataKeyValid(item.Key)) throw new RestValidationException("key", $"trigger data key '{item.Key}' is invalid");
-                }
+                CheckForInvalidDataKeys(t.TriggerData, "trigger");
             });
             container.CronTriggers?.ForEach(t =>
             {
                 t.TriggerData ??= new Dictionary<string, string?>();
                 if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"cron trigger group '{t.Group}' is invalid (preserved value)"); }
                 if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"cron trigger name '{t.Name}' has invalid prefix"); }
-                foreach (var item in t.TriggerData)
-                {
-                    if (!Consts.IsDataKeyValid(item.Key)) throw new RestValidationException("key", $"trigger data key '{item.Key}' is invalid");
-                }
+                CheckForInvalidDataKeys(t.TriggerData, "trigger");
             });
         }
 
@@ -699,10 +708,9 @@ namespace Planar.Service.API
             {
                 t.TriggerData ??= new Dictionary<string, string?>();
                 if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
-                foreach (var item in t.TriggerData)
-                {
-                    if (string.IsNullOrEmpty(item.Key)) throw new RestValidationException("key", "trigger data key must have value");
-                }
+
+                var emptyKeys = t.TriggerData.Any(item => string.IsNullOrWhiteSpace(item.Key));
+                if (emptyKeys) throw new RestValidationException("key", "trigger data key must have value");
             });
             container.CronTriggers?.ForEach(t =>
             {

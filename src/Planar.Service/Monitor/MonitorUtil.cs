@@ -183,8 +183,11 @@ namespace Planar.Service.Monitor
             var instance = Activator.CreateInstance(factory.Type);
             if (instance == null) { return null; }
 
+#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
             var method1 = instance.GetType().GetMethod(HookInstance.HandleMethodName, BindingFlags.NonPublic | BindingFlags.Instance);
             var method2 = instance.GetType().GetMethod(HookInstance.HandleSystemMethodName, BindingFlags.NonPublic | BindingFlags.Instance);
+#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
+
             var result = new HookInstance { Instance = instance, HandleMethod = method1, HandleSystemMethod = method2 };
             return result;
         }

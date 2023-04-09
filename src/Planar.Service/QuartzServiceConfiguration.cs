@@ -3,7 +3,6 @@ using Planar.Calendar.Hebrew;
 using Planar.Common;
 using Planar.Service.Listeners;
 using Quartz;
-using Quartz.Plugin.Interrupt;
 using Quartz.Simpl;
 using System;
 
@@ -74,7 +73,7 @@ namespace Planar.Service
                     switch (AppSettings.DatabaseProvider)
                     {
                         case "SqlServer":
-                            x.UseSqlServer(AppSettings.DatabaseConnectionString);
+                            x.UseSqlServer(AppSettings.DatabaseConnectionString ?? string.Empty);
                             break;
 
                         default:
