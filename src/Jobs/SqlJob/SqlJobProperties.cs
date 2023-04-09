@@ -25,6 +25,6 @@ namespace Planar
         public List<SqlConnectionString>? ConnectionStrings { get; set; }
 
         [YamlIgnore]
-        public string? DefaultConnectionString { get; set; }
+        internal string? DefaultConnectionString { get; set; }
     }
 }
