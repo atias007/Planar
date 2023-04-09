@@ -11,11 +11,8 @@ namespace Planar.Service.Validation
 
         public GlobalConfigDataValidator()
         {
-            RuleFor(f => f.Key).NotEmpty().MaximumLength(100)
-                .Must(ValidateGlobalConfigNotExists)
-                .WithMessage("global config key '{PropertyValue}'ropertyName} already exists with different value");
-
-            RuleFor(f => f.Value).NotEmpty().MaximumLength(1000);
+            RuleFor(f => f.Key).NotEmpty().MaximumLength(100);
+            RuleFor(f => f.Value).MaximumLength(1000);
             RuleFor(f => f.Type).NotEmpty().MaximumLength(10)
                 .Must(IsValidType)
                 .WithMessage("{PropertyName} has invalid value '{PropertyValue}'. valid values are: " + string.Join(',', _types));
@@ -25,16 +22,6 @@ namespace Planar.Service.Validation
         {
             if (type == null) { return false; }
             return _types.Contains(type.ToLower());
-        }
-
-        private static bool ValidateGlobalConfigNotExists(GlobalConfig config, string key)
-        {
-            if (Global.GlobalConfig.ContainsKey(key) && Global.GlobalConfig[key] == config.Value)
-            {
-                return false;
-            }
-
-            return true;
         }
     }
 }

@@ -430,7 +430,7 @@ namespace Planar.Service.API
         private static IEnumerable<GlobalConfig> ConvertToGlobalConfig(Dictionary<string, string?> config)
         {
             if (config == null) { return Array.Empty<GlobalConfig>(); }
-            var result = config.Select(c => new GlobalConfig { Key = c.Key, Value = c.Value ?? string.Empty, Type = "string" });
+            var result = config.Select(c => new GlobalConfig { Key = c.Key, Value = c.Value, Type = "string" });
             return result;
         }
 

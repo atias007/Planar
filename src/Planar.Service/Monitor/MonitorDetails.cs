@@ -7,7 +7,7 @@ namespace Planar.Service.Monitor
     {
         public string JobName { get; set; } = null!;
         public string JobGroup { get; set; } = null!;
-        public string? JobId { get; set; } = null!; = null!;
+        public string? JobId { get; set; } = null!;
         public string? JobDescription { get; set; }
         public bool Durable { get; set; }
         public string TriggerName { get; set; } = null!;

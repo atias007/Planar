@@ -5,21 +5,21 @@ namespace Planar.Service.API.Helpers
 {
     internal class JobUpdateMetadata
     {
-        public IJobDetail JobDetails { get; set; }
+        public IJobDetail JobDetails { get; set; } = null!;
 
-        public IReadOnlyCollection<ITrigger> Triggers { get; set; }
+        public IReadOnlyCollection<ITrigger> Triggers { get; set; } = null!;
 
-        public IJobDetail OldJobDetails { get; set; }
+        public IJobDetail OldJobDetails { get; set; } = null!;
 
-        public IReadOnlyCollection<ITrigger> OldTriggers { get; set; }
+        public IReadOnlyCollection<ITrigger> OldTriggers { get; set; } = null!;
 
-        public string OldJobProperties { get; set; }
+        public string? OldJobProperties { get; set; }
 
-        public JobKey JobKey { get; set; }
+        public JobKey JobKey { get; set; } = null!;
 
-        public string JobId { get; set; }
+        public string JobId { get; set; } = null!;
 
-        public string Author { get; set; }
+        public string? Author { get; set; }
 
         public bool RollbackEnabled { get; private set; }
 

@@ -30,23 +30,25 @@ namespace Planar.CLI.Actions
             return await ExecuteTable<List<CliGlobalConfig>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
         }
 
-        [Action("put")]
         [Action("add")]
-        public static async Task<CliActionResponse> Put(CliConfigRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> Add(CliConfigRequest request, CancellationToken cancellationToken = default)
         {
             var data = new { request.Key, request.Value, Type = "string" };
             var restRequest = new RestRequest("config", Method.Post)
                 .AddBody(data);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);
+            return new CliActionResponse(result);
+        }
 
-            if (result.StatusCode == HttpStatusCode.Conflict)
-            {
-                restRequest = new RestRequest("config", Method.Put)
-                    .AddBody(request);
-                result = await RestProxy.Invoke(restRequest, cancellationToken);
-            }
+        [Action("put")]
+        public static async Task<CliActionResponse> Put(CliConfigRequest request, CancellationToken cancellationToken = default)
+        {
+            var data = new { request.Key, request.Value, Type = "string" };
+            var restRequest = new RestRequest("config", Method.Put)
+                .AddBody(data);
 
+            var result = await RestProxy.Invoke(restRequest, cancellationToken);
             return new CliActionResponse(result);
         }
 
