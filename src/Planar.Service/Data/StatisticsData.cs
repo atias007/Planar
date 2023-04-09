@@ -62,6 +62,16 @@ namespace Planar.Service.Data
             return await conn.ExecuteAsync(cmd);
         }
 
+        public async Task<int> FillJobCounters()
+        {
+            using var conn = _context.Database.GetDbConnection();
+            var cmd = new CommandDefinition(
+                commandText: "Statistics.FillJobCounters",
+                commandType: CommandType.StoredProcedure);
+
+            return await conn.ExecuteAsync(cmd);
+        }
+
         public async Task<IEnumerable<JobDurationStatistic>> GetJobDurationStatistics()
         {
             return await _context.JobDurationStatistics
@@ -94,14 +104,12 @@ namespace Planar.Service.Data
 
         public async Task DeleteJobStatistic(JobDurationStatistic item)
         {
-            _context.JobDurationStatistics.Remove(item);
-            await SaveChangesWithoutConcurrency();
+            await _context.JobDurationStatistics.Where(i => i.JobId == item.JobId).ExecuteDeleteAsync();
         }
 
         public async Task DeleteJobStatistic(JobEffectedRowsStatistic item)
         {
-            _context.JobEffectedRowsStatistics.Remove(item);
-            await SaveChangesWithoutConcurrency();
+            await _context.JobEffectedRowsStatistics.Where(i => i.JobId == item.JobId).ExecuteDeleteAsync();
         }
 
         public IQueryable<JobInstanceLog> GetNullAnomaly()

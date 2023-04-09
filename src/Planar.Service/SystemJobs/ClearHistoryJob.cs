@@ -34,7 +34,7 @@ namespace Planar.Service.SystemJobs
         {
             const string description = "System job for clearing history records from database";
             var span = TimeSpan.FromHours(24);
-            var start = DateTime.Now.Date.AddDays(1);
+            var start = DateTime.Now.Date.AddDays(1).AddMinutes(5);
             await Schedule<ClearHistoryJob>(scheduler, description, span, start, stoppingToken);
         }
 

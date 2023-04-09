@@ -25,20 +25,6 @@ namespace Planar.Service.Data
             return await _context.SaveChangesAsync(acceptAllChangesOnSuccess);
         }
 
-        public async Task<int> SaveChangesWithoutConcurrency()
-        {
-            try
-            {
-                return await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                // *** DO NOTHING *** //
-            }
-
-            return 0;
-        }
-
         public IExecutionStrategy CreateExecutionStrategy()
         {
             return _context.Database.CreateExecutionStrategy();

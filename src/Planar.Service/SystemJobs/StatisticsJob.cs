@@ -36,8 +36,8 @@ namespace Planar.Service.SystemJobs
         public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
         {
             const string description = "System job for saving statistics data to database";
-            var span = TimeSpan.FromHours(1);
-            var start = DateTime.Now.Date.AddMinutes(1);
+            var span = TimeSpan.FromHours(24);
+            var start = DateTime.Now.Date.AddDays(1).AddMinutes(10);
             await Schedule<StatisticsJob>(scheduler, description, span, start, stoppingToken);
         }
 
@@ -73,6 +73,17 @@ namespace Planar.Service.SystemJobs
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Fail to fill anomaly execution");
+            }
+
+            try
+            {
+                var data = _serviceProvider.GetRequiredService<StatisticsData>();
+                var rows = await data.FillJobCounters();
+                _logger.LogDebug("statistics job execute {Method} with {Total} effected row(s)", nameof(StatisticsData.FillJobCounters), rows);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to fill job counter execution");
             }
 
             try
