@@ -61,7 +61,9 @@ namespace Planar.Service.API
                     throw new RestNotFoundException($"data with key '{request.DataKey}' not found");
                 }
 
+#pragma warning disable CS8604 // Possible null reference argument.
                 info.JobDetails.JobDataMap.Add(request.DataKey, request.DataValue);
+#pragma warning restore CS8604 // Possible null reference argument.
             }
 
             var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
@@ -153,6 +155,7 @@ namespace Planar.Service.API
                     if (request == null) { continue; }
 
                     var key = JobKeyHelper.GetJobKey(request);
+                    if (key == null) { continue; }
                     var details = await Scheduler.GetJobDetail(key);
                     if (details == null)
                     {
@@ -171,7 +174,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        public IEnumerable<string> GetJobTypes()
+        public static IEnumerable<string> GetJobTypes()
         {
             return ServiceUtil.JobTypes;
         }
@@ -183,25 +186,23 @@ namespace Planar.Service.API
                 throw new RestNotFoundException($"type '{typeName}' could not be found");
 
             using Stream? stream = assembly.GetManifestResourceStream($"{typeName}.JobFile.yml");
+            if (stream == null)
             {
-                if (stream == null)
-                {
-                    throw new RestNotFoundException("jobfile.yml resource could not be found");
-                }
-
-                using StreamReader reader = new(stream);
-                var result = reader.ReadToEnd();
-
-                if (string.IsNullOrEmpty(result))
-                {
-                    throw new RestNotFoundException("jobfile.yml resource could not be found");
-                }
-
-                return result;
+                throw new RestNotFoundException("jobfile.yml resource could not be found");
             }
+
+            using StreamReader reader = new(stream);
+            var result = reader.ReadToEnd();
+
+            if (string.IsNullOrEmpty(result))
+            {
+                throw new RestNotFoundException("jobfile.yml resource could not be found");
+            }
+
+            return result;
         }
 
-        public async Task<LastInstanceId> GetLastInstanceId(string id, DateTime invokeDate)
+        public async Task<LastInstanceId?> GetLastInstanceId(string id, DateTime invokeDate)
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
 
@@ -332,7 +333,7 @@ namespace Planar.Service.API
         public async Task<IEnumerable<KeyValueItem>> GetSettings(string id)
         {
             var result = new List<KeyValueItem>();
-            var jobId = await JobKeyHelper.GetJobId(id);
+            var jobId = await JobKeyHelper.GetJobId(id) ?? string.Empty;
             var properties = await DataLayer.GetJobProperty(jobId);
 
             if (string.IsNullOrEmpty(properties))
@@ -396,7 +397,7 @@ namespace Planar.Service.API
         public async Task Remove(string id)
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
-            var jobId = await JobKeyHelper.GetJobId(jobKey);
+            var jobId = await JobKeyHelper.GetJobId(jobKey) ?? string.Empty;
             ValidateSystemJob(jobKey);
 
             await Scheduler.DeleteJob(jobKey);
@@ -542,7 +543,7 @@ namespace Planar.Service.API
             target.Durable = source.Durable;
             target.RequestsRecovery = source.RequestsRecovery;
             target.DataMap = Global.ConvertDataMapToDictionary(dataMap);
-            target.Properties = await DataLayer.GetJobProperty(target.Id);
+            target.Properties = await DataLayer.GetJobProperty(target.Id) ?? string.Empty;
         }
 
         private static void FillEstimatedEndTime(List<RunningJobDetails> runningJobs)

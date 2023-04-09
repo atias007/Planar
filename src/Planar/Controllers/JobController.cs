@@ -335,7 +335,7 @@ namespace Planar.Controllers
         [OkJsonResponse(typeof(IEnumerable<string>))]
         public ActionResult<IEnumerable<string>> GetJobTypes()
         {
-            var result = BusinesLayer.GetJobTypes();
+            var result = JobDomain.GetJobTypes();
             return Ok(result);
         }
 

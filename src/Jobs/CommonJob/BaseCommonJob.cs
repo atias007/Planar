@@ -50,6 +50,8 @@ namespace CommonJob
 
         public TProperties Properties { get; private set; } = new();
 
+        protected IDictionary<string, string?> Settings { get; private set; } = new Dictionary<string, string?>();
+
         public abstract Task Execute(IJobExecutionContext context);
 
         protected void FinalizeJob(IJobExecutionContext context)
@@ -77,8 +79,8 @@ namespace CommonJob
                 path = pathProperties.Path;
             }
 
-            var settings = LoadJobSettings(path);
-            _messageBroker = new JobMessageBroker(context, settings);
+            Settings = LoadJobSettings(path);
+            _messageBroker = new JobMessageBroker(context, Settings);
         }
 
         protected IDictionary<string, string?> LoadJobSettings(string? path)

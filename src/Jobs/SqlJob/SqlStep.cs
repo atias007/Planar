@@ -4,8 +4,8 @@ namespace Planar
 {
     public sealed class SqlStep
     {
-        [YamlMember(Alias = "connection string")]
-        public string? ConnectionString { get; set; }
+        [YamlMember(Alias = "connection name")]
+        public string? ConnectionName { get; set; }
 
         public string? Name { get; set; }
         public string? Filename { get; set; }
@@ -17,5 +17,8 @@ namespace Planar
 
         [YamlIgnore]
         public string Script { get; set; } = string.Empty;
+
+        [YamlIgnore]
+        internal string? ConnectionString { get; set; }
     }
 }

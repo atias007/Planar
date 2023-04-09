@@ -47,22 +47,22 @@ namespace Planar
 
             var total = Properties.Steps.Count;
             MessageBroker.AppendLog(LogLevel.Information, $"Start sql job with {total} steps");
-            var isDefaultConnection =
-                !string.IsNullOrWhiteSpace(Properties.ConnectionString) &&
-                Properties.Steps.Any(s => string.IsNullOrWhiteSpace(s.ConnectionString));
+            var isOnlyDefaultConnection =
+                !string.IsNullOrWhiteSpace(Properties.DefaultConnectionName) &&
+                Properties.Steps.Any(s => string.IsNullOrWhiteSpace(s.ConnectionName));
 
             DbConnection? defaultConnection = null;
             DbTransaction? transaction = null;
 
             try
             {
-                if (isDefaultConnection)
+                if (isOnlyDefaultConnection)
                 {
-                    defaultConnection = new SqlConnection(Properties.ConnectionString);
+                    defaultConnection = new SqlConnection(Properties.DefaultConnectionString);
                     await defaultConnection.OpenAsync(context.CancellationToken);
                     if (Properties.Transaction)
                     {
-                        var isolation = Properties.IsolationLevel ?? IsolationLevel.Unspecified;
+                        var isolation = Properties.TransactionIsolationLevel ?? IsolationLevel.Unspecified;
                         transaction = await defaultConnection.BeginTransactionAsync(isolation, context.CancellationToken);
                         MessageBroker.AppendLog(LogLevel.Information, @"Begin transaction with isolation level {isolation}");
                     }
@@ -208,6 +208,7 @@ namespace Planar
             try
             {
                 ValidateMandatoryString(Properties.Path, nameof(Properties.Path));
+                Properties.DefaultConnectionString = ValidateConnectionName(Properties.DefaultConnectionName);
                 Properties.Steps?.ForEach(s => ValidateSqlStep(s));
             }
             catch (Exception ex)
@@ -224,6 +225,7 @@ namespace Planar
             try
             {
                 ValidateMandatoryString(step.Filename, nameof(step.Filename));
+                step.ConnectionString = ValidateConnectionName(step.ConnectionName);
                 step.FullFilename = FolderConsts.GetSpecialFilePath(
                     PlanarSpecialFolder.Jobs,
                     Properties.Path ?? string.Empty,
@@ -243,6 +245,39 @@ namespace Planar
                 MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
                 throw;
             }
+        }
+
+        private string? ValidateConnectionName(string? name)
+        {
+            if (string.IsNullOrEmpty(name)) { return null; }
+            var connectionString = Properties.ConnectionStrings?
+                .FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+
+            if (connectionString != null)
+            {
+                if (string.IsNullOrWhiteSpace(connectionString.ConnectionString))
+                {
+                    throw new SqlJobException($"connection name '{name}' in job properties has null or empty value");
+                }
+
+                return connectionString.ConnectionString;
+            }
+
+            var settingsKey = Settings.Keys
+                .FirstOrDefault(k => string.Equals(k, name, StringComparison.OrdinalIgnoreCase));
+
+            if (string.IsNullOrWhiteSpace(settingsKey))
+            {
+                throw new SqlJobException($"connection name '{name}' could not be found in job settings / global config / job connection strings property");
+            }
+
+            var value = Settings[settingsKey];
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new SqlJobException($"connection name '{name}' in job settings / global config has null or empty value");
+            }
+
+            return value;
         }
     }
 }
