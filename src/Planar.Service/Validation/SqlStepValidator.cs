@@ -8,7 +8,7 @@ namespace Planar.Service.Validation
         {
             RuleFor(s => s.Name).NotEmpty().Length(1, 50);
             RuleFor(s => s.Filename).NotEmpty().Length(1, 100);
-            RuleFor(s => s.ConnectionName).NotEmpty().Length(1, 50);
+            RuleFor(s => s.ConnectionName).Length(1, 50);
         }
     }
 }

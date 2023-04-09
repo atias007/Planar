@@ -59,12 +59,13 @@ namespace Planar
                 if (isOnlyDefaultConnection)
                 {
                     defaultConnection = new SqlConnection(Properties.DefaultConnectionString);
+                    MessageBroker.AppendLog(LogLevel.Information, $"Open default sql connection with connection name: {Properties.DefaultConnectionName}");
                     await defaultConnection.OpenAsync(context.CancellationToken);
                     if (Properties.Transaction)
                     {
                         var isolation = Properties.TransactionIsolationLevel ?? IsolationLevel.Unspecified;
                         transaction = await defaultConnection.BeginTransactionAsync(isolation, context.CancellationToken);
-                        MessageBroker.AppendLog(LogLevel.Information, @"Begin transaction with isolation level {isolation}");
+                        MessageBroker.AppendLog(LogLevel.Information, $"Begin transaction with isolation level {isolation}");
                     }
                 }
                 var counter = 0;
@@ -118,6 +119,7 @@ namespace Planar
             {
                 finalizeConnection = true;
                 connection = new SqlConnection(step.ConnectionString);
+                MessageBroker.AppendLog(LogLevel.Information, $"Open sql connection with connection name: {step.ConnectionName}");
                 await connection.OpenAsync(context.CancellationToken);
             }
 
