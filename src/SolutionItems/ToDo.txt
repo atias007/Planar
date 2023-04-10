@@ -5,11 +5,10 @@ PLAN FOR V 1.3.0
 - authorization
 
 - add timeout parameter to trigger
-
 - convert id in sql table JobInstanceLog from int to bigint
 - add validation to JobRunnerBuilder in test nuget package
 - add to jobfile the option to control the amount of retries
-- replace json with yml appsettings
+
 
 - BACKLOG ----------------------------------------------------------------------------
 - move work hours settings to settings folder & convert yo yml
@@ -142,6 +141,7 @@ V 1.2.3
  - feature: cli history ls (status parameter to be enum)
  - job test: do not allow test already running jobs
  - job test: if no instance id, check hc and print warning about already running job 
+ - replace json with yml appsettings, serilog
  - add statistics for: 
 	* count runs per day, 
 	* count success retry per day, 

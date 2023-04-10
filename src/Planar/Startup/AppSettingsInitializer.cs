@@ -10,7 +10,7 @@ namespace Planar.Startup
     {
         public static void Initialize()
         {
-            var file = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.json");
+            var file = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.yml");
 
             IConfiguration config = null;
 
@@ -19,7 +19,7 @@ namespace Planar.Startup
                 Console.WriteLine("[x] Read AppSettings files");
 
                 config = new ConfigurationBuilder()
-                    .AddJsonFile(file, optional: false, reloadOnChange: true)
+                    .AddYamlFile(file, optional: false, reloadOnChange: true)
                     .AddEnvironmentVariables()
                     .Build();
             }

@@ -26,9 +26,9 @@ namespace Planar.Startup
         {
             Console.WriteLine("[x] Configure serilog");
 
-            var file = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "Serilog.json");
+            var file = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "Serilog.yml");
             var configuration = new ConfigurationBuilder()
-                        .AddJsonFile(file)
+                        .AddYamlFile(file)
                         .AddEnvironmentVariables()
                         .Build();
 

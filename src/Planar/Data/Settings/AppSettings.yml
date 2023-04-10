@@ -1,0 +1,27 @@
+Environment: Development
+DatabaseProvider: SqlServer                        # options: SqlServer
+ServiceName: PlanarService
+InstanceId: AUTO
+DatabaseConnectionString: Password=PlanarSqlPassword12345@;Persist Security Info=True;User ID=sa;Initial Catalog=Planar;Data Source=planar-db,1433;MultipleActiveResultSets=True;Encrypt=False
+MaxConcurrency: 10
+Clustering: false
+ClusterPort: 12306
+JobAutoStopSpan: '02:00:00'
+ClusteringCheckinInterval: '00:00:05'
+ClusteringCheckinMisfireThreshold: '00:00:05'
+ClusterHealthCheckInterval: '00:01:00'
+PersistRunningJobsSpan: '00:00:30'
+SchedulerStartupDelay: '00:00:05'
+HttpPort: 2306                                     # set this value to true in production environment
+UseHttps: false
+HttpsPort: 2610
+UseHttpsRedirect: false                            # set this value to true in production environment
+LogLevel: Debug                                    # options: Trace | Debug | Information | Warning | Error | Critical | None
+SwaggerUI: true                                    # set this value to false in production environment
+OpenApiUI: true                                    # set this value to false in production environment
+DeveloperExceptionPage: true                       # this value is automatically set to false in production environment
+ClearTraceTableOverDays: 365
+ClearJobLogTableOverDays: 365
+ClearStatisticsTablesOverDays: 365
+RunDatabaseMigration: true
+AuthenticationMode: AllAnonymous                   # options: AllAnonymous | ViewAnonymous | Authenticate */ /* set this value to ViewAnonymous or Authenticate in production environment
