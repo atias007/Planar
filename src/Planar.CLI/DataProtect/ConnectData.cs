@@ -40,7 +40,7 @@ namespace Planar.CLI.DataProtect
             try
             {
                 if (!request.Remember) { return; }
-                RemoveCurrentLogin();
+                Logout();
 
                 request.ConnectDate = DateTimeOffset.Now.Date;
                 Data.LoginRequest = request;
@@ -131,12 +131,6 @@ namespace Planar.CLI.DataProtect
             }
 
             MetadataFilename = Path.Combine(folder, filename);
-        }
-
-        private static void RemoveCurrentLogin()
-        {
-            Data.LoginRequest = null;
-            Save();
         }
 
         private static void Save()
