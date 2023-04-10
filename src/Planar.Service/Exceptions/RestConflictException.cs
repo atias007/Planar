@@ -19,6 +19,6 @@ namespace Planar.Service.Exceptions
         {
         }
 
-        public object Value { get; private set; }
+        public object? Value { get; private set; }
     }
 }

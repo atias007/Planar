@@ -17,7 +17,7 @@ namespace Planar.Common
             return list == null || !list.Contains(value);
         }
 
-        public static void Put<TValue>(this Dictionary<string, TValue> dictionary, string key, TValue value)
+        public static void Put<TValue>(this Dictionary<string, TValue?> dictionary, string key, TValue? value)
         {
             if (dictionary == null) { throw new ArgumentNullException(nameof(dictionary)); }
             if (dictionary.ContainsKey(key))
@@ -30,7 +30,7 @@ namespace Planar.Common
             }
         }
 
-        public static void Put(this Dictionary<string, string> dictionary, string key, string value)
+        public static void Put(this Dictionary<string, string?> dictionary, string key, string? value)
         {
             Put<string>(dictionary, key, value);
         }

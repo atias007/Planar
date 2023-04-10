@@ -42,6 +42,8 @@ namespace Planar.Service.Monitor.Test
 
         public bool Recovering => false;
 
+        // ****** ATTENTION: any changes should reflect in Monitor Util ******
+
         public TriggerKey RecoveringTriggerKey => null;
 
         public int RefireCount => 0;
@@ -59,6 +61,8 @@ namespace Planar.Service.Monitor.Test
         public DateTimeOffset? PreviousFireTimeUtc => DateTimeOffset.UtcNow.AddMinutes(-10);
 
         public DateTimeOffset? NextFireTimeUtc => DateTimeOffset.UtcNow.AddMinutes(10);
+
+        // ****** ATTENTION: any changes should reflect in Monitor Util ******
 
         public string FireInstanceId => "NON_CLUSTERED638093344653612239";
 

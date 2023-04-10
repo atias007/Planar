@@ -63,8 +63,8 @@ namespace Planar.Service.API
         public async Task<MonitorItem> GetById(int id)
         {
             var item = await DataLayer.GetMonitorAction(id);
-            ValidateExistingEntity(item, "monitor");
-            var result = Mapper.Map<MonitorAction, MonitorItem>(item);
+            var monitor = ValidateExistingEntity(item, "monitor");
+            var result = Mapper.Map<MonitorAction, MonitorItem>(monitor);
             return result;
         }
 
@@ -148,6 +148,13 @@ namespace Planar.Service.API
             var group = await groupDal.GetGroupWithUsers(request.DistributionGroupId);
             var monitorEvent = Enum.Parse<MonitorEvents>(request.MonitorEvent.ToString());
             var exception = new Exception("This is test exception");
+
+            if (group == null)
+            {
+                var field = nameof(request.DistributionGroupId);
+                throw new RestValidationException(field, $"{field} was not found");
+            }
+
             var action = new MonitorAction
             {
                 Active = true,
@@ -182,7 +189,7 @@ namespace Planar.Service.API
 
             if (!result.Success)
             {
-                throw new RestValidationException(string.Empty, result.Failure);
+                throw new RestValidationException(string.Empty, result.Failure ?? "general error");
             }
         }
     }

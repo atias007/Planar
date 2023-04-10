@@ -43,7 +43,7 @@ namespace CommonJob
         {
             get
             {
-                if (_messageBroker == null) { throw new ArgumentNullException(nameof(MessageBroker)); }
+                if (_messageBroker == null) { throw new PlanarJobException(nameof(MessageBroker)); }
                 return _messageBroker;
             }
         }

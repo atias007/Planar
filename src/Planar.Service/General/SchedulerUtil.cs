@@ -241,7 +241,7 @@ namespace Planar.Service.General
             target.TriggerGroup = source.Trigger.Key.Group;
             target.TriggerName = source.Trigger.Key.Name;
             target.DataMap = Global.ConvertDataMapToDictionary(source.MergedJobDataMap);
-            target.TriggerId = TriggerKeyHelper.GetTriggerId(source);
+            target.TriggerId = TriggerKeyHelper.GetTriggerId(source) ?? Consts.Undefined;
 
             if (target.TriggerGroup == Consts.RecoveringJobsGroup)
             {

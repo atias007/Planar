@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Exceptions;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.General;
@@ -183,13 +184,19 @@ namespace Planar.Service.Monitor
             var instance = Activator.CreateInstance(factory.Type);
             if (instance == null) { return null; }
 
-#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
-            var method1 = instance.GetType().GetMethod(HookInstance.HandleMethodName, BindingFlags.NonPublic | BindingFlags.Instance);
-            var method2 = instance.GetType().GetMethod(HookInstance.HandleSystemMethodName, BindingFlags.NonPublic | BindingFlags.Instance);
-#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
+            var method1 = SafeGetMethod(hook, HookInstance.HandleMethodName, instance);
+            var method2 = SafeGetMethod(hook, HookInstance.HandleSystemMethodName, instance);
 
             var result = new HookInstance { Instance = instance, HandleMethod = method1, HandleSystemMethod = method2 };
             return result;
+        }
+
+        private static MethodInfo SafeGetMethod(string hook, string methodName, object instance)
+        {
+#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
+            var method = instance.GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
+#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
+            return method ?? throw new PlanarException($"method {methodName} could not found in hook {hook}");
         }
 
         private static MonitorDetails GetMonitorDetails(MonitorAction action, IJobExecutionContext context, Exception? exception)

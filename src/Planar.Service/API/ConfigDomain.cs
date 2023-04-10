@@ -39,13 +39,7 @@ namespace Planar.Service.API
 
         public async Task<GlobalConfig> Get(string key)
         {
-            var data = await DataLayer.GetGlobalConfig(key);
-
-            if (data == null)
-            {
-                throw new RestNotFoundException($"global config with key '{key}' not found");
-            }
-
+            var data = await DataLayer.GetGlobalConfig(key) ?? throw new RestNotFoundException($"global config with key '{key}' not found");
             return data;
         }
 

@@ -37,7 +37,7 @@ namespace Planar.API.Common.Entities
         public string TriggerId { get; set; } = string.Empty;
 
         [YamlMember(Order = 30)]
-        public SortedDictionary<string, string> DataMap { get; set; } = new SortedDictionary<string, string>();
+        public SortedDictionary<string, string?> DataMap { get; set; } = new SortedDictionary<string, string?>();
 
         [YamlMember(Order = 998)]
         public int? EffectedRows { get; set; }

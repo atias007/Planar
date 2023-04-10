@@ -20,6 +20,8 @@ namespace Planar
             Author
         };
 
+        public const string Undefined = "undefined";
+
         public const string QuartzPrefix = "QRTZ_";
         public const string ConstPrefix = "__";
         public const string RetryCounter = "__Job_Retry_Counter";

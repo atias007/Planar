@@ -50,12 +50,12 @@ namespace Planar.Service.General
 
         public IDisposable OpenNestedContext(string message)
         {
-            return null;
+            return null!;
         }
 
         public IDisposable OpenMappedContext(string key, object value, bool destructure = false)
         {
-            return null;
+            return null!;
         }
     }
 }

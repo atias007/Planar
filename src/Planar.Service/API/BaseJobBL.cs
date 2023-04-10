@@ -25,7 +25,7 @@ namespace Planar.Service.API
 
             public JobKey JobKey { get; set; }
 
-            public IJobDetail JobDetails { get; set; }
+            public IJobDetail? JobDetails { get; set; }
         }
 
         protected static void ValidateSystemJob(JobKey jobKey)

@@ -55,7 +55,7 @@ namespace Planar.Service.API
                     throw new RestNotFoundException($"data with key '{request.DataKey}' not found");
                 }
 
-                info.Trigger.JobDataMap.Add(request.DataKey, request.DataValue);
+                info.Trigger.JobDataMap.Put(request.DataKey, request.DataValue);
             }
 
             var triggers = await BuildTriggers(info);
@@ -161,7 +161,7 @@ namespace Planar.Service.API
                     .Replace(doubleSpace, singleSpace)
                     .ToLowerInvariant();
 
-                throw new RestValidationException(nameof(expression), error);
+                throw new RestValidationException(nameof(expression), error ?? "general error");
             }
         }
 

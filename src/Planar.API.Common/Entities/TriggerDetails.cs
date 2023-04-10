@@ -37,7 +37,7 @@ namespace Planar.API.Common.Entities
         public DateTime? FinalFire { get; set; }
 
         [YamlMember(Order = 99)]
-        public SortedDictionary<string, string> DataMap { get; set; } = new SortedDictionary<string, string>();
+        public SortedDictionary<string, string?> DataMap { get; set; } = new SortedDictionary<string, string?>();
 
         [YamlMember(Order = 100)]
         public string? State { get; set; }

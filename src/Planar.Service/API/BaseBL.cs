@@ -82,7 +82,7 @@ namespace Planar.Service.API
             return _serviceProvider.GetRequiredService<T>();
         }
 
-        protected static void ValidateExistingEntity<T>(T? entity, string entityName)
+        protected static T ValidateExistingEntity<T>(T? entity, string entityName)
             where T : class
         {
             if (entity == null)
@@ -94,6 +94,8 @@ namespace Planar.Service.API
 
                 throw new RestNotFoundException($"{entityName} could not be found");
             }
+
+            return entity;
         }
 
         protected async Task ValidateExistingTrigger(TriggerKey entity, string triggerId)

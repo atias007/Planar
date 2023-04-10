@@ -46,21 +46,19 @@ namespace Planar.Service.API
 
         public async Task<JobInstanceLog> GetHistoryById(int id)
         {
-            var result = await DataLayer.GetHistoryById(id);
-            ValidateExistingEntity(result, "history");
+            var data = await DataLayer.GetHistoryById(id);
+            var result = ValidateExistingEntity(data, "history");
             return result;
         }
 
-        public async Task<string> GetHistoryDataById(int id)
+        public async Task<string?> GetHistoryDataById(int id)
         {
             var result = await DataLayer.GetHistoryDataById(id);
-
-            // generate NotFound response
             await ValidateHistoryExists(id, result);
             return result;
         }
 
-        public async Task<string> GetHistoryLogById(int id)
+        public async Task<string?> GetHistoryLogById(int id)
         {
             var result = await DataLayer.GetHistoryLogById(id);
 
@@ -69,7 +67,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<string> GetHistoryExceptionById(int id)
+        public async Task<string?> GetHistoryExceptionById(int id)
         {
             var result = await DataLayer.GetHistoryExceptionById(id);
 
@@ -86,7 +84,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        private async Task ValidateHistoryExists(int id, string result)
+        private async Task ValidateHistoryExists(int id, string? result)
         {
             if (string.IsNullOrEmpty(result) && !await DataLayer.IsHistoryExists(id))
             {

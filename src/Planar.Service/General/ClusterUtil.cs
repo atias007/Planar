@@ -601,7 +601,7 @@ namespace Planar.Service.General
         {
             var result = new RunningJobDetails
             {
-                DataMap = new SortedDictionary<string, string>(reply.DataMap.ToDictionary(k => k.Key, v => v.Value)),
+                DataMap = new SortedDictionary<string, string?>(),
                 Description = reply.Description,
                 EffectedRows = reply.EffectedRows == -1 ? null : reply.EffectedRows,
                 FireInstanceId = reply.FireInstanceId,
@@ -619,6 +619,11 @@ namespace Planar.Service.General
                 TriggerId = reply.TriggerId,
                 TriggerName = reply.TriggerName,
             };
+
+            foreach (var item in reply.DataMap)
+            {
+                result.DataMap.Add(item.Key, item.Value);
+            }
 
             return result;
         }
