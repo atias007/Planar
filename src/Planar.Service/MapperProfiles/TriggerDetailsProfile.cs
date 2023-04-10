@@ -63,7 +63,7 @@ namespace Planar.Service.MapperProfiles
             return dateTimeOffset?.LocalDateTime;
         }
 
-        private static string GetTriggerState(TriggerKey key, IScheduler scheduler)
+        private static string? GetTriggerState(TriggerKey key, IScheduler scheduler)
         {
             var result = scheduler.GetTriggerState(key).Result;
             return Convert.ToString(result);
@@ -77,7 +77,7 @@ namespace Planar.Service.MapperProfiles
             }
 
             var id = TriggerKeyHelper.GetTriggerId(trigger);
-            return id;
+            return id ?? Consts.Undefined;
         }
 
         private static string GetMisfireInstructionNameForSimpleTrigger(int value)
