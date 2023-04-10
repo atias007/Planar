@@ -61,9 +61,7 @@ namespace Planar.Service.API
                     throw new RestNotFoundException($"data with key '{request.DataKey}' not found");
                 }
 
-#pragma warning disable CS8604 // Possible null reference argument.
-                info.JobDetails.JobDataMap.Add(request.DataKey, request.DataValue);
-#pragma warning restore CS8604 // Possible null reference argument.
+                info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
             }
 
             var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);

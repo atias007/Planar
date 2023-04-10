@@ -24,7 +24,7 @@ namespace Planar.Service.Monitor
 
             var messageBroker = new MonitorMessageBroker(logger, details);
             var result = HandleMethod.Invoke(Instance, new object[] { messageBroker });
-            return (Task)result;
+            return (result as Task) ?? Task.CompletedTask;
         }
 
         public Task HandleSystem(MonitorSystemDetails details, ILogger<MonitorUtil> logger)
@@ -36,7 +36,7 @@ namespace Planar.Service.Monitor
 
             var messageBroker = new MonitorMessageBroker(logger, details);
             var result = HandleSystemMethod.Invoke(Instance, new object[] { messageBroker });
-            return result as Task;
+            return (result as Task) ?? Task.CompletedTask;
         }
     }
 }
