@@ -77,7 +77,7 @@ namespace Planar.CLI
             else
             {
                 var runtime = CliTableFormat.FormatTimeSpan(item.RunTime);
-                var estimated = item.EstimatedEndTime.HasValue ? CliTableFormat.FormatTimeSpan(item.EstimatedEndTime.Value) : string.Empty;
+                var estimated = CliTableFormat.FormatTimeSpan(item.EstimatedEndTime);
 
                 table.UpdateCell(i, 3, $"[gold3_1]{item.Progress}%[/]");
                 table.UpdateCell(i, 4, item.EffectedRows.GetValueOrDefault().ToString());

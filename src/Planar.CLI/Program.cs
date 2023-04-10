@@ -92,7 +92,7 @@ namespace Planar.CLI
 
             if (!errors.Any())
             {
-                AnsiConsole.MarkupLine(CliFormat.GetValidationErrorMarkup(entity.Detail));
+                MarkupCliLine(CliFormat.GetValidationErrorMarkup(entity.Detail));
                 return true;
             }
 
@@ -100,11 +100,11 @@ namespace Planar.CLI
             {
                 var value = errors.First() as JValue;
                 var strValue = Convert.ToString(value?.Value);
-                AnsiConsole.MarkupLine(CliFormat.GetValidationErrorMarkup(strValue));
+                MarkupCliLine(CliFormat.GetValidationErrorMarkup(strValue));
                 return true;
             }
 
-            AnsiConsole.MarkupLine(CliFormat.GetValidationErrorMarkup(string.Empty));
+            MarkupCliLine(CliFormat.GetValidationErrorMarkup(string.Empty));
             DisplayValidationErrors(errors);
 
             return true;
@@ -253,7 +253,7 @@ namespace Planar.CLI
                 }
                 else
                 {
-                    AnsiConsole.MarkupLine(CliFormat.GetErrorMarkup(Markup.Escape(finaleException.Message)));
+                    MarkupCliLine(CliFormat.GetErrorMarkup(Markup.Escape(finaleException.Message)));
                 }
             }
         }
@@ -290,20 +290,20 @@ namespace Planar.CLI
 
             if (response.ErrorMessage != null && response.ErrorMessage.Contains("No connection could be made"))
             {
-                AnsiConsole.MarkupLine(CliFormat.GetErrorMarkup($"no connection could be made to planar deamon ({RestProxy.Host}:{RestProxy.Port})"));
+                MarkupCliLine(CliFormat.GetErrorMarkup($"no connection could be made to planar deamon ({RestProxy.Host}:{RestProxy.Port})"));
             }
             else if (response.ErrorMessage != null && response.ErrorMessage.Contains("No such host is known"))
             {
-                AnsiConsole.MarkupLine(CliFormat.GetErrorMarkup(response.ErrorMessage.ToLower()));
+                MarkupCliLine(CliFormat.GetErrorMarkup(response.ErrorMessage.ToLower()));
             }
             else
             {
-                AnsiConsole.MarkupLine(CliFormat.GetErrorMarkup("general error"));
+                MarkupCliLine(CliFormat.GetErrorMarkup("general error"));
             }
 
             if (!string.IsNullOrEmpty(response.StatusDescription))
             {
-                AnsiConsole.MarkupLine($"[red] ({response.StatusDescription})[/]");
+                MarkupCliLine($"[red] ({response.StatusDescription})[/]");
             }
         }
 
@@ -342,7 +342,7 @@ namespace Planar.CLI
                     "server return conflict status" :
                     JsonConvert.DeserializeObject<string>(response.Content);
 
-                AnsiConsole.MarkupLine(CliFormat.GetConflictErrorMarkup(message));
+                MarkupCliLine(CliFormat.GetConflictErrorMarkup(message));
                 return true;
             }
 
@@ -367,7 +367,7 @@ namespace Planar.CLI
                     "server return not found status" :
                     JsonConvert.DeserializeObject<string>(response.Content);
 
-                AnsiConsole.MarkupLine(CliFormat.GetValidationErrorMarkup(message));
+                MarkupCliLine(CliFormat.GetValidationErrorMarkup(message));
                 return true;
             }
 
@@ -514,6 +514,16 @@ namespace Planar.CLI
         {
             if (filename == null) { return; }
             await File.AppendAllTextAsync(filename, content);
+        }
+
+        private static void MarkupCliLine(string message)
+        {
+            if (Console.CursorLeft != 0)
+            {
+                Console.WriteLine();
+            }
+
+            AnsiConsole.MarkupLine(message);
         }
     }
 }

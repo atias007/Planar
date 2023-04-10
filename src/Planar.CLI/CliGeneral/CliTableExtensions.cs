@@ -87,7 +87,7 @@ namespace Planar.CLI
                 CliTableFormat.GetProgressMarkup(r.Progress),
                 $"{r.EffectedRows}",
                 CliTableFormat.FormatTimeSpan(r.RunTime),
-                r.EstimatedEndTime.HasValue ? $"[grey]{CliTableFormat.FormatTimeSpan(r.EstimatedEndTime.Value)}[/]" : string.Empty));
+                $"[grey]{CliTableFormat.FormatTimeSpan(r.EstimatedEndTime)}[/]"));
             return table;
         }
 
