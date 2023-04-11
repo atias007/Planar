@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
+using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.Model.DataObjects;
@@ -241,7 +242,7 @@ namespace Planar.Service.General
             target.TriggerGroup = source.Trigger.Key.Group;
             target.TriggerName = source.Trigger.Key.Name;
             target.DataMap = Global.ConvertDataMapToDictionary(source.MergedJobDataMap);
-            target.TriggerId = TriggerKeyHelper.GetTriggerId(source) ?? Consts.Undefined;
+            target.TriggerId = TriggerHelper.GetTriggerId(source.Trigger) ?? Consts.Undefined;
 
             if (target.TriggerGroup == Consts.RecoveringJobsGroup)
             {

@@ -4,13 +4,12 @@ PLAN FOR V 1.3.0
 - documentation
 - authorization
 
-- add timeout parameter to trigger
 - convert id in sql table JobInstanceLog from int to bigint
 - add validation to JobRunnerBuilder in test nuget package
-- add to jobfile the option to control the amount of retries
-
+- fix AddAggragateException in job muget
 
 - BACKLOG ----------------------------------------------------------------------------
+- add RestJob
 - move work hours settings to settings folder & convert yo yml
 - cli: service status [time scope] dashboard command
 - add job audit
@@ -19,11 +18,12 @@ PLAN FOR V 1.3.0
 - add statistics module with rest apis and cli plot charts
 - add anomaly monitor events
 - add angular dashboard
-- add RestJob
+
 - cli test cluster command
 - cli: add string similarity (https://github.com/glienard/StringSimilarity.NET)
 - option to pause job after {x} fails in row
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt, )
+- add cli command to filter history / trace with odata filter
 
 -----------------------------------------DONE-----------------------------------------
 - cli login with option to remember
@@ -142,6 +142,8 @@ V 1.2.3
  - job test: do not allow test already running jobs
  - job test: if no instance id, check hc and print warning about already running job 
  - replace json with yml appsettings, serilog
+ - add timeout parameter to trigger
+ - add to jobfile the option to control the amount of retries
  - add statistics for: 
 	* count runs per day, 
 	* count success retry per day, 

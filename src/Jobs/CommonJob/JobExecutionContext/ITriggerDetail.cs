@@ -17,5 +17,7 @@ namespace Planar.Job
         bool HasRetry { get; }
         bool? IsLastRetry { get; }
         bool IsRetryTrigger { get; }
+        int? RetryNumber { get; }
+        int? MaxRetries { get; }
     }
 }

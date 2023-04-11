@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
+using Planar.Common.Helpers;
 using Quartz;
 using SqlJob;
 using System.Data;
@@ -25,7 +26,13 @@ namespace Planar
             {
                 await Initialize(context);
                 ValidateSqlJob();
-                await ExecuteSql(context);
+                var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
+                var task = Task.Run(() => ExecuteSql(context));
+                var finish = task.Wait(timeout);
+                if (!finish)
+                {
+                    await context.Scheduler.Interrupt(context.JobDetail.Key);
+                }
             }
             catch (Exception ex)
             {

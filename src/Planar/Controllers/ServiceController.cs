@@ -52,12 +52,12 @@ namespace Planar.Controllers
             return Ok(list);
         }
 
-        [HttpPost("stop")]
-        [SwaggerOperation(OperationId = "post_service_stop", Description = "Stop service", Summary = "Stop Service")]
+        [HttpPost("halt")]
+        [SwaggerOperation(OperationId = "post_service_halt", Description = "Halt (stop) service", Summary = "Halt Service")]
         [OkJsonResponse]
-        public async Task<ActionResult> StopScheduler()
+        public async Task<ActionResult> HaltScheduler()
         {
-            await BusinesLayer.StopScheduler();
+            await BusinesLayer.HaltScheduler();
             return Ok();
         }
 

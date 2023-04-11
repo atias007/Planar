@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
+using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.General;
@@ -218,7 +219,7 @@ namespace Planar.Service.Monitor
                 Recovering = context.JobDetail.RequestsRecovery,
                 TriggerDescription = context.Trigger.Description,
                 TriggerGroup = context.Trigger.Key.Group,
-                TriggerId = TriggerKeyHelper.GetTriggerId(context.Trigger),
+                TriggerId = TriggerHelper.GetTriggerId(context.Trigger),
                 TriggerName = context.Trigger.Key.Name,
             };
 

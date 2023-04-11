@@ -25,8 +25,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="API\Helpers\TriggerHelper.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="..\Planar.Common\Consts.cs" Link="General\Consts.cs" />
     <Compile Include="..\Planar\FolderConsts.cs" Link="General\FolderConsts.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="API\Helpers\TriggerHelper.cs" />
   </ItemGroup>
 
   <ItemGroup>

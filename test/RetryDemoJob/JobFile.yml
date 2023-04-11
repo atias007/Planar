@@ -6,10 +6,8 @@ properties:
   filename: RetryDemoJob.dll
   class name: RetryDemoJob.Worker
 simple triggers:
-cron triggers:
-  - name: some-cron-trigger
-    cron expression: 0 0/5 0 ? * * *
-    misfire behaviour: DoNothing   # | DoNothing | FireAndProceed | IgnoreMisfires
-    priority: 1
-    calendar: null
-    retry span: 00:01:00
+  - name: every-5minute-trigger
+    interval: 00:05:00
+    misfire behaviour: FireNow
+    retry span: 00:00:10
+    max retries: 5

@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar.API.Common.Entities;
+using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -57,8 +58,6 @@ namespace Planar.Service.API
         protected SchedulerUtil SchedulerUtil => _schedulerUtil;
 
         protected JobKeyHelper JobKeyHelper => _serviceProvider.GetRequiredService<JobKeyHelper>();
-
-        protected TriggerKeyHelper TriggerKeyHelper => _serviceProvider.GetRequiredService<TriggerKeyHelper>();
 
         protected string? ServiceVersion
         {

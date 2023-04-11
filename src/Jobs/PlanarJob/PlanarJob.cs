@@ -1,6 +1,7 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
+using Planar.Common.Helpers;
 using Quartz;
 using System;
 using System.IO;
@@ -66,7 +67,8 @@ namespace Planar
                     throw new PlanarJobException($"method {method.Name} invoked but not return System.Task type");
                 }
 
-                var finish = task.Wait(AppSettings.JobAutoStopSpan);
+                var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
+                var finish = task.Wait(timeout);
                 if (!finish)
                 {
                     await context.Scheduler.Interrupt(context.JobDetail.Key);

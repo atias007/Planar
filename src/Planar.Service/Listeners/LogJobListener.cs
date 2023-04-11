@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.General;
@@ -65,7 +66,7 @@ namespace Planar.Service.Listeners
                     JobName = context.JobDetail.Key.Name,
                     JobGroup = context.JobDetail.Key.Group,
                     JobType = SchedulerUtil.GetJobTypeName(context.JobDetail.JobType),
-                    TriggerId = TriggerKeyHelper.GetTriggerId(context.Trigger) ?? Consts.ManualTriggerId,
+                    TriggerId = TriggerHelper.GetTriggerId(context.Trigger) ?? Consts.ManualTriggerId,
                     TriggerName = context.Trigger.Key.Name,
                     TriggerGroup = context.Trigger.Key.Group,
                     Retry = context.Trigger.Key.Group == Consts.RetryTriggerGroup,

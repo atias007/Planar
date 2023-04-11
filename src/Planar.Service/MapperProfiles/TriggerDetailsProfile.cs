@@ -2,6 +2,7 @@
 using CronExpressionDescriptor;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Quartz;
 using System;
@@ -76,7 +77,7 @@ namespace Planar.Service.MapperProfiles
                 return Consts.RecoveringJobsGroup;
             }
 
-            var id = TriggerKeyHelper.GetTriggerId(trigger);
+            var id = TriggerHelper.GetTriggerId(trigger);
             return id ?? Consts.Undefined;
         }
 

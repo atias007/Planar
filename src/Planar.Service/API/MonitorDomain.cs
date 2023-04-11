@@ -141,7 +141,7 @@ namespace Planar.Service.API
             await Update(updateMonitor);
         }
 
-        public async Task Test(MonitorTestRequest request)
+        public async Task Try(MonitorTestRequest request)
         {
             var monitorUtil = Resolve<MonitorUtil>();
             var groupDal = Resolve<GroupData>();

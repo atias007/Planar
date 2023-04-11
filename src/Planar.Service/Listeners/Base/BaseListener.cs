@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
+using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.General;
@@ -200,7 +201,7 @@ namespace Planar.Service.Listeners.Base
 
         protected static bool IsSystemTriggerKey(TriggerKey triggerKey)
         {
-            return TriggerKeyHelper.IsSystemTriggerKey(triggerKey);
+            return TriggerHelper.IsSystemTriggerKey(triggerKey);
         }
 
         protected bool IsSystemJob(IJobDetail job)
@@ -210,7 +211,7 @@ namespace Planar.Service.Listeners.Base
 
         protected bool IsSystemTrigger(ITrigger trigger)
         {
-            return TriggerKeyHelper.IsSystemTriggerKey(trigger.Key);
+            return TriggerHelper.IsSystemTriggerKey(trigger.Key);
         }
     }
 }

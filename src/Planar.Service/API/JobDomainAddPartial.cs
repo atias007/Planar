@@ -1,7 +1,4 @@
-﻿using CommonJob;
-using FluentValidation;
-using Grpc.Core;
-using Microsoft.EntityFrameworkCore.SqlServer.Query.Internal;
+﻿using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
@@ -390,10 +387,23 @@ namespace Planar.Service.API
             // Data --> TriggerId
             trigger = trigger.UsingJobData(Consts.TriggerId, id);
 
-            // Data --> Retry span
+            // Data --> TriggerTimeout
+            if (jobTrigger.Timeout.HasValue)
+            {
+                var timeoutValue = jobTrigger.Timeout.Value.Ticks.ToString();
+                trigger = trigger.UsingJobData(Consts.TriggerTimeout, timeoutValue);
+            }
+
+            // Data --> Retry span, Max retries
             if (jobTrigger.RetrySpan.HasValue)
             {
                 trigger = trigger.UsingJobData(Consts.RetrySpan, jobTrigger.RetrySpan.Value.ToSimpleTimeString());
+            }
+
+            // Data --> Max retries
+            if (jobTrigger.MaxRetries.HasValue)
+            {
+                trigger = trigger.UsingJobData(Consts.MaxRetries, jobTrigger.MaxRetries.Value.ToString());
             }
 
             return trigger;
@@ -505,7 +515,7 @@ namespace Planar.Service.API
 
             #endregion Valid Name & Group
 
-            #region Max Chars
+            #region Max Chars / Value
 
             ValidateRange(metadata.Name, 5, 50, "name", "job");
             ValidateRange(metadata.Group, 1, 50, "group", "job");
@@ -518,7 +528,7 @@ namespace Planar.Service.API
                 ValidateMaxLength(item.Value, 1000, "value", "job data");
             }
 
-            #endregion Max Chars
+            #endregion Max Chars / Value
 
             #region JobData
 
@@ -580,6 +590,8 @@ namespace Planar.Service.API
             ValidateMaxCharsTiggerProperties(container);
             ValidatePreserveWordsTriggerProperties(container);
             ValidateTriggerPriority(container);
+            ValidateTriggerTimeout(container);
+            ValidateTriggerRetry(container);
             ValidateCronExpression(container);
             ValidateTriggerMisfireBehaviour(container);
         }
@@ -614,6 +626,30 @@ namespace Planar.Service.API
             container.CronTriggers?.ForEach(t =>
             {
                 if (t.Priority < 0 || t.Priority > 100) { throw new RestValidationException("priority", $"priority has invalid value ({t.Priority}). valid scope of values is 0-100"); }
+            });
+        }
+
+        private static void ValidateTriggerTimeout(ITriggersContainer container)
+        {
+            container.SimpleTriggers?.ForEach(t =>
+            {
+                if (t.Timeout.HasValue && t.Timeout.Value.TotalSeconds < 1) { throw new RestValidationException("timeout", $"timeout has invalid value. timeout must be greater or equals to 1 second"); }
+            });
+            container.CronTriggers?.ForEach(t =>
+            {
+                if (t.Timeout.HasValue && t.Timeout.Value.TotalSeconds < 1) { throw new RestValidationException("timeout", $"timeout has invalid value. timeout must be greater or equals to 1 second"); }
+            });
+        }
+
+        private static void ValidateTriggerRetry(ITriggersContainer container)
+        {
+            container.SimpleTriggers?.ForEach(t =>
+            {
+                if ((t.RetrySpan == null || t.RetrySpan == TimeSpan.Zero) && t.MaxRetries > 0) { throw new RestValidationException("retry span", $"retry span has invalid value. retry span must have value when max retries has value"); }
+            });
+            container.CronTriggers?.ForEach(t =>
+            {
+                if ((t.RetrySpan == null || t.RetrySpan == TimeSpan.Zero) && t.MaxRetries > 0) { throw new RestValidationException("retry span", $"retry span has invalid value. retry span must have value when max retries has value"); }
             });
         }
 
@@ -666,6 +702,8 @@ namespace Planar.Service.API
                 t.TriggerData ??= new Dictionary<string, string?>();
                 ValidateRange(t.Name, 5, 50, "name", "trigger");
                 ValidateRange(t.Group, 1, 50, "group", "trigger");
+                ValidateMaxLength(t.Calendar, 50, "calendar", "trigger");
+                ValidateRangeValue(t.MaxRetries, 1, 100, "max retries", "trigger");
 
                 foreach (var item in t.TriggerData)
                 {
@@ -735,7 +773,7 @@ namespace Planar.Service.API
             });
         }
 
-        private static Type GetJobType(SetJobRequest job)
+        private static System.Type GetJobType(SetJobRequest job)
         {
             string typeName;
             Assembly assembly;
@@ -832,6 +870,28 @@ namespace Planar.Service.API
             ValidateMaxLength(value, to, name, parent);
         }
 
+        private static void ValidateRangeValue(int? value, int from, int to, string name, string parent)
+        {
+            ValidateMinValue(value, from, name, parent);
+            ValidateMaxValue(value, to, name, parent);
+        }
+
+        private static void ValidateMinValue(int? value, int from, string name, string parent)
+        {
+            if (value != null && value < from)
+            {
+                throw new RestValidationException(name, $"{parent} {name} value is invalid. minimum value is {from}");
+            }
+        }
+
+        private static void ValidateMaxValue(int? value, int to, string name, string parent)
+        {
+            if (value != null && value > to)
+            {
+                throw new RestValidationException(name, $"{parent} {name} value is invalid. maximum value is {to}");
+            }
+        }
+
         private static void ValidateMaxLength(string? value, int length, string name, string parent)
         {
             if (value != null && value.Length > length)
@@ -842,8 +902,10 @@ namespace Planar.Service.API
 
         private static void ValidateMinLength(string? value, int length, string name, string parent)
         {
-            if (value == null) { return; }
-            if (value.Length < length) throw new RestValidationException(name, $"{parent} {name} length is invalid. minimum length is {length}");
+            if (value != null && value.Length < length)
+            {
+                throw new RestValidationException(name, $"{parent} {name} length is invalid. minimum length is {length}");
+            }
         }
     }
 }

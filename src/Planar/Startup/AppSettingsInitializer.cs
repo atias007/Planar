@@ -1,8 +1,15 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Planar.Common;
 using Planar.Common.Exceptions;
 using System;
+using System.Dynamic;
+using System.IO;
 using System.Threading;
+using YamlDotNet.Serialization.NamingConventions;
+using YamlDotNet.Serialization;
+using System.Threading.Tasks;
 
 namespace Planar.Startup
 {
@@ -10,6 +17,7 @@ namespace Planar.Startup
     {
         public static void Initialize()
         {
+            UpgradeToYml();
             var file = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.yml");
 
             IConfiguration config = null;
@@ -66,6 +74,33 @@ namespace Planar.Startup
         public static void TestDatabasePermission()
         {
             AppSettings.TestDatabasePermission();
+        }
+
+        private static void UpgradeToYml()
+        {
+            var jsonFile = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.json");
+            var jsonFileInfo = new FileInfo(jsonFile);
+            if (!jsonFileInfo.Exists) { return; }
+
+            Console.WriteLine("[x] Upgrade AppSettings file from json to yml format");
+            try
+            {
+                var json = File.ReadAllText(jsonFile);
+                var expConverter = new ExpandoObjectConverter();
+                dynamic deserializedObject = JsonConvert.DeserializeObject<ExpandoObject>(json, expConverter);
+                var serializer = new SerializerBuilder()
+                                .WithNamingConvention(PascalCaseNamingConvention.Instance)
+                                .Build();
+
+                var yml = serializer.Serialize(deserializedObject);
+                var ymlFile = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.yml");
+                File.WriteAllText(ymlFile, yml);
+                File.Delete(jsonFile);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[-] WARNING: Upgrade AppSettings file from json to yml format fail: {ex.Message}");
+            }
         }
     }
 }

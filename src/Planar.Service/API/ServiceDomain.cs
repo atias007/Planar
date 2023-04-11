@@ -138,7 +138,7 @@ namespace Planar.Service.API
             return list;
         }
 
-        public async Task StopScheduler()
+        public async Task HaltScheduler()
         {
             await SchedulerUtil.Stop();
             if (AppSettings.Clustering)

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar;
 using Planar.Common;
+using Planar.Common.Helpers;
 using Planar.Job;
 using System;
 using System.Collections.Generic;
@@ -176,12 +177,11 @@ namespace CommonJob
 
         private static JobExecutionContext MapContext(IJobExecutionContext context, IDictionary<string, string?> settings)
         {
-            var hasRetry = context.Trigger.JobDataMap.Contains(Consts.RetrySpan);
-            bool? lastRetry = null;
-            if (hasRetry)
-            {
-                lastRetry = context.Trigger.JobDataMap.GetIntValue(Consts.RetryCounter) > Consts.MaxRetries;
-            }
+            var isRetryTrigger = TriggerHelper.IsRetryTrigger(context.Trigger);
+            var hasRetry = TriggerHelper.HasRetry(context.Trigger);
+            var retryNumber = TriggerHelper.GetRetryNumber(context.Trigger);
+            var maxRetries = TriggerHelper.GetMaxRetries(context.Trigger);
+            var lastRetry = hasRetry ? retryNumber >= maxRetries : (bool?)null;
 
             var result = new JobExecutionContext
             {
@@ -225,7 +225,9 @@ namespace CommonJob
                     TriggerDataMap = Global.ConvertDataMapToDictionary(context.Trigger.JobDataMap),
                     HasRetry = hasRetry,
                     IsLastRetry = lastRetry,
-                    IsRetryTrigger = context.Trigger.Key.Name.StartsWith(Consts.RetryTriggerNamePrefix),
+                    IsRetryTrigger = isRetryTrigger,
+                    MaxRetries = maxRetries,
+                    RetryNumber = retryNumber == 0 ? null : retryNumber
                 },
                 Environment = Global.Environment
             };

@@ -17,8 +17,6 @@ namespace Planar
         [YamlMember(Alias = "output encoding")]
         public string? OutputEncoding { get; set; }
 
-        public TimeSpan? Timeout { get; set; }
-
         [YamlMember(Alias = "success exit codes")]
         public IEnumerable<int> SuccessExitCodes { get; set; } = new List<int>();
 

@@ -99,16 +99,6 @@ namespace CommonJob
             }
         }
 
-        protected static int GetTimeout(TimeSpan? specificTimeout = null)
-        {
-            if (specificTimeout.HasValue && specificTimeout != TimeSpan.Zero)
-            {
-                return Convert.ToInt32(specificTimeout.Value.TotalMilliseconds);
-            }
-
-            return Convert.ToInt32(AppSettings.JobAutoStopSpan.TotalMilliseconds);
-        }
-
         protected void MapJobInstanceProperties(IJobExecutionContext context, Type targetType, object instance)
         {
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****

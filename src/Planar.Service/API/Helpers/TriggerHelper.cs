@@ -4,16 +4,15 @@ using Planar.Common;
 using Planar.Service.Exceptions;
 using Quartz;
 using Quartz.Impl.Matchers;
-using System;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API.Helpers
 {
-    public class TriggerKeyHelper
+    private class TriggerHelper
     {
         private readonly IScheduler _scheduler;
 
-        public TriggerKeyHelper(IScheduler scheduler)
+        public TriggerHelper(IScheduler scheduler)
         {
             _scheduler = scheduler;
         }
@@ -66,15 +65,12 @@ namespace Planar.Service.API.Helpers
         {
             if (trigger == null)
             {
-                throw new PlanarJobException("trigger is null at TriggerKeyHelper.GetTriggerId(ITrigger)");
+                throw new PlanarJobException("trigger is null at TriggerHelper.GetTriggerId(ITrigger)");
             }
 
-            if (trigger.JobDataMap.TryGetValue(Consts.TriggerId, out var id))
-            {
-                return PlanarConvert.ToString(id);
-            }
+            if (!trigger.JobDataMap.TryGetValue(Consts.TriggerId, out var id)) { return null; }
 
-            return null;
+            return PlanarConvert.ToString(id);
         }
 
         public static string? GetTriggerId(IJobExecutionContext context)

@@ -6,10 +6,10 @@ author: israel israeli (sales)        # The author/responsible person of the job
 durable: true                         # Boolean [true/false]. Non durable job will be delete from system if no future triggers defined
 concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
 
-job data:                             # Key/Value pairs used to replace placeholder in script file (i.e {{key1}})
-  key1: value1                        # -------------------------------------------------------------------------
-  key2: value2                        # key 1 to 100
-  key3: value3                        # value up to 1000 characters
+job data:                             # Key/Value pairs used by job code
+  key1: value1                        # --------------------------------
+  key2: value2                        # [1 to 100 characters]
+  key3: value3                        # [up to 1000 characters]
 
 properties:                                   # Properties for job with 'PlanarJob' type
   path: c:\some_path                          # Path of script files [1 to 1000 characters]
@@ -23,7 +23,7 @@ properties:                                   # Properties for job with 'PlanarJ
   steps:                                      # list of scripts to execute
     - name: Step1                             # Name of step [1 to 50 characters]
       filename: step1.sql                     # Script filename [1 to 100 characters]
-      connection name: <name>                 # Specific connection string to sql server database [mandatory if no default connection name, 1 to 50 characters]
+      connection name: <name>                 # Specific connection string to sql server database [mandatory if no default connection name, 1 to 500 characters]
       timeout: 00:00:30                       # Timeout span for step. The default is 30 seconds
     - name: Step2
       filename: step2.sql
@@ -32,8 +32,8 @@ properties:                                   # Properties for job with 'PlanarJ
 
 global config:                        # Key/Value pairs of global parameters used across different jobs
   globalkey1: value1                  # ---------------------------------------------------------------
-  globalkey2: value2                  # key 1 to 100
-  globalkey3: value3                  # value up to 1000 characters
+  globalkey2: value2                  # [1 to 100 characters]
+  globalkey3: value3                  # [up to 1000 characters]
 
 simple triggers:                      # List of simple triggers
   - name: every-minute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
@@ -44,11 +44,13 @@ simple triggers:                      # List of simple triggers
     misfire behaviour: FireNow        # [ FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount ]
     priority: 1                       # Priority [value between 0 to 100]
     calendar: null                    # Calendar name
-    retry span: 01:00:00              # Retry time span
+    timeout: 00:30:00                 # Execution timeout. If timout span passed then stop command is executed
+    retry span: 01:00:00              # The time span between retries
+    max retries: 3                    # The maximum amount of retries. Default is 3 [1 to 100]
     trigger data:                     # Key/Value pairs used by job code (merged with job data)
       key4: value4                    # -------------------------------------------------------
-      key5: value5                    # key 1 to 100
-      key6: value6                    # value up to 1000 characters
+      key5: value5                    # [1 to 100 characters]
+      key6: value6                    # [up to 1000 characters]
 
 cron triggers:                               # List of cron triggers
   - name: some-cron-trigger                  # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
@@ -56,8 +58,10 @@ cron triggers:                               # List of cron triggers
     misfire behaviour: DoNothing             # [ DoNothing | FireAndProceed | IgnoreMisfires ]
     priority: 1                              # Priority [value between 0 to 100]
     calendar: null                           # Calendar name
-    retry span: 01:00:00                     # Retry time span
+    timeout: 00:30:00                        # Execution timeout. If timout span passed then stop command is executed
+    retry span: 01:00:00                     # The time span between retries
+    max retries: 3                           # The maximum amount of retries. Default is 3 [1 to 100]
     trigger data:                            # Key/Value pairs used by job code (merged with job data)
       key7: value7                           # -------------------------------------------------------
-      key8: value8                           # key 1 to 100
-      key9: value9                           # value up to 1000 characters
+      key8: value8                           # [1 to 100 characters]
+      key9: value9                           # [up to 1000 characters]

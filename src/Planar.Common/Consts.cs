@@ -11,11 +11,13 @@ namespace Planar
         {
             RetryCounter,
             RetrySpan,
+            MaxRetries,
             RetryTriggerGroup,
             RetryTriggerNamePrefix,
             PlanarSystemGroup,
             JobId,
             TriggerId,
+            TriggerTimeout,
             NowOverrideValue,
             Author
         };
@@ -26,7 +28,8 @@ namespace Planar
         public const string ConstPrefix = "__";
         public const string RetryCounter = "__Job_Retry_Counter";
         public const string RetrySpan = "__Job_Retry_Span";
-        public const int MaxRetries = 3;
+        public const string MaxRetries = "__Job_Retry_Max";
+        public const int DefaultMaxRetries = 3;
 
         public const string RetryTriggerGroup = "__RetryTrigger";
         public const string RetryTriggerNamePrefix = "__RetryCount";
@@ -35,6 +38,7 @@ namespace Planar
         public const string JobId = "__Job_Id";
         public const string Author = "__Author";
         public const string TriggerId = "__Trigger_Id";
+        public const string TriggerTimeout = "__Trigger_Timeout";
         public const string NowOverrideValue = "__Now_Override_Value";
 
         public const string ManualTriggerId = "Manual";
