@@ -1,6 +1,5 @@
 ﻿using Planar.CLI.Attributes;
 using System;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,6 +9,7 @@ namespace Planar.CLI.Actions
     public class InnerCliActions : BaseCliAction<InnerCliActions>
     {
         [Action("cls")]
+        [Action("clear")]
         public static async Task<CliActionResponse> GetParameter(CancellationToken cancellationToken = default)
         {
             if (cancellationToken.IsCancellationRequested) { throw new TaskCanceledException("task was canceled"); }

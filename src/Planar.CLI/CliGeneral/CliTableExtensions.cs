@@ -218,8 +218,16 @@ namespace Planar.CLI
             var table = new Table();
             if (response == null) { return table; }
             table.AddColumns("Key", "Value", "Type");
-            response.ForEach(r => table.AddRow(r.Key.EscapeMarkup(), r.Value.EscapeMarkup(), r.Type.EscapeMarkup()));
+            response.ForEach(r => table.AddRow(r.Key.EscapeMarkup(), LimitValue(r.Value?.EscapeMarkup(), 10), r.Type.EscapeMarkup()));
             return table;
+        }
+
+        private static string LimitValue(string? value, int limit = 100)
+        {
+            if (value == null) { return "[null]"; }
+            if (string.IsNullOrEmpty(value)) { return string.Empty; }
+            if (value.Length <= limit) { return value; }
+            return $"{value[0..99]}…";
         }
 
         private static string SerializeJobDetailsData(JobDetails? jobDetails)
