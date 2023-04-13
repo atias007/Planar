@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Planar.API.Common.Entities;
+using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -73,14 +74,14 @@ namespace Planar.Service.Validation
             var key = JobKey.Create(request.JobName, request.JobGroup);
             try
             {
-                jobKeyHelper.GetJobKey($"{key.Group}.{key.Name}").Wait();
+                jobKeyHelper.ValidateJobExists(key).Wait();
                 return true;
             }
             catch (AggregateException ex)
             {
                 if (ex.Flatten().InnerException is RestNotFoundException)
                 {
-                    context.MessageFormatter.AppendArgument("Message", $"job {key.Group}.{key.Name} is not exists");
+                    context.MessageFormatter.AppendArgument("Message", $"job with key '{KeyHelper.GetKeyTitle(key)}' is not exists");
                     return false;
                 }
 

@@ -6,40 +6,46 @@ namespace Planar.API.Common.Entities
 {
     public class TriggerDetails : PausedTriggerDetails
     {
-        [YamlMember(Order = 5)]
+        [YamlMember(Order = 20)]
         public DateTime Start { get; set; }
 
-        [YamlMember(Order = 6)]
+        [YamlMember(Order = 21)]
         public DateTime? End { get; set; }
 
-        [YamlMember(Order = 7)]
+        [YamlMember(Order = 22)]
         public string? CalendarName { get; set; }
 
-        [YamlMember(Order = 8)]
+        [YamlMember(Order = 23)]
+        public TimeSpan? Timeout { get; set; }
+
+        [YamlMember(Order = 24)]
         public TimeSpan? RetrySpan { get; set; }
 
-        [YamlMember(Order = 9)]
+        [YamlMember(Order = 25)]
+        public int? MaxRetries { get; set; }
+
+        [YamlMember(Order = 26)]
         public string? MisfireBehaviour { get; set; }
 
-        [YamlMember(Order = 10)]
+        [YamlMember(Order = 27)]
         public int Priority { get; set; }
 
-        [YamlMember(Order = 11)]
+        [YamlMember(Order = 28)]
         public DateTime? NextFireTime { get; set; }
 
-        [YamlMember(Order = 12)]
+        [YamlMember(Order = 29)]
         public DateTime? PreviousFireTime { get; set; }
 
-        [YamlMember(Order = 13)]
+        [YamlMember(Order = 30)]
         public bool MayFireAgain { get; set; }
 
-        [YamlMember(Order = 14)]
+        [YamlMember(Order = 31)]
         public DateTime? FinalFire { get; set; }
 
-        [YamlMember(Order = 99)]
-        public SortedDictionary<string, string?> DataMap { get; set; } = new SortedDictionary<string, string?>();
+        [YamlMember(Order = 32)]
+        public string? State { get; set; }
 
         [YamlMember(Order = 100)]
-        public string? State { get; set; }
+        public SortedDictionary<string, string?> DataMap { get; set; } = new SortedDictionary<string, string?>();
     }
 }

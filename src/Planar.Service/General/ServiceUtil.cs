@@ -80,7 +80,7 @@ namespace Planar.Service.General
 
         private static bool LoadHook<T>(ILogger<T> logger, string dir, AssemblyLoadContext assemblyContext, Type t)
         {
-            var name = new DirectoryInfo(dir).Name;
+            string name = new DirectoryInfo(dir).Name;
             var hook = new MonitorHookFactory { Name = name, Type = t, AssemblyContext = assemblyContext };
             var result = MonitorHooks.TryAdd(name, hook);
 

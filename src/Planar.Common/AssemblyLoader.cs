@@ -79,14 +79,14 @@ namespace Planar.Common
                 .Select(x => new KeyValuePair<string, string>(Path.GetFileNameWithoutExtension(x), x))
                 .ToDictionary(k => k.Key, v => v.Value);
 
-            var references = assembly.GetReferencedAssemblies();
+            var referenceNames = assembly.GetReferencedAssemblies().Select(r => r.Name);
 
-            foreach (var reference in references)
+            foreach (var name in referenceNames)
             {
-                if (reference.Name == null) { continue; }
-                if (filesInDirectory.ContainsKey(reference.Name))
+                if (name == null) { continue; }
+                if (filesInDirectory.ContainsKey(name))
                 {
-                    var path = filesInDirectory[reference.Name];
+                    var path = filesInDirectory[name];
                     var loadFileName = Path.GetFileName(path);
                     var loadedAssembly = LoadAssemblyFile(path, context);
                     if (loadedAssembly != null)

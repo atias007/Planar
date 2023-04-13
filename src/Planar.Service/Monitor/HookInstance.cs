@@ -9,11 +9,11 @@ namespace Planar.Service.Monitor
         public const string HandleMethodName = "ExecuteHandle";
         public const string HandleSystemMethodName = "ExecuteHandleSystem";
 
-        public object Instance { get; set; }
+        public object? Instance { get; set; }
 
-        public MethodInfo HandleMethod { get; set; }
+        public MethodInfo? HandleMethod { get; set; }
 
-        public MethodInfo HandleSystemMethod { get; set; }
+        public MethodInfo? HandleSystemMethod { get; set; }
 
         public Task Handle(MonitorDetails details, ILogger<MonitorUtil> logger)
         {

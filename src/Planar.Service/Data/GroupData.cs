@@ -117,8 +117,9 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
-        public async Task<bool> IsGroupNameExists(string name, int id)
+        public async Task<bool> IsGroupNameExists(string? name, int id)
         {
+            if (name == null) { return false; }
             return await _context.Groups.AnyAsync(u => u.Id != id && u.Name.ToLower() == name.ToLower());
         }
 

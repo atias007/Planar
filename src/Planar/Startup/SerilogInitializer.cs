@@ -28,7 +28,10 @@ namespace Planar.Startup
             });
         }
 
+#pragma warning disable IDE0060 // Remove unused parameter
+
         public static void Configure(HostBuilderContext context, LoggerConfiguration config)
+#pragma warning restore IDE0060 // Remove unused parameter
         {
             UpgradeToYml();
             Console.WriteLine("[x] Configure serilog");

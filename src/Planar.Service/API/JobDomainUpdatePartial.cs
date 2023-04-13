@@ -1,5 +1,6 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -118,7 +119,7 @@ namespace Planar.Service.API
         {
             metadata.OldJobDetails =
                 await Scheduler.GetJobDetail(metadata.JobKey)
-                ?? throw new RestGeneralException($"job {metadata.JobKey.Group}.{metadata.JobKey} could not be found");
+                ?? throw new RestGeneralException($"job with key '{KeyHelper.GetKeyTitle(metadata.JobKey)}' could not be found");
 
             metadata.OldTriggers = await Scheduler.GetTriggersOfJob(metadata.JobKey);
             await Scheduler.DeleteJob(metadata.JobKey);
@@ -240,7 +241,9 @@ namespace Planar.Service.API
             metadata.JobKey = ValidateJobMetadata(request);
             await JobKeyHelper.ValidateJobExists(metadata.JobKey);
             ValidateSystemJob(metadata.JobKey);
-            metadata.JobId = await JobKeyHelper.GetJobId(metadata.JobKey) ?? throw new RestGeneralException($"could not find job id for job key {metadata.JobKey.Group}.{metadata.JobKey}");
+            metadata.JobId =
+                await JobKeyHelper.GetJobId(metadata.JobKey) ??
+                throw new RestGeneralException($"could not find job id for job key '{KeyHelper.GetKeyTitle(metadata.JobKey)}'");
             await ValidateJobPaused(metadata.JobKey);
             await ValidateJobNotRunning(metadata.JobKey);
         }

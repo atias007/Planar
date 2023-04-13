@@ -1,11 +1,10 @@
 ﻿using Planar.API.Common.Entities;
-using Planar.Common.API.Helpers;
+using Planar.Common.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -20,14 +19,9 @@ namespace Planar.Service.API.Helpers
             _scheduler = scheduler;
         }
 
-        public static bool Compare(JobKey jobKeyA, JobKey jobKeyB)
-        {
-            return jobKeyA.Name == jobKeyB.Name && jobKeyA.Group == jobKeyB.Group;
-        }
-
         public static string? GetJobId(IJobDetail? job)
         {
-            return JobIdHelper.GetJobId(job);
+            return JobHelper.GetJobId(job);
         }
 
         public static JobKey? GetJobKey(SetJobRequest metadata)
@@ -114,7 +108,7 @@ namespace Planar.Service.API.Helpers
         {
             if (jobKey == null) { throw new RestNotFoundException($"job does not exist"); }
             var exists = await _scheduler.GetJobDetail(jobKey);
-            return exists ?? throw new RestNotFoundException($"job with key {jobKey.Group}.{jobKey.Name} does not exist");
+            return exists ?? throw new RestNotFoundException($"job with key '{KeyHelper.GetKeyTitle(jobKey)}' does not exist");
         }
 
         public static bool IsSystemJobKey(JobKey jobKey)

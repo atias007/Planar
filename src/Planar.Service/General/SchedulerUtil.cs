@@ -74,7 +74,7 @@ namespace Planar.Service.General
         public async Task<bool> IsJobRunning(JobKey jobKey, CancellationToken cancellationToken = default)
         {
             var allRunning = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
-            var result = allRunning.AsQueryable().Any(c => c.JobDetail.Key.Name == jobKey.Name && c.JobDetail.Key.Group == jobKey.Group);
+            var result = allRunning.AsQueryable().Any(c => KeyHelper.Equals(c.JobDetail.Key, jobKey));
             return result;
         }
 

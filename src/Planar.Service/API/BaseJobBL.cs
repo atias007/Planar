@@ -1,4 +1,5 @@
 ﻿using Planar.Common;
+using Planar.Common.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Quartz;
@@ -61,7 +62,7 @@ namespace Planar.Service.API
             var triggers = await Scheduler.GetTriggersOfJob(jobKey);
             var notPaused = triggers
                 .Where(t => Scheduler.GetTriggerState(t.Key).Result != TriggerState.Paused)
-                .Select(t => $"{t.Key.Group}.{t.Key.Name}")
+                .Select(t => TriggerHelper.GetKeyTitle(t))
                 .ToList();
 
             if (notPaused.Any())
@@ -81,7 +82,8 @@ namespace Planar.Service.API
 
             if (isRunning)
             {
-                throw new RestValidationException($"{jobKey.Group}.{jobKey.Name}", $"job with name: {jobKey.Name} and group: {jobKey.Group} is currently running");
+                var title = KeyHelper.GetKeyTitle(jobKey);
+                throw new RestValidationException($"{title}", $"job with key '{title}' is currently running");
             }
         }
     }

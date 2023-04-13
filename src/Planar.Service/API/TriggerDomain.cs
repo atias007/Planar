@@ -172,7 +172,7 @@ namespace Planar.Service.API
         {
             var triggers = await Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
             var pausedKeys = triggers.Where(t => t.Group != Consts.PlanarSystemGroup && Scheduler.GetTriggerState(t).Result == TriggerState.Paused);
-            var tasks = new List<Task<ITrigger>>();
+            var tasks = new List<Task<ITrigger?>>();
             foreach (var k in pausedKeys)
             {
                 tasks.Add(Scheduler.GetTrigger(k));
@@ -306,7 +306,7 @@ namespace Planar.Service.API
         private async Task<ITrigger> ValidateTriggerExists(TriggerKey triggerKey)
         {
             var exists = await Scheduler.GetTrigger(triggerKey);
-            return exists ?? throw new RestNotFoundException($"trigger with key {triggerKey.Group}.{triggerKey.Name} does not exist");
+            return exists ?? throw new RestNotFoundException($"trigger with key '{KeyHelper.GetKeyTitle(triggerKey)}' does not exist");
         }
 
         private static string? GetTriggerId(ITrigger? trigger)

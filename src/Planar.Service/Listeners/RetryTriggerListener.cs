@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Helpers;
+using Planar.Service.API.Helpers;
 using Planar.Service.General;
 using Planar.Service.Listeners.Base;
 using Quartz;
@@ -25,35 +26,43 @@ namespace Planar.Service.Listeners
         {
             try
             {
+                // Ignore system job / trigger
                 if (IsSystemTrigger(trigger)) { return Task.CompletedTask; }
                 if (IsSystemJob(context.JobDetail)) { return Task.CompletedTask; }
 
+                // Ignore success running
                 var metadata = JobExecutionMetadata.GetInstance(context);
                 if (metadata.IsRunningSuccess) { return Task.CompletedTask; }
+
+                // Ignore triggers with no retry
                 if (!TriggerHelper.HasRetry(trigger)) { return Task.CompletedTask; }
 
+                // Ignore trigger with no trigger span
                 var span = TriggerHelper.GetRetrySpan(trigger);
                 if (span == null) { return Task.CompletedTask; }
 
+                // Get retry counters
                 var numTries = TriggerHelper.GetRetryNumber(trigger) ?? 0;
                 var maxRetries = TriggerHelper.GetMaxRetriesWithDefault(context.Trigger);
+
+                // Last retry - No more retries
+                var key = JobHelper.GetKeyTitle(context.JobDetail);
                 if (numTries >= maxRetries)
                 {
-                    var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
                     _logger.LogError("Job with key {Key} fail and retry for {MaxRetries} times but failed each time", key, maxRetries);
                     return SafeScan(MonitorEvents.ExecutionLastRetryFail, context);
                 }
 
+                // Calculate the next start retry
                 var start = DateTime.Now.AddSeconds(span.Value.TotalSeconds);
 
+                // Log as warning the retry details
                 if (numTries > 0)
                 {
-                    var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
                     _logger.LogWarning("Retry no. {NumTries} of job with key {Key} was fail. Retry again at {Start}", numTries, key, start);
                 }
                 else
                 {
-                    var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
                     _logger.LogWarning("Job with key {Key} was fail. Retry again at {Start}", key, start);
                 }
 

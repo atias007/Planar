@@ -39,6 +39,18 @@ namespace Planar.Startup
             public static Lazy<IResult> SwaggerCss { get; set; }
 
             public static Lazy<IResult> OpenApiCss { get; set; }
+
+            private static byte[] GetBinaryContent(string name)
+            {
+                var assembly = Assembly.GetExecutingAssembly();
+                var resourceName = $"Planar.Content.{name}";
+
+                using var stream = assembly.GetManifestResourceStream(resourceName);
+                using var reader = new MemoryStream();
+                stream.CopyTo(reader);
+
+                return reader.ToArray();
+            }
         }
 
         public static void MapContent(WebApplication app)
@@ -84,18 +96,6 @@ namespace Planar.Startup
             }
 
             return value;
-        }
-
-        private static byte[] GetBinaryContent(string name)
-        {
-            var assembly = Assembly.GetExecutingAssembly();
-            var resourceName = $"Planar.Content.{name}";
-
-            using var stream = assembly.GetManifestResourceStream(resourceName);
-            using var reader = new MemoryStream();
-            stream.CopyTo(reader);
-
-            return reader.ToArray();
         }
     }
 }

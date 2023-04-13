@@ -89,8 +89,9 @@ namespace Planar.Service.Data
             return await _context.Users.AnyAsync(u => u.Id == userId);
         }
 
-        public async Task<bool> IsUsernameExists(string username, int id)
+        public async Task<bool> IsUsernameExists(string? username, int id)
         {
+            if (username == null) { return false; }
             return await _context.Users.AnyAsync(u => u.Id != id && u.Username.ToLower() == username.ToLower());
         }
     }

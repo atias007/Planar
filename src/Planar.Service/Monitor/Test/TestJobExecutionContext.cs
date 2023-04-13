@@ -25,7 +25,7 @@ namespace Planar.Service.Monitor.Test
 
             foreach (var item in JobDetail.JobDataMap)
             {
-                MergedJobDataMap.Add(item.Key, item.Value);
+                MergedJobDataMap.Put(item.Key, item.Value);
             }
 
             foreach (var item in Trigger.JobDataMap)

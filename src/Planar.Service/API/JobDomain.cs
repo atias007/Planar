@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -99,7 +100,7 @@ namespace Planar.Service.API
             var jobKey = await JobKeyHelper.GetJobKey(id);
             var info =
                 await Scheduler.GetJobDetail(jobKey) ??
-                throw new RestNotFoundException($"job with key {jobKey.Group}.{jobKey.Name} does not exist");
+                throw new RestNotFoundException($"job with key '{KeyHelper.GetKeyTitle(jobKey)}' does not exist");
 
             var result = new JobDetails();
             await MapJobDetails(info, result);
@@ -338,7 +339,7 @@ namespace Planar.Service.API
             try
             {
                 var pathObj = YmlUtil.Deserialize<JobPropertiesWithPath>(properties);
-                jobPath = pathObj.Path;
+                jobPath = pathObj.Path ?? string.Empty;
             }
             catch (Exception)
             {

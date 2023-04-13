@@ -25,30 +25,22 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="API\Helpers\TriggerHelper.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Include="..\Planar.Common\Consts.cs" Link="General\Consts.cs" />
     <Compile Include="..\Planar\FolderConsts.cs" Link="General\FolderConsts.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="API\Helpers\TriggerHelper.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="CronExpressionDescriptor" Version="2.19.0" />
     <PackageReference Include="FluentValidation" Version="11.5.2" />
-    <PackageReference Include="Google.Protobuf" Version="3.22.1" />
+    <PackageReference Include="Google.Protobuf" Version="3.22.3" />
     <PackageReference Include="Grpc.Net.ClientFactory" Version="2.52.0" />
     <PackageReference Include="Grpc.Tools" Version="2.53.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.4" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.4">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>

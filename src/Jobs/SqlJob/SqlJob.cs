@@ -26,13 +26,8 @@ namespace Planar
             {
                 await Initialize(context);
                 ValidateSqlJob();
-                var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
                 var task = Task.Run(() => ExecuteSql(context));
-                var finish = task.Wait(timeout);
-                if (!finish)
-                {
-                    await context.Scheduler.Interrupt(context.JobDetail.Key);
-                }
+                await WaitForJobTask(context, task);
             }
             catch (Exception ex)
             {

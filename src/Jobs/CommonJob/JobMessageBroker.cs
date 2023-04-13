@@ -5,6 +5,7 @@ using Planar;
 using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Job;
+using Polly;
 using System;
 using System.Collections.Generic;
 using IJobExecutionContext = Quartz.IJobExecutionContext;
@@ -117,7 +118,10 @@ namespace CommonJob
                     return _context.CancellationToken.IsCancellationRequested.ToString();
 
                 case "FailOnStopRequest":
-                    _context.CancellationToken.ThrowIfCancellationRequested();
+                    if (_context.CancellationToken.IsCancellationRequested)
+                    {
+                        throw new OperationCanceledException("Job was stopped");
+                    }
                     return null;
 
                 case "GetData":
@@ -181,6 +185,7 @@ namespace CommonJob
             var hasRetry = TriggerHelper.HasRetry(context.Trigger);
             var retryNumber = TriggerHelper.GetRetryNumber(context.Trigger);
             var maxRetries = TriggerHelper.GetMaxRetries(context.Trigger);
+            var retrySpan = TriggerHelper.GetRetrySpan(context.Trigger);
             var lastRetry = hasRetry ? retryNumber >= maxRetries : (bool?)null;
 
             var result = new JobExecutionContext
@@ -227,7 +232,8 @@ namespace CommonJob
                     IsLastRetry = lastRetry,
                     IsRetryTrigger = isRetryTrigger,
                     MaxRetries = maxRetries,
-                    RetryNumber = retryNumber == 0 ? null : retryNumber
+                    RetryNumber = retryNumber == 0 ? null : retryNumber,
+                    RetrySpan = retrySpan
                 },
                 Environment = Global.Environment
             };
