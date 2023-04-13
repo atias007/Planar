@@ -37,5 +37,8 @@ namespace Planar.Job.Test
         public bool HasRetry => false;
         public bool? IsLastRetry => null;
         public bool IsRetryTrigger => false;
+        public TimeSpan? RetrySpan => null;
+        public int? RetryNumber => null;
+        public int? MaxRetries => null;
     }
 }

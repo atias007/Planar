@@ -8,7 +8,9 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
@@ -161,9 +163,11 @@ namespace Planar.CLI.Actions
         [NullRequest]
         public static async Task<CliActionResponse> GetJobFile(CliGetJobFileRequest request, CancellationToken cancellationToken = default)
         {
+            request?.Validate();
+
             if (request == null)
             {
-                var wrapper = await GetCliGetJobFileRequest(cancellationToken);
+                var wrapper = await GetCliGetJobTypesRequest(cancellationToken);
                 if (!wrapper.IsSuccessful || wrapper.Request == null)
                 {
                     return new CliActionResponse(wrapper.FailResponse);
@@ -176,13 +180,14 @@ namespace Planar.CLI.Actions
                 .AddUrlSegment("name", request.Name);
 
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
-            return new CliActionResponse(result, message: result.Data);
+
+            return new CliActionResponse(result, result.Data, request);
         }
 
-        [Action("jobfiles")]
-        public static async Task<CliActionResponse> GetJobFiles(CancellationToken cancellationToken = default)
+        [Action("types")]
+        public static async Task<CliActionResponse> GetJobTypes(CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("job/jobfiles", Method.Get);
+            var restRequest = new RestRequest("job/types", Method.Get);
 
             var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
             return new CliActionResponse(result, result.Data);
@@ -254,10 +259,7 @@ namespace Planar.CLI.Actions
             {
                 var data = result.Item1?.Select(i => i.FireInstanceId).ToList();
                 var sb = new StringBuilder();
-                if (data != null)
-                {
-                    data.ForEach(m => sb.AppendLine(m));
-                }
+                data?.ForEach(m => sb.AppendLine(m));
 
                 return new CliActionResponse(result.Item2, message: sb.ToString());
             }
@@ -330,12 +332,13 @@ namespace Planar.CLI.Actions
         }
 
         [Action("stop")]
+        [NullRequest]
         public static async Task<CliActionResponse> StopRunningJob(CliFireInstanceIdRequest request, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(request.FireInstanceId))
+            request ??= new CliFireInstanceIdRequest
             {
-                request.FireInstanceId = await ChooseRunningJobInstance();
-            }
+                FireInstanceId = await ChooseRunningJobInstance()
+            };
 
             var restRequest = new RestRequest("job/stop", Method.Post)
                 .AddBody(request);
@@ -349,8 +352,12 @@ namespace Planar.CLI.Actions
         {
             var invokeDate = DateTime.Now.AddSeconds(-1);
 
+            // (0) Check the job
+            var step0 = await TestStep0CheckJob(request, cancellationToken);
+            if (step0 != null) { return step0; }
+
             // (1) Invoke job
-            var step1 = await TestStep1InvokeJob(request);
+            var step1 = await TestStep1InvokeJob(request, cancellationToken);
             if (step1 != null) { return step1; }
 
             // (2) Sleep 1 sec
@@ -412,12 +419,12 @@ namespace Planar.CLI.Actions
         }
 
         [Action("data")]
-        public static async Task<CliActionResponse> UpsertJobData(CliJobDataRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> PutJobData(CliJobDataRequest request, CancellationToken cancellationToken = default)
         {
             RestResponse result;
             switch (request.Action)
             {
-                case DataActions.Upsert:
+                case DataActions.Put:
                     var prm1 = new JobOrTriggerDataRequest
                     {
                         Id = request.Id,
@@ -528,9 +535,9 @@ namespace Planar.CLI.Actions
             return new RequestBuilderWrapper<CliAddJobRequest> { Request = request };
         }
 
-        private static async Task<RequestBuilderWrapper<CliGetJobFileRequest>> GetCliGetJobFileRequest(CancellationToken cancellationToken)
+        private static async Task<RequestBuilderWrapper<CliGetJobFileRequest>> GetCliGetJobTypesRequest(CancellationToken cancellationToken)
         {
-            var restRequest = new RestRequest("job/jobfiles", Method.Get);
+            var restRequest = new RestRequest("job/types", Method.Get);
 
             var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
             if (!result.IsSuccessful)
@@ -557,20 +564,30 @@ namespace Planar.CLI.Actions
                 return new RequestBuilderWrapper<CliUpdateJobRequest> { FailResponse = result };
             }
 
-            var dict = YmlUtil.Deserialize<Dictionary<string, string>>(result.Data.Properties);
-            var key = dict?.Keys.FirstOrDefault(k => string.Equals(k, "path", StringComparison.OrdinalIgnoreCase));
-            var folder = dict?[key ?? string.Empty];
+            var folder = GetPathFromProperties(result.Data.Properties);
 
-            if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(folder))
+            if (string.IsNullOrEmpty(folder))
             {
-                throw new CliException($"fail to get folder of job id {jobId}");
+                throw new CliException($"could not find the path of the job id {jobId}");
             }
 
             var request = new CliUpdateJobRequest { Folder = folder };
             return new RequestBuilderWrapper<CliUpdateJobRequest> { Request = request };
         }
 
-        private static async Task<RestResponse<LastInstanceId>> GetLastInstanceId(string id, DateTime invokeDate, CancellationToken cancellationToken = default)
+        private static string GetPathFromProperties(string yml)
+        {
+            const string path = "path:";
+            if (string.IsNullOrEmpty(yml)) { return string.Empty; }
+
+            var lines = yml.Split('\n');
+            var pathLine = lines.FirstOrDefault(p => p.ToLower().StartsWith(path));
+            if (string.IsNullOrEmpty(pathLine)) { return string.Empty; }
+
+            return pathLine[path.Length..].Trim();
+        }
+
+        private static async Task<RestResponse<LastInstanceId>> GetLastInstanceId(string id, DateTime invokeDate, CancellationToken cancellationToken)
         {
             // UTC
             var dateParameter = invokeDate.ToString("s", CultureInfo.InvariantCulture);
@@ -582,7 +599,19 @@ namespace Planar.CLI.Actions
             return result;
         }
 
-        private static async Task<RestResponse> InvokeJobInner(CliInvokeJobRequest request, CancellationToken cancellationToken = default)
+        private static async Task<RestResponse> CheckJob(CliInvokeJobRequest request, CancellationToken cancellationToken)
+        {
+            var result = await CheckJobInner(cancellationToken);
+            if (result.IsSuccessful)
+            {
+                var exists = result.Data?.Any(d => d.Id == request.Id || $"{d.Group}.{d.Name}" == request.Id) ?? false;
+                if (exists) { throw new CliException($"job id {request.Id} already running. test can not be invoked until job done"); }
+            }
+
+            return result;
+        }
+
+        private static async Task<RestResponse> InvokeJobInner(CliInvokeJobRequest request, CancellationToken cancellationToken)
         {
             var prm = JsonMapper.Map<InvokeJobRequest, CliInvokeJobRequest>(request);
             prm ??= new InvokeJobRequest();
@@ -591,6 +620,13 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("job/invoke", Method.Post)
                 .AddBody(prm);
             var result = await RestProxy.Invoke(restRequest, cancellationToken);
+            return result;
+        }
+
+        private static async Task<RestResponse<List<RunningJobDetails>>> CheckJobInner(CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("job/running", Method.Get);
+            var result = await RestProxy.Invoke<List<RunningJobDetails>>(restRequest, cancellationToken);
             return result;
         }
 
@@ -604,9 +640,9 @@ namespace Planar.CLI.Actions
                     .InstructionsText(
                         "[grey](Press [blue]<space>[/] to toggle a choise, [green]<enter>[/] to accept)[/]")
                     .PageSize(15)
-                    .AddChoiceGroup("all", new[] { "job details", "job data", "properties", "triggers", "triggers data" })
-                    .AddChoiceGroup("all job", new[] { "job details", "job data", "properties" })
-                    .AddChoiceGroup("all triggers", new[] { "triggers", "triggers data" })
+                    .AddChoiceGroup("all", "job details", "job data", "properties", "triggers", "triggers data")
+                    .AddChoiceGroup("all job", "job details", "job data", "properties")
+                    .AddChoiceGroup("all triggers", "triggers", "triggers data")
                     .AddChoiceGroup(CancelOption)
                     );
 
@@ -731,11 +767,21 @@ namespace Planar.CLI.Actions
             return PromptSelection(jobs, "job") ?? string.Empty;
         }
 
-        private static async Task<CliActionResponse?> TestStep1InvokeJob(CliInvokeJobRequest request)
+        private static async Task<CliActionResponse?> TestStep0CheckJob(CliInvokeJobRequest request, CancellationToken cancellationToken)
+        {
+            // (0) Check for running job
+            AnsiConsole.MarkupLine(" [gold3_1][[x]][/] Check job...");
+            var result = await CheckJob(request, cancellationToken);
+            if (result.IsSuccessful) { return null; }
+
+            return new CliActionResponse(result);
+        }
+
+        private static async Task<CliActionResponse?> TestStep1InvokeJob(CliInvokeJobRequest request, CancellationToken cancellationToken)
         {
             // (1) Invoke job
             AnsiConsole.MarkupLine(" [gold3_1][[x]][/] Invoke job...");
-            var result = await InvokeJobInner(request);
+            var result = await InvokeJobInner(request, cancellationToken);
             if (result.IsSuccessful)
             {
                 return null;
@@ -755,11 +801,13 @@ namespace Planar.CLI.Actions
                 instanceId = await GetLastInstanceId(request.Id, invokeDate, cancellationToken);
                 if (!instanceId.IsSuccessful)
                 {
+                    AnsiConsole.WriteLine();
                     response.Response = new CliActionResponse(instanceId);
                     return response;
                 }
 
                 if (instanceId.Data != null) { break; }
+                await CheckJob(request, cancellationToken);
                 await Task.Delay(1000, cancellationToken);
             }
 
@@ -797,7 +845,7 @@ namespace Planar.CLI.Actions
             {
                 Console.CursorTop -= 1;
                 var span = DateTime.Now.Subtract(invokeDate);
-                AnsiConsole.MarkupLine($" [gold3_1][[x]][/] Progress: [wheat1]{runResult.Data.Progress}[/]%  |  Effected Row(s): [wheat1]{runResult.Data.EffectedRows.GetValueOrDefault()}  |  Run Time: {CliTableFormat.FormatTimeSpan(span)}[/]     ");
+                AnsiConsole.MarkupLine($" [gold3_1][[x]][/] Progress: [wheat1]{runResult.Data.Progress}[/]%  |  Effected Row(s): [wheat1]{runResult.Data.EffectedRows.GetValueOrDefault()}[/]  |  Run Time: [wheat1]{CliTableFormat.FormatTimeSpan(span)}[/]  |  End Time: [wheat1]{CliTableFormat.FormatTimeSpan(runResult.Data.EstimatedEndTime)}[/]     ");
                 Thread.Sleep(sleepTime);
                 runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest, cancellationToken);
                 if (!runResult.IsSuccessful) { break; }
@@ -812,7 +860,7 @@ namespace Planar.CLI.Actions
             return null;
         }
 
-        private static async Task<CliActionResponse?> TestStep6CheckLog(int logId, CancellationToken cancellationToken)
+        private static async Task<CliActionResponse?> TestStep6CheckLog(long logId, CancellationToken cancellationToken)
         {
             var restTestRequest = new RestRequest("job/testStatus/{id}", Method.Get)
                 .AddParameter("id", logId, ParameterType.UrlSegment);
@@ -861,7 +909,7 @@ namespace Planar.CLI.Actions
         private struct TestData
         {
             public string InstanceId { get; set; }
-            public int LogId { get; set; }
+            public long LogId { get; set; }
             public CliActionResponse? Response { get; set; }
         }
     }

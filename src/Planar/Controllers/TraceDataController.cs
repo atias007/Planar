@@ -24,10 +24,10 @@ namespace Planar.Controllers
         }
 
         [EnableQuery]
-        public Service.Model.Trace Get([FromODataUri] int key)
+        public IActionResult Get([FromODataUri] int key)
         {
             var result = _businessLayer.GetTrace(key);
-            return result;
+            return Ok(result);
         }
     }
 }

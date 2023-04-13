@@ -2,7 +2,7 @@
 
 namespace Planar.CLI.Entities
 {
-    public class CliGetJobFileRequest
+    public class CliGetJobFileRequest : CliOutputFilenameRequest
     {
         [ActionProperty(DefaultOrder = 0)]
         [Required("name argument is required")]

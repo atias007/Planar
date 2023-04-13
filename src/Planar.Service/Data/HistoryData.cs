@@ -37,7 +37,7 @@ namespace Planar.Service.Data
             return data.ToList();
         }
 
-        public IQueryable<JobInstanceLog> GetHistory(int key)
+        public IQueryable<JobInstanceLog> GetHistory(long key)
         {
             return _context.JobInstanceLogs.Where(l => l.Id == key);
         }
@@ -89,7 +89,7 @@ namespace Planar.Service.Data
             return query;
         }
 
-        public async Task<string> GetHistoryDataById(int id)
+        public async Task<string?> GetHistoryDataById(long id)
         {
             var result = await _context.JobInstanceLogs
                 .Where(l => l.Id == id)
@@ -99,7 +99,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<string> GetHistoryLogById(int id)
+        public async Task<string?> GetHistoryLogById(long id)
         {
             var result = await _context.JobInstanceLogs
                 .Where(l => l.Id == id)
@@ -109,7 +109,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<string> GetHistoryExceptionById(int id)
+        public async Task<string?> GetHistoryExceptionById(long id)
         {
             var result = await _context.JobInstanceLogs
                 .Where(l => l.Id == id)
@@ -119,7 +119,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<JobInstanceLog> GetHistoryById(int id)
+        public async Task<JobInstanceLog?> GetHistoryById(long id)
         {
             var result = await _context.JobInstanceLogs
                 .Where(l => l.Id == id)
@@ -128,7 +128,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<bool> IsHistoryExists(int id)
+        public async Task<bool> IsHistoryExists(long id)
         {
             var result = await _context.JobInstanceLogs
                 .AnyAsync(l => l.Id == id);
@@ -165,6 +165,16 @@ namespace Planar.Service.Data
             await _context.Database.GetDbConnection().ExecuteAsync(cmd);
         }
 
+        public async Task SetAnomaly(object parameters)
+        {
+            var cmd = new CommandDefinition(
+                commandText: "dbo.UpdateJobInstanceLogAnomaly",
+                commandType: CommandType.StoredProcedure,
+                parameters: parameters);
+
+            await _context.Database.GetDbConnection().ExecuteAsync(cmd);
+        }
+
         public async Task PersistJobInstanceData(JobInstanceLog log)
         {
             var parameters = new
@@ -192,7 +202,7 @@ namespace Planar.Service.Data
             await _context.Database.ExecuteSqlRawAsync($"dbo.SetJobInstanceLogStatus @InstanceId,  @Status, @StatusTitle", paramInstanceId, paramStatus, paramTitle);
         }
 
-        public async Task<LastInstanceId> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime)
+        public async Task<LastInstanceId?> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime)
         {
             var result = await _context.JobInstanceLogs
                 .Where(l => l.JobName == jobKey.Name && l.JobGroup == jobKey.Group && l.StartDate >= invokeDateTime && l.TriggerId == Consts.ManualTriggerId)
@@ -206,7 +216,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<GetTestStatusResponse> GetTestStatus(int id)
+        public async Task<GetTestStatusResponse?> GetTestStatus(long id)
         {
             var result = await _context.JobInstanceLogs
                 .Where(l => l.Id == id)

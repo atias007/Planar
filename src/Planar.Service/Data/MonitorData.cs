@@ -65,7 +65,7 @@ namespace Planar.Service.Data
             return query;
         }
 
-        public async Task<MonitorAction> GetMonitorAction(int id)
+        public async Task<MonitorAction?> GetMonitorAction(int id)
         {
             return await _context.MonitorActions
                 .AsNoTracking()
@@ -124,14 +124,12 @@ namespace Planar.Service.Data
 
         public async Task DeleteMonitorByJobId(string group, string name)
         {
-            _context.MonitorActions.RemoveRange(e => e.JobGroup == group && e.JobName == name);
-            await SaveChangesWithoutConcurrency();
+            await _context.MonitorActions.Where(e => e.JobGroup == group && e.JobName == name).ExecuteDeleteAsync();
         }
 
         public async Task DeleteMonitorByJobGroup(string jobGroup)
         {
-            _context.MonitorActions.RemoveRange(e => e.JobGroup == jobGroup);
-            await SaveChangesWithoutConcurrency();
+            await _context.MonitorActions.Where(e => e.JobGroup == jobGroup).ExecuteDeleteAsync();
         }
 
         public async Task UpdateMonitorAction(MonitorAction monitor)

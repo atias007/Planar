@@ -1,4 +1,5 @@
-﻿using Planar.CLI.Attributes;
+﻿using Planar.API.Common.Entities;
+using Planar.CLI.Attributes;
 using System;
 
 namespace Planar.CLI.Entities
@@ -18,7 +19,7 @@ namespace Planar.CLI.Entities
         public DateTime ToDate { get; set; }
 
         [ActionProperty("s", "status")]
-        public string? Status { get; set; }
+        public StatusMembers? Status { get; set; }
 
         [ActionProperty("j", "job")]
         public string? JobId { get; set; }

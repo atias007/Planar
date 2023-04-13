@@ -2,6 +2,8 @@
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Exceptions;
+using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.General;
@@ -41,9 +43,15 @@ namespace Planar.Service.Monitor
             missingHooks.ForEach(h => _logger.LogWarning("Monitor with hook '{Hook}' is invalid. Missing hook in service", h));
         }
 
-        internal async Task Scan(MonitorEvents @event, IJobExecutionContext context, Exception exception = default)
+        internal async Task Scan(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
         {
-            if (context != null && context.JobDetail.Key.Group.StartsWith(Consts.PlanarSystemGroup))
+            if (context == null)
+            {
+                _logger.LogWarning($"IJobExecutionContext is null in {nameof(MonitorUtil)}.{nameof(MonitorUtil.Scan)}. Scan skipped");
+                return;
+            }
+
+            if (context.JobDetail.Key.Group.StartsWith(Consts.PlanarSystemGroup))
             {
                 return;
             }
@@ -77,7 +85,7 @@ namespace Planar.Service.Monitor
             }
         }
 
-        internal async Task Scan(MonitorEvents @event, MonitorSystemInfo info, Exception exception = default)
+        internal async Task Scan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default)
         {
             List<MonitorAction> items;
             var hookTasks = new List<Task>();
@@ -108,7 +116,7 @@ namespace Planar.Service.Monitor
             }
         }
 
-        internal async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception exception)
+        internal async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception? exception)
         {
             try
             {
@@ -138,7 +146,7 @@ namespace Planar.Service.Monitor
             }
         }
 
-        internal async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception exception)
+        internal async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception? exception)
         {
             try
             {
@@ -177,13 +185,22 @@ namespace Planar.Service.Monitor
             var instance = Activator.CreateInstance(factory.Type);
             if (instance == null) { return null; }
 
-            var method1 = instance.GetType().GetMethod(HookInstance.HandleMethodName, BindingFlags.NonPublic | BindingFlags.Instance);
-            var method2 = instance.GetType().GetMethod(HookInstance.HandleSystemMethodName, BindingFlags.NonPublic | BindingFlags.Instance);
+            var method1 = SafeGetMethod(hook, HookInstance.HandleMethodName, instance);
+            var method2 = SafeGetMethod(hook, HookInstance.HandleSystemMethodName, instance);
+
             var result = new HookInstance { Instance = instance, HandleMethod = method1, HandleSystemMethod = method2 };
             return result;
         }
 
-        private static MonitorDetails GetMonitorDetails(MonitorAction action, IJobExecutionContext context, Exception exception)
+        private static MethodInfo SafeGetMethod(string hook, string methodName, object instance)
+        {
+#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
+            var method = instance.GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
+#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
+            return method ?? throw new PlanarException($"method {methodName} could not found in hook {hook}");
+        }
+
+        private static MonitorDetails GetMonitorDetails(MonitorAction action, IJobExecutionContext context, Exception? exception)
         {
             // ****** ATTENTION: any changes should reflect in TestJobExecutionContext ******
             var result = new MonitorDetails
@@ -202,7 +219,7 @@ namespace Planar.Service.Monitor
                 Recovering = context.JobDetail.RequestsRecovery,
                 TriggerDescription = context.Trigger.Description,
                 TriggerGroup = context.Trigger.Key.Group,
-                TriggerId = TriggerKeyHelper.GetTriggerId(context.Trigger),
+                TriggerId = TriggerHelper.GetTriggerId(context.Trigger),
                 TriggerName = context.Trigger.Key.Name,
             };
 
@@ -213,7 +230,7 @@ namespace Planar.Service.Monitor
             // ****** ATTENTION: any changes should reflect in TestJobExecutionContext ******
         }
 
-        private static MonitorSystemDetails GetMonitorDetails(MonitorAction action, MonitorSystemInfo details, Exception exception)
+        private static MonitorSystemDetails GetMonitorDetails(MonitorAction action, MonitorSystemInfo details, Exception? exception)
         {
             var result = new MonitorSystemDetails
             {
@@ -233,8 +250,9 @@ namespace Planar.Service.Monitor
             return result;
         }
 
-        private static void FillMonitor(Monitor monitor, MonitorAction action, Exception exception)
+        private static void FillMonitor(Monitor monitor, MonitorAction action, Exception? exception)
         {
+            monitor.Users = new List<MonitorUser>();
             monitor.EventId = action.EventId;
             monitor.EventTitle = ((MonitorEvents)action.EventId).ToString();
             monitor.Group = new MonitorGroup(action.Group);
@@ -307,7 +325,7 @@ namespace Planar.Service.Monitor
             return result;
         }
 
-        private async Task<bool> Analyze(MonitorEvents @event, MonitorAction action, IJobExecutionContext context)
+        private async Task<bool> Analyze(MonitorEvents @event, MonitorAction action, IJobExecutionContext? context)
         {
             switch (@event)
             {
@@ -321,7 +339,8 @@ namespace Planar.Service.Monitor
                     return true;
 
                 case MonitorEvents.ExecutionSuccessWithNoEffectedRows:
-                    return ServiceUtil.GetEffectedRows(context) == 0;
+                    var rows = ServiceUtil.GetEffectedRows(context);
+                    return rows != null && rows == 0;
             }
 
             if (MonitorEventsExtensions.IsSystemMonitorEvent(@event))
@@ -337,7 +356,7 @@ namespace Planar.Service.Monitor
             return false;
         }
 
-        private async Task<bool> AnalyzeMonitorEventsWithArguments(MonitorEvents @event, MonitorAction action, IJobExecutionContext context)
+        private async Task<bool> AnalyzeMonitorEventsWithArguments(MonitorEvents @event, MonitorAction action, IJobExecutionContext? context)
         {
             using var scope = _serviceScopeFactory.CreateScope();
             var jobKeyHelper = scope.ServiceProvider.GetRequiredService<JobKeyHelper>();
@@ -359,11 +378,12 @@ namespace Planar.Service.Monitor
                     return count2 >= args.Arg;
 
                 case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx:
-
-                    return ServiceUtil.GetEffectedRows(context) > args.Arg;
+                    var rows = ServiceUtil.GetEffectedRows(context);
+                    return rows != null && rows > args.Arg;
 
                 case MonitorEvents.ExecutionEndWithEffectedRowsLessThanx:
-                    return ServiceUtil.GetEffectedRows(context) < args.Arg;
+                    var rows1 = ServiceUtil.GetEffectedRows(context);
+                    return rows1 != null && rows1 < args.Arg;
             }
         }
     }

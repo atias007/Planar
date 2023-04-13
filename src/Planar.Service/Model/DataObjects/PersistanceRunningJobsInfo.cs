@@ -2,11 +2,11 @@
 {
     public class PersistanceRunningJobsInfo
     {
-        public string Group { get; set; }
-        public string Name { get; set; }
-        public string InstanceId { get; set; }
-        public string Log { get; set; }
-        public string Exceptions { get; set; }
+        public string? Group { get; set; }
+        public string? Name { get; set; }
+        public string? InstanceId { get; set; }
+        public string? Log { get; set; }
+        public string? Exceptions { get; set; }
         public int Duration { get; set; }
 
         public static PersistanceRunningJobsInfo Parse(PersistanceRunningJobInfo info)
@@ -23,7 +23,7 @@
             return item;
         }
 
-        private static string ReverseSafeString(string value)
+        private static string? ReverseSafeString(string value)
         {
             return string.IsNullOrEmpty(value) ? null : value;
         }

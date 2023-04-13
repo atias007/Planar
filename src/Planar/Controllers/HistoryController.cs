@@ -32,7 +32,7 @@ namespace Planar.Controllers
         [OkJsonResponse(typeof(JobInstanceLog))]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<JobInstanceLog>> GetHistoryById([FromRoute][Id] int id)
+        public async Task<ActionResult<JobInstanceLog>> GetHistoryById([FromRoute][LongId] long id)
         {
             var result = await BusinesLayer.GetHistoryById(id);
             return Ok(result);
@@ -43,7 +43,7 @@ namespace Planar.Controllers
         [OkTextResponse]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<string>> GetHistoryDataById([FromRoute][Id] int id)
+        public async Task<ActionResult<string>> GetHistoryDataById([FromRoute][LongId] long id)
         {
             var result = await BusinesLayer.GetHistoryDataById(id);
             return Ok(result);
@@ -54,7 +54,7 @@ namespace Planar.Controllers
         [OkTextResponse]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<string>> GetHistoryLogById([FromRoute][Id] int id)
+        public async Task<ActionResult<string>> GetHistoryLogById([FromRoute][LongId] long id)
         {
             var result = await BusinesLayer.GetHistoryLogById(id);
             return Ok(result);
@@ -65,7 +65,7 @@ namespace Planar.Controllers
         [OkTextResponse]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<string>> GetHistoryExceptionById([FromRoute][Id] int id)
+        public async Task<ActionResult<string>> GetHistoryExceptionById([FromRoute][LongId] long id)
         {
             var result = await BusinesLayer.GetHistoryExceptionById(id);
             return Ok(result);

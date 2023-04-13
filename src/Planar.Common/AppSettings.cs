@@ -158,7 +158,7 @@ namespace Planar.Common
 
             if (string.IsNullOrEmpty(DatabaseConnectionString))
             {
-                throw new AppSettingsException($"ERROR: database connection string could not be initialized\r\nMissing key '{nameof(DatabaseConnectionString)}' or value is empty in AppSettings.json file and there is no environment variable 'Planar_DBCONNSTR'");
+                throw new AppSettingsException($"ERROR: database connection string could not be initialized\r\nMissing key '{nameof(DatabaseConnectionString)}' or value is empty in AppSettings.yml file and there is no environment variable '{Consts.ConnectionStringVariableKey}'");
             }
         }
 

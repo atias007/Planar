@@ -69,20 +69,20 @@ namespace Planar.CLI
             var item = refreshData.FirstOrDefault(r => r.Id == id.ToString());
             if (item == null || item.Progress == 100)
             {
-                table.UpdateCell(i, 3, $"[green]completed[/]");
+                table.UpdateCell(i, 3, $"[grey]completed[/]");
                 table.UpdateCell(i, 4, "---");
                 table.UpdateCell(i, 5, "---");
+                table.UpdateCell(i, 6, "[grey]---[/]");
             }
             else
             {
-                var runtime =
-                    item.RunTime.TotalHours < 24 ?
-                    $"{item.RunTime:hh\\:mm\\:ss}" :
-                    $"{item.RunTime:\\(d\\)\\ hh\\:mm\\:ss}";
+                var runtime = CliTableFormat.FormatTimeSpan(item.RunTime);
+                var estimated = CliTableFormat.FormatTimeSpan(item.EstimatedEndTime);
 
                 table.UpdateCell(i, 3, $"[gold3_1]{item.Progress}%[/]");
                 table.UpdateCell(i, 4, item.EffectedRows.GetValueOrDefault().ToString());
                 table.UpdateCell(i, 5, runtime);
+                table.UpdateCell(i, 6, $"[grey]{estimated}[/]");
             }
         }
     }

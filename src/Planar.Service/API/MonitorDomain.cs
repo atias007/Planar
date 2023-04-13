@@ -63,14 +63,15 @@ namespace Planar.Service.API
         public async Task<MonitorItem> GetById(int id)
         {
             var item = await DataLayer.GetMonitorAction(id);
-            ValidateExistingEntity(item, "monitor");
-            var result = Mapper.Map<MonitorAction, MonitorItem>(item);
+            var monitor = ValidateExistingEntity(item, "monitor");
+            var result = Mapper.Map<MonitorAction, MonitorItem>(monitor);
             return result;
         }
 
         public async Task<List<MonitorItem>> GetByJob(string jobId)
         {
             var jobKey = await JobKeyHelper.GetJobKey(jobId);
+            if (jobKey == null) { return new List<MonitorItem>(); }
             var items = await DataLayer.GetMonitorActionsByJob(jobKey.Group, jobKey.Name);
             var result = Mapper.Map<List<MonitorItem>>(items);
             return result;
@@ -140,13 +141,20 @@ namespace Planar.Service.API
             await Update(updateMonitor);
         }
 
-        public async Task Test(MonitorTestRequest request)
+        public async Task Try(MonitorTestRequest request)
         {
             var monitorUtil = Resolve<MonitorUtil>();
             var groupDal = Resolve<GroupData>();
             var group = await groupDal.GetGroupWithUsers(request.DistributionGroupId);
             var monitorEvent = Enum.Parse<MonitorEvents>(request.MonitorEvent.ToString());
             var exception = new Exception("This is test exception");
+
+            if (group == null)
+            {
+                var field = nameof(request.DistributionGroupId);
+                throw new RestValidationException(field, $"{field} was not found");
+            }
+
             var action = new MonitorAction
             {
                 Active = true,
@@ -164,9 +172,9 @@ namespace Planar.Service.API
             if (MonitorEventsExtensions.IsSystemMonitorEvent(monitorEvent))
             {
                 var info = new MonitorSystemInfo
-                {
-                    MessageTemplate = $"This is test monitor for system event {monitorEvent}"
-                };
+                (
+                    $"This is test monitor for system event {monitorEvent}"
+                );
                 result = await monitorUtil.ExecuteMonitor(action, monitorEvent, info, exception);
             }
             else if (MonitorEventsExtensions.IsSimpleJobMonitorEvent(monitorEvent))
@@ -181,7 +189,7 @@ namespace Planar.Service.API
 
             if (!result.Success)
             {
-                throw new RestValidationException(string.Empty, result.Failure);
+                throw new RestValidationException(string.Empty, result.Failure ?? "general error");
             }
         }
     }

@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Planar.Common;
 using Planar.Service.Model;
 using System.Linq;
 
@@ -10,8 +11,8 @@ namespace Planar.Service.Validation
 
         public GlobalConfigDataValidator()
         {
-            RuleFor(f => f.Key).NotEmpty().MaximumLength(50);
-            RuleFor(f => f.Value).NotEmpty().MaximumLength(1000);
+            RuleFor(f => f.Key).NotEmpty().MaximumLength(100);
+            RuleFor(f => f.Value).MaximumLength(1000);
             RuleFor(f => f.Type).NotEmpty().MaximumLength(10)
                 .Must(IsValidType)
                 .WithMessage("{PropertyName} has invalid value '{PropertyValue}'. valid values are: " + string.Join(',', _types));

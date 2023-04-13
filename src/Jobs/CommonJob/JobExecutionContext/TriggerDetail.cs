@@ -17,5 +17,8 @@ namespace Planar.Job
         public bool HasRetry { get; set; }
         public bool IsRetryTrigger { get; set; }
         public bool? IsLastRetry { get; set; }
+        public int? RetryNumber { get; set; }
+        public int? MaxRetries { get; set; }
+        public TimeSpan? RetrySpan { get; set; }
     }
 }

@@ -21,7 +21,7 @@ namespace Planar.Service.Monitor.Test
 
         public string Description => "This is test job";
 
-        public Type JobType => null;
+        public Type JobType => typeof(TestJob);
 
         public JobDataMap JobDataMap { get; set; }
 

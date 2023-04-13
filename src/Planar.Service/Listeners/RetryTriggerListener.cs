@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.General;
 using Planar.Service.Listeners.Base;
@@ -25,26 +26,51 @@ namespace Planar.Service.Listeners
         {
             try
             {
+                // Ignore system job / trigger
                 if (IsSystemTrigger(trigger)) { return Task.CompletedTask; }
                 if (IsSystemJob(context.JobDetail)) { return Task.CompletedTask; }
 
+                // Ignore success running
                 var metadata = JobExecutionMetadata.GetInstance(context);
                 if (metadata.IsRunningSuccess) { return Task.CompletedTask; }
-                if (!trigger.JobDataMap.Contains(Consts.RetrySpan)) { return Task.CompletedTask; }
-                var span = GetRetrySpan(trigger);
+
+                // Ignore triggers with no retry
+                if (!TriggerHelper.HasRetry(trigger)) { return Task.CompletedTask; }
+
+                // Ignore trigger with no trigger span
+                var span = TriggerHelper.GetRetrySpan(trigger);
                 if (span == null) { return Task.CompletedTask; }
 
-                var numTries = trigger.JobDataMap.GetIntValue(Consts.RetryCounter);
-                if (numTries > Consts.MaxRetries)
+                // Get retry counters
+                var numTries = TriggerHelper.GetRetryNumber(trigger) ?? 0;
+                var maxRetries = TriggerHelper.GetMaxRetriesWithDefault(context.Trigger);
+
+                // Last retry - No more retries
+                var key = JobHelper.GetKeyTitle(context.JobDetail);
+                if (numTries >= maxRetries)
                 {
-                    var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
-                    _logger.LogError("Job with key {Key} fail and retry for {MaxRetries} times but failed each time", key, Consts.MaxRetries);
+                    _logger.LogError("Job with key {Key} fail and retry for {MaxRetries} times but failed each time", key, maxRetries);
                     return SafeScan(MonitorEvents.ExecutionLastRetryFail, context);
                 }
 
-                var id = TriggerKeyHelper.GetTriggerId(trigger);
-                var name = string.IsNullOrEmpty(id) ? Guid.NewGuid().ToString().Replace("-", string.Empty) : id;
+                // Calculate the next start retry
                 var start = DateTime.Now.AddSeconds(span.Value.TotalSeconds);
+
+                // Log as warning the retry details
+                if (numTries > 0)
+                {
+                    _logger.LogWarning("Retry no. {NumTries} of job with key {Key} was fail. Retry again at {Start}", numTries, key, start);
+                }
+                else
+                {
+                    _logger.LogWarning("Job with key {Key} was fail. Retry again at {Start}", key, start);
+                }
+
+                numTries++;
+                trigger.JobDataMap.Put(Consts.RetryCounter, numTries.ToString());
+
+                var id = TriggerHelper.GetTriggerId(trigger);
+                var name = string.IsNullOrEmpty(id) ? Guid.NewGuid().ToString().Replace("-", string.Empty) : id;
                 var retryTrigger = TriggerBuilder
                         .Create()
                         .ForJob(context.JobDetail)
@@ -52,19 +78,9 @@ namespace Planar.Service.Listeners
                         .UsingJobData(Consts.TriggerId, ServiceUtil.GenerateId())
                         .UsingJobData(Consts.RetrySpan, span.GetValueOrDefault().ToSimpleTimeString())
                         .UsingJobData(Consts.RetryCounter, numTries.ToString())
+                        .UsingJobData(Consts.MaxRetries, maxRetries.ToString())
                         .StartAt(start)
                         .Build();
-
-                if (numTries > 1)
-                {
-                    var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
-                    _logger.LogWarning("Retry no. {NumTries} of job with key {Key} was fail. Retry again at {Start}", numTries, key, start);
-                }
-                else
-                {
-                    var key = $"{context.JobDetail.Key.Group}.{context.JobDetail.Key.Name}";
-                    _logger.LogWarning("Job with key {Key} was fail. Retry again at {Start}", key, start);
-                }
 
                 context.Scheduler.ScheduleJob(retryTrigger, cancellationToken).Wait(cancellationToken);
                 return SafeScan(MonitorEvents.ExecutionRetry, context);
@@ -78,29 +94,6 @@ namespace Planar.Service.Listeners
 
         public Task TriggerFired(ITrigger trigger, IJobExecutionContext context, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                if (IsSystemTrigger(trigger)) { return Task.CompletedTask; }
-                if (IsSystemJob(context.JobDetail)) { return Task.CompletedTask; }
-
-                if (!trigger.JobDataMap.Contains(Consts.RetrySpan)) { return Task.CompletedTask; }
-                var span = GetRetrySpan(trigger);
-                if (span == null) { return Task.CompletedTask; }
-
-                if (!trigger.JobDataMap.Contains(Consts.RetryCounter))
-                {
-                    trigger.JobDataMap.Put(Consts.RetryCounter, 0);
-                }
-
-                var numberTries = trigger.JobDataMap.GetIntValue(Consts.RetryCounter);
-                numberTries++;
-                trigger.JobDataMap.Put(Consts.RetryCounter, numberTries);
-            }
-            catch (Exception ex)
-            {
-                LogCritical(nameof(TriggerFired), ex);
-            }
-
             return Task.CompletedTask;
         }
 
@@ -112,15 +105,6 @@ namespace Planar.Service.Listeners
         public Task<bool> VetoJobExecution(ITrigger trigger, IJobExecutionContext context, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(false);
-        }
-
-        private static TimeSpan? GetRetrySpan(ITrigger trigger)
-        {
-            var value = trigger.JobDataMap[Consts.RetrySpan];
-            var spanValue = Convert.ToString(value);
-            if (string.IsNullOrEmpty(spanValue)) { return null; }
-            if (!TimeSpan.TryParse(spanValue, out TimeSpan span)) { return null; }
-            return span;
         }
     }
 }

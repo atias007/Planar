@@ -3,7 +3,9 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar;
 using Planar.Common;
+using Planar.Common.Helpers;
 using Planar.Job;
+using Polly;
 using System;
 using System.Collections.Generic;
 using IJobExecutionContext = Quartz.IJobExecutionContext;
@@ -42,6 +44,22 @@ namespace CommonJob
             LogData(log);
         }
 
+        public void IncreaseEffectedRows(int delta = 1)
+        {
+            lock (Locker)
+            {
+                Metadata.EffectedRows = Metadata.EffectedRows.GetValueOrDefault() + delta;
+            }
+        }
+
+        public void UpdateProgress(byte progress)
+        {
+            lock (Locker)
+            {
+                Metadata.Progress = progress;
+            }
+        }
+
         public string? Publish(string channel, string message)
         {
             switch (channel)
@@ -77,6 +95,7 @@ namespace CommonJob
                     return null;
 
                 case "AddAggragateException":
+                case "AddAggregateException":
                     var data3 = Deserialize<ExceptionDto>(message);
                     if (data3 == null) { return null; }
                     lock (Locker)
@@ -99,7 +118,10 @@ namespace CommonJob
                     return _context.CancellationToken.IsCancellationRequested.ToString();
 
                 case "FailOnStopRequest":
-                    _context.CancellationToken.ThrowIfCancellationRequested();
+                    if (_context.CancellationToken.IsCancellationRequested)
+                    {
+                        throw new OperationCanceledException("Job was stopped");
+                    }
                     return null;
 
                 case "GetData":
@@ -159,12 +181,12 @@ namespace CommonJob
 
         private static JobExecutionContext MapContext(IJobExecutionContext context, IDictionary<string, string?> settings)
         {
-            var hasRetry = context.Trigger.JobDataMap.Contains(Consts.RetrySpan);
-            bool? lastRetry = null;
-            if (hasRetry)
-            {
-                lastRetry = context.Trigger.JobDataMap.GetIntValue(Consts.RetryCounter) > Consts.MaxRetries;
-            }
+            var isRetryTrigger = TriggerHelper.IsRetryTrigger(context.Trigger);
+            var hasRetry = TriggerHelper.HasRetry(context.Trigger);
+            var retryNumber = TriggerHelper.GetRetryNumber(context.Trigger);
+            var maxRetries = TriggerHelper.GetMaxRetries(context.Trigger);
+            var retrySpan = TriggerHelper.GetRetrySpan(context.Trigger);
+            var lastRetry = hasRetry ? retryNumber >= maxRetries : (bool?)null;
 
             var result = new JobExecutionContext
             {
@@ -208,7 +230,10 @@ namespace CommonJob
                     TriggerDataMap = Global.ConvertDataMapToDictionary(context.Trigger.JobDataMap),
                     HasRetry = hasRetry,
                     IsLastRetry = lastRetry,
-                    IsRetryTrigger = context.Trigger.Key.Name.StartsWith(Consts.RetryTriggerNamePrefix),
+                    IsRetryTrigger = isRetryTrigger,
+                    MaxRetries = maxRetries,
+                    RetryNumber = retryNumber == 0 ? null : retryNumber,
+                    RetrySpan = retrySpan
                 },
                 Environment = Global.Environment
             };

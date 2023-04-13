@@ -65,8 +65,13 @@ namespace Planar.Service.General
             return result;
         }
 
-        public async Task ValidateJobFolderExists(string folder)
+        public async Task ValidateJobFolderExists(string? folder)
         {
+            if (folder == null)
+            {
+                throw new PlanarException("job folder has invalid value of null");
+            }
+
             var nodes = await GetAllNodes();
             foreach (var node in nodes)
             {
@@ -90,8 +95,13 @@ namespace Planar.Service.General
             }
         }
 
-        public async Task ValidateJobFileExists(string folder, string filename)
+        public async Task ValidateJobFileExists(string? folder, string filename)
         {
+            if (folder == null)
+            {
+                throw new PlanarException("job folder has invalid value of null");
+            }
+
             var nodes = await GetAllNodes();
             foreach (var node in nodes)
             {
@@ -302,7 +312,7 @@ namespace Planar.Service.General
             return false;
         }
 
-        public async Task<RunningJobDetails> GetRunningJob(string instanceId)
+        public async Task<RunningJobDetails?> GetRunningJob(string instanceId)
         {
             var nodes = await GetAllNodes();
             foreach (var node in nodes)
@@ -329,7 +339,7 @@ namespace Planar.Service.General
             return null;
         }
 
-        public async Task<GetRunningDataResponse> GetRunningData(string instanceId)
+        public async Task<GetRunningDataResponse?> GetRunningData(string instanceId)
         {
             var nodes = await GetAllNodes();
             foreach (var node in nodes)
@@ -529,7 +539,7 @@ namespace Planar.Service.General
             return response;
         }
 
-        private static async Task<RunningJobDetails> CallGetRunningJob(ClusterNode node, string instanceId)
+        private static async Task<RunningJobDetails?> CallGetRunningJob(ClusterNode node, string instanceId)
         {
             var client = GetClient(node);
             var request = new GetRunningJobRequest { InstanceId = instanceId };
@@ -544,7 +554,7 @@ namespace Planar.Service.General
             return response;
         }
 
-        private static async Task<GetRunningDataResponse> CallGetRunningData(ClusterNode node, string instanceId)
+        private static async Task<GetRunningDataResponse?> CallGetRunningData(ClusterNode node, string instanceId)
         {
             var client = GetClient(node);
             var request = new GetRunningJobRequest { InstanceId = instanceId };
@@ -591,7 +601,7 @@ namespace Planar.Service.General
         {
             var result = new RunningJobDetails
             {
-                DataMap = new SortedDictionary<string, string>(reply.DataMap.ToDictionary(k => k.Key, v => v.Value)),
+                DataMap = new SortedDictionary<string, string?>(),
                 Description = reply.Description,
                 EffectedRows = reply.EffectedRows == -1 ? null : reply.EffectedRows,
                 FireInstanceId = reply.FireInstanceId,
@@ -609,6 +619,11 @@ namespace Planar.Service.General
                 TriggerId = reply.TriggerId,
                 TriggerName = reply.TriggerName,
             };
+
+            foreach (var item in reply.DataMap)
+            {
+                result.DataMap.Add(item.Key, item.Value);
+            }
 
             return result;
         }

@@ -22,7 +22,7 @@ namespace Planar.Service.Data
             return result.Entity;
         }
 
-        public async Task<User> GetUser(int id, bool withTracking = false)
+        public async Task<User?> GetUser(int id, bool withTracking = false)
         {
             IQueryable<User> query = _context.Users;
             if (!withTracking)
@@ -34,7 +34,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<User> GetUserByUsername(string username)
+        public async Task<User?> GetUserByUsername(string username)
         {
             var result = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
             return result;
@@ -89,8 +89,9 @@ namespace Planar.Service.Data
             return await _context.Users.AnyAsync(u => u.Id == userId);
         }
 
-        public async Task<bool> IsUsernameExists(string username, int id)
+        public async Task<bool> IsUsernameExists(string? username, int id)
         {
+            if (username == null) { return false; }
             return await _context.Users.AnyAsync(u => u.Id != id && u.Username.ToLower() == username.ToLower());
         }
     }

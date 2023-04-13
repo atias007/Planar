@@ -19,15 +19,9 @@ namespace Planar.Service.API
             return DataLayer.GetTraceData();
         }
 
-        public Model.Trace GetTrace(int key)
+        public IQueryable<Model.Trace> GetTrace(int key)
         {
             var trace = DataLayer.GetTrace(key);
-
-            if (trace == null)
-            {
-                throw new RestNotFoundException();
-            }
-
             return trace;
         }
 
@@ -38,7 +32,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<string> GetException(int id)
+        public async Task<string?> GetException(int id)
         {
             var result = await DataLayer.GetTraceException(id);
 
@@ -50,7 +44,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<string> GetProperties(int id)
+        public async Task<string?> GetProperties(int id)
         {
             var result = await DataLayer.GetTraceProperties(id);
 

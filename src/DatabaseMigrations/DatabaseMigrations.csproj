@@ -11,9 +11,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="dbup-sqlserver" Version="5.0.8" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
     <PackageReference Include="Spectre.Console" Version="0.46.0" />
   </ItemGroup>
   <ItemGroup>
@@ -29,6 +27,13 @@
     <None Remove="Scripts\Planar_0007 - reset system jobs.sql" />
     <None Remove="Scripts\Planar_0008 - sp clear job log.sql" />
     <None Remove="Scripts\Planar_0009 - fix last_history sp.sql" />
+    <None Remove="Scripts\Planar_0010 - statistics_job.sql" />
+    <None Remove="Scripts\Planar_0011 - build_statistics.sql" />
+    <None Remove="Scripts\Planar_0012 - UpdateAnomalySP.sql" />
+    <None Remove="Scripts\Planar_0013 - stat_counters_table.sql" />
+    <None Remove="Scripts\Planar_0014 - sp_FillJobCounters.sql" />
+    <None Remove="Scripts\Planar_0015 - alter_globalparam.sql" />
+    <None Remove="Scripts\Planar_0016 - log_bigint_for_id.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -40,5 +45,12 @@
     <EmbeddedResource Include="Scripts\Planar_0007 - reset system jobs.sql" />
     <EmbeddedResource Include="Scripts\Planar_0008 - sp clear job log.sql" />
     <EmbeddedResource Include="Scripts\Planar_0009 - fix last_history sp.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0010 - statistics_job.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0011 - build_statistics.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0012 - UpdateAnomalySP.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0013 - stat_counters_table.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0014 - sp_FillJobCounters.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0015 - alter_globalparam.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0016 - log_bigint_for_id.sql" />
   </ItemGroup>
 </Project>

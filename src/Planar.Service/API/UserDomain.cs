@@ -101,6 +101,7 @@ namespace Planar.Service.API
         {
             var existsUser = await DataLayer.GetUser(id, true);
             ValidateExistingEntity(existsUser, "user");
+            if (existsUser == null) { return string.Empty; }
             var hash = GeneratePassword();
             existsUser.Password = hash.Hash;
             existsUser.Salt = hash.Salt;

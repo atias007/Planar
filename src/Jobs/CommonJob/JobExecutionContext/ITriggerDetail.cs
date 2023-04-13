@@ -15,7 +15,10 @@ namespace Planar.Job
         DateTimeOffset StartTime { get; }
         SortedDictionary<string, string?> TriggerDataMap { get; }
         bool HasRetry { get; }
+        TimeSpan? RetrySpan { get; }
         bool? IsLastRetry { get; }
         bool IsRetryTrigger { get; }
+        int? RetryNumber { get; }
+        int? MaxRetries { get; }
     }
 }

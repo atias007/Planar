@@ -79,8 +79,15 @@ namespace Planar.CLI
         {
             var table = new Table();
             if (response == null) { return table; }
-            table.AddColumns("Fire Instance Id", "Job Id", "Job Key", "Progress", "Effected Rows", "Run Time");
-            response.ForEach(r => table.AddRow(CliTableFormat.GetFireInstanceIdMarkup(r.FireInstanceId), $"{r.Id}", $"{r.Group}.{r.Name}".EscapeMarkup(), CliTableFormat.GetProgressMarkup(r.Progress), $"{r.EffectedRows}", CliTableFormat.FormatTimeSpan(r.RunTime)));
+            table.AddColumns("Fire Instance Id", "Job Id", "Job Key", "Progress", "Effected Rows", "Run Time", "End Time");
+            response.ForEach(r => table.AddRow(
+                CliTableFormat.GetFireInstanceIdMarkup(r.FireInstanceId),
+                $"{r.Id}",
+                $"{r.Group}.{r.Name}".EscapeMarkup(),
+                CliTableFormat.GetProgressMarkup(r.Progress),
+                $"{r.EffectedRows}",
+                CliTableFormat.FormatTimeSpan(r.RunTime),
+                $"[grey]{CliTableFormat.FormatTimeSpan(r.EstimatedEndTime)}[/]"));
             return table;
         }
 

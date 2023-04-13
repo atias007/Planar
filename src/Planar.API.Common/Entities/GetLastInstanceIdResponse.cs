@@ -4,6 +4,6 @@
     {
         public string InstanceId { get; set; } = string.Empty;
 
-        public int LogId { get; set; }
+        public long LogId { get; set; }
     }
 }

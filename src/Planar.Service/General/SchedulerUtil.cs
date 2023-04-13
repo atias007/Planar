@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
+using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.Model.DataObjects;
@@ -52,7 +53,7 @@ namespace Planar.Service.General
             await _scheduler.Standby(cancellationToken);
         }
 
-        public void HealthCheck(ILogger logger = null)
+        public void HealthCheck(ILogger? logger = null)
         {
             if (!IsSchedulerRunning)
             {
@@ -73,11 +74,11 @@ namespace Planar.Service.General
         public async Task<bool> IsJobRunning(JobKey jobKey, CancellationToken cancellationToken = default)
         {
             var allRunning = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
-            var result = allRunning.AsQueryable().Any(c => c.JobDetail.Key.Name == jobKey.Name && c.JobDetail.Key.Group == jobKey.Group);
+            var result = allRunning.AsQueryable().Any(c => KeyHelper.Equals(c.JobDetail.Key, jobKey));
             return result;
         }
 
-        public async Task<RunningJobDetails> GetRunningJob(string instanceId, CancellationToken cancellationToken = default)
+        public async Task<RunningJobDetails?> GetRunningJob(string instanceId, CancellationToken cancellationToken = default)
         {
             var jobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
             var context = jobs.FirstOrDefault(j => j.FireInstanceId == instanceId);
@@ -105,7 +106,7 @@ namespace Planar.Service.General
             return response;
         }
 
-        public async Task<GetRunningDataResponse> GetRunningData(string instanceId, CancellationToken cancellationToken = default)
+        public async Task<GetRunningDataResponse?> GetRunningData(string instanceId, CancellationToken cancellationToken = default)
         {
             var context = (await _scheduler.GetCurrentlyExecutingJobs(cancellationToken))
                 .FirstOrDefault(j => j.FireInstanceId == instanceId);
@@ -196,7 +197,7 @@ namespace Planar.Service.General
 
         public static void MapJobRowDetails(IJobDetail source, JobRowDetails target)
         {
-            target.Id = JobKeyHelper.GetJobId(source);
+            target.Id = JobKeyHelper.GetJobId(source) ?? string.Empty;
             target.Name = source.Key.Name;
             target.Group = source.Key.Group;
             target.Description = source.Description;
@@ -212,12 +213,12 @@ namespace Planar.Service.General
             return jobType.Name;
         }
 
-        private static Type GetJobType(Type type)
+        private static Type? GetJobType(Type type)
         {
             if (type == null) { return null; }
 
             var list = new List<Type>();
-            Type localType = type;
+            Type? localType = type;
             while (localType != null)
             {
                 list.Add(localType);
@@ -241,7 +242,7 @@ namespace Planar.Service.General
             target.TriggerGroup = source.Trigger.Key.Group;
             target.TriggerName = source.Trigger.Key.Name;
             target.DataMap = Global.ConvertDataMapToDictionary(source.MergedJobDataMap);
-            target.TriggerId = TriggerKeyHelper.GetTriggerId(source);
+            target.TriggerId = TriggerHelper.GetTriggerId(source.Trigger) ?? Consts.Undefined;
 
             if (target.TriggerGroup == Consts.RecoveringJobsGroup)
             {

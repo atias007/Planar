@@ -122,9 +122,9 @@ namespace Planar.CLI.Actions
             return await Execute(restRequest, cancellationToken);
         }
 
-        [Action("test")]
+        [Action("try")]
         [NullRequest]
-        public static async Task<CliActionResponse> TestMonitor(CliMonitorTestRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> TryMonitor(CliMonitorTestRequest request, CancellationToken cancellationToken = default)
         {
             if (request == null)
             {
@@ -137,7 +137,7 @@ namespace Planar.CLI.Actions
                 request = wrapper.Request;
             }
 
-            var restRequest = new RestRequest("monitor/test", Method.Post)
+            var restRequest = new RestRequest("monitor/try", Method.Post)
                 .AddBody(request);
 
             return await Execute(restRequest, cancellationToken);

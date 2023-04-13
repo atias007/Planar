@@ -81,7 +81,7 @@ namespace Planar.Controllers
         [BadRequestResponse]
         public async Task<IActionResult> AddData([FromBody] JobOrTriggerDataRequest request)
         {
-            await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Add);
+            await BusinesLayer.PutData(request, JobDomain.PutMode.Add);
             return CreatedAtAction(nameof(Get), new { triggerId = request.Id }, null);
         }
 
@@ -93,7 +93,7 @@ namespace Planar.Controllers
         [BadRequestResponse]
         public async Task<IActionResult> UpdateData([FromBody] JobOrTriggerDataRequest request)
         {
-            await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Update);
+            await BusinesLayer.PutData(request, JobDomain.PutMode.Update);
             return CreatedAtAction(nameof(Get), new { triggerId = request.Id }, null);
         }
 

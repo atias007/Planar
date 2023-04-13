@@ -1,5 +1,6 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -50,7 +51,7 @@ namespace Planar.Service.API
         {
             foreach (var item in metadata.OldJobDetails.JobDataMap)
             {
-                request.JobData.Upsert(item.Key, PlanarConvert.ToString(item.Value));
+                request.JobData.Put<string?>(item.Key, PlanarConvert.ToString(item.Value));
             }
         }
 
@@ -63,7 +64,7 @@ namespace Planar.Service.API
                 if (updateTrigger == null) { continue; }
                 foreach (var data in oldTrigger.JobDataMap)
                 {
-                    updateTrigger.TriggerData.Upsert(data.Key, PlanarConvert.ToString(data.Value));
+                    updateTrigger.TriggerData.Put<string?>(data.Key, PlanarConvert.ToString(data.Value));
                 }
             }
         }
@@ -116,7 +117,10 @@ namespace Planar.Service.API
 
         private async Task FillRollbackData(JobUpdateMetadata metadata)
         {
-            metadata.OldJobDetails = await Scheduler.GetJobDetail(metadata.JobKey);
+            metadata.OldJobDetails =
+                await Scheduler.GetJobDetail(metadata.JobKey)
+                ?? throw new RestGeneralException($"job with key '{KeyHelper.GetKeyTitle(metadata.JobKey)}' could not be found");
+
             metadata.OldTriggers = await Scheduler.GetTriggersOfJob(metadata.JobKey);
             await Scheduler.DeleteJob(metadata.JobKey);
             metadata.EnableRollback();
@@ -237,7 +241,9 @@ namespace Planar.Service.API
             metadata.JobKey = ValidateJobMetadata(request);
             await JobKeyHelper.ValidateJobExists(metadata.JobKey);
             ValidateSystemJob(metadata.JobKey);
-            metadata.JobId = await JobKeyHelper.GetJobId(metadata.JobKey);
+            metadata.JobId =
+                await JobKeyHelper.GetJobId(metadata.JobKey) ??
+                throw new RestGeneralException($"could not find job id for job key '{KeyHelper.GetKeyTitle(metadata.JobKey)}'");
             await ValidateJobPaused(metadata.JobKey);
             await ValidateJobNotRunning(metadata.JobKey);
         }

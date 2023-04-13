@@ -4,7 +4,7 @@ namespace Planar.API.Common.Entities
 {
     public class JobInstanceLogRow
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public string? JobId { get; set; }
         public string? JobType { get; set; }
         public string? JobName { get; set; }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.Common;
+using Planar.Common.Helpers;
 using Planar.Service.API;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
@@ -63,7 +64,6 @@ namespace Planar.Service
             services.AddSingleton(p => p.GetRequiredService<ISchedulerFactory>().GetScheduler().Result);
             services.AddSingleton<SchedulerUtil>();
             services.AddSingleton<JobKeyHelper>();
-            services.AddSingleton<TriggerKeyHelper>();
 
             // Host
             services.AddHostedService<MainService>();
@@ -103,7 +103,6 @@ namespace Planar.Service
             services.AddSingleton(p => p.GetRequiredService<ISchedulerFactory>().GetScheduler().Result);
             services.AddSingleton<SchedulerUtil>();
             services.AddSingleton<JobKeyHelper>();
-            services.AddSingleton<TriggerKeyHelper>();
 
             // Utils
             services.AddScoped<ClusterUtil>();

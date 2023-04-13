@@ -13,7 +13,7 @@ namespace Planar.Service.Data
         {
         }
 
-        public async Task<GlobalConfig> GetGlobalConfig(string key)
+        public async Task<GlobalConfig?> GetGlobalConfig(string key)
         {
             var result = await _context.GlobalConfigs.FindAsync(key);
             return result;

@@ -2,11 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 
 namespace Planar.Service.Exceptions
 {
-    public class RestValidationException : Exception
+    public sealed class RestValidationException : Exception
     {
         public RestValidationException()
         {
@@ -15,12 +14,6 @@ namespace Planar.Service.Exceptions
         public RestValidationException(string fieldName, string errorDetails)
         {
             Errors.Add(new RestProblem(fieldName, errorDetails));
-        }
-
-        protected RestValidationException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-            // ...
         }
 
         public RestValidationException(HashSet<RestProblem> errors)

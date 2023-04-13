@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.Serialization;
 
 namespace Planar.Service.Monitor
 {
@@ -7,12 +6,6 @@ namespace Planar.Service.Monitor
     {
         public PlanarMonitorException(string message) : base(message)
         {
-        }
-
-        protected PlanarMonitorException(SerializationInfo info, StreamingContext context)
-           : base(info, context)
-        {
-            // ...
         }
     }
 }

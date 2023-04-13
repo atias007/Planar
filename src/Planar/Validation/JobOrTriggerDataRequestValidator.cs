@@ -13,8 +13,7 @@ namespace Planar.Validation
                 .WithMessage("the data key '{PropertyValue}' in invalid");
 
             RuleFor(e => e.DataValue)
-                .MaximumLength(1000)
-                .NotEmpty();
+                .MaximumLength(1000);
         }
     }
 }

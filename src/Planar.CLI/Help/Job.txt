@@ -20,7 +20,7 @@ the options for <command> and [<options>] parameters of job module:
  remove|delete   <job id>
  resume-all
  resume          <job id>
- data            <job id> <upsert|remove|clear> [<key>] [<value>]
+ data            <job id> <put|remove> [<key>] [<value>]
  stop            <instance id>
  test            <job id> [-n|--now <{{ShortDatePattern}} {{LongTimePattern}}>]
 --------------------------------------------------------------------------------------------------

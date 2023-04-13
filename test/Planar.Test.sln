@@ -21,7 +21,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "package", "package", "{33BB
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DemoProcessJob", "DemoProcessJob\DemoProcessJob.csproj", "{679F9421-94EF-48D0-9580-510747D69656}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LongRunningProcess", "LongRunningProcess\LongRunningProcess.csproj", "{D165A2F6-31EF-4557-A14E-96A556B6F163}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LongRunningProcess", "LongRunningProcess\LongRunningProcess.csproj", "{D165A2F6-31EF-4557-A14E-96A556B6F163}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Common", "..\nuget packages\Planar.Common\Planar.Common.csproj", "{AF080F39-A0B0-434D-85E4-66915110CB9E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -65,12 +67,17 @@ Global
 		{D165A2F6-31EF-4557-A14E-96A556B6F163}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D165A2F6-31EF-4557-A14E-96A556B6F163}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D165A2F6-31EF-4557-A14E-96A556B6F163}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF080F39-A0B0-434D-85E4-66915110CB9E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF080F39-A0B0-434D-85E4-66915110CB9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF080F39-A0B0-434D-85E4-66915110CB9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF080F39-A0B0-434D-85E4-66915110CB9E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{F78E009C-B37B-4FB0-AC8D-6CA7065A8195} = {33BBD853-2616-4EFF-A553-FC4CDC022BF9}
+		{AF080F39-A0B0-434D-85E4-66915110CB9E} = {33BBD853-2616-4EFF-A553-FC4CDC022BF9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F30257B7-435D-473B-9997-2AA3DF5E7D03}

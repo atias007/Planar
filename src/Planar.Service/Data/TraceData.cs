@@ -40,9 +40,9 @@ namespace Planar.Service.Data
             return await conn.ExecuteAsync(cmd);
         }
 
-        public Trace? GetTrace(int key)
+        public IQueryable<Trace> GetTrace(int key)
         {
-            return _context.Traces.Find(key);
+            return _context.Traces.Where(t => t.Id == key);
         }
 
         public async Task<List<LogDetails>> GetTrace(GetTraceRequest request)
@@ -92,13 +92,13 @@ namespace Planar.Service.Data
             return _context.Traces.AsQueryable();
         }
 
-        public async Task<string> GetTraceException(int id)
+        public async Task<string?> GetTraceException(int id)
         {
             var result = (await _context.Traces.FindAsync(id))?.Exception;
             return result;
         }
 
-        public async Task<string> GetTraceProperties(int id)
+        public async Task<string?> GetTraceProperties(int id)
         {
             var result = (await _context.Traces.FindAsync(id))?.LogEvent;
             return result;

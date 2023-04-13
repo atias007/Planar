@@ -1,6 +1,7 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
+using Planar.Common.Helpers;
 using ProcessJob;
 using Quartz;
 using System.Diagnostics;
@@ -44,8 +45,9 @@ namespace Planar
                 ValidateProcessJob();
                 context.CancellationToken.Register(() => OnCancel());
 
+                var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
                 var startInfo = GetProcessStartInfo();
-                var success = StartProcess(startInfo);
+                var success = StartProcess(startInfo, timeout);
                 if (!success)
                 {
                     OnTimeout();
@@ -77,11 +79,6 @@ namespace Planar
             try { if (_process != null) { _process.ErrorDataReceived -= ProcessErrorDataReceived; } } catch { DoNothingMethod(); }
         }
 
-        private static void DoNothingMethod()
-        {
-            //// *** Do Nothing Method *** ////
-        }
-
         private void ValidateProcessJob()
         {
             try
@@ -98,6 +95,7 @@ namespace Planar
             {
                 var source = nameof(ValidateProcessJob);
                 _logger.LogError(ex, "Fail at {Source}", source);
+                MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
                 throw;
             }
         }
@@ -128,6 +126,7 @@ namespace Planar
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Fail to kill process job {Filename}", _process.StartInfo.FileName);
+                MessageBroker.AppendLog(LogLevel.Error, $"Fail to kill process job {_process.StartInfo.FileName}. {ex.Message}");
             }
         }
 
@@ -255,7 +254,7 @@ namespace Planar
             MessageBroker.AppendLog(LogLevel.Information, _seperator);
         }
 
-        private bool StartProcess(ProcessStartInfo startInfo)
+        private bool StartProcess(ProcessStartInfo startInfo, TimeSpan timeout)
         {
             _process = Process.Start(startInfo);
             if (_process == null)
@@ -271,13 +270,10 @@ namespace Planar
             _process.OutputDataReceived += ProcessOutputDataReceived;
             _process.ErrorDataReceived += ProcessErrorDataReceived;
 
-            var timeout = GetTimeout(Properties.Timeout);
-
-            _process.WaitForExit(timeout);
+            _process.WaitForExit(Convert.ToInt32(timeout.TotalMilliseconds));
             if (!_process.HasExited)
             {
-                var span = TimeSpan.FromMilliseconds(timeout);
-                MessageBroker.AppendLog(LogLevel.Error, $"Process timeout expire. Timeout was {span:hh\\:mm\\:ss}");
+                MessageBroker.AppendLog(LogLevel.Error, $"Process timeout expire. Timeout was {timeout:hh\\:mm\\:ss}");
                 return false;
             }
 

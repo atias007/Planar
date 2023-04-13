@@ -1,8 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar;
 using Planar.Common;
-using Planar.Common.API.Helpers;
+using Planar.Common.Helpers;
 using Planar.Job;
+using Planar.Service.API.Helpers;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,10 @@ namespace CommonJob
         protected static readonly string? JobDataMapAttribute = typeof(JobDataAttribute).FullName;
         protected static readonly string? TriggerDataMapAttribute = typeof(TriggerDataAttribute).FullName;
 
-        public static IEnumerable<string> JobTypes => new[] { "PlanarJob", "ProcessJob" };
+        protected static void DoNothingMethod()
+        {
+            //// *** Do Nothing Method *** ////
+        }
     }
 
     public abstract class BaseCommonJob<TInstance, TProperties> : BaseCommonJob, IJob
@@ -40,12 +44,14 @@ namespace CommonJob
         {
             get
             {
-                if (_messageBroker == null) { throw new ArgumentNullException(nameof(MessageBroker)); }
+                if (_messageBroker == null) { throw new PlanarJobException(nameof(MessageBroker)); }
                 return _messageBroker;
             }
         }
 
         public TProperties Properties { get; private set; } = new();
+
+        protected IDictionary<string, string?> Settings { get; private set; } = new Dictionary<string, string?>();
 
         public abstract Task Execute(IJobExecutionContext context);
 
@@ -74,8 +80,13 @@ namespace CommonJob
                 path = pathProperties.Path;
             }
 
-            var settings = LoadJobSettings(path);
-            _messageBroker = new JobMessageBroker(context, settings);
+            Settings = LoadJobSettings(path);
+            _messageBroker = new JobMessageBroker(context, Settings);
+
+            context.CancellationToken.Register(() =>
+            {
+                _messageBroker.AppendLog(LogLevel.Warning, "Service get a request for stop job");
+            });
         }
 
         protected IDictionary<string, string?> LoadJobSettings(string? path)
@@ -92,16 +103,6 @@ namespace CommonJob
                 _logger.LogError(ex, "Fail at {Source}", source);
                 throw;
             }
-        }
-
-        protected static int GetTimeout(TimeSpan? specificTimeout = null)
-        {
-            if (specificTimeout.HasValue && specificTimeout != TimeSpan.Zero)
-            {
-                return Convert.ToInt32(specificTimeout.Value.TotalMilliseconds);
-            }
-
-            return Convert.ToInt32(AppSettings.JobAutoStopSpan.TotalMilliseconds);
         }
 
         protected void MapJobInstanceProperties(IJobExecutionContext context, Type targetType, object instance)
@@ -162,6 +163,26 @@ namespace CommonJob
             {
                 throw new PlanarJobException($"property '{propertyName}' is mandatory for job '{GetType().FullName}'");
             }
+        }
+
+        protected async Task WaitForJobTask(IJobExecutionContext context, Task task)
+        {
+            var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
+            var finish = task.Wait(timeout);
+            if (!finish)
+            {
+                MessageBroker.AppendLog(LogLevel.Warning, $"Timeout occur, sent stop requst to job (timeout value: {FormatTimeSpan(timeout)})");
+                await context.Scheduler.Interrupt(context.JobDetail.Key);
+            }
+
+            task.Wait();
+        }
+
+        private static string FormatTimeSpan(TimeSpan timeSpan)
+        {
+            if (timeSpan.TotalSeconds < 1) { return $"{timeSpan.TotalMilliseconds:N0}ms"; }
+            if (timeSpan.TotalDays >= 1) { return $"{timeSpan:\\(d\\)\\ hh\\:mm\\:ss}"; }
+            return $"{timeSpan:hh\\:mm\\:ss}";
         }
 
         private bool IsIgnoreProperty(PropertyInfo property, JobKey jobKey, KeyValuePair<string, object> data)
@@ -325,18 +346,18 @@ namespace CommonJob
 
         private async Task SetProperties(IJobExecutionContext context)
         {
-            var jobId = JobIdHelper.GetJobId(context.JobDetail);
+            var jobId = JobHelper.GetJobId(context.JobDetail);
             if (jobId == null)
             {
-                var key = context.JobDetail.Key;
-                throw new PlanarJobException($"fail to get job id while execute job {key.Group}.{key.Name}");
+                var title = JobHelper.GetKeyTitle(context.JobDetail);
+                throw new PlanarJobException($"fail to get job id while execute job {title}");
             }
 
             var properties = await _dataLayer.GetJobProperty(jobId);
             if (string.IsNullOrEmpty(properties))
             {
-                var key = context.JobDetail.Key;
-                throw new PlanarJobException($"fail to get job properties while execute job {key.Group}.{key.Name} (id: {jobId})");
+                var title = JobHelper.GetKeyTitle(context.JobDetail);
+                throw new PlanarJobException($"fail to get job properties while execute job {title} (id: {jobId})");
             }
 
             Properties = YmlUtil.Deserialize<TProperties>(properties);

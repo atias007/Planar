@@ -9,9 +9,11 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.CLI
@@ -90,7 +92,7 @@ namespace Planar.CLI
 
             if (!errors.Any())
             {
-                AnsiConsole.MarkupLine(CliFormat.GetValidationErrorMarkup(entity.Detail));
+                MarkupCliLine(CliFormat.GetValidationErrorMarkup(entity.Detail));
                 return true;
             }
 
@@ -98,11 +100,11 @@ namespace Planar.CLI
             {
                 var value = errors.First() as JValue;
                 var strValue = Convert.ToString(value?.Value);
-                AnsiConsole.MarkupLine(CliFormat.GetValidationErrorMarkup(strValue));
+                MarkupCliLine(CliFormat.GetValidationErrorMarkup(strValue));
                 return true;
             }
 
-            AnsiConsole.MarkupLine(CliFormat.GetValidationErrorMarkup(string.Empty));
+            MarkupCliLine(CliFormat.GetValidationErrorMarkup(string.Empty));
             DisplayValidationErrors(errors);
 
             return true;
@@ -151,7 +153,7 @@ namespace Planar.CLI
                     object? param;
                     using (var scope = new TokenManagerScope())
                     {
-                        param = cliArgument.GetRequest(action.RequestType, action, TokenManagerScope.Token);
+                        param = cliArgument.GetRequest(action, TokenManagerScope.Token);
                     }
 
                     var itMode = param is IIterative itParam && itParam.Iterative;
@@ -181,7 +183,7 @@ namespace Planar.CLI
                     }
                 }
 
-                HandleCliResponse(response);
+                HandleCliResponse(response).Wait();
             }
             catch (Exception ex)
             {
@@ -191,7 +193,7 @@ namespace Planar.CLI
             return cliArgument;
         }
 
-        private static void HandleCliResponse(CliActionResponse? response)
+        private static async Task HandleCliResponse(CliActionResponse? response)
         {
             if (response == null) { return; }
             if (response.Response == null) { return; }
@@ -204,7 +206,7 @@ namespace Planar.CLI
                 }
                 else
                 {
-                    WriteInfo(response.Message);
+                    await WriteInfo(response);
                 }
             }
             else
@@ -243,7 +245,7 @@ namespace Planar.CLI
                 HandleExceptionSafe(finaleException.InnerException);
             }
 
-            if (string.IsNullOrEmpty(finaleException.Message) == false)
+            if (!string.IsNullOrEmpty(finaleException.Message))
             {
                 if (finaleException is CliWarningException)
                 {
@@ -251,7 +253,7 @@ namespace Planar.CLI
                 }
                 else
                 {
-                    AnsiConsole.MarkupLine(CliFormat.GetErrorMarkup(Markup.Escape(finaleException.Message)));
+                    MarkupCliLine(CliFormat.GetErrorMarkup(Markup.Escape(finaleException.Message)));
                 }
             }
         }
@@ -288,20 +290,20 @@ namespace Planar.CLI
 
             if (response.ErrorMessage != null && response.ErrorMessage.Contains("No connection could be made"))
             {
-                AnsiConsole.MarkupLine(CliFormat.GetErrorMarkup($"no connection could be made to planar deamon ({RestProxy.Host}:{RestProxy.Port})"));
+                MarkupCliLine(CliFormat.GetErrorMarkup($"no connection could be made to planar deamon ({RestProxy.Host}:{RestProxy.Port})"));
             }
             else if (response.ErrorMessage != null && response.ErrorMessage.Contains("No such host is known"))
             {
-                AnsiConsole.MarkupLine(CliFormat.GetErrorMarkup(response.ErrorMessage.ToLower()));
+                MarkupCliLine(CliFormat.GetErrorMarkup(response.ErrorMessage.ToLower()));
             }
             else
             {
-                AnsiConsole.MarkupLine(CliFormat.GetErrorMarkup("general error"));
+                MarkupCliLine(CliFormat.GetErrorMarkup("general error"));
             }
 
             if (!string.IsNullOrEmpty(response.StatusDescription))
             {
-                AnsiConsole.MarkupLine($"[red] ({response.StatusDescription})[/]");
+                MarkupCliLine($"[red] ({response.StatusDescription})[/]");
             }
         }
 
@@ -340,7 +342,7 @@ namespace Planar.CLI
                     "server return conflict status" :
                     JsonConvert.DeserializeObject<string>(response.Content);
 
-                AnsiConsole.MarkupLine(CliFormat.GetConflictErrorMarkup(message));
+                MarkupCliLine(CliFormat.GetConflictErrorMarkup(message));
                 return true;
             }
 
@@ -365,7 +367,7 @@ namespace Planar.CLI
                     "server return not found status" :
                     JsonConvert.DeserializeObject<string>(response.Content);
 
-                AnsiConsole.MarkupLine(CliFormat.GetValidationErrorMarkup(message));
+                MarkupCliLine(CliFormat.GetValidationErrorMarkup(message));
                 return true;
             }
 
@@ -456,6 +458,11 @@ namespace Planar.CLI
         private static void Start(string[] args)
         {
             var cliActions = BaseCliAction.GetAllActions();
+
+#if DEBUG
+            //// var md = CliHelpGenerator.GetHelpMD(cliActions);
+#endif
+
             ServiceCliActions.InitializeLogin();
 
             if (args.Length == 0)
@@ -483,13 +490,40 @@ namespace Planar.CLI
                 ExceptionFormats.ShortenMethods | ExceptionFormats.ShowLinks);
         }
 
-        private static void WriteInfo(string? message)
+        private static async Task WriteInfo(CliActionResponse response)
         {
-            if (string.IsNullOrEmpty(message) == false) { message = message.Trim(); }
+            var message = response.Message;
+            if (!string.IsNullOrEmpty(message)) { message = message.Trim(); }
             if (message == "[]") { message = null; }
             if (string.IsNullOrEmpty(message)) { return; }
 
-            AnsiConsole.WriteLine(message);
+            if (response.OutputFilename == null)
+            {
+                AnsiConsole.WriteLine(message);
+            }
+            else
+            {
+                var filename = response.OutputFilename ?? string.Empty;
+                if (!filename.Contains('.')) { filename = $"{filename}.txt"; }
+                await SaveData(message, filename);
+                AnsiConsole.WriteLine($"file '{new FileInfo(filename).FullName}' created");
+            }
+        }
+
+        private static async Task SaveData(string? content, string filename)
+        {
+            if (filename == null) { return; }
+            await File.AppendAllTextAsync(filename, content);
+        }
+
+        private static void MarkupCliLine(string message)
+        {
+            if (Console.CursorLeft != 0)
+            {
+                Console.WriteLine();
+            }
+
+            AnsiConsole.MarkupLine(message);
         }
     }
 }

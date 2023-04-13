@@ -1,13 +1,16 @@
 ﻿using CommonJob;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.General;
 using Planar.Service.Listeners.Base;
 using Planar.Service.Model;
+using Planar.Service.Model.DataObjects;
 using Polly;
 using Quartz;
 using System;
@@ -50,7 +53,7 @@ namespace Planar.Service.Listeners
             {
                 if (IsSystemJob(context.JobDetail)) { return; }
                 var statisticsTask = AddConcurentStatistics(context);
-                string data = GetJobDataForLogging(context.MergedJobDataMap);
+                var data = GetJobDataForLogging(context.MergedJobDataMap);
 
                 var log = new DbJobInstanceLog
                 {
@@ -59,18 +62,18 @@ namespace Planar.Service.Listeners
                     StartDate = context.FireTimeUtc.ToLocalTime().DateTime,
                     Status = (int)StatusMembers.Running,
                     StatusTitle = StatusMembers.Running.ToString(),
-                    JobId = JobKeyHelper.GetJobId(context.JobDetail),
+                    JobId = JobKeyHelper.GetJobId(context.JobDetail) ?? string.Empty,
                     JobName = context.JobDetail.Key.Name,
                     JobGroup = context.JobDetail.Key.Group,
                     JobType = SchedulerUtil.GetJobTypeName(context.JobDetail.JobType),
-                    TriggerId = TriggerKeyHelper.GetTriggerId(context.Trigger),
+                    TriggerId = TriggerHelper.GetTriggerId(context.Trigger) ?? Consts.ManualTriggerId,
                     TriggerName = context.Trigger.Key.Name,
                     TriggerGroup = context.Trigger.Key.Group,
                     Retry = context.Trigger.Key.Group == Consts.RetryTriggerGroup,
                     ServerName = Environment.MachineName
                 };
 
-                log.TriggerId ??= Consts.ManualTriggerId;
+                if (log.InstanceId.Length > 250) { log.InstanceId = log.InstanceId[0..250]; }
                 if (log.Data?.Length > 4000) { log.Data = log.Data[0..4000]; }
                 if (log.JobId?.Length > 20) { log.JobId = log.JobId[0..20]; }
                 if (log.JobName.Length > 50) { log.JobName = log.JobName[0..50]; }
@@ -79,7 +82,6 @@ namespace Planar.Service.Listeners
                 if (log.TriggerId.Length > 20) { log.TriggerId = log.TriggerId[0..20]; }
                 if (log.TriggerName.Length > 50) { log.TriggerName = log.TriggerName[0..50]; }
                 if (log.TriggerGroup.Length > 50) { log.TriggerGroup = log.TriggerGroup[0..50]; }
-                if (log.InstanceId.Length > 250) { log.InstanceId = log.InstanceId[0..250]; }
                 if (log.ServerName.Length > 50) { log.ServerName = log.ServerName[0..50]; }
 
                 await ExecuteDal<HistoryData>(d => d.CreateJobInstanceLog(log));
@@ -95,9 +97,9 @@ namespace Planar.Service.Listeners
             }
         }
 
-        public async Task JobWasExecuted(IJobExecutionContext context, JobExecutionException jobException, CancellationToken cancellationToken = default)
+        public async Task JobWasExecuted(IJobExecutionContext context, JobExecutionException? jobException, CancellationToken cancellationToken = default)
         {
-            Exception executionException = null;
+            Exception? executionException = null;
 
             try
             {
@@ -125,7 +127,10 @@ namespace Planar.Service.Listeners
                     IsStopped = context.CancellationToken.IsCancellationRequested
                 };
 
+                if (log.StatusTitle.Length > 10) { log.StatusTitle = log.StatusTitle[0..10]; }
+
                 await ExecuteDal<HistoryData>(d => d.UpdateHistoryJobRunLog(log));
+                await SafeFillAnomaly(log);
             }
             catch (Exception ex)
             {
@@ -137,7 +142,7 @@ namespace Planar.Service.Listeners
             }
         }
 
-        private async Task SafeMonitorJobWasExecuted(IJobExecutionContext context, Exception exception)
+        private async Task SafeMonitorJobWasExecuted(IJobExecutionContext context, Exception? exception)
         {
             var allTasks = new List<Task>();
             var task0 = SafeScan(MonitorEvents.ExecutionEnd, context, exception);
@@ -175,7 +180,7 @@ namespace Planar.Service.Listeners
             await Task.WhenAll(allTasks);
         }
 
-        private static string GetJobDataForLogging(JobDataMap data)
+        private static string? GetJobDataForLogging(JobDataMap data)
         {
             if (data?.Count == 0) { return null; }
 
@@ -207,6 +212,58 @@ namespace Planar.Service.Listeners
                 .Count(f => !IsSystemJobKey(f));
 
             return second;
+        }
+
+        private async Task<JobStatistics> GetJobStatistics()
+        {
+            var durationKey = nameof(StatisticsData.GetJobDurationStatistics);
+            var effectedKey = nameof(StatisticsData.GetJobEffectedRowsStatistics);
+            using var scope = ServiceScopeFactory.CreateScope();
+            var cache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
+
+            var exists = cache.TryGetValue<IEnumerable<JobDurationStatistic>>(durationKey, out var durationStatistics);
+            if (!exists || durationStatistics == null)
+            {
+                durationStatistics = await ExecuteDal<StatisticsData, IEnumerable<JobDurationStatistic>>(d => d.GetJobDurationStatistics());
+                cache.Set(durationKey, durationStatistics, StatisticsUtil.DefaultCacheSpan);
+            }
+
+            exists = cache.TryGetValue<IEnumerable<JobEffectedRowsStatistic>>(durationKey, out var effectedStatistics);
+            if (!exists || effectedStatistics == null)
+            {
+                effectedStatistics = await ExecuteDal<StatisticsData, IEnumerable<JobEffectedRowsStatistic>>(d => d.GetJobEffectedRowsStatistics());
+                cache.Set(effectedKey, effectedStatistics, StatisticsUtil.DefaultCacheSpan);
+            }
+
+            return new JobStatistics
+            {
+                JobDurationStatistics = durationStatistics,
+                JobEffectedRowsStatistic = effectedStatistics
+            };
+        }
+
+        private async Task SafeFillAnomaly(DbJobInstanceLog item)
+        {
+            try
+            {
+                await FillAnomaly(item);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Fail to invoke {nameof(FillAnomaly)} in {nameof(LogJobListener)}");
+            }
+        }
+
+        private async Task FillAnomaly(DbJobInstanceLog item)
+        {
+            var statistics = await GetJobStatistics();
+            StatisticsUtil.SetAnomaly(item, statistics);
+
+            if (item.Anomaly != null)
+            {
+                var parameters = new { item.InstanceId, item.Anomaly };
+                await ExecuteDal<HistoryData>(d => d.SetAnomaly(parameters));
+            }
         }
     }
 }

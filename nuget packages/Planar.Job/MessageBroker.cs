@@ -49,7 +49,7 @@ namespace Planar
             Details = GetProperty<string>(instance.GetType(), nameof(Details));
         }
 
-        public static MessageBroker Empty = new MessageBroker();
+        public static readonly MessageBroker Empty = new MessageBroker();
 
         public string Details { get; set; } = string.Empty;
 

@@ -43,6 +43,18 @@ namespace Planar.Controllers
             return CreatedAtAction(nameof(Get), result, result);
         }
 
+        [HttpPost("sql")]
+        [SwaggerOperation(OperationId = "post_job_sql_add", Description = "Add new sql job", Summary = "Add Sql Job")]
+        [JsonConsumes]
+        [CreatedResponse(typeof(JobIdResponse))]
+        [BadRequestResponse]
+        [ConflictResponse]
+        public async Task<ActionResult<JobIdResponse>> AddSql([FromBody] SetJobRequest<SqlJobProperties> request)
+        {
+            var result = await BusinesLayer.Add(request);
+            return CreatedAtAction(nameof(Get), result, result);
+        }
+
         [HttpPut("planar")]
         [SwaggerOperation(OperationId = "put_job_planar", Description = "Update existing planar job", Summary = "Update Planar Job")]
         [JsonConsumes]
@@ -62,6 +74,18 @@ namespace Planar.Controllers
         [BadRequestResponse]
         [NotFoundResponse]
         public async Task<ActionResult<JobIdResponse>> UpdateProcess([FromBody] UpdateJobRequest<ProcessJobProperties> request)
+        {
+            var result = await BusinesLayer.Update(request);
+            return CreatedAtAction(nameof(Get), result, result);
+        }
+
+        [HttpPut("sql")]
+        [SwaggerOperation(OperationId = "put_job_sql", Description = "Update existing sql job", Summary = "Update Sql Job")]
+        [JsonConsumes]
+        [CreatedResponse(typeof(JobIdResponse))]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<ActionResult<JobIdResponse>> UpdateSql([FromBody] UpdateJobRequest<SqlJobProperties> request)
         {
             var result = await BusinesLayer.Update(request);
             return CreatedAtAction(nameof(Get), result, result);
@@ -155,14 +179,14 @@ namespace Planar.Controllers
         }
 
         [HttpPost("data")]
-        [SwaggerOperation(OperationId = "post_job_data", Description = "Update job data", Summary = "Update Job Data")]
+        [SwaggerOperation(OperationId = "post_job_data", Description = "Add job data", Summary = "Add Job Data")]
         [JsonConsumes]
         [CreatedResponse]
         [BadRequestResponse]
         [NotFoundResponse]
         public async Task<IActionResult> AddData([FromBody] JobOrTriggerDataRequest request)
         {
-            await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Add);
+            await BusinesLayer.PutData(request, JobDomain.PutMode.Add);
             return CreatedAtAction(nameof(Get), new { request.Id }, null);
         }
 
@@ -174,7 +198,7 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public async Task<IActionResult> UpdateData([FromBody] JobOrTriggerDataRequest request)
         {
-            await BusinesLayer.UpsertData(request, JobDomain.UpsertMode.Update);
+            await BusinesLayer.PutData(request, JobDomain.PutMode.Update);
             return CreatedAtAction(nameof(Get), new { request.Id }, null);
         }
 
@@ -306,12 +330,12 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("jobfiles")]
-        [SwaggerOperation(OperationId = "get_job_jobfiles", Description = "Get list of all job files templates", Summary = "Get All Job Files Templates")]
+        [HttpGet("types")]
+        [SwaggerOperation(OperationId = "get_job_types", Description = "Get all job types", Summary = "Get All Job Types")]
         [OkJsonResponse(typeof(IEnumerable<string>))]
-        public ActionResult<IEnumerable<string>> GetJobFileTemplates()
+        public ActionResult<IEnumerable<string>> GetJobTypes()
         {
-            var result = BusinesLayer.GetJobFileTemplates();
+            var result = JobDomain.GetJobTypes();
             return Ok(result);
         }
 

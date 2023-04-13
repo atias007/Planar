@@ -25,7 +25,7 @@ namespace Planar.Service.Monitor.Test
 
             foreach (var item in JobDetail.JobDataMap)
             {
-                MergedJobDataMap.Add(item.Key, item.Value);
+                MergedJobDataMap.Put(item.Key, item.Value);
             }
 
             foreach (var item in Trigger.JobDataMap)
@@ -41,6 +41,8 @@ namespace Planar.Service.Monitor.Test
         public ICalendar Calendar => null;
 
         public bool Recovering => false;
+
+        // ****** ATTENTION: any changes should reflect in Monitor Util ******
 
         public TriggerKey RecoveringTriggerKey => null;
 
@@ -59,6 +61,8 @@ namespace Planar.Service.Monitor.Test
         public DateTimeOffset? PreviousFireTimeUtc => DateTimeOffset.UtcNow.AddMinutes(-10);
 
         public DateTimeOffset? NextFireTimeUtc => DateTimeOffset.UtcNow.AddMinutes(10);
+
+        // ****** ATTENTION: any changes should reflect in Monitor Util ******
 
         public string FireInstanceId => "NON_CLUSTERED638093344653612239";
 

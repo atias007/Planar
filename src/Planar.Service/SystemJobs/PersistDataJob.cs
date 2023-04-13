@@ -72,7 +72,7 @@ namespace Planar.Service.SystemJobs
             {
                 var log = new DbJobInstanceLog
                 {
-                    InstanceId = context.InstanceId,
+                    InstanceId = context.InstanceId ?? Consts.Undefined,
                     Log = context.Log,
                     Exception = context.Exceptions,
                     Duration = context.Duration,

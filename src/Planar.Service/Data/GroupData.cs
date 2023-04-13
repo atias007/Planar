@@ -31,7 +31,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<Group> GetGroup(int id)
+        public async Task<Group?> GetGroup(int id)
         {
             var result = await _context.Groups
                 .Include(g => g.Role)
@@ -41,7 +41,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<Group> GetGroupWithUsers(int id)
+        public async Task<Group?> GetGroupWithUsers(int id)
         {
             var result = await _context.Groups
                 .Include(g => g.Users)
@@ -117,8 +117,9 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
-        public async Task<bool> IsGroupNameExists(string name, int id)
+        public async Task<bool> IsGroupNameExists(string? name, int id)
         {
+            if (name == null) { return false; }
             return await _context.Groups.AnyAsync(u => u.Id != id && u.Name.ToLower() == name.ToLower());
         }
 

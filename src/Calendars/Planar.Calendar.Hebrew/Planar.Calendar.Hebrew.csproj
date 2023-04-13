@@ -12,6 +12,10 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Quartz.Serialization.Json" Version="3.6.2" />
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="8.55.0.65544">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 	</ItemGroup>
 
 	<ItemGroup>

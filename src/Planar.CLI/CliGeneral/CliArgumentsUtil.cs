@@ -17,7 +17,7 @@ namespace Planar.CLI
 {
     public class CliArgumentsUtil
     {
-        private const string RegexTemplate = "^[1-9][0-9]*$";
+        private const string RegexTemplate = "^[1-9][0-9]{0,8}$";
         private static readonly Regex _historyRegex = new(RegexTemplate, RegexOptions.Compiled, TimeSpan.FromSeconds(2));
 
         public CliArgumentsUtil(string[] args)
@@ -28,6 +28,7 @@ namespace Planar.CLI
             var list = new List<CliArgument>();
             for (int i = 2; i < args.Length; i++)
             {
+                if (args[i] == ">") { args[i] = "--output"; }
                 list.Add(new CliArgument { Key = args[i] });
             }
 
@@ -55,9 +56,11 @@ namespace Planar.CLI
             CliArguments = list.Where(l => l.Key != null).ToList();
         }
 
-        public List<CliArgument> CliArguments { get; set; } = new List<CliArgument>();
+        public List<CliArgument> CliArguments { get; set; }
 
         public string Command { get; set; }
+
+        public string? OutputFile { get; set; }
 
         public bool HasIterativeArgument
         {
@@ -121,21 +124,21 @@ namespace Planar.CLI
                 throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
             }
 
-            var action = actionsMetadata.FirstOrDefault(a => a.Commands.Any(c => c?.ToLower() == list[1].ToLower() && a.Module == list[0].ToLower()));
-            if (action == null)
-            {
+            var action =
+                actionsMetadata.FirstOrDefault(a => a.Commands.Any(c => c?.ToLower() == list[1].ToLower() && a.Module == list[0].ToLower())) ??
                 throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
-            }
 
             args = list.ToArray();
+
             return action;
         }
 
-        public object? GetRequest(Type type, CliActionMetadata action, CancellationToken cancellationToken)
+        public object? GetRequest(CliActionMetadata action, CancellationToken cancellationToken)
         {
             if (!CliArguments.Any() && action.AllowNullRequest) { return null; }
+            if (action.RequestType == null) { return null; }
 
-            var result = Activator.CreateInstance(type);
+            var result = Activator.CreateInstance(action.RequestType);
             var defaultProps = action.Arguments.Where(p => p.Default);
             var startDefaultOrder = defaultProps.Any() ? defaultProps.Min(p => p.DefaultOrder) : -1;
 
@@ -348,6 +351,16 @@ namespace Planar.CLI
                 {
                     objValue = ParseEnum(prop.PropertyType, value);
                 }
+
+                if (value != null &&
+                    prop.PropertyType.GenericTypeArguments.Length == 1 &&
+                    prop.PropertyType.GenericTypeArguments[0].BaseType == typeof(Enum))
+                {
+                    objValue = ParseEnum(prop.PropertyType.GenericTypeArguments[0], value);
+                    prop.SetValue(instance, objValue);
+                    return;
+                }
+
                 prop.SetValue(instance, Convert.ChangeType(objValue, prop.PropertyType, CultureInfo.CurrentCulture));
             }
             catch (Exception)

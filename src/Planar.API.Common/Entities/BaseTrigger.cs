@@ -20,9 +20,14 @@ namespace Planar.API.Common.Entities
         [YamlMember(Alias = "retry span")]
         public TimeSpan? RetrySpan { get; set; }
 
+        [YamlMember(Alias = "max retries")]
+        public int? MaxRetries { get; set; }
+
         [YamlMember(Alias = "trigger data")]
         public Dictionary<string, string?> TriggerData { get; set; } = new Dictionary<string, string?>();
 
         public string? Calendar { get; set; }
+
+        public TimeSpan? Timeout { get; set; }
     }
 }

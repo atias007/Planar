@@ -40,7 +40,7 @@ namespace Planar.Common
             GlobalConfig = new();
         }
 
-        public static SortedDictionary<string, string?> ConvertDataMapToDictionary(JobDataMap map)
+        public static SortedDictionary<string, string?> ConvertDataMapToDictionary(JobDataMap? map)
         {
             if (map == null)
             {

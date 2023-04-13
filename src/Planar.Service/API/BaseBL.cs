@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar.API.Common.Entities;
+using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -58,9 +59,7 @@ namespace Planar.Service.API
 
         protected JobKeyHelper JobKeyHelper => _serviceProvider.GetRequiredService<JobKeyHelper>();
 
-        protected TriggerKeyHelper TriggerKeyHelper => _serviceProvider.GetRequiredService<TriggerKeyHelper>();
-
-        protected string ServiceVersion
+        protected string? ServiceVersion
         {
             get
             {
@@ -77,23 +76,12 @@ namespace Planar.Service.API
         protected IMapper Mapper => _serviceProvider.GetRequiredService<IMapper>();
 
         protected T Resolve<T>()
+            where T : notnull
         {
             return _serviceProvider.GetRequiredService<T>();
         }
 
-        protected static T DeserializeObject<T>(string json)
-        {
-            var entity = JsonConvert.DeserializeObject<T>(json);
-            return entity;
-        }
-
-        protected static string SerializeObject(object obj)
-        {
-            var entity = JsonConvert.SerializeObject(obj);
-            return entity;
-        }
-
-        protected static void ValidateExistingEntity<T>(T entity, string entityName)
+        protected static T ValidateExistingEntity<T>(T? entity, string entityName)
             where T : class
         {
             if (entity == null)
@@ -105,15 +93,13 @@ namespace Planar.Service.API
 
                 throw new RestNotFoundException($"{entityName} could not be found");
             }
+
+            return entity;
         }
 
         protected async Task ValidateExistingTrigger(TriggerKey entity, string triggerId)
         {
-            var details = await Scheduler.GetTrigger(entity);
-            if (details == null)
-            {
-                throw new RestNotFoundException($"trigger with id/key {triggerId} could not be found");
-            }
+            _ = await Scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id/key {triggerId} could not be found");
         }
 
         protected static async Task SetEntityProperties<T>(T entity, UpdateEntityRequest request, IValidator<T>? validator = null)
@@ -122,11 +108,9 @@ namespace Planar.Service.API
 
             var type = typeof(T);
             var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
-            var prop = properties.FirstOrDefault(p => string.Compare(p.Name, request.PropertyName, true) == 0);
-            if (prop == null)
-            {
+            var prop =
+                properties.FirstOrDefault(p => string.Compare(p.Name, request.PropertyName, true) == 0) ??
                 throw new RestValidationException("propertyName", $"property name '{request.PropertyName}' could not be found");
-            }
 
             try
             {

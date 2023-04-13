@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Planar.API.Common.Entities;
+using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -27,7 +28,7 @@ namespace Planar.Service.Validation
 
             RuleFor(r => r.JobGroup).Empty()
                 .When(r => r.EventId != null && MonitorEventsExtensions.IsSystemMonitorEvent(r.EventId.GetValueOrDefault()))
-                .WithMessage(r => $"{{PropertyName}} must be null when 'Event Id' is {(int)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
+                .WithMessage(r => $"{{PropertyName}} must be null when 'Event Id' is {(int?)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
 
             RuleFor(r => r.GroupId).GreaterThan(0)
                 .Must(g => dal.IsGroupExists(g).Result)
@@ -39,19 +40,19 @@ namespace Planar.Service.Validation
 
             RuleFor(r => r.EventArgument).NotEmpty()
                 .When(r => MonitorEventsExtensions.IsMonitorEventHasArguments(r.EventId.GetValueOrDefault()))
-                .WithMessage(r => $"'{{PropertyName}}' must have value when 'Event Id' is {(int)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
+                .WithMessage(r => $"'{{PropertyName}}' must have value when 'Event Id' is {(int?)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
 
             RuleFor(r => r.EventArgument).Empty()
                 .When(r => !MonitorEventsExtensions.IsMonitorEventHasArguments(r.EventId.GetValueOrDefault()))
-                .WithMessage(r => $"'{{PropertyName}}' must be empty when 'Event Id' is {(int)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
+                .WithMessage(r => $"'{{PropertyName}}' must be empty when 'Event Id' is {(int?)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
 
             RuleFor(r => r.JobName).NotEmpty()
                 .When(r => MonitorEventsExtensions.IsMonitorEventHasArguments(r.EventId.GetValueOrDefault()))
-                .WithMessage(r => $"{{PropertyName}} and 'Job Group' must have value when 'Event Id' is {(int)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
+                .WithMessage(r => $"{{PropertyName}} and 'Job Group' must have value when 'Event Id' is {(int?)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
 
             RuleFor(r => r.JobName).Empty()
                 .When(r => r.EventId != null && MonitorEventsExtensions.IsSystemMonitorEvent(r.EventId.GetValueOrDefault()))
-                .WithMessage(r => $"{{PropertyName}} must be null when 'Event Id' is {(int)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
+                .WithMessage(r => $"{{PropertyName}} must be null when 'Event Id' is {(int?)r.EventId} ({r.EventId.GetValueOrDefault().ToString().SplitWords()})");
         }
 
         private static bool JobAndGroupExists(AddMonitorRequest request, JobKeyHelper jobKeyHelper, ValidationContext<AddMonitorRequest> context)
@@ -73,14 +74,14 @@ namespace Planar.Service.Validation
             var key = JobKey.Create(request.JobName, request.JobGroup);
             try
             {
-                jobKeyHelper.GetJobKey($"{key.Group}.{key.Name}").Wait();
+                jobKeyHelper.ValidateJobExists(key).Wait();
                 return true;
             }
             catch (AggregateException ex)
             {
                 if (ex.Flatten().InnerException is RestNotFoundException)
                 {
-                    context.MessageFormatter.AppendArgument("Message", $"job {key.Group}.{key.Name} is not exists");
+                    context.MessageFormatter.AppendArgument("Message", $"job with key '{KeyHelper.GetKeyTitle(key)}' is not exists");
                     return false;
                 }
 

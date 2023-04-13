@@ -6,7 +6,7 @@ the options for <command> and [<options>] parameters of param module:
 -------------------------------
  ls|list        
  get             <key>
- add|upsert      <key> <value>
+ add|put         <key> <value>
  remove|delete   <key>
  flush          
 -------------------------------

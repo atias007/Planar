@@ -274,7 +274,7 @@ namespace Planar.Service
 
         #endregion Initialize Scheduler
 
-        protected async Task SafeSystemScan(MonitorEvents @event, MonitorSystemInfo info, Exception exception = default, CancellationToken cancellationToken = default)
+        protected async Task SafeSystemScan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default, CancellationToken cancellationToken = default)
         {
             try
             {

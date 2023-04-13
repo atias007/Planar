@@ -29,6 +29,8 @@
 	  <None Remove="Data\Jobs\readme.md" />
 	  <None Remove="Data\MonitorHooks\readme.md" />
 	  <None Remove="Data\MonitorHooks\Teams\readme.md" />
+	  <None Remove="Data\Settings\AppSettings.yml" />
+	  <None Remove="Data\Settings\Serilog.yml" />
 	  <None Remove="Data\Setup\CliPath.ps1" />
 	  <None Remove="Data\Setup\EnvironmentVariable.ps1" />
 	  <None Remove="planar_openapi.html" />
@@ -54,17 +56,28 @@
 	  <EmbeddedResource Include="Content\theme-flattop.css">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
+	  <EmbeddedResource Include="Data\Settings\AppSettings.yml">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Data\Settings\Serilog.yml">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="FluentValidation.AspNetCore" Version="11.2.2" />
-		<PackageReference Include="Grpc.AspNetCore" Version="2.51.0" />
-		<PackageReference Include="Microsoft.AspNetCore.OData" Version="8.0.12" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="6.0.1" />
-		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
+		<PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
+		<PackageReference Include="Grpc.AspNetCore" Version="2.52.0" />
+		<PackageReference Include="Microsoft.AspNetCore.OData" Version="8.1.1" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.0" />
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
+		<PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.0.0" />
 		<PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
 		<PackageReference Include="Serilog.Enrichers.GlobalLogContext" Version="3.0.0" />
-		<PackageReference Include="Serilog.Sinks.MSSqlServer" Version="6.2.0" />
+		<PackageReference Include="Serilog.Sinks.MSSqlServer" Version="6.3.0" />
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="8.55.0.65544">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.5.0" />
 	</ItemGroup>
@@ -72,9 +85,9 @@
 		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
 	</PropertyGroup>
 	<ItemGroup>
-		<EmbeddedResource Include="Data\Settings\AppSettings.json">
+		<None Include="Data\Settings\AppSettings.json">
 			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
-		</EmbeddedResource>
+		</None>
 		<EmbeddedResource Include="Data\Calendars\Hebrew\HebrewCalendar.json">
 			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</EmbeddedResource>
@@ -90,9 +103,9 @@
 		<EmbeddedResource Include="Data\MonitorHooks\Teams\readme.md">
 		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</EmbeddedResource>
-		<EmbeddedResource Include="Data\Settings\Serilog.json">
+		<None Include="Data\Settings\Serilog.json">
 			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
-		</EmbeddedResource>
+		</None>
 		<EmbeddedResource Include="Data\Setup\CliPath.ps1" />
 		<EmbeddedResource Include="Data\Setup\EnvironmentVariable.ps1" />
 	</ItemGroup>

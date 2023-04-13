@@ -22,9 +22,9 @@ namespace Planar.Service.Listeners
         {
             if (IsSystemJob(jobDetail)) { return Task.CompletedTask; }
             var info = new MonitorSystemInfo
-            {
-                MessageTemplate = "Job {{JobGroup}}.{{JobName}} (Id: {{JobId}}) with description {{Description}} was added"
-            };
+            (
+                "Job {{JobGroup}}.{{JobName}} (Id: {{JobId}}) with description {{Description}} was added"
+            );
 
             var id = JobKeyHelper.GetJobId(jobDetail);
             info.MessagesParameters.Add("JobGroup", jobDetail.Key.Group);
@@ -137,12 +137,12 @@ namespace Planar.Service.Listeners
             return SafeSystemScan(MonitorEvents.TriggerResumed, info, null);
         }
 
-        public Task TriggersPaused(string triggerGroup, CancellationToken cancellationToken = default)
+        public Task TriggersPaused(string? triggerGroup, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
 
-        public Task TriggersResumed(string triggerGroup, CancellationToken cancellationToken = default)
+        public Task TriggersResumed(string? triggerGroup, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
@@ -157,9 +157,9 @@ namespace Planar.Service.Listeners
         private static MonitorSystemInfo GetJobKeyMonitorSystemInfo(JobKey jobKey, string title)
         {
             var info = new MonitorSystemInfo
-            {
-                MessageTemplate = $"Job {{{{JobGroup}}}}.{{{{JobName}}}} was {title}"
-            };
+            (
+                $"Job {{{{JobGroup}}}}.{{{{JobName}}}} was {title}"
+            );
 
             info.MessagesParameters.Add("JobGroup", jobKey.Group);
             info.MessagesParameters.Add("JobName", jobKey.Name);
@@ -170,9 +170,9 @@ namespace Planar.Service.Listeners
         private static MonitorSystemInfo GetTriggerKeyMonitorSystemInfo(TriggerKey triggerKey, string title)
         {
             var info = new MonitorSystemInfo
-            {
-                MessageTemplate = $"Trigger {{{{TriggerGroup}}}}.{{{{TriggerName}}}} was {title}"
-            };
+            (
+                $"Trigger {{{{TriggerGroup}}}}.{{{{TriggerName}}}} was {title}"
+            );
 
             info.MessagesParameters.Add("TriggerGroup", triggerKey.Group);
             info.MessagesParameters.Add("TriggerName", triggerKey.Name);

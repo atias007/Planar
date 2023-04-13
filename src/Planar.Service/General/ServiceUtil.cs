@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Common.Exceptions;
-using Planar.Service.Exceptions;
 using Planar.Service.Monitor;
 using Quartz;
 using System;
@@ -21,6 +20,8 @@ namespace Planar.Service.General
         private static readonly object _locker = new();
         private const string _monitorHookAssemblyContextName = "MonitorHook_";
         private const string _monitorHookBaseClassName = "Planar.Monitor.Hook.BaseHook";
+
+        public static IEnumerable<string> JobTypes => new[] { nameof(PlanarJob), nameof(ProcessJob), nameof(SqlJob) };
 
         internal static string GenerateId()
         {
@@ -44,7 +45,7 @@ namespace Planar.Service.General
         {
             var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.MonitorHooks);
 
-            if (Directory.Exists(path) == false)
+            if (!Directory.Exists(path))
             {
                 logger.LogWarning("monitor hooks path {Path} could not be found. Service does not have any monitor", path);
                 return;
@@ -70,7 +71,7 @@ namespace Planar.Service.General
                     }
                 }
 
-                if (hasHook == false)
+                if (!hasHook)
                 {
                     assemblyContext.Unload();
                 }
@@ -79,7 +80,7 @@ namespace Planar.Service.General
 
         private static bool LoadHook<T>(ILogger<T> logger, string dir, AssemblyLoadContext assemblyContext, Type t)
         {
-            var name = new DirectoryInfo(dir).Name;
+            string name = new DirectoryInfo(dir).Name;
             var hook = new MonitorHookFactory { Name = name, Type = t, AssemblyContext = assemblyContext };
             var result = MonitorHooks.TryAdd(name, hook);
 
@@ -126,7 +127,7 @@ namespace Planar.Service.General
             return result;
         }
 
-        public static string GetJobFolder(string folder)
+        public static string GetJobFolder(string? folder)
         {
             var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, folder);
             return path;
@@ -138,28 +139,28 @@ namespace Planar.Service.General
             return path;
         }
 
-        public static string GetJobFilename(string folder, string filename)
+        public static string GetJobFilename(string? folder, string filename)
         {
             var path = GetJobFolder(folder);
             var fullname = Path.Combine(path, filename);
             return fullname;
         }
 
-        public static bool IsJobFolderExists(string folder)
+        public static bool IsJobFolderExists(string? folder)
         {
             var path = GetJobFolder(folder);
             var result = Directory.Exists(path);
             return result;
         }
 
-        public static bool IsJobFileExists(string folder, string filename)
+        public static bool IsJobFileExists(string? folder, string filename)
         {
             var fullname = GetJobFilename(folder, filename);
             var result = File.Exists(fullname);
             return result;
         }
 
-        public static void ValidateJobFolderExists(string folder)
+        public static void ValidateJobFolderExists(string? folder)
         {
             if (!IsJobFolderExists(folder))
             {
@@ -168,7 +169,7 @@ namespace Planar.Service.General
             }
         }
 
-        public static void ValidateJobFileExists(string folder, string filename)
+        public static void ValidateJobFileExists(string? folder, string filename)
         {
             if (!IsJobFileExists(folder, filename))
             {
@@ -177,8 +178,9 @@ namespace Planar.Service.General
             }
         }
 
-        public static int? GetEffectedRows(IJobExecutionContext context)
+        public static int? GetEffectedRows(IJobExecutionContext? context)
         {
+            if (context == null) { return null; }
             var metadata = context.Result as JobExecutionMetadata;
             var result = metadata?.EffectedRows.GetValueOrDefault();
             return result;

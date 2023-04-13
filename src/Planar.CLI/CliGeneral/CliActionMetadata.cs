@@ -26,13 +26,14 @@ namespace Planar.CLI
 
         public string ArgumentsDisplayName { get; private set; } = string.Empty;
 
+        public List<string> ArgumentsDisplayNameItems { get; private set; } = new List<string>();
+
         public bool IgnoreHelp { get; set; }
 
         public bool HasWizard { get; set; }
 
         public void SetArgumentsDisplayName()
         {
-            var sb = new StringBuilder();
             var defaultArgs = Arguments
                 .Where(a => a.Default)
                 .OrderBy(a => a.DefaultOrder);
@@ -57,11 +58,11 @@ namespace Planar.CLI
 
                 if (item.Required)
                 {
-                    sb.Append($"<{title}> ");
+                    ArgumentsDisplayNameItems.Add($"<{title}>");
                 }
                 else
                 {
-                    sb.Append($"[<{title}>] ");
+                    ArgumentsDisplayNameItems.Add($"[<{title}>]");
                 }
             }
 
@@ -76,24 +77,24 @@ namespace Planar.CLI
 
                 if (info != null && info.PropertyType == typeof(bool))
                 {
-                    sb.Append($"[{item.DisplayName}] ");
+                    ArgumentsDisplayNameItems.Add($"[{item.DisplayName}]");
                 }
                 else if (info != null && (info.PropertyType == typeof(DateTime) || info.PropertyType == typeof(DateTime?)))
                 {
-                    sb.Append($"[{item.DisplayName} <\"{shortDateFormatString} {shortTimeFormatString}>\"] ");
+                    ArgumentsDisplayNameItems.Add($"[{item.DisplayName} <\"{shortDateFormatString} {shortTimeFormatString}>\"]");
                 }
                 else if (enumType != null)
                 {
                     var options = GetEnumOptions(enumType);
-                    sb.Append($"[{item.DisplayName} <{options}>] ");
+                    ArgumentsDisplayNameItems.Add($"[{item.DisplayName} <{options}>]");
                 }
                 else
                 {
-                    sb.Append($"[{item.DisplayName} <value>] ");
+                    ArgumentsDisplayNameItems.Add($"[{item.DisplayName} <value>]");
                 }
             }
 
-            ArgumentsDisplayName = sb.ToString().Trim();
+            ArgumentsDisplayName = string.Join(' ', ArgumentsDisplayNameItems);
         }
 
         private static string GetEnumOptions(Type type)

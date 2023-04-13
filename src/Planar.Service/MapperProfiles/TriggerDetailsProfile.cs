@@ -2,6 +2,7 @@
 using CronExpressionDescriptor;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Quartz;
 using System;
@@ -24,7 +25,10 @@ namespace Planar.Service.MapperProfiles
             CreateMap<ITrigger, TriggerDetails>()
                 .Include<ISimpleTrigger, SimpleTriggerDetails>()
                 .Include<ICronTrigger, CronTriggerDetails>()
-                .ForMember(t => t.RetrySpan, map => map.MapFrom(s => GetRetrySpan(s)))
+                .ForMember(t => t.Id, map => map.MapFrom(s => GetTriggerId(s)))
+                .ForMember(t => t.RetrySpan, map => map.MapFrom(s => TriggerHelper.GetRetrySpan(s)))
+                .ForMember(t => t.MaxRetries, map => map.MapFrom(s => TriggerHelper.GetMaxRetries(s)))
+                .ForMember(t => t.Timeout, map => map.MapFrom(s => TriggerHelper.GetTimeout(s)))
                 .ForMember(t => t.End, map => map.MapFrom(s => GetDateTime(s.EndTimeUtc)))
                 .ForMember(t => t.Start, map => map.MapFrom(s => GetDateTime(s.StartTimeUtc)))
                 .ForMember(t => t.FinalFire, map => map.MapFrom(s => GetDateTime(s.FinalFireTimeUtc)))
@@ -43,19 +47,10 @@ namespace Planar.Service.MapperProfiles
                 .ForMember(t => t.MisfireBehaviour, map => map.MapFrom(s => GetMisfireInstructionNameForCronTrigger(s.MisfireInstruction)));
         }
 
-        internal static string GetCronDescription(string expression)
+        internal static string GetCronDescription(string? expression)
         {
+            if (expression == null) { return string.Empty; }
             return ExpressionDescriptor.GetDescription(expression, new Options { Use24HourTimeFormat = true });
-        }
-
-        private static TimeSpan? GetRetrySpan(ITrigger trigger)
-        {
-            if (TimeSpan.TryParse(Convert.ToString(trigger.JobDataMap[Consts.RetrySpan]), out var span))
-            {
-                return span;
-            }
-
-            return null;
         }
 
         private static DateTime? GetDateTime(DateTimeOffset? dateTimeOffset)
@@ -63,7 +58,7 @@ namespace Planar.Service.MapperProfiles
             return dateTimeOffset?.LocalDateTime;
         }
 
-        private static string GetTriggerState(TriggerKey key, IScheduler scheduler)
+        private static string? GetTriggerState(TriggerKey key, IScheduler scheduler)
         {
             var result = scheduler.GetTriggerState(key).Result;
             return Convert.ToString(result);
@@ -76,8 +71,8 @@ namespace Planar.Service.MapperProfiles
                 return Consts.RecoveringJobsGroup;
             }
 
-            var id = TriggerKeyHelper.GetTriggerId(trigger);
-            return id;
+            var id = TriggerHelper.GetTriggerId(trigger);
+            return id ?? Consts.Undefined;
         }
 
         private static string GetMisfireInstructionNameForSimpleTrigger(int value)

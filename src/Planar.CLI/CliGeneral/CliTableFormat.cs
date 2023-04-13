@@ -52,6 +52,12 @@ namespace Planar.CLI
             }
         }
 
+        public static string FormatTimeSpan(TimeSpan? timeSpan)
+        {
+            if(timeSpan == null) { return "--:--:--"; }
+            return FormatTimeSpan(timeSpan.Value);
+        }
+
         public static string FormatTimeSpan(TimeSpan timeSpan)
         {
             if (timeSpan.TotalDays >= 1)
