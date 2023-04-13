@@ -10,7 +10,7 @@ namespace Planar.Service.Model;
 public partial class JobInstanceLog
 {
     [Key]
-    public int Id { get; set; }
+    public long Id { get; set; }
 
     [StringLength(250)]
     [Unicode(false)]

@@ -24,7 +24,7 @@ namespace Planar.Controllers
         }
 
         [EnableQuery]
-        public IActionResult Get([FromODataUri] int key)
+        public IActionResult Get([FromODataUri] long key)
         {
             var result = _businessLayer.GetHistory(key);
             return Ok(result);

@@ -23,7 +23,7 @@ namespace Planar.Service.API
             return DataLayer.GetHistoryData();
         }
 
-        public IQueryable<JobInstanceLog> GetHistory(int key)
+        public IQueryable<JobInstanceLog> GetHistory(long key)
         {
             var history = DataLayer.GetHistory(key);
             return history;
@@ -44,21 +44,21 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<JobInstanceLog> GetHistoryById(int id)
+        public async Task<JobInstanceLog> GetHistoryById(long id)
         {
             var data = await DataLayer.GetHistoryById(id);
             var result = ValidateExistingEntity(data, "history");
             return result;
         }
 
-        public async Task<string?> GetHistoryDataById(int id)
+        public async Task<string?> GetHistoryDataById(long id)
         {
             var result = await DataLayer.GetHistoryDataById(id);
             await ValidateHistoryExists(id, result);
             return result;
         }
 
-        public async Task<string?> GetHistoryLogById(int id)
+        public async Task<string?> GetHistoryLogById(long id)
         {
             var result = await DataLayer.GetHistoryLogById(id);
 
@@ -67,7 +67,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<string?> GetHistoryExceptionById(int id)
+        public async Task<string?> GetHistoryExceptionById(long id)
         {
             var result = await DataLayer.GetHistoryExceptionById(id);
 
@@ -84,7 +84,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        private async Task ValidateHistoryExists(int id, string? result)
+        private async Task ValidateHistoryExists(long id, string? result)
         {
             if (string.IsNullOrEmpty(result) && !await DataLayer.IsHistoryExists(id))
             {

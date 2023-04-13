@@ -2,7 +2,7 @@
 {
     internal class JobInstanceLogForStatistics : IJobInstanceLogForStatistics
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public string JobId { get; set; } = null!;
         public int Status { get; set; }
         public int? Duration { get; set; }

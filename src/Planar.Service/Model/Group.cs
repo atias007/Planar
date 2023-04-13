@@ -33,7 +33,7 @@ public partial class Group
     public int RoleId { get; set; }
 
     [InverseProperty("Group")]
-    public virtual ICollection<MonitorAction> MonitorActions { get; } = new List<MonitorAction>();
+    public virtual ICollection<MonitorAction> MonitorActions { get; set; } = new List<MonitorAction>();
 
     [ForeignKey("RoleId")]
     [InverseProperty("Groups")]
@@ -41,5 +41,5 @@ public partial class Group
 
     [ForeignKey("GroupId")]
     [InverseProperty("Groups")]
-    public virtual ICollection<User> Users { get; } = new List<User>();
+    public virtual ICollection<User> Users { get; set; } = new List<User>();
 }

@@ -65,5 +65,5 @@ public partial class User
 
     [ForeignKey("UserId")]
     [InverseProperty("Users")]
-    public virtual ICollection<Group> Groups { get; } = new List<Group>();
+    public virtual ICollection<Group> Groups { get; set; } = new List<Group>();
 }

@@ -14,7 +14,7 @@ namespace Planar.CLI.Actions
     public class HistoryCliActions : BaseCliAction<HistoryCliActions>
     {
         [Action("get")]
-        public static async Task<CliActionResponse> GetHistoryById(CliGetByIdRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> GetHistoryById(CliGetByLongIdRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("history/{id}", Method.Get)
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
@@ -71,7 +71,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("data")]
-        public static async Task<CliActionResponse> GetHistoryDataById(CliGetByIdRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> GetHistoryDataById(CliGetByLongIdRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("history/{id}/data", Method.Get)
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
@@ -81,7 +81,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("log")]
-        public static async Task<CliActionResponse> GetHistoryLogById(CliGetByIdRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> GetHistoryLogById(CliGetByLongIdRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("history/{id}/log", Method.Get)
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
@@ -91,7 +91,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("ex")]
-        public static async Task<CliActionResponse> GetHistoryExceptionById(CliGetByIdRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> GetHistoryExceptionById(CliGetByLongIdRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("history/{id}/exception", Method.Get)
                .AddParameter("id", request.Id, ParameterType.UrlSegment);

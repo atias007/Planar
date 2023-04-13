@@ -2,7 +2,7 @@
 {
     internal interface IJobInstanceLogForStatistics
     {
-        int Id { get; }
+        long Id { get; }
         string JobId { get; }
         int Status { get; }
         int? Duration { get; }

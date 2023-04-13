@@ -4,7 +4,7 @@ namespace Planar.CLI.Entities
 {
     public struct CliJobInstanceLog
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public string InstanceId { get; set; }
         public string JobId { get; set; }
         public string JobName { get; set; }
@@ -26,7 +26,6 @@ namespace Planar.CLI.Entities
         public bool Retry { get; set; }
         public bool IsStopped { get; set; }
         public bool? IsOutlier { get; set; }
-
         public byte? Anomaly { get; set; }
         public string AnomalyTitle { get; set; }
     }

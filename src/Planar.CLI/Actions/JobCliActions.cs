@@ -860,7 +860,7 @@ namespace Planar.CLI.Actions
             return null;
         }
 
-        private static async Task<CliActionResponse?> TestStep6CheckLog(int logId, CancellationToken cancellationToken)
+        private static async Task<CliActionResponse?> TestStep6CheckLog(long logId, CancellationToken cancellationToken)
         {
             var restTestRequest = new RestRequest("job/testStatus/{id}", Method.Get)
                 .AddParameter("id", logId, ParameterType.UrlSegment);
@@ -909,7 +909,7 @@ namespace Planar.CLI.Actions
         private struct TestData
         {
             public string InstanceId { get; set; }
-            public int LogId { get; set; }
+            public long LogId { get; set; }
             public CliActionResponse? Response { get; set; }
         }
     }
