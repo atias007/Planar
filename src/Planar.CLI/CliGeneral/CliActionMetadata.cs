@@ -12,6 +12,8 @@ namespace Planar.CLI
     {
         public string Module { get; set; } = string.Empty;
 
+        public List<string> ModuleSynonyms { get; set; } = new();
+
         public List<string> Commands { get; set; } = new();
 
         public MethodInfo? Method { get; set; }
@@ -31,6 +33,8 @@ namespace Planar.CLI
         public bool IgnoreHelp { get; set; }
 
         public bool HasWizard { get; set; }
+
+        public string CommandsTitle => string.Join('|', Commands);
 
         public void SetArgumentsDisplayName()
         {

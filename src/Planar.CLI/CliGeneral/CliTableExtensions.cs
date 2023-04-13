@@ -31,7 +31,7 @@ namespace Planar.CLI
             foreach (var item in response)
             {
                 if (item == null) { continue; }
-                table.AddRow(item.Key.EscapeMarkup(), item.Value.EscapeMarkup());
+                table.AddRow(item.Key.EscapeMarkup(), LimitValue(item.Value));
             }
 
             return table;
@@ -42,36 +42,36 @@ namespace Planar.CLI
             var table = new Table();
             if (response == null) { return table; }
             table.AddColumns("Id", "Name");
-            foreach (var item in response)
+            foreach (LovItem item in response)
             {
-                table.AddRow(item.Id.ToString(), item?.Name.EscapeMarkup() ?? string.Empty);
+                table.AddRow(item.Id.ToString(), LimitValue(item.Name));
             }
 
             return table;
         }
 
-        public static Table GetTable(CliGeneralMarupMessageResponse? response)
-        {
-            var table = new Table();
-            if (response == null) { return table; }
-            if (response.MarkupMessages == null) { return table; }
-            if (!response.MarkupMessages.Any()) { return table; }
+        ////public static Table GetTable(CliGeneralMarupMessageResponse? response)
+        ////{
+        ////    var table = new Table();
+        ////    if (response == null) { return table; }
+        ////    if (response.MarkupMessages == null) { return table; }
+        ////    if (!response.MarkupMessages.Any()) { return table; }
 
-            table.AddColumns(response.Title);
-            foreach (var item in response.MarkupMessages)
-            {
-                table.AddRow(item);
-            }
+        ////    table.AddColumns(response.Title);
+        ////    foreach (var item in response.MarkupMessages)
+        ////    {
+        ////        table.AddRow(item);
+        ////    }
 
-            return table;
-        }
+        ////    return table;
+        ////}
 
         public static Table GetTable(List<JobRowDetails>? response)
         {
             var table = new Table();
             if (response == null) { return table; }
             table.AddColumns("Job Id", "Job Key", "Job Type", "Description");
-            response.ForEach(r => table.AddRow(r.Id, $"{r.Group}.{r.Name}".EscapeMarkup(), r.JobType.EscapeMarkup(), r.Description.EscapeMarkup()));
+            response.ForEach(r => table.AddRow(r.Id, $"{r.Group}.{r.Name}".EscapeMarkup(), r.JobType.EscapeMarkup(), LimitValue(r.Description)));
             return table;
         }
 
@@ -105,7 +105,7 @@ namespace Planar.CLI
             var table = new Table();
             if (response == null) { return table; }
             table.AddColumns("Id", "Message", "Level", "Time Stamp");
-            response.ForEach(r => table.AddRow($"{r.Id}", r.Message.EscapeMarkup(), CliTableFormat.GetLevelMarkup(r.Level), CliTableFormat.FormatDateTime(r.TimeStamp)));
+            response.ForEach(r => table.AddRow($"{r.Id}", LimitValue(r.Message), CliTableFormat.GetLevelMarkup(r.Level), CliTableFormat.FormatDateTime(r.TimeStamp)));
             return table;
         }
 
@@ -218,7 +218,7 @@ namespace Planar.CLI
             var table = new Table();
             if (response == null) { return table; }
             table.AddColumns("Key", "Value", "Type");
-            response.ForEach(r => table.AddRow(r.Key.EscapeMarkup(), LimitValue(r.Value?.EscapeMarkup(), 10), r.Type.EscapeMarkup()));
+            response.ForEach(r => table.AddRow(r.Key.EscapeMarkup(), LimitValue(r.Value), r.Type.EscapeMarkup()));
             return table;
         }
 
@@ -226,8 +226,8 @@ namespace Planar.CLI
         {
             if (value == null) { return "[null]"; }
             if (string.IsNullOrEmpty(value)) { return string.Empty; }
-            if (value.Length <= limit) { return value; }
-            return $"{value[0..99]}…";
+            if (value.Length <= limit) { return value.EscapeMarkup(); }
+            return $"{value.EscapeMarkup()[0..(limit - 1)]}\u2026";
         }
 
         private static string SerializeJobDetailsData(JobDetails? jobDetails)

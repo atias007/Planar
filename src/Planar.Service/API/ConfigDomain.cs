@@ -40,12 +40,18 @@ namespace Planar.Service.API
         public async Task<GlobalConfig> Get(string key)
         {
             var data = await DataLayer.GetGlobalConfig(key) ?? throw new RestNotFoundException($"global config with key '{key}' not found");
+            data.Value = $"<{Consts.Unauthorized}>";
             return data;
         }
 
         public async Task<IEnumerable<GlobalConfig>> GetAll()
         {
             var data = await DataLayer.GetAllGlobalConfig();
+            foreach (var item in data)
+            {
+                item.Value = $"<{Consts.Unauthorized}>";
+            }
+
             return data;
         }
 

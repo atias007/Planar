@@ -23,6 +23,7 @@ namespace Planar
         };
 
         public const string Undefined = "undefined";
+        public const string Unauthorized = "unauthorized";
 
         public const string QuartzPrefix = "QRTZ_";
         public const string ConstPrefix = "__";

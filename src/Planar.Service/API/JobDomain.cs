@@ -347,7 +347,7 @@ namespace Planar.Service.API
             }
 
             var settings = JobSettingsLoader.LoadJobSettings(jobPath);
-            result = settings.Select(d => new KeyValueItem(d.Key, d.Value)).ToList();
+            result = settings.Select(d => new KeyValueItem(d.Key, $"<{Consts.Unauthorized}>")).ToList();
 
             return result;
         }

@@ -13,6 +13,8 @@ namespace Planar.CLI.Attributes
 
         public string Name { get; private set; }
 
+        public string Synonyms { get; set; } = string.Empty;
+
         public string Description { get; private set; }
     }
 }

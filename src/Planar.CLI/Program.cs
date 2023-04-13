@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -35,6 +36,7 @@ namespace Planar.CLI
 
         public static void Main(string[] args)
         {
+            Console.OutputEncoding = Encoding.UTF8;
             Console.CancelKeyPress += Console_CancelKeyPress;
 
             try

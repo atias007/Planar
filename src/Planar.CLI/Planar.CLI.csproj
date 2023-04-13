@@ -45,7 +45,6 @@
 		<EmbeddedResource Include="Help\Cluster.txt" />
 		<EmbeddedResource Include="Help\User.txt" />
 		<EmbeddedResource Include="Help\Trigger.txt" />
-		<EmbeddedResource Include="Help\Service.txt" />
 		<EmbeddedResource Include="Help\Config.txt" />
 		<EmbeddedResource Include="Help\Trace.txt" />
 		<EmbeddedResource Include="Help\Job.txt" />
@@ -55,6 +54,7 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="7.0.3" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.1" />
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="RestSharp" Version="109.0.1" />
 		<PackageReference Include="Spectre.Console" Version="0.46.0" />
 	</ItemGroup>

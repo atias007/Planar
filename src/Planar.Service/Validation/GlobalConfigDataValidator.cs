@@ -1,5 +1,4 @@
 ﻿using FluentValidation;
-using Planar.Common;
 using Planar.Service.Model;
 using System.Linq;
 

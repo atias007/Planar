@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
@@ -84,23 +83,6 @@ namespace Planar.CLI.Actions
             }
 
             return new CliActionResponse(result);
-        }
-
-        private static object? ConvertJTokenToObject(JToken token)
-        {
-            if (token is JValue value) { return value.Value; }
-
-            if (token is JArray)
-            {
-                return token.AsEnumerable().Select(ConvertJTokenToObject).ToList();
-            }
-
-            if (token is JObject)
-            {
-                return token.AsEnumerable().Cast<JProperty>().ToDictionary(x => x.Name, x => ConvertJTokenToObject(x.Value));
-            }
-
-            throw new InvalidOperationException("unexpected token: " + token);
         }
 
         private static ValidationResult GetValidationResultError(string message)
@@ -321,6 +303,16 @@ namespace Planar.CLI.Actions
                     IgnoreHelp = ignoreHelpAttribute != null,
                     HasWizard = hasWizard != null
                 };
+
+                if (!string.IsNullOrEmpty(moduleAttribute?.Synonyms))
+                {
+                    item.ModuleSynonyms = moduleAttribute.Synonyms.Split(',').ToList();
+                }
+
+                if (!string.IsNullOrEmpty(item.Module))
+                {
+                    item.ModuleSynonyms.Add(item.Module);
+                }
 
                 item.SetArgumentsDisplayName();
 

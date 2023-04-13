@@ -4,13 +4,12 @@ PLAN FOR V 1.3.0
 - documentation
 - authorization
 
-- convert id in sql table JobInstanceLog from int to bigint
 - add validation to JobRunnerBuilder in test nuget package
 - fix AddAggragateException in job muget
 
 - BACKLOG ----------------------------------------------------------------------------
 - add RestJob
-- cli: detect switch between command and option (i.e. pause job)
+- cli: global config with encrypt
 - move work hours settings to settings folder & convert yo yml
 - cli: service status [time scope] dashboard command
 - add job audit
@@ -150,3 +149,7 @@ V 1.2.3
 	* count success retry per day, 
 	* count fail retry per day, 
 	* count recovering runs per day
+V 1.2.4
+----------
+  - convert id in sql table JobInstanceLog from int to bigint
+  - cli: detect switch between command and option (i.e. pause job)

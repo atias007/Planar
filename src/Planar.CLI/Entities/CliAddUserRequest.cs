@@ -1,5 +1,4 @@
-﻿using Newtonsoft.Json;
-using Planar.CLI.Attributes;
+﻿using Planar.CLI.Attributes;
 
 namespace Planar.CLI.Entities
 {

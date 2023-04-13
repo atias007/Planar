@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("job", "Actions to add, remove, list, update and operate jobs")]
+    [Module("job", "Actions to add, remove, list, update and operate jobs", Synonyms = "jobs")]
     public class JobCliActions : BaseCliAction<JobCliActions>
     {
         [Action("add")]

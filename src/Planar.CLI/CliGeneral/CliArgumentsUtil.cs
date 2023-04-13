@@ -17,7 +17,7 @@ namespace Planar.CLI
 {
     public class CliArgumentsUtil
     {
-        private const string RegexTemplate = "^[1-9][0-9]{0,8}$";
+        private const string RegexTemplate = "^[1-9][0-9]{0,18}$";
         private static readonly Regex _historyRegex = new(RegexTemplate, RegexOptions.Compiled, TimeSpan.FromSeconds(2));
 
         public CliArgumentsUtil(string[] args)
@@ -74,24 +74,54 @@ namespace Planar.CLI
 
         public string Module { get; set; }
 
+        private static void Swap(ref List<string> args)
+        {
+            if (args.Count < 2) { return; }
+            (args[1], args[0]) = (args[0], args[1]);
+        }
+
+        private static CliActionMetadata? FindMatch(List<string> args, IEnumerable<CliActionMetadata> actionsMetadata)
+        {
+            if (args.Count < 2) { return null; }
+            var action = actionsMetadata.FirstOrDefault(a =>
+                a.ModuleSynonyms.Any(s => s == args[0].ToLower()) &&
+                a.Commands.Any(c => c?.ToLower() == args[1].ToLower()));
+
+            return action;
+        }
+
         public static CliActionMetadata? ValidateArgs(ref string[] args, IEnumerable<CliActionMetadata> actionsMetadata)
         {
             var list = args.ToList();
 
-            // enable to list jons only by type ls
-            if (list[0].ToLower() == "ls") { list.Insert(0, "job"); }
-
-            // enable get history only by type history id
-            if (_historyRegex.IsMatch(list[0]))
+            // special case: enable get history only by type history id
+            if (list.Count == 1 && _historyRegex.IsMatch(list[0]))
             {
                 list.Insert(0, "history");
                 list.Insert(1, "get");
             }
 
+            args = list.ToArray();
+
+            // find match
+            var action = FindMatch(list, actionsMetadata);
+            if (action != null) { return action; }
+
+            // find match with swap command and module
+            Swap(ref list);
+            args = list.ToArray();
+            action = FindMatch(list, actionsMetadata);
+            if (action != null) { return action; }
+            Swap(ref list);
+
+            // special case: enable to list jobs only by type ls or list
+            if (list[0].ToLower() == "ls") { list.Insert(0, "job"); }
+            if (list[0].ToLower() == "list") { list.Insert(0, "job"); }
+
             // module not found
             if (!actionsMetadata.Any(a => a.Module.ToLower() == list[0].ToLower()))
             {
-                var modules = GetModuleByArgument(list[0], actionsMetadata);
+                var modules = GetModuleByCommand(list[0], actionsMetadata);
                 if (!modules.Any())
                 {
                     throw new CliValidationException($"module '{list[0]}' is not supported");
@@ -124,11 +154,12 @@ namespace Planar.CLI
                 throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
             }
 
-            var action =
-                actionsMetadata.FirstOrDefault(a => a.Commands.Any(c => c?.ToLower() == list[1].ToLower() && a.Module == list[0].ToLower())) ??
-                throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
-
             args = list.ToArray();
+            action = FindMatch(list, actionsMetadata);
+            if (action == null)
+            {
+                throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
+            }
 
             return action;
         }
@@ -259,7 +290,7 @@ namespace Planar.CLI
             }
         }
 
-        private static IEnumerable<string> GetModuleByArgument(string subArgument, IEnumerable<CliActionMetadata> cliActionsMetadata)
+        private static IEnumerable<string> GetModuleByCommand(string subArgument, IEnumerable<CliActionMetadata> cliActionsMetadata)
         {
             var metadata = cliActionsMetadata
                 .Where(m => m.Commands.Any(c => c?.ToLower() == subArgument.ToLower()))
@@ -301,7 +332,7 @@ namespace Planar.CLI
 
             if (matchProp == null)
             {
-                throw new CliValidationException($"argument '{a.Key}' is not supported with command '{action.Commands.FirstOrDefault()}' at module '{action.Module}'");
+                throw new CliValidationException($"argument '{a.Key}' is not supported with command '{action.CommandsTitle}' at module '{action.Module}'");
             }
 
             if (a.Key != null && a.Key.StartsWith("-") && string.IsNullOrEmpty(a.Value))
