@@ -25,3 +25,4 @@ ClearJobLogTableOverDays: 365
 ClearStatisticsTablesOverDays: 365
 RunDatabaseMigration: true
 AuthenticationMode: AllAnonymous                   # options: AllAnonymous | ViewAnonymous | Authenticate */ /* set this value to ViewAnonymous or Authenticate in production environment
+AuthenticationSecret: DWPVy9Xefs7JnI4mMbZMrPhp39QWpDIO     # 16 to 256 charecters secret to encrypt and decrypt jwt tokens

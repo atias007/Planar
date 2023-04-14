@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("trace", "Actions to list trace log info")]
+    [Module("trace", "Actions to list trace log info", Synonyms = "traces")]
     public class TraceCliActions : BaseCliAction<TraceCliActions>
     {
         [Action("ls")]

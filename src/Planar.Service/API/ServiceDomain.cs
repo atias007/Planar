@@ -160,6 +160,11 @@ namespace Planar.Service.API
 
         public async Task<string> Login(LoginRequest request)
         {
+            if (AppSettings.AuthenticationMode == AuthMode.AllAnonymous)
+            {
+                throw new RestValidationException(Consts.Undefined, "login service is not avaliable when authentication mode is disabled (AllAnonymous)");
+            }
+
             var userData = Resolve<UserData>();
             var user = await userData.GetUserIdentity(request.Username);
             ValidateExistingEntity(user, "user");

@@ -3,13 +3,12 @@ using Planar.CLI.Entities;
 using RestSharp;
 using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("config", "Actions to add, remove, list & update global parameters")]
+    [Module("config", "Actions to add, remove, list & update global parameters", Synonyms = "configs")]
     public class ConfigCliActions : BaseCliAction<ConfigCliActions>
     {
         [Action("get")]

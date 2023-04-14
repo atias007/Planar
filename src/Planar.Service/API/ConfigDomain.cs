@@ -3,6 +3,7 @@ using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
+using Planar.Service.Model.DataObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,6 +48,9 @@ namespace Planar.Service.API
         public async Task<IEnumerable<GlobalConfig>> GetAll()
         {
             var data = await DataLayer.GetAllGlobalConfig();
+
+            if (RoleId == Roles.Administrator) { return data; }
+
             foreach (var item in data)
             {
                 item.Value = $"<{Consts.Unauthorized}>";

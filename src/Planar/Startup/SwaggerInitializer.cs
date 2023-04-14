@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using Planar.Common;
+using Swashbuckle.AspNetCore.Filters;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
 
@@ -28,6 +29,20 @@ namespace Planar.Startup
         {
             var info = GetOpenApiInfo();
             options.SwaggerDoc(SwaggerVersion, info);
+
+            // Authorization
+            if (AppSettings.AuthenticationMode != AuthMode.AllAnonymous)
+            {
+                options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+                {
+                    Description = "Standard authorization header using the Bearer scheme. Example: \"bearer {token}\"",
+                    In = ParameterLocation.Header,
+                    Name = "Authorization",
+                    Type = SecuritySchemeType.ApiKey
+                });
+                options.OperationFilter<SecurityRequirementsOperationFilter>();
+            }
+
             options.EnableAnnotations();
         }
 

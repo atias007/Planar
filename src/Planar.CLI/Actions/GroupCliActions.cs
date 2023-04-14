@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("group", "Actions to handle groups")]
+    [Module("group", "Actions to handle groups", Synonyms = "groups")]
     public class GroupCliActions : BaseCliAction<GroupCliActions>
     {
         [Action("add")]

@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Planar.Common.Exceptions;
 using Polly;
 using System;
@@ -69,6 +70,10 @@ namespace Planar.Common
 
         public static AuthMode AuthenticationMode { get; set; }
 
+        public static string? AuthenticationSecret { get; set; }
+
+        public static SymmetricSecurityKey AuthenticationKey { get; set; } = null!;
+
         public static LogLevel LogLevel { get; set; }
 
         public static bool RunDatabaseMigration { get; set; }
@@ -83,7 +88,7 @@ namespace Planar.Common
             InitializePersistanceSpan(configuration);
             InitializePorts(configuration);
             InitializeLogLevel(configuration);
-            InitializeAuthenticationMode(configuration);
+            InitializeAuthentication(configuration);
 
             InstanceId = GetSettings(configuration, Consts.InstanceIdVariableKey, nameof(InstanceId), "AUTO");
             ServiceName = GetSettings(configuration, Consts.ServiceNameVariableKey, nameof(ServiceName), "PlanarService");
@@ -253,8 +258,9 @@ namespace Planar.Common
             Global.LogLevel = LogLevel;
         }
 
-        private static void InitializeAuthenticationMode(IConfiguration configuration)
+        private static void InitializeAuthentication(IConfiguration configuration)
         {
+            const string DefaultAuthenticationSecret = "DWPVy9Xefs7JnI4mMbZMrPhp39QWpDIO";
             var mode = GetSettings(configuration, Consts.AuthenticationModeVariableKey, nameof(AuthenticationMode), AuthMode.AllAnonymous.ToString());
             if (Enum.TryParse<AuthMode>(mode, true, out var tempMode))
             {
@@ -263,6 +269,24 @@ namespace Planar.Common
             else
             {
                 AuthenticationMode = AuthMode.AllAnonymous;
+            }
+
+            AuthenticationSecret = GetSettings(configuration, Consts.AuthenticationSecretVariableKey, nameof(AuthenticationSecret), DefaultAuthenticationSecret);
+            AuthenticationKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AuthenticationSecret ?? string.Empty));
+            if (AuthenticationMode == AuthMode.AllAnonymous) { return; }
+            if (string.IsNullOrEmpty(AuthenticationSecret))
+            {
+                throw new AppSettingsException($"Authentication secret must have value when authentication mode is {AuthenticationMode}");
+            }
+
+            if (AuthenticationSecret.Length < 16)
+            {
+                throw new AppSettingsException($"Authentication secret must have minimum length of 16 charecters. Current length is {AuthenticationSecret.Length}");
+            }
+
+            if (AuthenticationSecret.Length > 256)
+            {
+                throw new AppSettingsException($"Authentication secret must have maximum length of 256 charecters. Current length is {AuthenticationSecret.Length}");
             }
         }
 

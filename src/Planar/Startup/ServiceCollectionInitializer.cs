@@ -1,15 +1,17 @@
 ﻿using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Planar.Authorization;
 using Planar.Common;
 using Planar.Filters;
 using Planar.Service;
+using Planar.Service.Model.DataObjects;
 using System;
 using System.Net;
-using System.Text;
 
 namespace Planar.Startup
 {
@@ -18,20 +20,8 @@ namespace Planar.Startup
         public static void ConfigureServices(IServiceCollection services)
         {
             Console.WriteLine("[x] Configure services");
-            const string secret = "DWPVy9Xefs7JnI4mMbZMrPhp39QWpDIO";
 
-            // Authorization
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.TokenValidationParameters = new TokenValidationParameters
-                    {
-                        ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret)),
-                        ValidateIssuer = false,
-                        ValidateAudience = false
-                    };
-                });
+            SetAuthorization(services);
 
             services.AddMvc(options =>
             {
@@ -39,6 +29,7 @@ namespace Planar.Startup
                 options.Filters.Add<HttpResponseExceptionFilter>();
             });
 
+            services.AddHttpContextAccessor();
             services.AddFluentValidationAutoValidation();
             services.AddValidatorsFromAssemblies(new[] { typeof(Program).Assembly, typeof(MainService).Assembly });
 
@@ -62,6 +53,34 @@ namespace Planar.Startup
             services.AddMemoryCache();
             services.AddPlanarServices();
             services.AddGrpc();
+        }
+
+        private static void SetAuthorization(IServiceCollection services)
+        {
+            if (AppSettings.AuthenticationMode != AuthMode.AllAnonymous)
+            {
+                services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                    .AddJwtBearer(options =>
+                    {
+                        options.TokenValidationParameters = new TokenValidationParameters
+                        {
+                            ValidateIssuerSigningKey = true,
+                            IssuerSigningKey = AppSettings.AuthenticationKey,
+                            ValidateIssuer = false,
+                            ValidateAudience = false
+                        };
+                    });
+            }
+
+            services.AddAuthorization(option =>
+            {
+                option.AddPolicy(Roles.Administrator.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Administrator)));
+                option.AddPolicy(Roles.Editor.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Editor)));
+                option.AddPolicy(Roles.Tester.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Tester)));
+                option.AddPolicy(Roles.Viewer.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Viewer)));
+            });
+
+            services.AddSingleton<IAuthorizationHandler, MinimumRoleHandler>();
         }
     }
 }

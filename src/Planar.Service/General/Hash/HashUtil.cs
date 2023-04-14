@@ -1,4 +1,5 @@
 ﻿using Microsoft.IdentityModel.Tokens;
+using Planar.Common;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using System;
@@ -44,11 +45,9 @@ namespace Planar.Service.General.Hash
                 new Claim(ClaimTypes.Name, user.Username )
             };
 
-            const string secret = "DWPVy9Xefs7JnI4mMbZMrPhp39QWpDIO";
             var tokenExpireSpan = TimeSpan.FromMinutes(20);
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
+            var creds = new SigningCredentials(AppSettings.AuthenticationKey, SecurityAlgorithms.HmacSha512);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),

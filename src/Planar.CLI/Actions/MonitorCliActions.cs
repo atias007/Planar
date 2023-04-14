@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("monitor", "Actions to handle monitoring and monitor hooks")]
+    [Module("monitor", "Actions to handle monitoring and monitor hooks", Synonyms = "monitors")]
     public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     {
         [Action("add")]

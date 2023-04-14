@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("user", "Actions to handle users")]
+    [Module("user", "Actions to handle users", Synonyms = "users")]
     public class UserCliActions : BaseCliAction<UserCliActions>
     {
         [Action("add")]

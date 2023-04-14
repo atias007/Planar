@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("trigger", "Actions to add, remove, list, update and operate triggers of job")]
+    [Module("trigger", "Actions to add, remove, list, update and operate triggers of job", Synonyms = "triggers")]
     public class TriggerCliActions : BaseCliAction<TriggerCliActions>
     {
         [Action("ls")]

@@ -53,7 +53,7 @@ namespace Planar.Service.Data
         public async Task<int> GetUserRole(string username)
         {
             var result = await _context.Groups
-                .Where(g => g.Users.Count > 0 && g.Users.Any(u => u.Username.ToLower() == username.ToLower()))
+                .Where(g => g.Users.Any(u => u.Username.ToLower() == username.ToLower()))
                 .Select(g => g.RoleId)
                 .OrderByDescending(g => g)
                 .FirstOrDefaultAsync();

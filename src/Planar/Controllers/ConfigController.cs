@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
-    [Authorize]
+    [Authorize(Policy = "Administrator")]
     [Route("config")]
     public class ConfigController : BaseController<ConfigDomain>
     {
