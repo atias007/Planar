@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Planar.Attributes;
 using Planar.Service.API;
 using Planar.Service.Model;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
+    [Authorize]
     [Route("config")]
     public class ConfigController : BaseController<ConfigDomain>
     {

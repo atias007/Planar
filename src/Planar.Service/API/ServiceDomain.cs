@@ -160,17 +160,20 @@ namespace Planar.Service.API
 
         public async Task<string> Login(LoginRequest request)
         {
-            var user = await Resolve<UserData>().GetUserByUsername(request.Username);
+            var userData = Resolve<UserData>();
+            var user = await userData.GetUserIdentity(request.Username);
             ValidateExistingEntity(user, "user");
-            if (user == null) { return string.Empty; }
+            var role = await userData.GetUserRole(request.Username);
+            user!.RoleId = role;
 
-            var verify = HashUtil.VerifyHash(request.Password, user.Password, user.Salt);
+            var verify = HashUtil.VerifyHash(request.Password, user!.Password, user!.Salt);
             if (!verify)
             {
                 throw new RestValidationException("password", "wrong password");
             }
 
-            return user.Id.ToString();
+            var result = HashUtil.CreateToken(user);
+            return result;
         }
     }
 }

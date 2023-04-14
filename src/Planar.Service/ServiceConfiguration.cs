@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.Common;
-using Planar.Common.Helpers;
 using Planar.Service.API;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
@@ -47,18 +46,6 @@ namespace Planar.Service
 
             // Service
             services.AddTransient<MainService>();
-
-            // Domains
-            services.AddScoped<GroupDomain>();
-            services.AddScoped<HistoryDomain>();
-            services.AddScoped<JobDomain>();
-            services.AddScoped<ConfigDomain>();
-            services.AddScoped<ServiceDomain>();
-            services.AddScoped<MonitorDomain>();
-            services.AddScoped<TraceDomain>();
-            services.AddScoped<TriggerDomain>();
-            services.AddScoped<UserDomain>();
-            services.AddScoped<ClusterDomain>();
 
             // Scheduler
             services.AddSingleton(p => p.GetRequiredService<ISchedulerFactory>().GetScheduler().Result);

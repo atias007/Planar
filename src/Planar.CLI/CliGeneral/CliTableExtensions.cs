@@ -224,7 +224,7 @@ namespace Planar.CLI
 
         private static string LimitValue(string? value, int limit = 100)
         {
-            if (value == null) { return "[null]"; }
+            if (value == null) { return "[null]".EscapeMarkup(); }
             if (string.IsNullOrEmpty(value)) { return string.Empty; }
             if (value.Length <= limit) { return value.EscapeMarkup(); }
             return $"{value.EscapeMarkup()[0..(limit - 1)]}\u2026";
