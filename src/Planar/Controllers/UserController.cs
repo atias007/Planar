@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
+using Planar.Authorization;
 using Planar.Service.API;
 using Planar.Service.Model;
 using Planar.Validation.Attributes;
@@ -18,6 +19,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost]
+        [EditorAuthorize]
         [JsonConsumes]
         [SwaggerOperation(OperationId = "post_user", Description = "Add user", Summary = "Add User")]
         [CreatedResponse(typeof(AddUserResponse))]
@@ -30,6 +32,7 @@ namespace Planar.Controllers
         }
 
         [HttpPut]
+        [EditorAuthorize]
         [JsonConsumes]
         [SwaggerOperation(OperationId = "put_user", Description = "Update user", Summary = "Update User")]
         [NoContentResponse]
@@ -43,6 +46,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_user_id", Description = "Get user by id", Summary = "Get User")]
         [OkJsonResponse(typeof(UserDetails))]
         [BadRequestResponse]
@@ -54,6 +58,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_user", Description = "Get all users", Summary = "Get All Users")]
         [OkJsonResponse(typeof(List<UserRow>))]
         public async Task<ActionResult<List<UserRow>>> GetAll()
@@ -63,6 +68,7 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}")]
+        [AdministratorAuthorize]
         [SwaggerOperation(OperationId = "delete_user_id", Description = "Delete user", Summary = "Delete User")]
         [NoContentResponse]
         [BadRequestResponse]
@@ -74,6 +80,7 @@ namespace Planar.Controllers
         }
 
         [HttpPatch]
+        [EditorAuthorize]
         [JsonConsumes]
         [SwaggerOperation(OperationId = "patch_user", Description = "Update user single property", Summary = "Partial Update Group")]
         [NoContentResponse]
@@ -87,6 +94,7 @@ namespace Planar.Controllers
         }
 
         [HttpPatch("{id}/resetpassword")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "patch_user_id_resetpassword", Description = "Reset user password", Summary = "Reset User Password")]
         [OkTextResponse]
         [BadRequestResponse]

@@ -5,13 +5,16 @@ PLAN FOR V 1.3.0
 - authorization
   * option to see the role for user
   * option to set role to group
+  * test authorize on odata
+
+- cli - menu on join (or unjoin) user to group
 
 - add validation to JobRunnerBuilder in test nuget package
 - fix AddAggragateException in job muget
 
 - BACKLOG ----------------------------------------------------------------------------
 - add RestJob
-- cli: global config with encrypt
+
 - move work hours settings to settings folder & convert yo yml
 - cli: service status [time scope] dashboard command
 - add job audit
@@ -155,3 +158,4 @@ V 1.2.4
 ----------
   - convert id in sql table JobInstanceLog from int to bigint
   - cli: detect switch between command and option (i.e. pause job)
+  - cli: global config with encrypt

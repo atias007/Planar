@@ -68,6 +68,7 @@ namespace Planar
         public const string LogLevelVariableKey = "PLANAR_LOGLEVEL";
         public const string AuthenticationModeVariableKey = "PLANAR_AUTHMODE";
         public const string AuthenticationSecretVariableKey = "PLANAR_AUTHSECRET";
+        public const string AuthenticationTokenExpireVariableKey = "PLANAR_AUTHTOKENEXPIRE";
         public const string SchedulerStartupDelayVariableKey = "PLANAR_SCHEDULER_DELAY";
         public const string RunDatabaseMigrationVariableKey = "PLANAR_RUN_DBMIGRATION";
 

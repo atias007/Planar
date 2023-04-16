@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Planar.Attributes;
+using Planar.Authorization;
 using Planar.Service.API;
 using Planar.Service.Model;
 using Swashbuckle.AspNetCore.Annotations;
@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
-    [Authorize(Policy = "Administrator")]
     [Route("config")]
     public class ConfigController : BaseController<ConfigDomain>
     {
@@ -19,6 +18,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_config", Description = "Get all global configuration", Summary = "Get All Global Configurations")]
         [OkJsonResponse(typeof(IEnumerable<GlobalConfig>))]
         public async Task<ActionResult<IEnumerable<GlobalConfig>>> GetAll()
@@ -28,6 +28,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{key}")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_config_key", Description = "Get global configuration by key", Summary = "Get Global Configuration")]
         [OkJsonResponse(typeof(GlobalConfig))]
         [BadRequestResponse]
@@ -39,6 +40,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_config", Description = "Add new global configuration", Summary = "Add Global Configuration")]
         [JsonConsumes]
         [CreatedResponse]
@@ -51,6 +53,7 @@ namespace Planar.Controllers
         }
 
         [HttpPut]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "put_config", Description = "Update existing global configuration", Summary = "Update Global Configuration")]
         [JsonConsumes]
         [NoContentResponse]
@@ -63,6 +66,7 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{key}")]
+        [AdministratorAuthorize]
         [SwaggerOperation(OperationId = "delete_config_key", Description = "Delete existing global configuration", Summary = "Delete Global Configuration")]
         [NoContentResponse]
         [NotFoundResponse]
@@ -73,6 +77,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("flush")]
+        [TesterAuthorize]
         [SwaggerOperation(OperationId = "post_config_flush", Description = "Flush and reload global configuration from cache", Summary = "Flush All Global Configuration")]
         [NoContentResponse]
         public async Task<ActionResult> Flush()

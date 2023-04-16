@@ -12,6 +12,7 @@ namespace Planar.Authorization
     {
         protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, MinimumRoleRequirement requirement)
         {
+            // No Authorization
             if (AppSettings.AuthenticationMode == AuthMode.AllAnonymous)
             {
                 context.Succeed(requirement);
@@ -19,7 +20,20 @@ namespace Planar.Authorization
             }
 
             var claim = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
-            if (claim == null) { return Task.CompletedTask; }
+            if (claim == null)
+            {
+                // View Anonymous Authorization
+                if (AppSettings.AuthenticationMode == AuthMode.ViewAnonymous &&
+                    Roles.Viewer >= requirement.Role)
+                {
+                    context.Succeed(requirement);
+                }
+
+                // No claim supplied in Authorization mode
+                return Task.CompletedTask;
+            }
+
+            // Authorization with supplied claim
             var strValue = claim.Value;
             if (string.IsNullOrEmpty(strValue)) { return Task.CompletedTask; }
             if (!int.TryParse(strValue, out var roleId)) { return Task.CompletedTask; }

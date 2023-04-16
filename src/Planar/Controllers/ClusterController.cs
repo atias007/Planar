@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Planar.Attributes;
+using Planar.Authorization;
 using Planar.Service.API;
 using Planar.Service.Model;
 using Swashbuckle.AspNetCore.Annotations;
@@ -16,6 +18,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("nodes")]
+        [AdministratorAuthorize]
         [SwaggerOperation(OperationId = "get_cluster_nodes", Description = "Get list of all nodes in cluster", Summary = "Get Cluster Nodes")]
         [OkJsonResponse(typeof(List<ClusterNode>))]
         public async Task<ActionResult<List<ClusterNode>>> GetNodes()
@@ -25,6 +28,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("healthCheck")]
+        [AllowAnonymous]
         [SwaggerOperation(OperationId = "get_cluster_health-check", Description = "Check the health of all nodes in cluster", Summary = "Check Cluster Health")]
         [OkTextResponse]
         [ServiceUnavailableResponse]

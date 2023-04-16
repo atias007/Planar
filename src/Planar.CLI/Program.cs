@@ -357,8 +357,26 @@ namespace Planar.CLI
             if (HandleBadRequestResponse(response)) { return; }
             if (HandleHealthCheckResponse(response)) { return; }
             if (HandleHttpConflictResponse(response)) { return; }
+            if (HandleHttpUnauthorizedResponse(response)) { return; }
 
             HandleGeneralError(response);
+        }
+
+        private static bool HandleHttpUnauthorizedResponse(RestResponse response)
+        {
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                MarkupCliLine(CliFormat.GetUnauthorizedErrorMarkup());
+                return true;
+            }
+
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                MarkupCliLine(CliFormat.GetForbiddenErrorMarkup());
+                return true;
+            }
+
+            return false;
         }
 
         private static bool HandleHttpNotFoundResponse(RestResponse response)

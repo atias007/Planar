@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
+using Planar.Authorization;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
@@ -18,6 +19,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_monitor", Description = "Get all monitors", Summary = "Get All Monitors")]
         [OkJsonResponse(typeof(List<MonitorItem>))]
         public async Task<ActionResult<List<MonitorItem>>> GetAll()
@@ -27,6 +29,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("byJob/{jobId}")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_monitor_byjob_id", Description = "Get monitor by job key or id", Summary = "Get Monitor By Job")]
         [OkJsonResponse(typeof(List<MonitorItem>))]
         [BadRequestResponse]
@@ -37,6 +40,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("byGroup/{group}")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_monitor_bygroup_group", Description = "Get monitor by job group", Summary = "Get Monitor By Group")]
         [OkJsonResponse(typeof(List<MonitorItem>))]
         [BadRequestResponse]
@@ -47,6 +51,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_monitor_id", Description = "Get monitor by id", Summary = "Get Monitor")]
         [OkJsonResponse(typeof(MonitorItem))]
         [BadRequestResponse]
@@ -58,6 +63,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("events")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_monitor_events", Description = "Get all monitor events type", Summary = "Get All Monitor Events")]
         [OkJsonResponse(typeof(List<LovItem>))]
         public ActionResult<List<LovItem>> GetEvents()
@@ -67,6 +73,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_monitor", Description = "Add monitor", Summary = "Add Monitor")]
         [JsonConsumes]
         [CreatedResponse(typeof(EntityIdResponse))]
@@ -79,6 +86,7 @@ namespace Planar.Controllers
         }
 
         [HttpPut]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "put_monitor", Description = "Update monitor", Summary = "Update Monitor")]
         [JsonConsumes]
         [NoContentResponse]
@@ -92,6 +100,7 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}")]
+        [AdministratorAuthorize]
         [SwaggerOperation(OperationId = "delete_monitor_id", Description = "Delete monitor", Summary = "Delete Monitor")]
         [BadRequestResponse]
         [NoContentResponse]
@@ -103,6 +112,7 @@ namespace Planar.Controllers
         }
 
         [HttpPatch]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "patch_monitor", Description = "Update monitor single property", Summary = "Partial Update Monitor")]
         [JsonConsumes]
         [BadRequestResponse]
@@ -117,6 +127,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("reload")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_monitor_reload", Description = "Refresh monitor hooks", Summary = "Refresh Monitor Hooks")]
         [OkJsonResponse(typeof(string))]
         public async Task<ActionResult<string>> Reload()
@@ -126,6 +137,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("hooks")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_monitor_hooks", Description = "Get all monitor hooks", Summary = "Get Monitor Hooks")]
         [OkJsonResponse(typeof(string))]
         public ActionResult<List<string>> GetHooks()
@@ -135,6 +147,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("try")]
+        [EditorAuthorize]
         [JsonConsumes]
         [SwaggerOperation(OperationId = "post_monitor_try", Description = "Try monitor", Summary = "Try Monitor")]
         [NoContentResponse]

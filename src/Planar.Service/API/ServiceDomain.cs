@@ -1,10 +1,13 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Azure.Identity;
+using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.General.Hash;
+using Planar.Service.Model.DataObjects;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -57,7 +60,8 @@ namespace Planar.Service.API
                 SwaggerUI = AppSettings.SwaggerUI,
                 OpenApiUI = AppSettings.OpenApiUI,
                 DeveloperExceptionPage = AppSettings.DeveloperExceptionPage,
-                AuthenticationMode = AppSettings.AuthenticationMode.ToString()
+                AuthenticationMode = AppSettings.AuthenticationMode.ToString(),
+                AuthenticationTokenExpire = AppSettings.AuthenticationTokenExpire,
             };
 
             return response;
@@ -158,7 +162,7 @@ namespace Planar.Service.API
             }
         }
 
-        public async Task<string> Login(LoginRequest request)
+        public async Task<LoginResponse> Login(LoginRequest request)
         {
             if (AppSettings.AuthenticationMode == AuthMode.AllAnonymous)
             {
@@ -166,8 +170,10 @@ namespace Planar.Service.API
             }
 
             var userData = Resolve<UserData>();
-            var user = await userData.GetUserIdentity(request.Username);
-            ValidateExistingEntity(user, "user");
+            var user =
+                await userData.GetUserIdentity(request.Username) ??
+                throw new RestValidationException("username", $"user with username '{request.Username}' not exists");
+
             var role = await userData.GetUserRole(request.Username);
             user!.RoleId = role;
 
@@ -177,7 +183,13 @@ namespace Planar.Service.API
                 throw new RestValidationException("password", "wrong password");
             }
 
-            var result = HashUtil.CreateToken(user);
+            var token = HashUtil.CreateToken(user);
+            var result = new LoginResponse
+            {
+                Role = ((Roles)role).ToString(),
+                Token = token
+            };
+
             return result;
         }
     }

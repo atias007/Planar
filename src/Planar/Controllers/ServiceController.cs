@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
+using Planar.Authorization;
 using Planar.Service.API;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
@@ -16,6 +18,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_service", Description = "Get service information", Summary = "Get Information")]
         [OkJsonResponse(typeof(GetServiceInfoResponse))]
         public async Task<ActionResult<GetServiceInfoResponse>> GetServiceInfo()
@@ -25,6 +28,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{key}")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_service_key", Description = "Get service information key", Summary = "Get Information Key")]
         [OkJsonResponse(typeof(GetServiceInfoResponse))]
         public async Task<ActionResult<string>> GetServiceInfo(string key)
@@ -34,6 +38,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("healthCheck")]
+        [AllowAnonymous]
         [SwaggerOperation(OperationId = "get_service_healthcheck", Description = "Service health check", Summary = "Health Check")]
         [OkJsonResponse(typeof(GetServiceInfoResponse))]
         [ServiceUnavailableResponse]
@@ -44,6 +49,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("calendars")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_service_calendars", Description = "Get calendars list", Summary = "Get Calendars")]
         [OkJsonResponse(typeof(List<string>))]
         public async Task<ActionResult<List<string>>> GetCalendars()
@@ -53,6 +59,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("halt")]
+        [AdministratorAuthorize]
         [SwaggerOperation(OperationId = "post_service_halt", Description = "Halt (stop) service", Summary = "Halt Service")]
         [OkJsonResponse]
         public async Task<ActionResult> HaltScheduler()
@@ -62,6 +69,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("start")]
+        [AdministratorAuthorize]
         [SwaggerOperation(OperationId = "post_service_start", Description = "Start service", Summary = "Start Service")]
         [OkJsonResponse]
         public async Task<ActionResult> StartScheduler()
@@ -71,10 +79,11 @@ namespace Planar.Controllers
         }
 
         [HttpPost("login")]
+        [AllowAnonymous]
         [SwaggerOperation(OperationId = "post_service_login", Description = "Login service", Summary = "Login Service")]
         [JsonConsumes]
-        [OkJsonResponse(typeof(string))]
-        public async Task<ActionResult<string>> Login([FromBody] LoginRequest request)
+        [OkJsonResponse(typeof(LoginResponse))]
+        public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
         {
             var result = await BusinesLayer.Login(request);
             return Ok(result);

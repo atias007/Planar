@@ -1,10 +1,12 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
+using Planar.Authorization;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -17,6 +19,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_group", Description = "Add new group", Summary = "Add Group")]
         [CreatedResponse(typeof(EntityIdResponse))]
         [JsonConsumes]
@@ -28,6 +31,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_group_id", Description = "Get group by id", Summary = "Get Group")]
         [OkJsonResponse(typeof(GroupDetails))]
         [NotFoundResponse]
@@ -38,6 +42,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_group", Description = "Get all groups", Summary = "Get All Groups")]
         [OkJsonResponse(typeof(List<GroupInfo>))]
         public async Task<ActionResult<List<GroupInfo>>> GetAllGroups()
@@ -47,6 +52,7 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "delete_group_id", Description = "Delete group", Summary = "Delete Group")]
         [NoContentResponse]
         [BadRequestResponse]
@@ -58,6 +64,7 @@ namespace Planar.Controllers
         }
 
         [HttpPatch]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "patch_group", Description = "Update group single property", Summary = "Partial Update Group")]
         [JsonConsumes]
         [NoContentResponse]
@@ -71,6 +78,7 @@ namespace Planar.Controllers
         }
 
         [HttpPut]
+        [EditorAuthorize]
         [JsonConsumes]
         [SwaggerOperation(OperationId = "put_group", Description = "Update group", Summary = "Update Group")]
         [NoContentResponse]
@@ -84,6 +92,7 @@ namespace Planar.Controllers
         }
 
         [HttpPut("{id}/user/{userId}")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_group_id_user", Description = "Add user to group", Summary = "Add User To Group")]
         [NoContentResponse]
         [BadRequestResponse]
@@ -95,6 +104,7 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}/user/{userId}")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "delete_group_id_user", Description = "Remove user from group", Summary = "Remove User From Group")]
         [NoContentResponse]
         [BadRequestResponse]

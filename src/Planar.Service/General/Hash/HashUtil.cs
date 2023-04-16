@@ -45,13 +45,11 @@ namespace Planar.Service.General.Hash
                 new Claim(ClaimTypes.Name, user.Username )
             };
 
-            var tokenExpireSpan = TimeSpan.FromMinutes(20);
-
             var creds = new SigningCredentials(AppSettings.AuthenticationKey, SecurityAlgorithms.HmacSha512);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.Now.Add(tokenExpireSpan),
+                Expires = DateTime.Now.Add(AppSettings.AuthenticationTokenExpire),
                 SigningCredentials = creds
             };
 

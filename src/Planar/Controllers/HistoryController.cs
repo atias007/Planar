@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
+using Planar.Authorization;
 using Planar.Service.API;
 using Planar.Service.Model;
 using Planar.Validation.Attributes;
@@ -18,6 +19,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_history", Description = "Get history data by filter", Summary = "Get History")]
         [OkJsonResponse(typeof(List<JobInstanceLogRow>))]
         [BadRequestResponse]
@@ -28,6 +30,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_history_id", Description = "Get history by id", Summary = "Get History By Id")]
         [OkJsonResponse(typeof(JobInstanceLog))]
         [BadRequestResponse]
@@ -39,6 +42,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}/data")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_history_id_data", Description = "Get only variables data from specific history item", Summary = "Get History Data By Id")]
         [OkTextResponse]
         [BadRequestResponse]
@@ -50,6 +54,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}/log")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_history_id_log", Description = "Get only log text from specific history item", Summary = "Get History Log By Id")]
         [OkTextResponse]
         [BadRequestResponse]
@@ -61,6 +66,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}/exception")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_history_id_exception", Description = "Get only exceptions text from specific history item", Summary = "Get History Exceptions By Id")]
         [OkTextResponse]
         [BadRequestResponse]
@@ -72,6 +78,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("last")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_history_last", Description = "Get summary of last running of each job", Summary = "Get Last Running Per Job")]
         [OkJsonResponse(typeof(JobInstanceLog))]
         [BadRequestResponse]
@@ -82,6 +89,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("count")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_history_count", Description = "Get history count by status", Summary = "Get History Count")]
         [OkJsonResponse(typeof(CounterResponse))]
         [BadRequestResponse]
