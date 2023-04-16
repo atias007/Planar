@@ -8,7 +8,7 @@ namespace Planar.Validation
         public LoginRequestValidator()
         {
             RuleFor(u => u.Username).NotEmpty().Length(2, 50);
-            RuleFor(x => x.Password).NotEmpty();
+            RuleFor(x => x.Password).NotEmpty().Length(2, 50);
         }
     }
 }

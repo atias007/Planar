@@ -15,14 +15,22 @@ namespace Planar.Service.Exceptions
         }
 
         public RestProblem(string field, string detail)
+            : this(field)
         {
-            Field = field;
             Detail.Add(detail);
+        }
+
+        public RestProblem(string field, string detail, int errorCode)
+            : this(field, detail)
+        {
+            ErrorCode = errorCode;
         }
 
         public string? Field { get; set; }
 
         public List<string> Detail { get; set; } = new();
+
+        public int ErrorCode { get; set; }
 
         public bool Equals(RestProblem? other)
         {

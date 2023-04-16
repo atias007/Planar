@@ -17,6 +17,19 @@ namespace Planar.CLI.Actions
             return await Task.FromResult(CliActionResponse.Empty);
         }
 
+        [Action("whoami")]
+        public static async Task<CliActionResponse> WhoAmI(CancellationToken cancellationToken = default)
+        {
+            if (cancellationToken.IsCancellationRequested) { throw new TaskCanceledException("task was canceled"); }
+            var title =
+                string.IsNullOrEmpty(RestProxy.Username) ?
+                "anonymous" :
+                $"{RestProxy.Username} ({RestProxy.Role?.ToLower()})";
+
+            var result = new CliActionResponse(null, message: title);
+            return await Task.FromResult(result);
+        }
+
         ////[Action("plot")]
         ////public static async Task<CliActionResponse> Plot(CancellationToken cancellationToken = default)
         ////{

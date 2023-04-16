@@ -483,7 +483,7 @@ namespace Planar.CLI
             //// var md = CliHelpGenerator.GetHelpMD(cliActions);
 #endif
 
-            ServiceCliActions.InitializeLogin();
+            ServiceCliActions.InitializeLogin().Wait();
 
             if (args.Length == 0)
             {

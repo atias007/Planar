@@ -28,7 +28,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        protected static string? CollectCliValue(string field, bool required, int minLength, int maxLength, string? regex = null, string? regexErrorMessage = null)
+        protected static string? CollectCliValue(string field, bool required, int minLength, int maxLength, string? regex = null, string? regexErrorMessage = null, string? defaultValue = null)
         {
             var prompt = new TextPrompt<string>($"[turquoise2]  > {field.EscapeMarkup()}: [/]")
                 .Validate(value =>
@@ -56,6 +56,11 @@ namespace Planar.CLI.Actions
                 });
 
             if (!required) { prompt.AllowEmpty(); }
+
+            if (!string.IsNullOrEmpty(defaultValue))
+            {
+                prompt.DefaultValue(defaultValue);
+            }
 
             var result = AnsiConsole.Prompt(prompt);
 

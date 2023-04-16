@@ -16,6 +16,11 @@ namespace Planar.Service.Exceptions
             Errors.Add(new RestProblem(fieldName, errorDetails));
         }
 
+        public RestValidationException(string fieldName, string errorDetails, int errorCode)
+        {
+            Errors.Add(new RestProblem(fieldName, errorDetails, errorCode));
+        }
+
         public RestValidationException(HashSet<RestProblem> errors)
         {
             if (errors == null || errors.Count == 0)

@@ -24,6 +24,6 @@ ClearTraceTableOverDays: 365
 ClearJobLogTableOverDays: 365
 ClearStatisticsTablesOverDays: 365
 RunDatabaseMigration: true
-AuthenticationMode: ViewAnonymous                   # options: AllAnonymous | ViewAnonymous | Authenticate */ /* set this value to ViewAnonymous or Authenticate in production environment
+AuthenticationMode: Authenticate                   # options: AllAnonymous | ViewAnonymous | Authenticate */ /* set this value to ViewAnonymous or Authenticate in production environment
 AuthenticationSecret: DWPVy9Xefs7JnI4mMbZMrPhp39QWpDIO     # 16 to 256 charecters secret to encrypt and decrypt jwt tokens
 AuthenticationTokenExpire: 00:20:00                # the expiration time of token generated at login service. default is 20 minutes. minimum value 1 minute

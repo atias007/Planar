@@ -1,5 +1,6 @@
 ﻿using RestSharp;
 using System;
+using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,6 +11,11 @@ namespace Planar.CLI
         public static string Schema { get; set; } = "http";
         public static string Host { get; set; } = "localhost";
         public static int Port { get; set; } = 2306;
+
+        public static string? Username { get; set; }
+        public static string? Password { get; set; }
+        public static string? Token { get; set; }
+        public static string? Role { get; set; }
 
         private static RestClient? _client;
         private static readonly object _lock = new();
@@ -33,10 +39,15 @@ namespace Planar.CLI
                         var options = new RestClientOptions
                         {
                             BaseUrl = BaseUri,
-                            MaxTimeout = 10000
+                            MaxTimeout = 10000,
                         };
 
                         _client = new RestClient(options);
+
+                        if (!string.IsNullOrEmpty(Token))
+                        {
+                            _client.AddDefaultHeader("Authorization", $"Bearer {Token}");
+                        }
                     }
 
                     return _client;

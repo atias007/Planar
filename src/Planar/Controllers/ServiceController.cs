@@ -83,6 +83,7 @@ namespace Planar.Controllers
         [SwaggerOperation(OperationId = "post_service_login", Description = "Login service", Summary = "Login Service")]
         [JsonConsumes]
         [OkJsonResponse(typeof(LoginResponse))]
+        [ConflictResponse]
         public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
         {
             var result = await BusinesLayer.Login(request);

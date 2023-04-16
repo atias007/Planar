@@ -1,10 +1,14 @@
-﻿using Planar.API.Common.Entities;
+﻿using Microsoft.Extensions.Hosting;
+using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.DataProtect;
 using Planar.CLI.Entities;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -109,11 +113,10 @@ namespace Planar.CLI.Actions
         [Action("login")]
         public static async Task<CliActionResponse> Login(CliLoginRequest request, CancellationToken cancellationToken = default)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            InnerLogin(request);
+            var response = await InnerLogin(request, cancellationToken);
 
-            ConnectData.SetLoginRequest(request);
-            return await Task.FromResult(CliActionResponse.Empty);
+            //// ConnectData.SetLoginRequest(request);
+            return response;
         }
 
         [Action("logout")]
@@ -121,40 +124,95 @@ namespace Planar.CLI.Actions
         {
             cancellationToken.ThrowIfCancellationRequested();
             ConnectData.Logout();
-            InnerLogin(new CliLoginRequest());
+            RestProxy.Username = null;
+            RestProxy.Password = null;
+            RestProxy.Token = null;
+            RestProxy.Role = null;
+            RestProxy.Flush();
             return await Task.FromResult(CliActionResponse.Empty);
         }
 
-        public static void InitializeLogin()
+        public static async Task InitializeLogin()
         {
             var request = ConnectData.GetLoginRequest();
-            InnerLogin(request);
+            await InnerLogin(request);
         }
 
-        private static void InnerLogin(CliLoginRequest? request)
+        private static async Task<CliActionResponse> InnerLogin(CliLoginRequest? request, CancellationToken cancellationToken = default)
         {
             CliGeneral.Login.Set(request);
-            if (request == null) { return; }
+            if (request == null) { return CliActionResponse.Empty; }
 
             if (string.IsNullOrEmpty(request.Host))
             {
-                request.Host = "127.0.0.1";
+                request.Host = CollectCliValue("host", true, 1, 50, defaultValue: "localhost") ?? string.Empty;
             }
 
             if (request.Port == 0)
             {
-                request.Port = 2306;
+                const string regexTepmplate = "^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$";
+                request.Port = int.Parse(CollectCliValue("port", true, 1, 5, regexTepmplate, "invalid port", "2306") ?? "0");
             }
 
-            RestProxy.Host = request.Host;
-            RestProxy.Port = request.Port;
-
-            if (request.SSL)
+            if (string.IsNullOrEmpty(request.User))
             {
-                RestProxy.Schema = "https";
+                request.User = CollectCliValue("username", true, 2, 50);
+            }
+
+            if (string.IsNullOrEmpty(request.Password))
+            {
+                request.Password = CollectCliValue("password", true, 2, 50);
+            }
+
+            var schema = request.SSL ? "https" : "http";
+            var body = new { Username = request.User, request.Password };
+            var restRequest = new RestRequest("service/login", Method.Post);
+            restRequest.AddBody(body);
+            var options = new RestClientOptions
+            {
+                BaseUrl = new UriBuilder(schema, request.Host, request.Port).Uri,
+                MaxTimeout = 10000,
+            };
+
+            var client = new RestClient(options);
+            var result = await client.ExecuteAsync<LoginResponse>(restRequest, cancellationToken);
+            if (result.IsSuccessStatusCode)
+            {
+                RestProxy.Host = request.Host;
+                RestProxy.Port = request.Port;
+
+                if (request.SSL)
+                {
+                    RestProxy.Schema = "https";
+                }
+
+                RestProxy.Username = request.User;
+                RestProxy.Password = request.Password;
+                RestProxy.Token = result.Data?.Token;
+                RestProxy.Role = result.Data?.Role;
+                RestProxy.Flush();
+                return new CliActionResponse(result, message: $"login success ({result.Data?.Role.ToLower()})");
+            }
+            else if (result.StatusCode == HttpStatusCode.Conflict)
+            {
+                RestProxy.Host = request.Host;
+                RestProxy.Port = request.Port;
+
+                if (request.SSL)
+                {
+                    RestProxy.Schema = "https";
+                }
+
+                RestProxy.Username = null;
+                RestProxy.Password = null;
+                RestProxy.Token = null;
+                RestProxy.Role = null;
+                RestProxy.Flush();
+                return CliActionResponse.Empty;
             }
 
             RestProxy.Flush();
+            return new CliActionResponse(result);
         }
     }
 }

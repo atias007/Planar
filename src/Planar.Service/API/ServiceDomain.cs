@@ -166,13 +166,13 @@ namespace Planar.Service.API
         {
             if (AppSettings.AuthenticationMode == AuthMode.AllAnonymous)
             {
-                throw new RestValidationException(Consts.Undefined, "login service is not avaliable when authentication mode is disabled (AllAnonymous)");
+                throw new RestConflictException("login service is not avaliable when authentication mode is disabled (AllAnonymous)");
             }
 
             var userData = Resolve<UserData>();
             var user =
                 await userData.GetUserIdentity(request.Username) ??
-                throw new RestValidationException("username", $"user with username '{request.Username}' not exists");
+                throw new RestValidationException("username", $"user with username '{request.Username}' not exists", 100);
 
             var role = await userData.GetUserRole(request.Username);
             user!.RoleId = role;
@@ -180,7 +180,7 @@ namespace Planar.Service.API
             var verify = HashUtil.VerifyHash(request.Password, user!.Password, user!.Salt);
             if (!verify)
             {
-                throw new RestValidationException("password", "wrong password");
+                throw new RestValidationException("password", "wrong password", 101);
             }
 
             var token = HashUtil.CreateToken(user);

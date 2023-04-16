@@ -5,11 +5,9 @@ namespace Planar.CLI.Entities
 {
     public class CliLoginRequest
     {
-        [Required]
         [ActionProperty(DefaultOrder = 1)]
         public string Host { get; set; } = string.Empty;
 
-        [Required]
         [ActionProperty(DefaultOrder = 2)]
         public int Port { get; set; }
 
