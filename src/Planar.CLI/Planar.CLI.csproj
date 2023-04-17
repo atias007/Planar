@@ -68,8 +68,4 @@
 			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Proxy\" />
-	</ItemGroup>
 </Project>

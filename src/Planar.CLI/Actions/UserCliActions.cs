@@ -1,6 +1,7 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
+using Planar.CLI.Proxy;
 using RestSharp;
 using System;
 using System.Collections.Generic;

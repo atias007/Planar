@@ -3,6 +3,7 @@ using Planar.CLI.Attributes;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.CLI.General;
+using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
 using System;
@@ -28,7 +29,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        protected static string? CollectCliValue(string field, bool required, int minLength, int maxLength, string? regex = null, string? regexErrorMessage = null, string? defaultValue = null)
+        protected static string? CollectCliValue(string field, bool required, int minLength, int maxLength, string? regex = null, string? regexErrorMessage = null, string? defaultValue = null, bool secret = false)
         {
             var prompt = new TextPrompt<string>($"[turquoise2]  > {field.EscapeMarkup()}: [/]")
                 .Validate(value =>
@@ -56,7 +57,7 @@ namespace Planar.CLI.Actions
                 });
 
             if (!required) { prompt.AllowEmpty(); }
-
+            if (secret) { prompt.Secret(); }
             if (!string.IsNullOrEmpty(defaultValue))
             {
                 prompt.DefaultValue(defaultValue);

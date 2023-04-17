@@ -3,6 +3,7 @@ using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.DataProtect;
 using Planar.CLI.Entities;
+using Planar.CLI.Proxy;
 using RestSharp;
 using System;
 using System.Collections.Generic;
@@ -123,26 +124,22 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> Logout(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            ConnectData.Logout();
-            RestProxy.Username = null;
-            RestProxy.Password = null;
-            RestProxy.Token = null;
-            RestProxy.Role = null;
-            RestProxy.Flush();
+
+            // TODO: remember - ConnectData.Logout();
+            LoginProxy.Logout();
             return await Task.FromResult(CliActionResponse.Empty);
         }
 
         public static async Task InitializeLogin()
         {
-            var request = ConnectData.GetLoginRequest();
-            await InnerLogin(request);
+            // TODO: remember
+            // var request = ConnectData.GetLoginRequest();
+            // await InnerLogin(request);
         }
 
-        private static async Task<CliActionResponse> InnerLogin(CliLoginRequest? request, CancellationToken cancellationToken = default)
+        private static CliLoginRequest FillLoginRequest(CliLoginRequest? request)
         {
-            CliGeneral.Login.Set(request);
-            if (request == null) { return CliActionResponse.Empty; }
-
+            request ??= new CliLoginRequest();
             if (string.IsNullOrEmpty(request.Host))
             {
                 request.Host = CollectCliValue("host", true, 1, 50, defaultValue: "localhost") ?? string.Empty;
@@ -154,64 +151,43 @@ namespace Planar.CLI.Actions
                 request.Port = int.Parse(CollectCliValue("port", true, 1, 5, regexTepmplate, "invalid port", "2306") ?? "0");
             }
 
-            if (string.IsNullOrEmpty(request.User))
+            if (string.IsNullOrEmpty(request.Username))
             {
-                request.User = CollectCliValue("username", true, 2, 50);
+                request.Username = CollectCliValue("username", required: true, 2, 50);
             }
 
             if (string.IsNullOrEmpty(request.Password))
             {
-                request.Password = CollectCliValue("password", true, 2, 50);
+                request.Password = CollectCliValue("password", required: true, 2, 50, secret: true);
             }
 
-            var schema = request.SSL ? "https" : "http";
-            var body = new { Username = request.User, request.Password };
-            var restRequest = new RestRequest("service/login", Method.Post);
-            restRequest.AddBody(body);
-            var options = new RestClientOptions
-            {
-                BaseUrl = new UriBuilder(schema, request.Host, request.Port).Uri,
-                MaxTimeout = 10000,
-            };
+            return request;
+        }
 
-            var client = new RestClient(options);
-            var result = await client.ExecuteAsync<LoginResponse>(restRequest, cancellationToken);
+        private static async Task<CliActionResponse> InnerLogin(CliLoginRequest? request, CancellationToken cancellationToken = default)
+        {
+            // TODO: remember - CliGeneral.Login.Set(request)
+            var notnullRequest = FillLoginRequest(request);
+            var result = await LoginProxy.Login(notnullRequest, cancellationToken);
+
+            // Success authorize
             if (result.IsSuccessStatusCode)
             {
-                RestProxy.Host = request.Host;
-                RestProxy.Port = request.Port;
-
-                if (request.SSL)
-                {
-                    RestProxy.Schema = "https";
-                }
-
-                RestProxy.Username = request.User;
-                RestProxy.Password = request.Password;
-                RestProxy.Token = result.Data?.Token;
-                RestProxy.Role = result.Data?.Role;
-                RestProxy.Flush();
-                return new CliActionResponse(result, message: $"login success ({result.Data?.Role.ToLower()})");
+                return new CliActionResponse(result, message: $"login success ({LoginProxy.Role?.ToLower()})");
             }
             else if (result.StatusCode == HttpStatusCode.Conflict)
             {
-                RestProxy.Host = request.Host;
-                RestProxy.Port = request.Port;
-
-                if (request.SSL)
-                {
-                    RestProxy.Schema = "https";
-                }
-
-                RestProxy.Username = null;
-                RestProxy.Password = null;
-                RestProxy.Token = null;
-                RestProxy.Role = null;
+                // No need to authorize
+                RestProxy.Host = notnullRequest.Host;
+                RestProxy.Port = notnullRequest.Port;
+                RestProxy.SecureProtocol = notnullRequest.SecureProtocol;
                 RestProxy.Flush();
+
+                LoginProxy.Logout();
                 return CliActionResponse.Empty;
             }
 
-            RestProxy.Flush();
+            // Login error
             return new CliActionResponse(result);
         }
     }

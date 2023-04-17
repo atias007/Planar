@@ -1,4 +1,5 @@
 ﻿using Planar.CLI.Attributes;
+using Planar.CLI.Proxy;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,9 +23,9 @@ namespace Planar.CLI.Actions
         {
             if (cancellationToken.IsCancellationRequested) { throw new TaskCanceledException("task was canceled"); }
             var title =
-                string.IsNullOrEmpty(RestProxy.Username) ?
+                string.IsNullOrEmpty(LoginProxy.Username) ?
                 "anonymous" :
-                $"{RestProxy.Username} ({RestProxy.Role?.ToLower()})";
+                $"{LoginProxy.Username} ({LoginProxy.Role?.ToLower()})";
 
             var result = new CliActionResponse(null, message: title);
             return await Task.FromResult(result);
