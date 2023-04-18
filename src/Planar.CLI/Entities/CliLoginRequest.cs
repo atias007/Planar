@@ -1,5 +1,4 @@
 ﻿using Planar.CLI.Attributes;
-using System;
 
 namespace Planar.CLI.Entities
 {
@@ -32,7 +31,7 @@ namespace Planar.CLI.Entities
         [IterativeActionProperty]
         public bool Iterative { get; set; }
 
-        internal DateTimeOffset ConnectDate { get; set; }
+        internal string Key => $"{Host}:{Port}";
 
         public string GetCliMarkupColor()
         {

@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using Planar.CLI.Actions;
 using Planar.CLI.CliGeneral;
+using Planar.CLI.DataProtect;
 using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
 using Planar.CLI.General;
@@ -406,7 +407,7 @@ namespace Planar.CLI
             const string help = "help";
             while (string.Compare(command, exit, true) != 0)
             {
-                var color = Login.Current.GetCliMarkupColor();
+                var color = ConnectUtil.Current.GetCliMarkupColor();
                 AnsiConsole.Markup($"[{color}]{RestProxy.Host.EscapeMarkup()}:{RestProxy.Port}[/]> ");
                 command = Console.ReadLine();
                 if (string.Compare(command, exit, true) == 0)

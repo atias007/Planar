@@ -1,4 +1,4 @@
-﻿using Planar.API.Common.Entities;
+﻿using Planar.CLI.DataProtect;
 using RestSharp;
 using System;
 using System.Net;
@@ -10,8 +10,8 @@ namespace Planar.CLI.Proxy
     internal static class RestProxy
     {
         public static bool SecureProtocol { get; set; }
-        public static string Host { get; set; } = "localhost";
-        public static int Port { get; set; } = 2306;
+        public static string Host { get; set; } = ConnectUtil.DefaultHost;
+        public static int Port { get; set; } = ConnectUtil.DefaultPort;
 
         private static RestClient? _client;
         private static readonly object _lock = new();

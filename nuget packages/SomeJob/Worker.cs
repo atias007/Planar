@@ -60,6 +60,38 @@ namespace SomeJob
 
             SimpleInt += 5;
             IgnoreData = "x";
+
+            for (int i = 0; i < 1250; i++)
+            {
+                try
+                {
+                    // Do Something 1
+
+                    // Do Something 2
+
+                    // Do Something 3
+
+                    // Do Something 4
+
+                    IncreaseEffectedRows();
+                }
+                catch (Exception ex)
+                {
+                    AddAggragateException(ex);
+                }
+                finally
+                {
+                    UpdateProgress(i, 1250);
+                    FailOnStopRequest();
+
+                    ////if(CheckIfStopRequest())
+                    ////{
+                    ////    // exist procedure
+                    ////}
+                }
+            }
+
+            CheckAggragateException();
         }
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

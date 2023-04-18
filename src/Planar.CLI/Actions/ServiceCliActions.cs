@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Hosting;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.DataProtect;
 using Planar.CLI.Entities;
@@ -7,9 +6,7 @@ using Planar.CLI.Proxy;
 using RestSharp;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -114,9 +111,13 @@ namespace Planar.CLI.Actions
         [Action("login")]
         public static async Task<CliActionResponse> Login(CliLoginRequest request, CancellationToken cancellationToken = default)
         {
-            var response = await InnerLogin(request, cancellationToken);
+            var notnullRequest = FillLoginRequest(request);
+            var response = await InnerLogin(notnullRequest, cancellationToken);
+            if (response.Response.IsSuccessful)
+            {
+                ConnectUtil.SaveLoginRequest(request, LoginProxy.Token);
+            }
 
-            //// ConnectData.SetLoginRequest(request);
             return response;
         }
 
@@ -125,50 +126,52 @@ namespace Planar.CLI.Actions
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            // TODO: remember - ConnectData.Logout();
             LoginProxy.Logout();
+            ConnectUtil.Logout();
             return await Task.FromResult(CliActionResponse.Empty);
         }
 
         public static async Task InitializeLogin()
         {
-            // TODO: remember
-            // var request = ConnectData.GetLoginRequest();
-            // await InnerLogin(request);
+            var request = ConnectUtil.GetSavedLoginRequest();
+            if (request == null || !request.Remember) { return; }
+
+            await InnerLogin(request);
         }
 
         private static CliLoginRequest FillLoginRequest(CliLoginRequest? request)
         {
+            const string regexTepmplate = "^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$";
+
             request ??= new CliLoginRequest();
             if (string.IsNullOrEmpty(request.Host))
             {
-                request.Host = CollectCliValue("host", true, 1, 50, defaultValue: "localhost") ?? string.Empty;
+                request.Host = CollectCliValue("host", true, 1, 50, defaultValue: ConnectUtil.DefaultHost) ?? string.Empty;
             }
 
             if (request.Port == 0)
             {
-                const string regexTepmplate = "^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$";
-                request.Port = int.Parse(CollectCliValue("port", true, 1, 5, regexTepmplate, "invalid port", "2306") ?? "0");
+                request.Port = int.Parse(CollectCliValue("port", true, 1, 5, regexTepmplate, "invalid port", ConnectUtil.DefaultPort.ToString()) ?? ConnectUtil.DefaultPort.ToString());
             }
 
             if (string.IsNullOrEmpty(request.Username))
             {
-                request.Username = CollectCliValue("username", required: true, 2, 50);
+                request.Username = CollectCliValue("username", required: false, 2, 50);
             }
 
             if (string.IsNullOrEmpty(request.Password))
             {
-                request.Password = CollectCliValue("password", required: true, 2, 50, secret: true);
+                request.Password = CollectCliValue("password", required: false, 2, 50, secret: true);
             }
+
+            // TODO: complete color, secure from connect data
 
             return request;
         }
 
-        private static async Task<CliActionResponse> InnerLogin(CliLoginRequest? request, CancellationToken cancellationToken = default)
+        private static async Task<CliActionResponse> InnerLogin(CliLoginRequest request, CancellationToken cancellationToken = default)
         {
-            // TODO: remember - CliGeneral.Login.Set(request)
-            var notnullRequest = FillLoginRequest(request);
-            var result = await LoginProxy.Login(notnullRequest, cancellationToken);
+            var result = await LoginProxy.Login(request, cancellationToken);
 
             // Success authorize
             if (result.IsSuccessStatusCode)
@@ -178,9 +181,9 @@ namespace Planar.CLI.Actions
             else if (result.StatusCode == HttpStatusCode.Conflict)
             {
                 // No need to authorize
-                RestProxy.Host = notnullRequest.Host;
-                RestProxy.Port = notnullRequest.Port;
-                RestProxy.SecureProtocol = notnullRequest.SecureProtocol;
+                RestProxy.Host = request.Host;
+                RestProxy.Port = request.Port;
+                RestProxy.SecureProtocol = request.SecureProtocol;
                 RestProxy.Flush();
 
                 LoginProxy.Logout();

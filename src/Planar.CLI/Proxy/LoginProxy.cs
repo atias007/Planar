@@ -28,7 +28,7 @@ namespace Planar.CLI.Proxy
             return await Login(login, cancellationToken);
         }
 
-        public static async Task<RestResponse> Login(CliLoginRequest request, CancellationToken cancellationToken)
+        public static async Task<RestResponse<LoginResponse>> Login(CliLoginRequest request, CancellationToken cancellationToken)
         {
             var login = new LoginData
             {
@@ -42,7 +42,7 @@ namespace Planar.CLI.Proxy
             return await Login(login, cancellationToken);
         }
 
-        public static async Task<RestResponse> Login(LoginData login, CancellationToken cancellationToken)
+        public static async Task<RestResponse<LoginResponse>> Login(LoginData login, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(login.Host)) { throw new CliException("host is mandatory"); }
             var schema = RestProxy.GetSchema(login.SecureProtocol);

@@ -5,28 +5,45 @@ using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Spectre.Console;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Planar.CLI.DataProtect
 {
-    public static class ConnectData
+    public static class ConnectUtil
     {
-        static ConnectData()
+        public const string DefaultHost = "localhost";
+        public const int DefaultPort = 2306;
+        public const int DefaultSecurePort = 2610;
+
+        static ConnectUtil()
         {
             InitializeMetadataFolder();
             Load();
         }
 
+        public static CliLoginRequest Current { get; private set; } = new CliLoginRequest();
+
         private static UserMetadata Data { get; set; } = new();
 
         private static string MetadataFilename { get; set; } = string.Empty;
 
-        public static CliLoginRequest? GetLoginRequest()
+        public static CliLoginRequest? GetSavedLoginRequest()
         {
             try
             {
                 FilterOldItems();
-                return Data?.LoginRequest;
+                var last = Data.Logins
+                    .Where(l => !l.Deprecated)
+                    .OrderByDescending(l => l.ConnectDate)
+                    .FirstOrDefault();
+
+                if (last == null) { return null; }
+
+                var result = Map(last);
+                Current = result;
+                return result;
             }
             catch (Exception ex)
             {
@@ -35,15 +52,47 @@ namespace Planar.CLI.DataProtect
             }
         }
 
-        public static void SetLoginRequest(CliLoginRequest request)
+        public static void Logout()
+        {
+            Current.Username = null;
+            Current.Password = null;
+
+            var login = Data.Logins.FirstOrDefault(l => l.Key == Current.Key);
+            if (login != null)
+            {
+                login.Token = null;
+            }
+
+            Save();
+        }
+
+        public static void SaveLoginRequest(CliLoginRequest request, string? token)
         {
             try
             {
-                if (!request.Remember) { return; }
-                Logout();
+                if (!request.Remember)
+                {
+                    request.Username = null;
+                    request.Password = null;
+                }
 
-                request.ConnectDate = DateTimeOffset.Now.Date;
-                Data.LoginRequest = request;
+                Current = request;
+
+                var login = ReverseMap(request);
+                login.Token = token;
+                Data.Logins.RemoveAll(l => l.Key == request.Key);
+
+                if (request.Remember)
+                {
+                    var clear = Data.Logins.Where(l => l.Remember).ToList();
+                    clear.ForEach(l =>
+                    {
+                        l.Remember = false;
+                        l.RememberDays = null;
+                    });
+                }
+
+                Data.Logins.Add(login);
 
                 Save();
             }
@@ -55,22 +104,43 @@ namespace Planar.CLI.DataProtect
 
         private static void FilterOldItems()
         {
-            var login = Data.LoginRequest;
-
-            if (login == null) { return; }
-
-            if (login.ConnectDate.AddDays(login.RememberDays) < DateTimeOffset.Now.Date)
-            {
-                Data.LoginRequest = null;
-            }
-
+            Data.Logins.RemoveAll(l => l.Deprecated);
             Save();
         }
 
-        public static void Logout()
+        private static CliLoginRequest Map(LoginData data)
         {
-            Data.LoginRequest = null;
-            Save();
+            var result = new CliLoginRequest
+            {
+                Color = data.Color,
+                Host = data.Host,
+                Password = data.Password,
+                Port = data.Port,
+                Username = data.Username,
+                Remember = data.Remember,
+                RememberDays = data.RememberDays.GetValueOrDefault(),
+                SecureProtocol = data.SecureProtocol
+            };
+
+            return result;
+        }
+
+        private static LoginData ReverseMap(CliLoginRequest data)
+        {
+            var result = new LoginData
+            {
+                Color = data.Color,
+                Host = data.Host,
+                Password = data.Password,
+                Port = data.Port,
+                Username = data.Username,
+                Remember = data.Remember,
+                RememberDays = data.RememberDays,
+                SecureProtocol = data.SecureProtocol,
+                ConnectDate = DateTimeOffset.Now.DateTime
+            };
+
+            return result;
         }
 
         private static IDataProtector GetProtector()
@@ -95,15 +165,12 @@ namespace Planar.CLI.DataProtect
         {
             try
             {
-                if (!File.Exists(MetadataFilename))
-                {
-                    return;
-                }
-
+                if (!File.Exists(MetadataFilename)) { return; }
                 var text = File.ReadAllText(MetadataFilename);
                 var protector = GetProtector();
                 text = protector.Unprotect(text);
                 Data = JsonConvert.DeserializeObject<UserMetadata>(text) ?? new UserMetadata();
+                if (Data.Logins == null) { Data.Logins = new List<LoginData>(); }
                 FilterOldItems();
             }
             catch (Exception ex)
