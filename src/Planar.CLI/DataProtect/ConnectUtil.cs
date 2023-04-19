@@ -29,13 +29,13 @@ namespace Planar.CLI.DataProtect
 
         private static string MetadataFilename { get; set; } = string.Empty;
 
-        public static CliLoginRequest? GetSavedLoginRequest()
+        public static CliLoginRequest? GetSavedLoginRequestWithCredentials()
         {
             try
             {
-                FilterOldItems();
+                LogoutOldItems();
                 var last = Data.Logins
-                    .Where(l => !l.Deprecated)
+                    .Where(l => l.HasCredentials)
                     .OrderByDescending(l => l.ConnectDate)
                     .FirstOrDefault();
 
@@ -52,6 +52,31 @@ namespace Planar.CLI.DataProtect
             }
         }
 
+        public static LoginData? GetSavedLogin(string key)
+        {
+            try
+            {
+                LogoutOldItems();
+                var last = Data.Logins
+                    .Where(l => l.Key == key)
+                    .OrderByDescending(l => l.ConnectDate)
+                    .FirstOrDefault();
+
+                return last;
+            }
+            catch (Exception ex)
+            {
+                HandleException(ex);
+                return null;
+            }
+        }
+
+        public static void Flush()
+        {
+            Data.Logins.Clear();
+            Save();
+        }
+
         public static void Logout()
         {
             Current.Username = null;
@@ -61,9 +86,18 @@ namespace Planar.CLI.DataProtect
             if (login != null)
             {
                 login.Token = null;
+                login.Username = null;
+                login.Password = null;
             }
 
             Save();
+        }
+
+        public static void Logout(LoginData login)
+        {
+            login.Username = null;
+            login.Password = null;
+            login.Token = null;
         }
 
         public static void SaveLoginRequest(CliLoginRequest request, string? token)
@@ -102,9 +136,10 @@ namespace Planar.CLI.DataProtect
             }
         }
 
-        private static void FilterOldItems()
+        private static void LogoutOldItems()
         {
-            Data.Logins.RemoveAll(l => l.Deprecated);
+            var old = Data.Logins.Where(l => l.Deprecated).ToList();
+            old.ForEach(o => Logout(o));
             Save();
         }
 
@@ -171,7 +206,7 @@ namespace Planar.CLI.DataProtect
                 text = protector.Unprotect(text);
                 Data = JsonConvert.DeserializeObject<UserMetadata>(text) ?? new UserMetadata();
                 if (Data.Logins == null) { Data.Logins = new List<LoginData>(); }
-                FilterOldItems();
+                LogoutOldItems();
             }
             catch (Exception ex)
             {

@@ -128,12 +128,31 @@ namespace Planar.CLI.Actions
 
             LoginProxy.Logout();
             ConnectUtil.Logout();
+            RestProxy.Flush();
+            return await Task.FromResult(CliActionResponse.Empty);
+        }
+
+        [Action("flush-logins")]
+        public static async Task<CliActionResponse> FlushLogins(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ConnectUtil.Flush();
+            return await Task.FromResult(CliActionResponse.Empty);
+        }
+
+        [Action("login-color")]
+        public static async Task<CliActionResponse> LoginColor(CliLoginColorRequest request, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            ConnectUtil.Current.Color = request.Color;
+            // TODO: persist the changed color
+            // TODO: add menu to set color
             return await Task.FromResult(CliActionResponse.Empty);
         }
 
         public static async Task InitializeLogin()
         {
-            var request = ConnectUtil.GetSavedLoginRequest();
+            var request = ConnectUtil.GetSavedLoginRequestWithCredentials();
             if (request == null || !request.Remember) { return; }
 
             await InnerLogin(request);
@@ -144,6 +163,8 @@ namespace Planar.CLI.Actions
             const string regexTepmplate = "^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$";
 
             request ??= new CliLoginRequest();
+            if (!InteractiveMode) { return request; }
+
             if (string.IsNullOrEmpty(request.Host))
             {
                 request.Host = CollectCliValue("host", true, 1, 50, defaultValue: ConnectUtil.DefaultHost) ?? string.Empty;
@@ -164,7 +185,12 @@ namespace Planar.CLI.Actions
                 request.Password = CollectCliValue("password", required: false, 2, 50, secret: true);
             }
 
-            // TODO: complete color, secure from connect data
+            var savedItem = ConnectUtil.GetSavedLogin(request.Key);
+            if (savedItem != null)
+            {
+                request.Color = savedItem.Color;
+                request.SecureProtocol = savedItem.SecureProtocol;
+            }
 
             return request;
         }
