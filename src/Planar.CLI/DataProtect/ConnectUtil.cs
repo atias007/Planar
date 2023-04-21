@@ -29,7 +29,7 @@ namespace Planar.CLI.DataProtect
 
         private static string MetadataFilename { get; set; } = string.Empty;
 
-        public static CliLoginRequest? GetSavedLoginRequestWithCredentials()
+        public static CliLoginRequest? GetLastLoginRequestWithCredentials()
         {
             try
             {
@@ -69,6 +69,18 @@ namespace Planar.CLI.DataProtect
                 HandleException(ex);
                 return null;
             }
+        }
+
+        public static void SetColor(CliColors color)
+        {
+            Current.Color = color;
+            var login = Data.Logins.FirstOrDefault(l => l.Key == Current.Key);
+            if (login != null)
+            {
+                login.Color = color;
+            }
+
+            Save();
         }
 
         public static void Flush()

@@ -15,6 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -40,6 +41,10 @@ namespace Planar.CLI
         {
             Console.OutputEncoding = Encoding.UTF8;
             Console.CancelKeyPress += Console_CancelKeyPress;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Console.Title = "Planar: Command Line Interface";
+            }
 
             try
             {
@@ -253,11 +258,11 @@ namespace Planar.CLI
             {
                 if (finaleException is CliWarningException)
                 {
-                    AnsiConsole.MarkupLine(CliFormat.GetWarningMarkup(Markup.Escape(finaleException.Message)));
+                    AnsiConsole.MarkupLine(CliFormat.GetWarningMarkup(finaleException.Message));
                 }
                 else
                 {
-                    MarkupCliLine(CliFormat.GetErrorMarkup(Markup.Escape(finaleException.Message)));
+                    MarkupCliLine(CliFormat.GetErrorMarkup(finaleException.Message));
                 }
             }
         }
@@ -294,7 +299,8 @@ namespace Planar.CLI
 
             if (response.ErrorMessage != null && response.ErrorMessage.Contains("No connection could be made"))
             {
-                MarkupCliLine(CliFormat.GetErrorMarkup($"no connection could be made to planar deamon ({RestProxy.Host}:{RestProxy.Port})"));
+                var message = response.ErrorMessage.Replace("because the target machine actively refused it.", "to planar deamon");
+                MarkupCliLine(CliFormat.GetErrorMarkup(message.ToLower()));
             }
             else if (response.ErrorMessage != null && response.ErrorMessage.Contains("No such host is known"))
             {
@@ -404,7 +410,6 @@ namespace Planar.CLI
             CliHelpGenerator.ShowModules();
 
             const string exit = "exit";
-            const string help = "help";
             while (string.Compare(command, exit, true) != 0)
             {
                 var color = ConnectUtil.Current.GetCliMarkupColor();
@@ -415,15 +420,8 @@ namespace Planar.CLI
                     break;
                 }
 
-                if (string.Compare(command, help, true) == 0)
-                {
-                    CliHelpGenerator.ShowModules();
-                }
-                else
-                {
-                    var args = SplitCommandLine(command).ToArray();
-                    HandleCliCommand(args, cliActions);
-                }
+                var args = SplitCommandLine(command).ToArray();
+                HandleCliCommand(args, cliActions);
             }
         }
 

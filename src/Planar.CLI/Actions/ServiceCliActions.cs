@@ -2,11 +2,13 @@
 using Planar.CLI.Attributes;
 using Planar.CLI.DataProtect;
 using Planar.CLI.Entities;
+using Planar.CLI.General;
 using Planar.CLI.Proxy;
 using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -137,6 +139,7 @@ namespace Planar.CLI.Actions
         {
             cancellationToken.ThrowIfCancellationRequested();
             ConnectUtil.Flush();
+            ConnectUtil.SetColor(CliColors.Default);
             return await Task.FromResult(CliActionResponse.Empty);
         }
 
@@ -144,18 +147,61 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> LoginColor(CliLoginColorRequest request, CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            ConnectUtil.Current.Color = request.Color;
-            // TODO: persist the changed color
-            // TODO: add menu to set color
+
+            if (request.Color == null)
+            {
+                var colorType = typeof(CliColors);
+                var options = CliActionMetadata.GetEnumOptions(colorType);
+                var colorText = PromptSelection(options, "color", true);
+                var parse = CliArgumentsUtil.ParseEnum(colorType, colorText);
+                if (parse != null)
+                {
+                    request.Color = (CliColors)parse;
+                }
+            }
+
+            ConnectUtil.SetColor(request.Color.GetValueOrDefault());
             return await Task.FromResult(CliActionResponse.Empty);
         }
 
         public static async Task InitializeLogin()
         {
-            var request = ConnectUtil.GetSavedLoginRequestWithCredentials();
-            if (request == null || !request.Remember) { return; }
+            var request = ConnectUtil.GetLastLoginRequestWithCredentials();
+            if (request == null)
+            {
+                SetDefaultAnonymousLogin();
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    Console.Title = $"{Console.Title} ({CliConsts.Anonymous})";
+                }
+            }
+            else
+            {
+                await InnerLogin(request);
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    Console.Title = $"{Console.Title} ({LoginProxy.Username})";
+                }
+            }
+        }
 
-            await InnerLogin(request);
+        private static void SetDefaultAnonymousLogin()
+        {
+            ConnectUtil.Current.Host = RestProxy.Host;
+            ConnectUtil.Current.Port = RestProxy.Port;
+
+            var savedItem = ConnectUtil.GetSavedLogin(ConnectUtil.Current.Key);
+
+            if (savedItem == null)
+            {
+                ConnectUtil.SaveLoginRequest(ConnectUtil.Current, token: null);
+            }
+            else
+            {
+                RestProxy.SecureProtocol = savedItem.SecureProtocol;
+                ConnectUtil.Current.Color = savedItem.Color;
+                ConnectUtil.Current.SecureProtocol = savedItem.SecureProtocol;
+            }
         }
 
         private static CliLoginRequest FillLoginRequest(CliLoginRequest? request)

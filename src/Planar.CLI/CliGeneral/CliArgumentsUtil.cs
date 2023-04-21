@@ -138,7 +138,10 @@ namespace Planar.CLI
 
             if (list.Count == 1)
             {
-                throw new CliValidationException($"missing command for module '{list[0]}'\r\n. command line format is 'planar-cli <module> <command> [<options>]'");
+                var message = $"missing command for module '{list[0]}'\r\ncommand line format is {{0}}'<module> <command> [<options>]'";
+                var cliCommand = BaseCliAction.InteractiveMode ? string.Empty : $"{CliHelpGenerator.CliCommand} ";
+                var final = string.Format(message, cliCommand);
+                throw new CliValidationException(final);
             }
 
             // command not found
@@ -343,7 +346,7 @@ namespace Planar.CLI
             return matchProp;
         }
 
-        private static object? ParseEnum(Type type, string value)
+        public static object? ParseEnum(Type type, string? value)
         {
             if (value == null) { return null; }
 

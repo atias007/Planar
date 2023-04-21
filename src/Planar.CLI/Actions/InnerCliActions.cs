@@ -1,5 +1,6 @@
 ﻿using Planar.CLI.Attributes;
-using Planar.CLI.DataProtect;
+using Planar.CLI.CliGeneral;
+using Planar.CLI.General;
 using Planar.CLI.Proxy;
 using System;
 using System.Threading;
@@ -25,11 +26,18 @@ namespace Planar.CLI.Actions
             if (cancellationToken.IsCancellationRequested) { throw new TaskCanceledException("task was canceled"); }
             var title =
                 string.IsNullOrEmpty(LoginProxy.Username) ?
-                "anonymous" :
+                CliConsts.Anonymous :
                 $"{LoginProxy.Username} ({LoginProxy.Role?.ToLower()})";
 
             var result = new CliActionResponse(null, message: title);
             return await Task.FromResult(result);
+        }
+
+        [Action("help")]
+        public static async Task<CliActionResponse> Help(CancellationToken cancellationToken = default)
+        {
+            CliHelpGenerator.ShowModules();
+            return await Task.FromResult(CliActionResponse.Empty);
         }
 
         ////[Action("plot")]
