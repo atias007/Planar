@@ -3,6 +3,7 @@ using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
+using Planar.Service.Model;
 using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
@@ -93,13 +94,25 @@ namespace Planar.Controllers
 
         [HttpPut("{id}/user/{userId}")]
         [EditorAuthorize]
-        [SwaggerOperation(OperationId = "post_group_id_user", Description = "Add user to group", Summary = "Add User To Group")]
+        [SwaggerOperation(OperationId = "post_group_id_user_userId", Description = "Join user to group", Summary = "Join User To Group")]
         [NoContentResponse]
         [BadRequestResponse]
         [NotFoundResponse]
         public async Task<IActionResult> AddUserToGroup([FromRoute][Id] int id, [FromRoute][Id] int userId)
         {
             await BusinesLayer.AddUserToGroup(id, userId);
+            return NoContent();
+        }
+
+        [HttpPatch("{id}/role/{role}")]
+        [AdministratorAuthorize]
+        [SwaggerOperation(OperationId = "post_group_id_role_roleid", Description = "Set role to group", Summary = "Set Role To Group")]
+        [NoContentResponse]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<IActionResult> SetRoleToGroup([FromRoute][Id] int id, [FromRoute] Roles role)
+        {
+            await BusinesLayer.SetRoleToGroup(id, role);
             return NoContent();
         }
 

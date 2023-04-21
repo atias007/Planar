@@ -1,5 +1,6 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
+using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
 using Planar.CLI.General;
@@ -641,10 +642,10 @@ namespace Planar.CLI.Actions
                     .AddChoiceGroup("all", "job details", "job data", "properties", "triggers", "triggers data")
                     .AddChoiceGroup("all job", "job details", "job data", "properties")
                     .AddChoiceGroup("all triggers", "triggers", "triggers data")
-                    .AddChoiceGroup(CancelOption)
+                    .AddChoiceGroup(CliPromptUtil.CancelOption)
                     );
 
-            CheckForCancelOption(options);
+            CliPromptUtil.CheckForCancelOption(options);
             var result = MapUpdateJobOptions(options);
             return result;
         }

@@ -6,7 +6,7 @@ namespace Planar.Authorization
     {
         public AdministratorAuthorizeAttribute()
         {
-            Policy = Service.Model.DataObjects.Roles.Administrator.ToString();
+            Policy = API.Common.Entities.Roles.Administrator.ToString();
         }
     }
 }

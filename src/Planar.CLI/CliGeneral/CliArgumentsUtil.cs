@@ -363,7 +363,8 @@ namespace Planar.CLI
                     return ParseEnum(type, value);
                 }
 
-                throw;
+                var values = string.Join(',', Enum.GetNames(type));
+                throw new CliException($"value '{value}' is invalid. available values for this argument is: {values.ToLower()}");
             }
         }
 
@@ -396,6 +397,10 @@ namespace Planar.CLI
                 }
 
                 prop.SetValue(instance, Convert.ChangeType(objValue, prop.PropertyType, CultureInfo.CurrentCulture));
+            }
+            catch (CliException)
+            {
+                throw;
             }
             catch (Exception)
             {

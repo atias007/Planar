@@ -5,7 +5,9 @@ using Planar.Service.Model.DataObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Group = Planar.Service.Model.Group;
 
 namespace Planar.Service.Data
 {
@@ -102,6 +104,13 @@ namespace Planar.Service.Data
             if (group == null) { return; }
 
             group.Users.Add(user);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task SetRoleToGroup(int groupId, int roleId)
+        {
+            var group = new Model.Group { Id = groupId, RoleId = roleId };
+            _context.Entry(group).Property(g => g.RoleId).IsModified = true;
             await _context.SaveChangesAsync();
         }
 

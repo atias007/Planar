@@ -18,7 +18,6 @@ namespace Planar.CLI.Actions
 {
     public abstract class BaseCliAction
     {
-        protected const string CancelOption = "<cancel>";
         protected const string JobFileName = "JobFile.yml";
 
         public static bool InteractiveMode { get; set; }
@@ -212,46 +211,7 @@ namespace Planar.CLI.Actions
 
         protected static string? PromptSelection(IEnumerable<string>? items, string title, bool addCancelOption = true)
         {
-            if (items == null) { return null; }
-            IEnumerable<string> finalItems;
-            if (addCancelOption)
-            {
-                var temp = items.ToList();
-                temp.Add(CancelOption);
-                finalItems = temp;
-            }
-            else
-            {
-                finalItems = items;
-            }
-
-            using var _ = new TokenBlockerScope();
-            var selectedItem = AnsiConsole.Prompt(
-                 new SelectionPrompt<string>()
-                     .Title($"[underline][gray]select [/][white]{title?.EscapeMarkup()}[/][gray] from the following list (press [/][blue]enter[/][gray] to select):[/][/]")
-                     .PageSize(20)
-                     .MoreChoicesText($"[grey](Move [/][blue]up[/][grey] and [/][blue]down[/] [grey]to reveal more [/][white]{title?.EscapeMarkup()}s[/])")
-                     .AddChoices(finalItems));
-
-            CheckForCancelOption(selectedItem);
-
-            return selectedItem;
-        }
-
-        protected static void CheckForCancelOption(string value)
-        {
-            if (value == CancelOption)
-            {
-                throw new CliWarningException("operation was canceled");
-            }
-        }
-
-        protected static void CheckForCancelOption(IEnumerable<string> values)
-        {
-            if (values.Any(v => v == CancelOption))
-            {
-                throw new CliWarningException("operation was canceled");
-            }
+            return CliPromptUtil.PromptSelection(items, title, addCancelOption);
         }
 
         protected static bool ConfirmAction(string title)

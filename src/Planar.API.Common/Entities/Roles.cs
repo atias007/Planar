@@ -1,4 +1,4 @@
-﻿namespace Planar.Service.Model.DataObjects
+﻿namespace Planar.API.Common.Entities
 {
     public enum Roles
     {

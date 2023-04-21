@@ -1,10 +1,13 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
+using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
+using Planar.CLI.General;
 using Planar.CLI.Proxy;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -70,9 +73,26 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
+        [Action("role")]
+        public static async Task<CliActionResponse> SetRole(CliSetRoleRequest request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("group/{id}/role/{role}", Method.Patch)
+               .AddUrlSegment("id", request.GroupId)
+               .AddUrlSegment("role", (int)request.Role);
+
+            var result = await RestProxy.Invoke(restRequest, cancellationToken);
+            return new CliActionResponse(result);
+        }
+
         [Action("join")]
         public static async Task<CliActionResponse> AddUserToGroup(CliUserToGroupRequest request, CancellationToken cancellationToken = default)
         {
+            var wrapper = await FillCliUserToGroupRequest(request, cancellationToken);
+            if (!wrapper.IsSuccessful)
+            {
+                return new CliActionResponse(wrapper.FailResponse);
+            }
+
             var restRequest = new RestRequest("group/{id}/user/{userId}", Method.Put)
                .AddParameter("id", request.GroupId, ParameterType.UrlSegment)
                .AddParameter("userId", request.UserId, ParameterType.UrlSegment);
@@ -84,12 +104,37 @@ namespace Planar.CLI.Actions
         [Action("exclude")]
         public static async Task<CliActionResponse> RemoveUserFromGroup(CliUserToGroupRequest request, CancellationToken cancellationToken = default)
         {
+            var wrapper = await FillCliUserToGroupRequest(request, cancellationToken);
+            if (!wrapper.IsSuccessful)
+            {
+                return new CliActionResponse(wrapper.FailResponse);
+            }
+
             var restRequest = new RestRequest("group/{id}/user/{userId}", Method.Delete)
                .AddParameter("id", request.GroupId, ParameterType.UrlSegment)
                .AddParameter("userId", request.UserId, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);
             return new CliActionResponse(result);
+        }
+
+        private static async Task<CliPromptWrapper> FillCliUserToGroupRequest(CliUserToGroupRequest request, CancellationToken cancellationToken)
+        {
+            if (request.GroupId == 0)
+            {
+                var p1 = await CliPromptUtil.Groups(cancellationToken);
+                if (!p1.IsSuccessful) { return p1; }
+                request.GroupId = p1.Value;
+            }
+
+            if (request.UserId == 0)
+            {
+                var p1 = await CliPromptUtil.Users(cancellationToken);
+                if (!p1.IsSuccessful) { return p1; }
+                request.UserId = p1.Value;
+            }
+
+            return CliPromptWrapper.Success;
         }
     }
 }

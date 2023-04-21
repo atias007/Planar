@@ -4,9 +4,12 @@ PLAN FOR V 1.3.0
 - documentation
 - authorization
   * option to see the role for user
-  * option to set role to group
   * test authorize on odata
-  * auto logout after 20 minutes of unuse
+  // TODO validate role --> { throw new RestNotFoundException($"role {role} does not exist"); }
+  * put to patch in group & users controller
+  * add GET /group/roles + CLI group roles (list of roles)
+
+
 - cli - menu on join (or unjoin) user to group
 
 - add validation to JobRunnerBuilder in test nuget package

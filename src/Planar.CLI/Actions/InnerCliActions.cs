@@ -13,7 +13,7 @@ namespace Planar.CLI.Actions
     {
         [Action("cls")]
         [Action("clear")]
-        public static async Task<CliActionResponse> GetParameter(CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> Clear(CancellationToken cancellationToken = default)
         {
             if (cancellationToken.IsCancellationRequested) { throw new TaskCanceledException("task was canceled"); }
             Console.Clear();
@@ -36,6 +36,7 @@ namespace Planar.CLI.Actions
         [Action("help")]
         public static async Task<CliActionResponse> Help(CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             CliHelpGenerator.ShowModules();
             return await Task.FromResult(CliActionResponse.Empty);
         }

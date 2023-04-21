@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Planar.Service.Model.DataObjects;
+using Planar.API.Common.Entities;
 
 namespace Planar.Authorization
 {

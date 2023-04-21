@@ -13,6 +13,7 @@ namespace Planar.Service.Validation
             RuleFor(u => u.Reference3).MaximumLength(500);
             RuleFor(u => u.Reference4).MaximumLength(500);
             RuleFor(u => u.Reference5).MaximumLength(500);
+            RuleFor(u => u.RoleId).IsInEnum();
         }
     }
 }

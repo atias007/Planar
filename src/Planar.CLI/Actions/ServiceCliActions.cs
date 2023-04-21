@@ -170,18 +170,11 @@ namespace Planar.CLI.Actions
             if (request == null)
             {
                 SetDefaultAnonymousLogin();
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    Console.Title = $"{Console.Title} ({CliConsts.Anonymous})";
-                }
+                Console.Title = $"{CliConsts.Title} ({CliConsts.Anonymous})";
             }
             else
             {
                 await InnerLogin(request);
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    Console.Title = $"{Console.Title} ({LoginProxy.Username})";
-                }
             }
         }
 
@@ -248,6 +241,8 @@ namespace Planar.CLI.Actions
             // Success authorize
             if (result.IsSuccessStatusCode)
             {
+                Console.Title = $"{CliConsts.Title} ({request.Username})";
+
                 return new CliActionResponse(result, message: $"login success ({LoginProxy.Role?.ToLower()})");
             }
             else if (result.StatusCode == HttpStatusCode.Conflict)

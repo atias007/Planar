@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Planar.API.Common.Entities;
 using Planar.Authorization;
 using Planar.Common;
 using Planar.Filters;

@@ -190,8 +190,8 @@ namespace Planar.CLI
         {
             var table = new Table();
             if (data == null) { return table; }
-            table.AddColumns("Id", "Name", "User Count");
-            data.ForEach(r => table.AddRow($"{r.Id}", r.Name.EscapeMarkup(), $"{r.UsersCount}"));
+            table.AddColumns("Id", "Name", "Role", "User Count");
+            data.ForEach(r => table.AddRow($"{r.Id}", r.Name.EscapeMarkup(), r.Role.EscapeMarkup(), $"{r.UsersCount}"));
             return table;
         }
 

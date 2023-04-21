@@ -6,7 +6,7 @@ namespace Planar.Authorization
     {
         public EditorAuthorizeAttribute()
         {
-            Policy = Service.Model.DataObjects.Roles.Editor.ToString();
+            Policy = API.Common.Entities.Roles.Editor.ToString();
         }
     }
 }

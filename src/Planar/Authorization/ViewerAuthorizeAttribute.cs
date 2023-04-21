@@ -6,7 +6,7 @@ namespace Planar.Authorization
     {
         public ViewerAuthorizeAttribute()
         {
-            Policy = Service.Model.DataObjects.Roles.Viewer.ToString();
+            Policy = API.Common.Entities.Roles.Viewer.ToString();
         }
     }
 }

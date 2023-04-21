@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.Model.DataObjects;
 using System;

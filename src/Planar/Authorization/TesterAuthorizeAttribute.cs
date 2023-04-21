@@ -6,7 +6,7 @@ namespace Planar.Authorization
     {
         public TesterAuthorizeAttribute()
         {
-            Policy = Service.Model.DataObjects.Roles.Tester.ToString();
+            Policy = API.Common.Entities.Roles.Tester.ToString();
         }
     }
 }

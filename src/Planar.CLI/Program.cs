@@ -24,6 +24,9 @@ namespace Planar.CLI
 {
     internal static class Program
     {
+        private static readonly TimeSpan _timerSpan = TimeSpan.FromMinutes(20);
+        private static Timer? _timer;
+
         internal static string Version
         {
             get
@@ -58,6 +61,21 @@ namespace Planar.CLI
             {
                 Console.CancelKeyPress -= Console_CancelKeyPress;
             }
+        }
+
+        private static void ResetTimer()
+        {
+            _timer?.Change(_timerSpan, _timerSpan);
+        }
+
+        private static void OnTimerAction(object? state)
+        {
+            if (string.IsNullOrEmpty(LoginProxy.Token)) { return; }
+            InnerCliActions.Clear().Wait();
+            var markup = CliFormat.GetWarningMarkup($"automaticaly log out after period of {_timerSpan.Minutes} minutes without any operation");
+            AnsiConsole.MarkupLine(markup);
+            AnsiConsole.WriteLine("press [enter] to continue");
+            ServiceCliActions.Logout().Wait();
         }
 
         private static void Console_CancelKeyPress(object? sender, ConsoleCancelEventArgs e)
@@ -408,6 +426,7 @@ namespace Planar.CLI
             var command = string.Empty;
             Console.Clear();
             CliHelpGenerator.ShowModules();
+            _timer = new Timer(OnTimerAction, null, _timerSpan, _timerSpan);
 
             const string exit = "exit";
             while (string.Compare(command, exit, true) != 0)
@@ -415,6 +434,8 @@ namespace Planar.CLI
                 var color = ConnectUtil.Current.GetCliMarkupColor();
                 AnsiConsole.Markup($"[{color}]{RestProxy.Host.EscapeMarkup()}:{RestProxy.Port}[/]> ");
                 command = Console.ReadLine();
+                ResetTimer();
+
                 if (string.Compare(command, exit, true) == 0)
                 {
                     break;
