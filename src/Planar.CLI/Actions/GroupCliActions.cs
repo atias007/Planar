@@ -93,7 +93,7 @@ namespace Planar.CLI.Actions
                 return new CliActionResponse(wrapper.FailResponse);
             }
 
-            var restRequest = new RestRequest("group/{id}/user/{userId}", Method.Put)
+            var restRequest = new RestRequest("group/{id}/user/{userId}", Method.Patch)
                .AddParameter("id", request.GroupId, ParameterType.UrlSegment)
                .AddParameter("userId", request.UserId, ParameterType.UrlSegment);
 

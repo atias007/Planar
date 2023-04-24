@@ -92,7 +92,7 @@ namespace Planar.Controllers
             return NoContent();
         }
 
-        [HttpPut("{id}/user/{userId}")]
+        [HttpPatch("{id}/user/{userId}")]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_group_id_user_userId", Description = "Join user to group", Summary = "Join User To Group")]
         [NoContentResponse]

@@ -131,7 +131,6 @@ namespace Planar.Service.API
 
         public async Task SetRoleToGroup(int groupId, Roles role)
         {
-            // TODO validate role --> { throw new RestNotFoundException($"role {role} does not exist"); }
             if (!await DataLayer.IsGroupExists(groupId)) { throw new RestNotFoundException($"group id {groupId} does not exist"); }
             await DataLayer.SetRoleToGroup(groupId, (int)role);
         }

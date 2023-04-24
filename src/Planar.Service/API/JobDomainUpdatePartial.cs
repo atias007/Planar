@@ -17,7 +17,7 @@ namespace Planar.Service.API
         {
             await ValidateAddPath(request);
             var yml = await GetJobFileContent(request);
-            var dynamicRequest = GetJobDynamicRequest(yml, request);
+            var dynamicRequest = GetJobDynamicRequest(yml);
             var response = await Update(dynamicRequest, request.UpdateJobOptions);
             return response;
         }

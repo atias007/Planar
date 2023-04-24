@@ -598,7 +598,7 @@ namespace Planar.CLI.Actions
             return result;
         }
 
-        private static async Task<RestResponse> CheckJob(CliInvokeJobRequest request, CancellationToken cancellationToken)
+        private static async Task<RestResponse> CheckAlreadyRunningJob(CliInvokeJobRequest request, CancellationToken cancellationToken)
         {
             var result = await CheckJobInner(cancellationToken);
             if (result.IsSuccessful)
@@ -770,7 +770,7 @@ namespace Planar.CLI.Actions
         {
             // (0) Check for running job
             AnsiConsole.MarkupLine(" [gold3_1][[x]][/] Check job...");
-            var result = await CheckJob(request, cancellationToken);
+            var result = await CheckAlreadyRunningJob(request, cancellationToken);
             if (result.IsSuccessful) { return null; }
 
             return new CliActionResponse(result);
@@ -806,7 +806,11 @@ namespace Planar.CLI.Actions
                 }
 
                 if (instanceId.Data != null) { break; }
-                await CheckJob(request, cancellationToken);
+                if (i > 5)
+                {
+                    await CheckAlreadyRunningJob(request, cancellationToken);
+                }
+
                 await Task.Delay(1000, cancellationToken);
             }
 

@@ -43,7 +43,7 @@ namespace Planar.Service.API
         {
             await ValidateAddPath(request);
             var yml = await GetJobFileContent(request);
-            var dynamicRequest = GetJobDynamicRequest(yml, request);
+            var dynamicRequest = GetJobDynamicRequest(yml);
             var response = await Add(dynamicRequest);
             return response;
         }
@@ -139,7 +139,7 @@ namespace Planar.Service.API
             }
         }
 
-        private static SetJobDynamicRequest GetJobDynamicRequest(string yml, SetJobPathRequest request)
+        private static SetJobDynamicRequest GetJobDynamicRequest(string yml)
         {
             SetJobDynamicRequest dynamicRequest;
 
@@ -149,8 +149,7 @@ namespace Planar.Service.API
             }
             catch (Exception ex)
             {
-                var filename = GetJobFileFullName(request);
-                throw new RestGeneralException($"fail to deserialize file: {filename}", ex);
+                throw new RestValidationException("path", $"fail to read JobFile.yml. error: {ex.Message}");
             }
 
             return dynamicRequest;
