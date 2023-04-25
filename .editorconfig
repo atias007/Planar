@@ -94,3 +94,6 @@ dotnet_diagnostic.CA1712.severity = warning
 dotnet_diagnostic.CA1725.severity = warning
 dotnet_diagnostic.CA1727.severity = warning
 dotnet_diagnostic.CA2215.severity = warning
+
+# S3267: Loops should be simplified with "LINQ" expressions
+dotnet_diagnostic.S3267.severity = none

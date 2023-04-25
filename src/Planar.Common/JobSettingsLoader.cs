@@ -73,15 +73,8 @@ namespace Planar.Common
             {
                 if (!File.Exists(filename)) { return dict; }
                 var yml = File.ReadAllText(filename);
-                if (string.IsNullOrWhiteSpace(yml)) { return dict; }
-
-                using var stream = new MemoryStream();
-                using var writer = new StreamWriter(stream);
-                writer.Write(yml.Trim());
-                writer.Flush();
-                stream.Position = 0;
                 var parser = new YamlConfigurationFileParser();
-                var items = parser.Parse(stream);
+                var items = parser.Parse(yml.Trim());
                 dict = new Dictionary<string, string?>(items);
                 return dict;
             }

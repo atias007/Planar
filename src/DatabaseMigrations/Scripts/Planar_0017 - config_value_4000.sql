@@ -1,0 +1,1 @@
+ALTER TABLE [dbo].[GlobalConfig] ALTER COLUMN [Value] nvarchar(4000)

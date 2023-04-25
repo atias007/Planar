@@ -1,7 +1,14 @@
-﻿using Planar.Service.API.Helpers;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Planar.Common;
+using Planar.Service.API.Helpers;
 using Planar.Service.General;
+using Polly;
 using System;
+using System.Dynamic;
+using System.IO;
 using System.Text.RegularExpressions;
+using YamlDotNet.Serialization;
 
 namespace Planar.Service.Validation
 {
@@ -44,6 +51,43 @@ namespace Planar.Service.Validation
             const string pattern = @"^(?:\w+\\?)*$";
             var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(5));
             return regex.IsMatch(value);
+        }
+
+        public static bool IsJsonValid(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json)) { return false; }
+            json = json.Trim();
+            if ((json.StartsWith("{") && json.EndsWith("}")) || //For object
+                (json.StartsWith("[") && json.EndsWith("]"))) //For array
+            {
+                try
+                {
+                    _ = JToken.Parse(json);
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+
+            return false;
+        }
+
+        public static bool IsYmlValid(string? yml)
+        {
+            if (string.IsNullOrWhiteSpace(yml)) { return false; }
+            if (IsJsonValid(yml)) { return false; }
+
+            try
+            {
+                _ = new DeserializerBuilder().Build().Deserialize<ExpandoObject>(yml);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

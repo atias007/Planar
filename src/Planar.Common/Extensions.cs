@@ -35,7 +35,7 @@ namespace Planar.Common
             Put<string>(dictionary, key, value);
         }
 
-        public static Dictionary<string, string?> Merge(this Dictionary<string, string?> source, Dictionary<string, string?> target)
+        public static Dictionary<string, string?> Merge(this Dictionary<string, string?> source, IDictionary<string, string?> target)
         {
             if (target == null) { return source; }
             source ??= new Dictionary<string, string?>();
