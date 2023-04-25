@@ -4,11 +4,13 @@ using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
+using Planar.Service.General;
 using Planar.Service.General.Hash;
 using Planar.Service.General.Password;
 using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -48,6 +50,20 @@ namespace Planar.Service.API
             var groups = await DataLayer.GetGroupsForUser(id);
             var result = Mapper.Map<UserDetails>(user);
             groups.ForEach(g => result.Groups.Add(g.ToString()));
+            var roleId = await DataLayer.GetUserRole(id);
+            result.Role = RoleHelper.GetTitle(roleId);
+            return result;
+        }
+
+        public async Task<string> GetRole(int id)
+        {
+            if (!await DataLayer.IsUserExists(id))
+            {
+                throw new RestNotFoundException("user could not be found");
+            }
+
+            var roleId = await DataLayer.GetUserRole(id);
+            var result = RoleHelper.GetTitle(roleId);
             return result;
         }
 

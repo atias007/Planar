@@ -35,6 +35,16 @@ namespace Planar.CLI.Actions
             return await ExecuteEntity<UserDetails>(restRequest, cancellationToken);
         }
 
+        [Action("get-role")]
+        public static async Task<CliActionResponse> GetUserRoleById(CliGetByIdRequest request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("user/{id}/role", Method.Get)
+                .AddParameter("id", request.Id, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
+            return new CliActionResponse(result, message: result.Data);
+        }
+
         [Action("reset-password")]
         public static async Task<CliActionResponse> GetUserPassword(CliGetByIdRequest request, CancellationToken cancellationToken = default)
         {

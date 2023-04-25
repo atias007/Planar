@@ -73,7 +73,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        [Action("role")]
+        [Action("set-role")]
         public static async Task<CliActionResponse> SetRole(CliSetRoleRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("group/{id}/role/{role}", Method.Patch)

@@ -47,7 +47,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, table);
         }
 
-        [Action("error")]
+        [Action("exception")]
         public static async Task<CliActionResponse> GetTraceException(CliGetByIdRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("trace/{id}/exception", Method.Get)

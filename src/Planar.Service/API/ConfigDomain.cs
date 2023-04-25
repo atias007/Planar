@@ -26,6 +26,7 @@ namespace Planar.Service.API
         {
             try
             {
+                key = key.SafeTrim() ?? string.Empty;
                 await DataLayer.RemoveGlobalConfig(key);
                 await Flush();
             }
@@ -40,7 +41,7 @@ namespace Planar.Service.API
             var prms = await DataLayer.GetAllGlobalConfig(stoppingToken);
             var final = prms
                 .Where(p => string.Equals(p.Type, GlobalConfigTypes.String.ToString(), StringComparison.OrdinalIgnoreCase))
-                .ToDictionary(p => p.Key, p => p.Value);
+                .ToDictionary(p => p.Key.Trim(), p => p.Value);
 
             var yamls = prms
                 .Where(p =>
@@ -68,26 +69,28 @@ namespace Planar.Service.API
         public async Task<GlobalConfig> Get(string key)
         {
             var data = await DataLayer.GetGlobalConfig(key) ?? throw new RestNotFoundException($"global config with key '{key}' not found");
-            data.Value = $"<{Consts.Unauthorized}>";
             return data;
         }
 
         public async Task<IEnumerable<GlobalConfig>> GetAll()
         {
             var data = await DataLayer.GetAllGlobalConfig();
+            return data;
+        }
+
+        public IEnumerable<KeyValueItem> GetAllFlat()
+        {
+            var data = Global.GlobalConfig
+                .Select(g => new KeyValueItem(g.Key.Trim(), g.Value));
 
             if (RoleId == Roles.Administrator) { return data; }
-
-            foreach (var item in data)
-            {
-                item.Value = $"<{Consts.Unauthorized}>";
-            }
 
             return data;
         }
 
         public async Task Put(GlobalConfig request)
         {
+            request.Key = request.Key.Trim();
             var exists = await DataLayer.IsGlobalConfigExists(request.Key);
             if (exists)
             {
@@ -103,6 +106,7 @@ namespace Planar.Service.API
 
         public async Task Add(GlobalConfig request)
         {
+            request.Key = request.Key.Trim();
             var exists = await DataLayer.IsGlobalConfigExists(request.Key);
 
             if (exists)
@@ -116,6 +120,7 @@ namespace Planar.Service.API
 
         public async Task Update(GlobalConfig request)
         {
+            request.Key = request.Key.Trim();
             var exists = await DataLayer.IsGlobalConfigExists(request.Key);
             if (!exists)
             {

@@ -57,6 +57,18 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
+        [HttpGet("{id}/role")]
+        [EditorAuthorize]
+        [SwaggerOperation(OperationId = "get_user_id_role", Description = "Get user rule by id", Summary = "Get User Role")]
+        [OkTextResponse]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<ActionResult<UserDetails>> GetRole([FromRoute][Id] int id)
+        {
+            var result = await BusinesLayer.GetRole(id);
+            return Ok(result);
+        }
+
         [HttpGet]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_user", Description = "Get all users", Summary = "Get All Users")]

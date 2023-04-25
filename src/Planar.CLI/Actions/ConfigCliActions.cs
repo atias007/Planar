@@ -1,4 +1,5 @@
-﻿using Planar.CLI.Attributes;
+﻿using Planar.API.Common.Entities;
+using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
 using Planar.CLI.Proxy;
 using RestSharp;
@@ -24,10 +25,20 @@ namespace Planar.CLI.Actions
 
         [Action("ls")]
         [Action("list")]
-        public static async Task<CliActionResponse> GetAllConfiguration(CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> GetAllConfiguration(CliListConfigsRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("config", Method.Get);
-            return await ExecuteTable<List<CliGlobalConfig>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
+            RestRequest restRequest;
+
+            if (request.Flat)
+            {
+                restRequest = new RestRequest("config/flat", Method.Get);
+                return await ExecuteTable<List<KeyValueItem>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
+            }
+            else
+            {
+                restRequest = new RestRequest("config", Method.Get);
+                return await ExecuteTable<List<CliGlobalConfig>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
+            }
         }
 
         [Action("add")]

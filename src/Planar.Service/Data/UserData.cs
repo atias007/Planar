@@ -50,10 +50,10 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<int> GetUserRole(string username)
+        public async Task<int> GetUserRole(int id)
         {
             var result = await _context.Groups
-                .Where(g => g.Users.Any(u => u.Username.ToLower() == username.ToLower()))
+                .Where(g => g.Users.Any(u => u.Id == id))
                 .Select(g => g.RoleId)
                 .OrderByDescending(g => g)
                 .FirstOrDefaultAsync();

@@ -16,7 +16,7 @@ namespace Planar.CLI
             var table = new Table();
             if (response == null) { return table; }
             table.AddColumns("User Id", "Password");
-            table.AddRow(response.Id.ToString(), $"{response.Password}".EscapeMarkup());
+            table.AddRow(response.Id.ToString(), SafeCliString(response.Password));
             table.AddRow(string.Empty, string.Empty);
             table.AddRow(string.Empty, CliFormat.GetWarningMarkup("make sure you copy the above password now."));
             table.AddRow(string.Empty, $"[{CliFormat.WarningColor}]we don't store it and you will not be able to see it again.[/]");
@@ -31,7 +31,7 @@ namespace Planar.CLI
             foreach (var item in response)
             {
                 if (item == null) { continue; }
-                table.AddRow(item.Key.EscapeMarkup(), LimitValue(item.Value));
+                table.AddRow(SafeCliString(item.Key), LimitValue(item.Value));
             }
 
             return table;
@@ -49,22 +49,6 @@ namespace Planar.CLI
 
             return table;
         }
-
-        ////public static Table GetTable(CliGeneralMarupMessageResponse? response)
-        ////{
-        ////    var table = new Table();
-        ////    if (response == null) { return table; }
-        ////    if (response.MarkupMessages == null) { return table; }
-        ////    if (!response.MarkupMessages.Any()) { return table; }
-
-        ////    table.AddColumns(response.Title);
-        ////    foreach (var item in response.MarkupMessages)
-        ////    {
-        ////        table.AddRow(item);
-        ////    }
-
-        ////    return table;
-        ////}
 
         public static Table GetTable(List<JobRowDetails>? response)
         {
@@ -226,8 +210,10 @@ namespace Planar.CLI
         {
             if (value == null) { return "[null]".EscapeMarkup(); }
             if (string.IsNullOrEmpty(value)) { return string.Empty; }
-            if (value.Length <= limit) { return value.EscapeMarkup(); }
-            return $"{value.EscapeMarkup()[0..(limit - 1)]}\u2026";
+
+            value = SafeCliString(value);
+            if (value.Length <= limit) { return value; }
+            return $"{value[0..(limit - 1)]}\u2026";
         }
 
         private static string SerializeJobDetailsData(JobDetails? jobDetails)
@@ -241,6 +227,13 @@ namespace Planar.CLI
                 new Serializer().Serialize(jobDetails.DataMap);
 
             return result.Trim();
+        }
+
+        private static string SafeCliString(string? value, bool displayNull = false)
+        {
+            if (displayNull && value == null) { return "[null]".EscapeMarkup(); }
+            if (string.IsNullOrWhiteSpace(value)) { return string.Empty; }
+            return value.Trim().EscapeMarkup();
         }
     }
 }

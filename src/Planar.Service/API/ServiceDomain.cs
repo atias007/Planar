@@ -171,13 +171,13 @@ namespace Planar.Service.API
 
             var userData = Resolve<UserData>();
             var user =
-                await userData.GetUserIdentity(request.Username) ??
+                await userData.GetUserIdentity(request.Username!) ??
                 throw new RestValidationException("username", $"user with username '{request.Username}' not exists", 100);
 
-            var role = await userData.GetUserRole(request.Username);
-            user!.RoleId = role;
+            var role = await userData.GetUserRole(user.Id);
+            user.RoleId = role;
 
-            var verify = HashUtil.VerifyHash(request.Password, user!.Password, user!.Salt);
+            var verify = HashUtil.VerifyHash(request.Password!, user.Password, user.Salt);
             if (!verify)
             {
                 throw new RestValidationException("password", "wrong password", 101);
@@ -186,7 +186,7 @@ namespace Planar.Service.API
             var token = HashUtil.CreateToken(user);
             var result = new LoginResponse
             {
-                Role = ((Roles)role).ToString(),
+                Role = RoleHelper.GetTitle(role),
                 Token = token
             };
 

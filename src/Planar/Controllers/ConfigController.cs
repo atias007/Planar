@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
@@ -24,6 +25,16 @@ namespace Planar.Controllers
         public async Task<ActionResult<IEnumerable<GlobalConfig>>> GetAll()
         {
             var result = await BusinesLayer.GetAll();
+            return Ok(result);
+        }
+
+        [HttpGet("flat")]
+        [EditorAuthorize]
+        [SwaggerOperation(OperationId = "get_config_flat", Description = "Get all global configuration", Summary = "Get All Global Configurations")]
+        [OkJsonResponse(typeof(IEnumerable<KeyValueItem>))]
+        public async Task<ActionResult<IEnumerable<KeyValueItem>>> GetAllFlat()
+        {
+            var result = await Task.FromResult(BusinesLayer.GetAllFlat());
             return Ok(result);
         }
 
