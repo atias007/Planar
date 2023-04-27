@@ -11,7 +11,9 @@ namespace NetEscapades.Configuration.Yaml
     public sealed partial class YamlConfigurationFileParser
     {
         private readonly IDictionary<string, string?> _data = new SortedDictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+#pragma warning disable IDE0090 // Use 'new(...)'
         private readonly Stack<string> _context = new Stack<string>(); // dont change. need for .net standart
+#pragma warning restore IDE0090 // Use 'new(...)'
         private string _currentPath = string.Empty;
 
         public IDictionary<string, string?> Parse(Stream input)

@@ -5,7 +5,6 @@ PLAN FOR V 1.3.0
 - authorization
   * add GET /group/roles + CLI group roles (list of roles)
 - cli - menu on join (or unjoin) user to group
-- cli: add r u sure on change group role
 - fix AddAggragateException in job nuget
 - add cli option to load yml or json file to global gonfig
 - chenge all Reference fields on user & group to AdditionalInfo

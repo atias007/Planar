@@ -76,6 +76,8 @@ namespace Planar.CLI.Actions
         [Action("set-role")]
         public static async Task<CliActionResponse> SetRole(CliSetRoleRequest request, CancellationToken cancellationToken = default)
         {
+            if (!ConfirmAction($"change group role to {request.Role}")) { return CliActionResponse.Empty; }
+
             var restRequest = new RestRequest("group/{id}/role/{role}", Method.Patch)
                .AddUrlSegment("id", request.GroupId)
                .AddUrlSegment("role", (int)request.Role);
