@@ -13,7 +13,7 @@ public partial class GlobalConfig
     [StringLength(50)]
     public string Key { get; set; } = null!;
 
-    [StringLength(1000)]
+    [StringLength(4000)]
     public string? Value { get; set; }
 
     [StringLength(10)]

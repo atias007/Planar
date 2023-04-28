@@ -7,6 +7,7 @@ using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -44,6 +45,11 @@ namespace Planar.Service.API
         public async Task<List<GroupInfo>> GetAllGroups()
         {
             return await DataLayer.GetGroups();
+        }
+
+        public static IEnumerable<string> GetAllGroupsRoles()
+        {
+            return Enum.GetNames<Roles>().Select(r => r.ToLower());
         }
 
         public async Task DeleteGroup(int id)

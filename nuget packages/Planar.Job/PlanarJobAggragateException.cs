@@ -10,9 +10,5 @@ namespace Planar
             : base(message)
         {
         }
-
-        public PlanarJobAggragateException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
     }
 }

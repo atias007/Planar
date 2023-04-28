@@ -26,7 +26,7 @@ namespace SomeJob
 
             var maxDiffranceHours = Configuration.GetValue("Max Diffrance Hours", 12);
             Logger.LogInformation("Value is {Value} while default value is 12", maxDiffranceHours);
-            AddAggragateException(new Exception("agg ex"));
+            AddAggregateException(new Exception("agg ex"));
 
             var exists = IsDataExists("X");
             Logger.LogDebug("Data X Exists: {Value}", exists);
@@ -77,7 +77,7 @@ namespace SomeJob
                 }
                 catch (Exception ex)
                 {
-                    AddAggragateException(ex);
+                    AddAggregateException(ex);
                 }
                 finally
                 {

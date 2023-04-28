@@ -169,9 +169,19 @@ namespace Planar.Service.API
                 throw new RestConflictException("login service is not avaliable when authentication mode is disabled (AllAnonymous)");
             }
 
+            if (string.IsNullOrWhiteSpace(request.Username))
+            {
+                throw new RestValidationException("username", "username is required");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Password))
+            {
+                throw new RestValidationException("password", "password is required");
+            }
+
             var userData = Resolve<UserData>();
             var user =
-                await userData.GetUserIdentity(request.Username!) ??
+                await userData.GetUserIdentity(request.Username) ??
                 throw new RestValidationException("username", $"user with username '{request.Username}' not exists", 100);
 
             var role = await userData.GetUserRole(user.Id);

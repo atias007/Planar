@@ -31,12 +31,7 @@ namespace Planar.Job.Test
             get
             {
                 var result = JobExecutionMetadata.GetInstance(_context);
-                if (result == null)
-                {
-                    throw new NullReferenceException(nameof(Metadata));
-                }
-
-                return result;
+                return result ?? throw new NullReferenceException(nameof(Metadata));
             }
         }
 
@@ -73,6 +68,7 @@ namespace Planar.Job.Test
                     return null;
 
                 case "AddAggragateException":
+                case "AddAggregateException":
                     var data3 = Deserialize<ExceptionDto>(message);
                     lock (Locker)
                     {

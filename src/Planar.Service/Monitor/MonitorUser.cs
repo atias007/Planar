@@ -16,11 +16,11 @@ namespace Planar.Service.Monitor
             PhoneNumber1 = user.PhoneNumber1;
             PhoneNumber2 = user.PhoneNumber2;
             PhoneNumber3 = user.PhoneNumber3;
-            Reference1 = user.Reference1;
-            Reference2 = user.Reference2;
-            Reference3 = user.Reference3;
-            Reference4 = user.Reference4;
-            Reference5 = user.Reference5;
+            AdditionalField1 = user.AdditionalField1;
+            AdditionalField2 = user.AdditionalField2;
+            AdditionalField3 = user.AdditionalField3;
+            AdditionalField4 = user.AdditionalField4;
+            AdditionalField5 = user.AdditionalField5;
         }
 
         public int Id { get; set; }
@@ -33,10 +33,10 @@ namespace Planar.Service.Monitor
         public string? PhoneNumber1 { get; set; }
         public string? PhoneNumber2 { get; set; }
         public string? PhoneNumber3 { get; set; }
-        public string? Reference1 { get; set; }
-        public string? Reference2 { get; set; }
-        public string? Reference3 { get; set; }
-        public string? Reference4 { get; set; }
-        public string? Reference5 { get; set; }
+        public string? AdditionalField1 { get; set; }
+        public string? AdditionalField2 { get; set; }
+        public string? AdditionalField3 { get; set; }
+        public string? AdditionalField4 { get; set; }
+        public string? AdditionalField5 { get; set; }
     }
 }

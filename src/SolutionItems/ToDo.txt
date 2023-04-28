@@ -3,11 +3,9 @@ PLAN FOR V 1.3.0
 ----------------
 - documentation
 - authorization
-  * add GET /group/roles + CLI group roles (list of roles)
-- cli - menu on join (or unjoin) user to group
-- fix AddAggragateException in job nuget
+  * cli - menu on join (or unjoin) user to group
 - add cli option to load yml or json file to global gonfig
-- chenge all Reference fields on user & group to AdditionalInfo
+- cli: auto invoke ls (if exists) if only module is typed
 
 
 - BACKLOG ----------------------------------------------------------------------------
@@ -161,3 +159,5 @@ V 1.2.4
   - convert id in sql table JobInstanceLog from int to bigint
   - cli: detect switch between command and option (i.e. pause job)
   - get flat list of global config
+  - chenge all Reference fields on user & group to AdditionalInfo
+  - add GET /group/roles + CLI group roles (list of roles)

@@ -108,10 +108,10 @@ namespace Planar.Job
                 });
         }
 
-        protected void AddAggragateException(Exception ex)
+        protected void AddAggregateException(Exception ex)
         {
             var message = new ExceptionDto(ex);
-            _messageBroker?.Publish(MessageBrokerChannels.AddAggragateException, message);
+            _messageBroker?.Publish(MessageBrokerChannels.AddAggregateException, message);
         }
 
         protected void CheckAggragateException()

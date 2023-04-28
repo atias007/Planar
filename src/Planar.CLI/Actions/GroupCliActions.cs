@@ -34,6 +34,14 @@ namespace Planar.CLI.Actions
             return await ExecuteEntity<GroupDetails>(restRequest, cancellationToken);
         }
 
+        [Action("roles")]
+        public static async Task<CliActionResponse> GetRoles(CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("group/roles", Method.Get);
+
+            return await ExecuteEntity<List<string>>(restRequest, cancellationToken);
+        }
+
         [Action("ls")]
         [Action("list")]
         public static async Task<CliActionResponse> Get(CancellationToken cancellationToken = default)

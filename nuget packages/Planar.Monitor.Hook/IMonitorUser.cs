@@ -11,11 +11,11 @@
         string? PhoneNumber1 { get; set; }
         string? PhoneNumber2 { get; set; }
         string? PhoneNumber3 { get; set; }
-        string? Reference1 { get; set; }
-        string? Reference2 { get; set; }
-        string? Reference3 { get; set; }
-        string? Reference4 { get; set; }
-        string? Reference5 { get; set; }
+        string? AdditionalField1 { get; set; }
+        string? AdditionalField2 { get; set; }
+        string? AdditionalField3 { get; set; }
+        string? AdditionalField4 { get; set; }
+        string? AdditionalField5 { get; set; }
         string Username { get; set; }
     }
 }

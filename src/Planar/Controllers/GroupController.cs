@@ -52,6 +52,16 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
+        [HttpGet("roles")]
+        [EditorAuthorize]
+        [SwaggerOperation(OperationId = "get_group_roles", Description = "Get all group roles", Summary = "Get All Group Roles")]
+        [OkJsonResponse(typeof(IEnumerable<string>))]
+        public async Task<ActionResult<List<GroupInfo>>> GetAllGroupsRoles()
+        {
+            var result = await Task.FromResult(GroupDomain.GetAllGroupsRoles());
+            return Ok(result);
+        }
+
         [HttpDelete("{id}")]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "delete_group_id", Description = "Delete group", Summary = "Delete Group")]
