@@ -5,6 +5,7 @@ using Planar.CLI.Proxy;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -44,12 +45,24 @@ namespace Planar.CLI.Actions
         [Action("add")]
         public static async Task<CliActionResponse> Add(CliConfigRequest request, CancellationToken cancellationToken = default)
         {
-            var data = new { request.Key, request.Value, Type = "string" };
+            var data = new { request.Key, request.Value, Type = GlobalConfigTypes.String.ToString().ToLower() };
             var restRequest = new RestRequest("config", Method.Post)
                 .AddBody(data);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);
             return new CliActionResponse(result);
+        }
+
+        [Action("load-yml")]
+        public static async Task<CliActionResponse> LoadYml(CliConfigFileRequest request, CancellationToken cancellationToken = default)
+        {
+            return await LoadConfig(request, GlobalConfigTypes.Yml, cancellationToken);
+        }
+
+        [Action("load-json")]
+        public static async Task<CliActionResponse> LoadJson(CliConfigFileRequest request, CancellationToken cancellationToken = default)
+        {
+            return await LoadConfig(request, GlobalConfigTypes.Json, cancellationToken);
         }
 
         [Action("put")]
@@ -79,6 +92,20 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("config/{key}", Method.Delete)
                 .AddParameter("key", request.Key, ParameterType.UrlSegment);
             return await Execute(restRequest, cancellationToken);
+        }
+
+        public static async Task<CliActionResponse> LoadConfig(CliConfigFileRequest request, GlobalConfigTypes configType, CancellationToken cancellationToken)
+        {
+            ValidateFileExists(request.Filename);
+            var value = await File.ReadAllTextAsync(request.Filename, cancellationToken);
+            var type = configType.ToString().ToLower();
+
+            var data = new { request.Key, value, Type = type };
+            var restRequest = new RestRequest("config", Method.Post)
+                .AddBody(data);
+
+            var result = await RestProxy.Invoke(restRequest, cancellationToken);
+            return new CliActionResponse(result);
         }
     }
 }

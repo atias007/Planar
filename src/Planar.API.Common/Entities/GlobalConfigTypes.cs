@@ -1,4 +1,4 @@
-﻿namespace Planar.Service.Model
+﻿namespace Planar.API.Common.Entities
 {
     public enum GlobalConfigTypes
     {

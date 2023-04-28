@@ -4,6 +4,7 @@ using Planar.CLI.General;
 using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -81,6 +82,31 @@ namespace Planar.CLI.CliGeneral
             var select = PromptSelection(items, "user", true);
             var id = result.Data.Where(r => r.Username == select).Select(r => r.Id).FirstOrDefault();
             return new CliPromptWrapper<int>(id);
+        }
+
+        internal static async Task<CliPromptWrapper<Roles>> Roles(CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("group/roles", Method.Get);
+            var result = await RestProxy.Invoke<List<string>>(restRequest, cancellationToken);
+            if (!result.IsSuccessful)
+            {
+                return new CliPromptWrapper<Roles>(result);
+            }
+
+            if (result.Data == null || !result.Data.Any())
+            {
+                throw new CliWarningException("no available roles to perform the opertaion");
+            }
+
+            var items = result.Data.Select(g => g ?? string.Empty);
+            var select = PromptSelection(items, "role", true);
+
+            if (!Enum.TryParse<Roles>(select, ignoreCase: true, out var enumSelect))
+            {
+                throw new CliException($"fail to convert selected value '{select}' to valid planar role");
+            }
+
+            return new CliPromptWrapper<Roles>(enumSelect);
         }
 
         private static void CheckForCancelOption(string value)

@@ -205,7 +205,11 @@ namespace Planar.CLI
                 }
             }
 
-            foreach (var item in action.Arguments)
+            var allRequired = action.Arguments
+                .Where(a => a.MissingRequired)
+                .OrderBy(a => a.DefaultOrder);
+
+            foreach (var item in allRequired)
             {
                 ValidateMissingRequiredProperties(item);
             }
@@ -282,15 +286,12 @@ namespace Planar.CLI
 
         private static void ValidateMissingRequiredProperties(CliArgumentMetadata props)
         {
-            if (props.MissingRequired)
-            {
-                var message =
-                    string.IsNullOrEmpty(props.RequiredMissingMessage) ?
-                    $"argument {props.Name} is required" :
-                    props.RequiredMissingMessage;
+            var message =
+                string.IsNullOrEmpty(props.RequiredMissingMessage) ?
+                $"argument {props.Name} is required" :
+                props.RequiredMissingMessage;
 
-                throw new CliException(message);
-            }
+            throw new CliException(message);
         }
 
         private static IEnumerable<string> GetModuleByCommand(string subArgument, IEnumerable<CliActionMetadata> cliActionsMetadata)

@@ -213,7 +213,8 @@ namespace Planar.CLI
 
             value = SafeCliString(value);
             if (value.Length <= limit) { return value; }
-            return $"{value[0..(limit - 1)]}\u2026";
+            var chunk = value[0..(limit - 1)].Trim();
+            return $"{chunk}\u2026";
         }
 
         private static string SerializeJobDetailsData(JobDetails? jobDetails)

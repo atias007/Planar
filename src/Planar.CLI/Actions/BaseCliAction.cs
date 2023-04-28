@@ -8,6 +8,7 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -21,6 +22,16 @@ namespace Planar.CLI.Actions
         protected const string JobFileName = "JobFile.yml";
 
         public static bool InteractiveMode { get; set; }
+
+        protected static void ValidateFileExists(string filename)
+        {
+            var fi = new FileInfo(filename);
+
+            if (!fi.Exists)
+            {
+                throw new CliException($"file '{fi.FullName}' does not exists");
+            }
+        }
 
         protected static async Task<CliActionResponse> Execute(RestRequest request, CancellationToken cancellationToken = default)
         {
@@ -67,18 +78,23 @@ namespace Planar.CLI.Actions
             return string.IsNullOrEmpty(result) ? null : result;
         }
 
-        protected static async Task<CliActionResponse> ExecuteEntity<T>(RestRequest request, CancellationToken cancellationToken = default)
+        protected static async Task<CliActionResponse> ExecuteEntity<T>(RestRequest request, CancellationToken cancellationToken)
+        {
+            return await ExecuteEntity<T>(request, null, cancellationToken);
+        }
+
+        protected static async Task<CliActionResponse> ExecuteEntity<T>(RestRequest request, CliOutputFilenameRequest? outputRequest, CancellationToken cancellationToken)
         {
             var result = await RestProxy.Invoke<T>(request, cancellationToken);
             if (result.IsSuccessful)
             {
-                return new CliActionResponse(result, serializeObj: result.Data);
+                return new CliActionResponse(result, serializeObj: result.Data, outputRequest);
             }
 
             return new CliActionResponse(result);
         }
 
-        protected static async Task<CliActionResponse> ExecuteTable<T>(RestRequest request, Func<T, Table> tableFunc, CancellationToken cancellationToken = default)
+        protected static async Task<CliActionResponse> ExecuteTable<T>(RestRequest request, Func<T, Table> tableFunc, CancellationToken cancellationToken)
         {
             var result = await RestProxy.Invoke<T>(request, cancellationToken);
             if (result.IsSuccessful && result.Data != null)

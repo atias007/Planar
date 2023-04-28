@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using NetEscapades.Configuration.Yaml;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -82,6 +83,7 @@ namespace Planar.Service.Validation
             try
             {
                 _ = new DeserializerBuilder().Build().Deserialize<ExpandoObject>(yml);
+                new YamlConfigurationFileParser().Parse(yml);
                 return true;
             }
             catch

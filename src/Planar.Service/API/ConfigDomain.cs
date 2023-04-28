@@ -81,6 +81,7 @@ namespace Planar.Service.API
         public IEnumerable<KeyValueItem> GetAllFlat()
         {
             var data = Global.GlobalConfig
+                .OrderBy(kv => kv.Key)
                 .Select(g => new KeyValueItem(g.Key.Trim(), g.Value));
 
             if (RoleId == Roles.Administrator) { return data; }

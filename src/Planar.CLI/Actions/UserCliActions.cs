@@ -1,5 +1,6 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
+using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.CLI.Proxy;
 using RestSharp;
@@ -98,6 +99,40 @@ namespace Planar.CLI.Actions
             return await Execute(restRequest, cancellationToken);
         }
 
+        [Action("join")]
+        public static async Task<CliActionResponse> AddGroupToUser(CliGroupToUserRequest request, CancellationToken cancellationToken = default)
+        {
+            var wrapper = await FillCliGroupToUserRequest(request, cancellationToken);
+            if (!wrapper.IsSuccessful)
+            {
+                return new CliActionResponse(wrapper.FailResponse);
+            }
+
+            var restRequest = new RestRequest("group/{id}/user/{userId}", Method.Patch)
+               .AddParameter("id", request.GroupId, ParameterType.UrlSegment)
+               .AddParameter("userId", request.UserId, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke(restRequest, cancellationToken);
+            return new CliActionResponse(result);
+        }
+
+        [Action("exclude")]
+        public static async Task<CliActionResponse> RemoveUserFromGroup(CliGroupToUserRequest request, CancellationToken cancellationToken = default)
+        {
+            var wrapper = await FillCliGroupToUserRequest(request, cancellationToken);
+            if (!wrapper.IsSuccessful)
+            {
+                return new CliActionResponse(wrapper.FailResponse);
+            }
+
+            var restRequest = new RestRequest("group/{id}/user/{userId}", Method.Delete)
+               .AddParameter("id", request.GroupId, ParameterType.UrlSegment)
+               .AddParameter("userId", request.UserId, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke(restRequest, cancellationToken);
+            return new CliActionResponse(result);
+        }
+
         private static CliAddUserRequest GetCliAddUserRequest()
         {
             const string phone_pattern = "^[0-9]+$";
@@ -113,6 +148,25 @@ namespace Planar.CLI.Actions
             };
 
             return result;
+        }
+
+        private static async Task<CliPromptWrapper> FillCliGroupToUserRequest(CliGroupToUserRequest request, CancellationToken cancellationToken)
+        {
+            if (request.UserId == 0)
+            {
+                var p1 = await CliPromptUtil.Users(cancellationToken);
+                if (!p1.IsSuccessful) { return p1; }
+                request.UserId = p1.Value;
+            }
+
+            if (request.GroupId == 0)
+            {
+                var p1 = await CliPromptUtil.Groups(cancellationToken);
+                if (!p1.IsSuccessful) { return p1; }
+                request.GroupId = p1.Value;
+            }
+
+            return CliPromptWrapper.Success;
         }
     }
 }

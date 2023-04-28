@@ -2,10 +2,10 @@
 
 namespace Planar.CLI.Entities
 {
-    public class CliGetByIdRequest
+    public class CliGetByLongIdRequestWithOutput : CliOutputFilenameRequest
     {
         [ActionProperty(DefaultOrder = 0)]
         [Required("id argument is required")]
-        public int Id { get; set; }
+        public long Id { get; set; }
     }
 }
