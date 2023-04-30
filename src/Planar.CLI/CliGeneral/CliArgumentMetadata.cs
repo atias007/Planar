@@ -1,5 +1,4 @@
-﻿using Spectre.Console;
-using System;
+﻿using System;
 using System.Reflection;
 
 namespace Planar.CLI

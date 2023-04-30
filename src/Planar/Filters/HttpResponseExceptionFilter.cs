@@ -49,6 +49,7 @@ namespace Planar.Filters
                     Status = StatusCodes.Status400BadRequest,
                     Title = error.Field,
                     Type = ProblemType,
+                    ErrorCode = error.ErrorCode,
                 };
             }
             else

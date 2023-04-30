@@ -71,6 +71,9 @@ namespace Planar.API.Common.Entities
         [YamlMember(Order = 23)]
         public string? AuthenticationMode { get; set; }
 
+        [YamlMember(Order = 24)]
+        public TimeSpan AuthenticationTokenExpire { get; set; }
+
         [YamlMember(Order = 96)]
         public DateTime? RunningSince { get; set; }
 

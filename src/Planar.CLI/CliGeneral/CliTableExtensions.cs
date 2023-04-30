@@ -16,7 +16,7 @@ namespace Planar.CLI
             var table = new Table();
             if (response == null) { return table; }
             table.AddColumns("User Id", "Password");
-            table.AddRow(response.Id.ToString(), $"{response.Password}".EscapeMarkup());
+            table.AddRow(response.Id.ToString(), SafeCliString(response.Password));
             table.AddRow(string.Empty, string.Empty);
             table.AddRow(string.Empty, CliFormat.GetWarningMarkup("make sure you copy the above password now."));
             table.AddRow(string.Empty, $"[{CliFormat.WarningColor}]we don't store it and you will not be able to see it again.[/]");
@@ -31,7 +31,7 @@ namespace Planar.CLI
             foreach (var item in response)
             {
                 if (item == null) { continue; }
-                table.AddRow(item.Key.EscapeMarkup(), item.Value.EscapeMarkup());
+                table.AddRow(SafeCliString(item.Key), LimitValue(item.Value));
             }
 
             return table;
@@ -42,25 +42,9 @@ namespace Planar.CLI
             var table = new Table();
             if (response == null) { return table; }
             table.AddColumns("Id", "Name");
-            foreach (var item in response)
+            foreach (LovItem item in response)
             {
-                table.AddRow(item.Id.ToString(), item?.Name.EscapeMarkup() ?? string.Empty);
-            }
-
-            return table;
-        }
-
-        public static Table GetTable(CliGeneralMarupMessageResponse? response)
-        {
-            var table = new Table();
-            if (response == null) { return table; }
-            if (response.MarkupMessages == null) { return table; }
-            if (!response.MarkupMessages.Any()) { return table; }
-
-            table.AddColumns(response.Title);
-            foreach (var item in response.MarkupMessages)
-            {
-                table.AddRow(item);
+                table.AddRow(item.Id.ToString(), LimitValue(item.Name));
             }
 
             return table;
@@ -71,7 +55,7 @@ namespace Planar.CLI
             var table = new Table();
             if (response == null) { return table; }
             table.AddColumns("Job Id", "Job Key", "Job Type", "Description");
-            response.ForEach(r => table.AddRow(r.Id, $"{r.Group}.{r.Name}".EscapeMarkup(), r.JobType.EscapeMarkup(), r.Description.EscapeMarkup()));
+            response.ForEach(r => table.AddRow(r.Id, $"{r.Group}.{r.Name}".EscapeMarkup(), r.JobType.EscapeMarkup(), LimitValue(r.Description)));
             return table;
         }
 
@@ -105,7 +89,7 @@ namespace Planar.CLI
             var table = new Table();
             if (response == null) { return table; }
             table.AddColumns("Id", "Message", "Level", "Time Stamp");
-            response.ForEach(r => table.AddRow($"{r.Id}", r.Message.EscapeMarkup(), CliTableFormat.GetLevelMarkup(r.Level), CliTableFormat.FormatDateTime(r.TimeStamp)));
+            response.ForEach(r => table.AddRow($"{r.Id}", LimitValue(r.Message), CliTableFormat.GetLevelMarkup(r.Level), CliTableFormat.FormatDateTime(r.TimeStamp)));
             return table;
         }
 
@@ -190,8 +174,8 @@ namespace Planar.CLI
         {
             var table = new Table();
             if (data == null) { return table; }
-            table.AddColumns("Id", "Name", "User Count");
-            data.ForEach(r => table.AddRow($"{r.Id}", r.Name.EscapeMarkup(), $"{r.UsersCount}"));
+            table.AddColumns("Id", "Name", "Role", "User Count");
+            data.ForEach(r => table.AddRow($"{r.Id}", r.Name.EscapeMarkup(), r.Role.EscapeMarkup(), $"{r.UsersCount}"));
             return table;
         }
 
@@ -218,8 +202,19 @@ namespace Planar.CLI
             var table = new Table();
             if (response == null) { return table; }
             table.AddColumns("Key", "Value", "Type");
-            response.ForEach(r => table.AddRow(r.Key.EscapeMarkup(), r.Value.EscapeMarkup(), r.Type.EscapeMarkup()));
+            response.ForEach(r => table.AddRow(r.Key.EscapeMarkup(), LimitValue(r.Value), r.Type.EscapeMarkup()));
             return table;
+        }
+
+        private static string LimitValue(string? value, int limit = 100)
+        {
+            if (value == null) { return "[null]".EscapeMarkup(); }
+            if (string.IsNullOrEmpty(value)) { return string.Empty; }
+
+            value = SafeCliString(value);
+            if (value.Length <= limit) { return value; }
+            var chunk = value[0..(limit - 1)].Trim();
+            return $"{chunk}\u2026";
         }
 
         private static string SerializeJobDetailsData(JobDetails? jobDetails)
@@ -233,6 +228,13 @@ namespace Planar.CLI
                 new Serializer().Serialize(jobDetails.DataMap);
 
             return result.Trim();
+        }
+
+        private static string SafeCliString(string? value, bool displayNull = false)
+        {
+            if (displayNull && value == null) { return "[null]".EscapeMarkup(); }
+            if (string.IsNullOrWhiteSpace(value)) { return string.Empty; }
+            return value.Trim().EscapeMarkup();
         }
     }
 }

@@ -29,8 +29,8 @@ namespace Planar.Filters
         [JsonPropertyName("status")]
         public int? Status { get; set; }
 
-        [JsonPropertyName("traceId")]
-        public string TraceId { get; set; }
+        [JsonPropertyName("errorCode")]
+        public int? ErrorCode { get; set; }
 
         //
         // Summary:

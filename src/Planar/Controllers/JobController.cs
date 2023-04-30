@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
+using Planar.Authorization;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
@@ -20,6 +21,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("planar")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_job_planar_add", Description = "Add new planar job", Summary = "Add Planar Job")]
         [JsonConsumes]
         [CreatedResponse(typeof(JobIdResponse))]
@@ -32,6 +34,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("process")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_job_process_add", Description = "Add new process job", Summary = "Add Process Job")]
         [JsonConsumes]
         [CreatedResponse(typeof(JobIdResponse))]
@@ -44,6 +47,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("sql")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_job_sql_add", Description = "Add new sql job", Summary = "Add Sql Job")]
         [JsonConsumes]
         [CreatedResponse(typeof(JobIdResponse))]
@@ -56,6 +60,7 @@ namespace Planar.Controllers
         }
 
         [HttpPut("planar")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "put_job_planar", Description = "Update existing planar job", Summary = "Update Planar Job")]
         [JsonConsumes]
         [CreatedResponse(typeof(JobIdResponse))]
@@ -68,6 +73,7 @@ namespace Planar.Controllers
         }
 
         [HttpPut("process")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "put_job_process", Description = "Update existing process job", Summary = "Update Process Job")]
         [JsonConsumes]
         [CreatedResponse(typeof(JobIdResponse))]
@@ -80,6 +86,7 @@ namespace Planar.Controllers
         }
 
         [HttpPut("sql")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "put_job_sql", Description = "Update existing sql job", Summary = "Update Sql Job")]
         [JsonConsumes]
         [CreatedResponse(typeof(JobIdResponse))]
@@ -92,6 +99,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("path")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_job_folder", Description = "Add job by yml job file", Summary = "Add Job By Yml")]
         [JsonConsumes]
         [CreatedResponse(typeof(JobIdResponse))]
@@ -104,6 +112,7 @@ namespace Planar.Controllers
         }
 
         [HttpPut("folder")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "put_job_folder", Description = "Update job by yml job file", Summary = "Update Job By Yml")]
         [JsonConsumes]
         [CreatedResponse(typeof(JobIdResponse))]
@@ -117,6 +126,7 @@ namespace Planar.Controllers
 
         [ApiExplorerSettings(IgnoreApi = true)]
         [HttpGet("available-jobs")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_job_available_jobs", Description = "", Summary = "")]
         [OkJsonResponse(typeof(List<AvailableJobToAdd>))]
         public async Task<ActionResult<List<AvailableJobToAdd>>> GetAvailableJobsToAdd()
@@ -126,6 +136,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job", Description = "Get all jobs", Summary = "Get All Jobs")]
         [OkJsonResponse(typeof(List<JobRowDetails>))]
         public async Task<ActionResult<List<JobRowDetails>>> GetAll([FromQuery] GetAllJobsRequest request)
@@ -135,6 +146,7 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "delete_job_id", Description = "Delete job", Summary = "Delete Job")]
         [NoContentResponse]
         [BadRequestResponse]
@@ -146,6 +158,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{id}")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job_id", Description = "Get job details by id", Summary = "Get Job By Id")]
         [OkJsonResponse(typeof(JobDetails))]
         [BadRequestResponse]
@@ -157,6 +170,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("nextRunning/{id}")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job_nextRunning_id", Description = "Get the next running date & time of job", Summary = "Get Next Running Date")]
         [OkTextResponse]
         [BadRequestResponse]
@@ -168,6 +182,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("prevRunning/{id}")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job_prevRunning_id", Description = "Get the previous running date & time of job", Summary = "Get Previous Running Date")]
         [OkTextResponse]
         [BadRequestResponse]
@@ -179,6 +194,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("data")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_job_data", Description = "Add job data", Summary = "Add Job Data")]
         [JsonConsumes]
         [CreatedResponse]
@@ -191,6 +207,7 @@ namespace Planar.Controllers
         }
 
         [HttpPut("data")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "put_job_data", Description = "Update job data", Summary = "Update Job Data")]
         [JsonConsumes]
         [CreatedResponse]
@@ -203,6 +220,7 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}/data/{key}")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "delete_job_id_data_key", Description = "Delete job data", Summary = "Delete Job Data")]
         [NoContentResponse]
         [BadRequestResponse]
@@ -214,6 +232,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("invoke")]
+        [TesterAuthorize]
         [SwaggerOperation(OperationId = "post_job_invoke", Description = "Invoke job", Summary = "Invoke Job")]
         [JsonConsumes]
         [AcceptedContentResponse]
@@ -226,6 +245,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("pause")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_job_pause", Description = "Pause job", Summary = "Pause Job")]
         [JsonConsumes]
         [AcceptedContentResponse]
@@ -238,6 +258,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("pauseAll")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_job_pauseall", Description = "Pause all jobs", Summary = "Pause All Jobs")]
         [AcceptedContentResponse]
         public async Task<IActionResult> PauseAll()
@@ -247,6 +268,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("resume")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_job_resume", Description = "Resume job", Summary = "Resume Job")]
         [JsonConsumes]
         [AcceptedContentResponse]
@@ -259,6 +281,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("resumeAll")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_job_resumeall", Description = "Resume all jobs", Summary = "Resume All Jobs")]
         [AcceptedContentResponse]
         public async Task<IActionResult> ResumeAll()
@@ -267,19 +290,21 @@ namespace Planar.Controllers
             return Accepted();
         }
 
-        [HttpPost("stop")]
-        [SwaggerOperation(OperationId = "post_job_stop", Description = "Stop running job", Summary = "Stop Job")]
+        [HttpPost("cancel")]
+        [EditorAuthorize]
+        [SwaggerOperation(OperationId = "post_job_cancel", Description = "Cancel running job", Summary = "Cancel Job")]
         [JsonConsumes]
         [AcceptedContentResponse]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<bool>> Stop([FromBody] FireInstanceIdRequest request)
+        public async Task<ActionResult<bool>> Cancel([FromBody] FireInstanceIdRequest request)
         {
-            await BusinesLayer.Stop(request);
+            await BusinesLayer.Cancel(request);
             return Accepted();
         }
 
         [HttpGet("{id}/settings")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "gat_job_id_settings", Description = "Get job settings", Summary = "Get Job Settings")]
         [OkJsonResponse(typeof(IEnumerable<KeyValueItem>))]
         [BadRequestResponse]
@@ -290,6 +315,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("running/{instanceId}")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job_running_instanceid", Description = "Get runnng job info", Summary = "Get Runnng Job Info")]
         [OkJsonResponse(typeof(RunningJobDetails))]
         [BadRequestResponse]
@@ -300,6 +326,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("running")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job_running", Description = "Gat all running jobs", Summary = "Gat All Running Jobs")]
         [OkJsonResponse(typeof(List<RunningJobDetails>))]
         public async Task<ActionResult<List<RunningJobDetails>>> GetRunning()
@@ -309,6 +336,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("runningData/{instanceId}")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job_runningData_instanceid", Description = "Get running job log & exception", Summary = "Get Running Job Data")]
         [OkJsonResponse(typeof(GetRunningDataResponse))]
         [BadRequestResponse]
@@ -320,6 +348,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("jobfile/{name}")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_job_jobfile_name", Description = "Get JobFile.yml template", Summary = "Get JobFile.yml Template")]
         [OkYmlResponse]
         [BadRequestResponse]
@@ -331,6 +360,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("types")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job_types", Description = "Get all job types", Summary = "Get All Job Types")]
         [OkJsonResponse(typeof(IEnumerable<string>))]
         public ActionResult<IEnumerable<string>> GetJobTypes()
@@ -341,6 +371,7 @@ namespace Planar.Controllers
 
         [ApiExplorerSettings(IgnoreApi = true)]
         [HttpGet("testStatus/{id}")]
+        [TesterAuthorize]
         [SwaggerOperation(OperationId = "get_job_teststatus_id", Description = "", Summary = "")]
         [OkJsonResponse(typeof(GetTestStatusResponse))]
         [BadRequestResponse]
@@ -353,6 +384,7 @@ namespace Planar.Controllers
 
         [ApiExplorerSettings(IgnoreApi = true)]
         [HttpGet("{id}/lastInstanceId")]
+        [TesterAuthorize]
         [SwaggerOperation(OperationId = "get_job_id_lastinstanceid", Description = "", Summary = "")]
         [OkJsonResponse(typeof(LastInstanceId))]
         [BadRequestResponse]

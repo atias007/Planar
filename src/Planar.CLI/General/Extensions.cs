@@ -26,6 +26,12 @@ namespace Planar.CLI.General
             yield return str?[nextPiece..];
         }
 
+        public static string? SafeTrim(this string? str)
+        {
+            if (string.IsNullOrEmpty(str)) { return str; }
+            return str.Trim();
+        }
+
         public static string TrimMatchingQuotes(this string input, char quote)
         {
             if ((input.Length >= 2) &&

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
+using Planar.Authorization;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 namespace Planar.Controllers
 {
     [Route("trace")]
+    [ViewerAuthorize]
     public class TraceController : BaseController<TraceDomain>
     {
         public TraceController(TraceDomain bl) : base(bl)

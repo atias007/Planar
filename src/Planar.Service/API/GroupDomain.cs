@@ -7,6 +7,7 @@ using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -44,6 +45,11 @@ namespace Planar.Service.API
         public async Task<List<GroupInfo>> GetAllGroups()
         {
             return await DataLayer.GetGroups();
+        }
+
+        public static IEnumerable<string> GetAllGroupsRoles()
+        {
+            return Enum.GetNames<Roles>().Select(r => r.ToLower());
         }
 
         public async Task DeleteGroup(int id)
@@ -88,8 +94,15 @@ namespace Planar.Service.API
 
         public async Task PartialUpdateGroup(UpdateEntityRequest request)
         {
+            if (string.Equals(request.PropertyName, "role", StringComparison.OrdinalIgnoreCase)
+                ||
+                string.Equals(request.PropertyName, "roleid", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new RestValidationException("property name", "role property can not be updated. to update role use specific role service");
+            }
+
             var group = await DataLayer.GetGroup(request.Id);
-            ValidateExistingEntity(group, "monitor");
+            ValidateExistingEntity(group, "group");
             var updateGroup = Mapper.Map<UpdateGroupRequest>(group);
             var validator = Resolve<IValidator<UpdateGroupRequest>>();
             await SetEntityProperties(updateGroup, request, validator);
@@ -120,6 +133,12 @@ namespace Planar.Service.API
             if (await DataLayer.IsUserExistsInGroup(userId, groupId)) { throw new RestValidationException("user id", $"user id {userId} already in group id {groupId}"); }
 
             await DataLayer.AddUserToGroup(userId, groupId);
+        }
+
+        public async Task SetRoleToGroup(int groupId, Roles role)
+        {
+            if (!await DataLayer.IsGroupExists(groupId)) { throw new RestNotFoundException($"group id {groupId} does not exist"); }
+            await DataLayer.SetRoleToGroup(groupId, (int)role);
         }
 
         public async Task RemoveUserFromGroup(int groupId, int userId)

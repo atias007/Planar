@@ -34,9 +34,30 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<User?> GetUserByUsername(string username)
+        public async Task<UserIdentity?> GetUserIdentity(string username)
         {
-            var result = await _context.Users.FirstOrDefaultAsync(u => u.Username.ToLower() == username.ToLower());
+            var result = await _context.Users
+                .Where(u => u.Username.ToLower() == username.ToLower())
+                .Select(u => new UserIdentity
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Password = u.Password,
+                    Salt = u.Salt,
+                })
+                .FirstOrDefaultAsync();
+
+            return result;
+        }
+
+        public async Task<int> GetUserRole(int id)
+        {
+            var result = await _context.Groups
+                .Where(g => g.Users.Any(u => u.Id == id))
+                .Select(g => g.RoleId)
+                .OrderByDescending(g => g)
+                .FirstOrDefaultAsync();
+
             return result;
         }
 

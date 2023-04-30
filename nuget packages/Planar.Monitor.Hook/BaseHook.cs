@@ -77,12 +77,7 @@ namespace Planar.Monitor.Hook
                     JsonSerializer.Deserialize<T>(json) :
                     JsonSerializer.Deserialize<T>(json, options);
 
-                if (result == null)
-                {
-                    throw new PlanarMonitorException($"Fail to deserialize {typeof(T).Name}. Result was null");
-                }
-
-                return result;
+                return result ?? throw new PlanarMonitorException($"Fail to deserialize {typeof(T).Name}. Result was null");
             }
             catch (Exception ex)
             {
@@ -120,19 +115,19 @@ namespace Planar.Monitor.Hook
         {
             string? url;
 
-            url = GetHookParameterReference(key, group.Reference1);
+            url = GetHookParameterReference(key, group.AdditionalField1);
             if (url != null) { return url; }
 
-            url = GetHookParameterReference(key, group.Reference2);
+            url = GetHookParameterReference(key, group.AdditionalField2);
             if (url != null) { return url; }
 
-            url = GetHookParameterReference(key, group.Reference3);
+            url = GetHookParameterReference(key, group.AdditionalField3);
             if (url != null) { return url; }
 
-            url = GetHookParameterReference(key, group.Reference4);
+            url = GetHookParameterReference(key, group.AdditionalField4);
             if (url != null) { return url; }
 
-            url = GetHookParameterReference(key, group.Reference5);
+            url = GetHookParameterReference(key, group.AdditionalField5);
             if (url != null) { return url; }
 
             return null;

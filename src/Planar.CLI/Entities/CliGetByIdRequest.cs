@@ -2,7 +2,7 @@
 
 namespace Planar.CLI.Entities
 {
-    public class CliGetByIdRequest : CliOutputFilenameRequest
+    public class CliGetByIdRequest
     {
         [ActionProperty(DefaultOrder = 0)]
         [Required("id argument is required")]

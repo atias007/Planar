@@ -12,6 +12,8 @@ namespace Planar.CLI
     {
         public string Module { get; set; } = string.Empty;
 
+        public List<string> ModuleSynonyms { get; set; } = new();
+
         public List<string> Commands { get; set; } = new();
 
         public MethodInfo? Method { get; set; }
@@ -32,6 +34,8 @@ namespace Planar.CLI
 
         public bool HasWizard { get; set; }
 
+        public string CommandsTitle => string.Join('|', Commands);
+
         public void SetArgumentsDisplayName()
         {
             var defaultArgs = Arguments
@@ -49,7 +53,7 @@ namespace Planar.CLI
 
                 if (enumType != null)
                 {
-                    var options = GetEnumOptions(enumType);
+                    var options = GetEnumOptionsTitle(enumType);
                     if (!string.IsNullOrEmpty(options))
                     {
                         title = options;
@@ -85,7 +89,7 @@ namespace Planar.CLI
                 }
                 else if (enumType != null)
                 {
-                    var options = GetEnumOptions(enumType);
+                    var options = GetEnumOptionsTitle(enumType);
                     ArgumentsDisplayNameItems.Add($"[{item.DisplayName} <{options}>]");
                 }
                 else
@@ -97,7 +101,7 @@ namespace Planar.CLI
             ArgumentsDisplayName = string.Join(' ', ArgumentsDisplayNameItems);
         }
 
-        private static string GetEnumOptions(Type type)
+        public static IEnumerable<string> GetEnumOptions(Type type)
         {
             var parts = new List<string>();
             var items = type.GetMembers(BindingFlags.Public | BindingFlags.Static);
@@ -115,6 +119,12 @@ namespace Planar.CLI
                 }
             }
 
+            return parts;
+        }
+
+        private static string GetEnumOptionsTitle(Type type)
+        {
+            var parts = GetEnumOptions(type);
             return string.Join('|', parts);
         }
 

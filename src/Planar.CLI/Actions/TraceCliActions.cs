@@ -2,6 +2,7 @@
 using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
 using Planar.CLI.General;
+using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
 using System;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("trace", "Actions to list trace log info")]
+    [Module("trace", "Actions to list trace log info", Synonyms = "traces")]
     public class TraceCliActions : BaseCliAction<TraceCliActions>
     {
         [Action("ls")]
@@ -46,22 +47,22 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, table);
         }
 
-        [Action("error")]
-        public static async Task<CliActionResponse> GetTraceException(CliGetByIdRequest request, CancellationToken cancellationToken = default)
+        [Action("exception")]
+        public static async Task<CliActionResponse> GetTraceException(CliGetByIdRequestWithOutput request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("trace/{id}/exception", Method.Get)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
-            return await ExecuteEntity<string>(restRequest, cancellationToken);
+            return await ExecuteEntity<string>(restRequest, request, cancellationToken);
         }
 
         [Action("prop")]
-        public static async Task<CliActionResponse> GetTraceProperties(CliGetByIdRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> GetTraceProperties(CliGetByIdRequestWithOutput request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("trace/{id}/properties", Method.Get)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
             var data = Util.BeautifyJson(result.Data);
-            return new CliActionResponse(result, message: data);
+            return new CliActionResponse(result, message: data, request);
         }
 
         [Action("count")]

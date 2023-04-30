@@ -8,11 +8,12 @@ namespace Planar.Service.Validation
         public AddGroupRequestValidator()
         {
             RuleFor(g => g.Name).NotEmpty().Length(2, 50);
-            RuleFor(u => u.Reference1).MaximumLength(500);
-            RuleFor(u => u.Reference2).MaximumLength(500);
-            RuleFor(u => u.Reference3).MaximumLength(500);
-            RuleFor(u => u.Reference4).MaximumLength(500);
-            RuleFor(u => u.Reference5).MaximumLength(500);
+            RuleFor(u => u.AdditionalField1).MaximumLength(500);
+            RuleFor(u => u.AdditionalField2).MaximumLength(500);
+            RuleFor(u => u.AdditionalField3).MaximumLength(500);
+            RuleFor(u => u.AdditionalField4).MaximumLength(500);
+            RuleFor(u => u.AdditionalField5).MaximumLength(500);
+            RuleFor(u => u.RoleId).IsInEnum();
         }
     }
 }

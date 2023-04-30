@@ -26,7 +26,7 @@ namespace Planar.Job
             {
                 if (_configuration == null)
                 {
-                    throw new ArgumentException(nameof(Configuration));
+                    throw new ArgumentNullException(nameof(Configuration));
                 }
 
                 return _configuration;
@@ -108,16 +108,22 @@ namespace Planar.Job
                 });
         }
 
+        [Obsolete("AddAggragateException is deprecated because spelling error. Use AddAggregateException instead")]
         protected void AddAggragateException(Exception ex)
         {
+            AddAggregateException(ex);
+        }
+
+        protected void AddAggregateException(Exception ex)
+        {
             var message = new ExceptionDto(ex);
-            _messageBroker?.Publish(MessageBrokerChannels.AddAggragateException, message);
+            _messageBroker?.Publish(MessageBrokerChannels.AddAggregateException, message);
         }
 
         protected void CheckAggragateException()
         {
             var text = _messageBroker?.Publish(MessageBrokerChannels.GetExceptionsText);
-            if (string.IsNullOrEmpty(text) == false)
+            if (!string.IsNullOrEmpty(text))
             {
                 var ex = new PlanarJobAggragateException(text);
                 throw ex;
@@ -269,7 +275,7 @@ namespace Planar.Job
         {
             if (messageBroker == null)
             {
-                throw new ApplicationException("MessageBroker at BaseJob.Execute(string, ref object) is null");
+                throw new PlanarJobException("MessageBroker at BaseJob.Execute(string, ref object) is null");
             }
 
             try
@@ -285,11 +291,8 @@ namespace Planar.Job
                         new TypeMappingConverter<IKey, Key>()
                     }
                 };
-                var ctx = JsonSerializer.Deserialize<JobExecutionContext>(_messageBroker.Details, options);
-                if (ctx == null)
-                {
+                var ctx = JsonSerializer.Deserialize<JobExecutionContext>(_messageBroker.Details, options) ??
                     throw new PlanarJobException("Fail to initialize JobExecutionContext from message broker detials (error 7379)");
-                }
 
                 FilterJobData(ctx.MergedJobDataMap);
                 FilterJobData(ctx.JobDetails.JobDataMap);
@@ -299,7 +302,7 @@ namespace Planar.Job
             }
             catch (Exception ex)
             {
-                throw new ApplicationException("Fail to deserialize job execution context at BaseJob.Execute(string, ref object)", ex);
+                throw new PlanarJobException("Fail to deserialize job execution context at BaseJob.Execute(string, ref object)", ex);
             }
         }
 

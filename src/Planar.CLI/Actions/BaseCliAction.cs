@@ -1,13 +1,14 @@
-﻿using Newtonsoft.Json.Linq;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.CLI.General;
+using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -18,10 +19,19 @@ namespace Planar.CLI.Actions
 {
     public abstract class BaseCliAction
     {
-        protected const string CancelOption = "<cancel>";
         protected const string JobFileName = "JobFile.yml";
 
         public static bool InteractiveMode { get; set; }
+
+        protected static void ValidateFileExists(string filename)
+        {
+            var fi = new FileInfo(filename);
+
+            if (!fi.Exists)
+            {
+                throw new CliException($"file '{fi.FullName}' does not exists");
+            }
+        }
 
         protected static async Task<CliActionResponse> Execute(RestRequest request, CancellationToken cancellationToken = default)
         {
@@ -29,7 +39,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        protected static string? CollectCliValue(string field, bool required, int minLength, int maxLength, string? regex = null, string? regexErrorMessage = null)
+        protected static string? CollectCliValue(string field, bool required, int minLength, int maxLength, string? regex = null, string? regexErrorMessage = null, string? defaultValue = null, bool secret = false)
         {
             var prompt = new TextPrompt<string>($"[turquoise2]  > {field.EscapeMarkup()}: [/]")
                 .Validate(value =>
@@ -57,24 +67,34 @@ namespace Planar.CLI.Actions
                 });
 
             if (!required) { prompt.AllowEmpty(); }
+            if (secret) { prompt.Secret(); }
+            if (!string.IsNullOrEmpty(defaultValue))
+            {
+                prompt.DefaultValue(defaultValue);
+            }
 
             var result = AnsiConsole.Prompt(prompt);
 
             return string.IsNullOrEmpty(result) ? null : result;
         }
 
-        protected static async Task<CliActionResponse> ExecuteEntity<T>(RestRequest request, CancellationToken cancellationToken = default)
+        protected static async Task<CliActionResponse> ExecuteEntity<T>(RestRequest request, CancellationToken cancellationToken)
+        {
+            return await ExecuteEntity<T>(request, null, cancellationToken);
+        }
+
+        protected static async Task<CliActionResponse> ExecuteEntity<T>(RestRequest request, CliOutputFilenameRequest? outputRequest, CancellationToken cancellationToken)
         {
             var result = await RestProxy.Invoke<T>(request, cancellationToken);
             if (result.IsSuccessful)
             {
-                return new CliActionResponse(result, serializeObj: result.Data);
+                return new CliActionResponse(result, serializeObj: result.Data, outputRequest);
             }
 
             return new CliActionResponse(result);
         }
 
-        protected static async Task<CliActionResponse> ExecuteTable<T>(RestRequest request, Func<T, Table> tableFunc, CancellationToken cancellationToken = default)
+        protected static async Task<CliActionResponse> ExecuteTable<T>(RestRequest request, Func<T, Table> tableFunc, CancellationToken cancellationToken)
         {
             var result = await RestProxy.Invoke<T>(request, cancellationToken);
             if (result.IsSuccessful && result.Data != null)
@@ -84,23 +104,6 @@ namespace Planar.CLI.Actions
             }
 
             return new CliActionResponse(result);
-        }
-
-        private static object? ConvertJTokenToObject(JToken token)
-        {
-            if (token is JValue value) { return value.Value; }
-
-            if (token is JArray)
-            {
-                return token.AsEnumerable().Select(ConvertJTokenToObject).ToList();
-            }
-
-            if (token is JObject)
-            {
-                return token.AsEnumerable().Cast<JProperty>().ToDictionary(x => x.Name, x => ConvertJTokenToObject(x.Value));
-            }
-
-            throw new InvalidOperationException("unexpected token: " + token);
         }
 
         private static ValidationResult GetValidationResultError(string message)
@@ -224,46 +227,7 @@ namespace Planar.CLI.Actions
 
         protected static string? PromptSelection(IEnumerable<string>? items, string title, bool addCancelOption = true)
         {
-            if (items == null) { return null; }
-            IEnumerable<string> finalItems;
-            if (addCancelOption)
-            {
-                var temp = items.ToList();
-                temp.Add(CancelOption);
-                finalItems = temp;
-            }
-            else
-            {
-                finalItems = items;
-            }
-
-            using var _ = new TokenBlockerScope();
-            var selectedItem = AnsiConsole.Prompt(
-                 new SelectionPrompt<string>()
-                     .Title($"[underline][gray]select [/][white]{title?.EscapeMarkup()}[/][gray] from the following list (press [/][blue]enter[/][gray] to select):[/][/]")
-                     .PageSize(20)
-                     .MoreChoicesText($"[grey](Move [/][blue]up[/][grey] and [/][blue]down[/] [grey]to reveal more [/][white]{title?.EscapeMarkup()}s[/])")
-                     .AddChoices(finalItems));
-
-            CheckForCancelOption(selectedItem);
-
-            return selectedItem;
-        }
-
-        protected static void CheckForCancelOption(string value)
-        {
-            if (value == CancelOption)
-            {
-                throw new CliWarningException("operation was canceled");
-            }
-        }
-
-        protected static void CheckForCancelOption(IEnumerable<string> values)
-        {
-            if (values.Any(v => v == CancelOption))
-            {
-                throw new CliWarningException("operation was canceled");
-            }
+            return CliPromptUtil.PromptSelection(items, title, addCancelOption);
         }
 
         protected static bool ConfirmAction(string title)
@@ -321,6 +285,16 @@ namespace Planar.CLI.Actions
                     IgnoreHelp = ignoreHelpAttribute != null,
                     HasWizard = hasWizard != null
                 };
+
+                if (!string.IsNullOrEmpty(moduleAttribute?.Synonyms))
+                {
+                    item.ModuleSynonyms = moduleAttribute.Synonyms.Split(',').ToList();
+                }
+
+                if (!string.IsNullOrEmpty(item.Module))
+                {
+                    item.ModuleSynonyms.Add(item.Module);
+                }
 
                 item.SetArgumentsDisplayName();
 

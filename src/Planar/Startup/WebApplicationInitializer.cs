@@ -86,6 +86,12 @@ namespace Planar.Startup
 
             app.UseRouting();
 
+            // Authorization
+            if (AppSettings.AuthenticationMode != AuthMode.AllAnonymous)
+            {
+                app.UseAuthentication();
+            }
+
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

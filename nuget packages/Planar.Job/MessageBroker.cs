@@ -6,24 +6,6 @@ using System.Text.Json;
 
 namespace Planar
 {
-    internal enum MessageBrokerChannels
-    {
-        AddAggragateException,
-        AppendLog,
-        FailOnStopRequest,
-        GetExceptionsText,
-        GetData,
-        CheckIfStopRequest,
-        GetEffectedRows,
-        IncreaseEffectedRows,
-        SetEffectedRows,
-        DataContainsKey,
-        PutJobData,
-        PutTriggerData,
-        UpdateProgress,
-        JobRunTime
-    }
-
     internal class MessageBroker
     {
         private object Instance { get; set; } = new object();
@@ -43,7 +25,7 @@ namespace Planar
 
             if (_method == null)
             {
-                throw new ApplicationException("MessageBroker does not contains 'Publish' method");
+                throw new ArgumentNullException(nameof(instance), "MessageBroker does not contains 'Publish' method");
             }
 
             Details = GetProperty<string>(instance.GetType(), nameof(Details));
@@ -84,12 +66,7 @@ namespace Planar
 
         private T GetProperty<T>(Type type, string name)
         {
-            var prop = type.GetProperty(name);
-            if (prop == null)
-            {
-                throw new PlanarJobException($"MessageBroker does not contains '{name}' property");
-            }
-
+            var prop = type.GetProperty(name) ?? throw new PlanarJobException($"MessageBroker does not contains '{name}' property");
             var value = prop.GetValue(Instance);
             var result = (T)Convert.ChangeType(value, typeof(T), CultureInfo.InvariantCulture);
             return result;

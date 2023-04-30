@@ -4,7 +4,7 @@
 		<OutputType>Exe</OutputType>
 		<TargetFramework>net6.0</TargetFramework>
 		<AssemblyName>planar-cli</AssemblyName>
-		<Version>1.2.0</Version>
+		<Version>1.2.4</Version>
 		<StartupObject>Planar.CLI.Program</StartupObject>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
@@ -26,6 +26,7 @@
 		<None Remove="Help\Job.txt" />
 		<None Remove="Help\Modules.txt" />
 		<None Remove="Help\Monitor.txt" />
+		<None Remove="Help\Service.txt" />
 		<None Remove="Help\Trace.txt" />
 		<None Remove="Help\Trigger.txt" />
 		<None Remove="Help\User.txt" />
@@ -52,14 +53,10 @@
 
 	<ItemGroup>
 		<PackageReference Include="AsciiChart.Sharp" Version="1.0.3" />
-		<PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="7.0.5" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
+		<PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="7.0.3" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.1" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="RestSharp" Version="110.2.0" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="8.55.0.65544">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
 		<PackageReference Include="Spectre.Console" Version="0.46.0" />
 	</ItemGroup>
 

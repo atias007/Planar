@@ -26,7 +26,7 @@ namespace SomeJob
 
             var maxDiffranceHours = Configuration.GetValue("Max Diffrance Hours", 12);
             Logger.LogInformation("Value is {Value} while default value is 12", maxDiffranceHours);
-            AddAggragateException(new Exception("agg ex"));
+            AddAggregateException(new Exception("agg ex"));
 
             var exists = IsDataExists("X");
             Logger.LogDebug("Data X Exists: {Value}", exists);
@@ -60,6 +60,38 @@ namespace SomeJob
 
             SimpleInt += 5;
             IgnoreData = "x";
+
+            for (int i = 0; i < 1250; i++)
+            {
+                try
+                {
+                    // Do Something 1
+
+                    // Do Something 2
+
+                    // Do Something 3
+
+                    // Do Something 4
+
+                    IncreaseEffectedRows();
+                }
+                catch (Exception ex)
+                {
+                    AddAggregateException(ex);
+                }
+                finally
+                {
+                    UpdateProgress(i, 1250);
+                    FailOnStopRequest();
+
+                    ////if(CheckIfStopRequest())
+                    ////{
+                    ////    // exist procedure
+                    ////}
+                }
+            }
+
+            CheckAggragateException();
         }
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

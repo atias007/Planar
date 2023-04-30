@@ -26,6 +26,16 @@ namespace Planar.CLI.CliGeneral
             return $"[black on {ErrorColor}]validation error:[/] [{ErrorColor}]{message.EscapeMarkup()}[/]";
         }
 
+        public static string GetUnauthorizedErrorMarkup()
+        {
+            return $"[black on {ErrorColor}]unauthorized:[/] [{ErrorColor}]you must login to performe this action[/]";
+        }
+
+        public static string GetForbiddenErrorMarkup()
+        {
+            return $"[black on {ErrorColor}]forbidden:[/] [{ErrorColor}]you don't the permmision to performe this action[/]";
+        }
+
         public static string GetConflictErrorMarkup(string? message)
         {
             message ??= string.Empty;

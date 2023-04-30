@@ -1,10 +1,13 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Azure.Identity;
+using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.General.Hash;
+using Planar.Service.Model.DataObjects;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -57,7 +60,8 @@ namespace Planar.Service.API
                 SwaggerUI = AppSettings.SwaggerUI,
                 OpenApiUI = AppSettings.OpenApiUI,
                 DeveloperExceptionPage = AppSettings.DeveloperExceptionPage,
-                AuthenticationMode = AppSettings.AuthenticationMode.ToString()
+                AuthenticationMode = AppSettings.AuthenticationMode.ToString(),
+                AuthenticationTokenExpire = AppSettings.AuthenticationTokenExpire,
             };
 
             return response;
@@ -138,7 +142,7 @@ namespace Planar.Service.API
             return list;
         }
 
-        public async Task HaltScheduler()
+        public async Task StopScheduler()
         {
             await SchedulerUtil.Stop();
             if (AppSettings.Clustering)
@@ -158,19 +162,45 @@ namespace Planar.Service.API
             }
         }
 
-        public async Task<string> Login(LoginRequest request)
+        public async Task<LoginResponse> Login(LoginRequest request)
         {
-            var user = await Resolve<UserData>().GetUserByUsername(request.Username);
-            ValidateExistingEntity(user, "user");
-            if (user == null) { return string.Empty; }
-
-            var verify = HashUtil.VerifyHash(request.Password, user.Password, user.Salt);
-            if (!verify)
+            if (AppSettings.AuthenticationMode == AuthMode.AllAnonymous)
             {
-                throw new RestValidationException("password", "wrong password");
+                throw new RestConflictException("login service is not avaliable when authentication mode is disabled (AllAnonymous)");
             }
 
-            return user.Id.ToString();
+            if (string.IsNullOrWhiteSpace(request.Username))
+            {
+                throw new RestValidationException("username", "username is required");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Password))
+            {
+                throw new RestValidationException("password", "password is required");
+            }
+
+            var userData = Resolve<UserData>();
+            var user =
+                await userData.GetUserIdentity(request.Username) ??
+                throw new RestValidationException("username", $"user with username '{request.Username}' not exists", 100);
+
+            var role = await userData.GetUserRole(user.Id);
+            user.RoleId = role;
+
+            var verify = HashUtil.VerifyHash(request.Password!, user.Password, user.Salt);
+            if (!verify)
+            {
+                throw new RestValidationException("password", "wrong password", 101);
+            }
+
+            var token = HashUtil.CreateToken(user);
+            var result = new LoginResponse
+            {
+                Role = RoleHelper.GetTitle(role),
+                Token = token
+            };
+
+            return result;
         }
     }
 }

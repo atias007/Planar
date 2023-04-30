@@ -16,7 +16,7 @@ namespace Planar.CLI.Entities
 
     public class CliUpdateJobRequest : CliAddJobRequest
     {
-        [ActionProperty(DefaultOrder = 1)]
+        [ActionProperty(DefaultOrder = 1, Name = "options")]
         public JobUpdateOptions? Options { get; set; }
     }
 }

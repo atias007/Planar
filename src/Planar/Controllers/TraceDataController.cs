@@ -2,11 +2,13 @@
 using Microsoft.AspNetCore.OData.Formatter;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.Extensions.DependencyInjection;
+using Planar.Authorization;
 using Planar.Service.API;
 using System;
 
 namespace Planar.Controllers
 {
+    [ViewerAuthorize]
     public class TraceDataController : ControllerBase
     {
         private readonly TraceDomain _businessLayer;

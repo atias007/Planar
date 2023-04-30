@@ -1,9 +1,9 @@
-﻿using Planar.CLI.Entities;
+﻿using System.Collections.Generic;
 
 namespace Planar.CLI.DataProtect
 {
     public class UserMetadata
     {
-        public CliLoginRequest? LoginRequest { get; set; }
+        public List<LoginData> Logins { get; set; } = new();
     }
 }

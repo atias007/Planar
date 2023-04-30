@@ -10,11 +10,15 @@ using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
+using Planar.Service.Model.DataObjects;
+using Planar.Service.Model;
 using Quartz;
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace Planar.Service.API
 {
@@ -22,10 +26,48 @@ namespace Planar.Service.API
         where TDataLayer : BaseDataLayer
     {
         private readonly TDataLayer _dataLayer;
+        private readonly IHttpContextAccessor _contextAccessor;
 
         protected BaseBL(IServiceProvider serviceProvider) : base(serviceProvider)
         {
             _dataLayer = serviceProvider.GetRequiredService<TDataLayer>();
+            _contextAccessor = serviceProvider.GetRequiredService<IHttpContextAccessor>();
+        }
+
+        protected int? UserId
+        {
+            get
+            {
+                return GetClaimIntValue(ClaimTypes.NameIdentifier);
+            }
+        }
+
+        protected Roles RoleId
+        {
+            get
+            {
+                var value = GetClaimIntValue(ClaimTypes.Role) ?? 0;
+                if (Enum.IsDefined(typeof(Roles), value))
+                {
+                    return (Roles)value;
+                }
+                else
+                {
+                    return Roles.Anonymous;
+                }
+            }
+        }
+
+        private int? GetClaimIntValue(string claimType)
+        {
+            var context = _contextAccessor.HttpContext;
+            if (context?.User?.Claims == null) { return null; }
+            var claim = context.User.Claims.FirstOrDefault(c => c.Type == claimType);
+            if (claim == null) { return null; }
+            var strValue = claim.Value;
+            if (string.IsNullOrEmpty(strValue)) { return null; }
+            if (!int.TryParse(strValue, out var value)) { return null; }
+            return value;
         }
 
         protected TDataLayer DataLayer => _dataLayer;

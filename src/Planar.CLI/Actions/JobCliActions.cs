@@ -1,16 +1,15 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
+using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
 using Planar.CLI.General;
-using Planar.Common;
+using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
@@ -21,7 +20,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("job", "Actions to add, remove, list, update and operate jobs")]
+    [Module("job", "Actions to add, remove, list, update and operate jobs", Synonyms = "jobs")]
     public class JobCliActions : BaseCliAction<JobCliActions>
     {
         [Action("add")]
@@ -331,7 +330,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        [Action("stop")]
+        [Action("cancel")]
         [NullRequest]
         public static async Task<CliActionResponse> StopRunningJob(CliFireInstanceIdRequest request, CancellationToken cancellationToken = default)
         {
@@ -340,7 +339,7 @@ namespace Planar.CLI.Actions
                 FireInstanceId = await ChooseRunningJobInstance()
             };
 
-            var restRequest = new RestRequest("job/stop", Method.Post)
+            var restRequest = new RestRequest("job/cancel", Method.Post)
                 .AddBody(request);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);
@@ -599,7 +598,7 @@ namespace Planar.CLI.Actions
             return result;
         }
 
-        private static async Task<RestResponse> CheckJob(CliInvokeJobRequest request, CancellationToken cancellationToken)
+        private static async Task<RestResponse> CheckAlreadyRunningJob(CliInvokeJobRequest request, CancellationToken cancellationToken)
         {
             var result = await CheckJobInner(cancellationToken);
             if (result.IsSuccessful)
@@ -643,10 +642,10 @@ namespace Planar.CLI.Actions
                     .AddChoiceGroup("all", "job details", "job data", "properties", "triggers", "triggers data")
                     .AddChoiceGroup("all job", "job details", "job data", "properties")
                     .AddChoiceGroup("all triggers", "triggers", "triggers data")
-                    .AddChoiceGroup(CancelOption)
+                    .AddChoiceGroup(CliPromptUtil.CancelOption)
                     );
 
-            CheckForCancelOption(options);
+            CliPromptUtil.CheckForCancelOption(options);
             var result = MapUpdateJobOptions(options);
             return result;
         }
@@ -771,7 +770,7 @@ namespace Planar.CLI.Actions
         {
             // (0) Check for running job
             AnsiConsole.MarkupLine(" [gold3_1][[x]][/] Check job...");
-            var result = await CheckJob(request, cancellationToken);
+            var result = await CheckAlreadyRunningJob(request, cancellationToken);
             if (result.IsSuccessful) { return null; }
 
             return new CliActionResponse(result);
@@ -807,7 +806,11 @@ namespace Planar.CLI.Actions
                 }
 
                 if (instanceId.Data != null) { break; }
-                await CheckJob(request, cancellationToken);
+                if (i > 5)
+                {
+                    await CheckAlreadyRunningJob(request, cancellationToken);
+                }
+
                 await Task.Delay(1000, cancellationToken);
             }
 

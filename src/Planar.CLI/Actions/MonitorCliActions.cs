@@ -2,6 +2,7 @@
 using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
 using Planar.CLI.General;
+using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
 using System;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("monitor", "Actions to handle monitoring and monitor hooks")]
+    [Module("monitor", "Actions to handle monitoring and monitor hooks", Synonyms = "monitors")]
     public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     {
         [Action("add")]
@@ -52,6 +53,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("ls")]
+        [Action("list")]
         public static async Task<CliActionResponse> GetMonitorActions(CliGetMonitorActionsRequest request, CancellationToken cancellationToken = default)
         {
             var data = new List<MonitorItem>();

@@ -1,4 +1,5 @@
-﻿using Planar.CLI.Attributes;
+﻿using Planar.API.Common.Entities;
+using Planar.CLI.Attributes;
 
 namespace Planar.CLI.Entities
 {
@@ -7,5 +8,8 @@ namespace Planar.CLI.Entities
         [ActionProperty(DefaultOrder = 0)]
         [Required("name argument is required")]
         public string Name { get; set; } = string.Empty;
+
+        [ActionProperty(DefaultOrder = 1, Name = "role")]
+        public Roles? Role { get; set; }
     }
 }

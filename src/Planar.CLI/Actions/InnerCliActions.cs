@@ -1,6 +1,8 @@
 ﻿using Planar.CLI.Attributes;
+using Planar.CLI.CliGeneral;
+using Planar.CLI.General;
+using Planar.CLI.Proxy;
 using System;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -10,10 +12,32 @@ namespace Planar.CLI.Actions
     public class InnerCliActions : BaseCliAction<InnerCliActions>
     {
         [Action("cls")]
-        public static async Task<CliActionResponse> GetParameter(CancellationToken cancellationToken = default)
+        [Action("clear")]
+        public static async Task<CliActionResponse> Clear(CancellationToken cancellationToken = default)
         {
             if (cancellationToken.IsCancellationRequested) { throw new TaskCanceledException("task was canceled"); }
             Console.Clear();
+            return await Task.FromResult(CliActionResponse.Empty);
+        }
+
+        [Action("whoami")]
+        public static async Task<CliActionResponse> WhoAmI(CancellationToken cancellationToken = default)
+        {
+            if (cancellationToken.IsCancellationRequested) { throw new TaskCanceledException("task was canceled"); }
+            var title =
+                string.IsNullOrEmpty(LoginProxy.Username) ?
+                CliConsts.Anonymous :
+                $"{LoginProxy.Username} ({LoginProxy.Role?.ToLower()})";
+
+            var result = new CliActionResponse(null, message: title);
+            return await Task.FromResult(result);
+        }
+
+        [Action("help")]
+        public static async Task<CliActionResponse> Help(CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            CliHelpGenerator.ShowModules();
             return await Task.FromResult(CliActionResponse.Empty);
         }
 

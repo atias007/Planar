@@ -2,9 +2,12 @@
 using Planar.CLI.Attributes;
 using Planar.CLI.DataProtect;
 using Planar.CLI.Entities;
+using Planar.CLI.General;
+using Planar.CLI.Proxy;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -13,10 +16,12 @@ namespace Planar.CLI.Actions
     [Module("service", "Actions to operate service, check alive, list calendars and more")]
     public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     {
-        [Action("halt")]
-        public static async Task<CliActionResponse> HaltScheduler(CancellationToken cancellationToken = default)
+        [Action("stop")]
+        public static async Task<CliActionResponse> StopScheduler(CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("service/halt", Method.Post);
+            if (!ConfirmAction("stop planar service")) { return CliActionResponse.Empty; }
+
+            var restRequest = new RestRequest("service/stop", Method.Post);
             return await Execute(restRequest, cancellationToken);
         }
 
@@ -109,52 +114,152 @@ namespace Planar.CLI.Actions
         [Action("login")]
         public static async Task<CliActionResponse> Login(CliLoginRequest request, CancellationToken cancellationToken = default)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            InnerLogin(request);
+            var notnullRequest = FillLoginRequest(request);
+            var response = await InnerLogin(notnullRequest, cancellationToken);
+            if (response.Response.IsSuccessful)
+            {
+                ConnectUtil.SaveLoginRequest(request, LoginProxy.Token);
+            }
 
-            ConnectData.SetLoginRequest(request);
-            return await Task.FromResult(CliActionResponse.Empty);
+            return response;
         }
 
         [Action("logout")]
         public static async Task<CliActionResponse> Logout(CancellationToken cancellationToken = default)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            ConnectData.Logout();
-            InnerLogin(new CliLoginRequest());
+
+            LoginProxy.Logout();
+            ConnectUtil.Logout();
+            RestProxy.Flush();
             return await Task.FromResult(CliActionResponse.Empty);
         }
 
-        public static void InitializeLogin()
+        [Action("flush-logins")]
+        public static async Task<CliActionResponse> FlushLogins(CancellationToken cancellationToken = default)
         {
-            var request = ConnectData.GetLoginRequest();
-            InnerLogin(request);
+            cancellationToken.ThrowIfCancellationRequested();
+            ConnectUtil.Flush();
+            ConnectUtil.SetColor(CliColors.Default);
+            return await Task.FromResult(CliActionResponse.Empty);
         }
 
-        private static void InnerLogin(CliLoginRequest? request)
+        [Action("login-color")]
+        public static async Task<CliActionResponse> LoginColor(CliLoginColorRequest request, CancellationToken cancellationToken = default)
         {
-            CliGeneral.Login.Set(request);
-            if (request == null) { return; }
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (request.Color == null)
+            {
+                var colorType = typeof(CliColors);
+                var options = CliActionMetadata.GetEnumOptions(colorType);
+                var colorText = PromptSelection(options, "color", true);
+                var parse = CliArgumentsUtil.ParseEnum(colorType, colorText);
+                if (parse != null)
+                {
+                    request.Color = (CliColors)parse;
+                }
+            }
+
+            ConnectUtil.SetColor(request.Color.GetValueOrDefault());
+            return await Task.FromResult(CliActionResponse.Empty);
+        }
+
+        public static async Task InitializeLogin()
+        {
+            var request = ConnectUtil.GetLastLoginRequestWithCredentials();
+            if (request == null)
+            {
+                SetDefaultAnonymousLogin();
+                Console.Title = $"{CliConsts.Title} ({CliConsts.Anonymous})";
+            }
+            else
+            {
+                await InnerLogin(request);
+            }
+        }
+
+        private static void SetDefaultAnonymousLogin()
+        {
+            ConnectUtil.Current.Host = RestProxy.Host;
+            ConnectUtil.Current.Port = RestProxy.Port;
+
+            var savedItem = ConnectUtil.GetSavedLogin(ConnectUtil.Current.Key);
+
+            if (savedItem == null)
+            {
+                ConnectUtil.SaveLoginRequest(ConnectUtil.Current, token: null);
+            }
+            else
+            {
+                RestProxy.SecureProtocol = savedItem.SecureProtocol;
+                ConnectUtil.Current.Color = savedItem.Color;
+                ConnectUtil.Current.SecureProtocol = savedItem.SecureProtocol;
+            }
+        }
+
+        private static CliLoginRequest FillLoginRequest(CliLoginRequest? request)
+        {
+            const string regexTepmplate = "^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$";
+
+            request ??= new CliLoginRequest();
+            if (!InteractiveMode) { return request; }
 
             if (string.IsNullOrEmpty(request.Host))
             {
-                request.Host = "127.0.0.1";
+                request.Host = CollectCliValue("host", true, 1, 50, defaultValue: ConnectUtil.DefaultHost) ?? string.Empty;
             }
 
             if (request.Port == 0)
             {
-                request.Port = 2306;
+                request.Port = int.Parse(CollectCliValue("port", true, 1, 5, regexTepmplate, "invalid port", ConnectUtil.DefaultPort.ToString()) ?? ConnectUtil.DefaultPort.ToString());
             }
 
-            RestProxy.Host = request.Host;
-            RestProxy.Port = request.Port;
-
-            if (request.SSL)
+            if (string.IsNullOrEmpty(request.Username))
             {
-                RestProxy.Schema = "https";
+                request.Username = CollectCliValue("username", required: false, 2, 50);
             }
 
-            RestProxy.Flush();
+            if (string.IsNullOrEmpty(request.Password))
+            {
+                request.Password = CollectCliValue("password", required: false, 2, 50, secret: true);
+            }
+
+            var savedItem = ConnectUtil.GetSavedLogin(request.Key);
+            if (savedItem != null)
+            {
+                request.Color = savedItem.Color;
+                request.SecureProtocol = savedItem.SecureProtocol;
+            }
+
+            return request;
+        }
+
+        private static async Task<CliActionResponse> InnerLogin(CliLoginRequest request, CancellationToken cancellationToken = default)
+        {
+            var result = await LoginProxy.Login(request, cancellationToken);
+
+            // Success authorize
+            if (result.IsSuccessStatusCode)
+            {
+                Console.Title = $"{CliConsts.Title} ({request.Username})";
+
+                return new CliActionResponse(result, message: $"login success ({LoginProxy.Role?.ToLower()})");
+            }
+            else if (result.StatusCode == HttpStatusCode.Conflict)
+            {
+                // No need to authorize
+                RestProxy.Host = request.Host;
+                RestProxy.Port = request.Port;
+                RestProxy.SecureProtocol = request.SecureProtocol;
+                RestProxy.Flush();
+
+                LoginProxy.Logout();
+                return CliActionResponse.Empty;
+            }
+
+            // Login error
+            return new CliActionResponse(result);
         }
     }
 }

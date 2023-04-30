@@ -1,6 +1,7 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
+using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
 using System;
@@ -20,7 +21,7 @@ namespace Planar.CLI.Actions
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<CliJobInstanceLog>(restRequest, cancellationToken);
-            return new CliActionResponse(result, serializeObj: result.Data, request);
+            return new CliActionResponse(result, serializeObj: result.Data);
         }
 
         [Action("ls")]
@@ -77,11 +78,11 @@ namespace Planar.CLI.Actions
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
-            return new CliActionResponse(result, serializeObj: result.Data, request);
+            return new CliActionResponse(result, serializeObj: result.Data);
         }
 
         [Action("log")]
-        public static async Task<CliActionResponse> GetHistoryLogById(CliGetByLongIdRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> GetHistoryLogById(CliGetByLongIdRequestWithOutput request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("history/{id}/log", Method.Get)
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
@@ -91,7 +92,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("ex")]
-        public static async Task<CliActionResponse> GetHistoryExceptionById(CliGetByLongIdRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> GetHistoryExceptionById(CliGetByLongIdRequestWithOutput request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("history/{id}/exception", Method.Get)
                .AddParameter("id", request.Id, ParameterType.UrlSegment);

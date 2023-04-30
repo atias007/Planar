@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Planar.Common.Exceptions;
 using Polly;
 using System;
@@ -69,6 +70,12 @@ namespace Planar.Common
 
         public static AuthMode AuthenticationMode { get; set; }
 
+        public static string? AuthenticationSecret { get; set; }
+
+        public static TimeSpan AuthenticationTokenExpire { get; set; }
+
+        public static SymmetricSecurityKey AuthenticationKey { get; set; } = null!;
+
         public static LogLevel LogLevel { get; set; }
 
         public static bool RunDatabaseMigration { get; set; }
@@ -83,7 +90,7 @@ namespace Planar.Common
             InitializePersistanceSpan(configuration);
             InitializePorts(configuration);
             InitializeLogLevel(configuration);
-            InitializeAuthenticationMode(configuration);
+            InitializeAuthentication(configuration);
 
             InstanceId = GetSettings(configuration, Consts.InstanceIdVariableKey, nameof(InstanceId), "AUTO");
             ServiceName = GetSettings(configuration, Consts.ServiceNameVariableKey, nameof(ServiceName), "PlanarService");
@@ -253,9 +260,14 @@ namespace Planar.Common
             Global.LogLevel = LogLevel;
         }
 
-        private static void InitializeAuthenticationMode(IConfiguration configuration)
+        private static void InitializeAuthentication(IConfiguration configuration)
         {
+            const string DefaultAuthenticationSecret = "DWPVy9Xefs7JnI4mMbZMrPhp39QWpDIO";
+
             var mode = GetSettings(configuration, Consts.AuthenticationModeVariableKey, nameof(AuthenticationMode), AuthMode.AllAnonymous.ToString());
+            AuthenticationSecret = GetSettings(configuration, Consts.AuthenticationSecretVariableKey, nameof(AuthenticationSecret), DefaultAuthenticationSecret);
+            AuthenticationTokenExpire = GetSettings(configuration, Consts.AuthenticationTokenExpireVariableKey, nameof(AuthenticationTokenExpire), TimeSpan.FromMinutes(20));
+
             if (Enum.TryParse<AuthMode>(mode, true, out var tempMode))
             {
                 AuthenticationMode = tempMode;
@@ -264,6 +276,30 @@ namespace Planar.Common
             {
                 AuthenticationMode = AuthMode.AllAnonymous;
             }
+
+            if (AuthenticationMode == AuthMode.AllAnonymous) { return; }
+
+            if (string.IsNullOrEmpty(AuthenticationSecret))
+            {
+                throw new AppSettingsException($"Authentication secret must have value when authentication mode is {AuthenticationMode}");
+            }
+
+            if (AuthenticationSecret.Length < 16)
+            {
+                throw new AppSettingsException($"Authentication secret must have minimum length of 16 charecters. Current length is {AuthenticationSecret.Length}");
+            }
+
+            if (AuthenticationSecret.Length > 256)
+            {
+                throw new AppSettingsException($"Authentication secret must have maximum length of 256 charecters. Current length is {AuthenticationSecret.Length}");
+            }
+
+            if (AuthenticationTokenExpire.TotalMinutes < 1)
+            {
+                throw new AppSettingsException($"Authentication token expire have minimum value of 1 minute. Current length is {AuthenticationTokenExpire.TotalSeconds:N0} seconds");
+            }
+
+            AuthenticationKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AuthenticationSecret));
         }
 
         private static T GetSettings<T>(IConfiguration configuration, string environmentKey, string appSettingsKey, T defaultValue = default)

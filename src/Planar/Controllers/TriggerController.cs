@@ -1,11 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
+using Planar.Authorization;
 using Planar.Service.API;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -18,6 +18,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{triggerId}")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_trigger_triggerid", Description = "Get trigger by id", Summary = "Get Trigger")]
         [BadRequestResponse]
         [OkJsonResponse(typeof(TriggerRowDetails))]
@@ -28,6 +29,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{jobId}/byjob")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_trigger_jobid_byjob", Description = "Find triggers by job ", Summary = "Find Triggers By Job")]
         [NotFoundResponse]
         [BadRequestResponse]
@@ -39,6 +41,7 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{triggerId}")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "delete_trigger_triggerId", Description = "Delete trigger", Summary = "Delete Trigger")]
         [NotFoundResponse]
         [BadRequestResponse]
@@ -50,6 +53,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("pause")]
+        [EditorAuthorize]
         [JsonConsumes]
         [SwaggerOperation(OperationId = "post_trigger_pause", Description = "Pause trigger", Summary = "Pause Trigger")]
         [NotFoundResponse]
@@ -62,6 +66,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("resume")]
+        [EditorAuthorize]
         [JsonConsumes]
         [SwaggerOperation(OperationId = "post_trigger_resume", Description = "Resume trigger", Summary = "Resume Trigger")]
         [NotFoundResponse]
@@ -74,6 +79,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("data")]
+        [EditorAuthorize]
         [JsonConsumes]
         [SwaggerOperation(OperationId = "post_trigger_data", Description = "Add trigger data", Summary = "Add Trigger Data")]
         [CreatedResponse]
@@ -86,6 +92,7 @@ namespace Planar.Controllers
         }
 
         [HttpPut("data")]
+        [EditorAuthorize]
         [JsonConsumes]
         [SwaggerOperation(OperationId = "put_trigger_data", Description = "Update trigger data", Summary = "Update Trigger Data")]
         [CreatedResponse]
@@ -98,6 +105,7 @@ namespace Planar.Controllers
         }
 
         [HttpDelete("{id}/data/{key}")]
+        [EditorAuthorize]
         [SwaggerOperation(OperationId = "delete_trigger_id_data_key", Description = "Delete trigger data", Summary = "Delete Trigger Data")]
         [NoContentResponse]
         [BadRequestResponse]
@@ -109,6 +117,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("cron")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_trigger_cron_expression", Description = "Get description of cron expression", Summary = "Get Cron Description")]
         [OkTextResponse]
         [BadRequestResponse]
@@ -119,6 +128,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("paused")]
+        [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_trigger_paused", Description = "Get all paused triggers", Summary = "Get Paused Triggers")]
         [OkJsonResponse(typeof(IEnumerable<PausedTriggerDetails>))]
         public async Task<ActionResult<IEnumerable<PausedTriggerDetails>>> GetPausedTriggers()

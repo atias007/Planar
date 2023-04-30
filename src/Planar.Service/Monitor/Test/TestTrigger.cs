@@ -45,7 +45,7 @@ namespace Planar.Service.Monitor.Test
             return this;
         }
 
-        public int CompareTo(ITrigger other)
+        public int CompareTo(ITrigger? other)
         {
             return 0;
         }

@@ -158,26 +158,25 @@ namespace Planar.Job.Test
                 throw new PlanarJobTestException("Job type is null");
             }
 
-            var method = type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (method == null)
-            {
-                throw new ApplicationException($"Type '{type.Name}' has no 'Execute' method");
-            }
+#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
+            var method = type.GetMethod("ExecuteUnitTest", BindingFlags.NonPublic | BindingFlags.Instance) ??
+                throw new PlanarJobTestException($"Type '{type.Name}' has no 'ExecuteUnitTest' method");
+#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
 
             if (method.ReturnType != typeof(Task))
             {
-                throw new ApplicationException($"Method 'Execute' at type '{type.Name}' has no 'Task' return type (current return type is {method.ReturnType.FullName})");
+                throw new PlanarJobTestException($"Method 'Execute' at type '{type.Name}' has no 'Task' return type (current return type is {method.ReturnType.FullName})");
             }
 
             var parameters = method.GetParameters();
             if (parameters?.Length != 1)
             {
-                throw new ApplicationException($"Method 'Execute' at type '{type.Name}' must have only 1 parameters (current parameters count {parameters?.Length})");
+                throw new PlanarJobTestException($"Method 'Execute' at type '{type.Name}' must have only 1 parameters (current parameters count {parameters?.Length})");
             }
 
             if (!parameters[0].ParameterType.ToString().StartsWith("System.Object"))
             {
-                throw new ApplicationException($"Second parameter in method 'Execute' at type '{type.Name}' must be object. (current type '{parameters[1].ParameterType.Name}')");
+                throw new PlanarJobTestException($"Second parameter in method 'Execute' at type '{type.Name}' must be object. (current type '{parameters[1].ParameterType.Name}')");
             }
 
             return method;
@@ -188,14 +187,8 @@ namespace Planar.Job.Test
         private IJobExecutionResult ExecuteJob(ExecuteJobProperties properties)
         {
             var context = new MockJobExecutionContext(properties);
-            ValidateBaseJob(properties.JobType);
+            var method = ValidateBaseJob(properties.JobType);
             if (properties.JobType == null) { return JobExecutionResult.Empty; }
-
-            var method = properties.JobType.GetMethod("ExecuteUnitTest", BindingFlags.NonPublic | BindingFlags.Instance);
-            if (method == null)
-            {
-                throw new Exception($"Can not run test. Worker type {properties.JobType.FullName} does not inherit BaseJob / does not use Planar.Job nuget pack with version 1.0.4 or higher");
-            }
 
             var instance = Activator.CreateInstance(properties.JobType);
             MapJobInstanceProperties(context, properties.JobType, instance);
@@ -264,7 +257,7 @@ namespace Planar.Job.Test
             var ignore = IsIgnoreProperty(attributes, prop, context.JobDetails.Key);
             if (ignore) { return; }
             var jobData = attributes.Any(a => a.GetType().FullName == _jobDataMapAttribute);
-            var triggerData = attributes.Any(a => a.GetType().FullName == _jobDataMapAttribute);
+            var triggerData = attributes.Any(a => a.GetType().FullName == _triggerDataMapAttribute);
 
             if (jobData)
             {

@@ -2,9 +2,11 @@
 using Newtonsoft.Json.Linq;
 using Planar.CLI.Actions;
 using Planar.CLI.CliGeneral;
+using Planar.CLI.DataProtect;
 using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
 using Planar.CLI.General;
+using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
 using System;
@@ -13,6 +15,8 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,6 +24,9 @@ namespace Planar.CLI
 {
     internal static class Program
     {
+        private static readonly TimeSpan _timerSpan = TimeSpan.FromMinutes(20);
+        private static Timer? _timer;
+
         internal static string Version
         {
             get
@@ -35,7 +42,12 @@ namespace Planar.CLI
 
         public static void Main(string[] args)
         {
+            Console.OutputEncoding = Encoding.UTF8;
             Console.CancelKeyPress += Console_CancelKeyPress;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Console.Title = "Planar: Command Line Interface";
+            }
 
             try
             {
@@ -49,6 +61,21 @@ namespace Planar.CLI
             {
                 Console.CancelKeyPress -= Console_CancelKeyPress;
             }
+        }
+
+        private static void ResetTimer()
+        {
+            _timer?.Change(_timerSpan, _timerSpan);
+        }
+
+        private static void OnTimerAction(object? state)
+        {
+            if (string.IsNullOrEmpty(LoginProxy.Token)) { return; }
+            InnerCliActions.Clear().Wait();
+            var markup = CliFormat.GetWarningMarkup($"automaticaly log out after period of {_timerSpan.Minutes} minutes without any operation");
+            AnsiConsole.MarkupLine(markup);
+            AnsiConsole.WriteLine("press [enter] to continue");
+            ServiceCliActions.Logout().Wait();
         }
 
         private static void Console_CancelKeyPress(object? sender, ConsoleCancelEventArgs e)
@@ -249,11 +276,11 @@ namespace Planar.CLI
             {
                 if (finaleException is CliWarningException)
                 {
-                    AnsiConsole.MarkupLine(CliFormat.GetWarningMarkup(Markup.Escape(finaleException.Message)));
+                    AnsiConsole.MarkupLine(CliFormat.GetWarningMarkup(finaleException.Message));
                 }
                 else
                 {
-                    MarkupCliLine(CliFormat.GetErrorMarkup(Markup.Escape(finaleException.Message)));
+                    MarkupCliLine(CliFormat.GetErrorMarkup(finaleException.Message));
                 }
             }
         }
@@ -290,7 +317,8 @@ namespace Planar.CLI
 
             if (response.ErrorMessage != null && response.ErrorMessage.Contains("No connection could be made"))
             {
-                MarkupCliLine(CliFormat.GetErrorMarkup($"no connection could be made to planar deamon ({RestProxy.Host}:{RestProxy.Port})"));
+                var message = response.ErrorMessage.Replace("because the target machine actively refused it.", "to planar deamon");
+                MarkupCliLine(CliFormat.GetErrorMarkup(message.ToLower()));
             }
             else if (response.ErrorMessage != null && response.ErrorMessage.Contains("No such host is known"))
             {
@@ -355,8 +383,26 @@ namespace Planar.CLI
             if (HandleBadRequestResponse(response)) { return; }
             if (HandleHealthCheckResponse(response)) { return; }
             if (HandleHttpConflictResponse(response)) { return; }
+            if (HandleHttpUnauthorizedResponse(response)) { return; }
 
             HandleGeneralError(response);
+        }
+
+        private static bool HandleHttpUnauthorizedResponse(RestResponse response)
+        {
+            if (response.StatusCode == HttpStatusCode.Unauthorized)
+            {
+                MarkupCliLine(CliFormat.GetUnauthorizedErrorMarkup());
+                return true;
+            }
+
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                MarkupCliLine(CliFormat.GetForbiddenErrorMarkup());
+                return true;
+            }
+
+            return false;
         }
 
         private static bool HandleHttpNotFoundResponse(RestResponse response)
@@ -380,28 +426,23 @@ namespace Planar.CLI
             var command = string.Empty;
             Console.Clear();
             CliHelpGenerator.ShowModules();
+            _timer = new Timer(OnTimerAction, null, _timerSpan, _timerSpan);
 
             const string exit = "exit";
-            const string help = "help";
             while (string.Compare(command, exit, true) != 0)
             {
-                var color = Login.Current.GetCliMarkupColor();
+                var color = ConnectUtil.Current.GetCliMarkupColor();
                 AnsiConsole.Markup($"[{color}]{RestProxy.Host.EscapeMarkup()}:{RestProxy.Port}[/]> ");
                 command = Console.ReadLine();
+                ResetTimer();
+
                 if (string.Compare(command, exit, true) == 0)
                 {
                     break;
                 }
 
-                if (string.Compare(command, help, true) == 0)
-                {
-                    CliHelpGenerator.ShowModules();
-                }
-                else
-                {
-                    var args = SplitCommandLine(command).ToArray();
-                    HandleCliCommand(args, cliActions);
-                }
+                var args = SplitCommandLine(command).ToArray();
+                HandleCliCommand(args, cliActions);
             }
         }
 
@@ -463,7 +504,7 @@ namespace Planar.CLI
             //// var md = CliHelpGenerator.GetHelpMD(cliActions);
 #endif
 
-            ServiceCliActions.InitializeLogin();
+            ServiceCliActions.InitializeLogin().Wait();
 
             if (args.Length == 0)
             {

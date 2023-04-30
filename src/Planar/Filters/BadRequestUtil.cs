@@ -22,13 +22,14 @@ namespace Planar.Filters
                 var error = context.ModelState.First();
                 const string titleTemplate = "{0} is invalid";
 
+                var first = error.Value.Errors.First();
                 result = new RestBadRequestResult
                 {
                     Instance = context.HttpContext.Request.Path,
                     Status = StatusCodes.Status400BadRequest,
                     Title = string.Format(CultureInfo.CurrentCulture, titleTemplate, error.Key),
                     Type = ProblemType,
-                    Detail = error.Value.Errors.First().ErrorMessage
+                    Detail = first.ErrorMessage,
                 };
             }
             else

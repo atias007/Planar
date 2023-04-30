@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Primitives;
-using Planar.CLI.Actions;
+﻿using Planar.CLI.Actions;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
@@ -11,8 +10,8 @@ namespace Planar.CLI.CliGeneral
 {
     internal static class CliHelpGenerator
     {
+        public const string CliCommand = "planar-cli";
         private const string space = "  ";
-        private const string cli = "planar-cli";
         private const string header0 = "<MODULE>";
         private const string header1 = "<COMMAND>";
         private const string header2 = "<ARGUMENTS>";
@@ -34,7 +33,7 @@ namespace Planar.CLI.CliGeneral
 
             AnsiConsole.Write(panel);
             AnsiConsole.WriteLine();
-            var cliCommand = BaseCliAction.InteractiveMode ? string.Empty : $"{cli} ";
+            var cliCommand = BaseCliAction.InteractiveMode ? string.Empty : $"{CliCommand} ";
             AnsiConsole.MarkupLine($" [invert]usage:[/] {cliCommand}[lightskyblue1]{header0}[/] [cornsilk1]{header1}[/] [[{header2}]]");
             AnsiConsole.MarkupLine($" [invert]usage:[/] {cliCommand}[lightskyblue1]{header0}[/] [cornsilk1]--help'[/] to see all avalible commands and arguments");
             AnsiConsole.WriteLine();
@@ -65,7 +64,7 @@ namespace Planar.CLI.CliGeneral
 
         public static void ShowHelp(string module, IEnumerable<CliActionMetadata> allActions)
         {
-            var cliCommand = BaseCliAction.InteractiveMode ? string.Empty : $"{cli} ";
+            var cliCommand = BaseCliAction.InteractiveMode ? string.Empty : $"{CliCommand} ";
 
             AnsiConsole.WriteLine();
             AnsiConsole.MarkupLine($" [invert]usage:[/] {cliCommand}[lightskyblue1]{module}[/] [cornsilk1]{header1}[/] [[{header2}]]");

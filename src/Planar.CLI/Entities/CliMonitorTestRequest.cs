@@ -9,7 +9,7 @@ namespace Planar.CLI.Entities
         [Required("hook argument is required")]
         public string Hook { get; set; } = string.Empty;
 
-        [ActionProperty(DefaultOrder = 2)]
+        [ActionProperty(DefaultOrder = 2, Name = "event")]
         [Required("event argument is required")]
         public TestMonitorEvents MonitorEvent { get; set; }
 
