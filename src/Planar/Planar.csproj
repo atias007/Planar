@@ -4,7 +4,7 @@
 		<TargetFramework>net6.0</TargetFramework>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<BaseOutputPath>bin</BaseOutputPath>
-		<Version>1.2.0</Version>
+		<Version>1.2.4</Version>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
@@ -71,11 +71,11 @@
 		<PackageReference Include="Microsoft.AspNetCore.OData" Version="8.1.1" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.0" />
 		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
-		<PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.0.0" />
+		<PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.1.0" />
 		<PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
 		<PackageReference Include="Serilog.Enrichers.GlobalLogContext" Version="3.0.0" />
 		<PackageReference Include="Serilog.Sinks.MSSqlServer" Version="6.3.0" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="8.55.0.65544">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.0.0.68202">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>

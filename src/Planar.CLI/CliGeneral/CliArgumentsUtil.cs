@@ -82,7 +82,21 @@ namespace Planar.CLI
 
         private static CliActionMetadata? FindMatch(List<string> args, IEnumerable<CliActionMetadata> actionsMetadata)
         {
+            var moduleExists = actionsMetadata.Any(a => a.Module == args[0].ToLower());
+            if (args.Count == 1 && moduleExists)
+            {
+                args.Add("--help");
+                return null;
+            }
+
+            var moduleSynonymExists = actionsMetadata.Any(a => a.ModuleSynonyms.Any(s => s == args[0].ToLower()) && a.Commands.Contains("list"));
+            if (args.Count == 1 && moduleSynonymExists)
+            {
+                args.Add("list");
+            }
+
             if (args.Count < 2) { return null; }
+
             var action = actionsMetadata.FirstOrDefault(a =>
                 a.ModuleSynonyms.Any(s => s == args[0].ToLower()) &&
                 a.Commands.Any(c => c?.ToLower() == args[1].ToLower()));
@@ -101,10 +115,9 @@ namespace Planar.CLI
                 list.Insert(1, "get");
             }
 
-            args = list.ToArray();
-
             // find match
             var action = FindMatch(list, actionsMetadata);
+            args = list.ToArray();
             if (action != null) { return action; }
 
             // find match with swap command and module

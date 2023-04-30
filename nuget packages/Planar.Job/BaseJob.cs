@@ -108,6 +108,12 @@ namespace Planar.Job
                 });
         }
 
+        [Obsolete("AddAggragateException is deprecated because spelling error. Use AddAggregateException instead")]
+        protected void AddAggragateException(Exception ex)
+        {
+            AddAggregateException(ex);
+        }
+
         protected void AddAggregateException(Exception ex)
         {
             var message = new ExceptionDto(ex);

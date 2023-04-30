@@ -1,15 +1,12 @@
 --------------------------------------------------------
 PLAN FOR V 1.3.0
 ----------------
-
-
-
-- cli: auto invoke ls (if exists) if only module is typed
-
+done
 
 - BACKLOG ----------------------------------------------------------------------------
 - documentation
 - add RestJob
+- move to .net 7
 - config flush - no support for cluster
 - authorize on odata metadata
 - add validation to JobRunnerBuilder in test nuget package
@@ -164,3 +161,4 @@ V 1.2.4
   - chenge all Reference fields on user & group to AdditionalInfo
   - add GET /group/roles + CLI group roles (list of roles)
   - add cli option to load yml or json file to global gonfig
+  - cli: auto invoke ls (if exists) if only module is typed
