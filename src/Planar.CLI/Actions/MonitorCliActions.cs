@@ -53,6 +53,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("ls")]
+        [Action("list")]
         public static async Task<CliActionResponse> GetMonitorActions(CliGetMonitorActionsRequest request, CancellationToken cancellationToken = default)
         {
             var data = new List<MonitorItem>();

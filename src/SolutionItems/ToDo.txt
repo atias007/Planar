@@ -7,6 +7,7 @@ done
 - documentation
 - add RestJob
 - move to .net 7
+- cli: show paused jobs
 - config flush - no support for cluster
 - authorize on odata metadata
 - add validation to JobRunnerBuilder in test nuget package
@@ -130,7 +131,7 @@ V 1.2.0
 - clear old properties from system clear job
 - add appsettings for UseJobAutoInterrupt at QuartzServiceConfiguration
 
-V 1.2.1
+V 1.3.0
 ----------
 - documentation
 - cli job data (change upsert to put) 
@@ -138,27 +139,23 @@ V 1.2.1
 - add estimated end run
 - do not allow to 'job test' system jobs
 - cli: save output to file
-V 1.2.3
-----------
- - add SqlJob
- - feature: cli history ls (status parameter to be enum)
- - job test: do not allow test already running jobs
- - job test: if no instance id, check hc and print warning about already running job 
- - replace json with yml appsettings, serilog
- - add timeout parameter to trigger
- - add to jobfile the option to control the amount of retries
- - add statistics for: 
-	* count runs per day, 
-	* count success retry per day, 
-	* count fail retry per day, 
-	* count recovering runs per day
-V 1.2.4
-----------
-  - authorization
-  - convert id in sql table JobInstanceLog from int to bigint
-  - cli: detect switch between command and option (i.e. pause job)
-  - get flat list of global config
-  - chenge all Reference fields on user & group to AdditionalInfo
-  - add GET /group/roles + CLI group roles (list of roles)
-  - add cli option to load yml or json file to global gonfig
-  - cli: auto invoke ls (if exists) if only module is typed
+- add SqlJob
+- feature: cli history ls (status parameter to be enum)
+- job test: do not allow test already running jobs
+- job test: if no instance id, check hc and print warning about already running job 
+- replace json with yml appsettings, serilog
+- add timeout parameter to trigger
+- add to jobfile the option to control the amount of retries
+- add statistics for: 
+  * count runs per day, 
+  * count success retry per day, 
+  * count fail retry per day, 
+  * count recovering runs per day
+- authorization
+- convert id in sql table JobInstanceLog from int to bigint
+- cli: detect switch between command and option (i.e. pause job)
+- get flat list of global config
+- chenge all Reference fields on user & group to AdditionalInfo
+- add GET /group/roles + CLI group roles (list of roles)
+- add cli option to load yml or json file to global gonfig
+- cli: auto invoke ls (if exists) if only module is typed

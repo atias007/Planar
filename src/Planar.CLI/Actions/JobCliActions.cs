@@ -330,7 +330,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        [Action("stop")]
+        [Action("cancel")]
         [NullRequest]
         public static async Task<CliActionResponse> StopRunningJob(CliFireInstanceIdRequest request, CancellationToken cancellationToken = default)
         {
@@ -339,7 +339,7 @@ namespace Planar.CLI.Actions
                 FireInstanceId = await ChooseRunningJobInstance()
             };
 
-            var restRequest = new RestRequest("job/stop", Method.Post)
+            var restRequest = new RestRequest("job/cancel", Method.Post)
                 .AddBody(request);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);

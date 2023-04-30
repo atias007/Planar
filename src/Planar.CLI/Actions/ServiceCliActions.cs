@@ -8,7 +8,6 @@ using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,10 +16,12 @@ namespace Planar.CLI.Actions
     [Module("service", "Actions to operate service, check alive, list calendars and more")]
     public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     {
-        [Action("halt")]
-        public static async Task<CliActionResponse> HaltScheduler(CancellationToken cancellationToken = default)
+        [Action("stop")]
+        public static async Task<CliActionResponse> StopScheduler(CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("service/halt", Method.Post);
+            if (!ConfirmAction("stop planar service")) { return CliActionResponse.Empty; }
+
+            var restRequest = new RestRequest("service/stop", Method.Post);
             return await Execute(restRequest, cancellationToken);
         }
 

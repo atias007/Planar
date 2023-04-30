@@ -440,7 +440,7 @@ namespace Planar.Service.API
             await Scheduler.ResumeAll();
         }
 
-        public async Task<bool> Stop(FireInstanceIdRequest request)
+        public async Task<bool> Cancel(FireInstanceIdRequest request)
         {
             var stop = await SchedulerUtil.StopRunningJob(request.FireInstanceId);
             if (AppSettings.Clustering && !stop)

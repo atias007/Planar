@@ -290,16 +290,16 @@ namespace Planar.Controllers
             return Accepted();
         }
 
-        [HttpPost("stop")]
+        [HttpPost("cancel")]
         [EditorAuthorize]
-        [SwaggerOperation(OperationId = "post_job_stop", Description = "Stop running job", Summary = "Stop Job")]
+        [SwaggerOperation(OperationId = "post_job_cancel", Description = "Cancel running job", Summary = "Cancel Job")]
         [JsonConsumes]
         [AcceptedContentResponse]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<bool>> Stop([FromBody] FireInstanceIdRequest request)
+        public async Task<ActionResult<bool>> Cancel([FromBody] FireInstanceIdRequest request)
         {
-            await BusinesLayer.Stop(request);
+            await BusinesLayer.Cancel(request);
             return Accepted();
         }
 
