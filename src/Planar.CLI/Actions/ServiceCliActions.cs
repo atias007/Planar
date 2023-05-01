@@ -16,12 +16,12 @@ namespace Planar.CLI.Actions
     [Module("service", "Actions to operate service, check alive, list calendars and more")]
     public class ServiceCliActions : BaseCliAction<ServiceCliActions>
     {
-        [Action("stop")]
+        [Action("halt")]
         public static async Task<CliActionResponse> StopScheduler(CancellationToken cancellationToken = default)
         {
-            if (!ConfirmAction("stop planar service")) { return CliActionResponse.Empty; }
+            if (!ConfirmAction("halt (stop) planar service")) { return CliActionResponse.Empty; }
 
-            var restRequest = new RestRequest("service/stop", Method.Post);
+            var restRequest = new RestRequest("service/halt", Method.Post);
             return await Execute(restRequest, cancellationToken);
         }
 

@@ -1,13 +1,10 @@
-﻿using Azure.Identity;
-using FluentValidation;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.General.Hash;
-using Planar.Service.Model.DataObjects;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -142,7 +139,7 @@ namespace Planar.Service.API
             return list;
         }
 
-        public async Task StopScheduler()
+        public async Task HaltScheduler()
         {
             await SchedulerUtil.Stop();
             if (AppSettings.Clustering)

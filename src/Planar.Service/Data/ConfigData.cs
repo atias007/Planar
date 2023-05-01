@@ -15,7 +15,7 @@ namespace Planar.Service.Data
 
         public async Task<GlobalConfig?> GetGlobalConfig(string key)
         {
-            var result = await _context.GlobalConfigs.FindAsync(key);
+            var result = await _context.GlobalConfigs.AsNoTracking().FirstOrDefaultAsync(c => c.Key == key);
             return result;
         }
 
@@ -27,7 +27,7 @@ namespace Planar.Service.Data
 
         public async Task<IEnumerable<GlobalConfig>> GetAllGlobalConfig(CancellationToken stoppingToken = default)
         {
-            var result = await _context.GlobalConfigs.OrderBy(p => p.Key).ToListAsync(stoppingToken);
+            var result = await _context.GlobalConfigs.AsNoTracking().OrderBy(p => p.Key).ToListAsync(stoppingToken);
             return result;
         }
 

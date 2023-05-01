@@ -238,7 +238,7 @@ namespace Planar.Service.API
             ValidateRequestNoNull(request);
             ValidateUpdateJobOptions(options);
             await ValidateRequestProperties(request);
-            metadata.JobKey = ValidateJobMetadata(request);
+            metadata.JobKey = ValidateJobMetadata(request, Scheduler);
             await JobKeyHelper.ValidateJobExists(metadata.JobKey);
             ValidateSystemJob(metadata.JobKey);
             metadata.JobId =

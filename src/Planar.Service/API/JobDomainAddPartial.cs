@@ -53,7 +53,7 @@ namespace Planar.Service.API
             // Validation
             ValidateRequestNoNull(request);
             await ValidateRequestProperties(request);
-            var jobKey = ValidateJobMetadata(request);
+            var jobKey = ValidateJobMetadata(request, Scheduler);
             await ValidateJobNotExists(jobKey);
 
             // Global Config
@@ -461,7 +461,7 @@ namespace Planar.Service.API
             }
         }
 
-        private static JobKey ValidateJobMetadata(SetJobRequest metadata)
+        private static JobKey ValidateJobMetadata(SetJobRequest metadata, IScheduler scheduler)
         {
             metadata.JobData ??= new Dictionary<string, string?>();
 
@@ -556,7 +556,7 @@ namespace Planar.Service.API
                 throw new RestValidationException("durable", $"job without any trigger must be durable. set the durable property to true or add at least one trigger");
             }
 
-            ValidateTriggerMetadata(metadata);
+            ValidateTriggerMetadata(metadata, scheduler);
 
             var jobKey =
                 JobKeyHelper.GetJobKey(metadata) ??
@@ -581,7 +581,7 @@ namespace Planar.Service.API
             }
         }
 
-        public static void ValidateTriggerMetadata(ITriggersContainer container)
+        public static void ValidateTriggerMetadata(ITriggersContainer container, IScheduler scheduler)
         {
             TrimTriggerProperties(container);
             ValidateMandatoryTriggerProperties(container);
@@ -593,6 +593,7 @@ namespace Planar.Service.API
             ValidateTriggerRetry(container);
             ValidateCronExpression(container);
             ValidateTriggerMisfireBehaviour(container);
+            ValidateTriggerCalendar(container, scheduler);
         }
 
         private static void ValidateTriggerMisfireBehaviour(ITriggersContainer container)
@@ -614,6 +615,24 @@ namespace Planar.Service.API
                     throw new RestValidationException("misfireBehaviour", $"value {t.MisfireBehaviour} is not valid value for cron trigger misfire behaviour");
                 }
             });
+        }
+
+        private static void ValidateTriggerCalendar(ITriggersContainer container, IScheduler scheduler)
+        {
+            var calendars = scheduler.GetCalendarNames().Result;
+            Action<BaseTrigger> action = t =>
+            {
+                var existsCalendarName = calendars.FirstOrDefault(c => string.Equals(c, t.Calendar, StringComparison.OrdinalIgnoreCase));
+                if (string.IsNullOrEmpty(existsCalendarName))
+                {
+                    throw new RestValidationException(nameof(t.Calendar), $"calendar name '{t.Calendar}' is not exists");
+                }
+
+                t.Calendar = existsCalendarName;
+            };
+
+            container.SimpleTriggers?.ForEach(t => action(t));
+            container.CronTriggers?.ForEach(t => action(t));
         }
 
         private static void ValidateTriggerPriority(ITriggersContainer container)
