@@ -2,6 +2,7 @@
 PLAN FOR V 1.3.0
 ----------------
 done
+* add job with calendar not defined
 
 - BACKLOG ----------------------------------------------------------------------------
 - documentation
