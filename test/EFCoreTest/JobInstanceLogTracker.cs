@@ -8,7 +8,7 @@ namespace EFCoreTest
 {
     internal class JobInstanceLogTracker : BaseJob
     {
-        public int LastId { get; set; }
+        public long LastId { get; set; }
 
         public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
         {
@@ -23,6 +23,9 @@ namespace EFCoreTest
             LastId = await dbContext.JobInstanceLogs.OrderByDescending(l => l.Id).Select(l => l.Id).FirstOrDefaultAsync();
             Logger.LogInformation("Total items {Count}", count);
             Logger.LogInformation("Last id {Id}", LastId);
+
+            var baseJob = ServiceProvider.GetRequiredService<IBaseJob>();
+            baseJob.SetEffectedRows(1);
         }
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

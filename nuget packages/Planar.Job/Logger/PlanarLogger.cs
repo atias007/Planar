@@ -36,9 +36,9 @@ namespace Planar.Job.Logger
         }
     }
 
-    internal class PlannerLogger<TContext> : BaseLogger, ILogger<TContext>
+    internal class PlanarLogger<TContext> : BaseLogger, ILogger<TContext>
     {
-        public PlannerLogger(MessageBroker messageBroker) : base(messageBroker)
+        public PlanarLogger(MessageBroker messageBroker) : base(messageBroker)
         {
         }
 
@@ -53,9 +53,9 @@ namespace Planar.Job.Logger
         }
     }
 
-    internal class PlannerLogger : BaseLogger, ILogger
+    internal class PlanarLogger : BaseLogger, ILogger
     {
-        public PlannerLogger(MessageBroker messageBroker) : base(messageBroker)
+        public PlanarLogger(MessageBroker messageBroker) : base(messageBroker)
         {
         }
 

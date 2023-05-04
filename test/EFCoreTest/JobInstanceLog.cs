@@ -5,7 +5,7 @@ namespace EFCoreTest
     [Table("JobInstanceLog")]
     internal class JobInstanceLog
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
 
         public string InstanceId { get; set; }
 
@@ -29,5 +29,6 @@ namespace EFCoreTest
         public string Exception { get; set; }
         public bool Retry { get; set; }
         public bool IsStopped { get; set; }
+        public byte? Anomaly { get; set; }
     }
 }

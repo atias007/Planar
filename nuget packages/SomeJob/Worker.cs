@@ -22,6 +22,8 @@ namespace SomeJob
 
         public override async Task ExecuteJob(IJobExecutionContext context)
         {
+            var fact = ServiceProvider.GetRequiredService<IBaseJob>();
+
             Logger.LogWarning("Now: {Now}", Now());
 
             var maxDiffranceHours = Configuration.GetValue("Max Diffrance Hours", 12);
@@ -73,11 +75,11 @@ namespace SomeJob
 
                     // Do Something 4
 
-                    IncreaseEffectedRows();
+                    fact.IncreaseEffectedRows();
                 }
                 catch (Exception ex)
                 {
-                    AddAggregateException(ex);
+                    fact.AddAggregateException(ex);
                 }
                 finally
                 {
@@ -91,7 +93,9 @@ namespace SomeJob
                 }
             }
 
-            CheckAggragateException();
+            // CheckAggragateException();
+            var a1 = fact.GetData<int>("X");
+            var b1 = fact.GetEffectedRows();
         }
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
