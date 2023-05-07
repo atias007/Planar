@@ -151,7 +151,7 @@ namespace Planar.Job.Test
 
         private static MethodInfo ValidateBaseJob(Type? type)
         {
-            //// ***** Attention: be aware for sync code with Validate on BaseCommonJob *****
+            //// ***** Attention: be aware for sync code with Validate on PlanarJob *****
 
             if (type == null)
             {
@@ -169,19 +169,19 @@ namespace Planar.Job.Test
             }
 
             var parameters = method.GetParameters();
-            if (parameters?.Length != 1)
+            if (parameters?.Length != 3)
             {
                 throw new PlanarJobTestException($"Method 'Execute' at type '{type.Name}' must have only 1 parameters (current parameters count {parameters?.Length})");
             }
 
             if (!parameters[0].ParameterType.ToString().StartsWith("System.Object"))
             {
-                throw new PlanarJobTestException($"Second parameter in method 'Execute' at type '{type.Name}' must be object. (current type '{parameters[1].ParameterType.Name}')");
+                throw new PlanarJobTestException($"First parameter in method 'Execute' at type '{type.Name}' must be object. (current type '{parameters[0].ParameterType.Name}')");
             }
 
             return method;
 
-            //// ***** Attention: be aware for sync code with Validate on BaseCommonJob *****
+            //// ***** Attention: be aware for sync code with Validate on PlanarJob *****
         }
 
         private IJobExecutionResult ExecuteJob(ExecuteJobProperties properties)

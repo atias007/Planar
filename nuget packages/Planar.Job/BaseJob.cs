@@ -13,22 +13,16 @@ namespace Planar.Job
     public abstract class BaseJob
     {
         private JobExecutionContext _context = new JobExecutionContext();
-        private bool? _isNowOverrideValueExists;
-        private MessageBroker _messageBroker = MessageBroker.Empty;
-        private DateTime? _nowOverrideValue;
-        private IServiceProvider? _provider;
 
-        private IConfiguration? _configuration;
+        private IServiceProvider _provider = null!;
+        private IConfiguration _configuration = null!;
+        private ILogger _logger = null!;
+        private BaseJobFactory _baseJobFactory = null!;
 
         protected IConfiguration Configuration
         {
             get
             {
-                if (_configuration == null)
-                {
-                    throw new ArgumentNullException(nameof(Configuration));
-                }
-
                 return _configuration;
             }
             private set
@@ -37,17 +31,10 @@ namespace Planar.Job
             }
         }
 
-        private ILogger? _logger;
-
         protected ILogger Logger
         {
             get
             {
-                if (_logger == null)
-                {
-                    throw new ArgumentException(nameof(Logger));
-                }
-
                 return _logger;
             }
             private set
@@ -56,14 +43,7 @@ namespace Planar.Job
             }
         }
 
-        protected IServiceProvider ServiceProvider
-        {
-            get
-            {
-                if (_provider == null) { throw new ArgumentNullException(nameof(ServiceProvider)); }
-                return _provider;
-            }
-        }
+        protected IServiceProvider ServiceProvider => _provider;
 
         public abstract void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
@@ -76,9 +56,9 @@ namespace Planar.Job
             Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
             Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
 
-            InitializeMessageBroker(messageBroker);
+            InitializeBaseJobFactory(messageBroker);
             InitializeConfiguration(_context, configureAction);
-            InitializeDepedencyInjection(_context, _messageBroker, registerServicesAction);
+            InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction);
 
             Logger = ServiceProvider.GetRequiredService<ILogger>();
 
@@ -95,9 +75,9 @@ namespace Planar.Job
             Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction)
 
         {
-            InitializeMessageBroker(messageBroker);
+            InitializeBaseJobFactory(messageBroker);
             InitializeConfiguration(_context, configureAction);
-            InitializeDepedencyInjection(_context, _messageBroker, registerServicesAction);
+            InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction);
 
             Logger = ServiceProvider.GetRequiredService<ILogger>();
 
@@ -116,139 +96,79 @@ namespace Planar.Job
 
         protected void AddAggregateException(Exception ex)
         {
-            var message = new ExceptionDto(ex);
-            _messageBroker?.Publish(MessageBrokerChannels.AddAggregateException, message);
+            _baseJobFactory.AddAggregateException(ex);
         }
 
         protected void CheckAggragateException()
         {
-            var text = _messageBroker?.Publish(MessageBrokerChannels.GetExceptionsText);
-            if (!string.IsNullOrEmpty(text))
-            {
-                var ex = new PlanarJobAggragateException(text);
-                throw ex;
-            }
+            _baseJobFactory.CheckAggragateException();
         }
 
         protected bool CheckIfStopRequest()
         {
-            var text = _messageBroker?.Publish(MessageBrokerChannels.CheckIfStopRequest);
-            _ = bool.TryParse(text, out var stop);
-            return stop;
+            return _baseJobFactory.CheckIfStopRequest();
         }
 
         protected void FailOnStopRequest(Action? stopHandle = default)
         {
-            if (stopHandle != default)
-            {
-                stopHandle.Invoke();
-            }
-
-            _messageBroker?.Publish(MessageBrokerChannels.FailOnStopRequest);
+            _baseJobFactory.FailOnStopRequest(stopHandle);
         }
 
         protected T GetData<T>(string key)
         {
-            var value = _messageBroker?.Publish(MessageBrokerChannels.GetData, key);
-            var result = (T)Convert.ChangeType(value, typeof(T));
-            return result;
+            return _baseJobFactory.GetData<T>(key);
         }
 
         protected string GetData(string key)
         {
-            return GetData<string>(key);
+            return _baseJobFactory.GetData(key);
         }
 
         protected int? GetEffectedRows()
         {
-            var text = _messageBroker?.Publish(MessageBrokerChannels.GetEffectedRows);
-            _ = int.TryParse(text, out var rows);
-            return rows;
+            return _baseJobFactory.GetEffectedRows();
         }
 
         protected void IncreaseEffectedRows(int delta = 1)
         {
-            _messageBroker?.Publish(MessageBrokerChannels.IncreaseEffectedRows, delta);
+            _baseJobFactory.IncreaseEffectedRows(delta);
         }
 
         protected bool IsDataExists(string key)
         {
-            var text = _messageBroker?.Publish(MessageBrokerChannels.DataContainsKey, key);
-            _ = bool.TryParse(text, out var result);
-            return result;
+            return _baseJobFactory.IsDataExists(key);
         }
 
-        protected TimeSpan JobRunTime
-        {
-            get
-            {
-                var text = _messageBroker?.Publish(MessageBrokerChannels.JobRunTime);
-                var success = double.TryParse(text, out var result);
-                if (success)
-                {
-                    return TimeSpan.FromMilliseconds(result);
-                }
-                else
-                {
-                    return TimeSpan.Zero;
-                }
-            }
-        }
+        protected TimeSpan JobRunTime => _baseJobFactory.JobRunTime;
 
         protected DateTime Now()
         {
-            if (_isNowOverrideValueExists == null)
-            {
-                _isNowOverrideValueExists = IsDataExists(Consts.NowOverrideValue);
-                if (_isNowOverrideValueExists.GetValueOrDefault())
-                {
-                    var value = GetData(Consts.NowOverrideValue);
-                    if (DateTime.TryParse(value, out DateTime dateValue))
-                    {
-                        _nowOverrideValue = dateValue;
-                    }
-                }
-            }
-
-            if (_nowOverrideValue.HasValue)
-            {
-                return _nowOverrideValue.Value;
-            }
-            else
-            {
-                return DateTime.Now;
-            }
+            return _baseJobFactory.Now();
         }
 
         protected void PutJobData(string key, object value)
         {
-            var message = new { Key = key, Value = value };
-            _messageBroker?.Publish(MessageBrokerChannels.PutJobData, message);
+            _baseJobFactory.PutJobData(key, value);
         }
 
         protected void PutTriggerData(string key, object value)
         {
-            var message = new { Key = key, Value = value };
-            _messageBroker?.Publish(MessageBrokerChannels.PutTriggerData, message);
+            _baseJobFactory.PutTriggerData(key, value);
         }
 
         protected void SetEffectedRows(int value)
         {
-            _messageBroker?.Publish(MessageBrokerChannels.SetEffectedRows, value);
+            _baseJobFactory.SetEffectedRows(value);
         }
 
         protected void UpdateProgress(byte value)
         {
-            if (value > 100) { value = 100; }
-            if (value < 0) { value = 0; }
-            _messageBroker?.Publish(MessageBrokerChannels.UpdateProgress, value);
+            _baseJobFactory.UpdateProgress(value);
         }
 
         protected void UpdateProgress(int current, int total)
         {
-            var percentage = 1.0 * current / total;
-            var value = Convert.ToByte(percentage * 100);
-            UpdateProgress(value);
+            _baseJobFactory.UpdateProgress(current, total);
         }
 
         private void InitializeConfiguration(JobExecutionContext context, Action<IConfigurationBuilder, IJobExecutionContext> configureAction)
@@ -259,19 +179,20 @@ namespace Planar.Job
             Configuration = builder.Build();
         }
 
-        private void InitializeDepedencyInjection(JobExecutionContext context, MessageBroker messageBroker, Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction)
+        private void InitializeDepedencyInjection(JobExecutionContext context, BaseJobFactory baseJobFactory, Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction)
         {
             var services = new ServiceCollection();
             services.AddSingleton(Configuration);
             services.AddSingleton<IJobExecutionContext>(context);
-            services.AddSingleton<ILogger, PlannerLogger>();
-            services.AddSingleton(messageBroker);
-            services.AddSingleton(typeof(ILogger<>), typeof(PlannerLogger<>));
+            services.AddSingleton<IBaseJob>(baseJobFactory);
+            services.AddSingleton<ILogger, PlanarLogger>();
+            services.AddSingleton(baseJobFactory.MessageBroker);
+            services.AddSingleton(typeof(ILogger<>), typeof(PlanarLogger<>));
             registerServicesAction.Invoke(Configuration, services, context);
             _provider = services.BuildServiceProvider();
         }
 
-        private void InitializeMessageBroker(object messageBroker)
+        private void InitializeBaseJobFactory(object messageBroker)
         {
             if (messageBroker == null)
             {
@@ -280,7 +201,8 @@ namespace Planar.Job
 
             try
             {
-                _messageBroker = new MessageBroker(messageBroker);
+                var mb = new MessageBroker(messageBroker);
+                _baseJobFactory = new BaseJobFactory(mb);
 
                 var options = new JsonSerializerOptions
                 {
@@ -291,7 +213,7 @@ namespace Planar.Job
                         new TypeMappingConverter<IKey, Key>()
                     }
                 };
-                var ctx = JsonSerializer.Deserialize<JobExecutionContext>(_messageBroker.Details, options) ??
+                var ctx = JsonSerializer.Deserialize<JobExecutionContext>(mb.Details, options) ??
                     throw new PlanarJobException("Fail to initialize JobExecutionContext from message broker detials (error 7379)");
 
                 FilterJobData(ctx.MergedJobDataMap);

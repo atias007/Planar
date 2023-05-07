@@ -136,7 +136,7 @@ namespace Planar
 
             if (!parameters[0].ParameterType.ToString().StartsWith("System.Object"))
             {
-                throw new PlanarJobException($"second parameter in method 'Execute' at type '{Properties.ClassName}' from assembly '{AssemblyFilename}' must be object. (current type '{parameters[1].ParameterType.Name}')");
+                throw new PlanarJobException($"first parameter in method 'Execute' at type '{Properties.ClassName}' from assembly '{AssemblyFilename}' must be object. (current type '{parameters[0].ParameterType.Name}')");
             }
 
             return method;
