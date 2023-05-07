@@ -835,7 +835,7 @@ namespace Planar.CLI.Actions
             if (!runResult.IsSuccessful)
             {
                 // Not Found: job finish in very short time
-                AnsiConsole.Markup($" [gold3_1][[x]][/] Progress: [green]100%[/]  |  ");
+                AnsiConsole.Markup($" [gold3_1][[x]][/] Progress: 100%  |  ");
                 if (runResult.StatusCode == HttpStatusCode.NotFound) { return null; }
 
                 // Fail to get running data
@@ -849,7 +849,7 @@ namespace Planar.CLI.Actions
                 Console.CursorTop -= 1;
                 var span = DateTime.Now.Subtract(invokeDate);
                 AnsiConsole.MarkupLine($" [gold3_1][[x]][/] Progress: [wheat1]{runResult.Data.Progress}[/]%  |  Effected Row(s): [wheat1]{runResult.Data.EffectedRows.GetValueOrDefault()}[/]  |  Run Time: [wheat1]{CliTableFormat.FormatTimeSpan(span)}[/]  |  End Time: [wheat1]{CliTableFormat.FormatTimeSpan(runResult.Data.EstimatedEndTime)}[/]     ");
-                Thread.Sleep(sleepTime);
+                await Task.Delay(sleepTime, cancellationToken);
                 runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest, cancellationToken);
                 if (!runResult.IsSuccessful) { break; }
                 if (span.TotalMinutes >= 5) { sleepTime = 10000; }
@@ -858,7 +858,15 @@ namespace Planar.CLI.Actions
             }
 
             Console.CursorTop -= 1;
-            AnsiConsole.Markup($" [gold3_1][[x]][/] Progress: [green]100%[/]  |  ");
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                AnsiConsole.WriteLine();
+            }
+            else
+            {
+                AnsiConsole.Markup($" [gold3_1][[x]][/] Progress: 100%  |  ");
+            }
 
             return null;
         }
