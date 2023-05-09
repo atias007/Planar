@@ -7,6 +7,11 @@ PLAN FOR V 1.4.0
 - use https://github.com/kellyelton/Eltons.ReflectionKit to validate signature in validate base job / hook
 - config flush - no support for cluster
 - ability to inject all BaseJob function as IBaseJob utility
+- add service + cli (admin auth) to set password (with stron validity: 
+   * https://stackoverflow.com/questions/12899876/checking-strings-for-a-strong-enough-password
+   * https://www.tutorialspoint.com/Chash-program-to-check-the-validity-of-a-Password
+   * see DoesNotContainThreeIdenticalCharsInARow below
+   )
 - add job audit
 - add monitor audit
 - cli: add job describe (job details, triggers, monitors, audit, last 10 runs, last 10 alerts, statistics)
@@ -26,6 +31,7 @@ PLAN FOR V 1.4.0
 - add WorkflowJob
 - add SSIS job
 - add SSRS job
+- nuget package for client library
 - authorize on odata metadata
 - add validation to JobRunnerBuilder in test nuget package
 - move work hours settings to settings folder & convert yo yml
@@ -170,3 +176,35 @@ V 1.3.0
 - cli: auto invoke ls (if exists) if only module is typed
 - bug fix: add job with calendar not defined
 - load json or yml global settings
+
+
+---------------------------
+
+
+public bool DoesNotContainThreeIdenticalCharsInARow(string str)
+{
+    if (string.IsNullOrEmpty(str))
+        return true;
+
+    int count = 1;
+    char prev = str[0];
+
+    for (int i = 1; i < str.Length; i++)
+    {
+        if (str[i] == prev)
+        {
+            count++;
+
+            if (count == 3)
+                return false;
+        }
+        else
+        {
+            count = 1;
+        }
+
+        prev = str[i];
+    }
+
+    return true;
+}

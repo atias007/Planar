@@ -66,11 +66,11 @@ namespace Planar.Service.Data
 
             if (request.Ascending)
             {
-                query = query.OrderBy(l => l.TimeStamp);
+                query = query.OrderBy(l => l.TimeStamp).ThenBy(l => l.Id);
             }
             else
             {
-                query = query.OrderByDescending(l => l.TimeStamp);
+                query = query.OrderByDescending(l => l.TimeStamp).ThenBy(l => l.Id);
             }
 
             query = query.Take(request.Rows.GetValueOrDefault());
