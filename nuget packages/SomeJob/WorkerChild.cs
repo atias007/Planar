@@ -1,12 +1,14 @@
-﻿namespace SomeJob
+﻿using Microsoft.Extensions.DependencyInjection;
+using Planar.Job;
+
+namespace SomeJob
 {
     public class WorkerChild
     {
-        private readonly IServiceProvider serviceProvider;
-
         public WorkerChild(IServiceProvider serviceProvider)
         {
-            this.serviceProvider = serviceProvider;
+            var basej = serviceProvider.GetRequiredService<IBaseJob>();
+            var util = serviceProvider.GetRequiredService<GeneralUtil>();
         }
     }
 }

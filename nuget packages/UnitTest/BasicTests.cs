@@ -15,6 +15,7 @@ namespace UnitTest
         protected override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
         {
             services.AddTransient<WorkerChild>();
+            services.AddTransient<GeneralUtil>();
         }
 
         [Test]

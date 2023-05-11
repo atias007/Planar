@@ -189,7 +189,7 @@ namespace Planar.Job
             services.AddSingleton(baseJobFactory.MessageBroker);
             services.AddSingleton(typeof(ILogger<>), typeof(PlanarLogger<>));
             registerServicesAction.Invoke(Configuration, services, context);
-            _provider = services.BuildServiceProvider();
+            _provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
         }
 
         private void InitializeBaseJobFactory(object messageBroker)
