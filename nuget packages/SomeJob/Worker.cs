@@ -23,6 +23,7 @@ namespace SomeJob
         public override async Task ExecuteJob(IJobExecutionContext context)
         {
             var fact = ServiceProvider.GetRequiredService<IBaseJob>();
+            var child = ServiceProvider.GetRequiredService<WorkerChild>();
 
             Logger.LogWarning("Now: {Now}", Now());
 
@@ -100,6 +101,7 @@ namespace SomeJob
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
         {
+            services.AddTransient<WorkerChild>();
         }
     }
 }

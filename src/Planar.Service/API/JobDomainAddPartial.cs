@@ -15,13 +15,28 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using static Quartz.MisfireInstruction;
 
 namespace Planar.Service.API
 {
     public partial class JobDomain
     {
+        private struct TriggerPool
+        {
+            public TriggerPool(ITriggersContainer container)
+            {
+                var temp = new List<BaseTrigger>();
+                temp.AddRange(container.SimpleTriggers);
+                temp.AddRange(container.CronTriggers);
+                Triggers = temp;
+            }
+
+            public IEnumerable<BaseTrigger> Triggers { get; private set; }
+        }
+
         private const int MinNameLength = 3;
         private const int MaxNameLength = 50;
         private const string NameRegexTemplate = @"^[a-zA-Z0-9\-_\s]{@MinNameLength@,@MaxNameLength@}$";
@@ -583,17 +598,21 @@ namespace Planar.Service.API
 
         public static void ValidateTriggerMetadata(ITriggersContainer container, IScheduler scheduler)
         {
+            var pool = new TriggerPool(container);
             TrimTriggerProperties(container);
             ValidateMandatoryTriggerProperties(container);
-            ValidateTriggerNameProperties(container);
-            ValidateMaxCharsTiggerProperties(container);
-            ValidatePreserveWordsTriggerProperties(container);
-            ValidateTriggerPriority(container);
-            ValidateTriggerTimeout(container);
-            ValidateTriggerRetry(container);
+            ValidateTriggerNameProperties(pool);
+            ValidateMaxCharsTiggerProperties(pool);
+            ValidatePreserveWordsTriggerProperties(pool);
+            ValidateTriggerPriority(pool);
+            ValidateTriggerTimeout(pool);
+            ValidateTriggerInterval(container);
+            ValidateTriggerRepeatCount(container);
+            ValidateTriggerRetry(pool);
+            ValidateTriggerStartEnd(container);
             ValidateCronExpression(container);
             ValidateTriggerMisfireBehaviour(container);
-            ValidateTriggerCalendar(container, scheduler);
+            ValidateTriggerCalendar(pool, scheduler);
         }
 
         private static void ValidateTriggerMisfireBehaviour(ITriggersContainer container)
@@ -617,11 +636,13 @@ namespace Planar.Service.API
             });
         }
 
-        private static void ValidateTriggerCalendar(ITriggersContainer container, IScheduler scheduler)
+        private static void ValidateTriggerCalendar(TriggerPool pool, IScheduler scheduler)
         {
             var calendars = scheduler.GetCalendarNames().Result;
-            Action<BaseTrigger> action = t =>
+
+            foreach (var t in pool.Triggers)
             {
+                if (string.IsNullOrEmpty(t.Calendar)) { continue; }
                 var existsCalendarName = calendars.FirstOrDefault(c => string.Equals(c, t.Calendar, StringComparison.OrdinalIgnoreCase));
                 if (string.IsNullOrEmpty(existsCalendarName))
                 {
@@ -629,45 +650,62 @@ namespace Planar.Service.API
                 }
 
                 t.Calendar = existsCalendarName;
-            };
-
-            container.SimpleTriggers?.ForEach(t => action(t));
-            container.CronTriggers?.ForEach(t => action(t));
+            }
         }
 
-        private static void ValidateTriggerPriority(ITriggersContainer container)
+        private static void ValidateTriggerPriority(TriggerPool pool)
         {
-            container.SimpleTriggers?.ForEach(t =>
+            foreach (var t in pool.Triggers)
             {
                 if (t.Priority < 0 || t.Priority > 100) { throw new RestValidationException("priority", $"priority has invalid value ({t.Priority}). valid scope of values is 0-100"); }
-            });
-            container.CronTriggers?.ForEach(t =>
-            {
-                if (t.Priority < 0 || t.Priority > 100) { throw new RestValidationException("priority", $"priority has invalid value ({t.Priority}). valid scope of values is 0-100"); }
-            });
+            }
         }
 
-        private static void ValidateTriggerTimeout(ITriggersContainer container)
+        private static void ValidateTriggerTimeout(TriggerPool pool)
+        {
+            foreach (var t in pool.Triggers)
+            {
+                if (t.Timeout.HasValue && t.Timeout.Value.TotalSeconds < 1) { throw new RestValidationException("timeout", $"timeout has invalid value. timeout must be greater or equals to 1 second"); }
+            }
+        }
+
+        private static void ValidateTriggerInterval(ITriggersContainer container)
         {
             container.SimpleTriggers?.ForEach(t =>
             {
-                if (t.Timeout.HasValue && t.Timeout.Value.TotalSeconds < 1) { throw new RestValidationException("timeout", $"timeout has invalid value. timeout must be greater or equals to 1 second"); }
-            });
-            container.CronTriggers?.ForEach(t =>
-            {
-                if (t.Timeout.HasValue && t.Timeout.Value.TotalSeconds < 1) { throw new RestValidationException("timeout", $"timeout has invalid value. timeout must be greater or equals to 1 second"); }
+                if (t.RepeatCount > 0 && t.Interval.TotalSeconds < 60) { throw new RestValidationException("interval", $"interval has invalid value. interval must be greater or equals to 1 minute"); }
             });
         }
 
-        private static void ValidateTriggerRetry(ITriggersContainer container)
+        private static void ValidateTriggerRepeatCount(ITriggersContainer container)
         {
             container.SimpleTriggers?.ForEach(t =>
             {
-                if ((t.RetrySpan == null || t.RetrySpan == TimeSpan.Zero) && t.MaxRetries > 0) { throw new RestValidationException("retry span", $"retry span has invalid value. retry span must have value when max retries has value"); }
+                if (t.RepeatCount < 0) { throw new RestValidationException("repeat count", $"repeat count has invalid value. repeat count must be greater to 1"); }
             });
-            container.CronTriggers?.ForEach(t =>
+        }
+
+        private static void ValidateTriggerRetry(TriggerPool pool)
+        {
+            foreach (var t in pool.Triggers)
             {
                 if ((t.RetrySpan == null || t.RetrySpan == TimeSpan.Zero) && t.MaxRetries > 0) { throw new RestValidationException("retry span", $"retry span has invalid value. retry span must have value when max retries has value"); }
+            }
+        }
+
+        private static void ValidateTriggerStartEnd(ITriggersContainer container)
+        {
+            container.SimpleTriggers?.ForEach(t =>
+            {
+                if (t.Start.HasValue && t.End.HasValue && t.Start.Value >= t.End.Value)
+                {
+                    throw new RestValidationException("end", $"end time has invalid value. end time cannot be before start time");
+                }
+
+                if (t.End.HasValue && t.End.Value <= DateTime.Now)
+                {
+                    throw new RestValidationException("end", $"end time has invalid value. end time cannot be before current server time");
+                }
             });
         }
 
@@ -695,27 +733,20 @@ namespace Planar.Service.API
             }
         }
 
-        private static void ValidatePreserveWordsTriggerProperties(ITriggersContainer container)
+        private static void ValidatePreserveWordsTriggerProperties(TriggerPool pool)
         {
-            container.SimpleTriggers?.ForEach(t =>
+            foreach (var t in pool.Triggers)
             {
                 t.TriggerData ??= new Dictionary<string, string?>();
-                if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"simple trigger group '{t.Group}' is invalid (preserved value)"); }
+                if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid (preserved value)"); }
                 if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"simple trigger name '{t.Name}' has invalid prefix"); }
                 CheckForInvalidDataKeys(t.TriggerData, "trigger");
-            });
-            container.CronTriggers?.ForEach(t =>
-            {
-                t.TriggerData ??= new Dictionary<string, string?>();
-                if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"cron trigger group '{t.Group}' is invalid (preserved value)"); }
-                if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"cron trigger name '{t.Name}' has invalid prefix"); }
-                CheckForInvalidDataKeys(t.TriggerData, "trigger");
-            });
+            }
         }
 
-        private static void ValidateMaxCharsTiggerProperties(ITriggersContainer container)
+        private static void ValidateMaxCharsTiggerProperties(TriggerPool pool)
         {
-            container.SimpleTriggers?.ForEach(t =>
+            foreach (var t in pool.Triggers)
             {
                 t.TriggerData ??= new Dictionary<string, string?>();
                 ValidateRange(t.Name, 5, 50, "name", "trigger");
@@ -728,34 +759,16 @@ namespace Planar.Service.API
                     ValidateRange(item.Key, 1, 100, "key", "trigger data");
                     ValidateMaxLength(item.Value, 1000, "value", "trigger data");
                 }
-            });
-
-            container.CronTriggers?.ForEach(t =>
-            {
-                t.TriggerData ??= new Dictionary<string, string?>();
-                ValidateRange(t.Name, 5, 50, "name", "trigger");
-                ValidateRange(t.Group, 1, 50, "group", "trigger");
-
-                foreach (var item in t.TriggerData)
-                {
-                    ValidateRange(item.Key, 1, 100, "key", "trigger data");
-                    ValidateMaxLength(item.Value, 1000, "value", "trigger data");
-                }
-            });
+            }
         }
 
-        private static void ValidateTriggerNameProperties(ITriggersContainer container)
+        private static void ValidateTriggerNameProperties(TriggerPool pool)
         {
-            container.SimpleTriggers?.ForEach(t =>
+            foreach (var t in pool.Triggers)
             {
                 if (!IsRegexMatch(_regex, t.Name)) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
                 if (!IsRegexMatch(_regex, t.Group)) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
-            });
-            container.CronTriggers?.ForEach(t =>
-            {
-                if (!IsRegexMatch(_regex, t.Name)) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
-                if (!IsRegexMatch(_regex, t.Group)) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
-            });
+            }
         }
 
         private static void ValidateMandatoryTriggerProperties(ITriggersContainer container)

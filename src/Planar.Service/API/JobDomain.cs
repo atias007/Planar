@@ -9,6 +9,7 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
+using Planar.Service.Validation;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -147,30 +148,52 @@ namespace Planar.Service.API
             var files = Directory.GetFiles(folder, FolderConsts.JobFileName, SearchOption.AllDirectories);
             foreach (var f in files)
             {
-                try
-                {
-                    var yml = File.ReadAllText(f);
-                    var request = YmlUtil.Deserialize<SetJobDynamicRequest>(yml);
-                    if (request == null) { continue; }
-
-                    var key = JobKeyHelper.GetJobKey(request);
-                    if (key == null) { continue; }
-                    var details = await Scheduler.GetJobDetail(key);
-                    if (details == null)
-                    {
-                        var fullFolder = new FileInfo(f).Directory;
-                        if (fullFolder == null) { continue; }
-                        var relativeFolder = fullFolder.FullName[(folder.Length + 1)..];
-                        result.Add(new AvailableJobToAdd { RelativeFolder = relativeFolder, Name = fullFolder.Name });
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogDebug(ex, "Fail to get avaliable job folder info");
-                }
+                var job = await GetAvailableJobToAdd(f, folder);
+                if (job != null) { result.Add(job); }
             }
 
             return result;
+        }
+
+        private async Task<AvailableJobToAdd?> GetAvailableJobToAdd(string filename, string jobsFolder)
+        {
+            try
+            {
+                var request = GetJobDynamicRequestFromFilename(filename);
+                if (request == null) { return null; }
+
+                var key = JobKeyHelper.GetJobKey(request);
+                if (key == null) { return null; }
+                var details = await Scheduler.GetJobDetail(key);
+                if (details == null)
+                {
+                    var fullFolder = new FileInfo(filename).Directory;
+                    if (fullFolder == null) { return null; }
+                    var relativeFolder = fullFolder.FullName[(jobsFolder.Length + 1)..];
+                    var result = new AvailableJobToAdd(relativeFolder, fullFolder.Name);
+                    return result;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogDebug(ex, "Fail to get avaliable job folder info");
+            }
+
+            return null;
+        }
+
+        private SetJobDynamicRequest? GetJobDynamicRequestFromFilename(string filename)
+        {
+            try
+            {
+                var yml = File.ReadAllText(filename);
+                var request = YmlUtil.Deserialize<SetJobDynamicRequest>(yml);
+                return request;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidDataException($"fail to read yml file: {filename}", ex);
+            }
         }
 
         public static IEnumerable<string> GetJobTypes()

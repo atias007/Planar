@@ -2,7 +2,13 @@
 {
     public class AvailableJobToAdd
     {
-        public string? Name { get; set; }
-        public string? RelativeFolder { get; set; }
+        public AvailableJobToAdd(string name, string relativeFolder)
+        {
+            Name = name;
+            RelativeFolder = relativeFolder;
+        }
+
+        public string Name { get; private set; }
+        public string RelativeFolder { get; private set; }
     }
 }

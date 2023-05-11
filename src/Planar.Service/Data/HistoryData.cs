@@ -63,7 +63,17 @@ namespace Planar.Service.Data
 
             if (!string.IsNullOrEmpty(request.JobId))
             {
-                query = query.Where(l => l.JobId == request.JobId);
+                var index = request.JobId.IndexOf(".");
+                if (index > 0)
+                {
+                    var group = request.JobId[0..index];
+                    var name = request.JobId[(index + 1)..];
+                    query = query.Where(l => l.JobGroup == group && l.JobName == name);
+                }
+                else
+                {
+                    query = query.Where(l => l.JobId == request.JobId);
+                }
             }
 
             if (!string.IsNullOrEmpty(request.JobGroup))
