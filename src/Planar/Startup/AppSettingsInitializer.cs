@@ -7,9 +7,8 @@ using System;
 using System.Dynamic;
 using System.IO;
 using System.Threading;
-using YamlDotNet.Serialization.NamingConventions;
 using YamlDotNet.Serialization;
-using System.Threading.Tasks;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace Planar.Startup
 {

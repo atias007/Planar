@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.SqlServer.Query.Internal;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
@@ -7,19 +6,17 @@ using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Service.API;
 using Planar.Service.Data;
-using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.SystemJobs;
-using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Planar.Service
+namespace Planar.Service.Services
 {
     public class MainService : BackgroundService
     {

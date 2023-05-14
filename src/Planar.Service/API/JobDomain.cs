@@ -1,15 +1,14 @@
-﻿using CommonJob;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
+using Planar.Service.Audit;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
-using Planar.Service.Validation;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
