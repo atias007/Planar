@@ -20,6 +20,8 @@ public partial class PlanarContext : DbContext
 
     public virtual DbSet<Group> Groups { get; set; }
 
+    public virtual DbSet<JobAudit> JobAudits { get; set; }
+
     public virtual DbSet<JobDurationStatistic> JobDurationStatistics { get; set; }
 
     public virtual DbSet<JobEffectedRowsStatistic> JobEffectedRowsStatistics { get; set; }

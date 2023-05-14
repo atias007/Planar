@@ -41,6 +41,8 @@ namespace Planar.Service.Data
                 .Select(u => new UserIdentity
                 {
                     Id = u.Id,
+                    Surename = u.FirstName,
+                    GivenName = u.LastName,
                     Username = u.Username,
                     Password = u.Password,
                     Salt = u.Salt,

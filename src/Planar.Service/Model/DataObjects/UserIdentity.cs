@@ -5,7 +5,12 @@
         public int Id { get; set; }
         public string Username { get; set; } = null!;
         public int RoleId { get; set; }
+
+        public string Surename { get; set; } = null!;
+        public string? GivenName { get; set; } = null!;
+
         public byte[] Password { get; set; } = null!;
+
         public byte[] Salt { get; set; } = null!;
     }
 }

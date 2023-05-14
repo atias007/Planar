@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Planar.Common;
+using Planar.Service.Audit;
 using Planar.Service.Model;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,6 +49,17 @@ namespace Planar.Service.Data
         {
             _context.JobProperties.Update(jobProperty);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task AddJobAudit(JobAudit jobAudit)
+        {
+            _context.JobAudits.Add(jobAudit);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteJobAudit(string jobId)
+        {
+            await _context.JobAudits.Where(j => j.JobId == jobId).ExecuteDeleteAsync();
         }
     }
 }

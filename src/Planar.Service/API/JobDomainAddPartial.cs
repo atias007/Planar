@@ -15,10 +15,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using static Quartz.MisfireInstruction;
 
 namespace Planar.Service.API
 {
@@ -106,6 +104,8 @@ namespace Planar.Service.API
                 await DataLayer.DeleteJobProperty(id);
                 throw;
             }
+
+            Audit(jobKey, "job added", request);
 
             // Return Id
             return new JobIdResponse { Id = id };

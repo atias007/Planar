@@ -4,7 +4,6 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
-using Planar.Service.Audit;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
@@ -39,6 +38,8 @@ namespace Planar.Service.API
             var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
             await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
             await Scheduler.PauseJob(info.JobKey);
+
+            Audit(info.JobKey, $"remove data with key '{key}'");
         }
 
         public async Task PutData(JobOrTriggerDataRequest request, PutMode mode)
@@ -54,6 +55,7 @@ namespace Planar.Service.API
                 }
 
                 info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
+                Audit(info.JobKey, $"update data with key '{request.DataKey}'", new { value = request.DataValue });
             }
             else
             {
@@ -63,6 +65,7 @@ namespace Planar.Service.API
                 }
 
                 info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
+                Audit(info.JobKey, $"add new data with key '{request.DataKey}'", new { value = request.DataValue });
             }
 
             var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
@@ -181,7 +184,7 @@ namespace Planar.Service.API
             return null;
         }
 
-        private SetJobDynamicRequest? GetJobDynamicRequestFromFilename(string filename)
+        private static SetJobDynamicRequest? GetJobDynamicRequestFromFilename(string filename)
         {
             try
             {
@@ -408,11 +411,14 @@ namespace Planar.Service.API
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
             await Scheduler.PauseJob(jobKey);
+
+            Audit(jobKey, "job paused");
         }
 
         public async Task PauseAll()
         {
             await Scheduler.PauseAll();
+            Audit(null, "all jobs paused");
         }
 
         public async Task Remove(string id)
@@ -430,6 +436,15 @@ namespace Planar.Service.API
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Fail to delete properties after delete job id {Id}", id);
+            }
+
+            try
+            {
+                await DataLayer.DeleteJobAudit(jobId);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Fail to delete audit after delete job id {Id}", id);
             }
 
             try
@@ -455,11 +470,13 @@ namespace Planar.Service.API
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
             await Scheduler.ResumeJob(jobKey);
+            Audit(jobKey, "job resumed");
         }
 
         public async Task ResumeAll()
         {
             await Scheduler.ResumeAll();
+            Audit(null, "all jobs resumed");
         }
 
         public async Task<bool> Cancel(FireInstanceIdRequest request)

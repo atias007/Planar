@@ -5,7 +5,8 @@ CREATE TABLE dbo.JobAudit
 	DateCreated datetime NOT NULL,
 	Username varchar(50) NOT NULL,
 	UserTitle nvarchar(101) NOT NULL,
-	Description varchar(200) NOT NULL
+	Description varchar(200) NOT NULL,
+	AdditionalInfo nvarchar(4000) NULL
 	)  ON [PRIMARY]
 GO
 ALTER TABLE dbo.JobAudit ADD CONSTRAINT

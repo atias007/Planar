@@ -182,6 +182,9 @@ namespace Planar.Service.API
             // Update Properties
             await UpdateJobProperties(request, options, metadata);
 
+            // Audit
+            Audit(metadata.JobKey, "job updated", new { request, options });
+
             // Return Id
             return new JobIdResponse { Id = metadata.JobId };
         }
