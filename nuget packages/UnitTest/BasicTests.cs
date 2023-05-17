@@ -33,7 +33,9 @@ namespace UnitTest
 
             var result = ExecuteJob(run);
             result.Assert.Status.Success()
-                .EffectedRows.IsNotEmpty();
+                .EffectedRows.IsNotEmpty()
+                .Data.ContainsKey("NoExists")
+                .Data.Key("NoExists").EqualsTo(12345);
         }
 
         [Test]

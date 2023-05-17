@@ -25,6 +25,8 @@ namespace SomeJob
             var fact = ServiceProvider.GetRequiredService<IBaseJob>();
             var child = ServiceProvider.GetRequiredService<WorkerChild>();
 
+            fact.PutJobData("NoExists", 12345);
+
             Logger.LogWarning("Now: {Now}", Now());
 
             var maxDiffranceHours = Configuration.GetValue("Max Diffrance Hours", 12);
@@ -97,6 +99,9 @@ namespace SomeJob
             // CheckAggragateException();
             var a1 = fact.GetData<int>("X");
             var b1 = fact.GetEffectedRows();
+
+            var no = fact.GetData("NoExists");
+            Logger.LogInformation(no);
         }
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

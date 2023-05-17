@@ -46,6 +46,6 @@ namespace Planar.API.Common.Entities
         public string? State { get; set; }
 
         [YamlMember(Order = 100)]
-        public SortedDictionary<string, string?> DataMap { get; set; } = new SortedDictionary<string, string?>();
+        public Dictionary<string, string?> DataMap { get; set; } = new Dictionary<string, string?>();
     }
 }

@@ -50,6 +50,7 @@ namespace Planar.Job.Test
                     {
                         var value = PlanarConvert.ToString(data1.Value);
                         _context.JobDetails.JobDataMap.AddOrUpdate(data1.Key, value);
+                        _context.MergedJobDataMap = _context.JobDetails.JobDataMap.Merge(_context.TriggerDetails.TriggerDataMap);
                     }
                     return null;
 
@@ -64,6 +65,7 @@ namespace Planar.Job.Test
                     {
                         var value = PlanarConvert.ToString(data2.Value);
                         _context.TriggerDetails.TriggerDataMap.AddOrUpdate(data2.Key, value);
+                        _context.MergedJobDataMap = _context.JobDetails.JobDataMap.Merge(_context.TriggerDetails.TriggerDataMap);
                     }
                     return null;
 

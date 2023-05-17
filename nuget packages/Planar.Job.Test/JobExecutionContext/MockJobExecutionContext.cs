@@ -72,7 +72,7 @@ namespace Planar.Job.Test
 
         public object? Result { get; set; }
 
-        public SortedDictionary<string, string?> MergedJobDataMap { get; private set; }
+        public SortedDictionary<string, string?> MergedJobDataMap { get; internal set; }
 
         public DateTimeOffset FireTime => _now;
 
