@@ -26,24 +26,25 @@ namespace Planar.CLI
             }
         }
 
-        public CliActionResponse(RestResponse? response, object? serializeObj, CliOutputFilenameRequest? request = null)
-            : this(response)
-        {
-            if (serializeObj != null)
-            {
-                Message = SerializeResponse(serializeObj);
-            }
-
-            if (request != null && request.HasOutputFilename)
-            {
-                OutputFilename = request.OutputFilename;
-            }
-        }
-
         public CliActionResponse(RestResponse? response, Table table)
             : this(response)
         {
             Tables = new List<Table> { table };
+        }
+
+        public CliActionResponse(RestResponse? response, object? dumpObject, CliOutputFilenameRequest? request = null)
+            : this(response)
+        {
+            DumpObject = dumpObject;
+
+            if (request != null && request.HasOutputFilename)
+            {
+                OutputFilename = request.OutputFilename;
+                if (dumpObject != null)
+                {
+                    Message = SerializeResponse(dumpObject);
+                }
+            }
         }
 
         public CliActionResponse(RestResponse? response, List<Table> tables)
@@ -57,6 +58,8 @@ namespace Planar.CLI
         public string? Message { get; private set; }
 
         public string? OutputFilename { get; private set; }
+
+        public object? DumpObject { get; private set; }
 
         public List<Table>? Tables { get; private set; }
 

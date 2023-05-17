@@ -28,12 +28,12 @@ namespace Planar.CLI.CliGeneral
 
         public static string GetUnauthorizedErrorMarkup()
         {
-            return $"[black on {ErrorColor}]unauthorized:[/] [{ErrorColor}]you must login to performe this action[/]";
+            return $"[black on {ErrorColor}]unauthorized:[/] [{ErrorColor}]you must login to perform this action[/]";
         }
 
         public static string GetForbiddenErrorMarkup()
         {
-            return $"[black on {ErrorColor}]forbidden:[/] [{ErrorColor}]you don't the permmision to performe this action[/]";
+            return $"[black on {ErrorColor}]forbidden:[/] [{ErrorColor}]you don't have the permission to perform this action[/]";
         }
 
         public static string GetConflictErrorMarkup(string? message)

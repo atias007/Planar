@@ -2,7 +2,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
-using Planar.Service.API.Helpers;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using Quartz;

@@ -62,7 +62,13 @@ namespace Planar.CLI.Actions
             var result = await RestProxy.Invoke<List<JobRowDetails>>(restRequest, cancellationToken);
             if (!result.IsSuccessful)
             {
-                throw new CliException($"fail to fetch list of jobs. error message: {result.ErrorMessage}", result.ErrorException);
+                var message = "fail to fetch list of jobs";
+                if (!string.IsNullOrEmpty(result.ErrorMessage))
+                {
+                    message += $". error message: {result.ErrorMessage}";
+                }
+
+                throw new CliException(message, result.ErrorException);
             }
 
             return ChooseJob(result.Data);
@@ -154,6 +160,42 @@ namespace Planar.CLI.Actions
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<JobDetails>(restRequest, cancellationToken);
+            var tables = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, tables);
+        }
+
+        [Action("audit")]
+        public static async Task<CliActionResponse> GetJobAudits(CliJobKey jobKey, CancellationToken cancellationToken = default)
+        {
+            if (int.TryParse(jobKey.Id, out var id) && id > 0)
+            {
+                return await GetJobAudit(id, cancellationToken);
+            }
+
+            var restRequest = new RestRequest("job/{id}/audit", Method.Get)
+                .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<IEnumerable<JobAuditDto>>(restRequest, cancellationToken);
+            var tables = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, tables);
+        }
+
+        private static async Task<CliActionResponse> GetJobAudit(int auditId, CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("job/audit/{auditId}", Method.Get)
+                .AddParameter("auditId", auditId, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<JobAuditWithInfoDto>(restRequest, cancellationToken);
+            return new CliActionResponse(result, dumpObject: result.Data);
+        }
+
+        [Action("all-audits")]
+        public static async Task<CliActionResponse> GetAudits(CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("job/audits", Method.Get)
+                .AddParameter("pageNumber", 0, ParameterType.QueryString);
+
+            var result = await RestProxy.Invoke<IEnumerable<JobAuditDto>>(restRequest, cancellationToken);
             var tables = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, tables);
         }
@@ -265,7 +307,7 @@ namespace Planar.CLI.Actions
 
             if (request.Details)
             {
-                return new CliActionResponse(result.Item2, serializeObj: result.Item1);
+                return new CliActionResponse(result.Item2, dumpObject: result.Item1);
             }
 
             var table = CliTableExtensions.GetTable(result.Item1);

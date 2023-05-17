@@ -13,6 +13,7 @@ using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -34,12 +35,13 @@ namespace Planar.Service.API
             if (info.JobDetails == null) { return; }
 
             ValidateDataKeyExists(info.JobDetails, key, id);
+            var auditValue = PlanarConvert.ToString(info.JobDetails.JobDataMap[key]);
             info.JobDetails.JobDataMap.Remove(key);
             var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
             await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
             await Scheduler.PauseJob(info.JobKey);
 
-            Audit(info.JobKey, $"remove data with key '{key}'");
+            AuditJob(info.JobKey, $"remove job data with key '{key}'", new { value = auditValue?.Trim() });
         }
 
         public async Task PutData(JobOrTriggerDataRequest request, PutMode mode)
@@ -55,7 +57,7 @@ namespace Planar.Service.API
                 }
 
                 info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
-                Audit(info.JobKey, $"update data with key '{request.DataKey}'", new { value = request.DataValue });
+                AuditJob(info.JobKey, $"update job data with key '{request.DataKey}'", new { value = request.DataValue?.Trim() });
             }
             else
             {
@@ -65,7 +67,7 @@ namespace Planar.Service.API
                 }
 
                 info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
-                Audit(info.JobKey, $"add new data with key '{request.DataKey}'", new { value = request.DataValue });
+                AuditJob(info.JobKey, $"add job data with key '{request.DataKey}'", new { value = request.DataValue?.Trim() });
             }
 
             var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
@@ -237,6 +239,37 @@ namespace Planar.Service.API
 
             var dal = Resolve<HistoryData>();
             var result = await dal.GetLastInstanceId(jobKey, invokeDate);
+            return result;
+        }
+
+        public async Task<IEnumerable<JobAuditDto>> GetJobAudits(string id)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(id);
+            var jobId = await JobKeyHelper.GetJobId(jobKey) ?? string.Empty;
+            var query = DataLayer.GetJobAudits(jobId);
+            var result = await Mapper.ProjectTo<JobAuditDto>(query).ToListAsync();
+            return result;
+        }
+
+        public async Task<IEnumerable<JobAuditDto>> GetAudits(int pageNumber)
+        {
+            const byte pageSize = 10;
+
+            if (pageNumber < 0)
+            {
+                throw new RestValidationException("pageNumber", "pageNumber must be greater or equals to 0");
+            }
+
+            var query = DataLayer.GetAudits(pageNumber, pageSize);
+            var result = await Mapper.ProjectTo<JobAuditDto>(query).ToListAsync();
+            return result;
+        }
+
+        public async Task<JobAuditDto> GetJobAudit(int id)
+        {
+            var query = DataLayer.GetJobAudit(id);
+            var entity = await Mapper.ProjectTo<JobAuditWithInfoDto>(query).FirstOrDefaultAsync();
+            var result = ValidateExistingEntity(entity, "job audit");
             return result;
         }
 
@@ -412,13 +445,13 @@ namespace Planar.Service.API
             var jobKey = await JobKeyHelper.GetJobKey(request);
             await Scheduler.PauseJob(jobKey);
 
-            Audit(jobKey, "job paused");
+            AuditJob(jobKey, "job paused");
         }
 
         public async Task PauseAll()
         {
             await Scheduler.PauseAll();
-            Audit(null, "all jobs paused");
+            AuditJobs("all jobs paused");
         }
 
         public async Task Remove(string id)
@@ -470,13 +503,13 @@ namespace Planar.Service.API
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
             await Scheduler.ResumeJob(jobKey);
-            Audit(jobKey, "job resumed");
+            AuditJob(jobKey, "job resumed");
         }
 
         public async Task ResumeAll()
         {
             await Scheduler.ResumeAll();
-            Audit(null, "all jobs resumed");
+            AuditJobs("all jobs resumed");
         }
 
         public async Task<bool> Cancel(FireInstanceIdRequest request)

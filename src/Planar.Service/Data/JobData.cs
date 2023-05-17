@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.Audit;
 using Planar.Service.Model;
@@ -60,6 +61,34 @@ namespace Planar.Service.Data
         public async Task DeleteJobAudit(string jobId)
         {
             await _context.JobAudits.Where(j => j.JobId == jobId).ExecuteDeleteAsync();
+        }
+
+        public IQueryable<JobAudit> GetJobAudits(string id)
+        {
+            return _context.JobAudits
+                .AsNoTracking()
+                .Where(a => a.JobId == id || a.JobId == string.Empty)
+                .OrderByDescending(a => a.DateCreated)
+                .ThenByDescending(a => a.Id);
+        }
+
+        public IQueryable<JobAudit> GetAudits(int pageNumber, byte pageSize)
+        {
+            var skip = pageNumber * pageSize;
+
+            return _context.JobAudits
+                .AsNoTracking()
+                .Skip(skip)
+                .Take(pageSize)
+                .OrderByDescending(a => a.DateCreated)
+                .ThenByDescending(a => a.Id);
+        }
+
+        public IQueryable<JobAudit> GetJobAudit(int id)
+        {
+            return _context.JobAudits
+                .AsNoTracking()
+                .Where(a => a.Id == id);
         }
     }
 }

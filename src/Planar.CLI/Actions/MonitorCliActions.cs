@@ -104,7 +104,7 @@ namespace Planar.CLI.Actions
         {
             var restRequest = new RestRequest("monitor/hooks", Method.Get);
             var result = await RestProxy.Invoke<List<string>>(restRequest, cancellationToken);
-            return new CliActionResponse(result, serializeObj: result.Data);
+            return new CliActionResponse(result, dumpObject: result.Data);
         }
 
         [Action("reload")]

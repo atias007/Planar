@@ -152,7 +152,7 @@ namespace Planar.Service.SystemJobs
         {
             var data = _serviceProvider.GetRequiredService<StatisticsData>();
             var logsQuery = data.GetNullAnomaly();
-            var config = new MapperConfiguration(cfg => cfg.AddProfile<JobInstanceLogForStatisticsProfile>());
+            var config = new MapperConfiguration(cfg => cfg.AddProfile<StatisticsProfile>());
             var mapper = config.CreateMapper();
             var logs = await mapper.ProjectTo<JobInstanceLogForStatistics>(logsQuery).ToListAsync();
             var statistics = await SafeSetStatisticsCache();

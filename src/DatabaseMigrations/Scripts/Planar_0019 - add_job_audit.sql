@@ -2,6 +2,7 @@ CREATE TABLE dbo.JobAudit
 	(
 	Id int NOT NULL IDENTITY (1, 1),
 	JobId varchar(20) NOT NULL,
+	JobKey varchar(101) NOT NULL,
 	DateCreated datetime NOT NULL,
 	Username varchar(50) NOT NULL,
 	UserTitle nvarchar(101) NOT NULL,

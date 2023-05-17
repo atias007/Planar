@@ -1,5 +1,7 @@
-﻿using Planar.Common;
+﻿using Microsoft.AspNetCore.Http;
+using Planar.Common;
 using Planar.Common.Helpers;
+using Planar.Service.Audit;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Quartz;
@@ -27,6 +29,50 @@ namespace Planar.Service.API
             public JobKey JobKey { get; set; }
 
             public IJobDetail? JobDetails { get; set; }
+        }
+
+        protected void AuditJobs(string description)
+        {
+            var audit = new AuditMessage
+            {
+                Description = description,
+            };
+
+            AuditInner(audit);
+        }
+
+        protected void AuditJob(JobKey jobKey, string description, object? additionalInfo = null)
+        {
+            var audit = new AuditMessage
+            {
+                JobKey = jobKey,
+                Description = description,
+                AdditionalInfo = additionalInfo
+            };
+
+            AuditInner(audit);
+        }
+
+        protected void AuditTrigger(TriggerKey triggerKey, string description, object? additionalInfo = null, bool addTriggerInfo = false)
+        {
+            var audit = new AuditMessage
+            {
+                TriggerKey = triggerKey,
+                Description = description,
+                AdditionalInfo = additionalInfo,
+                AddTriggerInfo = addTriggerInfo
+            };
+
+            AuditInner(audit);
+        }
+
+        private void AuditInner(AuditMessage audit)
+        {
+            var context = Resolve<IHttpContextAccessor>();
+            var claims = context?.HttpContext?.User?.Claims;
+            audit.Claims = claims;
+            var producer = Resolve<AuditProducer>();
+            producer.Publish(audit);
         }
 
         protected static void ValidateSystemJob(JobKey jobKey)

@@ -394,5 +394,40 @@ namespace Planar.Controllers
             var result = await BusinesLayer.GetLastInstanceId(id, invokeDate);
             return Ok(result);
         }
+
+        [HttpGet("{id}/audit")]
+        [AdministratorAuthorize]
+        [SwaggerOperation(OperationId = "get_job_id_audit", Description = "Get audits for job", Summary = "Get Audits For Job")]
+        [OkJsonResponse(typeof(IEnumerable<JobAuditDto>))]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<ActionResult<IEnumerable<JobAuditDto>>> GetJobAudit([FromRoute][Required] string id)
+        {
+            var result = await BusinesLayer.GetJobAudits(id);
+            return Ok(result);
+        }
+
+        [HttpGet("audit/{auditId}")]
+        [AdministratorAuthorize]
+        [SwaggerOperation(OperationId = "get_job_audit_audit_id", Description = "Get audit by id", Summary = "Get Audit By Id")]
+        [OkJsonResponse(typeof(JobAuditWithInfoDto))]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<ActionResult<JobAuditWithInfoDto>> GetJobAudit([FromRoute][Id] int auditId)
+        {
+            var result = await BusinesLayer.GetJobAudit(auditId);
+            return Ok(result);
+        }
+
+        [HttpGet("audits")]
+        [AdministratorAuthorize]
+        [SwaggerOperation(OperationId = "get_job_audits", Description = "Get all audits", Summary = "Get All Audits")]
+        [BadRequestResponse]
+        [OkJsonResponse(typeof(IEnumerable<JobAuditDto>))]
+        public async Task<ActionResult<IEnumerable<JobAuditDto>>> GetJobAudits([FromQuery] int pageNumber)
+        {
+            var result = await BusinesLayer.GetAudits(pageNumber);
+            return Ok(result);
+        }
     }
 }

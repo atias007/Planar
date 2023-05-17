@@ -2,9 +2,7 @@
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Spectre.Console;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using YamlDotNet.Serialization;
 
 namespace Planar.CLI
@@ -20,6 +18,20 @@ namespace Planar.CLI
             table.AddRow(string.Empty, string.Empty);
             table.AddRow(string.Empty, CliFormat.GetWarningMarkup("make sure you copy the above password now."));
             table.AddRow(string.Empty, $"[{CliFormat.WarningColor}]we don't store it and you will not be able to see it again.[/]");
+            return table;
+        }
+
+        public static Table GetTable(IEnumerable<JobAuditDto>? response)
+        {
+            var table = new Table();
+            if (response == null) { return table; }
+            table.AddColumns("Id", "Date Created", "Username", "User Title", "Description");
+            foreach (var item in response)
+            {
+                if (item == null) { continue; }
+                table.AddRow(item.Id.ToString(), CliTableFormat.FormatDateTime(item.DateCreated), item.Username, item.UserTitle, SafeCliString(item.Description));
+            }
+
             return table;
         }
 

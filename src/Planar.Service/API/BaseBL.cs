@@ -97,39 +97,6 @@ namespace Planar.Service.API
             }
         }
 
-        protected void Audit(JobKey? jobKey, string description, object? additionalInfo = null)
-        {
-            var jobId =
-                jobKey == null ?
-                string.Empty :
-                JobKeyHelper.GetJobId(jobKey).Result;
-
-            if (jobId == null)
-            {
-                Logger.LogError("fail to get job id from job key '{Group}.{Name}' at BaseBL.Audit(JobKey, string, object?)", jobKey.Group, jobKey.Name);
-                return;
-            }
-
-            var context = Resolve<IHttpContextAccessor>();
-            var claims = context?.HttpContext?.User?.Claims;
-            var usernameClaim = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-            var surnameClaim = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Surname)?.Value;
-            var givenNameClaim = claims?.FirstOrDefault(c => c.Type == ClaimTypes.GivenName)?.Value;
-            var title = $"{givenNameClaim} {surnameClaim}".Trim();
-
-            var audit = new AuditMessage
-            {
-                AdditionalInfo = additionalInfo == null ? null : YmlUtil.Serialize(additionalInfo),
-                Description = description,
-                JobId = jobId,
-                Username = usernameClaim ?? Roles.Anonymous.ToString().ToLower(),
-                UserTitle = title ?? Roles.Anonymous.ToString().ToLower(),
-            };
-
-            var producer = Resolve<AuditProducer>();
-            producer.Publish(audit);
-        }
-
         protected IScheduler Scheduler => _schedulerUtil.Scheduler;
 
         protected SchedulerUtil SchedulerUtil => _schedulerUtil;

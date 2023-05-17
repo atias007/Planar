@@ -105,7 +105,7 @@ namespace Planar.Service.API
                 throw;
             }
 
-            Audit(jobKey, "job added", request);
+            AuditJob(jobKey, "job added", request);
 
             // Return Id
             return new JobIdResponse { Id = id };

@@ -88,7 +88,7 @@ namespace Planar.CLI.Actions
             var result = await RestProxy.Invoke<T>(request, cancellationToken);
             if (result.IsSuccessful)
             {
-                return new CliActionResponse(result, serializeObj: result.Data, outputRequest);
+                return new CliActionResponse(result, dumpObject: result.Data, outputRequest);
             }
 
             return new CliActionResponse(result);
@@ -211,7 +211,7 @@ namespace Planar.CLI.Actions
         protected static void AssertUpdated(string? id, string entity)
         {
             if (string.IsNullOrEmpty(id)) { return; }
-            Console.WriteLine(id);
+            // Console.WriteLine(id)
             string message = entity switch
             {
                 "job" => CliFormat.GetWarningMarkup("job is in 'pause' state and none of its triggers will fire"),
@@ -260,7 +260,7 @@ namespace Planar.CLI.Actions
             var allActions = type.GetMethods(BindingFlags.Public | BindingFlags.Static).ToList();
             var moduleAttribute = type.GetCustomAttribute<ModuleAttribute>();
 
-            // TODO: check for moduleAttribute == null;
+            // TODO: check for moduleAttribute == null
             foreach (var act in allActions)
             {
                 var actionAttributes = act.GetCustomAttributes<ActionAttribute>();

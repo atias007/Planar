@@ -1,11 +1,16 @@
-﻿namespace Planar.Service.Audit
+﻿using Quartz;
+using System.Collections.Generic;
+using System.Security.Claims;
+
+namespace Planar.Service.Audit
 {
     public class AuditMessage
     {
-        public string JobId { get; set; } = null!;
-        public string Username { get; set; } = null!;
-        public string UserTitle { get; set; } = null!;
+        public JobKey? JobKey { get; set; }
+        public TriggerKey? TriggerKey { get; set; }
+        public IEnumerable<Claim>? Claims { get; set; }
         public string Description { get; set; } = null!;
-        public string? AdditionalInfo { get; set; }
+        public object? AdditionalInfo { get; set; }
+        public bool AddTriggerInfo { get; set; }
     }
 }

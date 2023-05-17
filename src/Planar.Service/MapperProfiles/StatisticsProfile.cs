@@ -4,9 +4,9 @@ using Planar.Service.Model.DataObjects;
 
 namespace Planar.Service.MapperProfiles
 {
-    internal class JobInstanceLogForStatisticsProfile : Profile
+    internal class StatisticsProfile : Profile
     {
-        public JobInstanceLogForStatisticsProfile()
+        public StatisticsProfile()
         {
             CreateMap<JobInstanceLog, JobInstanceLogForStatistics>().ReverseMap();
         }

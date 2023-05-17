@@ -1,4 +1,6 @@
-﻿using Newtonsoft.Json;
+﻿using Dumpify;
+using Dumpify.Config;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Planar.CLI.Actions;
 using Planar.CLI.CliGeneral;
@@ -230,6 +232,14 @@ namespace Planar.CLI
                 if (response.Tables != null)
                 {
                     response.Tables.ForEach(t => AnsiConsole.Write(t));
+                }
+                else if (response.DumpObject != null)
+                {
+                    DumpConfig.Default.TableConfig.ShowTableHeaders = false;
+                    DumpConfig.Default.ShowHeaders = false;
+                    DumpConfig.Default.TypeNamingConfig.ShowTypeNames = false;
+
+                    response.DumpObject.Dump();
                 }
                 else
                 {

@@ -16,6 +16,10 @@ public partial class JobAudit
     [Unicode(false)]
     public string JobId { get; set; } = null!;
 
+    [StringLength(101)]
+    [Unicode(false)]
+    public string JobKey { get; set; } = null!;
+
     [Column(TypeName = "datetime")]
     public DateTime DateCreated { get; set; }
 

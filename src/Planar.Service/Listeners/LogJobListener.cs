@@ -73,6 +73,8 @@ namespace Planar.Service.Listeners
                     ServerName = Environment.MachineName
                 };
 
+                log.Data?.Trim();
+
                 if (log.InstanceId.Length > 250) { log.InstanceId = log.InstanceId[0..250]; }
                 if (log.Data?.Length > 4000) { log.Data = log.Data[0..4000]; }
                 if (log.JobId?.Length > 20) { log.JobId = log.JobId[0..20]; }
@@ -126,6 +128,8 @@ namespace Planar.Service.Listeners
                     StatusTitle = status.ToString(),
                     IsStopped = context.CancellationToken.IsCancellationRequested
                 };
+
+                log.Log?.Trim();
 
                 if (log.StatusTitle.Length > 10) { log.StatusTitle = log.StatusTitle[0..10]; }
 
