@@ -103,13 +103,16 @@ namespace Planar.Service.Services
             var audit = new JobAudit
             {
                 DateCreated = DateTime.Now,
-                Description = message.Description,
+                Description = message.Description.Trim(),
                 AdditionalInfo = message.AdditionalInfo == null ? null : YmlUtil.Serialize(message.AdditionalInfo),
                 JobId = jobId ?? string.Empty,
                 Username = usernameClaim ?? Roles.Anonymous.ToString().ToLower(),
                 UserTitle = title ?? Roles.Anonymous.ToString().ToLower(),
                 JobKey = message.JobKey == null ? string.Empty : $"{message.JobKey.Group}.{message.JobKey.Name}"
             };
+
+            if (audit.Description.Length > 200) { audit.Description = audit.Description[0..200]; }
+            if (audit.AdditionalInfo?.Length > 4000) { audit.AdditionalInfo = audit.AdditionalInfo[0..4000]; }
 
             await data.AddJobAudit(audit);
         }
