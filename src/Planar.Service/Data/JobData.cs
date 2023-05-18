@@ -79,10 +79,10 @@ namespace Planar.Service.Data
 
             return _context.JobAudits
                 .AsNoTracking()
-                .Skip(skip)
-                .Take(pageSize)
                 .OrderByDescending(a => a.DateCreated)
-                .ThenByDescending(a => a.Id);
+                .ThenByDescending(a => a.Id)
+                .Skip(skip)
+                .Take(pageSize);
         }
 
         public IQueryable<JobAudit> GetJobAudit(int id)

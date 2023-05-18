@@ -21,15 +21,31 @@ namespace Planar.CLI
             return table;
         }
 
-        public static Table GetTable(IEnumerable<JobAuditDto>? response)
+        public static Table GetTable(IEnumerable<JobAuditDto>? response, bool withJobId = false)
         {
             var table = new Table();
             if (response == null) { return table; }
-            table.AddColumns("Id", "Date Created", "Username", "User Title", "Description");
+
+            if (withJobId)
+            {
+                table.AddColumns("Id", "Job Id", "Job Key", "Date Created", "Username", "User Title", "Description");
+            }
+            else
+            {
+                table.AddColumns("Id", "Date Created", "Username", "User Title", "Description");
+            }
+
             foreach (var item in response)
             {
                 if (item == null) { continue; }
-                table.AddRow(item.Id.ToString(), CliTableFormat.FormatDateTime(item.DateCreated), item.Username, item.UserTitle, SafeCliString(item.Description));
+                if (withJobId)
+                {
+                    table.AddRow(item.Id.ToString(), item.JobId.EscapeMarkup(), item.JobKey.EscapeMarkup(), CliTableFormat.FormatDateTime(item.DateCreated), item.Username, item.UserTitle, SafeCliString(item.Description));
+                }
+                else
+                {
+                    table.AddRow(item.Id.ToString(), CliTableFormat.FormatDateTime(item.DateCreated), item.Username, item.UserTitle, SafeCliString(item.Description));
+                }
             }
 
             return table;

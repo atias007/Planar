@@ -111,6 +111,7 @@ namespace Planar.Service.Services
                 JobKey = message.JobKey == null ? string.Empty : $"{message.JobKey.Group}.{message.JobKey.Name}"
             };
 
+            audit.AdditionalInfo = audit.AdditionalInfo?.Trim();
             if (audit.Description.Length > 200) { audit.Description = audit.Description[0..200]; }
             if (audit.AdditionalInfo?.Length > 4000) { audit.AdditionalInfo = audit.AdditionalInfo[0..4000]; }
 

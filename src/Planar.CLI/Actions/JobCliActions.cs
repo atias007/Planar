@@ -197,7 +197,7 @@ namespace Planar.CLI.Actions
                 .AddParameter("pageSize", request.PageSize, ParameterType.QueryString);
 
             var result = await RestProxy.Invoke<IEnumerable<JobAuditDto>>(restRequest, cancellationToken);
-            var tables = CliTableExtensions.GetTable(result.Data);
+            var tables = CliTableExtensions.GetTable(result.Data, withJobId: true);
             return new CliActionResponse(result, tables);
         }
 

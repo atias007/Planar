@@ -71,6 +71,8 @@ namespace Planar.CLI
 
         public List<CliArgument> CliArguments { get; set; }
 
+        public Type? RequestType { get; set; }
+
         public string? OutputFilename => _outputFilename;
 
         public string Command { get; set; }
@@ -86,7 +88,6 @@ namespace Planar.CLI
         }
 
         public string Module { get; set; }
-        public string? OutputFile { get; set; }
 
         public static object? ParseEnum(Type type, string? value)
         {
@@ -115,7 +116,7 @@ namespace Planar.CLI
             var list = args.ToList();
 
             // special case: enable get history only by type history id
-            if (list.Count == 1 && _historyRegex.IsMatch(list[0]))
+            if (_historyRegex.IsMatch(list[0]))
             {
                 list.Insert(0, "history");
                 list.Insert(1, "get");

@@ -152,7 +152,10 @@ namespace Planar.CLI
                 var action = CliArgumentsUtil.ValidateArgs(ref args, cliActions);
                 if (action == null) { return null; }
 
-                cliArgument = new CliArgumentsUtil(args);
+                cliArgument = new CliArgumentsUtil(args)
+                {
+                    RequestType = action.RequestType
+                };
 
                 if (action.Method == null || action.Method.DeclaringType == null) { return null; }
 
@@ -207,6 +210,22 @@ namespace Planar.CLI
                     else
                     {
                         response = InvokeCliAction(action, console, param);
+
+                        // paging request
+                        if (param is IPagingRequest pagingRequest)
+                        {
+                            var rowsCount = GetResponseTableRowCount(response);
+                            while (rowsCount == pagingRequest.PageSize)
+                            {
+                                HandleCliResponse(response, cliArgument.OutputFilename);
+
+                                pagingRequest.PageNumber++;
+                                response = InvokeCliAction(action, console, param);
+                                rowsCount = GetResponseTableRowCount(response);
+                                var ok = AssertPage(pagingRequest.PageNumber);
+                                if (!ok) { return cliArgument; }
+                            }
+                        }
                     }
                 }
 
@@ -218,6 +237,23 @@ namespace Planar.CLI
             }
 
             return cliArgument;
+        }
+
+        private static bool AssertPage(uint pageNumber)
+        {
+            var chiose = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title($" [turquoise2]continue[/] to page number [{CliFormat.WarningColor}]{pageNumber + 1}[/] or [turquoise2]stop[/]?")
+                    .AddChoices("continue", "stop"));
+
+            if (chiose == "stop") { return false; }
+            return true;
+        }
+
+        private static int GetResponseTableRowCount(CliActionResponse? cliActionResponse)
+        {
+            var rowsCount = cliActionResponse?.Tables?.FirstOrDefault()?.Rows.Count ?? 0;
+            return rowsCount;
         }
 
         private static void HandleCliResponse(CliActionResponse? response, string? outputfilename)

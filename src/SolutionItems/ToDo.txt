@@ -4,16 +4,18 @@ PLAN FOR V 1.4.0
 - add RestJob
 - move to .net 7
 - cli: show paused jobs
+- cli: show no-trigger jobs
+- cli: job list with group parameter
+- history column 'isstop' --> 'iscancel'
 - use https://github.com/kellyelton/Eltons.ReflectionKit to validate signature in validate base job / hook
 - config flush - no support for cluster
-- ability to inject all BaseJob function as IBaseJob utility
 - add service + cli (admin auth) to set password (with stron validity: 
    * https://stackoverflow.com/questions/12899876/checking-strings-for-a-strong-enough-password
    * https://www.tutorialspoint.com/Chash-program-to-check-the-validity-of-a-Password
    * see DoesNotContainThreeIdenticalCharsInARow below
    )
-- add job audit
-- add monitor audit
+
+- queue-invoke command to create one time trigger (get date time or time from now)
 - cli: add job describe (job details, triggers, monitors, audit, last 10 runs, last 10 alerts, statistics)
 - cli: test --> show indication for exceptions in current running
 - cli: running --> show indication for exceptions in current running
@@ -23,7 +25,7 @@ PLAN FOR V 1.4.0
 - add monitor event: cluster health check fail
 - add monitor hook REST
 - cli test cluster command
-- add cli command to filter history / trace with odata filter
+
 - build anomaly job statistics only for 365 days ago
 - add ali plot statistics
 
@@ -31,7 +33,9 @@ PLAN FOR V 1.4.0
 - add WorkflowJob
 - add SSIS job
 - add SSRS job
-- queue-invoke command to create one time trigger (get date time or time from now)
+- add monitor audit
+
+- add cli command to filter history / trace with odata filter
 - security log (login, unauthorized request, change role of group)
 - security monitoring
 - nuget package for client library
@@ -185,6 +189,7 @@ V 1.4.0
 - ability to inject all BaseJob function as IBaseJob utility
 - add general option in cli to save output to file
 - add cli object dump into table
+- add job audit
 
 ---------------------------
 
