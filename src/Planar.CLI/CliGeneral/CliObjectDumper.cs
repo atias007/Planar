@@ -9,14 +9,14 @@ namespace Planar.CLI.CliGeneral
 {
     internal static class CliObjectDumper
     {
-        public static void Dump(object obj)
+        public static void Dump(IAnsiConsole console, object obj)
         {
             if (obj == null) { return; }
 
             var type = obj.GetType();
             if (type == typeof(string))
             {
-                AnsiConsole.WriteLine(Convert.ToString(obj) ?? string.Empty);
+                console.WriteLine(Convert.ToString(obj) ?? string.Empty);
                 return;
             }
 
@@ -24,7 +24,7 @@ namespace Planar.CLI.CliGeneral
             {
                 foreach (var item in arr)
                 {
-                    Dump(item);
+                    Dump(console, item);
                 }
 
                 return;
@@ -42,7 +42,7 @@ namespace Planar.CLI.CliGeneral
             }
 
             table.HideHeaders();
-            AnsiConsole.Write(table);
+            console.Write(table);
         }
 
         private static IRenderable GetRenderableMarkup(object? value)

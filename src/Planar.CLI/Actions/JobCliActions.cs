@@ -204,8 +204,6 @@ namespace Planar.CLI.Actions
         [NullRequest]
         public static async Task<CliActionResponse> GetJobFile(CliGetJobFileRequest request, CancellationToken cancellationToken = default)
         {
-            request?.Validate();
-
             if (request == null)
             {
                 var wrapper = await GetCliGetJobTypesRequest(cancellationToken);
@@ -222,7 +220,7 @@ namespace Planar.CLI.Actions
 
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
 
-            return new CliActionResponse(result, result.Data, request);
+            return new CliActionResponse(result, result.Data);
         }
 
         [Action("types")]

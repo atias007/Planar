@@ -80,15 +80,10 @@ namespace Planar.CLI.Actions
 
         protected static async Task<CliActionResponse> ExecuteEntity<T>(RestRequest request, CancellationToken cancellationToken)
         {
-            return await ExecuteEntity<T>(request, null, cancellationToken);
-        }
-
-        protected static async Task<CliActionResponse> ExecuteEntity<T>(RestRequest request, CliOutputFilenameRequest? outputRequest, CancellationToken cancellationToken)
-        {
             var result = await RestProxy.Invoke<T>(request, cancellationToken);
             if (result.IsSuccessful)
             {
-                return new CliActionResponse(result, dumpObject: result.Data, outputRequest);
+                return new CliActionResponse(result, dumpObject: result.Data);
             }
 
             return new CliActionResponse(result);

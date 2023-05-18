@@ -88,7 +88,7 @@ namespace Planar.CLI.Actions
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
-            return new CliActionResponse(result, message: result.Data, request);
+            return new CliActionResponse(result, message: result.Data);
         }
 
         [Action("ex")]
@@ -98,7 +98,7 @@ namespace Planar.CLI.Actions
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
-            return new CliActionResponse(result, message: result.Data, request);
+            return new CliActionResponse(result, message: result.Data);
         }
 
         [Action("last")]

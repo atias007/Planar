@@ -7,6 +7,7 @@ using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -17,8 +18,10 @@ namespace Planar.CLI
 {
     public class CliArgumentsUtil
     {
+        private const string OutputTerm = "--inner-cli-output-filename";
         private const string RegexTemplate = "^[1-9][0-9]{0,18}$";
         private static readonly Regex _historyRegex = new(RegexTemplate, RegexOptions.Compiled, TimeSpan.FromSeconds(2));
+        private readonly string? _outputFilename;
 
         public CliArgumentsUtil(string[] args)
         {
@@ -28,7 +31,7 @@ namespace Planar.CLI
             var list = new List<CliArgument>();
             for (int i = 2; i < args.Length; i++)
             {
-                if (args[i] == ">") { args[i] = "--output"; }
+                if (args[i] == ">") { args[i] = OutputTerm; }
                 list.Add(new CliArgument { Key = args[i] });
             }
 
@@ -54,13 +57,23 @@ namespace Planar.CLI
             }
 
             CliArguments = list.Where(l => l.Key != null).ToList();
+            _outputFilename = CliArguments
+                .Where(a => a.Key == OutputTerm)
+                .Select(a => a.Value)
+                .FirstOrDefault();
+
+            _outputFilename = _outputFilename?.Trim() ?? string.Empty;
+            if (!_outputFilename.Contains('.')) { _outputFilename = $"{_outputFilename}.txt"; }
+            IsValidFilePath(_outputFilename);
+
+            CliArguments.RemoveAll(a => a.Key == OutputTerm);
         }
 
         public List<CliArgument> CliArguments { get; set; }
 
-        public string Command { get; set; }
+        public string? OutputFilename => _outputFilename;
 
-        public string? OutputFile { get; set; }
+        public string Command { get; set; }
 
         public bool HasIterativeArgument
         {
@@ -73,35 +86,28 @@ namespace Planar.CLI
         }
 
         public string Module { get; set; }
+        public string? OutputFile { get; set; }
 
-        private static void Swap(ref List<string> args)
+        public static object? ParseEnum(Type type, string? value)
         {
-            if (args.Count < 2) { return; }
-            (args[1], args[0]) = (args[0], args[1]);
-        }
+            if (value == null) { return null; }
 
-        private static CliActionMetadata? FindMatch(List<string> args, IEnumerable<CliActionMetadata> actionsMetadata)
-        {
-            var moduleExists = actionsMetadata.Any(a => a.Module == args[0].ToLower());
-            if (args.Count == 1 && moduleExists)
+            try
             {
-                args.Add("--help");
-                return null;
+                var result = Enum.Parse(type, value, true);
+                return result;
             }
-
-            var moduleSynonymExists = actionsMetadata.Any(a => a.ModuleSynonyms.Any(s => s == args[0].ToLower()) && a.Commands.Contains("list"));
-            if (args.Count == 1 && moduleSynonymExists)
+            catch (ArgumentException)
             {
-                args.Add("list");
+                if (value.Contains('-'))
+                {
+                    value = value.Replace("-", string.Empty);
+                    return ParseEnum(type, value);
+                }
+
+                var values = string.Join(',', Enum.GetNames(type));
+                throw new CliException($"value '{value}' is invalid. available values for this argument is: {values.ToLower()}");
             }
-
-            if (args.Count < 2) { return null; }
-
-            var action = actionsMetadata.FirstOrDefault(a =>
-                a.ModuleSynonyms.Any(s => s == args[0].ToLower()) &&
-                a.Commands.Any(c => c?.ToLower() == args[1].ToLower()));
-
-            return action;
         }
 
         public static CliActionMetadata? ValidateArgs(ref string[] args, IEnumerable<CliActionMetadata> actionsMetadata)
@@ -230,14 +236,39 @@ namespace Planar.CLI
             return result;
         }
 
-        private static bool IsHelpCommand(string command)
+        private static void IsValidFilePath(string? outputFilename)
         {
-            if (string.IsNullOrEmpty(command)) { return false; }
-            var cmd = command.ToLower();
-            if (cmd == "help") { return true; }
-            if (cmd == "-h") { return true; }
-            if (cmd == "--help") { return true; }
-            return false;
+            if (outputFilename == null) { return; }
+
+            try
+            {
+                // Check if the file name with path is valid
+                var directory = Path.GetDirectoryName(outputFilename);
+                var fileName = Path.GetFileName(outputFilename);
+
+                // Validate the directory and file name separately
+                bool isDirectoryValid = string.IsNullOrEmpty(directory) || Directory.Exists(directory);
+                bool isFileNameValid = !string.IsNullOrEmpty(fileName) && fileName.IndexOfAny(Path.GetInvalidFileNameChars()) == -1;
+
+                if (!isDirectoryValid)
+                {
+                    throw new CliValidationException($"output directory '{directory}' is not exists");
+                }
+
+                if (!isFileNameValid)
+                {
+                    throw new CliValidationException($"output filename '{fileName}' is invalid");
+                }
+            }
+            catch (CliValidationException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                // Handle any exception that occurs during the validation
+                throw new CliValidationException($"output filename '{outputFilename}' is invalid");
+            }
         }
 
         private static async Task FillJobId(CliArgumentMetadata metadata, CliArgument arg, CancellationToken cancellationToken)
@@ -297,14 +328,28 @@ namespace Planar.CLI
             }
         }
 
-        private static void ValidateMissingRequiredProperties(CliArgumentMetadata props)
+        private static CliActionMetadata? FindMatch(List<string> args, IEnumerable<CliActionMetadata> actionsMetadata)
         {
-            var message =
-                string.IsNullOrEmpty(props.RequiredMissingMessage) ?
-                $"argument {props.Name} is required" :
-                props.RequiredMissingMessage;
+            var moduleExists = actionsMetadata.Any(a => a.Module == args[0].ToLower());
+            if (args.Count == 1 && moduleExists)
+            {
+                args.Add("--help");
+                return null;
+            }
 
-            throw new CliException(message);
+            var moduleSynonymExists = actionsMetadata.Any(a => a.ModuleSynonyms.Any(s => s == args[0].ToLower()) && a.Commands.Contains("list"));
+            if (args.Count == 1 && moduleSynonymExists)
+            {
+                args.Add("list");
+            }
+
+            if (args.Count < 2) { return null; }
+
+            var action = actionsMetadata.FirstOrDefault(a =>
+                a.ModuleSynonyms.Any(s => s == args[0].ToLower()) &&
+                a.Commands.Any(c => c?.ToLower() == args[1].ToLower()));
+
+            return action;
         }
 
         private static IEnumerable<string> GetModuleByCommand(string subArgument, IEnumerable<CliActionMetadata> cliActionsMetadata)
@@ -314,6 +359,16 @@ namespace Planar.CLI
                 .Select(m => m.Module);
 
             return metadata;
+        }
+
+        private static bool IsHelpCommand(string command)
+        {
+            if (string.IsNullOrEmpty(command)) { return false; }
+            var cmd = command.ToLower();
+            if (cmd == "help") { return true; }
+            if (cmd == "-h") { return true; }
+            if (cmd == "--help") { return true; }
+            return false;
         }
 
         private static bool IsKeyArgument(CliArgument arg)
@@ -360,28 +415,6 @@ namespace Planar.CLI
             return matchProp;
         }
 
-        public static object? ParseEnum(Type type, string? value)
-        {
-            if (value == null) { return null; }
-
-            try
-            {
-                var result = Enum.Parse(type, value, true);
-                return result;
-            }
-            catch (ArgumentException)
-            {
-                if (value.Contains('-'))
-                {
-                    value = value.Replace("-", string.Empty);
-                    return ParseEnum(type, value);
-                }
-
-                var values = string.Join(',', Enum.GetNames(type));
-                throw new CliException($"value '{value}' is invalid. available values for this argument is: {values.ToLower()}");
-            }
-        }
-
         private static void SetValue(PropertyInfo? prop, object? instance, string? value)
         {
             if (prop == null) { return; }
@@ -425,6 +458,22 @@ namespace Planar.CLI
 
                 throw new CliException(message);
             }
+        }
+
+        private static void Swap(ref List<string> args)
+        {
+            if (args.Count < 2) { return; }
+            (args[1], args[0]) = (args[0], args[1]);
+        }
+
+        private static void ValidateMissingRequiredProperties(CliArgumentMetadata props)
+        {
+            var message =
+                string.IsNullOrEmpty(props.RequiredMissingMessage) ?
+                $"argument {props.Name} is required" :
+                props.RequiredMissingMessage;
+
+            throw new CliException(message);
         }
     }
 }

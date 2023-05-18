@@ -210,7 +210,7 @@ namespace Planar.CLI
                     }
                 }
 
-                HandleCliResponse(response).Wait();
+                HandleCliResponse(response, cliArgument.OutputFilename);
             }
             catch (Exception ex)
             {
@@ -220,29 +220,75 @@ namespace Planar.CLI
             return cliArgument;
         }
 
-        private static async Task HandleCliResponse(CliActionResponse? response)
+        private static void HandleCliResponse(CliActionResponse? response, string? outputfilename)
         {
             if (response == null) { return; }
             if (response.Response == null) { return; }
 
-            if (response.Response.IsSuccessful)
+            if (!response.Response.IsSuccessful)
             {
-                if (response.Tables != null)
-                {
-                    response.Tables.ForEach(t => AnsiConsole.Write(t));
-                }
-                else if (response.DumpObject != null)
-                {
-                    CliObjectDumper.Dump(response.DumpObject);
-                }
-                else
-                {
-                    await WriteInfo(response);
-                }
+                HandleHttpFailResponse(response.Response);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(outputfilename))
+            {
+                WriteCliResponse(AnsiConsole.Console, response);
             }
             else
             {
-                HandleHttpFailResponse(response.Response);
+                var isHtml = IsHtmlFilename(outputfilename);
+                using var recorder = AnsiConsole.Console.CreateRecorder();
+                WriteCliResponse(recorder, response);
+
+                var output =
+                    isHtml ?
+                    recorder.ExportHtml() :
+                    recorder.ExportText();
+
+                output += Environment.NewLine;
+
+                SafeCreateFile(outputfilename, output);
+            }
+        }
+
+        private static void SafeCreateFile(string outputfilename, string output)
+        {
+            try
+            {
+                File.WriteAllText(outputfilename, output, Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                throw new CliException($"fail to write content to file '{outputfilename}'. error message: {ex.Message}");
+            }
+        }
+
+        private static bool IsHtmlFilename(string filename)
+        {
+            var fi = new FileInfo(filename);
+            var ext = fi.Extension.ToLower();
+            if (ext == ".htm" || ext == ".html")
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void WriteCliResponse(IAnsiConsole console, CliActionResponse response)
+        {
+            if (response.Tables != null)
+            {
+                response.Tables.ForEach(t => console.Write(t));
+            }
+            else if (response.DumpObject != null)
+            {
+                CliObjectDumper.Dump(console, response.DumpObject);
+            }
+            else
+            {
+                WriteInfo(console, response);
             }
         }
 
@@ -535,30 +581,14 @@ namespace Planar.CLI
                 ExceptionFormats.ShortenMethods | ExceptionFormats.ShowLinks);
         }
 
-        private static async Task WriteInfo(CliActionResponse response)
+        private static void WriteInfo(IAnsiConsole console, CliActionResponse response)
         {
             var message = response.Message;
             if (!string.IsNullOrEmpty(message)) { message = message.Trim(); }
             if (message == "[]") { message = null; }
             if (string.IsNullOrEmpty(message)) { return; }
 
-            if (response.OutputFilename == null)
-            {
-                AnsiConsole.WriteLine(message);
-            }
-            else
-            {
-                var filename = response.OutputFilename ?? string.Empty;
-                if (!filename.Contains('.')) { filename = $"{filename}.txt"; }
-                await SaveData(message, filename);
-                AnsiConsole.WriteLine($"file '{new FileInfo(filename).FullName}' created");
-            }
-        }
-
-        private static async Task SaveData(string? content, string filename)
-        {
-            if (filename == null) { return; }
-            await File.AppendAllTextAsync(filename, content);
+            console.WriteLine(message);
         }
 
         private static void MarkupCliLine(string message)

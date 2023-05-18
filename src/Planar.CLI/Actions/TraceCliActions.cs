@@ -52,7 +52,7 @@ namespace Planar.CLI.Actions
         {
             var restRequest = new RestRequest("trace/{id}/exception", Method.Get)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
-            return await ExecuteEntity<string>(restRequest, request, cancellationToken);
+            return await ExecuteEntity<string>(restRequest, cancellationToken);
         }
 
         [Action("prop")]
@@ -62,7 +62,7 @@ namespace Planar.CLI.Actions
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
             var data = Util.BeautifyJson(result.Data);
-            return new CliActionResponse(result, message: data, request);
+            return new CliActionResponse(result, message: data);
         }
 
         [Action("count")]
