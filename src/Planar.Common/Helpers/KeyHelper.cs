@@ -7,6 +7,11 @@ namespace Planar.Common.Helpers
     {
         public static string GetKeyTitle<T>(Key<T> key)
         {
+            if (key.Group == Key<T>.DefaultGroup)
+            {
+                return key.Name;
+            }
+
             var title = $"{key.Group}.{key.Name}";
             return title;
         }
