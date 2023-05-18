@@ -190,10 +190,11 @@ namespace Planar.CLI.Actions
         }
 
         [Action("all-audits")]
-        public static async Task<CliActionResponse> GetAudits(CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> GetAudits(CliGetAuditsRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("job/audits", Method.Get)
-                .AddParameter("pageNumber", 0, ParameterType.QueryString);
+                .AddParameter("pageNumber", request.PageNumber, ParameterType.QueryString)
+                .AddParameter("pageSize", request.PageSize, ParameterType.QueryString);
 
             var result = await RestProxy.Invoke<IEnumerable<JobAuditDto>>(restRequest, cancellationToken);
             var tables = CliTableExtensions.GetTable(result.Data);

@@ -183,6 +183,8 @@ V 1.3.0
 V 1.4.0
 ---------
 - ability to inject all BaseJob function as IBaseJob utility
+- add general option in cli to save output to file
+- add cli object dump into table
 
 ---------------------------
 

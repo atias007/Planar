@@ -424,9 +424,9 @@ namespace Planar.Controllers
         [SwaggerOperation(OperationId = "get_job_audits", Description = "Get all audits", Summary = "Get All Audits")]
         [BadRequestResponse]
         [OkJsonResponse(typeof(IEnumerable<JobAuditDto>))]
-        public async Task<ActionResult<IEnumerable<JobAuditDto>>> GetJobAudits([FromQuery] int pageNumber)
+        public async Task<ActionResult<IEnumerable<JobAuditDto>>> GetJobAudits([FromQuery] uint pageNumber, [FromQuery] byte pageSize)
         {
-            var result = await BusinesLayer.GetAudits(pageNumber);
+            var result = await BusinesLayer.GetAudits(pageNumber, pageSize);
             return Ok(result);
         }
     }

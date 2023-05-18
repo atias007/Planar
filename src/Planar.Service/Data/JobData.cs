@@ -3,6 +3,7 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.Audit;
 using Planar.Service.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -72,9 +73,9 @@ namespace Planar.Service.Data
                 .ThenByDescending(a => a.Id);
         }
 
-        public IQueryable<JobAudit> GetAudits(int pageNumber, byte pageSize)
+        public IQueryable<JobAudit> GetAudits(uint pageNumber, byte pageSize)
         {
-            var skip = pageNumber * pageSize;
+            var skip = Convert.ToInt32(pageNumber * pageSize);
 
             return _context.JobAudits
                 .AsNoTracking()

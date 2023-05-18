@@ -14,6 +14,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
+using System.Drawing.Printing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -251,13 +252,11 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<IEnumerable<JobAuditDto>> GetAudits(int pageNumber)
+        public async Task<IEnumerable<JobAuditDto>> GetAudits(uint pageNumber, byte pageSize)
         {
-            const byte pageSize = 10;
-
-            if (pageNumber < 0)
+            if (pageSize < 1)
             {
-                throw new RestValidationException("pageNumber", "pageNumber must be greater or equals to 0");
+                throw new RestValidationException("pageSize", "pageSize must be greater then 1");
             }
 
             var query = DataLayer.GetAudits(pageNumber, pageSize);
