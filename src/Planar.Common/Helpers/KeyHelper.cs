@@ -1,5 +1,4 @@
-﻿using Quartz;
-using Quartz.Util;
+﻿using Quartz.Util;
 
 namespace Planar.Common.Helpers
 {
