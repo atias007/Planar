@@ -37,6 +37,34 @@ namespace Planar.Job.Test
             return this;
         }
 
+        public ExecuteJobBuilder CancelJobAfter(TimeSpan timeSpan)
+        {
+            // TODO: check greater then TimeSpan.Zero
+            _properties.CancelJobAfter = timeSpan;
+            return this;
+        }
+
+        public ExecuteJobBuilder CancelJobAfterSeconds(uint seconds)
+        {
+            // TODO: check greater then 1
+            _properties.CancelJobAfter = TimeSpan.FromSeconds(seconds);
+            return this;
+        }
+
+        public ExecuteJobBuilder CancelJobAfterMinutes(uint seconds)
+        {
+            // TODO: check greater then 1
+            _properties.CancelJobAfter = TimeSpan.FromMinutes(seconds);
+            return this;
+        }
+
+        public ExecuteJobBuilder CancelJobAfterMilliseconds(uint seconds)
+        {
+            // TODO: check greater then 1
+            _properties.CancelJobAfter = TimeSpan.FromMilliseconds(seconds);
+            return this;
+        }
+
         internal ExecuteJobProperties Build()
         {
             return _properties;

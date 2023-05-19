@@ -196,11 +196,11 @@ namespace Planar.Job.Test
 
             Exception? jobException = null;
             var start = DateTime.Now;
-            JobMessageBroker _broker;
+            JobMessageBroker _broker = null;
 
             try
             {
-                _broker = new JobMessageBroker(context, settings);
+                _broker = new JobMessageBroker(context, properties, settings);
                 Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
                 Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
                 var result = method.Invoke(instance, new object[] { _broker, configureAction, registerServicesAction }) as Task;
@@ -239,7 +239,7 @@ namespace Planar.Job.Test
                 EffectedRows = metadata?.EffectedRows,
                 Log = metadata?.GetLog(),
                 Id = -1,
-                IsStopped = false,
+                IsStopped = _broker?.IsCancel ?? false,
                 Retry = false,
                 Status = status,
                 Instance = instance

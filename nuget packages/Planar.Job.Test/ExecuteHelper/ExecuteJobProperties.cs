@@ -7,6 +7,8 @@ namespace Planar.Job.Test
     {
         public Type? JobType { get; set; }
 
+        public TimeSpan? CancelJobAfter { get; set; }
+
         public DateTimeOffset? ExecutionDate { get; set; }
 
         public Dictionary<string, object?> TriggerData { get; set; } = new Dictionary<string, object?>();

@@ -55,7 +55,8 @@ namespace SomeJob
             rows = GetEffectedRows();
             Logger.LogDebug("GetEffectedRows: {Value}", rows);
 
-            await Task.Delay(2000);
+            await Task.Delay(5000);
+            FailOnStopRequest();
             Logger.LogWarning("JobRunTime: {JobRunTime}", JobRunTime);
 
             Logger.LogInformation("SomeDate: {SomeDate}", SomeDate);

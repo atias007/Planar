@@ -4,7 +4,7 @@ using Planar.Job.Test.Common;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
-using YamlDotNet.Core.Tokens;
+using System.Threading;
 
 namespace Planar.Job.Test
 {
@@ -13,13 +13,18 @@ namespace Planar.Job.Test
         private readonly DateTimeOffset _startTime = DateTime.UtcNow;
         private static readonly object Locker = new object();
         private readonly MockJobExecutionContext _context;
+        private readonly CancellationTokenSource _cancellationTokenSource;
 
-        public JobMessageBroker(MockJobExecutionContext context, Dictionary<string, string?> settings)
+        public JobMessageBroker(MockJobExecutionContext context, ExecuteJobProperties properties, Dictionary<string, string?> settings)
         {
             _context = context;
             context.JobSettings = settings;
             SetLogLevel(settings);
             Details = JsonSerializer.Serialize(context);
+            _cancellationTokenSource =
+                properties.CancelJobAfter != null ?
+                new CancellationTokenSource(properties.CancelJobAfter.Value) :
+                new CancellationTokenSource();
         }
 
         public string Details { get; set; }
@@ -34,6 +39,8 @@ namespace Planar.Job.Test
                 return result ?? throw new NullReferenceException(nameof(Metadata));
             }
         }
+
+        public bool IsCancel => _cancellationTokenSource.Token.IsCancellationRequested;
 
         public string? Publish(string channel, string message)
         {
@@ -88,9 +95,14 @@ namespace Planar.Job.Test
                     return exceptionText;
 
                 case "CheckIfStopRequest":
-                    return false.ToString();
+                    return _cancellationTokenSource.Token.IsCancellationRequested.ToString();
 
                 case "FailOnStopRequest":
+                    if (_cancellationTokenSource.Token.IsCancellationRequested)
+                    {
+                        throw new OperationCanceledException("Job was stopped");
+                    }
+
                     return null;
 
                 case "GetData":

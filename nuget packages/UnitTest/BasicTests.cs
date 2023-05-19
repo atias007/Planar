@@ -74,5 +74,18 @@ namespace UnitTest
             result.Assert.Status.Success()
                 .Data.Key("IgnoreData").IsNull();
         }
+
+        [Test]
+        public void CancelJob()
+        {
+            var run = ExecuteJobBuilder
+                .CreateBuilderForJob<Worker>()
+                .WithJobData("X", 10)
+                .CancelJobAfterSeconds(2);
+
+            var result = ExecuteJob(run);
+            result.Assert.Status.Fail();
+            Assert.That(result.IsStopped, Is.True);
+        }
     }
 }
