@@ -4,6 +4,9 @@ namespace Planar.CLI.Entities
 {
     public class CliGetAllJobsRequest : IQuietResult
     {
+        [ActionProperty(DefaultOrder = 0, Name = "group")]
+        public string? JobGroup { get; set; }
+
         [QuietActionProperty]
         public bool Quiet { get; set; }
 

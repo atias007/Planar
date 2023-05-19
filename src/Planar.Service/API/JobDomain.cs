@@ -122,7 +122,7 @@ namespace Planar.Service.API
         {
             var result = new List<JobRowDetails>();
 
-            foreach (var jobKey in await GetJobKeys(request.Filter))
+            foreach (var jobKey in await GetJobKeys(request))
             {
                 var info = await Scheduler.GetJobDetail(jobKey);
                 if (info == null) { continue; }
@@ -554,12 +554,17 @@ namespace Planar.Service.API
             await dal.DeleteJobStatistic(s2);
         }
 
-        private async Task<IReadOnlyCollection<JobKey>> GetJobKeys(AllJobsMembers members)
+        private async Task<IReadOnlyCollection<JobKey>> GetJobKeys(GetAllJobsRequest request)
         {
-            switch (members)
+            var matcher =
+                string.IsNullOrEmpty(request.Group) ?
+                GroupMatcher<JobKey>.AnyGroup() :
+                GroupMatcher<JobKey>.GroupEquals(request.Group);
+
+            switch (request.Filter)
             {
                 case AllJobsMembers.AllUserJobs:
-                    var result = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+                    var result = await Scheduler.GetJobKeys(matcher);
                     var list = result.Where(x => x.Group != Consts.PlanarSystemGroup).ToList();
                     return new ReadOnlyCollection<JobKey>(list);
 
@@ -568,7 +573,7 @@ namespace Planar.Service.API
 
                 default:
                 case AllJobsMembers.All:
-                    return await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+                    return await Scheduler.GetJobKeys(matcher);
             }
         }
 

@@ -130,6 +130,11 @@ namespace Planar.CLI.Actions
                 restRequest.AddQueryParameter("jobType", request.JobType);
             }
 
+            if (!string.IsNullOrEmpty(request.JobGroup))
+            {
+                restRequest.AddQueryParameter("group", request.JobGroup);
+            }
+
             var result = await RestProxy.Invoke<List<JobRowDetails>>(restRequest, cancellationToken);
             var message = string.Empty;
             CliActionResponse response;

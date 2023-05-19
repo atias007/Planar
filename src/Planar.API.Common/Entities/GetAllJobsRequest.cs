@@ -12,5 +12,7 @@
         public AllJobsMembers Filter { get; set; }
 
         public string? JobType { get; set; }
+
+        public string? Group { get; set; }
     }
 }
