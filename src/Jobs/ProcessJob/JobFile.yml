@@ -1,15 +1,10 @@
-﻿job type: ProcessJob                 # Fixed! don't change it
+﻿job type: ProcessJob                  # Fixed! don't change it
 name: some job name                   # Name of job [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
 group: null or group name             # Group of job [only alphanumeric, dashes & underscore, 1 to 50 characters]
 description: some job description     # Description of job [only alphanumeric, dashes & underscore, up to 200 characters]
 author: israel israeli (sales)        # The author/responsible person of the job [up to 100 characters]
 durable: true                         # Boolean [true/false]. Non durable job will be delete from system if no future triggers defined
 concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
-
-job data:                             # Key/Value pairs used by job code
-  key1: value1                        # --------------------------------
-  key2: value2                        # [1 to 100 characters]
-  key3: value3                        # [up to 1000 characters]
 
 properties:                           # Properties for job with 'PlanarJob' type
   path: HelloWorld                    # Path to process executable file [mandatory, up to 500 characters]
@@ -26,11 +21,6 @@ properties:                           # Properties for job with 'PlanarJob' type
   fail output regex: "[Ee]rror"       # Regular expression to define fail run
   log process information: true       # Log some data of process (memory usage, exit code, etc.)
 
-global config:                        # Key/Value pairs of global parameters used across different jobs
-  globalkey1: value1                  # ---------------------------------------------------------------
-  globalkey2: value2                  # [1 to 100 characters]
-  globalkey3: value3                  # [up to 1000 characters]
-
 simple triggers:                      # List of simple triggers
   - name: every-minute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
     start: 2021-09-19 00:00:00        # Start date
@@ -45,8 +35,8 @@ simple triggers:                      # List of simple triggers
     max retries: 3                    # The maximum amount of retries. Default is 3 [1 to 100]
     trigger data:                     # Key/Value pairs used by job code (merged with job data)
       key4: value4                    # -------------------------------------------------------
-      key5: value5                    # [1 to 100 characters]
-      key6: value6                    # [up to 1000 characters]
+      key5: value5                    # key --> [1 to 100 characters]
+      key6: value6                    # value --> [up to 1000 characters]
 
 cron triggers:                               # List of cron triggers
   - name: some-cron-trigger                  # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
@@ -59,5 +49,5 @@ cron triggers:                               # List of cron triggers
     max retries: 3                           # The maximum amount of retries. Default is 3 [1 to 100]
     trigger data:                            # Key/Value pairs used by job code (merged with job data)
       key7: value7                           # -------------------------------------------------------
-      key8: value8                           # [1 to 100 characters]
-      key9: value9                           # [up to 1000 characters]
+      key8: value8                           # key --> [1 to 100 characters]
+      key9: value9                           # value --> [up to 1000 characters]
