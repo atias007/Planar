@@ -11,14 +11,32 @@ properties:                           # Properties for job with 'PlanarJob' type
   method: GET                         # The http method: POST, GET, PUT, DELETE, PATCH, HEAD [mandatory]
   body file: body.json                # The body text file for the request (only for POST, PUT, PATCH methods)
   ignore ssl errors: false            # Ignore certificate error
+  user agent: my.agent
+  timeout: 00:00:30
+  max redirects: null
+  follow redirects: false
+  expect 100 continue: true
+  proxy: 
+    address: http://proxy.example.com 
+    bypass on local: false
+    use default credentials: true
+    credentials:
+      domain: some.domain
+      username: some.user
+      password: some.password
+  basic authentication:               # https://restsharp.dev/authenticators.html#basic-authentication
+    username: admin
+    password: strong.pass             # https://restsharp.dev/authenticators.html#jwt
+  jwt authentication:
+    token: some.token
   form data:                          # Key/Value pairs of http form data list
     data_key_1: value a               # --------------------------------------
-    data_key_2: value b               # key --> [1 to 100 characters]
-    data_key_3: value c               # value -->[up to 1000 characters]
+    data_key_2: value b               # key --> [mandatory, up to 100 characters]
+    data_key_3: value c               # value --> [up to 1000 characters]
   headers:                            # Key/Value pairs of http request headers
     header1: some value x             # ---------------------------------------
-    header2: some value y             # key --> [1 to 100 characters]
-    header3: some value z             # value -->[1 to 1000 characters]
+    header2: some value y             # key --> [mandatory, up to 100 characters]
+    header3: some value z             # value --> [up to 1000  characters]
 
 simple triggers:                      # List of simple triggers
   - name: every-minute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]

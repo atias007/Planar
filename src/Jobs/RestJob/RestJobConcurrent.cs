@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar.Common;
 
-namespace RestJob
+namespace Planar
 {
     public class RestJobConcurrent : RestJob
     {

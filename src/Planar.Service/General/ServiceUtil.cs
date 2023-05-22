@@ -21,7 +21,13 @@ namespace Planar.Service.General
         private const string _monitorHookAssemblyContextName = "MonitorHook_";
         private const string _monitorHookBaseClassName = "Planar.Monitor.Hook.BaseHook";
 
-        public static IEnumerable<string> JobTypes => new[] { nameof(PlanarJob), nameof(ProcessJob), nameof(SqlJob) };
+        public static IEnumerable<string> JobTypes => new[]
+        {
+            nameof(PlanarJob),
+            nameof(ProcessJob),
+            nameof(SqlJob),
+            nameof(RestJob)
+        };
 
         internal static string GenerateId()
         {

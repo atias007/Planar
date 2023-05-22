@@ -60,7 +60,7 @@ namespace Planar.Service.Validation
 
         private async Task<bool> FilenameExists(SqlJobProperties properties, SqlStep step, ValidationContext<SqlJobProperties> context, CancellationToken cancellationToken = default)
         {
-            return await CommonValidations.FilenameExists(properties, step.Filename, _cluster, context);
+            return await CommonValidations.FilenameExists(properties, "filename", step.Filename, _cluster, context);
         }
     }
 }

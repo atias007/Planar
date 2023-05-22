@@ -2,9 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
-using Planar.Common.Helpers;
 using Quartz;
-using SqlJob;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;

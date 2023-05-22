@@ -1,34 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Intrinsics.X86;
-using System.Text;
-using System.Threading.Tasks;
+﻿using CommonJob;
 using YamlDotNet.Serialization;
 
-namespace RestJob
+namespace Planar
 {
-    public class RestJobProperties
+    public class RestJobProperties : IPathJobProperties
     {
-        public enum RestJobHttpMethods
-        {
-            POST,
-            GET,
-            PUT,
-            DELETE,
-            PATCH,
-            HEAD
-        }
+        public string? Path { get; set; } = null!;
 
-        public Uri Url { get; set; } = null!;
-        public RestJobHttpMethods Method { get; set; }
+        public string Url { get; set; } = null!;
+
+        public string Method { get; set; } = null!;
+
+        [YamlMember(Alias = "body file")]
+        public string? BodyFile { get; set; }
 
         [YamlMember(Alias = "ignore ssl errors")]
         public bool IgnoreSslErrors { get; set; }
 
         [YamlMember(Alias = "form data")]
-        public Dictionary<string, string> FormData { get; set; } = new();
+        public Dictionary<string, string?> FormData { get; set; } = new();
 
-        public Dictionary<string, string> Headers { get; set; } = new();
+        public Dictionary<string, string?> Headers { get; set; } = new();
     }
 }

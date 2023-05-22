@@ -39,12 +39,21 @@ namespace Planar.Service.Validation
             }
         }
 
-        public static async Task<bool> FilenameExists<T>(IPathJobProperties properties, string? filename, ClusterUtil clusterUtil, ValidationContext<T> context)
+        public static async Task<bool> FilenameExists<T>(IPathJobProperties properties, string propertyName, string? filename, ClusterUtil clusterUtil, ValidationContext<T> context)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(filename)) { return false; }
-                if (string.IsNullOrWhiteSpace(properties.Path)) { return false; }
+                if (string.IsNullOrWhiteSpace(filename))
+                {
+                    context.AddFailure(propertyName, $"{propertyName} is null or empty");
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(properties.Path))
+                {
+                    context.AddFailure("path", "path is null or empty");
+                    return false;
+                }
 
                 ServiceUtil.ValidateJobFileExists(properties.Path, filename);
                 await clusterUtil.ValidateJobFileExists(properties.Path, filename);
@@ -52,7 +61,7 @@ namespace Planar.Service.Validation
             }
             catch (PlanarException ex)
             {
-                context.AddFailure("filename", ex.Message);
+                context.AddFailure(propertyName, ex.Message);
                 return false;
             }
         }
