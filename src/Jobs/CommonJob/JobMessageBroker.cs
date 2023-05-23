@@ -44,6 +44,18 @@ namespace CommonJob
             LogData(log);
         }
 
+        public void SafeAppendLog(LogLevel level, string messag)
+        {
+            try
+            {
+                AppendLog(level, messag);
+            }
+            catch (Exception)
+            {
+                // === DO NOTHING ===
+            }
+        }
+
         public void IncreaseEffectedRows(int delta = 1)
         {
             lock (Locker)

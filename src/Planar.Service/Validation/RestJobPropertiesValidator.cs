@@ -26,13 +26,22 @@ namespace Planar.Service.Validation
             RuleFor(r => r.Method)
                 .NotEmpty()
                 .Must(r => _methods.Any(m => string.Equals(r, m, StringComparison.OrdinalIgnoreCase)))
-                .WithMessage("methot with value '{PropertyValue}' is invalid. avaliable options are: " + string.Join(',', _methods));
+                .WithMessage("methot '{PropertyValue}' is invalid. avaliable options are: " + string.Join(',', _methods));
 
-            RuleFor(r => r.BodyFile).MustAsync(FilenameExists);
-
-            RuleFor(r => r.Method)
-                .Must((r, m) => string.IsNullOrEmpty(r.BodyFile) && (m == "GET" || m == "HEAD"))
+            RuleFor(r => r.BodyFile).MaximumLength(1000).MustAsync(FilenameExists);
+            RuleFor(r => r.BodyFile)
+                .Empty()
+                .When(r => r.Method == "GET" || r.Method == "HEAD" || (r.Headers?.Any() ?? true))
                 .WithMessage("body filename must be null when method is GET or HEAD");
+
+            RuleFor(r => r.UserAgent).MaximumLength(1000);
+            RuleFor(r => r.MaxRedirects).GreaterThan(0).When(r => r.MaxRedirects.HasValue).WithMessage("max redirects must be greater the 0");
+            RuleFor(r => r.MaxRedirects).NotEmpty().When(r => r.FollowRedirects).WithMessage("max redirects must have value when follow redirects is true");
+            RuleFor(r => r.BasicAuthentication).Null().When(r => r.JwtAuthentication != null).WithMessage("basic authentication must be null when jwt authentication has value");
+            RuleFor(r => r.BasicAuthentication).SetValidator(new RestJobBasicAuthenticationValidator()!).When(r => r.BasicAuthentication != null);
+            RuleFor(r => r.JwtAuthentication).Null().When(r => r.BasicAuthentication != null).WithMessage("jwt authentication must be null when basic authentication has value");
+            RuleFor(r => r.JwtAuthentication).SetValidator(new RestJobJwtAuthenticationValidator()!).When(r => r.JwtAuthentication != null);
+            RuleFor(r => r.Proxy).SetValidator(new RestJobPropertiesProxyValidator()!).When(r => r.Proxy != null);
 
             RuleForEach(r => r.FormData)
                 .Must(kvp => RestListKeyNotEmpty(kvp))
@@ -44,7 +53,7 @@ namespace Planar.Service.Validation
 
             RuleForEach(r => r.FormData)
                 .Must(kvp => RestListValueLength(kvp))
-                .WithMessage("form data key maximum length is 1000 chars");
+                .WithMessage("form data value maximum length is 1000 chars");
 
             RuleForEach(r => r.Headers)
                 .Must(kvp => RestListKeyNotEmpty(kvp))
@@ -52,11 +61,11 @@ namespace Planar.Service.Validation
 
             RuleForEach(r => r.Headers)
                 .Must(kvp => RestListKeyLength(kvp))
-                .WithMessage("headers key maximum length is 100 chars");
+                .WithMessage("header key maximum length is 100 chars");
 
             RuleForEach(r => r.Headers)
                 .Must(kvp => RestListValueLength(kvp))
-                .WithMessage("headerskey maximum length is 1000 chars");
+                .WithMessage("header value maximum length is 1000 chars");
         }
 
         private async Task<bool> FilenameExists(RestJobProperties properties, string? filename, ValidationContext<RestJobProperties> context, CancellationToken cancellationToken = default)
@@ -65,19 +74,19 @@ namespace Planar.Service.Validation
             return await CommonValidations.FilenameExists(properties, "body file", filename, _cluster, context);
         }
 
-        private static bool RestListKeyNotEmpty(KeyValuePair<string, string?> kvp)
+        private static bool RestListKeyNotEmpty(KeyValuePair<string, string>? kvp)
         {
-            return !string.IsNullOrEmpty(kvp.Key);
+            return !string.IsNullOrEmpty(kvp?.Key);
         }
 
-        private static bool RestListKeyLength(KeyValuePair<string, string?> kvp)
+        private static bool RestListKeyLength(KeyValuePair<string, string>? kvp)
         {
-            return kvp.Key.Length <= 100;
+            return kvp?.Key.Length <= 100;
         }
 
-        private static bool RestListValueLength(KeyValuePair<string, string?> kvp)
+        private static bool RestListValueLength(KeyValuePair<string, string>? kvp)
         {
-            return kvp.Value?.Length <= 1000;
+            return kvp?.Value?.Length <= 1000;
         }
     }
 }

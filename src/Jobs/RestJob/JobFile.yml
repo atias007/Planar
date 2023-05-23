@@ -6,27 +6,32 @@ author: israel israeli (sales)        # The author/responsible person of the job
 durable: true                         # Boolean [true/false]. Non durable job will be delete from system if no future triggers defined
 concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
 
+job data:                             # Key/Value pairs used by job code
+  key1: value1                        # --------------------------------
+  key2: value2                        # [1 to 100 characters]
+  key3: value3                        # [up to 1000 characters]
+
 properties:                           # Properties for job with 'PlanarJob' type
   url: http://google.com              # The url address to make rest call [mandatory, up to 1000 characters]
   method: GET                         # The http method: POST, GET, PUT, DELETE, PATCH, HEAD [mandatory]
   body file: body.json                # The body text file for the request (only for POST, PUT, PATCH methods)
   ignore ssl errors: false            # Ignore certificate error
-  user agent: my.agent
-  timeout: 00:00:30
-  max redirects: null
-  follow redirects: false
-  expect 100 continue: true
+  user agent: my.agent                # Initialize the user agent header [up to 100 characters]
+  follow redirects: false             # Allow client redirection 
+  max redirects: 100                  # The maximum redirections when follow redirects enabled
+  expect 100 continue: true           # Create excpect : 100-continue header and receive a 100 Continue status code in response before sending the body
+  log response content: false         # Log the content payload of the response
   proxy: 
-    address: http://proxy.example.com 
-    bypass on local: false
+    address: http://proxy.example.com    # proxy address [up to 100 characters]
+    bypass on local: false               # by pass proxy for local addresses
     use default credentials: true
     credentials:
       domain: some.domain
       username: some.user
       password: some.password
-  basic authentication:               # https://restsharp.dev/authenticators.html#basic-authentication
+  basic authentication:
     username: admin
-    password: strong.pass             # https://restsharp.dev/authenticators.html#jwt
+    password: strong.pass
   jwt authentication:
     token: some.token
   form data:                          # Key/Value pairs of http form data list
