@@ -5,7 +5,6 @@ using Planar;
 using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Job;
-using Polly;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -115,7 +114,7 @@ namespace CommonJob
                 case "FailOnStopRequest":
                     if (_context.CancellationToken.IsCancellationRequested)
                     {
-                        throw new OperationCanceledException("Job was stopped");
+                        throw new OperationCanceledException("job was cancelled");
                     }
                     return null;
 

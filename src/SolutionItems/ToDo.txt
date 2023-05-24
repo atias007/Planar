@@ -191,6 +191,7 @@ V 1.4.0
 - add cli object dump into table
 - add job audit
 - cli: job list with group parameter
+- add cancellation token to job execution context
 ---------------------------
 
 
