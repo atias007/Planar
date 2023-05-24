@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
+using System.Threading;
 
 namespace Planar.Job
 {
@@ -26,5 +28,7 @@ namespace Planar.Job
         SortedDictionary<string, string?> MergedJobDataMap { get; }
 
         string Environment { get; }
+
+        CancellationToken CancellationToken { get; }
     }
 }

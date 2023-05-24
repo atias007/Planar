@@ -63,10 +63,7 @@ namespace Planar.Job
             Logger = ServiceProvider.GetRequiredService<ILogger>();
 
             return ExecuteJob(_context)
-                .ContinueWith(t =>
-                {
-                    if (t.Exception != null) { throw t.Exception; }
-                });
+                .ContinueWith(HandleTaskContinue);
         }
 
         internal Task ExecuteUnitTest(
@@ -82,10 +79,16 @@ namespace Planar.Job
             Logger = ServiceProvider.GetRequiredService<ILogger>();
 
             return ExecuteJob(_context)
-                .ContinueWith(t =>
-                {
-                    if (t.Exception != null) { throw t.Exception; }
-                });
+                .ContinueWith(HandleTaskContinue);
+        }
+
+        private static void HandleTaskContinue(Task task)
+        {
+            if (task.Exception != null) { throw task.Exception; }
+            if (task.Exception == null && task.Status == TaskStatus.Canceled)
+            {
+                throw new TaskCanceledException("Request for cancel job");
+            }
         }
 
         [Obsolete("AddAggragateException is deprecated because spelling error. Use AddAggregateException instead")]
@@ -215,6 +218,8 @@ namespace Planar.Job
                 };
                 var ctx = JsonSerializer.Deserialize<JobExecutionContext>(mb.Details, options) ??
                     throw new PlanarJobException("Fail to initialize JobExecutionContext from message broker detials (error 7379)");
+
+                ctx.CancellationToken = mb.CancellationToken;
 
                 FilterJobData(ctx.MergedJobDataMap);
                 FilterJobData(ctx.JobDetails.JobDataMap);

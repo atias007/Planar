@@ -3,6 +3,7 @@ using System;
 using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
+using System.Threading;
 
 namespace Planar
 {
@@ -21,17 +22,26 @@ namespace Planar
             if (instance == null) { return; }
 
             Instance = instance;
-            _method = instance.GetType().GetMethod("Publish");
+            var type = instance.GetType();
+            _method = type.GetMethod("Publish");
 
             if (_method == null)
             {
                 throw new ArgumentNullException(nameof(instance), "MessageBroker does not contains 'Publish' method");
             }
 
+            var createLinkedTokenMethod = type.GetMethod("CreateLinkedToken");
+            if (createLinkedTokenMethod != null)
+            {
+                CancellationToken = (CancellationToken)createLinkedTokenMethod.Invoke(instance, null);
+            }
+
             Details = GetProperty<string>(instance.GetType(), nameof(Details));
         }
 
         public string Details { get; set; } = string.Empty;
+
+        public CancellationToken CancellationToken { get; }
 
         public string? Publish(MessageBrokerChannels channel)
         {

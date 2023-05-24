@@ -81,7 +81,7 @@ namespace UnitTest
             var run = ExecuteJobBuilder
                 .CreateBuilderForJob<Worker>()
                 .WithJobData("X", 10)
-                .CancelJobAfterSeconds(2);
+                .CancelJobAfterSeconds(5);
 
             var result = ExecuteJob(run);
             result.Assert.Status.Fail();

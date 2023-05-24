@@ -8,6 +8,7 @@ using Planar.Job;
 using Polly;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using IJobExecutionContext = Quartz.IJobExecutionContext;
 
 namespace CommonJob
@@ -15,6 +16,7 @@ namespace CommonJob
     public class JobMessageBroker
     {
         private static readonly object Locker = new();
+        private readonly CancellationToken _cancellationToken;
         private readonly IJobExecutionContext _context;
 
         public JobMessageBroker(IJobExecutionContext context, IDictionary<string, string?> settings)
@@ -23,6 +25,7 @@ namespace CommonJob
             var mapContext = MapContext(context, settings);
             SetLogLevel(settings);
             Details = JsonConvert.SerializeObject(mapContext);
+            _cancellationToken = context.CancellationToken;
         }
 
         public string Details { get; set; }
@@ -44,31 +47,11 @@ namespace CommonJob
             LogData(log);
         }
 
-        public void SafeAppendLog(LogLevel level, string messag)
-        {
-            try
-            {
-                AppendLog(level, messag);
-            }
-            catch (Exception)
-            {
-                // === DO NOTHING ===
-            }
-        }
-
         public void IncreaseEffectedRows(int delta = 1)
         {
             lock (Locker)
             {
                 Metadata.EffectedRows = Metadata.EffectedRows.GetValueOrDefault() + delta;
-            }
-        }
-
-        public void UpdateProgress(byte progress)
-        {
-            lock (Locker)
-            {
-                Metadata.Progress = progress;
             }
         }
 
@@ -183,6 +166,32 @@ namespace CommonJob
                 default:
                     return null;
             }
+        }
+
+        public void SafeAppendLog(LogLevel level, string messag)
+        {
+            try
+            {
+                AppendLog(level, messag);
+            }
+            catch (Exception)
+            {
+                // === DO NOTHING ===
+            }
+        }
+
+        public void UpdateProgress(byte progress)
+        {
+            lock (Locker)
+            {
+                Metadata.Progress = progress;
+            }
+        }
+
+        public CancellationToken CreateLinkedToken()
+        {
+            var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_cancellationToken);
+            return linkedCancellationTokenSource.Token;
         }
 
         private static T? Deserialize<T>(string message)

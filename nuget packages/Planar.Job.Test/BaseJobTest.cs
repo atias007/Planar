@@ -196,7 +196,7 @@ namespace Planar.Job.Test
 
             Exception? jobException = null;
             var start = DateTime.Now;
-            JobMessageBroker _broker = null;
+            JobMessageBroker _broker = null!;
 
             try
             {

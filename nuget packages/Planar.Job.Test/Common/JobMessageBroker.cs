@@ -42,6 +42,19 @@ namespace Planar.Job.Test
 
         public bool IsCancel => _cancellationTokenSource.Token.IsCancellationRequested;
 
+        public CancellationToken CreateLinkedToken()
+        {
+            var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_cancellationTokenSource.Token);
+
+            linkedCancellationTokenSource.Token.Register(() =>
+            {
+                var log = new LogEntity { Level = LogLevel.Warning, Message = "Request for cancel job" };
+                LogData(log);
+            });
+
+            return linkedCancellationTokenSource.Token;
+        }
+
         public string? Publish(string channel, string message)
         {
             switch (channel)

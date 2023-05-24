@@ -7,7 +7,6 @@ durable: true                         # Boolean [true/false]. Non durable job wi
 concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
 
 properties:                           # Properties for job with 'PlanarJob' type
-  path: HelloWorld                    # Path to process executable file [mandatory, up to 500 characters]
   filename: HelloWorld.exe            # Name process executable file [mandatory, up to 500 characters]
   arguments: --port 20                # Process arguments
   output encoding: utf8               # Process output encoding name (see list here https://learn.microsoft.com/en-us/dotnet/api/system.text.encoding.getencodings?view=net-7.0)
@@ -33,10 +32,6 @@ simple triggers:                      # List of simple triggers
     timeout: 00:30:00                 # Execution timeout. If timout span passed then stop command is executed
     retry span: 01:00:00              # The time span between retries
     max retries: 3                    # The maximum amount of retries. Default is 3 [1 to 100]
-    trigger data:                     # Key/Value pairs used by job code (merged with job data)
-      key4: value4                    # -------------------------------------------------------
-      key5: value5                    # key --> [1 to 100 characters]
-      key6: value6                    # value --> [up to 1000 characters]
 
 cron triggers:                               # List of cron triggers
   - name: some-cron-trigger                  # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
@@ -47,7 +42,3 @@ cron triggers:                               # List of cron triggers
     timeout: 00:30:00                        # Execution timeout. If timout span passed then stop command is executed
     retry span: 01:00:00                     # The time span between retries
     max retries: 3                           # The maximum amount of retries. Default is 3 [1 to 100]
-    trigger data:                            # Key/Value pairs used by job code (merged with job data)
-      key7: value7                           # -------------------------------------------------------
-      key8: value8                           # key --> [1 to 100 characters]
-      key9: value9                           # value --> [up to 1000 characters]

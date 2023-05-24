@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Serialization;
+using System.Threading;
 
 namespace Planar.Job.Test
 {
@@ -85,6 +87,9 @@ namespace Planar.Job.Test
         public ITriggerDetail TriggerDetails => _triggerDetail;
 
         public string Environment => UnitTestConsts.Environment;
+
+        [JsonIgnore]
+        public CancellationToken CancellationToken { get; set; }
 
         private static string GenerateFireInstanceId()
         {

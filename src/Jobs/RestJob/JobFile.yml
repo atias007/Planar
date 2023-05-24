@@ -43,6 +43,11 @@ properties:                           # Properties for job with 'PlanarJob' type
     header2: some value y             # key --> [mandatory, up to 100 characters]
     header3: some value z             # value --> [up to 1000  characters]
 
+global config:                        # Key/Value pairs of global parameters used across different jobs
+  globalkey1: value1                  # ---------------------------------------------------------------
+  globalkey2: value2                  # [1 to 100 characters]
+  globalkey3: value3                  # [up to 1000 characters]
+
 simple triggers:                      # List of simple triggers
   - name: every-minute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
     start: 2021-09-19 00:00:00        # Start date
