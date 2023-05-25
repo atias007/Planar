@@ -107,11 +107,13 @@ namespace Planar.Job
             _baseJobFactory.CheckAggragateException();
         }
 
+        [Obsolete("CheckIfStopRequest is no longer supported. Use cancellation token in IJobExecutionContext")]
         protected bool CheckIfStopRequest()
         {
             return _baseJobFactory.CheckIfStopRequest();
         }
 
+        [Obsolete("FailOnStopRequest is no longer supported. Use cancellation token in IJobExecutionContext")]
         protected void FailOnStopRequest(Action? stopHandle = default)
         {
             _baseJobFactory.FailOnStopRequest(stopHandle);

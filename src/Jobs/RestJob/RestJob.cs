@@ -52,7 +52,7 @@ namespace Planar
             // Execute Rest
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            var response = await client.ExecuteAsync(request);
+            var response = await client.ExecuteAsync(request, context.CancellationToken);
             stopwatch.Stop();
 
             LogExecution(stopwatch, response);

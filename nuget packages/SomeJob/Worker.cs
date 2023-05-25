@@ -88,7 +88,6 @@ namespace SomeJob
                 finally
                 {
                     UpdateProgress(i, 1250);
-                    FailOnStopRequest();
 
                     ////if(CheckIfStopRequest())
                     ////{
@@ -97,7 +96,6 @@ namespace SomeJob
                 }
             }
 
-            // CheckAggragateException();
             var a1 = fact.GetData<int>("X");
             var b1 = fact.GetEffectedRows();
 

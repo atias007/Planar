@@ -12,7 +12,6 @@ job data:                             # Key/Value pairs used by job code
   key3: value3                        # [up to 1000 characters]
 
 properties:                                   # Properties for job with 'PlanarJob' type
-  path: c:\some_path                          # Path of script files [1 to 1000 characters]
   default connection name: <name>             # Default configuration key for connection string to sql server database [mandatory if any step has no connection string, 1 to 50 characters]
   transaction: false                          # Use transaction for all steps
   transaction isolation level: Unspecified    # The isolation level of transaction. The default is Unspecified [Unspecified, Chaos, ReadUncommitted, ReadCommitted, RepeatableRead, Serializable, Snapshot]

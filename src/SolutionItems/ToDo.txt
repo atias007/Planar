@@ -5,7 +5,7 @@ PLAN FOR V 1.4.0
 - cli: show paused jobs
 - cli: show no-trigger jobs
 
-- history column 'isstop' --> 'iscancel'
+- history column 'isstop' --> 'iscancel' (also on unit test)
 - use https://github.com/kellyelton/Eltons.ReflectionKit to validate signature in validate base job / hook
 - config flush - no support for cluster
 - add service + cli (admin auth) to set password (with stron validity: 
