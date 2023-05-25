@@ -436,7 +436,48 @@ namespace Planar.Service.API
             else
             {
                 await Scheduler.TriggerJob(jobKey);
+                var auditInfo = request.NowOverrideValue.HasValue ? new { request.NowOverrideValue } : null;
+                AuditJob(jobKey, "job manually invoked", auditInfo);
             }
+        }
+
+        public async Task QueueInvoke(QueueInvokeJobRequest request)
+        {
+            // build new job
+            var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateSystemJob(jobKey);
+            var job = await Scheduler.GetJobDetail(jobKey);
+            if (job == null) { return; }
+
+            // build new trigger
+            var triggerId = ServiceUtil.GenerateId();
+            var triggerKey = new TriggerKey($"due_{request.DueDate:yyyyMMdd_HHmmss}", Consts.QueueInvokeTriggerGroup);
+            var exists = await Scheduler.GetTrigger(triggerKey);
+            if (exists != null)
+            {
+                throw new RestValidationException("due date", $"job already has queue invoke trigger with date {request.DueDate:yyyy-MM-dd HH:mm:ss}");
+            }
+
+            var newTrigger = TriggerBuilder.Create()
+                .WithIdentity(triggerKey)
+                .UsingJobData(Consts.TriggerId, triggerId)
+                .StartAt(request.DueDate)
+                .WithSimpleSchedule(b =>
+                {
+                    b.WithRepeatCount(0).WithMisfireHandlingInstructionFireNow();
+                })
+                .ForJob(job);
+
+            if (request.Timeout.HasValue)
+            {
+                var timeoutValue = request.Timeout.Value.Ticks.ToString();
+                newTrigger = newTrigger.UsingJobData(Consts.TriggerTimeout, timeoutValue);
+            }
+
+            // schedule trigger
+            await Scheduler.ScheduleJob(newTrigger.Build());
+
+            AuditJob(jobKey, "job queue invoked", request);
         }
 
         public async Task Pause(JobOrTriggerKey request)

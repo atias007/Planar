@@ -15,6 +15,7 @@ PLAN FOR V 1.4.0
    )
 
 - queue-invoke command to create one time trigger (get date time or time from now)
+
 - cli: add job describe (job details, triggers, monitors, audit, last 10 runs, last 10 alerts, statistics)
 - cli: test --> show indication for exceptions in current running
 - cli: running --> show indication for exceptions in current running

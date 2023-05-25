@@ -325,6 +325,19 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
+        [Action("queue-invoke")]
+        public static async Task<CliActionResponse> QueueInvokeJob(CliQueueInvokeJobRequest request, CancellationToken cancellationToken = default)
+        {
+            var prm = JsonMapper.Map<QueueInvokeJobRequest, CliQueueInvokeJobRequest>(request);
+            prm ??= new QueueInvokeJobRequest();
+            if (prm.Timeout == TimeSpan.Zero) { prm.Timeout = null; }
+
+            var restRequest = new RestRequest("job/queue-invoke", Method.Post)
+                .AddBody(prm);
+            var result = await RestProxy.Invoke(restRequest, cancellationToken);
+            return new CliActionResponse(result);
+        }
+
         [Action("pause-all")]
         public static async Task<CliActionResponse> PauseAll(CancellationToken cancellationToken = default)
         {

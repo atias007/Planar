@@ -166,6 +166,19 @@ namespace Planar.Controllers
             return Accepted();
         }
 
+        [HttpPost("queue-invoke")]
+        [TesterAuthorize]
+        [SwaggerOperation(OperationId = "post_job_queue_invoke", Description = "Queue invokation of job", Summary = "Queue Invokation Of Job")]
+        [JsonConsumes]
+        [AcceptedContentResponse]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<IActionResult> QueueInvoke([FromBody] QueueInvokeJobRequest request)
+        {
+            await BusinesLayer.QueueInvoke(request);
+            return Accepted();
+        }
+
         [HttpPost("pause")]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_job_pause", Description = "Pause job", Summary = "Pause Job")]

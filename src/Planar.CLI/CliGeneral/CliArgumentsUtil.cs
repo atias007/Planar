@@ -444,6 +444,13 @@ namespace Planar.CLI
                     return;
                 }
 
+                if (value != null && prop.PropertyType == typeof(TimeSpan))
+                {
+                    objValue = TimeSpan.Parse(Convert.ToString(value));
+                    prop.SetValue(instance, objValue);
+                    return;
+                }
+
                 prop.SetValue(instance, Convert.ChangeType(objValue, prop.PropertyType, CultureInfo.CurrentCulture));
             }
             catch (CliException)
