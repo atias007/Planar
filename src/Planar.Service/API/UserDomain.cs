@@ -125,6 +125,17 @@ namespace Planar.Service.API
             return hash.Value;
         }
 
+        public async Task SetPassword(int id, SetPasswordRequest request)
+        {
+            var existsUser = await DataLayer.GetUser(id, withTracking: true);
+            ValidateExistingEntity(existsUser, "user");
+            if (existsUser == null) { return; }
+            var hash = HashUtil.CreateHash(request.Password);
+            existsUser.Password = hash.Hash;
+            existsUser.Salt = hash.Salt;
+            await DataLayer.SaveChangesAsync();
+        }
+
         private static HashEntity GeneratePassword()
         {
             var password = PasswordGenerator.GeneratePassword(

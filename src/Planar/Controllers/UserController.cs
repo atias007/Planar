@@ -116,5 +116,17 @@ namespace Planar.Controllers
             var result = await BusinesLayer.ResetPassword(id);
             return Ok(result);
         }
+
+        [HttpPatch("{id}/password")]
+        [EditorAuthorize]
+        [SwaggerOperation(OperationId = "patch_user_id_password", Description = "Set user password", Summary = "Set User Password")]
+        [NoContentResponse]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<IActionResult> SetPassword([FromRoute][Id] int id, [FromBody] SetPasswordRequest request)
+        {
+            await BusinesLayer.SetPassword(id, request);
+            return NoContent();
+        }
     }
 }

@@ -47,7 +47,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("reset-password")]
-        public static async Task<CliActionResponse> GetUserPassword(CliGetByIdRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> ResetUserPassword(CliGetByIdRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("user/{id}/resetpassword", Method.Patch)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
@@ -68,6 +68,17 @@ namespace Planar.CLI.Actions
             {
                 return new CliActionResponse(result);
             }
+        }
+
+        [Action("set-password")]
+        public static async Task<CliActionResponse> SetUserPassword(CliSetUserPasswordRequest request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("user/{id}/password", Method.Patch)
+                .AddParameter("id", request.Id, ParameterType.UrlSegment)
+                .AddBody(request);
+
+            var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
+            return new CliActionResponse(result);
         }
 
         [Action("ls")]

@@ -19,6 +19,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using YamlDotNet.Core.Tokens;
 
 namespace Planar.CLI
 {
@@ -94,13 +95,15 @@ namespace Planar.CLI
                     {
                         if (subItem is JValue jvalue)
                         {
-                            AnsiConsole.MarkupLine($"[red]  - {jvalue.Value}[/]");
+                            var message = Convert.ToString(jvalue.Value)?.EscapeMarkup();
+                            AnsiConsole.MarkupLine($"[red]  - {message}[/]");
                         }
                     }
                 }
                 else
                 {
-                    AnsiConsole.MarkupLine($"[red]  - {(item as JValue)?.Value}[/]");
+                    var message = Convert.ToString((item as JValue)?.Value)?.EscapeMarkup();
+                    AnsiConsole.MarkupLine($"[red]  - {message}[/]");
                 }
             }
         }
