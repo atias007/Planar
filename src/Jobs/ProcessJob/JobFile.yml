@@ -29,7 +29,7 @@ simple triggers:                      # List of simple triggers
     misfire behaviour: FireNow        # [ FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount ]
     priority: 1                       # Priority [value between 0 to 100]
     calendar: null                    # Calendar name
-    timeout: 00:30:00                 # Execution timeout. If timout span passed then stop command is executed
+    timeout: 00:30:00                 # Execution timeout. If timout span passed then cancel command is executed
     retry span: 01:00:00              # The time span between retries
     max retries: 3                    # The maximum amount of retries. Default is 3 [1 to 100]
 
@@ -39,6 +39,6 @@ cron triggers:                               # List of cron triggers
     misfire behaviour: DoNothing             # [ DoNothing | FireAndProceed | IgnoreMisfires ]
     priority: 1                              # Priority [value between 0 to 100]
     calendar: null                           # Calendar name
-    timeout: 00:30:00                        # Execution timeout. If timout span passed then stop command is executed
+    timeout: 00:30:00                        # Execution timeout. If timout span passed then cancel command is executed
     retry span: 01:00:00                     # The time span between retries
     max retries: 3                           # The maximum amount of retries. Default is 3 [1 to 100]

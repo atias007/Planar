@@ -61,7 +61,6 @@ namespace SomeJob
             Logger.LogDebug("GetEffectedRows: {Value}", rows);
 
             await Task.Delay(10000, context.CancellationToken);
-            FailOnStopRequest();
             Logger.LogWarning("JobRunTime: {JobRunTime}", JobRunTime);
 
             Logger.LogInformation("SomeDate: {SomeDate}", SomeDate);
@@ -71,35 +70,6 @@ namespace SomeJob
 
             SimpleInt += 5;
             IgnoreData = "x";
-
-            for (int i = 0; i < 1250; i++)
-            {
-                try
-                {
-                    // Do Something 1
-
-                    // Do Something 2
-
-                    // Do Something 3
-
-                    // Do Something 4
-
-                    fact.IncreaseEffectedRows();
-                }
-                catch (Exception ex)
-                {
-                    fact.AddAggregateException(ex);
-                }
-                finally
-                {
-                    UpdateProgress(i, 1250);
-
-                    ////if(CheckIfStopRequest())
-                    ////{
-                    ////    // exist procedure
-                    ////}
-                }
-            }
 
             var a1 = fact.GetData<int>("X");
             var b1 = fact.GetEffectedRows();

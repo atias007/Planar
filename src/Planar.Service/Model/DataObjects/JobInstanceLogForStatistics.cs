@@ -7,7 +7,7 @@
         public int Status { get; set; }
         public int? Duration { get; set; }
         public int? EffectedRows { get; set; }
-        public bool IsStopped { get; set; }
+        public bool IsCanceled { get; set; }
         public byte? Anomaly { get; set; }
     }
 }

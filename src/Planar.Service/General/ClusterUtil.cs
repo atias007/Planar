@@ -399,11 +399,11 @@ namespace Planar.Service.General
 
                 try
                 {
-                    var isStopped = await Policy.Handle<RpcException>()
+                    var isCanceled = await Policy.Handle<RpcException>()
                         .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => CallStopRunningJob(node, instanceId));
+                        .ExecuteAsync(() => CallCancelRunningJob(node, instanceId));
 
-                    if (isStopped) { return true; }
+                    if (isCanceled) { return true; }
                 }
                 catch (RpcException ex)
                 {
@@ -582,12 +582,12 @@ namespace Planar.Service.General
             return result.Exists;
         }
 
-        private static async Task<bool> CallStopRunningJob(ClusterNode node, string instanceId)
+        private static async Task<bool> CallCancelRunningJob(ClusterNode node, string instanceId)
         {
             var client = GetClient(node);
             var request = new GetRunningJobRequest { InstanceId = instanceId };
-            var result = await client.StopRunningJobAsync(request, deadline: GrpcDeadLine);
-            return result.IsStopped;
+            var result = await client.CancelRunningJobAsync(request, deadline: GrpcDeadLine);
+            return result.IsCanceled;
         }
 
         private static async Task<PersistanceRunningJobInfoReply> CallGetPersistanceRunningJobInfo(ClusterNode node)

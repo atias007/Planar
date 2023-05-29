@@ -19,7 +19,7 @@ namespace Planar.Service.General
                 return;
             }
 
-            if (item.IsStopped) // Stopped Job
+            if (item.IsCanceled) // Stopped Job
             {
                 item.Anomaly = 100;
                 return;

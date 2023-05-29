@@ -123,13 +123,13 @@ namespace Planar
         }
 
         // OK
-        public override async Task<StopRunningJobReply> StopRunningJob(GetRunningJobRequest request, ServerCallContext context)
+        public override async Task<CancelRunningJobReply> CancelRunningJob(GetRunningJobRequest request, ServerCallContext context)
         {
             ValidateRequest(request);
             using var scope = _serviceScopeFactory.CreateScope();
             var schedulerUtil = scope.ServiceProvider.GetService<SchedulerUtil>();
             var result = await schedulerUtil.StopRunningJob(request.InstanceId, context.CancellationToken);
-            return new StopRunningJobReply { IsStopped = result };
+            return new CancelRunningJobReply { IsCanceled = result };
         }
 
         // OK

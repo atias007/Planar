@@ -20,7 +20,7 @@ namespace BankOfIsraelCurrency
         public override async Task ExecuteJob(IJobExecutionContext context)
         {
             //// Execute Job ////
-            await SaveCurrency();
+            await SaveCurrency(context);
         }
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -30,7 +30,7 @@ namespace BankOfIsraelCurrency
 
         #endregion Planar Methods
 
-        private async Task SaveCurrency()
+        private async Task SaveCurrency(IJobExecutionContext context)
         {
             var client = new RestClient("https://www.boi.org.il");
             var request = new RestRequest("PublicApi/GetExchangeRates", Method.Get);
@@ -43,7 +43,7 @@ namespace BankOfIsraelCurrency
                 var data = response.Data.ExchangeRates;
                 foreach (var item in data)
                 {
-                    FailOnStopRequest();
+                    context.CancellationToken.ThrowIfCancellationRequested();
                     UpdateProgress(counter, data.Length);
                     Logger.LogInformation(" [x] Handle currency {Currency} with value {Value}", item.Key, item.CurrentExchangeRate);
                     IncreaseEffectedRows();

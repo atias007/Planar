@@ -126,7 +126,7 @@ namespace Planar.Service.Listeners
                     Log = metadata?.Log.ToString(),
                     Status = (int)status,
                     StatusTitle = status.ToString(),
-                    IsStopped = context.CancellationToken.IsCancellationRequested
+                    IsCanceled = context.CancellationToken.IsCancellationRequested
                 };
 
                 log.Log?.Trim();

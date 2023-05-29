@@ -44,6 +44,7 @@ namespace UnitTest
         {
             var run = ExecuteJobBuilder
                 .CreateBuilderForJob<Worker>()
+                .WithJobData("Z", "SomeString")
                 .WithJobData("SimpleInt", 44);
 
             var result = ExecuteJob(run);
@@ -56,6 +57,7 @@ namespace UnitTest
             var run = ExecuteJobBuilder
                 .CreateBuilderForJob<Worker>()
                 .WithJobData("X", 10)
+                .WithJobData("Z", "SomeString")
                 .WithJobData("SimpleInt", 44);
 
             var result = ExecuteJob(run);
@@ -69,6 +71,7 @@ namespace UnitTest
             var run = ExecuteJobBuilder
                 .CreateBuilderForJob<Worker>()
                 .WithJobData("X", 10)
+                .WithJobData("Z", "SomeString")
                 .WithJobData("IgnoreData", null);
 
             var result = ExecuteJob(run);
@@ -82,11 +85,12 @@ namespace UnitTest
             var run = ExecuteJobBuilder
                 .CreateBuilderForJob<Worker>()
                 .WithJobData("X", 10)
+                .WithJobData("Z", "SomeString")
                 .CancelJobAfterSeconds(5);
 
             var result = ExecuteJob(run);
             result.Assert.Status.Fail();
-            Assert.That(result.IsStopped, Is.True);
+            Assert.That(result.IsCanceled, Is.True);
         }
     }
 }

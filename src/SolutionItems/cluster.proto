@@ -20,7 +20,7 @@ service PlanarCluster {
   rpc IsJobRunning (RpcJobKey) returns (IsJobRunningReply);
   rpc GetRunningData (GetRunningJobRequest) returns (RunningDataReply);
   rpc IsRunningInstanceExist (GetRunningJobRequest) returns (IsRunningInstanceExistReply);
-  rpc StopRunningJob (GetRunningJobRequest) returns (StopRunningJobReply);
+  rpc CancelRunningJob (GetRunningJobRequest) returns (CancelRunningJobReply);
   rpc GetPersistanceRunningJobInfo(google.protobuf.Empty) returns (PersistanceRunningJobInfoReply);
   rpc IsJobFolderExist(IsJobAssestsExistRequest) returns (IsJobAssestsExistReply);
   rpc IsJobFileExist(IsJobAssestsExistRequest) returns (IsJobAssestsExistReply);
@@ -44,8 +44,8 @@ message IsJobRunningReply{
 	bool isRunning = 1;
 }
 
-message StopRunningJobReply{
-	bool isStopped = 1;
+message CancelRunningJobReply{
+	bool isCanceled = 1;
 }
 
 message PersistanceRunningJobInfoReply

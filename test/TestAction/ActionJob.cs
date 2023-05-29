@@ -28,7 +28,7 @@ namespace TestAction
                 {
                     UpdateProgress(i, 130);
                     SetEffectedRows(i + 1);
-                    if (CheckIfStopRequest())
+                    if (context.CancellationToken.IsCancellationRequested)
                     {
                         Logger.LogInformation("Cancel job");
                         break;

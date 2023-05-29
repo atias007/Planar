@@ -33,7 +33,7 @@ namespace TestAggEx
                 }
                 catch (Exception ex)
                 {
-                    AddAggragateException(ex);
+                    AddAggregateException(ex);
                 }
                 finally
                 {

@@ -163,7 +163,7 @@ namespace Planar.Service.Data
                 log.EffectedRows,
                 log.Log,
                 log.Exception,
-                log.IsStopped
+                log.IsCanceled
             };
 
             var cmd = new CommandDefinition(

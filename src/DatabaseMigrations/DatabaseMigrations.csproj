@@ -37,6 +37,8 @@
     <None Remove="Scripts\Planar_0017 - config_value_4000.sql" />
     <None Remove="Scripts\Planar_0018 - referece_fields.sql" />
     <None Remove="Scripts\Planar_0019 - add_job_audit.sql" />
+    <None Remove="Scripts\Planar_0020 - stop-cancel-column.sql" />
+    <None Remove="Scripts\Planar_0021 - alter_instancelog.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -58,5 +60,7 @@
     <EmbeddedResource Include="Scripts\Planar_0017 - config_value_4000.sql" />
     <EmbeddedResource Include="Scripts\Planar_0018 - referece_fields.sql" />
     <EmbeddedResource Include="Scripts\Planar_0019 - add_job_audit.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0020 - stop-cancel-column.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0021 - alter_instancelog.sql" />
   </ItemGroup>
 </Project>

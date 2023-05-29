@@ -417,7 +417,7 @@ namespace Planar.CLI.Actions
 
         [Action("cancel")]
         [NullRequest]
-        public static async Task<CliActionResponse> StopRunningJob(CliFireInstanceIdRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> CancelRunningJob(CliFireInstanceIdRequest request, CancellationToken cancellationToken = default)
         {
             request ??= new CliFireInstanceIdRequest
             {

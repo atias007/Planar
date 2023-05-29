@@ -239,7 +239,7 @@ namespace Planar.Job.Test
                 EffectedRows = metadata?.EffectedRows,
                 Log = metadata?.GetLog(),
                 Id = -1,
-                IsStopped = _broker?.IsCancel ?? false,
+                IsCanceled = _broker?.IsCancel ?? false,
                 Retry = false,
                 Status = status,
                 Instance = instance

@@ -19,7 +19,7 @@ namespace Planar.Job.Test
         int? Duration { get; }
         int? EffectedRows { get; }
         bool Retry { get; }
-        bool IsStopped { get; }
+        bool IsCanceled { get; }
         IReadOnlyDictionary<string, string?> Data { get; }
         string? Log { get; }
         Exception? Exception { get; }

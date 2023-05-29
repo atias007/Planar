@@ -1,0 +1,1 @@
+EXEC sp_rename 'dbo.JobInstanceLog.IsStopped', 'IsCanceled', 'COLUMN';

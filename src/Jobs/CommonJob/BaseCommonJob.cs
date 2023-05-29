@@ -85,7 +85,7 @@ namespace CommonJob
 
             context.CancellationToken.Register(() =>
             {
-                _messageBroker.AppendLog(LogLevel.Warning, "Service get a request for stop job");
+                _messageBroker.AppendLog(LogLevel.Warning, "Service get a request for cancel job");
             });
         }
 
@@ -171,7 +171,7 @@ namespace CommonJob
             var finish = task.Wait(timeout);
             if (!finish)
             {
-                MessageBroker.AppendLog(LogLevel.Warning, $"Timeout occur, sent stop requst to job (timeout value: {FormatTimeSpan(timeout)})");
+                MessageBroker.AppendLog(LogLevel.Warning, $"Timeout occur, sent cancel requst to job (timeout value: {FormatTimeSpan(timeout)})");
                 await context.Scheduler.Interrupt(context.JobDetail.Key);
             }
 
