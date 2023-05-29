@@ -46,6 +46,11 @@ namespace SomeJob
             a = GetData<int>("X");
             Logger.LogDebug("Data X Value: {Value}", a);
 
+            var z = GetData("Z");
+            Logger.LogDebug("Data Z Value: {Value}", z);
+            PutJobData("Z", "NewZData");
+            Logger.LogInformation("Z=" + GetData("Z"));
+
             var rows = GetEffectedRows();
             Logger.LogDebug("GetEffectedRows: {Value}", rows);
             IncreaseEffectedRows();

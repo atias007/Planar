@@ -111,7 +111,7 @@ namespace Planar.Job.Test
 
             if (ignore)
             {
-                Console.WriteLine($"Ignore map back property '{property.Name}' of job '{jobKey.Group}.{jobKey.Name}' to data map");
+                Console.WriteLine($"ATTENTION: Ignore map back property '{property.Name}' of job '{jobKey.Group}.{jobKey.Name}' to data map");
             }
 
             return ignore;

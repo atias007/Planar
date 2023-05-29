@@ -24,6 +24,7 @@ namespace UnitTest
             var run = ExecuteJobBuilder
                 .CreateBuilderForJob<Worker>()
                 .WithJobData("X", 10)
+                .WithJobData("Z", "SomeString")
                 .WithJobData("SomeDate", DateTime.Now)
                 .WithJobData("SimpleInt", 44)
                 .WithTriggerData("Y", 33)

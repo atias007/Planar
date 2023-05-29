@@ -215,7 +215,7 @@ namespace CommonJob
 
             if (ignore)
             {
-                _logger.LogDebug("Ignore map back property '{PropertyName}' of job '{JobGroup}.{JobName}' to data map",
+                _logger.LogDebug("ATTENTION: Ignore map back property '{PropertyName}' of job '{JobGroup}.{JobName}' to data map",
                     property.Name,
                     jobKey.Group,
                     jobKey.Name);
