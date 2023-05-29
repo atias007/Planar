@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Azure.Core;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
@@ -566,6 +568,57 @@ namespace Planar.Service.API
             }
 
             return stop;
+        }
+
+        public async Task<IEnumerable<JobRowDetails>> GetDeadJobs()
+        {
+            var temp = new List<IJobDetail>();
+            foreach (var jobKey in await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup()))
+            {
+                if (JobKeyHelper.IsSystemJobKey(jobKey)) { continue; }
+                var info = await Scheduler.GetJobDetail(jobKey);
+                if (info == null) { continue; }
+                var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+                if (triggers == null)
+                {
+                    temp.Add(info);
+                    continue;
+                }
+
+                if (!await HasActiveTrigger(triggers))
+                {
+                    temp.Add(info);
+                }
+            }
+
+            var result = new List<JobRowDetails>();
+            foreach (var item in temp)
+            {
+                var details = new JobRowDetails();
+                SchedulerUtil.MapJobRowDetails(item, details);
+                result.Add(details);
+            }
+
+            result = result
+                .OrderBy(r => r.Group)
+                .ThenBy(r => r.Name)
+                .ToList();
+
+            return result;
+        }
+
+        private async Task<bool> HasActiveTrigger(IReadOnlyCollection<ITrigger> triggers)
+        {
+            foreach (var t in triggers)
+            {
+                var state = await Scheduler.GetTriggerState(t.Key);
+                if (state != TriggerState.None && state != TriggerState.Paused)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void ValidateDataKeyExists(IJobDetail details, string key, string jobId)

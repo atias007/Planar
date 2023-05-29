@@ -157,6 +157,32 @@ namespace Planar.CLI.Actions
             return response;
         }
 
+        [Action("dead")]
+        public static async Task<CliActionResponse> GetDeadJobs(CliGetDeadJobsRequest request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("job/dead", Method.Get);
+            var result = await RestProxy.Invoke<List<JobRowDetails>>(restRequest, cancellationToken);
+            var message = string.Empty;
+            CliActionResponse response;
+            if (request.Quiet)
+            {
+                var ids = result.Data?.Select(r => r.Id);
+                if (ids != null)
+                {
+                    message = string.Join('\n', ids);
+                }
+
+                response = new CliActionResponse(result, message);
+            }
+            else
+            {
+                var table = CliTableExtensions.GetTable(result.Data);
+                response = new CliActionResponse(result, table);
+            }
+
+            return response;
+        }
+
         [Action("get")]
         [Action("inspect")]
         public static async Task<CliActionResponse> GetJobDetails(CliJobKey jobKey, CancellationToken cancellationToken = default)

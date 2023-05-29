@@ -67,6 +67,16 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
+        [HttpGet("dead")]
+        [ViewerAuthorize]
+        [SwaggerOperation(OperationId = "get_dead_job", Description = "Get dead jobs", Summary = "Get Dead Jobs")]
+        [OkJsonResponse(typeof(List<JobRowDetails>))]
+        public async Task<ActionResult<List<JobRowDetails>>> GetDead()
+        {
+            var result = await BusinesLayer.GetDeadJobs();
+            return Ok(result);
+        }
+
         [HttpDelete("{id}")]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "delete_job_id", Description = "Delete job", Summary = "Delete Job")]

@@ -45,7 +45,7 @@ namespace Planar.Service.Listeners
         public Task JobInterrupted(JobKey jobKey, CancellationToken cancellationToken = default)
         {
             var info = GetJobKeyMonitorSystemInfo(jobKey, "interrupted");
-            return SafeSystemScan(MonitorEvents.JobInterrupted, info, null);
+            return SafeSystemScan(MonitorEvents.JobCanceled, info, null);
         }
 
         public Task JobPaused(JobKey jobKey, CancellationToken cancellationToken = default)
