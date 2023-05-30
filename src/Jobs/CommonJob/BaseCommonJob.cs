@@ -115,7 +115,7 @@ namespace CommonJob
                 foreach (var item in context.MergedJobDataMap)
                 {
                     if (item.Key.StartsWith(Consts.ConstPrefix)) { continue; }
-                    var prop = allProperties.FirstOrDefault(p => string.Equals(p.Name, item.Key, StringComparison.OrdinalIgnoreCase));
+                    var prop = allProperties.Find(p => string.Equals(p.Name, item.Key, StringComparison.OrdinalIgnoreCase));
                     MapProperty(context.JobDetail.Key, instance, prop, item);
                 }
             }

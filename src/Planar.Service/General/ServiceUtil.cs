@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Common.Exceptions;
+using Planar.Hooks;
 using Planar.Service.Monitor;
 using Quartz;
 using System;
@@ -60,6 +61,7 @@ namespace Planar.Service.General
             logger.LogInformation("load monitor hooks at node {MachineName}", Environment.MachineName);
 
             ClearMonitorHooks();
+            LoadSystemHooks(logger);
             var directories = Directory.GetDirectories(path);
             foreach (var dir in directories)
             {
@@ -92,10 +94,32 @@ namespace Planar.Service.General
 
             if (result)
             {
-                logger.LogInformation("Add MonitorHook '{Name}' from type '{FullName}'", name, t.FullName);
+                logger.LogInformation("Add monitor hook '{Name}' from type '{FullName}'", name, t.FullName);
             }
 
             return result;
+        }
+
+        private static void LoadSystemHooks<TLogger>(ILogger<TLogger> logger)
+        {
+            LoadSystemHook<TLogger, PlanarRestHook>(logger);
+        }
+
+        private static void LoadSystemHook<TLogger, THook>(ILogger<TLogger> logger)
+        {
+            var type = typeof(THook);
+            var name = type.Name;
+            var hook = new MonitorHookFactory { Name = name, Type = type, AssemblyContext = AssemblyLoadContext.Default };
+            var result = MonitorHooks.TryAdd(name, hook);
+
+            if (result)
+            {
+                logger.LogInformation("Add system monitor hook '{Name}'", name);
+            }
+            else
+            {
+                logger.LogError("Fail to add system monitor hook '{Name}'", name);
+            }
         }
 
         private static IEnumerable<Type> GetHookTypesFromFile(AssemblyLoadContext assemblyContext, string file)

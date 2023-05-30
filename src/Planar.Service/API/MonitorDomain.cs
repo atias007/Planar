@@ -102,7 +102,7 @@ namespace Planar.Service.API
 
         public List<string> GetHooks()
         {
-            return ServiceUtil.MonitorHooks.Keys.ToList();
+            return ServiceUtil.MonitorHooks.Keys.OrderBy(k => k).ToList();
         }
 
         public async Task<string> Reload()
