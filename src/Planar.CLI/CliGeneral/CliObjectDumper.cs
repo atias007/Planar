@@ -30,6 +30,15 @@ namespace Planar.CLI.CliGeneral
                 return;
             }
 
+            var table = GetRenderableTable(obj);
+            console.Write(table);
+        }
+
+        public static Renderable GetRenderableTable(object? obj)
+        {
+            if (obj == null) { return new Markup(string.Empty); }
+
+            var type = obj.GetType();
             var properties = type.GetProperties().OrderBy(p => p.Name);
             var table = new Table();
             table.AddColumns("Name", "Value");
@@ -42,7 +51,7 @@ namespace Planar.CLI.CliGeneral
             }
 
             table.HideHeaders();
-            console.Write(table);
+            return table;
         }
 
         private static IRenderable GetRenderableMarkup(object? value)
@@ -53,11 +62,10 @@ namespace Planar.CLI.CliGeneral
             }
 
             var vt = value.GetType();
-            var dictionaryType = new Type[] { typeof(Dictionary<string, string>), typeof(SortedDictionary<string, string>) };
 
-            if (dictionaryType.Contains(vt))
+            if (typeof(IDictionary).IsAssignableFrom(vt))
             {
-                var dict = (IDictionary<string, string>)value;
+                var dict = (IDictionary)value;
                 if (dict.Count == 0)
                 {
                     return new Markup("[lightskyblue1][[empty]][/]");
@@ -65,19 +73,37 @@ namespace Planar.CLI.CliGeneral
 
                 var table = new Table();
                 table.AddColumns("key", "value");
-                foreach (var item in dict)
+                foreach (var item in dict.Keys)
                 {
-                    table.AddRow(item.Key, item.Value);
+                    var dkey = Convert.ToString(item) ?? string.Empty;
+                    var dvalue = Convert.ToString(dict[item]) ?? string.Empty;
+                    table.AddRow(dkey, dvalue);
                 }
 
                 return table;
             }
 
-            var text = GetRenderable(value);
+            if (vt != typeof(string) && typeof(IEnumerable).IsAssignableFrom(vt))
+            {
+                var list = (IEnumerable)value;
+                var table = new Table();
+                table.AddColumns("child item");
+
+                foreach (var item in list)
+                {
+                    var dvalue = Convert.ToString(item) ?? string.Empty;
+                    table.AddRow(dvalue);
+                }
+
+                table.HideHeaders();
+                return table;
+            }
+
+            var text = GetRenderableString(value);
             return new Markup(text);
         }
 
-        private static string GetRenderable(object value)
+        private static string GetRenderableString(object value)
         {
             var simpleTypes = new Type[] { typeof(byte), typeof(byte?), typeof(int), typeof(int?), typeof(long), typeof(bool), typeof(bool?) };
             var dateTypes = new Type[] { typeof(DateTime), typeof(DateTime?) };
