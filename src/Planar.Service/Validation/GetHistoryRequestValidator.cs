@@ -2,7 +2,7 @@
 using Planar.API.Common.Entities;
 using System;
 
-namespace Planar.Validation
+namespace Planar.Service.Validation
 {
     public class GetHistoryRequestValidator : AbstractValidator<GetHistoryRequest>
     {

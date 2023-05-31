@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Planar.Validation
+namespace Planar.Service.Validation
 {
     public class StringIgnoreCaseComparer : IEqualityComparer<string>
     {

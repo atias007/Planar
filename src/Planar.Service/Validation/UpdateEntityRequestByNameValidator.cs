@@ -1,13 +1,13 @@
 ﻿using FluentValidation;
 using Planar.API.Common.Entities;
 
-namespace Planar.Validation
+namespace Planar.Service.Validation
 {
-    public class UpdateEntityRecordValidator : AbstractValidator<UpdateEntityRequest>
+    public class UpdateEntityRequestByNameValidator : AbstractValidator<UpdateEntityRequestByName>
     {
-        public UpdateEntityRecordValidator()
+        public UpdateEntityRequestByNameValidator()
         {
-            RuleFor(u => u.Id).GreaterThan(0);
+            RuleFor(u => u.Name).NotEmpty().Length(2, 50);
             RuleFor(u => u.PropertyName).NotEmpty().NotEqual("id", StringIgnoreCaseComparer.Instance);
             RuleFor(u => u.PropertyValue).NotEmpty();
         }

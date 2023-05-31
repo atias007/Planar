@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Planar.Validation.Attributes
 {
-    public class UIntAttribute : ValidationAttribute
+    public class NameAttribute : ValidationAttribute
     {
         protected override ValidationResult IsValid(object value, ValidationContext validationContext)
         {
@@ -13,14 +13,15 @@ namespace Planar.Validation.Attributes
             }
 
             var stringValue = Convert.ToString(value);
-            if (!int.TryParse(stringValue, out int id))
+
+            if (stringValue.Length < 2)
             {
-                return new ValidationResult($"{validationContext.MemberName} is not valid integer value");
+                return new ValidationResult($"{validationContext.MemberName} with value {stringValue} is not valid. minimum length is 2");
             }
 
-            if (id < 0)
+            if (stringValue.Length > 50)
             {
-                return new ValidationResult($"{validationContext.MemberName} with value {id} is not valid. it should be greater then or equals 0");
+                return new ValidationResult($"{validationContext.MemberName} with value {stringValue} is not valid. maximum length is 50");
             }
 
             return ValidationResult.Success;

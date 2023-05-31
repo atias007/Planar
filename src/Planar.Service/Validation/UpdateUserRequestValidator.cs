@@ -8,7 +8,7 @@ namespace Planar.Service
         public UpdateUserRequestValidator(IValidator<AddUserRequest> addValidator)
         {
             Include(addValidator);
-            RuleFor(e => e.Id).GreaterThan(0);
+            RuleFor(e => e.CurrentUsername).NotEmpty().Length(2, 50);
         }
     }
 }

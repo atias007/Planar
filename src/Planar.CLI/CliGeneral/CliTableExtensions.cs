@@ -13,11 +13,11 @@ namespace Planar.CLI
         {
             var table = new Table();
             if (response == null) { return table; }
-            table.AddColumns("User Id", "Password");
-            table.AddRow(response.Id.ToString(), SafeCliString(response.Password));
-            table.AddRow(string.Empty, string.Empty);
-            table.AddRow(string.Empty, CliFormat.GetWarningMarkup("make sure you copy the above password now."));
-            table.AddRow(string.Empty, $"[{CliFormat.WarningColor}]we don't store it and you will not be able to see it again.[/]");
+            table.AddColumns("Password");
+            table.AddRow(SafeCliString(response.Password));
+            table.AddEmptyRow();
+            table.AddRow(CliFormat.GetWarningMarkup("make sure you copy the above password now."));
+            table.AddRow($"[{CliFormat.WarningColor}]we don't store it and you will not be able to see it again.[/]");
             return table;
         }
 
@@ -202,8 +202,8 @@ namespace Planar.CLI
         {
             var table = new Table();
             if (data == null) { return table; }
-            table.AddColumns("Id", "Name", "Role", "User Count");
-            data.ForEach(r => table.AddRow($"{r.Id}", r.Name.EscapeMarkup(), r.Role.EscapeMarkup(), $"{r.UsersCount}"));
+            table.AddColumns("Name", "Role", "User Count");
+            data.ForEach(r => table.AddRow(r.Name.EscapeMarkup(), r.Role.EscapeMarkup(), $"{r.UsersCount}"));
             return table;
         }
 
@@ -211,8 +211,8 @@ namespace Planar.CLI
         {
             var table = new Table();
             if (data == null) { return table; }
-            table.AddColumns("Id", "First Name", "Last Name", "Username", "Email Address 1", "Phone Number 1");
-            data.ForEach(r => table.AddRow($"{r.Id}", r.FirstName.EscapeMarkup(), r.LastName.EscapeMarkup(), r.Username.EscapeMarkup(), r.EmailAddress1.EscapeMarkup(), r.PhoneNumber1.EscapeMarkup()));
+            table.AddColumns("Username", "First Name", "Last Name", "Email Address 1", "Phone Number 1");
+            data.ForEach(r => table.AddRow(r.Username.EscapeMarkup(), r.FirstName.EscapeMarkup(), r.LastName.EscapeMarkup(), r.EmailAddress1.EscapeMarkup(), r.PhoneNumber1.EscapeMarkup()));
             return table;
         }
 

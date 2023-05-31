@@ -131,7 +131,7 @@ namespace Planar.Service.API
             await DataLayer.UpdateMonitorAction(monitor);
         }
 
-        public async Task PartialUpdateMonitor(UpdateEntityRequest request)
+        public async Task PartialUpdateMonitor(UpdateEntityRequestById request)
         {
             var monitor = await DataLayer.GetMonitorAction(request.Id);
             ValidateExistingEntity(monitor, "monitor");

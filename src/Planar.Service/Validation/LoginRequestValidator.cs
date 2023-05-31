@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using Planar.API.Common.Entities;
 
-namespace Planar.Validation
+namespace Planar.Service.Validation
 {
     public class LoginRequestValidator : AbstractValidator<LoginRequest>
     {

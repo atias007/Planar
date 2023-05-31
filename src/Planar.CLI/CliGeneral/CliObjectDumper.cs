@@ -3,6 +3,7 @@ using Spectre.Console.Rendering;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.Linq;
 
 namespace Planar.CLI.CliGeneral
@@ -89,10 +90,17 @@ namespace Planar.CLI.CliGeneral
                 var table = new Table();
                 table.AddColumns("child item");
 
+                var counter = 0;
                 foreach (var item in list)
                 {
+                    counter++;
                     var dvalue = Convert.ToString(item) ?? string.Empty;
                     table.AddRow(dvalue);
+                }
+
+                if (counter == 0)
+                {
+                    table.AddRow("[lightskyblue1][[empty]][/]");
                 }
 
                 table.HideHeaders();

@@ -44,13 +44,13 @@ namespace Planar.CLI.CliGeneral
             return selectedItem;
         }
 
-        internal static async Task<CliPromptWrapper<int>> Groups(CancellationToken cancellationToken)
+        internal static async Task<CliPromptWrapper<string>> Groups(CancellationToken cancellationToken)
         {
             var restRequest = new RestRequest("group", Method.Get);
             var result = await RestProxy.Invoke<List<GroupInfo>>(restRequest, cancellationToken);
             if (!result.IsSuccessful)
             {
-                return new CliPromptWrapper<int>(result);
+                return new CliPromptWrapper<string>(result);
             }
 
             if (result.Data == null || !result.Data.Any())
@@ -60,17 +60,16 @@ namespace Planar.CLI.CliGeneral
 
             var items = result.Data.Select(g => g.Name ?? string.Empty);
             var select = PromptSelection(items, "group", true);
-            var id = result.Data.Where(r => r.Name == select).Select(r => r.Id).FirstOrDefault();
-            return new CliPromptWrapper<int>(id);
+            return new CliPromptWrapper<string>(select);
         }
 
-        internal static async Task<CliPromptWrapper<int>> Users(CancellationToken cancellationToken)
+        internal static async Task<CliPromptWrapper<string>> Users(CancellationToken cancellationToken)
         {
             var restRequest = new RestRequest("user", Method.Get);
             var result = await RestProxy.Invoke<List<UserRowDetails>>(restRequest, cancellationToken);
             if (!result.IsSuccessful)
             {
-                return new CliPromptWrapper<int>(result);
+                return new CliPromptWrapper<string>(result);
             }
 
             if (result.Data == null || !result.Data.Any())
@@ -80,8 +79,7 @@ namespace Planar.CLI.CliGeneral
 
             var items = result.Data.Select(g => g.Username ?? string.Empty);
             var select = PromptSelection(items, "user", true);
-            var id = result.Data.Where(r => r.Username == select).Select(r => r.Id).FirstOrDefault();
-            return new CliPromptWrapper<int>(id);
+            return new CliPromptWrapper<string>(select);
         }
 
         internal static async Task<CliPromptWrapper<Roles>> Roles(CancellationToken cancellationToken)

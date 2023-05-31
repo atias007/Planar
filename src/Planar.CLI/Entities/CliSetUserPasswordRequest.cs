@@ -2,7 +2,7 @@
 
 namespace Planar.CLI.Entities
 {
-    public class CliSetUserPasswordRequest : CliGetByIdRequest
+    public class CliSetUserPasswordRequest : CliGetByNameRequest
     {
         [ActionProperty(DefaultOrder = 1)]
         [Required("password argument is required")]

@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Planar.API.Common.Entities;
+using System;
 
 namespace Planar.Service.Validation
 {
@@ -13,7 +14,12 @@ namespace Planar.Service.Validation
             RuleFor(u => u.AdditionalField3).MaximumLength(500);
             RuleFor(u => u.AdditionalField4).MaximumLength(500);
             RuleFor(u => u.AdditionalField5).MaximumLength(500);
-            RuleFor(u => u.RoleId).IsInEnum();
+            RuleFor(u => u.Role).Must(r =>
+            {
+                if (string.IsNullOrEmpty(r)) { return true; }
+                return Enum.TryParse<Roles>(r, ignoreCase: true, out _);
+            })
+            .WithMessage("role '{PropertyValue}' is not supported");
         }
     }
 }

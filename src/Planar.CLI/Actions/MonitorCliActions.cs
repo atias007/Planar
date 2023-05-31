@@ -116,7 +116,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("update")]
-        public static async Task<CliActionResponse> UpdateMonitor(CliUpdateEntityRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> UpdateMonitor(CliUpdateEntityByIdRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("monitor", Method.Patch)
                 .AddBody(request);

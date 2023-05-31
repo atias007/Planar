@@ -2,6 +2,7 @@
 using FluentValidation;
 using Planar.Common.Exceptions;
 using Planar.Service.General;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -13,7 +14,7 @@ namespace Planar.Service.Validation
     {
         public static bool EncodingExists<T>(string encoding, ValidationContext<T> context)
         {
-            var any = Encoding.GetEncodings().Any(e => e.Name == encoding);
+            var any = Array.Exists(Encoding.GetEncodings(), e => e.Name == encoding);
             if (!any)
             {
                 context.AddFailure("output encoding", $"encoding '{encoding}' is not valid");
