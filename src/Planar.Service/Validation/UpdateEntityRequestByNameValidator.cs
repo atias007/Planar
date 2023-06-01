@@ -8,7 +8,6 @@ namespace Planar.Service.Validation
         public UpdateEntityRequestByNameValidator()
         {
             RuleFor(u => u.Name).NotEmpty().Length(2, 50);
-            RuleFor(u => u.PropertyName).NotEmpty().NotEqual("id", StringIgnoreCaseComparer.Instance);
             RuleFor(u => u.PropertyValue).NotEmpty();
         }
     }

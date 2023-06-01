@@ -4,7 +4,6 @@ namespace Planar.API.Common.Entities
 {
     public class UserDetails
     {
-        public int Id { get; set; }
         public string? Username { get; set; }
         public string? FirstName { get; set; }
         public string? LastName { get; set; }
@@ -19,9 +18,7 @@ namespace Planar.API.Common.Entities
         public string? AdditionalField3 { get; set; }
         public string? AdditionalField4 { get; set; }
         public string? AdditionalField5 { get; set; }
-
         public string Role { get; set; } = null!;
-
         public List<string> Groups { get; set; } = new();
     }
 }

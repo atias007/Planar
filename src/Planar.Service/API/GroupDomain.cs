@@ -88,12 +88,9 @@ namespace Planar.Service.API
 
         public async Task PartialUpdateGroup(UpdateEntityRequestByName request)
         {
-            if (string.Equals(request.PropertyName, "role", StringComparison.OrdinalIgnoreCase)
-                ||
-                string.Equals(request.PropertyName, "roleid", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new RestValidationException("property name", "role property can not be updated. to update role use 'group set-role' command");
-            }
+            ForbbidenPartialUpdateProperties(request, "to update role use 'group set-role' command", nameof(UpdateGroupRequest.Role), nameof(UpdateGroupRequest.RoleId));
+            ForbbidenPartialUpdateProperties(request, "to join user to group use 'group join'", nameof(GroupDetails.Users));
+            ForbbidenPartialUpdateProperties(request, null, nameof(GroupDetails.Users));
 
             var group = await DataLayer.GetGroup(request.Name);
             ValidateExistingEntity(group, "group");

@@ -22,7 +22,7 @@
             var result = Username;
             if (!string.IsNullOrEmpty(FirstName) || !string.IsNullOrEmpty(LastName))
             {
-                result += $" | {FirstName} {LastName}".TrimEnd();
+                result += $" ({FirstName} {LastName})".TrimEnd();
             }
 
             return result;
