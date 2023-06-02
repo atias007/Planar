@@ -1,26 +1,20 @@
 ﻿using AutoMapper;
 using CommonJob;
 using FluentValidation;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Planar.API.Common.Entities;
-using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
-using Planar.Service.Model.DataObjects;
-using Planar.Service.Model;
 using Quartz;
 using System;
 using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Planar.Service.Audit;
-using Planar.Common;
 
 namespace Planar.Service.API
 {
@@ -68,7 +62,7 @@ namespace Planar.Service.API
             if (claim == null) { return null; }
             var strValue = claim.Value;
             if (string.IsNullOrEmpty(strValue)) { return null; }
-            if (!int.TryParse(strValue, out var value)) { return null; }
+            if (!int.TryParse(strValue, out int value)) { return null; }
             return value;
         }
 

@@ -319,7 +319,7 @@ namespace Planar.CLI
         {
             if (response.Tables != null)
             {
-                response.Tables.ForEach(t => console.Write(t));
+                response.Tables.ForEach(console.Write);
             }
             else if (response.DumpObject != null)
             {
