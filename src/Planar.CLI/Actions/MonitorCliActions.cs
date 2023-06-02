@@ -95,7 +95,7 @@ namespace Planar.CLI.Actions
         {
             var restRequest = new RestRequest("monitor/events", Method.Get);
             var result = await RestProxy.Invoke<List<LovItem>>(restRequest, cancellationToken);
-            var table = CliTableExtensions.GetTable(result.Data);
+            var table = CliTableExtensions.GetTable(result.Data, "event");
             return new CliActionResponse(result, table);
         }
 

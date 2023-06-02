@@ -570,7 +570,7 @@ namespace Planar.Service.API
             return stop;
         }
 
-        public async Task<IEnumerable<JobRowDetails>> GetDeadJobs()
+        public async Task<IEnumerable<JobRowDetails>> GetInactive()
         {
             var temp = new List<IJobDetail>();
             foreach (var jobKey in await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup()))
@@ -586,6 +586,39 @@ namespace Planar.Service.API
                 }
 
                 if (!await HasActiveTrigger(triggers))
+                {
+                    temp.Add(info);
+                }
+            }
+
+            var result = new List<JobRowDetails>();
+            foreach (var item in temp)
+            {
+                var details = new JobRowDetails();
+                SchedulerUtil.MapJobRowDetails(item, details);
+                result.Add(details);
+            }
+
+            result = result
+                .OrderBy(r => r.Group)
+                .ThenBy(r => r.Name)
+                .ToList();
+
+            return result;
+        }
+
+        public async Task<IEnumerable<JobRowDetails>> GetActive()
+        {
+            var temp = new List<IJobDetail>();
+            foreach (var jobKey in await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup()))
+            {
+                if (JobKeyHelper.IsSystemJobKey(jobKey)) { continue; }
+                var info = await Scheduler.GetJobDetail(jobKey);
+                if (info == null) { continue; }
+                var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+                if (triggers == null) { continue; }
+
+                if (await HasActiveTrigger(triggers))
                 {
                     temp.Add(info);
                 }

@@ -157,10 +157,22 @@ namespace Planar.CLI.Actions
             return response;
         }
 
-        [Action("dead")]
-        public static async Task<CliActionResponse> GetDeadJobs(CliGetDeadJobsRequest request, CancellationToken cancellationToken = default)
+        [Action("inactive")]
+        public static async Task<CliActionResponse> GetInActiveJobs(CliGetActiveJobsRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("job/dead", Method.Get);
+            var restRequest = new RestRequest("job/inactive", Method.Get);
+            return await ActiveJobs(request, restRequest, cancellationToken);
+        }
+
+        [Action("active")]
+        public static async Task<CliActionResponse> GetActiveJobs(CliGetActiveJobsRequest request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("job/active", Method.Get);
+            return await ActiveJobs(request, restRequest, cancellationToken);
+        }
+
+        private static async Task<CliActionResponse> ActiveJobs(CliGetActiveJobsRequest request, RestRequest restRequest, CancellationToken cancellationToken)
+        {
             var result = await RestProxy.Invoke<List<JobRowDetails>>(restRequest, cancellationToken);
             var message = string.Empty;
             CliActionResponse response;

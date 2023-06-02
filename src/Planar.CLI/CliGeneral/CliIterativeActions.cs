@@ -21,7 +21,7 @@ namespace Planar.CLI
             {
                 var ids = data.Select(r => r.Id).ToList();
                 var table = CliTableExtensions.GetTable(result.Item1);
-                await AnsiConsole.Live(table).StartAsync(async context =>
+                await AnsiConsole.Live(table.Table).StartAsync(async context =>
                 {
                     context.Refresh();
                     if (ids.Count == 0) { return; }
@@ -30,7 +30,7 @@ namespace Planar.CLI
                     var counter = 0;
                     while (counter < 1000)
                     {
-                        var isAllFinish = await LoopGetRunnings(param, table, ids, cancellationToken);
+                        var isAllFinish = await LoopGetRunnings(param, table.Table, ids, cancellationToken);
                         context.Refresh();
 
                         if (isAllFinish) { break; }

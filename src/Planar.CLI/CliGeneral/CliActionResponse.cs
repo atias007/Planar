@@ -1,4 +1,4 @@
-﻿using Planar.CLI.Entities;
+﻿using Planar.CLI.CliGeneral;
 using Planar.Common;
 using RestSharp;
 using Spectre.Console;
@@ -22,10 +22,10 @@ namespace Planar.CLI
             Message = message;
         }
 
-        public CliActionResponse(RestResponse? response, Table table)
+        public CliActionResponse(RestResponse? response, CliTable table)
             : this(response)
         {
-            Tables = new List<Table> { table };
+            Tables = new List<CliTable> { table };
         }
 
         public CliActionResponse(RestResponse? response, object? dumpObject)
@@ -39,7 +39,7 @@ namespace Planar.CLI
             }
         }
 
-        public CliActionResponse(RestResponse? response, List<Table> tables)
+        public CliActionResponse(RestResponse? response, List<CliTable> tables)
             : this(response)
         {
             Tables = tables;
@@ -51,7 +51,7 @@ namespace Planar.CLI
 
         public object? DumpObject { get; private set; }
 
-        public List<Table>? Tables { get; private set; }
+        public List<CliTable>? Tables { get; private set; }
 
         public static CliActionResponse Empty
         {

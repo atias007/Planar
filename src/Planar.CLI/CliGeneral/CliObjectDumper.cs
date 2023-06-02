@@ -113,7 +113,7 @@ namespace Planar.CLI.CliGeneral
 
         private static string GetRenderableString(object value)
         {
-            var simpleTypes = new Type[] { typeof(byte), typeof(byte?), typeof(int), typeof(int?), typeof(long), typeof(bool), typeof(bool?) };
+            var simpleTypes = new Type[] { typeof(byte), typeof(byte?), typeof(int), typeof(int?), typeof(short), typeof(short?), typeof(byte), typeof(byte?), typeof(long), typeof(bool), typeof(bool?) };
             var dateTypes = new Type[] { typeof(DateTime), typeof(DateTime?) };
             var timeSpanTypes = new Type[] { typeof(TimeSpan), typeof(TimeSpan?) };
 

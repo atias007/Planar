@@ -2,7 +2,7 @@
 
 namespace Planar.CLI.Entities
 {
-    public class CliGetDeadJobsRequest : IQuietResult
+    public class CliGetActiveJobsRequest : IQuietResult
     {
         [QuietActionProperty]
         public bool Quiet { get; set; }

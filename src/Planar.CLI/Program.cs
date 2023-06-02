@@ -255,7 +255,7 @@ namespace Planar.CLI
 
         private static int GetResponseTableRowCount(CliActionResponse? cliActionResponse)
         {
-            var rowsCount = cliActionResponse?.Tables?.FirstOrDefault()?.Rows.Count ?? 0;
+            var rowsCount = cliActionResponse?.Tables?.FirstOrDefault()?.Table.Rows.Count ?? 0;
             return rowsCount;
         }
 
@@ -317,9 +317,9 @@ namespace Planar.CLI
 
         private static void WriteCliResponse(IAnsiConsole console, CliActionResponse response)
         {
-            if (response.Tables != null)
+            if (response.Tables != null && response.Tables.Any())
             {
-                response.Tables.ForEach(console.Write);
+                PrintTables(console, response);
             }
             else if (response.DumpObject != null)
             {
@@ -328,6 +328,30 @@ namespace Planar.CLI
             else
             {
                 WriteInfo(console, response);
+            }
+        }
+
+        private static void PrintTables(IAnsiConsole console, CliActionResponse response)
+        {
+            if (response.Tables == null) { return; }
+            foreach (var item in response.Tables)
+            {
+                console.Write(item.Table);
+                PrintTableFooter(console, item);
+
+                console.WriteLine();
+            }
+        }
+
+        private static void PrintTableFooter(IAnsiConsole console, CliTable item)
+        {
+            if (!item.ShowCount) { return; }
+            var rows = item.Table.Rows.Count;
+            if (rows > 0)
+            {
+                var entity = string.IsNullOrEmpty(item.EntityName) ? "row" : item.EntityName;
+                var extra = rows > 1 ? "s" : string.Empty;
+                console.MarkupLine($" [black on gray]{rows} {entity}{extra}[/]");
             }
         }
 

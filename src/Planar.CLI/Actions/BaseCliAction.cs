@@ -89,7 +89,7 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        protected static async Task<CliActionResponse> ExecuteTable<T>(RestRequest request, Func<T, Table> tableFunc, CancellationToken cancellationToken)
+        protected static async Task<CliActionResponse> ExecuteTable<T>(RestRequest request, Func<T, CliTable> tableFunc, CancellationToken cancellationToken)
         {
             var result = await RestProxy.Invoke<T>(request, cancellationToken);
             if (result.IsSuccessful && result.Data != null)
