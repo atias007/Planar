@@ -19,12 +19,12 @@ namespace Planar.Service.Validation
             RuleFor(j => j.DefaultConnectionName).Length(1, 50);
             RuleFor(j => j.DefaultConnectionName)
                 .NotEmpty()
-                .When(j => j.Steps != null && j.Steps.Any(s => string.IsNullOrWhiteSpace(s.ConnectionName)))
+                .When(j => j.Steps != null && j.Steps.Exists(s => string.IsNullOrWhiteSpace(s.ConnectionName)))
                 .WithMessage("{PropertyName} must have value when any step has no connection name");
 
             RuleFor(s => s.Transaction)
                 .Equal(false)
-                .When(p => p.Steps != null && p.Steps.Any(s => !string.IsNullOrWhiteSpace(s.ConnectionName)))
+                .When(p => p.Steps != null && p.Steps.Exists(s => !string.IsNullOrWhiteSpace(s.ConnectionName)))
                 .WithMessage("{PropertyName} must be false when there is a step with specific connection name. Transaction only aloowed with single default connection name");
 
             RuleFor(j => j.TransactionIsolationLevel).IsInEnum();

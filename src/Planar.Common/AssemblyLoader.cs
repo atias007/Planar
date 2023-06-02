@@ -67,7 +67,7 @@ namespace Planar.Common
         private static bool IsExcludedAssembly(string filename)
         {
             var name = new FileInfo(filename).Name;
-            var result = ExcludedAssemblies.Any(a => string.Compare(name, a, true) == 0);
+            var result = ExcludedAssemblies.Exists(a => string.Compare(name, a, true) == 0);
             return result;
         }
 

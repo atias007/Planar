@@ -54,11 +54,11 @@ namespace Planar.Startup
             var parts = resource.Split('.');
             parts = parts[1..];
 
-            var sufix = parts.Last();
+            var sufix = parts[^1];
             if (sufixes.Contains(sufix))
             {
                 parts = parts[..^1];
-                var last = parts.Last();
+                var last = parts[^1];
                 parts[^1] = $"{last}.{sufix}";
             }
 

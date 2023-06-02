@@ -89,7 +89,7 @@ namespace Planar
 
         public static bool IsDataKeyValid(string key)
         {
-            return !AllDataKeys.Any(k => string.Equals(k, key, StringComparison.OrdinalIgnoreCase));
+            return !Array.Exists(AllDataKeys, k => string.Equals(k, key, StringComparison.OrdinalIgnoreCase));
         }
     }
 }

@@ -44,7 +44,7 @@ namespace Planar
                 type = assembly.GetType(Properties.ClassName);
                 if (type == null)
                 {
-                    type = assembly.GetTypes().FirstOrDefault(t => t.FullName == Properties.ClassName);
+                    type = Array.Find(assembly.GetTypes(), t => t.FullName == Properties.ClassName);
                 }
 
                 if (type == null)

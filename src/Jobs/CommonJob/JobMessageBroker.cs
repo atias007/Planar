@@ -264,14 +264,10 @@ namespace CommonJob
         private bool HasSettings(IDictionary<string, string?> settings, string key)
         {
             if (settings == null) { return false; }
-            if (settings.ContainsKey(key))
+            if (settings.TryGetValue(key, out string? value) && Enum.TryParse<LogLevel>(value, true, out var tempLevel))
             {
-                var value = settings[key];
-                if (Enum.TryParse<LogLevel>(value, true, out var tempLevel))
-                {
-                    SetLogLevel(tempLevel);
-                    return true;
-                }
+                SetLogLevel(tempLevel);
+                return true;
             }
 
             return false;

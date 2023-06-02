@@ -56,7 +56,7 @@ namespace Planar.Service.General
         {
             var tempNode = GetCurrentClusterNode();
             var result = await _dal.GetClusterNodes();
-            var currentNode = result.FirstOrDefault(n => string.Equals(n.Server, tempNode.Server, StringComparison.CurrentCultureIgnoreCase) && n.Port == tempNode.Port);
+            var currentNode = result.Find(n => string.Equals(n.Server, tempNode.Server, StringComparison.CurrentCultureIgnoreCase) && n.Port == tempNode.Port);
             if (currentNode != null)
             {
                 currentNode.IsCurrentNode = true;

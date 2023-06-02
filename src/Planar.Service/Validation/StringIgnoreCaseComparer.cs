@@ -6,8 +6,9 @@ namespace Planar.Service.Validation
 {
     public class StringIgnoreCaseComparer : IEqualityComparer<string>
     {
-        public bool Equals(string x, string y)
+        public bool Equals(string? x, string? y)
         {
+            if (x == null) { return y == null; }
             return x.Equals(y, StringComparison.OrdinalIgnoreCase);
         }
 

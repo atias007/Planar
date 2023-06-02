@@ -49,7 +49,7 @@ namespace Planar
             MessageBroker.AppendLog(LogLevel.Information, $"Start sql job with {total} steps");
             var isOnlyDefaultConnection =
                 !string.IsNullOrWhiteSpace(Properties.DefaultConnectionName) &&
-                Properties.Steps.Any(s => string.IsNullOrWhiteSpace(s.ConnectionName));
+                Properties.Steps.Exists(s => string.IsNullOrWhiteSpace(s.ConnectionName));
 
             DbConnection? defaultConnection = null;
             DbTransaction? transaction = null;
@@ -253,7 +253,7 @@ namespace Planar
         {
             if (string.IsNullOrEmpty(name)) { return null; }
             var connectionString = Properties.ConnectionStrings?
-                .FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+                .Find(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
 
             if (connectionString != null)
             {

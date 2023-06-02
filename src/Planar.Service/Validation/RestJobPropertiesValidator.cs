@@ -25,7 +25,7 @@ namespace Planar.Service.Validation
 
             RuleFor(r => r.Method)
                 .NotEmpty()
-                .Must(r => _methods.Any(m => string.Equals(r, m, StringComparison.OrdinalIgnoreCase)))
+                .Must(r => Array.Exists(_methods, m => string.Equals(r, m, StringComparison.OrdinalIgnoreCase)))
                 .WithMessage("methot '{PropertyValue}' is invalid. avaliable options are: " + string.Join(',', _methods));
 
             RuleFor(r => r.BodyFile).MaximumLength(1000).MustAsync(FilenameExists);

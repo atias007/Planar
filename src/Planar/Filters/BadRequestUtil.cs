@@ -22,7 +22,7 @@ namespace Planar.Filters
                 var error = context.ModelState.First();
                 const string titleTemplate = "{0} is invalid";
 
-                var first = error.Value.Errors.First();
+                var first = error.Value.Errors[0];
                 result = new RestBadRequestResult
                 {
                     Instance = context.HttpContext.Request.Path,

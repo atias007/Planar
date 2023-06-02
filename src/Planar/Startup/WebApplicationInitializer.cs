@@ -39,18 +39,15 @@ namespace Planar.Startup
                 }
             });
 
-            builder.WebHost.ConfigureAppConfiguration(builder =>
-            {
-                Console.WriteLine("[x] Load configuration & app settings");
-                var file1 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.yml");
-                var file2 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, $"AppSettings.{AppSettings.Environment}.yml");
+            Console.WriteLine("[x] Load configuration & app settings");
+            var file1 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.yml");
+            var file2 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, $"AppSettings.{AppSettings.Environment}.yml");
 
-                builder
+            builder.Configuration
                 .AddYamlFile(file1, optional: false, reloadOnChange: true)
                 .AddYamlFile(file2, optional: true, reloadOnChange: true)
                 .AddCommandLine(args)
                 .AddEnvironmentVariables();
-            });
 
             ServiceCollectionInitializer.ConfigureServices(builder.Services);
             builder.Host.UseWindowsService();
@@ -93,13 +90,8 @@ namespace Planar.Startup
             }
 
             app.UseAuthorization();
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-
-                endpoints.MapGrpcService<ClusterService>();
-            });
+            app.MapControllers();
+            app.MapGrpcService<ClusterService>();
         }
     }
 }

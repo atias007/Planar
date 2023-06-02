@@ -314,7 +314,7 @@ namespace Planar.CLI.Actions
                 throw new CliException($"cli error: action '{method.Name}' has more then 2 parameter");
             }
 
-            var last = parameters.Last();
+            var last = parameters[parameters.Length - 1];
             if (last.ParameterType != typeof(CancellationToken))
             {
                 throw new CliException($"cli error: action '{method.Name}' has no CancellationToken parameter");
@@ -323,7 +323,7 @@ namespace Planar.CLI.Actions
             var requestType =
                 parameters.Length == 1 ?
                 null :
-                parameters.First().ParameterType;
+                parameters[0].ParameterType;
 
             return requestType;
         }

@@ -677,7 +677,7 @@ namespace Planar.CLI.Actions
             if (string.IsNullOrEmpty(yml)) { return string.Empty; }
 
             var lines = yml.Split('\n');
-            var pathLine = lines.FirstOrDefault(p => p.ToLower().StartsWith(path));
+            var pathLine = Array.Find(lines, p => p.ToLower().StartsWith(path));
             if (string.IsNullOrEmpty(pathLine)) { return string.Empty; }
 
             return pathLine[path.Length..].Trim();
@@ -700,7 +700,7 @@ namespace Planar.CLI.Actions
             var result = await CheckJobInner(cancellationToken);
             if (result.IsSuccessful)
             {
-                var exists = result.Data?.Any(d => d.Id == request.Id || $"{d.Group}.{d.Name}" == request.Id) ?? false;
+                var exists = result.Data?.Exists(d => d.Id == request.Id || $"{d.Group}.{d.Name}" == request.Id) ?? false;
                 if (exists) { throw new CliException($"job id {request.Id} already running. test can not be invoked until job done"); }
             }
 

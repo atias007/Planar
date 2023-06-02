@@ -26,7 +26,7 @@ namespace Planar.Controllers
         [ConflictResponse]
         public async Task<ActionResult<EntityIdResponse>> AddGroup([FromBody] AddGroupRequest request)
         {
-            var id = await BusinesLayer.AddGroup(request);
+            await BusinesLayer.AddGroup(request);
             return CreatedAtAction(nameof(GetGroup), new { request.Name }, null);
         }
 

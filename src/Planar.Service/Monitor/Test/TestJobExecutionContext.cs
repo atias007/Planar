@@ -38,7 +38,7 @@ namespace Planar.Service.Monitor.Test
 
         public ITrigger Trigger { get; private set; }
 
-        public ICalendar Calendar => null;
+        public ICalendar? Calendar => null;
 
         public bool Recovering => false;
 

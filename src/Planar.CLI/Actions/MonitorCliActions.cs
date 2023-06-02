@@ -266,7 +266,7 @@ namespace Planar.CLI.Actions
 
             var selectedEvent = PromptSelection(types, "monitor type") ?? string.Empty;
 
-            selectedEvent = selectedEvent.Split(' ').First();
+            selectedEvent = selectedEvent.Split(' ')[0];
 
             if (selectedEvent == "all")
             {
@@ -419,7 +419,7 @@ namespace Planar.CLI.Actions
             RestResponse? result = null;
             if (items.Any())
             {
-                result = items.FirstOrDefault(i => !i.IsSuccessful && (int)i.StatusCode >= 500);
+                result = Array.Find(items, i => !i.IsSuccessful && (int)i.StatusCode >= 500);
             }
 
             result ??= CliActionResponse.GetGenericSuccessRestResponse();

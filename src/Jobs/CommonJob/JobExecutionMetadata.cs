@@ -34,7 +34,7 @@ namespace CommonJob
 
             if (exceptions.Count == 1)
             {
-                return exceptions.First().ExceptionText ?? string.Empty;
+                return exceptions[0].ExceptionText ?? string.Empty;
             }
 
             var seperator = string.Empty.PadLeft(80, '-');
