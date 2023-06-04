@@ -5,7 +5,10 @@ using System.Linq;
 
 namespace Planar.Service.Exceptions
 {
+#pragma warning disable S3925 // "ISerializable" should be implemented correctly
+
     public sealed class RestValidationException : Exception
+#pragma warning restore S3925 // "ISerializable" should be implemented correctly
     {
         public RestValidationException()
         {

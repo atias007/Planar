@@ -195,6 +195,13 @@ namespace Planar.Service.General
             return result;
         }
 
+        public static JobRowDetails MapJobRowDetails(IJobDetail source)
+        {
+            var result = new JobRowDetails();
+            MapJobRowDetails(source, result);
+            return result;
+        }
+
         public static void MapJobRowDetails(IJobDetail source, JobRowDetails target)
         {
             target.Id = JobKeyHelper.GetJobId(source) ?? string.Empty;

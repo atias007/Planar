@@ -14,5 +14,7 @@
         public string? JobType { get; set; }
 
         public string? Group { get; set; }
+
+        public bool? Active { get; set; }
     }
 }

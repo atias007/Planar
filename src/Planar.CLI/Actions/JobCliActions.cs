@@ -122,7 +122,6 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("job", Method.Get);
             var p = AllJobsMembers.AllUserJobs;
             if (request.System) { p = AllJobsMembers.AllSystemJobs; }
-            if (request.All) { p = AllJobsMembers.All; }
             restRequest.AddQueryParameter("filter", (int)p);
 
             if (!string.IsNullOrEmpty(request.JobType))
@@ -133,6 +132,19 @@ namespace Planar.CLI.Actions
             if (!string.IsNullOrEmpty(request.JobGroup))
             {
                 restRequest.AddQueryParameter("group", request.JobGroup);
+            }
+
+            if (request.Active ^ request.Inactive)
+            {
+                if (request.Active)
+                {
+                    restRequest.AddQueryParameter("active", true.ToString());
+                }
+
+                if (request.Inactive)
+                {
+                    restRequest.AddQueryParameter("active", false.ToString());
+                }
             }
 
             var result = await RestProxy.Invoke<List<JobRowDetails>>(restRequest, cancellationToken);
@@ -155,20 +167,6 @@ namespace Planar.CLI.Actions
             }
 
             return response;
-        }
-
-        [Action("inactive")]
-        public static async Task<CliActionResponse> GetInActiveJobs(CliGetActiveJobsRequest request, CancellationToken cancellationToken = default)
-        {
-            var restRequest = new RestRequest("job/inactive", Method.Get);
-            return await ActiveJobs(request, restRequest, cancellationToken);
-        }
-
-        [Action("active")]
-        public static async Task<CliActionResponse> GetActiveJobs(CliGetActiveJobsRequest request, CancellationToken cancellationToken = default)
-        {
-            var restRequest = new RestRequest("job/active", Method.Get);
-            return await ActiveJobs(request, restRequest, cancellationToken);
         }
 
         private static async Task<CliActionResponse> ActiveJobs(CliGetActiveJobsRequest request, RestRequest restRequest, CancellationToken cancellationToken)

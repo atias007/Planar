@@ -68,7 +68,7 @@ namespace Planar.CLI.Actions
 
             if (result.Data.SimpleTriggers.Any())
             {
-                return new CliActionResponse(result, dumpObject: result.Data.SimpleTriggers.First());
+                return new CliActionResponse(result, dumpObject: result.Data.SimpleTriggers[0]);
             }
 
             if (result.Data.CronTriggers.Any())

@@ -67,26 +67,6 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("active")]
-        [ViewerAuthorize]
-        [SwaggerOperation(OperationId = "get_active_job", Description = "Get active jobs", Summary = "Get Active Jobs")]
-        [OkJsonResponse(typeof(List<JobRowDetails>))]
-        public async Task<ActionResult<List<JobRowDetails>>> GetActive()
-        {
-            var result = await BusinesLayer.GetActive();
-            return Ok(result);
-        }
-
-        [HttpGet("inactive")]
-        [ViewerAuthorize]
-        [SwaggerOperation(OperationId = "get_inactive_job", Description = "Get inactive jobs", Summary = "Get Inactive Jobs")]
-        [OkJsonResponse(typeof(List<JobRowDetails>))]
-        public async Task<ActionResult<List<JobRowDetails>>> GetInactive()
-        {
-            var result = await BusinesLayer.GetInactive();
-            return Ok(result);
-        }
-
         [HttpDelete("{id}")]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "delete_job_id", Description = "Delete job", Summary = "Delete Job")]

@@ -122,27 +122,31 @@ namespace Planar.Service.API
 
         public async Task<List<JobRowDetails>> GetAll(GetAllJobsRequest request)
         {
-            var result = new List<JobRowDetails>();
+            var jobs = new List<IJobDetail>();
 
             foreach (var jobKey in await GetJobKeys(request))
             {
                 var info = await Scheduler.GetJobDetail(jobKey);
                 if (info == null) { continue; }
-                var details = new JobRowDetails();
-                SchedulerUtil.MapJobRowDetails(info, details);
-                result.Add(details);
+                jobs.Add(info);
             }
 
             if (!string.IsNullOrEmpty(request.JobType))
             {
-                result = result
-                    .Where(r => string.Equals(r.JobType, request.JobType, StringComparison.OrdinalIgnoreCase))
+                jobs = jobs
+                    .Where(r => string.Equals(SchedulerUtil.GetJobTypeName(r.JobType), request.JobType, StringComparison.OrdinalIgnoreCase))
                     .ToList();
             }
 
-            result = result
-                .OrderBy(r => r.Group)
-                .ThenBy(r => r.Name)
+            if (request.Active.HasValue)
+            {
+                jobs = jobs.Where(r => IsActiveJob(r.Key).Result == request.Active.Value).ToList();
+            }
+
+            var result = jobs
+                .Select(j => SchedulerUtil.MapJobRowDetails(j))
+                .OrderBy(j => j.Group)
+                .ThenBy(j => j.Name)
                 .ToList();
 
             return result;
@@ -216,7 +220,7 @@ namespace Planar.Service.API
 
             var resources = assembly.GetManifestResourceNames();
             var resourceName =
-                resources.FirstOrDefault(r => r.ToLower() == $"{typeName}.JobFile.yml".ToLower()) ??
+                Array.Find(resources, r => r.ToLower() == $"{typeName}.JobFile.yml".ToLower()) ??
                 throw new RestNotFoundException($"type '{typeName}' could not be found");
 
             using Stream? stream = assembly.GetManifestResourceStream(resourceName) ?? throw new RestNotFoundException("jobfile.yml resource could not be found");
@@ -570,78 +574,11 @@ namespace Planar.Service.API
             return stop;
         }
 
-        public async Task<IEnumerable<JobRowDetails>> GetInactive()
+        private async Task<bool> IsActiveJob(JobKey jobKey)
         {
-            var temp = new List<IJobDetail>();
-            foreach (var jobKey in await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup()))
-            {
-                if (JobKeyHelper.IsSystemJobKey(jobKey)) { continue; }
-                var info = await Scheduler.GetJobDetail(jobKey);
-                if (info == null) { continue; }
-                var triggers = await Scheduler.GetTriggersOfJob(jobKey);
-                if (triggers == null)
-                {
-                    temp.Add(info);
-                    continue;
-                }
+            var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+            if (triggers == null) { return false; }
 
-                if (!await HasActiveTrigger(triggers))
-                {
-                    temp.Add(info);
-                }
-            }
-
-            var result = new List<JobRowDetails>();
-            foreach (var item in temp)
-            {
-                var details = new JobRowDetails();
-                SchedulerUtil.MapJobRowDetails(item, details);
-                result.Add(details);
-            }
-
-            result = result
-                .OrderBy(r => r.Group)
-                .ThenBy(r => r.Name)
-                .ToList();
-
-            return result;
-        }
-
-        public async Task<IEnumerable<JobRowDetails>> GetActive()
-        {
-            var temp = new List<IJobDetail>();
-            foreach (var jobKey in await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup()))
-            {
-                if (JobKeyHelper.IsSystemJobKey(jobKey)) { continue; }
-                var info = await Scheduler.GetJobDetail(jobKey);
-                if (info == null) { continue; }
-                var triggers = await Scheduler.GetTriggersOfJob(jobKey);
-                if (triggers == null) { continue; }
-
-                if (await HasActiveTrigger(triggers))
-                {
-                    temp.Add(info);
-                }
-            }
-
-            var result = new List<JobRowDetails>();
-            foreach (var item in temp)
-            {
-                var details = new JobRowDetails();
-                SchedulerUtil.MapJobRowDetails(item, details);
-                result.Add(details);
-            }
-
-            result = result
-                .OrderBy(r => r.Group)
-                .ThenBy(r => r.Name)
-                .ToList();
-
-            return result;
-        }
-
-        private async Task<bool> HasActiveTrigger(IReadOnlyCollection<ITrigger> triggers)
-        {
             foreach (var t in triggers)
             {
                 var state = await Scheduler.GetTriggerState(t.Key);

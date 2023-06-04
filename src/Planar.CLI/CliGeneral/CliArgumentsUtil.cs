@@ -81,7 +81,7 @@ namespace Planar.CLI
         {
             get
             {
-                return CliArguments.Any(a =>
+                return CliArguments.Exists(a =>
                 string.Equals(a.Key, $"-{IterativeActionPropertyAttribute.ShortNameText}", StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(a.Key, $"--{IterativeActionPropertyAttribute.LongNameText}", StringComparison.OrdinalIgnoreCase));
             }
@@ -165,7 +165,7 @@ namespace Planar.CLI
             }
 
             // command not found
-            if (!actionsMetadata.Any(a => a.Commands.Any(c => c?.ToLower() == list[1].ToLower())))
+            if (!actionsMetadata.Any(a => a.Commands.Exists(c => c?.ToLower() == list[1].ToLower())))
             {
                 // help command
                 if (IsHelpCommand(list[1]))
@@ -208,7 +208,7 @@ namespace Planar.CLI
                 }
             }
 
-            metadata = action.Arguments.FirstOrDefault(m => m.IsJobOrTriggerKey);
+            metadata = action.Arguments.Find(m => m.IsJobOrTriggerKey);
             if (metadata != null)
             {
                 var value = metadata.PropertyInfo?.GetValue(result);
@@ -347,8 +347,8 @@ namespace Planar.CLI
             if (args.Count < 2) { return null; }
 
             var action = actionsMetadata.FirstOrDefault(a =>
-                a.ModuleSynonyms.Any(s => s == args[0].ToLower()) &&
-                a.Commands.Any(c => c?.ToLower() == args[1].ToLower()));
+                a.ModuleSynonyms.Exists(s => s == args[0].ToLower()) &&
+                a.Commands.Exists(c => c?.ToLower() == args[1].ToLower()));
 
             return action;
         }
@@ -356,7 +356,7 @@ namespace Planar.CLI
         private static IEnumerable<string> GetModuleByCommand(string subArgument, IEnumerable<CliActionMetadata> cliActionsMetadata)
         {
             var metadata = cliActionsMetadata
-                .Where(m => m.Commands.Any(c => c?.ToLower() == subArgument.ToLower()))
+                .Where(m => m.Commands.Exists(c => c?.ToLower() == subArgument.ToLower()))
                 .Select(m => m.Module);
 
             return metadata;
@@ -385,18 +385,18 @@ namespace Planar.CLI
             if (a.Key != null && a.Key.StartsWith("--"))
             {
                 var key = a.Key[2..].ToLower();
-                matchProp = props.FirstOrDefault(p => p.LongName == key);
+                matchProp = props.Find(p => p.LongName == key);
             }
-            else if (a.Key != null && a.Key.StartsWith("-"))
+            else if (a.Key != null && a.Key.StartsWith('-'))
             {
                 var key = a.Key[1..].ToLower();
-                matchProp = props.FirstOrDefault(p => p.ShortName == key);
+                matchProp = props.Find(p => p.ShortName == key);
             }
             else
             {
                 var defaultOrder = startDefaultOrder;
                 matchProp = props
-                    .FirstOrDefault(p => p.Default && (p.DefaultOrder == defaultOrder));
+                    .Find(p => p.Default && (p.DefaultOrder == defaultOrder));
 
                 startDefaultOrder++;
 
@@ -408,7 +408,7 @@ namespace Planar.CLI
                 throw new CliValidationException($"argument '{a.Key}' is not supported with command '{action.CommandsTitle}' at module '{action.Module}'");
             }
 
-            if (a.Key != null && a.Key.StartsWith("-") && string.IsNullOrEmpty(a.Value))
+            if (a.Key != null && a.Key.StartsWith('-') && string.IsNullOrEmpty(a.Value))
             {
                 a.Value = true.ToString();
             }
