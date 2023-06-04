@@ -568,7 +568,8 @@ namespace Planar.Service.General
             var response = new GetRunningDataResponse
             {
                 Log = string.IsNullOrEmpty(result.Log) ? null : result.Log,
-                Exceptions = string.IsNullOrEmpty(result.Exceptions) ? null : result.Exceptions
+                Exceptions = string.IsNullOrEmpty(result.Exceptions) ? null : result.Exceptions,
+                ExceptionsCount = result.ExceptionsCount
             };
 
             return response;
@@ -618,6 +619,9 @@ namespace Planar.Service.General
                 TriggerGroup = reply.TriggerGroup,
                 TriggerId = reply.TriggerId,
                 TriggerName = reply.TriggerName,
+                ExceptionsCount = reply.ExceptionsCount,
+                EstimatedEndTime = reply.EstimatedEndTime?.ToTimeSpan(),
+                JobType = reply.JobType
             };
 
             foreach (var item in reply.DataMap)

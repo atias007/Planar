@@ -115,14 +115,22 @@ namespace Planar.Service.General
 
             var log = string.Empty;
             var exceptions = string.Empty;
+            var count = 0;
 
             if (context.Result is JobExecutionMetadata metadata)
             {
                 log = metadata.GetLog();
                 exceptions = metadata.GetExceptionsText();
+                count = metadata.Exceptions.Count;
             }
 
-            var response = new GetRunningDataResponse { Log = log, Exceptions = exceptions };
+            var response = new GetRunningDataResponse
+            {
+                Log = log,
+                Exceptions = exceptions,
+                ExceptionsCount = count
+            };
+
             return response;
         }
 
@@ -260,6 +268,7 @@ namespace Planar.Service.General
             {
                 target.EffectedRows = metadata.EffectedRows;
                 target.Progress = metadata.Progress;
+                target.ExceptionsCount = metadata.Exceptions.Count;
             }
         }
     }

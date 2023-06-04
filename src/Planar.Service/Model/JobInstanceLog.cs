@@ -70,6 +70,8 @@ public partial class JobInstanceLog
 
     public string? Exception { get; set; }
 
+    public int ExceptionCount { get; set; }
+
     public bool Retry { get; set; }
 
     public bool IsCanceled { get; set; }

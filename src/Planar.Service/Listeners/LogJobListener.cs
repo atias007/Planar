@@ -122,6 +122,7 @@ namespace Planar.Service.Listeners
                     Duration = Convert.ToInt32(duration),
                     EndDate = endDate,
                     Exception = executionException?.ToString(),
+                    ExceptionCount = metadata?.Exceptions.Count ?? 0,
                     EffectedRows = metadata?.EffectedRows,
                     Log = metadata?.Log.ToString(),
                     Status = (int)status,

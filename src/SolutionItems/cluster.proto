@@ -82,6 +82,10 @@ message RunningJobReply{
 	repeated DataMap DataMap = 16;
 	optional int32 effectedRows = 17;
 	int32 progress = 18;
+	int32 exceptionsCount = 19;
+	optional google.protobuf.Duration estimatedEndTime = 20;
+	string jobType = 21;
+
 }
 
 message DataMap{
@@ -94,6 +98,7 @@ message RunningDataReply
 	bool isEmpty = 1;
 	string log = 2;
     string exceptions = 3;
+	int32 exceptionsCount = 4;
 }
 
 message IsRunningInstanceExistReply

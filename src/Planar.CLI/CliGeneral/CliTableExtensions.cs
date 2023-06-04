@@ -91,13 +91,14 @@ namespace Planar.CLI
         {
             var table = new CliTable(showCount: true, "job");
             if (response == null) { return table; }
-            table.Table.AddColumns("Fire Instance Id", "Job Id", "Job Key", "Progress", "Effected Rows", "Run Time", "End Time");
+            table.Table.AddColumns("Fire Instance Id", "Job Id", "Job Key", "Progress", "Effected Rows", "Ex. Count", "Run Time", "End Time");
             response.ForEach(r => table.Table.AddRow(
                 CliTableFormat.GetFireInstanceIdMarkup(r.FireInstanceId),
                 $"{r.Id}",
                 $"{r.Group}.{r.Name}".EscapeMarkup(),
                 CliTableFormat.GetProgressMarkup(r.Progress),
                 $"{r.EffectedRows}",
+                CliTableFormat.FormatExceptionCount(r.ExceptionsCount),
                 CliTableFormat.FormatTimeSpan(r.RunTime),
                 $"[grey]{CliTableFormat.FormatTimeSpan(r.EstimatedEndTime)}[/]"));
             return table;

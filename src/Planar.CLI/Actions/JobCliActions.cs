@@ -915,11 +915,19 @@ namespace Planar.CLI.Actions
 
             Console.WriteLine();
             var sleepTime = 2000;
+            var max = 0;
             while (runResult.Data != null)
             {
                 Console.CursorTop -= 1;
                 var span = DateTime.Now.Subtract(invokeDate);
-                AnsiConsole.MarkupLine($" [gold3_1][[x]][/] Progress: [wheat1]{runResult.Data.Progress}[/]%  |  Effected Row(s): [wheat1]{runResult.Data.EffectedRows.GetValueOrDefault()}[/]  |  Run Time: [wheat1]{CliTableFormat.FormatTimeSpan(span)}[/]  |  End Time: [wheat1]{CliTableFormat.FormatTimeSpan(runResult.Data.EstimatedEndTime)}[/]     ");
+                var title =
+                        $" [gold3_1][[x]][/] Progress: [wheat1]{runResult.Data.Progress}[/]%  |" +
+                        $"  Effected Row(s): [wheat1]{runResult.Data.EffectedRows.GetValueOrDefault()}[/]  |" +
+                        $"  Ex. Count: {CliTableFormat.FormatExceptionCount(runResult.Data.ExceptionsCount)}  |" +
+                        $"  Run Time: [wheat1]{CliTableFormat.FormatTimeSpan(span)}[/]  |" +
+                        $"  End Time: [wheat1]{CliTableFormat.FormatTimeSpan(runResult.Data.EstimatedEndTime)}[/]     ";
+                max = Math.Max(max, title.Length);
+                AnsiConsole.MarkupLine(title);
                 await Task.Delay(sleepTime, cancellationToken);
                 runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest, cancellationToken);
                 if (!runResult.IsSuccessful) { break; }
@@ -956,8 +964,10 @@ namespace Planar.CLI.Actions
             }
 
             var finalSpan = TimeSpan.FromMilliseconds(status.Data.Duration.GetValueOrDefault());
-            AnsiConsole.Markup($"Effected Row(s): {status.Data.EffectedRows.GetValueOrDefault()}");
-            AnsiConsole.MarkupLine($"  |  Run Time: {CliTableFormat.FormatTimeSpan(finalSpan)}");
+            AnsiConsole.Markup($"Effected Row(s): {status.Data.EffectedRows.GetValueOrDefault()}  |");
+            AnsiConsole.Markup($"  Ex. Count: {CliTableFormat.FormatExceptionCount(status.Data.ExceptionCount)}  |");
+            AnsiConsole.Markup($"  Run Time: {CliTableFormat.FormatTimeSpan(finalSpan)}  |");
+            AnsiConsole.MarkupLine($"  End Time: --:--:--     ");
             AnsiConsole.Markup(" [gold3_1][[x]][/] ");
             if (status.Data.Status == 0)
             {

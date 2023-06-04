@@ -106,7 +106,8 @@ namespace Planar
             var result = new RunningDataReply
             {
                 Exceptions = SafeString(job.Exceptions),
-                Log = SafeString(job.Log)
+                Log = SafeString(job.Log),
+                ExceptionsCount = job.ExceptionsCount
             };
 
             return result;

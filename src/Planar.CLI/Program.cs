@@ -351,7 +351,7 @@ namespace Planar.CLI
             {
                 var entity = string.IsNullOrEmpty(item.EntityName) ? "row" : item.EntityName;
                 var extra = rows > 1 ? "s" : string.Empty;
-                console.MarkupLine($" [black on gray]{rows} {entity}{extra}[/]");
+                console.MarkupLine($" [black on gray] ({rows} {entity}{extra}) [/]");
             }
         }
 

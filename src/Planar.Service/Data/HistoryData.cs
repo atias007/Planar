@@ -233,7 +233,8 @@ namespace Planar.Service.Data
                 {
                     EffectedRows = l.EffectedRows,
                     Status = l.Status,
-                    Duration = l.Duration
+                    Duration = l.Duration,
+                    ExceptionCount = l.ExceptionCount
                 })
                 .FirstOrDefaultAsync();
 

@@ -1,6 +1,4 @@
-﻿using Spectre.Console;
-using Spectre.Console.Rendering;
-using System;
+﻿using System;
 
 namespace Planar.CLI.Entities
 {
@@ -22,6 +20,7 @@ namespace Planar.CLI.Entities
         public DateTime? EndDate { get; set; }
         public int? Duration { get; set; }
         public int? EffectedRows { get; set; }
+        public int ExceptionCount { get; set; }
         public string Data { get; set; }
         public string Log { get; set; }
         public string Exception { get; set; }

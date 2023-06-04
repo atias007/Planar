@@ -6,6 +6,8 @@
 
         public int? EffectedRows { get; set; }
 
+        public int ExceptionCount { get; set; }
+
         public int? Duration { get; set; }
     }
 }

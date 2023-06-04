@@ -39,6 +39,7 @@
     <None Remove="Scripts\Planar_0019 - add_job_audit.sql" />
     <None Remove="Scripts\Planar_0020 - stop-cancel-column.sql" />
     <None Remove="Scripts\Planar_0021 - alter_instancelog.sql" />
+    <None Remove="Scripts\Planar_0022 - add ex count.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -62,5 +63,6 @@
     <EmbeddedResource Include="Scripts\Planar_0019 - add_job_audit.sql" />
     <EmbeddedResource Include="Scripts\Planar_0020 - stop-cancel-column.sql" />
     <EmbeddedResource Include="Scripts\Planar_0021 - alter_instancelog.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0022 - add ex count.sql" />
   </ItemGroup>
 </Project>
