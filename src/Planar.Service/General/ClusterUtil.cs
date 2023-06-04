@@ -286,6 +286,26 @@ namespace Planar.Service.General
             }
         }
 
+        public async Task ConfigFlush()
+        {
+            var nodes = await GetAllNodes();
+            foreach (var node in nodes)
+            {
+                if (node.IsCurrentNode) { continue; }
+
+                try
+                {
+                    await Policy.Handle<RpcException>()
+                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                    .ExecuteAsync(() => CallConfigFlush(node));
+                }
+                catch (RpcException ex)
+                {
+                    _logger.LogError(ex, "Fail to flush config at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                }
+            }
+        }
+
         public async Task<bool> IsJobRunning(JobKey jobKey)
         {
             var rcpJobKey = new RpcJobKey { Group = jobKey.Group, Name = jobKey.Name };
@@ -515,6 +535,12 @@ namespace Planar.Service.General
         {
             var client = GetClient(node);
             await client.StartSchedulerAsync(new Empty(), deadline: GrpcDeadLine);
+        }
+
+        private static async Task CallConfigFlush(ClusterNode node)
+        {
+            var client = GetClient(node);
+            await client.ConfigFlushAsync(new Empty(), deadline: GrpcDeadLine);
         }
 
         private static async Task<bool> CallIsJobRunningService(RpcJobKey jobKey, ClusterNode node)

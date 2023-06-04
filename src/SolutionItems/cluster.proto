@@ -12,6 +12,7 @@ option csharp_namespace = "Planar";
 package Cluster;
 
 service PlanarCluster {
+  rpc ConfigFlush (google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc HealthCheck (google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc StopScheduler (google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc StartScheduler (google.protobuf.Empty) returns (google.protobuf.Empty);

@@ -1,7 +1,6 @@
 --------------------------------------------------------
 PLAN FOR V 1.4.0
 ----------------
-- config flush - no support for cluster
 
 - cli: add job describe (job details, triggers, monitors, audit, last 10 runs, last 10 alerts, statistics)
 
@@ -24,6 +23,7 @@ PLAN FOR V 1.4.0
 - add SSRS job
 - add monitor audit
 
+- build anomaly job statistics exception count
 - use https://github.com/kellyelton/Eltons.ReflectionKit to validate signature in validate base job / hook
 - add cli command to filter history / trace with odata filter
 - security log (login, unauthorized request, change role of group)
@@ -192,6 +192,7 @@ V 1.4.0
 - add monitor hook REST
 - cli: test --> show indication for exceptions in current running
 - cli: running --> show indication for exceptions in current running
-- add exception count in log
+- add exception count in log & cli (running + test)
+- config flush - add support for cluster
 ---------------------------
 

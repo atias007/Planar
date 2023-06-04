@@ -3,6 +3,7 @@ using Grpc.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
+using Planar.Service.API;
 using Planar.Service.General;
 using Quartz;
 using System;
@@ -18,6 +19,15 @@ namespace Planar
         public ClusterService(IServiceScopeFactory serviceScopeFactory)
         {
             _serviceScopeFactory = serviceScopeFactory;
+        }
+
+        // NEED CHECK
+        public override async Task<Empty> ConfigFlush(Empty request, ServerCallContext context)
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var configDomain = scope.ServiceProvider.GetService<ConfigDomain>();
+            await configDomain.FlushInner();
+            return await Task.FromResult(new Empty());
         }
 
         // OK

@@ -38,6 +38,15 @@ namespace Planar.Service.API
 
         public async Task Flush(CancellationToken stoppingToken = default)
         {
+            await FlushInner(stoppingToken);
+            if (AppSettings.Clustering)
+            {
+                await ClusterUtil.ConfigFlush();
+            }
+        }
+
+        public async Task FlushInner(CancellationToken stoppingToken = default)
+        {
             var prms = await DataLayer.GetAllGlobalConfig(stoppingToken);
             var final = prms
                 .Where(p => string.Equals(p.Type, GlobalConfigTypes.String.ToString(), StringComparison.OrdinalIgnoreCase))
