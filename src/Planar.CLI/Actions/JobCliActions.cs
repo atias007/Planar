@@ -169,30 +169,6 @@ namespace Planar.CLI.Actions
             return response;
         }
 
-        private static async Task<CliActionResponse> ActiveJobs(CliGetActiveJobsRequest request, RestRequest restRequest, CancellationToken cancellationToken)
-        {
-            var result = await RestProxy.Invoke<List<JobRowDetails>>(restRequest, cancellationToken);
-            var message = string.Empty;
-            CliActionResponse response;
-            if (request.Quiet)
-            {
-                var ids = result.Data?.Select(r => r.Id);
-                if (ids != null)
-                {
-                    message = string.Join('\n', ids);
-                }
-
-                response = new CliActionResponse(result, message);
-            }
-            else
-            {
-                var table = CliTableExtensions.GetTable(result.Data);
-                response = new CliActionResponse(result, table);
-            }
-
-            return response;
-        }
-
         [Action("get")]
         [Action("inspect")]
         public static async Task<CliActionResponse> GetJobDetails(CliJobKey jobKey, CancellationToken cancellationToken = default)
