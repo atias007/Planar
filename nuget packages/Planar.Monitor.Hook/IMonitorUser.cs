@@ -2,20 +2,20 @@
 {
     public interface IMonitorUser
     {
-        string? EmailAddress1 { get; set; }
-        string? EmailAddress2 { get; set; }
-        string? EmailAddress3 { get; set; }
-        string FirstName { get; set; }
-        int Id { get; set; }
-        string? LastName { get; set; }
-        string? PhoneNumber1 { get; set; }
-        string? PhoneNumber2 { get; set; }
-        string? PhoneNumber3 { get; set; }
-        string? AdditionalField1 { get; set; }
-        string? AdditionalField2 { get; set; }
-        string? AdditionalField3 { get; set; }
-        string? AdditionalField4 { get; set; }
-        string? AdditionalField5 { get; set; }
-        string Username { get; set; }
+        string? EmailAddress1 { get; }
+        string? EmailAddress2 { get; }
+        string? EmailAddress3 { get; }
+        string FirstName { get; }
+        int Id { get; }
+        string? LastName { get; }
+        string? PhoneNumber1 { get; }
+        string? PhoneNumber2 { get; }
+        string? PhoneNumber3 { get; }
+        string? AdditionalField1 { get; }
+        string? AdditionalField2 { get; }
+        string? AdditionalField3 { get; }
+        string? AdditionalField4 { get; }
+        string? AdditionalField5 { get; }
+        string Username { get; }
     }
 }
