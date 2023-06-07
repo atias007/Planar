@@ -1,6 +1,5 @@
-﻿using Azure.Core;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.FileSystemGlobbing;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
@@ -15,8 +14,6 @@ using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel.DataAnnotations;
-using System.Drawing.Printing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -101,6 +98,27 @@ namespace Planar.Service.API
         {
             Add,
             Update
+        }
+
+        public async Task<JobDescription> GetDescription(string id)
+        {
+            var monitorDomain = _serviceProvider.GetRequiredService<MonitorDomain>();
+            var historyDomain = _serviceProvider.GetRequiredService<HistoryDomain>();
+
+            var historyRequest = new GetHistoryRequest { JobId = id, Rows = 10 };
+            var detailsTask = await Get(id);
+            var monitorsTask = await monitorDomain.GetByJob(id);
+            var auditTask = await GetAudits(0, 10);
+            var historyTask = await historyDomain.GetHistory(historyRequest);
+            var result = new JobDescription
+            {
+                Details = detailsTask,
+                Audits = auditTask,
+                History = historyTask,
+                Monitors = monitorsTask
+            };
+
+            return result;
         }
 
         public async Task<JobDetails> Get(string id)
@@ -313,8 +331,6 @@ namespace Planar.Service.API
             DateTime? result = null;
             foreach (var t in triggers)
             {
-                var state = await Scheduler.GetTriggerState(t.Key);
-                if (state == TriggerState.Paused) { continue; }
                 var prev = t.GetPreviousFireTimeUtc();
                 if (prev == null) { continue; }
                 var prevDate = prev.Value.LocalDateTime;

@@ -36,6 +36,7 @@ namespace Planar.Service
             services.AddScoped<TriggerDomain>();
             services.AddScoped<UserDomain>();
             services.AddScoped<ClusterDomain>();
+            services.AddScoped<StatisticsDomain>();
 
             // Utils
             services.AddScoped<ClusterUtil>();
