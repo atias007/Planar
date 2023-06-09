@@ -11,36 +11,42 @@ namespace Planar.Service.Monitor
         public MonitorMessageBroker(ILogger<MonitorUtil> logger, MonitorDetails details)
         {
             _logger = logger;
-
-            Users = JsonSerializer.Serialize(details.Users);
-            Group = JsonSerializer.Serialize(details.Group);
-            GlobalConfig = JsonSerializer.Serialize(details.GlobalConfig);
-            details.Users = null;
-            details.Group = null;
-            details.GlobalConfig = null;
-            Details = JsonSerializer.Serialize(details);
+            HandleMonitor(details);
         }
 
         public MonitorMessageBroker(ILogger<MonitorUtil> logger, MonitorSystemDetails details)
         {
             _logger = logger;
-
-            Users = JsonSerializer.Serialize(details.Users);
-            Group = JsonSerializer.Serialize(details.Group);
-            GlobalConfig = JsonSerializer.Serialize(details.GlobalConfig);
-            details.Users = null;
-            details.Group = null;
-            details.GlobalConfig = null;
-            Details = JsonSerializer.Serialize(details);
+            HandleMonitor(details);
         }
 
-        public string Users { get; set; }
+        public void HandleMonitor<T>(T monitor)
+            where T : Monitor
+        {
+            Users = JsonSerializer.Serialize(monitor.Users);
+            Group = JsonSerializer.Serialize(monitor.Group);
+            GlobalConfig = JsonSerializer.Serialize(monitor.GlobalConfig);
 
-        public string Group { get; set; }
+            monitor.Users = null;
+            monitor.Group = null;
+            monitor.GlobalConfig = null;
 
-        public string Details { get; set; }
+            Details = JsonSerializer.Serialize(monitor);
+        }
 
-        public string GlobalConfig { get; set; }
+        public string Users { get; set; } = null!;
+
+        public string Group { get; set; } = null!;
+
+        public string Details { get; set; } = null!;
+
+        public string GlobalConfig { get; set; } = null!;
+
+        public string? Exception { get; set; }
+
+        public string? MostInnerException { get; set; }
+
+        public string? MostInnerExceptionMessage { get; set; }
 
         public void LogError(Exception exception, string message, params object[] args)
         {

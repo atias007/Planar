@@ -133,7 +133,7 @@ namespace Planar.Service.Monitor
                 else
                 {
                     var details = GetMonitorDetails(action, context, exception);
-                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook}", action.Id, action.Title, @event, action.Hook);
+                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
                     await hookInstance.Handle(details, _logger);
                     return ExecuteMonitorResult.Ok;
                 }
@@ -163,7 +163,7 @@ namespace Planar.Service.Monitor
                 else
                 {
                     var details = GetMonitorDetails(action, info, exception);
-                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook}", action.Id, action.Title, @event, action.Hook);
+                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
                     await hookInstance.HandleSystem(details, _logger);
                     return ExecuteMonitorResult.Ok;
                 }
@@ -258,8 +258,63 @@ namespace Planar.Service.Monitor
             monitor.Group = new MonitorGroup(action.Group);
             monitor.MonitorTitle = action.Title;
             monitor.Users.AddRange(action.Group.Users.Select(u => new MonitorUser(u)).ToList());
-            monitor.Exception = exception;
             monitor.GlobalConfig = Global.GlobalConfig;
+
+            FillException(monitor, exception);
+        }
+
+        private static void FillException(Monitor monitor, Exception? exception)
+        {
+            if (exception == null) { return; }
+            exception = GetTopRelevantException(exception);
+            if (exception == null) { return; }
+
+            monitor.Exception = exception.ToString();
+            var inner = GetMostInnerException(exception);
+            if (inner != null)
+            {
+                monitor.MostInnerException = inner.ToString();
+                monitor.MostInnerExceptionMessage = inner.Message;
+            }
+        }
+
+        private static Exception? GetTopRelevantException(Exception ex)
+        {
+            var innerException = ex;
+            do
+            {
+                if (IsRelevantException(innerException))
+                {
+                    if (innerException.InnerException is TargetInvocationException)
+                    {
+                        return innerException.InnerException.InnerException;
+                    }
+
+                    return innerException.InnerException;
+                }
+                innerException = innerException?.InnerException;
+            } while (innerException != null);
+
+            return ex;
+        }
+
+        private static bool IsRelevantException(Exception? ex)
+        {
+            const string source = $"{nameof(Planar)}.{nameof(Job)}";
+            if (ex == null) { return false; }
+            if (ex is AggregateException && ex.Source == source) { return true; }
+            return false;
+        }
+
+        private static Exception GetMostInnerException(Exception ex)
+        {
+            var innerException = ex;
+            while (innerException.InnerException != null)
+            {
+                innerException = innerException.InnerException;
+            }
+
+            return innerException;
         }
 
         private async Task<List<MonitorAction>> LoadMonitorItems(MonitorEvents @event, IJobExecutionContext context)

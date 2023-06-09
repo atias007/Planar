@@ -394,7 +394,7 @@ namespace Planar.CLI.Actions
         private static string GetTitle()
         {
             // === Title ===
-            var title = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > Title: [/]")
+            var title = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > title: [/]")
                 .Validate(title =>
                 {
                     if (string.IsNullOrWhiteSpace(title)) { return ValidationResult.Error("[red]title is required field[/]"); }
@@ -404,7 +404,6 @@ namespace Planar.CLI.Actions
                     return ValidationResult.Success();
                 }));
 
-            AnsiConsole.MarkupLine($"[turquoise2]  > title:[/] {title}");
             return title;
         }
 

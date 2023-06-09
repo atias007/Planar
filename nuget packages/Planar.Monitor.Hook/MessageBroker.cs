@@ -27,12 +27,18 @@ namespace Planar.Monitor.Hook
             Users = GetProperty<string>(type, nameof(Users));
             Group = GetProperty<string>(type, nameof(Group));
             GlobalConfig = GetProperty<string>(type, nameof(GlobalConfig));
+            Exception = GetProperty<string>(type, nameof(Exception));
+            MostInnerException = GetProperty<string>(type, nameof(MostInnerException));
+            MostInnerExceptionMessage = GetProperty<string>(type, nameof(MostInnerExceptionMessage));
         }
 
         public string Details { get; set; }
         public string Users { get; set; }
         public string Group { get; set; }
         public string GlobalConfig { get; set; }
+        public string? Exception { get; set; }
+        public string? MostInnerException { get; set; }
+        public string? MostInnerExceptionMessage { get; set; }
 
         public string? Publish(Exception? exception, string message, params object?[] args)
         {
@@ -45,11 +51,8 @@ namespace Planar.Monitor.Hook
 
         private T GetProperty<T>(Type type, string name)
         {
-            var prop = type.GetProperty(name);
-            if (prop == null)
-            {
+            var prop = type.GetProperty(name) ??
                 throw new PlanarMonitorException($"MessageBroker does not contains '{name}' property");
-            }
 
             var value = prop.GetValue(Instance);
             var result = (T)Convert.ChangeType(value, typeof(T), CultureInfo.InvariantCulture);

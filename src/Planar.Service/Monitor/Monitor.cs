@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Planar.Service.Monitor
 {
@@ -10,7 +9,9 @@ namespace Planar.Service.Monitor
         public string MonitorTitle { get; set; } = null!;
         public MonitorGroup? Group { get; set; }
         public List<MonitorUser>? Users { get; set; } = new();
-        public Exception? Exception { get; set; }
         public Dictionary<string, string?>? GlobalConfig { get; set; }
+        public string? Exception { get; set; }
+        public string? MostInnerException { get; set; }
+        public string? MostInnerExceptionMessage { get; set; }
     }
 }
