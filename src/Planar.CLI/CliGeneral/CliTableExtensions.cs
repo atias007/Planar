@@ -21,6 +21,18 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetTable(JobStatistic? response)
+        {
+            var table = new CliTable();
+            if (response == null) { return table; }
+            table.Table.AddColumns("Key", "Value");
+            table.Table.AddRow("Average Duration", CliTableFormat.FormatTimeSpan(response.AvgDuration));
+            table.Table.AddRow("Standard Deviation Duration", CliTableFormat.FormatTimeSpan(response.StdevDuration));
+            table.Table.AddRow("Average Effected Rows", response.AvgEffectedRows.ToString("N2"));
+            table.Table.AddRow("Standard Deviation Effected Rows", response.StdevEffectedRows.ToString("N2"));
+            return table;
+        }
+
         public static CliTable GetTable(IEnumerable<JobAuditDto>? response, bool withJobId = false)
         {
             var table = new CliTable(showCount: true, "audit");

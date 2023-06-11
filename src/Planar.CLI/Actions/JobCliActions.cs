@@ -180,14 +180,16 @@ namespace Planar.CLI.Actions
             var tables2 = CliTableExtensions.GetTable(result.Data?.History.ToList());
             var tables3 = CliTableExtensions.GetTable(result.Data?.Monitors.ToList());
             var tables4 = CliTableExtensions.GetTable(result.Data?.Audits?.ToList());
+            var table5 = CliTableExtensions.GetTable(result.Data?.Statistics);
 
             tables[0].Title = "Jobs";
             tables[1].Title = "Triggers";
             tables2.Title = "History";
             tables3.Title = "Monitors";
             tables4.Title = "Audits";
+            table5.Title = "Statistics";
 
-            tables.AddRange(new CliTable[] { tables2, tables3, tables4 });
+            tables.AddRange(new CliTable[] { tables2, tables3, tables4, table5 });
             return new CliActionResponse(result, tables);
         }
 

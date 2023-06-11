@@ -104,18 +104,21 @@ namespace Planar.Service.API
         {
             var monitorDomain = _serviceProvider.GetRequiredService<MonitorDomain>();
             var historyDomain = _serviceProvider.GetRequiredService<HistoryDomain>();
+            var statisticsDomain = _serviceProvider.GetRequiredService<StatisticsDomain>();
 
             var historyRequest = new GetHistoryRequest { JobId = id, Rows = 10 };
-            var detailsTask = await Get(id);
-            var monitorsTask = await monitorDomain.GetByJob(id);
-            var auditTask = await GetAudits(0, 10);
-            var historyTask = await historyDomain.GetHistory(historyRequest);
+            var details = await Get(id);
+            var monitorsTask = monitorDomain.GetByJob(id);
+            var audit = await GetAudits(0, 10);
+            var historyTask = historyDomain.GetHistory(historyRequest);
+            var statisticsTask = statisticsDomain.GetJobStatistics(id);
             var result = new JobDescription
             {
-                Details = detailsTask,
-                Audits = auditTask,
-                History = historyTask,
-                Monitors = monitorsTask
+                Details = details,
+                Audits = audit,
+                History = await historyTask,
+                Monitors = await monitorsTask,
+                Statistics = await statisticsTask
             };
 
             return result;
