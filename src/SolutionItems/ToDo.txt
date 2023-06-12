@@ -18,6 +18,8 @@ PLAN FOR V 1.4.0
 - add SSRS job
 - add monitor audit
 
+- cli command to changhe interval/count
+- cli command to changhe cron expr
 - create update version script
 - https://github.com/nager/Nager.Date
 - build anomaly job statistics exception count

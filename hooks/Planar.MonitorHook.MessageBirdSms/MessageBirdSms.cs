@@ -20,7 +20,7 @@ namespace Planar.MonitorHook.MessageBirdSms
 
             if (monitorDetails.Exception != null)
             {
-                message += $"\r\nError: {monitorDetails.Exception.Message}";
+                message += $"\r\nError: {monitorDetails.MostInnerExceptionMessage}";
             }
 
             SendMessage(message, monitorDetails);

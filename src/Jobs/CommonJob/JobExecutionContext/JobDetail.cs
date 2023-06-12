@@ -5,24 +5,7 @@ namespace Planar.Job
 {
     internal class JobDetail : IJobDetail
     {
-        private IKey? _key;
-
-        public IKey Key
-        {
-            get
-            {
-                if (_key == null)
-                {
-                    throw new ArgumentException(nameof(Key));
-                }
-
-                return _key;
-            }
-            set
-            {
-                _key = value;
-            }
-        }
+        public IKey Key { get; set; } = null!;
 
         public string Description { get; set; } = string.Empty;
 
