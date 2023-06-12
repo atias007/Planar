@@ -1,8 +1,7 @@
 {
   "profiles": {
     "Planar.CLI": {
-      "commandName": "Project",
-      "commandLineArgs": "service login localhost 2306 -it"
+      "commandName": "Project"
     }
   }
 }

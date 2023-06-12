@@ -4,7 +4,6 @@ using Planar.Common;
 using Quartz;
 using System;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Threading.Tasks;
@@ -13,8 +12,11 @@ namespace Planar
 {
     public abstract class PlanarJob : BaseCommonJob<PlanarJob, PlanarJobProperties>
     {
-        protected PlanarJob(ILogger<PlanarJob> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
+        private readonly IMonitorUtil _monitorUtil;
+
+        protected PlanarJob(ILogger<PlanarJob> logger, IJobPropertyDataLayer dataLayer, IMonitorUtil monitorUtil) : base(logger, dataLayer)
         {
+            _monitorUtil = monitorUtil;
         }
 
         private string? AssemblyFilename { get; set; }
@@ -27,7 +29,7 @@ namespace Planar
 
             try
             {
-                await Initialize(context);
+                await Initialize(context, _monitorUtil);
                 AssemblyFilename = FolderConsts.GetSpecialFilePath(
                     PlanarSpecialFolder.Jobs,
                     Properties.Path ?? string.Empty,

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Service.General;
 using Planar.Service.Model;
 

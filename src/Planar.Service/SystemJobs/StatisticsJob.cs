@@ -56,17 +56,6 @@ namespace Planar.Service.SystemJobs
 
             try
             {
-                var data = _serviceProvider.GetRequiredService<StatisticsData>();
-                var rows = await data.SetMaxDurationExecution();
-                _logger.LogDebug("statistics job execute {Method} with {Total} effected row(s)", nameof(data.SetMaxDurationExecution), rows);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Fail to set max duration execution");
-            }
-
-            try
-            {
                 var rows = await FillAnomaly();
                 _logger.LogDebug("statistics job execute {Method} with {Total} effected row(s)", nameof(FillAnomaly), rows);
             }

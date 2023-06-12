@@ -461,9 +461,10 @@ namespace Planar.Service.API
             else
             {
                 await Scheduler.TriggerJob(jobKey);
-                var auditInfo = request.NowOverrideValue.HasValue ? new { request.NowOverrideValue } : null;
-                AuditJob(jobKey, "job manually invoked", auditInfo);
             }
+
+            var auditInfo = request.NowOverrideValue.HasValue ? new { NowOverrideValue = request.NowOverrideValue.Value } : null;
+            AuditJob(jobKey, "job manually invoked", auditInfo);
         }
 
         public async Task QueueInvoke(QueueInvokeJobRequest request)
@@ -476,7 +477,7 @@ namespace Planar.Service.API
 
             // build new trigger
             var triggerId = ServiceUtil.GenerateId();
-            var triggerKey = new TriggerKey($"due_{request.DueDate:yyyyMMdd_HHmmss}", Consts.QueueInvokeTriggerGroup);
+            var triggerKey = new TriggerKey($"DueTo.{request.DueDate:yyyyMMdd.HHmmss}", Consts.QueueInvokeTriggerGroup);
             var exists = await Scheduler.GetTrigger(triggerKey);
             if (exists != null)
             {

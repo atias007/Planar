@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Monitor
 {
-    public class MonitorUtil
+    public class MonitorUtil : IMonitorUtil
     {
         private readonly ILogger<MonitorUtil> _logger;
         private readonly IServiceScopeFactory _serviceScopeFactory;
@@ -43,7 +43,7 @@ namespace Planar.Service.Monitor
             missingHooks.ForEach(h => _logger.LogWarning("Monitor with hook '{Hook}' is invalid. Missing hook in service", h));
         }
 
-        internal async Task Scan(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
+        public async Task Scan(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
         {
             if (context == null)
             {
@@ -85,7 +85,7 @@ namespace Planar.Service.Monitor
             }
         }
 
-        internal async Task Scan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default)
+        public async Task Scan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default)
         {
             List<MonitorAction> items;
             var hookTasks = new List<Task>();
@@ -116,7 +116,7 @@ namespace Planar.Service.Monitor
             }
         }
 
-        internal async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception? exception)
+        public async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception? exception)
         {
             try
             {
@@ -133,20 +133,28 @@ namespace Planar.Service.Monitor
                 else
                 {
                     var details = GetMonitorDetails(action, context, exception);
-                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
+                    if (@event == MonitorEvents.ExecutionProgressChanged)
+                    {
+                        _logger.LogDebug("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
+                    }
+                    else
+                    {
+                        _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
+                    }
+
                     await hookInstance.Handle(details, _logger);
                     return ExecuteMonitorResult.Ok;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook: {Hook}", action.Id, action.Title, action.Hook);
+                _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, action.Hook, action.Group.Name);
                 var message = $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook: {action.Hook}. Error message: {ex.Message}";
                 return ExecuteMonitorResult.Fail(message);
             }
         }
 
-        internal async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception? exception)
+        public async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception? exception)
         {
             try
             {
@@ -382,20 +390,15 @@ namespace Planar.Service.Monitor
 
         private async Task<bool> Analyze(MonitorEvents @event, MonitorAction action, IJobExecutionContext? context)
         {
-            switch (@event)
+            if (@event == MonitorEvents.ExecutionSuccessWithNoEffectedRows)
             {
-                case MonitorEvents.ExecutionVetoed:
-                case MonitorEvents.ExecutionRetry:
-                case MonitorEvents.ExecutionLastRetryFail:
-                case MonitorEvents.ExecutionFail:
-                case MonitorEvents.ExecutionSuccess:
-                case MonitorEvents.ExecutionStart:
-                case MonitorEvents.ExecutionEnd:
-                    return true;
+                var rows = ServiceUtil.GetEffectedRows(context);
+                return rows != null && rows == 0;
+            }
 
-                case MonitorEvents.ExecutionSuccessWithNoEffectedRows:
-                    var rows = ServiceUtil.GetEffectedRows(context);
-                    return rows != null && rows == 0;
+            if (MonitorEventsExtensions.IsSimpleJobMonitorEvent(@event))
+            {
+                return true;
             }
 
             if (MonitorEventsExtensions.IsSystemMonitorEvent(@event))

@@ -22,6 +22,8 @@ public partial class PlanarContext : DbContext
 
     public virtual DbSet<JobAudit> JobAudits { get; set; }
 
+    public virtual DbSet<JobCounter> JobCounters { get; set; }
+
     public virtual DbSet<JobDurationStatistic> JobDurationStatistics { get; set; }
 
     public virtual DbSet<JobEffectedRowsStatistic> JobEffectedRowsStatistics { get; set; }

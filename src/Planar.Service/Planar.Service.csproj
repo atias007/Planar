@@ -66,7 +66,6 @@
     <ProjectReference Include="..\Jobs\ProcessJob\ProcessJob.csproj" />
     <ProjectReference Include="..\Jobs\RestJob\RestJob.csproj" />
     <ProjectReference Include="..\Jobs\SqlJob\SqlJob.csproj" />
-    <ProjectReference Include="..\Planar.API.Common\Planar.API.Common.csproj" />
     <ProjectReference Include="..\Calendars\Planar.Calendar.Hebrew\Planar.Calendar.Hebrew.csproj" />
     <ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
   </ItemGroup>

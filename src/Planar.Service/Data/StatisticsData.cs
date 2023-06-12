@@ -1,6 +1,8 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
+using Planar.API.Common.Entities;
 using Planar.Service.Model;
+using Polly;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -70,16 +72,6 @@ namespace Planar.Service.Data
             return await conn.ExecuteAsync(cmd);
         }
 
-        public async Task<int> SetMaxDurationExecution()
-        {
-            using var conn = _context.Database.GetDbConnection();
-            var cmd = new CommandDefinition(
-                commandText: "Statistics.SetMaxDurationExecution",
-                commandType: CommandType.StoredProcedure);
-
-            return await conn.ExecuteAsync(cmd);
-        }
-
         public async Task<int> BuildJobStatistics()
         {
             using var conn = _context.Database.GetDbConnection();
@@ -124,6 +116,23 @@ namespace Planar.Service.Data
         public async Task DeleteJobStatistic(JobEffectedRowsStatistic item)
         {
             await _context.JobEffectedRowsStatistics.Where(i => i.JobId == item.JobId).ExecuteDeleteAsync();
+        }
+
+        public async Task<JobCounters> GetJobCounters(string id)
+        {
+            var result = _context.JobCounters
+                .Where(j => j.JobId == id)
+                .GroupBy(j => 1)  // Group by a constant to get aggregate counts
+                .Select(g => new JobCounters
+                {
+                    TotalRuns = g.Sum(j => j.TotalRuns),
+                    SuccessRetries = g.Sum(j => j.SuccessRetries) ?? 0,
+                    FailRetries = g.Sum(j => j.FailRetries) ?? 0,
+                    Recovers = g.Sum(j => j.Recovers) ?? 0
+                })
+                .FirstOrDefault();
+
+            return result;
         }
 
         public IQueryable<JobInstanceLog> GetNullAnomaly()

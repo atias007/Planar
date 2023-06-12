@@ -6,7 +6,7 @@ namespace Planar
 {
     public class PlanarJobConcurent : PlanarJob
     {
-        public PlanarJobConcurent(ILogger<PlanarJob> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
+        public PlanarJobConcurent(ILogger<PlanarJob> logger, IJobPropertyDataLayer dataLayer, IMonitorUtil monitorUtil) : base(logger, dataLayer, monitorUtil)
         {
         }
     }

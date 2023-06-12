@@ -32,4 +32,7 @@
 		</PackageReference>
 		<PackageReference Include="YamlDotNet" Version="13.1.0" />
 	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\Planar.API.Common\Planar.API.Common.csproj" />
+	</ItemGroup>
 </Project>

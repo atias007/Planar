@@ -17,6 +17,13 @@ namespace CommonJob
         private static readonly object Locker = new();
         private readonly CancellationToken _cancellationToken;
         private readonly IJobExecutionContext _context;
+        private readonly IMonitorUtil? _monitorUtil;
+
+        public JobMessageBroker(IJobExecutionContext context, IDictionary<string, string?> settings, IMonitorUtil? monitorUtil)
+            : this(context, settings)
+        {
+            _monitorUtil = monitorUtil;
+        }
 
         public JobMessageBroker(IJobExecutionContext context, IDictionary<string, string?> settings)
         {
@@ -152,6 +159,8 @@ namespace CommonJob
                         _ = byte.TryParse(message, out var progress);
                         Metadata.Progress = progress;
                     }
+
+                    _monitorUtil?.Scan(MonitorEvents.ExecutionProgressChanged, _context);
 
                     return null;
 
