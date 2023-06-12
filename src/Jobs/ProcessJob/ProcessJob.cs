@@ -58,8 +58,7 @@ namespace Planar
             }
             catch (Exception ex)
             {
-                var metadata = JobExecutionMetadata.GetInstance(context);
-                metadata.UnhandleException = ex;
+                HandleException(context, ex);
             }
             finally
             {

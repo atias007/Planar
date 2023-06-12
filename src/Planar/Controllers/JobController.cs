@@ -91,7 +91,19 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("nextRunning/{id}")]
+        [HttpGet("{id}/info")]
+        [ViewerAuthorize]
+        [SwaggerOperation(OperationId = "get_job_info_id", Description = "Get job info by id", Summary = "Get Job Info By Id")]
+        [OkJsonResponse(typeof(JobDescription))]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<ActionResult<JobDetails>> GetDescription([FromRoute][Required] string id)
+        {
+            var result = await BusinesLayer.GetDescription(id);
+            return Ok(result);
+        }
+
+        [HttpGet("{id}/nextRunning")]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job_nextRunning_id", Description = "Get the next running date & time of job", Summary = "Get Next Running Date")]
         [OkTextResponse]
@@ -103,7 +115,7 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("prevRunning/{id}")]
+        [HttpGet("{id}/prevRunning")]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job_prevRunning_id", Description = "Get the previous running date & time of job", Summary = "Get Previous Running Date")]
         [OkTextResponse]
@@ -249,7 +261,7 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("running/{instanceId}")]
+        [HttpGet("{instanceId}/running")]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job_running_instanceid", Description = "Get runnng job info", Summary = "Get Runnng Job Info")]
         [OkJsonResponse(typeof(RunningJobDetails))]
@@ -270,7 +282,7 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("runningData/{instanceId}")]
+        [HttpGet("{instanceId}/runningData")]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job_runningData_instanceid", Description = "Get running job log & exception", Summary = "Get Running Job Data")]
         [OkJsonResponse(typeof(GetRunningDataResponse))]
@@ -305,7 +317,7 @@ namespace Planar.Controllers
         }
 
         [ApiExplorerSettings(IgnoreApi = true)]
-        [HttpGet("testStatus/{id}")]
+        [HttpGet("{id}/testStatus")]
         [TesterAuthorize]
         [SwaggerOperation(OperationId = "get_job_teststatus_id", Description = "", Summary = "")]
         [OkJsonResponse(typeof(GetTestStatusResponse))]

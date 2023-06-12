@@ -66,7 +66,7 @@ namespace Planar.CLI.Actions
 
             restRequest.AddQueryParameter("ascending", request.Ascending);
 
-            var result = await RestProxy.Invoke<List<CliJobInstanceLog>>(restRequest, cancellationToken);
+            var result = await RestProxy.Invoke<List<JobInstanceLogRow>>(restRequest, cancellationToken);
             var table = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, table);
         }

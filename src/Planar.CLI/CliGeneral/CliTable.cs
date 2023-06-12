@@ -29,5 +29,7 @@ namespace Planar.CLI.CliGeneral
         public bool ShowCount { get; }
 
         public string? EntityName { get; }
+
+        public string? Title { get; set; }
     }
 }

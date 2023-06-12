@@ -336,10 +336,21 @@ namespace Planar.CLI
             if (response.Tables == null) { return; }
             foreach (var item in response.Tables)
             {
+                PrintTableHeader(console, item);
                 console.Write(item.Table);
                 PrintTableFooter(console, item);
 
                 console.WriteLine();
+            }
+        }
+
+        private static void PrintTableHeader(IAnsiConsole console, CliTable item)
+        {
+            if (item.Title != null)
+            {
+                var rule = new Rule($"[aqua]{item.Title.EscapeMarkup()}[/]");
+                rule.LeftJustified();
+                console.Write(rule);
             }
         }
 

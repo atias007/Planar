@@ -14,6 +14,34 @@ namespace Planar.Service.Data
         {
         }
 
+        public IQueryable<JobDurationStatistic> GetJobDurationStatistics(string jobId)
+        {
+            return _context.JobDurationStatistics
+                .AsNoTracking()
+                .Where(job => job.JobId == jobId);
+        }
+
+        public async Task<IEnumerable<JobDurationStatistic>> GetJobDurationStatistics()
+        {
+            return await _context.JobDurationStatistics
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
+        public IQueryable<JobEffectedRowsStatistic> GetJobEffectedRowsStatistics(string jobId)
+        {
+            return _context.JobEffectedRowsStatistics
+                .AsNoTracking()
+                .Where(job => job.JobId == jobId);
+        }
+
+        public async Task<IEnumerable<JobEffectedRowsStatistic>> GetJobEffectedRowsStatistics()
+        {
+            return await _context.JobEffectedRowsStatistics
+                .AsNoTracking()
+                .ToListAsync();
+        }
+
         public async Task AddCocurentQueueItem(ConcurentQueue item)
         {
             _context.Add(item);
@@ -70,20 +98,6 @@ namespace Planar.Service.Data
                 commandType: CommandType.StoredProcedure);
 
             return await conn.ExecuteAsync(cmd);
-        }
-
-        public async Task<IEnumerable<JobDurationStatistic>> GetJobDurationStatistics()
-        {
-            return await _context.JobDurationStatistics
-                .AsNoTracking()
-                .ToListAsync();
-        }
-
-        public async Task<IEnumerable<JobEffectedRowsStatistic>> GetJobEffectedRowsStatistics()
-        {
-            return await _context.JobEffectedRowsStatistics
-                .AsNoTracking()
-                .ToListAsync();
         }
 
         public async Task<IEnumerable<string>> GetJobDurationStatisticsIds()

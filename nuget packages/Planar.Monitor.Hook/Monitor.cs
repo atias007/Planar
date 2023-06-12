@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Planar.Monitor.Hook
 {
@@ -17,6 +16,10 @@ namespace Planar.Monitor.Hook
 
         public Dictionary<string, string?> GlobalConfig { get; set; } = new Dictionary<string, string?>();
 
-        public Exception? Exception { get; set; }
+        public string? Exception { get; set; }
+
+        public string? MostInnerException { get; set; }
+
+        public string? MostInnerExceptionMessage { get; set; }
     }
 }

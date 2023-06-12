@@ -21,6 +21,18 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetTable(JobStatistic? response)
+        {
+            var table = new CliTable();
+            if (response == null) { return table; }
+            table.Table.AddColumns("Key", "Value");
+            table.Table.AddRow("Average Duration", CliTableFormat.FormatTimeSpan(response.AvgDuration));
+            table.Table.AddRow("Standard Deviation Duration", CliTableFormat.FormatTimeSpan(response.StdevDuration));
+            table.Table.AddRow("Average Effected Rows", response.AvgEffectedRows.ToString("N2"));
+            table.Table.AddRow("Standard Deviation Effected Rows", response.StdevEffectedRows.ToString("N2"));
+            return table;
+        }
+
         public static CliTable GetTable(IEnumerable<JobAuditDto>? response, bool withJobId = false)
         {
             var table = new CliTable(showCount: true, "audit");
@@ -104,12 +116,21 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetTable(List<JobInstanceLogRow>? response)
+        {
+            var table = new CliTable(showCount: true);
+            if (response == null) { return table; }
+            table.Table.AddColumns("Id", "Job Id", "Job Key", "Job Type", "Trigger Id", "Status", "Start Date", "Duration", "Effected Rows");
+            response.ForEach(r => table.Table.AddRow($"{r.Id}", r.JobId ?? string.Empty, $"{r.JobGroup}.{r.JobName}".EscapeMarkup(), r.JobType.EscapeMarkup(), CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FormatNumber(r.EffectedRows)));
+            return table;
+        }
+
         public static CliTable GetTable(List<CliJobInstanceLog>? response)
         {
             var table = new CliTable(showCount: true);
             if (response == null) { return table; }
             table.Table.AddColumns("Id", "Job Id", "Job Key", "Job Type", "Trigger Id", "Status", "Start Date", "Duration", "Effected Rows");
-            response.ForEach(r => table.Table.AddRow($"{r.Id}", r.JobId, $"{r.JobGroup}.{r.JobName}".EscapeMarkup(), r.JobType.EscapeMarkup(), CliTableFormat.GetTriggerIdMarkup(r.TriggerId), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FormatNumber(r.EffectedRows)));
+            response.ForEach(r => table.Table.AddRow($"{r.Id}", r.JobId ?? string.Empty, $"{r.JobGroup}.{r.JobName}".EscapeMarkup(), r.JobType.EscapeMarkup(), CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FormatNumber(r.EffectedRows)));
             return table;
         }
 

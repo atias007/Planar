@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Planar.Monitor.Hook
 {
@@ -11,6 +10,8 @@ namespace Planar.Monitor.Hook
         IMonitorGroup Group { get; }
         IEnumerable<IMonitorUser> Users { get; }
         Dictionary<string, string?> GlobalConfig { get; }
-        Exception? Exception { get; }
+        string? Exception { get; }
+        string? MostInnerException { get; }
+        string? MostInnerExceptionMessage { get; }
     }
 }

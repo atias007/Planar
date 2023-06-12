@@ -14,13 +14,11 @@ namespace Planar.Job.Logger
 
         protected MessageBroker MessageBroker => _messageBroker;
 
-#pragma warning disable CS8603 // Possible null reference return.
 #pragma warning disable IDE0060 // Remove unused parameter
 
-        public IDisposable BeginScope<TState>(TState state) => default;
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default;
 
 #pragma warning restore IDE0060 // Remove unused parameter
-#pragma warning restore CS8603 // Possible null reference return.
 
 #pragma warning disable IDE0060 // Remove unused parameter
 

@@ -2,17 +2,12 @@
 PLAN FOR V 1.4.0
 ----------------
 
-- cli: add job describe (job details, triggers, monitors, audit, last 10 runs, last 10 alerts, statistics)
-
 - add monitor event: Progress changed
 - add monitor event: Progress over XXX
 - add monitor event: Running over XXX minutes
 - add monitor event: cluster health check fail
 
 - cli test cluster command
-
-- build anomaly job statistics only for 365 days ago
-
 - add cli plot statistics
 
 
@@ -23,6 +18,9 @@ PLAN FOR V 1.4.0
 - add SSRS job
 - add monitor audit
 
+- cli command to changhe interval/count
+- cli command to changhe cron expr
+- create update version script
 - https://github.com/nager/Nager.Date
 - build anomaly job statistics exception count
 - use https://github.com/kellyelton/Eltons.ReflectionKit to validate signature in validate base job / hook
@@ -195,5 +193,8 @@ V 1.4.0
 - cli: running --> show indication for exceptions in current running
 - add exception count in log & cli (running + test)
 - config flush - add support for cluster
+- cli: add job describe (job details, triggers, monitors, audit, last 10 runs, last 10 alerts, statistics)
+- BUG!!!!!! serialize exception in hook 
+- build anomaly job statistics only for 365 days ago
 ---------------------------
 

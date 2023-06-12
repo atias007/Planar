@@ -19,10 +19,58 @@ namespace CommonJob
         protected static readonly string? IgnoreDataMapAttribute = typeof(IgnoreDataMapAttribute).FullName;
         protected static readonly string? JobDataMapAttribute = typeof(JobDataAttribute).FullName;
         protected static readonly string? TriggerDataMapAttribute = typeof(TriggerDataAttribute).FullName;
+        private JobMessageBroker _messageBroker = null!;
+
+        protected IDictionary<string, string?> Settings { get; private set; } = new Dictionary<string, string?>();
+
+        protected JobMessageBroker MessageBroker => _messageBroker;
 
         protected static void DoNothingMethod()
         {
             //// *** Do Nothing Method *** ////
+        }
+
+        protected static void HandleException(IJobExecutionContext context, Exception ex)
+        {
+            var metadata = JobExecutionMetadata.GetInstance(context);
+            if (ex is TargetInvocationException)
+            {
+                metadata.UnhandleException = ex.InnerException;
+            }
+            else
+            {
+                metadata.UnhandleException = ex;
+            }
+        }
+
+        protected async Task WaitForJobTask(IJobExecutionContext context, Task task)
+        {
+            var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
+            var finish = task.Wait(timeout);
+            if (!finish)
+            {
+                MessageBroker.AppendLog(LogLevel.Warning, $"Timeout occur, sent cancel requst to job (timeout value: {FormatTimeSpan(timeout)})");
+                await context.Scheduler.Interrupt(context.JobDetail.Key);
+            }
+
+            task.Wait();
+        }
+
+        internal void FillSettings(IDictionary<string, string?> settings)
+        {
+            Settings = settings;
+        }
+
+        internal void SetMessageBroker(JobMessageBroker messageBroker)
+        {
+            _messageBroker = messageBroker;
+        }
+
+        private static string FormatTimeSpan(TimeSpan timeSpan)
+        {
+            if (timeSpan.TotalSeconds < 1) { return $"{timeSpan.TotalMilliseconds:N0}ms"; }
+            if (timeSpan.TotalDays >= 1) { return $"{timeSpan:\\(d\\)\\ hh\\:mm\\:ss}"; }
+            return $"{timeSpan:hh\\:mm\\:ss}";
         }
     }
 
@@ -32,7 +80,6 @@ namespace CommonJob
     {
         protected readonly ILogger<TInstance> _logger;
         private readonly IJobPropertyDataLayer _dataLayer;
-        private JobMessageBroker? _messageBroker;
 
         protected BaseCommonJob(ILogger<TInstance> logger, IJobPropertyDataLayer dataLayer)
         {
@@ -40,18 +87,7 @@ namespace CommonJob
             _dataLayer = dataLayer;
         }
 
-        public JobMessageBroker MessageBroker
-        {
-            get
-            {
-                if (_messageBroker == null) { throw new PlanarJobException(nameof(MessageBroker)); }
-                return _messageBroker;
-            }
-        }
-
         public TProperties Properties { get; private set; } = new();
-
-        protected IDictionary<string, string?> Settings { get; private set; } = new Dictionary<string, string?>();
 
         public abstract Task Execute(IJobExecutionContext context);
 
@@ -80,12 +116,12 @@ namespace CommonJob
                 path = pathProperties.Path;
             }
 
-            Settings = LoadJobSettings(path);
-            _messageBroker = new JobMessageBroker(context, Settings);
+            FillSettings(LoadJobSettings(path));
+            SetMessageBroker(new JobMessageBroker(context, Settings));
 
             context.CancellationToken.Register(() =>
             {
-                _messageBroker.AppendLog(LogLevel.Warning, "Service get a request for cancel job");
+                MessageBroker.AppendLog(LogLevel.Warning, "Service get a request for cancel job");
             });
         }
 
@@ -163,26 +199,6 @@ namespace CommonJob
             {
                 throw new PlanarJobException($"property '{propertyName}' is mandatory for job '{GetType().FullName}'");
             }
-        }
-
-        protected async Task WaitForJobTask(IJobExecutionContext context, Task task)
-        {
-            var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
-            var finish = task.Wait(timeout);
-            if (!finish)
-            {
-                MessageBroker.AppendLog(LogLevel.Warning, $"Timeout occur, sent cancel requst to job (timeout value: {FormatTimeSpan(timeout)})");
-                await context.Scheduler.Interrupt(context.JobDetail.Key);
-            }
-
-            task.Wait();
-        }
-
-        private static string FormatTimeSpan(TimeSpan timeSpan)
-        {
-            if (timeSpan.TotalSeconds < 1) { return $"{timeSpan.TotalMilliseconds:N0}ms"; }
-            if (timeSpan.TotalDays >= 1) { return $"{timeSpan:\\(d\\)\\ hh\\:mm\\:ss}"; }
-            return $"{timeSpan:hh\\:mm\\:ss}";
         }
 
         private bool IsIgnoreProperty(PropertyInfo property, JobKey jobKey, KeyValuePair<string, object> data)
