@@ -1,4 +1,4 @@
-DROP PROCEDURE [Statistics].[SetMaxDurationExecution]
+DROP PROCEDURE  IF EXISTS  [Statistics].[SetMaxDurationExecution]
   GO
-  DROP TABLE [Statistics].[MaxDurationExecution]
+  DROP TABLE  IF EXISTS  [Statistics].[MaxDurationExecution]
   GO
