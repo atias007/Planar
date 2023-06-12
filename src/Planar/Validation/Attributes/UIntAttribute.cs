@@ -20,7 +20,7 @@ namespace Planar.Validation.Attributes
 
             if (id < 0)
             {
-                return new ValidationResult($"{validationContext.MemberName} with value {id} is not valid. It should be greater then or equals 0");
+                return new ValidationResult($"{validationContext.MemberName} with value {id} is not valid. it should be greater then or equals 0");
             }
 
             return ValidationResult.Success;

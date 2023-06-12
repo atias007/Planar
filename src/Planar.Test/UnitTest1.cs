@@ -7,11 +7,6 @@ namespace Planar.Test
 {
     public class Tests
     {
-        [SetUp]
-        public void Setup()
-        {
-        }
-
         [Test]
         public void TestPassword()
         {
@@ -31,9 +26,10 @@ namespace Planar.Test
                 var passwordBytes = Encoding.UTF8.GetBytes(password);
                 var salt = hmac.Key;
                 var hash = hmac.ComputeHash(passwordBytes);
-            }
 
-            Assert.Pass();
+                Assert.That(salt, Is.Not.Null);
+                Assert.That(hash, Is.Not.Null);
+            }
         }
     }
 }

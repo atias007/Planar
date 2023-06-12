@@ -7,6 +7,12 @@ namespace Planar.CLI
 {
     public static class CliTableFormat
     {
+        public static string FormatExceptionCount(int count)
+        {
+            if (count <= 0) { return "0"; }
+            return $"[red]{count}[/]";
+        }
+
         public static string FormatClusterHealthCheck(TimeSpan? span, TimeSpan? deviation)
         {
             var title = FromatDurationUpToSecond(span).EscapeMarkup();
@@ -54,7 +60,7 @@ namespace Planar.CLI
 
         public static string FormatTimeSpan(TimeSpan? timeSpan)
         {
-            if(timeSpan == null) { return "--:--:--"; }
+            if (timeSpan == null) { return "--:--:--"; }
             return FormatTimeSpan(timeSpan.Value);
         }
 

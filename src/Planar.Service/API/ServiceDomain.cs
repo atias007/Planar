@@ -70,7 +70,7 @@ namespace Planar.Service.API
             var info = await GetServiceInfo();
             var props = info.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
             var prop =
-                props.FirstOrDefault(p => p.Name.ToLower() == lowerKey) ??
+                Array.Find(props, p => p.Name.ToLower() == lowerKey) ??
                 throw new RestNotFoundException($"key '{key}' was not found in service information");
 
             var value = prop.GetValue(info);

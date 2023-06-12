@@ -26,7 +26,7 @@ namespace Planar.Service.Validation
 
         private async Task<bool> FilenameExists(PlanarJobProperties properties, string? filename, ValidationContext<PlanarJobProperties> context, CancellationToken cancellationToken = default)
         {
-            return await CommonValidations.FilenameExists(properties, filename, _cluster, context);
+            return await CommonValidations.FilenameExists(properties, "filename", filename, _cluster, context);
         }
     }
 }

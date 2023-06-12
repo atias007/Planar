@@ -95,7 +95,7 @@ namespace Planar.CLI.Actions
         {
             var restRequest = new RestRequest("monitor/events", Method.Get);
             var result = await RestProxy.Invoke<List<LovItem>>(restRequest, cancellationToken);
-            var table = CliTableExtensions.GetTable(result.Data);
+            var table = CliTableExtensions.GetTable(result.Data, "event");
             return new CliActionResponse(result, table);
         }
 
@@ -104,7 +104,7 @@ namespace Planar.CLI.Actions
         {
             var restRequest = new RestRequest("monitor/hooks", Method.Get);
             var result = await RestProxy.Invoke<List<string>>(restRequest, cancellationToken);
-            return new CliActionResponse(result, serializeObj: result.Data);
+            return new CliActionResponse(result, dumpObject: result.Data);
         }
 
         [Action("reload")]
@@ -116,7 +116,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("update")]
-        public static async Task<CliActionResponse> UpdateMonitor(CliUpdateEntityRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> UpdateMonitor(CliUpdateEntityByIdRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("monitor", Method.Patch)
                 .AddBody(request);
@@ -266,7 +266,7 @@ namespace Planar.CLI.Actions
 
             var selectedEvent = PromptSelection(types, "monitor type") ?? string.Empty;
 
-            selectedEvent = selectedEvent.Split(' ').First();
+            selectedEvent = selectedEvent.Split(' ')[0];
 
             if (selectedEvent == "all")
             {
@@ -419,7 +419,7 @@ namespace Planar.CLI.Actions
             RestResponse? result = null;
             if (items.Any())
             {
-                result = items.FirstOrDefault(i => !i.IsSuccessful && (int)i.StatusCode >= 500);
+                result = Array.Find(items, i => !i.IsSuccessful && (int)i.StatusCode >= 500);
             }
 
             result ??= CliActionResponse.GetGenericSuccessRestResponse();

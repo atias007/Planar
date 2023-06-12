@@ -1,24 +1,20 @@
 ﻿using AutoMapper;
 using CommonJob;
 using FluentValidation;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Planar.API.Common.Entities;
-using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
-using Planar.Service.Model.DataObjects;
-using Planar.Service.Model;
 using Quartz;
 using System;
 using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 
 namespace Planar.Service.API
 {
@@ -66,7 +62,7 @@ namespace Planar.Service.API
             if (claim == null) { return null; }
             var strValue = claim.Value;
             if (string.IsNullOrEmpty(strValue)) { return null; }
-            if (!int.TryParse(strValue, out var value)) { return null; }
+            if (!int.TryParse(strValue, out int value)) { return null; }
             return value;
         }
 
@@ -144,14 +140,30 @@ namespace Planar.Service.API
             _ = await Scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id/key {triggerId} could not be found");
         }
 
+        protected static void ForbbidenPartialUpdateProperties(UpdateEntityRequest request, string? message, params string[] properties)
+        {
+            var any = Array.Exists(properties, p => string.Equals(request.PropertyName, p, StringComparison.OrdinalIgnoreCase));
+            if (any)
+            {
+                var errorMessage = $"property '{request.PropertyName}' can not be updated";
+                if (!string.IsNullOrEmpty(message))
+                {
+                    errorMessage += $". {message}";
+                }
+
+                throw new RestValidationException("property name", errorMessage);
+            }
+        }
+
         protected static async Task SetEntityProperties<T>(T entity, UpdateEntityRequest request, IValidator<T>? validator = null)
         {
+            ForbbidenPartialUpdateProperties(request, null, "id");
             if (request.PropertyValue == null) { return; }
 
             var type = typeof(T);
-            var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
             var prop =
-                properties.FirstOrDefault(p => string.Compare(p.Name, request.PropertyName, true) == 0) ??
+                properties.Find(p => string.Compare(p.Name, request.PropertyName, true) == 0) ??
                 throw new RestValidationException("propertyName", $"property name '{request.PropertyName}' could not be found");
 
             try

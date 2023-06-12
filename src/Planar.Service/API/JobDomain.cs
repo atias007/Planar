@@ -1,5 +1,6 @@
-﻿using CommonJob;
+﻿using Azure.Core;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
@@ -9,12 +10,13 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
-using Planar.Service.Validation;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations;
+using System.Drawing.Printing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -36,10 +38,13 @@ namespace Planar.Service.API
             if (info.JobDetails == null) { return; }
 
             ValidateDataKeyExists(info.JobDetails, key, id);
+            var auditValue = PlanarConvert.ToString(info.JobDetails.JobDataMap[key]);
             info.JobDetails.JobDataMap.Remove(key);
             var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
             await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
             await Scheduler.PauseJob(info.JobKey);
+
+            AuditJob(info.JobKey, $"remove job data with key '{key}'", new { value = auditValue?.Trim() });
         }
 
         public async Task PutData(JobOrTriggerDataRequest request, PutMode mode)
@@ -55,6 +60,7 @@ namespace Planar.Service.API
                 }
 
                 info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
+                AuditJob(info.JobKey, $"update job data with key '{request.DataKey}'", new { value = request.DataValue?.Trim() });
             }
             else
             {
@@ -64,6 +70,7 @@ namespace Planar.Service.API
                 }
 
                 info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
+                AuditJob(info.JobKey, $"add job data with key '{request.DataKey}'", new { value = request.DataValue?.Trim() });
             }
 
             var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
@@ -115,27 +122,31 @@ namespace Planar.Service.API
 
         public async Task<List<JobRowDetails>> GetAll(GetAllJobsRequest request)
         {
-            var result = new List<JobRowDetails>();
+            var jobs = new List<IJobDetail>();
 
-            foreach (var jobKey in await GetJobKeys(request.Filter))
+            foreach (var jobKey in await GetJobKeys(request))
             {
                 var info = await Scheduler.GetJobDetail(jobKey);
                 if (info == null) { continue; }
-                var details = new JobRowDetails();
-                SchedulerUtil.MapJobRowDetails(info, details);
-                result.Add(details);
+                jobs.Add(info);
             }
 
             if (!string.IsNullOrEmpty(request.JobType))
             {
-                result = result
-                    .Where(r => string.Equals(r.JobType, request.JobType, StringComparison.OrdinalIgnoreCase))
+                jobs = jobs
+                    .Where(r => string.Equals(SchedulerUtil.GetJobTypeName(r.JobType), request.JobType, StringComparison.OrdinalIgnoreCase))
                     .ToList();
             }
 
-            result = result
-                .OrderBy(r => r.Group)
-                .ThenBy(r => r.Name)
+            if (request.Active.HasValue)
+            {
+                jobs = jobs.Where(r => IsActiveJob(r.Key).Result == request.Active.Value).ToList();
+            }
+
+            var result = jobs
+                .Select(j => SchedulerUtil.MapJobRowDetails(j))
+                .OrderBy(j => j.Group)
+                .ThenBy(j => j.Name)
                 .ToList();
 
             return result;
@@ -182,7 +193,7 @@ namespace Planar.Service.API
             return null;
         }
 
-        private SetJobDynamicRequest? GetJobDynamicRequestFromFilename(string filename)
+        private static SetJobDynamicRequest? GetJobDynamicRequestFromFilename(string filename)
         {
             try
             {
@@ -209,7 +220,7 @@ namespace Planar.Service.API
 
             var resources = assembly.GetManifestResourceNames();
             var resourceName =
-                resources.FirstOrDefault(r => r.ToLower() == $"{typeName}.JobFile.yml".ToLower()) ??
+                Array.Find(resources, r => r.ToLower() == $"{typeName}.JobFile.yml".ToLower()) ??
                 throw new RestNotFoundException($"type '{typeName}' could not be found");
 
             using Stream? stream = assembly.GetManifestResourceStream(resourceName) ?? throw new RestNotFoundException("jobfile.yml resource could not be found");
@@ -235,6 +246,35 @@ namespace Planar.Service.API
 
             var dal = Resolve<HistoryData>();
             var result = await dal.GetLastInstanceId(jobKey, invokeDate);
+            return result;
+        }
+
+        public async Task<IEnumerable<JobAuditDto>> GetJobAudits(string id)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(id);
+            var jobId = await JobKeyHelper.GetJobId(jobKey) ?? string.Empty;
+            var query = DataLayer.GetJobAudits(jobId);
+            var result = await Mapper.ProjectTo<JobAuditDto>(query).ToListAsync();
+            return result;
+        }
+
+        public async Task<IEnumerable<JobAuditDto>> GetAudits(uint pageNumber, byte pageSize)
+        {
+            if (pageSize < 1)
+            {
+                throw new RestValidationException("pageSize", "pageSize must be greater then 1");
+            }
+
+            var query = DataLayer.GetAudits(pageNumber, pageSize);
+            var result = await Mapper.ProjectTo<JobAuditDto>(query).ToListAsync();
+            return result;
+        }
+
+        public async Task<JobAuditDto> GetJobAudit(int id)
+        {
+            var query = DataLayer.GetJobAudit(id);
+            var entity = await Mapper.ProjectTo<JobAuditWithInfoDto>(query).FirstOrDefaultAsync();
+            var result = ValidateExistingEntity(entity, "job audit");
             return result;
         }
 
@@ -402,18 +442,62 @@ namespace Planar.Service.API
             else
             {
                 await Scheduler.TriggerJob(jobKey);
+                var auditInfo = request.NowOverrideValue.HasValue ? new { request.NowOverrideValue } : null;
+                AuditJob(jobKey, "job manually invoked", auditInfo);
             }
+        }
+
+        public async Task QueueInvoke(QueueInvokeJobRequest request)
+        {
+            // build new job
+            var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateSystemJob(jobKey);
+            var job = await Scheduler.GetJobDetail(jobKey);
+            if (job == null) { return; }
+
+            // build new trigger
+            var triggerId = ServiceUtil.GenerateId();
+            var triggerKey = new TriggerKey($"due_{request.DueDate:yyyyMMdd_HHmmss}", Consts.QueueInvokeTriggerGroup);
+            var exists = await Scheduler.GetTrigger(triggerKey);
+            if (exists != null)
+            {
+                throw new RestValidationException("due date", $"job already has queue invoke trigger with date {request.DueDate:yyyy-MM-dd HH:mm:ss}");
+            }
+
+            var newTrigger = TriggerBuilder.Create()
+                .WithIdentity(triggerKey)
+                .UsingJobData(Consts.TriggerId, triggerId)
+                .StartAt(request.DueDate)
+                .WithSimpleSchedule(b =>
+                {
+                    b.WithRepeatCount(0).WithMisfireHandlingInstructionFireNow();
+                })
+                .ForJob(job);
+
+            if (request.Timeout.HasValue)
+            {
+                var timeoutValue = request.Timeout.Value.Ticks.ToString();
+                newTrigger = newTrigger.UsingJobData(Consts.TriggerTimeout, timeoutValue);
+            }
+
+            // schedule trigger
+            await Scheduler.ScheduleJob(newTrigger.Build());
+
+            AuditJob(jobKey, "job queue invoked", request);
         }
 
         public async Task Pause(JobOrTriggerKey request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
             await Scheduler.PauseJob(jobKey);
+
+            AuditJob(jobKey, "job paused");
         }
 
         public async Task PauseAll()
         {
             await Scheduler.PauseAll();
+            AuditJobs("all jobs paused");
         }
 
         public async Task Remove(string id)
@@ -431,6 +515,15 @@ namespace Planar.Service.API
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Fail to delete properties after delete job id {Id}", id);
+            }
+
+            try
+            {
+                await DataLayer.DeleteJobAudit(jobId);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Fail to delete audit after delete job id {Id}", id);
             }
 
             try
@@ -456,11 +549,13 @@ namespace Planar.Service.API
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
             await Scheduler.ResumeJob(jobKey);
+            AuditJob(jobKey, "job resumed");
         }
 
         public async Task ResumeAll()
         {
             await Scheduler.ResumeAll();
+            AuditJobs("all jobs resumed");
         }
 
         public async Task<bool> Cancel(FireInstanceIdRequest request)
@@ -477,6 +572,23 @@ namespace Planar.Service.API
             }
 
             return stop;
+        }
+
+        private async Task<bool> IsActiveJob(JobKey jobKey)
+        {
+            var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+            if (triggers == null) { return false; }
+
+            foreach (var t in triggers)
+            {
+                var state = await Scheduler.GetTriggerState(t.Key);
+                if (state != TriggerState.None && state != TriggerState.Paused)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void ValidateDataKeyExists(IJobDetail details, string key, string jobId)
@@ -506,12 +618,17 @@ namespace Planar.Service.API
             await dal.DeleteJobStatistic(s2);
         }
 
-        private async Task<IReadOnlyCollection<JobKey>> GetJobKeys(AllJobsMembers members)
+        private async Task<IReadOnlyCollection<JobKey>> GetJobKeys(GetAllJobsRequest request)
         {
-            switch (members)
+            var matcher =
+                string.IsNullOrEmpty(request.Group) ?
+                GroupMatcher<JobKey>.AnyGroup() :
+                GroupMatcher<JobKey>.GroupEquals(request.Group);
+
+            switch (request.Filter)
             {
                 case AllJobsMembers.AllUserJobs:
-                    var result = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+                    var result = await Scheduler.GetJobKeys(matcher);
                     var list = result.Where(x => x.Group != Consts.PlanarSystemGroup).ToList();
                     return new ReadOnlyCollection<JobKey>(list);
 
@@ -520,7 +637,7 @@ namespace Planar.Service.API
 
                 default:
                 case AllJobsMembers.All:
-                    return await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+                    return await Scheduler.GetJobKeys(matcher);
             }
         }
 

@@ -2,130 +2,159 @@
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Spectre.Console;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using YamlDotNet.Serialization;
 
 namespace Planar.CLI
 {
     internal static class CliTableExtensions
     {
-        public static Table GetTable(AddUserResponse? response)
+        public static CliTable GetTable(AddUserResponse? response)
         {
-            var table = new Table();
+            var table = new CliTable();
             if (response == null) { return table; }
-            table.AddColumns("User Id", "Password");
-            table.AddRow(response.Id.ToString(), SafeCliString(response.Password));
-            table.AddRow(string.Empty, string.Empty);
-            table.AddRow(string.Empty, CliFormat.GetWarningMarkup("make sure you copy the above password now."));
-            table.AddRow(string.Empty, $"[{CliFormat.WarningColor}]we don't store it and you will not be able to see it again.[/]");
+            table.Table.AddColumns("Password");
+            table.Table.AddRow(SafeCliString(response.Password));
+            table.Table.AddEmptyRow();
+            table.Table.AddRow(CliFormat.GetWarningMarkup("make sure you copy the above password now."));
+            table.Table.AddRow($"[{CliFormat.WarningColor}]we don't store it and you will not be able to see it again.[/]");
             return table;
         }
 
-        public static Table GetTable(IEnumerable<KeyValueItem>? response)
+        public static CliTable GetTable(IEnumerable<JobAuditDto>? response, bool withJobId = false)
         {
-            var table = new Table();
+            var table = new CliTable(showCount: true, "audit");
             if (response == null) { return table; }
-            table.AddColumns("Key", "Value");
+
+            if (withJobId)
+            {
+                table.Table.AddColumns("Id", "Job Id", "Job Key", "Date Created", "Username", "User Title", "Description");
+            }
+            else
+            {
+                table.Table.AddColumns("Id", "Date Created", "Username", "User Title", "Description");
+            }
+
             foreach (var item in response)
             {
                 if (item == null) { continue; }
-                table.AddRow(SafeCliString(item.Key), LimitValue(item.Value));
+                if (withJobId)
+                {
+                    table.Table.AddRow(item.Id.ToString(), item.JobId.EscapeMarkup(), item.JobKey.EscapeMarkup(), CliTableFormat.FormatDateTime(item.DateCreated), item.Username, item.UserTitle, SafeCliString(item.Description));
+                }
+                else
+                {
+                    table.Table.AddRow(item.Id.ToString(), CliTableFormat.FormatDateTime(item.DateCreated), item.Username, item.UserTitle, SafeCliString(item.Description));
+                }
             }
 
             return table;
         }
 
-        public static Table GetTable(IEnumerable<LovItem>? response)
+        public static CliTable GetTable(IEnumerable<KeyValueItem>? response)
         {
-            var table = new Table();
+            var table = new CliTable(showCount: true);
             if (response == null) { return table; }
-            table.AddColumns("Id", "Name");
+            table.Table.AddColumns("Key", "Value");
+            foreach (var item in response)
+            {
+                if (item == null) { continue; }
+                table.Table.AddRow(SafeCliString(item.Key), LimitValue(item.Value));
+            }
+
+            return table;
+        }
+
+        public static CliTable GetTable(IEnumerable<LovItem>? response, string entityName)
+        {
+            var table = new CliTable(showCount: true, entityName);
+            if (response == null) { return table; }
+            table.Table.AddColumns("Id", "Name");
             foreach (LovItem item in response)
             {
-                table.AddRow(item.Id.ToString(), LimitValue(item.Name));
+                table.Table.AddRow(item.Id.ToString(), LimitValue(item.Name));
             }
 
             return table;
         }
 
-        public static Table GetTable(List<JobRowDetails>? response)
+        public static CliTable GetTable(List<JobRowDetails>? response)
         {
-            var table = new Table();
+            var table = new CliTable(showCount: true, entityName: "job");
             if (response == null) { return table; }
-            table.AddColumns("Job Id", "Job Key", "Job Type", "Description");
-            response.ForEach(r => table.AddRow(r.Id, $"{r.Group}.{r.Name}".EscapeMarkup(), r.JobType.EscapeMarkup(), LimitValue(r.Description)));
+            table.Table.AddColumns("Job Id", "Job Key", "Job Type", "Description");
+            response.ForEach(r => table.Table.AddRow(r.Id, $"{r.Group}.{r.Name}".EscapeMarkup(), r.JobType.EscapeMarkup(), LimitValue(r.Description)));
             return table;
         }
 
-        public static Table GetTable(List<RunningJobDetails>? response)
+        public static CliTable GetTable(List<RunningJobDetails>? response)
         {
-            var table = new Table();
+            var table = new CliTable(showCount: true, "job");
             if (response == null) { return table; }
-            table.AddColumns("Fire Instance Id", "Job Id", "Job Key", "Progress", "Effected Rows", "Run Time", "End Time");
-            response.ForEach(r => table.AddRow(
+            table.Table.AddColumns("Fire Instance Id", "Job Id", "Job Key", "Progress", "Effected Rows", "Ex. Count", "Run Time", "End Time");
+            response.ForEach(r => table.Table.AddRow(
                 CliTableFormat.GetFireInstanceIdMarkup(r.FireInstanceId),
                 $"{r.Id}",
                 $"{r.Group}.{r.Name}".EscapeMarkup(),
                 CliTableFormat.GetProgressMarkup(r.Progress),
                 $"{r.EffectedRows}",
+                CliTableFormat.FormatExceptionCount(r.ExceptionsCount),
                 CliTableFormat.FormatTimeSpan(r.RunTime),
                 $"[grey]{CliTableFormat.FormatTimeSpan(r.EstimatedEndTime)}[/]"));
             return table;
         }
 
-        public static Table GetTable(List<CliJobInstanceLog>? response)
+        public static CliTable GetTable(List<CliJobInstanceLog>? response)
         {
-            var table = new Table();
+            var table = new CliTable(showCount: true);
             if (response == null) { return table; }
-            table.AddColumns("Id", "Job Id", "Job Key", "Job Type", "Trigger Id", "Status", "Start Date", "Duration", "Effected Rows");
-            response.ForEach(r => table.AddRow($"{r.Id}", r.JobId, $"{r.JobGroup}.{r.JobName}".EscapeMarkup(), r.JobType.EscapeMarkup(), CliTableFormat.GetTriggerIdMarkup(r.TriggerId), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FormatNumber(r.EffectedRows)));
+            table.Table.AddColumns("Id", "Job Id", "Job Key", "Job Type", "Trigger Id", "Status", "Start Date", "Duration", "Effected Rows");
+            response.ForEach(r => table.Table.AddRow($"{r.Id}", r.JobId, $"{r.JobGroup}.{r.JobName}".EscapeMarkup(), r.JobType.EscapeMarkup(), CliTableFormat.GetTriggerIdMarkup(r.TriggerId), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FormatNumber(r.EffectedRows)));
             return table;
         }
 
-        public static Table GetTable(List<LogDetails>? response)
+        public static CliTable GetTable(List<LogDetails>? response)
         {
-            var table = new Table();
+            var table = new CliTable(showCount: true);
             if (response == null) { return table; }
-            table.AddColumns("Id", "Message", "Level", "Time Stamp");
-            response.ForEach(r => table.AddRow($"{r.Id}", SafeCliString(r.Message), CliTableFormat.GetLevelMarkup(r.Level), CliTableFormat.FormatDateTime(r.TimeStamp)));
+            table.Table.AddColumns("Id", "Message", "Level", "Time Stamp");
+            response.ForEach(r => table.Table.AddRow($"{r.Id}", SafeCliString(r.Message), CliTableFormat.GetLevelMarkup(r.Level), CliTableFormat.FormatDateTime(r.TimeStamp)));
             return table;
         }
 
-        public static Table GetTable(TriggerRowDetails? response)
+        public static CliTable GetTable(TriggerRowDetails? response)
         {
-            var table = new Table();
+            var table = new CliTable(showCount: true, entityName: "trigger");
             if (response == null) { return table; }
-            table.AddColumns("Trigger Id", "Trigger Key", "State", "Next Fire Time", "Interval/Cron");
-            response.SimpleTriggers.ForEach(r => table.AddRow($"{r.Id}", $"{r.TriggerGroup}.{r.TriggerName}".EscapeMarkup(), r.State ?? string.Empty, CliTableFormat.FormatDateTime(r.NextFireTime), CliTableFormat.FormatTimeSpan(r.RepeatInterval)));
-            response.CronTriggers.ForEach(r => table.AddRow($"{r.Id}", $"{r.TriggerGroup}.{r.TriggerName}".EscapeMarkup(), r.State ?? string.Empty, CliTableFormat.FormatDateTime(r.NextFireTime), r.CronExpression.EscapeMarkup()));
+            table.Table.AddColumns("Trigger Id", "Trigger Key", "State", "Next Fire Time", "Interval/Cron");
+            response.SimpleTriggers.ForEach(r => table.Table.AddRow($"{r.Id}", $"{r.TriggerGroup}.{r.TriggerName}".EscapeMarkup(), r.State ?? string.Empty, CliTableFormat.FormatDateTime(r.NextFireTime), CliTableFormat.FormatTimeSpan(r.RepeatInterval)));
+            response.CronTriggers.ForEach(r => table.Table.AddRow($"{r.Id}", $"{r.TriggerGroup}.{r.TriggerName}".EscapeMarkup(), r.State ?? string.Empty, CliTableFormat.FormatDateTime(r.NextFireTime), r.CronExpression.EscapeMarkup()));
             return table;
         }
 
-        public static List<Table> GetTable(JobDetails? response)
+        public static List<CliTable> GetTable(JobDetails? response)
         {
-            var table = new Table();
+            var table = new CliTable();
             if (response == null)
             {
-                return new List<Table> { table };
+                return new List<CliTable> { table };
             }
 
-            table.AddColumns("Property Name", "Value");
-            table.AddRow(nameof(response.Id), response.Id.EscapeMarkup());
-            table.AddRow(nameof(response.Group), response.Group.EscapeMarkup());
-            table.AddRow(nameof(response.Name), response.Name.EscapeMarkup());
-            table.AddRow(nameof(response.Author), response.Author.EscapeMarkup());
-            table.AddRow(nameof(response.JobType), response.JobType.EscapeMarkup());
-            table.AddRow(nameof(response.Description), response.Description.EscapeMarkup());
-            table.AddRow(nameof(response.Durable), response.Durable.ToString());
-            table.AddRow(nameof(response.RequestsRecovery), response.RequestsRecovery.ToString());
-            table.AddRow(nameof(response.Concurrent), response.Concurrent.ToString());
+            table.Table.AddColumns("Property Name", "Value");
+            table.Table.AddRow(nameof(response.Id), response.Id.EscapeMarkup());
+            table.Table.AddRow(nameof(response.Group), response.Group.EscapeMarkup());
+            table.Table.AddRow(nameof(response.Name), response.Name.EscapeMarkup());
+            table.Table.AddRow(nameof(response.Author), response.Author.EscapeMarkup());
+            table.Table.AddRow(nameof(response.JobType), response.JobType.EscapeMarkup());
+            table.Table.AddRow(nameof(response.Description), response.Description.EscapeMarkup());
+            table.Table.AddRow(nameof(response.Durable), response.Durable.ToString());
+            table.Table.AddRow(nameof(response.RequestsRecovery), response.RequestsRecovery.ToString());
+            table.Table.AddRow(nameof(response.Concurrent), response.Concurrent.ToString());
 
             var dataMap = SerializeJobDetailsData(response);
 
-            table.AddRow("Data", dataMap.EscapeMarkup() ?? string.Empty);
-            table.AddRow(nameof(response.Properties), response.Properties.EscapeMarkup());
+            table.Table.AddRow("Data", dataMap.EscapeMarkup() ?? string.Empty);
+            table.Table.AddRow(nameof(response.Properties), response.Properties.EscapeMarkup());
 
             var response2 = new TriggerRowDetails
             {
@@ -135,30 +164,30 @@ namespace Planar.CLI
 
             var table2 = GetTable(response2);
 
-            return new List<Table> { table, table2 };
+            return new List<CliTable> { table, table2 };
         }
 
-        public static Table GetTable(List<CliClusterNode>? response)
+        public static CliTable GetTable(List<CliClusterNode>? response)
         {
-            var table = new Table();
+            var table = new CliTable(showCount: true, entityName: "node");
             if (response == null) { return table; }
-            table.AddColumns("Server", "Port", "Instance Id", "Cluster Port", "Join Date", "Health Check");
+            table.Table.AddColumns("Server", "Port", "Instance Id", "Cluster Port", "Join Date", "Health Check");
             response.ForEach(r =>
             {
                 var hcTitle = CliTableFormat.FormatClusterHealthCheck(r.HealthCheckGap, r.HealthCheckGapDeviation);
-                table.AddRow(r.Server.EscapeMarkup(), r.Port.ToString(), r.InstanceId.EscapeMarkup(), r.ClusterPort.ToString(), CliTableFormat.FormatDateTime(r.JoinDate), hcTitle);
+                table.Table.AddRow(r.Server.EscapeMarkup(), r.Port.ToString(), r.InstanceId.EscapeMarkup(), r.ClusterPort.ToString(), CliTableFormat.FormatDateTime(r.JoinDate), hcTitle);
             });
 
             return table;
         }
 
-        public static Table GetTable(List<MonitorItem>? response)
+        public static CliTable GetTable(List<MonitorItem>? response)
         {
-            var table = new Table();
+            var table = new CliTable(showCount: true, entityName: "monitor");
             if (response == null) { return table; }
             var data = response;
-            table.AddColumns("Id", "Title", "Event", "Job Group", "Job Name", "Dist. Group", "Hook", "Active");
-            data.ForEach(r => table.AddRow(
+            table.Table.AddColumns("Id", "Title", "Event", "Job Group", "Job Name", "Dist. Group", "Hook", "Active");
+            data.ForEach(r => table.Table.AddRow(
                 r.Id.ToString(),
                 r.Title.EscapeMarkup(),
                 r.EventTitle.EscapeMarkup(),
@@ -170,39 +199,39 @@ namespace Planar.CLI
             return table;
         }
 
-        public static Table GetTable(List<GroupInfo>? data)
+        public static CliTable GetTable(List<GroupInfo>? data)
         {
-            var table = new Table();
+            var table = new CliTable(showCount: true, entityName: "group");
             if (data == null) { return table; }
-            table.AddColumns("Id", "Name", "Role", "User Count");
-            data.ForEach(r => table.AddRow($"{r.Id}", r.Name.EscapeMarkup(), r.Role.EscapeMarkup(), $"{r.UsersCount}"));
+            table.Table.AddColumns("Name", "Role", "User Count");
+            data.ForEach(r => table.Table.AddRow(r.Name.EscapeMarkup(), r.Role.EscapeMarkup(), $"{r.UsersCount}"));
             return table;
         }
 
-        public static Table GetTable(List<UserRowDetails>? data)
+        public static CliTable GetTable(List<UserRowDetails>? data)
         {
-            var table = new Table();
+            var table = new CliTable(showCount: true, entityName: "user");
             if (data == null) { return table; }
-            table.AddColumns("Id", "First Name", "Last Name", "Username", "Email Address 1", "Phone Number 1");
-            data.ForEach(r => table.AddRow($"{r.Id}", r.FirstName.EscapeMarkup(), r.LastName.EscapeMarkup(), r.Username.EscapeMarkup(), r.EmailAddress1.EscapeMarkup(), r.PhoneNumber1.EscapeMarkup()));
+            table.Table.AddColumns("Username", "First Name", "Last Name", "Email Address 1", "Phone Number 1");
+            data.ForEach(r => table.Table.AddRow(r.Username.EscapeMarkup(), r.FirstName.EscapeMarkup(), r.LastName.EscapeMarkup(), r.EmailAddress1.EscapeMarkup(), r.PhoneNumber1.EscapeMarkup()));
             return table;
         }
 
-        public static Table GetTable(List<PausedTriggerDetails>? response)
+        public static CliTable GetTable(List<PausedTriggerDetails>? response)
         {
-            var table = new Table();
+            var table = new CliTable(showCount: true, entityName: "trigger");
             if (response == null) { return table; }
-            table.AddColumns("Trigger Id", "Trigger Key", "Job Id", "Job Key");
-            response.ForEach(r => table.AddRow(r.Id.EscapeMarkup(), $"{r.TriggerGroup}.{r.TriggerName}".EscapeMarkup(), r.JobId.EscapeMarkup(), $"{r.JobGroup}.{r.JobName}".EscapeMarkup()));
+            table.Table.AddColumns("Trigger Id", "Trigger Key", "Job Id", "Job Key");
+            response.ForEach(r => table.Table.AddRow(r.Id.EscapeMarkup(), $"{r.TriggerGroup}.{r.TriggerName}".EscapeMarkup(), r.JobId.EscapeMarkup(), $"{r.JobGroup}.{r.JobName}".EscapeMarkup()));
             return table;
         }
 
-        internal static Table GetTable(List<CliGlobalConfig>? response)
+        internal static CliTable GetTable(List<CliGlobalConfig>? response)
         {
-            var table = new Table();
+            var table = new CliTable(showCount: true);
             if (response == null) { return table; }
-            table.AddColumns("Key", "Value", "Type");
-            response.ForEach(r => table.AddRow(r.Key.EscapeMarkup(), LimitValue(r.Value), r.Type.EscapeMarkup()));
+            table.Table.AddColumns("Key", "Value", "Type");
+            response.ForEach(r => table.Table.AddRow(r.Key.EscapeMarkup(), LimitValue(r.Value), r.Type.EscapeMarkup()));
             return table;
         }
 

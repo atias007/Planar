@@ -28,7 +28,7 @@ namespace Planar.Controllers
         public async Task<ActionResult<AddUserResponse>> Add([FromBody] AddUserRequest request)
         {
             var result = await BusinesLayer.Add(request);
-            return CreatedAtAction(nameof(Get), new { result.Id }, result);
+            return CreatedAtAction(nameof(Get), new { request.Username }, result);
         }
 
         [HttpPut]
@@ -45,27 +45,27 @@ namespace Planar.Controllers
             return NoContent();
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{username}")]
         [EditorAuthorize]
-        [SwaggerOperation(OperationId = "get_user_id", Description = "Get user by id", Summary = "Get User")]
+        [SwaggerOperation(OperationId = "get_user_username", Description = "Get user by username", Summary = "Get User")]
         [OkJsonResponse(typeof(UserDetails))]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<UserDetails>> Get([FromRoute][Id] int id)
+        public async Task<ActionResult<UserDetails>> Get([FromRoute][Name] string username)
         {
-            var result = await BusinesLayer.Get(id);
+            var result = await BusinesLayer.Get(username);
             return Ok(result);
         }
 
-        [HttpGet("{id}/role")]
+        [HttpGet("{username}/role")]
         [EditorAuthorize]
-        [SwaggerOperation(OperationId = "get_user_id_role", Description = "Get user rule by id", Summary = "Get User Role")]
+        [SwaggerOperation(OperationId = "get_user_username_role", Description = "Get user rule by username", Summary = "Get User Role")]
         [OkTextResponse]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<UserDetails>> GetRole([FromRoute][Id] int id)
+        public async Task<ActionResult<UserDetails>> GetRole([FromRoute][Name] string username)
         {
-            var result = await BusinesLayer.GetRole(id);
+            var result = await BusinesLayer.GetRole(username);
             return Ok(result);
         }
 
@@ -79,15 +79,15 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{username}")]
         [AdministratorAuthorize]
-        [SwaggerOperation(OperationId = "delete_user_id", Description = "Delete user", Summary = "Delete User")]
+        [SwaggerOperation(OperationId = "delete_user_username", Description = "Delete user", Summary = "Delete User")]
         [NoContentResponse]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult> Delete([FromRoute][Id] int id)
+        public async Task<ActionResult> Delete([FromRoute][Name] string username)
         {
-            await BusinesLayer.Delete(id);
+            await BusinesLayer.Delete(username);
             return NoContent();
         }
 
@@ -99,22 +99,34 @@ namespace Planar.Controllers
         [NotFoundResponse]
         [ConflictResponse]
         [BadRequestResponse]
-        public async Task<ActionResult> PartialUpdate([FromBody] UpdateEntityRequest request)
+        public async Task<ActionResult> PartialUpdate([FromBody] UpdateEntityRequestByName request)
         {
             await BusinesLayer.PartialUpdate(request);
             return NoContent();
         }
 
-        [HttpPatch("{id}/resetpassword")]
+        [HttpPatch("{username}/resetpassword")]
         [EditorAuthorize]
-        [SwaggerOperation(OperationId = "patch_user_id_resetpassword", Description = "Reset user password", Summary = "Reset User Password")]
+        [SwaggerOperation(OperationId = "patch_user_username_resetpassword", Description = "Reset user password", Summary = "Reset User Password")]
         [OkTextResponse]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<string>> ResetPassword([FromRoute][Id] int id)
+        public async Task<ActionResult<string>> ResetPassword([FromRoute][Name] string username)
         {
-            var result = await BusinesLayer.ResetPassword(id);
+            var result = await BusinesLayer.ResetPassword(username);
             return Ok(result);
+        }
+
+        [HttpPatch("{username}/password")]
+        [EditorAuthorize]
+        [SwaggerOperation(OperationId = "patch_user_username_password", Description = "Set user password", Summary = "Set User Password")]
+        [NoContentResponse]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<IActionResult> SetPassword([FromRoute][Name] string username, [FromBody] SetPasswordRequest request)
+        {
+            await BusinesLayer.SetPassword(username, request);
+            return NoContent();
         }
     }
 }

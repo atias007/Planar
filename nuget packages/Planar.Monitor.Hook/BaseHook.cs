@@ -10,17 +10,11 @@ namespace Planar.Monitor.Hook
     {
         private MessageBroker? _messageBroker;
 
-        internal Task ExecuteHandleSystem(ref object messageBroker)
-        {
-            InitializeMessageBroker(ref messageBroker);
-            var monitorDetails = InitializeMessageDetails<MonitorSystemDetails>(_messageBroker);
+        public abstract string Name { get; }
 
-            return HandleSystem(monitorDetails)
-                .ContinueWith(t =>
-                {
-                    if (t.Exception != null) { throw t.Exception; }
-                });
-        }
+        public abstract Task Handle(IMonitorDetails monitorDetails);
+
+        public abstract Task HandleSystem(IMonitorSystemDetails monitorDetails);
 
         internal Task ExecuteHandle(ref object messageBroker)
         {
@@ -34,14 +28,84 @@ namespace Planar.Monitor.Hook
                 });
         }
 
-        private void InitializeMessageBroker(ref object messageBroker)
+        internal Task ExecuteHandleSystem(ref object messageBroker)
         {
-            if (messageBroker == null)
+            InitializeMessageBroker(ref messageBroker);
+            var monitorDetails = InitializeMessageDetails<MonitorSystemDetails>(_messageBroker);
+
+            return HandleSystem(monitorDetails)
+                .ContinueWith(t =>
+                {
+                    if (t.Exception != null) { throw t.Exception; }
+                });
+        }
+
+        protected static bool IsValidUri(string? url)
+        {
+            if (string.IsNullOrEmpty(url)) { return false; }
+            return Uri.TryCreate(url, UriKind.Absolute, out _);
+        }
+
+        protected string? GetHookParameter(string key, IMonitor details)
+        {
+            if (string.IsNullOrEmpty(key))
             {
-                throw new PlanarMonitorException("The MessageBroker provided to hook is null");
+                LogError(null, "GetHookParameter with key null (or empty) is invalid");
+                return null;
             }
 
-            _messageBroker = new MessageBroker(messageBroker);
+            var groupResult = GetHookParameterFromGroup(key, details.Group);
+            if (!string.IsNullOrEmpty(groupResult)) { return groupResult; }
+
+            if (details.GlobalConfig.ContainsKey(key))
+            {
+                return details.GlobalConfig[key];
+            }
+
+            LogError(null, $"missing hook parameter with key '{key}' at monitor '{details.MonitorTitle}'");
+
+            return null;
+        }
+
+        protected void LogError(Exception? exception, string message, params object?[] args)
+        {
+            _messageBroker?.Publish(exception, message, args);
+        }
+
+        private static string? GetHookParameterFromGroup(string key, IMonitorGroup group)
+        {
+            string? url;
+
+            url = GetHookParameterReference(key, group.AdditionalField1);
+            if (url != null) { return url; }
+
+            url = GetHookParameterReference(key, group.AdditionalField2);
+            if (url != null) { return url; }
+
+            url = GetHookParameterReference(key, group.AdditionalField3);
+            if (url != null) { return url; }
+
+            url = GetHookParameterReference(key, group.AdditionalField4);
+            if (url != null) { return url; }
+
+            url = GetHookParameterReference(key, group.AdditionalField5);
+            if (url != null) { return url; }
+
+            return null;
+        }
+
+        private static string? GetHookParameterReference(string key, string? reference)
+        {
+            if (!string.IsNullOrEmpty(reference) && reference.StartsWith(key))
+            {
+                var url = reference[key.Length..];
+                if (url.StartsWith(':') || url.StartsWith('=') || url.StartsWith(' '))
+                {
+                    return url[1..];
+                }
+            }
+
+            return null;
         }
 
         private static T InitializeMessageDetails<T>(MessageBroker? messageBroker)
@@ -85,72 +149,14 @@ namespace Planar.Monitor.Hook
             }
         }
 
-        protected void LogError(Exception? exception, string message, params object?[] args)
+        private void InitializeMessageBroker(ref object messageBroker)
         {
-            _messageBroker?.Publish(exception, message, args);
-        }
-
-        protected static bool IsValidUri(string url)
-        {
-            return Uri.TryCreate(url, UriKind.Absolute, out _);
-        }
-
-        protected string? GetHookParameter(string key, IMonitor details)
-        {
-            if (string.IsNullOrEmpty(key))
+            if (messageBroker == null)
             {
-                LogError(null, "GetHookParameter with key null or empty is invalid");
-                return null;
+                throw new PlanarMonitorException("The MessageBroker provided to hook is null");
             }
 
-            if (details.GlobalConfig.ContainsKey(key))
-            {
-                return details.GlobalConfig[key];
-            }
-
-            return GetHookParameterFromGroup(key, details.Group);
+            _messageBroker = new MessageBroker(messageBroker);
         }
-
-        private static string? GetHookParameterFromGroup(string key, IMonitorGroup group)
-        {
-            string? url;
-
-            url = GetHookParameterReference(key, group.AdditionalField1);
-            if (url != null) { return url; }
-
-            url = GetHookParameterReference(key, group.AdditionalField2);
-            if (url != null) { return url; }
-
-            url = GetHookParameterReference(key, group.AdditionalField3);
-            if (url != null) { return url; }
-
-            url = GetHookParameterReference(key, group.AdditionalField4);
-            if (url != null) { return url; }
-
-            url = GetHookParameterReference(key, group.AdditionalField5);
-            if (url != null) { return url; }
-
-            return null;
-        }
-
-        private static string? GetHookParameterReference(string key, string? reference)
-        {
-            if (!string.IsNullOrEmpty(reference) && reference.StartsWith(key))
-            {
-                var url = reference[key.Length..];
-                if (url.StartsWith(':') || url.StartsWith('=') || url.StartsWith(' '))
-                {
-                    return url[1..];
-                }
-            }
-
-            return null;
-        }
-
-        public abstract Task Handle(IMonitorDetails monitorDetails);
-
-        public abstract Task HandleSystem(IMonitorSystemDetails monitorDetails);
-
-        public abstract string Name { get; }
     }
 }

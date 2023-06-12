@@ -3,11 +3,10 @@ using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
-using Planar.Service.Model;
 using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -27,18 +26,18 @@ namespace Planar.Controllers
         [ConflictResponse]
         public async Task<ActionResult<EntityIdResponse>> AddGroup([FromBody] AddGroupRequest request)
         {
-            var id = await BusinesLayer.AddGroup(request);
-            return CreatedAtAction(nameof(GetGroup), id, id);
+            await BusinesLayer.AddGroup(request);
+            return CreatedAtAction(nameof(GetGroup), new { request.Name }, null);
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{name}")]
         [EditorAuthorize]
-        [SwaggerOperation(OperationId = "get_group_id", Description = "Get group by id", Summary = "Get Group")]
+        [SwaggerOperation(OperationId = "get_group_name", Description = "Get group by name", Summary = "Get Group")]
         [OkJsonResponse(typeof(GroupDetails))]
         [NotFoundResponse]
-        public async Task<ActionResult<GroupDetails>> GetGroup([FromRoute][Id] int id)
+        public async Task<ActionResult<GroupDetails>> GetGroup([FromRoute][Name] string name)
         {
-            var result = await BusinesLayer.GetGroupById(id);
+            var result = await BusinesLayer.GetGroupByName(name);
             return Ok(result);
         }
 
@@ -62,15 +61,15 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{name}")]
         [EditorAuthorize]
-        [SwaggerOperation(OperationId = "delete_group_id", Description = "Delete group", Summary = "Delete Group")]
+        [SwaggerOperation(OperationId = "delete_group_name", Description = "Delete group", Summary = "Delete Group")]
         [NoContentResponse]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<IActionResult> DeleteGroup([FromRoute][Id] int id)
+        public async Task<IActionResult> DeleteGroup([FromRoute][Name] string name)
         {
-            await BusinesLayer.DeleteGroup(id);
+            await BusinesLayer.DeleteGroup(name);
             return NoContent();
         }
 
@@ -82,7 +81,7 @@ namespace Planar.Controllers
         [BadRequestResponse]
         [ConflictResponse]
         [NotFoundResponse]
-        public async Task<IActionResult> PatrialUpdateGroup([FromBody] UpdateEntityRequest request)
+        public async Task<IActionResult> PatrialUpdateGroup([FromBody] UpdateEntityRequestByName request)
         {
             await BusinesLayer.PartialUpdateGroup(request);
             return NoContent();
@@ -102,39 +101,39 @@ namespace Planar.Controllers
             return NoContent();
         }
 
-        [HttpPatch("{id}/user/{userId}")]
+        [HttpPatch("{name}/user/{username}")]
         [EditorAuthorize]
-        [SwaggerOperation(OperationId = "post_group_id_user_userId", Description = "Join user to group", Summary = "Join User To Group")]
+        [SwaggerOperation(OperationId = "post_group_name_user_userId", Description = "Join user to group", Summary = "Join User To Group")]
         [NoContentResponse]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<IActionResult> AddUserToGroup([FromRoute][Id] int id, [FromRoute][Id] int userId)
+        public async Task<IActionResult> AddUserToGroup([FromRoute][Name] string name, [FromRoute][Name] string username)
         {
-            await BusinesLayer.AddUserToGroup(id, userId);
+            await BusinesLayer.AddUserToGroup(name, username);
             return NoContent();
         }
 
-        [HttpPatch("{id}/role/{role}")]
+        [HttpPatch("{name}/role/{role}")]
         [AdministratorAuthorize]
-        [SwaggerOperation(OperationId = "post_group_id_role_roleid", Description = "Set role to group", Summary = "Set Role To Group")]
+        [SwaggerOperation(OperationId = "patch_group_name_role_role", Description = "Set role to group", Summary = "Set Role To Group")]
         [NoContentResponse]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<IActionResult> SetRoleToGroup([FromRoute][Id] int id, [FromRoute] Roles role)
+        public async Task<IActionResult> SetRoleToGroup([FromRoute][Name] string name, [FromRoute][Required][MaxLength(20)] string role)
         {
-            await BusinesLayer.SetRoleToGroup(id, role);
+            await BusinesLayer.SetRoleToGroup(name, role);
             return NoContent();
         }
 
-        [HttpDelete("{id}/user/{userId}")]
+        [HttpDelete("{name}/user/{username}")]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "delete_group_id_user", Description = "Remove user from group", Summary = "Remove User From Group")]
         [NoContentResponse]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<IActionResult> RemoveUserFromGroup([FromRoute][Id] int id, [FromRoute][Id] int userId)
+        public async Task<IActionResult> RemoveUserFromGroup([FromRoute][Name] string name, [FromRoute][Name] string username)
         {
-            await BusinesLayer.RemoveUserFromGroup(id, userId);
+            await BusinesLayer.RemoveUserFromGroup(name, username);
             return NoContent();
         }
     }

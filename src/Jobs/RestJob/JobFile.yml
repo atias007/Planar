@@ -1,0 +1,80 @@
+﻿job type: RestJob                     # Fixed! don't change it
+name: some job name                   # Name of job [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+group: null or group name             # Group of job [only alphanumeric, dashes & underscore, 1 to 50 characters]
+description: some job description     # Description of job [only alphanumeric, dashes & underscore, up to 200 characters]
+author: israel israeli (sales)        # The author/responsible person of the job [up to 100 characters]
+durable: true                         # Boolean [true/false]. Non durable job will be delete from system if no future triggers defined
+concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
+
+job data:                             # Key/Value pairs used by job code
+  key1: value1                        # --------------------------------
+  key2: value2                        # [1 to 100 characters]
+  key3: value3                        # [up to 1000 characters]
+
+properties:                           # Properties for job with 'PlanarJob' type
+  url: http://google.com              # The url address to make rest call [mandatory, up to 1000 characters]
+  method: GET                         # The http method: POST, GET, PUT, DELETE, PATCH, HEAD [mandatory]
+  body file: body.json                # The body text file for the request (only for POST, PUT, PATCH methods)
+  ignore ssl errors: false            # Ignore certificate error
+  user agent: my.agent                # Initialize the user agent header [up to 100 characters]
+  follow redirects: false             # Allow client redirection 
+  max redirects: 100                  # The maximum redirections when follow redirects enabled
+  expect 100 continue: true           # Create excpect : 100-continue header and receive a 100 Continue status code in response before sending the body
+  log response content: false         # Log the content payload of the response
+  proxy: 
+    address: http://proxy.example.com    # proxy address [up to 100 characters]
+    bypass on local: false               # by pass proxy for local addresses
+    use default credentials: true
+    credentials:
+      domain: some.domain
+      username: some.user
+      password: some.password
+  basic authentication:
+    username: admin
+    password: strong.pass
+  jwt authentication:
+    token: some.token
+  form data:                          # Key/Value pairs of http form data list
+    data_key_1: value a               # --------------------------------------
+    data_key_2: value b               # key --> [mandatory, up to 100 characters]
+    data_key_3: value c               # value --> [up to 1000 characters]
+  headers:                            # Key/Value pairs of http request headers
+    header1: some value x             # ---------------------------------------
+    header2: some value y             # key --> [mandatory, up to 100 characters]
+    header3: some value z             # value --> [up to 1000  characters]
+
+global config:                        # Key/Value pairs of global parameters used across different jobs
+  globalkey1: value1                  # ---------------------------------------------------------------
+  globalkey2: value2                  # [1 to 100 characters]
+  globalkey3: value3                  # [up to 1000 characters]
+
+simple triggers:                      # List of simple triggers
+  - name: every-minute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+    start: 2021-09-19 00:00:00        # Start date
+    end: 2021-09-19 23:59:00          # End date
+    interval: 00:01:00                # Interval
+    repeat count: 100                 # Repeat count
+    misfire behaviour: FireNow        # [ FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount ]
+    priority: 1                       # Priority [value between 0 to 100]
+    calendar: null                    # Calendar name
+    timeout: 00:30:00                 # Execution timeout. If timout span passed then cancel command is executed
+    retry span: 01:00:00              # The time span between retries
+    max retries: 3                    # The maximum amount of retries. Default is 3 [1 to 100]
+    trigger data:                     # Key/Value pairs used by job code (merged with job data)
+      key4: value4                    # -------------------------------------------------------
+      key5: value5                    # key --> [1 to 100 characters]
+      key6: value6                    # value --> [up to 1000 characters]
+
+cron triggers:                               # List of cron triggers
+  - name: some-cron-trigger                  # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+    cron expression: 0 15 10 ? * MON-FRI     # Cron expression [mandatory]
+    misfire behaviour: DoNothing             # [ DoNothing | FireAndProceed | IgnoreMisfires ]
+    priority: 1                              # Priority [value between 0 to 100]
+    calendar: null                           # Calendar name
+    timeout: 00:30:00                        # Execution timeout. If timout span passed then cancel command is executed
+    retry span: 01:00:00                     # The time span between retries
+    max retries: 3                           # The maximum amount of retries. Default is 3 [1 to 100]
+    trigger data:                            # Key/Value pairs used by job code (merged with job data)
+      key7: value7                           # -------------------------------------------------------
+      key8: value8                           # key --> [1 to 100 characters]
+      key9: value9                           # value --> [up to 1000 characters]

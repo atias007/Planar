@@ -80,21 +80,16 @@ namespace Planar.CLI.Actions
 
         protected static async Task<CliActionResponse> ExecuteEntity<T>(RestRequest request, CancellationToken cancellationToken)
         {
-            return await ExecuteEntity<T>(request, null, cancellationToken);
-        }
-
-        protected static async Task<CliActionResponse> ExecuteEntity<T>(RestRequest request, CliOutputFilenameRequest? outputRequest, CancellationToken cancellationToken)
-        {
             var result = await RestProxy.Invoke<T>(request, cancellationToken);
             if (result.IsSuccessful)
             {
-                return new CliActionResponse(result, serializeObj: result.Data, outputRequest);
+                return new CliActionResponse(result, dumpObject: result.Data);
             }
 
             return new CliActionResponse(result);
         }
 
-        protected static async Task<CliActionResponse> ExecuteTable<T>(RestRequest request, Func<T, Table> tableFunc, CancellationToken cancellationToken)
+        protected static async Task<CliActionResponse> ExecuteTable<T>(RestRequest request, Func<T, CliTable> tableFunc, CancellationToken cancellationToken)
         {
             var result = await RestProxy.Invoke<T>(request, cancellationToken);
             if (result.IsSuccessful && result.Data != null)
@@ -211,7 +206,7 @@ namespace Planar.CLI.Actions
         protected static void AssertUpdated(string? id, string entity)
         {
             if (string.IsNullOrEmpty(id)) { return; }
-            Console.WriteLine(id);
+            // Console.WriteLine(id)
             string message = entity switch
             {
                 "job" => CliFormat.GetWarningMarkup("job is in 'pause' state and none of its triggers will fire"),
@@ -260,7 +255,7 @@ namespace Planar.CLI.Actions
             var allActions = type.GetMethods(BindingFlags.Public | BindingFlags.Static).ToList();
             var moduleAttribute = type.GetCustomAttribute<ModuleAttribute>();
 
-            // TODO: check for moduleAttribute == null;
+            // TODO: check for moduleAttribute == null
             foreach (var act in allActions)
             {
                 var actionAttributes = act.GetCustomAttributes<ActionAttribute>();
@@ -319,7 +314,7 @@ namespace Planar.CLI.Actions
                 throw new CliException($"cli error: action '{method.Name}' has more then 2 parameter");
             }
 
-            var last = parameters.Last();
+            var last = parameters[parameters.Length - 1];
             if (last.ParameterType != typeof(CancellationToken))
             {
                 throw new CliException($"cli error: action '{method.Name}' has no CancellationToken parameter");
@@ -328,7 +323,7 @@ namespace Planar.CLI.Actions
             var requestType =
                 parameters.Length == 1 ?
                 null :
-                parameters.First().ParameterType;
+                parameters[0].ParameterType;
 
             return requestType;
         }

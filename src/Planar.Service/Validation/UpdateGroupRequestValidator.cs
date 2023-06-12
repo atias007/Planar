@@ -8,7 +8,7 @@ namespace Planar.Service.Validation
         public UpdateGroupRequestValidator(IValidator<AddGroupRequest> addValidator)
         {
             Include(addValidator);
-            RuleFor(e => e.Id).GreaterThan(0);
+            RuleFor(e => e.CurrentName).NotEmpty().Length(2, 50);
         }
     }
 }

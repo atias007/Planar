@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <NoWarn>1701;1702;NU1803</NoWarn>
@@ -12,7 +12,7 @@
   <ItemGroup>
     <PackageReference Include="dbup-sqlserver" Version="5.0.8" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
-    <PackageReference Include="Spectre.Console" Version="0.46.0" />
+    <PackageReference Include="Spectre.Console" Version="0.47.0" />
   </ItemGroup>
   <ItemGroup>
     <None Update="appsettings.json">
@@ -36,6 +36,10 @@
     <None Remove="Scripts\Planar_0016 - log_bigint_for_id.sql" />
     <None Remove="Scripts\Planar_0017 - config_value_4000.sql" />
     <None Remove="Scripts\Planar_0018 - referece_fields.sql" />
+    <None Remove="Scripts\Planar_0019 - add_job_audit.sql" />
+    <None Remove="Scripts\Planar_0020 - stop-cancel-column.sql" />
+    <None Remove="Scripts\Planar_0021 - alter_instancelog.sql" />
+    <None Remove="Scripts\Planar_0022 - add ex count.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -56,5 +60,9 @@
     <EmbeddedResource Include="Scripts\Planar_0016 - log_bigint_for_id.sql" />
     <EmbeddedResource Include="Scripts\Planar_0017 - config_value_4000.sql" />
     <EmbeddedResource Include="Scripts\Planar_0018 - referece_fields.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0019 - add_job_audit.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0020 - stop-cancel-column.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0021 - alter_instancelog.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0022 - add ex count.sql" />
   </ItemGroup>
 </Project>

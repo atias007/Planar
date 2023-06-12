@@ -12,7 +12,6 @@ job data:                             # Key/Value pairs used by job code
   key3: value3                        # [up to 1000 characters]
 
 properties:                           # Properties for job with 'PlanarJob' type
-  path: HelloWorld                    # Path to assembly file(s) [mandatory, up to 500 characters]
   filename: HelloWorld.dll            # Name of assembly file [mandatory, up to 500 characters]
   class name: HelloWorld.DemoJob      # Full class name (with namespace) [mandatory, up to 500 characters]
 
@@ -30,7 +29,7 @@ simple triggers:                      # List of simple triggers
     misfire behaviour: FireNow        # [ FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount ]
     priority: 1                       # Priority [value between 0 to 100]
     calendar: null                    # Calendar name
-    timeout: 00:30:00                 # Execution timeout. If timout span passed then stop command is executed
+    timeout: 00:30:00                 # Execution timeout. If timout span passed then cancel command is executed
     retry span: 01:00:00              # The time span between retries
     max retries: 3                    # The maximum amount of retries. Default is 3 [1 to 100]
     trigger data:                     # Key/Value pairs used by job code (merged with job data)
@@ -44,7 +43,7 @@ cron triggers:                               # List of cron triggers
     misfire behaviour: DoNothing             # [ DoNothing | FireAndProceed | IgnoreMisfires ]
     priority: 1                              # Priority [value between 0 to 100]
     calendar: null                           # Calendar name
-    timeout: 00:30:00                        # Execution timeout. If timout span passed then stop command is executed
+    timeout: 00:30:00                        # Execution timeout. If timout span passed then cancel command is executed
     retry span: 01:00:00                     # The time span between retries
     max retries: 3                           # The maximum amount of retries. Default is 3 [1 to 100]
     trigger data:                            # Key/Value pairs used by job code (merged with job data)

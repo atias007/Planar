@@ -9,6 +9,7 @@ namespace Planar.CLI.Entities
         public DataActions Action { get; set; }
 
         [ActionProperty(DefaultOrder = 2, Name = "key")]
+        [Required("data key argument is required")]
         public string DataKey { get; set; } = string.Empty;
 
         [ActionProperty(DefaultOrder = 3, Name = "value")]

@@ -19,6 +19,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using YamlDotNet.Core.Tokens;
 
 namespace Planar.CLI
 {
@@ -94,13 +95,15 @@ namespace Planar.CLI
                     {
                         if (subItem is JValue jvalue)
                         {
-                            AnsiConsole.MarkupLine($"[red]  - {jvalue.Value}[/]");
+                            var message = Convert.ToString(jvalue.Value)?.EscapeMarkup();
+                            AnsiConsole.MarkupLine($"[red]  - {message}[/]");
                         }
                     }
                 }
                 else
                 {
-                    AnsiConsole.MarkupLine($"[red]  - {(item as JValue)?.Value}[/]");
+                    var message = Convert.ToString((item as JValue)?.Value)?.EscapeMarkup();
+                    AnsiConsole.MarkupLine($"[red]  - {message}[/]");
                 }
             }
         }
@@ -152,7 +155,10 @@ namespace Planar.CLI
                 var action = CliArgumentsUtil.ValidateArgs(ref args, cliActions);
                 if (action == null) { return null; }
 
-                cliArgument = new CliArgumentsUtil(args);
+                cliArgument = new CliArgumentsUtil(args)
+                {
+                    RequestType = action.RequestType
+                };
 
                 if (action.Method == null || action.Method.DeclaringType == null) { return null; }
 
@@ -207,10 +213,26 @@ namespace Planar.CLI
                     else
                     {
                         response = InvokeCliAction(action, console, param);
+
+                        // paging request
+                        if (param is IPagingRequest pagingRequest)
+                        {
+                            var rowsCount = GetResponseTableRowCount(response);
+                            while (rowsCount == pagingRequest.PageSize)
+                            {
+                                HandleCliResponse(response, cliArgument.OutputFilename);
+
+                                pagingRequest.PageNumber++;
+                                response = InvokeCliAction(action, console, param);
+                                rowsCount = GetResponseTableRowCount(response);
+                                var ok = AssertPage(pagingRequest.PageNumber);
+                                if (!ok) { return cliArgument; }
+                            }
+                        }
                     }
                 }
 
-                HandleCliResponse(response).Wait();
+                HandleCliResponse(response, cliArgument.OutputFilename);
             }
             catch (Exception ex)
             {
@@ -220,25 +242,116 @@ namespace Planar.CLI
             return cliArgument;
         }
 
-        private static async Task HandleCliResponse(CliActionResponse? response)
+        private static bool AssertPage(uint pageNumber)
+        {
+            var chiose = AnsiConsole.Prompt(
+                new SelectionPrompt<string>()
+                    .Title($" [turquoise2]continue[/] to page number [{CliFormat.WarningColor}]{pageNumber + 1}[/] or [turquoise2]stop[/]?")
+                    .AddChoices("continue", "stop"));
+
+            if (chiose == "stop") { return false; }
+            return true;
+        }
+
+        private static int GetResponseTableRowCount(CliActionResponse? cliActionResponse)
+        {
+            var rowsCount = cliActionResponse?.Tables?.FirstOrDefault()?.Table.Rows.Count ?? 0;
+            return rowsCount;
+        }
+
+        private static void HandleCliResponse(CliActionResponse? response, string? outputfilename)
         {
             if (response == null) { return; }
             if (response.Response == null) { return; }
 
-            if (response.Response.IsSuccessful)
+            if (!response.Response.IsSuccessful)
             {
-                if (response.Tables != null)
-                {
-                    response.Tables.ForEach(t => AnsiConsole.Write(t));
-                }
-                else
-                {
-                    await WriteInfo(response);
-                }
+                HandleHttpFailResponse(response.Response);
+                return;
+            }
+
+            if (string.IsNullOrEmpty(outputfilename))
+            {
+                WriteCliResponse(AnsiConsole.Console, response);
             }
             else
             {
-                HandleHttpFailResponse(response.Response);
+                var isHtml = IsHtmlFilename(outputfilename);
+                using var recorder = AnsiConsole.Console.CreateRecorder();
+                WriteCliResponse(recorder, response);
+
+                var output =
+                    isHtml ?
+                    recorder.ExportHtml() :
+                    recorder.ExportText();
+
+                output += Environment.NewLine;
+
+                SafeCreateFile(outputfilename, output);
+            }
+        }
+
+        private static void SafeCreateFile(string outputfilename, string output)
+        {
+            try
+            {
+                File.WriteAllText(outputfilename, output, Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                throw new CliException($"fail to write content to file '{outputfilename}'. error message: {ex.Message}");
+            }
+        }
+
+        private static bool IsHtmlFilename(string filename)
+        {
+            var fi = new FileInfo(filename);
+            var ext = fi.Extension.ToLower();
+            if (ext == ".htm" || ext == ".html")
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void WriteCliResponse(IAnsiConsole console, CliActionResponse response)
+        {
+            if (response.Tables != null && response.Tables.Any())
+            {
+                PrintTables(console, response);
+            }
+            else if (response.DumpObject != null)
+            {
+                CliObjectDumper.Dump(console, response.DumpObject);
+            }
+            else
+            {
+                WriteInfo(console, response);
+            }
+        }
+
+        private static void PrintTables(IAnsiConsole console, CliActionResponse response)
+        {
+            if (response.Tables == null) { return; }
+            foreach (var item in response.Tables)
+            {
+                console.Write(item.Table);
+                PrintTableFooter(console, item);
+
+                console.WriteLine();
+            }
+        }
+
+        private static void PrintTableFooter(IAnsiConsole console, CliTable item)
+        {
+            if (!item.ShowCount) { return; }
+            var rows = item.Table.Rows.Count;
+            if (rows > 0)
+            {
+                var entity = string.IsNullOrEmpty(item.EntityName) ? "row" : item.EntityName;
+                var extra = rows > 1 ? "s" : string.Empty;
+                console.MarkupLine($" [black on gray] ({rows} {entity}{extra}) [/]");
             }
         }
 
@@ -531,30 +644,14 @@ namespace Planar.CLI
                 ExceptionFormats.ShortenMethods | ExceptionFormats.ShowLinks);
         }
 
-        private static async Task WriteInfo(CliActionResponse response)
+        private static void WriteInfo(IAnsiConsole console, CliActionResponse response)
         {
             var message = response.Message;
             if (!string.IsNullOrEmpty(message)) { message = message.Trim(); }
             if (message == "[]") { message = null; }
             if (string.IsNullOrEmpty(message)) { return; }
 
-            if (response.OutputFilename == null)
-            {
-                AnsiConsole.WriteLine(message);
-            }
-            else
-            {
-                var filename = response.OutputFilename ?? string.Empty;
-                if (!filename.Contains('.')) { filename = $"{filename}.txt"; }
-                await SaveData(message, filename);
-                AnsiConsole.WriteLine($"file '{new FileInfo(filename).FullName}' created");
-            }
-        }
-
-        private static async Task SaveData(string? content, string filename)
-        {
-            if (filename == null) { return; }
-            await File.AppendAllTextAsync(filename, content);
+            console.WriteLine(message);
         }
 
         private static void MarkupCliLine(string message)

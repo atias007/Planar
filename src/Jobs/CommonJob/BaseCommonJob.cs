@@ -85,7 +85,7 @@ namespace CommonJob
 
             context.CancellationToken.Register(() =>
             {
-                _messageBroker.AppendLog(LogLevel.Warning, "Service get a request for stop job");
+                _messageBroker.AppendLog(LogLevel.Warning, "Service get a request for cancel job");
             });
         }
 
@@ -115,7 +115,7 @@ namespace CommonJob
                 foreach (var item in context.MergedJobDataMap)
                 {
                     if (item.Key.StartsWith(Consts.ConstPrefix)) { continue; }
-                    var prop = allProperties.FirstOrDefault(p => string.Equals(p.Name, item.Key, StringComparison.OrdinalIgnoreCase));
+                    var prop = allProperties.Find(p => string.Equals(p.Name, item.Key, StringComparison.OrdinalIgnoreCase));
                     MapProperty(context.JobDetail.Key, instance, prop, item);
                 }
             }
@@ -171,7 +171,7 @@ namespace CommonJob
             var finish = task.Wait(timeout);
             if (!finish)
             {
-                MessageBroker.AppendLog(LogLevel.Warning, $"Timeout occur, sent stop requst to job (timeout value: {FormatTimeSpan(timeout)})");
+                MessageBroker.AppendLog(LogLevel.Warning, $"Timeout occur, sent cancel requst to job (timeout value: {FormatTimeSpan(timeout)})");
                 await context.Scheduler.Interrupt(context.JobDetail.Key);
             }
 
@@ -215,7 +215,7 @@ namespace CommonJob
 
             if (ignore)
             {
-                _logger.LogDebug("Ignore map back property '{PropertyName}' of job '{JobGroup}.{JobName}' to data map",
+                _logger.LogDebug("ATTENTION: Ignore map back property '{PropertyName}' of job '{JobGroup}.{JobName}' to data map",
                     property.Name,
                     jobKey.Group,
                     jobKey.Name);

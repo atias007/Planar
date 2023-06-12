@@ -48,6 +48,7 @@ namespace Planar.Job
             }
         }
 
+        [Obsolete("CheckIfStopRequest is no longer supported. Use cancellation token in IJobExecutionContext")]
         public bool CheckIfStopRequest()
         {
             var text = _messageBroker?.Publish(MessageBrokerChannels.CheckIfStopRequest);
@@ -55,6 +56,7 @@ namespace Planar.Job
             return stop;
         }
 
+        [Obsolete("FailOnStopRequest is no longer supported. Use cancellation token in IJobExecutionContext")]
         public void FailOnStopRequest(Action? stopHandle = null)
         {
             if (stopHandle != default)

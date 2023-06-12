@@ -1,6 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Service.Audit;
 using Planar.Service.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -48,6 +51,45 @@ namespace Planar.Service.Data
         {
             _context.JobProperties.Update(jobProperty);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task AddJobAudit(JobAudit jobAudit)
+        {
+            _context.JobAudits.Add(jobAudit);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteJobAudit(string jobId)
+        {
+            await _context.JobAudits.Where(j => j.JobId == jobId).ExecuteDeleteAsync();
+        }
+
+        public IQueryable<JobAudit> GetJobAudits(string id)
+        {
+            return _context.JobAudits
+                .AsNoTracking()
+                .Where(a => a.JobId == id || a.JobId == string.Empty)
+                .OrderByDescending(a => a.DateCreated)
+                .ThenByDescending(a => a.Id);
+        }
+
+        public IQueryable<JobAudit> GetAudits(uint pageNumber, byte pageSize)
+        {
+            var skip = Convert.ToInt32(pageNumber * pageSize);
+
+            return _context.JobAudits
+                .AsNoTracking()
+                .OrderByDescending(a => a.DateCreated)
+                .ThenByDescending(a => a.Id)
+                .Skip(skip)
+                .Take(pageSize);
+        }
+
+        public IQueryable<JobAudit> GetJobAudit(int id)
+        {
+            return _context.JobAudits
+                .AsNoTracking()
+                .Where(a => a.Id == id);
         }
     }
 }

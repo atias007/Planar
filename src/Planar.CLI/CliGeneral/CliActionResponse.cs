@@ -1,4 +1,4 @@
-﻿using Planar.CLI.Entities;
+﻿using Planar.CLI.CliGeneral;
 using Planar.Common;
 using RestSharp;
 using Spectre.Console;
@@ -16,37 +16,30 @@ namespace Planar.CLI
             Response = response;
         }
 
-        public CliActionResponse(RestResponse? response, string? message, CliOutputFilenameRequest? request = null)
+        public CliActionResponse(RestResponse? response, string? message)
             : this(response)
         {
             Message = message;
-            if (request != null && request.HasOutputFilename)
-            {
-                OutputFilename = request.OutputFilename;
-            }
         }
 
-        public CliActionResponse(RestResponse? response, object? serializeObj, CliOutputFilenameRequest? request = null)
+        public CliActionResponse(RestResponse? response, CliTable table)
             : this(response)
         {
-            if (serializeObj != null)
-            {
-                Message = SerializeResponse(serializeObj);
-            }
-
-            if (request != null && request.HasOutputFilename)
-            {
-                OutputFilename = request.OutputFilename;
-            }
+            Tables = new List<CliTable> { table };
         }
 
-        public CliActionResponse(RestResponse? response, Table table)
+        public CliActionResponse(RestResponse? response, object? dumpObject)
             : this(response)
         {
-            Tables = new List<Table> { table };
+            DumpObject = dumpObject;
+
+            if (dumpObject != null)
+            {
+                Message = SerializeResponse(dumpObject);
+            }
         }
 
-        public CliActionResponse(RestResponse? response, List<Table> tables)
+        public CliActionResponse(RestResponse? response, List<CliTable> tables)
             : this(response)
         {
             Tables = tables;
@@ -56,9 +49,9 @@ namespace Planar.CLI
 
         public string? Message { get; private set; }
 
-        public string? OutputFilename { get; private set; }
+        public object? DumpObject { get; private set; }
 
-        public List<Table>? Tables { get; private set; }
+        public List<CliTable>? Tables { get; private set; }
 
         public static CliActionResponse Empty
         {

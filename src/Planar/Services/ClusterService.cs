@@ -3,6 +3,7 @@ using Grpc.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
+using Planar.Service.API;
 using Planar.Service.General;
 using Quartz;
 using System;
@@ -18,6 +19,15 @@ namespace Planar
         public ClusterService(IServiceScopeFactory serviceScopeFactory)
         {
             _serviceScopeFactory = serviceScopeFactory;
+        }
+
+        // NEED CHECK
+        public override async Task<Empty> ConfigFlush(Empty request, ServerCallContext context)
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var configDomain = scope.ServiceProvider.GetService<ConfigDomain>();
+            await configDomain.FlushInner();
+            return await Task.FromResult(new Empty());
         }
 
         // OK
@@ -106,7 +116,8 @@ namespace Planar
             var result = new RunningDataReply
             {
                 Exceptions = SafeString(job.Exceptions),
-                Log = SafeString(job.Log)
+                Log = SafeString(job.Log),
+                ExceptionsCount = job.ExceptionsCount
             };
 
             return result;
@@ -123,13 +134,13 @@ namespace Planar
         }
 
         // OK
-        public override async Task<StopRunningJobReply> StopRunningJob(GetRunningJobRequest request, ServerCallContext context)
+        public override async Task<CancelRunningJobReply> CancelRunningJob(GetRunningJobRequest request, ServerCallContext context)
         {
             ValidateRequest(request);
             using var scope = _serviceScopeFactory.CreateScope();
             var schedulerUtil = scope.ServiceProvider.GetService<SchedulerUtil>();
             var result = await schedulerUtil.StopRunningJob(request.InstanceId, context.CancellationToken);
-            return new StopRunningJobReply { IsStopped = result };
+            return new CancelRunningJobReply { IsCanceled = result };
         }
 
         // OK

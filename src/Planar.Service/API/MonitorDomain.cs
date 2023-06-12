@@ -102,7 +102,7 @@ namespace Planar.Service.API
 
         public List<string> GetHooks()
         {
-            return ServiceUtil.MonitorHooks.Keys.ToList();
+            return ServiceUtil.MonitorHooks.Keys.OrderBy(k => k).ToList();
         }
 
         public async Task<string> Reload()
@@ -131,7 +131,7 @@ namespace Planar.Service.API
             await DataLayer.UpdateMonitorAction(monitor);
         }
 
-        public async Task PartialUpdateMonitor(UpdateEntityRequest request)
+        public async Task PartialUpdateMonitor(UpdateEntityRequestById request)
         {
             var monitor = await DataLayer.GetMonitorAction(request.Id);
             ValidateExistingEntity(monitor, "monitor");

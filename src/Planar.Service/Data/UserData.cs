@@ -34,6 +34,18 @@ namespace Planar.Service.Data
             return result;
         }
 
+        public async Task<User?> GetUser(string username, bool withTracking = false)
+        {
+            IQueryable<User> query = _context.Users;
+            if (!withTracking)
+            {
+                query = query.AsNoTracking();
+            }
+
+            var result = await query.SingleOrDefaultAsync(u => u.Username == username);
+            return result;
+        }
+
         public async Task<UserIdentity?> GetUserIdentity(string username)
         {
             var result = await _context.Users
@@ -41,6 +53,8 @@ namespace Planar.Service.Data
                 .Select(u => new UserIdentity
                 {
                     Id = u.Id,
+                    Surename = u.FirstName,
+                    GivenName = u.LastName,
                     Username = u.Username,
                     Password = u.Password,
                     Salt = u.Salt,
@@ -61,11 +75,22 @@ namespace Planar.Service.Data
             return result;
         }
 
+        public async Task<int> GetUserRole(string username)
+        {
+            var result = await _context.Groups
+                .Where(g => g.Users.Any(u => u.Username.ToLower() == username.ToLower()))
+                .Select(g => g.RoleId)
+                .OrderByDescending(g => g)
+                .FirstOrDefaultAsync();
+
+            return result;
+        }
+
         public async Task<List<EntityTitle>> GetGroupsForUser(int id)
         {
             var result = await _context.Groups
                     .Where(g => g.Users.Any(u => u.Id == id))
-                    .Select(g => new EntityTitle(g.Id, g.Name))
+                    .Select(g => new EntityTitle(g.Name))
                     .ToListAsync();
 
             return result;
@@ -98,11 +123,10 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task RemoveUser(User user)
+        public async Task<int> RemoveUser(string username)
         {
-            _context.Users.Remove(user);
-            _context.SaveChanges();
-            await Task.CompletedTask;
+            var result = await _context.Users.Where(u => u.Username.ToLower() == username.ToLower()).ExecuteDeleteAsync();
+            return result;
         }
 
         public async Task<bool> IsUserExists(int userId)
@@ -110,10 +134,24 @@ namespace Planar.Service.Data
             return await _context.Users.AnyAsync(u => u.Id == userId);
         }
 
-        public async Task<bool> IsUsernameExists(string? username, int id)
+        public async Task<int> GetUserId(string username)
+        {
+            return await _context.Users
+                .Where(u => u.Username.ToLower() == username.ToLower())
+                .Select(u => u.Id)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<bool> IsUsernameExists(string? username)
         {
             if (username == null) { return false; }
-            return await _context.Users.AnyAsync(u => u.Id != id && u.Username.ToLower() == username.ToLower());
+            return await _context.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower());
+        }
+
+        public async Task<bool> IsUsernameExists(string? username, string ignoreUsername)
+        {
+            if (username == null) { return false; }
+            return await _context.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower() && u.Username.ToLower() != ignoreUsername.ToLower());
         }
     }
 }

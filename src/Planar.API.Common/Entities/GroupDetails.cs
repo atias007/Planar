@@ -4,7 +4,6 @@ namespace Planar.API.Common.Entities
 {
     public class GroupDetails
     {
-        public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? AdditionalField1 { get; set; }
         public string? AdditionalField2 { get; set; }

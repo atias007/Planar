@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net7.0</TargetFramework>
 		<RootNamespace>Planar.API.Common</RootNamespace>
 		<AssemblyName>Planar.API.Common</AssemblyName>
 		<Nullable>enable</Nullable>
@@ -14,7 +14,7 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.0.0.68202">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.2.0.71021">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>

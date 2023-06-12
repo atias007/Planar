@@ -102,7 +102,7 @@ namespace Planar
 
         private void OnCancel()
         {
-            Kill("request for stop");
+            Kill("request for cancel process");
         }
 
         private void OnTimeout()

@@ -39,7 +39,7 @@ namespace Planar.CLI.Actions
             }
 
             var body = new SetJobPathRequest { Folder = request.Folder };
-            var restRequest = new RestRequest("job/path", Method.Post)
+            var restRequest = new RestRequest("job/folder", Method.Post)
                 .AddBody(body);
             var result = await RestProxy.Invoke<JobIdResponse>(restRequest, cancellationToken);
 
@@ -62,7 +62,13 @@ namespace Planar.CLI.Actions
             var result = await RestProxy.Invoke<List<JobRowDetails>>(restRequest, cancellationToken);
             if (!result.IsSuccessful)
             {
-                throw new CliException($"fail to fetch list of jobs. error message: {result.ErrorMessage}", result.ErrorException);
+                var message = "fail to fetch list of jobs";
+                if (!string.IsNullOrEmpty(result.ErrorMessage))
+                {
+                    message += $". error message: {result.ErrorMessage}";
+                }
+
+                throw new CliException(message, result.ErrorException);
             }
 
             return ChooseJob(result.Data);
@@ -116,12 +122,29 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("job", Method.Get);
             var p = AllJobsMembers.AllUserJobs;
             if (request.System) { p = AllJobsMembers.AllSystemJobs; }
-            if (request.All) { p = AllJobsMembers.All; }
             restRequest.AddQueryParameter("filter", (int)p);
 
             if (!string.IsNullOrEmpty(request.JobType))
             {
                 restRequest.AddQueryParameter("jobType", request.JobType);
+            }
+
+            if (!string.IsNullOrEmpty(request.JobGroup))
+            {
+                restRequest.AddQueryParameter("group", request.JobGroup);
+            }
+
+            if (request.Active ^ request.Inactive)
+            {
+                if (request.Active)
+                {
+                    restRequest.AddQueryParameter("active", true.ToString());
+                }
+
+                if (request.Inactive)
+                {
+                    restRequest.AddQueryParameter("active", false.ToString());
+                }
             }
 
             var result = await RestProxy.Invoke<List<JobRowDetails>>(restRequest, cancellationToken);
@@ -158,12 +181,47 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, tables);
         }
 
+        [Action("audit")]
+        public static async Task<CliActionResponse> GetJobAudits(CliJobKey jobKey, CancellationToken cancellationToken = default)
+        {
+            if (int.TryParse(jobKey.Id, out var id) && id > 0)
+            {
+                return await GetJobAudit(id, cancellationToken);
+            }
+
+            var restRequest = new RestRequest("job/{id}/audit", Method.Get)
+                .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<IEnumerable<JobAuditDto>>(restRequest, cancellationToken);
+            var tables = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, tables);
+        }
+
+        private static async Task<CliActionResponse> GetJobAudit(int auditId, CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("job/audit/{auditId}", Method.Get)
+                .AddParameter("auditId", auditId, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<JobAuditWithInfoDto>(restRequest, cancellationToken);
+            return new CliActionResponse(result, dumpObject: result.Data);
+        }
+
+        [Action("all-audits")]
+        public static async Task<CliActionResponse> GetAudits(CliGetAuditsRequest request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("job/audits", Method.Get)
+                .AddParameter("pageNumber", request.PageNumber, ParameterType.QueryString)
+                .AddParameter("pageSize", request.PageSize, ParameterType.QueryString);
+
+            var result = await RestProxy.Invoke<IEnumerable<JobAuditDto>>(restRequest, cancellationToken);
+            var tables = CliTableExtensions.GetTable(result.Data, withJobId: true);
+            return new CliActionResponse(result, tables);
+        }
+
         [Action("jobfile")]
         [NullRequest]
         public static async Task<CliActionResponse> GetJobFile(CliGetJobFileRequest request, CancellationToken cancellationToken = default)
         {
-            request?.Validate();
-
             if (request == null)
             {
                 var wrapper = await GetCliGetJobTypesRequest(cancellationToken);
@@ -180,7 +238,7 @@ namespace Planar.CLI.Actions
 
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
 
-            return new CliActionResponse(result, result.Data, request);
+            return new CliActionResponse(result, result.Data);
         }
 
         [Action("types")]
@@ -265,7 +323,7 @@ namespace Planar.CLI.Actions
 
             if (request.Details)
             {
-                return new CliActionResponse(result.Item2, serializeObj: result.Item1);
+                return new CliActionResponse(result.Item2, dumpObject: result.Item1);
             }
 
             var table = CliTableExtensions.GetTable(result.Item1);
@@ -276,6 +334,19 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> InvokeJob(CliInvokeJobRequest request, CancellationToken cancellationToken = default)
         {
             var result = await InvokeJobInner(request, cancellationToken);
+            return new CliActionResponse(result);
+        }
+
+        [Action("queue-invoke")]
+        public static async Task<CliActionResponse> QueueInvokeJob(CliQueueInvokeJobRequest request, CancellationToken cancellationToken = default)
+        {
+            var prm = JsonMapper.Map<QueueInvokeJobRequest, CliQueueInvokeJobRequest>(request);
+            prm ??= new QueueInvokeJobRequest();
+            if (prm.Timeout == TimeSpan.Zero) { prm.Timeout = null; }
+
+            var restRequest = new RestRequest("job/queue-invoke", Method.Post)
+                .AddBody(prm);
+            var result = await RestProxy.Invoke(restRequest, cancellationToken);
             return new CliActionResponse(result);
         }
 
@@ -332,7 +403,7 @@ namespace Planar.CLI.Actions
 
         [Action("cancel")]
         [NullRequest]
-        public static async Task<CliActionResponse> StopRunningJob(CliFireInstanceIdRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> CancelRunningJob(CliFireInstanceIdRequest request, CancellationToken cancellationToken = default)
         {
             request ??= new CliFireInstanceIdRequest
             {
@@ -580,7 +651,7 @@ namespace Planar.CLI.Actions
             if (string.IsNullOrEmpty(yml)) { return string.Empty; }
 
             var lines = yml.Split('\n');
-            var pathLine = lines.FirstOrDefault(p => p.ToLower().StartsWith(path));
+            var pathLine = Array.Find(lines, p => p.ToLower().StartsWith(path));
             if (string.IsNullOrEmpty(pathLine)) { return string.Empty; }
 
             return pathLine[path.Length..].Trim();
@@ -603,7 +674,7 @@ namespace Planar.CLI.Actions
             var result = await CheckJobInner(cancellationToken);
             if (result.IsSuccessful)
             {
-                var exists = result.Data?.Any(d => d.Id == request.Id || $"{d.Group}.{d.Name}" == request.Id) ?? false;
+                var exists = result.Data?.Exists(d => d.Id == request.Id || $"{d.Group}.{d.Name}" == request.Id) ?? false;
                 if (exists) { throw new CliException($"job id {request.Id} already running. test can not be invoked until job done"); }
             }
 
@@ -844,11 +915,19 @@ namespace Planar.CLI.Actions
 
             Console.WriteLine();
             var sleepTime = 2000;
+            var max = 0;
             while (runResult.Data != null)
             {
                 Console.CursorTop -= 1;
                 var span = DateTime.Now.Subtract(invokeDate);
-                AnsiConsole.MarkupLine($" [gold3_1][[x]][/] Progress: [wheat1]{runResult.Data.Progress}[/]%  |  Effected Row(s): [wheat1]{runResult.Data.EffectedRows.GetValueOrDefault()}[/]  |  Run Time: [wheat1]{CliTableFormat.FormatTimeSpan(span)}[/]  |  End Time: [wheat1]{CliTableFormat.FormatTimeSpan(runResult.Data.EstimatedEndTime)}[/]     ");
+                var title =
+                        $" [gold3_1][[x]][/] Progress: [wheat1]{runResult.Data.Progress}[/]%  |" +
+                        $"  Effected Row(s): [wheat1]{runResult.Data.EffectedRows.GetValueOrDefault()}[/]  |" +
+                        $"  Ex. Count: {CliTableFormat.FormatExceptionCount(runResult.Data.ExceptionsCount)}  |" +
+                        $"  Run Time: [wheat1]{CliTableFormat.FormatTimeSpan(span)}[/]  |" +
+                        $"  End Time: [wheat1]{CliTableFormat.FormatTimeSpan(runResult.Data.EstimatedEndTime)}[/]     ";
+                max = Math.Max(max, title.Length);
+                AnsiConsole.MarkupLine(title);
                 await Task.Delay(sleepTime, cancellationToken);
                 runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest, cancellationToken);
                 if (!runResult.IsSuccessful) { break; }
@@ -885,8 +964,10 @@ namespace Planar.CLI.Actions
             }
 
             var finalSpan = TimeSpan.FromMilliseconds(status.Data.Duration.GetValueOrDefault());
-            AnsiConsole.Markup($"Effected Row(s): {status.Data.EffectedRows.GetValueOrDefault()}");
-            AnsiConsole.MarkupLine($"  |  Run Time: {CliTableFormat.FormatTimeSpan(finalSpan)}");
+            AnsiConsole.Markup($"Effected Row(s): {status.Data.EffectedRows.GetValueOrDefault()}  |");
+            AnsiConsole.Markup($"  Ex. Count: {CliTableFormat.FormatExceptionCount(status.Data.ExceptionCount)}  |");
+            AnsiConsole.Markup($"  Run Time: {CliTableFormat.FormatTimeSpan(finalSpan)}  |");
+            AnsiConsole.MarkupLine($"  End Time: --:--:--     ");
             AnsiConsole.Markup(" [gold3_1][[x]][/] ");
             if (status.Data.Status == 0)
             {

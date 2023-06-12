@@ -56,7 +56,7 @@ namespace Planar.Service.General
         {
             var tempNode = GetCurrentClusterNode();
             var result = await _dal.GetClusterNodes();
-            var currentNode = result.FirstOrDefault(n => string.Equals(n.Server, tempNode.Server, StringComparison.CurrentCultureIgnoreCase) && n.Port == tempNode.Port);
+            var currentNode = result.Find(n => string.Equals(n.Server, tempNode.Server, StringComparison.CurrentCultureIgnoreCase) && n.Port == tempNode.Port);
             if (currentNode != null)
             {
                 currentNode.IsCurrentNode = true;
@@ -286,6 +286,26 @@ namespace Planar.Service.General
             }
         }
 
+        public async Task ConfigFlush()
+        {
+            var nodes = await GetAllNodes();
+            foreach (var node in nodes)
+            {
+                if (node.IsCurrentNode) { continue; }
+
+                try
+                {
+                    await Policy.Handle<RpcException>()
+                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                    .ExecuteAsync(() => CallConfigFlush(node));
+                }
+                catch (RpcException ex)
+                {
+                    _logger.LogError(ex, "Fail to flush config at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                }
+            }
+        }
+
         public async Task<bool> IsJobRunning(JobKey jobKey)
         {
             var rcpJobKey = new RpcJobKey { Group = jobKey.Group, Name = jobKey.Name };
@@ -399,11 +419,11 @@ namespace Planar.Service.General
 
                 try
                 {
-                    var isStopped = await Policy.Handle<RpcException>()
+                    var isCanceled = await Policy.Handle<RpcException>()
                         .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => CallStopRunningJob(node, instanceId));
+                        .ExecuteAsync(() => CallCancelRunningJob(node, instanceId));
 
-                    if (isStopped) { return true; }
+                    if (isCanceled) { return true; }
                 }
                 catch (RpcException ex)
                 {
@@ -517,6 +537,12 @@ namespace Planar.Service.General
             await client.StartSchedulerAsync(new Empty(), deadline: GrpcDeadLine);
         }
 
+        private static async Task CallConfigFlush(ClusterNode node)
+        {
+            var client = GetClient(node);
+            await client.ConfigFlushAsync(new Empty(), deadline: GrpcDeadLine);
+        }
+
         private static async Task<bool> CallIsJobRunningService(RpcJobKey jobKey, ClusterNode node)
         {
             var client = GetClient(node);
@@ -568,7 +594,8 @@ namespace Planar.Service.General
             var response = new GetRunningDataResponse
             {
                 Log = string.IsNullOrEmpty(result.Log) ? null : result.Log,
-                Exceptions = string.IsNullOrEmpty(result.Exceptions) ? null : result.Exceptions
+                Exceptions = string.IsNullOrEmpty(result.Exceptions) ? null : result.Exceptions,
+                ExceptionsCount = result.ExceptionsCount
             };
 
             return response;
@@ -582,12 +609,12 @@ namespace Planar.Service.General
             return result.Exists;
         }
 
-        private static async Task<bool> CallStopRunningJob(ClusterNode node, string instanceId)
+        private static async Task<bool> CallCancelRunningJob(ClusterNode node, string instanceId)
         {
             var client = GetClient(node);
             var request = new GetRunningJobRequest { InstanceId = instanceId };
-            var result = await client.StopRunningJobAsync(request, deadline: GrpcDeadLine);
-            return result.IsStopped;
+            var result = await client.CancelRunningJobAsync(request, deadline: GrpcDeadLine);
+            return result.IsCanceled;
         }
 
         private static async Task<PersistanceRunningJobInfoReply> CallGetPersistanceRunningJobInfo(ClusterNode node)
@@ -618,6 +645,9 @@ namespace Planar.Service.General
                 TriggerGroup = reply.TriggerGroup,
                 TriggerId = reply.TriggerId,
                 TriggerName = reply.TriggerName,
+                ExceptionsCount = reply.ExceptionsCount,
+                EstimatedEndTime = reply.EstimatedEndTime?.ToTimeSpan(),
+                JobType = reply.JobType
             };
 
             foreach (var item in reply.DataMap)

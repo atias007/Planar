@@ -12,13 +12,12 @@ using Planar.Service.Validation;
 using Quartz;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using static Quartz.MisfireInstruction;
 
 namespace Planar.Service.API
 {
@@ -46,19 +45,13 @@ namespace Planar.Service.API
                 .Replace("@MinNameLength@", MinNameLength.ToString())
                 .Replace("@MaxNameLength@", MaxNameLength.ToString()), RegexOptions.Compiled, TimeSpan.FromSeconds(5));
 
-        public async Task<JobIdResponse> Add<TProperties>(SetJobRequest<TProperties> genericRequest)
-           where TProperties : class, new()
-        {
-            ValidateRequestNoNull(genericRequest);
-            var request = Mapper.Map<SetJobRequest<TProperties>, SetJobDynamicRequest>(genericRequest);
-            return await Add(request);
-        }
-
         public async Task<JobIdResponse> AddByPath(SetJobPathRequest request)
         {
             await ValidateAddPath(request);
             var yml = await GetJobFileContent(request);
             var dynamicRequest = GetJobDynamicRequest(yml);
+            dynamic properties = dynamicRequest.Properties ?? new ExpandoObject();
+            properties["path"] = request.Folder;
             var response = await Add(dynamicRequest);
             return response;
         }
@@ -106,6 +99,8 @@ namespace Planar.Service.API
                 await DataLayer.DeleteJobProperty(id);
                 throw;
             }
+
+            AuditJob(jobKey, "job added", request);
 
             // Return Id
             return new JobIdResponse { Id = id };
@@ -867,6 +862,10 @@ namespace Planar.Service.API
 
                 case nameof(SqlJob):
                     await ValidateJobProperties<SqlJobProperties>(yml);
+                    break;
+
+                case nameof(RestJob):
+                    await ValidateJobProperties<RestJobProperties>(yml);
                     break;
 
                 default:

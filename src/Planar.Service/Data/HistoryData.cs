@@ -2,7 +2,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
-using Planar.Service.API.Helpers;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using Quartz;
@@ -164,7 +163,7 @@ namespace Planar.Service.Data
                 log.EffectedRows,
                 log.Log,
                 log.Exception,
-                log.IsStopped
+                log.IsCanceled
             };
 
             var cmd = new CommandDefinition(
@@ -234,7 +233,8 @@ namespace Planar.Service.Data
                 {
                     EffectedRows = l.EffectedRows,
                     Status = l.Status,
-                    Duration = l.Duration
+                    Duration = l.Duration,
+                    ExceptionCount = l.ExceptionCount
                 })
                 .FirstOrDefaultAsync();
 

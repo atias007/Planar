@@ -12,6 +12,7 @@ option csharp_namespace = "Planar";
 package Cluster;
 
 service PlanarCluster {
+  rpc ConfigFlush (google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc HealthCheck (google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc StopScheduler (google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc StartScheduler (google.protobuf.Empty) returns (google.protobuf.Empty);
@@ -20,7 +21,7 @@ service PlanarCluster {
   rpc IsJobRunning (RpcJobKey) returns (IsJobRunningReply);
   rpc GetRunningData (GetRunningJobRequest) returns (RunningDataReply);
   rpc IsRunningInstanceExist (GetRunningJobRequest) returns (IsRunningInstanceExistReply);
-  rpc StopRunningJob (GetRunningJobRequest) returns (StopRunningJobReply);
+  rpc CancelRunningJob (GetRunningJobRequest) returns (CancelRunningJobReply);
   rpc GetPersistanceRunningJobInfo(google.protobuf.Empty) returns (PersistanceRunningJobInfoReply);
   rpc IsJobFolderExist(IsJobAssestsExistRequest) returns (IsJobAssestsExistReply);
   rpc IsJobFileExist(IsJobAssestsExistRequest) returns (IsJobAssestsExistReply);
@@ -44,8 +45,8 @@ message IsJobRunningReply{
 	bool isRunning = 1;
 }
 
-message StopRunningJobReply{
-	bool isStopped = 1;
+message CancelRunningJobReply{
+	bool isCanceled = 1;
 }
 
 message PersistanceRunningJobInfoReply
@@ -82,6 +83,10 @@ message RunningJobReply{
 	repeated DataMap DataMap = 16;
 	optional int32 effectedRows = 17;
 	int32 progress = 18;
+	int32 exceptionsCount = 19;
+	optional google.protobuf.Duration estimatedEndTime = 20;
+	string jobType = 21;
+
 }
 
 message DataMap{
@@ -94,6 +99,7 @@ message RunningDataReply
 	bool isEmpty = 1;
 	string log = 2;
     string exceptions = 3;
+	int32 exceptionsCount = 4;
 }
 
 message IsRunningInstanceExistReply

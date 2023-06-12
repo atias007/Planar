@@ -1,5 +1,4 @@
-﻿using Quartz;
-using Quartz.Util;
+﻿using Quartz.Util;
 
 namespace Planar.Common.Helpers
 {
@@ -7,6 +6,11 @@ namespace Planar.Common.Helpers
     {
         public static string GetKeyTitle<T>(Key<T> key)
         {
+            if (key.Group == Key<T>.DefaultGroup)
+            {
+                return key.Name;
+            }
+
             var title = $"{key.Group}.{key.Name}";
             return title;
         }

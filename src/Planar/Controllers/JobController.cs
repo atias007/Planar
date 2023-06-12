@@ -20,85 +20,7 @@ namespace Planar.Controllers
         {
         }
 
-        [HttpPost("planar")]
-        [EditorAuthorize]
-        [SwaggerOperation(OperationId = "post_job_planar_add", Description = "Add new planar job", Summary = "Add Planar Job")]
-        [JsonConsumes]
-        [CreatedResponse(typeof(JobIdResponse))]
-        [BadRequestResponse]
-        [ConflictResponse]
-        public async Task<ActionResult<JobIdResponse>> AddPlanar([FromBody] SetJobRequest<PlanarJobProperties> request)
-        {
-            var result = await BusinesLayer.Add(request);
-            return CreatedAtAction(nameof(Get), result, result);
-        }
-
-        [HttpPost("process")]
-        [EditorAuthorize]
-        [SwaggerOperation(OperationId = "post_job_process_add", Description = "Add new process job", Summary = "Add Process Job")]
-        [JsonConsumes]
-        [CreatedResponse(typeof(JobIdResponse))]
-        [BadRequestResponse]
-        [ConflictResponse]
-        public async Task<ActionResult<JobIdResponse>> AddProcess([FromBody] SetJobRequest<ProcessJobProperties> request)
-        {
-            var result = await BusinesLayer.Add(request);
-            return CreatedAtAction(nameof(Get), result, result);
-        }
-
-        [HttpPost("sql")]
-        [EditorAuthorize]
-        [SwaggerOperation(OperationId = "post_job_sql_add", Description = "Add new sql job", Summary = "Add Sql Job")]
-        [JsonConsumes]
-        [CreatedResponse(typeof(JobIdResponse))]
-        [BadRequestResponse]
-        [ConflictResponse]
-        public async Task<ActionResult<JobIdResponse>> AddSql([FromBody] SetJobRequest<SqlJobProperties> request)
-        {
-            var result = await BusinesLayer.Add(request);
-            return CreatedAtAction(nameof(Get), result, result);
-        }
-
-        [HttpPut("planar")]
-        [EditorAuthorize]
-        [SwaggerOperation(OperationId = "put_job_planar", Description = "Update existing planar job", Summary = "Update Planar Job")]
-        [JsonConsumes]
-        [CreatedResponse(typeof(JobIdResponse))]
-        [BadRequestResponse]
-        [NotFoundResponse]
-        public async Task<ActionResult<JobIdResponse>> UpdatePlanar([FromBody] UpdateJobRequest<PlanarJobProperties> request)
-        {
-            var result = await BusinesLayer.Update(request);
-            return CreatedAtAction(nameof(Get), result, result);
-        }
-
-        [HttpPut("process")]
-        [EditorAuthorize]
-        [SwaggerOperation(OperationId = "put_job_process", Description = "Update existing process job", Summary = "Update Process Job")]
-        [JsonConsumes]
-        [CreatedResponse(typeof(JobIdResponse))]
-        [BadRequestResponse]
-        [NotFoundResponse]
-        public async Task<ActionResult<JobIdResponse>> UpdateProcess([FromBody] UpdateJobRequest<ProcessJobProperties> request)
-        {
-            var result = await BusinesLayer.Update(request);
-            return CreatedAtAction(nameof(Get), result, result);
-        }
-
-        [HttpPut("sql")]
-        [EditorAuthorize]
-        [SwaggerOperation(OperationId = "put_job_sql", Description = "Update existing sql job", Summary = "Update Sql Job")]
-        [JsonConsumes]
-        [CreatedResponse(typeof(JobIdResponse))]
-        [BadRequestResponse]
-        [NotFoundResponse]
-        public async Task<ActionResult<JobIdResponse>> UpdateSql([FromBody] UpdateJobRequest<SqlJobProperties> request)
-        {
-            var result = await BusinesLayer.Update(request);
-            return CreatedAtAction(nameof(Get), result, result);
-        }
-
-        [HttpPost("path")]
+        [HttpPost("folder")]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_job_folder", Description = "Add job by yml job file", Summary = "Add Job By Yml")]
         [JsonConsumes]
@@ -241,6 +163,19 @@ namespace Planar.Controllers
         public async Task<IActionResult> Invoke([FromBody] InvokeJobRequest request)
         {
             await BusinesLayer.Invoke(request);
+            return Accepted();
+        }
+
+        [HttpPost("queue-invoke")]
+        [TesterAuthorize]
+        [SwaggerOperation(OperationId = "post_job_queue_invoke", Description = "Queue invokation of job", Summary = "Queue Invokation Of Job")]
+        [JsonConsumes]
+        [AcceptedContentResponse]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<IActionResult> QueueInvoke([FromBody] QueueInvokeJobRequest request)
+        {
+            await BusinesLayer.QueueInvoke(request);
             return Accepted();
         }
 
@@ -392,6 +327,41 @@ namespace Planar.Controllers
         public async Task<ActionResult<LastInstanceId>> GetLastInstanceId([FromRoute][Required] string id, [FromQuery] DateTime invokeDate)
         {
             var result = await BusinesLayer.GetLastInstanceId(id, invokeDate);
+            return Ok(result);
+        }
+
+        [HttpGet("{id}/audit")]
+        [AdministratorAuthorize]
+        [SwaggerOperation(OperationId = "get_job_id_audit", Description = "Get audits for job", Summary = "Get Audits For Job")]
+        [OkJsonResponse(typeof(IEnumerable<JobAuditDto>))]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<ActionResult<IEnumerable<JobAuditDto>>> GetJobAudit([FromRoute][Required] string id)
+        {
+            var result = await BusinesLayer.GetJobAudits(id);
+            return Ok(result);
+        }
+
+        [HttpGet("audit/{auditId}")]
+        [AdministratorAuthorize]
+        [SwaggerOperation(OperationId = "get_job_audit_audit_id", Description = "Get audit by id", Summary = "Get Audit By Id")]
+        [OkJsonResponse(typeof(JobAuditWithInfoDto))]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<ActionResult<JobAuditWithInfoDto>> GetJobAudit([FromRoute][Id] int auditId)
+        {
+            var result = await BusinesLayer.GetJobAudit(auditId);
+            return Ok(result);
+        }
+
+        [HttpGet("audits")]
+        [AdministratorAuthorize]
+        [SwaggerOperation(OperationId = "get_job_audits", Description = "Get all audits", Summary = "Get All Audits")]
+        [BadRequestResponse]
+        [OkJsonResponse(typeof(IEnumerable<JobAuditDto>))]
+        public async Task<ActionResult<IEnumerable<JobAuditDto>>> GetJobAudits([FromQuery] uint pageNumber, [FromQuery] byte pageSize)
+        {
+            var result = await BusinesLayer.GetAudits(pageNumber, pageSize);
             return Ok(result);
         }
     }

@@ -1,6 +1,4 @@
-﻿using AutoMapper;
-using FluentValidation;
-using Microsoft.EntityFrameworkCore;
+﻿using FluentValidation;
 using Planar.API.Common.Entities;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -10,7 +8,6 @@ using Planar.Service.General.Password;
 using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -23,9 +20,9 @@ namespace Planar.Service.API
 
         public async Task<AddUserResponse> Add(AddUserRequest request)
         {
-            if (await DataLayer.IsUsernameExists(request.Username, 0))
+            if (await DataLayer.IsUsernameExists(request.Username))
             {
-                throw new RestConflictException($"user with {nameof(request.Username).ToLower()} '{request.Username}' already exists");
+                throw new RestConflictException($"user with username '{request.Username}' already exists");
             }
 
             var hash = GeneratePassword();
@@ -33,36 +30,35 @@ namespace Planar.Service.API
             user.Password = hash.Hash;
             user.Salt = hash.Salt;
 
-            var result = await DataLayer.AddUser(user);
+            _ = await DataLayer.AddUser(user);
             var response = new AddUserResponse
             {
-                Id = result.Id,
                 Password = hash.Value
             };
 
             return response;
         }
 
-        public async Task<UserDetails> Get(int id)
+        public async Task<UserDetails> Get(string username)
         {
-            var user = await DataLayer.GetUser(id);
+            var user = await DataLayer.GetUser(username);
             ValidateExistingEntity(user, "user");
-            var groups = await DataLayer.GetGroupsForUser(id);
+            var groups = await DataLayer.GetGroupsForUser(user!.Id);
             var result = Mapper.Map<UserDetails>(user);
             groups.ForEach(g => result.Groups.Add(g.ToString()));
-            var roleId = await DataLayer.GetUserRole(id);
+            var roleId = await DataLayer.GetUserRole(username);
             result.Role = RoleHelper.GetTitle(roleId);
             return result;
         }
 
-        public async Task<string> GetRole(int id)
+        public async Task<string> GetRole(string username)
         {
-            if (!await DataLayer.IsUserExists(id))
+            if (!await DataLayer.IsUsernameExists(username))
             {
-                throw new RestNotFoundException("user could not be found");
+                throw new RestNotFoundException($"user with username '{username}' could not be found");
             }
 
-            var roleId = await DataLayer.GetUserRole(id);
+            var roleId = await DataLayer.GetUserRole(username);
             var result = RoleHelper.GetTitle(roleId);
             return result;
         }
@@ -72,25 +68,26 @@ namespace Planar.Service.API
             return await DataLayer.GetUsers();
         }
 
-        public async Task Delete(int id)
+        public async Task Delete(string username)
         {
-            var user = new User { Id = id };
-
-            try
+            var count = await DataLayer.RemoveUser(username);
+            if (count < 1)
             {
-                await DataLayer.RemoveUser(user);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                throw new RestNotFoundException($"user with id {id} could not be found");
+                throw new RestNotFoundException($"user with username '{username}' could not be found");
             }
         }
 
-        public async Task PartialUpdate(UpdateEntityRequest request)
+        public async Task PartialUpdate(UpdateEntityRequestByName request)
         {
-            var user = await DataLayer.GetUser(request.Id);
+            ForbbidenPartialUpdateProperties(request, null, nameof(UpdateUserRequest.CurrentUsername), nameof(UpdateUserRequest.RoleId));
+            ForbbidenPartialUpdateProperties(request, "to join user to group use: 'user join'", nameof(UserDetails.Groups));
+            ForbbidenPartialUpdateProperties(request, "to update user password use: 'user set-password'", nameof(User.Password));
+            ForbbidenPartialUpdateProperties(request, "to update user role use: 'user join' to join the user to group which has an appropriate role", nameof(UserDetails.Role));
+
+            var user = await DataLayer.GetUser(request.Name);
             ValidateExistingEntity(user, "user");
             var updateUser = Mapper.Map<UpdateUserRequest>(user);
+            updateUser.CurrentUsername = request.Name;
             var validator = Resolve<IValidator<UpdateUserRequest>>();
             await SetEntityProperties(updateUser, request, validator);
             await Update(updateUser);
@@ -98,24 +95,24 @@ namespace Planar.Service.API
 
         public async Task Update(UpdateUserRequest request)
         {
-            var exists = await DataLayer.IsUserExists(request.Id);
+            var exists = await DataLayer.IsUsernameExists(request.CurrentUsername);
             if (!exists)
             {
-                throw new RestNotFoundException($"user with id {request.Id} is not exists");
+                throw new RestNotFoundException($"user with username '{request.CurrentUsername}' is not exists");
             }
 
-            if (await DataLayer.IsUsernameExists(request.Username, request.Id))
+            if (await DataLayer.IsUsernameExists(request.Username, request.CurrentUsername))
             {
-                throw new RestConflictException($"user with {nameof(request.Username).ToLower()} '{request.Username}' already exists");
+                throw new RestConflictException($"user with username '{request.Username}' already exists");
             }
 
             var user = Mapper.Map<User>(request);
             await DataLayer.UpdateUser(user);
         }
 
-        public async Task<string> ResetPassword(int id)
+        public async Task<string> ResetPassword(string username)
         {
-            var existsUser = await DataLayer.GetUser(id, true);
+            var existsUser = await DataLayer.GetUser(username, withTracking: true);
             ValidateExistingEntity(existsUser, "user");
             if (existsUser == null) { return string.Empty; }
             var hash = GeneratePassword();
@@ -123,6 +120,17 @@ namespace Planar.Service.API
             existsUser.Salt = hash.Salt;
             await DataLayer.SaveChangesAsync();
             return hash.Value;
+        }
+
+        public async Task SetPassword(string username, SetPasswordRequest request)
+        {
+            var existsUser = await DataLayer.GetUser(username, withTracking: true);
+            ValidateExistingEntity(existsUser, "user");
+            if (existsUser == null) { return; }
+            var hash = HashUtil.CreateHash(request.Password);
+            existsUser.Password = hash.Hash;
+            existsUser.Salt = hash.Salt;
+            await DataLayer.SaveChangesAsync();
         }
 
         private static HashEntity GeneratePassword()

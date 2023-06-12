@@ -1,4 +1,6 @@
-﻿using CommonJob;
+﻿using Azure;
+using Azure.Core;
+using CommonJob;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
@@ -31,10 +33,13 @@ namespace Planar.Service.API
             if (info.Trigger == null || info.JobDetails == null) { return; }
 
             ValidateDataKeyExists(info.Trigger, key, id);
+            var auditValue = PlanarConvert.ToString(info.Trigger.JobDataMap[key]);
             info.Trigger.JobDataMap.Remove(key);
             var triggers = await BuildTriggers(info);
             await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
             await Scheduler.PauseJob(info.JobKey);
+
+            AuditTrigger(info.TriggerKey, GetTriggerAuditDescription("remove", key), new { value = auditValue?.Trim() }, addTriggerInfo: true);
         }
 
         public async Task PutData(JobOrTriggerDataRequest request, PutMode mode)
@@ -50,6 +55,7 @@ namespace Planar.Service.API
                 }
 
                 info.Trigger.JobDataMap.Put(request.DataKey, request.DataValue);
+                AuditTrigger(info.TriggerKey, GetTriggerAuditDescription("update", request.DataKey), new { value = request.DataValue?.Trim() });
             }
             else
             {
@@ -59,11 +65,17 @@ namespace Planar.Service.API
                 }
 
                 info.Trigger.JobDataMap.Put(request.DataKey, request.DataValue);
+                AuditTrigger(info.TriggerKey, GetTriggerAuditDescription("add", request.DataKey), new { value = request.DataValue?.Trim() });
             }
 
             var triggers = await BuildTriggers(info);
             await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
             await Scheduler.PauseJob(info.JobKey);
+        }
+
+        private static string GetTriggerAuditDescription(string operation, string key)
+        {
+            return $"{operation} trigger data with key '{key}' ({{{{TriggerId}}}})";
         }
 
         private async Task<List<ITrigger>> BuildTriggers(DataCommandDto info)
@@ -129,23 +141,40 @@ namespace Planar.Service.API
             await ValidateExistingTrigger(triggerKey, triggerId);
             ValidateSystemTrigger(triggerKey);
             await Scheduler.PauseTrigger(triggerKey);
+            var trigger = await ValidateTriggerExists(triggerKey);
+            var details = await GetTriggerDetails(triggerKey);
+            var triggerIdentifier = GetTriggerId(trigger);
             var success = await Scheduler.UnscheduleJob(triggerKey);
             if (!success)
             {
                 throw new PlanarException($"fail to remove trigger {triggerId}");
             }
+
+            // Audit
+            object? obj = details.SimpleTriggers.Any() ? details?.SimpleTriggers[0] : details?.CronTriggers.FirstOrDefault();
+            AuditJob(trigger.JobKey, $"trigger removed (id: {triggerIdentifier})", obj);
         }
 
         public async Task Pause(JobOrTriggerKey request)
         {
             var key = await GetTriggerKey(request);
             await Scheduler.PauseTrigger(key);
+
+            // audit
+            var trigger = ValidateTriggerExists(key).Result;
+            var id = GetTriggerId(trigger);
+            AuditJob(trigger.JobKey, $"trigger paused (id: {id})");
         }
 
         public async Task Resume(JobOrTriggerKey request)
         {
             var key = await GetTriggerKey(request);
             await Scheduler.ResumeTrigger(key);
+
+            // audit
+            var trigger = ValidateTriggerExists(key).Result;
+            var id = GetTriggerId(trigger);
+            AuditJob(trigger.JobKey, $"trigger resume (id: {id})");
         }
 
         public string GetCronDescription(string expression)
@@ -240,7 +269,7 @@ namespace Planar.Service.API
             }
         }
 
-        public async Task<TriggerKey> GetTriggerKey(JobOrTriggerKey key)
+        private async Task<TriggerKey> GetTriggerKey(JobOrTriggerKey key)
         {
             TriggerKey? result;
             if (key.Id.Contains('.'))
@@ -261,12 +290,12 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<TriggerKey> GetTriggerKey(string id)
+        private async Task<TriggerKey> GetTriggerKey(string id)
         {
             return await GetTriggerKey(new JobOrTriggerKey { Id = id });
         }
 
-        public async Task<TriggerKey?> GetTriggerKeyById(string triggerId)
+        private async Task<TriggerKey?> GetTriggerKeyById(string triggerId)
         {
             TriggerKey? result = null;
             var keys = await Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());

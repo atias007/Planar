@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
+using System.Threading;
 
 namespace Planar.Job
 {
@@ -28,5 +30,8 @@ namespace Planar.Job
         public ITriggerDetail TriggerDetails { get; set; } = new TriggerDetail();
 
         public string Environment { get; set; } = string.Empty;
+
+        [JsonIgnore]
+        public CancellationToken CancellationToken { get; set; }
     }
 }

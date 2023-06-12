@@ -25,6 +25,8 @@ namespace SomeJob
             var fact = ServiceProvider.GetRequiredService<IBaseJob>();
             var child = ServiceProvider.GetRequiredService<WorkerChild>();
 
+            fact.PutJobData("NoExists", 12345);
+
             Logger.LogWarning("Now: {Now}", Now());
 
             var maxDiffranceHours = Configuration.GetValue("Max Diffrance Hours", 12);
@@ -44,6 +46,11 @@ namespace SomeJob
             a = GetData<int>("X");
             Logger.LogDebug("Data X Value: {Value}", a);
 
+            var z = GetData("Z");
+            Logger.LogDebug("Data Z Value: {Value}", z);
+            PutJobData("Z", "NewZData");
+            Logger.LogInformation("Z=" + GetData("Z"));
+
             var rows = GetEffectedRows();
             Logger.LogDebug("GetEffectedRows: {Value}", rows);
             IncreaseEffectedRows();
@@ -53,7 +60,7 @@ namespace SomeJob
             rows = GetEffectedRows();
             Logger.LogDebug("GetEffectedRows: {Value}", rows);
 
-            await Task.Delay(2000);
+            await Task.Delay(10000, context.CancellationToken);
             Logger.LogWarning("JobRunTime: {JobRunTime}", JobRunTime);
 
             Logger.LogInformation("SomeDate: {SomeDate}", SomeDate);
@@ -64,39 +71,11 @@ namespace SomeJob
             SimpleInt += 5;
             IgnoreData = "x";
 
-            for (int i = 0; i < 1250; i++)
-            {
-                try
-                {
-                    // Do Something 1
-
-                    // Do Something 2
-
-                    // Do Something 3
-
-                    // Do Something 4
-
-                    fact.IncreaseEffectedRows();
-                }
-                catch (Exception ex)
-                {
-                    fact.AddAggregateException(ex);
-                }
-                finally
-                {
-                    UpdateProgress(i, 1250);
-                    FailOnStopRequest();
-
-                    ////if(CheckIfStopRequest())
-                    ////{
-                    ////    // exist procedure
-                    ////}
-                }
-            }
-
-            // CheckAggragateException();
             var a1 = fact.GetData<int>("X");
             var b1 = fact.GetEffectedRows();
+
+            var no = fact.GetData("NoExists");
+            Logger.LogInformation(no);
         }
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

@@ -3,12 +3,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Planar.Common;
 using Planar.Service.API;
 using Planar.Service.API.Helpers;
+using Planar.Service.Audit;
 using Planar.Service.Data;
 using Planar.Service.General;
 using Planar.Service.Monitor;
+using Planar.Service.Services;
 using Quartz;
 using System;
 using System.Reflection;
+using System.Threading.Channels;
 
 namespace Planar.Service
 {
@@ -45,7 +48,8 @@ namespace Planar.Service
             services.AddPlanarDataLayerWithContext();
 
             // Service
-            services.AddTransient<MainService>();
+            services.AddSingleton<MainService>();
+            services.AddSingleton<AuditService>();
 
             // Scheduler
             services.AddSingleton(p => p.GetRequiredService<ISchedulerFactory>().GetScheduler().Result);
@@ -54,6 +58,11 @@ namespace Planar.Service
 
             // Host
             services.AddHostedService<MainService>();
+            services.AddHostedService<AuditService>();
+
+            // Channel
+            services.AddSingleton(Channel.CreateUnbounded<AuditMessage>());
+            services.AddSingleton<AuditProducer>();
 
             // AutoMapper
             var assemply = Assembly.Load($"{nameof(Planar)}.{nameof(Service)}");

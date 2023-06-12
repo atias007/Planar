@@ -1,9 +1,0 @@
-﻿usage: planar-cli cluster <command> [<options>]
-
-the options for <command> and [<options>] parameters of cluster module:
-
- <command>         <options>
--------------------------------
- nodes
- health-check|hc   
--------------------------------

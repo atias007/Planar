@@ -1,6 +1,6 @@
 ﻿namespace Planar.Monitor.Hook
 {
-    public class User : IMonitorUser
+    internal class User : IMonitorUser
     {
         public int Id { get; set; }
 

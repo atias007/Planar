@@ -1,4 +1,5 @@
-﻿using Planar.API.Common.Entities;
+﻿using Newtonsoft.Json;
+using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
@@ -6,6 +7,7 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -18,16 +20,9 @@ namespace Planar.Service.API
             await ValidateAddPath(request);
             var yml = await GetJobFileContent(request);
             var dynamicRequest = GetJobDynamicRequest(yml);
+            dynamic properties = dynamicRequest.Properties ?? new ExpandoObject();
+            properties["path"] = request.Folder;
             var response = await Update(dynamicRequest, request.UpdateJobOptions);
-            return response;
-        }
-
-        public async Task<JobIdResponse> Update<TProperties>(UpdateJobRequest<TProperties> genericRequest)
-           where TProperties : class, new()
-        {
-            ValidateRequestNoNull(genericRequest);
-            var dynamicRequest = Mapper.Map<SetJobRequest<TProperties>, SetJobDynamicRequest>(genericRequest);
-            var response = await Update(dynamicRequest, genericRequest.UpdateJobOptions);
             return response;
         }
 
@@ -163,6 +158,9 @@ namespace Planar.Service.API
             // Save for rollback
             await FillRollbackData(metadata);
 
+            // Clone request for audit
+            var cloneRequest = Clone(request);
+
             // Update Job Details (JobType+Concurent, JobGroup, JobName, Description, Durable)
             await UpdateJobDetails(request, options, metadata);
 
@@ -182,8 +180,19 @@ namespace Planar.Service.API
             // Update Properties
             await UpdateJobProperties(request, options, metadata);
 
+            // Audit
+            AuditJob(metadata.JobKey, "job updated", new { request = cloneRequest, options });
+
             // Return Id
             return new JobIdResponse { Id = metadata.JobId };
+        }
+
+        private static T? Clone<T>(T obj)
+            where T : class, new()
+        {
+            var json = YmlUtil.Serialize(obj);
+            var result = YmlUtil.Deserialize<T>(json);
+            return result;
         }
 
         private async Task UpdateJobDetails(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)

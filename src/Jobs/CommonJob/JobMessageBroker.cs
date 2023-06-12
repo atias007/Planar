@@ -5,9 +5,9 @@ using Planar;
 using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Job;
-using Polly;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using IJobExecutionContext = Quartz.IJobExecutionContext;
 
 namespace CommonJob
@@ -15,6 +15,7 @@ namespace CommonJob
     public class JobMessageBroker
     {
         private static readonly object Locker = new();
+        private readonly CancellationToken _cancellationToken;
         private readonly IJobExecutionContext _context;
 
         public JobMessageBroker(IJobExecutionContext context, IDictionary<string, string?> settings)
@@ -23,6 +24,7 @@ namespace CommonJob
             var mapContext = MapContext(context, settings);
             SetLogLevel(settings);
             Details = JsonConvert.SerializeObject(mapContext);
+            _cancellationToken = context.CancellationToken;
         }
 
         public string Details { get; set; }
@@ -49,14 +51,6 @@ namespace CommonJob
             lock (Locker)
             {
                 Metadata.EffectedRows = Metadata.EffectedRows.GetValueOrDefault() + delta;
-            }
-        }
-
-        public void UpdateProgress(byte progress)
-        {
-            lock (Locker)
-            {
-                Metadata.Progress = progress;
             }
         }
 
@@ -120,7 +114,7 @@ namespace CommonJob
                 case "FailOnStopRequest":
                     if (_context.CancellationToken.IsCancellationRequested)
                     {
-                        throw new OperationCanceledException("Job was stopped");
+                        throw new OperationCanceledException("job was cancelled");
                     }
                     return null;
 
@@ -171,6 +165,32 @@ namespace CommonJob
                 default:
                     return null;
             }
+        }
+
+        public void SafeAppendLog(LogLevel level, string messag)
+        {
+            try
+            {
+                AppendLog(level, messag);
+            }
+            catch (Exception)
+            {
+                // === DO NOTHING ===
+            }
+        }
+
+        public void UpdateProgress(byte progress)
+        {
+            lock (Locker)
+            {
+                Metadata.Progress = progress;
+            }
+        }
+
+        public CancellationToken CreateLinkedToken()
+        {
+            var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_cancellationToken);
+            return linkedCancellationTokenSource.Token;
         }
 
         private static T? Deserialize<T>(string message)
@@ -244,14 +264,10 @@ namespace CommonJob
         private bool HasSettings(IDictionary<string, string?> settings, string key)
         {
             if (settings == null) { return false; }
-            if (settings.ContainsKey(key))
+            if (settings.TryGetValue(key, out string? value) && Enum.TryParse<LogLevel>(value, true, out var tempLevel))
             {
-                var value = settings[key];
-                if (Enum.TryParse<LogLevel>(value, true, out var tempLevel))
-                {
-                    SetLogLevel(tempLevel);
-                    return true;
-                }
+                SetLogLevel(tempLevel);
+                return true;
             }
 
             return false;

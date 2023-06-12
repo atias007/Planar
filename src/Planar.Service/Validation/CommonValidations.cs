@@ -2,6 +2,7 @@
 using FluentValidation;
 using Planar.Common.Exceptions;
 using Planar.Service.General;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -13,7 +14,7 @@ namespace Planar.Service.Validation
     {
         public static bool EncodingExists<T>(string encoding, ValidationContext<T> context)
         {
-            var any = Encoding.GetEncodings().Any(e => e.Name == encoding);
+            var any = Array.Exists(Encoding.GetEncodings(), e => e.Name == encoding);
             if (!any)
             {
                 context.AddFailure("output encoding", $"encoding '{encoding}' is not valid");
@@ -39,12 +40,21 @@ namespace Planar.Service.Validation
             }
         }
 
-        public static async Task<bool> FilenameExists<T>(IPathJobProperties properties, string? filename, ClusterUtil clusterUtil, ValidationContext<T> context)
+        public static async Task<bool> FilenameExists<T>(IPathJobProperties properties, string propertyName, string? filename, ClusterUtil clusterUtil, ValidationContext<T> context)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(filename)) { return false; }
-                if (string.IsNullOrWhiteSpace(properties.Path)) { return false; }
+                if (string.IsNullOrWhiteSpace(filename))
+                {
+                    context.AddFailure(propertyName, $"{propertyName} is null or empty");
+                    return false;
+                }
+
+                if (string.IsNullOrWhiteSpace(properties.Path))
+                {
+                    context.AddFailure("path", "path is null or empty");
+                    return false;
+                }
 
                 ServiceUtil.ValidateJobFileExists(properties.Path, filename);
                 await clusterUtil.ValidateJobFileExists(properties.Path, filename);
@@ -52,7 +62,7 @@ namespace Planar.Service.Validation
             }
             catch (PlanarException ex)
             {
-                context.AddFailure("filename", ex.Message);
+                context.AddFailure(propertyName, ex.Message);
                 return false;
             }
         }

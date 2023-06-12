@@ -22,7 +22,7 @@
         JobAdded = 300,
 
         JobDeleted = 301,
-        JobInterrupted = 302,
+        JobCanceled = 302,
         JobPaused = 303,
         JobResumed = 304,
         JobGroupPaused = 305,

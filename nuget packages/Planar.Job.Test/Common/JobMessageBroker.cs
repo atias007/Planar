@@ -4,7 +4,7 @@ using Planar.Job.Test.Common;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
-using YamlDotNet.Core.Tokens;
+using System.Threading;
 
 namespace Planar.Job.Test
 {
@@ -13,13 +13,18 @@ namespace Planar.Job.Test
         private readonly DateTimeOffset _startTime = DateTime.UtcNow;
         private static readonly object Locker = new object();
         private readonly MockJobExecutionContext _context;
+        private readonly CancellationTokenSource _cancellationTokenSource;
 
-        public JobMessageBroker(MockJobExecutionContext context, Dictionary<string, string?> settings)
+        public JobMessageBroker(MockJobExecutionContext context, ExecuteJobProperties properties, Dictionary<string, string?> settings)
         {
             _context = context;
             context.JobSettings = settings;
             SetLogLevel(settings);
             Details = JsonSerializer.Serialize(context);
+            _cancellationTokenSource =
+                properties.CancelJobAfter != null ?
+                new CancellationTokenSource(properties.CancelJobAfter.Value) :
+                new CancellationTokenSource();
         }
 
         public string Details { get; set; }
@@ -33,6 +38,21 @@ namespace Planar.Job.Test
                 var result = JobExecutionMetadata.GetInstance(_context);
                 return result ?? throw new NullReferenceException(nameof(Metadata));
             }
+        }
+
+        public bool IsCancel => _cancellationTokenSource.Token.IsCancellationRequested;
+
+        public CancellationToken CreateLinkedToken()
+        {
+            var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_cancellationTokenSource.Token);
+
+            linkedCancellationTokenSource.Token.Register(() =>
+            {
+                var log = new LogEntity { Level = LogLevel.Warning, Message = "Request for cancel job" };
+                LogData(log);
+            });
+
+            return linkedCancellationTokenSource.Token;
         }
 
         public string? Publish(string channel, string message)
@@ -50,6 +70,7 @@ namespace Planar.Job.Test
                     {
                         var value = PlanarConvert.ToString(data1.Value);
                         _context.JobDetails.JobDataMap.AddOrUpdate(data1.Key, value);
+                        _context.MergedJobDataMap = _context.JobDetails.JobDataMap.Merge(_context.TriggerDetails.TriggerDataMap);
                     }
                     return null;
 
@@ -64,6 +85,7 @@ namespace Planar.Job.Test
                     {
                         var value = PlanarConvert.ToString(data2.Value);
                         _context.TriggerDetails.TriggerDataMap.AddOrUpdate(data2.Key, value);
+                        _context.MergedJobDataMap = _context.JobDetails.JobDataMap.Merge(_context.TriggerDetails.TriggerDataMap);
                     }
                     return null;
 
@@ -86,9 +108,14 @@ namespace Planar.Job.Test
                     return exceptionText;
 
                 case "CheckIfStopRequest":
-                    return false.ToString();
+                    return _cancellationTokenSource.Token.IsCancellationRequested.ToString();
 
                 case "FailOnStopRequest":
+                    if (_cancellationTokenSource.Token.IsCancellationRequested)
+                    {
+                        throw new OperationCanceledException("Job was stopped");
+                    }
+
                     return null;
 
                 case "GetData":

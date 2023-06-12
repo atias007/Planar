@@ -1,11 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
-using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Group = Planar.Service.Model.Group;
 
@@ -27,18 +24,18 @@ namespace Planar.Service.Data
         {
             var result = await _context.Users
                 .Where(u => u.Groups.Any(g => g.Id == id))
-                .Select(u => new EntityTitle(u.Id, u.FirstName, u.LastName))
+                .Select(u => new EntityTitle(u.Username, u.FirstName, u.LastName))
                 .ToListAsync();
 
             return result;
         }
 
-        public async Task<Group?> GetGroup(int id)
+        public async Task<Group?> GetGroup(string name)
         {
             var result = await _context.Groups
                 .Include(g => g.Role)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(g => g.Id == id);
+                .FirstOrDefaultAsync(g => g.Name.ToLower() == name.ToLower());
 
             return result;
         }
@@ -77,10 +74,9 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
-        public async Task RemoveGroup(Group group)
+        public async Task<int> RemoveGroup(int id)
         {
-            _context.Groups.Remove(group);
-            await _context.SaveChangesAsync();
+            return await _context.Groups.Where(g => g.Id == id).ExecuteDeleteAsync();
         }
 
         public async Task<bool> IsGroupHasMonitors(int groupId)
@@ -140,6 +136,14 @@ namespace Planar.Service.Data
         public async Task<bool> IsGroupExists(int groupId)
         {
             return await _context.Groups.AnyAsync(g => g.Id == groupId);
+        }
+
+        public async Task<int> GetGroupId(string name)
+        {
+            return await _context.Groups
+                .Where(g => g.Name.ToLower() == name.ToLower())
+                .Select(g => g.Id)
+                .FirstOrDefaultAsync();
         }
     }
 }

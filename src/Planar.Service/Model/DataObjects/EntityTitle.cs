@@ -2,24 +2,30 @@
 {
     public class EntityTitle
     {
-        public EntityTitle(int id, string firstName)
+        public EntityTitle(string name)
         {
-            Id = id;
+            Username = name;
+        }
+
+        public EntityTitle(string username, string firstName, string? lastName) : this(username)
+        {
+            LastName = lastName;
             FirstName = firstName;
         }
 
-        public EntityTitle(int id, string firstName, string? lastName) : this(id, firstName)
-        {
-            LastName = lastName;
-        }
-
-        public int Id { get; set; }
-        public string FirstName { get; set; }
+        public string Username { get; set; }
+        public string? FirstName { get; set; }
         public string? LastName { get; set; }
 
         public override string ToString()
         {
-            return $"Id: {Id}, Name: {FirstName} {LastName}".Trim();
+            var result = Username;
+            if (!string.IsNullOrEmpty(FirstName) || !string.IsNullOrEmpty(LastName))
+            {
+                result += $" ({FirstName} {LastName})".TrimEnd();
+            }
+
+            return result;
         }
     }
 }

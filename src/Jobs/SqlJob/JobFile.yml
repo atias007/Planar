@@ -12,7 +12,6 @@ job data:                             # Key/Value pairs used by job code
   key3: value3                        # [up to 1000 characters]
 
 properties:                                   # Properties for job with 'PlanarJob' type
-  path: c:\some_path                          # Path of script files [1 to 1000 characters]
   default connection name: <name>             # Default configuration key for connection string to sql server database [mandatory if any step has no connection string, 1 to 50 characters]
   transaction: false                          # Use transaction for all steps
   transaction isolation level: Unspecified    # The isolation level of transaction. The default is Unspecified [Unspecified, Chaos, ReadUncommitted, ReadCommitted, RepeatableRead, Serializable, Snapshot]
@@ -44,13 +43,13 @@ simple triggers:                      # List of simple triggers
     misfire behaviour: FireNow        # [ FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount ]
     priority: 1                       # Priority [value between 0 to 100]
     calendar: null                    # Calendar name
-    timeout: 00:30:00                 # Execution timeout. If timout span passed then stop command is executed
+    timeout: 00:30:00                 # Execution timeout. If timout span passed then cancel command is executed
     retry span: 01:00:00              # The time span between retries
     max retries: 3                    # The maximum amount of retries. Default is 3 [1 to 100]
     trigger data:                     # Key/Value pairs used by job code (merged with job data)
       key4: value4                    # -------------------------------------------------------
-      key5: value5                    # [1 to 100 characters]
-      key6: value6                    # [up to 1000 characters]
+      key5: value5                    # key --> [1 to 100 characters]
+      key6: value6                    # value --> [up to 1000 characters]
 
 cron triggers:                               # List of cron triggers
   - name: some-cron-trigger                  # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
@@ -58,10 +57,10 @@ cron triggers:                               # List of cron triggers
     misfire behaviour: DoNothing             # [ DoNothing | FireAndProceed | IgnoreMisfires ]
     priority: 1                              # Priority [value between 0 to 100]
     calendar: null                           # Calendar name
-    timeout: 00:30:00                        # Execution timeout. If timout span passed then stop command is executed
+    timeout: 00:30:00                        # Execution timeout. If timout span passed then cancel command is executed
     retry span: 01:00:00                     # The time span between retries
     max retries: 3                           # The maximum amount of retries. Default is 3 [1 to 100]
     trigger data:                            # Key/Value pairs used by job code (merged with job data)
       key7: value7                           # -------------------------------------------------------
-      key8: value8                           # [1 to 100 characters]
-      key9: value9                           # [up to 1000 characters]
+      key8: value8                           # key --> [1 to 100 characters]
+      key9: value9                           # value --> [up to 1000 characters]

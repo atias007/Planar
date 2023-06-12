@@ -58,8 +58,8 @@ namespace Planar.Service.Validation
         {
             if (string.IsNullOrWhiteSpace(json)) { return false; }
             json = json.Trim();
-            if ((json.StartsWith("{") && json.EndsWith("}")) || //For object
-                (json.StartsWith("[") && json.EndsWith("]"))) //For array
+            if ((json.StartsWith('{') && json.EndsWith('}')) || //For object
+                (json.StartsWith('[') && json.EndsWith(']'))) //For array
             {
                 try
                 {

@@ -20,11 +20,12 @@ namespace Planar.CLI.Entities
         public DateTime? EndDate { get; set; }
         public int? Duration { get; set; }
         public int? EffectedRows { get; set; }
+        public int ExceptionCount { get; set; }
         public string Data { get; set; }
         public string Log { get; set; }
         public string Exception { get; set; }
         public bool Retry { get; set; }
-        public bool IsStopped { get; set; }
+        public bool IsCanceled { get; set; }
         public bool? IsOutlier { get; set; }
         public byte? Anomaly { get; set; }
         public string AnomalyTitle { get; set; }

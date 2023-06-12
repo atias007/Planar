@@ -24,6 +24,7 @@ namespace UnitTest
             var run = ExecuteJobBuilder
                 .CreateBuilderForJob<Worker>()
                 .WithJobData("X", 10)
+                .WithJobData("Z", "SomeString")
                 .WithJobData("SomeDate", DateTime.Now)
                 .WithJobData("SimpleInt", 44)
                 .WithTriggerData("Y", 33)
@@ -33,7 +34,9 @@ namespace UnitTest
 
             var result = ExecuteJob(run);
             result.Assert.Status.Success()
-                .EffectedRows.IsNotEmpty();
+                .EffectedRows.IsNotEmpty()
+                .Data.ContainsKey("NoExists")
+                .Data.Key("NoExists").EqualsTo(12345);
         }
 
         [Test]
@@ -41,6 +44,7 @@ namespace UnitTest
         {
             var run = ExecuteJobBuilder
                 .CreateBuilderForJob<Worker>()
+                .WithJobData("Z", "SomeString")
                 .WithJobData("SimpleInt", 44);
 
             var result = ExecuteJob(run);
@@ -53,6 +57,7 @@ namespace UnitTest
             var run = ExecuteJobBuilder
                 .CreateBuilderForJob<Worker>()
                 .WithJobData("X", 10)
+                .WithJobData("Z", "SomeString")
                 .WithJobData("SimpleInt", 44);
 
             var result = ExecuteJob(run);
@@ -66,11 +71,26 @@ namespace UnitTest
             var run = ExecuteJobBuilder
                 .CreateBuilderForJob<Worker>()
                 .WithJobData("X", 10)
+                .WithJobData("Z", "SomeString")
                 .WithJobData("IgnoreData", null);
 
             var result = ExecuteJob(run);
             result.Assert.Status.Success()
                 .Data.Key("IgnoreData").IsNull();
+        }
+
+        [Test]
+        public void CancelJob()
+        {
+            var run = ExecuteJobBuilder
+                .CreateBuilderForJob<Worker>()
+                .WithJobData("X", 10)
+                .WithJobData("Z", "SomeString")
+                .CancelJobAfterSeconds(5);
+
+            var result = ExecuteJob(run);
+            result.Assert.Status.Fail();
+            Assert.That(result.IsCanceled, Is.True);
         }
     }
 }

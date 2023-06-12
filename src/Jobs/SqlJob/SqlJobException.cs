@@ -1,6 +1,6 @@
 ﻿using System.Runtime.Serialization;
 
-namespace SqlJob
+namespace Planar
 {
     [Serializable]
     public class SqlJobException : Exception

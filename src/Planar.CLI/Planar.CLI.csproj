@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net7.0</TargetFramework>
 		<AssemblyName>planar-cli</AssemblyName>
 		<Version>1.3.0</Version>
 		<StartupObject>Planar.CLI.Program</StartupObject>
@@ -18,19 +18,6 @@
 	<PropertyGroup>
 		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
 	</PropertyGroup>
-	<ItemGroup>
-		<None Remove="Help\Cluster.txt" />
-		<None Remove="Help\Config.txt" />
-		<None Remove="Help\group.txt" />
-		<None Remove="Help\History.txt" />
-		<None Remove="Help\Job.txt" />
-		<None Remove="Help\Modules.txt" />
-		<None Remove="Help\Monitor.txt" />
-		<None Remove="Help\Service.txt" />
-		<None Remove="Help\Trace.txt" />
-		<None Remove="Help\Trigger.txt" />
-		<None Remove="Help\User.txt" />
-	</ItemGroup>
 
 	<ItemGroup>
 		<Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
@@ -39,25 +26,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Include="Help\History.txt" />
-		<EmbeddedResource Include="Help\Monitor.txt" />
-		<EmbeddedResource Include="Help\Group.txt" />
-		<EmbeddedResource Include="Help\Cluster.txt" />
-		<EmbeddedResource Include="Help\User.txt" />
-		<EmbeddedResource Include="Help\Trigger.txt" />
-		<EmbeddedResource Include="Help\Config.txt" />
-		<EmbeddedResource Include="Help\Trace.txt" />
-		<EmbeddedResource Include="Help\Job.txt" />
-		<EmbeddedResource Include="Help\Modules.txt" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<PackageReference Include="AsciiChart.Sharp" Version="1.0.3" />
-		<PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="7.0.3" />
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="6.0.1" />
+		<PackageReference Include="Microsoft.AspNetCore.DataProtection" Version="7.0.5" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
 		<PackageReference Include="RestSharp" Version="110.2.0" />
-		<PackageReference Include="Spectre.Console" Version="0.46.0" />
+		<PackageReference Include="Spectre.Console" Version="0.47.0" />
 	</ItemGroup>
 
 	<ItemGroup>

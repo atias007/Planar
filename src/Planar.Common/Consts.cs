@@ -13,6 +13,7 @@ namespace Planar
             RetrySpan,
             MaxRetries,
             RetryTriggerGroup,
+            QueueInvokeTriggerGroup,
             RetryTriggerNamePrefix,
             PlanarSystemGroup,
             JobId,
@@ -32,6 +33,7 @@ namespace Planar
         public const string MaxRetries = "__Job_Retry_Max";
         public const int DefaultMaxRetries = 3;
 
+        public const string QueueInvokeTriggerGroup = "QueueInvoke";
         public const string RetryTriggerGroup = "__RetryTrigger";
         public const string RetryTriggerNamePrefix = "__RetryCount";
         public const string PlanarSystemGroup = "__System";
@@ -87,7 +89,7 @@ namespace Planar
 
         public static bool IsDataKeyValid(string key)
         {
-            return !AllDataKeys.Any(k => string.Equals(k, key, StringComparison.OrdinalIgnoreCase));
+            return !Array.Exists(AllDataKeys, k => string.Equals(k, key, StringComparison.OrdinalIgnoreCase));
         }
     }
 }
