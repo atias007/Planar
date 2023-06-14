@@ -6,9 +6,9 @@ namespace Planar
 {
     [DisallowConcurrentExecution]
     [PersistJobDataAfterExecution]
-    public class RestJobNoConcurent : RestJob
+    public class RestJobNoConcurrent : RestJob
     {
-        public RestJobNoConcurent(ILogger<RestJob> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
+        public RestJobNoConcurrent(ILogger<RestJob> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
         {
         }
     }

@@ -6,8 +6,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Planar.Service.Model;
 
-[Table("ConcurentQueue", Schema = "Statistics")]
-public partial class ConcurentQueue
+[Table("ConcurrentExecution", Schema = "Statistics")]
+public partial class ConcurrentExecution
 {
     [Key]
     public long Id { get; set; }
@@ -21,5 +21,5 @@ public partial class ConcurentQueue
     [StringLength(100)]
     public string InstanceId { get; set; } = null!;
 
-    public int ConcurentValue { get; set; }
+    public int MaxConcurrent { get; set; }
 }

@@ -2,8 +2,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Service.Data;
+using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -37,6 +40,13 @@ namespace Planar.Service.API
             if (s2 != null) { Mapper.Map(s2.Result, result); }
             if (s3 != null) { Mapper.Map(s3.Result, result); }
 
+            return result;
+        }
+
+        public async Task<IEnumerable<ConcurrentExecutionModel>> GetConcurrentExecution(ConcurrentExecutionRequest request)
+        {
+            var query = DataLayer.GetConcurrentExecution(request);
+            var result = await Mapper.ProjectTo<ConcurrentExecutionModel>(query).ToListAsync();
             return result;
         }
     }

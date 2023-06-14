@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using AsciiChart.Sharp;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Planar.CLI.Actions;
 using Planar.CLI.CliGeneral;
@@ -11,6 +12,7 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -317,7 +319,18 @@ namespace Planar.CLI
 
         private static void WriteCliResponse(IAnsiConsole console, CliActionResponse response)
         {
-            if (response.Tables != null && response.Tables.Any())
+            if (response.Plot != null)
+            {
+                var options = new Options
+                {
+                    AxisColor = AnsiColor.Blue,
+                    LabelColor = AnsiColor.Blue,
+                    Height = 20
+                };
+
+                AnsiConsole.WriteLine(AsciiChart.Sharp.AsciiChart.Plot(response.Plot.Series, options));
+            }
+            else if (response.Tables != null && response.Tables.Any())
             {
                 PrintTables(console, response);
             }
@@ -582,6 +595,10 @@ namespace Planar.CLI
                 if (action.Method.Invoke(console, args) is Task<CliActionResponse> task)
                 {
                     response = task.ConfigureAwait(false).GetAwaiter().GetResult();
+                }
+                else
+                {
+                    Debugger.Break();
                 }
             }
             catch (Exception ex)

@@ -14,7 +14,9 @@ public partial class PlanarContext : DbContext
 
     public virtual DbSet<ClusterNode> ClusterNodes { get; set; }
 
-    public virtual DbSet<ConcurentQueue> ConcurentQueues { get; set; }
+    public virtual DbSet<ConcurrentExecution> ConcurrentExecutions { get; set; }
+
+    public virtual DbSet<ConcurrentQueue> ConcurrentQueues { get; set; }
 
     public virtual DbSet<GlobalConfig> GlobalConfigs { get; set; }
 
@@ -42,6 +44,16 @@ public partial class PlanarContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<ConcurrentExecution>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_ConcurentExecution");
+        });
+
+        modelBuilder.Entity<ConcurrentQueue>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_ConcurentQueue");
+        });
+
         modelBuilder.Entity<Group>(entity =>
         {
             entity.HasOne(d => d.Role).WithMany(p => p.Groups)

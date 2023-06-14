@@ -46,7 +46,7 @@ PLAN FOR V 1.4.0
 - filter /Cluster.PlanarCluster/HealthCheck from trace
 - when delete job --> delete its monitoring items
 - add monitor event when retry
-- add concurent property to yml
+- add concurrent property to yml
 - move to .net 6
 - planar stop with job id (not only instance id)
 - when cli has no connection to service - show specific error
@@ -129,7 +129,7 @@ V 1.2.0
 - add JobType argument to cli history ls
 - add settings for clear job log
 - add settings for statistics log
-- add max concurent & max duration statistics
+- add max concurrent & max duration statistics
 - correct the job type of system job
 - cli: support cancel operation (cancallation token)
 - option for job timeout & general system timeout

@@ -18,6 +18,7 @@ namespace Planar.Service.MapperProfiles
                 .ForMember(t => t.AvgDuration, map => map.MapFrom(s => TimeSpan.FromMilliseconds(Convert.ToDouble(s.AvgDuration))));
             CreateMap<JobEffectedRowsStatisticDto, JobStatistic>();
             CreateMap<JobCounters, JobStatistic>();
+            CreateMap<ConcurrentExecution, ConcurrentExecutionModel>();
         }
     }
 }

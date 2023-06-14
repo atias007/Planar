@@ -43,6 +43,7 @@
     <None Remove="Scripts\Planar_0023 - fix_stat_sp.sql" />
     <None Remove="Scripts\Planar_0024 - fix_stats.sql" />
     <None Remove="Scripts\Planar_0025 - drop_max_duration.sql" />
+    <None Remove="Scripts\Planar_0026 - fix_concurrent.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -70,5 +71,6 @@
     <EmbeddedResource Include="Scripts\Planar_0023 - fix_stat_sp.sql" />
     <EmbeddedResource Include="Scripts\Planar_0024 - fix_stats.sql" />
     <EmbeddedResource Include="Scripts\Planar_0025 - drop_max_duration.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0026 - fix_concurrent.sql" />
   </ItemGroup>
 </Project>
