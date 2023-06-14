@@ -2,11 +2,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Service.Data;
-using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
+using Planar.Service.SystemJobs;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -15,6 +14,13 @@ namespace Planar.Service.API
     {
         public StatisticsDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
+        }
+
+        public async Task RebuildJobStatistics()
+        {
+            var key = $"{Consts.PlanarSystemGroup}.{typeof(StatisticsJob).Name}";
+            var jobKey = await JobKeyHelper.GetJobKey(key);
+            await Scheduler.TriggerJob(jobKey);
         }
 
         public async Task<JobStatistic> GetJobStatistics(string jobId)

@@ -17,6 +17,16 @@ namespace Planar.Controllers
         {
         }
 
+        [HttpPost("rebuild")]
+        [EditorAuthorize]
+        [SwaggerOperation(OperationId = "post_statistics_rebuild", Description = "Rebuild statistics data", Summary = "Rebuild Statistics Data")]
+        [NoContentResponse]
+        public async Task<ActionResult> RebuildJobStatistics()
+        {
+            await BusinesLayer.RebuildJobStatistics();
+            return NoContent();
+        }
+
         [HttpGet("job/{id}")]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_statistics_job_id", Description = "Get job statistics", Summary = "Get Job Statistics")]

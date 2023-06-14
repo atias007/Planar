@@ -229,9 +229,9 @@ namespace Planar.CLI.Actions
         protected static TEnum PromptSelection<TEnum>(string title, bool addCancelOption = true)
             where TEnum : struct, Enum
         {
-            var items = Enum.GetNames<TEnum>();
+            var items = Enum.GetNames<TEnum>().Select(e => e.ToLower());
             var result = CliPromptUtil.PromptSelection(items, title, addCancelOption);
-            return Enum.Parse<TEnum>(result!);
+            return Enum.Parse<TEnum>(result!, true);
         }
 
         protected static bool ConfirmAction(string title)

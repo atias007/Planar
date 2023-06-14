@@ -328,6 +328,7 @@ namespace Planar.CLI
                     Height = 20
                 };
 
+                AnsiConsole.WriteLine();
                 AnsiConsole.WriteLine(AsciiChart.Sharp.AsciiChart.Plot(response.Plot.Series, options));
             }
             else if (response.Tables != null && response.Tables.Any())

@@ -15,10 +15,11 @@ namespace Planar.CLI.Actions
     [Module("statistic", "Actions to get statistical data & graphs", Synonyms = "statistics")]
     public class StatisticsCliActions : BaseCliAction<StatisticsCliActions>
     {
-        [Action("calc")]
-        public static async Task<CliActionResponse> Calc(CancellationToken cancellationToken = default)
+        [Action("rebuild")]
+        public static async Task<CliActionResponse> Rebuild(CancellationToken cancellationToken = default)
         {
-            return CliActionResponse.Empty;
+            var restRequest = new RestRequest("statistics/rebuild", Method.Post);
+            return await Execute(restRequest, cancellationToken);
         }
 
         [Action("concurrent")]
