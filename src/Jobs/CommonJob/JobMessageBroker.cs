@@ -157,6 +157,7 @@ namespace CommonJob
                     lock (Locker)
                     {
                         _ = byte.TryParse(message, out var progress);
+                        if (Metadata.Progress == progress) { return null; }
                         Metadata.Progress = progress;
                     }
 
