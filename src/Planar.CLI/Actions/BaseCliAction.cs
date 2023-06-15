@@ -141,7 +141,8 @@ namespace Planar.CLI.Actions
                 GetModule<UserCliActions>(),
                 GetModule<GroupCliActions>(),
                 GetModule<ClusterCliActions>(),
-                GetModule<MonitorCliActions>()
+                GetModule<MonitorCliActions>(),
+                GetModule<StatisticsCliActions>()
             }
             .OrderBy(m => m.Name);
 
@@ -223,6 +224,14 @@ namespace Planar.CLI.Actions
         protected static string? PromptSelection(IEnumerable<string>? items, string title, bool addCancelOption = true)
         {
             return CliPromptUtil.PromptSelection(items, title, addCancelOption);
+        }
+
+        protected static TEnum PromptSelection<TEnum>(string title, bool addCancelOption = true)
+            where TEnum : struct, Enum
+        {
+            var items = Enum.GetNames<TEnum>().Select(e => e.ToLower());
+            var result = CliPromptUtil.PromptSelection(items, title, addCancelOption);
+            return Enum.Parse<TEnum>(result!, true);
         }
 
         protected static bool ConfirmAction(string title)

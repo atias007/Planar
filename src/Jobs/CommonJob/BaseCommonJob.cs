@@ -106,7 +106,7 @@ namespace CommonJob
             }
         }
 
-        protected async Task Initialize(IJobExecutionContext context)
+        protected async Task Initialize(IJobExecutionContext context, IMonitorUtil? monitorUtil = null)
         {
             await SetProperties(context);
 
@@ -117,7 +117,7 @@ namespace CommonJob
             }
 
             FillSettings(LoadJobSettings(path));
-            SetMessageBroker(new JobMessageBroker(context, Settings));
+            SetMessageBroker(new JobMessageBroker(context, Settings, monitorUtil));
 
             context.CancellationToken.Register(() =>
             {

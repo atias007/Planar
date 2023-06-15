@@ -1,5 +1,3 @@
-USE [Planar]
-GO
 /****** Object:  StoredProcedure [Statistics].[BuildJobStatistics]    Script Date: 11/06/2023 22:33:49 ******/
 SET ANSI_NULLS ON
 GO
@@ -22,6 +20,7 @@ AS
 		[Status] = 0 
 		AND [IsCanceled] = 0
 		AND [Anomaly] = 0
+		AND	DATEDIFF(DAY, [StartDate], GETDATE())<=365
 	GROUP BY [JobId]
 )
 
@@ -57,6 +56,7 @@ AS
 		AND [IsCanceled] = 0
 		AND [Anomaly] = 0
 		AND [EffectedRows] IS NOT NULL
+		AND	DATEDIFF(DAY, [StartDate], GETDATE())<=365
 	GROUP BY [JobId]
 )
 

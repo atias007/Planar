@@ -69,7 +69,7 @@ namespace Planar.Service.API
             await ValidateGlobalConfig(config);
             await PutGlobalConfig(config);
 
-            // Create Job (JobType+Concurent, JobGroup, JobName, Description, Durable)
+            // Create Job (JobType+Concurrent, JobGroup, JobName, Description, Durable)
             var job = BuildJobDetails(request, jobKey);
 
             // Add Author
@@ -106,7 +106,7 @@ namespace Planar.Service.API
             return new JobIdResponse { Id = id };
         }
 
-        // JobType+Concurent, JobGroup, JobName, Description, Durable
+        // JobType+Concurrent, JobGroup, JobName, Description, Durable
         private static IJobDetail BuildJobDetails(SetJobDynamicRequest request, JobKey jobKey)
         {
             var jobType = GetJobType(request);
@@ -124,7 +124,7 @@ namespace Planar.Service.API
             return job;
         }
 
-        // JobType+Concurent, JobGroup, JobName, Description, Durable
+        // JobType+Concurrent, JobGroup, JobName, Description, Durable
         private static IJobDetail CloneJobDetails(IJobDetail source)
         {
             var jobBuilder = JobBuilder.Create(source.JobType)
@@ -543,7 +543,7 @@ namespace Planar.Service.API
 
             if (metadata.JobData != null && metadata.JobData.Any() && metadata.Concurrent)
             {
-                throw new RestValidationException("concurrent", $"job with concurrent=true can not have data. persist data with concurent running may cause unexpected results");
+                throw new RestValidationException("concurrent", $"job with concurrent=true can not have data. persist data with concurrent running may cause unexpected results");
             }
 
             CheckForInvalidDataKeys(metadata.JobData, "job");
@@ -816,11 +816,11 @@ namespace Planar.Service.API
 
             if (job.Concurrent)
             {
-                typeName = $"Planar.{job.JobType}Concurent";
+                typeName = $"Planar.{job.JobType}Concurrent";
             }
             else
             {
-                typeName = $"Planar.{job.JobType}NoConcurent";
+                typeName = $"Planar.{job.JobType}NoConcurrent";
             }
 
             try

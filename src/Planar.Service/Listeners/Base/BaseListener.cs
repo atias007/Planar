@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
@@ -54,7 +55,7 @@ namespace Planar.Service.Listeners.Base
                 if (MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
 
                 using var scope = _serviceScopeFactory.CreateScope();
-                var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
+                var monitor = scope.ServiceProvider.GetRequiredService<IMonitorUtil>();
                 await monitor.Scan(@event, context, exception);
             }
             catch (ObjectDisposedException)

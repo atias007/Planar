@@ -46,23 +46,12 @@ namespace Planar.Service.SystemJobs
             try
             {
                 var data = _serviceProvider.GetRequiredService<StatisticsData>();
-                var rows = await data.SetMaxConcurentExecution();
-                _logger.LogDebug("statistics job execute {Method} with {Total} effected row(s)", nameof(data.SetMaxConcurentExecution), rows);
+                var rows = await data.SetMaxConcurrentExecution();
+                _logger.LogDebug("statistics job execute {Method} with {Total} effected row(s)", nameof(data.SetMaxConcurrentExecution), rows);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to set max concurent execution");
-            }
-
-            try
-            {
-                var data = _serviceProvider.GetRequiredService<StatisticsData>();
-                var rows = await data.SetMaxDurationExecution();
-                _logger.LogDebug("statistics job execute {Method} with {Total} effected row(s)", nameof(data.SetMaxDurationExecution), rows);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Fail to set max duration execution");
+                _logger.LogError(ex, "Fail to set max concurrent execution");
             }
 
             try

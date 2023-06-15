@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;

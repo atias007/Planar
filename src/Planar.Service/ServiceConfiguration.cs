@@ -41,6 +41,7 @@ namespace Planar.Service
             // Utils
             services.AddScoped<ClusterUtil>();
             services.AddScoped<MonitorUtil>();
+            services.AddScoped<IMonitorUtil, MonitorUtil>();
 
             // AutoMapper
             services.AddAutoMapper(Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));

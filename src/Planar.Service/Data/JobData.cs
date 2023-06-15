@@ -1,7 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Planar.API.Common.Entities;
 using Planar.Common;
-using Planar.Service.Audit;
 using Planar.Service.Model;
 using System;
 using System.Collections.Generic;

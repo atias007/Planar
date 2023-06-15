@@ -161,7 +161,7 @@ namespace Planar.Service.API
             // Clone request for audit
             var cloneRequest = Clone(request);
 
-            // Update Job Details (JobType+Concurent, JobGroup, JobName, Description, Durable)
+            // Update Job Details (JobType+Concurrent, JobGroup, JobName, Description, Durable)
             await UpdateJobDetails(request, options, metadata);
 
             // Sync Job Data

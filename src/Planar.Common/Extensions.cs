@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text.RegularExpressions;
 using YamlDotNet.Core.Tokens;
 
 namespace Planar.Common
@@ -66,9 +68,18 @@ namespace Planar.Common
             return value.Trim();
         }
 
-        public static bool HasValue(this string? value)
+        public static bool HasValue([NotNullWhen(true)] this string? value)
         {
             return !string.IsNullOrEmpty(value);
+        }
+
+        public static string SplitWords(this string value)
+        {
+            const string spacer = " ";
+            const string template = @"(?<=[A-Z])(?=[A-Z][a-z])|(?<=[^A-Z])(?=[A-Z])|(?<=[A-Za-z])(?=[^A-Za-z])";
+            var r = new Regex(template, RegexOptions.None, TimeSpan.FromMilliseconds(500));
+            var result = r.Replace(value, spacer);
+            return result;
         }
     }
 }
