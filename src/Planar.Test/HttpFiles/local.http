@@ -1,0 +1,8 @@
+# this is remark
+// this is also remark
+// for more information see: https://learn.microsoft.com/en-us/aspnet/core/test/http-files?view=aspnetcore-8.0
+
+@hostname=localhost
+@port=2306
+@host={{hostname}}:{{port}}
+GET https://{{host}}/job
