@@ -1,4 +1,4 @@
-﻿namespace Planar.API.Common.Entities
+﻿namespace Planar.Common
 {
     public enum MonitorEvents
     {
@@ -10,6 +10,7 @@
         ExecutionStart = 105,
         ExecutionEnd = 106,
         ExecutionSuccessWithNoEffectedRows = 107,
+        ExecutionProgressChanged = 108,
 
         //// - Events with argument --------------------------------
         ExecutionFailxTimesInRow = 200,
@@ -34,6 +35,7 @@
         TriggerPaused = 311,
         TriggerResumed = 312,
         ClusterNodeJoin = 313,
-        ClusterNodeRemoved = 314
+        ClusterNodeRemoved = 314,
+        ClusterHealthCheckFail = 315
     }
 }

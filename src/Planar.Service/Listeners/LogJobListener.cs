@@ -52,7 +52,7 @@ namespace Planar.Service.Listeners
             try
             {
                 if (IsSystemJob(context.JobDetail)) { return; }
-                var statisticsTask = AddConcurentStatistics(context);
+                var statisticsTask = AddConcurrentStatistics(context);
                 var data = GetJobDataForLogging(context.MergedJobDataMap);
 
                 var log = new DbJobInstanceLog
@@ -196,12 +196,12 @@ namespace Planar.Service.Listeners
             return yml;
         }
 
-        private async Task AddConcurentStatistics(IJobExecutionContext context)
+        private async Task AddConcurrentStatistics(IJobExecutionContext context)
         {
-            var count = await CountConcurentExecutionJob(context.Scheduler);
-            var item = new ConcurentQueue
+            var count = await CountConcurrentExecutionJob(context.Scheduler);
+            var item = new ConcurrentQueue
             {
-                ConcurentValue = Convert.ToInt16(count + 1),
+                ConcurrentValue = Convert.ToInt16(count + 1),
                 Server = Environment.MachineName,
                 InstanceId = context.Scheduler.SchedulerInstanceId,
                 RecordDate = DateTimeOffset.Now.DateTime
@@ -210,7 +210,7 @@ namespace Planar.Service.Listeners
             await ExecuteDal<StatisticsData>(d => d.AddCocurentQueueItem(item));
         }
 
-        private static async Task<int> CountConcurentExecutionJob(IScheduler scheduler)
+        private static async Task<int> CountConcurrentExecutionJob(IScheduler scheduler)
         {
             var first = await scheduler.GetCurrentlyExecutingJobs();
             var second = first.Select(f => f.JobDetail.Key)

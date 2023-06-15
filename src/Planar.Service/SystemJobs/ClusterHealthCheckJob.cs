@@ -13,9 +13,11 @@ namespace Planar.Service.SystemJobs
     {
         private readonly ILogger<ClusterHealthCheckJob> _logger;
         private readonly IServiceProvider _serviceProvider;
+        private readonly IMonitorUtil _monitorUtil;
 
-        public ClusterHealthCheckJob(IServiceProvider serviceProvider)
+        public ClusterHealthCheckJob(IServiceProvider serviceProvider, IMonitorUtil monitorUtil)
         {
+            _monitorUtil = monitorUtil;
             _serviceProvider = serviceProvider;
             _logger = _serviceProvider.GetRequiredService<ILogger<ClusterHealthCheckJob>>();
         }
@@ -29,7 +31,7 @@ namespace Planar.Service.SystemJobs
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Fail check health of cluster: {Message}", ex.Message);
-                return Task.CompletedTask;
+                return _monitorUtil.Scan(MonitorEvents.ClusterHealthCheckFail, context, ex);
             }
         }
 

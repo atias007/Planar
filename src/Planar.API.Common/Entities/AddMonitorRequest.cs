@@ -1,4 +1,6 @@
-﻿namespace Planar.API.Common.Entities
+﻿using Planar.Common;
+
+namespace Planar.API.Common.Entities
 {
     public class AddMonitorRequest
     {

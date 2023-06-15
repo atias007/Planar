@@ -1,6 +1,11 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
+using Planar.API.Common.Entities;
+using Planar.Common;
+using Planar.Service.General;
 using Planar.Service.Model;
+using Polly;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -42,7 +47,7 @@ namespace Planar.Service.Data
                 .ToListAsync();
         }
 
-        public async Task AddCocurentQueueItem(ConcurentQueue item)
+        public async Task AddCocurentQueueItem(ConcurrentQueue item)
         {
             _context.Add(item);
             await SaveChangesAsync();
@@ -60,21 +65,11 @@ namespace Planar.Service.Data
             return await conn.ExecuteAsync(cmd);
         }
 
-        public async Task<int> SetMaxConcurentExecution()
+        public async Task<int> SetMaxConcurrentExecution()
         {
             using var conn = _context.Database.GetDbConnection();
             var cmd = new CommandDefinition(
-                commandText: "Statistics.SetMaxConcurentExecution",
-                commandType: CommandType.StoredProcedure);
-
-            return await conn.ExecuteAsync(cmd);
-        }
-
-        public async Task<int> SetMaxDurationExecution()
-        {
-            using var conn = _context.Database.GetDbConnection();
-            var cmd = new CommandDefinition(
-                commandText: "Statistics.SetMaxDurationExecution",
+                commandText: "Statistics.SetMaxConcurrentExecution",
                 commandType: CommandType.StoredProcedure);
 
             return await conn.ExecuteAsync(cmd);
@@ -124,6 +119,37 @@ namespace Planar.Service.Data
         public async Task DeleteJobStatistic(JobEffectedRowsStatistic item)
         {
             await _context.JobEffectedRowsStatistics.Where(i => i.JobId == item.JobId).ExecuteDeleteAsync();
+        }
+
+        public async Task<JobCounters?> GetJobCounters(string id)
+        {
+            var result = await _context.JobCounters
+                .AsNoTracking()
+                .Where(j => j.JobId == id)
+                .GroupBy(j => 1)  // Group by a constant to get aggregate counts
+                .Select(g => new JobCounters
+                {
+                    TotalRuns = g.Sum(j => j.TotalRuns),
+                    SuccessRetries = g.Sum(j => j.SuccessRetries) ?? 0,
+                    FailRetries = g.Sum(j => j.FailRetries) ?? 0,
+                    Recovers = g.Sum(j => j.Recovers) ?? 0
+                })
+                .FirstOrDefaultAsync();
+
+            return result;
+        }
+
+        public IQueryable<ConcurrentExecution> GetConcurrentExecution(ConcurrentExecutionRequest request)
+        {
+            var query = _context.ConcurrentExecutions.AsNoTracking();
+
+            if (request.FromDate.HasValue) { query = query.Where(c => c.RecordDate >= request.FromDate.Value); }
+            if (request.ToDate.HasValue) { query = query.Where(c => c.RecordDate < request.ToDate.Value); }
+            if (request.Server.HasValue()) { query = query.Where(c => c.Server.ToLower() == request.Server.ToLower()); }
+            if (request.InstanceId.HasValue()) { query = query.Where(c => c.InstanceId.ToLower() == request.InstanceId.ToLower()); }
+
+            query = query.OrderByDescending(c => c.RecordDate).Take(1000);
+            return query;
         }
 
         public IQueryable<JobInstanceLog> GetNullAnomaly()
