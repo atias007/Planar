@@ -1,8 +1,46 @@
 # this is remark
 // this is also remark
-// for more information see: https://learn.microsoft.com/en-us/aspnet/core/test/http-files?view=aspnetcore-8.0
 
 @hostname=localhost
 @port=2306
-@host={{hostname}}:{{port}}
-GET https://{{host}}/job
+@host=http://{{hostname}}:{{port}}
+
+GET {{host}}/job
+
+###
+
+GET {{host}}/job/zeybkuzuvdd
+
+###
+
+POST {{host}}/config
+Content-Type: application/json
+
+{
+  "key": "xyz",
+  "value": "123",
+  "type": "string"
+}
+
+### 
+
+GET {{host}}/config/xyz
+
+### 
+
+DELETE {{host}}/config/xyz
+
+###
+
+POST {{host}}/config
+Content-Type: application/json
+
+{
+  "key": "ccc",
+  "value": "99",
+  "type": "string"
+}
+
+### 
+
+GET {{host}}/config/ccc
