@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
+    [ApiController]
     [Route("trace")]
     [ViewerAuthorize]
     public class TraceController : BaseController<TraceDomain>

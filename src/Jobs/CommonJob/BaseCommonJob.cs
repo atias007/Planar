@@ -197,7 +197,7 @@ namespace CommonJob
             if (!string.IsNullOrEmpty(value)) { value = value.Trim(); }
             if (string.IsNullOrEmpty(value))
             {
-                throw new PlanarJobException($"property '{propertyName}' is mandatory for job '{GetType().FullName}'");
+                throw new PlanarJobException($"property {propertyName} is mandatory for job '{GetType().FullName}'");
             }
         }
 
@@ -210,7 +210,7 @@ namespace CommonJob
 
             if (ignore)
             {
-                _logger.LogDebug("Ignore map data key '{DataKey}' with value '{DataValue}' to property '{PropertyName}' of job '{JobGroup}.{JobName}'",
+                _logger.LogDebug("Ignore map data key '{DataKey}' with value '{DataValue}' to property {PropertyName} of job '{JobGroup}.{JobName}'",
                     data.Key,
                     data.Value,
                     property.Name,
@@ -231,7 +231,7 @@ namespace CommonJob
 
             if (ignore)
             {
-                _logger.LogDebug("ATTENTION: Ignore map back property '{PropertyName}' of job '{JobGroup}.{JobName}' to data map",
+                _logger.LogDebug("ATTENTION: Ignore map back property {PropertyName} of job '{JobGroup}.{JobName}' to data map",
                     property.Name,
                     jobKey.Group,
                     jobKey.Name);

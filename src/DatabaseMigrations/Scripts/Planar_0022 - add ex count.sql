@@ -57,7 +57,7 @@ ALTER TABLE dbo.JobInstanceLog ADD CONSTRAINT
 
 
 GO
-/****** Object:  StoredProcedure [dbo].[UpdateJobInstanceLog]    Script Date: 04/06/2023 16:33:58 ******/
+
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON

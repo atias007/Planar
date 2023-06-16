@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 
 namespace Planar.Service.General.Password
 {
-    public static class PasswordGenerator
+    public static partial class PasswordGenerator
     {
         /// <summary>
         /// Generates a random password based on the rules passed in the parameters
@@ -94,19 +94,28 @@ namespace Planar.Service.General.Password
         /// <returns>True or False to say if the password is valid or not</returns>
         public static bool PasswordIsValid(IPasswordGeneratorProperties properties, string password)
         {
-            const string REGEX_LOWERCASE = @"[a-z]";
-            const string REGEX_UPPERCASE = @"[A-Z]";
-            const string REGEX_NUMERIC = @"[\d]";
-            const string REGEX_SPECIAL = @"([!#$%&*@\\])+";
-            const string REGEX_SPACE = @"([ ])+";
-
-            bool lowerCaseIsValid = !properties.IncludeLowercase || (properties.IncludeLowercase && Regex.IsMatch(password, REGEX_LOWERCASE));
-            bool upperCaseIsValid = !properties.IncludeUppercase || (properties.IncludeUppercase && Regex.IsMatch(password, REGEX_UPPERCASE));
-            bool numericIsValid = !properties.IncludeNumeric || (properties.IncludeNumeric && Regex.IsMatch(password, REGEX_NUMERIC));
-            bool symbolsAreValid = !properties.IncludeSpecial || (properties.IncludeSpecial && Regex.IsMatch(password, REGEX_SPECIAL));
-            bool spacesAreValid = !properties.IncludeSpaces || (properties.IncludeSpaces && Regex.IsMatch(password, REGEX_SPACE));
+            bool lowerCaseIsValid = !properties.IncludeLowercase || properties.IncludeLowercase && LowerCaseRegex().IsMatch(password);
+            bool upperCaseIsValid = !properties.IncludeUppercase || properties.IncludeUppercase && UpperCaseRegex().IsMatch(password);
+            bool numericIsValid = !properties.IncludeNumeric || properties.IncludeNumeric && NumericRegex().IsMatch(password);
+            bool symbolsAreValid = !properties.IncludeSpecial || properties.IncludeSpecial && SpecialRegex().IsMatch(password);
+            bool spacesAreValid = !properties.IncludeSpaces || properties.IncludeSpaces && SpaceRegex().IsMatch(password);
 
             return lowerCaseIsValid && upperCaseIsValid && numericIsValid && symbolsAreValid && spacesAreValid;
         }
+
+        [GeneratedRegex("[A-Z]", RegexOptions.None, 500)]
+        private static partial Regex UpperCaseRegex();
+
+        [GeneratedRegex("[\\d]", RegexOptions.None, 500)]
+        private static partial Regex NumericRegex();
+
+        [GeneratedRegex("[a-z]", RegexOptions.None, 500)]
+        private static partial Regex LowerCaseRegex();
+
+        [GeneratedRegex("([!#$%&*@\\\\])+", RegexOptions.None, 500)]
+        private static partial Regex SpecialRegex();
+
+        [GeneratedRegex("([ ])+", RegexOptions.None, 500)]
+        private static partial Regex SpaceRegex();
     }
 }

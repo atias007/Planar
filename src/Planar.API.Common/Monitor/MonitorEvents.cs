@@ -1,41 +1,43 @@
-﻿namespace Planar.Common
+﻿using System.ComponentModel;
+
+namespace Planar.Common
 {
     public enum MonitorEvents
     {
-        ExecutionVetoed = 100,
-        ExecutionRetry = 101,
-        ExecutionLastRetryFail = 102,
-        ExecutionFail = 103,
-        ExecutionSuccess = 104,
-        ExecutionStart = 105,
-        ExecutionEnd = 106,
-        ExecutionSuccessWithNoEffectedRows = 107,
-        ExecutionProgressChanged = 108,
+        [Description("Execution Vetoed")] ExecutionVetoed = 100,
+        [Description("Execution Retry")] ExecutionRetry = 101,
+        [Description("Execution Last Retry Fail")] ExecutionLastRetryFail = 102,
+        [Description("Execution Fail")] ExecutionFail = 103,
+        [Description("Execution Success")] ExecutionSuccess = 104,
+        [Description("Execution Start")] ExecutionStart = 105,
+        [Description("Execution End")] ExecutionEnd = 106,
+        [Description("Execution Success With No Effected Rows")] ExecutionSuccessWithNoEffectedRows = 107,
+        [Description("Execution Progress Changed")] ExecutionProgressChanged = 108,
 
         //// - Events with argument --------------------------------
-        ExecutionFailxTimesInRow = 200,
+        [Description("Execution Fail {x} Times In Row")] ExecutionFailxTimesInRow = 200,
 
-        ExecutionFailxTimesInHour = 201,
-        ExecutionEndWithEffectedRowsGreaterThanx = 202,
-        ExecutionEndWithEffectedRowsLessThanx = 203,
+        [Description("Execution Fail {x} Times In {y} Hours")] ExecutionFailxTimesInyHours = 201,
+        [Description("Execution End With Effected Rows Greater Than {x}")] ExecutionEndWithEffectedRowsGreaterThanx = 202,
+        [Description("Execution End With Effected Rows Less Than {x}")] ExecutionEndWithEffectedRowsLessThanx = 203,
 
         //// -------------------------------------------------------
-        JobAdded = 300,
+        [Description("Job Added")] JobAdded = 300,
 
-        JobDeleted = 301,
-        JobCanceled = 302,
-        JobPaused = 303,
-        JobResumed = 304,
-        JobGroupPaused = 305,
-        JobGroupResumed = 306,
-        SchedulerError = 307,
-        SchedulerInStandbyMode = 308,
-        SchedulerStarted = 309,
-        SchedulerShutdown = 310,
-        TriggerPaused = 311,
-        TriggerResumed = 312,
-        ClusterNodeJoin = 313,
-        ClusterNodeRemoved = 314,
-        ClusterHealthCheckFail = 315
+        [Description("Job Deleted")] JobDeleted = 301,
+        [Description("Job Canceled")] JobCanceled = 302,
+        [Description("Job Paused")] JobPaused = 303,
+        [Description("Job Resumed")] JobResumed = 304,
+        [Description("Job Group Paused")] JobGroupPaused = 305,
+        [Description("Job Group Resumed")] JobGroupResumed = 306,
+        [Description("Scheduler Error")] SchedulerError = 307,
+        [Description("Scheduler In Standby Mode")] SchedulerInStandbyMode = 308,
+        [Description("Scheduler Started")] SchedulerStarted = 309,
+        [Description("Scheduler Shutdown")] SchedulerShutdown = 310,
+        [Description("Trigger Paused")] TriggerPaused = 311,
+        [Description("Trigger Resumed")] TriggerResumed = 312,
+        [Description("Cluster Node Join")] ClusterNodeJoin = 313,
+        [Description("Cluster Node Removed")] ClusterNodeRemoved = 314,
+        [Description("Cluster Health Check Fail")] ClusterHealthCheckFail = 315
     }
 }

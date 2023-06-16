@@ -4,7 +4,7 @@ namespace Planar.CLI.Entities
 {
     public class CliGroupToUserRequest
     {
-        [ActionProperty(DefaultOrder = 0, Name = "group name")]
+        [ActionProperty(DefaultOrder = 0)]
         public string Name { get; set; } = null!;
 
         [ActionProperty(DefaultOrder = 1)]

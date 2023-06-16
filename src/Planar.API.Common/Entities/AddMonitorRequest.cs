@@ -1,21 +1,19 @@
-﻿using Planar.Common;
-
-namespace Planar.API.Common.Entities
+﻿namespace Planar.API.Common.Entities
 {
     public class AddMonitorRequest
     {
-        public string Title { get; set; } = string.Empty;
+        public string Title { get; set; } = null!;
 
         public string? JobName { get; set; }
 
         public string? JobGroup { get; set; }
 
-        public MonitorEvents? EventId { get; set; }
+        public string EventName { get; set; } = null!;
 
         public string? EventArgument { get; set; }
 
-        public int GroupId { get; set; }
+        public string GroupName { get; set; } = null!;
 
-        public string? Hook { get; set; }
+        public string Hook { get; set; } = null!;
     }
 }

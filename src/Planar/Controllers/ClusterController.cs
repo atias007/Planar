@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
+    [ApiController]
     [Route("cluster")]
     public class ClusterController : BaseController<ClusterDomain>
     {

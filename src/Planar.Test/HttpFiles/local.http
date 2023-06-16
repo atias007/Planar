@@ -1,0 +1,46 @@
+# this is remark
+// this is also remark
+
+@hostname=localhost
+@port=2306
+@host=http://{{hostname}}:{{port}}
+
+GET {{host}}/job
+
+###
+
+GET {{host}}/job/zeybkuzuvdd
+
+###
+
+POST {{host}}/config
+Content-Type: application/json
+
+{
+  "key": "xyz",
+  "value": "123",
+  "type": "string"
+}
+
+### 
+
+GET {{host}}/config/xyz
+
+### 
+
+DELETE {{host}}/config/xyz
+
+###
+
+POST {{host}}/config
+Content-Type: application/json
+
+{
+  "key": "ccc",
+  "value": "99",
+  "type": "string"
+}
+
+### 
+
+GET {{host}}/config/ccc

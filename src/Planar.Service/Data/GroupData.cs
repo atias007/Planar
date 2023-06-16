@@ -125,22 +125,29 @@ namespace Planar.Service.Data
         public async Task<bool> IsGroupNameExists(string? name, int id)
         {
             if (name == null) { return false; }
-            return await _context.Groups.AnyAsync(u => u.Id != id && u.Name.ToLower() == name.ToLower());
+            return await _context.Groups.AsNoTracking().AnyAsync(u => u.Id != id && u.Name.ToLower() == name.ToLower());
+        }
+
+        public async Task<bool> IsGroupNameExists(string? name)
+        {
+            if (name == null) { return false; }
+            return await _context.Groups.AsNoTracking().AnyAsync(u => u.Name.ToLower() == name.ToLower());
         }
 
         public async Task<bool> IsUserExistsInGroup(int userId, int groupId)
         {
-            return await _context.Groups.AnyAsync(g => g.Id == groupId && g.Users.Any(u => u.Id == userId));
+            return await _context.Groups.AsNoTracking().AnyAsync(g => g.Id == groupId && g.Users.Any(u => u.Id == userId));
         }
 
         public async Task<bool> IsGroupExists(int groupId)
         {
-            return await _context.Groups.AnyAsync(g => g.Id == groupId);
+            return await _context.Groups.AsNoTracking().AnyAsync(g => g.Id == groupId);
         }
 
         public async Task<int> GetGroupId(string name)
         {
             return await _context.Groups
+                .AsNoTracking()
                 .Where(g => g.Name.ToLower() == name.ToLower())
                 .Select(g => g.Id)
                 .FirstOrDefaultAsync();

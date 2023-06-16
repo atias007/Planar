@@ -175,7 +175,7 @@ namespace Planar.Service.Listeners
             {
                 var task3 = SafeScan(MonitorEvents.ExecutionFail, context, exception);
                 var task4 = SafeScan(MonitorEvents.ExecutionFailxTimesInRow, context, exception);
-                var task5 = SafeScan(MonitorEvents.ExecutionFailxTimesInHour, context, exception);
+                var task5 = SafeScan(MonitorEvents.ExecutionFailxTimesInyHours, context, exception);
 
                 allTasks.Add(task3);
                 allTasks.Add(task4);

@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
+    [ApiController]
     [Route("monitor")]
     public class MonitorController : BaseController<MonitorDomain>
     {
@@ -65,10 +66,10 @@ namespace Planar.Controllers
         [HttpGet("events")]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_monitor_events", Description = "Get all monitor events type", Summary = "Get All Monitor Events")]
-        [OkJsonResponse(typeof(List<LovItem>))]
-        public ActionResult<List<LovItem>> GetEvents()
+        [OkJsonResponse(typeof(List<MonitorEventModel>))]
+        public ActionResult<List<MonitorEventModel>> GetEvents()
         {
-            var result = BusinesLayer.GetEvents();
+            var result = MonitorDomain.GetEvents();
             return Ok(result);
         }
 

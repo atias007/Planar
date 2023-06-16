@@ -94,8 +94,8 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> GetMonitorEvents(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("monitor/events", Method.Get);
-            var result = await RestProxy.Invoke<List<LovItem>>(restRequest, cancellationToken);
-            var table = CliTableExtensions.GetTable(result.Data, "event");
+            var result = await RestProxy.Invoke<List<MonitorEventModel>>(restRequest, cancellationToken);
+            var table = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, table);
         }
 
@@ -125,6 +125,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("try")]
+        [ActionWizard]
         [NullRequest]
         public static async Task<CliActionResponse> TryMonitor(CliMonitorTestRequest request, CancellationToken cancellationToken = default)
         {
@@ -155,13 +156,13 @@ namespace Planar.CLI.Actions
 
             var hookName = GetHook(data.Hooks);
             var eventName = GetEventForTest();
-            var groupId = GetDistributionGroup(data.Groups);
+            var groupName = GetDistributionGroup(data.Groups);
 
             var monitor = new CliMonitorTestRequest
             {
-                DistributionGroupId = groupId,
+                GroupName = groupName,
                 Hook = hookName,
-                MonitorEvent = eventName
+                EventName = eventName
             };
 
             return new RequestBuilderWrapper<CliMonitorTestRequest> { Request = monitor };
@@ -175,10 +176,10 @@ namespace Planar.CLI.Actions
                 return new RequestBuilderWrapper<CliAddMonitorRequest> { FailResponse = data.FailResponse };
             }
 
-            var monitorEventId = GetEvent(data.Events);
-            var job = GetJob(data.Jobs, monitorEventId);
-            var monitorEventArgs = GetEventArguments(monitorEventId);
-            var groupId = GetDistributionGroup(data.Groups);
+            var eventName = GetEvent(data.Events);
+            var job = GetJob(data.Jobs, eventName);
+            var monitorEventArgs = GetEventArguments(eventName);
+            var groupName = GetDistributionGroup(data.Groups);
             var hookName = GetHook(data.Hooks);
             var title = GetTitle();
 
@@ -186,38 +187,35 @@ namespace Planar.CLI.Actions
             {
                 EventArgument = monitorEventArgs,
                 JobGroup = job.JobGroup,
-                GroupId = groupId,
+                GroupName = groupName,
                 Hook = hookName,
                 JobName = job.JobName,
-                EventId = monitorEventId,
+                EventName = eventName,
                 Title = title
             };
 
             return new RequestBuilderWrapper<CliAddMonitorRequest> { Request = monitor };
         }
 
-        private static int GetDistributionGroup(IEnumerable<GroupInfo> groups)
+        private static string GetDistributionGroup(IEnumerable<GroupInfo> groups)
         {
             var groupsNames = groups.Select(group => group.Name ?? string.Empty);
             var selectedGroup = PromptSelection(groupsNames, "distribution group");
 
-            var group = groups.First(e => e.Name == selectedGroup);
-            AnsiConsole.MarkupLine($"[turquoise2]  > dist. group:[/] {group.Name}");
-            return group.Id;
+            AnsiConsole.MarkupLine($"[turquoise2]  > dist. group:[/] {selectedGroup}");
+            return selectedGroup ?? string.Empty;
         }
 
-        private static int GetEvent(IEnumerable<LovItem> events)
+        private static string GetEvent(IEnumerable<MonitorEventModel> events)
         {
-            var eventsName = events.Select(e => e.Name);
-
+            var eventsName = events.Select(e => e.EventTitle);
             var selectedEvent = PromptSelection(eventsName, "monitor event");
-
-            var monitorEvent = events.First(e => e.Name == selectedEvent);
-            AnsiConsole.MarkupLine($"[turquoise2]  > event:[/] {monitorEvent.Name}");
-            return monitorEvent.Id;
+            AnsiConsole.MarkupLine($"[turquoise2]  > event:[/] {selectedEvent}");
+            var result = events.FirstOrDefault(e => e.EventTitle == selectedEvent)?.EventName;
+            return result ?? string.Empty;
         }
 
-        private static TestMonitorEvents GetEventForTest()
+        private static string GetEventForTest()
         {
             var names = Enum.GetNames(typeof(TestMonitorEvents));
             var selectedEvent = PromptSelection(names, "monitor event");
@@ -227,14 +225,13 @@ namespace Planar.CLI.Actions
                 throw new CliWarningException("monitor event is not selected");
             }
 
-            var monitorEvent = Enum.Parse<TestMonitorEvents>(selectedEvent);
             AnsiConsole.MarkupLine($"[turquoise2]  > event:[/] {selectedEvent}");
-            return monitorEvent;
+            return selectedEvent;
         }
 
-        private static string? GetEventArguments(int monitorEvent)
+        private static string? GetEventArguments(string eventName)
         {
-            var result = MonitorEventsExtensions.IsMonitorEventHasArguments(monitorEvent) ?
+            var result = MonitorEventsExtensions.IsMonitorEventHasArguments(eventName) ?
                 AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > event argument:[/] ").AllowEmpty()) :
                 null;
 
@@ -255,19 +252,25 @@ namespace Planar.CLI.Actions
             return selectedHook ?? string.Empty;
         }
 
-        private static AddMonitorJobData GetJob(IEnumerable<JobRowDetails> jobs, int monitorEventId)
+        private static AddMonitorJobData GetJob(IEnumerable<JobRowDetails> jobs, string eventName)
         {
-            if (MonitorEventsExtensions.IsSystemMonitorEvent(monitorEventId))
+            if (MonitorEventsExtensions.IsSystemMonitorEvent(eventName))
             {
                 return new AddMonitorJobData();
             }
 
-            var types = new[] { "single (monitor for single job)", "group (monitor for group of jobs)", "all (monitor for all jobs)" };
-
-            var selectedEvent = PromptSelection(types, "monitor type") ?? string.Empty;
+            string selectedEvent;
+            if (MonitorEventsExtensions.IsMonitorEventHasArguments(eventName))
+            {
+                selectedEvent = "single (monitor for single job)";
+            }
+            else
+            {
+                var types = new[] { "single (monitor for single job)", "group (monitor for group of jobs)", "all (monitor for all jobs)" };
+                selectedEvent = PromptSelection(types, "monitor type") ?? string.Empty;
+            }
 
             selectedEvent = selectedEvent.Split(' ')[0];
-
             if (selectedEvent == "all")
             {
                 AnsiConsole.MarkupLine("[turquoise2]  > monitor for: [/] all jobs");
@@ -329,7 +332,7 @@ namespace Planar.CLI.Actions
         {
             var data = new MonitorRequestData();
             var eventsRequest = new RestRequest("monitor/events", Method.Get);
-            var eventsTask = RestProxy.Invoke<List<LovItem>>(eventsRequest, cancellationToken);
+            var eventsTask = RestProxy.Invoke<List<MonitorEventModel>>(eventsRequest, cancellationToken);
 
             var hooksRequest = new RestRequest("monitor/hooks", Method.Get);
             var hooksTask = RestProxy.Invoke<List<string>>(hooksRequest, cancellationToken);
@@ -342,7 +345,7 @@ namespace Planar.CLI.Actions
             var groupsTask = RestProxy.Invoke<List<GroupInfo>>(groupsRequest, cancellationToken);
 
             var events = await eventsTask;
-            data.Events = events.Data ?? new List<LovItem>();
+            data.Events = events.Data ?? new List<MonitorEventModel>();
             if (!events.IsSuccessful)
             {
                 data.FailResponse = events;
@@ -430,17 +433,17 @@ namespace Planar.CLI.Actions
             public List<GroupInfo> Groups { get; set; }
             public List<string> Hooks { get; set; }
             public RestResponse FailResponse { get; set; }
-            public bool IsSuccessful => FailResponse == null;
+            public readonly bool IsSuccessful => FailResponse == null;
         }
 
         private struct MonitorRequestData
         {
-            public List<LovItem> Events { get; set; }
+            public List<MonitorEventModel> Events { get; set; }
             public List<GroupInfo> Groups { get; set; }
             public List<string> Hooks { get; set; }
             public List<JobRowDetails> Jobs { get; set; }
             public RestResponse FailResponse { get; set; }
-            public bool IsSuccessful => FailResponse == null;
+            public readonly bool IsSuccessful => FailResponse == null;
         }
 
         private struct AddMonitorJobData

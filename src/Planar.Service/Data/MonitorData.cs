@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
@@ -102,6 +103,7 @@ namespace Planar.Service.Data
         public async Task<List<MonitorAction>> GetMonitorActions()
         {
             return await _context.MonitorActions
+                .AsNoTracking()
                 .Include(i => i.Group)
                 .OrderByDescending(d => d.Active)
                 .ThenBy(d => d.JobGroup)
@@ -166,7 +168,17 @@ namespace Planar.Service.Data
         {
             return await _context.MonitorActions.AnyAsync(m =>
                 m.EventId == monitor.EventId &&
-                m.EventArgument == monitor.EventArgument &&
+                m.JobName == monitor.JobName &&
+                m.JobGroup == monitor.JobGroup &&
+                m.GroupId == monitor.GroupId &&
+                m.Hook == monitor.Hook);
+        }
+
+        public async Task<bool> IsMonitorExists(MonitorAction monitor, int currentUpdateId)
+        {
+            return await _context.MonitorActions.AnyAsync(m =>
+                m.Id != currentUpdateId &&
+                m.EventId == monitor.EventId &&
                 m.JobName == monitor.JobName &&
                 m.JobGroup == monitor.JobGroup &&
                 m.GroupId == monitor.GroupId &&

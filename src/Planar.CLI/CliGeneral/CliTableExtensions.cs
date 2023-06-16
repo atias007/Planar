@@ -94,6 +94,15 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetTable(List<MonitorEventModel>? response)
+        {
+            var table = new CliTable(showCount: true, entityName: "event");
+            if (response == null) { return table; }
+            table.Table.AddColumns("Event Name", "Event Title");
+            response.ForEach(r => table.Table.AddRow(r.EventName, r.EventTitle));
+            return table;
+        }
+
         public static CliTable GetTable(List<JobRowDetails>? response)
         {
             var table = new CliTable(showCount: true, entityName: "job");
@@ -211,13 +220,14 @@ namespace Planar.CLI
             var table = new CliTable(showCount: true, entityName: "monitor");
             if (response == null) { return table; }
             var data = response;
-            table.Table.AddColumns("Id", "Title", "Event", "Job Group", "Job Name", "Dist. Group", "Hook", "Active");
+            table.Table.AddColumns("Id", "Title", "Event", "Job Group", "Job Name", "Event Arguments", "Dist. Group", "Hook", "Active");
             data.ForEach(r => table.Table.AddRow(
                 r.Id.ToString(),
                 r.Title.EscapeMarkup(),
                 r.EventTitle.EscapeMarkup(),
                 r.JobGroup.EscapeMarkup(),
                 r.JobName.EscapeMarkup(),
+                r.EventArgument.EscapeMarkup(),
                 r.DistributionGroupName.EscapeMarkup(),
                 r.Hook.EscapeMarkup(),
                 CliTableFormat.GetBooleanMarkup(r.Active)));
