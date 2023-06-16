@@ -9,10 +9,10 @@ using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.Monitor.Test;
+using Planar.Service.Validation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -25,9 +25,12 @@ namespace Planar.Service.API
 
         public async Task<int> Add(AddMonitorRequest request)
         {
+            var validator = new MonitorActionValidator();
+            validator.ValidateMonitorArguments(request);
+
             var monitor = Mapper.Map<MonitorAction>(request);
-            if (string.IsNullOrEmpty(monitor.JobGroup)) { monitor.JobGroup = null; }
-            if (string.IsNullOrEmpty(monitor.JobName)) { monitor.JobName = null; }
+            if (string.IsNullOrWhiteSpace(monitor.JobGroup)) { monitor.JobGroup = null; }
+            if (string.IsNullOrWhiteSpace(monitor.JobName)) { monitor.JobName = null; }
             monitor.Active = true;
 
             if (await DataLayer.IsMonitorExists(monitor))
@@ -89,12 +92,12 @@ namespace Planar.Service.API
             return result;
         }
 
-        public List<LovItem> GetEvents()
+        public static List<MonitorEventModel> GetEvents()
         {
             var result =
                 Enum.GetValues(typeof(MonitorEvents))
                 .Cast<MonitorEvents>()
-                .Select(e => new LovItem { Id = (int)e, Name = e.ToString().SplitWords() })
+                .Select(e => new MonitorEventModel { EventName = e.ToString(), EventTitle = e.GetEnumDescription() })
                 .ToList();
 
             return result;
@@ -127,7 +130,17 @@ namespace Planar.Service.API
                 throw new RestNotFoundException($"monitor with id {request.Id} is not exists");
             }
 
+            var validator = new MonitorActionValidator();
+            validator.ValidateMonitorArguments(request);
+
             var monitor = Mapper.Map<MonitorAction>(request);
+            if (string.IsNullOrWhiteSpace(monitor.JobGroup)) { monitor.JobGroup = null; }
+            if (string.IsNullOrWhiteSpace(monitor.JobName)) { monitor.JobName = null; }
+            if (await DataLayer.IsMonitorExists(monitor))
+            {
+                throw new RestConflictException("monitor with same properties already exists");
+            }
+
             await DataLayer.UpdateMonitorAction(monitor);
         }
 
@@ -145,13 +158,14 @@ namespace Planar.Service.API
         {
             var monitorUtil = Resolve<MonitorUtil>();
             var groupDal = Resolve<GroupData>();
-            var group = await groupDal.GetGroupWithUsers(request.DistributionGroupId);
-            var monitorEvent = Enum.Parse<MonitorEvents>(request.MonitorEvent.ToString());
+            var groupId = await groupDal.GetGroupId(request.GroupName ?? string.Empty);
+            var group = await groupDal.GetGroupWithUsers(groupId);
+            var monitorEvent = Enum.Parse<MonitorEvents>(request.EventName.ToString());
             var exception = new Exception("This is test exception");
 
             if (group == null)
             {
-                var field = nameof(request.DistributionGroupId);
+                var field = nameof(request.GroupName);
                 throw new RestValidationException(field, $"{field} was not found");
             }
 
@@ -159,9 +173,9 @@ namespace Planar.Service.API
             {
                 Active = true,
                 EventArgument = null,
-                EventId = (int)request.MonitorEvent,
+                EventId = (int)monitorEvent,
                 Group = group,
-                GroupId = request.DistributionGroupId,
+                GroupId = groupId,
                 Hook = request.Hook,
                 JobGroup = "TestJobGroup",
                 JobName = "TestJobName",
@@ -184,7 +198,7 @@ namespace Planar.Service.API
             }
             else
             {
-                throw new RestValidationException(nameof(MonitorTestRequest.MonitorEvent), $"monitor enent '{monitorEvent}' is not supported for test");
+                throw new RestValidationException(nameof(MonitorTestRequest.EventName), $"monitor enent '{monitorEvent}' is not supported for test");
             }
 
             if (!result.Success)

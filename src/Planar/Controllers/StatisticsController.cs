@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
+    [ApiController]
     [Route("statistics")]
     public class StatisticsController : BaseController<StatisticsDomain>
     {

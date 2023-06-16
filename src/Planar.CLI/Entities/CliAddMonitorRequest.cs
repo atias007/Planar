@@ -8,7 +8,7 @@ namespace Planar.CLI.Entities
         [Required("title argument is required")]
         public string Title { get; set; } = string.Empty;
 
-        [ActionProperty("n", "name")]
+        [ActionProperty("jn", "job-name")]
         public string? JobName { get; set; }
 
         [ActionProperty("jg", "job-group")]
@@ -16,14 +16,14 @@ namespace Planar.CLI.Entities
 
         [ActionProperty("e", "event")]
         [Required("event argument is required")]
-        public int EventId { get; set; }
+        public string EventName { get; set; } = null!;
 
         [ActionProperty("a", "arguments")]
         public string? EventArgument { get; set; }
 
         [ActionProperty("g", "group")]
         [Required("group argument is required")]
-        public int GroupId { get; set; }
+        public string GroupName { get; set; } = null!;
 
         [ActionProperty("h", "hook")]
         [Required("hook argument is required")]

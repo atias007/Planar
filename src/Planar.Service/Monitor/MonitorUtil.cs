@@ -6,8 +6,10 @@ using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
+using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
+using Planar.Service.Validation;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -376,15 +378,27 @@ namespace Planar.Service.Monitor
 
         private async Task<MonitorArguments> GetAndValidateArgs(MonitorAction action, JobKeyHelper jobKeyHelper)
         {
-            _ = int.TryParse(action.EventArgument, out var args);
             var jobId = await jobKeyHelper.GetJobId(action);
-            if (args < 2 || string.IsNullOrEmpty(jobId))
+
+            if (string.IsNullOrWhiteSpace(jobId))
             {
-                _logger.LogWarning("Monitor action {Id}, Title '{Title}' has invalid argument ({EventArgument}) or missing job group/name", action.Id, action.Title, action.EventArgument);
+                _logger.LogWarning("Monitor action {Id}, Title '{Title}' --> missing job group/name", action.Id, action.Title);
                 return MonitorArguments.Empty;
             }
 
-            var result = new MonitorArguments { Arg = args, Handle = true, JobId = jobId };
+            var result = new MonitorArguments { Handle = true, JobId = jobId };
+
+            try
+            {
+                var validator = new MonitorActionValidator(_logger);
+                var args = validator.ValidateMonitorArguments(action);
+                result.Args = args;
+            }
+            catch (RestValidationException)
+            {
+                return MonitorArguments.Empty;
+            }
+
             return result;
         }
 
@@ -420,7 +434,7 @@ namespace Planar.Service.Monitor
             var jobKeyHelper = scope.ServiceProvider.GetRequiredService<JobKeyHelper>();
             var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
             var args = await GetAndValidateArgs(action, jobKeyHelper);
-            if (!args.Handle) { return false; }
+            if (!args.Handle || args.Args == null) { return false; }
 
             switch (@event)
             {
@@ -428,20 +442,20 @@ namespace Planar.Service.Monitor
                     return false;
 
                 case MonitorEvents.ExecutionFailxTimesInRow:
-                    var count1 = await dal.CountFailsInRowForJob(new { args.JobId, Total = args.Arg });
-                    return count1 >= args.Arg;
+                    var count1 = await dal.CountFailsInRowForJob(new { args.JobId, Total = args.Args[0] });
+                    return count1 >= args.Args[0];
 
-                case MonitorEvents.ExecutionFailxTimesInHour:
-                    var count2 = await dal.CountFailsInHourForJob(new { args.JobId });
-                    return count2 >= args.Arg;
+                case MonitorEvents.ExecutionFailxTimesInyHours:
+                    var count2 = await dal.CountFailsInHourForJob(new { args.JobId, Hours = args.Args[1] });
+                    return count2 >= args.Args[0];
 
                 case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx:
                     var rows = ServiceUtil.GetEffectedRows(context);
-                    return rows != null && rows > args.Arg;
+                    return rows != null && rows > args.Args[0];
 
                 case MonitorEvents.ExecutionEndWithEffectedRowsLessThanx:
                     var rows1 = ServiceUtil.GetEffectedRows(context);
-                    return rows1 != null && rows1 < args.Arg;
+                    return rows1 != null && rows1 < args.Args[0];
             }
         }
     }

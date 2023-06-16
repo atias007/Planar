@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
+    [ApiController]
     [Route("user")]
     public class UserController : BaseController<UserDomain>
     {

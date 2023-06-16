@@ -2,11 +2,11 @@
 {
     public class MonitorTestRequest
     {
-        public string Hook { get; set; } = string.Empty;
+        public string Hook { get; set; } = null!;
 
-        public TestMonitorEvents MonitorEvent { get; set; }
+        public string EventName { get; set; } = null!;
 
-        public int DistributionGroupId { get; set; }
+        public string GroupName { get; set; } = null!;
 
         public int? EffectedRows { get; set; }
     }

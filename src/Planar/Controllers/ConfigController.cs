@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
+    [ApiController]
     [Route("config")]
     public class ConfigController : BaseController<ConfigDomain>
     {

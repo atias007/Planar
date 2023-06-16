@@ -4,7 +4,7 @@
     {
         public string JobId { get; set; }
 
-        public int Arg { get; set; }
+        public int[]? Args { get; set; }
 
         public bool Handle { get; set; }
 

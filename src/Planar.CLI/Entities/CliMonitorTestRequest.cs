@@ -1,5 +1,4 @@
-﻿using Planar.API.Common.Entities;
-using Planar.CLI.Attributes;
+﻿using Planar.CLI.Attributes;
 
 namespace Planar.CLI.Entities
 {
@@ -11,10 +10,10 @@ namespace Planar.CLI.Entities
 
         [ActionProperty(DefaultOrder = 2, Name = "event")]
         [Required("event argument is required")]
-        public TestMonitorEvents MonitorEvent { get; set; }
+        public string EventName { get; set; } = null!;
 
-        [ActionProperty(DefaultOrder = 3, Name = "group id")]
+        [ActionProperty(DefaultOrder = 3, Name = "group name")]
         [Required("group id argument is required")]
-        public int DistributionGroupId { get; set; }
+        public string GroupName { get; set; } = null!;
     }
 }
