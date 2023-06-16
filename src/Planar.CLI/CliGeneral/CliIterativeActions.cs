@@ -58,7 +58,7 @@ namespace Planar.CLI
                 RefreshTable(table, ids, refreshData, i);
             }
 
-            var isAllFinish = refreshData?.All(r => r.Progress == 100);
+            var isAllFinish = refreshData?.TrueForAll(r => r.Progress == 100);
             return isAllFinish.GetValueOrDefault();
         }
 
@@ -66,7 +66,7 @@ namespace Planar.CLI
         {
             if (refreshData == null) { return; }
             var id = ids[i];
-            var item = refreshData.FirstOrDefault(r => r.Id == id.ToString());
+            var item = refreshData.Find(r => r.Id == id.ToString());
             if (item == null || item.Progress == 100)
             {
                 table.UpdateCell(i, 3, $"[grey]completed[/]");

@@ -74,7 +74,7 @@ namespace Planar.CLI.DataProtect
         public static void SetColor(CliColors color)
         {
             Current.Color = color;
-            var login = Data.Logins.FirstOrDefault(l => l.Key == Current.Key);
+            var login = Data.Logins.Find(l => l.Key == Current.Key);
             if (login != null)
             {
                 login.Color = color;
@@ -94,7 +94,7 @@ namespace Planar.CLI.DataProtect
             Current.Username = null;
             Current.Password = null;
 
-            var login = Data.Logins.FirstOrDefault(l => l.Key == Current.Key);
+            var login = Data.Logins.Find(l => l.Key == Current.Key);
             if (login != null)
             {
                 login.Token = null;

@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
+using Polly;
 using Quartz;
 using System.Data;
 using System.Data.Common;
@@ -107,20 +108,9 @@ namespace Planar
 
         private async Task ExecuteSqlStep(IJobExecutionContext context, SqlStep step, DbConnection? defaultConnection, DbTransaction? transaction)
         {
-            DbConnection connection;
-            var finalizeConnection = false;
-            if (string.IsNullOrWhiteSpace(step.ConnectionString))
-            {
-                if (defaultConnection == null) { throw new SqlJobException($"No connection string defined for step name '{step.Name}' and no default connection"); }
-                connection = defaultConnection;
-            }
-            else
-            {
-                finalizeConnection = true;
-                connection = new SqlConnection(step.ConnectionString);
-                MessageBroker.AppendLog(LogLevel.Information, $"Open sql connection with connection name: {step.ConnectionName}");
-                await connection.OpenAsync(context.CancellationToken);
-            }
+            var tuple = await GetDbConnection(context, step, defaultConnection);
+            DbConnection connection = tuple.Item1;
+            var finalizeConnection = tuple.Item2;
 
             try
             {
@@ -154,17 +144,7 @@ namespace Planar
             }
             catch (Exception ex)
             {
-                var sqlEx = new SqlJobException($"Fail to execute step name '{step.Name}'", ex);
-                _logger.LogError(ex, "Fail to execute step name '{Name}'", step.Name);
-                MessageBroker.AppendLog(LogLevel.Error, $"Fail to execute step name '{step.Name}'. {ex.Message}");
-                if (Properties.ContinueOnError)
-                {
-                    _exceptions.Add(sqlEx);
-                }
-                else
-                {
-                    throw sqlEx;
-                }
+                HandleStepException(step, ex);
             }
             finally
             {
@@ -173,6 +153,34 @@ namespace Planar
                     try { connection?.Close(); } catch { DoNothingMethod(); }
                     try { connection?.Dispose(); } catch { DoNothingMethod(); }
                 }
+            }
+        }
+
+        private async Task<Tuple<DbConnection, bool>> GetDbConnection(IJobExecutionContext context, SqlStep step, DbConnection? defaultConnection)
+        {
+            DbConnection? connection = null;
+            var finalizeConnection = false;
+            try
+            {
+                if (string.IsNullOrWhiteSpace(step.ConnectionString))
+                {
+                    if (defaultConnection == null) { throw new SqlJobException($"No connection string defined for step name '{step.Name}' and no default connection"); }
+                    connection = defaultConnection;
+                }
+                else
+                {
+                    finalizeConnection = true;
+                    connection = new SqlConnection(step.ConnectionString);
+                    MessageBroker.AppendLog(LogLevel.Information, $"Open sql connection with connection name: {step.ConnectionName}");
+                    await connection.OpenAsync(context.CancellationToken);
+                }
+
+                return new Tuple<DbConnection, bool>(connection, finalizeConnection);
+            }
+            catch (Exception)
+            {
+                try { connection?.Dispose(); } catch { DoNothingMethod(); }
+                throw;
             }
         }
 
@@ -202,6 +210,54 @@ namespace Planar
             }
 
             return result;
+        }
+
+        private void HandleStepException(SqlStep step, Exception ex)
+        {
+            var sqlEx = new SqlJobException($"Fail to execute step name '{step.Name}'", ex);
+            _logger.LogError(ex, "Fail to execute step name '{Name}'", step.Name);
+            MessageBroker.AppendLog(LogLevel.Error, $"Fail to execute step name '{step.Name}'. {ex.Message}");
+            if (Properties.ContinueOnError)
+            {
+                _exceptions.Add(sqlEx);
+            }
+            else
+            {
+                throw sqlEx;
+            }
+        }
+
+        private string? ValidateConnectionName(string? name)
+        {
+            if (string.IsNullOrEmpty(name)) { return null; }
+            var connectionString = Properties.ConnectionStrings?
+                .Find(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
+
+            if (connectionString != null)
+            {
+                if (string.IsNullOrWhiteSpace(connectionString.ConnectionString))
+                {
+                    throw new SqlJobException($"connection name '{name}' in job properties has null or empty value");
+                }
+
+                return connectionString.ConnectionString;
+            }
+
+            var settingsKey = Settings.Keys
+                .FirstOrDefault(k => string.Equals(k, name, StringComparison.OrdinalIgnoreCase));
+
+            if (string.IsNullOrWhiteSpace(settingsKey))
+            {
+                throw new SqlJobException($"connection name '{name}' could not be found in job settings / global config / job connection strings property");
+            }
+
+            var value = Settings[settingsKey];
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                throw new SqlJobException($"connection name '{name}' in job settings / global config has null or empty value");
+            }
+
+            return value;
         }
 
         private void ValidateSqlJob()
@@ -246,39 +302,6 @@ namespace Planar
                 MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
                 throw;
             }
-        }
-
-        private string? ValidateConnectionName(string? name)
-        {
-            if (string.IsNullOrEmpty(name)) { return null; }
-            var connectionString = Properties.ConnectionStrings?
-                .Find(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
-
-            if (connectionString != null)
-            {
-                if (string.IsNullOrWhiteSpace(connectionString.ConnectionString))
-                {
-                    throw new SqlJobException($"connection name '{name}' in job properties has null or empty value");
-                }
-
-                return connectionString.ConnectionString;
-            }
-
-            var settingsKey = Settings.Keys
-                .FirstOrDefault(k => string.Equals(k, name, StringComparison.OrdinalIgnoreCase));
-
-            if (string.IsNullOrWhiteSpace(settingsKey))
-            {
-                throw new SqlJobException($"connection name '{name}' could not be found in job settings / global config / job connection strings property");
-            }
-
-            var value = Settings[settingsKey];
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                throw new SqlJobException($"connection name '{name}' in job settings / global config has null or empty value");
-            }
-
-            return value;
         }
     }
 }

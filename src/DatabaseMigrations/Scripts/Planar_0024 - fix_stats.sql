@@ -1,4 +1,3 @@
-/****** Object:  StoredProcedure [Statistics].[BuildJobStatistics]    Script Date: 11/06/2023 23:10:23 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
