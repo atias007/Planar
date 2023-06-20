@@ -54,7 +54,7 @@
     <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.6.2" />
     <PackageReference Include="Quartz.Extensions.Hosting" Version="3.6.2" />
     <PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.6.2" />
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="9.3.0.71466">
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="9.4.0.72892">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
