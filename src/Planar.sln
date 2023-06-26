@@ -18,9 +18,10 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0DB882F1-2470-40F6-AB4B-4030A653BBCC}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		SolutionItems\CliPath.ps1 = SolutionItems\CliPath.ps1
 		SolutionItems\DockerBuildScript.bat = SolutionItems\DockerBuildScript.bat
 		Dockerfile = Dockerfile
-		Planar\Data\Setup\EnvironmentVariable.ps1 = Planar\Data\Setup\EnvironmentVariable.ps1
+		SolutionItems\EnvironmentVariable.ps1 = SolutionItems\EnvironmentVariable.ps1
 		SolutionItems\Features.txt = SolutionItems\Features.txt
 		SolutionItems\MalamWebHook.txt = SolutionItems\MalamWebHook.txt
 		SolutionItems\postgressql-docker-compose.yml = SolutionItems\postgressql-docker-compose.yml
