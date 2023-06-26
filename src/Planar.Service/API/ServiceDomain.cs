@@ -194,7 +194,9 @@ namespace Planar.Service.API
             var result = new LoginResponse
             {
                 Role = RoleHelper.GetTitle(role),
-                Token = token
+                Token = token,
+                FirstName = user.Surename, 
+                LastName = user.GivenName,
             };
 
             return result;

@@ -34,6 +34,6 @@ namespace Planar.Service.Model
         }
 
         [NotMapped]
-        public bool IsCurrentNode { get; set; }
+        internal bool IsCurrentNode { get; set; }
     }
 }

@@ -31,8 +31,6 @@
 	  <None Remove="Data\MonitorHooks\Teams\readme.md" />
 	  <None Remove="Data\Settings\AppSettings.yml" />
 	  <None Remove="Data\Settings\Serilog.yml" />
-	  <None Remove="Data\Setup\CliPath.ps1" />
-	  <None Remove="Data\Setup\EnvironmentVariable.ps1" />
 	  <None Remove="planar_openapi.html" />
 	</ItemGroup>
 	<ItemGroup>
@@ -108,8 +106,6 @@
 		<None Include="Data\Settings\Serilog.json">
 			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</None>
-		<EmbeddedResource Include="Data\Setup\CliPath.ps1" />
-		<EmbeddedResource Include="Data\Setup\EnvironmentVariable.ps1" />
 	</ItemGroup>
 
 	<ItemGroup>
