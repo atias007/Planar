@@ -11,15 +11,12 @@ namespace Planar.API.Common.Entities
         public string TriggerName { get; set; } = string.Empty;
 
         [YamlMember(Order = 2)]
-        public string TriggerGroup { get; set; } = string.Empty;
-
-        [YamlMember(Order = 3)]
         public string JobId { get; set; } = string.Empty;
 
-        [YamlMember(Order = 4)]
+        [YamlMember(Order = 3)]
         public string JobName { get; set; } = string.Empty;
 
-        [YamlMember(Order = 5)]
+        [YamlMember(Order = 4)]
         public string JobGroup { get; set; } = string.Empty;
     }
 }

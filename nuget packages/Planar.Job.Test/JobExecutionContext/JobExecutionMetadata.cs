@@ -32,7 +32,7 @@ namespace Planar.Job.Test
 
             if (exceptions.Count == 1)
             {
-                return exceptions.First().ExceptionText;
+                return exceptions[0].ExceptionText;
             }
 
             var seperator = string.Empty.PadLeft(80, '-');

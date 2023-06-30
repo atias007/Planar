@@ -93,7 +93,7 @@ namespace Planar.Service.API
 #pragma warning restore IDE0017 // Simplify object initialization
 
             // Get Trigger
-            result.TriggerKey = await GetTriggerKey(triggerId);
+            result.TriggerKey = await GetTriggerKeyById(triggerId);
             result.Trigger = await ValidateTriggerExists(result.TriggerKey);
 
             // Get Job
@@ -122,7 +122,7 @@ namespace Planar.Service.API
 
         public async Task<TriggerRowDetails> Get(string triggerId)
         {
-            var triggerKey = await GetTriggerKey(triggerId);
+            var triggerKey = await GetTriggerKeyById(triggerId);
             await ValidateExistingTrigger(triggerKey, triggerId);
             var result = await GetTriggerDetails(triggerKey);
             return result;
@@ -137,7 +137,7 @@ namespace Planar.Service.API
 
         public async Task Delete(string triggerId)
         {
-            var triggerKey = await GetTriggerKey(triggerId);
+            var triggerKey = await GetTriggerKeyById(triggerId);
             await ValidateExistingTrigger(triggerKey, triggerId);
             ValidateSystemTrigger(triggerKey);
             await Scheduler.PauseTrigger(triggerKey);
@@ -157,7 +157,7 @@ namespace Planar.Service.API
 
         public async Task Pause(JobOrTriggerKey request)
         {
-            var key = await GetTriggerKey(request);
+            var key = await GetTriggerKeyById(request.Id);
             await Scheduler.PauseTrigger(key);
 
             // audit
@@ -168,7 +168,7 @@ namespace Planar.Service.API
 
         public async Task Resume(JobOrTriggerKey request)
         {
-            var key = await GetTriggerKey(request);
+            var key = await GetTriggerKeyById(request.Id);
             await Scheduler.ResumeTrigger(key);
 
             // audit
@@ -269,33 +269,7 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task<TriggerKey> GetTriggerKey(JobOrTriggerKey key)
-        {
-            TriggerKey? result;
-            if (key.Id.Contains('.'))
-            {
-                result = GetTriggerKeyByKey(key.Id);
-            }
-            else
-            {
-                result = await GetTriggerKeyById(key.Id);
-                result ??= GetTriggerKeyByKey(key.Id);
-            }
-
-            if (result == null)
-            {
-                throw new RestNotFoundException($"trigger with id {key.Id} does not exist");
-            }
-
-            return result;
-        }
-
-        private async Task<TriggerKey> GetTriggerKey(string id)
-        {
-            return await GetTriggerKey(new JobOrTriggerKey { Id = id });
-        }
-
-        private async Task<TriggerKey?> GetTriggerKeyById(string triggerId)
+        private async Task<TriggerKey> GetTriggerKeyById(string triggerId)
         {
             TriggerKey? result = null;
             var keys = await Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
@@ -310,23 +284,9 @@ namespace Planar.Service.API
                 }
             }
 
-            return result;
-        }
-
-        private static TriggerKey? GetTriggerKeyByKey(string key)
-        {
-            TriggerKey? result = null;
-            if (key != null)
+            if (result == null)
             {
-                var index = key.IndexOf(".");
-                if (index == -1)
-                {
-                    result = new TriggerKey(key);
-                }
-                else
-                {
-                    result = new TriggerKey(key[(index + 1)..], key[0..index]);
-                }
+                throw new RestNotFoundException($"trigger with id '{triggerId}' does not exist");
             }
 
             return result;

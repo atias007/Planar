@@ -114,7 +114,7 @@ namespace Planar.Service.API
             if (notPaused.Any())
             {
                 var message = string.Join(',', notPaused);
-                throw new RestValidationException("triggers", $"the following job triggers are not in pause state: {message}. stop the job before make any update");
+                throw new RestValidationException("triggers", $"the following job triggers are not in pause state: {message}. pause the job before make any update");
             }
         }
 

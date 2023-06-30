@@ -234,7 +234,7 @@ namespace Planar.Service.API
             if (options.UpdateTriggers)
             {
                 SyncTriggersData(request, metadata);
-                metadata.Triggers = BuildTriggers(request);
+                metadata.Triggers = BuildTriggers(request, metadata.JobId);
             }
             else
             {

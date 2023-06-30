@@ -54,9 +54,8 @@ namespace Planar.CLI.Actions
         [Action("get")]
         public static async Task<CliActionResponse> GetTriggerDetails(CliGetTriggersDetailsRequest request, CancellationToken cancellationToken = default)
         {
-            var prm = request.GetKey();
             var restRequest = new RestRequest("trigger/{triggerId}", Method.Get)
-                .AddParameter("triggerId", prm.Id, ParameterType.UrlSegment);
+                .AddParameter("triggerId", request.Id, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<TriggerRowDetails>(restRequest, cancellationToken);
 

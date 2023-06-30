@@ -137,7 +137,7 @@ namespace Planar.Service.API
 
         protected async Task ValidateExistingTrigger(TriggerKey entity, string triggerId)
         {
-            _ = await Scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id/key {triggerId} could not be found");
+            _ = await Scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id '{triggerId}' could not be found");
         }
 
         protected static void ForbbidenPartialUpdateProperties(UpdateEntityRequest request, string? message, params string[] properties)

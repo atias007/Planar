@@ -98,16 +98,17 @@ namespace Planar.CLI.Actions
             if (result.IsSuccessful && result.Data != null)
             {
                 var triggers = result.Data.SimpleTriggers
-                    .OrderBy(d => d.TriggerName)
-                    .Select(d => $"{d.TriggerGroup}.{d.TriggerName}")
+                    .Select(d => new { d.Id, d.TriggerName })
                     .Union(
                          result.Data.CronTriggers
-                         .OrderBy(d => d.TriggerName)
-                        .Select(d => $"{d.TriggerGroup}.{d.TriggerName}")
+                        .Select(d => new { d.Id, d.TriggerName })
                     )
                     .ToList();
 
-                return PromptSelection(triggers, "trigger") ?? string.Empty;
+                var triggersNames = triggers.Select(t => t.TriggerName).OrderBy(t => t).ToList();
+                var name = PromptSelection(triggersNames, "trigger") ?? string.Empty;
+                var id = triggers.First(t => t.TriggerName == name).Id;
+                return id;
             }
             else
             {
@@ -177,7 +178,7 @@ namespace Planar.CLI.Actions
 
             var result = await RestProxy.Invoke<JobDescription>(restRequest, cancellationToken);
             var tables = CliTableExtensions.GetTable(result.Data?.Details);
-            var tables2 = CliTableExtensions.GetTable(result.Data?.History.ToList());
+            var tables2 = CliTableExtensions.GetTable(result.Data?.History.ToList(), singleJob: true);
             var tables3 = CliTableExtensions.GetTable(result.Data?.Monitors.ToList());
             var tables4 = CliTableExtensions.GetTable(result.Data?.Audits?.ToList());
             var table5 = CliTableExtensions.GetTable(result.Data?.Statistics);

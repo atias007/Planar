@@ -127,7 +127,7 @@ namespace Planar.Service.API
             var exists = await DataLayer.IsMonitorExists(request.Id);
             if (!exists)
             {
-                throw new RestNotFoundException($"monitor with id {request.Id} is not exists");
+                throw new RestNotFoundException($"monitor with id '{request.Id}' is not exists");
             }
 
             var validator = new MonitorActionValidator();

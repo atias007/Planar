@@ -17,7 +17,6 @@ namespace Planar.Service.MapperProfiles
                 .Include<ITrigger, TriggerDetails>()
                 .ForMember(t => t.Id, map => map.MapFrom(s => GetTriggerId(s)))
                 .ForMember(t => t.TriggerName, map => map.MapFrom(s => s.Key.Name))
-                .ForMember(t => t.TriggerGroup, map => map.MapFrom(s => s.Key.Group))
                 .ForMember(t => t.JobName, map => map.MapFrom(s => s.JobKey.Name))
                 .ForMember(t => t.JobGroup, map => map.MapFrom(s => s.JobKey.Group))
                 .ForMember(t => t.JobId, map => map.MapFrom(s => jobKeyHelper.GetJobId(s.JobKey).Result));
