@@ -9,9 +9,10 @@ namespace Planar.API.Common.Entities
         [YamlIgnore]
         public string Id { get; set; } = string.Empty;
 
-        public string? Name { get; set; }
-
+        [YamlIgnore]
         public string? Group { get; set; }
+
+        public string? Name { get; set; }
 
         [YamlMember(Alias = "misfire behaviour")]
         public string? MisfireBehaviour { get; set; }

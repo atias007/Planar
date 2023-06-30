@@ -82,7 +82,7 @@ namespace Planar.Service.API
             var id = CreateJobId(job);
 
             // Build Triggers
-            var triggers = BuildTriggers(request);
+            var triggers = BuildTriggers(request, id);
 
             // Save Job Properties
             var jobPropertiesYml = GetJopPropertiesYml(request);
@@ -228,23 +228,23 @@ namespace Planar.Service.API
             }
         }
 
-        private static IReadOnlyCollection<ITrigger> BuildTriggers(SetJobRequest job)
+        private static IReadOnlyCollection<ITrigger> BuildTriggers(SetJobRequest job, string jobId)
         {
-            var quartzTriggers1 = BuildTriggerWithSimpleSchedule(job.SimpleTriggers);
-            var quartzTriggers2 = BuildTriggerWithCronSchedule(job.CronTriggers);
+            var quartzTriggers1 = BuildTriggerWithSimpleSchedule(job.SimpleTriggers, jobId);
+            var quartzTriggers2 = BuildTriggerWithCronSchedule(job.CronTriggers, jobId);
             var allTriggers = new List<ITrigger>();
             if (quartzTriggers1 != null) { allTriggers.AddRange(quartzTriggers1); }
             if (quartzTriggers2 != null) { allTriggers.AddRange(quartzTriggers2); }
             return allTriggers;
         }
 
-        public static IEnumerable<ITrigger> BuildTriggerWithCronSchedule(List<JobCronTriggerMetadata> triggers)
+        public static IEnumerable<ITrigger> BuildTriggerWithCronSchedule(List<JobCronTriggerMetadata> triggers, string jobId)
         {
             if (triggers.IsNullOrEmpty()) { return new List<ITrigger>(); }
 
             var result = triggers.Select(t =>
             {
-                var trigger = GetBaseTriggerBuilder(t)
+                var trigger = GetBaseTriggerBuilder(t, jobId)
                     .WithCronSchedule(t.CronExpression, c => BuidCronSchedule(c, t));
 
                 return trigger.Build();
@@ -253,13 +253,13 @@ namespace Planar.Service.API
             return result;
         }
 
-        public static IEnumerable<ITrigger> BuildTriggerWithSimpleSchedule(List<JobSimpleTriggerMetadata> triggers)
+        public static IEnumerable<ITrigger> BuildTriggerWithSimpleSchedule(List<JobSimpleTriggerMetadata> triggers, string jobId)
         {
             if (triggers.IsNullOrEmpty()) { return new List<ITrigger>(); }
 
             var result = triggers.Select(t =>
             {
-                var trigger = GetBaseTriggerBuilder(t);
+                var trigger = GetBaseTriggerBuilder(t, jobId);
 
                 if (t.Start == null)
                 {
@@ -355,7 +355,7 @@ namespace Planar.Service.API
             }
         }
 
-        private static TriggerBuilder GetBaseTriggerBuilder(BaseTrigger jobTrigger)
+        private static TriggerBuilder GetBaseTriggerBuilder(BaseTrigger jobTrigger, string jobId)
         {
             var id =
                 string.IsNullOrEmpty(jobTrigger.Id) ?
@@ -363,15 +363,8 @@ namespace Planar.Service.API
                 jobTrigger.Id;
 
             var trigger = TriggerBuilder.Create();
-
-            if (string.IsNullOrEmpty(jobTrigger.Group))
-            {
-                trigger = trigger.WithIdentity(jobTrigger.Name ?? string.Empty);
-            }
-            else
-            {
-                trigger = trigger.WithIdentity(jobTrigger.Name ?? string.Empty, jobTrigger.Group);
-            }
+            jobTrigger.Group = jobId;
+            trigger = trigger.WithIdentity(jobTrigger.Name ?? string.Empty, jobTrigger.Group);
 
             // Priority
             if (jobTrigger.Priority.HasValue)
