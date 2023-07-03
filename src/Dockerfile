@@ -22,6 +22,7 @@ COPY ["Planar.API.Common/Planar.API.Common.csproj", "Planar.API.Common/"]
 COPY ["Planar.CLI/Planar.CLI.csproj", "Planar.CLI/"]
 COPY ["Planar.Common/Planar.Common.csproj", "Planar.Common/"]
 COPY ["Planar.Service/Planar.Service.csproj", "Planar.Service/"]
+COPY ["Hooks/Planar.Hooks.csproj", "Hooks/"]
 
 RUN dotnet restore "Planar/Planar.csproj"
 RUN dotnet restore "Planar.CLI/Planar.CLI.csproj"

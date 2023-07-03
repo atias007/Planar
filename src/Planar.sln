@@ -60,8 +60,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Hooks", "Hooks", "{E9F29B01
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Hooks", "Hooks\Planar.Hooks.csproj", "{1E97E8B3-8049-4445-8F32-929CE4B3D27F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Monitor.Hook", "..\nuget packages\Planar.Monitor.Hook\Planar.Monitor.Hook.csproj", "{228A5379-33C7-4348-8D60-3CF6F91C2F9C}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -132,10 +130,6 @@ Global
 		{1E97E8B3-8049-4445-8F32-929CE4B3D27F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1E97E8B3-8049-4445-8F32-929CE4B3D27F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1E97E8B3-8049-4445-8F32-929CE4B3D27F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{228A5379-33C7-4348-8D60-3CF6F91C2F9C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{228A5379-33C7-4348-8D60-3CF6F91C2F9C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{228A5379-33C7-4348-8D60-3CF6F91C2F9C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{228A5379-33C7-4348-8D60-3CF6F91C2F9C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -150,7 +144,6 @@ Global
 		{07EAEB6B-D84C-4C72-BDAE-52333D15155B} = {8877FB52-2C70-41FB-8119-13C99EF673E1}
 		{0610AEC6-D7A5-4012-95D2-985482B0CD44} = {8877FB52-2C70-41FB-8119-13C99EF673E1}
 		{1E97E8B3-8049-4445-8F32-929CE4B3D27F} = {E9F29B01-E6D9-408B-834F-23E19F6E181F}
-		{228A5379-33C7-4348-8D60-3CF6F91C2F9C} = {E9F29B01-E6D9-408B-834F-23E19F6E181F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E379E82B-7E36-4F72-8191-C425A6FA97CD}
