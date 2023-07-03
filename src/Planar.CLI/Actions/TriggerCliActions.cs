@@ -20,9 +20,12 @@ namespace Planar.CLI.Actions
         [Action("list")]
         public static async Task<CliActionResponse> GetTriggersDetails(CliListTriggersRequest request, CancellationToken cancellationToken = default)
         {
-            var prm = request.GetKey();
-            var restRequest = new RestRequest("trigger/{jobId}/byjob", Method.Get)
-                .AddParameter("jobId", prm.Id, ParameterType.UrlSegment);
+            var restRequest = new RestRequest("trigger/{jobId}/byjob", Method.Get);
+
+            if (!string.IsNullOrWhiteSpace(request.Id))
+            {
+                restRequest.AddParameter("jobId", request.Id, ParameterType.UrlSegment);
+            }
 
             var result = await RestProxy.Invoke<TriggerRowDetails>(restRequest, cancellationToken);
             CliActionResponse response = new(result);

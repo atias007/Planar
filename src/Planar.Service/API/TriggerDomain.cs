@@ -47,7 +47,7 @@ namespace Planar.Service.API
             var info = await GetTriggerDetailsForDataCommands(request.Id, request.DataKey);
             if (info.Trigger == null || info.JobDetails == null) { return; }
 
-            if (info.Trigger.JobDataMap.ContainsKey(request.DataKey))
+            if (IsDataKeyExists(info.Trigger, request.DataKey))
             {
                 if (mode == PutMode.Add)
                 {
@@ -112,10 +112,17 @@ namespace Planar.Service.API
 
         private static void ValidateDataKeyExists(ITrigger trigger, string key, string triggerId)
         {
-            if (trigger == null || !trigger.JobDataMap.ContainsKey(key))
+            if (!IsDataKeyExists(trigger, key))
             {
-                throw new RestValidationException($"{key}", $"data with Key '{key}' could not found in trigger '{triggerId}' (Name '{trigger?.Key.Name}' and Group '{trigger?.Key.Group}')");
+                throw new RestValidationException($"{key}", $"data with Key '{key}' could not found in trigger '{triggerId}' (Name '{trigger?.Key.Name}'");
             }
+        }
+
+        private static bool IsDataKeyExists(ITrigger trigger, string key)
+        {
+            if (trigger == null) { return false; }
+            var result = trigger.JobDataMap.Any(k => string.Equals(key, k.Key, StringComparison.OrdinalIgnoreCase));
+            return result;
         }
 
         #endregion Data

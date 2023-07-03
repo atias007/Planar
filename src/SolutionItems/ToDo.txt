@@ -2,11 +2,7 @@
 PLAN FOR V 1.4.0
 ----------------
 
-- add cli plot statistics
-- remove jobid+jobkey+jobtype columns from job describe history table
-- add jobtype to job get table
-- trigger ls cli command help --> change to <job id> instead of <id>
-- update trigger data set the key to lower case. why? (check for job)
+
 
 - BACKLOG ----------------------------------------------------------------------------
 - add smart process job
@@ -15,6 +11,7 @@ PLAN FOR V 1.4.0
 - add SSRS job
 - add monitor audit
 
+- add cli plot statistics
 - api rate limit
 - circuit breaker
 - cli command to changhe interval/count
