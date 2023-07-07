@@ -134,7 +134,25 @@ namespace Planar.Service.Data
                     FailRetries = g.Sum(j => j.FailRetries) ?? 0,
                     Recovers = g.Sum(j => j.Recovers) ?? 0
                 })
-                .FirstOrDefaultAsync();
+                .SingleOrDefaultAsync();
+
+            return result;
+        }
+
+        public async Task<JobCounters?> GetAllJobsCounters(DateTime fromDate)
+        {
+            var result = await _context.JobCounters
+                .AsNoTracking()
+                .Where(j => j.RunDate >= fromDate)
+                .GroupBy(j => 1)  // Group by a constant to get aggregate counts
+                .Select(g => new JobCounters
+                {
+                    TotalRuns = g.Sum(j => j.TotalRuns),
+                    SuccessRetries = g.Sum(j => j.SuccessRetries) ?? 0,
+                    FailRetries = g.Sum(j => j.FailRetries) ?? 0,
+                    Recovers = g.Sum(j => j.Recovers) ?? 0
+                })
+                .SingleOrDefaultAsync();
 
             return result;
         }

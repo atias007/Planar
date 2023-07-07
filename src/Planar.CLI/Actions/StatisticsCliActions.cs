@@ -4,6 +4,7 @@ using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.CLI.Proxy;
 using RestSharp;
+using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +21,19 @@ namespace Planar.CLI.Actions
         {
             var restRequest = new RestRequest("statistics/rebuild", Method.Post);
             return await Execute(restRequest, cancellationToken);
+        }
+
+        [Action("job-counters")]
+        public static async Task<CliActionResponse> JobCounters(CliJobCountersRequest request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("statistics/jobCounters", Method.Get);
+            if (request.FromDate != default)
+            {
+                restRequest.AddQueryParameter("fromDate", request.FromDate.ToString("u"));
+            }
+
+            var result = await RestProxy.Invoke<JobCounters>(restRequest, cancellationToken);
+            return new CliActionResponse(result, dumpObject: result?.Data);
         }
 
         [Action("concurrent")]

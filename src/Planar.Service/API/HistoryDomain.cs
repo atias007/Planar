@@ -33,7 +33,6 @@ namespace Planar.Service.API
 
         public async Task<List<JobInstanceLogRow>> GetHistory(GetHistoryRequest request)
         {
-            if (request.Rows.GetValueOrDefault() == 0) { request.Rows = 50; }
             var query = DataLayer.GetHistory(request);
             var result = await Mapper.ProjectTo<JobInstanceLogRow>(query).ToListAsync();
             return result;

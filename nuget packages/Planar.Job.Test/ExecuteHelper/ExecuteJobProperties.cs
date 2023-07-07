@@ -11,6 +11,12 @@ namespace Planar.Job.Test
 
         public DateTimeOffset? ExecutionDate { get; set; }
 
+        public bool Recovering { get; set; }
+
+        public int RefireCount { get; set; }
+
+        public string? Environment { get; set; }
+
         public Dictionary<string, object?> TriggerData { get; set; } = new Dictionary<string, object?>();
 
         public Dictionary<string, object?> JobData { get; set; } = new Dictionary<string, object?>();

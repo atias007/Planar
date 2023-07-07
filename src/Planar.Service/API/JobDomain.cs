@@ -106,7 +106,7 @@ namespace Planar.Service.API
             var historyDomain = _serviceProvider.GetRequiredService<HistoryDomain>();
             var statisticsDomain = _serviceProvider.GetRequiredService<StatisticsDomain>();
 
-            var historyRequest = new GetHistoryRequest { JobId = id, Rows = 10 };
+            var historyRequest = new GetHistoryRequest { JobId = id, PageSize = 10 };
             var details = await Get(id);
             var monitorsTask = monitorDomain.GetByJob(id);
             var audit = await GetAudits(0, 10);

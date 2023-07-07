@@ -15,7 +15,9 @@ namespace Planar.Job
         private JobExecutionContext _context = new JobExecutionContext();
 
         private IServiceProvider _provider = null!;
+
         private IConfiguration _configuration = null!;
+
         private ILogger _logger = null!;
         private BaseJobFactory _baseJobFactory = null!;
 
@@ -82,7 +84,7 @@ namespace Planar.Job
                 .ContinueWith(HandleTaskContinue);
         }
 
-        private static void HandleTaskContinue(Task task)
+        private void HandleTaskContinue(Task task)
         {
             if (task.Exception != null) { throw task.Exception; }
             if (task.Exception == null && task.Status == TaskStatus.Canceled)
@@ -194,7 +196,7 @@ namespace Planar.Job
             services.AddSingleton(baseJobFactory.MessageBroker);
             services.AddSingleton(typeof(ILogger<>), typeof(PlanarLogger<>));
             registerServicesAction.Invoke(Configuration, services, context);
-            _provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+            _provider = services.BuildServiceProvider();
         }
 
         private void InitializeBaseJobFactory(object messageBroker)

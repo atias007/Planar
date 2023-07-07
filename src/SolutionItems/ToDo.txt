@@ -2,7 +2,7 @@
 PLAN FOR V 1.4.0
 ----------------
 
-
+-- add paging
 
 - BACKLOG ----------------------------------------------------------------------------
 - add smart process job
@@ -11,6 +11,7 @@ PLAN FOR V 1.4.0
 - add SSRS job
 - add monitor audit
 
+- search in history by free text from log
 - add cli plot statistics
 - api rate limit
 - circuit breaker

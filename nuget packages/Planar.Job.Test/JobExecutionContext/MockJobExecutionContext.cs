@@ -33,17 +33,28 @@ namespace Planar.Job.Test
 
             MergedJobDataMap = _jobDetail.JobDataMap.Merge(_triggerDetail.TriggerDataMap);
             FireInstanceId = $"JobTest_{System.Environment.MachineName}_{System.Environment.UserName}_{GenerateFireInstanceId()}";
+            Recovering = properties.Recovering;
+            RefireCount = properties.RefireCount;
+
+            if (properties.Environment == null)
+            {
+                Environment = UnitTestConsts.Environment;
+            }
+            else
+            {
+                Environment = properties.Environment;
+            }
         }
 
         public Dictionary<string, string?> JobSettings { get; set; } = new Dictionary<string, string?>();
 
-        public bool Recovering => false;
+        public bool Recovering { get; private set; }
 
-        public int RefireCount => 0;
+        public int RefireCount { get; private set; }
 
         public IJobDetail JobDetail => _jobDetail;
 
-        public string FireInstanceId { get; set; }
+        public string FireInstanceId { get; private set; }
 
         public DateTimeOffset FireTimeUtc => _now.UtcDateTime;
 
@@ -80,13 +91,13 @@ namespace Planar.Job.Test
 
         public DateTimeOffset? NextFireTime { get; private set; }
 
-        public DateTimeOffset? ScheduledFireTime => _now.UtcDateTime;
+        public DateTimeOffset? ScheduledFireTime => _now;
 
         public DateTimeOffset? PreviousFireTime => null;
 
         public ITriggerDetail TriggerDetails => _triggerDetail;
 
-        public string Environment => UnitTestConsts.Environment;
+        public string Environment { get; private set; }
 
         [JsonIgnore]
         public CancellationToken CancellationToken { get; set; }

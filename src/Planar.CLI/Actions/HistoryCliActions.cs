@@ -29,10 +29,9 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> GetHistory(CliGetHistoryRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("history", Method.Get);
-            if (request.Rows > 0)
-            {
-                restRequest.AddQueryParameter("rows", request.Rows);
-            }
+            if (request.Rows == 0) { request.Rows = 50; }
+
+            restRequest.AddQueryParameter("pageSize", request.Rows);
 
             if (request.FromDate > DateTime.MinValue)
             {

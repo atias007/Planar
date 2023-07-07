@@ -49,6 +49,12 @@ namespace Planar.Service.API
             return result;
         }
 
+        public async Task<JobCounters?> GetAllJobsCounters(AllJobsCountersRequest request)
+        {
+            var fromDate = request.FromDate ?? DateTime.Now.Date.AddDays(-1);
+            return await DataLayer.GetAllJobsCounters(fromDate);
+        }
+
         public async Task<IEnumerable<ConcurrentExecutionModel>> GetConcurrentExecution(ConcurrentExecutionRequest request)
         {
             var query = DataLayer.GetConcurrentExecution(request);

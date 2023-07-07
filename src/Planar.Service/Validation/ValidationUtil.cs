@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using Planar.Service.API.Helpers;
 using Planar.Service.General;
 using System;
+using System.Data.SqlTypes;
 using System.Dynamic;
 using System.Text.RegularExpressions;
 using YamlDotNet.Serialization;
@@ -49,6 +50,24 @@ namespace Planar.Service.Validation
             var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(5));
             return regex.IsMatch(value);
         }
+
+        #region SqlDateTime
+
+        public static bool IsValidSqlDateTime(DateTime value)
+        {
+            var result = value >= SqlDateTime.MinValue.Value && value <= SqlDateTime.MaxValue.Value;
+            return result;
+        }
+
+        public static bool IsValidSqlDateTime(DateTime? value)
+        {
+            if (value == null) { return true; }
+
+            var result = value >= SqlDateTime.MinValue.Value && value <= SqlDateTime.MaxValue.Value;
+            return result;
+        }
+
+        #endregion SqlDateTime
 
         public static bool IsJsonValid(string? json)
         {

@@ -94,7 +94,8 @@ namespace Planar.Service.Data
                 query = query.OrderByDescending(l => l.StartDate);
             }
 
-            query = query.Take(request.Rows.GetValueOrDefault());
+            query = query.SetPaging(request);
+
             return query;
         }
 

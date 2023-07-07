@@ -49,5 +49,16 @@ namespace Planar.Controllers
             var response = await BusinesLayer.GetConcurrentExecution(request);
             return Ok(response);
         }
+
+        [HttpGet("jobCounters")]
+        [ViewerAuthorize]
+        [SwaggerOperation(OperationId = "get_statistics_job_counters", Description = "Get all jobs counters", Summary = "Get All Jobs Counters")]
+        [OkJsonResponse(typeof(JobCounters))]
+        [BadRequestResponse]
+        public async Task<ActionResult<JobCounters>> GetAllJobsCounters([FromQuery] AllJobsCountersRequest request)
+        {
+            var response = await BusinesLayer.GetAllJobsCounters(request);
+            return Ok(response);
+        }
     }
 }

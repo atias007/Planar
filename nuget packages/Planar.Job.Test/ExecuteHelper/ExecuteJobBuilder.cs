@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Planar.Job.Test.ExecuteHelper;
+using System;
 
 namespace Planar.Job.Test
 {
@@ -12,6 +13,39 @@ namespace Planar.Job.Test
         private readonly ExecuteJobProperties _properties = new ExecuteJobProperties();
 
         public static ExecuteJobBuilder CreateBuilderForJob<T>() where T : class, new() => new ExecuteJobBuilder(typeof(T));
+
+        public ExecuteJobBuilder SetRecoveringMode()
+        {
+            _properties.Recovering = true;
+            return this;
+        }
+
+        public ExecuteJobBuilder WithRefireCount(uint refireCount)
+        {
+            if (refireCount == 0)
+            {
+                throw new ExecuteJobBuilderException("refireCount parameter should be greater then 0");
+            }
+
+            if (refireCount > int.MaxValue)
+            {
+                throw new ExecuteJobBuilderException($"refireCount parameter should be less then then {int.MaxValue}");
+            }
+
+            _properties.RefireCount = Convert.ToInt32(refireCount);
+            return this;
+        }
+
+        public ExecuteJobBuilder SetEnvironment(string? environment)
+        {
+            if (environment == null)
+            {
+                throw new ExecuteJobBuilderException("environment parameter should not set to null");
+            }
+
+            _properties.Environment = environment;
+            return this;
+        }
 
         public ExecuteJobBuilder WithExecutionDate(DateTimeOffset executionDate)
         {
@@ -39,29 +73,45 @@ namespace Planar.Job.Test
 
         public ExecuteJobBuilder CancelJobAfter(TimeSpan timeSpan)
         {
-            // TODO: check greater then TimeSpan.Zero
+            if (timeSpan == TimeSpan.Zero)
+            {
+                throw new ExecuteJobBuilderException("timeSpan parameter should be greater then TimeSpan.Zero");
+            }
+
             _properties.CancelJobAfter = timeSpan;
             return this;
         }
 
         public ExecuteJobBuilder CancelJobAfterSeconds(uint seconds)
         {
-            // TODO: check greater then 1
+            if (seconds == 0)
+            {
+                throw new ExecuteJobBuilderException("seconds parameter should be greater then 0");
+            }
+
             _properties.CancelJobAfter = TimeSpan.FromSeconds(seconds);
             return this;
         }
 
-        public ExecuteJobBuilder CancelJobAfterMinutes(uint seconds)
+        public ExecuteJobBuilder CancelJobAfterMinutes(uint minutes)
         {
-            // TODO: check greater then 1
-            _properties.CancelJobAfter = TimeSpan.FromMinutes(seconds);
+            if (minutes == 0)
+            {
+                throw new ExecuteJobBuilderException("minutes parameter should be greater then 0");
+            }
+
+            _properties.CancelJobAfter = TimeSpan.FromMinutes(minutes);
             return this;
         }
 
-        public ExecuteJobBuilder CancelJobAfterMilliseconds(uint seconds)
+        public ExecuteJobBuilder CancelJobAfterMilliseconds(uint milliseconds)
         {
-            // TODO: check greater then 1
-            _properties.CancelJobAfter = TimeSpan.FromMilliseconds(seconds);
+            if (milliseconds == 0)
+            {
+                throw new ExecuteJobBuilderException("milliseconds parameter should be greater then 0");
+            }
+
+            _properties.CancelJobAfter = TimeSpan.FromMilliseconds(milliseconds);
             return this;
         }
 
