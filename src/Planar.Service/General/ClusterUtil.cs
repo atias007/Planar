@@ -6,7 +6,6 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Service.Data;
-using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using Polly;
@@ -14,9 +13,7 @@ using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace Planar.Service.General
 {

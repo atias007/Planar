@@ -5,7 +5,7 @@ using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,7 +20,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("history/{id}", Method.Get)
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
-            var result = await RestProxy.Invoke<CliJobInstanceLog>(restRequest, cancellationToken);
+            var result = await RestProxy.Invoke<JobHistory>(restRequest, cancellationToken);
             return new CliActionResponse(result, dumpObject: result.Data);
         }
 
@@ -65,8 +65,8 @@ namespace Planar.CLI.Actions
 
             restRequest.AddQueryParameter("ascending", request.Ascending);
 
-            var result = await RestProxy.Invoke<List<JobInstanceLogRow>>(restRequest, cancellationToken);
-            var table = CliTableExtensions.GetTable(result.Data);
+            var result = await RestProxy.Invoke<HistoryJobRowResponse>(restRequest, cancellationToken);
+            var table = CliTableExtensions.GetTable(result.Data?.Data);
             return new CliActionResponse(result, table);
         }
 
@@ -103,11 +103,14 @@ namespace Planar.CLI.Actions
         [Action("last")]
         public static async Task<CliActionResponse> GetLastHistoryCallForJob(CliGetLastHistoryCallForJobRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("history/last", Method.Get)
-                .AddQueryParameter("lastDays", request.LastDays);
+            var restRequest = new RestRequest("history/last", Method.Get);
+            if (request.LastDays > 0)
+            {
+                restRequest.AddQueryParameter("lastDays", request.LastDays);
+            }
 
-            var result = await RestProxy.Invoke<List<CliJobInstanceLog>>(restRequest, cancellationToken);
-            var table = CliTableExtensions.GetTable(result.Data);
+            var result = await RestProxy.Invoke<HistoryJobResponse>(restRequest, cancellationToken);
+            var table = CliTableExtensions.GetTable(result.Data?.Data);
             return new CliActionResponse(result, table);
         }
 

@@ -31,10 +31,11 @@ namespace Planar.Service.API
 
         #endregion OData
 
-        public async Task<List<JobInstanceLogRow>> GetHistory(GetHistoryRequest request)
+        public async Task<HistoryJobRowResponse> GetHistory(GetHistoryRequest request)
         {
             var query = DataLayer.GetHistory(request);
-            var result = await Mapper.ProjectTo<JobInstanceLogRow>(query).ToListAsync();
+            var data = await Mapper.ProjectTo<JobInstanceLogRow>(query).ToListAsync();
+            var result = new HistoryJobRowResponse(data, request);
             return result;
         }
 
@@ -71,10 +72,14 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<List<JobInstanceLog>> GetLastHistoryCallForJob(int lastDays)
+        public async Task<HistoryJobResponse> GetLastHistoryCallForJob(GetLastHistoryCallForJobRequest request)
         {
-            var parameters = new { LastDays = lastDays };
-            var result = (await DataLayer.GetLastHistoryCallForJob(parameters)).ToList();
+            request.SetPagingDefaults();
+            if (request.LastDays == null) { request.LastDays = 365; }
+            var parameters = new { request.LastDays, request.PageNumber, request.PageSize };
+            var data = await DataLayer.GetLastHistoryCallForJob(parameters);
+            var mappedData = Mapper.Map<List<JobHistory>>(data);
+            var result = new HistoryJobResponse(mappedData, request);
             return result;
         }
 

@@ -9,6 +9,7 @@ namespace Planar.Service.MapperProfiles
         public HistoryProfile()
         {
             CreateMap<JobInstanceLog, JobInstanceLogRow>();
+            CreateMap<JobInstanceLog, JobHistory>();
         }
     }
 }

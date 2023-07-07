@@ -20,12 +20,12 @@ namespace Planar.Service.Data
 
         public static IQueryable<TSource> SetPaging<TSource>(this IQueryable<TSource> source, IPagingRequest pagingRequest)
         {
-            var pageNumber = pagingRequest.PageNumber > 0 ? pagingRequest.PageNumber.Value : 1;
-            var pageSize = pagingRequest.PageSize > 0 ? pagingRequest.PageSize.Value : 100;
-
+            pagingRequest.SetPagingDefaults();
+            var page = pagingRequest.PageNumber.GetValueOrDefault();
+            var size = pagingRequest.PageSize.GetValueOrDefault();
             return source
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize);
+                .Skip((page - 1) * size)
+                .Take(size);
         }
     }
 }

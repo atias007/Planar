@@ -116,7 +116,7 @@ namespace Planar.Service.API
             {
                 Details = details,
                 Audits = audit,
-                History = await historyTask,
+                History = (await historyTask)?.Data ?? new List<JobInstanceLogRow>(),
                 Monitors = await monitorsTask,
                 Statistics = await statisticsTask
             };

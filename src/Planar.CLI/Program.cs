@@ -21,7 +21,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using YamlDotNet.Core.Tokens;
 
 namespace Planar.CLI
 {
@@ -467,7 +466,11 @@ namespace Planar.CLI
                 MarkupCliLine(CliFormat.GetErrorMarkup("general error"));
             }
 
-            if (!string.IsNullOrEmpty(response.StatusDescription))
+            if (!string.IsNullOrEmpty(response.ErrorMessage))
+            {
+                MarkupCliLine($"[red] ({response.ErrorMessage})[/]");
+            }
+            else if (!string.IsNullOrEmpty(response.StatusDescription))
             {
                 MarkupCliLine($"[red] ({response.StatusDescription})[/]");
             }
@@ -558,12 +561,17 @@ namespace Planar.CLI
             return false;
         }
 
-        private static void InteractiveMode(IEnumerable<CliActionMetadata> cliActions)
+        private static void InteractiveMode(IEnumerable<CliActionMetadata> cliActions, bool showModules)
         {
             BaseCliAction.InteractiveMode = true;
             var command = string.Empty;
-            Console.Clear();
-            CliHelpGenerator.ShowModules();
+
+            if (showModules)
+            {
+                Console.Clear();
+                CliHelpGenerator.ShowModules();
+            }
+
             _timer = new Timer(OnTimerAction, null, _timerSpan, _timerSpan);
 
             const string exit = "exit";
@@ -650,7 +658,7 @@ namespace Planar.CLI
 
             if (args.Length == 0)
             {
-                InteractiveMode(cliActions);
+                InteractiveMode(cliActions, showModules: true);
             }
             else
             {
@@ -660,7 +668,7 @@ namespace Planar.CLI
                     var command = $"{cliUtil.Module}.{cliUtil.Command}";
                     if (string.Equals(command, "service.login", StringComparison.OrdinalIgnoreCase) && cliUtil.HasIterativeArgument)
                     {
-                        InteractiveMode(cliActions);
+                        InteractiveMode(cliActions, showModules: false);
                     }
                 }
             }

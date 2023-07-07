@@ -1,6 +1,4 @@
-﻿using System.Net.Http.Headers;
-
-namespace Planar.API.Common.Entities
+﻿namespace Planar.API.Common.Entities
 {
     public abstract class PagingRequest : IPagingRequest
     {
@@ -8,6 +6,10 @@ namespace Planar.API.Common.Entities
 
         public int? PageSize { get; set; }
 
-        public bool IsEmpty => PageNumber == null && PageSize == null;
+        public void SetPagingDefaults()
+        {
+            PageNumber ??= 1;
+            PageSize ??= 100;
+        }
     }
 }

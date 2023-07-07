@@ -19,7 +19,21 @@ namespace Planar.Service.API
 
         public async Task<List<ClusterNode>> GetNodes()
         {
-            return await DataLayer.GetClusterNodes();
+            var result = await DataLayer.GetClusterNodes();
+            if (!AppSettings.Clustering && result.Count == 1)
+            {
+                var hc = SchedulerUtil.IsSchedulerRunning;
+                if (hc)
+                {
+                    result[0].HealthCheckDate = DateTime.Now;
+                }
+                else
+                {
+                    result[0].HealthCheckDate = DateTime.Now.Add(-AppSettings.ClusteringCheckinInterval).AddMinutes(-1);
+                }
+            }
+
+            return result;
         }
 
         public async Task<string> HealthCheck()

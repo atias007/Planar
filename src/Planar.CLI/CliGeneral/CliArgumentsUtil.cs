@@ -63,7 +63,7 @@ namespace Planar.CLI
                 .FirstOrDefault();
 
             _outputFilename = _outputFilename?.Trim() ?? string.Empty;
-            if (!_outputFilename.Contains('.')) { _outputFilename = $"{_outputFilename}.txt"; }
+            if (!string.IsNullOrWhiteSpace(_outputFilename) && !_outputFilename.Contains('.')) { _outputFilename = $"{_outputFilename}.txt"; }
             IsValidFilePath(_outputFilename);
 
             CliArguments.RemoveAll(a => a.Key == OutputTerm);
@@ -239,7 +239,7 @@ namespace Planar.CLI
 
         private static void IsValidFilePath(string? outputFilename)
         {
-            if (outputFilename == null) { return; }
+            if (string.IsNullOrEmpty(outputFilename)) { return; }
 
             try
             {

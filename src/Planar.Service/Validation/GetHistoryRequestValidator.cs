@@ -8,6 +8,7 @@ namespace Planar.Service.Validation
     {
         public GetHistoryRequestValidator()
         {
+            Include(new PagingRequestValidator());
             RuleFor(r => r.FromDate).LessThan(DateTime.Now);
             RuleFor(r => r.JobId).Null()
                 .When((req, r) => !string.IsNullOrEmpty(req.JobGroup))

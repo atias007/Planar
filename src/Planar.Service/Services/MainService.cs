@@ -182,8 +182,6 @@ namespace Planar.Service.Services
 
         private async Task RemoveSchedulerCluster()
         {
-            if (!AppSettings.Clustering) { return; }
-
             var cluster = new ClusterNode
             {
                 Server = Environment.MachineName,
@@ -198,6 +196,9 @@ namespace Planar.Service.Services
             var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
             await dal.RemoveClusterNode(cluster);
 
+            if (!AppSettings.Clustering) { return; }
+
+            // Monotoring
             var info = new MonitorSystemInfo("Cluster node removed from {{MachineName}}");
             info.MessagesParameters.Add("Port", AppSettings.HttpPort.ToString());
             info.MessagesParameters.Add("InstanceId", _schedulerUtil.SchedulerInstanceId);
@@ -207,7 +208,24 @@ namespace Planar.Service.Services
 
         private async Task JoinToCluster(CancellationToken stoppingToken)
         {
-            if (!AppSettings.Clustering) { return; }
+            if (!AppSettings.Clustering)
+            {
+                try
+                {
+                    _logger.LogInformation("Initialize: RegisterNode");
+                    using var scope = _serviceProvider.CreateScope();
+                    var util = scope.ServiceProvider.GetRequiredService<ClusterUtil>();
+                    await util.Join();
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogCritical(ex, "Initialize: Fail to RegisterNode");
+                    await _schedulerUtil.Stop(stoppingToken);
+                    await _schedulerUtil.Shutdown(stoppingToken);
+                    Shutdown();
+                }
+            }
 
             try
             {
@@ -227,6 +245,7 @@ namespace Planar.Service.Services
                     await util.Join();
                     LogClustering();
 
+                    // Monitoring
                     var info = new MonitorSystemInfo("Cluster node join to {{MachineName}}");
                     info.MessagesParameters.Add("Port", AppSettings.HttpPort.ToString());
                     info.MessagesParameters.Add("InstanceId", _schedulerUtil.SchedulerInstanceId);

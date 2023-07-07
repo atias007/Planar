@@ -148,7 +148,7 @@ namespace Planar.CLI
             return table;
         }
 
-        public static CliTable GetTable(List<CliJobInstanceLog>? response)
+        public static CliTable GetTable(List<JobHistory>? response)
         {
             var table = new CliTable(showCount: true);
             if (response == null) { return table; }

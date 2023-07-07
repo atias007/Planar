@@ -4,6 +4,7 @@
     {
         int? PageNumber { get; set; }
         int? PageSize { get; set; }
-        bool IsEmpty { get; }
+
+        void SetPagingDefaults();
     }
 }

@@ -6,7 +6,6 @@ using Planar.Service.API;
 using Planar.Service.Model;
 using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -22,9 +21,9 @@ namespace Planar.Controllers
         [HttpGet]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_history", Description = "Get history data by filter", Summary = "Get History")]
-        [OkJsonResponse(typeof(List<JobInstanceLogRow>))]
+        [OkJsonResponse(typeof(HistoryJobRowResponse))]
         [BadRequestResponse]
-        public async Task<ActionResult<List<JobInstanceLogRow>>> GetHistory([FromQuery] GetHistoryRequest request)
+        public async Task<ActionResult<HistoryJobRowResponse>> GetHistory([FromQuery] GetHistoryRequest request)
         {
             var result = await BusinesLayer.GetHistory(request);
             return Ok(result);
@@ -81,11 +80,11 @@ namespace Planar.Controllers
         [HttpGet("last")]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_history_last", Description = "Get summary of last running of each job", Summary = "Get Last Running Per Job")]
-        [OkJsonResponse(typeof(JobInstanceLog))]
+        [OkJsonResponse(typeof(HistoryJobResponse))]
         [BadRequestResponse]
-        public async Task<ActionResult<List<JobInstanceLog>>> GetLastHistoryCallForJob([FromQuery][UInt] int lastDays)
+        public async Task<ActionResult<HistoryJobResponse>> GetLastHistoryCallForJob([FromQuery] GetLastHistoryCallForJobRequest request)
         {
-            var result = await BusinesLayer.GetLastHistoryCallForJob(lastDays);
+            var result = await BusinesLayer.GetLastHistoryCallForJob(request);
             return Ok(result);
         }
 
