@@ -1,8 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Azure.Core;
+using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Planar.Service.Data
 {
@@ -18,7 +23,7 @@ namespace Planar.Service.Data
             }
         }
 
-        public static IQueryable<TSource> SetPaging<TSource>(this IQueryable<TSource> source, IPagingRequest pagingRequest)
+        public static IQueryable<TSource> SetPagingAsyc<TSource>(this IQueryable<TSource> source, IPagingRequest pagingRequest)
         {
             pagingRequest.SetPagingDefaults();
             var page = pagingRequest.PageNumber.GetValueOrDefault();
@@ -26,6 +31,31 @@ namespace Planar.Service.Data
             return source
                 .Skip((page - 1) * size)
                 .Take(size);
+        }
+
+        public static async Task<PagingResponse<TDestination>> ProjectToWithPagingAsyc<TSource, TDestination>
+            (this IQueryable<TSource> source, IMapper mapper, IPagingRequest pagingRequest)
+            where TDestination : class
+        {
+            var pageQuery = source.SetPagingAsyc(pagingRequest);
+            var data = await mapper.ProjectTo<TDestination>(pageQuery).ToListAsync();
+            var total = await source.CountAsync();
+            return new PagingResponse<TDestination>(pagingRequest, data, total);
+        }
+
+        public static async Task<PagingResponse<TSource>> ToPagingListAsync<TSource>(this IQueryable<TSource> source, IPagingRequest pagingRequest)
+            where TSource : class
+        {
+            pagingRequest.SetPagingDefaults();
+            var page = pagingRequest.PageNumber.GetValueOrDefault();
+            var size = pagingRequest.PageSize.GetValueOrDefault();
+            var count = await source.CountAsync();
+            var data = source
+                .Skip((page - 1) * size)
+                .Take(size)
+                .ToList();
+
+            return new PagingResponse<TSource>(pagingRequest, data, count);
         }
     }
 }

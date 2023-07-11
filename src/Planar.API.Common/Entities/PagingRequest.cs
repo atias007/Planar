@@ -1,7 +1,17 @@
 ﻿namespace Planar.API.Common.Entities
 {
-    public abstract class PagingRequest : IPagingRequest
+    public class PagingRequest : IPagingRequest
     {
+        public PagingRequest()
+        {
+        }
+
+        public PagingRequest(int pageNumber, int pageSize)
+        {
+            PageNumber = pageNumber;
+            PageSize = pageSize;
+        }
+
         public int? PageNumber { get; set; }
 
         public int? PageSize { get; set; }

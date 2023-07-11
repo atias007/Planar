@@ -345,12 +345,12 @@ namespace Planar.Controllers
         [HttpGet("{id}/audit")]
         [AdministratorAuthorize]
         [SwaggerOperation(OperationId = "get_job_id_audit", Description = "Get audits for job", Summary = "Get Audits For Job")]
-        [OkJsonResponse(typeof(IEnumerable<JobAuditDto>))]
+        [OkJsonResponse(typeof(PagingResponse<JobAuditDto>))]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<IEnumerable<JobAuditDto>>> GetJobAudit([FromRoute][Required] string id)
+        public async Task<ActionResult<PagingResponse<JobAuditDto>>> GetJobAudit([FromRoute][Required] string id, [FromQuery] PagingRequest paging)
         {
-            var result = await BusinesLayer.GetJobAudits(id);
+            var result = await BusinesLayer.GetJobAudits(id, paging);
             return Ok(result);
         }
 
@@ -370,10 +370,10 @@ namespace Planar.Controllers
         [AdministratorAuthorize]
         [SwaggerOperation(OperationId = "get_job_audits", Description = "Get all audits", Summary = "Get All Audits")]
         [BadRequestResponse]
-        [OkJsonResponse(typeof(IEnumerable<JobAuditDto>))]
-        public async Task<ActionResult<IEnumerable<JobAuditDto>>> GetJobAudits([FromQuery] uint pageNumber, [FromQuery] byte pageSize)
+        [OkJsonResponse(typeof(PagingResponse<JobAuditDto>))]
+        public async Task<ActionResult<PagingResponse<JobAuditDto>>> GetJobAudits([FromQuery] PagingRequest request)
         {
-            var result = await BusinesLayer.GetAudits(pageNumber, pageSize);
+            var result = await BusinesLayer.GetAudits(request);
             return Ok(result);
         }
     }

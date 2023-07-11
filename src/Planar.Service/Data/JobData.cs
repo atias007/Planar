@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.Model;
 using System;
@@ -71,16 +72,12 @@ namespace Planar.Service.Data
                 .ThenByDescending(a => a.Id);
         }
 
-        public IQueryable<JobAudit> GetAudits(uint pageNumber, byte pageSize)
+        public IQueryable<JobAudit> GetAudits()
         {
-            var skip = Convert.ToInt32(pageNumber * pageSize);
-
             return _context.JobAudits
                 .AsNoTracking()
                 .OrderByDescending(a => a.DateCreated)
-                .ThenByDescending(a => a.Id)
-                .Skip(skip)
-                .Take(pageSize);
+                .ThenByDescending(a => a.Id);
         }
 
         public IQueryable<JobAudit> GetJobAudit(int id)

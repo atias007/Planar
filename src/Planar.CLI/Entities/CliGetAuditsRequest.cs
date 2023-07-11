@@ -1,12 +1,18 @@
-﻿using Planar.CLI.Attributes;
+﻿using Planar.API.Common.Entities;
+using Planar.CLI.Attributes;
 
 namespace Planar.CLI.Entities
 {
     public class CliGetAuditsRequest : IPagingRequest
     {
         [ActionProperty(DefaultOrder = 0)]
-        public uint PageNumber { get; set; }
+        public int? PageNumber { get; set; }
 
-        public byte PageSize => 10;
+        public int? PageSize => 10;
+
+        public void SetPagingDefaults()
+        {
+            PageNumber = 1;
+        }
     }
 }

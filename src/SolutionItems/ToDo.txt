@@ -9,7 +9,7 @@ PLAN FOR V 1.4.0
    * sync max concurrent from all nodes
 
 - BACKLOG ----------------------------------------------------------------------------
-- add smart process job
+- add smart process job (implement https://github.com/dotnet/MQTTnet)
 - add WorkflowJob
 - add SSIS job
 - add SSRS job

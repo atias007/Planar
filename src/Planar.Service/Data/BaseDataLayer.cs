@@ -34,5 +34,7 @@ namespace Planar.Service.Data
         {
             return await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
         }
+
+        public IDbConnection DbConnection => _context.Database.GetDbConnection();
     }
 }

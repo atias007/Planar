@@ -1,6 +1,7 @@
 ﻿using AsciiChart.Sharp;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Planar.API.Common.Entities;
 using Planar.CLI.Actions;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.DataProtect;
@@ -226,7 +227,7 @@ namespace Planar.CLI
                                 pagingRequest.PageNumber++;
                                 response = InvokeCliAction(action, console, param);
                                 rowsCount = GetResponseTableRowCount(response);
-                                var ok = AssertPage(pagingRequest.PageNumber);
+                                var ok = AssertPage(pagingRequest.PageNumber.GetValueOrDefault());
                                 if (!ok) { return cliArgument; }
                             }
                         }
@@ -243,7 +244,7 @@ namespace Planar.CLI
             return cliArgument;
         }
 
-        private static bool AssertPage(uint pageNumber)
+        private static bool AssertPage(int pageNumber)
         {
             var chiose = AnsiConsole.Prompt(
                 new SelectionPrompt<string>()

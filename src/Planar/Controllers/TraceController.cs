@@ -5,7 +5,6 @@ using Planar.Authorization;
 using Planar.Service.API;
 using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -21,8 +20,8 @@ namespace Planar.Controllers
 
         [HttpGet]
         [SwaggerOperation(OperationId = "get_trace", Description = "Get trace records", Summary = "Get Trace Records")]
-        [OkJsonResponse(typeof(List<LogDetails>))]
-        public async Task<ActionResult<List<LogDetails>>> Get([FromQuery] GetTraceRequest request)
+        [OkJsonResponse(typeof(PagingResponse<LogDetails>))]
+        public async Task<ActionResult<PagingResponse<LogDetails>>> Get([FromQuery] GetTraceRequest request)
         {
             var result = await BusinesLayer.Get(request);
             return Ok(result);

@@ -21,9 +21,9 @@ namespace Planar.Controllers
         [HttpGet]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_history", Description = "Get history data by filter", Summary = "Get History")]
-        [OkJsonResponse(typeof(HistoryJobRowResponse))]
+        [OkJsonResponse(typeof(PagingResponse<JobInstanceLogRow>))]
         [BadRequestResponse]
-        public async Task<ActionResult<HistoryJobRowResponse>> GetHistory([FromQuery] GetHistoryRequest request)
+        public async Task<ActionResult<PagingResponse<JobInstanceLogRow>>> GetHistory([FromQuery] GetHistoryRequest request)
         {
             var result = await BusinesLayer.GetHistory(request);
             return Ok(result);
@@ -80,9 +80,9 @@ namespace Planar.Controllers
         [HttpGet("last")]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_history_last", Description = "Get summary of last running of each job", Summary = "Get Last Running Per Job")]
-        [OkJsonResponse(typeof(HistoryJobResponse))]
+        [OkJsonResponse(typeof(PagingResponse<JobHistory>))]
         [BadRequestResponse]
-        public async Task<ActionResult<HistoryJobResponse>> GetLastHistoryCallForJob([FromQuery] GetLastHistoryCallForJobRequest request)
+        public async Task<ActionResult<PagingResponse<JobHistory>>> GetLastHistoryCallForJob([FromQuery] GetLastHistoryCallForJobRequest request)
         {
             var result = await BusinesLayer.GetLastHistoryCallForJob(request);
             return Ok(result);

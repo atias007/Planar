@@ -56,43 +56,39 @@ namespace Planar.Service.Data
         public async Task<int> ClearStatisticsTables(int overDays)
         {
             var parameters = new { OverDays = overDays };
-            using var conn = _context.Database.GetDbConnection();
             var cmd = new CommandDefinition(
                 commandText: "Statistics.ClearStatistics",
                 commandType: CommandType.StoredProcedure,
                 parameters: parameters);
 
-            return await conn.ExecuteAsync(cmd);
+            return await DbConnection.ExecuteAsync(cmd);
         }
 
         public async Task<int> SetMaxConcurrentExecution()
         {
-            using var conn = _context.Database.GetDbConnection();
             var cmd = new CommandDefinition(
                 commandText: "Statistics.SetMaxConcurrentExecution",
                 commandType: CommandType.StoredProcedure);
 
-            return await conn.ExecuteAsync(cmd);
+            return await DbConnection.ExecuteAsync(cmd);
         }
 
         public async Task<int> BuildJobStatistics()
         {
-            using var conn = _context.Database.GetDbConnection();
             var cmd = new CommandDefinition(
                 commandText: "Statistics.BuildJobStatistics",
                 commandType: CommandType.StoredProcedure);
 
-            return await conn.ExecuteAsync(cmd);
+            return await DbConnection.ExecuteAsync(cmd);
         }
 
         public async Task<int> FillJobCounters()
         {
-            using var conn = _context.Database.GetDbConnection();
             var cmd = new CommandDefinition(
                 commandText: "Statistics.FillJobCounters",
                 commandType: CommandType.StoredProcedure);
 
-            return await conn.ExecuteAsync(cmd);
+            return await DbConnection.ExecuteAsync(cmd);
         }
 
         public async Task<IEnumerable<string>> GetJobDurationStatisticsIds()

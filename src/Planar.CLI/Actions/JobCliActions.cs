@@ -178,9 +178,9 @@ namespace Planar.CLI.Actions
 
             var result = await RestProxy.Invoke<JobDescription>(restRequest, cancellationToken);
             var tables = CliTableExtensions.GetTable(result.Data?.Details);
-            var tables2 = CliTableExtensions.GetTable(result.Data?.History.ToList(), singleJob: true);
+            var tables2 = CliTableExtensions.GetTable(result.Data?.History, singleJob: true);
             var tables3 = CliTableExtensions.GetTable(result.Data?.Monitors.ToList());
-            var tables4 = CliTableExtensions.GetTable(result.Data?.Audits?.ToList());
+            var tables4 = CliTableExtensions.GetTable(result.Data?.Audits);
             var table5 = CliTableExtensions.GetTable(result.Data?.Statistics);
 
             tables[0].Title = "Jobs";
@@ -217,7 +217,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("job/{id}/audit", Method.Get)
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
 
-            var result = await RestProxy.Invoke<IEnumerable<JobAuditDto>>(restRequest, cancellationToken);
+            var result = await RestProxy.Invoke<PagingResponse<JobAuditDto>>(restRequest, cancellationToken);
             var tables = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, tables);
         }
@@ -234,11 +234,12 @@ namespace Planar.CLI.Actions
         [Action("all-audits")]
         public static async Task<CliActionResponse> GetAudits(CliGetAuditsRequest request, CancellationToken cancellationToken = default)
         {
+            request.SetPagingDefaults();
             var restRequest = new RestRequest("job/audits", Method.Get)
-                .AddParameter("pageNumber", request.PageNumber, ParameterType.QueryString)
-                .AddParameter("pageSize", request.PageSize, ParameterType.QueryString);
+                .AddParameter("pageNumber", request.PageNumber.GetValueOrDefault(), ParameterType.QueryString)
+                .AddParameter("pageSize", request.PageSize.GetValueOrDefault(), ParameterType.QueryString);
 
-            var result = await RestProxy.Invoke<IEnumerable<JobAuditDto>>(restRequest, cancellationToken);
+            var result = await RestProxy.Invoke<PagingResponse<JobAuditDto>>(restRequest, cancellationToken);
             var tables = CliTableExtensions.GetTable(result.Data, withJobId: true);
             return new CliActionResponse(result, tables);
         }

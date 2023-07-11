@@ -6,7 +6,6 @@ using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using Quartz;
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,26 +23,27 @@ namespace Planar.Service.Data
             return _context.JobInstanceLogs.AsQueryable();
         }
 
-        public async Task<List<JobInstanceLog>> GetLastHistoryCallForJob(object parameters)
+        public async Task<PagingResponse<JobInstanceLog>> GetLastHistoryCallForJob(object parameters)
         {
-            using var conn = _context.Database.GetDbConnection();
             var cmd = new CommandDefinition(
                 commandText: "dbo.GetLastHistoryCallForJob",
                 commandType: CommandType.StoredProcedure,
                 parameters: parameters);
 
-            var data = await conn.QueryAsync<JobInstanceLog>(cmd);
-            return data.ToList();
+            var multi = await DbConnection.QueryMultipleAsync(cmd);
+            var data = await multi.ReadAsync<JobInstanceLog>();
+            var count = await multi.ReadSingleAsync<int>();
+            return new PagingResponse<JobInstanceLog>(data.ToList(), count);
         }
 
         public IQueryable<JobInstanceLog> GetHistory(long key)
         {
-            return _context.JobInstanceLogs.Where(l => l.Id == key);
+            return _context.JobInstanceLogs.AsNoTracking().Where(l => l.Id == key);
         }
 
         public IQueryable<JobInstanceLog> GetHistory(GetHistoryRequest request)
         {
-            var query = _context.JobInstanceLogs.AsQueryable();
+            var query = _context.JobInstanceLogs.AsNoTracking();
 
             if (request.FromDate.HasValue)
             {
@@ -94,8 +94,6 @@ namespace Planar.Service.Data
                 query = query.OrderByDescending(l => l.StartDate);
             }
 
-            query = query.SetPaging(request);
-
             return query;
         }
 
@@ -112,6 +110,7 @@ namespace Planar.Service.Data
         public async Task<string?> GetHistoryLogById(long id)
         {
             var result = await _context.JobInstanceLogs
+                .AsNoTracking()
                 .Where(l => l.Id == id)
                 .Select(l => l.Log)
                 .FirstOrDefaultAsync();
@@ -122,6 +121,7 @@ namespace Planar.Service.Data
         public async Task<string?> GetHistoryExceptionById(long id)
         {
             var result = await _context.JobInstanceLogs
+                .AsNoTracking()
                 .Where(l => l.Id == id)
                 .Select(l => l.Exception)
                 .FirstOrDefaultAsync();
@@ -132,6 +132,7 @@ namespace Planar.Service.Data
         public async Task<JobInstanceLog?> GetHistoryById(long id)
         {
             var result = await _context.JobInstanceLogs
+                .AsNoTracking()
                 .Where(l => l.Id == id)
                 .FirstOrDefaultAsync();
 
@@ -172,7 +173,7 @@ namespace Planar.Service.Data
                 commandType: CommandType.StoredProcedure,
                 parameters: parameters);
 
-            await _context.Database.GetDbConnection().ExecuteAsync(cmd);
+            await DbConnection.ExecuteAsync(cmd);
         }
 
         public async Task SetAnomaly(object parameters)
@@ -182,7 +183,7 @@ namespace Planar.Service.Data
                 commandType: CommandType.StoredProcedure,
                 parameters: parameters);
 
-            await _context.Database.GetDbConnection().ExecuteAsync(cmd);
+            await DbConnection.ExecuteAsync(cmd);
         }
 
         public async Task PersistJobInstanceData(JobInstanceLog log)
@@ -200,7 +201,7 @@ namespace Planar.Service.Data
                 commandType: CommandType.StoredProcedure,
                 parameters: parameters);
 
-            await _context.Database.GetDbConnection().ExecuteAsync(cmd);
+            await DbConnection.ExecuteAsync(cmd);
         }
 
         public async Task SetJobInstanceLogStatus(string instanceId, StatusMembers status)
@@ -250,8 +251,7 @@ namespace Planar.Service.Data
                 parameters: parameters,
                 commandType: CommandType.StoredProcedure);
 
-            var result = await _context.Database.GetDbConnection()
-                .QueryFirstOrDefaultAsync<HistoryStatusDto>(definition);
+            var result = await DbConnection.QueryFirstOrDefaultAsync<HistoryStatusDto>(definition);
 
             return result;
         }

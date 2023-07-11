@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
@@ -31,11 +30,11 @@ namespace Planar.Service.API
 
         #endregion OData
 
-        public async Task<HistoryJobRowResponse> GetHistory(GetHistoryRequest request)
+        public async Task<PagingResponse<JobInstanceLogRow>> GetHistory(GetHistoryRequest request)
         {
             var query = DataLayer.GetHistory(request);
-            var data = await Mapper.ProjectTo<JobInstanceLogRow>(query).ToListAsync();
-            var result = new HistoryJobRowResponse(data, request);
+            var data = await query.ProjectToWithPagingAsyc<JobInstanceLog, JobInstanceLogRow>(Mapper, request);
+            var result = new PagingResponse<JobInstanceLogRow>(data);
             return result;
         }
 
@@ -72,14 +71,15 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<HistoryJobResponse> GetLastHistoryCallForJob(GetLastHistoryCallForJobRequest request)
+        public async Task<PagingResponse<JobHistory>> GetLastHistoryCallForJob(GetLastHistoryCallForJobRequest request)
         {
             request.SetPagingDefaults();
-            if (request.LastDays == null) { request.LastDays = 365; }
-            var parameters = new { request.LastDays, request.PageNumber, request.PageSize };
-            var data = await DataLayer.GetLastHistoryCallForJob(parameters);
-            var mappedData = Mapper.Map<List<JobHistory>>(data);
-            var result = new HistoryJobResponse(mappedData, request);
+            request.LastDays ??= 365;
+            var parameters1 = new { request.LastDays, request.PageNumber, request.PageSize };
+            var data = await DataLayer.GetLastHistoryCallForJob(parameters1);
+            var mappedData = Mapper.Map<List<JobHistory>>(data.Data);
+            var result = new PagingResponse<JobHistory>(mappedData);
+            result.SetPagingData(request, data.TotalRows.GetValueOrDefault());
             return result;
         }
 

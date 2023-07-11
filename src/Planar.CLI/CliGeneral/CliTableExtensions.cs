@@ -37,10 +37,10 @@ namespace Planar.CLI
             return table;
         }
 
-        public static CliTable GetTable(IEnumerable<JobAuditDto>? response, bool withJobId = false)
+        public static CliTable GetTable(PagingResponse<JobAuditDto>? response, bool withJobId = false)
         {
             var table = new CliTable(showCount: true, "audit");
-            if (response == null) { return table; }
+            if (response == null || response.Data == null) { return table; }
 
             if (withJobId)
             {
@@ -51,7 +51,7 @@ namespace Planar.CLI
                 table.Table.AddColumns("Id", "Date Created", "Username", "User Title", "Description");
             }
 
-            foreach (var item in response)
+            foreach (var item in response.Data)
             {
                 if (item == null) { continue; }
                 if (withJobId)
@@ -129,40 +129,40 @@ namespace Planar.CLI
             return table;
         }
 
-        public static CliTable GetTable(List<JobInstanceLogRow>? response, bool singleJob = false)
+        public static CliTable GetTable(PagingResponse<JobInstanceLogRow>? response, bool singleJob = false)
         {
             var table = new CliTable(showCount: true);
-            if (response == null) { return table; }
+            if (response == null || response.Data == null) { return table; }
 
             if (singleJob)
             {
                 table.Table.AddColumns("Id", "Trigger Id", "Status", "Start Date", "Duration", "Effected Rows");
-                response.ForEach(r => table.Table.AddRow($"{r.Id}", CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FormatNumber(r.EffectedRows)));
+                response.Data.ForEach(r => table.Table.AddRow($"{r.Id}", CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FormatNumber(r.EffectedRows)));
             }
             else
             {
                 table.Table.AddColumns("Id", "Job Id", "Job Key", "Job Type", "Trigger Id", "Status", "Start Date", "Duration", "Effected Rows");
-                response.ForEach(r => table.Table.AddRow($"{r.Id}", r.JobId ?? string.Empty, $"{r.JobGroup}.{r.JobName}".EscapeMarkup(), r.JobType.EscapeMarkup(), CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FormatNumber(r.EffectedRows)));
+                response.Data.ForEach(r => table.Table.AddRow($"{r.Id}", r.JobId ?? string.Empty, $"{r.JobGroup}.{r.JobName}".EscapeMarkup(), r.JobType.EscapeMarkup(), CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FormatNumber(r.EffectedRows)));
             }
 
             return table;
         }
 
-        public static CliTable GetTable(List<JobHistory>? response)
+        public static CliTable GetTable(PagingResponse<JobHistory>? response)
         {
             var table = new CliTable(showCount: true);
-            if (response == null) { return table; }
+            if (response == null || response.Data == null) { return table; }
             table.Table.AddColumns("Id", "Job Id", "Job Key", "Job Type", "Trigger Id", "Status", "Start Date", "Duration", "Effected Rows");
-            response.ForEach(r => table.Table.AddRow($"{r.Id}", r.JobId ?? string.Empty, $"{r.JobGroup}.{r.JobName}".EscapeMarkup(), r.JobType.EscapeMarkup(), CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FormatNumber(r.EffectedRows)));
+            response.Data.ForEach(r => table.Table.AddRow($"{r.Id}", r.JobId ?? string.Empty, $"{r.JobGroup}.{r.JobName}".EscapeMarkup(), r.JobType.EscapeMarkup(), CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FormatNumber(r.EffectedRows)));
             return table;
         }
 
-        public static CliTable GetTable(List<LogDetails>? response)
+        public static CliTable GetTable(PagingResponse<LogDetails>? response)
         {
             var table = new CliTable(showCount: true);
-            if (response == null) { return table; }
+            if (response == null || response.Data == null) { return table; }
             table.Table.AddColumns("Id", "Message", "Level", "Time Stamp");
-            response.ForEach(r => table.Table.AddRow($"{r.Id}", SafeCliString(r.Message), CliTableFormat.GetLevelMarkup(r.Level), CliTableFormat.FormatDateTime(r.TimeStamp)));
+            response.Data.ForEach(r => table.Table.AddRow($"{r.Id}", SafeCliString(r.Message), CliTableFormat.GetLevelMarkup(r.Level), CliTableFormat.FormatDateTime(r.TimeStamp)));
             return table;
         }
 

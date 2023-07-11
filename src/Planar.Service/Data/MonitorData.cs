@@ -1,11 +1,6 @@
 ﻿using Dapper;
-using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Planar.API.Common.Entities;
 using Planar.Service.Model;
-using Quartz;
-using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -142,25 +137,23 @@ namespace Planar.Service.Data
 
         public async Task<int> CountFailsInRowForJob(object parameters)
         {
-            using var conn = _context.Database.GetDbConnection();
             var cmd = new CommandDefinition(
                 commandText: "dbo.CountFailsInRowForJob",
                 commandType: CommandType.StoredProcedure,
                 parameters: parameters);
 
-            var data = await conn.QuerySingleAsync<int>(cmd);
+            var data = await DbConnection.QuerySingleAsync<int>(cmd);
             return data;
         }
 
         public async Task<int> CountFailsInHourForJob(object parameters)
         {
-            using var conn = _context.Database.GetDbConnection();
             var cmd = new CommandDefinition(
                 commandText: "dbo.CountFailsInHourForJob",
                 commandType: CommandType.StoredProcedure,
                 parameters: parameters);
 
-            var data = await conn.QuerySingleAsync<int>(cmd);
+            var data = await DbConnection.QuerySingleAsync<int>(cmd);
             return data;
         }
 

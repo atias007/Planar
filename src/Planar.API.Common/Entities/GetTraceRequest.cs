@@ -2,10 +2,8 @@
 
 namespace Planar.API.Common.Entities
 {
-    public class GetTraceRequest
+    public class GetTraceRequest : PagingRequest
     {
-        public int? Rows { get; set; }
-
         public bool Ascending { get; set; }
 
         public DateTime? FromDate { get; set; }

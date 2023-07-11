@@ -109,14 +109,14 @@ namespace Planar.Service.API
             var historyRequest = new GetHistoryRequest { JobId = id, PageSize = 10 };
             var details = await Get(id);
             var monitorsTask = monitorDomain.GetByJob(id);
-            var audit = await GetAudits(0, 10);
+            var audit = await GetAudits(new PagingRequest(1, 10));
             var historyTask = historyDomain.GetHistory(historyRequest);
             var statisticsTask = statisticsDomain.GetJobStatistics(id);
             var result = new JobDescription
             {
                 Details = details,
                 Audits = audit,
-                History = (await historyTask)?.Data ?? new List<JobInstanceLogRow>(),
+                History = await historyTask,
                 Monitors = await monitorsTask,
                 Statistics = await statisticsTask
             };
@@ -270,24 +270,19 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<IEnumerable<JobAuditDto>> GetJobAudits(string id)
+        public async Task<PagingResponse<JobAuditDto>> GetJobAudits(string id, PagingRequest paging)
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
             var jobId = await JobKeyHelper.GetJobId(jobKey) ?? string.Empty;
             var query = DataLayer.GetJobAudits(jobId);
-            var result = await Mapper.ProjectTo<JobAuditDto>(query).ToListAsync();
+            var result = await query.ProjectToWithPagingAsyc<JobAudit, JobAuditDto>(Mapper, paging);
             return result;
         }
 
-        public async Task<IEnumerable<JobAuditDto>> GetAudits(uint pageNumber, byte pageSize)
+        public async Task<PagingResponse<JobAuditDto>> GetAudits(PagingRequest request)
         {
-            if (pageSize < 1)
-            {
-                throw new RestValidationException("pageSize", "pageSize must be greater then 1");
-            }
-
-            var query = DataLayer.GetAudits(pageNumber, pageSize);
-            var result = await Mapper.ProjectTo<JobAuditDto>(query).ToListAsync();
+            var query = DataLayer.GetAudits();
+            var result = await query.ProjectToWithPagingAsyc<JobAudit, JobAuditDto>(Mapper, request);
             return result;
         }
 

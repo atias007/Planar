@@ -27,10 +27,9 @@ namespace Planar.CLI.Actions
                 restRequest.AddParameter("Level", request.Level, ParameterType.QueryString);
             }
 
-            if (request.Rows > 0)
-            {
-                restRequest.AddParameter("Rows", request.Rows, ParameterType.QueryString);
-            }
+            if (request.Rows == 0) { request.Rows = 50; }
+
+            restRequest.AddParameter("pageSize", request.Rows, ParameterType.QueryString);
 
             if (request.FromDate != DateTime.MinValue)
             {
@@ -42,7 +41,7 @@ namespace Planar.CLI.Actions
                 restRequest.AddParameter("ToDate", request.ToDate, ParameterType.QueryString);
             }
 
-            var result = await RestProxy.Invoke<List<LogDetails>>(restRequest, cancellationToken);
+            var result = await RestProxy.Invoke<PagingResponse<LogDetails>>(restRequest, cancellationToken);
             var table = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, table);
         }

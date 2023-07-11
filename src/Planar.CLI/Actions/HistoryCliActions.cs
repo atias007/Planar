@@ -5,7 +5,6 @@ using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -65,8 +64,8 @@ namespace Planar.CLI.Actions
 
             restRequest.AddQueryParameter("ascending", request.Ascending);
 
-            var result = await RestProxy.Invoke<HistoryJobRowResponse>(restRequest, cancellationToken);
-            var table = CliTableExtensions.GetTable(result.Data?.Data);
+            var result = await RestProxy.Invoke<PagingResponse<JobInstanceLogRow>>(restRequest, cancellationToken);
+            var table = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, table);
         }
 
@@ -109,8 +108,8 @@ namespace Planar.CLI.Actions
                 restRequest.AddQueryParameter("lastDays", request.LastDays);
             }
 
-            var result = await RestProxy.Invoke<HistoryJobResponse>(restRequest, cancellationToken);
-            var table = CliTableExtensions.GetTable(result.Data?.Data);
+            var result = await RestProxy.Invoke<PagingResponse<JobHistory>>(restRequest, cancellationToken);
+            var table = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, table);
         }
 

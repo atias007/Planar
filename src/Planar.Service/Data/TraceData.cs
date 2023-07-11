@@ -19,25 +19,23 @@ namespace Planar.Service.Data
         public async Task<int> ClearTraceTable(int overDays)
         {
             var parameters = new { OverDays = overDays };
-            using var conn = _context.Database.GetDbConnection();
             var cmd = new CommandDefinition(
                 commandText: "dbo.ClearTrace",
                 commandType: CommandType.StoredProcedure,
                 parameters: parameters);
 
-            return await conn.ExecuteAsync(cmd);
+            return await DbConnection.ExecuteAsync(cmd);
         }
 
         public async Task<int> ClearJobLogTable(int overDays)
         {
             var parameters = new { OverDays = overDays };
-            using var conn = _context.Database.GetDbConnection();
             var cmd = new CommandDefinition(
                 commandText: "dbo.ClearLogInstance",
                 commandType: CommandType.StoredProcedure,
                 parameters: parameters);
 
-            return await conn.ExecuteAsync(cmd);
+            return await DbConnection.ExecuteAsync(cmd);
         }
 
         public IQueryable<Trace> GetTrace(int key)
@@ -45,7 +43,7 @@ namespace Planar.Service.Data
             return _context.Traces.Where(t => t.Id == key);
         }
 
-        public async Task<List<LogDetails>> GetTrace(GetTraceRequest request)
+        public async Task<PagingResponse<LogDetails>> GetTrace(GetTraceRequest request)
         {
             var query = _context.Traces.AsQueryable();
 
@@ -73,8 +71,6 @@ namespace Planar.Service.Data
                 query = query.OrderByDescending(l => l.TimeStamp).ThenBy(l => l.Id);
             }
 
-            query = query.Take(request.Rows.GetValueOrDefault());
-
             var final = query.Select(l => new LogDetails
             {
                 Id = l.Id,
@@ -83,7 +79,7 @@ namespace Planar.Service.Data
                 TimeStamp = l.TimeStamp.ToLocalTime().DateTime
             });
 
-            var result = await final.ToListAsync();
+            var result = await final.ToPagingListAsync(request);
             return result;
         }
 
@@ -117,8 +113,7 @@ namespace Planar.Service.Data
                 parameters: parameters,
                 commandType: CommandType.StoredProcedure);
 
-            var result = await _context.Database.GetDbConnection()
-                .QueryFirstOrDefaultAsync<TraceStatusDto>(definition);
+            var result = await DbConnection.QueryFirstOrDefaultAsync<TraceStatusDto>(definition);
 
             return result;
         }

@@ -25,9 +25,8 @@ namespace Planar.Service.API
             return trace;
         }
 
-        public async Task<List<LogDetails>> Get(GetTraceRequest request)
+        public async Task<PagingResponse<LogDetails>> Get(GetTraceRequest request)
         {
-            if (request.Rows.GetValueOrDefault() == 0) { request.Rows = 50; }
             var result = await DataLayer.GetTrace(request);
             return result;
         }
