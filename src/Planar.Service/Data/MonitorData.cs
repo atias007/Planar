@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
+using Planar.API.Common.Entities;
 using Planar.Service.Model;
 using System.Collections.Generic;
 using System.Data;
@@ -74,9 +75,10 @@ namespace Planar.Service.Data
             var result = await _context.MonitorActions
                 .Include(m => m.Group)
                 .Where(m => m.JobGroup == group && (m.JobName == name || string.IsNullOrEmpty(m.JobName)))
-                .OrderByDescending(m => m.Active)
-                .ThenBy(m => m.JobGroup)
-                .ThenBy(m => m.JobName)
+                .OrderByDescending(d => d.Active)
+                .ThenBy(d => d.JobGroup)
+                .ThenBy(d => d.JobName)
+                .ThenBy(d => d.Title)
                 .ToListAsync();
 
             return result;
@@ -87,24 +89,24 @@ namespace Planar.Service.Data
             var result = await _context.MonitorActions
                 .Include(m => m.Group)
                 .Where(m => m.JobGroup == group && m.JobName == null)
-                .OrderByDescending(m => m.Active)
-                .ThenBy(m => m.JobGroup)
-                .ThenBy(m => m.JobName)
-                .ToListAsync();
-
-            return result;
-        }
-
-        public async Task<List<MonitorAction>> GetMonitorActions()
-        {
-            return await _context.MonitorActions
-                .AsNoTracking()
-                .Include(i => i.Group)
                 .OrderByDescending(d => d.Active)
                 .ThenBy(d => d.JobGroup)
                 .ThenBy(d => d.JobName)
                 .ThenBy(d => d.Title)
                 .ToListAsync();
+
+            return result;
+        }
+
+        public IQueryable<MonitorAction> GetMonitorActions()
+        {
+            return _context.MonitorActions
+                .AsNoTracking()
+                .Include(i => i.Group)
+                .OrderByDescending(d => d.Active)
+                .ThenBy(d => d.JobGroup)
+                .ThenBy(d => d.JobName)
+                .ThenBy(d => d.Title);
         }
 
         public async Task AddMonitor(MonitorAction request)

@@ -7,7 +7,7 @@
         All
     }
 
-    public class GetAllJobsRequest
+    public class GetAllJobsRequest : PagingRequest
     {
         public AllJobsMembers Filter { get; set; }
 

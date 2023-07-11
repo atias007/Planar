@@ -22,10 +22,10 @@ namespace Planar.Controllers
         [HttpGet]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_monitor", Description = "Get all monitors", Summary = "Get All Monitors")]
-        [OkJsonResponse(typeof(List<MonitorItem>))]
-        public async Task<ActionResult<List<MonitorItem>>> GetAll()
+        [OkJsonResponse(typeof(PagingResponse<MonitorItem>))]
+        public async Task<ActionResult<PagingResponse<MonitorItem>>> GetAll([FromQuery] PagingRequest request)
         {
-            var result = await BusinesLayer.GetAll();
+            var result = await BusinesLayer.GetAll(request);
             return Ok(result);
         }
 

@@ -56,10 +56,10 @@ namespace Planar.Service.API
             }
         }
 
-        public async Task<List<MonitorItem>> GetAll()
+        public async Task<PagingResponse<MonitorItem>> GetAll(IPagingRequest request)
         {
-            var items = await DataLayer.GetMonitorActions();
-            var result = Mapper.Map<List<MonitorItem>>(items);
+            var query = DataLayer.GetMonitorActions();
+            var result = await query.ProjectToWithPagingAsyc<MonitorAction, MonitorItem>(Mapper, request);
             return result;
         }
 

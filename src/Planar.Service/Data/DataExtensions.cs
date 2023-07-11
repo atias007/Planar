@@ -1,13 +1,12 @@
 ﻿using AutoMapper;
-using Azure.Core;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 using Planar.API.Common.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Planar.Service.Data
 {
@@ -23,7 +22,17 @@ namespace Planar.Service.Data
             }
         }
 
-        public static IQueryable<TSource> SetPagingAsyc<TSource>(this IQueryable<TSource> source, IPagingRequest pagingRequest)
+        public static IQueryable<TSource> SetPaging<TSource>(this IQueryable<TSource> source, IPagingRequest pagingRequest)
+        {
+            pagingRequest.SetPagingDefaults();
+            var page = pagingRequest.PageNumber.GetValueOrDefault();
+            var size = pagingRequest.PageSize.GetValueOrDefault();
+            return source
+                .Skip((page - 1) * size)
+                .Take(size);
+        }
+
+        public static IEnumerable<TSource> SetPaging<TSource>(this IEnumerable<TSource> source, IPagingRequest pagingRequest)
         {
             pagingRequest.SetPagingDefaults();
             var page = pagingRequest.PageNumber.GetValueOrDefault();
@@ -37,7 +46,7 @@ namespace Planar.Service.Data
             (this IQueryable<TSource> source, IMapper mapper, IPagingRequest pagingRequest)
             where TDestination : class
         {
-            var pageQuery = source.SetPagingAsyc(pagingRequest);
+            var pageQuery = source.SetPaging(pagingRequest);
             var data = await mapper.ProjectTo<TDestination>(pageQuery).ToListAsync();
             var total = await source.CountAsync();
             return new PagingResponse<TDestination>(pagingRequest, data, total);

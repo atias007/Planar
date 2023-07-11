@@ -148,12 +148,12 @@ namespace Planar.CLI.Actions
                 }
             }
 
-            var result = await RestProxy.Invoke<List<JobRowDetails>>(restRequest, cancellationToken);
+            var result = await RestProxy.Invoke<PagingResponse<JobRowDetails>>(restRequest, cancellationToken);
             var message = string.Empty;
             CliActionResponse response;
             if (request.Quiet)
             {
-                var ids = result.Data?.Select(r => r.Id);
+                var ids = result.Data?.Data?.Select(r => r.Id);
                 if (ids != null)
                 {
                     message = string.Join('\n', ids);

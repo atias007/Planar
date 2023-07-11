@@ -60,8 +60,8 @@ namespace Planar.Controllers
         [HttpGet]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job", Description = "Get all jobs", Summary = "Get All Jobs")]
-        [OkJsonResponse(typeof(List<JobRowDetails>))]
-        public async Task<ActionResult<List<JobRowDetails>>> GetAll([FromQuery] GetAllJobsRequest request)
+        [OkJsonResponse(typeof(PagingResponse<JobRowDetails>))]
+        public async Task<ActionResult<PagingResponse<JobRowDetails>>> GetAll([FromQuery] GetAllJobsRequest request)
         {
             var result = await BusinesLayer.GetAll(request);
             return Ok(result);

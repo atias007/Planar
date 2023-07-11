@@ -103,12 +103,12 @@ namespace Planar.CLI
             return table;
         }
 
-        public static CliTable GetTable(List<JobRowDetails>? response)
+        public static CliTable GetTable(PagingResponse<JobRowDetails>? response)
         {
             var table = new CliTable(showCount: true, entityName: "job");
-            if (response == null) { return table; }
+            if (response == null || response.Data == null) { return table; }
             table.Table.AddColumns("Job Id", "Job Key", "Job Type", "Description");
-            response.ForEach(r => table.Table.AddRow(r.Id, $"{r.Group}.{r.Name}".EscapeMarkup(), r.JobType.EscapeMarkup(), LimitValue(r.Description)));
+            response.Data.ForEach(r => table.Table.AddRow(r.Id, $"{r.Group}.{r.Name}".EscapeMarkup(), r.JobType.EscapeMarkup(), LimitValue(r.Description)));
             return table;
         }
 
@@ -223,6 +223,11 @@ namespace Planar.CLI
             });
 
             return table;
+        }
+
+        public static CliTable GetTable(PagingResponse<MonitorItem>? response)
+        {
+            return GetTable(response?.Data);
         }
 
         public static CliTable GetTable(List<MonitorItem>? response)

@@ -12,7 +12,7 @@ namespace Planar.CLI.Entities
 
         public void SetPagingDefaults()
         {
-            PageNumber = 1;
+            PageNumber ??= 1;
         }
     }
 }

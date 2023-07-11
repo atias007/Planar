@@ -56,15 +56,13 @@ namespace Planar.CLI.Actions
         [Action("list")]
         public static async Task<CliActionResponse> GetMonitorActions(CliGetMonitorActionsRequest request, CancellationToken cancellationToken = default)
         {
-            var data = new List<MonitorItem>();
-            RestResponse finalResult;
-
             if (string.IsNullOrEmpty(request.JobIdOrJobGroup))
             {
                 var restRequest = new RestRequest("monitor", Method.Get);
-                var result = await RestProxy.Invoke<List<MonitorItem>>(restRequest, cancellationToken);
-                if (result.IsSuccessful && result.Data != null) { data.AddRange(result.Data); }
-                finalResult = result;
+                var result = await RestProxy.Invoke<PagingResponse<MonitorItem>>(restRequest, cancellationToken);
+
+                var table1 = CliTableExtensions.GetTable(result?.Data);
+                return new CliActionResponse(result, table1);
             }
             else
             {
@@ -80,14 +78,14 @@ namespace Planar.CLI.Actions
 
                 var result1 = task1.Result;
                 var result2 = task2.Result;
+                var data = new List<MonitorItem>();
                 if (result1.IsSuccessful && result1.Data != null) { data.AddRange(result1.Data); }
                 if (result2.IsSuccessful && result2.Data != null) { data.AddRange(result2.Data); }
 
-                finalResult = SelectRestResponse(result1, result2);
+                var result = SelectRestResponse(result1, result2);
+                var table = CliTableExtensions.GetTable(data);
+                return new CliActionResponse(result, table);
             }
-
-            var table = CliTableExtensions.GetTable(data);
-            return new CliActionResponse(finalResult, table);
         }
 
         [Action("events")]

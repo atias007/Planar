@@ -8,7 +8,7 @@ namespace Planar.Service.Validation
         public PagingRequestValidator()
         {
             RuleFor(e => e.PageNumber).GreaterThan(0);
-            RuleFor(e => e.PageSize).GreaterThan(0);
+            RuleFor(e => e.PageSize).InclusiveBetween(1, 1000);
         }
     }
 }
