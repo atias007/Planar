@@ -1,6 +1,5 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
-using Planar.API.Common.Entities;
 using Planar.Service.Model;
 using System.Collections.Generic;
 using System.Data;
@@ -28,7 +27,10 @@ namespace Planar.Service.Data
         public async Task<List<MonitorAction>> GetMonitorDataByEvent(int @event)
         {
             var data = await GetMonitorData()
-                .Where(m => m.EventId == @event && string.IsNullOrEmpty(m.JobGroup) && string.IsNullOrEmpty(m.JobName))
+                .Where(m =>
+                    m.EventId == @event &&
+                    string.IsNullOrEmpty(m.JobGroup) &&
+                    string.IsNullOrEmpty(m.JobName))
                 .ToListAsync();
 
             return data;
@@ -37,7 +39,10 @@ namespace Planar.Service.Data
         public async Task<List<MonitorAction>> GetMonitorDataByGroup(int @event, string jobGroup)
         {
             var data = await GetMonitorData()
-                .Where(m => m.EventId == @event && m.JobGroup == jobGroup && string.IsNullOrEmpty(m.JobName))
+                .Where(m =>
+                    m.EventId == @event &&
+                    m.JobGroup != null && m.JobGroup.ToLower() == jobGroup.ToLower() &&
+                    string.IsNullOrEmpty(m.JobName))
                 .ToListAsync();
 
             return data;
@@ -46,7 +51,10 @@ namespace Planar.Service.Data
         public async Task<List<MonitorAction>> GetMonitorDataByJob(int @event, string jobGroup, string jobName)
         {
             var data = await GetMonitorData()
-                .Where(m => m.EventId == @event && m.JobGroup == jobGroup && m.JobName == jobName)
+                .Where(m =>
+                    m.EventId == @event &&
+                    m.JobGroup != null && m.JobGroup.ToLower() == jobGroup.ToLower() &&
+                    m.JobName != null && m.JobName.ToLower() == jobName.ToLower())
                 .ToListAsync();
 
             return data;
@@ -74,7 +82,9 @@ namespace Planar.Service.Data
         {
             var result = await _context.MonitorActions
                 .Include(m => m.Group)
-                .Where(m => m.JobGroup == group && (m.JobName == name || string.IsNullOrEmpty(m.JobName)))
+                .Where(m =>
+                    m.JobGroup == group &&
+                    (string.IsNullOrEmpty(m.JobName) || m.JobName.ToLower() == name.ToLower()))
                 .OrderByDescending(d => d.Active)
                 .ThenBy(d => d.JobGroup)
                 .ThenBy(d => d.JobName)
@@ -88,7 +98,9 @@ namespace Planar.Service.Data
         {
             var result = await _context.MonitorActions
                 .Include(m => m.Group)
-                .Where(m => m.JobGroup == group && m.JobName == null)
+                .Where(m =>
+                    m.JobGroup != null && m.JobGroup.ToLower() == group.ToLower() &&
+                    m.JobName == null)
                 .OrderByDescending(d => d.Active)
                 .ThenBy(d => d.JobGroup)
                 .ThenBy(d => d.JobName)
@@ -123,12 +135,18 @@ namespace Planar.Service.Data
 
         public async Task DeleteMonitorByJobId(string group, string name)
         {
-            await _context.MonitorActions.Where(e => e.JobGroup == group && e.JobName == name).ExecuteDeleteAsync();
+            await _context.MonitorActions
+                .Where(m =>
+                     m.JobGroup == group &&
+                     m.JobName == name)
+                .ExecuteDeleteAsync();
         }
 
         public async Task DeleteMonitorByJobGroup(string jobGroup)
         {
-            await _context.MonitorActions.Where(e => e.JobGroup == jobGroup).ExecuteDeleteAsync();
+            await _context.MonitorActions
+                .Where(m => m.JobGroup == jobGroup)
+                .ExecuteDeleteAsync();
         }
 
         public async Task UpdateMonitorAction(MonitorAction monitor)

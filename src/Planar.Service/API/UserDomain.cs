@@ -63,9 +63,9 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<List<UserRow>> GetAll()
+        public async Task<PagingResponse<UserRow>> GetAll(IPagingRequest request)
         {
-            return await DataLayer.GetUsers();
+            return await DataLayer.GetUsers(request);
         }
 
         public async Task Delete(string username)

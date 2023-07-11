@@ -8,7 +8,7 @@ namespace Planar.CLI.Entities
         [ActionProperty(DefaultOrder = 0)]
         public int? PageNumber { get; set; }
 
-        public int? PageSize => 10;
+        public int? PageSize => 25;
 
         public void SetPagingDefaults()
         {

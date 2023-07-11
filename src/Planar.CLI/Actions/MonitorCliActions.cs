@@ -336,11 +336,13 @@ namespace Planar.CLI.Actions
             var hooksTask = RestProxy.Invoke<List<string>>(hooksRequest, cancellationToken);
 
             var jobsRequest = new RestRequest("job", Method.Get)
-                .AddQueryParameter("filter", (int)AllJobsMembers.AllUserJobs);
-            var jobsTask = RestProxy.Invoke<List<JobRowDetails>>(jobsRequest, cancellationToken);
+                .AddQueryParameter("filter", (int)AllJobsMembers.AllUserJobs)
+                .AddQueryPagingParameter(1000);
+            var jobsTask = RestProxy.Invoke<PagingResponse<JobRowDetails>>(jobsRequest, cancellationToken);
 
-            var groupsRequest = new RestRequest("group", Method.Get);
-            var groupsTask = RestProxy.Invoke<List<GroupInfo>>(groupsRequest, cancellationToken);
+            var groupsRequest = new RestRequest("group", Method.Get)
+                .AddQueryPagingParameter(1000);
+            var groupsTask = RestProxy.Invoke<PagingResponse<GroupInfo>>(groupsRequest, cancellationToken);
 
             var events = await eventsTask;
             data.Events = events.Data ?? new List<MonitorEventModel>();
@@ -359,7 +361,7 @@ namespace Planar.CLI.Actions
             }
 
             var jobs = await jobsTask;
-            data.Jobs = jobs.Data ?? new List<JobRowDetails>();
+            data.Jobs = jobs.Data?.Data ?? new List<JobRowDetails>();
             if (!jobs.IsSuccessful)
             {
                 data.FailResponse = jobs;
@@ -367,7 +369,7 @@ namespace Planar.CLI.Actions
             }
 
             var groups = await groupsTask;
-            data.Groups = groups.Data ?? new List<GroupInfo>();
+            data.Groups = groups.Data?.Data ?? new List<GroupInfo>();
             if (!groups.IsSuccessful)
             {
                 data.FailResponse = groups;

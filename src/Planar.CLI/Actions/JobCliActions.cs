@@ -58,8 +58,10 @@ namespace Planar.CLI.Actions
         {
             var restRequest = new RestRequest("job", Method.Get);
             var p = AllJobsMembers.AllUserJobs;
-            restRequest.AddQueryParameter("filter", (int)p);
-            var result = await RestProxy.Invoke<List<JobRowDetails>>(restRequest, cancellationToken);
+            restRequest.AddQueryParameter("filter", (int)p)
+                .AddQueryPagingParameter(1000);
+
+            var result = await RestProxy.Invoke<PagingResponse<JobRowDetails>>(restRequest, cancellationToken);
             if (!result.IsSuccessful)
             {
                 var message = "fail to fetch list of jobs";
@@ -71,7 +73,7 @@ namespace Planar.CLI.Actions
                 throw new CliException(message, result.ErrorException);
             }
 
-            return ChooseJob(result.Data);
+            return ChooseJob(result.Data?.Data);
         }
 
         [IgnoreHelp]
@@ -147,6 +149,8 @@ namespace Planar.CLI.Actions
                     restRequest.AddQueryParameter("active", false.ToString());
                 }
             }
+
+            restRequest.AddQueryPagingParameter(request);
 
             var result = await RestProxy.Invoke<PagingResponse<JobRowDetails>>(restRequest, cancellationToken);
             var message = string.Empty;
@@ -236,8 +240,7 @@ namespace Planar.CLI.Actions
         {
             request.SetPagingDefaults();
             var restRequest = new RestRequest("job/audits", Method.Get)
-                .AddParameter("pageNumber", request.PageNumber.GetValueOrDefault(), ParameterType.QueryString)
-                .AddParameter("pageSize", request.PageSize.GetValueOrDefault(), ParameterType.QueryString);
+                .AddQueryPagingParameter(request);
 
             var result = await RestProxy.Invoke<PagingResponse<JobAuditDto>>(restRequest, cancellationToken);
             var tables = CliTableExtensions.GetTable(result.Data, withJobId: true);

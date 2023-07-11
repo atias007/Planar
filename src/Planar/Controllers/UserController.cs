@@ -73,10 +73,10 @@ namespace Planar.Controllers
         [HttpGet]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_user", Description = "Get all users", Summary = "Get All Users")]
-        [OkJsonResponse(typeof(List<UserRow>))]
-        public async Task<ActionResult<List<UserRow>>> GetAll()
+        [OkJsonResponse(typeof(PagingResponse<UserRow>))]
+        public async Task<ActionResult<PagingResponse<UserRow>>> GetAll([FromQuery] PagingRequest request)
         {
-            var result = await BusinesLayer.GetAll();
+            var result = await BusinesLayer.GetAll(request);
             return Ok(result);
         }
 

@@ -1,4 +1,6 @@
-﻿using Planar.CLI.CliGeneral;
+﻿using Newtonsoft.Json;
+using Planar.API.Common.Entities;
+using Planar.CLI.CliGeneral;
 using Planar.Common;
 using RestSharp;
 using System.Collections.Generic;
@@ -65,6 +67,21 @@ namespace Planar.CLI
             get
             {
                 return new CliActionResponse(null);
+            }
+        }
+
+        public IPagingResponse? GetPagingResponse()
+        {
+            if (string.IsNullOrEmpty(Response.Content)) { return null; }
+
+            try
+            {
+                var result = JsonConvert.DeserializeObject<PagingResponse>(Response.Content);
+                return result;
+            }
+            catch
+            {
+                return null;
             }
         }
 

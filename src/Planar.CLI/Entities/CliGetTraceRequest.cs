@@ -1,13 +1,11 @@
-﻿using Planar.CLI.Attributes;
+﻿using Planar.API.Common.Entities;
+using Planar.CLI.Attributes;
 using System;
 
 namespace Planar.CLI.Entities
 {
-    public class CliGetTraceRequest
+    public class CliGetTraceRequest : IPagingRequest
     {
-        [ActionProperty(ShortName = "r", LongName = "rows")]
-        public int Rows { get; set; }
-
         [ActionProperty(ShortName = "a", LongName = "asc")]
         public bool Ascending { get; set; }
 
@@ -19,5 +17,14 @@ namespace Planar.CLI.Entities
 
         [ActionProperty(ShortName = "l", LongName = "level")]
         public string? Level { get; set; }
+
+        public int? PageNumber { get; set; }
+
+        public int? PageSize => 25;
+
+        public void SetPagingDefaults()
+        {
+            PageNumber ??= 1;
+        }
     }
 }

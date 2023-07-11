@@ -219,14 +219,14 @@ namespace Planar.CLI
                         // paging request
                         if (param is IPagingRequest pagingRequest)
                         {
-                            var rowsCount = GetResponseTableRowCount(response);
-                            while (rowsCount == pagingRequest.PageSize)
+                            var paging = response?.GetPagingResponse();
+                            while (paging?.IsLastPage == false)
                             {
                                 HandleCliResponse(response, cliArgument.OutputFilename);
 
                                 pagingRequest.PageNumber++;
                                 response = InvokeCliAction(action, console, param);
-                                rowsCount = GetResponseTableRowCount(response);
+                                paging = response?.GetPagingResponse();
                                 var ok = AssertPage(pagingRequest.PageNumber.GetValueOrDefault());
                                 if (!ok) { return cliArgument; }
                             }
@@ -253,12 +253,6 @@ namespace Planar.CLI
 
             if (chiose == "stop") { return false; }
             return true;
-        }
-
-        private static int GetResponseTableRowCount(CliActionResponse? cliActionResponse)
-        {
-            var rowsCount = cliActionResponse?.Tables?.FirstOrDefault()?.Table.Rows.Count ?? 0;
-            return rowsCount;
         }
 
         private static void HandleCliResponse(CliActionResponse? response, string? outputfilename)
@@ -372,12 +366,17 @@ namespace Planar.CLI
         {
             if (!item.ShowCount) { return; }
             var rows = item.Table.Rows.Count;
-            if (rows > 0)
+            if (rows <= 0) { return; }
+
+            var entity = string.IsNullOrEmpty(item.EntityName) ? "row" : item.EntityName;
+            var extra = rows > 1 ? "s" : string.Empty;
+            var text = $"({rows} {entity}{extra})";
+            if (item.Paging?.TotalPages > 1)
             {
-                var entity = string.IsNullOrEmpty(item.EntityName) ? "row" : item.EntityName;
-                var extra = rows > 1 ? "s" : string.Empty;
-                console.MarkupLine($" [black on gray] ({rows} {entity}{extra}) [/]");
+                text += $" |  [page {item.Paging.PageNumber} / {item.Paging.TotalPages}]  |  total: {item.Paging.TotalRows} {entity}{extra}";
             }
+
+            console.MarkupLine($" [black on gray] {text.EscapeMarkup()} [/]");
         }
 
         private static void HandleExceptionSafe(Exception ex)
@@ -469,7 +468,7 @@ namespace Planar.CLI
 
             if (!string.IsNullOrEmpty(response.ErrorMessage))
             {
-                MarkupCliLine($"[red] ({response.ErrorMessage})[/]");
+                MarkupCliLine(CliFormat.GetErrorMarkup(response.ErrorMessage));
             }
             else if (!string.IsNullOrEmpty(response.StatusDescription))
             {

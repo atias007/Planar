@@ -30,7 +30,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("history", Method.Get);
             if (request.Rows == 0) { request.Rows = 50; }
 
-            restRequest.AddQueryParameter("pageSize", request.Rows);
+            restRequest.AddQueryPagingParameter(request.Rows);
 
             if (request.FromDate > DateTime.MinValue)
             {
@@ -63,6 +63,7 @@ namespace Planar.CLI.Actions
             }
 
             restRequest.AddQueryParameter("ascending", request.Ascending);
+            restRequest.AddQueryPagingParameter(request);
 
             var result = await RestProxy.Invoke<PagingResponse<JobInstanceLogRow>>(restRequest, cancellationToken);
             var table = CliTableExtensions.GetTable(result.Data);
@@ -108,6 +109,7 @@ namespace Planar.CLI.Actions
                 restRequest.AddQueryParameter("lastDays", request.LastDays);
             }
 
+            restRequest.AddQueryPagingParameter(request);
             var result = await RestProxy.Invoke<PagingResponse<JobHistory>>(restRequest, cancellationToken);
             var table = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, table);

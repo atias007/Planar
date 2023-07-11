@@ -41,9 +41,9 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<List<GroupInfo>> GetAllGroups()
+        public async Task<PagingResponse<GroupInfo>> GetAllGroups(IPagingRequest request)
         {
-            return await DataLayer.GetGroups();
+            return await DataLayer.GetGroups(request);
         }
 
         public static IEnumerable<string> GetAllGroupsRoles()

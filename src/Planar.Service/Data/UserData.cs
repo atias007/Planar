@@ -1,5 +1,6 @@
 ﻿using CommonJob;
 using Microsoft.EntityFrameworkCore;
+using Planar.API.Common.Entities;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using System;
@@ -104,7 +105,7 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
-        public async Task<List<UserRow>> GetUsers()
+        public async Task<PagingResponse<UserRow>> GetUsers(IPagingRequest request)
         {
             var result = await _context.Users
                 .Select(u => new UserRow
@@ -118,7 +119,7 @@ namespace Planar.Service.Data
                 })
                 .OrderBy(u => u.FirstName)
                 .ThenBy(u => u.LastName)
-                .ToListAsync();
+                .ToPagingListAsync(request);
 
             return result;
         }

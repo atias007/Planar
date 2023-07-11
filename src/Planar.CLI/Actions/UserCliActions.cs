@@ -85,7 +85,7 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> GetUsers(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("user", Method.Get);
-            return await ExecuteTable<List<UserRowDetails>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
+            return await ExecuteTable<PagingResponse<UserRowDetails>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
         }
 
         [Action("remove")]

@@ -50,7 +50,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<List<GroupInfo>> GetGroups()
+        public async Task<PagingResponse<GroupInfo>> GetGroups(IPagingRequest request)
         {
             var result = await _context.Groups
                 .Include(g => g.Users)
@@ -63,7 +63,7 @@ namespace Planar.Service.Data
                     Role = g.Role.Name
                 })
                 .OrderBy(g => g.Name)
-                .ToListAsync();
+                .ToPagingListAsync(request);
 
             return result;
         }

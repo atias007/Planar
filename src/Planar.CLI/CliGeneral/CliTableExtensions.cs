@@ -39,7 +39,7 @@ namespace Planar.CLI
 
         public static CliTable GetTable(PagingResponse<JobAuditDto>? response, bool withJobId = false)
         {
-            var table = new CliTable(showCount: true, "audit");
+            var table = new CliTable(paging: response, "audit");
             if (response == null || response.Data == null) { return table; }
 
             if (withJobId)
@@ -105,7 +105,7 @@ namespace Planar.CLI
 
         public static CliTable GetTable(PagingResponse<JobRowDetails>? response)
         {
-            var table = new CliTable(showCount: true, entityName: "job");
+            var table = new CliTable(paging: response, entityName: "job");
             if (response == null || response.Data == null) { return table; }
             table.Table.AddColumns("Job Id", "Job Key", "Job Type", "Description");
             response.Data.ForEach(r => table.Table.AddRow(r.Id, $"{r.Group}.{r.Name}".EscapeMarkup(), r.JobType.EscapeMarkup(), LimitValue(r.Description)));
@@ -131,7 +131,7 @@ namespace Planar.CLI
 
         public static CliTable GetTable(PagingResponse<JobInstanceLogRow>? response, bool singleJob = false)
         {
-            var table = new CliTable(showCount: true);
+            var table = new CliTable(paging: response);
             if (response == null || response.Data == null) { return table; }
 
             if (singleJob)
@@ -150,7 +150,7 @@ namespace Planar.CLI
 
         public static CliTable GetTable(PagingResponse<JobHistory>? response)
         {
-            var table = new CliTable(showCount: true);
+            var table = new CliTable(paging: response);
             if (response == null || response.Data == null) { return table; }
             table.Table.AddColumns("Id", "Job Id", "Job Key", "Job Type", "Trigger Id", "Status", "Start Date", "Duration", "Effected Rows");
             response.Data.ForEach(r => table.Table.AddRow($"{r.Id}", r.JobId ?? string.Empty, $"{r.JobGroup}.{r.JobName}".EscapeMarkup(), r.JobType.EscapeMarkup(), CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FormatNumber(r.EffectedRows)));
@@ -159,7 +159,7 @@ namespace Planar.CLI
 
         public static CliTable GetTable(PagingResponse<LogDetails>? response)
         {
-            var table = new CliTable(showCount: true);
+            var table = new CliTable(paging: response);
             if (response == null || response.Data == null) { return table; }
             table.Table.AddColumns("Id", "Message", "Level", "Time Stamp");
             response.Data.ForEach(r => table.Table.AddRow($"{r.Id}", SafeCliString(r.Message), CliTableFormat.GetLevelMarkup(r.Level), CliTableFormat.FormatDateTime(r.TimeStamp)));
@@ -249,21 +249,21 @@ namespace Planar.CLI
             return table;
         }
 
-        public static CliTable GetTable(List<GroupInfo>? data)
+        public static CliTable GetTable(PagingResponse<GroupInfo>? response)
         {
-            var table = new CliTable(showCount: true, entityName: "group");
-            if (data == null) { return table; }
+            var table = new CliTable(paging: response, entityName: "group");
+            if (response == null || response.Data == null) { return table; }
             table.Table.AddColumns("Name", "Role", "User Count");
-            data.ForEach(r => table.Table.AddRow(r.Name.EscapeMarkup(), r.Role.EscapeMarkup(), $"{r.UsersCount}"));
+            response.Data.ForEach(r => table.Table.AddRow(r.Name.EscapeMarkup(), r.Role.EscapeMarkup(), $"{r.UsersCount}"));
             return table;
         }
 
-        public static CliTable GetTable(List<UserRowDetails>? data)
+        public static CliTable GetTable(PagingResponse<UserRowDetails>? data)
         {
-            var table = new CliTable(showCount: true, entityName: "user");
-            if (data == null) { return table; }
+            var table = new CliTable(paging: data, entityName: "user");
+            if (data == null || data.Data == null) { return table; }
             table.Table.AddColumns("Username", "First Name", "Last Name", "Email Address 1", "Phone Number 1");
-            data.ForEach(r => table.Table.AddRow(r.Username.EscapeMarkup(), r.FirstName.EscapeMarkup(), r.LastName.EscapeMarkup(), r.EmailAddress1.EscapeMarkup(), r.PhoneNumber1.EscapeMarkup()));
+            data.Data.ForEach(r => table.Table.AddRow(r.Username.EscapeMarkup(), r.FirstName.EscapeMarkup(), r.LastName.EscapeMarkup(), r.EmailAddress1.EscapeMarkup(), r.PhoneNumber1.EscapeMarkup()));
             return table;
         }
 

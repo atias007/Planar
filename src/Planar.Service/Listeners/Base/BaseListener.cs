@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
@@ -14,12 +13,12 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Listeners.Base
 {
-    public class BaseListener<T>
+    public abstract class BaseListener<T>
     {
         protected readonly ILogger<T> _logger;
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public BaseListener(IServiceScopeFactory serviceScopeFactory, ILogger<T> logger)
+        protected BaseListener(IServiceScopeFactory serviceScopeFactory, ILogger<T> logger)
         {
             _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;

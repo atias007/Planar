@@ -54,10 +54,10 @@ namespace Planar.Service
 
                 // convert time zones using converter that can handle Windows/Linux differences
                 q.UseTimeZoneConverter();
-                ////q.UseJobAutoInterrupt(options =>
-                ////{
-                ////    options.DefaultMaxRunTime = TimeSpan.FromSeconds(30);
-                ////});
+                q.UseJobAutoInterrupt(options =>
+                {
+                    options.DefaultMaxRunTime = AppSettings.JobAutoStopSpan;
+                });
 
                 q.AddJobListener<LogJobListener>();
                 q.AddTriggerListener<RetryTriggerListener>();

@@ -45,10 +45,10 @@ namespace Planar.Controllers
         [HttpGet]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_group", Description = "Get all groups", Summary = "Get All Groups")]
-        [OkJsonResponse(typeof(List<GroupInfo>))]
-        public async Task<ActionResult<List<GroupInfo>>> GetAllGroups()
+        [OkJsonResponse(typeof(PagingResponse<GroupInfo>))]
+        public async Task<ActionResult<PagingResponse<GroupInfo>>> GetAllGroups([FromQuery] PagingRequest request)
         {
-            var result = await BusinesLayer.GetAllGroups();
+            var result = await BusinesLayer.GetAllGroups(request);
             return Ok(result);
         }
 

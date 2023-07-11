@@ -4,7 +4,7 @@ using System;
 
 namespace Planar.CLI.Entities
 {
-    public class CliGetHistoryRequest
+    public class CliGetHistoryRequest : IPagingRequest
     {
         [ActionProperty("r", "rows")]
         public int Rows { get; set; }
@@ -29,5 +29,14 @@ namespace Planar.CLI.Entities
 
         [ActionProperty("jg", "job-group")]
         public string? JobGroup { get; set; }
+
+        public int? PageNumber { get; set; }
+
+        public int? PageSize => 25;
+
+        public void SetPagingDefaults()
+        {
+            PageNumber ??= 1;
+        }
     }
 }

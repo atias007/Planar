@@ -4,9 +4,9 @@ using System.Text.Json.Serialization;
 
 namespace Planar.API.Common.Entities
 {
-    public class PagingResponse<T> where T : class
+    public class PagingResponse<T> : PagingResponse
+        where T : class
     {
-        private int? _totalRows;
         private List<T>? _data;
 
         public PagingResponse()
@@ -37,6 +37,26 @@ namespace Planar.API.Common.Entities
             PageNumber = pagingResponse.PageNumber;
             PageSize = pagingResponse.PageSize;
             TotalRows = pagingResponse.TotalRows;
+        }
+
+        [JsonPropertyOrder(99)]
+        public List<T>? Data
+        {
+            get { return _data; }
+            set
+            {
+                _data = value;
+                Count = _data?.Count;
+            }
+        }
+    }
+
+    public class PagingResponse : IPagingResponse
+    {
+        private int? _totalRows;
+
+        public PagingResponse()
+        {
         }
 
         public void SetPagingData(IPagingRequest request, int totalRows)
@@ -78,15 +98,6 @@ namespace Planar.API.Common.Entities
         [JsonPropertyOrder(5)]
         public int? TotalPages { get; set; }
 
-        [JsonPropertyOrder(6)]
-        public List<T>? Data
-        {
-            get { return _data; }
-            set
-            {
-                _data = value;
-                Count = _data?.Count;
-            }
-        }
+        public bool IsLastPage => PageNumber >= TotalPages;
     }
 }
