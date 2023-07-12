@@ -117,7 +117,7 @@ namespace Planar.Service.API
                 Details = details,
                 Audits = audit,
                 History = await historyTask,
-                Monitors = await monitorsTask,
+                Monitors = new PagingResponse<MonitorItem>(await monitorsTask),
                 Statistics = await statisticsTask
             };
 

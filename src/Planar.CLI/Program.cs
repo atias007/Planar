@@ -22,6 +22,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Planar.Common;
 
 namespace Planar.CLI
 {
@@ -373,7 +374,7 @@ namespace Planar.CLI
             var text = $"({rows} {entity}{extra})";
             if (item.Paging?.TotalPages > 1)
             {
-                text += $" |  [page {item.Paging.PageNumber} / {item.Paging.TotalPages}]  |  total: {item.Paging.TotalRows} {entity}{extra}";
+                text += $" | page {item.Paging.PageNumber}/{item.Paging.TotalPages} | total {item.Paging.TotalRows:N0} {entity}s";
             }
 
             console.MarkupLine($" [black on gray] {text.EscapeMarkup()} [/]");

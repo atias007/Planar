@@ -183,7 +183,7 @@ namespace Planar.CLI.Actions
             var result = await RestProxy.Invoke<JobDescription>(restRequest, cancellationToken);
             var tables = CliTableExtensions.GetTable(result.Data?.Details);
             var tables2 = CliTableExtensions.GetTable(result.Data?.History, singleJob: true);
-            var tables3 = CliTableExtensions.GetTable(result.Data?.Monitors.ToList());
+            var tables3 = CliTableExtensions.GetTable(result.Data?.Monitors);
             var tables4 = CliTableExtensions.GetTable(result.Data?.Audits);
             var table5 = CliTableExtensions.GetTable(result.Data?.Statistics);
 
@@ -236,7 +236,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("all-audits")]
-        public static async Task<CliActionResponse> GetAudits(CliGetAuditsRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> GetAudits(CliPagingRequest request, CancellationToken cancellationToken = default)
         {
             request.SetPagingDefaults();
             var restRequest = new RestRequest("job/audits", Method.Get)

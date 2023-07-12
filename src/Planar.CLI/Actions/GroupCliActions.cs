@@ -49,10 +49,10 @@ namespace Planar.CLI.Actions
 
         [Action("ls")]
         [Action("list")]
-        public static async Task<CliActionResponse> Get(CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> Get(CliPagingRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("group", Method.Get);
-            restRequest.AddQueryPagingParameter(25);
+            restRequest.AddQueryPagingParameter(request);
             var result = await RestProxy.Invoke<PagingResponse<GroupInfo>>(restRequest, cancellationToken);
 
             if (result.IsSuccessful)

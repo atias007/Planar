@@ -4,7 +4,7 @@ using System;
 
 namespace Planar.CLI.Entities
 {
-    public class CliGetTraceRequest : IPagingRequest
+    public class CliGetTraceRequest : CliPagingRequest
     {
         [ActionProperty(ShortName = "a", LongName = "asc")]
         public bool Ascending { get; set; }
@@ -17,14 +17,5 @@ namespace Planar.CLI.Entities
 
         [ActionProperty(ShortName = "l", LongName = "level")]
         public string? Level { get; set; }
-
-        public int? PageNumber { get; set; }
-
-        public int? PageSize => 25;
-
-        public void SetPagingDefaults()
-        {
-            PageNumber ??= 1;
-        }
     }
 }

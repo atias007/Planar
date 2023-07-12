@@ -227,16 +227,11 @@ namespace Planar.CLI
 
         public static CliTable GetTable(PagingResponse<MonitorItem>? response)
         {
-            return GetTable(response?.Data);
-        }
+            var table = new CliTable(paging: response, entityName: "monitor");
+            if (response == null || response.Data == null) { return table; }
 
-        public static CliTable GetTable(List<MonitorItem>? response)
-        {
-            var table = new CliTable(showCount: true, entityName: "monitor");
-            if (response == null) { return table; }
-            var data = response;
             table.Table.AddColumns("Id", "Title", "Event", "Job Group", "Job Name", "Event Arguments", "Dist. Group", "Hook", "Active");
-            data.ForEach(r => table.Table.AddRow(
+            response.Data.ForEach(r => table.Table.AddRow(
                 r.Id.ToString(),
                 r.Title.EscapeMarkup(),
                 r.EventTitle.EscapeMarkup(),
@@ -246,6 +241,7 @@ namespace Planar.CLI
                 r.DistributionGroupName.EscapeMarkup(),
                 r.Hook.EscapeMarkup(),
                 CliTableFormat.GetBooleanMarkup(r.Active)));
+
             return table;
         }
 

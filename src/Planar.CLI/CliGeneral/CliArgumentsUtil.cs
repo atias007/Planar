@@ -451,7 +451,15 @@ namespace Planar.CLI
                     return;
                 }
 
-                prop.SetValue(instance, Convert.ChangeType(objValue, prop.PropertyType, CultureInfo.CurrentCulture));
+                var nullableType = Nullable.GetUnderlyingType(prop.PropertyType);
+                if (nullableType == null)
+                {
+                    prop.SetValue(instance, Convert.ChangeType(objValue, prop.PropertyType, CultureInfo.CurrentCulture));
+                }
+                else
+                {
+                    prop.SetValue(instance, Convert.ChangeType(objValue, nullableType, CultureInfo.CurrentCulture));
+                }
             }
             catch (CliException)
             {

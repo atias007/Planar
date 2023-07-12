@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Planar.API.Common.Entities;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.RegularExpressions;
-using YamlDotNet.Core.Tokens;
 
 namespace Planar.Common
 {
@@ -17,6 +17,16 @@ namespace Planar.Common
         public static bool NotContains<T>(this IEnumerable<T> list, T value)
         {
             return list == null || !list.Contains(value);
+        }
+
+        public static IEnumerable<TSource> SetPaging<TSource>(this IEnumerable<TSource> source, IPagingRequest pagingRequest)
+        {
+            pagingRequest.SetPagingDefaults();
+            var page = pagingRequest.PageNumber.GetValueOrDefault();
+            var size = pagingRequest.PageSize.GetValueOrDefault();
+            return source
+                .Skip((page - 1) * size)
+                .Take(size);
         }
 
         public static void Put<TValue>(this Dictionary<string, TValue?> dictionary, string key, TValue? value)
@@ -80,6 +90,36 @@ namespace Planar.Common
             var r = new Regex(template, RegexOptions.None, TimeSpan.FromMilliseconds(500));
             var result = r.Replace(value, spacer);
             return result;
+        }
+
+        public static IEnumerable<string?> Split(this string str, Func<char, bool> controller)
+        {
+            if (str == null)
+            {
+                yield return null;
+            }
+
+            int nextPiece = 0;
+
+            for (int c = 0; c < str?.Length; c++)
+            {
+                if (controller(str[c]))
+                {
+                    yield return str?[nextPiece..c];
+                    nextPiece = c + 1;
+                }
+            }
+
+            yield return str?[nextPiece..];
+        }
+
+        public static string TrimMatchingQuotes(this string input, char quote)
+        {
+            if ((input.Length >= 2) &&
+                (input[0] == quote) && (input[^1] == quote))
+                return input[1..^1];
+
+            return input;
         }
     }
 }

@@ -1,8 +1,10 @@
-﻿using Planar.API.Common.Entities;
+﻿using Newtonsoft.Json;
+using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.Entities;
 using Planar.CLI.General;
 using Planar.CLI.Proxy;
+using Planar.Common;
 using RestSharp;
 using Spectre.Console;
 using System;
@@ -58,11 +60,13 @@ namespace Planar.CLI.Actions
         {
             if (string.IsNullOrEmpty(request.JobIdOrJobGroup))
             {
-                var restRequest = new RestRequest("monitor", Method.Get);
+                var restRequest = new RestRequest("monitor", Method.Get)
+                    .AddQueryPagingParameter(request);
+
                 var result = await RestProxy.Invoke<PagingResponse<MonitorItem>>(restRequest, cancellationToken);
 
-                var table1 = CliTableExtensions.GetTable(result?.Data);
-                return new CliActionResponse(result, table1);
+                var table = CliTableExtensions.GetTable(result?.Data);
+                return new CliActionResponse(result, table);
             }
             else
             {
@@ -81,9 +85,15 @@ namespace Planar.CLI.Actions
                 var data = new List<MonitorItem>();
                 if (result1.IsSuccessful && result1.Data != null) { data.AddRange(result1.Data); }
                 if (result2.IsSuccessful && result2.Data != null) { data.AddRange(result2.Data); }
+                var total = data.Count;
+                data = data.SetPaging(request).ToList();
 
+                var pagingResponse = new PagingResponse();
+                pagingResponse.SetPagingData(request, total);
+                var final = new PagingResponse<MonitorItem>(request, data, total);
                 var result = SelectRestResponse(result1, result2);
-                var table = CliTableExtensions.GetTable(data);
+                result.Content = JsonConvert.SerializeObject(final);
+                var table = CliTableExtensions.GetTable(final);
                 return new CliActionResponse(result, table);
             }
         }

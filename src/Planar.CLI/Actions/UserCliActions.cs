@@ -82,9 +82,11 @@ namespace Planar.CLI.Actions
 
         [Action("ls")]
         [Action("list")]
-        public static async Task<CliActionResponse> GetUsers(CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> GetUsers(CliPagingRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("user", Method.Get);
+            var restRequest = new RestRequest("user", Method.Get)
+                .AddQueryPagingParameter(request);
+
             return await ExecuteTable<PagingResponse<UserRowDetails>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
         }
 

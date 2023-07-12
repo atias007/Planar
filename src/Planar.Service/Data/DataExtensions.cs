@@ -32,16 +32,6 @@ namespace Planar.Service.Data
                 .Take(size);
         }
 
-        public static IEnumerable<TSource> SetPaging<TSource>(this IEnumerable<TSource> source, IPagingRequest pagingRequest)
-        {
-            pagingRequest.SetPagingDefaults();
-            var page = pagingRequest.PageNumber.GetValueOrDefault();
-            var size = pagingRequest.PageSize.GetValueOrDefault();
-            return source
-                .Skip((page - 1) * size)
-                .Take(size);
-        }
-
         public static async Task<PagingResponse<TDestination>> ProjectToWithPagingAsyc<TSource, TDestination>
             (this IQueryable<TSource> source, IMapper mapper, IPagingRequest pagingRequest)
             where TDestination : class

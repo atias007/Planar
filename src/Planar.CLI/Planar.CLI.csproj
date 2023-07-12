@@ -21,6 +21,7 @@
 
 	<ItemGroup>
 		<Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
+		<Compile Include="..\Planar.Common\Extensions.cs" Link="General\Extensions.cs" />
 		<Compile Include="..\Planar.Common\YmlUtil.cs" Link="General\YmlUtil.cs" />
 		<Compile Include="..\Planar.Service\Monitor\MonitorEventsExtensions.cs" Link="MonitorEventsExtensions.cs" />
 	</ItemGroup>
