@@ -211,6 +211,7 @@ namespace Planar.Service.General
                 currentNode.JoinDate = DateTime.Now;
                 currentNode.HealthCheckDate = DateTime.Now;
                 currentNode.InstanceId = _schedulerUtil.SchedulerInstanceId;
+                currentNode.MaxConcurrency = AppSettings.MaxConcurrency;
                 await _dal.AddClusterNode(currentNode);
             }
             else
@@ -219,6 +220,7 @@ namespace Planar.Service.General
                 item.JoinDate = DateTime.Now;
                 item.HealthCheckDate = DateTime.Now;
                 item.InstanceId = _schedulerUtil.SchedulerInstanceId;
+                item.MaxConcurrency = AppSettings.MaxConcurrency;
                 await _dal.SaveChangesAsync();
             }
         }

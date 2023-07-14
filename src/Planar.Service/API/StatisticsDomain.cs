@@ -57,9 +57,32 @@ namespace Planar.Service.API
 
         public async Task<IEnumerable<ConcurrentExecutionModel>> GetConcurrentExecution(ConcurrentExecutionRequest request)
         {
+            ResetRequestHours(request);
             var query = DataLayer.GetConcurrentExecution(request);
             var result = await Mapper.ProjectTo<ConcurrentExecutionModel>(query).ToListAsync();
             return result;
+        }
+
+        public async Task<int> GetMaxConcurrentExecution(MaxConcurrentExecutionRequest request)
+        {
+            ResetRequestHours(request);
+            var result = await DataLayer.GetMaxConcurrentExecution(request);
+            return result;
+        }
+
+        private static void ResetRequestHours(MaxConcurrentExecutionRequest request)
+        {
+            if (request.FromDate.HasValue)
+            {
+                var value = request.FromDate.Value;
+                request.FromDate = value.Date.AddHours(value.Hour);
+            }
+
+            if (request.ToDate.HasValue)
+            {
+                var value = request.ToDate.Value;
+                request.ToDate = value.Date.AddHours(value.Hour);
+            }
         }
     }
 }

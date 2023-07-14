@@ -18,6 +18,16 @@ namespace Planar.Controllers
         {
         }
 
+        [HttpGet("version")]
+        [ViewerAuthorize]
+        [SwaggerOperation(OperationId = "get_service_version", Description = "Get service version", Summary = "Get Version")]
+        [OkTextResponse]
+        public ActionResult<string> GetServiceVersion()
+        {
+            var response = BusinesLayer.GetServiceVersion();
+            return Ok(response);
+        }
+
         [HttpGet]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_service", Description = "Get service information", Summary = "Get Information")]

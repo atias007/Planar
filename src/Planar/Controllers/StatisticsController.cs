@@ -41,12 +41,23 @@ namespace Planar.Controllers
 
         [HttpGet("concurrent")]
         [ViewerAuthorize]
-        [SwaggerOperation(OperationId = "get_statistics_concurrent", Description = "Get concurrent execution statistics", Summary = "Get Concurrent Execution Statistics")]
+        [SwaggerOperation(OperationId = "get_statistics_concurrent", Description = "Get concurrent execution", Summary = "Get Concurrent Execution")]
         [OkJsonResponse(typeof(IEnumerable<ConcurrentExecutionModel>))]
         [BadRequestResponse]
         public async Task<ActionResult<IEnumerable<ConcurrentExecutionModel>>> GetConcurrentExecution([FromQuery] ConcurrentExecutionRequest request)
         {
             var response = await BusinesLayer.GetConcurrentExecution(request);
+            return Ok(response);
+        }
+
+        [HttpGet("maxConcurrent")]
+        [ViewerAuthorize]
+        [SwaggerOperation(OperationId = "get_statistics_max_concurrent", Description = "Get max of concurrent execution", Summary = "Get Max Of Concurrent Execution")]
+        [OkTextResponse]
+        [BadRequestResponse]
+        public async Task<ActionResult<int>> GetMaxConcurrentExecution([FromQuery] MaxConcurrentExecutionRequest request)
+        {
+            var response = await BusinesLayer.GetMaxConcurrentExecution(request);
             return Ok(response);
         }
 

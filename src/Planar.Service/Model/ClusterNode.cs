@@ -27,4 +27,6 @@ public partial class ClusterNode
 
     [Column(TypeName = "datetime")]
     public DateTime HealthCheckDate { get; set; }
+
+    public int MaxConcurrency { get; set; }
 }

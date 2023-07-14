@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -6,6 +7,7 @@ using Planar.Service.General;
 using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -33,6 +35,13 @@ namespace Planar.Service.API
                 }
             }
 
+            return result;
+        }
+
+        public async Task<int> MaxConcurrency()
+        {
+            var nodes = await GetNodes();
+            var result = nodes.Where(n => n.LiveNode).Sum(n => n.MaxConcurrency);
             return result;
         }
 

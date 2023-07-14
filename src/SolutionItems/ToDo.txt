@@ -2,7 +2,6 @@
 PLAN FOR V 1.4.0
 ----------------
 
--- add paging to cli (users, groups, monitors)
 -- concurent:
    * get total concurrent
    * sync max concurrent from all nodes
@@ -198,5 +197,6 @@ V 1.4.0
 - build anomaly job statistics only for 365 days ago
 - add monitor event: Progress changed
 - add monitor event: cluster health check fail
+-- add paging to api & cli
 ---------------------------
 

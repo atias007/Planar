@@ -22,6 +22,11 @@ namespace Planar.Service.API
         {
         }
 
+        public string GetServiceVersion()
+        {
+            return ServiceVersion ?? Consts.Undefined;
+        }
+
         public async Task<GetServiceInfoResponse> GetServiceInfo()
         {
             var totalJobs = Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
@@ -195,7 +200,7 @@ namespace Planar.Service.API
             {
                 Role = RoleHelper.GetTitle(role),
                 Token = token,
-                FirstName = user.Surename, 
+                FirstName = user.Surename,
                 LastName = user.GivenName,
             };
 

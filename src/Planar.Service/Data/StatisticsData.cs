@@ -166,6 +166,21 @@ namespace Planar.Service.Data
             return query;
         }
 
+        public async Task<int> GetMaxConcurrentExecution(MaxConcurrentExecutionRequest request)
+        {
+            var query = _context.ConcurrentExecutions.AsNoTracking();
+
+            if (request.FromDate.HasValue) { query = query.Where(c => c.RecordDate >= request.FromDate.Value); }
+            if (request.ToDate.HasValue) { query = query.Where(c => c.RecordDate < request.ToDate.Value); }
+
+            var result = await query
+                .Select(c => c.MaxConcurrent)
+                .DefaultIfEmpty()
+                .MaxAsync();
+
+            return result;
+        }
+
         public IQueryable<JobInstanceLog> GetNullAnomaly()
         {
             return _context.JobInstanceLogs

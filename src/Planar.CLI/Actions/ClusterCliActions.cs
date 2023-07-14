@@ -25,7 +25,15 @@ namespace Planar.CLI.Actions
         {
             var restRequest = new RestRequest("cluster/healthCheck", Method.Get);
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
-            return new CliActionResponse(result, result.Data);
+            return new CliActionResponse(result, message: result.Data);
+        }
+
+        [Action("max-concurrency")]
+        public static async Task<CliActionResponse> MaxConcurrency(CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("cluster/maxConcurrency", Method.Get);
+            var result = await RestProxy.Invoke<int>(restRequest, cancellationToken);
+            return new CliActionResponse(result, message: result.Data.ToString());
         }
     }
 }

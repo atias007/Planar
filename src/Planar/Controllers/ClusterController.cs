@@ -38,5 +38,15 @@ namespace Planar.Controllers
             var response = await BusinesLayer.HealthCheck();
             return Ok(response);
         }
+
+        [HttpGet("maxConcurrency")]
+        [ViewerAuthorize]
+        [SwaggerOperation(OperationId = "get_cluster_max_concurrency", Description = "Get the total max concurrency of cluster", Summary = "Get Cluster Max Concurrency")]
+        [OkTextResponse]
+        public async Task<ActionResult<string>> MaxConcurrency()
+        {
+            var response = await BusinesLayer.MaxConcurrency();
+            return Ok(response);
+        }
     }
 }

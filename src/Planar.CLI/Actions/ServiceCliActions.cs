@@ -65,14 +65,12 @@ namespace Planar.CLI.Actions
         [Action("version")]
         public static async Task<CliActionResponse> GetVersion(CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("service", Method.Get);
-            var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest, cancellationToken);
+            var restRequest = new RestRequest("service/version", Method.Get);
+            var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
 
             if (result.IsSuccessful && result.Data != null)
             {
-                result.Data.CliVersion = Program.Version;
-
-                var versionData = new { result.Data.ServiceVersion, result.Data.CliVersion };
+                var versionData = new { ServiceVersion = result.Data, CliVersion = Program.Version };
                 return new CliActionResponse(result, versionData);
             }
 

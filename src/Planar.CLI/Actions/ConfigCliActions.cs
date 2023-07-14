@@ -101,7 +101,7 @@ namespace Planar.CLI.Actions
             var type = configType.ToString().ToLower();
 
             var data = new { request.Key, value, Type = type };
-            var restRequest = new RestRequest("config", Method.Post)
+            var restRequest = new RestRequest("config", Method.Put)
                 .AddBody(data);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);

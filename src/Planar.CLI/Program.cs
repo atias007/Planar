@@ -23,6 +23,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Planar.Common;
+using System.Reflection.PortableExecutable;
 
 namespace Planar.CLI
 {
@@ -221,15 +222,19 @@ namespace Planar.CLI
                         if (param is IPagingRequest pagingRequest)
                         {
                             var paging = response?.GetPagingResponse();
-                            while (paging?.IsLastPage == false)
+                            if (paging != null)
                             {
-                                HandleCliResponse(response, cliArgument.OutputFilename);
+                                do
+                                {
+                                    HandleCliResponse(response, cliArgument.OutputFilename);
+                                    var assert = AssertPage(pagingRequest);
+                                    if (assert == AssertMembers.Next) { pagingRequest.PageNumber++; }
+                                    else if (assert == AssertMembers.Prev) { pagingRequest.PageNumber--; }
+                                    else { return cliArgument; }
 
-                                pagingRequest.PageNumber++;
-                                response = InvokeCliAction(action, console, param);
-                                paging = response?.GetPagingResponse();
-                                var ok = AssertPage(pagingRequest.PageNumber.GetValueOrDefault());
-                                if (!ok) { return cliArgument; }
+                                    response = InvokeCliAction(action, console, param);
+                                    paging = response?.GetPagingResponse();
+                                } while (paging?.IsLastPage == false);
                             }
                         }
                     }
@@ -245,15 +250,64 @@ namespace Planar.CLI
             return cliArgument;
         }
 
-        private static bool AssertPage(int pageNumber)
+        private static AssertMembers AssertPage(IPagingRequest request)
         {
-            var chiose = AnsiConsole.Prompt(
-                new SelectionPrompt<string>()
-                    .Title($" [turquoise2]continue[/] to page number [{CliFormat.WarningColor}]{pageNumber + 1}[/] or [turquoise2]stop[/]?")
-                    .AddChoices("continue", "stop"));
+            const string nextMarkup = $" [turquoise2][[Page Down]][/] for next page";
+            var prevMarkup = $", [{CliFormat.WarningColor}][[Page Up]][/] for previous";
+            var cancelMarkup = $", [{CliFormat.ErrorColor}][[Enter]][/] to cancel paging ";
 
-            if (chiose == "stop") { return false; }
-            return true;
+            if (request.PageNumber == 1)
+            {
+                AnsiConsole.Markup($"{nextMarkup}{cancelMarkup}");
+            }
+            else
+            {
+                AnsiConsole.Markup($"{nextMarkup}{prevMarkup}{cancelMarkup}");
+            }
+
+            AssertMembers result;
+            while (true)
+            {
+                var key = Console.ReadKey(true);
+                var modifier = key.Modifiers == ConsoleModifiers.Control || key.Modifiers == ConsoleModifiers.Shift || key.Modifiers == ConsoleModifiers.Shift;
+                var cancel = !modifier && key.Key == ConsoleKey.Enter;
+
+                if (!modifier && key.Key == ConsoleKey.PageUp && request.PageNumber > 1)
+                {
+                    result = AssertMembers.Prev;
+                    break;
+                }
+
+                if (!modifier && key.Key == ConsoleKey.PageDown)
+                {
+                    result = AssertMembers.Next;
+                    break;
+                }
+
+                if (cancel)
+                {
+                    result = AssertMembers.Exit;
+                    break;
+                }
+            }
+
+            ClearCurrentConsoleLine();
+            return result;
+        }
+
+        private static void ClearCurrentConsoleLine()
+        {
+            int currentLineCursor = Console.CursorTop;
+            Console.SetCursorPosition(0, Console.CursorTop);
+            Console.Write(new string(' ', Console.WindowWidth));
+            Console.SetCursorPosition(0, currentLineCursor);
+        }
+
+        private enum AssertMembers
+        {
+            Next,
+            Prev,
+            Exit
         }
 
         private static void HandleCliResponse(CliActionResponse? response, string? outputfilename)
