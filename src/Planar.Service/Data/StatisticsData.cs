@@ -185,7 +185,7 @@ namespace Planar.Service.Data
         {
             return _context.JobInstanceLogs
                 .AsNoTracking()
-                .Where(j => j.Anomaly == null);
+                .Where(j => j.Anomaly == null && j.Status != -1);
         }
 
         public void SetAnomaly(IEnumerable<JobInstanceLog> logs)
