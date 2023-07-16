@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using AutoMapper;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
@@ -10,6 +12,7 @@ using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Validation;
+using Polly;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -120,6 +123,8 @@ namespace Planar.Service.Monitor
 
         public async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception? exception)
         {
+            MonitorDetails? details = null;
+
             try
             {
                 var toBeContinue = await Analyze(@event, action, context);
@@ -134,7 +139,7 @@ namespace Planar.Service.Monitor
                 }
                 else
                 {
-                    var details = GetMonitorDetails(action, context, exception);
+                    details = GetMonitorDetails(action, context, exception);
                     if (@event == MonitorEvents.ExecutionProgressChanged)
                     {
                         _logger.LogDebug("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
@@ -145,11 +150,13 @@ namespace Planar.Service.Monitor
                     }
 
                     await hookInstance.Handle(details, _logger);
+                    await SaveMonitorAlert(action, details, context);
                     return ExecuteMonitorResult.Ok;
                 }
             }
             catch (Exception ex)
             {
+                await SaveMonitorAlert(action, details, context, ex);
                 _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, action.Hook, action.Group.Name);
                 var message = $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook: {action.Hook}. Error message: {ex.Message}";
                 return ExecuteMonitorResult.Fail(message);
@@ -158,6 +165,8 @@ namespace Planar.Service.Monitor
 
         public async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception? exception)
         {
+            MonitorSystemDetails? details = null;
+
             try
             {
                 var toBeContinue = await Analyze(@event, action, null);
@@ -172,18 +181,110 @@ namespace Planar.Service.Monitor
                 }
                 else
                 {
-                    var details = GetMonitorDetails(action, info, exception);
+                    details = GetMonitorDetails(action, info, exception);
                     _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
                     await hookInstance.HandleSystem(details, _logger);
+                    await SaveMonitorAlert(action, details);
                     return ExecuteMonitorResult.Ok;
                 }
             }
             catch (Exception ex)
             {
+                await SaveMonitorAlert(action, details, ex);
                 _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook: {Hook}", action.Id, action.Title, action.Hook);
                 var message = $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook: {action.Hook}. Error message: {ex.Message}";
                 return ExecuteMonitorResult.Fail(message);
             }
+        }
+
+        private async Task SaveMonitorAlert(MonitorAction action, MonitorDetails? details, IJobExecutionContext context, Exception? exception = null)
+        {
+            try
+            {
+                if (details == null) { return; }
+
+                var alert = new MonitorAlert();
+                MapDetailsToMonitorAlert(details, alert);
+                MapActionToMonitorAlert(action, alert);
+                MapExceptionMonitorAlert(exception, alert);
+                alert.LogInstanceId = context.FireInstanceId;
+
+                using var scope = _serviceScopeFactory.CreateScope();
+                var dbcontext = scope.ServiceProvider.GetRequiredService<PlanarContext>();
+                dbcontext.MonitorAlerts.Add(alert);
+                await dbcontext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Fail to save monitor alert for monitor '{Title}' with event id {Id}",
+                    details?.MonitorTitle ?? "[null]",
+                    details?.EventId ?? 0);
+            }
+        }
+
+        private async Task SaveMonitorAlert(MonitorAction action, MonitorSystemDetails? details, Exception? exception = null)
+        {
+            try
+            {
+                if (details == null) { return; }
+
+                var alert = new MonitorAlert();
+                MapDetailsToMonitorAlert(details, alert);
+                MapActionToMonitorAlert(action, alert);
+                MapExceptionMonitorAlert(exception, alert);
+
+                using var scope = _serviceScopeFactory.CreateScope();
+                var dbcontext = scope.ServiceProvider.GetRequiredService<PlanarContext>();
+                dbcontext.MonitorAlerts.Add(alert);
+                await dbcontext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Fail to save monitor alert for monitor '{Title}' with event id {Id}",
+                    details?.MonitorTitle ?? "[null]",
+                    details?.EventId ?? 0);
+            }
+        }
+
+        private static void MapMonitorToMonitorAlert(Monitor monitor, MonitorAlert alert)
+        {
+            alert.EventTitle = monitor.EventTitle;
+            alert.AlertDate = DateTime.Now;
+            alert.EventId = monitor.EventId;
+            alert.GroupId = monitor.Group?.Id ?? 0;
+            alert.GroupName = monitor.Group?.Name ?? string.Empty;
+            alert.MonitorTitle = monitor.MonitorTitle;
+            alert.UsersCount = monitor.Users?.Count ?? 0;
+        }
+
+        private static void MapDetailsToMonitorAlert(MonitorDetails details, MonitorAlert alert)
+        {
+            MapMonitorToMonitorAlert(details, alert);
+            alert.JobGroup = details.JobGroup;
+            alert.JobName = details.JobName;
+            alert.JobId = details.JobId;
+            alert.AlertPayload = JsonConvert.SerializeObject(details);
+        }
+
+        private static void MapDetailsToMonitorAlert(MonitorSystemDetails details, MonitorAlert alert)
+        {
+            MapMonitorToMonitorAlert(details, alert);
+            alert.AlertPayload = JsonConvert.SerializeObject(details);
+        }
+
+        private static void MapActionToMonitorAlert(MonitorAction action, MonitorAlert alert)
+        {
+            alert.MonitorId = action.Id;
+            alert.Hook = action.Hook;
+            alert.EventArgument = action.EventArgument;
+        }
+
+        private static void MapExceptionMonitorAlert(Exception? exception, MonitorAlert alert)
+        {
+            alert.Exception = exception?.ToString();
+            alert.HasError = exception != null;
         }
 
         private static HookInstance? GetMonitorHookInstance(string hook)

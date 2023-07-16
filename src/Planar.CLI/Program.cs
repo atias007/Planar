@@ -222,7 +222,7 @@ namespace Planar.CLI
                         if (param is IPagingRequest pagingRequest)
                         {
                             var paging = response?.GetPagingResponse();
-                            if (paging != null)
+                            if (paging != null && !paging.IsLastPage)
                             {
                                 do
                                 {
