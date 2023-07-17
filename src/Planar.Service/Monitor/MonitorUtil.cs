@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar.API.Common.Entities;
@@ -12,12 +11,12 @@ using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Validation;
-using Polly;
 using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.Monitor
@@ -253,8 +252,6 @@ namespace Planar.Service.Monitor
             alert.EventTitle = monitor.EventTitle;
             alert.AlertDate = DateTime.Now;
             alert.EventId = monitor.EventId;
-            alert.GroupId = monitor.Group?.Id ?? 0;
-            alert.GroupName = monitor.Group?.Name ?? string.Empty;
             alert.MonitorTitle = monitor.MonitorTitle;
             alert.UsersCount = monitor.Users?.Count ?? 0;
         }
@@ -276,6 +273,8 @@ namespace Planar.Service.Monitor
 
         private static void MapActionToMonitorAlert(MonitorAction action, MonitorAlert alert)
         {
+            alert.GroupId = action.Group.Id;
+            alert.GroupName = action.Group.Name;
             alert.MonitorId = action.Id;
             alert.Hook = action.Hook;
             alert.EventArgument = action.EventArgument;

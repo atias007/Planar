@@ -65,12 +65,12 @@ namespace Planar.Hooks
                 if (!response.IsSuccessStatusCode)
                 {
                     var message = GetErrorMessage(response);
-                    LogError(exception: null, $"fail to invoke '{detials.MonitorTitle}' with '{Name}' hook. message: {message}");
+                    throw new PlanarHookException($"fail to invoke '{detials.MonitorTitle}' with '{Name}' hook. message: {message}");
                 }
             }
             catch (Exception ex)
             {
-                LogError(ex, $"fail to invoke '{detials.MonitorTitle}' with '{Name}' hook. message: {ex.Message}");
+                throw new PlanarHookException($"fail to invoke '{detials.MonitorTitle}' with '{Name}' hook. message: {ex.Message}", ex);
             }
         }
 

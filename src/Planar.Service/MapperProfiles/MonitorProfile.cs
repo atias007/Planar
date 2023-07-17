@@ -27,6 +27,7 @@ namespace Planar.Service.MapperProfiles
             CreateMap<UpdateMonitorRequest, MonitorAction>().ReverseMap();
 
             CreateMap<MonitorAlert, MonitorAlertRowModel>();
+            CreateMap<MonitorAlert, MonitorAlertModel>();
 
             CreateMap<MonitorDetails, MonitorAlert>()
                 .ForMember(d => d.GroupId, map => map.MapFrom(s => s.Group == null ? 0 : s.Group.Id))

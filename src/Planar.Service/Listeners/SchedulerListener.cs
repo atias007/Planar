@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.API.Helpers;
+using Planar.Service.General;
 using Planar.Service.Listeners.Base;
 using Planar.Service.Monitor;
 using Quartz;
@@ -15,9 +16,7 @@ namespace Planar.Service.Listeners
 {
     internal class SchedulerListener : BaseListener<SchedulerListener>, ISchedulerListener
     {
-        private static readonly Dictionary<string, long> _cache = new();
         private const string _cacheKey = "{0}_{1}";
-        private static readonly object _locker = new();
 
         public SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogger<SchedulerListener> logger) : base(serviceScopeFactory, logger)
         {
@@ -207,19 +206,8 @@ namespace Planar.Service.Listeners
 
         private static bool IsLock(string operation, string? key)
         {
-            lock (_locker)
-            {
-                var cacheKey = GetCacheKey(operation, key ?? string.Empty);
-                if (_cache.TryGetValue(cacheKey, out long _))
-                {
-                    return true;
-                }
-                else
-                {
-                    _cache.Add(cacheKey, DateTime.Now.Ticks);
-                    return false;
-                }
-            }
+            var cacheKey = GetCacheKey(operation, key ?? string.Empty);
+            return LockUtil.TryLock(cacheKey, TimeSpan.FromSeconds(10));
         }
     }
 }
