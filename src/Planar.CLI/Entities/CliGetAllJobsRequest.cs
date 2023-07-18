@@ -3,7 +3,7 @@ using Planar.CLI.Attributes;
 
 namespace Planar.CLI.Entities
 {
-    public class CliGetAllJobsRequest : IQuietResult, IPagingRequest
+    public class CliGetAllJobsRequest : CliPagingRequest, IQuietResult
     {
         [ActionProperty(DefaultOrder = 0, Name = "group")]
         public string? JobGroup { get; set; }
@@ -22,14 +22,5 @@ namespace Planar.CLI.Entities
 
         [ActionProperty("t", "type")]
         public string? JobType { get; set; }
-
-        public int? PageNumber { get; set; }
-
-        public int? PageSize => 25;
-
-        public void SetPagingDefaults()
-        {
-            PageNumber ??= 1;
-        }
     }
 }

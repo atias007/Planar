@@ -108,7 +108,7 @@ namespace Planar.CLI
             var table = new CliTable(paging: response, entityName: "job");
             if (response == null || response.Data == null) { return table; }
             table.Table.AddColumns("Job Id", "Job Key", "Job Type", "Description");
-            response.Data.ForEach(r => table.Table.AddRow(r.Id, $"{r.Group}.{r.Name}".EscapeMarkup(), r.JobType.EscapeMarkup(), LimitValue(r.Description)));
+            response.Data.ForEach(r => table.Table.AddRow(r.Id, CliTableFormat.FormatJobKey(r.Group, r.Name), r.JobType.EscapeMarkup(), LimitValue(r.Description)));
             return table;
         }
 
@@ -120,7 +120,7 @@ namespace Planar.CLI
             response.ForEach(r => table.Table.AddRow(
                 CliTableFormat.GetFireInstanceIdMarkup(r.FireInstanceId),
                 $"{r.Id}",
-                $"{r.Group}.{r.Name}".EscapeMarkup(),
+                CliTableFormat.FormatJobKey(r.Group, r.Name),
                 CliTableFormat.GetProgressMarkup(r.Progress),
                 $"{r.EffectedRows}",
                 CliTableFormat.FormatExceptionCount(r.ExceptionsCount),
@@ -142,7 +142,7 @@ namespace Planar.CLI
             else
             {
                 table.Table.AddColumns("Id", "Job Id", "Job Key", "Job Type", "Trigger Id", "Status", "Start Date", "Duration", "Effected Rows");
-                response.Data.ForEach(r => table.Table.AddRow($"{r.Id}", r.JobId ?? string.Empty, $"{r.JobGroup}.{r.JobName}".EscapeMarkup(), r.JobType.EscapeMarkup(), CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FormatNumber(r.EffectedRows)));
+                response.Data.ForEach(r => table.Table.AddRow($"{r.Id}", r.JobId ?? string.Empty, CliTableFormat.FormatJobKey(r.JobGroup, r.JobName), r.JobType.EscapeMarkup(), CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FormatNumber(r.EffectedRows)));
             }
 
             return table;
@@ -153,7 +153,7 @@ namespace Planar.CLI
             var table = new CliTable(paging: response);
             if (response == null || response.Data == null) { return table; }
             table.Table.AddColumns("Id", "Job Id", "Job Key", "Job Type", "Trigger Id", "Status", "Start Date", "Duration", "Effected Rows");
-            response.Data.ForEach(r => table.Table.AddRow($"{r.Id}", r.JobId ?? string.Empty, $"{r.JobGroup}.{r.JobName}".EscapeMarkup(), r.JobType.EscapeMarkup(), CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FormatNumber(r.EffectedRows)));
+            response.Data.ForEach(r => table.Table.AddRow($"{r.Id}", r.JobId ?? string.Empty, CliTableFormat.FormatJobKey(r.JobGroup, r.JobName), r.JobType.EscapeMarkup(), CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty), CliTableFormat.GetStatusMarkup(r.Status), CliTableFormat.FormatDateTime(r.StartDate), CliTableFormat.FromatDuration(r.Duration), CliTableFormat.FormatNumber(r.EffectedRows)));
             return table;
         }
 
@@ -245,6 +245,27 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetTable(PagingResponse<MonitorAlertRowModel>? response)
+        {
+            var table = new CliTable(paging: response, entityName: "alert");
+            if (response == null || response.Data == null) { return table; }
+
+            table.Table.AddColumns("Id", "Monitor Title", "Event Title", "Event Arguments", "Alert Date", "JobId", "Job Key", "Dist. Group", "Hook", "Has Error");
+            response.Data.ForEach(r => table.Table.AddRow(
+                r.Id.ToString(),
+                r.MonitorTitle.EscapeMarkup(),
+                r.EventTitle.EscapeMarkup(),
+                r.EventArgument.EscapeMarkup(),
+                CliTableFormat.FormatDateTime(r.AlertDate),
+                r.JobId.EscapeMarkup(),
+                CliTableFormat.FormatJobKey(r.JobGroup, r.JobName),
+                r.GroupName.EscapeMarkup(),
+                r.Hook.EscapeMarkup(),
+                r.HasError.ToString()));
+
+            return table;
+        }
+
         public static CliTable GetTable(PagingResponse<GroupInfo>? response)
         {
             var table = new CliTable(paging: response, entityName: "group");
@@ -268,7 +289,7 @@ namespace Planar.CLI
             var table = new CliTable(showCount: true, entityName: "trigger");
             if (response == null) { return table; }
             table.Table.AddColumns("Trigger Id", "Trigger Name", "Job Id", "Job Key");
-            response.ForEach(r => table.Table.AddRow(r.Id.EscapeMarkup(), r.TriggerName.EscapeMarkup(), r.JobId.EscapeMarkup(), $"{r.JobGroup}.{r.JobName}".EscapeMarkup()));
+            response.ForEach(r => table.Table.AddRow(r.Id.EscapeMarkup(), r.TriggerName.EscapeMarkup(), r.JobId.EscapeMarkup(), CliTableFormat.FormatJobKey(r.JobGroup, r.JobName)));
             return table;
         }
 

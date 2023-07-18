@@ -79,7 +79,7 @@ namespace Planar.Service.API
             var data = await DataLayer.GetLastHistoryCallForJob(parameters1);
             var mappedData = Mapper.Map<List<JobHistory>>(data.Data);
             var result = new PagingResponse<JobHistory>(mappedData);
-            result.SetPagingData(request, data.TotalRows.GetValueOrDefault());
+            result.SetPagingData(request, data.TotalRows);
             return result;
         }
 

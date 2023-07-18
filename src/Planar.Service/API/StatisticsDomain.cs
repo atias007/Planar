@@ -63,10 +63,22 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<int> GetMaxConcurrentExecution(MaxConcurrentExecutionRequest request)
+        public async Task<MaxConcurrentExecution> GetMaxConcurrentExecution(MaxConcurrentExecutionRequest request)
         {
             ResetRequestHours(request);
-            var result = await DataLayer.GetMaxConcurrentExecution(request);
+            var max = await DataLayer.GetMaxConcurrentExecution(request);
+            var cluster = Resolve<ClusterDomain>();
+            var total = await cluster.MaxConcurrency();
+            var percentage = max * 1.0 / total;
+
+            var result = new MaxConcurrentExecution
+            {
+                Value = max
+            };
+
+            if (percentage < 0.7) { result.Status = "Ok"; }
+            if (percentage >= 0.7 && percentage < 0.9) { result.Status = "Warning"; }
+            if (percentage >= 0.9) { result.Status = "Error"; }
             return result;
         }
 

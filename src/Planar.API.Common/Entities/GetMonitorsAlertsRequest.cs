@@ -13,6 +13,6 @@ namespace Planar.API.Common.Entities
         public bool? HasError { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
-        public bool Ascending { get; set; }
+        public bool? Ascending { get; set; }
     }
 }

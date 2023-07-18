@@ -6,9 +6,6 @@ namespace Planar.CLI.Entities
 {
     public class CliGetHistoryRequest : CliPagingRequest
     {
-        [ActionProperty("r", "rows")]
-        public int Rows { get; set; }
-
         [ActionProperty("f", "from")]
         public DateTime FromDate { get; set; }
 
