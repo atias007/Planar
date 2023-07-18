@@ -91,6 +91,17 @@ namespace Planar.CLI
             }
         }
 
+        public static string FormatJobKey(string? group, string? name)
+        {
+            var noGroup = string.IsNullOrWhiteSpace(group);
+            var noName = string.IsNullOrWhiteSpace(name);
+
+            if (noName && noGroup) { return string.Empty; }
+            if (noName) { return group!.EscapeMarkup(); }
+            if (noGroup) { return $"DEFAULT.{name}".EscapeMarkup(); }
+            return $"{group}.{name}".EscapeMarkup();
+        }
+
         public static string FromatDuration(int? number)
         {
             if (number.HasValue)

@@ -225,7 +225,7 @@ namespace Planar.Service.Data
                 query = query.Where(l => l.JobGroup == request.JobGroup);
             }
 
-            if (request.Ascending)
+            if (request.Ascending.GetValueOrDefault())
             {
                 query = query.OrderBy(l => l.AlertDate);
             }

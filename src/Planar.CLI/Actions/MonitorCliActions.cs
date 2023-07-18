@@ -142,6 +142,18 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, dumpObject: result.Data);
         }
 
+        [Action("list-alerts")]
+        [Action("ls-alerts")]
+        public static async Task<CliActionResponse> ListAlerts(CliGetMonitorsAlertsRequest request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("monitor/alerts", Method.Get)
+                .AddQueryParameter(request);
+
+            var result = await RestProxy.Invoke<PagingResponse<MonitorAlertRowModel>>(restRequest, cancellationToken);
+            var table = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, table);
+        }
+
         [Action("try")]
         [ActionWizard]
         [NullRequest]
