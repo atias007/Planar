@@ -94,8 +94,7 @@ namespace Planar.Common.Helpers
 
         public static string GetKeyTitle(ITrigger trigger)
         {
-            var title = KeyHelper.GetKeyTitle(trigger.Key);
-            return title;
+            return trigger.Key.Name;
         }
 
         private static int GetMaxRetriesInner(int? specificMaxRetries = null)

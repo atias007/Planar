@@ -10,7 +10,6 @@ namespace Planar.CLI.Entities
         [ActionEnumOption("job-details")] JobDetails,
         [ActionEnumOption("job-data")] JobData,
         [ActionEnumOption("properties")] Properties,
-        [ActionEnumOption("triggers")] Triggers,
         [ActionEnumOption("triggers-data")] TriggersData
     }
 

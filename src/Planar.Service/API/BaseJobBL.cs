@@ -108,7 +108,7 @@ namespace Planar.Service.API
             var triggers = await Scheduler.GetTriggersOfJob(jobKey);
             var notPaused = triggers
                 .Where(t => Scheduler.GetTriggerState(t.Key).Result != TriggerState.Paused)
-                .Select(t => TriggerHelper.GetKeyTitle(t))
+                .Select(TriggerHelper.GetKeyTitle)
                 .ToList();
 
             if (notPaused.Any())
