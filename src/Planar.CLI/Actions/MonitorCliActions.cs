@@ -147,7 +147,7 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> ListAlerts(CliGetMonitorsAlertsRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("monitor/alerts", Method.Get)
-                .AddQueryParameter(request);
+                .AddEntityToQueryParameter(request);
 
             var result = await RestProxy.Invoke<PagingResponse<MonitorAlertRowModel>>(restRequest, cancellationToken);
             var table = CliTableExtensions.GetTable(result.Data);

@@ -109,7 +109,7 @@ namespace Planar.Service.API
             var historyRequest = new GetHistoryRequest { JobId = id, PageSize = 10 };
             var details = await Get(id);
             var monitorsTask = monitorDomain.GetByJob(id);
-            var audit = await GetAudits(new PagingRequest(1, 10));
+            var audit = await GetJobAudits(id, new PagingRequest(1, 10));
             var historyTask = historyDomain.GetHistory(historyRequest);
             var statisticsTask = statisticsDomain.GetJobStatistics(id);
             var result = new JobDescription

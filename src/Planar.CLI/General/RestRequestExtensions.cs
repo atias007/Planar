@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RestSharp;
 
 public static class MyRestRequestExtensions
 {
-    public static RestRequest AddQueryParameter<T>(this RestRequest request, T parameter, bool encode = true)
+    public static RestRequest AddEntityToQueryParameter<T>(this RestRequest request, T parameter, bool encode = true)
         where T : class
     {
         var props = typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance);
