@@ -23,21 +23,10 @@ namespace Planar.Service.API
 {
     public partial class JobDomain
     {
-        private struct TriggerPool
-        {
-            public TriggerPool(ITriggersContainer container)
-            {
-                var temp = new List<BaseTrigger>();
-                temp.AddRange(container.SimpleTriggers);
-                temp.AddRange(container.CronTriggers);
-                Triggers = temp;
-            }
-
-            public IEnumerable<BaseTrigger> Triggers { get; private set; }
-        }
+        private const int MaxNameLength = 50;
 
         private const int MinNameLength = 3;
-        private const int MaxNameLength = 50;
+
         private const string NameRegexTemplate = @"^[a-zA-Z0-9\-_\s]{@MinNameLength@,@MaxNameLength@}$";
 
         private static readonly Regex _regex = new(
@@ -45,198 +34,7 @@ namespace Planar.Service.API
                 .Replace("@MinNameLength@", MinNameLength.ToString())
                 .Replace("@MaxNameLength@", MaxNameLength.ToString()), RegexOptions.Compiled, TimeSpan.FromSeconds(5));
 
-        public async Task<JobIdResponse> AddByPath(SetJobPathRequest request)
-        {
-            await ValidateAddPath(request);
-            var yml = await GetJobFileContent(request);
-            var dynamicRequest = GetJobDynamicRequest(yml);
-            dynamic properties = dynamicRequest.Properties ?? new ExpandoObject();
-            properties["path"] = request.Folder;
-            var response = await Add(dynamicRequest);
-            return response;
-        }
-
-        private async Task<JobIdResponse> Add(SetJobDynamicRequest request)
-        {
-            // Validation
-            ValidateRequestNoNull(request);
-            await ValidateRequestProperties(request);
-            var jobKey = ValidateJobMetadata(request, Scheduler);
-            await ValidateJobNotExists(jobKey);
-
-            // Global Config
-            var config = ConvertToGlobalConfig(request.GlobalConfig);
-            await ValidateGlobalConfig(config);
-            await PutGlobalConfig(config);
-
-            // Create Job (JobType+Concurrent, JobGroup, JobName, Description, Durable)
-            var job = BuildJobDetails(request, jobKey);
-
-            // Add Author
-            AddAuthor(request, job);
-
-            // Build Data
-            BuildJobData(request, job);
-
-            // Create Job Id
-            var id = CreateJobId(job);
-
-            // Build Triggers
-            var triggers = BuildTriggers(request, id);
-
-            // Save Job Properties
-            var jobPropertiesYml = GetJopPropertiesYml(request);
-            await DataLayer.AddJobProperty(new JobProperty { JobId = id, Properties = jobPropertiesYml });
-
-            try
-            {
-                // ScheduleJob
-                await Scheduler.ScheduleJob(job, triggers, true);
-            }
-            catch
-            {
-                // roll back
-                await DataLayer.DeleteJobProperty(id);
-                throw;
-            }
-
-            AuditJob(jobKey, "job added", request);
-
-            // Return Id
-            return new JobIdResponse { Id = id };
-        }
-
-        // JobType+Concurrent, JobGroup, JobName, Description, Durable
-        private static IJobDetail BuildJobDetails(SetJobDynamicRequest request, JobKey jobKey)
-        {
-            var jobType = GetJobType(request);
-            var jobBuilder = JobBuilder.Create(jobType)
-                .WithIdentity(jobKey)
-                .WithDescription(request.Description)
-                .RequestRecovery();
-
-            if (request.Durable.GetValueOrDefault())
-            {
-                jobBuilder = jobBuilder.StoreDurably(true);
-            }
-
-            var job = jobBuilder.Build();
-            return job;
-        }
-
-        // JobType+Concurrent, JobGroup, JobName, Description, Durable
-        private static IJobDetail CloneJobDetails(IJobDetail source)
-        {
-            var jobBuilder = JobBuilder.Create(source.JobType)
-                .WithIdentity(source.Key)
-                .WithDescription(source.Description)
-                .RequestRecovery();
-
-            if (source.Durable)
-            {
-                jobBuilder = jobBuilder.StoreDurably(true);
-            }
-
-            var job = jobBuilder.Build();
-            return job;
-        }
-
-        private static void ValidateRequestNoNull(object request)
-        {
-            if (request == null)
-            {
-                throw new RestValidationException("request", "request is null");
-            }
-        }
-
-        private static SetJobDynamicRequest GetJobDynamicRequest(string yml)
-        {
-            SetJobDynamicRequest dynamicRequest;
-
-            try
-            {
-                dynamicRequest = YmlUtil.Deserialize<SetJobDynamicRequest>(yml);
-            }
-            catch (Exception ex)
-            {
-                throw new RestValidationException("path", $"fail to read JobFile.yml. error: {ex.Message}");
-            }
-
-            return dynamicRequest;
-        }
-
-        private async Task<string> GetJobFileContent(SetJobPathRequest request)
-        {
-            await ValidateAddPath(request);
-            string yml;
-            var filename = GetJobFileFullName(request);
-            try
-            {
-                yml = File.ReadAllText(filename);
-            }
-            catch (Exception ex)
-            {
-                throw new RestGeneralException($"fail to read file: {filename}", ex);
-            }
-
-            return yml;
-        }
-
-        private static string GetJobFileFullName(SetJobPathRequest request)
-        {
-            if (request.JobFileName == null) { return string.Empty; }
-            var filename = ServiceUtil.GetJobFilename(request.Folder, request.JobFileName);
-            return filename;
-        }
-
-        private static string? GetJopPropertiesYml(SetJobDynamicRequest request)
-        {
-            if (request.Properties == null)
-            {
-                return null;
-            }
-
-            var yml = YmlUtil.Serialize(request.Properties);
-            return yml;
-        }
-
-        private async Task ValidateAddPath(SetJobPathRequest request)
-        {
-            ValidateRequestNoNull(request);
-            if (string.IsNullOrEmpty(request.JobFileName)) { request.JobFileName = FolderConsts.JobFileName; }
-
-            try
-            {
-                ServiceUtil.ValidateJobFolderExists(request.Folder);
-                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-                await util.ValidateJobFolderExists(request.Folder);
-            }
-            catch (PlanarException ex)
-            {
-                throw new RestValidationException("folder", ex.Message);
-            }
-
-            try
-            {
-                ServiceUtil.ValidateJobFileExists(request.Folder, request.JobFileName);
-                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-                await util.ValidateJobFileExists(request.Folder, request.JobFileName);
-            }
-            catch (PlanarException ex)
-            {
-                throw new RestValidationException("folder", ex.Message);
-            }
-        }
-
-        private static IReadOnlyCollection<ITrigger> BuildTriggers(SetJobRequest job, string jobId)
-        {
-            var quartzTriggers1 = BuildTriggerWithSimpleSchedule(job.SimpleTriggers, jobId);
-            var quartzTriggers2 = BuildTriggerWithCronSchedule(job.CronTriggers, jobId);
-            var allTriggers = new List<ITrigger>();
-            if (quartzTriggers1 != null) { allTriggers.AddRange(quartzTriggers1); }
-            if (quartzTriggers2 != null) { allTriggers.AddRange(quartzTriggers2); }
-            return allTriggers;
-        }
+        private static DateTimeOffset DelayStartTriggerDateTime = new DateTimeOffset(DateTime.Now.AddSeconds(3));
 
         public static IEnumerable<ITrigger> BuildTriggerWithCronSchedule(List<JobCronTriggerMetadata> triggers, string jobId)
         {
@@ -263,7 +61,7 @@ namespace Planar.Service.API
 
                 if (t.Start == null)
                 {
-                    trigger = trigger.StartAt(new DateTimeOffset(DateTime.Now.AddSeconds(3)));
+                    trigger = trigger.StartAt(DelayStartTriggerDateTime);
                 }
                 else
                 {
@@ -281,6 +79,44 @@ namespace Planar.Service.API
             });
 
             return result;
+        }
+
+        public static void ValidateTriggerMetadata(ITriggersContainer container, IScheduler scheduler)
+        {
+            var pool = new TriggerPool(container);
+            TrimTriggerProperties(container);
+            ValidateMandatoryTriggerProperties(container);
+            ValidateTriggerNameProperties(pool);
+            ValidateMaxCharsTiggerProperties(pool);
+            ValidatePreserveWordsTriggerProperties(pool);
+            ValidateTriggerPriority(pool);
+            ValidateTriggerTimeout(pool);
+            ValidateTriggerInterval(container);
+            ValidateTriggerRepeatCount(container);
+            ValidateTriggerRetry(pool);
+            ValidateTriggerStartEnd(container);
+            ValidateCronExpression(container);
+            ValidateTriggerMisfireBehaviour(container);
+            ValidateTriggerCalendar(pool, scheduler);
+        }
+
+        public async Task<JobIdResponse> AddByPath(SetJobPathRequest request)
+        {
+            await ValidateAddPath(request);
+            var yml = await GetJobFileContent(request);
+            var dynamicRequest = GetJobDynamicRequest(yml);
+            dynamic properties = dynamicRequest.Properties ?? new ExpandoObject();
+            properties["path"] = request.Folder;
+            var response = await Add(dynamicRequest);
+            return response;
+        }
+
+        private static void AddAuthor(SetJobRequest metadata, IJobDetail job)
+        {
+            if (!string.IsNullOrEmpty(metadata.Author))
+            {
+                job.JobDataMap.Put(Consts.Author, metadata.Author);
+            }
         }
 
         private static void BuidCronSchedule(CronScheduleBuilder builder, JobCronTriggerMetadata trigger)
@@ -355,6 +191,94 @@ namespace Planar.Service.API
             }
         }
 
+        private static void BuildJobData(SetJobRequest metadata, IJobDetail job)
+        {
+            if (metadata.JobData != null)
+            {
+                foreach (var item in metadata.JobData)
+                {
+                    job.JobDataMap.Put(item.Key, item.Value);
+                }
+            }
+        }
+
+        // JobType+Concurrent, JobGroup, JobName, Description, Durable
+        private static IJobDetail BuildJobDetails(SetJobDynamicRequest request, JobKey jobKey)
+        {
+            var jobType = GetJobType(request);
+            var jobBuilder = JobBuilder.Create(jobType)
+                .WithIdentity(jobKey)
+                .WithDescription(request.Description)
+                .RequestRecovery();
+
+            if (request.Durable.GetValueOrDefault())
+            {
+                jobBuilder = jobBuilder.StoreDurably(true);
+            }
+
+            var job = jobBuilder.Build();
+            return job;
+        }
+
+        private static IReadOnlyCollection<ITrigger> BuildTriggers(SetJobRequest job, string jobId)
+        {
+            var quartzTriggers1 = BuildTriggerWithSimpleSchedule(job.SimpleTriggers, jobId);
+            var quartzTriggers2 = BuildTriggerWithCronSchedule(job.CronTriggers, jobId);
+            var allTriggers = new List<ITrigger>();
+            if (quartzTriggers1 != null) { allTriggers.AddRange(quartzTriggers1); }
+            if (quartzTriggers2 != null) { allTriggers.AddRange(quartzTriggers2); }
+            return allTriggers;
+        }
+
+        private static void CheckForInvalidDataKeys(Dictionary<string, string?>? data, string title)
+        {
+            if (data == null) { return; }
+
+            var invalidKeys = data
+                    .Where(item => !Consts.IsDataKeyValid(item.Key))
+                    .Select(item => item.Key)
+                    .ToList();
+
+            if (invalidKeys.Count > 0)
+            {
+                var keys = string.Join(',', invalidKeys);
+                throw new RestValidationException("key", $"{title} data key(s) '{keys}' is invalid");
+            }
+        }
+
+        // JobType+Concurrent, JobGroup, JobName, Description, Durable
+        private static IJobDetail CloneJobDetails(IJobDetail source)
+        {
+            var jobBuilder = JobBuilder.Create(source.JobType)
+                .WithIdentity(source.Key)
+                .WithDescription(source.Description)
+                .RequestRecovery();
+
+            if (source.Durable)
+            {
+                jobBuilder = jobBuilder.StoreDurably(true);
+            }
+
+            var job = jobBuilder.Build();
+            return job;
+        }
+
+        private static IEnumerable<GlobalConfig> ConvertToGlobalConfig(Dictionary<string, string?> config)
+        {
+            if (config == null) { return Array.Empty<GlobalConfig>(); }
+            var result = config.Select(c => new GlobalConfig { Key = c.Key, Value = c.Value, Type = "string" });
+            return result;
+        }
+
+        private static string CreateJobId(IJobDetail job)
+        {
+            // job id
+            var id = ServiceUtil.GenerateId();
+            job.JobDataMap.Add(Consts.JobId, id);
+
+            return id ?? string.Empty;
+        }
+
         private static TriggerBuilder GetBaseTriggerBuilder(BaseTrigger jobTrigger, string jobId)
         {
             var id =
@@ -411,39 +335,103 @@ namespace Planar.Service.API
             return trigger;
         }
 
-        private static void BuildJobData(SetJobRequest metadata, IJobDetail job)
+        private static SetJobDynamicRequest GetJobDynamicRequest(string yml)
         {
-            if (metadata.JobData != null)
+            SetJobDynamicRequest dynamicRequest;
+
+            try
             {
-                foreach (var item in metadata.JobData)
-                {
-                    job.JobDataMap.Put(item.Key, item.Value);
-                }
+                dynamicRequest = YmlUtil.Deserialize<SetJobDynamicRequest>(yml);
+            }
+            catch (Exception ex)
+            {
+                throw new RestValidationException("path", $"fail to read JobFile.yml. error: {ex.Message}");
+            }
+
+            return dynamicRequest;
+        }
+
+        private static string GetJobFileFullName(SetJobPathRequest request)
+        {
+            if (request.JobFileName == null) { return string.Empty; }
+            var filename = ServiceUtil.GetJobFilename(request.Folder, request.JobFileName);
+            return filename;
+        }
+
+        private static System.Type GetJobType(SetJobRequest job)
+        {
+            string typeName;
+            Assembly assembly;
+
+            try
+            {
+                if (job.JobType == null) { return typeof(object); }
+                assembly = Assembly.Load(job.JobType);
+            }
+            catch (Exception ex)
+            {
+                throw new RestValidationException("jobType", $"fail to load assemly {job.JobType} ({ex.Message})");
+            }
+
+            if (job.Concurrent)
+            {
+                typeName = $"Planar.{job.JobType}Concurrent";
+            }
+            else
+            {
+                typeName = $"Planar.{job.JobType}NoConcurrent";
+            }
+
+            try
+            {
+                var type = assembly.GetType(typeName);
+                return type ?? throw new RestValidationException("jobType", $"type {typeName} is not supported");
+            }
+            catch (Exception ex)
+            {
+                throw new RestValidationException("jobType", $"fail to get type {job.JobType} from assemly {assembly.FullName} ({ex.Message})");
             }
         }
 
-        private static void AddAuthor(SetJobRequest metadata, IJobDetail job)
+        private static string? GetJopPropertiesYml(SetJobDynamicRequest request)
         {
-            if (!string.IsNullOrEmpty(metadata.Author))
+            if (request.Properties == null)
             {
-                job.JobDataMap.Put(Consts.Author, metadata.Author);
+                return null;
             }
+
+            var yml = YmlUtil.Serialize(request.Properties);
+            return yml;
         }
 
-        private static string CreateJobId(IJobDetail job)
+        private static bool IsRegexMatch(Regex regex, string? value)
         {
-            // job id
-            var id = ServiceUtil.GenerateId();
-            job.JobDataMap.Add(Consts.JobId, id);
-
-            return id ?? string.Empty;
+            if (value == null) { return true; }
+            return regex.IsMatch(value);
         }
 
-        private static IEnumerable<GlobalConfig> ConvertToGlobalConfig(Dictionary<string, string?> config)
+        private static void TrimTriggerProperties(ITriggersContainer container)
         {
-            if (config == null) { return Array.Empty<GlobalConfig>(); }
-            var result = config.Select(c => new GlobalConfig { Key = c.Key, Value = c.Value, Type = "string" });
-            return result;
+            container.SimpleTriggers?.ForEach(t =>
+            {
+                t.Name = t.Name.SafeTrim();
+                t.Group = t.Group.SafeTrim();
+                t.Calendar = t.Calendar.SafeTrim();
+            });
+            container.CronTriggers?.ForEach(t =>
+            {
+                t.Name = t.Name.SafeTrim();
+                t.Group = t.Group.SafeTrim();
+                t.Calendar = t.Calendar.SafeTrim();
+            });
+        }
+
+        private static void ValidateCronExpression(ITriggersContainer container)
+        {
+            container.CronTriggers?.ForEach(t =>
+            {
+                if (string.IsNullOrEmpty(t.CronExpression)) { throw new RestValidationException("priority", "cron expression is mandatory in cron trigger"); }
+            });
         }
 
         private static async Task ValidateGlobalConfig(IEnumerable<GlobalConfig> config)
@@ -452,15 +440,6 @@ namespace Planar.Service.API
             {
                 var validator = new GlobalConfigDataValidator();
                 await validator.ValidateAndThrowAsync(p);
-            }
-        }
-
-        private async Task PutGlobalConfig(IEnumerable<GlobalConfig> config)
-        {
-            var configDomain = Resolve<ConfigDomain>();
-            foreach (var p in config)
-            {
-                await configDomain.Put(p);
             }
         }
 
@@ -568,39 +547,127 @@ namespace Planar.Service.API
             return jobKey;
         }
 
-        private static bool IsRegexMatch(Regex regex, string? value)
+        private static void ValidateMandatoryTriggerProperties(ITriggersContainer container)
         {
-            if (value == null) { return true; }
-            return regex.IsMatch(value);
+            container.SimpleTriggers?.ForEach(t =>
+            {
+                t.TriggerData ??= new Dictionary<string, string?>();
+                if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
+
+                var emptyKeys = t.TriggerData.Any(item => string.IsNullOrWhiteSpace(item.Key));
+                if (emptyKeys) throw new RestValidationException("key", "trigger data key must have value");
+            });
+            container.CronTriggers?.ForEach(t =>
+            {
+                t.TriggerData ??= new Dictionary<string, string?>();
+                if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
+            });
         }
 
-        private async Task ValidateJobNotExists(JobKey jobKey)
+        private static void ValidateMaxCharsTiggerProperties(TriggerPool pool)
         {
-            var exists = await Scheduler.GetJobDetail(jobKey);
-
-            if (exists != null)
+            foreach (var t in pool.Triggers)
             {
-                throw new RestConflictException($"job with name: {jobKey.Name} and group: {jobKey.Group} already exists");
+                t.TriggerData ??= new Dictionary<string, string?>();
+                ValidateRange(t.Name, 5, 50, "name", "trigger");
+                ValidateRange(t.Group, 1, 50, "group", "trigger");
+                ValidateMaxLength(t.Calendar, 50, "calendar", "trigger");
+                ValidateRangeValue(t.MaxRetries, 1, 100, "max retries", "trigger");
+
+                foreach (var item in t.TriggerData)
+                {
+                    ValidateRange(item.Key, 1, 100, "key", "trigger data");
+                    ValidateMaxLength(item.Value, 1000, "value", "trigger data");
+                }
             }
         }
 
-        public static void ValidateTriggerMetadata(ITriggersContainer container, IScheduler scheduler)
+        private static void ValidateMaxLength(string? value, int length, string name, string parent)
         {
-            var pool = new TriggerPool(container);
-            TrimTriggerProperties(container);
-            ValidateMandatoryTriggerProperties(container);
-            ValidateTriggerNameProperties(pool);
-            ValidateMaxCharsTiggerProperties(pool);
-            ValidatePreserveWordsTriggerProperties(pool);
-            ValidateTriggerPriority(pool);
-            ValidateTriggerTimeout(pool);
-            ValidateTriggerInterval(container);
-            ValidateTriggerRepeatCount(container);
-            ValidateTriggerRetry(pool);
-            ValidateTriggerStartEnd(container);
-            ValidateCronExpression(container);
-            ValidateTriggerMisfireBehaviour(container);
-            ValidateTriggerCalendar(pool, scheduler);
+            if (value != null && value.Length > length)
+            {
+                throw new RestValidationException(name, $"{parent} {name} length is invalid. maximum length is {length}");
+            }
+        }
+
+        private static void ValidateMaxValue(int? value, int to, string name, string parent)
+        {
+            if (value != null && value > to)
+            {
+                throw new RestValidationException(name, $"{parent} {name} value is invalid. maximum value is {to}");
+            }
+        }
+
+        private static void ValidateMinLength(string? value, int length, string name, string parent)
+        {
+            if (value != null && value.Length < length)
+            {
+                throw new RestValidationException(name, $"{parent} {name} length is invalid. minimum length is {length}");
+            }
+        }
+
+        private static void ValidateMinValue(int? value, int from, string name, string parent)
+        {
+            if (value != null && value < from)
+            {
+                throw new RestValidationException(name, $"{parent} {name} value is invalid. minimum value is {from}");
+            }
+        }
+
+        private static void ValidatePreserveWordsTriggerProperties(TriggerPool pool)
+        {
+            foreach (var t in pool.Triggers)
+            {
+                t.TriggerData ??= new Dictionary<string, string?>();
+                if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid (preserved value)"); }
+                if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"simple trigger name '{t.Name}' has invalid prefix"); }
+                CheckForInvalidDataKeys(t.TriggerData, "trigger");
+            }
+        }
+
+        private static void ValidateRange(string? value, int from, int to, string name, string parent)
+        {
+            ValidateMinLength(value, from, name, parent);
+            ValidateMaxLength(value, to, name, parent);
+        }
+
+        private static void ValidateRangeValue(int? value, int from, int to, string name, string parent)
+        {
+            ValidateMinValue(value, from, name, parent);
+            ValidateMaxValue(value, to, name, parent);
+        }
+
+        private static void ValidateRequestNoNull(object request)
+        {
+            if (request == null)
+            {
+                throw new RestValidationException("request", "request is null");
+            }
+        }
+
+        private static void ValidateTriggerCalendar(TriggerPool pool, IScheduler scheduler)
+        {
+            var calendars = scheduler.GetCalendarNames().Result;
+
+            foreach (var t in pool.Triggers)
+            {
+                if (string.IsNullOrEmpty(t.Calendar)) { continue; }
+                var existsCalendarName = calendars.FirstOrDefault(c => string.Equals(c, t.Calendar, StringComparison.OrdinalIgnoreCase));
+                if (string.IsNullOrEmpty(existsCalendarName))
+                {
+                    throw new RestValidationException(nameof(t.Calendar), $"calendar name '{t.Calendar}' is not exists");
+                }
+
+                t.Calendar = existsCalendarName;
+            }
+        }
+
+        private static void ValidateTriggerInterval(ITriggersContainer container)
+        {
+            container.SimpleTriggers?.ForEach(t =>
+            {
+                if (t.RepeatCount > 0 && t.Interval.TotalSeconds < 60) { throw new RestValidationException("interval", $"interval has invalid value. interval must be greater or equals to 1 minute"); }
+            });
         }
 
         private static void ValidateTriggerMisfireBehaviour(ITriggersContainer container)
@@ -624,20 +691,12 @@ namespace Planar.Service.API
             });
         }
 
-        private static void ValidateTriggerCalendar(TriggerPool pool, IScheduler scheduler)
+        private static void ValidateTriggerNameProperties(TriggerPool pool)
         {
-            var calendars = scheduler.GetCalendarNames().Result;
-
             foreach (var t in pool.Triggers)
             {
-                if (string.IsNullOrEmpty(t.Calendar)) { continue; }
-                var existsCalendarName = calendars.FirstOrDefault(c => string.Equals(c, t.Calendar, StringComparison.OrdinalIgnoreCase));
-                if (string.IsNullOrEmpty(existsCalendarName))
-                {
-                    throw new RestValidationException(nameof(t.Calendar), $"calendar name '{t.Calendar}' is not exists");
-                }
-
-                t.Calendar = existsCalendarName;
+                if (!IsRegexMatch(_regex, t.Name)) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
+                if (!IsRegexMatch(_regex, t.Group)) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
             }
         }
 
@@ -647,22 +706,6 @@ namespace Planar.Service.API
             {
                 if (t.Priority < 0 || t.Priority > 100) { throw new RestValidationException("priority", $"priority has invalid value ({t.Priority}). valid scope of values is 0-100"); }
             }
-        }
-
-        private static void ValidateTriggerTimeout(TriggerPool pool)
-        {
-            foreach (var t in pool.Triggers)
-            {
-                if (t.Timeout.HasValue && t.Timeout.Value.TotalSeconds < 1) { throw new RestValidationException("timeout", $"timeout has invalid value. timeout must be greater or equals to 1 second"); }
-            }
-        }
-
-        private static void ValidateTriggerInterval(ITriggersContainer container)
-        {
-            container.SimpleTriggers?.ForEach(t =>
-            {
-                if (t.RepeatCount > 0 && t.Interval.TotalSeconds < 60) { throw new RestValidationException("interval", $"interval has invalid value. interval must be greater or equals to 1 minute"); }
-            });
         }
 
         private static void ValidateTriggerRepeatCount(ITriggersContainer container)
@@ -697,146 +740,147 @@ namespace Planar.Service.API
             });
         }
 
-        private static void ValidateCronExpression(ITriggersContainer container)
-        {
-            container.CronTriggers?.ForEach(t =>
-            {
-                if (string.IsNullOrEmpty(t.CronExpression)) { throw new RestValidationException("priority", "cron expression is mandatory in cron trigger"); }
-            });
-        }
-
-        private static void CheckForInvalidDataKeys(Dictionary<string, string?>? data, string title)
-        {
-            if (data == null) { return; }
-
-            var invalidKeys = data
-                    .Where(item => !Consts.IsDataKeyValid(item.Key))
-                    .Select(item => item.Key)
-                    .ToList();
-
-            if (invalidKeys.Count > 0)
-            {
-                var keys = string.Join(',', invalidKeys);
-                throw new RestValidationException("key", $"{title} data key(s) '{keys}' is invalid");
-            }
-        }
-
-        private static void ValidatePreserveWordsTriggerProperties(TriggerPool pool)
+        private static void ValidateTriggerTimeout(TriggerPool pool)
         {
             foreach (var t in pool.Triggers)
             {
-                t.TriggerData ??= new Dictionary<string, string?>();
-                if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid (preserved value)"); }
-                if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"simple trigger name '{t.Name}' has invalid prefix"); }
-                CheckForInvalidDataKeys(t.TriggerData, "trigger");
+                if (t.Timeout.HasValue && t.Timeout.Value.TotalSeconds < 1) { throw new RestValidationException("timeout", $"timeout has invalid value. timeout must be greater or equals to 1 second"); }
             }
         }
 
-        private static void ValidateMaxCharsTiggerProperties(TriggerPool pool)
+        private async Task<JobIdResponse> Add(SetJobDynamicRequest request)
         {
-            foreach (var t in pool.Triggers)
-            {
-                t.TriggerData ??= new Dictionary<string, string?>();
-                ValidateRange(t.Name, 5, 50, "name", "trigger");
-                ValidateRange(t.Group, 1, 50, "group", "trigger");
-                ValidateMaxLength(t.Calendar, 50, "calendar", "trigger");
-                ValidateRangeValue(t.MaxRetries, 1, 100, "max retries", "trigger");
+            // Validation
+            ValidateRequestNoNull(request);
+            await ValidateRequestProperties(request);
+            var jobKey = ValidateJobMetadata(request, Scheduler);
+            await ValidateJobNotExists(jobKey);
 
-                foreach (var item in t.TriggerData)
-                {
-                    ValidateRange(item.Key, 1, 100, "key", "trigger data");
-                    ValidateMaxLength(item.Value, 1000, "value", "trigger data");
-                }
-            }
-        }
+            // Global Config
+            var config = ConvertToGlobalConfig(request.GlobalConfig);
+            await ValidateGlobalConfig(config);
+            await PutGlobalConfig(config);
 
-        private static void ValidateTriggerNameProperties(TriggerPool pool)
-        {
-            foreach (var t in pool.Triggers)
-            {
-                if (!IsRegexMatch(_regex, t.Name)) throw new RestValidationException("name", $"trigger name '{t.Name}' is invalid. use only alphanumeric, dashes & underscore");
-                if (!IsRegexMatch(_regex, t.Group)) throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid. use only alphanumeric, dashes & underscore");
-            }
-        }
+            // Create Job (JobType+Concurrent, JobGroup, JobName, Description, Durable)
+            var job = BuildJobDetails(request, jobKey);
 
-        private static void ValidateMandatoryTriggerProperties(ITriggersContainer container)
-        {
-            container.SimpleTriggers?.ForEach(t =>
-            {
-                t.TriggerData ??= new Dictionary<string, string?>();
-                if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
+            // Add Author
+            AddAuthor(request, job);
 
-                var emptyKeys = t.TriggerData.Any(item => string.IsNullOrWhiteSpace(item.Key));
-                if (emptyKeys) throw new RestValidationException("key", "trigger data key must have value");
-            });
-            container.CronTriggers?.ForEach(t =>
-            {
-                t.TriggerData ??= new Dictionary<string, string?>();
-                if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
-            });
-        }
+            // Build Data
+            BuildJobData(request, job);
 
-        private static void TrimTriggerProperties(ITriggersContainer container)
-        {
-            container.SimpleTriggers?.ForEach(t =>
-            {
-                t.Name = t.Name.SafeTrim();
-                t.Group = t.Group.SafeTrim();
-                t.Calendar = t.Calendar.SafeTrim();
-            });
-            container.CronTriggers?.ForEach(t =>
-            {
-                t.Name = t.Name.SafeTrim();
-                t.Group = t.Group.SafeTrim();
-                t.Calendar = t.Calendar.SafeTrim();
-            });
-        }
+            // Create Job Id
+            var id = CreateJobId(job);
 
-        private static System.Type GetJobType(SetJobRequest job)
-        {
-            string typeName;
-            Assembly assembly;
+            // Build Triggers
+            var triggers = BuildTriggers(request, id);
+
+            // Save Job Properties
+            var jobPropertiesYml = GetJopPropertiesYml(request);
+            await DataLayer.AddJobProperty(new JobProperty { JobId = id, Properties = jobPropertiesYml });
 
             try
             {
-                if (job.JobType == null) { return typeof(object); }
-                assembly = Assembly.Load(job.JobType);
+                // ScheduleJob
+                await Scheduler.ScheduleJob(job, triggers, true);
+            }
+            catch
+            {
+                // roll back
+                await DataLayer.DeleteJobProperty(id);
+                throw;
+            }
+
+            AuditJob(jobKey, "job added", request);
+
+            // Return Id
+            return new JobIdResponse { Id = id };
+        }
+
+        private async Task<string> GetJobFileContent(SetJobPathRequest request)
+        {
+            await ValidateAddPath(request);
+            string yml;
+            var filename = GetJobFileFullName(request);
+            try
+            {
+                yml = File.ReadAllText(filename);
             }
             catch (Exception ex)
             {
-                throw new RestValidationException("jobType", $"fail to load assemly {job.JobType} ({ex.Message})");
+                throw new RestGeneralException($"fail to read file: {filename}", ex);
             }
 
-            if (job.Concurrent)
+            return yml;
+        }
+
+        private async Task PutGlobalConfig(IEnumerable<GlobalConfig> config)
+        {
+            var configDomain = Resolve<ConfigDomain>();
+            foreach (var p in config)
             {
-                typeName = $"Planar.{job.JobType}Concurrent";
+                await configDomain.Put(p);
             }
-            else
+        }
+
+        private async Task ValidateAddPath(SetJobPathRequest request)
+        {
+            ValidateRequestNoNull(request);
+            if (string.IsNullOrEmpty(request.JobFileName)) { request.JobFileName = FolderConsts.JobFileName; }
+
+            try
             {
-                typeName = $"Planar.{job.JobType}NoConcurrent";
+                ServiceUtil.ValidateJobFolderExists(request.Folder);
+                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+                await util.ValidateJobFolderExists(request.Folder);
+            }
+            catch (PlanarException ex)
+            {
+                throw new RestValidationException("folder", ex.Message);
             }
 
             try
             {
-                var type = assembly.GetType(typeName);
-                return type ?? throw new RestValidationException("jobType", $"type {typeName} is not supported");
+                ServiceUtil.ValidateJobFileExists(request.Folder, request.JobFileName);
+                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+                await util.ValidateJobFileExists(request.Folder, request.JobFileName);
             }
-            catch (Exception ex)
+            catch (PlanarException ex)
             {
-                throw new RestValidationException("jobType", $"fail to get type {job.JobType} from assemly {assembly.FullName} ({ex.Message})");
+                throw new RestValidationException("folder", ex.Message);
             }
         }
 
-        private async Task ValidateRequestProperties(SetJobDynamicRequest request)
+        private async Task ValidateJobNotExists(JobKey jobKey)
         {
-            try
+            var exists = await Scheduler.GetJobDetail(jobKey);
+
+            if (exists != null)
             {
-                await ValidatePropertiesInner(request);
+                throw new RestConflictException($"job with name: {jobKey.Name} and group: {jobKey.Group} already exists");
             }
-            catch (Exception ex)
+        }
+
+        private async Task ValidateJobProperties<TProperties>(string? yml)
+        {
+            if (yml == null)
             {
-                throw new RestValidationException("properties", $"fail to read/validate properties section. error: {ex.Message}");
+                throw new RestValidationException("properties", "properties is null or empty");
             }
+
+            var properties = YmlUtil.Deserialize<TProperties>(yml) ??
+                throw new RestValidationException("properties", "properties is null or empty");
+
+            var validator = _serviceProvider.GetService<IValidator<TProperties>>();
+
+            if (validator == null)
+            {
+                Logger.LogWarning("Job properties of type {PropertyType} has no registered validation in DI. validation skipped", typeof(TProperties).FullName);
+                return;
+            }
+
+            await validator.ValidateAndThrowAsync(properties);
         }
 
         private async Task ValidatePropertiesInner(SetJobDynamicRequest request)
@@ -866,69 +910,29 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task ValidateJobProperties<TProperties>(string? yml)
+        private async Task ValidateRequestProperties(SetJobDynamicRequest request)
         {
-            if (yml == null)
+            try
             {
-                throw new RestValidationException("properties", "properties is null or empty");
+                await ValidatePropertiesInner(request);
             }
-
-            var properties = YmlUtil.Deserialize<TProperties>(yml) ??
-                throw new RestValidationException("properties", "properties is null or empty");
-
-            var validator = _serviceProvider.GetService<IValidator<TProperties>>();
-
-            if (validator == null)
+            catch (Exception ex)
             {
-                Logger.LogWarning("Job properties of type {PropertyType} has no registered validation in DI. validation skipped", typeof(TProperties).FullName);
-                return;
-            }
-
-            await validator.ValidateAndThrowAsync(properties);
-        }
-
-        private static void ValidateRange(string? value, int from, int to, string name, string parent)
-        {
-            ValidateMinLength(value, from, name, parent);
-            ValidateMaxLength(value, to, name, parent);
-        }
-
-        private static void ValidateRangeValue(int? value, int from, int to, string name, string parent)
-        {
-            ValidateMinValue(value, from, name, parent);
-            ValidateMaxValue(value, to, name, parent);
-        }
-
-        private static void ValidateMinValue(int? value, int from, string name, string parent)
-        {
-            if (value != null && value < from)
-            {
-                throw new RestValidationException(name, $"{parent} {name} value is invalid. minimum value is {from}");
+                throw new RestValidationException("properties", $"fail to read/validate properties section. error: {ex.Message}");
             }
         }
 
-        private static void ValidateMaxValue(int? value, int to, string name, string parent)
+        private struct TriggerPool
         {
-            if (value != null && value > to)
+            public TriggerPool(ITriggersContainer container)
             {
-                throw new RestValidationException(name, $"{parent} {name} value is invalid. maximum value is {to}");
+                var temp = new List<BaseTrigger>();
+                temp.AddRange(container.SimpleTriggers);
+                temp.AddRange(container.CronTriggers);
+                Triggers = temp;
             }
-        }
 
-        private static void ValidateMaxLength(string? value, int length, string name, string parent)
-        {
-            if (value != null && value.Length > length)
-            {
-                throw new RestValidationException(name, $"{parent} {name} length is invalid. maximum length is {length}");
-            }
-        }
-
-        private static void ValidateMinLength(string? value, int length, string name, string parent)
-        {
-            if (value != null && value.Length < length)
-            {
-                throw new RestValidationException(name, $"{parent} {name} length is invalid. minimum length is {length}");
-            }
+            public IEnumerable<BaseTrigger> Triggers { get; private set; }
         }
     }
 }
