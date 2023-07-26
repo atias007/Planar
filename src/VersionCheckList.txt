@@ -21,8 +21,8 @@ Check List
 - fix sonar issues
 - approve pull request
 - publish cli all versions
-- publish planar all versions
 - publish DatabaseMigrations version
+- publish planar all versions
 - Zip all published at C:\temp\Planar\publish
 
 Docker
@@ -30,3 +30,23 @@ Docker
 - update the version number on script DockerBuildScript.bat
 - run build script DockerBuildScript.bat
 - check the docker version
+
+---------------------------------------------------------------------
+
+DECLARE @SQL varchar(max)
+
+SELECT @SQL = COALESCE(@SQL,'') + 'Kill ' + Convert(varchar, SPId) + ';'
+FROM MASTER..SysProcesses
+WHERE DBId = DB_ID(@DatabaseName) AND SPId <> @@SPId
+
+--SELECT @SQL 
+EXEC(@SQL)
+alter database Planar_Test set single_user with rollback immediate
+
+GO
+Use Master
+GO
+ALTER DATABASE Planar_Test SET OFFLINE
+GO
+
+DROP DATABASE Planar_Test

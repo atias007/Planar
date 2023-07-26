@@ -227,7 +227,7 @@ namespace Planar.CLI
                                 do
                                 {
                                     HandleCliResponse(response, cliArgument.OutputFilename);
-                                    var assert = AssertPage(pagingRequest);
+                                    var assert = paging.IsLastPage ? AssertMembers.Exit : AssertPage(pagingRequest);
                                     if (assert == AssertMembers.Next) { pagingRequest.PageNumber++; }
                                     else if (assert == AssertMembers.Prev) { pagingRequest.PageNumber--; }
                                     else { return cliArgument; }

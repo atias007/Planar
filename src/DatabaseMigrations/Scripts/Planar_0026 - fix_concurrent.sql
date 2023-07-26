@@ -6,7 +6,7 @@ EXEC sp_rename 'Statistics.ConcurentExecution.MaxConcurent', 'MaxConcurrent', 'C
 GO
 EXEC sp_rename 'Statistics.ConcurentQueue', 'ConcurrentQueue';
 GO
-EXEC sp_rename 'Statistics.ConcurentExecution', 'ConcurentExecution';
+EXEC sp_rename 'Statistics.ConcurentExecution', 'ConcurrentExecution';
 GO
 DROP PROC [Statistics].[SetMaxConcurentExecution]
 GO
