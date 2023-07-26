@@ -36,6 +36,8 @@ public partial class PlanarContext : DbContext
 
     public virtual DbSet<MonitorAction> MonitorActions { get; set; }
 
+    public virtual DbSet<MonitorAlert> MonitorAlerts { get; set; }
+
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<Trace> Traces { get; set; }

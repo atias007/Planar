@@ -46,14 +46,14 @@ namespace Planar.API.Common.Entities
             set
             {
                 _data = value;
-                Count = _data?.Count;
+                Count = _data?.Count ?? 0;
             }
         }
     }
 
     public class PagingResponse : IPagingResponse
     {
-        private int? _totalRows;
+        private int _totalRows;
 
         public PagingResponse()
         {
@@ -73,7 +73,7 @@ namespace Planar.API.Common.Entities
         }
 
         [JsonPropertyOrder(1)]
-        public int? Count { get; set; }
+        public int Count { get; set; }
 
         [JsonPropertyOrder(2)]
         public int PageNumber { get; set; }
@@ -82,7 +82,7 @@ namespace Planar.API.Common.Entities
         public int PageSize { get; set; }
 
         [JsonPropertyOrder(4)]
-        public int? TotalRows
+        public int TotalRows
         {
             get { return _totalRows; }
             set
@@ -90,13 +90,13 @@ namespace Planar.API.Common.Entities
                 _totalRows = value;
                 if (PageSize > 0 && _totalRows > 0)
                 {
-                    TotalPages = Convert.ToInt32(Math.Ceiling(_totalRows.Value * 1.0 / PageSize));
+                    TotalPages = Convert.ToInt32(Math.Ceiling(_totalRows * 1.0 / PageSize));
                 }
             }
         }
 
         [JsonPropertyOrder(5)]
-        public int? TotalPages { get; set; }
+        public int TotalPages { get; set; }
 
         public bool IsLastPage => PageNumber >= TotalPages;
     }

@@ -63,6 +63,29 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
+        [HttpGet("alert/{id}")]
+        [ViewerAuthorize]
+        [SwaggerOperation(OperationId = "get_monitor_alert_id", Description = "Get monitor alert by id", Summary = "Get Monitor Alert")]
+        [OkJsonResponse(typeof(MonitorAlertModel))]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<ActionResult<MonitorAlertModel>> GetAlertById([FromRoute][Id] int id)
+        {
+            var result = await BusinesLayer.GetMonitorAlert(id);
+            return Ok(result);
+        }
+
+        [HttpGet("alerts")]
+        [ViewerAuthorize]
+        [SwaggerOperation(OperationId = "get_monitor_alerts", Description = "Get monitor alerts by filter", Summary = "Get Monitor Alerts")]
+        [OkJsonResponse(typeof(PagingResponse<MonitorAlertRowModel>))]
+        [BadRequestResponse]
+        public async Task<ActionResult<PagingResponse<MonitorAlertRowModel>>> GetMonitorAlerts([FromQuery] GetMonitorsAlertsRequest request)
+        {
+            var result = await BusinesLayer.GetMonitorsAlerts(request);
+            return Ok(result);
+        }
+
         [HttpGet("events")]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_monitor_events", Description = "Get all monitor events type", Summary = "Get All Monitor Events")]

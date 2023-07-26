@@ -23,6 +23,17 @@ namespace Planar.Service.API
         {
         }
 
+        public static List<MonitorEventModel> GetEvents()
+        {
+            var result =
+                Enum.GetValues(typeof(MonitorEvents))
+                .Cast<MonitorEvents>()
+                .Select(e => new MonitorEventModel { EventName = e.ToString(), EventTitle = e.GetEnumDescription() })
+                .ToList();
+
+            return result;
+        }
+
         public async Task<int> Add(AddMonitorRequest request)
         {
             var validator = new MonitorActionValidator();
@@ -63,6 +74,18 @@ namespace Planar.Service.API
             return result;
         }
 
+        public async Task<List<MonitorItem>> GetByGroup(string group)
+        {
+            if (!await JobKeyHelper.IsJobGroupExists(group))
+            {
+                throw new RestValidationException("group", $"group with name '{group}' is not exists");
+            }
+
+            var items = await DataLayer.GetMonitorActionsByGroup(group);
+            var result = Mapper.Map<List<MonitorItem>>(items);
+            return result;
+        }
+
         public async Task<MonitorItem> GetById(int id)
         {
             var item = await DataLayer.GetMonitorAction(id);
@@ -80,32 +103,35 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<List<MonitorItem>> GetByGroup(string group)
+        public async Task<MonitorAlertModel> GetMonitorAlert(int id)
         {
-            if (!await JobKeyHelper.IsJobGroupExists(group))
-            {
-                throw new RestValidationException("group", $"group with name '{group}' is not exists");
-            }
-
-            var items = await DataLayer.GetMonitorActionsByGroup(group);
-            var result = Mapper.Map<List<MonitorItem>>(items);
-            return result;
+            var query = DataLayer.GetMonitorAlert(id);
+            var result = await Mapper.ProjectTo<MonitorAlertModel>(query).FirstOrDefaultAsync();
+            ValidateExistingEntity(result, "monitor alert");
+            return result!;
         }
 
-        public static List<MonitorEventModel> GetEvents()
+        public async Task<PagingResponse<MonitorAlertRowModel>> GetMonitorsAlerts(GetMonitorsAlertsRequest request)
         {
-            var result =
-                Enum.GetValues(typeof(MonitorEvents))
-                .Cast<MonitorEvents>()
-                .Select(e => new MonitorEventModel { EventName = e.ToString(), EventTitle = e.GetEnumDescription() })
-                .ToList();
-
+            var query = DataLayer.GetMonitorAlerts(request);
+            var data = await query.ProjectToWithPagingAsyc<MonitorAlert, MonitorAlertRowModel>(Mapper, request);
+            var result = new PagingResponse<MonitorAlertRowModel>(data);
             return result;
         }
 
         public List<string> GetHooks()
         {
             return ServiceUtil.MonitorHooks.Keys.OrderBy(k => k).ToList();
+        }
+
+        public async Task PartialUpdateMonitor(UpdateEntityRequestById request)
+        {
+            var monitor = await DataLayer.GetMonitorAction(request.Id);
+            ValidateExistingEntity(monitor, "monitor");
+            var updateMonitor = Mapper.Map<UpdateMonitorRequest>(monitor);
+            var validator = Resolve<IValidator<UpdateMonitorRequest>>();
+            await SetEntityProperties(updateMonitor, request, validator);
+            await Update(updateMonitor);
         }
 
         public async Task<string> Reload()
@@ -120,38 +146,6 @@ namespace Planar.Service.API
             await monitor.Validate();
 
             return $"{ServiceUtil.MonitorHooks.Count} monitor hooks loaded";
-        }
-
-        public async Task Update(UpdateMonitorRequest request)
-        {
-            var exists = await DataLayer.IsMonitorExists(request.Id);
-            if (!exists)
-            {
-                throw new RestNotFoundException($"monitor with id '{request.Id}' is not exists");
-            }
-
-            var validator = new MonitorActionValidator();
-            validator.ValidateMonitorArguments(request);
-
-            var monitor = Mapper.Map<MonitorAction>(request);
-            if (string.IsNullOrWhiteSpace(monitor.JobGroup)) { monitor.JobGroup = null; }
-            if (string.IsNullOrWhiteSpace(monitor.JobName)) { monitor.JobName = null; }
-            if (await DataLayer.IsMonitorExists(monitor))
-            {
-                throw new RestConflictException("monitor with same properties already exists");
-            }
-
-            await DataLayer.UpdateMonitorAction(monitor);
-        }
-
-        public async Task PartialUpdateMonitor(UpdateEntityRequestById request)
-        {
-            var monitor = await DataLayer.GetMonitorAction(request.Id);
-            ValidateExistingEntity(monitor, "monitor");
-            var updateMonitor = Mapper.Map<UpdateMonitorRequest>(monitor);
-            var validator = Resolve<IValidator<UpdateMonitorRequest>>();
-            await SetEntityProperties(updateMonitor, request, validator);
-            await Update(updateMonitor);
         }
 
         public async Task Try(MonitorTestRequest request)
@@ -205,6 +199,28 @@ namespace Planar.Service.API
             {
                 throw new RestValidationException(string.Empty, result.Failure ?? "general error");
             }
+        }
+
+        public async Task Update(UpdateMonitorRequest request)
+        {
+            var exists = await DataLayer.IsMonitorExists(request.Id);
+            if (!exists)
+            {
+                throw new RestNotFoundException($"monitor with id '{request.Id}' is not exists");
+            }
+
+            var validator = new MonitorActionValidator();
+            validator.ValidateMonitorArguments(request);
+
+            var monitor = Mapper.Map<MonitorAction>(request);
+            if (string.IsNullOrWhiteSpace(monitor.JobGroup)) { monitor.JobGroup = null; }
+            if (string.IsNullOrWhiteSpace(monitor.JobName)) { monitor.JobName = null; }
+            if (await DataLayer.IsMonitorExists(monitor))
+            {
+                throw new RestConflictException("monitor with same properties already exists");
+            }
+
+            await DataLayer.UpdateMonitorAction(monitor);
         }
     }
 }

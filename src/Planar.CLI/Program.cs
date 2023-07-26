@@ -222,12 +222,13 @@ namespace Planar.CLI
                         if (param is IPagingRequest pagingRequest)
                         {
                             var paging = response?.GetPagingResponse();
-                            if (paging != null)
+                            if (paging != null && !paging.IsLastPage)
                             {
                                 do
                                 {
                                     HandleCliResponse(response, cliArgument.OutputFilename);
-                                    var assert = paging.IsLastPage ? AssertMembers.Exit : AssertPage(pagingRequest);
+                                    pagingRequest.SetPagingDefaults();
+                                    var assert = AssertPage(pagingRequest);
                                     if (assert == AssertMembers.Next) { pagingRequest.PageNumber++; }
                                     else if (assert == AssertMembers.Prev) { pagingRequest.PageNumber--; }
                                     else { return cliArgument; }

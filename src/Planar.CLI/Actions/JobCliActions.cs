@@ -739,10 +739,7 @@ namespace Planar.CLI.Actions
                     .InstructionsText(
                         "[grey](Press [blue]<space>[/] to toggle a choise, [green]<enter>[/] to accept)[/]")
                     .PageSize(15)
-                    .AddChoiceGroup("all", "job details", "job data", "properties", "triggers", "triggers data")
-                    .AddChoiceGroup("all job", "job details", "job data", "properties")
-                    .AddChoiceGroup("all triggers", "triggers", "triggers data")
-                    .AddChoiceGroup(CliPromptUtil.CancelOption)
+                    .AddChoices("all", "only job", "only triggers", "only properties", "only job details", "only job data", "only triggers data", CliPromptUtil.CancelOption)
                     );
 
             CliPromptUtil.CheckForCancelOption(options);
@@ -773,38 +770,36 @@ namespace Planar.CLI.Actions
                         result.UpdateTriggersData = true;
                         break;
 
-                    case "all job":
+                    case "only job":
                     case "all-job":
                         result.UpdateJobDetails = true;
                         result.UpdateJobData = true;
                         result.UpdateProperties = true;
                         break;
 
-                    case "all triggers":
+                    case "only triggers":
                     case "all-triggers":
                         result.UpdateTriggers = true;
                         result.UpdateTriggersData = true;
                         break;
 
-                    case "job details":
+                    case "only job details":
+                    case "job-details":
                         result.UpdateJobDetails = true;
                         break;
 
+                    case "only job data":
                     case "job-data":
-                    case "job data":
                         result.UpdateJobData = true;
                         break;
 
+                    case "only properties":
                     case "properties":
                         result.UpdateProperties = true;
                         break;
 
-                    case "triggers":
-                        result.UpdateTriggers = true;
-                        break;
-
+                    case "only triggers data":
                     case "triggers-data":
-                    case "triggers data":
                         result.UpdateTriggersData = true;
                         break;
 

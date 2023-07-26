@@ -1,12 +1,14 @@
-﻿using Newtonsoft.Json;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
+using Quartz;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -26,6 +28,14 @@ namespace Planar.Service.API
             return response;
         }
 
+        private static T? Clone<T>(T obj)
+            where T : class, new()
+        {
+            var json = YmlUtil.Serialize(obj);
+            var result = YmlUtil.Deserialize<T>(json);
+            return result;
+        }
+
         private static IEnumerable<BaseTrigger> GetAllTriggers(SetJobRequest request)
         {
             var allTriggers = new List<BaseTrigger>();
@@ -40,6 +50,36 @@ namespace Planar.Service.API
             }
 
             return allTriggers;
+        }
+
+        private static DateTimeOffset GetTriggerStartAt(ITrigger trigger)
+        {
+            var delayStart = DelayStartTriggerDateTime;
+            var next = trigger.GetNextFireTimeUtc();
+            if (next == null || next < delayStart)
+            {
+                return delayStart;
+            }
+            else
+            {
+                return next.Value;
+            }
+        }
+
+        private static IReadOnlyCollection<ITrigger> RebuildOldTriggers(IReadOnlyCollection<ITrigger> triggers)
+        {
+            var result = new List<ITrigger>();
+            foreach (var item in triggers)
+            {
+                var builder = item.GetTriggerBuilder();
+                var start = GetTriggerStartAt(item);
+                builder.StartAt(start);
+
+                var trigger = builder.Build();
+                result.Add(trigger);
+            }
+
+            return new ReadOnlyCollection<ITrigger>(result);
         }
 
         private static void SyncJobData(SetJobRequest request, JobUpdateMetadata metadata)
@@ -64,6 +104,20 @@ namespace Planar.Service.API
             }
         }
 
+        private static async Task UpdateJobAuthor(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+        {
+            if (options.UpdateJobDetails)
+            {
+                metadata.JobDetails.JobDataMap.Put(Consts.Author, request.Author);
+            }
+            else
+            {
+                metadata.JobDetails.JobDataMap.Put(Consts.Author, metadata.Author);
+            }
+
+            await Task.CompletedTask;
+        }
+
         private static async Task UpdateJobData(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
         {
             if (options.UpdateJobData)
@@ -79,20 +133,6 @@ namespace Planar.Service.API
             }
 
             BuildJobData(request, metadata.JobDetails);
-
-            await Task.CompletedTask;
-        }
-
-        private static async Task UpdateJobAuthor(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
-        {
-            if (options.UpdateJobDetails)
-            {
-                metadata.JobDetails.JobDataMap.Put(Consts.Author, request.Author);
-            }
-            else
-            {
-                metadata.JobDetails.JobDataMap.Put(Consts.Author, metadata.Author);
-            }
 
             await Task.CompletedTask;
         }
@@ -123,6 +163,18 @@ namespace Planar.Service.API
             metadata.Author = JobHelper.GetJobAuthor(metadata.OldJobDetails);
         }
 
+        private async Task RollBack(JobUpdateMetadata metadata)
+        {
+            if (metadata == null) { return; }
+            if (metadata.OldJobDetails == null) { return; }
+            if (!metadata.RollbackEnabled) { return; }
+
+            var property = new JobProperty { JobId = metadata.JobId, Properties = metadata.OldJobProperties };
+            await Scheduler.ScheduleJob(metadata.OldJobDetails, metadata.OldTriggers, true);
+            await Scheduler.PauseJob(metadata.JobKey);
+            await Resolve<JobData>().UpdateJobProperty(property);
+        }
+
         private async Task<JobIdResponse> Update(SetJobDynamicRequest request, UpdateJobOptions options)
         {
             var metadata = new JobUpdateMetadata();
@@ -136,18 +188,6 @@ namespace Planar.Service.API
                 await RollBack(metadata);
                 throw;
             }
-        }
-
-        private async Task RollBack(JobUpdateMetadata metadata)
-        {
-            if (metadata == null) { return; }
-            if (metadata.OldJobDetails == null) { return; }
-            if (!metadata.RollbackEnabled) { return; }
-
-            var property = new JobProperty { JobId = metadata.JobId, Properties = metadata.OldJobProperties };
-            await Scheduler.ScheduleJob(metadata.OldJobDetails, metadata.OldTriggers, true);
-            await Scheduler.PauseJob(metadata.JobKey);
-            await Resolve<JobData>().UpdateJobProperty(property);
         }
 
         private async Task<JobIdResponse> UpdateInner(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
@@ -185,14 +225,6 @@ namespace Planar.Service.API
 
             // Return Id
             return new JobIdResponse { Id = metadata.JobId };
-        }
-
-        private static T? Clone<T>(T obj)
-            where T : class, new()
-        {
-            var json = YmlUtil.Serialize(obj);
-            var result = YmlUtil.Deserialize<T>(json);
-            return result;
         }
 
         private async Task UpdateJobDetails(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
@@ -238,7 +270,8 @@ namespace Planar.Service.API
             }
             else
             {
-                metadata.Triggers = metadata.OldTriggers;
+                var triggers = RebuildOldTriggers(metadata.OldTriggers);
+                metadata.Triggers = triggers;
             }
         }
 

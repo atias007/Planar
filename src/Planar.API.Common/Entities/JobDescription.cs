@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Planar.API.Common.Entities
+﻿namespace Planar.API.Common.Entities
 {
     public class JobDescription
     {
