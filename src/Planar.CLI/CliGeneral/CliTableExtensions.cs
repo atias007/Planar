@@ -157,6 +157,15 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetTable(PagingResponse<SecurityAuditModel>? response)
+        {
+            var table = new CliTable(paging: response);
+            if (response == null || response.Data == null) { return table; }
+            table.Table.AddColumns("Title", "Username", "User Title", "Date Created", "Is Warning");
+            response.Data.ForEach(r => table.Table.AddRow(SafeCliString(r.Title), SafeCliString(r.Username), SafeCliString(r.UserTitle), CliTableFormat.FormatDateTime(r.DateCreated), CliTableFormat.GetBooleanWarningMarkup(r.IsWarning)));
+            return table;
+        }
+
         public static CliTable GetTable(PagingResponse<LogDetails>? response)
         {
             var table = new CliTable(paging: response);

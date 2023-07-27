@@ -163,6 +163,29 @@ namespace Planar.CLI.Actions
             return await Task.FromResult(CliActionResponse.Empty);
         }
 
+        [Action("security-audits")]
+        public static async Task<CliActionResponse> GetSecurityAudits(CliGetSecurityAuditsRequest request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("service/securityAudits", Method.Get);
+
+            if (request.FromDate > DateTime.MinValue)
+            {
+                restRequest.AddQueryParameter("fromDate", request.FromDate);
+            }
+
+            if (request.ToDate > DateTime.MinValue)
+            {
+                restRequest.AddQueryParameter("toDate", request.ToDate);
+            }
+
+            restRequest.AddQueryParameter("ascending", request.Ascending);
+            restRequest.AddQueryPagingParameter(request);
+
+            var result = await RestProxy.Invoke<PagingResponse<SecurityAuditModel>>(restRequest, cancellationToken);
+            var table = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, table);
+        }
+
         public static async Task InitializeLogin()
         {
             var request = ConnectUtil.GetLastLoginRequestWithCredentials();

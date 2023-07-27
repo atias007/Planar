@@ -12,5 +12,7 @@
         public byte[] Password { get; set; } = null!;
 
         public byte[] Salt { get; set; } = null!;
+
+        public string Fullname => $"{Surename} {GivenName}".Trim();
     }
 }

@@ -221,7 +221,7 @@ namespace Planar.Service.API
             await UpdateJobProperties(request, options, metadata);
 
             // Audit
-            AuditJob(metadata.JobKey, "job updated", new { request = cloneRequest, options });
+            AuditJobSafe(metadata.JobKey, "job updated", new { request = cloneRequest, options });
 
             // Return Id
             return new JobIdResponse { Id = metadata.JobId };

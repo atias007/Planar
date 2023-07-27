@@ -41,7 +41,7 @@ namespace Planar.Service.API
             await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
             await Scheduler.PauseJob(info.JobKey);
 
-            AuditJob(info.JobKey, $"remove job data with key '{key}'", new { value = auditValue?.Trim() });
+            AuditJobSafe(info.JobKey, $"remove job data with key '{key}'", new { value = auditValue?.Trim() });
         }
 
         public async Task PutData(JobOrTriggerDataRequest request, PutMode mode)
@@ -57,7 +57,7 @@ namespace Planar.Service.API
                 }
 
                 info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
-                AuditJob(info.JobKey, $"update job data with key '{request.DataKey}'", new { value = request.DataValue?.Trim() });
+                AuditJobSafe(info.JobKey, $"update job data with key '{request.DataKey}'", new { value = request.DataValue?.Trim() });
             }
             else
             {
@@ -67,7 +67,7 @@ namespace Planar.Service.API
                 }
 
                 info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
-                AuditJob(info.JobKey, $"add job data with key '{request.DataKey}'", new { value = request.DataValue?.Trim() });
+                AuditJobSafe(info.JobKey, $"add job data with key '{request.DataKey}'", new { value = request.DataValue?.Trim() });
             }
 
             var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
@@ -460,7 +460,7 @@ namespace Planar.Service.API
             }
 
             var auditInfo = request.NowOverrideValue.HasValue ? new { NowOverrideValue = request.NowOverrideValue.Value } : null;
-            AuditJob(jobKey, "job manually invoked", auditInfo);
+            AuditJobSafe(jobKey, "job manually invoked", auditInfo);
         }
 
         public async Task QueueInvoke(QueueInvokeJobRequest request)
@@ -499,7 +499,7 @@ namespace Planar.Service.API
             // schedule trigger
             await Scheduler.ScheduleJob(newTrigger.Build());
 
-            AuditJob(jobKey, "job queue invoked", request);
+            AuditJobSafe(jobKey, "job queue invoked", request);
         }
 
         public async Task Pause(JobOrTriggerKey request)
@@ -507,13 +507,13 @@ namespace Planar.Service.API
             var jobKey = await JobKeyHelper.GetJobKey(request);
             await Scheduler.PauseJob(jobKey);
 
-            AuditJob(jobKey, "job paused");
+            AuditJobSafe(jobKey, "job paused");
         }
 
         public async Task PauseAll()
         {
             await Scheduler.PauseAll();
-            AuditJobs("all jobs paused");
+            AuditJobsSafe("all jobs paused");
         }
 
         public async Task Remove(string id)
@@ -565,13 +565,13 @@ namespace Planar.Service.API
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
             await Scheduler.ResumeJob(jobKey);
-            AuditJob(jobKey, "job resumed");
+            AuditJobSafe(jobKey, "job resumed");
         }
 
         public async Task ResumeAll()
         {
             await Scheduler.ResumeAll();
-            AuditJobs("all jobs resumed");
+            AuditJobsSafe("all jobs resumed");
         }
 
         public async Task<bool> Cancel(FireInstanceIdRequest request)

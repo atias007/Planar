@@ -52,6 +52,7 @@ namespace Planar.Service
             // Service
             services.AddSingleton<MainService>();
             services.AddSingleton<AuditService>();
+            services.AddSingleton<SecurityService>();
 
             // Scheduler
             services.AddSingleton(p => p.GetRequiredService<ISchedulerFactory>().GetScheduler().Result);
@@ -61,10 +62,16 @@ namespace Planar.Service
             // Host
             services.AddHostedService<MainService>();
             services.AddHostedService<AuditService>();
+            if (AppSettings.HasAuthontication)
+            {
+                services.AddHostedService<SecurityService>();
+            }
 
             // Channel
             services.AddSingleton(Channel.CreateUnbounded<AuditMessage>());
+            services.AddSingleton(Channel.CreateUnbounded<SecurityMessage>());
             services.AddSingleton<AuditProducer>();
+            services.AddSingleton<SecurityProducer>();
 
             // AutoMapper
             var assemply = Assembly.Load($"{nameof(Planar)}.{nameof(Service)}");

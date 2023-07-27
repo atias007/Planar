@@ -1,10 +1,13 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Azure.Core;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.General.Hash;
+using Planar.Service.Model;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -166,7 +169,7 @@ namespace Planar.Service.API
 
         public async Task<LoginResponse> Login(LoginRequest request)
         {
-            if (AppSettings.AuthenticationMode == AuthMode.AllAnonymous)
+            if (AppSettings.NoAuthontication)
             {
                 throw new RestConflictException("login service is not avaliable when authentication mode is disabled (AllAnonymous)");
             }
@@ -192,18 +195,30 @@ namespace Planar.Service.API
             var verify = HashUtil.VerifyHash(request.Password!, user.Password, user.Salt);
             if (!verify)
             {
+                AuditSecuritySafe($"user '{user.Fullname}' try to login with username '{request.Username}' and with wrong password", isWarning: true);
                 throw new RestValidationException("password", "wrong password", 101);
             }
+
+            var roleTitle = RoleHelper.GetTitle(role);
+            AuditSecuritySafe($"user '{user.Fullname}' with username '{request.Username}' and role '{roleTitle}' successfully login");
 
             var token = HashUtil.CreateToken(user);
             var result = new LoginResponse
             {
-                Role = RoleHelper.GetTitle(role),
+                Role = roleTitle,
                 Token = token,
                 FirstName = user.Surename,
                 LastName = user.GivenName,
             };
 
+            return result;
+        }
+
+        public async Task<PagingResponse<SecurityAuditModel>> GetSecurityAudits([FromQuery] SecurityAuditsFilter request)
+        {
+            var query = DataLayer.GetSecurityAudits(request);
+            var data = await query.ProjectToWithPagingAsyc<SecurityAudit, SecurityAuditModel>(Mapper, request);
+            var result = new PagingResponse<SecurityAuditModel>(data);
             return result;
         }
     }

@@ -80,6 +80,10 @@ namespace Planar.Common
 
         public static bool RunDatabaseMigration { get; set; }
 
+        public static bool HasAuthontication => AuthenticationMode != AuthMode.AllAnonymous;
+
+        public static bool NoAuthontication => AuthenticationMode == AuthMode.AllAnonymous;
+
         public static void Initialize(IConfiguration configuration)
         {
             Console.WriteLine("[x] Initialize AppSettings");

@@ -6,6 +6,7 @@ using Planar.Authorization;
 using Planar.Service.API;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -98,6 +99,17 @@ namespace Planar.Controllers
         public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
         {
             var result = await BusinesLayer.Login(request);
+            return Ok(result);
+        }
+
+        [HttpGet("securityAudits")]
+        [AdministratorAuthorize]
+        [SwaggerOperation(OperationId = "get_service_security_audits", Description = "Get all security audits", Summary = "Get All Security Audits")]
+        [OkJsonResponse(typeof(PagingResponse<SecurityAuditModel>))]
+        [BadRequestResponse]
+        public async Task<ActionResult<PagingResponse<SecurityAuditModel>>> GetSecurityAudits([FromQuery] SecurityAuditsFilter request)
+        {
+            var result = await BusinesLayer.GetSecurityAudits(request);
             return Ok(result);
         }
     }
