@@ -1,7 +1,7 @@
 --------------------------------------------------------
 PLAN FOR V 1.5.0
 ----------------
-- PERFORMANCE: each page request calculate the total rows
+- change /securityAudits route to /security-audits (and all others)
 - add smart process job (implement https://github.com/dotnet/MQTTnet)
 - add job yml field: log retention days
 - security log (login, change role of group, add/remove user from group)
