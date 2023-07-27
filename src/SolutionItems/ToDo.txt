@@ -13,6 +13,8 @@ PLAN FOR V 1.5.0
 - add SSIS job
 - add SSRS job
 - add daily report system job
+
+- cli: job apply (do add or update)
 - search in history by free text from log
 - add cli plot statistics
 - api rate limit
