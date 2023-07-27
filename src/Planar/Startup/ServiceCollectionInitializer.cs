@@ -58,7 +58,7 @@ namespace Planar.Startup
 
         private static void SetAuthorization(IServiceCollection services)
         {
-            if (AppSettings.AuthenticationMode != AuthMode.AllAnonymous)
+            if (AppSettings.HasAuthontication)
             {
                 services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     .AddJwtBearer(options =>

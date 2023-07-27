@@ -1,6 +1,7 @@
 ﻿using Polly;
 using Quartz;
 using System;
+using System.Globalization;
 
 namespace Planar.Common.Helpers
 {
@@ -82,7 +83,7 @@ namespace Planar.Common.Helpers
             var value = trigger.JobDataMap[Consts.RetrySpan];
             var spanValue = Convert.ToString(value);
             if (string.IsNullOrEmpty(spanValue)) { return null; }
-            if (!TimeSpan.TryParse(spanValue, out TimeSpan span)) { return null; }
+            if (!TimeSpan.TryParse(spanValue, CultureInfo.CurrentCulture, out TimeSpan span)) { return null; }
             return span;
         }
 

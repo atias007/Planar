@@ -31,7 +31,7 @@ namespace Planar.Startup
             options.SwaggerDoc(SwaggerVersion, info);
 
             // Authorization
-            if (AppSettings.AuthenticationMode != AuthMode.AllAnonymous)
+            if (AppSettings.HasAuthontication)
             {
                 options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
                 {

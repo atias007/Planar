@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
+using Planar.Service.Audit;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
@@ -138,6 +139,33 @@ namespace Planar.Service.API
         protected async Task ValidateExistingTrigger(TriggerKey entity, string triggerId)
         {
             _ = await Scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id '{triggerId}' could not be found");
+        }
+
+        protected void AuditSecuritySafe(string title, bool isWarning = false)
+        {
+            try
+            {
+                var audit = new SecurityMessage
+                {
+                    Title = title,
+                    IsWarning = isWarning
+                };
+
+                AuditSecurityInner(audit);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "fail to publish security audit with title {Title}. is warning audit: {IsWarning}", title, isWarning);
+            }
+        }
+
+        private void AuditSecurityInner(SecurityMessage audit)
+        {
+            var context = Resolve<IHttpContextAccessor>();
+            var claims = context?.HttpContext?.User?.Claims;
+            audit.Claims = claims;
+            var producer = Resolve<SecurityProducer>();
+            producer.Publish(audit);
         }
 
         protected static void ForbbidenPartialUpdateProperties(UpdateEntityRequest request, string? message, params string[] properties)

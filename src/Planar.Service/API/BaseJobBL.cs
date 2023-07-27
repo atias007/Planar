@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Service.Audit;
@@ -31,17 +32,17 @@ namespace Planar.Service.API
             public IJobDetail? JobDetails { get; set; }
         }
 
-        protected void AuditJobs(string description)
+        protected void AuditJobsSafe(string description)
         {
             var audit = new AuditMessage
             {
                 Description = description,
             };
 
-            AuditInner(audit);
+            AuditInnerSafe(audit);
         }
 
-        protected void AuditJob(JobKey jobKey, string description, object? additionalInfo = null)
+        protected void AuditJobSafe(JobKey jobKey, string description, object? additionalInfo = null)
         {
             var audit = new AuditMessage
             {
@@ -50,10 +51,10 @@ namespace Planar.Service.API
                 AdditionalInfo = additionalInfo
             };
 
-            AuditInner(audit);
+            AuditInnerSafe(audit);
         }
 
-        protected void AuditTrigger(TriggerKey triggerKey, string description, object? additionalInfo = null, bool addTriggerInfo = false)
+        protected void AuditTriggerSafe(TriggerKey triggerKey, string description, object? additionalInfo = null, bool addTriggerInfo = false)
         {
             var audit = new AuditMessage
             {
@@ -63,16 +64,23 @@ namespace Planar.Service.API
                 AddTriggerInfo = addTriggerInfo
             };
 
-            AuditInner(audit);
+            AuditInnerSafe(audit);
         }
 
-        private void AuditInner(AuditMessage audit)
+        private void AuditInnerSafe(AuditMessage audit)
         {
-            var context = Resolve<IHttpContextAccessor>();
-            var claims = context?.HttpContext?.User?.Claims;
-            audit.Claims = claims;
-            var producer = Resolve<AuditProducer>();
-            producer.Publish(audit);
+            try
+            {
+                var context = Resolve<IHttpContextAccessor>();
+                var claims = context?.HttpContext?.User?.Claims;
+                audit.Claims = claims;
+                var producer = Resolve<AuditProducer>();
+                producer.Publish(audit);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "fail to publish job/trigger audit message. the message: {@Message}", audit);
+            }
         }
 
         protected static void ValidateSystemJob(JobKey jobKey)

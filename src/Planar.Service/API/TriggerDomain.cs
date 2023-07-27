@@ -39,7 +39,7 @@ namespace Planar.Service.API
             await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
             await Scheduler.PauseJob(info.JobKey);
 
-            AuditTrigger(info.TriggerKey, GetTriggerAuditDescription("remove", key), new { value = auditValue?.Trim() }, addTriggerInfo: true);
+            AuditTriggerSafe(info.TriggerKey, GetTriggerAuditDescription("remove", key), new { value = auditValue?.Trim() }, addTriggerInfo: true);
         }
 
         public async Task PutData(JobOrTriggerDataRequest request, PutMode mode)
@@ -55,7 +55,7 @@ namespace Planar.Service.API
                 }
 
                 info.Trigger.JobDataMap.Put(request.DataKey, request.DataValue);
-                AuditTrigger(info.TriggerKey, GetTriggerAuditDescription("update", request.DataKey), new { value = request.DataValue?.Trim() });
+                AuditTriggerSafe(info.TriggerKey, GetTriggerAuditDescription("update", request.DataKey), new { value = request.DataValue?.Trim() });
             }
             else
             {
@@ -65,7 +65,7 @@ namespace Planar.Service.API
                 }
 
                 info.Trigger.JobDataMap.Put(request.DataKey, request.DataValue);
-                AuditTrigger(info.TriggerKey, GetTriggerAuditDescription("add", request.DataKey), new { value = request.DataValue?.Trim() });
+                AuditTriggerSafe(info.TriggerKey, GetTriggerAuditDescription("add", request.DataKey), new { value = request.DataValue?.Trim() });
             }
 
             var triggers = await BuildTriggers(info);
@@ -159,7 +159,7 @@ namespace Planar.Service.API
 
             // Audit
             object? obj = details.SimpleTriggers.Any() ? details?.SimpleTriggers[0] : details?.CronTriggers.FirstOrDefault();
-            AuditJob(trigger.JobKey, $"trigger removed (id: {triggerIdentifier})", obj);
+            AuditJobSafe(trigger.JobKey, $"trigger removed (id: {triggerIdentifier})", obj);
         }
 
         public async Task Pause(JobOrTriggerKey request)
@@ -170,7 +170,7 @@ namespace Planar.Service.API
             // audit
             var trigger = ValidateTriggerExists(key).Result;
             var id = GetTriggerId(trigger);
-            AuditJob(trigger.JobKey, $"trigger paused (id: {id})");
+            AuditJobSafe(trigger.JobKey, $"trigger paused (id: {id})");
         }
 
         public async Task Resume(JobOrTriggerKey request)
@@ -181,7 +181,7 @@ namespace Planar.Service.API
             // audit
             var trigger = ValidateTriggerExists(key).Result;
             var id = GetTriggerId(trigger);
-            AuditJob(trigger.JobKey, $"trigger resume (id: {id})");
+            AuditJobSafe(trigger.JobKey, $"trigger resume (id: {id})");
         }
 
         public string GetCronDescription(string expression)

@@ -40,6 +40,8 @@ public partial class PlanarContext : DbContext
 
     public virtual DbSet<Role> Roles { get; set; }
 
+    public virtual DbSet<SecurityAudit> SecurityAudits { get; set; }
+
     public virtual DbSet<Trace> Traces { get; set; }
 
     public virtual DbSet<User> Users { get; set; }

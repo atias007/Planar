@@ -14,9 +14,7 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<Content Remove="Data\Settings\AppSettings.json" />
 		<Content Remove="Data\Settings\HebrewCalendar.json" />
-		<Content Remove="Data\Settings\Serilog.json" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Remove="Content\fonts.googleapis.css" />
@@ -85,9 +83,6 @@
 		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
 	</PropertyGroup>
 	<ItemGroup>
-		<None Include="Data\Settings\AppSettings.json">
-			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
-		</None>
 		<EmbeddedResource Include="Data\Calendars\Hebrew\HebrewCalendar.json">
 			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</EmbeddedResource>
@@ -103,9 +98,6 @@
 		<EmbeddedResource Include="Data\MonitorHooks\Teams\readme.md">
 		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</EmbeddedResource>
-		<None Include="Data\Settings\Serilog.json">
-			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
-		</None>
 	</ItemGroup>
 
 	<ItemGroup>

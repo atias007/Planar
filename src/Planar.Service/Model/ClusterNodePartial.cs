@@ -7,13 +7,7 @@ namespace Planar.Service.Model
     public partial class ClusterNode
     {
         [NotMapped]
-        public TimeSpan HealthCheckGap
-        {
-            get
-            {
-                return DateTime.Now.Subtract(HealthCheckDate);
-            }
-        }
+        public TimeSpan HealthCheckGap => DateTime.UtcNow.Subtract(HealthCheckDate.ToUniversalTime());
 
         [NotMapped]
         public TimeSpan HealthCheckGapDeviation

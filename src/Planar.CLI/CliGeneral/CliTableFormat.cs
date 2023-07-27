@@ -193,6 +193,15 @@ namespace Planar.CLI
                 $"[{CliFormat.ErrorColor}]{display}[/]";
         }
 
+        public static string GetBooleanWarningMarkup(bool value, object? display = null)
+        {
+            display ??= value;
+
+            return value ?
+                $"[{CliFormat.WarningColor}]{display}[/]" :
+                $"{display}";
+        }
+
         public static string GetLevelMarkup(string? level)
         {
             return level switch
