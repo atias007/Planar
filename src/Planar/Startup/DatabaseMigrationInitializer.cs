@@ -1,17 +1,13 @@
-﻿using DbUp;
+﻿using DatabaseMigrations;
 using Planar.Common;
 using Planar.Common.Exceptions;
-using Planar.Service;
-using Planar.Service.Exceptions;
 using System;
-using System.Reflection;
+using System.Linq;
 
 namespace Planar.Startup
 {
     public static class DatabaseMigrationInitializer
     {
-        private static readonly Assembly _assembly = Assembly.Load(nameof(DatabaseMigrations));
-
         private static void HandleError(Exception ex)
         {
             Console.WriteLine(string.Empty.PadLeft(80, '-'));
@@ -43,16 +39,7 @@ namespace Planar.Startup
             {
                 Console.WriteLine("[x] Run database migration");
 
-                EnsureDatabase.For.SqlDatabase(AppSettings.DatabaseConnectionString);
-
-                var engine =
-                    DeployChanges.To
-                        .SqlDatabase(AppSettings.DatabaseConnectionString)
-                        .WithScriptsEmbeddedInAssembly(_assembly)
-                        .WithTransaction()
-                        .LogToConsole()
-                        .LogScriptOutput()
-                        .Build();
+                Runner.EnsureDatabaseExists(AppSettings.DatabaseConnectionString);
 
                 var count = CountScriptsToExecute();
                 Console.WriteLine($"    - Found {count} scripts to run");
@@ -63,7 +50,7 @@ namespace Planar.Startup
                 }
 
                 Console.WriteLine(string.Empty.PadLeft(80, '-'));
-                var result = engine.PerformUpgrade();
+                var result = Runner.Execute(AppSettings.DatabaseConnectionString);
 
                 if (result.Successful)
                 {
@@ -84,14 +71,8 @@ namespace Planar.Startup
 
         private static int CountScriptsToExecute()
         {
-            var engine =
-                    DeployChanges.To
-                        .SqlDatabase(AppSettings.DatabaseConnectionString)
-                        .WithScriptsEmbeddedInAssembly(_assembly)
-                        .Build();
-
-            var scripts = engine.GetScriptsToExecute();
-            return scripts.Count;
+            var list = Runner.GetScripts(AppSettings.DatabaseConnectionString);
+            return list.Count();
         }
     }
 }

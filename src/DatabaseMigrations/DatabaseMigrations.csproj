@@ -1,86 +1,27 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <NoWarn>1701;1702;NU1803</NoWarn>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <NoWarn>1701;1702;NU1803</NoWarn>
-  </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="dbup-sqlserver" Version="5.0.8" />
+    <PackageReference Include="dbup-core" Version="5.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
     <PackageReference Include="Spectre.Console" Version="0.47.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DatabaseMigrations.Factory\DatabaseMigrations.Factory.csproj" />
+  </ItemGroup>
+
   <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Remove="Scripts\Planar_0001 - startup_v1_1_0.sql" />
-    <None Remove="Scripts\Planar_0002 - status_count_sp.sql" />
-    <None Remove="Scripts\Planar_0003 - add stat trace sp.sql" />
-    <None Remove="Scripts\Planar_0004 - concurent q table.sql" />
-    <None Remove="Scripts\Planar_0005 - add jobtype col.sql" />
-    <None Remove="Scripts\Planar_0006 - add sp reset system.sql" />
-    <None Remove="Scripts\Planar_0007 - reset system jobs.sql" />
-    <None Remove="Scripts\Planar_0008 - sp clear job log.sql" />
-    <None Remove="Scripts\Planar_0009 - fix last_history sp.sql" />
-    <None Remove="Scripts\Planar_0010 - statistics_job.sql" />
-    <None Remove="Scripts\Planar_0011 - build_statistics.sql" />
-    <None Remove="Scripts\Planar_0012 - UpdateAnomalySP.sql" />
-    <None Remove="Scripts\Planar_0013 - stat_counters_table.sql" />
-    <None Remove="Scripts\Planar_0014 - sp_FillJobCounters.sql" />
-    <None Remove="Scripts\Planar_0015 - alter_globalparam.sql" />
-    <None Remove="Scripts\Planar_0016 - log_bigint_for_id.sql" />
-    <None Remove="Scripts\Planar_0017 - config_value_4000.sql" />
-    <None Remove="Scripts\Planar_0018 - referece_fields.sql" />
-    <None Remove="Scripts\Planar_0019 - add_job_audit.sql" />
-    <None Remove="Scripts\Planar_0020 - stop-cancel-column.sql" />
-    <None Remove="Scripts\Planar_0021 - alter_instancelog.sql" />
-    <None Remove="Scripts\Planar_0022 - add ex count.sql" />
-    <None Remove="Scripts\Planar_0023 - fix_stat_sp.sql" />
-    <None Remove="Scripts\Planar_0024 - fix_stats.sql" />
-    <None Remove="Scripts\Planar_0025 - drop_max_duration.sql" />
-    <None Remove="Scripts\Planar_0026 - fix_concurrent.sql" />
-    <None Remove="Scripts\Planar_0027 - fix_count_fails.sql" />
-    <None Remove="Scripts\Planar_0028 - paging_lastrunning.sql" />
-    <None Remove="Scripts\Planar_0029 - add_counter_sp.sql" />
-    <None Remove="Scripts\Planar_0030 - add_concurrent.sql" />
-    <None Remove="Scripts\Planar_0031 - monitor_alerts.sql" />
   </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0002 - status_count_sp.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0003 - add stat trace sp.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0004 - concurent q table.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0005 - add jobtype col.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0006 - add sp reset system.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0007 - reset system jobs.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0008 - sp clear job log.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0009 - fix last_history sp.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0010 - statistics_job.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0011 - build_statistics.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0012 - UpdateAnomalySP.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0013 - stat_counters_table.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0014 - sp_FillJobCounters.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0015 - alter_globalparam.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0016 - log_bigint_for_id.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0017 - config_value_4000.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0018 - referece_fields.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0019 - add_job_audit.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0020 - stop-cancel-column.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0021 - alter_instancelog.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0022 - add ex count.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0023 - fix_stat_sp.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0024 - fix_stats.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0025 - drop_max_duration.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0026 - fix_concurrent.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0027 - fix_count_fails.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0028 - paging_lastrunning.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0029 - add_counter_sp.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0030 - add_concurrent.sql" />
-    <EmbeddedResource Include="Scripts\Planar_0031 - monitor_alerts.sql" />
-  </ItemGroup>
+
 </Project>

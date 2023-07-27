@@ -1,6 +1,6 @@
 ﻿namespace DatabaseMigrations
 {
-    internal enum RunningMode
+    public enum RunningMode
     {
         AddScript,
         Validate,

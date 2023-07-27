@@ -10,7 +10,7 @@ Solutions
 Check List
 ----------------------------------------
 - update nuget packages
-- Remove unsused nuget packages
+- optional: remove unsused nuget packages
 - run database migrations on Planar_Test
 - run SqlSchemaCompare
 - run SqlDataCompare (Roles table)
@@ -20,33 +20,37 @@ Check List
 - create pull request to master
 - fix sonar issues
 - approve pull request
-- publish cli all versions
-- publish DatabaseMigrations version
-- publish planar all versions
-- Zip all published at C:\temp\Planar\publish
+- switch to master branch + git pull
+- run planar_publish.bat
 
 Docker
 ------
 - update the version number on script DockerBuildScript.bat
 - run build script DockerBuildScript.bat
-- check the docker version
+- check the docker
 
+GitHub
+------
+- Draft new release
+- Carete new tag: version x.x.x
+- Release Title: Version x.x.x
+- Release text as folowing...
+- Add all publish files
+- Publish Release
 ---------------------------------------------------------------------
 
-DECLARE @SQL varchar(max)
+# Planar For Windows
 
-SELECT @SQL = COALESCE(@SQL,'') + 'Kill ' + Convert(varchar, SPId) + ';'
-FROM MASTER..SysProcesses
-WHERE DBId = DB_ID(@DatabaseName) AND SPId <> @@SPId
+`planar`: the main windows service
+`planar-cli`: command line interface tool
+`database_migrations`: setup helper tool for installing and updating versions of SQL scripts
 
---SELECT @SQL 
-EXEC(@SQL)
-alter database Planar_Test set single_user with rollback immediate
 
-GO
-Use Master
-GO
-ALTER DATABASE Planar_Test SET OFFLINE
-GO
+# Planar For Docker
 
-DROP DATABASE Planar_Test
+`docker-compose.yml`: docker compose file to run configured service & SQL server instance.
+
+- create new local foder 
+- download and save the docker-compose.yml file to the new folder
+- open terminal / command line pointing to the new folder
+- run command: `docker-compose -p planar up -d`
