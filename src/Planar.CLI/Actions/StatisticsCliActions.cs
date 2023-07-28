@@ -26,7 +26,7 @@ namespace Planar.CLI.Actions
         [Action("job-counters")]
         public static async Task<CliActionResponse> JobCounters(CliJobCountersRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("statistics/jobCounters", Method.Get);
+            var restRequest = new RestRequest("statistics/job-counters", Method.Get);
             if (request.FromDate != default)
             {
                 restRequest.AddQueryParameter("fromDate", request.FromDate.ToString("u"));

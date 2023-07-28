@@ -10,8 +10,8 @@ namespace Planar.Startup.Logging
         private static readonly string[] filterPath = new[]
         {
             "/",
-            "/service/healthcheck",
-            "/cluster/healthcheck",
+            "/service/health-check",
+            "/cluster/health-check",
             "/favicon.ico"
         };
 

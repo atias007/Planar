@@ -28,9 +28,9 @@ namespace Planar.Controllers
             return Ok(response);
         }
 
-        [HttpGet("healthCheck")]
+        [HttpGet("health-check")]
         [AllowAnonymous]
-        [SwaggerOperation(OperationId = "get_cluster_health-check", Description = "Check the health of all nodes in cluster", Summary = "Check Cluster Health")]
+        [SwaggerOperation(OperationId = "get_cluster_health_check", Description = "Check the health of all nodes in cluster", Summary = "Check Cluster Health")]
         [OkTextResponse]
         [ServiceUnavailableResponse]
         public async Task<ActionResult<string>> HealthCheck()
@@ -39,7 +39,7 @@ namespace Planar.Controllers
             return Ok(response);
         }
 
-        [HttpGet("maxConcurrency")]
+        [HttpGet("max-concurrency")]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_cluster_max_concurrency", Description = "Get the total max concurrency of cluster", Summary = "Get Cluster Max Concurrency")]
         [OkTextResponse]

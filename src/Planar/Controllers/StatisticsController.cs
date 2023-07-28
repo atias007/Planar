@@ -61,7 +61,7 @@ namespace Planar.Controllers
             return Ok(response);
         }
 
-        [HttpGet("jobCounters")]
+        [HttpGet("job-counters")]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_statistics_job_counters", Description = "Get all jobs counters", Summary = "Get All Jobs Counters")]
         [OkJsonResponse(typeof(JobCounters))]

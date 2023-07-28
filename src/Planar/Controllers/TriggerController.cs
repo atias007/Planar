@@ -29,9 +29,9 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{jobId}/byjob")]
+        [HttpGet("{jobId}/by-job")]
         [ViewerAuthorize]
-        [SwaggerOperation(OperationId = "get_trigger_jobid_byjob", Description = "Find triggers by job ", Summary = "Find Triggers By Job")]
+        [SwaggerOperation(OperationId = "get_trigger_jobid_by_job", Description = "Find triggers by job ", Summary = "Find Triggers By Job")]
         [NotFoundResponse]
         [BadRequestResponse]
         [OkJsonResponse(typeof(TriggerRowDetails))]

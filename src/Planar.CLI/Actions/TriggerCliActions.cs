@@ -20,7 +20,7 @@ namespace Planar.CLI.Actions
         [Action("list")]
         public static async Task<CliActionResponse> GetTriggersDetails(CliListTriggersRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("trigger/{jobId}/byjob", Method.Get);
+            var restRequest = new RestRequest("trigger/{jobId}/by-job", Method.Get);
 
             if (!string.IsNullOrWhiteSpace(request.Id))
             {

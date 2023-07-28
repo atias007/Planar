@@ -94,7 +94,7 @@ namespace Planar.CLI.Actions
         public static async Task<string> ChooseTrigger(CancellationToken cancellationToken = default)
         {
             var jobId = await ChooseJob(cancellationToken);
-            var restRequest = new RestRequest("trigger/{jobId}/byjob", Method.Get);
+            var restRequest = new RestRequest("trigger/{jobId}/by-job", Method.Get);
             restRequest.AddUrlSegment("jobId", jobId);
             var result = await RestProxy.Invoke<TriggerRowDetails>(restRequest, cancellationToken);
             if (result.IsSuccessful && result.Data != null)
@@ -293,7 +293,7 @@ namespace Planar.CLI.Actions
         [Action("next")]
         public static async Task<CliActionResponse> GetNextRunning(CliJobKey jobKey, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("job/{id}/nextRunning", Method.Get)
+            var restRequest = new RestRequest("job/{id}/next-running", Method.Get)
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<DateTime?>(restRequest, cancellationToken);
@@ -304,7 +304,7 @@ namespace Planar.CLI.Actions
         [Action("prev")]
         public static async Task<CliActionResponse> GetPreviousRunning(CliJobKey jobKey, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("job/{id}/prevRunning", Method.Get)
+            var restRequest = new RestRequest("job/{id}/prev-running", Method.Get)
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<DateTime?>(restRequest, cancellationToken);
@@ -315,7 +315,7 @@ namespace Planar.CLI.Actions
         [Action("running-log")]
         public static async Task<CliActionResponse> GetRunningData(CliFireInstanceIdRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("job/{instanceId}/runningData", Method.Get)
+            var restRequest = new RestRequest("job/{instanceId}/running-data", Method.Get)
                 .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<GetRunningDataResponse>(restRequest, cancellationToken);
@@ -327,7 +327,7 @@ namespace Planar.CLI.Actions
         [Action("running-ex")]
         public static async Task<CliActionResponse> GetRunningExceptions(CliFireInstanceIdRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("job/{instanceId}/runningData", Method.Get)
+            var restRequest = new RestRequest("job/{instanceId}/running-data", Method.Get)
                 .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<GetRunningDataResponse>(restRequest, cancellationToken);
@@ -382,7 +382,7 @@ namespace Planar.CLI.Actions
         [Action("pause-all")]
         public static async Task<CliActionResponse> PauseAll(CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("job/pauseAll", Method.Post);
+            var restRequest = new RestRequest("job/pause-all", Method.Post);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);
             return new CliActionResponse(result);
@@ -414,7 +414,7 @@ namespace Planar.CLI.Actions
         [Action("resume-all")]
         public static async Task<CliActionResponse> ResumeAll(CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("job/resumeAll", Method.Post);
+            var restRequest = new RestRequest("job/resume-all", Method.Post);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);
             return new CliActionResponse(result);
@@ -976,7 +976,7 @@ namespace Planar.CLI.Actions
 
         private static async Task<CliActionResponse?> TestStep6CheckLog(long logId, CancellationToken cancellationToken)
         {
-            var restTestRequest = new RestRequest("job/{id}/testStatus", Method.Get)
+            var restTestRequest = new RestRequest("job/{id}/test-status", Method.Get)
                 .AddParameter("id", logId, ParameterType.UrlSegment);
             var status = await RestProxy.Invoke<GetTestStatusResponse>(restTestRequest, cancellationToken);
 

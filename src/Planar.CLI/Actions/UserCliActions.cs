@@ -49,7 +49,7 @@ namespace Planar.CLI.Actions
         [Action("reset-password")]
         public static async Task<CliActionResponse> ResetUserPassword(CliGetByNameRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("user/{username}/resetpassword", Method.Patch)
+            var restRequest = new RestRequest("user/{username}/reset-password", Method.Patch)
                 .AddParameter("username", request.Name, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
