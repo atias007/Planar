@@ -49,9 +49,9 @@ namespace Planar.Controllers
             return Ok(response);
         }
 
-        [HttpGet("healthCheck")]
+        [HttpGet("health-check")]
         [AllowAnonymous]
-        [SwaggerOperation(OperationId = "get_service_healthcheck", Description = "Service health check", Summary = "Health Check")]
+        [SwaggerOperation(OperationId = "get_service_health_check", Description = "Service health check", Summary = "Health Check")]
         [OkJsonResponse(typeof(GetServiceInfoResponse))]
         [ServiceUnavailableResponse]
         public async Task<ActionResult<string>> HealthCheck()
@@ -102,7 +102,7 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("securityAudits")]
+        [HttpGet("security-audits")]
         [AdministratorAuthorize]
         [SwaggerOperation(OperationId = "get_service_security_audits", Description = "Get all security audits", Summary = "Get All Security Audits")]
         [OkJsonResponse(typeof(PagingResponse<SecurityAuditModel>))]

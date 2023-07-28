@@ -103,9 +103,9 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{id}/nextRunning")]
+        [HttpGet("{id}/next-running")]
         [ViewerAuthorize]
-        [SwaggerOperation(OperationId = "get_job_nextRunning_id", Description = "Get the next running date & time of job", Summary = "Get Next Running Date")]
+        [SwaggerOperation(OperationId = "get_job_next_running_id", Description = "Get the next running date & time of job", Summary = "Get Next Running Date")]
         [OkTextResponse]
         [BadRequestResponse]
         [NotFoundResponse]
@@ -115,9 +115,9 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{id}/prevRunning")]
+        [HttpGet("{id}/prev-running")]
         [ViewerAuthorize]
-        [SwaggerOperation(OperationId = "get_job_prevRunning_id", Description = "Get the previous running date & time of job", Summary = "Get Previous Running Date")]
+        [SwaggerOperation(OperationId = "get_job_prev_running_id", Description = "Get the previous running date & time of job", Summary = "Get Previous Running Date")]
         [OkTextResponse]
         [BadRequestResponse]
         [NotFoundResponse]
@@ -204,9 +204,9 @@ namespace Planar.Controllers
             return Accepted();
         }
 
-        [HttpPost("pauseAll")]
+        [HttpPost("pause-all")]
         [EditorAuthorize]
-        [SwaggerOperation(OperationId = "post_job_pauseall", Description = "Pause all jobs", Summary = "Pause All Jobs")]
+        [SwaggerOperation(OperationId = "post_job_pause_all", Description = "Pause all jobs", Summary = "Pause All Jobs")]
         [AcceptedContentResponse]
         public async Task<IActionResult> PauseAll()
         {
@@ -227,7 +227,7 @@ namespace Planar.Controllers
             return Accepted();
         }
 
-        [HttpPost("resumeAll")]
+        [HttpPost("resume-all")]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_job_resumeall", Description = "Resume all jobs", Summary = "Resume All Jobs")]
         [AcceptedContentResponse]
@@ -282,9 +282,9 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{instanceId}/runningData")]
+        [HttpGet("{instanceId}/running-data")]
         [ViewerAuthorize]
-        [SwaggerOperation(OperationId = "get_job_runningData_instanceid", Description = "Get running job log & exception", Summary = "Get Running Job Data")]
+        [SwaggerOperation(OperationId = "get_job_running_data_instanceid", Description = "Get running job log & exception", Summary = "Get Running Job Data")]
         [OkJsonResponse(typeof(GetRunningDataResponse))]
         [BadRequestResponse]
         [NotFoundResponse]
@@ -317,7 +317,7 @@ namespace Planar.Controllers
         }
 
         [ApiExplorerSettings(IgnoreApi = true)]
-        [HttpGet("{id}/testStatus")]
+        [HttpGet("{id}/test-status")]
         [TesterAuthorize]
         [SwaggerOperation(OperationId = "get_job_teststatus_id", Description = "", Summary = "")]
         [OkJsonResponse(typeof(GetTestStatusResponse))]

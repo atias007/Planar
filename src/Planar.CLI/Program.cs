@@ -537,7 +537,7 @@ namespace Planar.CLI
             if (response.StatusCode == HttpStatusCode.ServiceUnavailable &&
                 response.Request != null &&
                 response.Content != null &&
-                response.Request.Resource.ToLower().Contains("service/healthcheck"))
+                response.Request.Resource.ToLower().Contains("service/health-check"))
             {
                 var s = JsonConvert.DeserializeObject<string>(response.Content) ?? string.Empty;
                 var lines = s.Split("\r", StringSplitOptions.TrimEntries);

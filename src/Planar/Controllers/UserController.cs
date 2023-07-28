@@ -106,9 +106,9 @@ namespace Planar.Controllers
             return NoContent();
         }
 
-        [HttpPatch("{username}/resetpassword")]
+        [HttpPatch("{username}/reset-password")]
         [EditorAuthorize]
-        [SwaggerOperation(OperationId = "patch_user_username_resetpassword", Description = "Reset user password", Summary = "Reset User Password")]
+        [SwaggerOperation(OperationId = "patch_user_username_reset_password", Description = "Reset user password", Summary = "Reset User Password")]
         [OkTextResponse]
         [BadRequestResponse]
         [NotFoundResponse]

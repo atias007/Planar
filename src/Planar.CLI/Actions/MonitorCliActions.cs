@@ -70,10 +70,10 @@ namespace Planar.CLI.Actions
             }
             else
             {
-                var restRequest1 = new RestRequest("monitor/byJob/{jobId}", Method.Get)
+                var restRequest1 = new RestRequest("monitor/by-job/{jobId}", Method.Get)
                     .AddParameter("jobId", request.JobIdOrJobGroup, ParameterType.UrlSegment);
 
-                var restRequest2 = new RestRequest("monitor/byGroup/{group}", Method.Get)
+                var restRequest2 = new RestRequest("monitor/by-group/{group}", Method.Get)
                     .AddParameter("group", request.JobIdOrJobGroup, ParameterType.UrlSegment);
 
                 var task1 = RestProxy.Invoke<List<MonitorItem>>(restRequest1, cancellationToken);

@@ -81,7 +81,7 @@ namespace Planar.CLI.Actions
         [Action("health-check")]
         public static async Task<CliActionResponse> HealthCheck(CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("service/healthCheck", Method.Get);
+            var restRequest = new RestRequest("service/health-check", Method.Get);
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
             return new CliActionResponse(result, result.Data);
         }
@@ -166,7 +166,7 @@ namespace Planar.CLI.Actions
         [Action("security-audits")]
         public static async Task<CliActionResponse> GetSecurityAudits(CliGetSecurityAuditsRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("service/securityAudits", Method.Get);
+            var restRequest = new RestRequest("service/security-audits", Method.Get);
 
             if (request.FromDate > DateTime.MinValue)
             {
