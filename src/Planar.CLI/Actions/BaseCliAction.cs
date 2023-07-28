@@ -142,7 +142,7 @@ namespace Planar.CLI.Actions
                 GetModule<GroupCliActions>(),
                 GetModule<ClusterCliActions>(),
                 GetModule<MonitorCliActions>(),
-                GetModule<StatisticsCliActions>()
+                GetModule<MetricsCliActions>()
             }
             .OrderBy(m => m.Name);
 

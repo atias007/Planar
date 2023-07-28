@@ -36,7 +36,7 @@ namespace Planar.Service
             services.AddScoped<TriggerDomain>();
             services.AddScoped<UserDomain>();
             services.AddScoped<ClusterDomain>();
-            services.AddScoped<StatisticsDomain>();
+            services.AddScoped<MetricsDomain>();
 
             // Utils
             services.AddScoped<ClusterUtil>();
@@ -92,7 +92,7 @@ namespace Planar.Service
             services.AddTransient<HistoryData>();
             services.AddTransient<TraceData>();
             services.AddTransient<ServiceData>();
-            services.AddTransient<StatisticsData>();
+            services.AddTransient<MetricsData>();
             services.AddTransient<JobData>();
             services.AddTransient<IJobPropertyDataLayer, JobData>();
 

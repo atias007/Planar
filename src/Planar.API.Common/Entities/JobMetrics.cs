@@ -2,7 +2,7 @@
 
 namespace Planar.API.Common.Entities
 {
-    public class JobStatistic
+    public class JobMetrics
     {
         public TimeSpan AvgDuration { get; set; }
         public TimeSpan StdevDuration { get; set; }

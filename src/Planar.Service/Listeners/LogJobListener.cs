@@ -207,7 +207,7 @@ namespace Planar.Service.Listeners
                 RecordDate = DateTimeOffset.Now.DateTime
             };
 
-            await ExecuteDal<StatisticsData>(d => d.AddCocurentQueueItem(item));
+            await ExecuteDal<MetricsData>(d => d.AddCocurentQueueItem(item));
         }
 
         private static async Task<int> CountConcurrentExecutionJob(IScheduler scheduler)
@@ -221,22 +221,22 @@ namespace Planar.Service.Listeners
 
         private async Task<JobStatistics> GetJobStatistics()
         {
-            var durationKey = nameof(StatisticsData.GetJobDurationStatistics);
-            var effectedKey = nameof(StatisticsData.GetJobEffectedRowsStatistics);
+            var durationKey = nameof(MetricsData.GetJobDurationStatistics);
+            var effectedKey = nameof(MetricsData.GetJobEffectedRowsStatistics);
             using var scope = ServiceScopeFactory.CreateScope();
             var cache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
 
             var exists = cache.TryGetValue<IEnumerable<JobDurationStatistic>>(durationKey, out var durationStatistics);
             if (!exists || durationStatistics == null)
             {
-                durationStatistics = await ExecuteDal<StatisticsData, IEnumerable<JobDurationStatistic>>(d => d.GetJobDurationStatistics());
+                durationStatistics = await ExecuteDal<MetricsData, IEnumerable<JobDurationStatistic>>(d => d.GetJobDurationStatistics());
                 cache.Set(durationKey, durationStatistics, StatisticsUtil.DefaultCacheSpan);
             }
 
             exists = cache.TryGetValue<IEnumerable<JobEffectedRowsStatistic>>(durationKey, out var effectedStatistics);
             if (!exists || effectedStatistics == null)
             {
-                effectedStatistics = await ExecuteDal<StatisticsData, IEnumerable<JobEffectedRowsStatistic>>(d => d.GetJobEffectedRowsStatistics());
+                effectedStatistics = await ExecuteDal<MetricsData, IEnumerable<JobEffectedRowsStatistic>>(d => d.GetJobEffectedRowsStatistics());
                 cache.Set(effectedKey, effectedStatistics, StatisticsUtil.DefaultCacheSpan);
             }
 

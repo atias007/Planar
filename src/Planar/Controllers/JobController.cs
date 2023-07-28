@@ -205,7 +205,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("pause-all")]
-        [EditorAuthorize]
+        [AdministratorAuthorize]
         [SwaggerOperation(OperationId = "post_job_pause_all", Description = "Pause all jobs", Summary = "Pause All Jobs")]
         [AcceptedContentResponse]
         public async Task<IActionResult> PauseAll()
@@ -228,7 +228,7 @@ namespace Planar.Controllers
         }
 
         [HttpPost("resume-all")]
-        [EditorAuthorize]
+        [AdministratorAuthorize]
         [SwaggerOperation(OperationId = "post_job_resumeall", Description = "Resume all jobs", Summary = "Resume All Jobs")]
         [AcceptedContentResponse]
         public async Task<IActionResult> ResumeAll()

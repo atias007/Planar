@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class StatisticsDomain : BaseJobBL<StatisticsDomain, StatisticsData>
+    public class MetricsDomain : BaseJobBL<MetricsDomain, MetricsData>
     {
-        public StatisticsDomain(IServiceProvider serviceProvider) : base(serviceProvider)
+        public MetricsDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
 
@@ -23,7 +23,7 @@ namespace Planar.Service.API
             await Scheduler.TriggerJob(jobKey);
         }
 
-        public async Task<JobStatistic> GetJobStatistics(string jobId)
+        public async Task<JobMetrics> GetJobMetrics(string jobId)
         {
             var key = await JobKeyHelper.GetJobKey(jobId);
             var id = await JobKeyHelper.GetJobId(key);
@@ -31,16 +31,16 @@ namespace Planar.Service.API
             using var scope1 = _serviceProvider.CreateScope();
             using var scope2 = _serviceProvider.CreateScope();
             using var scope3 = _serviceProvider.CreateScope();
-            var query1 = scope1.ServiceProvider.GetRequiredService<StatisticsData>().GetJobDurationStatistics(id!);
-            var query2 = scope2.ServiceProvider.GetRequiredService<StatisticsData>().GetJobEffectedRowsStatistics(id!);
-            var s3 = scope2.ServiceProvider.GetRequiredService<StatisticsData>().GetJobCounters(id!);
+            var query1 = scope1.ServiceProvider.GetRequiredService<MetricsData>().GetJobDurationStatistics(id!);
+            var query2 = scope2.ServiceProvider.GetRequiredService<MetricsData>().GetJobEffectedRowsStatistics(id!);
+            var s3 = scope2.ServiceProvider.GetRequiredService<MetricsData>().GetJobCounters(id!);
 
             var s1 = Mapper.ProjectTo<JobDurationStatisticDto>(query1).FirstOrDefaultAsync();
             var s2 = Mapper.ProjectTo<JobEffectedRowsStatisticDto>(query2).FirstOrDefaultAsync();
 
             await Task.WhenAll(s1, s2, s3);
 
-            var result = new JobStatistic();
+            var result = new JobMetrics();
 
             if (s1 != null) { Mapper.Map(s1.Result, result); }
             if (s2 != null) { Mapper.Map(s2.Result, result); }
@@ -51,8 +51,7 @@ namespace Planar.Service.API
 
         public async Task<JobCounters?> GetAllJobsCounters(AllJobsCountersRequest request)
         {
-            var fromDate = request.FromDate ?? DateTime.Now.Date.AddDays(-1);
-            return await DataLayer.GetAllJobsCounters(fromDate);
+            return await DataLayer.GetAllJobsCounters(request.FromDate);
         }
 
         public async Task<IEnumerable<ConcurrentExecutionModel>> GetConcurrentExecution(ConcurrentExecutionRequest request)

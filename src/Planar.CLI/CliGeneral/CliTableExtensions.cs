@@ -21,7 +21,7 @@ namespace Planar.CLI
             return table;
         }
 
-        public static CliTable GetTable(JobStatistic? response)
+        public static CliTable GetTable(JobMetrics? response)
         {
             var table = new CliTable();
             if (response == null) { return table; }
