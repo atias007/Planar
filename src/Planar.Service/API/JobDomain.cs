@@ -104,21 +104,21 @@ namespace Planar.Service.API
         {
             var monitorDomain = _serviceProvider.GetRequiredService<MonitorDomain>();
             var historyDomain = _serviceProvider.GetRequiredService<HistoryDomain>();
-            var statisticsDomain = _serviceProvider.GetRequiredService<StatisticsDomain>();
+            var statisticsDomain = _serviceProvider.GetRequiredService<MetricsDomain>();
 
             var historyRequest = new GetHistoryRequest { JobId = id, PageSize = 10 };
             var details = await Get(id);
             var monitorsTask = monitorDomain.GetByJob(id);
             var audit = await GetJobAudits(id, new PagingRequest(1, 10));
             var historyTask = historyDomain.GetHistory(historyRequest);
-            var statisticsTask = statisticsDomain.GetJobStatistics(id);
+            var statisticsTask = statisticsDomain.GetJobMetrics(id);
             var result = new JobDescription
             {
                 Details = details,
                 Audits = audit,
                 History = await historyTask,
                 Monitors = new PagingResponse<MonitorItem>(await monitorsTask),
-                Statistics = await statisticsTask
+                Metrics = await statisticsTask
             };
 
             return result;
@@ -597,14 +597,20 @@ namespace Planar.Service.API
 
             foreach (var t in triggers)
             {
+                if (t.Key.Group == Consts.RecoveringJobsGroup) { continue; }
                 var state = await Scheduler.GetTriggerState(t.Key);
-                if (state != TriggerState.None && state != TriggerState.Paused)
+                if (IaActiveTriggerState(state))
                 {
                     return true;
                 }
             }
 
             return false;
+        }
+
+        private static bool IaActiveTriggerState(TriggerState state)
+        {
+            return state != TriggerState.None && state != TriggerState.Paused;
         }
 
         private static void ValidateDataKeyExists(IJobDetail details, string key, string jobId)
@@ -627,7 +633,7 @@ namespace Planar.Service.API
 
         private async Task DeleteJobStatistics(string jobId)
         {
-            var dal = Resolve<StatisticsData>();
+            var dal = Resolve<MetricsData>();
             var s1 = new JobDurationStatistic { JobId = jobId };
             await dal.DeleteJobStatistic(s1);
             var s2 = new JobEffectedRowsStatistic { JobId = jobId };

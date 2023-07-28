@@ -6,18 +6,18 @@ using System;
 
 namespace Planar.Service.MapperProfiles
 {
-    internal class StatisticsProfile : Profile
+    internal class MetricsProfile : Profile
     {
-        public StatisticsProfile()
+        public MetricsProfile()
         {
             CreateMap<JobInstanceLog, JobInstanceLogForStatistics>().ReverseMap();
             CreateMap<JobDurationStatistic, JobDurationStatisticDto>().ReverseMap();
             CreateMap<JobEffectedRowsStatisticDto, JobEffectedRowsStatistic>().ReverseMap();
-            CreateMap<JobDurationStatisticDto, JobStatistic>()
+            CreateMap<JobDurationStatisticDto, JobMetrics>()
                 .ForMember(t => t.StdevDuration, map => map.MapFrom(s => TimeSpan.FromMilliseconds(Convert.ToDouble(s.StdevDuration))))
                 .ForMember(t => t.AvgDuration, map => map.MapFrom(s => TimeSpan.FromMilliseconds(Convert.ToDouble(s.AvgDuration))));
-            CreateMap<JobEffectedRowsStatisticDto, JobStatistic>();
-            CreateMap<JobCounters, JobStatistic>();
+            CreateMap<JobEffectedRowsStatisticDto, JobMetrics>();
+            CreateMap<JobCounters, JobMetrics>();
             CreateMap<ConcurrentExecution, ConcurrentExecutionModel>();
         }
     }

@@ -13,20 +13,20 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("statistic", "Actions to get statistical data & graphs", Synonyms = "statistics")]
-    public class StatisticsCliActions : BaseCliAction<StatisticsCliActions>
+    [Module("metrics", "Actions to get statistical data & graphs")]
+    public class MetricsCliActions : BaseCliAction<MetricsCliActions>
     {
         [Action("rebuild")]
         public static async Task<CliActionResponse> Rebuild(CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("statistics/rebuild", Method.Post);
+            var restRequest = new RestRequest("metrics/rebuild", Method.Post);
             return await Execute(restRequest, cancellationToken);
         }
 
         [Action("job-counters")]
         public static async Task<CliActionResponse> JobCounters(CliJobCountersRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("statistics/job-counters", Method.Get);
+            var restRequest = new RestRequest("metrics/job-counters", Method.Get);
             if (request.FromDate != default)
             {
                 restRequest.AddQueryParameter("fromDate", request.FromDate.ToString("u"));
@@ -61,7 +61,7 @@ namespace Planar.CLI.Actions
                     break;
             }
 
-            var restRequest = new RestRequest("statistics/concurrent", Method.Get)
+            var restRequest = new RestRequest("metrics/concurrent", Method.Get)
                 .AddQueryParameter("fromDate", fromDate.ToString("u"));
 
             var result = await RestProxy.Invoke<List<ConcurrentExecutionModel>>(restRequest, cancellationToken);

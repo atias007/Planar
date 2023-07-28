@@ -11,16 +11,16 @@ using System.Threading.Tasks;
 namespace Planar.Controllers
 {
     [ApiController]
-    [Route("statistics")]
-    public class StatisticsController : BaseController<StatisticsDomain>
+    [Route("metrics")]
+    public class MetricsController : BaseController<MetricsDomain>
     {
-        public StatisticsController(StatisticsDomain businesLayer) : base(businesLayer)
+        public MetricsController(MetricsDomain businesLayer) : base(businesLayer)
         {
         }
 
         [HttpPost("rebuild")]
         [EditorAuthorize]
-        [SwaggerOperation(OperationId = "post_statistics_rebuild", Description = "Rebuild statistics data", Summary = "Rebuild Statistics Data")]
+        [SwaggerOperation(OperationId = "post_metrics_rebuild", Description = "Rebuild statistics data", Summary = "Rebuild Statistics Data")]
         [NoContentResponse]
         public async Task<ActionResult> RebuildJobStatistics()
         {
@@ -30,18 +30,18 @@ namespace Planar.Controllers
 
         [HttpGet("job/{id}")]
         [ViewerAuthorize]
-        [SwaggerOperation(OperationId = "get_statistics_job_id", Description = "Get job statistics", Summary = "Get Job Statistics")]
-        [OkJsonResponse(typeof(JobStatistic))]
+        [SwaggerOperation(OperationId = "get_metrics_job_id", Description = "Get job metrics", Summary = "Get Job Metrics")]
+        [OkJsonResponse(typeof(JobMetrics))]
         [BadRequestResponse]
-        public async Task<ActionResult<JobStatistic>> GetJobStatistics([FromRoute][Required] string id)
+        public async Task<ActionResult<JobMetrics>> GetJobMetrics([FromRoute][Required] string id)
         {
-            var response = await BusinesLayer.GetJobStatistics(id);
+            var response = await BusinesLayer.GetJobMetrics(id);
             return Ok(response);
         }
 
         [HttpGet("concurrent")]
         [ViewerAuthorize]
-        [SwaggerOperation(OperationId = "get_statistics_concurrent", Description = "Get concurrent execution", Summary = "Get Concurrent Execution")]
+        [SwaggerOperation(OperationId = "get_metrics_concurrent", Description = "Get concurrent execution", Summary = "Get Concurrent Execution")]
         [OkJsonResponse(typeof(IEnumerable<ConcurrentExecutionModel>))]
         [BadRequestResponse]
         public async Task<ActionResult<IEnumerable<ConcurrentExecutionModel>>> GetConcurrentExecution([FromQuery] ConcurrentExecutionRequest request)
@@ -52,7 +52,7 @@ namespace Planar.Controllers
 
         [HttpGet("maxConcurrent")]
         [ViewerAuthorize]
-        [SwaggerOperation(OperationId = "get_statistics_max_concurrent", Description = "Get max of concurrent execution", Summary = "Get Max Of Concurrent Execution")]
+        [SwaggerOperation(OperationId = "get_metrics_max_concurrent", Description = "Get max of concurrent execution", Summary = "Get Max Of Concurrent Execution")]
         [OkJsonResponse(typeof(MaxConcurrentExecution))]
         [BadRequestResponse]
         public async Task<ActionResult<MaxConcurrentExecution>> GetMaxConcurrentExecution([FromQuery] MaxConcurrentExecutionRequest request)
@@ -63,7 +63,7 @@ namespace Planar.Controllers
 
         [HttpGet("job-counters")]
         [ViewerAuthorize]
-        [SwaggerOperation(OperationId = "get_statistics_job_counters", Description = "Get all jobs counters", Summary = "Get All Jobs Counters")]
+        [SwaggerOperation(OperationId = "get_metrics_job_counters", Description = "Get all jobs counters", Summary = "Get All Jobs Counters")]
         [OkJsonResponse(typeof(JobCounters))]
         [BadRequestResponse]
         public async Task<ActionResult<JobCounters>> GetAllJobsCounters([FromQuery] AllJobsCountersRequest request)

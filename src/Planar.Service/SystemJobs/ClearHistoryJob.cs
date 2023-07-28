@@ -55,7 +55,7 @@ namespace Planar.Service.SystemJobs
         {
             try
             {
-                var data = _serviceProvider.GetRequiredService<StatisticsData>();
+                var data = _serviceProvider.GetRequiredService<MetricsData>();
                 var rows = await data.ClearStatisticsTables(AppSettings.ClearStatisticsTablesOverDays);
                 _logger.LogDebug("clear statistics tables rows (older then {Days} days) with {Total} effected row(s)", AppSettings.ClearStatisticsTablesOverDays, rows);
             }
@@ -137,7 +137,7 @@ namespace Planar.Service.SystemJobs
         {
             try
             {
-                var data = _serviceProvider.GetRequiredService<StatisticsData>();
+                var data = _serviceProvider.GetRequiredService<MetricsData>();
                 var ids1 = await data.GetJobDurationStatisticsIds();
 
                 var rows = 0;

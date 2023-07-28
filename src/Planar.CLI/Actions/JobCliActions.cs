@@ -185,14 +185,14 @@ namespace Planar.CLI.Actions
             var tables2 = CliTableExtensions.GetTable(result.Data?.History, singleJob: true);
             var tables3 = CliTableExtensions.GetTable(result.Data?.Monitors);
             var tables4 = CliTableExtensions.GetTable(result.Data?.Audits);
-            var table5 = CliTableExtensions.GetTable(result.Data?.Statistics);
+            var table5 = CliTableExtensions.GetTable(result.Data?.Metrics);
 
             tables[0].Title = "Jobs";
             tables[1].Title = "Triggers";
             tables2.Title = "History";
             tables3.Title = "Monitors";
             tables4.Title = "Audits";
-            table5.Title = "Statistics";
+            table5.Title = "Metrics";
 
             tables.AddRange(new CliTable[] { tables2, tables3, tables4, table5 });
             return new CliActionResponse(result, tables);
@@ -382,6 +382,8 @@ namespace Planar.CLI.Actions
         [Action("pause-all")]
         public static async Task<CliActionResponse> PauseAll(CancellationToken cancellationToken = default)
         {
+            if (!ConfirmAction("pause all jobs")) { return CliActionResponse.Empty; }
+
             var restRequest = new RestRequest("job/pause-all", Method.Post);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);
@@ -414,6 +416,8 @@ namespace Planar.CLI.Actions
         [Action("resume-all")]
         public static async Task<CliActionResponse> ResumeAll(CancellationToken cancellationToken = default)
         {
+            if (!ConfirmAction("resume all jobs")) { return CliActionResponse.Empty; }
+
             var restRequest = new RestRequest("job/resume-all", Method.Post);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);

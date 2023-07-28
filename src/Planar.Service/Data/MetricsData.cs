@@ -13,9 +13,9 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Data
 {
-    public class StatisticsData : BaseDataLayer
+    public class MetricsData : BaseDataLayer
     {
-        public StatisticsData(PlanarContext context) : base(context)
+        public MetricsData(PlanarContext context) : base(context)
         {
         }
 
@@ -135,21 +135,25 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<JobCounters?> GetAllJobsCounters(DateTime fromDate)
+        public async Task<JobCounters?> GetAllJobsCounters(DateTime? fromDate)
         {
-            var result = await _context.JobCounters
-                .AsNoTracking()
-                .Where(j => j.RunDate >= fromDate)
-                .GroupBy(j => 1)  // Group by a constant to get aggregate counts
+            var query = _context.JobCounters.AsNoTracking();
+
+            if (fromDate.HasValue)
+            {
+                query = query.Where(j => j.RunDate >= fromDate);
+            }
+
+            var groupQuery = query.GroupBy(j => 1)  // Group by a constant to get aggregate counts
                 .Select(g => new JobCounters
                 {
                     TotalRuns = g.Sum(j => j.TotalRuns),
                     SuccessRetries = g.Sum(j => j.SuccessRetries) ?? 0,
                     FailRetries = g.Sum(j => j.FailRetries) ?? 0,
                     Recovers = g.Sum(j => j.Recovers) ?? 0
-                })
-                .SingleOrDefaultAsync();
+                });
 
+            var result = await groupQuery.SingleOrDefaultAsync();
             return result;
         }
 
