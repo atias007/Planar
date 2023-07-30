@@ -6,7 +6,6 @@ using Planar.Service.API;
 using Planar.Service.Model;
 using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -73,8 +72,8 @@ namespace Planar.Controllers
         [HttpGet]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_user", Description = "Get all users", Summary = "Get All Users")]
-        [OkJsonResponse(typeof(PagingResponse<UserRow>))]
-        public async Task<ActionResult<PagingResponse<UserRow>>> GetAll([FromQuery] PagingRequest request)
+        [OkJsonResponse(typeof(PagingResponse<UserRowModel>))]
+        public async Task<ActionResult<PagingResponse<UserRowModel>>> GetAll([FromQuery] PagingRequest request)
         {
             var result = await BusinesLayer.GetAll(request);
             return Ok(result);

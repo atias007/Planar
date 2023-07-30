@@ -87,7 +87,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("user", Method.Get)
                 .AddQueryPagingParameter(request);
 
-            return await ExecuteTable<PagingResponse<UserRowDetails>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
+            return await ExecuteTable<PagingResponse<UserRowModel>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
         }
 
         [Action("remove")]

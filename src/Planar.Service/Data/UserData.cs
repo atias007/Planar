@@ -105,21 +105,12 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
-        public async Task<PagingResponse<UserRow>> GetUsers(IPagingRequest request)
+        public IQueryable<User> GetUsers()
         {
-            var result = await _context.Users
-                .Select(u => new UserRow
-                {
-                    EmailAddress1 = u.EmailAddress1,
-                    FirstName = u.FirstName,
-                    Id = u.Id,
-                    LastName = u.LastName,
-                    PhoneNumber1 = u.PhoneNumber1,
-                    Username = u.Username
-                })
+            var result = _context.Users
+                .AsNoTracking()
                 .OrderBy(u => u.FirstName)
-                .ThenBy(u => u.LastName)
-                .ToPagingListAsync(request);
+                .ThenBy(u => u.LastName);
 
             return result;
         }

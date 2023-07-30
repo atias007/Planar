@@ -3,7 +3,7 @@ PLAN FOR V 1.5.0
 ----------------
 - add smart process job (implement https://github.com/dotnet/MQTTnet)
 - add job yml field: log retention days
-- security log (login, *** change role of group, *** add/remove user from group)
+- add monitor get api+cli
 - cli command to changhe interval/count
 - cli command to changhe cron expr
 
@@ -14,6 +14,7 @@ PLAN FOR V 1.5.0
 - add SSRS job
 - add daily report system job
 
+- api security headers
 - cli: job apply (do add or update)
 - search in history by free text from log
 - add cli plot statistics
@@ -203,3 +204,4 @@ V1.5.0
 ------
 - add adminisrator rele to pause-all /resume-all
 - ask are you sure on pause-all / resume-all
+- security audit (all login senarios, change role of group, add/remove user from group)

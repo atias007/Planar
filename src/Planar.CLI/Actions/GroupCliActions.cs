@@ -51,8 +51,9 @@ namespace Planar.CLI.Actions
         [Action("list")]
         public static async Task<CliActionResponse> Get(CliPagingRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("group", Method.Get);
-            restRequest.AddQueryPagingParameter(request);
+            var restRequest = new RestRequest("group", Method.Get)
+                .AddQueryPagingParameter(request);
+
             var result = await RestProxy.Invoke<PagingResponse<GroupInfo>>(restRequest, cancellationToken);
 
             if (result.IsSuccessful)

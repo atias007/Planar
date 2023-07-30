@@ -215,7 +215,7 @@ namespace Planar.Service.API
             var monitor = Mapper.Map<MonitorAction>(request);
             if (string.IsNullOrWhiteSpace(monitor.JobGroup)) { monitor.JobGroup = null; }
             if (string.IsNullOrWhiteSpace(monitor.JobName)) { monitor.JobName = null; }
-            if (await DataLayer.IsMonitorExists(monitor))
+            if (await DataLayer.IsMonitorExists(monitor, request.Id))
             {
                 throw new RestConflictException("monitor with same properties already exists");
             }
