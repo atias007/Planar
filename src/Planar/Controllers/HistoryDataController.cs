@@ -9,6 +9,7 @@ using System;
 namespace Planar.Controllers
 {
     [ViewerAuthorize]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class HistoryDataController : ControllerBase
     {
         private readonly HistoryDomain _businessLayer;

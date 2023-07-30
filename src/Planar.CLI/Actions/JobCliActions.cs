@@ -610,7 +610,7 @@ namespace Planar.CLI.Actions
             }
             else
             {
-                restRequest = new RestRequest("job/running/{instanceId}", Method.Get)
+                restRequest = new RestRequest("job/running-instance/{instanceId}", Method.Get)
                     .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
                 var result = await RestProxy.Invoke<RunningJobDetails>(restRequest, cancellationToken);
                 if (result.Data != null)
@@ -695,7 +695,7 @@ namespace Planar.CLI.Actions
             // UTC
             var dateParameter = invokeDate.ToString("s", CultureInfo.InvariantCulture);
 
-            var restRequest = new RestRequest("job/{id}/lastInstanceId", Method.Get)
+            var restRequest = new RestRequest("job/{id}/last-instance-id", Method.Get)
                 .AddParameter("id", id, ParameterType.UrlSegment)
                 .AddParameter("invokeDate", dateParameter, ParameterType.QueryString);
             var result = await RestProxy.Invoke<LastInstanceId>(restRequest, cancellationToken);
@@ -927,7 +927,7 @@ namespace Planar.CLI.Actions
 
         private static async Task<CliActionResponse?> TestStep4GetRunningData(string instanceId, DateTime invokeDate, CancellationToken cancellationToken)
         {
-            var restRequest = new RestRequest("job/{instanceId}/running", Method.Get)
+            var restRequest = new RestRequest("job/running-instance/{instanceId}", Method.Get)
                 .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
             var runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest, cancellationToken);
 

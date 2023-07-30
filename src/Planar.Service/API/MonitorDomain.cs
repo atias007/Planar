@@ -74,6 +74,14 @@ namespace Planar.Service.API
             return result;
         }
 
+        public async Task<MonitorItem?> GetMonitorItem(int id)
+        {
+            var query = DataLayer.GetMonitorActions();
+            var result = await Mapper.ProjectTo<MonitorItem>(query).FirstOrDefaultAsync();
+            ValidateExistingEntity(result, "monitor");
+            return result;
+        }
+
         public async Task<List<MonitorItem>> GetByGroup(string group)
         {
             if (!await JobKeyHelper.IsJobGroupExists(group))
@@ -128,6 +136,7 @@ namespace Planar.Service.API
         {
             var monitor = await DataLayer.GetMonitorAction(request.Id);
             ValidateExistingEntity(monitor, "monitor");
+            ForbbidenPartialUpdateProperties(request, "EventId", "GroupId");
             var updateMonitor = Mapper.Map<UpdateMonitorRequest>(monitor);
             var validator = Resolve<IValidator<UpdateMonitorRequest>>();
             await SetEntityProperties(updateMonitor, request, validator);

@@ -59,12 +59,12 @@ namespace Planar.Startup
         {
             //// app.UseHttpLogging();
 
-            if (AppSettings.DeveloperExceptionPage || !app.Environment.IsProduction())
+            if (AppSettings.DeveloperExceptionPage && !app.Environment.IsProduction())
             {
                 app.UseDeveloperExceptionPage();
             }
 
-            if (AppSettings.SwaggerUI)
+            if (AppSettings.SwaggerUI && !app.Environment.IsProduction())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI(c =>
