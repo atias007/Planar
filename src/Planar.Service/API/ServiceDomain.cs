@@ -1,5 +1,4 @@
-﻿using Azure.Core;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Common;
@@ -185,9 +184,12 @@ namespace Planar.Service.API
             }
 
             var userData = Resolve<UserData>();
-            var user =
-                await userData.GetUserIdentity(request.Username) ??
+            var user = await userData.GetUserIdentity(request.Username);
+            if (user == null)
+            {
+                AuditSecuritySafe($"login fail with not exists username '{request.Username}'", isWarning: true);
                 throw new RestValidationException("username", $"user with username '{request.Username}' not exists", 100);
+            }
 
             var role = await userData.GetUserRole(user.Id);
             user.RoleId = role;

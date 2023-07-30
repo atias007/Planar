@@ -239,7 +239,7 @@ namespace Planar.CLI
             var table = new CliTable(paging: response, entityName: "monitor");
             if (response == null || response.Data == null) { return table; }
 
-            table.Table.AddColumns("Id", "Title", "Event", "Job Group", "Job Name", "Event Arguments", "Dist. Group", "Hook", "Active");
+            table.Table.AddColumns("Id", "Title", "Event", "Job Group", "Job Name", "Event Argument", "Dist. Group", "Hook", "Active");
             response.Data.ForEach(r => table.Table.AddRow(
                 r.Id.ToString(),
                 r.Title.EscapeMarkup(),
@@ -284,7 +284,7 @@ namespace Planar.CLI
             return table;
         }
 
-        public static CliTable GetTable(PagingResponse<UserRowDetails>? data)
+        public static CliTable GetTable(PagingResponse<UserRowModel>? data)
         {
             var table = new CliTable(paging: data, entityName: "user");
             if (data == null || data.Data == null) { return table; }

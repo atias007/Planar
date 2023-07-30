@@ -10,6 +10,8 @@ namespace Planar.Service.MapperProfiles
         {
             CreateMap<User, UserDetails>();
 
+            CreateMap<User, UserRowModel>();
+
             CreateMap<AddUserRequest, User>();
 
             CreateMap<UpdateUserRequest, User>().ReverseMap();

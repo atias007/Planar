@@ -20,14 +20,16 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
-        internal async Task<List<EntityTitle>> GetUsersInGroup(int id)
+        public async Task AddUserToGroup(int userId, int groupId)
         {
-            var result = await _context.Users
-                .Where(u => u.Groups.Any(g => g.Id == id))
-                .Select(u => new EntityTitle(u.Username, u.FirstName, u.LastName))
-                .ToListAsync();
+            var user = _context.Users.FirstOrDefault(x => x.Id == userId);
+            if (user == null) { return; }
 
-            return result;
+            var group = _context.Groups.FirstOrDefault(x => x.Id == groupId);
+            if (group == null) { return; }
+
+            group.Users.Add(user);
+            await _context.SaveChangesAsync();
         }
 
         public async Task<Group?> GetGroup(string name)
@@ -40,14 +42,33 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<Group?> GetGroupWithUsers(int id)
+        public async Task<int> GetGroupRole(string name)
         {
             var result = await _context.Groups
-                .Include(g => g.Users)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(g => g.Id == id);
+                .Where(g => g.Name.ToLower() == name.ToLower())
+                .Select(g => g.RoleId)
+                .FirstOrDefaultAsync();
 
             return result;
+        }
+
+        public async Task<int> GetGroupId(string name)
+        {
+            return await _context.Groups
+                .AsNoTracking()
+                .Where(g => g.Name.ToLower() == name.ToLower())
+                .Select(g => g.Id)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<string?> GetGroupName(int id)
+        {
+            return await _context.Groups
+                .AsNoTracking()
+                .Where(g => g.Id == id)
+                .Select(g => g.Name)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<PagingResponse<GroupInfo>> GetGroups(IPagingRequest request)
@@ -68,15 +89,19 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task UpdateGroup(Group group)
+        public async Task<Group?> GetGroupWithUsers(int id)
         {
-            _context.Groups.Update(group);
-            await _context.SaveChangesAsync();
+            var result = await _context.Groups
+                .Include(g => g.Users)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(g => g.Id == id);
+
+            return result;
         }
 
-        public async Task<int> RemoveGroup(int id)
+        public async Task<bool> IsGroupExists(int groupId)
         {
-            return await _context.Groups.Where(g => g.Id == id).ExecuteDeleteAsync();
+            return await _context.Groups.AsNoTracking().AnyAsync(g => g.Id == groupId);
         }
 
         public async Task<bool> IsGroupHasMonitors(int groupId)
@@ -89,37 +114,6 @@ namespace Planar.Service.Data
         {
             var result = await _context.Groups.AnyAsync(g => g.Id == groupId && g.Users.Any());
             return result;
-        }
-
-        public async Task AddUserToGroup(int userId, int groupId)
-        {
-            var user = _context.Users.FirstOrDefault(x => x.Id == userId);
-            if (user == null) { return; }
-
-            var group = _context.Groups.FirstOrDefault(x => x.Id == groupId);
-            if (group == null) { return; }
-
-            group.Users.Add(user);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task SetRoleToGroup(int groupId, int roleId)
-        {
-            var group = new Model.Group { Id = groupId, RoleId = roleId };
-            _context.Entry(group).Property(g => g.RoleId).IsModified = true;
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task RemoveUserFromGroup(int userId, int groupId)
-        {
-            var user = _context.Users.FirstOrDefault(x => x.Id == userId);
-            if (user == null) { return; }
-
-            var group = _context.Groups.Include(g => g.Users).FirstOrDefault(x => x.Id == groupId);
-            if (group == null) { return; }
-
-            group.Users.Remove(user);
-            await _context.SaveChangesAsync();
         }
 
         public async Task<bool> IsGroupNameExists(string? name, int id)
@@ -139,18 +133,44 @@ namespace Planar.Service.Data
             return await _context.Groups.AsNoTracking().AnyAsync(g => g.Id == groupId && g.Users.Any(u => u.Id == userId));
         }
 
-        public async Task<bool> IsGroupExists(int groupId)
+        public async Task<int> RemoveGroup(int id)
         {
-            return await _context.Groups.AsNoTracking().AnyAsync(g => g.Id == groupId);
+            return await _context.Groups.Where(g => g.Id == id).ExecuteDeleteAsync();
         }
 
-        public async Task<int> GetGroupId(string name)
+        public async Task RemoveUserFromGroup(int userId, int groupId)
         {
-            return await _context.Groups
-                .AsNoTracking()
-                .Where(g => g.Name.ToLower() == name.ToLower())
-                .Select(g => g.Id)
-                .FirstOrDefaultAsync();
+            var user = _context.Users.FirstOrDefault(x => x.Id == userId);
+            if (user == null) { return; }
+
+            var group = _context.Groups.Include(g => g.Users).FirstOrDefault(x => x.Id == groupId);
+            if (group == null) { return; }
+
+            group.Users.Remove(user);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task SetRoleToGroup(int groupId, int roleId)
+        {
+            var group = new Model.Group { Id = groupId, RoleId = roleId };
+            _context.Entry(group).Property(g => g.RoleId).IsModified = true;
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateGroup(Group group)
+        {
+            _context.Groups.Update(group);
+            await _context.SaveChangesAsync();
+        }
+
+        internal async Task<List<EntityTitle>> GetUsersInGroup(int id)
+        {
+            var result = await _context.Users
+                .Where(u => u.Groups.Any(g => g.Id == id))
+                .Select(u => new EntityTitle(u.Username, u.FirstName, u.LastName))
+                .ToListAsync();
+
+            return result;
         }
     }
 }

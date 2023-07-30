@@ -6,6 +6,7 @@ using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -128,20 +129,45 @@ namespace Planar.Service.API
                 throw new RestValidationException("username", $"username '{username}' already in group '{name}'");
             }
 
+            var currentUserRole = await Resolve<UserData>().GetUserRole(userId);
+            var targetUserRole = await DataLayer.GetGroupRole(name);
+
             await DataLayer.AddUserToGroup(userId, groupId);
+
+            if (targetUserRole > currentUserRole)
+            {
+                var currentUserRoleTitle = ((Roles)currentUserRole).ToString().ToLower();
+                var targetUserRoleTitle = ((Roles)targetUserRole).ToString().ToLower();
+                AuditSecuritySafe($"the user '{username}' elevate its role from '{currentUserRoleTitle}' to '{targetUserRoleTitle}' by joining group '{name}'", isWarning: true);
+            }
         }
 
         public async Task SetRoleToGroup(string name, string role)
         {
-            var groupId = await DataLayer.GetGroupId(name);
-            if (groupId == 0) { throw new RestNotFoundException($"group '{name}' could not be found"); }
+            var entity = await DataLayer.GetGroup(name);
+            var group = ValidateExistingEntity(entity, "group");
 
             if (!Enum.TryParse<Roles>(role, true, out var roleEnum))
             {
-                throw new RestNotFoundException($"role '{role}' could not be found");
+                throw new RestNotFoundException($"role '{role?.ToLower()}' could not be found");
             }
 
-            await DataLayer.SetRoleToGroup(groupId, (int)roleEnum);
+            if ((int)roleEnum == group.RoleId)
+            {
+                throw new RestNotFoundException($"group '{name}' already has role '{role?.ToLower()}'");
+            }
+
+            var isWarning = (int)roleEnum > group.RoleId;
+            if (isWarning)
+            {
+                AuditSecuritySafe($"the group '{name}' elevate its role from '{group.Role.Name?.ToLower()}' to '{role}'", isWarning: true);
+            }
+            else
+            {
+                AuditSecuritySafe($"the group '{name}' bring down its role from '{group.Role.Name?.ToLower()}' to '{role}'", isWarning: false);
+            }
+
+            await DataLayer.SetRoleToGroup(group.Id, (int)roleEnum);
         }
 
         public async Task RemoveUserFromGroup(string name, string username)

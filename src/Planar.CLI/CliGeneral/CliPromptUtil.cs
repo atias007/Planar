@@ -1,5 +1,4 @@
 ﻿using Planar.API.Common.Entities;
-using Planar.CLI.Entities;
 using Planar.CLI.General;
 using Planar.CLI.Proxy;
 using RestSharp;
@@ -46,38 +45,43 @@ namespace Planar.CLI.CliGeneral
 
         internal static async Task<CliPromptWrapper<string>> Groups(CancellationToken cancellationToken)
         {
-            var restRequest = new RestRequest("group", Method.Get);
-            var result = await RestProxy.Invoke<List<GroupInfo>>(restRequest, cancellationToken);
+            var restRequest = new RestRequest("group", Method.Get)
+                .AddQueryPagingParameter(1000);
+
+            var result = await RestProxy.Invoke<PagingResponse<GroupInfo>>(restRequest, cancellationToken);
             if (!result.IsSuccessful)
             {
                 return new CliPromptWrapper<string>(result);
             }
 
-            if (result.Data == null || !result.Data.Any())
+            var data = result.Data?.Data;
+            if (data == null || !data.Any())
             {
                 throw new CliWarningException("no available groups to perform the opertaion");
             }
 
-            var items = result.Data.Select(g => g.Name ?? string.Empty);
+            var items = data.Select(g => g.Name ?? string.Empty);
             var select = PromptSelection(items, "group", true);
             return new CliPromptWrapper<string>(select);
         }
 
         internal static async Task<CliPromptWrapper<string>> Users(CancellationToken cancellationToken)
         {
-            var restRequest = new RestRequest("user", Method.Get);
-            var result = await RestProxy.Invoke<List<UserRowDetails>>(restRequest, cancellationToken);
+            var restRequest = new RestRequest("user", Method.Get)
+                .AddQueryPagingParameter(1000);
+            var result = await RestProxy.Invoke<PagingResponse<UserRowModel>>(restRequest, cancellationToken);
             if (!result.IsSuccessful)
             {
                 return new CliPromptWrapper<string>(result);
             }
 
-            if (result.Data == null || !result.Data.Any())
+            var data = result.Data?.Data;
+            if (data == null || !data.Any())
             {
                 throw new CliWarningException("no available users to perform the opertaion");
             }
 
-            var items = result.Data.Select(g => g.Username ?? string.Empty);
+            var items = data.Select(g => g.Username ?? string.Empty);
             var select = PromptSelection(items, "user", true);
             return new CliPromptWrapper<string>(select);
         }

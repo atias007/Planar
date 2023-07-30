@@ -30,21 +30,26 @@ namespace Planar.Service.Validation
                 .When(r => MonitorEventsExtensions.IsSystemMonitorEvent(r.EventName))
                 .WithMessage(r => $"{{PropertyName}} must be null when Event Name is {r.EventName?.SplitWords()}");
 
+            RuleFor(r => r.GroupName).NotEmpty();
+
             RuleFor(r => r.GroupName)
-                .NotEmpty()
                 .Must(g => dal.IsGroupNameExists(g).Result)
+                .When(r => !string.IsNullOrWhiteSpace(r.GroupName))
                 .WithMessage("{PropertyName} field with value '{PropertyValue}' does not exist");
 
-            RuleFor(r => r.Hook).NotEmpty()
+            RuleFor(r => r.Hook).NotEmpty();
+
+            RuleFor(r => r.Hook)
                 .Must(ValidationUtil.IsHookExists)
+                .When(r => !string.IsNullOrWhiteSpace(r.Hook))
                 .WithMessage("{PropertyName} field with value '{PropertyValue}' does not exist");
 
             RuleFor(r => r.EventArgument).NotEmpty()
-                .When(r => MonitorEventsExtensions.IsMonitorEventHasArguments(r.EventName))
+                .When(r => !string.IsNullOrWhiteSpace(r.EventName) && MonitorEventsExtensions.IsMonitorEventHasArguments(r.EventName))
                 .WithMessage(r => $"{{PropertyName}} must have value when Event Id is {r.EventName?.SplitWords()}");
 
             RuleFor(r => r.EventArgument).Empty()
-                .When(r => !MonitorEventsExtensions.IsMonitorEventHasArguments(r.EventName))
+                .When(r => !string.IsNullOrWhiteSpace(r.EventName) && !MonitorEventsExtensions.IsMonitorEventHasArguments(r.EventName))
                 .WithMessage(r => $"{{PropertyName}} must be empty when Event Id is {r.EventName?.SplitWords()}");
 
             RuleFor(r => r.JobName).NotEmpty()

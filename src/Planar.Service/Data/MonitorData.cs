@@ -68,6 +68,7 @@ namespace Planar.Service.Data
         public async Task<MonitorAction?> GetMonitorAction(int id)
         {
             return await _context.MonitorActions
+                .AsNoTracking()
                 .Where(m => m.Id == id)
                 .FirstOrDefaultAsync();
         }

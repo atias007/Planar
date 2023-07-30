@@ -1,6 +1,6 @@
-﻿namespace Planar.Service.Model
+﻿namespace Planar.API.Common.Entities
 {
-    public class UserRow
+    public class UserRowModel
     {
         public string? EmailAddress1 { get; set; }
         public string FirstName { get; set; } = null!;

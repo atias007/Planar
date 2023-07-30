@@ -326,8 +326,9 @@ namespace Planar.CLI.Actions
             var hooksRequest = new RestRequest("monitor/hooks", Method.Get);
             var hooksTask = RestProxy.Invoke<List<string>>(hooksRequest, cancellationToken);
 
-            var groupsRequest = new RestRequest("group", Method.Get);
-            var groupsTask = RestProxy.Invoke<List<GroupInfo>>(groupsRequest, cancellationToken);
+            var groupsRequest = new RestRequest("group", Method.Get)
+                .AddQueryPagingParameter(1000);
+            var groupsTask = RestProxy.Invoke<PagingResponse<GroupInfo>>(groupsRequest, cancellationToken);
 
             var hooks = await hooksTask;
             data.Hooks = hooks.Data ?? new List<string>();
@@ -338,7 +339,7 @@ namespace Planar.CLI.Actions
             }
 
             var groups = await groupsTask;
-            data.Groups = groups.Data ?? new List<GroupInfo>();
+            data.Groups = groups.Data?.Data ?? new List<GroupInfo>();
             if (!groups.IsSuccessful)
             {
                 data.FailResponse = groups;
