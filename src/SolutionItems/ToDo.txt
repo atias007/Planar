@@ -3,7 +3,6 @@ PLAN FOR V 1.5.0
 ----------------
 - add smart process job (implement https://github.com/dotnet/MQTTnet)
 - add job yml field: log retention days
-- add monitor get api+cli
 - cli command to changhe interval/count
 - cli command to changhe cron expr
 
@@ -205,3 +204,4 @@ V1.5.0
 - add adminisrator rele to pause-all /resume-all
 - ask are you sure on pause-all / resume-all
 - security audit (all login senarios, change role of group, add/remove user from group)
+- always remove swagger & redoc on production

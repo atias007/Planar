@@ -1,18 +1,29 @@
 ﻿using Serilog.Core;
 using Serilog.Events;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace Planar.Startup.Logging
 {
     public class PlanarFilter : ILogEventFilter
     {
-        private static readonly string[] filterPath = new[]
+        private static readonly HashSet<string> filterPath = new()
         {
             "/",
             "/service/health-check",
             "/cluster/health-check",
             "/favicon.ico"
+        };
+
+        private static readonly string[] filterEndWithPath = new[]
+        {
+            "/test-status",
+            "/last-instance-id",
+        };
+
+        private static readonly string[] filterStartWithPath = new[]
+        {
+            "/job/running-instance/",
         };
 
         private const string SwaggerRequestPath = "swagger";
@@ -28,6 +39,16 @@ namespace Planar.Startup.Logging
 
                 stringValue = stringValue.ToLower();
                 if (filterPath.Contains(stringValue))
+                {
+                    return false;
+                }
+
+                if (Array.Exists(filterEndWithPath, stringValue.EndsWith))
+                {
+                    return false;
+                }
+
+                if (Array.Exists(filterStartWithPath, stringValue.StartsWith))
                 {
                     return false;
                 }

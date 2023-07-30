@@ -54,6 +54,16 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
+        [Action("get")]
+        public static async Task<CliActionResponse> GetMonitoActions(CliGetByIdRequest request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("monitor/{id}", Method.Get)
+                .AddParameter("id", request.Id, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<MonitorItem>(restRequest, cancellationToken);
+            return new CliActionResponse(result, dumpObject: result.Data);
+        }
+
         [Action("ls")]
         [Action("list")]
         public static async Task<CliActionResponse> GetMonitorActions(CliGetMonitorActionsRequest request, CancellationToken cancellationToken = default)

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 using Planar.Common;
 using Planar.Service;
 using System;
@@ -55,7 +56,8 @@ namespace Planar.Startup
 
         public static void MapContent(WebApplication app)
         {
-            if (AppSettings.OpenApiUI)
+            var isProduction = app.Environment.IsProduction();
+            if (!isProduction && AppSettings.OpenApiUI)
             {
                 app.MapGet("/", () => Content.OpenApiHtml.Value);
                 app.MapGet("/content/redoc.standalone.js", () => Content.OpenApiJavaScript.Value);

@@ -9,6 +9,7 @@ using System;
 namespace Planar.Controllers
 {
     [ViewerAuthorize]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class TraceDataController : ControllerBase
     {
         private readonly TraceDomain _businessLayer;

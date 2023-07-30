@@ -21,7 +21,7 @@ namespace Planar.Service.MapperProfiles
             CreateMap<MonitorAction, MonitorItem>()
              .ForMember(t => t.Active, map => map.MapFrom(s => s.Active.GetValueOrDefault()))
              .ForMember(t => t.EventTitle, map => map.MapFrom(s => ((MonitorEvents)s.EventId).GetEnumDescription()))
-             .ForMember(t => t.DistributionGroupName, map => map.MapFrom(s => s.Group.Name));
+             .ForMember(t => t.DistributionGroupName, map => map.MapFrom(s => groupDal.GetGroupName(s.GroupId).Result));
 
             CreateMap<UpdateMonitorRequest, MonitorAction>()
                 .ForMember(t => t.EventId, map => map.MapFrom(s => (int)Enum.Parse<MonitorEvents>(s.EventName ?? string.Empty)))

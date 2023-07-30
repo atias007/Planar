@@ -261,12 +261,12 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{instanceId}/running")]
+        [HttpGet("running-instance/{instanceId}")]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job_running_instanceid", Description = "Get runnng job info", Summary = "Get Runnng Job Info")]
         [OkJsonResponse(typeof(RunningJobDetails))]
         [BadRequestResponse]
-        public async Task<ActionResult<RunningJobDetails>> GetAllRunning([FromRoute][Required] string instanceId)
+        public async Task<ActionResult<RunningJobDetails>> GetRunningInstance([FromRoute][Required] string instanceId)
         {
             var result = await BusinesLayer.GetRunning(instanceId);
             return Ok(result);
@@ -276,7 +276,7 @@ namespace Planar.Controllers
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job_running", Description = "Gat all running jobs", Summary = "Gat All Running Jobs")]
         [OkJsonResponse(typeof(List<RunningJobDetails>))]
-        public async Task<ActionResult<List<RunningJobDetails>>> GetRunning()
+        public async Task<ActionResult<List<RunningJobDetails>>> GetAllRunning()
         {
             var result = await BusinesLayer.GetRunning();
             return Ok(result);
@@ -330,7 +330,7 @@ namespace Planar.Controllers
         }
 
         [ApiExplorerSettings(IgnoreApi = true)]
-        [HttpGet("{id}/lastInstanceId")]
+        [HttpGet("{id}/last-instance-id")]
         [TesterAuthorize]
         [SwaggerOperation(OperationId = "get_job_id_lastinstanceid", Description = "", Summary = "")]
         [OkJsonResponse(typeof(LastInstanceId))]
