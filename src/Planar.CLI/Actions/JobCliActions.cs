@@ -70,7 +70,7 @@ namespace Planar.CLI.Actions
                     message += $". error message: {result.ErrorMessage}";
                 }
 
-                throw new CliException(message, result.ErrorException);
+                throw new CliException(message, result);
             }
 
             return ChooseJob(result.Data?.Data);
@@ -114,7 +114,7 @@ namespace Planar.CLI.Actions
             }
             else
             {
-                throw new CliException($"fail to fetch list of triggers. error message: {result.ErrorMessage}");
+                throw new CliException($"fail to fetch list of triggers. error message: {result.ErrorMessage}", result);
             }
         }
 
@@ -343,7 +343,7 @@ namespace Planar.CLI.Actions
 
             if (request.Quiet)
             {
-                var data = result.Item1?.Select(i => i.FireInstanceId).ToList();
+                var data = result.Item1.Select(i => i.FireInstanceId).ToList();
                 var sb = new StringBuilder();
                 data?.ForEach(m => sb.AppendLine(m));
 
@@ -569,12 +569,7 @@ namespace Planar.CLI.Actions
 
         private static async Task<string> ChooseRunningJobInstance()
         {
-            var result = await GetRunningJobsInner(new CliGetRunningJobsRequest { });
-
-            if (!result.Item2.IsSuccessful || result.Item1 == null)
-            {
-                throw new CliException($"fail to fetch list of running job instance. error message: {result.Item2.ErrorMessage}");
-            }
+            var result = await GetRunningJobsInner(new CliGetRunningJobsRequest());
 
             var items = result.Item1
                 .Select(i => $"{i.FireInstanceId} ({i.Group}.{i.Name})  [{i.Progress}%]".EscapeMarkup())
@@ -590,7 +585,7 @@ namespace Planar.CLI.Actions
             return parts[0];
         }
 
-        internal static async Task<(List<RunningJobDetails>?, RestResponse)> GetRunningJobsInner(CliGetRunningJobsRequest request, CancellationToken cancellationToken = default)
+        internal static async Task<(List<RunningJobDetails>, RestResponse)> GetRunningJobsInner(CliGetRunningJobsRequest request, CancellationToken cancellationToken = default)
         {
             if (request.Iterative && request.Details)
             {
@@ -619,6 +614,11 @@ namespace Planar.CLI.Actions
                 }
 
                 restResponse = result;
+            }
+
+            if (!restResponse.IsSuccessful || resultData == null)
+            {
+                throw new CliException($"fail to fetch list of running job instance. error message: {restResponse.ErrorMessage}", restResponse);
             }
 
             return (resultData, restResponse);

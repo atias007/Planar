@@ -245,7 +245,18 @@ namespace Planar.CLI
             }
             catch (Exception ex)
             {
-                HandleExceptionSafe(ex);
+                if (ex is CliException cliEx)
+                {
+                    HandleExceptionSafe(cliEx, cliArgument?.OutputFilename);
+                }
+                else if (ex.InnerException is CliException cliInnerEx)
+                {
+                    HandleExceptionSafe(cliInnerEx, cliArgument?.OutputFilename);
+                }
+                else
+                {
+                    HandleExceptionSafe(ex);
+                }
             }
 
             return cliArgument;
@@ -433,6 +444,26 @@ namespace Planar.CLI
             }
 
             console.MarkupLine($" [black on gray] {text.EscapeMarkup()} [/]");
+        }
+
+        private static void HandleExceptionSafe(CliException ex, string? outputFilename)
+        {
+            try
+            {
+                if (ex.RestResponse != null)
+                {
+                    var response = new CliActionResponse(ex.RestResponse);
+                    HandleCliResponse(response, outputFilename);
+                }
+                else
+                {
+                    HandleException(ex);
+                }
+            }
+            catch (Exception ex2)
+            {
+                WriteException(ex2);
+            }
         }
 
         private static void HandleExceptionSafe(Exception ex)
