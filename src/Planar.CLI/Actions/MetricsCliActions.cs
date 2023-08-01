@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("metrics", "Actions to get statistical data & graphs")]
+    [Module("metrics", "Actions to get metrics data & graphs", Synonyms = "metric")]
     public class MetricsCliActions : BaseCliAction<MetricsCliActions>
     {
         [Action("rebuild")]
