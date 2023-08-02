@@ -24,9 +24,80 @@ namespace Planar
         private Process? _process;
         private bool _processKilled;
 
-        protected PlanarJob(ILogger<PlanarJob> logger, IJobPropertyDataLayer dataLayer, IMonitorUtil monitorUtil) : base(logger, dataLayer)
+        protected PlanarJob(
+            ILogger<PlanarJob> logger,
+            IJobPropertyDataLayer dataLayer,
+            IMonitorUtil monitorUtil) : base(logger, dataLayer)
         {
             _monitorUtil = monitorUtil;
+
+            MqttBrokerService.InterceptingPublishAsync += InterceptingPublishAsync;
+        }
+
+        private void InterceptingPublishAsync(object? sender, CloudEventArgs e)
+        {
+            try
+            {
+                InterceptingPublishAsyncInner(e);
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+
+        private void InterceptingPublishAsyncInner(CloudEventArgs e)
+        {
+            _logger.LogDebug("Type: {Type}", e.CloudEvent.Type);
+
+            if (!Enum.TryParse<MessageBrokerChannels>(e.CloudEvent.Type, ignoreCase: true, out var channel))
+            {
+                _logger.LogError("Message broker channels '{Type}' is not valid", e.CloudEvent.Type);
+                return;
+            }
+
+            if (e.CloudEvent.Data == null)
+            {
+                _logger.LogError("Message broker channels '{Type}' has no value", e.CloudEvent.Type);
+                return;
+            }
+
+            switch (channel)
+            {
+                case MessageBrokerChannels.AddAggregateException:
+                    break;
+
+                case MessageBrokerChannels.AppendLog:
+                    break;
+
+                case MessageBrokerChannels.IncreaseEffectedRows:
+                    if (byte.TryParse(e.CloudEvent.Data.ToString(), out var delta))
+                    {
+                        _logger.LogError("Message broker channels '{Type}' has invalid byte value '{Value}'", e.CloudEvent.Type, e.CloudEvent.Data.ToString());
+                        return;
+                    }
+
+                    MessageBroker.IncreaseEffectedRows(effectedRows);
+                    break;
+
+                case MessageBrokerChannels.SetEffectedRows:
+                    break;
+
+                case MessageBrokerChannels.PutJobData:
+                    break;
+
+                case MessageBrokerChannels.PutTriggerData:
+                    break;
+
+                case MessageBrokerChannels.UpdateProgress:
+                    break;
+
+                case MessageBrokerChannels.ReportException:
+                    break;
+
+                default:
+                    break;
+            }
         }
 
         private string Filename
@@ -95,6 +166,7 @@ namespace Planar
             try { _process?.CancelOutputRead(); } catch { DoNothingMethod(); }
             try { _process?.Close(); } catch { DoNothingMethod(); }
             try { _process?.Dispose(); } catch { DoNothingMethod(); }
+            try { MqttBrokerService.InterceptingPublishAsync -= InterceptingPublishAsync; } catch { DoNothingMethod(); }
             try { if (_process != null) { _process.EnableRaisingEvents = false; } } catch { DoNothingMethod(); }
             try { if (_process != null) { _process.OutputDataReceived -= ProcessOutputDataReceived; } } catch { DoNothingMethod(); }
             try { if (_process != null) { _process.ErrorDataReceived -= ProcessErrorDataReceived; } } catch { DoNothingMethod(); }

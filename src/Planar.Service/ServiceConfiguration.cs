@@ -53,6 +53,7 @@ namespace Planar.Service
             services.AddSingleton<MainService>();
             services.AddSingleton<AuditService>();
             services.AddSingleton<SecurityService>();
+            services.AddSingleton<MqttBrokerService>();
 
             // Scheduler
             services.AddSingleton(p => p.GetRequiredService<ISchedulerFactory>().GetScheduler().Result);
@@ -60,11 +61,12 @@ namespace Planar.Service
             services.AddSingleton<JobKeyHelper>();
 
             // Host
-            services.AddHostedService<MainService>();
-            services.AddHostedService<AuditService>();
+            services.AddHostedService(p => p.GetRequiredService<MainService>());
+            services.AddHostedService(p => p.GetRequiredService<AuditService>());
+            services.AddHostedService(p => p.GetRequiredService<MqttBrokerService>());
             if (AppSettings.HasAuthontication)
             {
-                services.AddHostedService<SecurityService>();
+                services.AddHostedService(p => p.GetRequiredService<SecurityService>());
             }
 
             // Channel

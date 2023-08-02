@@ -340,7 +340,7 @@ namespace Planar.CLI
                 return null;
             }
 
-            var moduleSynonymExists = actionsMetadata.Any(a => a.ModuleSynonyms.Any(s => s == args[0].ToLower()) && a.Commands.Contains("list"));
+            var moduleSynonymExists = actionsMetadata.Any(a => a.ModuleSynonyms.Exists(s => s == args[0].ToLower()) && a.Commands.Contains("list"));
             if (args.Count == 1 && moduleSynonymExists)
             {
                 args.Add("list");
