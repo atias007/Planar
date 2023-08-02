@@ -5,8 +5,7 @@ description: Demo Hello World Job
 durable: true
 concurrent: false
 properties:
-  filename: HelloWorld.dll
-  class name: HelloWorld.Job
+  filename: HelloWorld.exe
 simple triggers:
   - name: default_trigger
     interval: 00:10:00

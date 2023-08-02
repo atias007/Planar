@@ -43,7 +43,7 @@ namespace Planar
                 await Initialize(context);
 
                 ValidateProcessJob();
-                context.CancellationToken.Register(() => OnCancel());
+                context.CancellationToken.Register(OnCancel);
 
                 var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
                 var startInfo = GetProcessStartInfo();

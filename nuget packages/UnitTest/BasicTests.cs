@@ -32,6 +32,7 @@ namespace UnitTest
                 .WithExecutionDate(DateTime.Now.AddDays(-2))
                 .WithGlobalSettings("Port", 1234);
 
+            var arg = GetPlanarJobArgument(run);
             var result = ExecuteJob(run);
             result.Assert.Status.Success()
                 .EffectedRows.IsNotEmpty()

@@ -2,6 +2,6 @@
 {
     public interface IFileJobProperties : IPathJobProperties
     {
-        public string? Filename { get; }
+        public string Filename { get; }
     }
 }

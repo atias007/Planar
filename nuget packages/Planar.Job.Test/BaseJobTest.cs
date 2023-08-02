@@ -5,6 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Planar.Job.Test
@@ -32,6 +35,16 @@ namespace Planar.Job.Test
         {
             var props = builder.Build();
             return ExecuteJob(props);
+        }
+
+        protected string GetPlanarJobArgument(ExecuteJobBuilder builder)
+        {
+            var props = builder.Build();
+            var context = new MockJobExecutionContext(props);
+            var json = JsonSerializer.Serialize(context);
+            var bytes = Encoding.UTF8.GetBytes(json);
+            var base64String = Convert.ToBase64String(bytes);
+            return base64String;
         }
 
         protected void MapJobInstanceProperties(IJobExecutionContext context, Type targetType, object instance)

@@ -40,10 +40,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.7.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Logging.Console" Version="7.0.0" />
+		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.2.1.781" />
 		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.6.0.74858">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

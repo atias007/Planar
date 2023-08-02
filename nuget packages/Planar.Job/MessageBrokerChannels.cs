@@ -4,17 +4,10 @@
     {
         AddAggregateException,
         AppendLog,
-        FailOnStopRequest,
-        GetExceptionsText,
-        GetData,
-        CheckIfStopRequest,
-        GetEffectedRows,
         IncreaseEffectedRows,
         SetEffectedRows,
-        DataContainsKey,
         PutJobData,
         PutTriggerData,
-        UpdateProgress,
-        JobRunTime
+        UpdateProgress
     }
 }

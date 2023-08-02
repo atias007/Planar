@@ -10,10 +10,6 @@ namespace Planar.Job
 
         void CheckAggragateException();
 
-        bool CheckIfStopRequest();
-
-        void FailOnStopRequest(Action? stopHandle = default);
-
         T GetData<T>(string key);
 
         string GetData(string key);

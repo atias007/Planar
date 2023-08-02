@@ -165,33 +165,6 @@ namespace CommonJob
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
         }
 
-        protected void MapJobInstancePropertiesBack(IJobExecutionContext context, Type? targetType, object? instance)
-        {
-            //// ***** Attention: be aware for sync code with MapJobInstancePropertiesBack on Planar.Job.Test *****
-
-            try
-            {
-                if (context == null) { return; }
-                if (targetType == null) { return; }
-                if (instance == null) { return; }
-
-                var propInfo = targetType.GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
-                foreach (var prop in propInfo)
-                {
-                    if (prop.Name.StartsWith(Consts.ConstPrefix)) { continue; }
-                    SafePutData(context, instance, prop);
-                }
-            }
-            catch (Exception ex)
-            {
-                var source = nameof(MapJobInstancePropertiesBack);
-                _logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
-                throw;
-            }
-
-            //// ***** Attention: be aware for sync code with MapJobInstancePropertiesBack on Planar.Job.Test *****
-        }
-
         protected void ValidateMandatoryString(string? value, string propertyName)
         {
             if (!string.IsNullOrEmpty(value)) { value = value.Trim(); }
@@ -213,25 +186,6 @@ namespace CommonJob
                 _logger.LogDebug("Ignore map data key '{DataKey}' with value '{DataValue}' to property {PropertyName} of job '{JobGroup}.{JobName}'",
                     data.Key,
                     data.Value,
-                    property.Name,
-                    jobKey.Group,
-                    jobKey.Name);
-            }
-
-            return ignore;
-
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
-        }
-
-        private bool IsIgnoreProperty(IEnumerable<Attribute> attributes, PropertyInfo property, JobKey jobKey)
-        {
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
-
-            var ignore = attributes.Any(a => a.GetType().FullName == IgnoreDataMapAttribute);
-
-            if (ignore)
-            {
-                _logger.LogDebug("ATTENTION: Ignore map back property {PropertyName} of job '{JobGroup}.{JobName}' to data map",
                     property.Name,
                     jobKey.Group,
                     jobKey.Name);
@@ -267,94 +221,6 @@ namespace CommonJob
                 _logger.LogWarning(ex,
                     "Fail to map data key '{Key}' with value {Value} to property {Name} of job {JobGroup}.{JobName}",
                     data.Key, data.Value, prop.Name, jobKey.Group, jobKey.Name);
-            }
-
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
-        }
-
-        private void SafePutData(IJobExecutionContext context, object instance, PropertyInfo prop)
-        {
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
-
-            var attributes = prop.GetCustomAttributes();
-            var ignore = IsIgnoreProperty(attributes, prop, context.JobDetail.Key);
-            if (ignore) { return; }
-            var jobData = attributes.Any(a => a.GetType().FullName == JobDataMapAttribute);
-            var triggerData = attributes.Any(a => a.GetType().FullName == JobDataMapAttribute);
-
-            if (jobData)
-            {
-                SafePutJobDataMap(context, instance, prop);
-            }
-
-            if (triggerData)
-            {
-                SafePutTiggerDataMap(context, instance, prop);
-            }
-
-            if (!jobData && !triggerData)
-            {
-                if (context.JobDetail.JobDataMap.ContainsKey(prop.Name))
-                {
-                    SafePutJobDataMap(context, instance, prop);
-                }
-
-                if (context.Trigger.JobDataMap.ContainsKey(prop.Name))
-                {
-                    SafePutTiggerDataMap(context, instance, prop);
-                }
-            }
-
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
-        }
-
-        private void SafePutJobDataMap(IJobExecutionContext context, object instance, PropertyInfo prop)
-        {
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
-
-            string? value = null;
-            try
-            {
-                if (!Consts.IsDataKeyValid(prop.Name))
-                {
-                    throw new PlanarJobException($"the data key {prop.Name} in invalid");
-                }
-
-                value = PlanarConvert.ToString(prop.GetValue(instance));
-                context.JobDetail.JobDataMap.Put(prop.Name, value);
-            }
-            catch (Exception ex)
-            {
-                var jobKey = context.JobDetail.Key;
-                _logger.LogWarning(ex,
-                    "Fail to save back value {Value} from property {Name} to JobDetails at job {JobGroup}.{JobName}",
-                    value, prop.Name, jobKey.Group, jobKey.Name);
-            }
-
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
-        }
-
-        private void SafePutTiggerDataMap(IJobExecutionContext context, object instance, PropertyInfo prop)
-        {
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****
-
-            string? value = null;
-            try
-            {
-                if (!Consts.IsDataKeyValid(prop.Name))
-                {
-                    throw new PlanarJobException($"the data key {prop.Name} in invalid");
-                }
-
-                value = PlanarConvert.ToString(prop.GetValue(instance));
-                context.Trigger.JobDataMap.Put(prop.Name, value);
-            }
-            catch (Exception ex)
-            {
-                var jobKey = context.JobDetail.Key;
-                _logger.LogWarning(ex,
-                    "Fail to save back value {Value} from property {Name} to TriggerDetails at job {JobGroup}.{JobName}",
-                    value, prop.Name, jobKey.Group, jobKey.Name);
             }
 
             //// ***** Attention: be aware for sync code with MapJobInstanceProperties on Planar.Job.Test *****

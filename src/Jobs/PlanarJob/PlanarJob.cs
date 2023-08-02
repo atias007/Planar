@@ -1,74 +1,63 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Planar.Common;
+using Planar.Common.Helpers;
 using Quartz;
 using System;
+using System.Diagnostics;
 using System.IO;
-using System.Reflection;
-using System.Runtime.Loader;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Planar
 {
     public abstract class PlanarJob : BaseCommonJob<PlanarJob, PlanarJobProperties>
     {
+        private static readonly string _seperator = string.Empty.PadLeft(80, '-');
         private readonly IMonitorUtil _monitorUtil;
+        private readonly StringBuilder _output = new();
+        private string? _filename;
+        private long _peakPagedMemorySize64;
+        private long _peakVirtualMemorySize64;
+        private long _peakWorkingSet64;
+        private Process? _process;
+        private bool _processKilled;
 
         protected PlanarJob(ILogger<PlanarJob> logger, IJobPropertyDataLayer dataLayer, IMonitorUtil monitorUtil) : base(logger, dataLayer)
         {
             _monitorUtil = monitorUtil;
         }
 
-        private string? AssemblyFilename { get; set; }
+        private string Filename
+        {
+            get
+            {
+                _filename ??= FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, Properties.Path, Properties.Filename);
+
+                return _filename;
+            }
+        }
 
         public override async Task Execute(IJobExecutionContext context)
         {
-            AssemblyLoadContext? assemblyContext = null;
-            Type? type = null;
-            object? instance = null;
-
             try
             {
                 await Initialize(context, _monitorUtil);
-                AssemblyFilename = FolderConsts.GetSpecialFilePath(
-                    PlanarSpecialFolder.Jobs,
-                    Properties.Path ?? string.Empty,
-                    Properties.Filename ?? string.Empty);
 
                 ValidatePlanarJob();
-                if (Properties.ClassName == null) { return; }
+                context.CancellationToken.Register(OnCancel);
 
-                assemblyContext = AssemblyLoader.CreateAssemblyLoadContext(context.FireInstanceId, true);
-                var assembly =
-                    AssemblyLoader.LoadFromAssemblyPath(AssemblyFilename, assemblyContext) ??
-                    throw new PlanarJobException($"could not load assembly {AssemblyFilename}");
-
-                type = assembly.GetType(Properties.ClassName);
-                if (type == null)
+                var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
+                var startInfo = GetProcessStartInfo(context);
+                var success = StartProcess(startInfo, timeout);
+                if (!success)
                 {
-                    type = Array.Find(assembly.GetTypes(), t => t.FullName == Properties.ClassName);
+                    OnTimeout();
                 }
 
-                if (type == null)
-                {
-                    throw new PlanarJobException($"could not load type {Properties.ClassName} from assembly {AssemblyFilename}");
-                }
-
-                var method = ValidateBaseJob(type);
-                instance = assembly.CreateInstance(Properties.ClassName);
-                if (instance == null)
-                {
-                    throw new PlanarJobException($"could not create {Properties.ClassName} from assembly {AssemblyFilename}");
-                }
-
-                MapJobInstanceProperties(context, type, instance);
-
-                if (method.Invoke(instance, new object[] { MessageBroker }) is not Task task)
-                {
-                    throw new PlanarJobException($"method {method.Name} invoked but not return System.Task type");
-                }
-
-                await WaitForJobTask(context, task);
+                LogProcessInformation();
+                CheckProcessExitCode();
             }
             catch (Exception ex)
             {
@@ -76,9 +65,167 @@ namespace Planar
             }
             finally
             {
-                MapJobInstancePropertiesBack(context, type, instance);
                 FinalizeJob(context);
-                assemblyContext?.Unload();
+            }
+        }
+
+        private static string FormatBytes(long bytes)
+        {
+            const int scale = 1024;
+            var orders = new string[] { "gb", "mb", "kb", "bytes" };
+            var max = (long)Math.Pow(scale, orders.Length - 1);
+
+            foreach (string order in orders)
+            {
+                if (bytes > max)
+                {
+                    return string.Format("{0:##.##} {1}", decimal.Divide(bytes, max), order);
+                }
+
+                max /= scale;
+            }
+
+            return "0 bytes";
+        }
+
+        private void CheckProcessExitCode()
+        {
+            if (_processKilled)
+            {
+                throw new PlanarJobException($"process '{Filename}' was stopped at {DateTimeOffset.Now}");
+            }
+        }
+
+        private ProcessStartInfo GetProcessStartInfo(IJobExecutionContext context)
+        {
+            var json = JsonConvert.SerializeObject(context);
+            var bytes = Encoding.UTF8.GetBytes(json);
+            var base64String = Convert.ToBase64String(bytes);
+
+            var startInfo = new ProcessStartInfo
+            {
+                Arguments = base64String,
+                CreateNoWindow = true,
+                ErrorDialog = false,
+                FileName = Filename,
+                UseShellExecute = false,
+                WindowStyle = ProcessWindowStyle.Hidden,
+                WorkingDirectory = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, Properties.Path),
+                RedirectStandardError = true,
+                RedirectStandardOutput = true,
+                StandardErrorEncoding = Encoding.UTF8,
+                StandardOutputEncoding = Encoding.UTF8,
+            };
+
+            return startInfo;
+        }
+
+        private void Kill(string reason)
+        {
+            if (_process == null)
+            {
+                return;
+            }
+
+            try
+            {
+                MessageBroker.AppendLog(LogLevel.Warning, $"Process was stopped. Reason: {reason}");
+                _processKilled = true;
+                _process.Kill(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to kill process job {Filename}", _process.StartInfo.FileName);
+                MessageBroker.AppendLog(LogLevel.Error, $"Fail to kill process job {_process.StartInfo.FileName}. {ex.Message}");
+            }
+        }
+
+        private void LogProcessInformation()
+        {
+            if (_process == null) { return; }
+            if (!_process.HasExited) { return; }
+
+            MessageBroker.AppendLog(LogLevel.Information, _seperator);
+            MessageBroker.AppendLog(LogLevel.Information, " - Process information:");
+            MessageBroker.AppendLog(LogLevel.Information, _seperator);
+            MessageBroker.AppendLog(LogLevel.Information, $"ExitCode: {_process.ExitCode}");
+            MessageBroker.AppendLog(LogLevel.Information, $"StartTime: {_process.StartTime}");
+            MessageBroker.AppendLog(LogLevel.Information, $"ExitTime: {_process.ExitTime}");
+            MessageBroker.AppendLog(LogLevel.Information, $"Id: {_process.Id}");
+            MessageBroker.AppendLog(LogLevel.Information, $"PeakPagedMemorySize64: {FormatBytes(_peakPagedMemorySize64)}");
+            MessageBroker.AppendLog(LogLevel.Information, $"PeakWorkingSet64: {FormatBytes(_peakWorkingSet64)}");
+            MessageBroker.AppendLog(LogLevel.Information, $"PeakVirtualMemorySize64: {FormatBytes(_peakVirtualMemorySize64)}");
+            MessageBroker.AppendLog(LogLevel.Information, _seperator);
+        }
+
+        private void OnCancel()
+        {
+            Kill("request for cancel process");
+        }
+
+        private void OnTimeout()
+        {
+            Kill("timeout expire");
+        }
+
+        private void ProcessErrorDataReceived(object sender, DataReceivedEventArgs eventArgs)
+        {
+            if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
+            _output.AppendLine(eventArgs.Data);
+            MessageBroker.AppendLog(LogLevel.Error, eventArgs.Data);
+            UpdatePeakVariables(_process);
+        }
+
+        private void ProcessOutputDataReceived(object sender, DataReceivedEventArgs eventArgs)
+        {
+            if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
+            _output.AppendLine(eventArgs.Data);
+            MessageBroker.AppendLog(LogLevel.Information, eventArgs.Data);
+            UpdatePeakVariables(_process);
+        }
+
+        private bool StartProcess(ProcessStartInfo startInfo, TimeSpan timeout)
+        {
+            _process = Process.Start(startInfo);
+            if (_process == null)
+            {
+                var filename = Path.Combine(Properties.Path, Properties.Filename);
+                throw new PlanarJobException($"could not start process {filename}");
+            }
+
+            _process.EnableRaisingEvents = true;
+            _process.BeginOutputReadLine();
+            _process.BeginErrorReadLine();
+
+            _process.OutputDataReceived += ProcessOutputDataReceived;
+            _process.ErrorDataReceived += ProcessErrorDataReceived;
+
+            _process.WaitForExit(Convert.ToInt32(timeout.TotalMilliseconds));
+            if (!_process.HasExited)
+            {
+                MessageBroker.AppendLog(LogLevel.Error, $"Process timeout expire. Timeout was {timeout:hh\\:mm\\:ss}");
+                return false;
+            }
+
+            return true;
+        }
+
+        private void UpdatePeakVariables(Process? process)
+        {
+            if (process == null) { return; }
+
+            if (!process.HasExited)
+            {
+                try
+                {
+                    _peakPagedMemorySize64 = process.PeakPagedMemorySize64;
+                    _peakVirtualMemorySize64 = process.PeakVirtualMemorySize64;
+                    _peakWorkingSet64 = process.PeakWorkingSet64;
+                }
+                catch
+                {
+                    // *** DO NOTHING ***
+                }
             }
         }
 
@@ -86,63 +233,28 @@ namespace Planar
         {
             try
             {
+                // Obsolete: Support old dll files
+                if (!string.IsNullOrEmpty(Properties.Filename))
+                {
+                    var fi = new FileInfo(Properties.Filename);
+                    if (fi.Extension == ".dll") { Properties.Filename = $"{Properties.Filename[0..^4]}.exe"; }
+                }
+
                 ValidateMandatoryString(Properties.Path, nameof(Properties.Path));
                 ValidateMandatoryString(Properties.Filename, nameof(Properties.Filename));
-                ValidateMandatoryString(Properties.ClassName, nameof(Properties.ClassName));
 
-                if (!File.Exists(AssemblyFilename))
+                if (!File.Exists(Filename))
                 {
-                    throw new PlanarJobException($"assembly filename '{AssemblyFilename}' could not be found");
+                    throw new PlanarJobException($"process filename '{Filename}' could not be found");
                 }
             }
             catch (Exception ex)
             {
                 var source = nameof(ValidatePlanarJob);
                 _logger.LogError(ex, "Fail at {Source}", source);
+                MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
                 throw;
             }
-        }
-
-        private MethodInfo ValidateBaseJob(Type type)
-        {
-            //// ***** Attention: be aware for sync code with Validate on BaseJobTest *****
-
-            if (type == null)
-            {
-                throw new PlanarJobException($"type '{Properties.ClassName}' could not be found at assembly '{AssemblyFilename}'");
-            }
-
-            ////var baseTypeName = type.BaseType?.FullName;
-            ////if (baseTypeName != $"{nameof(Planar)}.BaseJob")
-            ////{
-            ////    throw new PlanarJobException($"type '{Properties.ClassName}' from assembly '{AssemblyFilename}' not inherit 'Planar.Job.BaseJob' type");
-            ////}
-
-#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
-            var method =
-                type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance) ??
-                throw new PlanarJobException($"type '{Properties.ClassName}' from assembly '{AssemblyFilename}' has no 'Execute' method");
-#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
-
-            if (method.ReturnType != typeof(Task))
-            {
-                throw new PlanarJobException($"method 'Execute' at type '{Properties.ClassName}' from assembly '{AssemblyFilename}' has no 'Task' return type (current return type is {method.ReturnType.FullName})");
-            }
-
-            var parameters = method.GetParameters();
-            if (parameters?.Length != 1)
-            {
-                throw new PlanarJobException($"method 'Execute' at type '{Properties.ClassName}' from assembly '{AssemblyFilename}' must have only 1 parameters (current parameters count {parameters?.Length})");
-            }
-
-            if (!parameters[0].ParameterType.ToString().StartsWith("System.Object"))
-            {
-                throw new PlanarJobException($"first parameter in method 'Execute' at type '{Properties.ClassName}' from assembly '{AssemblyFilename}' must be object. (current type '{parameters[0].ParameterType.Name}')");
-            }
-
-            return method;
-
-            //// ***** Attention: be aware for sync code with Validate on BaseJobTest *****
         }
     }
 }

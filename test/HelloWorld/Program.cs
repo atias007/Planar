@@ -1,2 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+﻿using HelloWorld;
+using Planar.Job;
+
+PlanarJob.Start<Job>();

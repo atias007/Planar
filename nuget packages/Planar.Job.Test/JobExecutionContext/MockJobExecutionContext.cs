@@ -32,7 +32,7 @@ namespace Planar.Job.Test
             }
 
             MergedJobDataMap = _jobDetail.JobDataMap.Merge(_triggerDetail.TriggerDataMap);
-            FireInstanceId = $"JobTest_{System.Environment.MachineName}_{System.Environment.UserName}_{GenerateFireInstanceId()}";
+            FireInstanceId = $"JobTest_{GenerateFireInstanceId()}";
             Recovering = properties.Recovering;
             RefireCount = properties.RefireCount;
 
