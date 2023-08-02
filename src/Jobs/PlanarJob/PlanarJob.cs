@@ -71,16 +71,23 @@ namespace Planar
                     break;
 
                 case MessageBrokerChannels.IncreaseEffectedRows:
-                    if (byte.TryParse(e.CloudEvent.Data.ToString(), out var delta))
+                    if (int.TryParse(e.CloudEvent.Data.ToString(), out var delta))
                     {
-                        _logger.LogError("Message broker channels '{Type}' has invalid byte value '{Value}'", e.CloudEvent.Type, e.CloudEvent.Data.ToString());
+                        _logger.LogError("Message broker channels '{Type}' has invalid integer value '{Value}'", e.CloudEvent.Type, e.CloudEvent.Data.ToString());
                         return;
                     }
 
-                    MessageBroker.IncreaseEffectedRows(effectedRows);
+                    MessageBroker.IncreaseEffectedRows(delta);
                     break;
 
                 case MessageBrokerChannels.SetEffectedRows:
+                    if (int.TryParse(e.CloudEvent.Data.ToString(), out var effectedRows))
+                    {
+                        _logger.LogError("Message broker channels '{Type}' has invalid integer value '{Value}'", e.CloudEvent.Type, e.CloudEvent.Data.ToString());
+                        return;
+                    }
+
+                    MessageBroker.IncreaseEffectedRows(delta);
                     break;
 
                 case MessageBrokerChannels.PutJobData:
