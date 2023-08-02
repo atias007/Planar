@@ -8,6 +8,7 @@
         SetEffectedRows,
         PutJobData,
         PutTriggerData,
-        UpdateProgress
+        UpdateProgress,
+        ReportException
     }
 }

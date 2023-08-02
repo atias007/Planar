@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
@@ -170,6 +171,15 @@ namespace Planar.Job
         }
 
         #endregion EffectedRows
+
+        #region Inner
+
+        public void ReportException(Exception ex)
+        {
+            MqttClient.Publish(MessageBrokerChannels.ReportException, ex.ToString()).ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+
+        #endregion Inner
 
         #region Progress
 

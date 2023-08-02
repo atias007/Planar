@@ -1,6 +1,5 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Planar.Common;
 using Planar.Common.Helpers;
 using Quartz;
@@ -17,6 +16,7 @@ namespace Planar
         private static readonly string _seperator = string.Empty.PadLeft(80, '-');
         private readonly IMonitorUtil _monitorUtil;
         private readonly StringBuilder _output = new();
+        private readonly StringBuilder _error = new();
         private string? _filename;
         private long _peakPagedMemorySize64;
         private long _peakVirtualMemorySize64;
@@ -49,7 +49,7 @@ namespace Planar
                 context.CancellationToken.Register(OnCancel);
 
                 var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
-                var startInfo = GetProcessStartInfo(context);
+                var startInfo = GetProcessStartInfo();
                 var success = StartProcess(startInfo, timeout);
                 if (!success)
                 {
@@ -66,6 +66,7 @@ namespace Planar
             finally
             {
                 FinalizeJob(context);
+                FinalizeProcess();
             }
         }
 
@@ -88,6 +89,17 @@ namespace Planar
             return "0 bytes";
         }
 
+        private void FinalizeProcess()
+        {
+            try { _process?.CancelErrorRead(); } catch { DoNothingMethod(); }
+            try { _process?.CancelOutputRead(); } catch { DoNothingMethod(); }
+            try { _process?.Close(); } catch { DoNothingMethod(); }
+            try { _process?.Dispose(); } catch { DoNothingMethod(); }
+            try { if (_process != null) { _process.EnableRaisingEvents = false; } } catch { DoNothingMethod(); }
+            try { if (_process != null) { _process.OutputDataReceived -= ProcessOutputDataReceived; } } catch { DoNothingMethod(); }
+            try { if (_process != null) { _process.ErrorDataReceived -= ProcessErrorDataReceived; } } catch { DoNothingMethod(); }
+        }
+
         private void CheckProcessExitCode()
         {
             if (_processKilled)
@@ -96,10 +108,9 @@ namespace Planar
             }
         }
 
-        private ProcessStartInfo GetProcessStartInfo(IJobExecutionContext context)
+        private ProcessStartInfo GetProcessStartInfo()
         {
-            var json = JsonConvert.SerializeObject(context);
-            var bytes = Encoding.UTF8.GetBytes(json);
+            var bytes = Encoding.UTF8.GetBytes(MessageBroker.Details);
             var base64String = Convert.ToBase64String(bytes);
 
             var startInfo = new ProcessStartInfo
@@ -171,8 +182,7 @@ namespace Planar
         private void ProcessErrorDataReceived(object sender, DataReceivedEventArgs eventArgs)
         {
             if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
-            _output.AppendLine(eventArgs.Data);
-            MessageBroker.AppendLog(LogLevel.Error, eventArgs.Data);
+            _error.AppendLine(eventArgs.Data);
             UpdatePeakVariables(_process);
         }
 
@@ -180,7 +190,6 @@ namespace Planar
         {
             if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
             _output.AppendLine(eventArgs.Data);
-            MessageBroker.AppendLog(LogLevel.Information, eventArgs.Data);
             UpdatePeakVariables(_process);
         }
 

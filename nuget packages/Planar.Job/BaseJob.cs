@@ -206,12 +206,12 @@ namespace Planar.Job
 
         private void HandleTaskContinue(Task task)
         {
-            MqttClient.Stop().ConfigureAwait(false).GetAwaiter().GetResult();
-            if (task.Exception != null) { throw task.Exception; }
-            if (task.Exception == null && task.Status == TaskStatus.Canceled)
+            if (task.Exception != null)
             {
-                throw new TaskCanceledException("Request for cancel job");
+                _baseJobFactory.ReportException(task.Exception);
             }
+
+            MqttClient.Stop().ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         private void InitializeBaseJobFactory(string json)
