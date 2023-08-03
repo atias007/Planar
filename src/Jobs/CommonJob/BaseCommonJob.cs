@@ -83,6 +83,8 @@ namespace CommonJob
 
         public TProperties Properties { get; private set; } = new();
 
+        public string FireInstanceId { get; private set; } = string.Empty;
+
         public abstract Task Execute(IJobExecutionContext context);
 
         protected void FinalizeJob(IJobExecutionContext context)
@@ -161,6 +163,7 @@ namespace CommonJob
             }
 
             Properties = YmlUtil.Deserialize<TProperties>(properties);
+            FireInstanceId = context.FireInstanceId;
         }
     }
 }

@@ -202,7 +202,10 @@ namespace Planar
         {
             try
             {
-                InterceptingPublishAsyncInner(e);
+                if (e.ClientId == FireInstanceId)
+                {
+                    InterceptingPublishAsyncInner(e);
+                }
             }
             catch (PlanarJobException ex)
             {
