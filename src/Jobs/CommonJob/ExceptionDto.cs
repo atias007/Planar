@@ -1,4 +1,6 @@
-﻿namespace Planar
+﻿using System;
+
+namespace Planar
 {
     public class ExceptionDto
     {
@@ -6,8 +8,14 @@
         {
         }
 
-        public string? Message { get; set; }
+        public ExceptionDto(Exception ex)
+        {
+            Message = ex.Message;
+            ExceptionText = ex.ToString();
+        }
 
-        public string? ExceptionText { get; set; }
+        public string? Message { get; set; } = string.Empty;
+
+        public string? ExceptionText { get; set; } = string.Empty;
     }
 }

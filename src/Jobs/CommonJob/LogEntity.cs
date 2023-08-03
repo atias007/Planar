@@ -2,7 +2,7 @@
 
 namespace Planar
 {
-    internal class LogEntity
+    public class LogEntity
     {
         public LogEntity()
         {

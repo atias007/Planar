@@ -1,5 +1,8 @@
-﻿using CommonJob;
+﻿using CloudNative.CloudEvents;
+using CommonJob;
+using CommonJob.MessageBrokerEntities;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Planar.Common;
 using Planar.Common.Helpers;
 using Quartz;
@@ -8,21 +11,23 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using System.Timers;
 
 namespace Planar
 {
     public abstract class PlanarJob : BaseCommonJob<PlanarJob, PlanarJobProperties>
     {
-        private static readonly string _seperator = string.Empty.PadLeft(80, '-');
+        private static readonly string _seperator = string.Empty.PadLeft(40, '-');
+        private readonly object Locker = new();
+        private readonly StringBuilder _error = new();
         private readonly IMonitorUtil _monitorUtil;
         private readonly StringBuilder _output = new();
-        private readonly StringBuilder _error = new();
         private string? _filename;
         private long _peakPagedMemorySize64;
-        private long _peakVirtualMemorySize64;
         private long _peakWorkingSet64;
         private Process? _process;
         private bool _processKilled;
+        private readonly Timer _processMetricsTimer = new(1000);
 
         protected PlanarJob(
             ILogger<PlanarJob> logger,
@@ -32,79 +37,6 @@ namespace Planar
             _monitorUtil = monitorUtil;
 
             MqttBrokerService.InterceptingPublishAsync += InterceptingPublishAsync;
-        }
-
-        private void InterceptingPublishAsync(object? sender, CloudEventArgs e)
-        {
-            try
-            {
-                InterceptingPublishAsyncInner(e);
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-        }
-
-        private void InterceptingPublishAsyncInner(CloudEventArgs e)
-        {
-            _logger.LogDebug("Type: {Type}", e.CloudEvent.Type);
-
-            if (!Enum.TryParse<MessageBrokerChannels>(e.CloudEvent.Type, ignoreCase: true, out var channel))
-            {
-                _logger.LogError("Message broker channels '{Type}' is not valid", e.CloudEvent.Type);
-                return;
-            }
-
-            if (e.CloudEvent.Data == null)
-            {
-                _logger.LogError("Message broker channels '{Type}' has no value", e.CloudEvent.Type);
-                return;
-            }
-
-            switch (channel)
-            {
-                case MessageBrokerChannels.AddAggregateException:
-                    break;
-
-                case MessageBrokerChannels.AppendLog:
-                    break;
-
-                case MessageBrokerChannels.IncreaseEffectedRows:
-                    if (int.TryParse(e.CloudEvent.Data.ToString(), out var delta))
-                    {
-                        _logger.LogError("Message broker channels '{Type}' has invalid integer value '{Value}'", e.CloudEvent.Type, e.CloudEvent.Data.ToString());
-                        return;
-                    }
-
-                    MessageBroker.IncreaseEffectedRows(delta);
-                    break;
-
-                case MessageBrokerChannels.SetEffectedRows:
-                    if (int.TryParse(e.CloudEvent.Data.ToString(), out var effectedRows))
-                    {
-                        _logger.LogError("Message broker channels '{Type}' has invalid integer value '{Value}'", e.CloudEvent.Type, e.CloudEvent.Data.ToString());
-                        return;
-                    }
-
-                    MessageBroker.IncreaseEffectedRows(delta);
-                    break;
-
-                case MessageBrokerChannels.PutJobData:
-                    break;
-
-                case MessageBrokerChannels.PutTriggerData:
-                    break;
-
-                case MessageBrokerChannels.UpdateProgress:
-                    break;
-
-                case MessageBrokerChannels.ReportException:
-                    break;
-
-                default:
-                    break;
-            }
         }
 
         private string Filename
@@ -122,7 +54,6 @@ namespace Planar
             try
             {
                 await Initialize(context, _monitorUtil);
-
                 ValidatePlanarJob();
                 context.CancellationToken.Register(OnCancel);
 
@@ -167,6 +98,67 @@ namespace Planar
             return "0 bytes";
         }
 
+        private static byte GetCloudEventByteValue(CloudEvent cloudEvent)
+        {
+            var data = ValidateCloudEventData(cloudEvent.Data);
+
+            if (byte.TryParse(data, out var value))
+            {
+                return value;
+            }
+            else
+            {
+                throw new PlanarJobException($"Message broker channels '{cloudEvent.Type}' has invalid byte value '{cloudEvent.Data}'");
+            }
+        }
+
+        private static T GetCloudEventEntityValue<T>(CloudEvent cloudEvent)
+            where T : class, new()
+        {
+            var data = ValidateCloudEventData(cloudEvent.Data);
+            var log = JsonConvert.DeserializeObject<T>(data);
+            return log
+                ?? throw new PlanarJobException($"Message broker channels '{cloudEvent.Type}' has invalid '{typeof(T).Name}' value '{data}'");
+        }
+
+        private static int GetCloudEventInt32Value(CloudEvent cloudEvent)
+        {
+            var data = ValidateCloudEventData(cloudEvent.Data);
+
+            if (int.TryParse(data, out var value))
+            {
+                return value;
+            }
+            else
+            {
+                throw new PlanarJobException($"Message broker channels '{cloudEvent.Type}' has invalid integer value '{cloudEvent.Data}'");
+            }
+        }
+
+        private static string ValidateCloudEventData(object? data)
+        {
+            if (data == null)
+            {
+                throw new PlanarJobException("Message broker has empty data");
+            }
+
+            var result = data.ToString();
+            if (string.IsNullOrWhiteSpace(result))
+            {
+                throw new PlanarJobException("Message broker has empty data");
+            }
+
+            return result;
+        }
+
+        private void CheckProcessExitCode()
+        {
+            if (_processKilled)
+            {
+                throw new PlanarJobException($"process '{Filename}' was stopped at {DateTimeOffset.Now}");
+            }
+        }
+
         private void FinalizeProcess()
         {
             try { _process?.CancelErrorRead(); } catch { DoNothingMethod(); }
@@ -177,14 +169,7 @@ namespace Planar
             try { if (_process != null) { _process.EnableRaisingEvents = false; } } catch { DoNothingMethod(); }
             try { if (_process != null) { _process.OutputDataReceived -= ProcessOutputDataReceived; } } catch { DoNothingMethod(); }
             try { if (_process != null) { _process.ErrorDataReceived -= ProcessErrorDataReceived; } } catch { DoNothingMethod(); }
-        }
-
-        private void CheckProcessExitCode()
-        {
-            if (_processKilled)
-            {
-                throw new PlanarJobException($"process '{Filename}' was stopped at {DateTimeOffset.Now}");
-            }
+            try { if (_processMetricsTimer != null) { _processMetricsTimer.Elapsed -= MetricsTimerElapsed; } } catch { DoNothingMethod(); }
         }
 
         private ProcessStartInfo GetProcessStartInfo()
@@ -208,6 +193,79 @@ namespace Planar
             };
 
             return startInfo;
+        }
+
+        private void InterceptingPublishAsync(object? sender, CloudEventArgs e)
+        {
+            try
+            {
+                InterceptingPublishAsyncInner(e);
+            }
+            catch (PlanarJobException ex)
+            {
+                _logger.LogCritical("Fail intercepting published message on MQTT broker event. {Error}", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Fail intercepting published message on MQTT broker event");
+            }
+        }
+
+        private void InterceptingPublishAsyncInner(CloudEventArgs e)
+        {
+            _logger.LogDebug("Type: {Type}", e.CloudEvent.Type);
+
+            if (!Enum.TryParse<MessageBrokerChannels>(e.CloudEvent.Type, ignoreCase: true, out var channel))
+            {
+                _logger.LogError("Message broker channels '{Type}' is not valid", e.CloudEvent.Type);
+                return;
+            }
+
+            int iValue;
+            KeyValueObject kv;
+            switch (channel)
+            {
+                case MessageBrokerChannels.AddAggregateException:
+                    var ex = GetCloudEventEntityValue<ExceptionDto>(e.CloudEvent);
+                    MessageBroker.AddAggregateException(ex);
+                    break;
+
+                case MessageBrokerChannels.AppendLog:
+                    var log = GetCloudEventEntityValue<LogEntity>(e.CloudEvent);
+                    MessageBroker.AppendLog(log);
+                    break;
+
+                case MessageBrokerChannels.IncreaseEffectedRows:
+                    iValue = GetCloudEventInt32Value(e.CloudEvent);
+                    MessageBroker.IncreaseEffectedRows(iValue);
+                    break;
+
+                case MessageBrokerChannels.SetEffectedRows:
+                    iValue = GetCloudEventInt32Value(e.CloudEvent);
+                    MessageBroker.SetEffectedRows(iValue);
+                    break;
+
+                case MessageBrokerChannels.PutJobData:
+                    kv = GetCloudEventEntityValue<KeyValueObject>(e.CloudEvent);
+                    MessageBroker.PutJobDataAction(kv);
+                    break;
+
+                case MessageBrokerChannels.PutTriggerData:
+                    kv = GetCloudEventEntityValue<KeyValueObject>(e.CloudEvent);
+                    MessageBroker.PutTriggerData(kv);
+                    break;
+
+                case MessageBrokerChannels.UpdateProgress:
+                    var progress = GetCloudEventByteValue(e.CloudEvent);
+                    MessageBroker.UpdateProgress(progress);
+                    break;
+
+                case MessageBrokerChannels.ReportException:
+                    break;
+
+                default:
+                    break;
+            }
         }
 
         private void Kill(string reason)
@@ -239,12 +297,8 @@ namespace Planar
             MessageBroker.AppendLog(LogLevel.Information, " - Process information:");
             MessageBroker.AppendLog(LogLevel.Information, _seperator);
             MessageBroker.AppendLog(LogLevel.Information, $"ExitCode: {_process.ExitCode}");
-            MessageBroker.AppendLog(LogLevel.Information, $"StartTime: {_process.StartTime}");
-            MessageBroker.AppendLog(LogLevel.Information, $"ExitTime: {_process.ExitTime}");
-            MessageBroker.AppendLog(LogLevel.Information, $"Id: {_process.Id}");
             MessageBroker.AppendLog(LogLevel.Information, $"PeakPagedMemorySize64: {FormatBytes(_peakPagedMemorySize64)}");
             MessageBroker.AppendLog(LogLevel.Information, $"PeakWorkingSet64: {FormatBytes(_peakWorkingSet64)}");
-            MessageBroker.AppendLog(LogLevel.Information, $"PeakVirtualMemorySize64: {FormatBytes(_peakVirtualMemorySize64)}");
             MessageBroker.AppendLog(LogLevel.Information, _seperator);
         }
 
@@ -262,14 +316,12 @@ namespace Planar
         {
             if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
             _error.AppendLine(eventArgs.Data);
-            UpdatePeakVariables(_process);
         }
 
         private void ProcessOutputDataReceived(object sender, DataReceivedEventArgs eventArgs)
         {
             if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
             _output.AppendLine(eventArgs.Data);
-            UpdatePeakVariables(_process);
         }
 
         private bool StartProcess(ProcessStartInfo startInfo, TimeSpan timeout)
@@ -287,6 +339,7 @@ namespace Planar
 
             _process.OutputDataReceived += ProcessOutputDataReceived;
             _process.ErrorDataReceived += ProcessErrorDataReceived;
+            _processMetricsTimer.Elapsed += MetricsTimerElapsed;
 
             _process.WaitForExit(Convert.ToInt32(timeout.TotalMilliseconds));
             if (!_process.HasExited)
@@ -298,22 +351,28 @@ namespace Planar
             return true;
         }
 
+        private void MetricsTimerElapsed(object? sender, ElapsedEventArgs e)
+        {
+            UpdatePeakVariables(_process);
+        }
+
         private void UpdatePeakVariables(Process? process)
         {
             if (process == null) { return; }
 
-            if (!process.HasExited)
+            if (process.HasExited) { return; }
+
+            try
             {
-                try
+                lock (Locker)
                 {
                     _peakPagedMemorySize64 = process.PeakPagedMemorySize64;
-                    _peakVirtualMemorySize64 = process.PeakVirtualMemorySize64;
                     _peakWorkingSet64 = process.PeakWorkingSet64;
                 }
-                catch
-                {
-                    // *** DO NOTHING ***
-                }
+            }
+            catch
+            {
+                // *** DO NOTHING ***
             }
         }
 
