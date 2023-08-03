@@ -29,6 +29,7 @@
 	  <None Remove="Jobs\**" />
 	</ItemGroup>
 	<ItemGroup>
+		<Compile Include="..\..\src\Jobs\CommonJob\ExceptionDto.cs" Link="Common\ExceptionDto.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\Key.cs" Link="JobExecutionContext\Key.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\LogEntity.cs" Link="Common\LogEntity.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\MessageBrokerEntities\KeyValueItem.cs" Link="Common\KeyValueItem.cs" />
@@ -39,7 +40,6 @@
 		<Compile Include="..\Planar.Job\Attributes\IgnoreDataMapAttribute.cs" Link="Attributes\IgnoreDataMapAttribute.cs" />
 		<Compile Include="..\Planar.Job\Attributes\JobDataAttribute.cs" Link="Attributes\JobDataAttribute.cs" />
 		<Compile Include="..\Planar.Job\Attributes\TriggerDataAttribute.cs" Link="Attributes\TriggerDataAttribute.cs" />
-		<Compile Include="..\Planar.Job\ExceptionDto.cs" Link="Common\ExceptionDto.cs" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Include="..\..\res\nuget_logo.png">
@@ -52,10 +52,6 @@
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.6.0.74858">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
 		<PackageReference Include="System.Text.Json" Version="7.0.3" />
 		<PackageReference Include="YamlDotNet" Version="13.1.1" />
 	</ItemGroup>

@@ -429,7 +429,7 @@ namespace Planar.Service.API
                 return result;
             }
 
-            var settings = JobSettingsLoader.LoadJobSettings(jobPath);
+            var settings = JobSettingsLoader.LoadJobSettings(jobPath, Global.GlobalConfig);
             result = settings.Select(d => new KeyValueItem(d.Key, d.Value)).ToList();
 
             return result;

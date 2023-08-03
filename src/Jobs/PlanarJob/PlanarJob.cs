@@ -18,16 +18,18 @@ namespace Planar
     public abstract class PlanarJob : BaseCommonJob<PlanarJob, PlanarJobProperties>
     {
         private static readonly string _seperator = string.Empty.PadLeft(40, '-');
-        private readonly object Locker = new();
         private readonly StringBuilder _error = new();
         private readonly IMonitorUtil _monitorUtil;
         private readonly StringBuilder _output = new();
+        private readonly Timer _processMetricsTimer = new(1000);
+        private readonly object Locker = new();
+        private readonly object ConsoleLocker = new();
         private string? _filename;
         private long _peakPagedMemorySize64;
         private long _peakWorkingSet64;
         private Process? _process;
         private bool _processKilled;
-        private readonly Timer _processMetricsTimer = new(1000);
+        private readonly bool _isDevelopment;
 
         protected PlanarJob(
             ILogger<PlanarJob> logger,
@@ -37,6 +39,7 @@ namespace Planar
             _monitorUtil = monitorUtil;
 
             MqttBrokerService.InterceptingPublishAsync += InterceptingPublishAsync;
+            _isDevelopment = string.Equals(AppSettings.Environment, "development", StringComparison.OrdinalIgnoreCase);
         }
 
         private string Filename
@@ -211,10 +214,21 @@ namespace Planar
             }
         }
 
+        private void WriteToConsole(LogEntity logEntity)
+        {
+            if (_isDevelopment)
+            {
+                lock (ConsoleLocker)
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                    Console.Out.WriteLine($" - {logEntity.Message}");
+                    Console.ResetColor();
+                }
+            }
+        }
+
         private void InterceptingPublishAsyncInner(CloudEventArgs e)
         {
-            _logger.LogDebug("Type: {Type}", e.CloudEvent.Type);
-
             if (!Enum.TryParse<MessageBrokerChannels>(e.CloudEvent.Type, ignoreCase: true, out var channel))
             {
                 _logger.LogError("Message broker channels '{Type}' is not valid", e.CloudEvent.Type);
@@ -233,6 +247,7 @@ namespace Planar
                 case MessageBrokerChannels.AppendLog:
                     var log = GetCloudEventEntityValue<LogEntity>(e.CloudEvent);
                     MessageBroker.AppendLog(log);
+                    WriteToConsole(log);
                     break;
 
                 case MessageBrokerChannels.IncreaseEffectedRows:
@@ -302,6 +317,11 @@ namespace Planar
             MessageBroker.AppendLog(LogLevel.Information, _seperator);
         }
 
+        private void MetricsTimerElapsed(object? sender, ElapsedEventArgs e)
+        {
+            UpdatePeakVariables(_process);
+        }
+
         private void OnCancel()
         {
             Kill("request for cancel process");
@@ -340,6 +360,7 @@ namespace Planar
             _process.OutputDataReceived += ProcessOutputDataReceived;
             _process.ErrorDataReceived += ProcessErrorDataReceived;
             _processMetricsTimer.Elapsed += MetricsTimerElapsed;
+            _processMetricsTimer.Start();
 
             _process.WaitForExit(Convert.ToInt32(timeout.TotalMilliseconds));
             if (!_process.HasExited)
@@ -349,11 +370,6 @@ namespace Planar
             }
 
             return true;
-        }
-
-        private void MetricsTimerElapsed(object? sender, ElapsedEventArgs e)
-        {
-            UpdatePeakVariables(_process);
         }
 
         private void UpdatePeakVariables(Process? process)

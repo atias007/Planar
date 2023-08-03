@@ -54,7 +54,7 @@ namespace CommonJob
 
         public void AppendLog(LogLevel level, string messag)
         {
-            var formatedMessage = $"[{DateTime.Now:HH:mm:ss} {GetLogLevelDisplayTest(level)}] | {messag}";
+            var formatedMessage = $"[{DateTime.Now:HH:mm:ss} {GetLogLevelDisplayTest(level)}] {messag}";
             var log = new LogEntity(level, formatedMessage);
             LogData(log);
         }

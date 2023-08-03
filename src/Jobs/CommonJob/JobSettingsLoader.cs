@@ -6,16 +6,16 @@ using System.Linq;
 
 namespace Planar.Common
 {
-    public static class JobSettingsLoader
+    internal static class JobSettingsLoader
     {
         private const string SettingsFilename = "JobSettings.yml";
         private const string EnvironmentPlaceholder = "{environment}";
         private static readonly string EnvironmntSettingsFilename = $"JobSettings.{EnvironmentPlaceholder}.yml";
 
-        public static IDictionary<string, string?> LoadJobSettings(string jobPath)
+        public static IDictionary<string, string?> LoadJobSettings(string jobPath, Dictionary<string, string?> globalSettings)
         {
             // Load job global config
-            var final = new Dictionary<string, string?>(Global.GlobalConfig);
+            var final = new Dictionary<string, string?>(globalSettings);
 
             // Merge settings yml file
             if (string.IsNullOrEmpty(jobPath)) { return final; }

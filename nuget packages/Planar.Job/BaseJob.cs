@@ -67,9 +67,9 @@ namespace Planar.Job
 
             Logger = ServiceProvider.GetRequiredService<ILogger>();
 
-            MqttClient.Start(_context.FireInstanceId).ConfigureAwait(false).GetAwaiter().GetResult();
             if (!PlanarJob.DebugMode)
             {
+                MqttClient.Start(_context.FireInstanceId).ConfigureAwait(false).GetAwaiter().GetResult();
                 SpinWait.SpinUntil(() => MqttClient.IsConnected, TimeSpan.FromSeconds(5));
                 if (MqttClient.IsConnected)
                 {
@@ -206,9 +206,17 @@ namespace Planar.Job
 
         private void HandleTaskContinue(Task task)
         {
+            MapJobInstancePropertiesBack(_context);
+
             if (task.Exception != null)
             {
                 _baseJobFactory.ReportException(task.Exception);
+                if (PlanarJob.DebugMode)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Error.WriteLine(task.Exception);
+                    Console.ResetColor();
+                }
             }
 
             MqttClient.Stop().ConfigureAwait(false).GetAwaiter().GetResult();
@@ -233,11 +241,14 @@ namespace Planar.Job
 
                 _baseJobFactory = new BaseJobFactory(ctx);
 
-                //// ctx.CancellationToken = mb.CancellationToken;
-
                 FilterJobData(ctx.MergedJobDataMap);
                 FilterJobData(ctx.JobDetails.JobDataMap);
                 FilterJobData(ctx.TriggerDetails.TriggerDataMap);
+
+                if (PlanarJob.DebugMode)
+                {
+                    ctx.JobSettings = new Dictionary<string, string?>(JobSettingsLoader.LoadJobSettings(ctx.JobSettings));
+                }
 
                 _context = ctx;
             }

@@ -7,9 +7,7 @@ concurrent: false
 job data:
   LastId: 1
 properties:
-  path: EFCoreTest
-  filename: EFCoreTest.dll
-  class name: EFCoreTest.JobInstanceLogTracker
+  filename: EFCoreTest.exe
 simple triggers:
   - name: every_1_hour
     interval: 01:00:00

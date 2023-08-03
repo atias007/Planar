@@ -37,8 +37,7 @@ namespace Planar.Job
 
         private static void ValidateArgs()
         {
-            var args = Environment.GetCommandLineArgs();
-            if (args == null) { throw new PlanarJobException("Missing command line argument(s)"); }
+            var args = Environment.GetCommandLineArgs() ?? throw new PlanarJobException("Missing command line argument(s)");
             if (args.Length == 1) { throw new PlanarJobException("Job was executed with no arguments"); }
         }
 

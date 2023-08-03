@@ -27,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Jobs\CommonJob\JobSettingsLoader.cs" Link="General\JobSettingsLoader.cs" />
     <Compile Include="..\Planar.Common\Consts.cs" Link="General\Consts.cs" />
     <Compile Include="..\Planar\FolderConsts.cs" Link="General\FolderConsts.cs" />
   </ItemGroup>
