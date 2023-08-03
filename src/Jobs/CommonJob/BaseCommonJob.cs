@@ -98,7 +98,6 @@ namespace CommonJob
             {
                 var source = nameof(FinalizeJob);
                 _logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
-                throw;
             }
         }
 

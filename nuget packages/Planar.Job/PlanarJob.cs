@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 
 namespace Planar.Job
@@ -7,6 +8,8 @@ namespace Planar.Job
     public static class PlanarJob
     {
         internal static bool DebugMode { get; private set; }
+        internal static string Environment { get; private set; } = "Development";
+        internal static string[] Args { get; private set; } = System.Environment.GetCommandLineArgs();
 
         internal static Stopwatch Stopwatch { get; private set; } = new Stopwatch();
 
@@ -15,7 +18,7 @@ namespace Planar.Job
         {
             Stopwatch.Start();
             ValidateArgs();
-            CheckDebugMode();
+            FillProperties();
             var json = GetJsonFromArgs();
             Execute<TJob>(json);
         }
@@ -25,7 +28,9 @@ namespace Planar.Job
         {
             if (DebugMode)
             {
-                Console.WriteLine("[x] Debug mode");
+                Console.WriteLine("[x] Debug mode: True");
+                Console.WriteLine($"[x] Environment: {Environment}");
+                Console.WriteLine("---------------------------------------");
                 Console.WriteLine("[x] Press [Enter] to start execute job");
                 Console.WriteLine("---------------------------------------");
                 Console.ReadKey(true);
@@ -37,24 +42,36 @@ namespace Planar.Job
 
         private static void ValidateArgs()
         {
-            var args = Environment.GetCommandLineArgs() ?? throw new PlanarJobException("Missing command line argument(s)");
-            if (args.Length == 1) { throw new PlanarJobException("Job was executed with no arguments"); }
+            var args = Args ?? throw new PlanarJobException("Missing command line argument(s)");
+            if (args.Count() == 1) { throw new PlanarJobException("Job was executed with no arguments"); }
         }
 
         private static string GetJsonFromArgs()
         {
-            var args = Environment.GetCommandLineArgs();
-
-            var base64 = args[1];
+            var base64 = Args[1];
             if (string.IsNullOrWhiteSpace(base64)) { throw new PlanarJobException("Job was executed empty argument"); }
             var json = DecodeBase64ToString(base64);
             return json;
         }
 
-        private static void CheckDebugMode()
+        private static void FillProperties()
         {
-            var args = Environment.GetCommandLineArgs();
-            DebugMode = Array.Exists(args, a => a.ToLower() == "debug");
+            DebugMode = Array.Exists(Args, a => a.ToLower() == "--debug" || a.ToLower() == "-d");
+            for (int i = 0; i < Args.Length; i++)
+            {
+                if (Args[i].ToLower() == "--environment" || Args[i].ToLower() == "-e")
+                {
+                    var j = i + 1;
+                    if (j < Args.Length || Args[j].StartsWith('-'))
+                    {
+                        Environment = Args[j];
+                    }
+                    else
+                    {
+                        throw new PlanarJobException($"Environment value for argument {Args[i]} was not supplied");
+                    }
+                }
+            }
         }
 
         private static string DecodeBase64ToString(string base64String)

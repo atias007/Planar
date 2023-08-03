@@ -60,33 +60,27 @@ namespace Planar.Job.Test
             switch (channel)
             {
                 case "PutJobData":
-                    var data1 = Deserialize<KeyValueItem>(message);
+                    var data1 = Deserialize<KeyValueObject>(message);
                     if (!Consts.IsDataKeyValid(data1.Key))
                     {
                         throw new PlanarJobTestException($"the data key {data1.Key} in invalid");
                     }
 
-                    lock (Locker)
-                    {
-                        var value = PlanarConvert.ToString(data1.Value);
-                        _context.JobDetails.JobDataMap.AddOrUpdate(data1.Key, value);
-                        _context.MergedJobDataMap = _context.JobDetails.JobDataMap.Merge(_context.TriggerDetails.TriggerDataMap);
-                    }
+                    // TODO: var log = new LogEntity(LogLevel.Debug,)
+                    // LogData()
+
                     return null;
 
                 case "PutTriggerData":
-                    var data2 = Deserialize<KeyValueItem>(message);
+                    var data2 = Deserialize<KeyValueObject>(message);
                     if (!Consts.IsDataKeyValid(data2.Key))
                     {
                         throw new PlanarJobTestException($"the data key {data2.Key} in invalid");
                     }
 
-                    lock (Locker)
-                    {
-                        var value = PlanarConvert.ToString(data2.Value);
-                        _context.TriggerDetails.TriggerDataMap.AddOrUpdate(data2.Key, value);
-                        _context.MergedJobDataMap = _context.JobDetails.JobDataMap.Merge(_context.TriggerDetails.TriggerDataMap);
-                    }
+                    // TODO: var log = new LogEntity(LogLevel.Debug,)
+                    // LogData()
+
                     return null;
 
                 case "AddAggragateException":
@@ -106,17 +100,6 @@ namespace Planar.Job.Test
                 case "GetExceptionsText":
                     var exceptionText = Metadata.GetExceptionsText();
                     return exceptionText;
-
-                case "CheckIfStopRequest":
-                    return _cancellationTokenSource.Token.IsCancellationRequested.ToString();
-
-                case "FailOnStopRequest":
-                    if (_cancellationTokenSource.Token.IsCancellationRequested)
-                    {
-                        throw new OperationCanceledException("Job was stopped");
-                    }
-
-                    return null;
 
                 case "GetData":
                     try

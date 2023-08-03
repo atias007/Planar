@@ -60,7 +60,6 @@ namespace SomeJob
             rows = GetEffectedRows();
             Logger.LogDebug("GetEffectedRows: {Value}", rows);
 
-            await Task.Delay(30000, context.CancellationToken);
             Logger.LogWarning("JobRunTime: {JobRunTime}", JobRunTime);
 
             Logger.LogInformation("SomeDate: {SomeDate}", SomeDate);

@@ -30,6 +30,7 @@ namespace Planar
         private Process? _process;
         private bool _processKilled;
         private readonly bool _isDevelopment;
+        private bool _isHealthCheck;
 
         protected PlanarJob(
             ILogger<PlanarJob> logger,
@@ -68,6 +69,7 @@ namespace Planar
                     OnTimeout();
                 }
 
+                ValidateHealthCheck();
                 LogProcessInformation();
                 CheckProcessExitCode();
             }
@@ -159,6 +161,31 @@ namespace Planar
             if (_processKilled)
             {
                 throw new PlanarJobException($"process '{Filename}' was stopped at {DateTimeOffset.Now}");
+            }
+        }
+
+        private void ValidateHealthCheck()
+        {
+            try
+            {
+                if (!_isHealthCheck)
+                {
+                    var log = new LogEntity
+                    {
+                        Level = LogLevel.Warning,
+                        Message = "No health check signal from job. Check if the following code: \"PlanarJob.Start<TJob>();\" exists in startup of your console project"
+                    };
+                    MessageBroker.AppendLog(log);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Fail to handle health chek at {nameof(FinalizeProcess)}");
+            }
+
+            if (!_isHealthCheck)
+            {
+                throw new PlanarJobException("No health check signal from job. See job log for more information");
             }
         }
 
@@ -281,7 +308,12 @@ namespace Planar
                 case MessageBrokerChannels.ReportException:
                     break;
 
+                case MessageBrokerChannels.HealthCheck:
+                    _isHealthCheck = true;
+                    break;
+
                 default:
+                    _logger.LogWarning("PlanarJob intercepting published message with unsupported channel {Channel}", channel);
                     break;
             }
         }

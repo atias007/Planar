@@ -74,6 +74,7 @@ namespace Planar.Job
                 if (MqttClient.IsConnected)
                 {
                     MqttClient.Ping().ConfigureAwait(false).GetAwaiter().GetResult();
+                    MqttClient.Publish(MessageBrokerChannels.HealthCheck).ConfigureAwait(false).GetAwaiter().GetResult();
                 }
                 else
                 {

@@ -54,8 +54,7 @@ namespace CommonJob
 
         public void AppendLog(LogLevel level, string messag)
         {
-            var formatedMessage = $"[{DateTime.Now:HH:mm:ss} {GetLogLevelDisplayTest(level)}] {messag}";
-            var log = new LogEntity(level, formatedMessage);
+            var log = new LogEntity(level, messag);
             LogData(log);
         }
 
@@ -135,20 +134,6 @@ namespace CommonJob
             }
 
             _monitorUtil?.Scan(MonitorEvents.ExecutionProgressChanged, _context);
-        }
-
-        private static string GetLogLevelDisplayTest(LogLevel logLevel)
-        {
-            return logLevel switch
-            {
-                LogLevel.Trace => "TRC",
-                LogLevel.Debug => "DBG",
-                LogLevel.Information => "INF",
-                LogLevel.Warning => "WRN",
-                LogLevel.Error => "ERR",
-                LogLevel.Critical => "CRT",
-                _ => "NON", // case LogLevel.None
-            };
         }
 
         private static JobExecutionContext MapContext(IJobExecutionContext context, IDictionary<string, string?> settings)
@@ -231,7 +216,7 @@ namespace CommonJob
             {
                 if ((int)logEntity.Level >= (int)LogLevel)
                 {
-                    Metadata.Log.AppendLine(logEntity.Message);
+                    Metadata.Log.AppendLine(logEntity.ToString());
                 }
             }
         }

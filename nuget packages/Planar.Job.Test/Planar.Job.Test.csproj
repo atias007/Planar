@@ -32,7 +32,7 @@
 		<Compile Include="..\..\src\Jobs\CommonJob\ExceptionDto.cs" Link="Common\ExceptionDto.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\Key.cs" Link="JobExecutionContext\Key.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\LogEntity.cs" Link="Common\LogEntity.cs" />
-		<Compile Include="..\..\src\Jobs\CommonJob\MessageBrokerEntities\KeyValueItem.cs" Link="Common\KeyValueItem.cs" />
+		<Compile Include="..\..\src\Jobs\CommonJob\MessageBrokerEntities\KeyValueObject.cs" Link="KeyValueObject.cs" />
 		<Compile Include="..\..\src\Planar.API.Common\Entities\StatusMembers.cs" Link="Common\StatusMembers.cs" />
 		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Common\Consts.cs" />
 		<Compile Include="..\..\src\Planar.Common\YamlConfigurationFileParser.cs" Link="Common\YamlConfigurationFileParser.cs" />

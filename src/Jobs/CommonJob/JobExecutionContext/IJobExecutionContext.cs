@@ -28,7 +28,5 @@ namespace Planar.Job
         SortedDictionary<string, string?> MergedJobDataMap { get; }
 
         string Environment { get; }
-
-        CancellationToken CancellationToken { get; }
     }
 }

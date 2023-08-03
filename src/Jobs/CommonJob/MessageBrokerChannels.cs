@@ -9,6 +9,7 @@
         PutJobData,
         PutTriggerData,
         UpdateProgress,
-        ReportException
+        ReportException,
+        HealthCheck
     }
 }

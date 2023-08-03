@@ -1,2 +1,6 @@
-﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+﻿using CancelTokenTest;
+using Planar.Job;
+
+Console.WriteLine("X");
+return;
+PlanarJob.Start<Job>();

@@ -60,6 +60,11 @@ namespace Planar
             _mqttClient?.Dispose();
         }
 
+        public static async Task Publish(MessageBrokerChannels channel)
+        {
+            await Publish(channel, string.Empty);
+        }
+
         public static async Task Publish<T>(MessageBrokerChannels channel, T message)
         {
             if (_mqttClient == null) { return; }

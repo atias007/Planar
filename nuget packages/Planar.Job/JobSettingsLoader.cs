@@ -44,7 +44,7 @@ namespace Planar.Job
             }
 
             // JobSettings.{environment}.yml
-            var filename = EnvironmntSettingsFilename.Replace(EnvironmentPlaceholder, "Development");
+            var filename = EnvironmntSettingsFilename.Replace(EnvironmentPlaceholder, PlanarJob.Environment);
             files = GetFiles(path, filename);
 
             foreach (var f in files)

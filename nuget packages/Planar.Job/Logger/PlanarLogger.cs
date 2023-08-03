@@ -23,20 +23,6 @@ namespace Planar.Job.Logger
             Console.Out.WriteLineAsync(message);
             Console.ForegroundColor = ConsoleColor.White;
         }
-
-        protected string GetLogLevelDisplayTest(LogLevel logLevel)
-        {
-            return logLevel switch
-            {
-                LogLevel.Trace => "TRC",
-                LogLevel.Debug => "DBG",
-                LogLevel.Information => "INF",
-                LogLevel.Warning => "WRN",
-                LogLevel.Error => "ERR",
-                LogLevel.Critical => "CRT",
-                _ => "NON", // case LogLevel.None
-            };
-        }
     }
 
     internal class PlanarLogger<TContext> : BaseLogger, ILogger<TContext>
@@ -49,10 +35,10 @@ namespace Planar.Job.Logger
         {
             if (!IsEnabled(logLevel)) { return; }
 
-            var message = $"[{DateTime.Now:HH:mm:ss} {GetLogLevelDisplayTest(logLevel)}] <{typeof(TContext).Name}> {formatter(state, exception)}";
+            var message = $"<{typeof(TContext).Name}> {formatter(state, exception)}";
             var entity = new LogEntity { Message = message, Level = logLevel };
             MqttClient.Publish(MessageBrokerChannels.AppendLog, entity).ConfigureAwait(false).GetAwaiter().GetResult();
-            LogToConsole(message);
+            LogToConsole(entity.ToString());
         }
     }
 
@@ -62,10 +48,10 @@ namespace Planar.Job.Logger
         {
             if (!IsEnabled(logLevel)) { return; }
 
-            var message = $"[{DateTime.Now:HH:mm:ss} {GetLogLevelDisplayTest(logLevel)}] {formatter(state, exception)}";
+            var message = $"{formatter(state, exception)}";
             var entity = new LogEntity { Message = message, Level = logLevel };
             MqttClient.Publish(MessageBrokerChannels.AppendLog, entity).ConfigureAwait(false).GetAwaiter().GetResult();
-            LogToConsole(message);
+            LogToConsole(entity.ToString());
         }
     }
 }

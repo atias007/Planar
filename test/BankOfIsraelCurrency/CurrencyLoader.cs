@@ -43,7 +43,6 @@ namespace BankOfIsraelCurrency
                 var data = response.Data.ExchangeRates;
                 foreach (var item in data)
                 {
-                    context.CancellationToken.ThrowIfCancellationRequested();
                     UpdateProgress(counter, data.Length);
                     Logger.LogInformation(" [x] Handle currency {Currency} with value {Value}", item.Key, item.CurrentExchangeRate);
                     IncreaseEffectedRows();
