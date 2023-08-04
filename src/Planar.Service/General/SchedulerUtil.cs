@@ -240,9 +240,11 @@ namespace Planar.Service.General
                 localType = localType.BaseType;
             }
 
-            list = list.Where(l => !l.Name.StartsWith("BaseCommonJob") && l.Name != nameof(Object)).ToList();
+            var index = list.FindIndex(l => l.Name.StartsWith("Base"));
+            if (index <= 0) { index = 0; }
+            else { index--; }
 
-            return list.LastOrDefault();
+            return list[index];
         }
 
         private static void MapJobExecutionContext(IJobExecutionContext source, RunningJobDetails target)

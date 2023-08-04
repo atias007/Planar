@@ -82,11 +82,11 @@ namespace Planar
 
                 if (response.ErrorException == null)
                 {
-                    throw new RestJobException($"Rest job fail with response status code: {response.StatusCode} {response.StatusDescription}");
+                    throw new RestJobException($"rest job fail with response status code: {response.StatusCode} {response.StatusDescription}");
                 }
                 else
                 {
-                    throw new RestJobException("Rest job fail", response.ErrorException);
+                    throw new RestJobException("rest job fail", response.ErrorException);
                 }
             }
         }

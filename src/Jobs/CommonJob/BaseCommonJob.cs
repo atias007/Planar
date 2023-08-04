@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar.Common;
+using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Quartz;
@@ -141,7 +142,7 @@ namespace CommonJob
             if (!string.IsNullOrEmpty(value)) { value = value.Trim(); }
             if (string.IsNullOrEmpty(value))
             {
-                throw new PlanarJobException($"property {propertyName} is mandatory for job '{GetType().FullName}'");
+                throw new PlanarException($"property {propertyName} is mandatory for job '{GetType().FullName}'");
             }
         }
 
@@ -151,14 +152,14 @@ namespace CommonJob
             if (jobId == null)
             {
                 var title = JobHelper.GetKeyTitle(context.JobDetail);
-                throw new PlanarJobException($"fail to get job id while execute job {title}");
+                throw new PlanarException($"fail to get job id while execute job {title}");
             }
 
             var properties = await _dataLayer.GetJobProperty(jobId);
             if (string.IsNullOrEmpty(properties))
             {
                 var title = JobHelper.GetKeyTitle(context.JobDetail);
-                throw new PlanarJobException($"fail to get job properties while execute job {title} (id: {jobId})");
+                throw new PlanarException($"fail to get job properties while execute job {title} (id: {jobId})");
             }
 
             Properties = YmlUtil.Deserialize<TProperties>(properties);

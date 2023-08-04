@@ -12,8 +12,6 @@ namespace Planar
 {
     public abstract class ProcessJob : BaseProcessJob<ProcessJob, ProcessJobProperties>
     {
-        private readonly StringBuilder _output = new();
-
         protected ProcessJob(ILogger<ProcessJob> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
         {
         }
@@ -24,7 +22,7 @@ namespace Planar
             {
                 await Initialize(context);
 
-                ValidateProcessJob(Properties);
+                ValidateProcessJob();
                 context.CancellationToken.Register(OnCancel);
 
                 var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
@@ -110,9 +108,9 @@ namespace Planar
             }
         }
 
-        protected ProcessStartInfo GetProcessStartInfo()
+        protected override ProcessStartInfo GetProcessStartInfo()
         {
-            var startInfo = base.GetProcessStartInfo(Properties);
+            var startInfo = base.GetProcessStartInfo();
             startInfo.Arguments = Properties.Arguments;
 
             if (!string.IsNullOrEmpty(Properties.OutputEncoding))
@@ -123,41 +121,6 @@ namespace Planar
             }
 
             return startInfo;
-        }
-
-        private void LogProcessInformation()
-        {
-            if (_process == null) { return; }
-            if (!Properties.LogProcessInformation) { return; }
-            if (!_process.HasExited) { return; }
-
-            MessageBroker.AppendLog(LogLevel.Information, _seperator);
-            MessageBroker.AppendLog(LogLevel.Information, " - Process information:");
-            MessageBroker.AppendLog(LogLevel.Information, _seperator);
-            MessageBroker.AppendLog(LogLevel.Information, $"ExitCode: {_process.ExitCode}");
-            MessageBroker.AppendLog(LogLevel.Information, $"StartTime: {_process.StartTime}");
-            MessageBroker.AppendLog(LogLevel.Information, $"ExitTime: {_process.ExitTime}");
-            MessageBroker.AppendLog(LogLevel.Information, $"Id: {_process.Id}");
-            MessageBroker.AppendLog(LogLevel.Information, $"PeakPagedMemorySize64: {FormatBytes(_peakPagedMemorySize64)}");
-            MessageBroker.AppendLog(LogLevel.Information, $"PeakWorkingSet64: {FormatBytes(_peakWorkingSet64)}");
-            MessageBroker.AppendLog(LogLevel.Information, $"PeakVirtualMemorySize64: {FormatBytes(_peakVirtualMemorySize64)}");
-            MessageBroker.AppendLog(LogLevel.Information, _seperator);
-        }
-
-        private void ProcessErrorDataReceived(object sender, DataReceivedEventArgs eventArgs)
-        {
-            if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
-            _output.AppendLine(eventArgs.Data);
-            MessageBroker.AppendLog(LogLevel.Error, eventArgs.Data);
-            UpdatePeakVariables(_process);
-        }
-
-        private void ProcessOutputDataReceived(object sender, DataReceivedEventArgs eventArgs)
-        {
-            if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
-            _output.AppendLine(eventArgs.Data);
-            MessageBroker.AppendLog(LogLevel.Information, eventArgs.Data);
-            UpdatePeakVariables(_process);
         }
     }
 }

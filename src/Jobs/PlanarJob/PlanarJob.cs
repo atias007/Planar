@@ -4,6 +4,7 @@ using CommonJob.MessageBrokerEntities;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar.Common;
+using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
 using Quartz;
 using System;
@@ -11,19 +12,16 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using System.Timers;
 
 namespace Planar
 {
     public abstract class PlanarJob : BaseProcessJob<PlanarJob, PlanarJobProperties>
     {
-        private readonly StringBuilder _error = new();
         private readonly IMonitorUtil _monitorUtil;
-        private readonly StringBuilder _output = new();
         private readonly object ConsoleLocker = new();
-
         private readonly bool _isDevelopment;
         private bool _isHealthCheck;
+        private string? _executionException;
 
         protected PlanarJob(
             ILogger<PlanarJob> logger,
@@ -41,7 +39,8 @@ namespace Planar
             try
             {
                 await Initialize(context, _monitorUtil);
-                ValidateProcessJob(Properties);
+                ValidateProcessJob();
+                ValidateExeFile();
                 context.CancellationToken.Register(OnCancel);
 
                 var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
@@ -54,7 +53,8 @@ namespace Planar
 
                 ValidateHealthCheck();
                 LogProcessInformation();
-                CheckProcessExitCode();
+                CheckProcessCancel();
+                CheckJobErrorReport();
             }
             catch (Exception ex)
             {
@@ -66,6 +66,37 @@ namespace Planar
                 FinalizeProcess();
                 UnregisterMqttBrokerService();
             }
+        }
+
+        private void CheckJobErrorReport()
+        {
+            if (string.IsNullOrWhiteSpace(_executionException)) { return; }
+            throw new PlanarJobExecutionException(_executionException);
+        }
+
+        private void ValidateExeFile()
+        {
+            try
+            {
+                if (!FileExtentionIsExe(Filename))
+                {
+                    throw new PlanarException($"process filename '{Filename}' must have 'exe' extention");
+                }
+            }
+            catch (Exception ex)
+            {
+                var source = nameof(ValidateExeFile);
+                _logger.LogError(ex, "Fail at {Source}. Message: {Message}", source, ex.Message);
+                MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
+                throw;
+            }
+        }
+
+        private static bool FileExtentionIsExe(string filename)
+        {
+            const string exe = ".exe";
+            var fi = new FileInfo(filename);
+            return string.Equals(fi.Extension, exe);
         }
 
         private static byte GetCloudEventByteValue(CloudEvent cloudEvent)
@@ -80,6 +111,12 @@ namespace Planar
             {
                 throw new PlanarJobException($"Message broker channels '{cloudEvent.Type}' has invalid byte value '{cloudEvent.Data}'");
             }
+        }
+
+        private static string GetCloudEventStringValue(CloudEvent cloudEvent)
+        {
+            var data = ValidateCloudEventData(cloudEvent.Data);
+            return data;
         }
 
         private static T GetCloudEventEntityValue<T>(CloudEvent cloudEvent)
@@ -109,19 +146,19 @@ namespace Planar
         {
             if (data == null)
             {
-                throw new PlanarJobException("Message broker has empty data");
+                throw new PlanarJobException("message broker has empty data");
             }
 
             var result = data.ToString();
             if (string.IsNullOrWhiteSpace(result))
             {
-                throw new PlanarJobException("Message broker has empty data");
+                throw new PlanarJobException("message broker has empty data");
             }
 
             return result;
         }
 
-        private void CheckProcessExitCode()
+        private void CheckProcessCancel()
         {
             if (_processKilled)
             {
@@ -145,12 +182,12 @@ namespace Planar
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Fail to handle health chek at {nameof(FinalizeProcess)}");
+                _logger.LogError(ex, $"fail to handle health chek at {nameof(FinalizeProcess)}");
             }
 
             if (!_isHealthCheck)
             {
-                throw new PlanarJobException("No health check signal from job. See job log for more information");
+                throw new PlanarJobException("no health check signal from job. See job log for more information");
             }
         }
 
@@ -159,11 +196,11 @@ namespace Planar
             try { MqttBrokerService.InterceptingPublishAsync -= InterceptingPublishAsync; } catch { DoNothingMethod(); }
         }
 
-        private ProcessStartInfo GetProcessStartInfo()
+        protected override ProcessStartInfo GetProcessStartInfo()
         {
             var bytes = Encoding.UTF8.GetBytes(MessageBroker.Details);
             var base64String = Convert.ToBase64String(bytes);
-            var startInfo = GetProcessStartInfo(Properties);
+            var startInfo = base.GetProcessStartInfo();
             startInfo.Arguments = base64String;
             startInfo.StandardErrorEncoding = Encoding.UTF8;
             startInfo.StandardOutputEncoding = Encoding.UTF8;
@@ -251,6 +288,7 @@ namespace Planar
                     break;
 
                 case MessageBrokerChannels.ReportException:
+                    _executionException = GetCloudEventStringValue(e.CloudEvent);
                     break;
 
                 case MessageBrokerChannels.HealthCheck:
@@ -261,37 +299,6 @@ namespace Planar
                     _logger.LogWarning("PlanarJob intercepting published message with unsupported channel {Channel}", channel);
                     break;
             }
-        }
-
-        private void LogProcessInformation()
-        {
-            if (_process == null) { return; }
-            if (!_process.HasExited) { return; }
-
-            MessageBroker.AppendLog(LogLevel.Information, _seperator);
-            MessageBroker.AppendLog(LogLevel.Information, " - Process information:");
-            MessageBroker.AppendLog(LogLevel.Information, _seperator);
-            MessageBroker.AppendLog(LogLevel.Information, $"ExitCode: {_process.ExitCode}");
-            MessageBroker.AppendLog(LogLevel.Information, $"PeakPagedMemorySize64: {FormatBytes(_peakPagedMemorySize64)}");
-            MessageBroker.AppendLog(LogLevel.Information, $"PeakWorkingSet64: {FormatBytes(_peakWorkingSet64)}");
-            MessageBroker.AppendLog(LogLevel.Information, _seperator);
-        }
-
-        private void MetricsTimerElapsed(object? sender, ElapsedEventArgs e)
-        {
-            UpdatePeakVariables(_process);
-        }
-
-        private void ProcessErrorDataReceived(object sender, DataReceivedEventArgs eventArgs)
-        {
-            if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
-            _error.AppendLine(eventArgs.Data);
-        }
-
-        private void ProcessOutputDataReceived(object sender, DataReceivedEventArgs eventArgs)
-        {
-            if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
-            _output.AppendLine(eventArgs.Data);
         }
     }
 }

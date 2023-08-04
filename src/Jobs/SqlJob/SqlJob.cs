@@ -80,7 +80,7 @@ namespace Planar
 
                 if (_exceptions.Any())
                 {
-                    throw new AggregateException("There is one or more error(s) in sql job steps. See inner exceptions for more details", _exceptions);
+                    throw new AggregateException("there is one or more error(s) in sql job steps. See inner exceptions for more details", _exceptions);
                 }
 
                 if (transaction != null)

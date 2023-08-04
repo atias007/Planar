@@ -37,7 +37,7 @@ namespace Planar.Job
             }
 
             var instance = Activator.CreateInstance<TJob>();
-            instance.Execute(json).ConfigureAwait(false).GetAwaiter().GetResult();
+            instance.Execute(json).Wait();
         }
 
         private static void ValidateArgs()

@@ -44,7 +44,8 @@ namespace Planar
         public int? MaxRedirects { get; set; }
 
         public string Method { get; set; } = null!;
-        public string? Path { get; set; } = null!;
+
+        public string Path { get; set; } = null!;
 
         public RestJobPropertiesProxy? Proxy { get; set; }
 

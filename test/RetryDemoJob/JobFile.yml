@@ -2,9 +2,7 @@
 name: RetryDemoJob
 description: Demo of retry when job throw new exception
 properties:
-  path: RetryDemoJob
-  filename: RetryDemoJob.dll
-  class name: RetryDemoJob.Worker
+  filename: RetryDemoJob.exe
 simple triggers:
   - name: every-5minute-trigger
     interval: 00:05:00

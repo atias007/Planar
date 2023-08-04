@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar;
 using Planar.Common;
+using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
 using Planar.Job;
 using System;
@@ -77,7 +78,7 @@ namespace CommonJob
             if (item == null) { return; }
             if (!Consts.IsDataKeyValid(item.Key))
             {
-                throw new PlanarJobException($"the data key {item.Key} in invalid");
+                throw new PlanarException($"the data key {item.Key} in invalid");
             }
 
             lock (Locker)
@@ -92,7 +93,7 @@ namespace CommonJob
             if (item == null) { return; }
             if (!Consts.IsDataKeyValid(item.Key))
             {
-                throw new PlanarJobException($"the data key {item.Key} in invalid");
+                throw new PlanarException($"the data key {item.Key} in invalid");
             }
 
             lock (Locker)

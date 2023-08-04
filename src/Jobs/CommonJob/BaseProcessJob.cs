@@ -14,17 +14,21 @@ namespace CommonJob
     where TInstance : class
     where TProperties : class, new()
     {
-        protected long _peakPagedMemorySize64;
-        protected long _peakVirtualMemorySize64;
-        protected long _peakWorkingSet64;
-        protected Process? _process;
+        private long _peakPagedMemorySize64;
+        private long _peakWorkingSet64;
         protected bool _processKilled;
-        protected readonly Timer _processMetricsTimer = new(1000);
-        protected static readonly string _seperator = string.Empty.PadLeft(40, '-');
+        protected Process? _process;
+        private readonly Timer _processMetricsTimer = new(1000);
+        private readonly string _seperator = string.Empty.PadLeft(40, '-');
         private readonly object Locker = new();
+        protected readonly StringBuilder _output = new();
 
         protected BaseProcessJob(ILogger<TInstance> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
         {
+            if (Properties is not IFileJobProperties)
+            {
+                throw new PlanarException($"Job type '{Properties.GetType()}' does not implement '{nameof(IFileJobProperties)}'");
+            }
         }
 
         private string? _filename;
@@ -33,11 +37,15 @@ namespace CommonJob
         {
             get
             {
-                _filename ??= FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, Properties.Path, Properties.Filename);
+                _filename ??= FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, FileProperties.Path, FileProperties.Filename);
 
                 return _filename;
             }
         }
+
+        private IFileJobProperties FileProperties =>
+            Properties as IFileJobProperties ??
+            throw new PlanarException($"Job type '{Properties.GetType()}' does not implement '{nameof(IFileJobProperties)}'");
 
         protected void FinalizeProcess()
         {
@@ -47,16 +55,16 @@ namespace CommonJob
             try { _process?.Dispose(); } catch { DoNothingMethod(); }
             try { if (_process != null) { _process.EnableRaisingEvents = false; } } catch { DoNothingMethod(); }
             try { if (_process != null) { _process.OutputDataReceived -= ProcessOutputDataReceived; } } catch { DoNothingMethod(); }
-            try { if (_process != null) { _process.ErrorDataReceived -= ProcessErrorDataReceived; } } catch { DoNothingMethod(); }
+            try { if (_process != null) { _process.ErrorDataReceived -= ProcessOutputDataReceived; } } catch { DoNothingMethod(); }
             try { if (_processMetricsTimer != null) { _processMetricsTimer.Elapsed -= MetricsTimerElapsed; } } catch { DoNothingMethod(); }
         }
 
-        protected void ValidateProcessJob(IFileJobProperties properties)
+        protected void ValidateProcessJob()
         {
             try
             {
-                ValidateMandatoryString(properties.Path, nameof(properties.Path));
-                ValidateMandatoryString(properties.Filename, nameof(properties.Filename));
+                ValidateMandatoryString(FileProperties.Path, nameof(FileProperties.Path));
+                ValidateMandatoryString(FileProperties.Filename, nameof(FileProperties.Filename));
 
                 if (!File.Exists(Filename))
                 {
@@ -66,7 +74,7 @@ namespace CommonJob
             catch (Exception ex)
             {
                 var source = nameof(ValidateProcessJob);
-                _logger.LogError(ex, "Fail at {Source}", source);
+                _logger.LogError(ex, "Fail at {Source}. Message: {Message}", source, ex.Message);
                 MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
                 throw;
             }
@@ -121,7 +129,7 @@ namespace CommonJob
             return "0 bytes";
         }
 
-        protected ProcessStartInfo GetProcessStartInfo(IPathJobProperties properties)
+        protected virtual ProcessStartInfo GetProcessStartInfo()
         {
             var startInfo = new ProcessStartInfo
             {
@@ -130,7 +138,7 @@ namespace CommonJob
                 FileName = Filename,
                 UseShellExecute = false,
                 WindowStyle = ProcessWindowStyle.Hidden,
-                WorkingDirectory = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, properties.Path),
+                WorkingDirectory = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, FileProperties.Path),
                 RedirectStandardError = true,
                 RedirectStandardOutput = true
             };
@@ -143,7 +151,7 @@ namespace CommonJob
             _process = Process.Start(startInfo);
             if (_process == null)
             {
-                var filename = Path.Combine(Properties.Path, Properties.Filename);
+                var filename = Path.Combine(FileProperties.Path, FileProperties.Filename);
                 throw new PlanarException($"could not start process {filename}");
             }
 
@@ -152,7 +160,7 @@ namespace CommonJob
             _process.BeginErrorReadLine();
 
             _process.OutputDataReceived += ProcessOutputDataReceived;
-            _process.ErrorDataReceived += ProcessErrorDataReceived;
+            _process.ErrorDataReceived += ProcessOutputDataReceived;
             _processMetricsTimer.Elapsed += MetricsTimerElapsed;
             _processMetricsTimer.Start();
 
@@ -166,7 +174,7 @@ namespace CommonJob
             return true;
         }
 
-        protected void UpdatePeakVariables(Process? process)
+        private void UpdatePeakVariables(Process? process)
         {
             if (process == null) { return; }
 
@@ -184,6 +192,31 @@ namespace CommonJob
             {
                 // *** DO NOTHING ***
             }
+        }
+
+        private void MetricsTimerElapsed(object? sender, ElapsedEventArgs e)
+        {
+            UpdatePeakVariables(_process);
+        }
+
+        private void ProcessOutputDataReceived(object sender, DataReceivedEventArgs eventArgs)
+        {
+            if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
+            _output.AppendLine(eventArgs.Data);
+        }
+
+        protected void LogProcessInformation()
+        {
+            if (_process == null) { return; }
+            if (!_process.HasExited) { return; }
+
+            MessageBroker.AppendLog(LogLevel.Information, _seperator);
+            MessageBroker.AppendLog(LogLevel.Information, " - Process information:");
+            MessageBroker.AppendLog(LogLevel.Information, _seperator);
+            MessageBroker.AppendLog(LogLevel.Information, $"ExitCode: {_process.ExitCode}");
+            MessageBroker.AppendLog(LogLevel.Information, $"PeakPagedMemorySize64: {FormatBytes(_peakPagedMemorySize64)}");
+            MessageBroker.AppendLog(LogLevel.Information, $"PeakWorkingSet64: {FormatBytes(_peakWorkingSet64)}");
+            MessageBroker.AppendLog(LogLevel.Information, _seperator);
         }
     }
 }

@@ -34,7 +34,7 @@ namespace Planar.Service.API
                 .Replace("@MinNameLength@", MinNameLength.ToString())
                 .Replace("@MaxNameLength@", MaxNameLength.ToString()), RegexOptions.Compiled, TimeSpan.FromSeconds(5));
 
-        private static readonly DateTimeOffset DelayStartTriggerDateTime = new DateTimeOffset(DateTime.Now.AddSeconds(3));
+        private static readonly DateTimeOffset DelayStartTriggerDateTime = new(DateTime.Now.AddSeconds(3));
 
         public static IEnumerable<ITrigger> BuildTriggerWithCronSchedule(List<JobCronTriggerMetadata> triggers, string jobId)
         {
@@ -358,7 +358,7 @@ namespace Planar.Service.API
             return filename;
         }
 
-        private static System.Type GetJobType(SetJobRequest job)
+        private static Type GetJobType(SetJobRequest job)
         {
             string typeName;
             Assembly assembly;

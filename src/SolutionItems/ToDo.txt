@@ -1,11 +1,15 @@
---------------------------------------------------------
+﻿--------------------------------------------------------
 PLAN FOR V 1.5.0
 ----------------
-- add smart process job (implement https://github.com/dotnet/MQTTnet)
+- add smart process job (implement https://github.com/dotnet/MQTTnet) + (https://behroozbc.hashnode.dev/basic-mqtt-broker-with-c-sharp)
 - add job yml field: log retention days
 - cli command to changhe interval/count
 - cli command to changhe cron expr
 
+- Test: unhandled exception
+- Test: Aggregate exception
+- Test: Timeout
+- BUG: any update of job create monitor alert (delete + add)
 
 - BACKLOG ----------------------------------------------------------------------------
 - add WorkflowJob
