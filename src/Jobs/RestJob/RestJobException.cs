@@ -1,9 +1,10 @@
-﻿using System.Runtime.Serialization;
+﻿using Planar.Common.Exceptions;
+using System.Runtime.Serialization;
 
 namespace Planar
 {
     [Serializable]
-    public class RestJobException : Exception
+    public class RestJobException : PlanarException
     {
         public RestJobException(string message) : base(message)
         {

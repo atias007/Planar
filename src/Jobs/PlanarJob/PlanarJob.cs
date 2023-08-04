@@ -15,20 +15,13 @@ using System.Timers;
 
 namespace Planar
 {
-    public abstract class PlanarJob : BaseCommonJob<PlanarJob, PlanarJobProperties>
+    public abstract class PlanarJob : BaseProcessJob<PlanarJob, PlanarJobProperties>
     {
-        private static readonly string _seperator = string.Empty.PadLeft(40, '-');
         private readonly StringBuilder _error = new();
         private readonly IMonitorUtil _monitorUtil;
         private readonly StringBuilder _output = new();
-        private readonly Timer _processMetricsTimer = new(1000);
-        private readonly object Locker = new();
         private readonly object ConsoleLocker = new();
-        private string? _filename;
-        private long _peakPagedMemorySize64;
-        private long _peakWorkingSet64;
-        private Process? _process;
-        private bool _processKilled;
+
         private readonly bool _isDevelopment;
         private bool _isHealthCheck;
 
@@ -43,22 +36,12 @@ namespace Planar
             _isDevelopment = string.Equals(AppSettings.Environment, "development", StringComparison.OrdinalIgnoreCase);
         }
 
-        private string Filename
-        {
-            get
-            {
-                _filename ??= FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, Properties.Path, Properties.Filename);
-
-                return _filename;
-            }
-        }
-
         public override async Task Execute(IJobExecutionContext context)
         {
             try
             {
                 await Initialize(context, _monitorUtil);
-                ValidatePlanarJob();
+                ValidateProcessJob(Properties);
                 context.CancellationToken.Register(OnCancel);
 
                 var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
@@ -81,26 +64,8 @@ namespace Planar
             {
                 FinalizeJob(context);
                 FinalizeProcess();
+                UnregisterMqttBrokerService();
             }
-        }
-
-        private static string FormatBytes(long bytes)
-        {
-            const int scale = 1024;
-            var orders = new string[] { "gb", "mb", "kb", "bytes" };
-            var max = (long)Math.Pow(scale, orders.Length - 1);
-
-            foreach (string order in orders)
-            {
-                if (bytes > max)
-                {
-                    return string.Format("{0:##.##} {1}", decimal.Divide(bytes, max), order);
-                }
-
-                max /= scale;
-            }
-
-            return "0 bytes";
         }
 
         private static byte GetCloudEventByteValue(CloudEvent cloudEvent)
@@ -189,39 +154,19 @@ namespace Planar
             }
         }
 
-        private void FinalizeProcess()
+        private void UnregisterMqttBrokerService()
         {
-            try { _process?.CancelErrorRead(); } catch { DoNothingMethod(); }
-            try { _process?.CancelOutputRead(); } catch { DoNothingMethod(); }
-            try { _process?.Close(); } catch { DoNothingMethod(); }
-            try { _process?.Dispose(); } catch { DoNothingMethod(); }
             try { MqttBrokerService.InterceptingPublishAsync -= InterceptingPublishAsync; } catch { DoNothingMethod(); }
-            try { if (_process != null) { _process.EnableRaisingEvents = false; } } catch { DoNothingMethod(); }
-            try { if (_process != null) { _process.OutputDataReceived -= ProcessOutputDataReceived; } } catch { DoNothingMethod(); }
-            try { if (_process != null) { _process.ErrorDataReceived -= ProcessErrorDataReceived; } } catch { DoNothingMethod(); }
-            try { if (_processMetricsTimer != null) { _processMetricsTimer.Elapsed -= MetricsTimerElapsed; } } catch { DoNothingMethod(); }
         }
 
         private ProcessStartInfo GetProcessStartInfo()
         {
             var bytes = Encoding.UTF8.GetBytes(MessageBroker.Details);
             var base64String = Convert.ToBase64String(bytes);
-
-            var startInfo = new ProcessStartInfo
-            {
-                Arguments = base64String,
-                CreateNoWindow = true,
-                ErrorDialog = false,
-                FileName = Filename,
-                UseShellExecute = false,
-                WindowStyle = ProcessWindowStyle.Hidden,
-                WorkingDirectory = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, Properties.Path),
-                RedirectStandardError = true,
-                RedirectStandardOutput = true,
-                StandardErrorEncoding = Encoding.UTF8,
-                StandardOutputEncoding = Encoding.UTF8,
-            };
-
+            var startInfo = GetProcessStartInfo(Properties);
+            startInfo.Arguments = base64String;
+            startInfo.StandardErrorEncoding = Encoding.UTF8;
+            startInfo.StandardOutputEncoding = Encoding.UTF8;
             return startInfo;
         }
 
@@ -318,26 +263,6 @@ namespace Planar
             }
         }
 
-        private void Kill(string reason)
-        {
-            if (_process == null)
-            {
-                return;
-            }
-
-            try
-            {
-                MessageBroker.AppendLog(LogLevel.Warning, $"Process was stopped. Reason: {reason}");
-                _processKilled = true;
-                _process.Kill(true);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Fail to kill process job {Filename}", _process.StartInfo.FileName);
-                MessageBroker.AppendLog(LogLevel.Error, $"Fail to kill process job {_process.StartInfo.FileName}. {ex.Message}");
-            }
-        }
-
         private void LogProcessInformation()
         {
             if (_process == null) { return; }
@@ -357,16 +282,6 @@ namespace Planar
             UpdatePeakVariables(_process);
         }
 
-        private void OnCancel()
-        {
-            Kill("request for cancel process");
-        }
-
-        private void OnTimeout()
-        {
-            Kill("timeout expire");
-        }
-
         private void ProcessErrorDataReceived(object sender, DataReceivedEventArgs eventArgs)
         {
             if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
@@ -377,82 +292,6 @@ namespace Planar
         {
             if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
             _output.AppendLine(eventArgs.Data);
-        }
-
-        private bool StartProcess(ProcessStartInfo startInfo, TimeSpan timeout)
-        {
-            _process = Process.Start(startInfo);
-            if (_process == null)
-            {
-                var filename = Path.Combine(Properties.Path, Properties.Filename);
-                throw new PlanarJobException($"could not start process {filename}");
-            }
-
-            _process.EnableRaisingEvents = true;
-            _process.BeginOutputReadLine();
-            _process.BeginErrorReadLine();
-
-            _process.OutputDataReceived += ProcessOutputDataReceived;
-            _process.ErrorDataReceived += ProcessErrorDataReceived;
-            _processMetricsTimer.Elapsed += MetricsTimerElapsed;
-            _processMetricsTimer.Start();
-
-            _process.WaitForExit(Convert.ToInt32(timeout.TotalMilliseconds));
-            if (!_process.HasExited)
-            {
-                MessageBroker.AppendLog(LogLevel.Error, $"Process timeout expire. Timeout was {timeout:hh\\:mm\\:ss}");
-                return false;
-            }
-
-            return true;
-        }
-
-        private void UpdatePeakVariables(Process? process)
-        {
-            if (process == null) { return; }
-
-            if (process.HasExited) { return; }
-
-            try
-            {
-                lock (Locker)
-                {
-                    _peakPagedMemorySize64 = process.PeakPagedMemorySize64;
-                    _peakWorkingSet64 = process.PeakWorkingSet64;
-                }
-            }
-            catch
-            {
-                // *** DO NOTHING ***
-            }
-        }
-
-        private void ValidatePlanarJob()
-        {
-            try
-            {
-                // Obsolete: Support old dll files
-                if (!string.IsNullOrEmpty(Properties.Filename))
-                {
-                    var fi = new FileInfo(Properties.Filename);
-                    if (fi.Extension == ".dll") { Properties.Filename = $"{Properties.Filename[0..^4]}.exe"; }
-                }
-
-                ValidateMandatoryString(Properties.Path, nameof(Properties.Path));
-                ValidateMandatoryString(Properties.Filename, nameof(Properties.Filename));
-
-                if (!File.Exists(Filename))
-                {
-                    throw new PlanarJobException($"process filename '{Filename}' could not be found");
-                }
-            }
-            catch (Exception ex)
-            {
-                var source = nameof(ValidatePlanarJob);
-                _logger.LogError(ex, "Fail at {Source}", source);
-                MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
-                throw;
-            }
         }
     }
 }

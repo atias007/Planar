@@ -1,10 +1,11 @@
-﻿using System;
+﻿using Planar.Common.Exceptions;
+using System;
 using System.Runtime.Serialization;
 
-namespace CommonJob
+namespace Planar
 {
     [Serializable]
-    public class PlanarJobException : Exception
+    public class PlanarJobException : PlanarException
     {
         public PlanarJobException(string message) : base(message)
         {

@@ -10,6 +10,10 @@ namespace Planar.Common.Exceptions
         {
         }
 
+        public PlanarException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
         protected PlanarException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
