@@ -56,7 +56,7 @@ namespace Planar.Job
 
         public abstract void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context);
 
-        internal Task Execute(string json)
+        internal void Execute(string json)
         {
             Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
             Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
@@ -84,8 +84,25 @@ namespace Planar.Job
 
             MapJobInstanceProperties(_context);
 
-            return ExecuteJob(_context)
-                .ContinueWith(HandleTaskContinue);
+            try
+            {
+                ExecuteJob(_context).ConfigureAwait(false).GetAwaiter().GetResult();
+                MapJobInstancePropertiesBack(_context);
+            }
+            catch (Exception ex)
+            {
+                _baseJobFactory.ReportException(ex);
+                if (PlanarJob.DebugMode)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.Error.WriteLine(ex);
+                    Console.ResetColor();
+                }
+            }
+            finally
+            {
+                MqttClient.Stop().ConfigureAwait(false).GetAwaiter().GetResult();
+            }
         }
 
         internal Task ExecuteUnitTest(

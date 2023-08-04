@@ -1,12 +1,4 @@
-﻿using System;
+﻿using LongRunningJob;
+using Planar.Job;
 
-namespace LongRunningJob
-{
-    internal class Program
-    {
-        private static void Main(string[] args)
-        {
-            Console.WriteLine(args);
-        }
-    }
-}
+PlanarJob.Start<Worker>();

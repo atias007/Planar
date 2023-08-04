@@ -37,7 +37,15 @@ namespace Planar.Job
             }
 
             var instance = Activator.CreateInstance<TJob>();
-            instance.Execute(json).Wait();
+            instance.Execute(json);
+
+            if (DebugMode)
+            {
+                Console.WriteLine("---------------------------------------");
+                Console.WriteLine("[x] Press [Enter] to close window");
+                Console.WriteLine("---------------------------------------");
+                Console.ReadKey(true);
+            }
         }
 
         private static void ValidateArgs()

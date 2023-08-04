@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
@@ -16,6 +17,7 @@ using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
@@ -121,7 +123,7 @@ namespace Planar.Service.Listeners
                     InstanceId = context.FireInstanceId,
                     Duration = Convert.ToInt32(duration),
                     EndDate = endDate,
-                    Exception = executionException?.ToString(),
+                    Exception = GetExceptionText(executionException),
                     ExceptionCount = metadata?.Exceptions.Count ?? 0,
                     EffectedRows = metadata?.EffectedRows,
                     Log = metadata?.Log.ToString(),
@@ -145,6 +147,35 @@ namespace Planar.Service.Listeners
             {
                 await SafeMonitorJobWasExecuted(context, executionException);
             }
+        }
+
+        private static string? GetExceptionText(Exception? ex)
+        {
+            if (ex == null) { return null; }
+            if (ex is PlanarJobExecutionException jobEx)
+            {
+                return jobEx.ExceptionText;
+            }
+            else
+            {
+                var result = $"{ex.GetType().FullName}: {GetAllExceptionMessages(ex)}";
+                return result;
+            }
+        }
+
+        private static string GetAllExceptionMessages(Exception ex)
+        {
+            var messages = new StringBuilder(ex.Message);
+
+            // Traverse inner exceptions using a loop
+            var innerException = ex.InnerException;
+            while (innerException != null)
+            {
+                messages.AppendLine(innerException.Message);
+                innerException = innerException.InnerException;
+            }
+
+            return messages.ToString();
         }
 
         private async Task SafeMonitorJobWasExecuted(IJobExecutionContext context, Exception? exception)
