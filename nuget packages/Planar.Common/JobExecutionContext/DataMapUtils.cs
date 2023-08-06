@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Planar.Job.Test.JobExecutionContext
+namespace Planar.Common
 {
     internal static class DataMapUtils
     {

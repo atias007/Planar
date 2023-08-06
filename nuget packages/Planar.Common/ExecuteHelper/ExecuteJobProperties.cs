@@ -1,10 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Planar.Job.Test
+namespace Planar.Common
 {
     internal class ExecuteJobProperties
     {
+        private const string DefaultEnvironment = "UnitTest";
+        private const string DefaultGroup = "Default";
+        private const string DefaultJobName = "TestJob";
+        private const string DefaultTriggerName = "TestTrigger";
+
         public Type? JobType { get; set; }
 
         public TimeSpan? CancelJobAfter { get; set; }
@@ -15,7 +20,12 @@ namespace Planar.Job.Test
 
         public int RefireCount { get; set; }
 
-        public string? Environment { get; set; }
+        public string Environment { get; set; } = DefaultEnvironment;
+
+        public string JobKeyName { get; set; } = DefaultJobName;
+        public string JobKeyGroup { get; set; } = DefaultGroup;
+        public string TriggerKeyName { get; set; } = DefaultTriggerName;
+        public string TriggerKeyGroup { get; set; } = DefaultGroup;
 
         public Dictionary<string, object?> TriggerData { get; set; } = new Dictionary<string, object?>();
 

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace Planar.Job.Test.ExecuteHelper
+namespace Planar.Common
 {
     [Serializable]
     public class ExecuteJobBuilderException : Exception

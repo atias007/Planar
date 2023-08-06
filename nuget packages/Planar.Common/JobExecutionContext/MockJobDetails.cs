@@ -1,16 +1,18 @@
-﻿using Planar.Job.Test.JobExecutionContext;
+﻿using Planar.Job;
+using Planar.Job.Test.JobExecutionContext;
 using System.Collections.Generic;
 
-namespace Planar.Job.Test
+namespace Planar.Common
 {
     internal class MockJobDetails : IJobDetail
     {
         private readonly SortedDictionary<string, string?> _jobDataMap;
-        private readonly IKey _key = new MockKey(UnitTestConsts.Environment, UnitTestConsts.TestMethod);
+        private readonly IKey _key;
 
         public MockJobDetails(ExecuteJobProperties properties)
         {
             _jobDataMap = DataMapUtils.Convert(properties.JobData);
+            _key = new MockKey(properties.JobKeyName, properties.JobKeyGroup);
         }
 
         public IKey Key => _key;

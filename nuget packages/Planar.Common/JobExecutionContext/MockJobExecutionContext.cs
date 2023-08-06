@@ -1,11 +1,12 @@
-﻿using System;
+﻿using Planar.Job;
+using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading;
 
-namespace Planar.Job.Test
+namespace Planar.Common
 {
     internal class MockJobExecutionContext : IJobExecutionContext
     {
@@ -35,15 +36,7 @@ namespace Planar.Job.Test
             FireInstanceId = $"JobTest_{GenerateFireInstanceId()}";
             Recovering = properties.Recovering;
             RefireCount = properties.RefireCount;
-
-            if (properties.Environment == null)
-            {
-                Environment = UnitTestConsts.Environment;
-            }
-            else
-            {
-                Environment = properties.Environment;
-            }
+            Environment = properties.Environment;
         }
 
         public Dictionary<string, string?> JobSettings { get; set; } = new Dictionary<string, string?>();

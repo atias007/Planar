@@ -1,5 +1,6 @@
 ﻿using CommonJob.MessageBrokerEntities;
 using Microsoft.Extensions.Logging;
+using Planar.Common;
 using Planar.Job.Test.Common;
 using System;
 using System.Collections.Generic;

@@ -24,7 +24,6 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<Compile Include="..\..\src\Jobs\CommonJob\ExceptionDto.cs" Link="ExceptionDto.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\JobDetail.cs" Link="JobExecutionContext\JobDetail.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\JobExecutionContext.cs" Link="JobExecutionContext\JobExecutionContext.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\Key.cs" Link="JobExecutionContext\Key.cs" />
@@ -32,7 +31,9 @@
 		<Compile Include="..\..\src\Jobs\CommonJob\LogEntity.cs" Link="LogEntity.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\MessageBrokerChannels.cs" Link="MessageBrokerChannels.cs" />
 		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
-		<Compile Include="..\Planar.Job.Test\Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
+		<Compile Include="..\Planar.Common\ExecuteHelper\ExecuteJobProperties.cs" Link="ExecuteHelper\ExecuteJobProperties.cs" />
+		<Compile Include="..\Planar.Common\Extensions.cs" Link="Extensions.cs" />
+		<Compile Include="..\Planar.Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Include="..\..\res\nuget_logo.png">

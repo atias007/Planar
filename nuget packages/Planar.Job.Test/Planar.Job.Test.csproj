@@ -29,14 +29,16 @@
 	  <None Remove="Jobs\**" />
 	</ItemGroup>
 	<ItemGroup>
-		<Compile Include="..\..\src\Jobs\CommonJob\ExceptionDto.cs" Link="Common\ExceptionDto.cs" />
-		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\Key.cs" Link="JobExecutionContext\Key.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\LogEntity.cs" Link="Common\LogEntity.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\MessageBrokerEntities\KeyValueObject.cs" Link="KeyValueObject.cs" />
 		<Compile Include="..\..\src\Planar.API.Common\Entities\StatusMembers.cs" Link="Common\StatusMembers.cs" />
 		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Common\Consts.cs" />
 		<Compile Include="..\..\src\Planar.Common\YamlConfigurationFileParser.cs" Link="Common\YamlConfigurationFileParser.cs" />
 		<Compile Include="..\..\src\Planar\FolderConsts.cs" Link="Common\FolderConsts.cs" />
+		<Compile Include="..\Planar.Common\ExecuteHelper\ExecuteJobProperties.cs" Link="ExecuteHelper\ExecuteJobProperties.cs" />
+		<Compile Include="..\Planar.Common\Extensions.cs" Link="Common\Extensions.cs" />
+		<Compile Include="..\Planar.Common\JobExecutionContext\MockJobExecutionContext.cs" Link="JobExecutionContext\MockJobExecutionContext.cs" />
+		<Compile Include="..\Planar.Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
 		<Compile Include="..\Planar.Job\Attributes\IgnoreDataMapAttribute.cs" Link="Attributes\IgnoreDataMapAttribute.cs" />
 		<Compile Include="..\Planar.Job\Attributes\JobDataAttribute.cs" Link="Attributes\JobDataAttribute.cs" />
 		<Compile Include="..\Planar.Job\Attributes\TriggerDataAttribute.cs" Link="Attributes\TriggerDataAttribute.cs" />
@@ -58,10 +60,12 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
+	  <ProjectReference Include="..\Planar.Job\Planar.Job.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <Folder Include="Attributes\" />
+	  <Folder Include="JobExecutionContext\" />
 	</ItemGroup>
 
 </Project>

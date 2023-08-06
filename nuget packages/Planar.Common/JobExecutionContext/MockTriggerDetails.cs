@@ -1,8 +1,9 @@
-﻿using Planar.Job.Test.JobExecutionContext;
+﻿using Planar.Job;
+using Planar.Job.Test.JobExecutionContext;
 using System;
 using System.Collections.Generic;
 
-namespace Planar.Job.Test
+namespace Planar.Common
 {
     internal class MockTriggerDetails : ITriggerDetail
     {
@@ -14,8 +15,8 @@ namespace Planar.Job.Test
         public MockTriggerDetails(ExecuteJobProperties properties)
         {
             _now = DateTimeOffset.Now;
-            _triggerKey = new MockKey(UnitTestConsts.Environment, UnitTestConsts.TriggerName);
-            _jobKey = new MockKey(UnitTestConsts.Environment, UnitTestConsts.TestMethod);
+            _triggerKey = new MockKey(properties.TriggerKeyName, properties.TriggerKeyGroup);
+            _jobKey = new MockKey(properties.JobKeyName, properties.JobKeyGroup);
             _triggerDataMap = DataMapUtils.Convert(properties.TriggerData);
             FinalFireTime = _now.AddDays(new Random().Next(1, 30));
         }

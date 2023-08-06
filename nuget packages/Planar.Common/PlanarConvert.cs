@@ -1,4 +1,4 @@
-﻿namespace Planar
+﻿namespace Planar.Common
 {
     internal static class PlanarConvert
     {

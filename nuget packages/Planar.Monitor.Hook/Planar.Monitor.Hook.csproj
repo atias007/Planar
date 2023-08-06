@@ -25,7 +25,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Include="..\Planar.Job.Test\Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
+	  <Compile Include="..\Planar.Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
 	  <Compile Include="..\Planar.Job\TypeMappingConverter.cs" Link="TypeMappingConverter.cs" />
 	</ItemGroup>
 

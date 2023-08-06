@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Planar.Common;
 using Planar.Job.Test.Common;
 using System;
 using System.Collections.Generic;
@@ -7,7 +8,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Planar.Job.Test
@@ -226,7 +226,7 @@ namespace Planar.Job.Test
             finally
             {
                 MapJobInstancePropertiesBack(context, properties.JobType, instance);
-                context.JobRunTime = DateTime.Now.Subtract(start);
+                context.JobRunTime = DateTimeOffset.Now.Subtract(start);
             }
 
             var duration = context.JobRunTime.TotalMilliseconds;

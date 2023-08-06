@@ -1,16 +1,15 @@
-﻿using Planar.Job.Test.ExecuteHelper;
-using System;
+﻿using System;
 
-namespace Planar.Job.Test
+namespace Planar.Common
 {
     public class ExecuteJobBuilder
     {
+        private readonly ExecuteJobProperties _properties = new ExecuteJobProperties();
+
         private ExecuteJobBuilder(Type type)
         {
             _properties.JobType = type;
         }
-
-        private readonly ExecuteJobProperties _properties = new ExecuteJobProperties();
 
         public static ExecuteJobBuilder CreateBuilderForJob<T>() where T : class, new() => new ExecuteJobBuilder(typeof(T));
 
@@ -36,14 +35,52 @@ namespace Planar.Job.Test
             return this;
         }
 
-        public ExecuteJobBuilder SetEnvironment(string? environment)
+        public ExecuteJobBuilder SetEnvironment(string environment)
         {
-            if (environment == null)
+            if (string.IsNullOrWhiteSpace(environment))
             {
-                throw new ExecuteJobBuilderException("environment parameter should not set to null");
+                throw new ExecuteJobBuilderException("environment parameter should not be empty");
             }
 
             _properties.Environment = environment;
+            return this;
+        }
+
+        public ExecuteJobBuilder WithJobName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ExecuteJobBuilderException("job name parameter should not be empty");
+            }
+
+            _properties.JobKeyName = name;
+            return this;
+        }
+
+        public ExecuteJobBuilder WithJobGroup(string group)
+        {
+            if (string.IsNullOrWhiteSpace(group))
+            {
+                throw new ExecuteJobBuilderException("job group parameter should not be empty");
+            }
+
+            _properties.JobKeyGroup = group;
+            return this;
+        }
+
+        public ExecuteJobBuilder WithJobKey(string group, string name)
+        {
+            return WithJobGroup(group).WithJobName(name);
+        }
+
+        public ExecuteJobBuilder WithTriggerName(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ExecuteJobBuilderException("trigger name parameter should not be empty");
+            }
+
+            _properties.TriggerKeyName = name;
             return this;
         }
 
