@@ -1,15 +1,14 @@
 ﻿using Planar.Job;
 using Planar.Job.Test.JobExecutionContext;
-using System.Collections.Generic;
 
 namespace Planar.Common
 {
     internal class MockJobDetails : IJobDetail
     {
-        private readonly SortedDictionary<string, string?> _jobDataMap;
+        private readonly DataMap _jobDataMap;
         private readonly IKey _key;
 
-        public MockJobDetails(ExecuteJobProperties properties)
+        public MockJobDetails(IExecuteJobProperties properties)
         {
             _jobDataMap = DataMapUtils.Convert(properties.JobData);
             _key = new MockKey(properties.JobKeyName, properties.JobKeyGroup);
@@ -19,7 +18,7 @@ namespace Planar.Common
 
         public string Description => "This is UnitTest job description";
 
-        public SortedDictionary<string, string?> JobDataMap => _jobDataMap;
+        public IDataMap JobDataMap => _jobDataMap;
 
         public bool Durable => false;
 

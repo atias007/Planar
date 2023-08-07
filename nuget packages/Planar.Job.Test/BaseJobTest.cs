@@ -31,13 +31,13 @@ namespace Planar.Job.Test
             return ExecuteJob(props);
         }
 
-        protected IJobExecutionResult ExecuteJob(ExecuteJobBuilder builder)
+        protected IJobExecutionResult ExecuteJob(ExecuteJobPropertiesBuilder builder)
         {
             var props = builder.Build();
             return ExecuteJob(props);
         }
 
-        protected string GetPlanarJobArgument(ExecuteJobBuilder builder)
+        protected string GetPlanarJobArgument(ExecuteJobPropertiesBuilder builder)
         {
             var props = builder.Build();
             var context = new MockJobExecutionContext(props);
@@ -196,7 +196,7 @@ namespace Planar.Job.Test
             //// ***** Attention: be aware for sync code with Validate on PlanarJob *****
         }
 
-        private IJobExecutionResult ExecuteJob(ExecuteJobProperties properties)
+        private IJobExecutionResult ExecuteJob(IExecuteJobProperties properties)
         {
             var context = new MockJobExecutionContext(properties);
             var method = ValidateBaseJob(properties.JobType);
@@ -263,84 +263,72 @@ namespace Planar.Job.Test
 
         private void SafePutData(IJobExecutionContext context, object instance, PropertyInfo prop)
         {
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
+            ////var attributes = prop.GetCustomAttributes();
+            ////var ignore = IsIgnoreProperty(attributes, prop, context.JobDetails.Key);
+            ////if (ignore) { return; }
+            ////var jobData = attributes.Any(a => a.GetType().FullName == _jobDataMapAttribute);
+            ////var triggerData = attributes.Any(a => a.GetType().FullName == _triggerDataMapAttribute);
 
-            var attributes = prop.GetCustomAttributes();
-            var ignore = IsIgnoreProperty(attributes, prop, context.JobDetails.Key);
-            if (ignore) { return; }
-            var jobData = attributes.Any(a => a.GetType().FullName == _jobDataMapAttribute);
-            var triggerData = attributes.Any(a => a.GetType().FullName == _triggerDataMapAttribute);
+            ////if (jobData)
+            ////{
+            ////    SafePutJobDataMap(context, instance, prop);
+            ////}
 
-            if (jobData)
-            {
-                SafePutJobDataMap(context, instance, prop);
-            }
+            ////if (!jobData && !triggerData)
+            ////{
+            ////    if (context.JobDetails.JobDataMap.ContainsKey(prop.Name))
+            ////    {
+            ////        SafePutJobDataMap(context, instance, prop);
+            ////    }
 
-            if (!jobData && !triggerData)
-            {
-                if (context.JobDetails.JobDataMap.ContainsKey(prop.Name))
-                {
-                    SafePutJobDataMap(context, instance, prop);
-                }
-
-                if (context.TriggerDetails.TriggerDataMap.ContainsKey(prop.Name))
-                {
-                    SafePutTiggerDataMap(context, instance, prop);
-                }
-            }
-
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
+            ////    if (context.TriggerDetails.TriggerDataMap.ContainsKey(prop.Name))
+            ////    {
+            ////        SafePutTiggerDataMap(context, instance, prop);
+            ////    }
+            ////}
         }
 
         private void SafePutJobDataMap(IJobExecutionContext context, object instance, PropertyInfo prop)
         {
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
+            ////string? value = null;
+            ////try
+            ////{
+            ////    if (!Consts.IsDataKeyValid(prop.Name))
+            ////    {
+            ////        throw new PlanarJobTestException($"the data key {prop.Name} in invalid");
+            ////    }
 
-            string? value = null;
-            try
-            {
-                if (!Consts.IsDataKeyValid(prop.Name))
-                {
-                    throw new PlanarJobTestException($"the data key {prop.Name} in invalid");
-                }
-
-                value = PlanarConvert.ToString(prop.GetValue(instance));
-                context.JobDetails.JobDataMap.AddOrUpdate(prop.Name, value);
-                context.MergedJobDataMap.AddOrUpdate(prop.Name, value);
-            }
-            catch (Exception ex)
-            {
-                var jobKey = context.JobDetails.Key;
-                Console.WriteLine($"Fail to save back value {value} from property {prop.Name} to JobDetails at job {jobKey.Group}.{jobKey.Name}");
-                Console.WriteLine(ex);
-            }
-
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
+            ////    value = PlanarConvert.ToString(prop.GetValue(instance));
+            ////    context.JobDetails.JobDataMap.AddOrUpdate(prop.Name, value);
+            ////    context.MergedJobDataMap.AddOrUpdate(prop.Name, value);
+            ////}
+            ////catch (Exception ex)
+            ////{
+            ////    var jobKey = context.JobDetails.Key;
+            ////    Console.WriteLine($"Fail to save back value {value} from property {prop.Name} to JobDetails at job {jobKey.Group}.{jobKey.Name}");
+            ////    Console.WriteLine(ex);
+            ////}
         }
 
         private void SafePutTiggerDataMap(IJobExecutionContext context, object instance, PropertyInfo prop)
         {
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
+            ////string? value = null;
+            ////try
+            ////{
+            ////    if (!Consts.IsDataKeyValid(prop.Name))
+            ////    {
+            ////        throw new PlanarJobTestException($"the data key {prop.Name} in invalid");
+            ////    }
 
-            string? value = null;
-            try
-            {
-                if (!Consts.IsDataKeyValid(prop.Name))
-                {
-                    throw new PlanarJobTestException($"the data key {prop.Name} in invalid");
-                }
-
-                value = PlanarConvert.ToString(prop.GetValue(instance));
-                context.TriggerDetails.TriggerDataMap.AddOrUpdate(prop.Name, value);
-            }
-            catch (Exception ex)
-            {
-                var jobKey = context.TriggerDetails.Key;
-                Console.WriteLine($"Fail to save back value {value} from property {prop.Name} to TriggerDetails at job {jobKey.Group}.{jobKey.Name}");
-                Console.WriteLine(ex);
-            }
-
-            //// ***** Attention: be aware for sync code with MapJobInstanceProperties on BaseCommonJob *****
+            ////    value = PlanarConvert.ToString(prop.GetValue(instance));
+            ////    context.TriggerDetails.TriggerDataMap.AddOrUpdate(prop.Name, value);
+            ////}
+            ////catch (Exception ex)
+            ////{
+            ////    var jobKey = context.TriggerDetails.Key;
+            ////    Console.WriteLine($"Fail to save back value {value} from property {prop.Name} to TriggerDetails at job {jobKey.Group}.{jobKey.Name}");
+            ////    Console.WriteLine(ex);
+            ////}
         }
     }
 }

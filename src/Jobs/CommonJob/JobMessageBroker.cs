@@ -6,8 +6,10 @@ using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
 using Planar.Job;
+using Quartz;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using IJobExecutionContext = Quartz.IJobExecutionContext;
 
 namespace CommonJob
@@ -137,6 +139,21 @@ namespace CommonJob
             _monitorUtil?.Scan(MonitorEvents.ExecutionProgressChanged, _context);
         }
 
+        private static DataMap ConvertDataMap(JobDataMap? map)
+        {
+            if (map == null)
+            {
+                return new DataMap();
+            }
+
+            var dic = map
+                .Where(k => !k.Key.StartsWith(Consts.ConstPrefix) && !k.Key.StartsWith(Consts.QuartzPrefix))
+                .OrderBy(k => k.Key)
+                .ToDictionary(k => k.Key, v => PlanarConvert.ToString(v.Value));
+
+            return new DataMap(dic);
+        }
+
         private static JobExecutionContext MapContext(IJobExecutionContext context, IDictionary<string, string?> settings)
         {
             var isRetryTrigger = TriggerHelper.IsRetryTrigger(context.Trigger);
@@ -149,7 +166,7 @@ namespace CommonJob
             var result = new JobExecutionContext
             {
                 JobSettings = new Dictionary<string, string?>(settings),
-                MergedJobDataMap = Global.ConvertDataMapToDictionary(context.MergedJobDataMap),
+                MergedJobDataMap = ConvertDataMap(context.MergedJobDataMap),
                 FireInstanceId = context.FireInstanceId,
                 FireTime = context.FireTimeUtc,
                 NextFireTime = context.NextFireTimeUtc,
@@ -162,7 +179,7 @@ namespace CommonJob
                     ConcurrentExecutionDisallowed = context.JobDetail.ConcurrentExecutionDisallowed,
                     Description = context.JobDetail.Description ?? string.Empty,
                     Durable = context.JobDetail.Durable,
-                    JobDataMap = Global.ConvertDataMapToDictionary(context.JobDetail.JobDataMap),
+                    JobDataMap = ConvertDataMap(context.JobDetail.JobDataMap),
                     Key = new Key
                     {
                         Name = context.JobDetail.Key.Name,
@@ -185,7 +202,7 @@ namespace CommonJob
                     },
                     Priority = context.Trigger.Priority,
                     StartTime = context.Trigger.StartTimeUtc,
-                    TriggerDataMap = Global.ConvertDataMapToDictionary(context.Trigger.JobDataMap),
+                    TriggerDataMap = ConvertDataMap(context.Trigger.JobDataMap),
                     HasRetry = hasRetry,
                     IsLastRetry = lastRetry,
                     IsRetryTrigger = isRetryTrigger,

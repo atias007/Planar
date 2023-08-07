@@ -16,7 +16,7 @@ namespace Planar.Job.Test
         private readonly MockJobExecutionContext _context;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
-        public JobMessageBroker(MockJobExecutionContext context, ExecuteJobProperties properties, Dictionary<string, string?> settings)
+        public JobMessageBroker(MockJobExecutionContext context, IExecuteJobProperties properties, Dictionary<string, string?> settings)
         {
             _context = context;
             context.JobSettings = settings;

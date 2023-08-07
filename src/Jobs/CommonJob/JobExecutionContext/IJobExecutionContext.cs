@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Planar.Job
 {
@@ -23,7 +22,7 @@ namespace Planar.Job
 
         ITriggerDetail TriggerDetails { get; }
 
-        SortedDictionary<string, string?> MergedJobDataMap { get; }
+        IDataMap MergedJobDataMap { get; }
 
         string Environment { get; }
     }

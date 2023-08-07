@@ -1,22 +1,21 @@
 ﻿using Planar.Job;
 using Planar.Job.Test.JobExecutionContext;
 using System;
-using System.Collections.Generic;
 
 namespace Planar.Common
 {
     internal class MockTriggerDetails : ITriggerDetail
     {
-        private readonly SortedDictionary<string, string?> _triggerDataMap;
+        private readonly DataMap _triggerDataMap;
         private readonly DateTimeOffset _now;
         private readonly MockKey _triggerKey;
         private readonly MockKey _jobKey;
 
-        public MockTriggerDetails(ExecuteJobProperties properties)
+        public MockTriggerDetails(IExecuteJobProperties properties)
         {
             _now = DateTimeOffset.Now;
-            _triggerKey = new MockKey(properties.TriggerKeyName, properties.TriggerKeyGroup);
-            _jobKey = new MockKey(properties.JobKeyName, properties.JobKeyGroup);
+            _triggerKey = new MockKey(properties);
+            _jobKey = new MockKey(properties);
             _triggerDataMap = DataMapUtils.Convert(properties.TriggerData);
             FinalFireTime = _now.AddDays(new Random().Next(1, 30));
         }
@@ -30,7 +29,7 @@ namespace Planar.Common
         public string? CalendarName => null;
         public string Description => "This is UnitTest trigger description";
         public IKey JobKey => _jobKey;
-        public SortedDictionary<string, string?> TriggerDataMap => _triggerDataMap;
+        public IDataMap TriggerDataMap => _triggerDataMap;
         public IKey Key => _triggerKey;
         public DateTimeOffset? EndTime => null;
         public DateTimeOffset? FinalFireTime { get; private set; }

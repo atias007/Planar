@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Planar.Common
 {
-    internal class ExecuteJobProperties
+    internal class ExecuteJobProperties : IExecuteJobProperties
     {
         private const string DefaultEnvironment = "UnitTest";
         private const string DefaultGroup = "Default";

@@ -201,7 +201,7 @@ namespace Planar
             var bytes = Encoding.UTF8.GetBytes(MessageBroker.Details);
             var base64String = Convert.ToBase64String(bytes);
             var startInfo = base.GetProcessStartInfo();
-            startInfo.Arguments = base64String;
+            startInfo.Arguments = $"--planar-service-mode --context {base64String}";
             startInfo.StandardErrorEncoding = Encoding.UTF8;
             startInfo.StandardOutputEncoding = Encoding.UTF8;
             return startInfo;

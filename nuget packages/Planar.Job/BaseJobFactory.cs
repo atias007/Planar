@@ -34,10 +34,10 @@ namespace Planar.Job
         {
             if (_isNowOverrideValueExists == null)
             {
-                _isNowOverrideValueExists = IsDataExists(Consts.NowOverrideValue);
+                _isNowOverrideValueExists = _context.MergedJobDataMap.Exists(Consts.NowOverrideValue);
                 if (_isNowOverrideValueExists.GetValueOrDefault())
                 {
-                    var value = GetData(Consts.NowOverrideValue);
+                    var value = _context.MergedJobDataMap.Get(Consts.NowOverrideValue);
                     if (DateTime.TryParse(value, CultureInfo.CurrentCulture, DateTimeStyles.AssumeLocal, out DateTime dateValue))
                     {
                         _nowOverrideValue = dateValue;
@@ -111,27 +111,6 @@ namespace Planar.Job
         #endregion AggregateException
 
         #region Data
-
-        public T GetData<T>(string key)
-        {
-            if (!_context.MergedJobDataMap.TryGetValue(key, out string? value))
-            {
-                throw new PlanarJobException($"Data with key '{key}' is not exists");
-            }
-
-            var result = (T)Convert.ChangeType(value, typeof(T));
-            return result;
-        }
-
-        public string GetData(string key)
-        {
-            return GetData<string>(key);
-        }
-
-        public bool IsDataExists(string key)
-        {
-            return _context.MergedJobDataMap.ContainsKey(key);
-        }
 
         public void PutJobData(string key, object? value)
         {

@@ -9,7 +9,7 @@ namespace Planar.Job
     {
         public Dictionary<string, string?> JobSettings { get; set; } = new Dictionary<string, string?>();
 
-        public SortedDictionary<string, string?> MergedJobDataMap { get; set; } = new SortedDictionary<string, string?>();
+        public IDataMap MergedJobDataMap { get; set; } = new DataMap();
 
         public string FireInstanceId { get; set; } = string.Empty;
 

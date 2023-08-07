@@ -22,7 +22,7 @@ namespace UnitTest
         [Test]
         public void GeneralTest()
         {
-            var run = ExecuteJobBuilder
+            var run = ExecuteJobPropertiesBuilder
                 .CreateBuilderForJob<Worker>()
                 .WithJobData("X", 10)
                 .WithJobData("Z", "SomeString")
@@ -44,7 +44,7 @@ namespace UnitTest
         [Test]
         public void FailOnMissingData()
         {
-            var run = ExecuteJobBuilder
+            var run = ExecuteJobPropertiesBuilder
                 .CreateBuilderForJob<Worker>()
                 .WithJobData("Z", "SomeString")
                 .WithJobData("SimpleInt", 44);
@@ -56,7 +56,7 @@ namespace UnitTest
         [Test]
         public void SimpleIntIncrease()
         {
-            var run = ExecuteJobBuilder
+            var run = ExecuteJobPropertiesBuilder
                 .CreateBuilderForJob<Worker>()
                 .WithJobData("X", 10)
                 .WithJobData("Z", "SomeString")
@@ -70,7 +70,7 @@ namespace UnitTest
         [Test]
         public void IgnoreData()
         {
-            var run = ExecuteJobBuilder
+            var run = ExecuteJobPropertiesBuilder
                 .CreateBuilderForJob<Worker>()
                 .WithJobData("X", 10)
                 .WithJobData("Z", "SomeString")
@@ -84,7 +84,7 @@ namespace UnitTest
         [Test]
         public void CancelJob()
         {
-            var run = ExecuteJobBuilder
+            var run = ExecuteJobPropertiesBuilder
                 .CreateBuilderForJob<Worker>()
                 .WithJobData("X", 10)
                 .WithJobData("Z", "SomeString")

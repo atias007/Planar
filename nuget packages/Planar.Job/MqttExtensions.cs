@@ -33,7 +33,7 @@ namespace Planar
             Validation.CheckNotNull(message, nameof(message));
 
             // TODO: Determine if there's a sensible content type we should apply.
-            return formatter.DecodeStructuredModeMessage(message.Payload, contentType: null, extensionAttributes);
+            return formatter.DecodeStructuredModeMessage(message.PayloadSegment, contentType: null, extensionAttributes);
         }
 
         // TODO: Update to a newer version of MQTTNet and support both binary and structured mode?
@@ -55,7 +55,7 @@ namespace Planar
                     return new MqttApplicationMessage
                     {
                         Topic = topic,
-                        Payload = BinaryDataUtilities.AsArray(formatter.EncodeStructuredModeMessage(cloudEvent, out _))
+                        PayloadSegment = BinaryDataUtilities.AsArray(formatter.EncodeStructuredModeMessage(cloudEvent, out _))
                     };
 
                 default:

@@ -3,9 +3,9 @@ using System;
 
 namespace Planar
 {
-    public class LogEntity
+    internal class LogEntity
     {
-        // ************************** BE AWARE TO SYNC WITH PLANAR.PACKAGES SOLUTION **************************
+        // ************************** BE AWARE TO SYNC WITH PLANAR SOLUTION **************************
 
         public LogEntity()
         {
@@ -41,6 +41,6 @@ namespace Planar
             };
         }
 
-        // ************************** BE AWARE TO SYNC WITH PLANAR.PACKAGES SOLUTION **************************
+        // ************************** BE AWARE TO SYNC WITH PLANAR SOLUTION **************************
     }
 }

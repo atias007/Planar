@@ -10,15 +10,9 @@ namespace Planar.Job
 
         void CheckAggragateException();
 
-        T GetData<T>(string key);
-
-        string GetData(string key);
-
         int? GetEffectedRows();
 
         void IncreaseEffectedRows(int delta = 1);
-
-        bool IsDataExists(string key);
 
         DateTime Now();
 

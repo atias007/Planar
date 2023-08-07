@@ -33,23 +33,23 @@ namespace SomeJob
             Logger.LogInformation("Value is {Value} while default value is 12", maxDiffranceHours);
             AddAggregateException(new Exception("agg ex"));
 
-            var exists = IsDataExists("X");
+            var exists = context.MergedJobDataMap.Exists("X");
             Logger.LogDebug("Data X Exists: {Value}", exists);
 
-            exists = IsDataExists("Y");
+            exists = context.MergedJobDataMap.Exists("Y");
             Logger.LogDebug("Data Y Exists: {Value}", exists);
 
-            var a = GetData<int>("X");
+            var a = context.MergedJobDataMap.Get<int>("X");
             Logger.LogDebug("Data X Value: {Value}", a);
             a++;
             PutJobData("X", a);
-            a = GetData<int>("X");
+            a = context.MergedJobDataMap.Get<int>("X");
             Logger.LogDebug("Data X Value: {Value}", a);
 
-            var z = GetData("Z");
+            var z = context.MergedJobDataMap.Get("Z");
             Logger.LogDebug("Data Z Value: {Value}", z);
             PutJobData("Z", "NewZData");
-            Logger.LogInformation("Z=" + GetData("Z"));
+            Logger.LogInformation("Z=" + context.MergedJobDataMap.Get("Z"));
 
             var rows = GetEffectedRows();
             Logger.LogDebug("GetEffectedRows: {Value}", rows);
@@ -70,11 +70,14 @@ namespace SomeJob
             SimpleInt += 5;
             IgnoreData = "x";
 
-            var a1 = fact.GetData<int>("X");
-            var b1 = fact.GetEffectedRows();
+            // TODO: handle!
+            ////            var a1 = fact.GetData<int>("X");
+            ////var b1 = fact.GetEffectedRows();
 
-            var no = fact.GetData("NoExists");
-            Logger.LogInformation(no);
+            ////var no = fact.GetData("NoExists");
+            ////Logger.LogInformation(no);
+
+            await Task.CompletedTask;
         }
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

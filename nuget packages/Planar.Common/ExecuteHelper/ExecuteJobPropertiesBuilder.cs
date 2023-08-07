@@ -2,24 +2,24 @@
 
 namespace Planar.Common
 {
-    public class ExecuteJobBuilder
+    public class ExecuteJobPropertiesBuilder
     {
         private readonly ExecuteJobProperties _properties = new ExecuteJobProperties();
 
-        private ExecuteJobBuilder(Type type)
+        private ExecuteJobPropertiesBuilder(Type type)
         {
             _properties.JobType = type;
         }
 
-        public static ExecuteJobBuilder CreateBuilderForJob<T>() where T : class, new() => new ExecuteJobBuilder(typeof(T));
+        public static ExecuteJobPropertiesBuilder CreateBuilderForJob<T>() where T : class, new() => new ExecuteJobPropertiesBuilder(typeof(T));
 
-        public ExecuteJobBuilder SetRecoveringMode()
+        public ExecuteJobPropertiesBuilder SetRecoveringMode()
         {
             _properties.Recovering = true;
             return this;
         }
 
-        public ExecuteJobBuilder WithRefireCount(uint refireCount)
+        public ExecuteJobPropertiesBuilder WithRefireCount(uint refireCount)
         {
             if (refireCount == 0)
             {
@@ -35,7 +35,7 @@ namespace Planar.Common
             return this;
         }
 
-        public ExecuteJobBuilder SetEnvironment(string environment)
+        public ExecuteJobPropertiesBuilder SetEnvironment(string environment)
         {
             if (string.IsNullOrWhiteSpace(environment))
             {
@@ -46,7 +46,7 @@ namespace Planar.Common
             return this;
         }
 
-        public ExecuteJobBuilder WithJobName(string name)
+        public ExecuteJobPropertiesBuilder WithJobName(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -57,7 +57,7 @@ namespace Planar.Common
             return this;
         }
 
-        public ExecuteJobBuilder WithJobGroup(string group)
+        public ExecuteJobPropertiesBuilder WithJobGroup(string group)
         {
             if (string.IsNullOrWhiteSpace(group))
             {
@@ -68,12 +68,12 @@ namespace Planar.Common
             return this;
         }
 
-        public ExecuteJobBuilder WithJobKey(string group, string name)
+        public ExecuteJobPropertiesBuilder WithJobKey(string group, string name)
         {
             return WithJobGroup(group).WithJobName(name);
         }
 
-        public ExecuteJobBuilder WithTriggerName(string name)
+        public ExecuteJobPropertiesBuilder WithTriggerName(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
@@ -84,31 +84,31 @@ namespace Planar.Common
             return this;
         }
 
-        public ExecuteJobBuilder WithExecutionDate(DateTimeOffset executionDate)
+        public ExecuteJobPropertiesBuilder WithExecutionDate(DateTimeOffset executionDate)
         {
             _properties.ExecutionDate = executionDate;
             return this;
         }
 
-        public ExecuteJobBuilder WithJobData(string key, object? value)
+        public ExecuteJobPropertiesBuilder WithJobData(string key, object? value)
         {
             _properties.JobData.Add(key, value);
             return this;
         }
 
-        public ExecuteJobBuilder WithTriggerData(string key, object? value)
+        public ExecuteJobPropertiesBuilder WithTriggerData(string key, object? value)
         {
             _properties.TriggerData.Add(key, value);
             return this;
         }
 
-        public ExecuteJobBuilder WithGlobalSettings(string key, object? value)
+        public ExecuteJobPropertiesBuilder WithGlobalSettings(string key, object? value)
         {
             _properties.GlobalSettings.Add(key, PlanarConvert.ToString(value));
             return this;
         }
 
-        public ExecuteJobBuilder CancelJobAfter(TimeSpan timeSpan)
+        public ExecuteJobPropertiesBuilder CancelJobAfter(TimeSpan timeSpan)
         {
             if (timeSpan == TimeSpan.Zero)
             {
@@ -119,7 +119,7 @@ namespace Planar.Common
             return this;
         }
 
-        public ExecuteJobBuilder CancelJobAfterSeconds(uint seconds)
+        public ExecuteJobPropertiesBuilder CancelJobAfterSeconds(uint seconds)
         {
             if (seconds == 0)
             {
@@ -130,7 +130,7 @@ namespace Planar.Common
             return this;
         }
 
-        public ExecuteJobBuilder CancelJobAfterMinutes(uint minutes)
+        public ExecuteJobPropertiesBuilder CancelJobAfterMinutes(uint minutes)
         {
             if (minutes == 0)
             {
@@ -141,7 +141,7 @@ namespace Planar.Common
             return this;
         }
 
-        public ExecuteJobBuilder CancelJobAfterMilliseconds(uint milliseconds)
+        public ExecuteJobPropertiesBuilder CancelJobAfterMilliseconds(uint milliseconds)
         {
             if (milliseconds == 0)
             {
@@ -152,7 +152,7 @@ namespace Planar.Common
             return this;
         }
 
-        internal ExecuteJobProperties Build()
+        public IExecuteJobProperties Build()
         {
             return _properties;
         }

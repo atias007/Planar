@@ -131,16 +131,6 @@ namespace Planar.Job
             _baseJobFactory.CheckAggragateException();
         }
 
-        protected T GetData<T>(string key)
-        {
-            return _baseJobFactory.GetData<T>(key);
-        }
-
-        protected string GetData(string key)
-        {
-            return _baseJobFactory.GetData(key);
-        }
-
         protected int? GetEffectedRows()
         {
             return _baseJobFactory.GetEffectedRows();
@@ -149,11 +139,6 @@ namespace Planar.Job
         protected void IncreaseEffectedRows(int delta = 1)
         {
             _baseJobFactory.IncreaseEffectedRows(delta);
-        }
-
-        protected bool IsDataExists(string key)
-        {
-            return _baseJobFactory.IsDataExists(key);
         }
 
         protected void MapJobInstancePropertiesBack(IJobExecutionContext context)
@@ -211,13 +196,13 @@ namespace Planar.Job
             _baseJobFactory.UpdateProgress(current, total);
         }
 
-        private static void FilterJobData(SortedDictionary<string, string?> dictionary)
+        private static void FilterJobData(IDataMap dictionary)
         {
             foreach (var item in Consts.AllDataKeys)
             {
                 if (dictionary.ContainsKey(item))
                 {
-                    dictionary.Remove(item);
+                    ((DataMap)dictionary).Remove(item);
                 }
             }
         }
@@ -250,7 +235,8 @@ namespace Planar.Job
                     {
                         new TypeMappingConverter<IJobDetail, JobDetail>(),
                         new TypeMappingConverter<ITriggerDetail, TriggerDetail>(),
-                        new TypeMappingConverter<IKey, Key>()
+                        new TypeMappingConverter<IKey, Key>(),
+                        new DataMapConvertor()
                     }
                 };
 

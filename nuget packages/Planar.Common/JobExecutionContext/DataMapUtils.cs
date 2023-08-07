@@ -1,12 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using Planar.Job;
+using System.Collections.Generic;
 
 namespace Planar.Common
 {
     internal static class DataMapUtils
     {
-        public static SortedDictionary<string, string?> Convert(Dictionary<string, object?> source)
+        public static DataMap Convert(Dictionary<string, object?> source)
         {
-            var result = new SortedDictionary<string, string?>();
+            var result = new DataMap();
             if (source == null) { return result; }
 
             foreach (var item in source)

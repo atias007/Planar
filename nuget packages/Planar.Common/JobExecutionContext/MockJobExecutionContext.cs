@@ -15,7 +15,7 @@ namespace Planar.Common
         private readonly IJobDetail _jobDetail;
         private readonly ITriggerDetail _triggerDetail;
 
-        public MockJobExecutionContext(ExecuteJobProperties properties)
+        public MockJobExecutionContext(IExecuteJobProperties properties)
         {
             _start = DateTimeOffset.UtcNow;
             _now = DateTimeOffset.Now;
@@ -28,11 +28,11 @@ namespace Planar.Common
             if (properties.ExecutionDate.HasValue)
             {
                 _now = properties.ExecutionDate.Value;
-                JobDetail.JobDataMap.Add(Consts.NowOverrideValue, _now.ToString());
-                Trigger.TriggerDataMap.Add(Consts.NowOverrideValue, _now.ToString());
+                ((DataMap)JobDetail.JobDataMap).Add(Consts.NowOverrideValue, _now.ToString());
+                ((DataMap)Trigger.TriggerDataMap).Add(Consts.NowOverrideValue, _now.ToString());
             }
 
-            MergedJobDataMap = _jobDetail.JobDataMap.Merge(_triggerDetail.TriggerDataMap);
+            MergedJobDataMap = ((DataMap)_jobDetail.JobDataMap).Merge((DataMap)_triggerDetail.TriggerDataMap);
             FireInstanceId = $"JobTest_{GenerateFireInstanceId()}";
             Recovering = properties.Recovering;
             RefireCount = properties.RefireCount;
@@ -78,7 +78,7 @@ namespace Planar.Common
 
         public object? Result { get; set; }
 
-        public SortedDictionary<string, string?> MergedJobDataMap { get; internal set; }
+        public IDataMap MergedJobDataMap { get; internal set; }
 
         public DateTimeOffset FireTime => _now;
 

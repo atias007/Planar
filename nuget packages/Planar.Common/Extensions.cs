@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Planar.Job;
+using System.Collections.Generic;
 
 namespace Planar.Common
 {
@@ -14,6 +15,13 @@ namespace Planar.Common
             {
                 dictionary.Add(key, value);
             }
+        }
+
+        public static DataMap Merge(this DataMap dataMap, DataMap source)
+        {
+            var merge = MergeInner(dataMap, source);
+            var result = new DataMap(merge);
+            return result;
         }
 
         public static Dictionary<string, string?> Merge(this Dictionary<string, string?> dictionary, Dictionary<string, string?> source)

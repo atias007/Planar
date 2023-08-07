@@ -1,39 +1,40 @@
-﻿using System;
+﻿using Planar.Common;
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 
 namespace Planar.Job
 {
     public static class PlanarJob
     {
-        internal static bool DebugMode { get; private set; }
+        internal static bool DebugMode { get; private set; } = true;
         internal static string Environment { get; private set; } = "Development";
         internal static string[] Args { get; private set; } = System.Environment.GetCommandLineArgs();
-
         internal static Stopwatch Stopwatch { get; private set; } = new Stopwatch();
+        public static PlanarJobDebugger Debugger { get; } = new PlanarJobDebugger();
 
         public static void Start<TJob>()
-            where TJob : BaseJob
+            where TJob : BaseJob, new()
         {
             Stopwatch.Start();
-            ValidateArgs();
             FillProperties();
-            var json = GetJsonFromArgs();
-            Execute<TJob>(json);
+
+            Execute<TJob>();
         }
 
-        private static void Execute<TJob>(string json)
-             where TJob : BaseJob
+        private static void Execute<TJob>()
+             where TJob : BaseJob, new()
         {
+            string json;
             if (DebugMode)
             {
-                Console.WriteLine("[x] Debug mode: True");
-                Console.WriteLine($"[x] Environment: {Environment}");
-                Console.WriteLine("---------------------------------------");
-                Console.WriteLine("[x] Press [Enter] to start execute job");
-                Console.WriteLine("---------------------------------------");
-                Console.ReadKey(true);
+                json = ShowDebugMenu<TJob>();
+            }
+            else
+            {
+                json = GetJsonFromArgs();
             }
 
             var instance = Activator.CreateInstance<TJob>();
@@ -41,6 +42,7 @@ namespace Planar.Job
 
             if (DebugMode)
             {
+                Console.WriteLine();
                 Console.WriteLine("---------------------------------------");
                 Console.WriteLine("[x] Press [Enter] to close window");
                 Console.WriteLine("---------------------------------------");
@@ -48,10 +50,115 @@ namespace Planar.Job
             }
         }
 
-        private static void ValidateArgs()
+        private static string ShowDebugMenu<TJob>()
+            where TJob : class, new()
         {
-            var args = Args ?? throw new PlanarJobException("Missing command line argument(s)");
-            if (args.Count() == 1) { throw new PlanarJobException("Job was executed with no arguments"); }
+            PrintHeader();
+
+            if (Debugger.Profiles.Any())
+            {
+                var typeName = typeof(TJob).Name;
+                Console.Write("[x] type the profile code ");
+                Console.Write("to start executing the ");
+                Console.ForegroundColor = ConsoleColor.Magenta;
+                Console.Write($"{typeName} ");
+                Console.ResetColor();
+                Console.WriteLine("job");
+                Console.WriteLine();
+                PrintMenuItem("<Default>", "Enter");
+                var index = 1;
+                foreach (var p in Debugger.Profiles)
+                {
+                    PrintMenuItem(p.Key, index.ToString());
+                    index++;
+                }
+
+                Console.WriteLine();
+            }
+            else
+            {
+                var typeName = typeof(TJob).Name;
+                Console.Write("[x] Press ");
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write("[Enter] ");
+                Console.ResetColor();
+                Console.Write("to start executing the ");
+                Console.ForegroundColor = ConsoleColor.Magenta;
+                Console.Write($"{typeName} ");
+                Console.ResetColor();
+                Console.WriteLine("job with default profile");
+                Console.WriteLine();
+            }
+
+            var selectedIndex = GetMenuItem();
+            if (selectedIndex == null)
+            {
+                var properties = ExecuteJobPropertiesBuilder.CreateBuilderForJob<TJob>().Build();
+                var context = new MockJobExecutionContext(properties);
+                var json = JsonSerializer.Serialize(context);
+                return json;
+            }
+            else
+            {
+                var properties = Debugger.Profiles.Values.ToList()[selectedIndex.Value - 1];
+                var context = new MockJobExecutionContext(properties);
+                var json = JsonSerializer.Serialize(context);
+                return json;
+            }
+        }
+
+        private static int? GetMenuItem()
+        {
+            int index = 0;
+            var valid = false;
+            while (!valid)
+            {
+                Console.Write("Profile number: ");
+                var selected = Console.ReadLine();
+                if (string.IsNullOrEmpty(selected)) { return null; }
+
+                if (!int.TryParse(selected, out index))
+                {
+                    ShowErrorMenu($"Selected value '{selected}' is not valid numeric value");
+                }
+                else if (index > Debugger.Profiles.Count || index <= 0)
+                {
+                    ShowErrorMenu($"Selected value '{index}' is not exists");
+                }
+                else
+                {
+                    valid = true;
+                }
+            }
+
+            return index;
+        }
+
+        private static void ShowErrorMenu(string message)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(message);
+            Console.ResetColor();
+        }
+
+        private static void PrintMenuItem(string text, string key)
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write($"[{key}] ");
+            Console.ResetColor();
+            Console.WriteLine(text);
+        }
+
+        private static void PrintHeader()
+        {
+            Console.Write("[x] ");
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine("Debug mode");
+            Console.ResetColor();
+            Console.Write("[x] Environment: ");
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine(Environment);
+            Console.ResetColor();
         }
 
         private static string GetJsonFromArgs()
@@ -62,12 +169,14 @@ namespace Planar.Job
             return json;
         }
 
+        // TODO: handle!
         private static void FillProperties()
         {
-            DebugMode = Array.Exists(Args, a => a.ToLower() == "--debug" || a.ToLower() == "-d");
+            DebugMode = !Array.Exists(Args, a => a.ToLower() == "--planar-service-mode");
+
             for (int i = 0; i < Args.Length; i++)
             {
-                if (Args[i].ToLower() == "--environment" || Args[i].ToLower() == "-e")
+                if (Args[i].ToLower() == "--context")
                 {
                     var j = i + 1;
                     if (j < Args.Length || Args[j].StartsWith('-'))

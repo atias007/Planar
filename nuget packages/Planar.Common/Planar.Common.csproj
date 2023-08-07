@@ -26,6 +26,8 @@
 
 	<ItemGroup>
 	  <Compile Include="..\..\src\Jobs\CommonJob\ExceptionDto.cs" Link="JobExecutionContext\ExceptionDto.cs" />
+	  <Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\DataMap.cs" Link="JobExecutionContext\DataMap.cs" />
+	  <Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\IDataMap.cs" Link="JobExecutionContext\IDataMap.cs" />
 	  <Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\IJobDetail.cs" Link="JobExecutionContext\IJobDetail.cs" />
 	  <Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\IJobExecutionContext.cs" Link="JobExecutionContext\IJobExecutionContext.cs" />
 	  <Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\IKey.cs" Link="JobExecutionContext\IKey.cs" />

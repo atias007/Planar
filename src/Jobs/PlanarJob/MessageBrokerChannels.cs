@@ -1,6 +1,6 @@
 ﻿namespace Planar
 {
-    public enum MessageBrokerChannels
+    internal enum MessageBrokerChannels
     {
         AddAggregateException,
         AppendLog,
