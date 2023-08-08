@@ -9,7 +9,7 @@ namespace SomeJob
     {
         public DateTime? SomeDate { get; set; }
 
-        public int? SomeInt { get; set; }
+        public int? SomeMappedInt { get; set; }
 
         public int SimpleInt { get; set; }
 
@@ -22,12 +22,18 @@ namespace SomeJob
 
         public override async Task ExecuteJob(IJobExecutionContext context)
         {
-            var fact = ServiceProvider.GetRequiredService<IBaseJob>();
+            var factory = ServiceProvider.GetRequiredService<IBaseJob>();
             var child = ServiceProvider.GetRequiredService<WorkerChild>();
 
-            fact.PutJobData("NoExists", 12345);
+            child.TestMe();
+
+            factory.PutJobData("NoExists", 12345);
 
             Logger.LogWarning("Now: {Now}", Now());
+
+            Logger.LogInformation("SomeMappedInt: {SomeMappedInt}", SomeMappedInt);
+
+            SomeMappedInt = 1050;
 
             var maxDiffranceHours = Configuration.GetValue("Max Diffrance Hours", 12);
             Logger.LogInformation("Value is {Value} while default value is 12", maxDiffranceHours);
@@ -70,12 +76,12 @@ namespace SomeJob
             SimpleInt += 5;
             IgnoreData = "x";
 
-            // TODO: handle!
-            ////            var a1 = fact.GetData<int>("X");
-            ////var b1 = fact.GetEffectedRows();
+            var a1 = factory.Context.MergedJobDataMap.Get<int>("X");
+            var b1 = factory.GetEffectedRows();
+            Logger.LogInformation("Test IBaseJob: X={X}, EffectedRows={EffectedRows}", a1, b1);
 
-            ////var no = fact.GetData("NoExists");
-            ////Logger.LogInformation(no);
+            var no = factory.Context.MergedJobDataMap.Exists("NoExists");
+            Logger.LogInformation("Test IBaseJob: Has NoExists? {NoExists}", no);
 
             await Task.CompletedTask;
         }

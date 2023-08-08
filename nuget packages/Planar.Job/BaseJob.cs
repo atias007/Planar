@@ -67,7 +67,7 @@ namespace Planar.Job
 
             Logger = ServiceProvider.GetRequiredService<ILogger>();
 
-            if (!PlanarJob.DebugMode)
+            if (PlanarJob.Mode == RunningMode.Release)
             {
                 MqttClient.Start(_context.FireInstanceId).ConfigureAwait(false).GetAwaiter().GetResult();
                 SpinWait.SpinUntil(() => MqttClient.IsConnected, TimeSpan.FromSeconds(5));
@@ -92,7 +92,7 @@ namespace Planar.Job
             catch (Exception ex)
             {
                 _baseJobFactory.ReportException(ex);
-                if (PlanarJob.DebugMode)
+                if (PlanarJob.Mode == RunningMode.Debug)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.Error.WriteLine(ex);
@@ -214,7 +214,7 @@ namespace Planar.Job
             if (task.Exception != null)
             {
                 _baseJobFactory.ReportException(task.Exception);
-                if (PlanarJob.DebugMode)
+                if (PlanarJob.Mode == RunningMode.Debug)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.Error.WriteLine(task.Exception);
@@ -249,7 +249,7 @@ namespace Planar.Job
                 FilterJobData(ctx.JobDetails.JobDataMap);
                 FilterJobData(ctx.TriggerDetails.TriggerDataMap);
 
-                if (PlanarJob.DebugMode)
+                if (PlanarJob.Mode == RunningMode.Debug)
                 {
                     ctx.JobSettings = new Dictionary<string, string?>(JobSettingsLoader.LoadJobSettings(ctx.JobSettings));
                 }

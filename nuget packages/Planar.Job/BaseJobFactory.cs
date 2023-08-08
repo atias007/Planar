@@ -20,6 +20,12 @@ namespace Planar.Job
             _context = context;
         }
 
+        #region Context
+
+        public IJobExecutionContext Context => _context;
+
+        #endregion Context
+
         #region Timing
 
         public TimeSpan JobRunTime

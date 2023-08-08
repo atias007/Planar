@@ -1,14 +1,24 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Planar.Job;
 
 namespace SomeJob
 {
     public class WorkerChild
     {
+        private readonly IBaseJob _base;
+        private readonly ILogger<WorkerChild> _logger;
+
         public WorkerChild(IServiceProvider serviceProvider)
         {
-            var basej = serviceProvider.GetRequiredService<IBaseJob>();
-            var util = serviceProvider.GetRequiredService<GeneralUtil>();
+            _base = serviceProvider.GetRequiredService<IBaseJob>();
+            _ = serviceProvider.GetRequiredService<GeneralUtil>();
+            _logger = serviceProvider.GetRequiredService<ILogger<WorkerChild>>();
+        }
+
+        public void TestMe()
+        {
+            _logger.LogInformation("Test IBaseJob: {JobRunTime}", _base.JobRunTime);
         }
     }
 }

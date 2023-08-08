@@ -4,6 +4,8 @@ namespace Planar.Job
 {
     public interface IBaseJob
     {
+        IJobExecutionContext Context { get; }
+
         TimeSpan JobRunTime { get; }
 
         void AddAggregateException(Exception ex);
