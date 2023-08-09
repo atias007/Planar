@@ -6,11 +6,10 @@ PLAN FOR V 1.5.0
 - cli command to changhe interval/count
 - cli command to changhe cron expr
 
-- Test: unhandled exception
-- Test: Aggregate exception
 - Test: Timeout
 - BUG: any update of job create monitor alert (delete + add)
 - when basejob report exception -> remove the last line of stack trace
+- monitor of scheduler shutdows fail due to di error (add break point on BaseListener line 42 and stop (ctrl+c) the service)
 
 - BACKLOG ----------------------------------------------------------------------------
 - add WorkflowJob

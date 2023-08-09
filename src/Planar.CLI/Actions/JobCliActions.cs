@@ -947,7 +947,7 @@ namespace Planar.CLI.Actions
             while (runResult.Data != null)
             {
                 Console.CursorTop -= 1;
-                var span = DateTime.Now.Subtract(invokeDate);
+                var span = DateTimeOffset.Now.Subtract(invokeDate);
                 var title =
                         $" [gold3_1][[x]][/] Progress: [wheat1]{runResult.Data.Progress}[/]%  |" +
                         $"  Effected Row(s): [wheat1]{runResult.Data.EffectedRows.GetValueOrDefault()}[/]  |" +

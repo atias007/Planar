@@ -25,6 +25,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="ExecuteHelper\ExecuteJobPropertiesBuilder.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <Compile Include="..\..\src\Jobs\CommonJob\ExceptionDto.cs" Link="JobExecutionContext\ExceptionDto.cs" />
 	  <Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\DataMap.cs" Link="JobExecutionContext\DataMap.cs" />
 	  <Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\IDataMap.cs" Link="JobExecutionContext\IDataMap.cs" />
@@ -40,6 +44,7 @@
       <PackagePath>\</PackagePath>
       <Pack>True</Pack>
     </None>
+    <None Include="ExecuteHelper\ExecuteJobPropertiesBuilder.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="System.Text.Json" Version="7.0.3" />

@@ -1,5 +1,6 @@
 ﻿using CommonJob.MessageBrokerEntities;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Abstractions;
 using Newtonsoft.Json;
 using Planar;
 using Planar.Common;
@@ -65,6 +66,14 @@ namespace CommonJob
         {
             if (log == null) { return; }
             LogData(log);
+        }
+
+        public void AppendLogRaw(string text)
+        {
+            lock (Locker)
+            {
+                Metadata.Log.AppendLine(text);
+            }
         }
 
         public void IncreaseEffectedRows(int delta = 1)

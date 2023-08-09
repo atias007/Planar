@@ -170,13 +170,20 @@ namespace Planar
         {
             try
             {
-                if (!_isHealthCheck)
+                if (_isHealthCheck) { return; }
+
+                if (_output.Length > 0)
+                {
+                    MessageBroker.AppendLogRaw(_output.ToString());
+                }
+                else
                 {
                     var log = new LogEntity
                     {
                         Level = LogLevel.Warning,
                         Message = "No health check signal from job. Check if the following code: \"PlanarJob.Start<TJob>();\" exists in startup of your console project"
                     };
+
                     MessageBroker.AppendLog(log);
                 }
             }
@@ -293,6 +300,7 @@ namespace Planar
 
                 case MessageBrokerChannels.HealthCheck:
                     _isHealthCheck = true;
+                    UnsubscribeOutput();
                     break;
 
                 default:

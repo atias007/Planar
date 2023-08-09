@@ -47,11 +47,66 @@ namespace Planar.Service.Monitor
             missingHooks.ForEach(h => _logger.LogWarning("Monitor with hook '{Hook}' is invalid. Missing hook in service", h));
         }
 
-        public async Task Scan(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
+        public void Scan(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
+        {
+            _ = ScanInner(@event, context, exception)
+                .ContinueWith(task =>
+                {
+                    if (task.Exception != null)
+                    {
+                        _logger.LogError(task.Exception, "Fail to handle monitor item(s)");
+                    }
+                });
+        }
+
+        public void Scan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default)
+        {
+            _ = ScanInner(@event, info, exception)
+                .ContinueWith(task =>
+                {
+                    if (task.Exception != null)
+                    {
+                        _logger.LogError(task.Exception, "Fail to handle monitor item(s)");
+                    }
+                });
+        }
+
+        private async Task ScanInner(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default)
+        {
+            List<MonitorAction> items;
+            var hookTasks = new List<Task>();
+
+            try
+            {
+                items = await LoadMonitorItems(@event);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to handle monitor item(s) --> LoadMonitorItems");
+                return;
+            }
+
+            foreach (var action in items)
+            {
+                var task = ExecuteMonitor(action, @event, info, exception);
+                hookTasks.Add(task);
+            }
+
+            try
+            {
+                await Task.WhenAll(hookTasks);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to handle monitor item(s)");
+            }
+        }
+
+        private async Task ScanInner(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
         {
             if (context == null)
             {
-                _logger.LogWarning($"IJobExecutionContext is null in {nameof(MonitorUtil)}.{nameof(MonitorUtil.Scan)}. Scan skipped");
+                _logger.LogWarning($"IJobExecutionContext is null in {nameof(MonitorUtil)}.{nameof(Scan)}. Scan skipped");
                 return;
             }
 
@@ -76,37 +131,6 @@ namespace Planar.Service.Monitor
             foreach (var action in items)
             {
                 var task = ExecuteMonitor(action, @event, context, exception);
-                hookTasks.Add(task);
-            }
-
-            try
-            {
-                await Task.WhenAll(hookTasks);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Fail to handle monitor item(s)");
-            }
-        }
-
-        public async Task Scan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default)
-        {
-            List<MonitorAction> items;
-            var hookTasks = new List<Task>();
-
-            try
-            {
-                items = await LoadMonitorItems(@event);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Fail to handle monitor item(s) --> LoadMonitorItems");
-                return;
-            }
-
-            foreach (var action in items)
-            {
-                var task = ExecuteMonitor(action, @event, info, exception);
                 hookTasks.Add(task);
             }
 

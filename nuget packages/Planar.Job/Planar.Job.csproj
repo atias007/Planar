@@ -32,6 +32,7 @@
 		<Compile Include="..\..\src\Jobs\PlanarJob\MessageBrokerChannels.cs" Link="MessageBrokerChannels.cs" />
 		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
 		<Compile Include="..\Planar.Common\ExecuteHelper\ExecuteJobProperties.cs" Link="ExecuteHelper\ExecuteJobProperties.cs" />
+		<Compile Include="..\Planar.Common\ExecuteHelper\ExecuteJobPropertiesBuilder.cs" Link="ExecuteHelper\ExecuteJobPropertiesBuilder.cs" />
 		<Compile Include="..\Planar.Common\Extensions.cs" Link="Extensions.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\DataMapUtils.cs" Link="JobExecutionContext\DataMapUtils.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\MockJobDetails.cs" Link="JobExecutionContext\MockJobDetails.cs" />

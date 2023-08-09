@@ -24,50 +24,65 @@ namespace Planar.Service.Listeners
 
         public Task JobAdded(IJobDetail jobDetail, CancellationToken cancellationToken = default)
         {
-            if (IsSystemJob(jobDetail)) { return Task.CompletedTask; }
-            var id = JobKeyHelper.GetJobId(jobDetail);
-            if (IsLock(nameof(JobAdded), id)) { return Task.CompletedTask; }
+            return Task.Run(() =>
+            {
+                if (IsSystemJob(jobDetail)) { return; }
+                var id = JobKeyHelper.GetJobId(jobDetail);
+                if (IsLock(nameof(JobAdded), id)) { return; }
 
-            var info = new MonitorSystemInfo
-            (
-                "Job {{JobGroup}}.{{JobName}} (Id: {{JobId}}) with description {{Description}} was added"
-            );
+                var info = new MonitorSystemInfo
+                (
+                    "Job {{JobGroup}}.{{JobName}} (Id: {{JobId}}) with description {{Description}} was added"
+                );
 
-            info.MessagesParameters.Add("JobGroup", jobDetail.Key.Group);
-            info.MessagesParameters.Add("JobName", jobDetail.Key.Name);
-            info.MessagesParameters.Add("JobId", id);
-            info.MessagesParameters.Add("Description", jobDetail.Description);
-            info.AddMachineName();
+                info.MessagesParameters.Add("JobGroup", jobDetail.Key.Group);
+                info.MessagesParameters.Add("JobName", jobDetail.Key.Name);
+                info.MessagesParameters.Add("JobId", id);
+                info.MessagesParameters.Add("Description", jobDetail.Description);
+                info.AddMachineName();
 
-            return SafeSystemScan(MonitorEvents.JobAdded, info, null);
+                SafeSystemScan(MonitorEvents.JobAdded, info, null);
+            }, cancellationToken);
         }
 
         public Task JobDeleted(JobKey jobKey, CancellationToken cancellationToken = default)
         {
-            if (IsLock(nameof(JobDeleted), jobKey.ToString())) { return Task.CompletedTask; }
-            var info = GetJobKeyMonitorSystemInfo(jobKey, "deleted");
-            return SafeSystemScan(MonitorEvents.JobDeleted, info, null);
+            return Task.Run(() =>
+            {
+                if (IsLock(nameof(JobDeleted), jobKey.ToString())) { return; }
+                var info = GetJobKeyMonitorSystemInfo(jobKey, "deleted");
+                SafeSystemScan(MonitorEvents.JobDeleted, info, null);
+            }, cancellationToken);
         }
 
         public Task JobInterrupted(JobKey jobKey, CancellationToken cancellationToken = default)
         {
-            if (IsLock(nameof(JobInterrupted), jobKey.ToString())) { return Task.CompletedTask; }
-            var info = GetJobKeyMonitorSystemInfo(jobKey, "interrupted");
-            return SafeSystemScan(MonitorEvents.JobCanceled, info, null);
+            return Task.Run(() =>
+            {
+                if (IsLock(nameof(JobInterrupted), jobKey.ToString())) { return; }
+                var info = GetJobKeyMonitorSystemInfo(jobKey, "interrupted");
+                SafeSystemScan(MonitorEvents.JobCanceled, info, null);
+            }, cancellationToken);
         }
 
         public Task JobPaused(JobKey jobKey, CancellationToken cancellationToken = default)
         {
-            if (IsLock(nameof(JobPaused), jobKey.ToString())) { return Task.CompletedTask; }
-            var info = GetJobKeyMonitorSystemInfo(jobKey, "paused");
-            return SafeSystemScan(MonitorEvents.JobPaused, info, null);
+            return Task.Run(() =>
+            {
+                if (IsLock(nameof(JobPaused), jobKey.ToString())) { return; }
+                var info = GetJobKeyMonitorSystemInfo(jobKey, "paused");
+                SafeSystemScan(MonitorEvents.JobPaused, info, null);
+            }, cancellationToken);
         }
 
         public Task JobResumed(JobKey jobKey, CancellationToken cancellationToken = default)
         {
-            if (IsLock(nameof(JobResumed), jobKey.ToString())) { return Task.CompletedTask; }
-            var info = GetJobKeyMonitorSystemInfo(jobKey, "resumed");
-            return SafeSystemScan(MonitorEvents.JobPaused, info, null);
+            return Task.Run(() =>
+            {
+                if (IsLock(nameof(JobResumed), jobKey.ToString())) { return; }
+                var info = GetJobKeyMonitorSystemInfo(jobKey, "resumed");
+                SafeSystemScan(MonitorEvents.JobPaused, info, null);
+            }, cancellationToken);
         }
 
         public Task JobScheduled(ITrigger trigger, CancellationToken cancellationToken = default)
@@ -77,16 +92,22 @@ namespace Planar.Service.Listeners
 
         public Task JobsPaused(string jobGroup, CancellationToken cancellationToken = default)
         {
-            if (IsLock(nameof(JobsPaused), jobGroup)) { return Task.CompletedTask; }
-            var info = GetSimpleMonitorSystemInfo("Job group {{JobGroup}} was paused");
-            return SafeSystemScan(MonitorEvents.JobGroupPaused, info, null);
+            return Task.Run(() =>
+            {
+                if (IsLock(nameof(JobsPaused), jobGroup)) { return; }
+                var info = GetSimpleMonitorSystemInfo("Job group {{JobGroup}} was paused");
+                SafeSystemScan(MonitorEvents.JobGroupPaused, info, null);
+            }, cancellationToken);
         }
 
         public Task JobsResumed(string jobGroup, CancellationToken cancellationToken = default)
         {
-            if (IsLock(nameof(JobsResumed), jobGroup)) { return Task.CompletedTask; }
-            var info = GetSimpleMonitorSystemInfo("Job group {{JobGroup}} was resumed");
-            return SafeSystemScan(MonitorEvents.JobGroupResumed, info, null);
+            return Task.Run(() =>
+            {
+                if (IsLock(nameof(JobsResumed), jobGroup)) { return; }
+                var info = GetSimpleMonitorSystemInfo("Job group {{JobGroup}} was resumed");
+                SafeSystemScan(MonitorEvents.JobGroupResumed, info, null);
+            }, cancellationToken);
         }
 
         public Task JobUnscheduled(TriggerKey triggerKey, CancellationToken cancellationToken = default)
@@ -101,16 +122,20 @@ namespace Planar.Service.Listeners
 
         public Task SchedulerInStandbyMode(CancellationToken cancellationToken = default)
         {
+            // *** DONT USE TASK.RUN ***
             if (IsLock(nameof(SchedulerInStandbyMode), null)) { return Task.CompletedTask; }
             var info = GetSimpleMonitorSystemInfo("Scheduler is in standby mode at {{MachineName}}");
-            return SafeSystemScan(MonitorEvents.SchedulerInStandbyMode, info, null);
+            SafeSystemScan(MonitorEvents.SchedulerInStandbyMode, info, null);
+            return Task.CompletedTask;
         }
 
         public Task SchedulerShutdown(CancellationToken cancellationToken = default)
         {
+            // *** DONT USE TASK.RUN ***
             if (IsLock(nameof(SchedulerShutdown), null)) { return Task.CompletedTask; }
             var info = GetSimpleMonitorSystemInfo("Scheduler was shutdown at {{MachineName}}");
-            return SafeSystemScan(MonitorEvents.SchedulerInStandbyMode, info, null);
+            SafeSystemScan(MonitorEvents.SchedulerShutdown, info, null);
+            return Task.CompletedTask;
         }
 
         public Task SchedulerShuttingdown(CancellationToken cancellationToken = default)
@@ -120,9 +145,12 @@ namespace Planar.Service.Listeners
 
         public Task SchedulerStarted(CancellationToken cancellationToken = default)
         {
-            if (IsLock(nameof(SchedulerStarted), null)) { return Task.CompletedTask; }
-            var info = GetSimpleMonitorSystemInfo("Scheduler was started at {{MachineName}}");
-            return SafeSystemScan(MonitorEvents.SchedulerStarted, info, null);
+            return Task.Run(() =>
+            {
+                if (IsLock(nameof(SchedulerStarted), null)) { return; }
+                var info = GetSimpleMonitorSystemInfo("Scheduler was started at {{MachineName}}");
+                SafeSystemScan(MonitorEvents.SchedulerStarted, info, null);
+            }, cancellationToken);
         }
 
         public Task SchedulerStarting(CancellationToken cancellationToken = default)
@@ -142,16 +170,22 @@ namespace Planar.Service.Listeners
 
         public Task TriggerPaused(TriggerKey triggerKey, CancellationToken cancellationToken = default)
         {
-            if (IsLock(nameof(TriggerPaused), triggerKey.ToString())) { return Task.CompletedTask; }
-            var info = GetTriggerKeyMonitorSystemInfo(triggerKey, "paused");
-            return SafeSystemScan(MonitorEvents.TriggerPaused, info, null);
+            return Task.Run(() =>
+            {
+                if (IsLock(nameof(TriggerPaused), triggerKey.ToString())) { return; }
+                var info = GetTriggerKeyMonitorSystemInfo(triggerKey, "paused");
+                SafeSystemScan(MonitorEvents.TriggerPaused, info, null);
+            }, cancellationToken);
         }
 
         public Task TriggerResumed(TriggerKey triggerKey, CancellationToken cancellationToken = default)
         {
-            if (IsLock(nameof(TriggerResumed), triggerKey.ToString())) { return Task.CompletedTask; }
-            var info = GetTriggerKeyMonitorSystemInfo(triggerKey, "resumed");
-            return SafeSystemScan(MonitorEvents.TriggerResumed, info, null);
+            return Task.Run(() =>
+            {
+                if (IsLock(nameof(TriggerResumed), triggerKey.ToString())) { return; }
+                var info = GetTriggerKeyMonitorSystemInfo(triggerKey, "resumed");
+                SafeSystemScan(MonitorEvents.TriggerResumed, info, null);
+            }, cancellationToken);
         }
 
         public Task TriggersPaused(string? triggerGroup, CancellationToken cancellationToken = default)
@@ -164,11 +198,9 @@ namespace Planar.Service.Listeners
             return Task.CompletedTask;
         }
 
-        private static MonitorSystemInfo GetSimpleMonitorSystemInfo(string messageTemplate)
+        private static string GetCacheKey(string operation, string key)
         {
-            var info = new MonitorSystemInfo(messageTemplate);
-            info.AddMachineName();
-            return info;
+            return string.Format(_cacheKey, operation, key);
         }
 
         private static MonitorSystemInfo GetJobKeyMonitorSystemInfo(JobKey jobKey, string title)
@@ -184,6 +216,13 @@ namespace Planar.Service.Listeners
             return info;
         }
 
+        private static MonitorSystemInfo GetSimpleMonitorSystemInfo(string messageTemplate)
+        {
+            var info = new MonitorSystemInfo(messageTemplate);
+            info.AddMachineName();
+            return info;
+        }
+
         private static MonitorSystemInfo GetTriggerKeyMonitorSystemInfo(TriggerKey triggerKey, string title)
         {
             var info = new MonitorSystemInfo
@@ -195,11 +234,6 @@ namespace Planar.Service.Listeners
             info.MessagesParameters.Add("TriggerName", triggerKey.Name);
             info.AddMachineName();
             return info;
-        }
-
-        private static string GetCacheKey(string operation, string key)
-        {
-            return string.Format(_cacheKey, operation, key);
         }
 
         private static bool IsLock(string operation, string? key)

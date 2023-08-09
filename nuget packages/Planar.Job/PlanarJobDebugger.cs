@@ -13,7 +13,7 @@ namespace Planar.Job
         {
         }
 
-        public void AddProfile<T>(string name, Action<ExecuteJobPropertiesBuilder> builderAction)
+        public void AddProfile<T>(string name, Action<IExecuteJobPropertiesBuilder> builderAction)
             where T : class, new()
         {
             if (_profiles.ContainsKey(name))
@@ -31,7 +31,7 @@ namespace Planar.Job
                 throw new PlanarJobException($"Debug profile name has {name.Length} chars. Maximum allowed chars is 20");
             }
 
-            var builder = ExecuteJobPropertiesBuilder.CreateBuilderForJob<T>();
+            var builder = new ExecuteJobPropertiesBuilder(typeof(T)).SetDevelopmentEnvironment();
             builderAction(builder);
             var properties = builder.Build();
             _profiles.Add(name, properties);

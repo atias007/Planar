@@ -1,4 +1,5 @@
-﻿using Planar.Common;
+﻿using Microsoft.Extensions.Logging;
+using Planar.Common;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -15,18 +16,6 @@ namespace Planar.Job
         Release
     }
 
-    internal class Argument
-    {
-        public string? Key { get; set; }
-
-        public string? Value { get; set; }
-
-        public override string ToString()
-        {
-            return $"{Key}: {Value}";
-        }
-    }
-
     public static class PlanarJob
     {
         public static PlanarJobDebugger Debugger { get; } = new PlanarJobDebugger();
@@ -41,7 +30,17 @@ namespace Planar.Job
         {
             Stopwatch.Start();
             FillProperties();
-            Execute<TJob>();
+            try
+            {
+                Execute<TJob>();
+            }
+            catch (Exception ex)
+            {
+                var log = new LogEntity { Level = LogLevel.Critical, Message = $"Fail to execute {typeof(TJob).Name}" };
+                Console.Error.WriteLine(log.ToString());
+                log.Message = ex.ToString();
+                Console.Error.WriteLine(log.ToString());
+            }
         }
 
         private static string DecodeBase64ToString(string base64String)
@@ -103,7 +102,7 @@ namespace Planar.Job
             var source = System.Environment.GetCommandLineArgs();
             for (int i = 0; i < source.Length; i++)
             {
-                Arguments.Add(new Argument { Key = source[i]?.ToLower() });
+                Arguments.Add(new Argument { Key = source[i] });
             }
 
             for (int i = 1; i < Arguments.Count; i++)
@@ -113,7 +112,7 @@ namespace Planar.Job
 
                 if (IsKeyArgument(item1) && !IsKeyArgument(item2))
                 {
-                    item1.Value = item2.Key?.ToLower();
+                    item1.Value = item2.Key;
                     item2.Key = null;
                     i++;
                 }
@@ -138,7 +137,7 @@ namespace Planar.Job
 
         private static Argument? GetArgument(string key)
         {
-            return Arguments.Find(a => a.Key == key?.ToLower());
+            return Arguments.Find(a => string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
         }
 
         private static string GetJsonFromArgs()
@@ -181,7 +180,7 @@ namespace Planar.Job
 
         private static bool HasArgument(string key)
         {
-            return Arguments.Exists(a => a.Key == key?.ToLower());
+            return Arguments.Exists(a => string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
         }
 
         private static bool IsKeyArgument(Argument arg)
@@ -200,7 +199,7 @@ namespace Planar.Job
         }
 
         private static string ShowDebugMenu<TJob>()
-                                                                            where TJob : class, new()
+            where TJob : class, new()
         {
             if (Debugger.Profiles.Any())
             {
@@ -241,7 +240,7 @@ namespace Planar.Job
             var selectedIndex = GetMenuItem();
             if (selectedIndex == null)
             {
-                var properties = ExecuteJobPropertiesBuilder.CreateBuilderForJob<TJob>().Build();
+                var properties = new ExecuteJobPropertiesBuilder(typeof(TJob)).SetDevelopmentEnvironment().Build();
                 var context = new MockJobExecutionContext(properties);
                 var json = JsonSerializer.Serialize(context);
                 return json;

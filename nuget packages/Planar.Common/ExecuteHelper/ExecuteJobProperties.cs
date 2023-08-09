@@ -5,7 +5,7 @@ namespace Planar.Common
 {
     internal class ExecuteJobProperties : IExecuteJobProperties
     {
-        private const string DefaultEnvironment = "UnitTest";
+        private const string DefaultEnvironment = "Unknown";
         private const string DefaultGroup = "Default";
         private const string DefaultJobName = "TestJob";
         private const string DefaultTriggerName = "TestTrigger";

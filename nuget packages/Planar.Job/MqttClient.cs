@@ -1,5 +1,6 @@
 ﻿using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.NewtonsoftJson;
+using Microsoft.Extensions.Logging;
 using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Extensions.ManagedClient;
@@ -95,17 +96,23 @@ namespace Planar
 
         private static async Task ConnectingFailedAsync(ConnectingFailedEventArgs arg)
         {
-            await Console.Error.WriteLineAsync("[x] Couldn't connect to mqtt broker!");
+            var log = new LogEntity { Level = LogLevel.Critical, Message = $"Couldn't connect to mqtt broker! (port {_port})" };
+            await Console.Error.WriteLineAsync(log.ToString());
+
+            log = new LogEntity { Level = LogLevel.Critical, Message = arg.Exception.ToString() };
+            await Console.Error.WriteLineAsync(log.ToString());
         }
 
         private static async Task DisconnectedAsync(MqttClientDisconnectedEventArgs arg)
         {
-            await Console.Out.WriteLineAsync("[x] Successfully disconnected.");
+            var log = new LogEntity { Level = LogLevel.Error, Message = "Successfully disconnected" };
+            await Console.Out.WriteLineAsync(log.ToString());
         }
 
         private static async Task ConnectedAsync(MqttClientConnectedEventArgs arg)
         {
-            await Console.Out.WriteLineAsync("[x] Successfully connected.");
+            var log = new LogEntity { Level = LogLevel.Error, Message = "Successfully connected" };
+            await Console.Out.WriteLineAsync(log.ToString());
         }
     }
 }

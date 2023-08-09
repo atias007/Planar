@@ -1,7 +1,6 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
@@ -24,22 +23,45 @@ namespace Planar.Service.Listeners
 
         public Task TriggerComplete(ITrigger trigger, IJobExecutionContext context, SchedulerInstruction triggerInstructionCode, CancellationToken cancellationToken = default)
         {
+            return Task.Run(() =>
+                {
+                    TriggerCompleteInner(trigger, context, cancellationToken);
+                }, cancellationToken);
+        }
+
+        public Task TriggerFired(ITrigger trigger, IJobExecutionContext context, CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task TriggerMisfired(ITrigger trigger, CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task<bool> VetoJobExecution(ITrigger trigger, IJobExecutionContext context, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(false);
+        }
+
+        private void TriggerCompleteInner(ITrigger trigger, IJobExecutionContext context, CancellationToken cancellationToken = default)
+        {
             try
             {
                 // Ignore system job / trigger
-                if (IsSystemTrigger(trigger)) { return Task.CompletedTask; }
-                if (IsSystemJob(context.JobDetail)) { return Task.CompletedTask; }
+                if (IsSystemTrigger(trigger)) { return; }
+                if (IsSystemJob(context.JobDetail)) { return; }
 
                 // Ignore success running
                 var metadata = JobExecutionMetadata.GetInstance(context);
-                if (metadata.IsRunningSuccess) { return Task.CompletedTask; }
+                if (metadata.IsRunningSuccess) { return; }
 
                 // Ignore triggers with no retry
-                if (!TriggerHelper.HasRetry(trigger)) { return Task.CompletedTask; }
+                if (!TriggerHelper.HasRetry(trigger)) { return; }
 
                 // Ignore trigger with no trigger span
                 var span = TriggerHelper.GetRetrySpan(trigger);
-                if (span == null) { return Task.CompletedTask; }
+                if (span == null) { return; }
 
                 // Get retry counters
                 var numTries = TriggerHelper.GetRetryNumber(trigger) ?? 0;
@@ -50,7 +72,7 @@ namespace Planar.Service.Listeners
                 if (numTries >= maxRetries)
                 {
                     _logger.LogError("Job with key {Key} fail and retry for {MaxRetries} times but failed each time", key, maxRetries);
-                    return SafeScan(MonitorEvents.ExecutionLastRetryFail, context);
+                    SafeScan(MonitorEvents.ExecutionLastRetryFail, context);
                 }
 
                 // Calculate the next start retry
@@ -83,28 +105,12 @@ namespace Planar.Service.Listeners
                         .Build();
 
                 context.Scheduler.ScheduleJob(retryTrigger, cancellationToken).Wait(cancellationToken);
-                return SafeScan(MonitorEvents.ExecutionRetry, context);
+                SafeScan(MonitorEvents.ExecutionRetry, context);
             }
             catch (Exception ex)
             {
                 LogCritical(nameof(TriggerComplete), ex);
-                return Task.CompletedTask;
             }
-        }
-
-        public Task TriggerFired(ITrigger trigger, IJobExecutionContext context, CancellationToken cancellationToken = default)
-        {
-            return Task.CompletedTask;
-        }
-
-        public Task TriggerMisfired(ITrigger trigger, CancellationToken cancellationToken = default)
-        {
-            return Task.CompletedTask;
-        }
-
-        public Task<bool> VetoJobExecution(ITrigger trigger, IJobExecutionContext context, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(false);
         }
     }
 }

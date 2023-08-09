@@ -22,16 +22,16 @@ namespace Planar.Service.SystemJobs
             _logger = _serviceProvider.GetRequiredService<ILogger<ClusterHealthCheckJob>>();
         }
 
-        public Task Execute(IJobExecutionContext context)
+        public async Task Execute(IJobExecutionContext context)
         {
             try
             {
-                return DoWork();
+                await DoWork();
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Fail check health of cluster: {Message}", ex.Message);
-                return _monitorUtil.Scan(MonitorEvents.ClusterHealthCheckFail, context, ex);
+                _monitorUtil.Scan(MonitorEvents.ClusterHealthCheckFail, context, ex);
             }
         }
 

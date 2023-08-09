@@ -26,7 +26,7 @@ namespace Planar.Service.Listeners.Base
 
         protected IServiceScopeFactory ServiceScopeFactory => _serviceScopeFactory;
 
-        protected async Task SafeSystemScan(MonitorEvents @event, MonitorSystemInfo details, Exception? exception = default)
+        protected void SafeSystemScan(MonitorEvents @event, MonitorSystemInfo details, Exception? exception = default)
         {
             try
             {
@@ -34,7 +34,7 @@ namespace Planar.Service.Listeners.Base
 
                 using var scope = _serviceScopeFactory.CreateScope();
                 var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
-                await monitor.Scan(@event, details, exception);
+                monitor.Scan(@event, details, exception);
             }
             catch (ObjectDisposedException)
             {
@@ -47,7 +47,7 @@ namespace Planar.Service.Listeners.Base
             }
         }
 
-        protected async Task SafeScan(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
+        protected void SafeScan(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
         {
             try
             {
@@ -55,7 +55,7 @@ namespace Planar.Service.Listeners.Base
 
                 using var scope = _serviceScopeFactory.CreateScope();
                 var monitor = scope.ServiceProvider.GetRequiredService<IMonitorUtil>();
-                await monitor.Scan(@event, context, exception);
+                monitor.Scan(@event, context, exception);
             }
             catch (ObjectDisposedException)
             {
