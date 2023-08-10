@@ -4,6 +4,9 @@ group: Infrastructure
 description: Download daily currency data and save it to disk as xml 
 durable: true
 concurrent: false
+author: israel israeli (sales)
+log retention days: 4
+
 properties:
   filename: BankOfIsraelCurrency.exe
 simple triggers:

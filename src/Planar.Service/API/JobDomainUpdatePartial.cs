@@ -110,10 +110,18 @@ namespace Planar.Service.API
             if (options.UpdateJobDetails)
             {
                 metadata.JobDetails.JobDataMap.Put(Consts.Author, request.Author);
+                if (request.LogRetentionDays.HasValue)
+                {
+                    metadata.JobDetails.JobDataMap.Put(Consts.LogRetentionDays, request.LogRetentionDays.Value.ToString());
+                }
             }
             else
             {
                 metadata.JobDetails.JobDataMap.Put(Consts.Author, metadata.Author);
+                if (metadata.LogRetentionDays.HasValue)
+                {
+                    metadata.JobDetails.JobDataMap.Put(Consts.LogRetentionDays, metadata.LogRetentionDays.Value.ToString());
+                }
             }
 
             await Task.CompletedTask;
@@ -162,6 +170,7 @@ namespace Planar.Service.API
             metadata.EnableRollback();
             metadata.OldJobProperties = await DataLayer.GetJobProperty(metadata.JobId);
             metadata.Author = JobHelper.GetJobAuthor(metadata.OldJobDetails);
+            metadata.LogRetentionDays = JobHelper.GetLogRetentionDays(metadata.OldJobDetails);
         }
 
         private async Task RollBack(JobUpdateMetadata metadata)

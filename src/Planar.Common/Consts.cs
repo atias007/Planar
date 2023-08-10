@@ -19,7 +19,8 @@ namespace Planar
             TriggerId,
             TriggerTimeout,
             NowOverrideValue,
-            Author
+            Author,
+            LogRetentionDays
         };
 
         public const string Undefined = "undefined";
@@ -39,6 +40,7 @@ namespace Planar
 
         public const string JobId = "__Job_Id";
         public const string Author = "__Author";
+        public const string LogRetentionDays = "__LogRetentionDays";
         public const string TriggerId = "__Trigger_Id";
         public const string TriggerTimeout = "__Trigger_Timeout";
         public const string NowOverrideValue = "__Now_Override_Value";

@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
@@ -113,10 +114,14 @@ namespace Planar.Service.API
 
         private static void AddAuthor(SetJobRequest metadata, IJobDetail job)
         {
-            if (!string.IsNullOrEmpty(metadata.Author))
-            {
-                job.JobDataMap.Put(Consts.Author, metadata.Author);
-            }
+            if (string.IsNullOrEmpty(metadata.Author)) { return; }
+            job.JobDataMap.Put(Consts.Author, metadata.Author);
+        }
+
+        private static void AddLogRetentionDays(SetJobRequest metadata, IJobDetail job)
+        {
+            if (metadata.LogRetentionDays == null) { return; }
+            job.JobDataMap.Put(Consts.LogRetentionDays, metadata.LogRetentionDays.Value.ToString());
         }
 
         private static void BuidCronSchedule(CronScheduleBuilder builder, JobCronTriggerMetadata trigger)
@@ -500,6 +505,7 @@ namespace Planar.Service.API
 
             ValidateRange(metadata.Name, 5, 50, "name", "job");
             ValidateRange(metadata.Group, 1, 50, "group", "job");
+            ValidateRangeValue(metadata.LogRetentionDays, 1, 1000, "log retention days", "job");
             ValidateMaxLength(metadata.Author, 200, "author", "job");
             ValidateMaxLength(metadata.Description, 100, "description", "job");
 
@@ -764,8 +770,9 @@ namespace Planar.Service.API
             // Create Job (JobType+Concurrent, JobGroup, JobName, Description, Durable)
             var job = BuildJobDetails(request, jobKey);
 
-            // Add Author
+            // Add Author, RetentionDays
             AddAuthor(request, job);
+            AddLogRetentionDays(request, job);
 
             // Build Data
             BuildJobData(request, job);

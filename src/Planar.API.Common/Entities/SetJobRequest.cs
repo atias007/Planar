@@ -20,6 +20,9 @@ namespace Planar.API.Common.Entities
 
         public bool Concurrent { get; set; }
 
+        [YamlMember(Alias = "log retention days")]
+        public int? LogRetentionDays { get; set; }
+
         [YamlMember(Alias = "job data")]
         public Dictionary<string, string?> JobData { get; set; } = new();
 
