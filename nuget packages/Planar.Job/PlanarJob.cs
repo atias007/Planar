@@ -147,17 +147,17 @@ namespace Planar.Job
             return json;
         }
 
-        private static int? GetMenuItem()
+        private static int? GetMenuItem(bool quiet)
         {
             int index = 0;
             var valid = false;
             while (!valid)
             {
-                Console.Write("Code: ");
+                if (!quiet) { Console.Write("Code: "); }
                 var selected = Console.ReadLine();
                 if (string.IsNullOrEmpty(selected))
                 {
-                    Console.WriteLine("<Default>");
+                    if (!quiet) { Console.WriteLine("<Default>"); }
                     return null;
                 }
 
@@ -201,6 +201,8 @@ namespace Planar.Job
         private static string ShowDebugMenu<TJob>()
             where TJob : class, new()
         {
+            int? selectedIndex;
+
             if (Debugger.Profiles.Any())
             {
                 var typeName = typeof(TJob).Name;
@@ -221,6 +223,7 @@ namespace Planar.Job
                 Console.WriteLine("------------------");
                 PrintMenuItem("<Default>", "Enter");
                 Console.WriteLine();
+                selectedIndex = GetMenuItem(quiet: false);
             }
             else
             {
@@ -235,9 +238,9 @@ namespace Planar.Job
                 Console.ResetColor();
                 Console.WriteLine("job with default profile");
                 Console.WriteLine();
+                selectedIndex = GetMenuItem(quiet: true);
             }
 
-            var selectedIndex = GetMenuItem();
             if (selectedIndex == null)
             {
                 var properties = new ExecuteJobPropertiesBuilder(typeof(TJob)).SetDevelopmentEnvironment().Build();

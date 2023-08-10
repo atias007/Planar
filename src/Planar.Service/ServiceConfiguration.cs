@@ -41,7 +41,7 @@ namespace Planar.Service
             // Utils
             services.AddScoped<ClusterUtil>();
             services.AddScoped<MonitorUtil>();
-            services.AddScoped<IMonitorUtil, MonitorUtil>();
+            services.AddScoped<IMonitorUtil>(p => p.GetRequiredService<MonitorUtil>());
 
             // AutoMapper
             services.AddAutoMapper(Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));
@@ -117,7 +117,7 @@ namespace Planar.Service
             return services;
         }
 
-        private static IServiceCollection AddPlanarDbContext(this IServiceCollection services)
+        internal static IServiceCollection AddPlanarDbContext(this IServiceCollection services)
         {
             services.AddDbContext<PlanarContext>(o => o.UseSqlServer(
                     AppSettings.DatabaseConnectionString,

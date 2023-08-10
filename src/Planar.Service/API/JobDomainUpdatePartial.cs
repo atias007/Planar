@@ -5,6 +5,7 @@ using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
+using Planar.Service.Monitor;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -192,6 +193,9 @@ namespace Planar.Service.API
 
         private async Task<JobIdResponse> UpdateInner(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
         {
+            var monitor = Resolve<MonitorUtil>();
+            monitor.LockJobEvent(metadata.JobKey, MonitorEvents.JobDeleted, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+
             // Validation
             await ValidateUpdateJob(request, options, metadata);
 

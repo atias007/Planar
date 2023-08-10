@@ -54,7 +54,7 @@ namespace Planar.Service.Listeners.Base
                 if (MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
 
                 using var scope = _serviceScopeFactory.CreateScope();
-                var monitor = scope.ServiceProvider.GetRequiredService<IMonitorUtil>();
+                var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
                 monitor.Scan(@event, context, exception);
             }
             catch (ObjectDisposedException)
@@ -76,7 +76,7 @@ namespace Planar.Service.Listeners.Base
         #region Execute Data Layer
 
         protected async Task ExecuteDal<TDataLayer>(Expression<Func<TDataLayer, Task>> exp)
-    where TDataLayer : BaseDataLayer
+            where TDataLayer : BaseDataLayer
         {
             try
             {

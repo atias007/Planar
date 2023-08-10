@@ -91,6 +91,7 @@ namespace Planar.Job
             }
             catch (Exception ex)
             {
+                var text = GetExceptionText(ex);
                 _baseJobFactory.ReportException(ex);
                 if (PlanarJob.Mode == RunningMode.Debug)
                 {
@@ -205,6 +206,14 @@ namespace Planar.Job
                     ((DataMap)dictionary).Remove(item);
                 }
             }
+        }
+
+        private static string GetExceptionText(Exception ex)
+        {
+            var lines = ex.ToString().Split('\n');
+            var filterLines = lines.Where(l => !l.Contains($"{nameof(Planar)}.{nameof(Job)}\\{nameof(BaseJob)}.cs"));
+            var text = string.Join("\n", filterLines);
+            return text;
         }
 
         private void HandleTaskContinue(Task task)

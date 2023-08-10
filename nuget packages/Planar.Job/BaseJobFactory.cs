@@ -159,7 +159,12 @@ namespace Planar.Job
 
         public void ReportException(Exception ex)
         {
-            MqttClient.Publish(MessageBrokerChannels.ReportException, ex.ToString()).ConfigureAwait(false).GetAwaiter().GetResult();
+            ReportExceptionText(ex.ToString());
+        }
+
+        public void ReportExceptionText(string text)
+        {
+            MqttClient.Publish(MessageBrokerChannels.ReportException, text).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         #endregion Inner
