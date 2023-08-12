@@ -498,6 +498,11 @@ namespace Planar.Service.API
                 ValidateMaxLength(item.Value, 1000, "value", "job data");
             }
 
+            if (metadata.LogRetentionDays.GetValueOrDefault() > AppSettings.ClearJobLogTableOverDays)
+            {
+                throw new RestValidationException("log retention days", $"log retention days can not be greater than {AppSettings.ClearJobLogTableOverDays} (global app settings)");
+            }
+
             #endregion Max Chars / Value
 
             #region JobData
