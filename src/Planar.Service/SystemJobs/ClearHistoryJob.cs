@@ -184,7 +184,7 @@ namespace Planar.Service.SystemJobs
                 {
                     if (!existsIds.Contains(id))
                     {
-                        var stat = new JobDurationStatistic { JobId = id };
+                        var stat = new JobEffectedRowsStatistic { JobId = id };
                         await data.DeleteJobStatistic(stat);
                         _logger.LogDebug("delete job effected rows statistics for job id {JobId}", id);
                         rows++;

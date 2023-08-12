@@ -78,6 +78,8 @@
     <EmbeddedResource Include="Scripts\Planar_0034 - fix clear start sp.sql" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="dbup-sqlserver" Version="5.0.8" />
+    <PackageReference Include="dbup-sqlserver" Version="5.0.8">
+      <IncludeAssets></IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 </Project>

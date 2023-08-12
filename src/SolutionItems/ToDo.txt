@@ -1,12 +1,12 @@
 ﻿--------------------------------------------------------
 PLAN FOR V 1.5.0
 ----------------
-- add job yml field: log retention days
 - cli command to changhe interval/count
 - cli command to changhe cron expr
 - add job update monitor event
-
+- dapper: return await DbConnection.ExecuteAsync(cmd); return always -1
 - Test: Timeout
+- MQTT - todo in code
 
 
 - BACKLOG ----------------------------------------------------------------------------
@@ -209,3 +209,4 @@ V1.5.0
 - security audit (all login senarios, change role of group, add/remove user from group)
 - always remove swagger & redoc on production
 - BUG: any update of job create monitor alert (delete + add)
+- add job yml field: log retention days

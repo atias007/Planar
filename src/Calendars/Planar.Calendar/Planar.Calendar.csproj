@@ -17,8 +17,8 @@
 
 	<ItemGroup>
 		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageReference Include="Quartz" Version="3.6.3" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.6.0.74858">
+		<PackageReference Include="Quartz" Version="3.7.0" />
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.7.0.75501">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
