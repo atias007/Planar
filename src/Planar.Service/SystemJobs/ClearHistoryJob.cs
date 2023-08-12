@@ -45,6 +45,7 @@ namespace Planar.Service.SystemJobs
             await Task.WhenAll(
                 ClearTrace(),
                 ClearJobLog(),
+                ClearJobWithRetentionDaysLog(),
                 ClearStatistics(),
                 ClearProperties(ids.Result),
                 ClearJobStatistics(ids.Result)
@@ -69,13 +70,39 @@ namespace Planar.Service.SystemJobs
         {
             try
             {
-                var data = _serviceProvider.GetRequiredService<TraceData>();
+                var data = _serviceProvider.GetRequiredService<HistoryData>();
                 var rows = await data.ClearJobLogTable(AppSettings.ClearJobLogTableOverDays);
                 _logger.LogDebug("clear job log table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.ClearJobLogTableOverDays, rows);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "fail to clear job log table rows (older then {Days} days)", AppSettings.ClearJobLogTableOverDays);
+            }
+        }
+
+        private async Task ClearJobWithRetentionDaysLog()
+        {
+            try
+            {
+                var scheduler = _serviceProvider.GetRequiredService<IScheduler>();
+                var jobs = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+                var data = _serviceProvider.GetRequiredService<HistoryData>();
+
+                foreach (var item in jobs)
+                {
+                    var job = await scheduler.GetJobDetail(item);
+                    if (job == null) { continue; }
+                    var days = JobHelper.GetLogRetentionDays(job);
+                    if (days == null) { continue; }
+                    var jobId = JobHelper.GetJobId(job);
+                    if (string.IsNullOrEmpty(jobId)) { continue; }
+                    var rows = await data.ClearJobLogTable(jobId, days.Value);
+                    _logger.LogDebug("clear job {JobId} log table rows (older then {Days} days) with {Total} effected row(s)", jobId, days, rows);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "fail to clear job log table rows (jobs with retention days)");
             }
         }
 

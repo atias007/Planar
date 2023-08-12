@@ -251,23 +251,6 @@ namespace Planar.Service.API
             }
         }
 
-        // JobType+Concurrent, JobGroup, JobName, Description, Durable
-        private static IJobDetail CloneJobDetails(IJobDetail source)
-        {
-            var jobBuilder = JobBuilder.Create(source.JobType)
-                .WithIdentity(source.Key)
-                .WithDescription(source.Description)
-                .RequestRecovery();
-
-            if (source.Durable)
-            {
-                jobBuilder = jobBuilder.StoreDurably(true);
-            }
-
-            var job = jobBuilder.Build();
-            return job;
-        }
-
         private static IEnumerable<GlobalConfig> ConvertToGlobalConfig(Dictionary<string, string?> config)
         {
             if (config == null) { return Array.Empty<GlobalConfig>(); }

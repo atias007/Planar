@@ -38,6 +38,8 @@
     <None Remove="Scripts\Planar_0030 - add_concurrent.sql" />
     <None Remove="Scripts\Planar_0031 - add_monitor_alerts.sql" />
     <None Remove="Scripts\Planar_0032 - security_audits.sql" />
+    <None Remove="Scripts\Planar_0033 - add clear job log.sql" />
+    <None Remove="Scripts\Planar_0034 - fix clear start sp.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -72,6 +74,8 @@
     <EmbeddedResource Include="Scripts\Planar_0030 - add_concurrent.sql" />
     <EmbeddedResource Include="Scripts\Planar_0031 - add_monitor_alerts.sql" />
     <EmbeddedResource Include="Scripts\Planar_0032 - security_audits.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0033 - add clear job log.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0034 - fix clear start sp.sql" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="dbup-sqlserver" Version="5.0.8" />

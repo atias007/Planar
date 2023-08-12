@@ -6,10 +6,7 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
-using Quartz;
-using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -53,36 +50,6 @@ namespace Planar.Service.API
             return allTriggers;
         }
 
-        private static DateTimeOffset GetTriggerStartAt(ITrigger trigger)
-        {
-            var delayStart = DelayStartTriggerDateTime;
-            var next = trigger.GetNextFireTimeUtc();
-            if (next == null || next < delayStart)
-            {
-                return delayStart;
-            }
-            else
-            {
-                return next.Value;
-            }
-        }
-
-        private static IReadOnlyCollection<ITrigger> RebuildOldTriggers(IReadOnlyCollection<ITrigger> triggers)
-        {
-            var result = new List<ITrigger>();
-            foreach (var item in triggers)
-            {
-                var builder = item.GetTriggerBuilder();
-                var start = GetTriggerStartAt(item);
-                builder.StartAt(start);
-
-                var trigger = builder.Build();
-                result.Add(trigger);
-            }
-
-            return new ReadOnlyCollection<ITrigger>(result);
-        }
-
         private static void SyncJobData(SetJobRequest request, JobUpdateMetadata metadata)
         {
             foreach (var item in metadata.OldJobDetails.JobDataMap)
@@ -105,23 +72,12 @@ namespace Planar.Service.API
             }
         }
 
-        private static async Task UpdateJobAuthor(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+        private static async Task UpdateJobExtendedProperties(SetJobDynamicRequest request, JobUpdateMetadata metadata)
         {
-            if (options.UpdateJobDetails)
+            metadata.JobDetails.JobDataMap.Put(Consts.Author, request.Author);
+            if (request.LogRetentionDays.HasValue)
             {
-                metadata.JobDetails.JobDataMap.Put(Consts.Author, request.Author);
-                if (request.LogRetentionDays.HasValue)
-                {
-                    metadata.JobDetails.JobDataMap.Put(Consts.LogRetentionDays, request.LogRetentionDays.Value.ToString());
-                }
-            }
-            else
-            {
-                metadata.JobDetails.JobDataMap.Put(Consts.Author, metadata.Author);
-                if (metadata.LogRetentionDays.HasValue)
-                {
-                    metadata.JobDetails.JobDataMap.Put(Consts.LogRetentionDays, metadata.LogRetentionDays.Value.ToString());
-                }
+                metadata.JobDetails.JobDataMap.Put(Consts.LogRetentionDays, request.LogRetentionDays.Value.ToString());
             }
 
             await Task.CompletedTask;
@@ -151,11 +107,6 @@ namespace Planar.Service.API
             if (options == null)
             {
                 throw new RestValidationException("request", "options property is null or empty");
-            }
-
-            if (options.IsEmpty)
-            {
-                throw new RestValidationException("request", "all request options are false. no update will occur");
             }
         }
 
@@ -202,11 +153,12 @@ namespace Planar.Service.API
 
         private async Task<JobIdResponse> UpdateInner(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
         {
-            var monitor = Resolve<MonitorUtil>();
-            monitor.LockJobEvent(metadata.JobKey, MonitorEvents.JobDeleted, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
-
             // Validation
             await ValidateUpdateJob(request, options, metadata);
+
+            // Lock monitor events
+            var monitor = Resolve<MonitorUtil>();
+            monitor.LockJobEvent(metadata.JobKey, MonitorEvents.JobDeleted, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
 
             // Save for rollback
             await FillRollbackData(metadata);
@@ -215,23 +167,23 @@ namespace Planar.Service.API
             var cloneRequest = Clone(request);
 
             // Update Job Details (JobType+Concurrent, JobGroup, JobName, Description, Durable)
-            await UpdateJobDetails(request, options, metadata);
+            await UpdateJobDetails(request, metadata);
 
             // Sync Job Data
             await UpdateJobData(request, options, metadata);
 
             // Update the author
-            await UpdateJobAuthor(request, options, metadata);
+            await UpdateJobExtendedProperties(request, metadata);
 
             // Update Triggers
-            await UpdateTriggers(request, options, metadata);
+            await UpdateTriggers(request, metadata);
 
             // ScheduleJob
             await Scheduler.ScheduleJob(metadata.JobDetails, metadata.Triggers, true);
             await Scheduler.PauseJob(metadata.JobKey);
 
             // Update Properties
-            await UpdateJobProperties(request, options, metadata);
+            await UpdateJobProperties(request, metadata);
 
             // Audit
             AuditJobSafe(metadata.JobKey, "job updated", new { request = cloneRequest, options });
@@ -240,23 +192,14 @@ namespace Planar.Service.API
             return new JobIdResponse { Id = metadata.JobId };
         }
 
-        private async Task UpdateJobDetails(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+        private async Task UpdateJobDetails(SetJobDynamicRequest request, JobUpdateMetadata metadata)
         {
-            if (options.UpdateJobDetails)
-            {
-                await Scheduler.DeleteJob(metadata.JobKey);
-                metadata.JobDetails = BuildJobDetails(request, metadata.JobKey);
-            }
-            else
-            {
-                metadata.JobDetails = CloneJobDetails(metadata.OldJobDetails);
-            }
+            await Scheduler.DeleteJob(metadata.JobKey);
+            metadata.JobDetails = BuildJobDetails(request, metadata.JobKey);
         }
 
-        private async Task UpdateJobProperties(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+        private async Task UpdateJobProperties(SetJobDynamicRequest request, JobUpdateMetadata metadata)
         {
-            if (!options.UpdateProperties) { return; }
-
             var jobPropertiesYml = GetJopPropertiesYml(request);
             var property = new JobProperty { JobId = metadata.JobId, Properties = jobPropertiesYml };
             if (string.IsNullOrEmpty(metadata.OldJobProperties))
@@ -269,23 +212,15 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task UpdateTriggers(SetJobRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+        private async Task UpdateTriggers(SetJobRequest request, JobUpdateMetadata metadata)
         {
             foreach (var item in metadata.OldTriggers)
             {
                 await Scheduler.UnscheduleJob(item.Key);
             }
 
-            if (options.UpdateTriggers)
-            {
-                SyncTriggersData(request, metadata);
-                metadata.Triggers = BuildTriggers(request, metadata.JobId);
-            }
-            else
-            {
-                var triggers = RebuildOldTriggers(metadata.OldTriggers);
-                metadata.Triggers = triggers;
-            }
+            SyncTriggersData(request, metadata);
+            metadata.Triggers = BuildTriggers(request, metadata.JobId);
         }
 
         private async Task ValidateUpdateJob(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
