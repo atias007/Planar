@@ -1,6 +1,7 @@
 ﻿using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
@@ -34,7 +35,7 @@ namespace Planar.Service.API
                 .Replace("@MinNameLength@", MinNameLength.ToString())
                 .Replace("@MaxNameLength@", MaxNameLength.ToString()), RegexOptions.Compiled, TimeSpan.FromSeconds(5));
 
-        private static DateTimeOffset DelayStartTriggerDateTime = new DateTimeOffset(DateTime.Now.AddSeconds(3));
+        private static readonly DateTimeOffset DelayStartTriggerDateTime = new(DateTime.Now.AddSeconds(3));
 
         public static IEnumerable<ITrigger> BuildTriggerWithCronSchedule(List<JobCronTriggerMetadata> triggers, string jobId)
         {
@@ -113,10 +114,14 @@ namespace Planar.Service.API
 
         private static void AddAuthor(SetJobRequest metadata, IJobDetail job)
         {
-            if (!string.IsNullOrEmpty(metadata.Author))
-            {
-                job.JobDataMap.Put(Consts.Author, metadata.Author);
-            }
+            if (string.IsNullOrEmpty(metadata.Author)) { return; }
+            job.JobDataMap.Put(Consts.Author, metadata.Author);
+        }
+
+        private static void AddLogRetentionDays(SetJobRequest metadata, IJobDetail job)
+        {
+            if (metadata.LogRetentionDays == null) { return; }
+            job.JobDataMap.Put(Consts.LogRetentionDays, metadata.LogRetentionDays.Value.ToString());
         }
 
         private static void BuidCronSchedule(CronScheduleBuilder builder, JobCronTriggerMetadata trigger)
@@ -246,23 +251,6 @@ namespace Planar.Service.API
             }
         }
 
-        // JobType+Concurrent, JobGroup, JobName, Description, Durable
-        private static IJobDetail CloneJobDetails(IJobDetail source)
-        {
-            var jobBuilder = JobBuilder.Create(source.JobType)
-                .WithIdentity(source.Key)
-                .WithDescription(source.Description)
-                .RequestRecovery();
-
-            if (source.Durable)
-            {
-                jobBuilder = jobBuilder.StoreDurably(true);
-            }
-
-            var job = jobBuilder.Build();
-            return job;
-        }
-
         private static IEnumerable<GlobalConfig> ConvertToGlobalConfig(Dictionary<string, string?> config)
         {
             if (config == null) { return Array.Empty<GlobalConfig>(); }
@@ -358,7 +346,7 @@ namespace Planar.Service.API
             return filename;
         }
 
-        private static System.Type GetJobType(SetJobRequest job)
+        private static Type GetJobType(SetJobRequest job)
         {
             string typeName;
             Assembly assembly;
@@ -500,6 +488,7 @@ namespace Planar.Service.API
 
             ValidateRange(metadata.Name, 5, 50, "name", "job");
             ValidateRange(metadata.Group, 1, 50, "group", "job");
+            ValidateRangeValue(metadata.LogRetentionDays, 1, 1000, "log retention days", "job");
             ValidateMaxLength(metadata.Author, 200, "author", "job");
             ValidateMaxLength(metadata.Description, 100, "description", "job");
 
@@ -507,6 +496,11 @@ namespace Planar.Service.API
             {
                 ValidateRange(item.Key, 1, 100, "key", "job data");
                 ValidateMaxLength(item.Value, 1000, "value", "job data");
+            }
+
+            if (metadata.LogRetentionDays.GetValueOrDefault() > AppSettings.ClearJobLogTableOverDays)
+            {
+                throw new RestValidationException("log retention days", $"log retention days can not be greater than {AppSettings.ClearJobLogTableOverDays} (global app settings)");
             }
 
             #endregion Max Chars / Value
@@ -764,8 +758,9 @@ namespace Planar.Service.API
             // Create Job (JobType+Concurrent, JobGroup, JobName, Description, Durable)
             var job = BuildJobDetails(request, jobKey);
 
-            // Add Author
+            // Add Author, RetentionDays
             AddAuthor(request, job);
+            AddLogRetentionDays(request, job);
 
             // Build Data
             BuildJobData(request, job);

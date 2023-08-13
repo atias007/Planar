@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
@@ -16,6 +17,7 @@ using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
@@ -43,7 +45,7 @@ namespace Planar.Service.Listeners
             }
             finally
             {
-                await SafeScan(MonitorEvents.ExecutionVetoed, context, null);
+                SafeScan(MonitorEvents.ExecutionVetoed, context, null);
             }
         }
 
@@ -95,7 +97,7 @@ namespace Planar.Service.Listeners
             }
             finally
             {
-                await SafeScan(MonitorEvents.ExecutionStart, context, null);
+                SafeScan(MonitorEvents.ExecutionStart, context, null);
             }
         }
 
@@ -121,7 +123,7 @@ namespace Planar.Service.Listeners
                     InstanceId = context.FireInstanceId,
                     Duration = Convert.ToInt32(duration),
                     EndDate = endDate,
-                    Exception = executionException?.ToString(),
+                    Exception = GetExceptionText(executionException),
                     ExceptionCount = metadata?.Exceptions.Count ?? 0,
                     EffectedRows = metadata?.EffectedRows,
                     Log = metadata?.Log.ToString(),
@@ -143,46 +145,46 @@ namespace Planar.Service.Listeners
             }
             finally
             {
-                await SafeMonitorJobWasExecuted(context, executionException);
+                SafeMonitorJobWasExecuted(context, executionException);
             }
         }
 
-        private async Task SafeMonitorJobWasExecuted(IJobExecutionContext context, Exception? exception)
+        private static async Task<int> CountConcurrentExecutionJob(IScheduler scheduler)
         {
-            var allTasks = new List<Task>();
-            var task0 = SafeScan(MonitorEvents.ExecutionEnd, context, exception);
-            var task6 = SafeScan(MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx, context, exception);
-            var task7 = SafeScan(MonitorEvents.ExecutionEndWithEffectedRowsLessThanx, context, exception);
-            allTasks.Add(task0);
-            allTasks.Add(task6);
-            allTasks.Add(task7);
+            var first = await scheduler.GetCurrentlyExecutingJobs();
+            var second = first.Select(f => f.JobDetail.Key)
+                .Count(f => !IsSystemJobKey(f));
 
-            var success = exception == null;
-            if (success)
+            return second;
+        }
+
+        private static string GetAllExceptionMessages(Exception ex)
+        {
+            var messages = new StringBuilder(ex.Message);
+
+            // Traverse inner exceptions using a loop
+            var innerException = ex.InnerException;
+            while (innerException != null)
             {
-                var task1 = SafeScan(MonitorEvents.ExecutionSuccess, context, exception);
-                allTasks.Add(task1);
+                messages.AppendLine(innerException.Message);
+                innerException = innerException.InnerException;
+            }
 
-                // Execution sucsses with no effected rows
-                var effectedRows = ServiceUtil.GetEffectedRows(context);
-                if (effectedRows == 0)
-                {
-                    var task2 = SafeScan(MonitorEvents.ExecutionSuccessWithNoEffectedRows, context, exception);
-                    allTasks.Add(task2);
-                }
+            return messages.ToString();
+        }
+
+        private static string? GetExceptionText(Exception? ex)
+        {
+            if (ex == null) { return null; }
+            if (ex is PlanarJobExecutionException jobEx)
+            {
+                return jobEx.ExceptionText;
             }
             else
             {
-                var task3 = SafeScan(MonitorEvents.ExecutionFail, context, exception);
-                var task4 = SafeScan(MonitorEvents.ExecutionFailxTimesInRow, context, exception);
-                var task5 = SafeScan(MonitorEvents.ExecutionFailxTimesInyHours, context, exception);
-
-                allTasks.Add(task3);
-                allTasks.Add(task4);
-                allTasks.Add(task5);
+                var result = $"{ex.GetType().FullName}: {GetAllExceptionMessages(ex)}";
+                return result;
             }
-
-            await Task.WhenAll(allTasks);
         }
 
         private static string? GetJobDataForLogging(JobDataMap data)
@@ -210,13 +212,16 @@ namespace Planar.Service.Listeners
             await ExecuteDal<MetricsData>(d => d.AddCocurentQueueItem(item));
         }
 
-        private static async Task<int> CountConcurrentExecutionJob(IScheduler scheduler)
+        private async Task FillAnomaly(DbJobInstanceLog item)
         {
-            var first = await scheduler.GetCurrentlyExecutingJobs();
-            var second = first.Select(f => f.JobDetail.Key)
-                .Count(f => !IsSystemJobKey(f));
+            var statistics = await GetJobStatistics();
+            StatisticsUtil.SetAnomaly(item, statistics);
 
-            return second;
+            if (item.Anomaly != null)
+            {
+                var parameters = new { item.InstanceId, item.Anomaly };
+                await ExecuteDal<HistoryData>(d => d.SetAnomaly(parameters));
+            }
         }
 
         private async Task<JobStatistics> GetJobStatistics()
@@ -259,15 +264,29 @@ namespace Planar.Service.Listeners
             }
         }
 
-        private async Task FillAnomaly(DbJobInstanceLog item)
+        private void SafeMonitorJobWasExecuted(IJobExecutionContext context, Exception? exception)
         {
-            var statistics = await GetJobStatistics();
-            StatisticsUtil.SetAnomaly(item, statistics);
+            SafeScan(MonitorEvents.ExecutionEnd, context, exception);
+            SafeScan(MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx, context, exception);
+            SafeScan(MonitorEvents.ExecutionEndWithEffectedRowsLessThanx, context, exception);
 
-            if (item.Anomaly != null)
+            var success = exception == null;
+            if (success)
             {
-                var parameters = new { item.InstanceId, item.Anomaly };
-                await ExecuteDal<HistoryData>(d => d.SetAnomaly(parameters));
+                SafeScan(MonitorEvents.ExecutionSuccess, context, exception);
+
+                // Execution sucsses with no effected rows
+                var effectedRows = ServiceUtil.GetEffectedRows(context);
+                if (effectedRows == 0)
+                {
+                    SafeScan(MonitorEvents.ExecutionSuccessWithNoEffectedRows, context, exception);
+                }
+            }
+            else
+            {
+                SafeScan(MonitorEvents.ExecutionFail, context, exception);
+                SafeScan(MonitorEvents.ExecutionFailxTimesInRow, context, exception);
+                SafeScan(MonitorEvents.ExecutionFailxTimesInyHours, context, exception);
             }
         }
     }

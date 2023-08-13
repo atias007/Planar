@@ -50,7 +50,8 @@ namespace Planar.Service
                 q.UseDefaultThreadPool(tp => { tp.MaxConcurrency = 10; });
 
                 // this also injects scoped services (like EF DbContext)
-                q.UseMicrosoftDependencyInjectionJobFactory();
+                // MicrosoftDependencyInjectionJobFactory is the default for DI configuration, this method will be removed later on
+                //// DEPRECATED: q.UseMicrosoftDependencyInjectionJobFactory();
 
                 // convert time zones using converter that can handle Windows/Linux differences
                 q.UseTimeZoneConverter();
@@ -97,7 +98,7 @@ namespace Planar.Service
                     }
 
                     // this requires Quartz.Serialization.Json NuGet package
-                    x.UseJsonSerializer();
+                    x.UseNewtonsoftJsonSerializer();
                 });
             });
 

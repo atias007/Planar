@@ -25,22 +25,29 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="ExecuteHelper\ExecuteJobPropertiesBuilder.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Compile Include="..\..\src\Jobs\CommonJob\ExceptionDto.cs" Link="JobExecutionContext\ExceptionDto.cs" />
+	  <Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\DataMap.cs" Link="JobExecutionContext\DataMap.cs" />
+	  <Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\IDataMap.cs" Link="JobExecutionContext\IDataMap.cs" />
 	  <Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\IJobDetail.cs" Link="JobExecutionContext\IJobDetail.cs" />
 	  <Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\IJobExecutionContext.cs" Link="JobExecutionContext\IJobExecutionContext.cs" />
 	  <Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\IKey.cs" Link="JobExecutionContext\IKey.cs" />
 	  <Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\ITriggerDetail.cs" Link="JobExecutionContext\ITriggerDetail.cs" />
+	  <Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\Key.cs" Link="JobExecutionContext\Key.cs" />
+	  <Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
 	</ItemGroup>
   <ItemGroup>
     <None Include="..\..\res\nuget_logo.png" Link="nuget_logo.png">
       <PackagePath>\</PackagePath>
       <Pack>True</Pack>
     </None>
+    <None Include="ExecuteHelper\ExecuteJobPropertiesBuilder.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="9.6.0.74858">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
     <PackageReference Include="System.Text.Json" Version="7.0.3" />
   </ItemGroup>
 

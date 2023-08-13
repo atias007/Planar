@@ -1,12 +1,4 @@
-﻿using System;
+﻿using BankOfIsraelCurrency;
+using Planar.Job;
 
-namespace BankOfIsraelCurrency
-{
-    internal class Program
-    {
-        private static void Main(string[] args)
-        {
-            Console.WriteLine(args);
-        }
-    }
-}
+PlanarJob.Start<CurrencyLoader>();

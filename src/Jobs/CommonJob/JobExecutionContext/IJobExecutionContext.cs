@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text.Json.Serialization;
-using System.Threading;
 
 namespace Planar.Job
 {
@@ -25,10 +22,8 @@ namespace Planar.Job
 
         ITriggerDetail TriggerDetails { get; }
 
-        SortedDictionary<string, string?> MergedJobDataMap { get; }
+        IDataMap MergedJobDataMap { get; }
 
         string Environment { get; }
-
-        CancellationToken CancellationToken { get; }
     }
 }

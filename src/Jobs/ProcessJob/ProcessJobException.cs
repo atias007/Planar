@@ -1,9 +1,10 @@
-﻿using System.Runtime.Serialization;
+﻿using Planar.Common.Exceptions;
+using System.Runtime.Serialization;
 
 namespace ProcessJob
 {
     [Serializable]
-    public class ProcessJobException : Exception
+    public class ProcessJobException : PlanarException
     {
         public ProcessJobException(string message) : base(message)
         {

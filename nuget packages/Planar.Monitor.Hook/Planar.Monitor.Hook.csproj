@@ -25,7 +25,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Include="..\Planar.Job.Test\Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
+	  <Compile Include="..\Planar.Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
 	  <Compile Include="..\Planar.Job\TypeMappingConverter.cs" Link="TypeMappingConverter.cs" />
 	</ItemGroup>
 
@@ -36,10 +36,6 @@
 	  </None>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.6.0.74858">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
 		<PackageReference Include="System.Text.Json" Version="7.0.3" />
 	</ItemGroup>
 

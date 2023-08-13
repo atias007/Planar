@@ -22,6 +22,21 @@ namespace Planar.Service.API.Helpers
             return null;
         }
 
+        public static int? GetLogRetentionDays(IJobDetail job)
+        {
+            if (job == null)
+            {
+                throw new PlanarException("job is null at JobHelper.GetLogRetentionDays(IJobDetail)");
+            }
+
+            if (job.JobDataMap.TryGetValue(Consts.LogRetentionDays, out var id) && int.TryParse(PlanarConvert.ToString(id), out var result))
+            {
+                return result;
+            }
+
+            return null;
+        }
+
         public static string? GetJobId(IJobDetail? job)
         {
             if (job == null)

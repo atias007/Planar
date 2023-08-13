@@ -13,8 +13,8 @@ namespace CancelTokenTest
 
         public override async Task ExecuteJob(IJobExecutionContext context)
         {
-            Logger.LogInformation("Strat delay...");
-            await Task.Delay(60000, context.CancellationToken);
+            Logger.LogInformation($"Strat delay of 60sec... to cancel run: job cancel {context.JobDetails.Key.Group}.{context.JobDetails.Key.Name}...");
+            await Task.Delay(60000);
             Logger.LogInformation("End delay");
         }
 

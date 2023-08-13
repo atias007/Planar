@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "SomeJob": {
+      "commandName": "Project"
+    }
+  }
+}

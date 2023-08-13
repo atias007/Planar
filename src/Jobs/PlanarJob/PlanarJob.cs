@@ -1,74 +1,60 @@
-﻿using CommonJob;
+﻿using CloudNative.CloudEvents;
+using CommonJob;
+using CommonJob.MessageBrokerEntities;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Planar.Common;
+using Planar.Common.Exceptions;
+using Planar.Common.Helpers;
 using Quartz;
 using System;
+using System.Diagnostics;
 using System.IO;
-using System.Reflection;
-using System.Runtime.Loader;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Planar
 {
-    public abstract class PlanarJob : BaseCommonJob<PlanarJob, PlanarJobProperties>
+    public abstract class PlanarJob : BaseProcessJob<PlanarJob, PlanarJobProperties>
     {
         private readonly IMonitorUtil _monitorUtil;
+        private readonly object ConsoleLocker = new();
+        private readonly bool _isDevelopment;
+        private bool _isHealthCheck;
+        private string? _executionException;
 
-        protected PlanarJob(ILogger<PlanarJob> logger, IJobPropertyDataLayer dataLayer, IMonitorUtil monitorUtil) : base(logger, dataLayer)
+        protected PlanarJob(
+            ILogger<PlanarJob> logger,
+            IJobPropertyDataLayer dataLayer,
+            IMonitorUtil monitorUtil) : base(logger, dataLayer)
         {
             _monitorUtil = monitorUtil;
-        }
 
-        private string? AssemblyFilename { get; set; }
+            MqttBrokerService.InterceptingPublishAsync += InterceptingPublishAsync;
+            _isDevelopment = string.Equals(AppSettings.Environment, "development", StringComparison.OrdinalIgnoreCase);
+        }
 
         public override async Task Execute(IJobExecutionContext context)
         {
-            AssemblyLoadContext? assemblyContext = null;
-            Type? type = null;
-            object? instance = null;
-
             try
             {
                 await Initialize(context, _monitorUtil);
-                AssemblyFilename = FolderConsts.GetSpecialFilePath(
-                    PlanarSpecialFolder.Jobs,
-                    Properties.Path ?? string.Empty,
-                    Properties.Filename ?? string.Empty);
+                ValidateProcessJob();
+                ValidateExeFile();
+                context.CancellationToken.Register(OnCancel);
 
-                ValidatePlanarJob();
-                if (Properties.ClassName == null) { return; }
-
-                assemblyContext = AssemblyLoader.CreateAssemblyLoadContext(context.FireInstanceId, true);
-                var assembly =
-                    AssemblyLoader.LoadFromAssemblyPath(AssemblyFilename, assemblyContext) ??
-                    throw new PlanarJobException($"could not load assembly {AssemblyFilename}");
-
-                type = assembly.GetType(Properties.ClassName);
-                if (type == null)
+                var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
+                var startInfo = GetProcessStartInfo();
+                var success = StartProcess(startInfo, timeout);
+                if (!success)
                 {
-                    type = Array.Find(assembly.GetTypes(), t => t.FullName == Properties.ClassName);
+                    OnTimeout();
                 }
 
-                if (type == null)
-                {
-                    throw new PlanarJobException($"could not load type {Properties.ClassName} from assembly {AssemblyFilename}");
-                }
-
-                var method = ValidateBaseJob(type);
-                instance = assembly.CreateInstance(Properties.ClassName);
-                if (instance == null)
-                {
-                    throw new PlanarJobException($"could not create {Properties.ClassName} from assembly {AssemblyFilename}");
-                }
-
-                MapJobInstanceProperties(context, type, instance);
-
-                if (method.Invoke(instance, new object[] { MessageBroker }) is not Task task)
-                {
-                    throw new PlanarJobException($"method {method.Name} invoked but not return System.Task type");
-                }
-
-                await WaitForJobTask(context, task);
+                ValidateHealthCheck();
+                LogProcessInformation();
+                CheckProcessCancel();
+                CheckJobErrorReport();
             }
             catch (Exception ex)
             {
@@ -76,73 +62,251 @@ namespace Planar
             }
             finally
             {
-                MapJobInstancePropertiesBack(context, type, instance);
                 FinalizeJob(context);
-                assemblyContext?.Unload();
+                FinalizeProcess();
+                UnregisterMqttBrokerService();
             }
         }
 
-        private void ValidatePlanarJob()
+        private void CheckJobErrorReport()
+        {
+            if (string.IsNullOrWhiteSpace(_executionException)) { return; }
+            throw new PlanarJobExecutionException(_executionException);
+        }
+
+        private void ValidateExeFile()
         {
             try
             {
-                ValidateMandatoryString(Properties.Path, nameof(Properties.Path));
-                ValidateMandatoryString(Properties.Filename, nameof(Properties.Filename));
-                ValidateMandatoryString(Properties.ClassName, nameof(Properties.ClassName));
-
-                if (!File.Exists(AssemblyFilename))
+                if (!FileExtentionIsExe(Filename))
                 {
-                    throw new PlanarJobException($"assembly filename '{AssemblyFilename}' could not be found");
+                    throw new PlanarException($"process filename '{Filename}' must have 'exe' extention");
                 }
             }
             catch (Exception ex)
             {
-                var source = nameof(ValidatePlanarJob);
-                _logger.LogError(ex, "Fail at {Source}", source);
+                var source = nameof(ValidateExeFile);
+                _logger.LogError(ex, "Fail at {Source}. Message: {Message}", source, ex.Message);
+                MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
                 throw;
             }
         }
 
-        private MethodInfo ValidateBaseJob(Type type)
+        private static bool FileExtentionIsExe(string filename)
         {
-            //// ***** Attention: be aware for sync code with Validate on BaseJobTest *****
+            const string exe = ".exe";
+            var fi = new FileInfo(filename);
+            return string.Equals(fi.Extension, exe);
+        }
 
-            if (type == null)
+        private static byte GetCloudEventByteValue(CloudEvent cloudEvent)
+        {
+            var data = ValidateCloudEventData(cloudEvent.Data);
+
+            if (byte.TryParse(data, out var value))
             {
-                throw new PlanarJobException($"type '{Properties.ClassName}' could not be found at assembly '{AssemblyFilename}'");
+                return value;
+            }
+            else
+            {
+                throw new PlanarJobException($"Message broker channels '{cloudEvent.Type}' has invalid byte value '{cloudEvent.Data}'");
+            }
+        }
+
+        private static string GetCloudEventStringValue(CloudEvent cloudEvent)
+        {
+            var data = ValidateCloudEventData(cloudEvent.Data);
+            return data;
+        }
+
+        private static T GetCloudEventEntityValue<T>(CloudEvent cloudEvent)
+            where T : class, new()
+        {
+            var data = ValidateCloudEventData(cloudEvent.Data);
+            var log = JsonConvert.DeserializeObject<T>(data);
+            return log
+                ?? throw new PlanarJobException($"Message broker channels '{cloudEvent.Type}' has invalid '{typeof(T).Name}' value '{data}'");
+        }
+
+        private static int GetCloudEventInt32Value(CloudEvent cloudEvent)
+        {
+            var data = ValidateCloudEventData(cloudEvent.Data);
+
+            if (int.TryParse(data, out var value))
+            {
+                return value;
+            }
+            else
+            {
+                throw new PlanarJobException($"Message broker channels '{cloudEvent.Type}' has invalid integer value '{cloudEvent.Data}'");
+            }
+        }
+
+        private static string ValidateCloudEventData(object? data)
+        {
+            if (data == null)
+            {
+                throw new PlanarJobException("message broker has empty data");
             }
 
-            ////var baseTypeName = type.BaseType?.FullName;
-            ////if (baseTypeName != $"{nameof(Planar)}.BaseJob")
-            ////{
-            ////    throw new PlanarJobException($"type '{Properties.ClassName}' from assembly '{AssemblyFilename}' not inherit 'Planar.Job.BaseJob' type");
-            ////}
-
-#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
-            var method =
-                type.GetMethod("Execute", BindingFlags.NonPublic | BindingFlags.Instance) ??
-                throw new PlanarJobException($"type '{Properties.ClassName}' from assembly '{AssemblyFilename}' has no 'Execute' method");
-#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
-
-            if (method.ReturnType != typeof(Task))
+            var result = data.ToString();
+            if (string.IsNullOrWhiteSpace(result))
             {
-                throw new PlanarJobException($"method 'Execute' at type '{Properties.ClassName}' from assembly '{AssemblyFilename}' has no 'Task' return type (current return type is {method.ReturnType.FullName})");
+                throw new PlanarJobException("message broker has empty data");
             }
 
-            var parameters = method.GetParameters();
-            if (parameters?.Length != 1)
+            return result;
+        }
+
+        private void CheckProcessCancel()
+        {
+            if (_processKilled)
             {
-                throw new PlanarJobException($"method 'Execute' at type '{Properties.ClassName}' from assembly '{AssemblyFilename}' must have only 1 parameters (current parameters count {parameters?.Length})");
+                throw new PlanarJobException($"process '{Filename}' was stopped at {DateTimeOffset.Now}");
+            }
+        }
+
+        private void ValidateHealthCheck()
+        {
+            try
+            {
+                if (_isHealthCheck) { return; }
+
+                if (_output.Length > 0)
+                {
+                    MessageBroker.AppendLogRaw(_output.ToString());
+                }
+                else
+                {
+                    var log = new LogEntity
+                    {
+                        Level = LogLevel.Warning,
+                        Message = "No health check signal from job. Check if the following code: \"PlanarJob.Start<TJob>();\" exists in startup of your console project"
+                    };
+
+                    MessageBroker.AppendLog(log);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"fail to handle health chek at {nameof(FinalizeProcess)}");
             }
 
-            if (!parameters[0].ParameterType.ToString().StartsWith("System.Object"))
+            if (!_isHealthCheck)
             {
-                throw new PlanarJobException($"first parameter in method 'Execute' at type '{Properties.ClassName}' from assembly '{AssemblyFilename}' must be object. (current type '{parameters[0].ParameterType.Name}')");
+                throw new PlanarJobException("no health check signal from job. See job log for more information");
+            }
+        }
+
+        private void UnregisterMqttBrokerService()
+        {
+            try { MqttBrokerService.InterceptingPublishAsync -= InterceptingPublishAsync; } catch { DoNothingMethod(); }
+        }
+
+        protected override ProcessStartInfo GetProcessStartInfo()
+        {
+            var bytes = Encoding.UTF8.GetBytes(MessageBroker.Details);
+            var base64String = Convert.ToBase64String(bytes);
+            var startInfo = base.GetProcessStartInfo();
+            startInfo.Arguments = $"--planar-service-mode --context {base64String}";
+            startInfo.StandardErrorEncoding = Encoding.UTF8;
+            startInfo.StandardOutputEncoding = Encoding.UTF8;
+            return startInfo;
+        }
+
+        private void InterceptingPublishAsync(object? sender, CloudEventArgs e)
+        {
+            try
+            {
+                if (e.ClientId == FireInstanceId)
+                {
+                    InterceptingPublishAsyncInner(e);
+                }
+            }
+            catch (PlanarJobException ex)
+            {
+                _logger.LogCritical("Fail intercepting published message on MQTT broker event. {Error}", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Fail intercepting published message on MQTT broker event");
+            }
+        }
+
+        private void WriteToConsole(LogEntity logEntity)
+        {
+            if (_isDevelopment)
+            {
+                lock (ConsoleLocker)
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkCyan;
+                    Console.Out.WriteLine($" - {logEntity.Message}");
+                    Console.ResetColor();
+                }
+            }
+        }
+
+        private void InterceptingPublishAsyncInner(CloudEventArgs e)
+        {
+            if (!Enum.TryParse<MessageBrokerChannels>(e.CloudEvent.Type, ignoreCase: true, out var channel))
+            {
+                _logger.LogError("Message broker channels '{Type}' is not valid", e.CloudEvent.Type);
+                return;
             }
 
-            return method;
+            int iValue;
+            KeyValueObject kv;
+            switch (channel)
+            {
+                case MessageBrokerChannels.AddAggregateException:
+                    var ex = GetCloudEventEntityValue<ExceptionDto>(e.CloudEvent);
+                    MessageBroker.AddAggregateException(ex);
+                    break;
 
-            //// ***** Attention: be aware for sync code with Validate on BaseJobTest *****
+                case MessageBrokerChannels.AppendLog:
+                    var log = GetCloudEventEntityValue<LogEntity>(e.CloudEvent);
+                    MessageBroker.AppendLog(log);
+                    WriteToConsole(log);
+                    break;
+
+                case MessageBrokerChannels.IncreaseEffectedRows:
+                    iValue = GetCloudEventInt32Value(e.CloudEvent);
+                    MessageBroker.IncreaseEffectedRows(iValue);
+                    break;
+
+                case MessageBrokerChannels.SetEffectedRows:
+                    iValue = GetCloudEventInt32Value(e.CloudEvent);
+                    MessageBroker.SetEffectedRows(iValue);
+                    break;
+
+                case MessageBrokerChannels.PutJobData:
+                    kv = GetCloudEventEntityValue<KeyValueObject>(e.CloudEvent);
+                    MessageBroker.PutJobDataAction(kv);
+                    break;
+
+                case MessageBrokerChannels.PutTriggerData:
+                    kv = GetCloudEventEntityValue<KeyValueObject>(e.CloudEvent);
+                    MessageBroker.PutTriggerData(kv);
+                    break;
+
+                case MessageBrokerChannels.UpdateProgress:
+                    var progress = GetCloudEventByteValue(e.CloudEvent);
+                    MessageBroker.UpdateProgress(progress);
+                    break;
+
+                case MessageBrokerChannels.ReportException:
+                    _executionException = GetCloudEventStringValue(e.CloudEvent);
+                    break;
+
+                case MessageBrokerChannels.HealthCheck:
+                    _isHealthCheck = true;
+                    UnsubscribeOutput();
+                    break;
+
+                default:
+                    _logger.LogWarning("PlanarJob intercepting published message with unsupported channel {Channel}", channel);
+                    break;
+            }
         }
     }
 }

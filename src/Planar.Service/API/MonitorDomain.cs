@@ -164,7 +164,7 @@ namespace Planar.Service.API
             var groupId = await groupDal.GetGroupId(request.GroupName ?? string.Empty);
             var group = await groupDal.GetGroupWithUsers(groupId);
             var monitorEvent = Enum.Parse<MonitorEvents>(request.EventName.ToString());
-            var exception = new Exception("This is test exception");
+            var exception = new Exception("this is test exception");
 
             if (group == null)
             {

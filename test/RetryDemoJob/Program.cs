@@ -1,13 +1,4 @@
-﻿using System;
+﻿using Planar.Job;
+using RetryDemoJob;
 
-namespace RetryDemoJob
-{
-    internal class Program
-    {
-        private static void Main(string[] args)
-        {
-            Console.WriteLine(args);
-            Console.WriteLine("Hello World!");
-        }
-    }
-}
+PlanarJob.Start<Worker>();

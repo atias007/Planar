@@ -28,11 +28,7 @@ namespace TestAction
                 {
                     UpdateProgress(i, 130);
                     SetEffectedRows(i + 1);
-                    if (context.CancellationToken.IsCancellationRequested)
-                    {
-                        Logger.LogInformation("Cancel job");
-                        break;
-                    }
+
                     if (i % 10 == 0)
                     {
                         Logger.LogInformation("Step {Index}", i);

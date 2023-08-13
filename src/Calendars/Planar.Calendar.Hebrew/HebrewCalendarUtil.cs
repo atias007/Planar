@@ -108,7 +108,7 @@ namespace Planar.Calendar.Hebrew
         /// <returns></returns>
         public static HebrewEventInfo GetEvent(HebrewEventType eventType, int year)
         {
-            var startDate = new DateTime(year, 1, 1);
+            var startDate = new DateTime(year, 1, 1, 0, 0, 0, DateTimeKind.Local);
             while (startDate.Year == year)
             {
                 var info = new HebrewEventInfo(startDate);
@@ -191,7 +191,7 @@ namespace Planar.Calendar.Hebrew
             filter.Year ??= DateTime.Now.Year;
 
             var result = new List<HebrewEventInfo>();
-            var startDate = new DateTime(filter.Year.Value, filter.Month ?? 1, 1);
+            var startDate = new DateTime(filter.Year.Value, filter.Month ?? 1, 1, 0, 0, 0, DateTimeKind.Local);
 
             while (startDate.Year == filter.Year.Value && (filter.Month == null || startDate.Month == filter.Month.Value))
             {

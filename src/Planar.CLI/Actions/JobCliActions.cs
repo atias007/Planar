@@ -743,7 +743,7 @@ namespace Planar.CLI.Actions
                     .InstructionsText(
                         "[grey](Press [blue]<space>[/] to toggle a choise, [green]<enter>[/] to accept)[/]")
                     .PageSize(15)
-                    .AddChoices("all", "only job", "only triggers", "only properties", "only job details", "only job data", "only triggers data", CliPromptUtil.CancelOption)
+                    .AddChoices("without data (default)", "with job data", "with triggers data", CliPromptUtil.CancelOption)
                     );
 
             CliPromptUtil.CheckForCancelOption(options);
@@ -766,44 +766,14 @@ namespace Planar.CLI.Actions
             {
                 switch (item.ToLower())
                 {
-                    case "all":
-                        result.UpdateJobDetails = true;
-                        result.UpdateJobData = true;
-                        result.UpdateProperties = true;
-                        result.UpdateTriggers = true;
-                        result.UpdateTriggersData = true;
+                    case "without data (default)":
                         break;
 
-                    case "only job":
-                    case "all-job":
-                        result.UpdateJobDetails = true;
-                        result.UpdateJobData = true;
-                        result.UpdateProperties = true;
-                        break;
-
-                    case "only triggers":
-                    case "all-triggers":
-                        result.UpdateTriggers = true;
-                        result.UpdateTriggersData = true;
-                        break;
-
-                    case "only job details":
-                    case "job-details":
-                        result.UpdateJobDetails = true;
-                        break;
-
-                    case "only job data":
-                    case "job-data":
+                    case "with job data":
                         result.UpdateJobData = true;
                         break;
 
-                    case "only properties":
-                    case "properties":
-                        result.UpdateProperties = true;
-                        break;
-
-                    case "only triggers data":
-                    case "triggers-data":
+                    case "with triggers data":
                         result.UpdateTriggersData = true;
                         break;
 
@@ -947,7 +917,7 @@ namespace Planar.CLI.Actions
             while (runResult.Data != null)
             {
                 Console.CursorTop -= 1;
-                var span = DateTime.Now.Subtract(invokeDate);
+                var span = DateTimeOffset.Now.Subtract(invokeDate);
                 var title =
                         $" [gold3_1][[x]][/] Progress: [wheat1]{runResult.Data.Progress}[/]%  |" +
                         $"  Effected Row(s): [wheat1]{runResult.Data.EffectedRows.GetValueOrDefault()}[/]  |" +

@@ -1,13 +1,16 @@
 ﻿using CommonJob.MessageBrokerEntities;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Abstractions;
 using Newtonsoft.Json;
 using Planar;
 using Planar.Common;
+using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
 using Planar.Job;
+using Quartz;
 using System;
 using System.Collections.Generic;
-using System.Threading;
+using System.Linq;
 using IJobExecutionContext = Quartz.IJobExecutionContext;
 
 namespace CommonJob
@@ -15,7 +18,6 @@ namespace CommonJob
     public class JobMessageBroker
     {
         private static readonly object Locker = new();
-        private readonly CancellationToken _cancellationToken;
         private readonly IJobExecutionContext _context;
         private readonly IMonitorUtil? _monitorUtil;
 
@@ -31,7 +33,6 @@ namespace CommonJob
             var mapContext = MapContext(context, settings);
             SetLogLevel(settings);
             Details = JsonConvert.SerializeObject(mapContext);
-            _cancellationToken = context.CancellationToken;
         }
 
         public string Details { get; set; }
@@ -46,17 +47,33 @@ namespace CommonJob
             }
         }
 
+        public void AddAggregateException(ExceptionDto ex)
+        {
+            if (ex == null) { return; }
+            lock (Locker)
+            {
+                Metadata.Exceptions.Add(ex);
+            }
+        }
+
         public void AppendLog(LogLevel level, string messag)
         {
-            var formatedMessage = $"[{DateTime.Now:HH:mm:ss} {level}] | {messag}";
-            var log = new LogEntity(level, formatedMessage);
+            var log = new LogEntity(level, messag);
             LogData(log);
         }
 
-        public CancellationToken CreateLinkedToken()
+        public void AppendLog(LogEntity log)
         {
-            var linkedCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(_cancellationToken);
-            return linkedCancellationTokenSource.Token;
+            if (log == null) { return; }
+            LogData(log);
+        }
+
+        public void AppendLogRaw(string text)
+        {
+            lock (Locker)
+            {
+                Metadata.Log.AppendLine(text);
+            }
         }
 
         public void IncreaseEffectedRows(int delta = 1)
@@ -67,65 +84,33 @@ namespace CommonJob
             }
         }
 
-        public string? Publish(string channel, string message)
+        public void PutJobDataAction(KeyValueObject item)
         {
-            switch (channel)
+            if (item == null) { return; }
+            if (!Consts.IsDataKeyValid(item.Key))
             {
-                case "PutJobData":
-                    return PutJobDataAction(message);
+                throw new PlanarException($"the data key {item.Key} in invalid");
+            }
 
-                case "PutTriggerData":
-                    return PutTriggerDataAction(message);
+            lock (Locker)
+            {
+                var value = PlanarConvert.ToString(item.Value);
+                _context.JobDetail.JobDataMap.Put(item.Key, value);
+            }
+        }
 
-                case "AddAggragateException":
-                case "AddAggregateException":
-                    return AddAggregateExceptionAction(message);
+        public void PutTriggerData(KeyValueObject item)
+        {
+            if (item == null) { return; }
+            if (!Consts.IsDataKeyValid(item.Key))
+            {
+                throw new PlanarException($"the data key {item.Key} in invalid");
+            }
 
-                case "AppendLog":
-                    return AppendLogAction(message);
-
-                case "GetExceptionsText":
-                    var exceptionText = Metadata.GetExceptionsText();
-                    return exceptionText;
-
-                case "CheckIfStopRequest":
-                    return _context.CancellationToken.IsCancellationRequested.ToString();
-
-                case "FailOnStopRequest":
-                    if (_context.CancellationToken.IsCancellationRequested)
-                    {
-                        throw new OperationCanceledException("job was cancelled");
-                    }
-                    return null;
-
-                case "GetData":
-                    var data = _context.MergedJobDataMap[message];
-                    return PlanarConvert.ToString(data);
-
-                case "IsDataExists":
-                    return _context.MergedJobDataMap.ContainsKey(message).ToString();
-
-                case "GetEffectedRows":
-                    return Metadata.EffectedRows.ToString();
-
-                case "IncreaseEffectedRows":
-                    return IncreaseEffectedRowsAction(message);
-
-                case "SetEffectedRows":
-                    return SetEffectedRowsAction(message);
-
-                case "UpdateProgress":
-                    return UpdateProgressAction(message);
-
-                case "JobRunTime":
-                    return _context.JobRunTime.TotalMilliseconds.ToString();
-
-                case "DataContainsKey":
-                    var contains = _context.MergedJobDataMap.ContainsKey(message);
-                    return contains.ToString();
-
-                default:
-                    return null;
+            lock (Locker)
+            {
+                var value = PlanarConvert.ToString(item.Value);
+                _context.Trigger.JobDataMap.Put(item.Key, value);
             }
         }
 
@@ -141,18 +126,41 @@ namespace CommonJob
             }
         }
 
-        public void UpdateProgress(byte progress)
+        public void SetEffectedRows(int value)
         {
             lock (Locker)
             {
-                Metadata.Progress = progress;
+                if (value < 0) { value = 0; }
+                Metadata.EffectedRows = value;
             }
         }
 
-        private static T? Deserialize<T>(string message)
+        public void UpdateProgress(byte value)
         {
-            var result = JsonConvert.DeserializeObject<T>(message);
-            return result;
+            lock (Locker)
+            {
+                if (value > 100) { value = 100; }
+                if (value < 0) { value = 0; }
+                if (Metadata.Progress == value) { return; }
+                Metadata.Progress = value;
+            }
+
+            _monitorUtil?.Scan(MonitorEvents.ExecutionProgressChanged, _context);
+        }
+
+        private static DataMap ConvertDataMap(JobDataMap? map)
+        {
+            if (map == null)
+            {
+                return new DataMap();
+            }
+
+            var dic = map
+                .Where(k => !k.Key.StartsWith(Consts.ConstPrefix) && !k.Key.StartsWith(Consts.QuartzPrefix))
+                .OrderBy(k => k.Key)
+                .ToDictionary(k => k.Key, v => PlanarConvert.ToString(v.Value));
+
+            return new DataMap(dic);
         }
 
         private static JobExecutionContext MapContext(IJobExecutionContext context, IDictionary<string, string?> settings)
@@ -167,7 +175,7 @@ namespace CommonJob
             var result = new JobExecutionContext
             {
                 JobSettings = new Dictionary<string, string?>(settings),
-                MergedJobDataMap = Global.ConvertDataMapToDictionary(context.MergedJobDataMap),
+                MergedJobDataMap = ConvertDataMap(context.MergedJobDataMap),
                 FireInstanceId = context.FireInstanceId,
                 FireTime = context.FireTimeUtc,
                 NextFireTime = context.NextFireTimeUtc,
@@ -180,7 +188,7 @@ namespace CommonJob
                     ConcurrentExecutionDisallowed = context.JobDetail.ConcurrentExecutionDisallowed,
                     Description = context.JobDetail.Description ?? string.Empty,
                     Durable = context.JobDetail.Durable,
-                    JobDataMap = Global.ConvertDataMapToDictionary(context.JobDetail.JobDataMap),
+                    JobDataMap = ConvertDataMap(context.JobDetail.JobDataMap),
                     Key = new Key
                     {
                         Name = context.JobDetail.Key.Name,
@@ -203,7 +211,7 @@ namespace CommonJob
                     },
                     Priority = context.Trigger.Priority,
                     StartTime = context.Trigger.StartTimeUtc,
-                    TriggerDataMap = Global.ConvertDataMapToDictionary(context.Trigger.JobDataMap),
+                    TriggerDataMap = ConvertDataMap(context.Trigger.JobDataMap),
                     HasRetry = hasRetry,
                     IsLastRetry = lastRetry,
                     IsRetryTrigger = isRetryTrigger,
@@ -215,25 +223,6 @@ namespace CommonJob
             };
 
             return result;
-        }
-
-        private string? AddAggregateExceptionAction(string message)
-        {
-            var data3 = Deserialize<ExceptionDto>(message);
-            if (data3 == null) { return null; }
-            lock (Locker)
-            {
-                Metadata.Exceptions.Add(data3);
-            }
-            return null;
-        }
-
-        private string? AppendLogAction(string message)
-        {
-            var data4 = Deserialize<LogEntity>(message);
-            if (data4 == null) { return null; }
-            LogData(data4);
-            return null;
         }
 
         private bool HasSettings(IDictionary<string, string?> settings, string key)
@@ -248,72 +237,15 @@ namespace CommonJob
             return false;
         }
 
-        private string? IncreaseEffectedRowsAction(string message)
-        {
-            lock (Locker)
-            {
-                _ = int.TryParse(message, out var delta);
-                Metadata.EffectedRows = Metadata.EffectedRows.GetValueOrDefault() + delta;
-            }
-
-            return null;
-        }
-
         private void LogData(LogEntity logEntity)
         {
             lock (Locker)
             {
                 if ((int)logEntity.Level >= (int)LogLevel)
                 {
-                    Metadata.Log.AppendLine(logEntity.Message);
+                    Metadata.Log.AppendLine(logEntity.ToString());
                 }
             }
-        }
-
-        private string? PutJobDataAction(string message)
-        {
-            var data1 = Deserialize<KeyValueItem>(message);
-            if (data1 == null) { return null; }
-            if (!Consts.IsDataKeyValid(data1.Key))
-            {
-                throw new PlanarJobException($"the data key {data1.Key} in invalid");
-            }
-
-            lock (Locker)
-            {
-                var value = PlanarConvert.ToString(data1.Value);
-                _context.JobDetail.JobDataMap.Put(data1.Key, value);
-            }
-
-            return null;
-        }
-
-        private string? PutTriggerDataAction(string message)
-        {
-            var data2 = Deserialize<KeyValueItem>(message);
-            if (data2 == null) { return null; }
-            if (!Consts.IsDataKeyValid(data2.Key))
-            {
-                throw new PlanarJobException($"the data key {data2.Key} in invalid");
-            }
-
-            lock (Locker)
-            {
-                var value = PlanarConvert.ToString(data2.Value);
-                _context.Trigger.JobDataMap.Put(data2.Key, value);
-            }
-            return null;
-        }
-
-        private string? SetEffectedRowsAction(string message)
-        {
-            lock (Locker)
-            {
-                _ = int.TryParse(message, out var value);
-                Metadata.EffectedRows = value;
-            }
-
-            return null;
         }
 
         private void SetLogLevel(IDictionary<string, string?> settings)
@@ -325,22 +257,11 @@ namespace CommonJob
 
         private void SetLogLevel(LogLevel level)
         {
-            LogLevel = level;
-            Metadata.Log.AppendLine($"[Log Level: {LogLevel}]");
-        }
-
-        private string? UpdateProgressAction(string message)
-        {
             lock (Locker)
             {
-                _ = byte.TryParse(message, out var progress);
-                if (Metadata.Progress == progress) { return null; }
-                Metadata.Progress = progress;
+                LogLevel = level;
+                Metadata.Log.AppendLine($"[Log Level: {LogLevel}]");
             }
-
-            _monitorUtil?.Scan(MonitorEvents.ExecutionProgressChanged, _context);
-
-            return null;
         }
     }
 }

@@ -5,8 +5,7 @@ description: long running task with immidiate cancel
 durable: true
 concurrent: false
 properties:
-  filename: CancelTokenTest.dll
-  class name: CancelTokenTest.Job
+  filename: CancelTokenTest.exe
 simple triggers:
 - name: every-hour-trigger
   interval: 01:00:00

@@ -8,7 +8,7 @@ namespace Planar.Job
         public IKey Key { get; set; } = new Key();
         public string? Description { get; set; }
         public string? CalendarName { get; set; }
-        public SortedDictionary<string, string?> TriggerDataMap { get; set; } = new SortedDictionary<string, string?>();
+        public IDataMap TriggerDataMap { get; set; } = new DataMap();
         public DateTimeOffset? FinalFireTime { get; set; }
         public DateTimeOffset? EndTime { get; set; }
         public DateTimeOffset StartTime { get; set; }

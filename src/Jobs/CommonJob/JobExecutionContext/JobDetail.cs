@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Planar.Job
 {
@@ -9,7 +8,7 @@ namespace Planar.Job
 
         public string Description { get; set; } = string.Empty;
 
-        public SortedDictionary<string, string?> JobDataMap { get; set; } = new SortedDictionary<string, string?>();
+        public IDataMap JobDataMap { get; set; } = new DataMap();
 
         public bool Durable { get; set; }
 

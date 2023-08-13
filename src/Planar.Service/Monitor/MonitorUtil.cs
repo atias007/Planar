@@ -13,6 +13,7 @@ using Planar.Service.Model;
 using Planar.Service.Validation;
 using Quartz;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -23,6 +24,7 @@ namespace Planar.Service.Monitor
 {
     public class MonitorUtil : IMonitorUtil
     {
+        private static readonly ConcurrentDictionary<string, DateTimeOffset> _lockJobEvents = new();
         private readonly ILogger<MonitorUtil> _logger;
         private readonly IServiceScopeFactory _serviceScopeFactory;
 
@@ -30,94 +32,6 @@ namespace Planar.Service.Monitor
         {
             _logger = logger;
             _serviceScopeFactory = serviceScopeFactory;
-        }
-
-        public async Task Validate()
-        {
-            using var scope = _serviceScopeFactory.CreateScope();
-            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
-            var count = await dal.GetMonitorCount();
-            if (count == 0)
-            {
-                _logger.LogWarning("There is no monitor items. Service does not have any monitor");
-            }
-
-            var hooks = await dal.GetMonitorUsedHooks();
-            var missingHooks = hooks.Where(h => !ServiceUtil.MonitorHooks.ContainsKey(h)).ToList();
-            missingHooks.ForEach(h => _logger.LogWarning("Monitor with hook '{Hook}' is invalid. Missing hook in service", h));
-        }
-
-        public async Task Scan(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
-        {
-            if (context == null)
-            {
-                _logger.LogWarning($"IJobExecutionContext is null in {nameof(MonitorUtil)}.{nameof(MonitorUtil.Scan)}. Scan skipped");
-                return;
-            }
-
-            if (context.JobDetail.Key.Group.StartsWith(Consts.PlanarSystemGroup))
-            {
-                return;
-            }
-
-            List<MonitorAction> items;
-            var hookTasks = new List<Task>();
-
-            try
-            {
-                items = LoadMonitorItems(@event, context).Result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Fail to handle monitor item(s) --> LoadMonitorItems");
-                return;
-            }
-
-            foreach (var action in items)
-            {
-                var task = ExecuteMonitor(action, @event, context, exception);
-                hookTasks.Add(task);
-            }
-
-            try
-            {
-                await Task.WhenAll(hookTasks);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Fail to handle monitor item(s)");
-            }
-        }
-
-        public async Task Scan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default)
-        {
-            List<MonitorAction> items;
-            var hookTasks = new List<Task>();
-
-            try
-            {
-                items = await LoadMonitorItems(@event);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Fail to handle monitor item(s) --> LoadMonitorItems");
-                return;
-            }
-
-            foreach (var action in items)
-            {
-                var task = ExecuteMonitor(action, @event, info, exception);
-                hookTasks.Add(task);
-            }
-
-            try
-            {
-                await Task.WhenAll(hookTasks);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Fail to handle monitor item(s)");
-            }
         }
 
         public async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception? exception)
@@ -196,118 +110,79 @@ namespace Planar.Service.Monitor
             }
         }
 
-        private async Task SaveMonitorAlert(MonitorAction action, MonitorDetails? details, IJobExecutionContext context, Exception? exception = null)
+        public void LockJobEvent(JobKey key, params MonitorEvents[] events)
         {
-            try
+            foreach (var item in events)
             {
-                if (details == null) { return; }
-
-                var alert = new MonitorAlert();
-                MapDetailsToMonitorAlert(details, alert);
-                MapActionToMonitorAlert(action, alert);
-                MapExceptionMonitorAlert(exception, alert);
-                alert.LogInstanceId = context.FireInstanceId;
-
-                using var scope = _serviceScopeFactory.CreateScope();
-                var dbcontext = scope.ServiceProvider.GetRequiredService<PlanarContext>();
-                dbcontext.MonitorAlerts.Add(alert);
-                await dbcontext.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex,
-                    "Fail to save monitor alert for monitor '{Title}' with event id {Id}",
-                    details?.MonitorTitle ?? "[null]",
-                    details?.EventId ?? 0);
+                LockJobEvent(key, item);
             }
         }
 
-        private async Task SaveMonitorAlert(MonitorAction action, MonitorSystemDetails? details, Exception? exception = null)
+        public void Scan(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
         {
-            try
+            _ = ScanInner(@event, context, exception)
+                .ContinueWith(task =>
+                {
+                    if (task.Exception != null)
+                    {
+                        _logger.LogError(task.Exception, "Fail to handle monitor item(s)");
+                    }
+                });
+        }
+
+        public void Scan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default)
+        {
+            _ = ScanInner(@event, info, exception)
+                .ContinueWith(task =>
+                {
+                    if (task.Exception != null)
+                    {
+                        _logger.LogError(task.Exception, "Fail to handle monitor item(s)");
+                    }
+                });
+        }
+
+        public async Task Validate()
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
+            var count = await dal.GetMonitorCount();
+            if (count == 0)
             {
-                if (details == null) { return; }
-
-                var alert = new MonitorAlert();
-                MapDetailsToMonitorAlert(details, alert);
-                MapActionToMonitorAlert(action, alert);
-                MapExceptionMonitorAlert(exception, alert);
-
-                using var scope = _serviceScopeFactory.CreateScope();
-                var dbcontext = scope.ServiceProvider.GetRequiredService<PlanarContext>();
-                dbcontext.MonitorAlerts.Add(alert);
-                await dbcontext.SaveChangesAsync();
+                _logger.LogWarning("There is no monitor items. Service does not have any monitor");
             }
-            catch (Exception ex)
+
+            var hooks = await dal.GetMonitorUsedHooks();
+            var missingHooks = hooks.Where(h => !ServiceUtil.MonitorHooks.ContainsKey(h)).ToList();
+            missingHooks.ForEach(h => _logger.LogWarning("Monitor with hook '{Hook}' is invalid. Missing hook in service", h));
+        }
+
+        private static void FillException(Monitor monitor, Exception? exception)
+        {
+            if (exception == null) { return; }
+            exception = GetTopRelevantException(exception);
+            if (exception == null) { return; }
+
+            monitor.Exception = exception.ToString();
+            var inner = GetMostInnerException(exception);
+            if (inner != null)
             {
-                _logger.LogError(ex,
-                    "Fail to save monitor alert for monitor '{Title}' with event id {Id}",
-                    details?.MonitorTitle ?? "[null]",
-                    details?.EventId ?? 0);
+                monitor.MostInnerException = inner.ToString();
+                monitor.MostInnerExceptionMessage = inner.Message;
             }
         }
 
-        private static void MapMonitorToMonitorAlert(Monitor monitor, MonitorAlert alert)
+        private static void FillMonitor(Monitor monitor, MonitorAction action, Exception? exception)
         {
-            alert.EventTitle = monitor.EventTitle;
-            alert.AlertDate = DateTime.Now;
-            alert.EventId = monitor.EventId;
-            alert.MonitorTitle = monitor.MonitorTitle;
-            alert.UsersCount = monitor.Users?.Count ?? 0;
-        }
+            monitor.Users = new List<MonitorUser>();
+            monitor.EventId = action.EventId;
+            monitor.EventTitle = ((MonitorEvents)action.EventId).ToString();
+            monitor.Group = new MonitorGroup(action.Group);
+            monitor.MonitorTitle = action.Title;
+            monitor.Users.AddRange(action.Group.Users.Select(u => new MonitorUser(u)).ToList());
+            monitor.GlobalConfig = Global.GlobalConfig;
 
-        private static void MapDetailsToMonitorAlert(MonitorDetails details, MonitorAlert alert)
-        {
-            MapMonitorToMonitorAlert(details, alert);
-            alert.JobGroup = details.JobGroup;
-            alert.JobName = details.JobName;
-            alert.JobId = details.JobId;
-            alert.AlertPayload = JsonConvert.SerializeObject(details);
-        }
-
-        private static void MapDetailsToMonitorAlert(MonitorSystemDetails details, MonitorAlert alert)
-        {
-            MapMonitorToMonitorAlert(details, alert);
-            alert.AlertPayload = JsonConvert.SerializeObject(details);
-        }
-
-        private static void MapActionToMonitorAlert(MonitorAction action, MonitorAlert alert)
-        {
-            alert.GroupId = action.Group.Id;
-            alert.GroupName = action.Group.Name;
-            alert.MonitorId = action.Id;
-            alert.Hook = action.Hook;
-            alert.EventArgument = action.EventArgument;
-        }
-
-        private static void MapExceptionMonitorAlert(Exception? exception, MonitorAlert alert)
-        {
-            alert.Exception = exception?.ToString();
-            alert.HasError = exception != null;
-        }
-
-        private static HookInstance? GetMonitorHookInstance(string hook)
-        {
-            var factory = ServiceUtil.MonitorHooks[hook];
-            if (factory == null) { return null; }
-            if (factory.Type == null) { return null; }
-
-            var instance = Activator.CreateInstance(factory.Type);
-            if (instance == null) { return null; }
-
-            var method1 = SafeGetMethod(hook, HookInstance.HandleMethodName, instance);
-            var method2 = SafeGetMethod(hook, HookInstance.HandleSystemMethodName, instance);
-
-            var result = new HookInstance { Instance = instance, HandleMethod = method1, HandleSystemMethod = method2 };
-            return result;
-        }
-
-        private static MethodInfo SafeGetMethod(string hook, string methodName, object instance)
-        {
-#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
-            var method = instance.GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
-#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
-            return method ?? throw new PlanarException($"method {methodName} could not found in hook {hook}");
+            FillException(monitor, exception);
         }
 
         private static MonitorDetails GetMonitorDetails(MonitorAction action, IJobExecutionContext context, Exception? exception)
@@ -360,32 +235,31 @@ namespace Planar.Service.Monitor
             return result;
         }
 
-        private static void FillMonitor(Monitor monitor, MonitorAction action, Exception? exception)
+        private static HookInstance? GetMonitorHookInstance(string hook)
         {
-            monitor.Users = new List<MonitorUser>();
-            monitor.EventId = action.EventId;
-            monitor.EventTitle = ((MonitorEvents)action.EventId).ToString();
-            monitor.Group = new MonitorGroup(action.Group);
-            monitor.MonitorTitle = action.Title;
-            monitor.Users.AddRange(action.Group.Users.Select(u => new MonitorUser(u)).ToList());
-            monitor.GlobalConfig = Global.GlobalConfig;
+            var factory = ServiceUtil.MonitorHooks[hook];
+            if (factory == null) { return null; }
+            if (factory.Type == null) { return null; }
 
-            FillException(monitor, exception);
+            var instance = Activator.CreateInstance(factory.Type);
+            if (instance == null) { return null; }
+
+            var method1 = SafeGetMethod(hook, HookInstance.HandleMethodName, instance);
+            var method2 = SafeGetMethod(hook, HookInstance.HandleSystemMethodName, instance);
+
+            var result = new HookInstance { Instance = instance, HandleMethod = method1, HandleSystemMethod = method2 };
+            return result;
         }
 
-        private static void FillException(Monitor monitor, Exception? exception)
+        private static Exception GetMostInnerException(Exception ex)
         {
-            if (exception == null) { return; }
-            exception = GetTopRelevantException(exception);
-            if (exception == null) { return; }
-
-            monitor.Exception = exception.ToString();
-            var inner = GetMostInnerException(exception);
-            if (inner != null)
+            var innerException = ex;
+            while (innerException.InnerException != null)
             {
-                monitor.MostInnerException = inner.ToString();
-                monitor.MostInnerExceptionMessage = inner.Message;
+                innerException = innerException.InnerException;
             }
+
+            return innerException;
         }
 
         private static Exception? GetTopRelevantException(Exception ex)
@@ -416,90 +290,51 @@ namespace Planar.Service.Monitor
             return false;
         }
 
-        private static Exception GetMostInnerException(Exception ex)
+        private static void MapActionToMonitorAlert(MonitorAction action, MonitorAlert alert)
         {
-            var innerException = ex;
-            while (innerException.InnerException != null)
-            {
-                innerException = innerException.InnerException;
-            }
-
-            return innerException;
+            alert.GroupId = action.Group.Id;
+            alert.GroupName = action.Group.Name;
+            alert.MonitorId = action.Id;
+            alert.Hook = action.Hook;
+            alert.EventArgument = action.EventArgument;
         }
 
-        private async Task<List<MonitorAction>> LoadMonitorItems(MonitorEvents @event, IJobExecutionContext context)
+        private static void MapDetailsToMonitorAlert(MonitorDetails details, MonitorAlert alert)
         {
-            var key = context.JobDetail.Key;
-
-            var task1 = GetMonitorDataByEvent((int)@event);
-            var task2 = GetMonitorDataByGroup((int)@event, key.Group);
-            var task3 = GetMonitorDataByJob((int)@event, key.Group, key.Name);
-
-            await Task.WhenAll(task1, task2, task3);
-
-            var result = task1.Result
-                .Union(task2.Result)
-                .Union(task3.Result)
-                .Distinct()
-                .ToList();
-
-            return result;
+            MapMonitorToMonitorAlert(details, alert);
+            alert.JobGroup = details.JobGroup;
+            alert.JobName = details.JobName;
+            alert.JobId = details.JobId;
+            alert.AlertPayload = JsonConvert.SerializeObject(details);
         }
 
-        private async Task<List<MonitorAction>> LoadMonitorItems(MonitorEvents @event)
+        private static void MapDetailsToMonitorAlert(MonitorSystemDetails details, MonitorAlert alert)
         {
-            var result = await GetMonitorDataByEvent((int)@event);
-            return result;
+            MapMonitorToMonitorAlert(details, alert);
+            alert.AlertPayload = JsonConvert.SerializeObject(details);
         }
 
-        private async Task<List<MonitorAction>> GetMonitorDataByEvent(int @event)
+        private static void MapExceptionMonitorAlert(Exception? exception, MonitorAlert alert)
         {
-            using var scope = _serviceScopeFactory.CreateScope();
-            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
-            var data = await dal.GetMonitorDataByEvent(@event);
-            return data;
+            alert.Exception = exception?.ToString();
+            alert.HasError = exception != null;
         }
 
-        private async Task<List<MonitorAction>> GetMonitorDataByGroup(int @event, string jobGroup)
+        private static void MapMonitorToMonitorAlert(Monitor monitor, MonitorAlert alert)
         {
-            using var scope = _serviceScopeFactory.CreateScope();
-            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
-            var data = await dal.GetMonitorDataByGroup(@event, jobGroup);
-            return data;
+            alert.EventTitle = monitor.EventTitle;
+            alert.AlertDate = DateTime.Now;
+            alert.EventId = monitor.EventId;
+            alert.MonitorTitle = monitor.MonitorTitle;
+            alert.UsersCount = monitor.Users?.Count ?? 0;
         }
 
-        private async Task<List<MonitorAction>> GetMonitorDataByJob(int @event, string jobGroup, string jobName)
+        private static MethodInfo SafeGetMethod(string hook, string methodName, object instance)
         {
-            using var scope = _serviceScopeFactory.CreateScope();
-            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
-            var data = await dal.GetMonitorDataByJob(@event, jobGroup, jobName);
-            return data;
-        }
-
-        private async Task<MonitorArguments> GetAndValidateArgs(MonitorAction action, JobKeyHelper jobKeyHelper)
-        {
-            var jobId = await jobKeyHelper.GetJobId(action);
-
-            if (string.IsNullOrWhiteSpace(jobId))
-            {
-                _logger.LogWarning("Monitor action {Id}, Title '{Title}' --> missing job group/name", action.Id, action.Title);
-                return MonitorArguments.Empty;
-            }
-
-            var result = new MonitorArguments { Handle = true, JobId = jobId };
-
-            try
-            {
-                var validator = new MonitorActionValidator(_logger);
-                var args = validator.ValidateMonitorArguments(action);
-                result.Args = args;
-            }
-            catch (RestValidationException)
-            {
-                return MonitorArguments.Empty;
-            }
-
-            return result;
+#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
+            var method = instance.GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
+#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
+            return method ?? throw new PlanarException($"method {methodName} could not found in hook {hook}");
         }
 
         private async Task<bool> Analyze(MonitorEvents @event, MonitorAction action, IJobExecutionContext? context)
@@ -556,6 +391,257 @@ namespace Planar.Service.Monitor
                 case MonitorEvents.ExecutionEndWithEffectedRowsLessThanx:
                     var rows1 = ServiceUtil.GetEffectedRows(context);
                     return rows1 != null && rows1 < args.Args[0];
+            }
+        }
+
+        private async Task<MonitorArguments> GetAndValidateArgs(MonitorAction action, JobKeyHelper jobKeyHelper)
+        {
+            var jobId = await jobKeyHelper.GetJobId(action);
+
+            if (string.IsNullOrWhiteSpace(jobId))
+            {
+                _logger.LogWarning("Monitor action {Id}, Title '{Title}' --> missing job group/name", action.Id, action.Title);
+                return MonitorArguments.Empty;
+            }
+
+            var result = new MonitorArguments { Handle = true, JobId = jobId };
+
+            try
+            {
+                var validator = new MonitorActionValidator(_logger);
+                var args = validator.ValidateMonitorArguments(action);
+                result.Args = args;
+            }
+            catch (RestValidationException)
+            {
+                return MonitorArguments.Empty;
+            }
+
+            return result;
+        }
+
+        private async Task<List<MonitorAction>> GetMonitorDataByEvent(int @event)
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
+            var data = await dal.GetMonitorDataByEvent(@event);
+            return data;
+        }
+
+        private async Task<List<MonitorAction>> GetMonitorDataByGroup(int @event, string jobGroup)
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
+            var data = await dal.GetMonitorDataByGroup(@event, jobGroup);
+            return data;
+        }
+
+        private async Task<List<MonitorAction>> GetMonitorDataByJob(int @event, string jobGroup, string jobName)
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
+            var data = await dal.GetMonitorDataByJob(@event, jobGroup, jobName);
+            return data;
+        }
+
+        private async Task<List<MonitorAction>> LoadMonitorItems(MonitorEvents @event, IJobExecutionContext context)
+        {
+            var key = context.JobDetail.Key;
+
+            var task1 = GetMonitorDataByEvent((int)@event);
+            var task2 = GetMonitorDataByGroup((int)@event, key.Group);
+            var task3 = GetMonitorDataByJob((int)@event, key.Group, key.Name);
+
+            await Task.WhenAll(task1, task2, task3);
+
+            var result = task1.Result
+                .Union(task2.Result)
+                .Union(task3.Result)
+                .Distinct()
+                .ToList();
+
+            return result;
+        }
+
+        private async Task<List<MonitorAction>> LoadMonitorItems(MonitorEvents @event)
+        {
+            var result = await GetMonitorDataByEvent((int)@event);
+            return result;
+        }
+
+        private void LockJobEvent(JobKey key, MonitorEvents @event)
+        {
+            var keyString = $"{key} {@event}";
+            _lockJobEvents.TryAdd(keyString, DateTimeOffset.Now);
+            Task.Run(() =>
+            {
+                Thread.Sleep(10000);
+                ReleaseJobEvent(key, @event);
+            });
+        }
+
+        private void ReleaseJobEvent(JobKey key, MonitorEvents @event)
+        {
+            var keyString = $"{key} {@event}";
+            _lockJobEvents.TryRemove(keyString, out _);
+        }
+
+        private void ReleaseJobEvent(MonitorSystemInfo info, MonitorEvents @event)
+        {
+            if (!info.MessagesParameters.ContainsKey("JobGroup")) { return; }
+            if (!info.MessagesParameters.ContainsKey("JobName")) { return; }
+            var keyString = $"{info.MessagesParameters["JobGroup"]}.{info.MessagesParameters["JobName"]} {@event}";
+
+            _lockJobEvents.TryRemove(keyString, out _);
+        }
+
+        private async Task SaveMonitorAlert(MonitorAction action, MonitorDetails? details, IJobExecutionContext context, Exception? exception = null)
+        {
+            try
+            {
+                if (details == null) { return; }
+
+                var alert = new MonitorAlert();
+                MapDetailsToMonitorAlert(details, alert);
+                MapActionToMonitorAlert(action, alert);
+                MapExceptionMonitorAlert(exception, alert);
+                alert.LogInstanceId = context.FireInstanceId;
+
+                using var scope = _serviceScopeFactory.CreateScope();
+                var dbcontext = scope.ServiceProvider.GetRequiredService<PlanarContext>();
+                dbcontext.MonitorAlerts.Add(alert);
+                await dbcontext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Fail to save monitor alert for monitor '{Title}' with event id {Id}",
+                    details?.MonitorTitle ?? "[null]",
+                    details?.EventId ?? 0);
+            }
+        }
+
+        private async Task SaveMonitorAlert(MonitorAction action, MonitorSystemDetails? details, Exception? exception = null)
+        {
+            try
+            {
+                if (details == null) { return; }
+
+                var alert = new MonitorAlert();
+                MapDetailsToMonitorAlert(details, alert);
+                MapActionToMonitorAlert(action, alert);
+                MapExceptionMonitorAlert(exception, alert);
+
+                using var scope = _serviceScopeFactory.CreateScope();
+                var dbcontext = scope.ServiceProvider.GetRequiredService<PlanarContext>();
+                dbcontext.MonitorAlerts.Add(alert);
+                await dbcontext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Fail to save monitor alert for monitor '{Title}' with event id {Id}",
+                    details?.MonitorTitle ?? "[null]",
+                    details?.EventId ?? 0);
+            }
+        }
+
+        private bool IsJobEventLock(JobKey key, MonitorEvents @event)
+        {
+            var keyString = $"{key} {@event}";
+            return _lockJobEvents.ContainsKey(keyString);
+        }
+
+        private bool IsJobEventLock(MonitorSystemInfo info, MonitorEvents @event)
+        {
+            if (!info.MessagesParameters.ContainsKey("JobGroup")) { return false; }
+            if (!info.MessagesParameters.ContainsKey("JobName")) { return false; }
+            var keyString = $"{info.MessagesParameters["JobGroup"]}.{info.MessagesParameters["JobName"]} {@event}";
+            return _lockJobEvents.ContainsKey(keyString);
+        }
+
+        private async Task ScanInner(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default)
+        {
+            List<MonitorAction> items;
+            var hookTasks = new List<Task>();
+
+            if (IsJobEventLock(info, @event))
+            {
+                ReleaseJobEvent(info, @event);
+                return;
+            }
+
+            try
+            {
+                items = await LoadMonitorItems(@event);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to handle monitor item(s) --> LoadMonitorItems");
+                return;
+            }
+
+            foreach (var action in items)
+            {
+                var task = ExecuteMonitor(action, @event, info, exception);
+                hookTasks.Add(task);
+            }
+
+            try
+            {
+                await Task.WhenAll(hookTasks);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to handle monitor item(s)");
+            }
+        }
+
+        private async Task ScanInner(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
+        {
+            if (context == null)
+            {
+                _logger.LogWarning($"IJobExecutionContext is null in {nameof(MonitorUtil)}.{nameof(Scan)}. Scan skipped");
+                return;
+            }
+
+            if (context.JobDetail.Key.Group.StartsWith(Consts.PlanarSystemGroup))
+            {
+                return;
+            }
+
+            if (IsJobEventLock(context.JobDetail.Key, @event))
+            {
+                ReleaseJobEvent(context.JobDetail.Key, @event);
+                return;
+            }
+
+            List<MonitorAction> items;
+            var hookTasks = new List<Task>();
+
+            try
+            {
+                items = LoadMonitorItems(@event, context).Result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to handle monitor item(s) --> LoadMonitorItems");
+                return;
+            }
+
+            foreach (var action in items)
+            {
+                var task = ExecuteMonitor(action, @event, context, exception);
+                hookTasks.Add(task);
+            }
+
+            try
+            {
+                await Task.WhenAll(hookTasks);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fail to handle monitor item(s)");
             }
         }
     }

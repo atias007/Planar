@@ -21,6 +21,8 @@ namespace Planar.Service.API.Helpers
 
         public string? Author { get; set; }
 
+        public int? LogRetentionDays { get; set; }
+
         public bool RollbackEnabled { get; private set; }
 
         public void EnableRollback()

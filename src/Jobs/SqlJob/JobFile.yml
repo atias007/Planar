@@ -5,6 +5,7 @@ description: some job description     # Description of job [only alphanumeric, d
 author: israel israeli (sales)        # The author/responsible person of the job [up to 100 characters]
 durable: true                         # Boolean [true/false]. Non durable job will be delete from system if no future triggers defined
 concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
+log retention days: null              # How many days the running logs will retain. [1 to 1000, null for system default]
 
 job data:                             # Key/Value pairs used by job code
   key1: value1                        # --------------------------------

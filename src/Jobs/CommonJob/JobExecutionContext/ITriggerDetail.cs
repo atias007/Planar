@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Planar.Job
 {
@@ -13,7 +12,7 @@ namespace Planar.Job
         IKey Key { get; }
         int Priority { get; }
         DateTimeOffset StartTime { get; }
-        SortedDictionary<string, string?> TriggerDataMap { get; }
+        IDataMap TriggerDataMap { get; }
         bool HasRetry { get; }
         TimeSpan? RetrySpan { get; }
         bool? IsLastRetry { get; }

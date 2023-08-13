@@ -1,9 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
+using System;
 
 namespace Planar
 {
-    internal class LogEntity
+    public class LogEntity
     {
+        // ************************** BE AWARE TO SYNC WITH PLANAR.PACKAGES SOLUTION **************************
+
         public LogEntity()
         {
         }
@@ -17,5 +20,27 @@ namespace Planar
         public string Message { get; set; } = string.Empty;
 
         public LogLevel Level { get; set; }
+
+        public override string ToString()
+        {
+            var formatedMessage = $"[{DateTime.Now:HH:mm:ss} {GetLogLevelDisplayTest(Level)}] {Message}";
+            return formatedMessage;
+        }
+
+        private static string GetLogLevelDisplayTest(LogLevel logLevel)
+        {
+            return logLevel switch
+            {
+                LogLevel.Trace => "TRC",
+                LogLevel.Debug => "DBG",
+                LogLevel.Information => "INF",
+                LogLevel.Warning => "WRN",
+                LogLevel.Error => "ERR",
+                LogLevel.Critical => "CRT",
+                _ => "NON", // case LogLevel.None
+            };
+        }
+
+        // ************************** BE AWARE TO SYNC WITH PLANAR.PACKAGES SOLUTION **************************
     }
 }

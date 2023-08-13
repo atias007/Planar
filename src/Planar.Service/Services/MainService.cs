@@ -20,10 +20,10 @@ namespace Planar.Service.Services
 {
     public class MainService : BackgroundService
     {
-        private readonly ILogger<MainService> _logger;
         private readonly IHostApplicationLifetime _lifetime;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly ILogger<MainService> _logger;
         private readonly SchedulerUtil _schedulerUtil;
+        private readonly IServiceProvider _serviceProvider;
 
         public MainService(IServiceProvider serviceProvider, IHostApplicationLifetime lifetime)
         {
@@ -33,20 +33,17 @@ namespace Planar.Service.Services
             _schedulerUtil = _serviceProvider.GetRequiredService<SchedulerUtil>();
         }
 
-        private static async Task<bool> WaitForAppStartup(IHostApplicationLifetime lifetime, CancellationToken stoppingToken)
+        public async Task Run(CancellationToken stoppingToken)
         {
-            var startedSource = new TaskCompletionSource();
-            var cancelledSource = new TaskCompletionSource();
+            _logger.LogInformation("Service environment: {Environment}", AppSettings.Environment);
 
-            using var reg1 = lifetime.ApplicationStarted.Register(() => startedSource.SetResult());
-            using var reg2 = stoppingToken.Register(() => cancelledSource.SetResult());
+            await LoadGlobalConfigInner(stoppingToken);
 
-            Task completedTask = await Task.WhenAny(
-                startedSource.Task,
-                cancelledSource.Task).ConfigureAwait(false);
+            await LoadMonitorHooks();
 
-            // If the completed tasks was the "app started" task, return true, otherwise false
-            return completedTask == startedSource.Task;
+            await ScheduleSystemJobs(stoppingToken);
+
+            await JoinToCluster(stoppingToken);
         }
 
         public void Shutdown()
@@ -110,34 +107,40 @@ namespace Planar.Service.Services
             await Task.CompletedTask;
         }
 
-        public async Task Run(CancellationToken stoppingToken)
-        {
-            _logger.LogInformation("Service environment: {Environment}", AppSettings.Environment);
-
-            await LoadGlobalConfigInner(stoppingToken);
-
-            await LoadMonitorHooks();
-
-            await ScheduleSystemJobs(stoppingToken);
-
-            await JoinToCluster(stoppingToken);
-        }
-
-        #region Initialize Scheduler
-
-        private async Task LoadGlobalConfigInner(CancellationToken stoppingToken)
+        protected void SafeSystemScan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default, CancellationToken cancellationToken = default)
         {
             try
             {
-                _logger.LogInformation("Initialize: {Operation}", nameof(LoadGlobalConfig));
-                await LoadGlobalConfig(stoppingToken);
+                if (!MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
+
+                using var scope = _serviceProvider.CreateScope();
+                var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
+                monitor.Scan(@event, info, exception);
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Initialize: Fail to {Operation}", nameof(LoadGlobalConfig));
-                Shutdown();
+                var source = nameof(SafeSystemScan);
+                _logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
             }
         }
+
+        private static async Task<bool> WaitForAppStartup(IHostApplicationLifetime lifetime, CancellationToken stoppingToken)
+        {
+            var startedSource = new TaskCompletionSource();
+            var cancelledSource = new TaskCompletionSource();
+
+            using var reg1 = lifetime.ApplicationStarted.Register(() => startedSource.SetResult());
+            using var reg2 = stoppingToken.Register(() => cancelledSource.SetResult());
+
+            Task completedTask = await Task.WhenAny(
+                startedSource.Task,
+                cancelledSource.Task).ConfigureAwait(false);
+
+            // If the completed tasks was the "app started" task, return true, otherwise false
+            return completedTask == startedSource.Task;
+        }
+
+        #region Initialize Scheduler
 
         public async Task LoadGlobalConfig(CancellationToken stoppingToken = default)
         {
@@ -163,56 +166,13 @@ namespace Planar.Service.Services
             }
         }
 
-        private async Task LoadMonitorHooks()
-        {
-            try
-            {
-                _logger.LogInformation("Initialize: {Operation}", nameof(LoadMonitorHooks));
-
-                ServiceUtil.LoadMonitorHooks(_logger);
-                using var scope = _serviceProvider.CreateScope();
-                var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
-                await monitor.Validate();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(ex, "Initialize: Fail to {Operation}", nameof(LoadMonitorHooks));
-            }
-        }
-
-        private async Task RemoveSchedulerCluster()
-        {
-            var cluster = new ClusterNode
-            {
-                Server = Environment.MachineName,
-                Port = AppSettings.HttpPort,
-                InstanceId = _schedulerUtil.SchedulerInstanceId
-            };
-
-            var services = new ServiceCollection();
-            services.AddPlanarDataLayerWithContext();
-            var provider = services.BuildServiceProvider();
-            using var scope = provider.CreateScope();
-            var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
-            await dal.RemoveClusterNode(cluster);
-
-            if (!AppSettings.Clustering) { return; }
-
-            // Monotoring
-            var info = new MonitorSystemInfo("Cluster node removed from {{MachineName}}");
-            info.MessagesParameters.Add("Port", AppSettings.HttpPort.ToString());
-            info.MessagesParameters.Add("InstanceId", _schedulerUtil.SchedulerInstanceId);
-            info.AddMachineName();
-            await SafeSystemScan(MonitorEvents.ClusterNodeRemoved, info);
-        }
-
         private async Task JoinToCluster(CancellationToken stoppingToken)
         {
             if (!AppSettings.Clustering)
             {
                 try
                 {
-                    _logger.LogInformation("Initialize: RegisterNode");
+                    _logger.LogInformation("Initialize: {Operation}", "Register Current Node");
                     using var scope = _serviceProvider.CreateScope();
                     var util = scope.ServiceProvider.GetRequiredService<ClusterUtil>();
                     await util.Join();
@@ -220,7 +180,7 @@ namespace Planar.Service.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogCritical(ex, "Initialize: Fail to RegisterNode");
+                    _logger.LogCritical(ex, "Initialize: Fail to {Operation}", "Register Current Node");
                     await _schedulerUtil.Stop(stoppingToken);
                     await _schedulerUtil.Shutdown(stoppingToken);
                     Shutdown();
@@ -250,7 +210,7 @@ namespace Planar.Service.Services
                     info.MessagesParameters.Add("Port", AppSettings.HttpPort.ToString());
                     info.MessagesParameters.Add("InstanceId", _schedulerUtil.SchedulerInstanceId);
                     info.AddMachineName();
-                    await SafeSystemScan(MonitorEvents.ClusterNodeJoin, info, cancellationToken: stoppingToken);
+                    SafeSystemScan(MonitorEvents.ClusterNodeJoin, info, cancellationToken: stoppingToken);
                 }
                 else
                 {
@@ -267,12 +227,34 @@ namespace Planar.Service.Services
             }
         }
 
-        private void LogDeadNodes(List<ClusterNode> nodes)
+        private async Task LoadGlobalConfigInner(CancellationToken stoppingToken)
         {
-            if (nodes != null && nodes.Any())
+            try
             {
-                var text = string.Join(',', nodes.Select(n => $"{n.Server}:{n.Port}").ToArray());
-                _logger.LogWarning("There are dead cluster nodes. Current node will not check health with them {Nodes}", text);
+                _logger.LogInformation("Initialize: {Operation}", nameof(LoadGlobalConfig));
+                await LoadGlobalConfig(stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Initialize: Fail to {Operation}", nameof(LoadGlobalConfig));
+                Shutdown();
+            }
+        }
+
+        private async Task LoadMonitorHooks()
+        {
+            try
+            {
+                _logger.LogInformation("Initialize: {Operation}", nameof(LoadMonitorHooks));
+
+                ServiceUtil.LoadMonitorHooks(_logger);
+                using var scope = _serviceProvider.CreateScope();
+                var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
+                await monitor.Validate();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Initialize: Fail to {Operation}", nameof(LoadMonitorHooks));
             }
         }
 
@@ -288,23 +270,41 @@ namespace Planar.Service.Services
             }
         }
 
-        #endregion Initialize Scheduler
-
-        protected async Task SafeSystemScan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default, CancellationToken cancellationToken = default)
+        private void LogDeadNodes(List<ClusterNode> nodes)
         {
-            try
+            if (nodes != null && nodes.Any())
             {
-                if (!MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
-
-                using var scope = _serviceProvider.CreateScope();
-                var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
-                await monitor.Scan(@event, info, exception);
-            }
-            catch (Exception ex)
-            {
-                var source = nameof(SafeSystemScan);
-                _logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
+                var text = string.Join(',', nodes.Select(n => $"{n.Server}:{n.Port}").ToArray());
+                _logger.LogWarning("There are dead cluster nodes. Current node will not check health with them {Nodes}", text);
             }
         }
+
+        private async Task RemoveSchedulerCluster()
+        {
+            var cluster = new ClusterNode
+            {
+                Server = Environment.MachineName,
+                Port = AppSettings.HttpPort,
+                InstanceId = _schedulerUtil.SchedulerInstanceId
+            };
+
+            var services = new ServiceCollection();
+            services.AddPlanarDataLayerWithContext();
+            var provider = services.BuildServiceProvider();
+            using var scope = provider.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
+            await dal.RemoveClusterNode(cluster);
+
+            if (!AppSettings.Clustering) { return; }
+
+            // Monotoring
+            var info = new MonitorSystemInfo("Cluster node removed from {{MachineName}}");
+            info.MessagesParameters.Add("Port", AppSettings.HttpPort.ToString());
+            info.MessagesParameters.Add("InstanceId", _schedulerUtil.SchedulerInstanceId);
+            info.AddMachineName();
+            SafeSystemScan(MonitorEvents.ClusterNodeRemoved, info);
+        }
+
+        #endregion Initialize Scheduler
     }
 }

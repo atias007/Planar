@@ -6,7 +6,7 @@ namespace Planar
 {
     public class SqlJobProperties : IPathJobProperties
     {
-        public string? Path { get; set; } = null!;
+        public string Path { get; set; } = null!;
 
         [YamlMember(Alias = "default connection name")]
         public string? DefaultConnectionName { get; set; }

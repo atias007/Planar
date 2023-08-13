@@ -1,4 +1,5 @@
-﻿using Planar.Job.Test.Common;
+﻿using Planar.Common;
+using Planar.Job.Test.Common;
 using System;
 
 namespace Planar.Job.Test.Assert

@@ -1,5 +1,6 @@
 ﻿using CommonJob.MessageBrokerEntities;
 using Microsoft.Extensions.Logging;
+using Planar.Common;
 using Planar.Job.Test.Common;
 using System;
 using System.Collections.Generic;
@@ -15,7 +16,7 @@ namespace Planar.Job.Test
         private readonly MockJobExecutionContext _context;
         private readonly CancellationTokenSource _cancellationTokenSource;
 
-        public JobMessageBroker(MockJobExecutionContext context, ExecuteJobProperties properties, Dictionary<string, string?> settings)
+        public JobMessageBroker(MockJobExecutionContext context, IExecuteJobProperties properties, Dictionary<string, string?> settings)
         {
             _context = context;
             context.JobSettings = settings;
@@ -60,33 +61,27 @@ namespace Planar.Job.Test
             switch (channel)
             {
                 case "PutJobData":
-                    var data1 = Deserialize<KeyValueItem>(message);
+                    var data1 = Deserialize<KeyValueObject>(message);
                     if (!Consts.IsDataKeyValid(data1.Key))
                     {
                         throw new PlanarJobTestException($"the data key {data1.Key} in invalid");
                     }
 
-                    lock (Locker)
-                    {
-                        var value = PlanarConvert.ToString(data1.Value);
-                        _context.JobDetails.JobDataMap.AddOrUpdate(data1.Key, value);
-                        _context.MergedJobDataMap = _context.JobDetails.JobDataMap.Merge(_context.TriggerDetails.TriggerDataMap);
-                    }
+                    // TODO: var log = new LogEntity(LogLevel.Debug,)
+                    // LogData()
+
                     return null;
 
                 case "PutTriggerData":
-                    var data2 = Deserialize<KeyValueItem>(message);
+                    var data2 = Deserialize<KeyValueObject>(message);
                     if (!Consts.IsDataKeyValid(data2.Key))
                     {
                         throw new PlanarJobTestException($"the data key {data2.Key} in invalid");
                     }
 
-                    lock (Locker)
-                    {
-                        var value = PlanarConvert.ToString(data2.Value);
-                        _context.TriggerDetails.TriggerDataMap.AddOrUpdate(data2.Key, value);
-                        _context.MergedJobDataMap = _context.JobDetails.JobDataMap.Merge(_context.TriggerDetails.TriggerDataMap);
-                    }
+                    // TODO: var log = new LogEntity(LogLevel.Debug,)
+                    // LogData()
+
                     return null;
 
                 case "AddAggragateException":
@@ -106,17 +101,6 @@ namespace Planar.Job.Test
                 case "GetExceptionsText":
                     var exceptionText = Metadata.GetExceptionsText();
                     return exceptionText;
-
-                case "CheckIfStopRequest":
-                    return _cancellationTokenSource.Token.IsCancellationRequested.ToString();
-
-                case "FailOnStopRequest":
-                    if (_cancellationTokenSource.Token.IsCancellationRequested)
-                    {
-                        throw new OperationCanceledException("Job was stopped");
-                    }
-
-                    return null;
 
                 case "GetData":
                     try

@@ -24,13 +24,23 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
+		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\DataMap.cs" Link="JobExecutionContext\DataMap.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\JobDetail.cs" Link="JobExecutionContext\JobDetail.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\JobExecutionContext.cs" Link="JobExecutionContext\JobExecutionContext.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\Key.cs" Link="JobExecutionContext\Key.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\TriggerDetail.cs" Link="JobExecutionContext\TriggerDetail.cs" />
-		<Compile Include="..\..\src\Jobs\CommonJob\LogEntity.cs" Link="LogEntity.cs" />
+		<Compile Include="..\..\src\Jobs\PlanarJob\MessageBrokerChannels.cs" Link="MessageBrokerChannels.cs" />
 		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
-		<Compile Include="..\Planar.Job.Test\Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
+		<Compile Include="..\Planar.Common\ExecuteHelper\ExecuteJobProperties.cs" Link="ExecuteHelper\ExecuteJobProperties.cs" />
+		<Compile Include="..\Planar.Common\ExecuteHelper\ExecuteJobPropertiesBuilder.cs" Link="ExecuteHelper\ExecuteJobPropertiesBuilder.cs" />
+		<Compile Include="..\Planar.Common\Extensions.cs" Link="Extensions.cs" />
+		<Compile Include="..\Planar.Common\JobExecutionContext\DataMapUtils.cs" Link="JobExecutionContext\DataMapUtils.cs" />
+		<Compile Include="..\Planar.Common\JobExecutionContext\MockJobDetails.cs" Link="JobExecutionContext\MockJobDetails.cs" />
+		<Compile Include="..\Planar.Common\JobExecutionContext\MockJobExecutionContext.cs" Link="JobExecutionContext\MockJobExecutionContext.cs" />
+		<Compile Include="..\Planar.Common\JobExecutionContext\MockKey.cs" Link="JobExecutionContext\MockKey.cs" />
+		<Compile Include="..\Planar.Common\JobExecutionContext\MockTriggerDetails.cs" Link="JobExecutionContext\MockTriggerDetails.cs" />
+		<Compile Include="..\Planar.Common\JobMapper.cs" Link="JobMapper.cs" />
+		<Compile Include="..\Planar.Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Include="..\..\res\nuget_logo.png">
@@ -40,18 +50,16 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.7.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.6.0.74858">
-		  <PrivateAssets>all</PrivateAssets>
-		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-		<PackageReference Include="System.Text.Json" Version="7.0.3" />
+		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.2.1.781" />
+		<PackageReference Include="YamlDotNet" Version="13.1.1" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Folder Include="JobExecutionContext\" />
 	  <Folder Include="Properties\PublishProfiles\" />
 	</ItemGroup>
 

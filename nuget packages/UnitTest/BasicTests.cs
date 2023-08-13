@@ -21,8 +21,7 @@ namespace UnitTest
         [Test]
         public void GeneralTest()
         {
-            var run = ExecuteJobBuilder
-                .CreateBuilderForJob<Worker>()
+            var run = CreateJobPropertiesBuilder<Worker>()
                 .WithJobData("X", 10)
                 .WithJobData("Z", "SomeString")
                 .WithJobData("SomeDate", DateTime.Now)
@@ -42,8 +41,7 @@ namespace UnitTest
         [Test]
         public void FailOnMissingData()
         {
-            var run = ExecuteJobBuilder
-                .CreateBuilderForJob<Worker>()
+            var run = CreateJobPropertiesBuilder<Worker>()
                 .WithJobData("Z", "SomeString")
                 .WithJobData("SimpleInt", 44);
 
@@ -54,8 +52,7 @@ namespace UnitTest
         [Test]
         public void SimpleIntIncrease()
         {
-            var run = ExecuteJobBuilder
-                .CreateBuilderForJob<Worker>()
+            var run = CreateJobPropertiesBuilder<Worker>()
                 .WithJobData("X", 10)
                 .WithJobData("Z", "SomeString")
                 .WithJobData("SimpleInt", 44);
@@ -68,8 +65,7 @@ namespace UnitTest
         [Test]
         public void IgnoreData()
         {
-            var run = ExecuteJobBuilder
-                .CreateBuilderForJob<Worker>()
+            var run = CreateJobPropertiesBuilder<Worker>()
                 .WithJobData("X", 10)
                 .WithJobData("Z", "SomeString")
                 .WithJobData("IgnoreData", null);
@@ -82,8 +78,7 @@ namespace UnitTest
         [Test]
         public void CancelJob()
         {
-            var run = ExecuteJobBuilder
-                .CreateBuilderForJob<Worker>()
+            var run = CreateJobPropertiesBuilder<Worker>()
                 .WithJobData("X", 10)
                 .WithJobData("Z", "SomeString")
                 .CancelJobAfterSeconds(5);

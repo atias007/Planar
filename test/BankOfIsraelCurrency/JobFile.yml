@@ -4,10 +4,11 @@ group: Infrastructure
 description: Download daily currency data and save it to disk as xml 
 durable: true
 concurrent: false
+author: israel israeli (sales)
+log retention days: 4
+
 properties:
-  path: BankOfIsraelCurrency
-  filename: BankOfIsraelCurrency.dll
-  class name: BankOfIsraelCurrency.CurrencyLoader
+  filename: BankOfIsraelCurrency.exe
 simple triggers:
   - name: every_10_minutes
     interval: 00:10:00

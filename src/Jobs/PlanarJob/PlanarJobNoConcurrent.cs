@@ -8,7 +8,10 @@ namespace Planar
     [PersistJobDataAfterExecution]
     public class PlanarJobNoConcurrent : PlanarJob
     {
-        public PlanarJobNoConcurrent(ILogger<PlanarJob> logger, IJobPropertyDataLayer dataLayer, IMonitorUtil monitorUtil) : base(logger, dataLayer, monitorUtil)
+        public PlanarJobNoConcurrent(
+            ILogger<PlanarJob> logger,
+            IJobPropertyDataLayer dataLayer,
+            IMonitorUtil monitorUtil) : base(logger, dataLayer, monitorUtil)
         {
         }
     }
