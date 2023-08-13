@@ -172,7 +172,7 @@ namespace Planar.Service.Services
             {
                 try
                 {
-                    _logger.LogInformation("Initialize: RegisterNode");
+                    _logger.LogInformation("Initialize: {Operation}", "Register Current Node");
                     using var scope = _serviceProvider.CreateScope();
                     var util = scope.ServiceProvider.GetRequiredService<ClusterUtil>();
                     await util.Join();
@@ -180,7 +180,7 @@ namespace Planar.Service.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogCritical(ex, "Initialize: Fail to RegisterNode");
+                    _logger.LogCritical(ex, "Initialize: Fail to {Operation}", "Register Current Node");
                     await _schedulerUtil.Stop(stoppingToken);
                     await _schedulerUtil.Shutdown(stoppingToken);
                     Shutdown();

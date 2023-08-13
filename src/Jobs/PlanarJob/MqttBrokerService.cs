@@ -26,67 +26,89 @@ namespace Planar
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            var options = new MqttServerOptionsBuilder()
-                .WithDefaultEndpoint()
-                .WithDefaultEndpointPort(_port)
-                .WithDefaultCommunicationTimeout(TimeSpan.FromSeconds(5))
-                .WithKeepAlive()
-                .WithPersistentSessions()
-                .WithTcpKeepAliveInterval(3)
-                .WithTcpKeepAliveRetryCount(3)
-                .Build();
+            try
+            {
+                var options = new MqttServerOptionsBuilder()
+                        .WithDefaultEndpoint()
+                        .WithDefaultEndpointPort(_port)
+                        .WithDefaultCommunicationTimeout(TimeSpan.FromSeconds(5))
+                        .WithKeepAlive()
+                        .WithPersistentSessions()
+                        .WithTcpKeepAliveInterval(3)
+                        .WithTcpKeepAliveRetryCount(3)
+                        .Build();
 
-            _mqttServer = new MqttFactory().CreateMqttServer(options);
-            _mqttServer.ClientConnectedAsync += ClientConnected;
-            _mqttServer.InterceptingPublishAsync += InterceptingPublish;
-            _mqttServer.StartedAsync += StartedAsync;
-            _mqttServer.StoppedAsync += StoppedAsync;
-            await _mqttServer.StartAsync();
+                _mqttServer = new MqttFactory().CreateMqttServer(options);
+                _mqttServer.ClientConnectedAsync += ClientConnected;
+                _mqttServer.InterceptingPublishAsync += InterceptingPublish;
+                _mqttServer.StartedAsync += StartedAsync;
+                _mqttServer.StoppedAsync += StoppedAsync;
+                await _mqttServer.StartAsync();
+                _logger.LogInformation("Initialize: {Operation}", "Starting MQTT Service...");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogCritical(ex, "Initialize: Fail To {Operation}", "Start MQTT Service");
+            }
         }
 
         private async Task StoppedAsync(EventArgs arg)
         {
-            // TODO: add log info
+            _logger.LogWarning("Stopped MQTT Service");
             await Task.CompletedTask;
         }
 
         private async Task StartedAsync(EventArgs arg)
         {
-            // TODO: add log info
+            _logger.LogInformation("Initialize: {Operation}", "MQTT Service started");
             await Task.CompletedTask;
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            // TODO: try/catch for each row
             if (_mqttServer == null) { return; }
-            _mqttServer.ClientConnectedAsync -= ClientConnected;
-            _mqttServer.InterceptingPublishAsync -= InterceptingPublish;
-            _mqttServer.StartedAsync -= StartedAsync;
-            await _mqttServer.StopAsync();
-            _mqttServer.Dispose();
+            SafeHandle(() => _mqttServer.ClientConnectedAsync -= ClientConnected);
+            SafeHandle(() => _mqttServer.InterceptingPublishAsync -= InterceptingPublish);
+            SafeHandle(() => _mqttServer.StartedAsync -= StartedAsync);
+            await SafeHandleAsync(_mqttServer.StopAsync);
+            SafeHandle(_mqttServer.Dispose);
         }
 
-        private void OnInterceptingPublishAsync(CloudEvent cloudEvent, InterceptingPublishEventArgs arg)
+        private static void SafeHandle(Action action)
         {
-            // TODO: try/catch
             try
             {
-                if (InterceptingPublishAsync != null)
-                {
-                    var cloudEventArgs = new CloudEventArgs(cloudEvent, arg.ClientId);
-                    InterceptingPublishAsync(null, cloudEventArgs);
-                }
+                action.Invoke();
             }
-            catch (Exception ex)
+            catch
             {
-                throw;
+                // *** DO NOTHING ***
+            }
+        }
+
+        private static async Task SafeHandleAsync(Func<Task> func)
+        {
+            try
+            {
+                await func.Invoke();
+            }
+            catch
+            {
+                // *** DO NOTHING ***
+            }
+        }
+
+        private static void OnInterceptingPublishAsync(CloudEvent cloudEvent, InterceptingPublishEventArgs arg)
+        {
+            if (InterceptingPublishAsync != null)
+            {
+                var cloudEventArgs = new CloudEventArgs(cloudEvent, arg.ClientId);
+                InterceptingPublishAsync(null, cloudEventArgs);
             }
         }
 
         private async Task InterceptingPublish(InterceptingPublishEventArgs arg)
         {
-            // TODO: try/catch
             try
             {
                 var cloudEvent = arg.ApplicationMessage.ToCloudEvent(_formatter);
@@ -94,7 +116,7 @@ namespace Planar
             }
             catch (Exception ex)
             {
-                throw;
+                _logger.LogCritical(ex, "fail to handle MQTT published message");
             }
 
             await Task.CompletedTask;
@@ -102,9 +124,9 @@ namespace Planar
 
         private async Task ClientConnected(ClientConnectedEventArgs arg)
         {
-            // TODO: try/catch
-            // TODO: add log info
-            // _logger.LogDebug("New MQTT connection: ClientId = {ClientId}, Endpoint = {Cndpoint}", arg.ClientId, arg.Endpoint)
+            SafeHandle(() =>
+            _logger.LogDebug("New MQTT connection: ClientId = {ClientId}, Endpoint = {Cndpoint}", arg.ClientId, arg.Endpoint));
+
             await Task.CompletedTask;
         }
     }

@@ -4,9 +4,6 @@ PLAN FOR V 1.5.0
 - cli command to changhe interval/count
 - cli command to changhe cron expr
 - add job update monitor event
-- dapper: return await DbConnection.ExecuteAsync(cmd); return always -1
-- Test: Timeout
-- MQTT - todo in code
 
 
 - BACKLOG ----------------------------------------------------------------------------

@@ -40,12 +40,14 @@
 		<Compile Include="..\..\src\Planar.Common\YamlConfigurationFileParser.cs" Link="Common\YamlConfigurationFileParser.cs" />
 		<Compile Include="..\..\src\Planar\FolderConsts.cs" Link="Common\FolderConsts.cs" />
 		<Compile Include="..\Planar.Common\ExecuteHelper\ExecuteJobProperties.cs" Link="ExecuteHelper\ExecuteJobProperties.cs" />
+		<Compile Include="..\Planar.Common\ExecuteHelper\ExecuteJobPropertiesBuilder.cs" Link="ExecuteHelper\ExecuteJobPropertiesBuilder.cs" />
 		<Compile Include="..\Planar.Common\Extensions.cs" Link="Common\Extensions.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\DataMapUtils.cs" Link="JobExecutionContext\DataMapUtils.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\MockJobDetails.cs" Link="JobExecutionContext\MockJobDetails.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\MockJobExecutionContext.cs" Link="JobExecutionContext\MockJobExecutionContext.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\MockKey.cs" Link="JobExecutionContext\MockKey.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\MockTriggerDetails.cs" Link="JobExecutionContext\MockTriggerDetails.cs" />
+		<Compile Include="..\Planar.Common\JobMapper.cs" Link="JobMapper.cs" />
 		<Compile Include="..\Planar.Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
 		<Compile Include="..\Planar.Job\LogEntity.cs" Link="LogEntity.cs" />
 	</ItemGroup>

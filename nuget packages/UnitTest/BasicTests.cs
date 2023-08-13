@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Planar.Common;
 using Planar.Job;
 using Planar.Job.Test;
 using SomeJob;
@@ -22,8 +21,7 @@ namespace UnitTest
         [Test]
         public void GeneralTest()
         {
-            var run = ExecuteJobPropertiesBuilder
-                .CreateBuilderForJob<Worker>()
+            var run = CreateJobPropertiesBuilder<Worker>()
                 .WithJobData("X", 10)
                 .WithJobData("Z", "SomeString")
                 .WithJobData("SomeDate", DateTime.Now)
@@ -33,7 +31,6 @@ namespace UnitTest
                 .WithExecutionDate(DateTime.Now.AddDays(-2))
                 .WithGlobalSettings("Port", 1234);
 
-            var arg = GetPlanarJobArgument(run);
             var result = ExecuteJob(run);
             result.Assert.Status.Success()
                 .EffectedRows.IsNotEmpty()
@@ -44,8 +41,7 @@ namespace UnitTest
         [Test]
         public void FailOnMissingData()
         {
-            var run = ExecuteJobPropertiesBuilder
-                .CreateBuilderForJob<Worker>()
+            var run = CreateJobPropertiesBuilder<Worker>()
                 .WithJobData("Z", "SomeString")
                 .WithJobData("SimpleInt", 44);
 
@@ -56,8 +52,7 @@ namespace UnitTest
         [Test]
         public void SimpleIntIncrease()
         {
-            var run = ExecuteJobPropertiesBuilder
-                .CreateBuilderForJob<Worker>()
+            var run = CreateJobPropertiesBuilder<Worker>()
                 .WithJobData("X", 10)
                 .WithJobData("Z", "SomeString")
                 .WithJobData("SimpleInt", 44);
@@ -70,8 +65,7 @@ namespace UnitTest
         [Test]
         public void IgnoreData()
         {
-            var run = ExecuteJobPropertiesBuilder
-                .CreateBuilderForJob<Worker>()
+            var run = CreateJobPropertiesBuilder<Worker>()
                 .WithJobData("X", 10)
                 .WithJobData("Z", "SomeString")
                 .WithJobData("IgnoreData", null);
@@ -84,8 +78,7 @@ namespace UnitTest
         [Test]
         public void CancelJob()
         {
-            var run = ExecuteJobPropertiesBuilder
-                .CreateBuilderForJob<Worker>()
+            var run = CreateJobPropertiesBuilder<Worker>()
                 .WithJobData("X", 10)
                 .WithJobData("Z", "SomeString")
                 .CancelJobAfterSeconds(5);

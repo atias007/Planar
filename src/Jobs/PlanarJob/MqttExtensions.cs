@@ -33,11 +33,9 @@ namespace Planar
             CheckNotNull(formatter, nameof(formatter));
             CheckNotNull(message, nameof(message));
 
-            // TODO: Determine if there's a sensible content type we should apply.
-            return formatter.DecodeStructuredModeMessage(message.Payload, contentType: null, extensionAttributes);
+            return formatter.DecodeStructuredModeMessage(message.PayloadSegment, contentType: null, extensionAttributes);
         }
 
-        // TODO: Update to a newer version of MQTTNet and support both binary and structured mode?
         /// <summary>
         /// Converts a CloudEvent to <see cref="MqttApplicationMessage"/>.
         /// </summary>
@@ -50,18 +48,15 @@ namespace Planar
             CheckCloudEventArgument(cloudEvent, nameof(cloudEvent));
             CheckNotNull(formatter, nameof(formatter));
 
-            switch (contentMode)
+            return contentMode switch
             {
-                case ContentMode.Structured:
-                    return new MqttApplicationMessage
-                    {
-                        Topic = topic,
-                        Payload = BinaryDataUtilities.AsArray(formatter.EncodeStructuredModeMessage(cloudEvent, out _))
-                    };
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(contentMode), $"Unsupported content mode: {contentMode}");
-            }
+                ContentMode.Structured => new MqttApplicationMessage
+                {
+                    Topic = topic,
+                    PayloadSegment = BinaryDataUtilities.AsArray(formatter.EncodeStructuredModeMessage(cloudEvent, out _))
+                },
+                _ => throw new ArgumentOutOfRangeException(nameof(contentMode), $"Unsupported content mode: {contentMode}"),
+            };
         }
 
         private static void CheckNotNull<T>(T value, string? paramName) where T : class
