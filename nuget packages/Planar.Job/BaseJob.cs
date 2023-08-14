@@ -107,7 +107,7 @@ namespace Planar.Job
             }
         }
 
-        internal void ExecuteUnitTest(
+        internal UnitTestResult ExecuteUnitTest(
             string json,
             Action<IConfigurationBuilder, IJobExecutionContext> configureAction,
             Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction)
@@ -120,6 +120,14 @@ namespace Planar.Job
             Logger = ServiceProvider.GetRequiredService<ILogger>();
 
             ExecuteJob(_context).ConfigureAwait(false).GetAwaiter().GetResult();
+
+            var result = new UnitTestResult
+            {
+                EffectedRows = GetEffectedRows(),
+                Log = BaseLogger.LogText
+            };
+
+            return result;
         }
 
         protected void AddAggregateException(Exception ex)

@@ -5,7 +5,6 @@ using Planar.Job.Test.Common;
 using System;
 using System.Reflection;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Planar.Job.Test
 {
@@ -78,16 +77,13 @@ namespace Planar.Job.Test
             context.JobSettings = settings;
             var json = JsonSerializer.Serialize(context);
             Exception? jobException = null;
-
-            // JobMessageBroker _broker = null!;
+            object? baseJob = null;
 
             try
             {
-                // _broker = new JobMessageBroker(context, properties, settings);
                 Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
                 Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
-                var result = method.Invoke(instance, new object[] { json, configureAction, registerServicesAction }) as Task;
-                result?.ConfigureAwait(false).GetAwaiter().GetResult();
+                baseJob = method.Invoke(instance, new object[] { json, configureAction, registerServicesAction });
             }
             catch (Exception ex)
             {
@@ -98,7 +94,8 @@ namespace Planar.Job.Test
             var endDate = context.FireTimeUtc.DateTime.Add(context.JobRunTime);
             var status = jobException == null ? StatusMembers.Success : StatusMembers.Fail;
 
-            var metadata = context.Result as JobExecutionMetadata;
+            json = JsonSerializer.Serialize(baseJob);
+            var unitTestResult = JsonSerializer.Deserialize<UnitTestResult>(json);
 
             var log = new JobExecutionResult
             {
@@ -114,8 +111,8 @@ namespace Planar.Job.Test
                 Duration = Convert.ToInt32(duration),
                 EndDate = endDate,
                 Exception = jobException,
-                EffectedRows = metadata?.EffectedRows,
-                Log = metadata?.GetLog(),
+                EffectedRows = unitTestResult?.EffectedRows,
+                Log = unitTestResult?.Log,
                 Id = -1,
                 IsCanceled = false,
                 Retry = false,

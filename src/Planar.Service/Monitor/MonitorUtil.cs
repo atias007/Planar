@@ -34,6 +34,38 @@ namespace Planar.Service.Monitor
             _serviceScopeFactory = serviceScopeFactory;
         }
 
+        internal static void SafeSystemScan(IServiceProvider serviceProvider, ILogger logger, MonitorEvents @event, MonitorSystemInfo details, Exception? exception = default)
+        {
+            using var scope = serviceProvider.CreateScope();
+            SafeSystemScanInner(scope, logger, @event, details, exception);
+        }
+
+        internal static void SafeSystemScan(IServiceScopeFactory serviceScopeFactory, ILogger logger, MonitorEvents @event, MonitorSystemInfo details, Exception? exception = default)
+        {
+            using var scope = serviceScopeFactory.CreateScope();
+            SafeSystemScanInner(scope, logger, @event, details, exception);
+        }
+
+        private static void SafeSystemScanInner(IServiceScope scope, ILogger logger, MonitorEvents @event, MonitorSystemInfo details, Exception? exception = default)
+        {
+            try
+            {
+                if (!MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
+
+                var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
+                monitor.Scan(@event, details, exception);
+            }
+            catch (ObjectDisposedException)
+            {
+                ServiceUtil.AddDisposeWarningToLog(logger);
+            }
+            catch (Exception ex)
+            {
+                var source = nameof(SafeSystemScan);
+                logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
+            }
+        }
+
         public async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception? exception)
         {
             MonitorDetails? details = null;
@@ -110,7 +142,7 @@ namespace Planar.Service.Monitor
             }
         }
 
-        public void LockJobEvent(JobKey key, params MonitorEvents[] events)
+        public static void LockJobEvent(JobKey key, params MonitorEvents[] events)
         {
             foreach (var item in events)
             {
@@ -469,7 +501,7 @@ namespace Planar.Service.Monitor
             return result;
         }
 
-        private void LockJobEvent(JobKey key, MonitorEvents @event)
+        private static void LockJobEvent(JobKey key, MonitorEvents @event)
         {
             var keyString = $"{key} {@event}";
             _lockJobEvents.TryAdd(keyString, DateTimeOffset.Now);
@@ -480,13 +512,13 @@ namespace Planar.Service.Monitor
             });
         }
 
-        private void ReleaseJobEvent(JobKey key, MonitorEvents @event)
+        private static void ReleaseJobEvent(JobKey key, MonitorEvents @event)
         {
             var keyString = $"{key} {@event}";
             _lockJobEvents.TryRemove(keyString, out _);
         }
 
-        private void ReleaseJobEvent(MonitorSystemInfo info, MonitorEvents @event)
+        private static void ReleaseJobEvent(MonitorSystemInfo info, MonitorEvents @event)
         {
             if (!info.MessagesParameters.ContainsKey("JobGroup")) { return; }
             if (!info.MessagesParameters.ContainsKey("JobName")) { return; }
@@ -546,13 +578,13 @@ namespace Planar.Service.Monitor
             }
         }
 
-        private bool IsJobEventLock(JobKey key, MonitorEvents @event)
+        private static bool IsJobEventLock(JobKey key, MonitorEvents @event)
         {
             var keyString = $"{key} {@event}";
             return _lockJobEvents.ContainsKey(keyString);
         }
 
-        private bool IsJobEventLock(MonitorSystemInfo info, MonitorEvents @event)
+        private static bool IsJobEventLock(MonitorSystemInfo info, MonitorEvents @event)
         {
             if (!info.MessagesParameters.ContainsKey("JobGroup")) { return false; }
             if (!info.MessagesParameters.ContainsKey("JobName")) { return false; }

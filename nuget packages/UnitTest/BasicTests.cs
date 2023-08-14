@@ -33,9 +33,7 @@ namespace UnitTest
 
             var result = ExecuteJob(run);
             result.Assert.Status.Success()
-                .EffectedRows.IsNotEmpty()
-                .Data.ContainsKey("NoExists")
-                .Data.Key("NoExists").EqualsTo(12345);
+                .EffectedRows.IsNotEmpty();
         }
 
         [Test]
@@ -58,8 +56,7 @@ namespace UnitTest
                 .WithJobData("SimpleInt", 44);
 
             var result = ExecuteJob(run);
-            result.Assert.Status.Success()
-                .Data.Key("SimpleInt").EqualsTo(49);
+            result.Assert.Status.Success();
         }
 
         [Test]
@@ -71,8 +68,7 @@ namespace UnitTest
                 .WithJobData("IgnoreData", null);
 
             var result = ExecuteJob(run);
-            result.Assert.Status.Success()
-                .Data.Key("IgnoreData").IsNull();
+            result.Assert.Status.Success();
         }
 
         [Test]

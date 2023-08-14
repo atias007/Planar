@@ -28,23 +28,7 @@ namespace Planar.Service.Listeners.Base
 
         protected void SafeSystemScan(MonitorEvents @event, MonitorSystemInfo details, Exception? exception = default)
         {
-            try
-            {
-                if (!MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
-
-                using var scope = _serviceScopeFactory.CreateScope();
-                var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
-                monitor.Scan(@event, details, exception);
-            }
-            catch (ObjectDisposedException)
-            {
-                ServiceUtil.AddDisposeWarningToLog(_logger);
-            }
-            catch (Exception ex)
-            {
-                var source = nameof(SafeSystemScan);
-                _logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
-            }
+            MonitorUtil.SafeSystemScan(_serviceScopeFactory, _logger, @event, details, exception);
         }
 
         protected void SafeScan(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)

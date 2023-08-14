@@ -50,6 +50,7 @@
 		<Compile Include="..\Planar.Common\JobMapper.cs" Link="JobMapper.cs" />
 		<Compile Include="..\Planar.Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
 		<Compile Include="..\Planar.Job\LogEntity.cs" Link="LogEntity.cs" />
+		<Compile Include="..\Planar.Job\UnitTestResult.cs" Link="UnitTestResult.cs" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Include="..\..\res\nuget_logo.png">

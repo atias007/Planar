@@ -141,16 +141,16 @@ namespace Planar.Job
 
         public void SetEffectedRows(int value)
         {
-            MqttClient.Publish(MessageBrokerChannels.SetEffectedRows, value).ConfigureAwait(false).GetAwaiter().GetResult();
+            lock (Locker)
+            {
+                _effectedRows = value;
+                MqttClient.Publish(MessageBrokerChannels.SetEffectedRows, value).ConfigureAwait(false).GetAwaiter().GetResult();
+            }
         }
 
         public void IncreaseEffectedRows(int delta = 1)
         {
-            lock (Locker)
-            {
-                _effectedRows = _effectedRows.GetValueOrDefault() + delta;
-                SetEffectedRows(_effectedRows.GetValueOrDefault());
-            }
+            SetEffectedRows(_effectedRows.GetValueOrDefault() + 1);
         }
 
         #endregion EffectedRows

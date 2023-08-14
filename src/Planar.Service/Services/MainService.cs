@@ -107,21 +107,9 @@ namespace Planar.Service.Services
             await Task.CompletedTask;
         }
 
-        protected void SafeSystemScan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default, CancellationToken cancellationToken = default)
+        private void SafeSystemScan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                if (!MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
-
-                using var scope = _serviceProvider.CreateScope();
-                var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
-                monitor.Scan(@event, info, exception);
-            }
-            catch (Exception ex)
-            {
-                var source = nameof(SafeSystemScan);
-                _logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
-            }
+            MonitorUtil.SafeSystemScan(_serviceProvider, _logger, @event, info, exception);
         }
 
         private static async Task<bool> WaitForAppStartup(IHostApplicationLifetime lifetime, CancellationToken stoppingToken)

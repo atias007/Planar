@@ -4,6 +4,7 @@ using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
+using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
 using System.Collections.Generic;
@@ -157,8 +158,7 @@ namespace Planar.Service.API
             await ValidateUpdateJob(request, options, metadata);
 
             // Lock monitor events
-            var monitor = Resolve<MonitorUtil>();
-            monitor.LockJobEvent(metadata.JobKey, MonitorEvents.JobDeleted, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            MonitorUtil.LockJobEvent(metadata.JobKey, MonitorEvents.JobDeleted, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
 
             // Save for rollback
             await FillRollbackData(metadata);
@@ -187,6 +187,14 @@ namespace Planar.Service.API
 
             // Audit
             AuditJobSafe(metadata.JobKey, "job updated", new { request = cloneRequest, options });
+
+            // Monitoring
+            var info = new MonitorSystemInfo("Job {{JobGroup}}.{{JobName}} (Id: {{JobId}}) was updated");
+            info.MessagesParameters.Add("JobGroup", metadata.JobKey.Group);
+            info.MessagesParameters.Add("JobName", metadata.JobKey.Name);
+            info.MessagesParameters.Add("JobId", metadata.JobId);
+            info.AddMachineName();
+            MonitorUtil.SafeSystemScan(_serviceProvider, Logger, MonitorEvents.ClusterNodeJoin, info);
 
             // Return Id
             return new JobIdResponse { Id = metadata.JobId };
