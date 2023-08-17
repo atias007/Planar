@@ -123,7 +123,7 @@ namespace Planar.Job
 
             var result = new UnitTestResult
             {
-                EffectedRows = GetEffectedRows(),
+                EffectedRows = EffectedRows,
                 Log = BaseLogger.LogText
             };
 
@@ -140,14 +140,12 @@ namespace Planar.Job
             _baseJobFactory.CheckAggragateException();
         }
 
-        protected int? GetEffectedRows()
-        {
-            return _baseJobFactory.GetEffectedRows();
-        }
+        protected int ExceptionCount => _baseJobFactory.ExceptionCount;
 
-        protected void IncreaseEffectedRows(int delta = 1)
+        protected int? EffectedRows
         {
-            _baseJobFactory.IncreaseEffectedRows(delta);
+            get { return _baseJobFactory.EffectedRows; }
+            set { _baseJobFactory.EffectedRows = value; }
         }
 
         protected void MapJobInstancePropertiesBack(IJobExecutionContext context)
@@ -184,11 +182,6 @@ namespace Planar.Job
         protected void PutTriggerData(string key, object? value)
         {
             _baseJobFactory.PutTriggerData(key, value);
-        }
-
-        protected void SetEffectedRows(int value)
-        {
-            _baseJobFactory.SetEffectedRows(value);
         }
 
         protected void UpdateProgress(byte value)

@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using Planar.Job;
 
 namespace SomeJob
 {
@@ -7,7 +6,7 @@ namespace SomeJob
     {
         public GeneralUtil(ILogger<GeneralUtil> logger)
         {
-            logger.LogInformation("Success :))))");
+            logger.LogInformation("Success :)");
         }
     }
 }

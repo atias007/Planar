@@ -9,8 +9,8 @@ namespace Planar.Job
     internal class BaseJobFactory : IBaseJob
     {
         private static readonly object Locker = new object();
-        private bool? _isNowOverrideValueExists;
-        private DateTime? _nowOverrideValue;
+        private readonly bool _isNowOverrideValueExists;
+        private readonly DateTime? _nowOverrideValue;
         private readonly IJobExecutionContext _context;
         private readonly List<ExceptionDto> _exceptions = new List<ExceptionDto>();
         private int? _effectedRows;
@@ -18,6 +18,15 @@ namespace Planar.Job
         public BaseJobFactory(IJobExecutionContext context)
         {
             _context = context;
+            _isNowOverrideValueExists = _context.MergedJobDataMap.Exists(Consts.NowOverrideValue);
+            if (_isNowOverrideValueExists)
+            {
+                var stringValue = _context.MergedJobDataMap.Get(Consts.NowOverrideValue);
+                if (DateTime.TryParse(stringValue, CultureInfo.CurrentCulture, DateTimeStyles.AssumeLocal, out DateTime dateValue))
+                {
+                    _nowOverrideValue = dateValue;
+                }
+            }
         }
 
         #region Context
@@ -38,27 +47,12 @@ namespace Planar.Job
 
         public DateTime Now()
         {
-            if (_isNowOverrideValueExists == null)
-            {
-                _isNowOverrideValueExists = _context.MergedJobDataMap.Exists(Consts.NowOverrideValue);
-                if (_isNowOverrideValueExists.GetValueOrDefault())
-                {
-                    var value = _context.MergedJobDataMap.Get(Consts.NowOverrideValue);
-                    if (DateTime.TryParse(value, CultureInfo.CurrentCulture, DateTimeStyles.AssumeLocal, out DateTime dateValue))
-                    {
-                        _nowOverrideValue = dateValue;
-                    }
-                }
-            }
-
-            if (_nowOverrideValue.HasValue)
+            if (_isNowOverrideValueExists && _nowOverrideValue != null)
             {
                 return _nowOverrideValue.Value;
             }
-            else
-            {
-                return DateTime.Now;
-            }
+
+            return DateTime.Now;
         }
 
         #endregion Timing
@@ -84,6 +78,8 @@ namespace Planar.Job
                 throw ex;
             }
         }
+
+        public int ExceptionCount => _exceptions.Count;
 
         private string GetExceptionsText()
         {
@@ -134,23 +130,17 @@ namespace Planar.Job
 
         #region EffectedRows
 
-        public int? GetEffectedRows()
+        public int? EffectedRows
         {
-            return _effectedRows;
-        }
-
-        public void SetEffectedRows(int value)
-        {
-            lock (Locker)
+            get { return _effectedRows; }
+            set
             {
-                _effectedRows = value;
-                MqttClient.Publish(MessageBrokerChannels.SetEffectedRows, value).ConfigureAwait(false).GetAwaiter().GetResult();
+                lock (Locker)
+                {
+                    _effectedRows = value;
+                    MqttClient.Publish(MessageBrokerChannels.SetEffectedRows, value).ConfigureAwait(false).GetAwaiter().GetResult();
+                }
             }
-        }
-
-        public void IncreaseEffectedRows(int delta = 1)
-        {
-            SetEffectedRows(_effectedRows.GetValueOrDefault() + 1);
         }
 
         #endregion EffectedRows

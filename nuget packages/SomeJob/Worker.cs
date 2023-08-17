@@ -29,14 +29,18 @@ namespace SomeJob
 
             factory.PutJobData("NoExists", 12345);
 
-            Logger.LogWarning("Now: {Now}", Now());
+            Logger.LogWarning("Now: {Now:ddd MMM yyyy}", Now());
 
             Logger.LogInformation("SomeMappedInt: {SomeMappedInt}", SomeMappedInt);
 
-            SomeMappedInt = 1050;
+            SomeMappedInt++;
 
             var maxDiffranceHours = Configuration.GetValue("Max Diffrance Hours", 12);
-            Logger.LogInformation("Value is {Value} while default value is 12", maxDiffranceHours);
+            Logger.LogInformation("Configuration: Max Diffrance Hours={Value} while default is 12", maxDiffranceHours);
+
+            var someSettings = Configuration.GetValue<string>("Some New Settings");
+            Logger.LogInformation("Configuration: Some New Settings={Value}", someSettings);
+
             AddAggregateException(new Exception("agg ex"));
 
             var exists = context.MergedJobDataMap.Exists("X");
@@ -49,35 +53,30 @@ namespace SomeJob
             Logger.LogDebug("Data X Value: {Value}", a);
             a++;
             PutJobData("X", a);
-            a = context.MergedJobDataMap.Get<int>("X");
-            Logger.LogDebug("Data X Value: {Value}", a);
 
             var z = context.MergedJobDataMap.Get("Z");
             Logger.LogDebug("Data Z Value: {Value}", z);
             PutJobData("Z", "NewZData");
-            Logger.LogInformation("Z=" + context.MergedJobDataMap.Get("Z"));
 
-            var rows = GetEffectedRows();
+            var rows = EffectedRows;
             Logger.LogDebug("GetEffectedRows: {Value}", rows);
-            IncreaseEffectedRows();
-            rows = GetEffectedRows();
+            EffectedRows = 0;
+            rows = EffectedRows;
             Logger.LogDebug("GetEffectedRows: {Value}", rows);
-            IncreaseEffectedRows();
-            rows = GetEffectedRows();
+            EffectedRows++;
+            rows = EffectedRows;
             Logger.LogDebug("GetEffectedRows: {Value}", rows);
-
             Logger.LogWarning("JobRunTime: {JobRunTime}", JobRunTime);
-
             Logger.LogInformation("SomeDate: {SomeDate}", SomeDate);
             SomeDate = Now();
-
+            Logger.LogWarning("Recovery: {Recovery}", context.Recovering);
             UpdateProgress(66);
 
             SimpleInt += 5;
             IgnoreData = "x";
 
             var a1 = factory.Context.MergedJobDataMap.Get<int>("X");
-            var b1 = factory.GetEffectedRows();
+            var b1 = factory.EffectedRows;
             Logger.LogInformation("Test IBaseJob: X={X}, EffectedRows={EffectedRows}", a1, b1);
 
             var no = factory.Context.MergedJobDataMap.Exists("NoExists");

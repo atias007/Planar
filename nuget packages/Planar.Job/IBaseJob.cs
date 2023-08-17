@@ -12,17 +12,15 @@ namespace Planar.Job
 
         void CheckAggragateException();
 
-        int? GetEffectedRows();
+        int ExceptionCount { get; }
 
-        void IncreaseEffectedRows(int delta = 1);
+        int? EffectedRows { get; set; }
 
         DateTime Now();
 
         void PutJobData(string key, object value);
 
         void PutTriggerData(string key, object value);
-
-        void SetEffectedRows(int value);
 
         void UpdateProgress(byte value);
 

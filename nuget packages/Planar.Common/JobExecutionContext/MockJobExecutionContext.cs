@@ -28,7 +28,7 @@ namespace Planar.Common
             if (properties.ExecutionDate.HasValue)
             {
                 _now = properties.ExecutionDate.Value;
-                ((DataMap)JobDetail.JobDataMap).Add(Consts.NowOverrideValue, _now.ToString());
+                ((DataMap)JobDetails.JobDataMap).Add(Consts.NowOverrideValue, _now.ToString());
                 ((DataMap)Trigger.TriggerDataMap).Add(Consts.NowOverrideValue, _now.ToString());
             }
 
@@ -44,8 +44,6 @@ namespace Planar.Common
         public bool Recovering { get; private set; }
 
         public int RefireCount { get; private set; }
-
-        public IJobDetail JobDetail => _jobDetail;
 
         public string FireInstanceId { get; private set; }
 
