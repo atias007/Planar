@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -8,7 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="dbup-core" Version="5.0.10" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
     <PackageReference Include="Spectre.Console" Version="0.47.0" />
@@ -16,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DatabaseMigrations.Factory\DatabaseMigrations.Factory.csproj" />
+    <ProjectReference Include="..\DbUp\dbup-core\dbup-core.csproj" />
   </ItemGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
