@@ -27,10 +27,10 @@ namespace Planar.Common
         public string TriggerKeyName { get; set; } = DefaultTriggerName;
         public string TriggerKeyGroup { get; set; } = DefaultGroup;
 
-        public Dictionary<string, object?> TriggerData { get; set; } = new Dictionary<string, object?>();
+        public IDictionary<string, object?> TriggerData { get; set; } = new Dictionary<string, object?>();
 
-        public Dictionary<string, object?> JobData { get; set; } = new Dictionary<string, object?>();
+        public IDictionary<string, object?> JobData { get; set; } = new Dictionary<string, object?>();
 
-        public Dictionary<string, string?> GlobalSettings { get; set; } = new Dictionary<string, string?>();
+        public IDictionary<string, string?> GlobalSettings { get; set; } = new Dictionary<string, string?>();
     }
 }

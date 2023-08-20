@@ -239,7 +239,8 @@ namespace Planar.Job
 
                 if (PlanarJob.Mode == RunningMode.Debug)
                 {
-                    ctx.JobSettings = new Dictionary<string, string?>(JobSettingsLoader.LoadJobSettings(ctx.JobSettings));
+                    var settings = JobSettingsLoader.LoadJobSettings(null, ctx.JobSettings);
+                    ctx.JobSettings = new Dictionary<string, string?>(settings);
                 }
 
                 _context = ctx;

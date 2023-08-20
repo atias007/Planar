@@ -1,6 +1,7 @@
 ﻿using Planar.Job;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -37,9 +38,18 @@ namespace Planar.Common
             Recovering = properties.Recovering;
             RefireCount = properties.RefireCount;
             Environment = properties.Environment;
+
+            if (properties.GlobalSettings.Any())
+            {
+                JobSettings = new Dictionary<string, string?>(properties.GlobalSettings);
+            }
+            else
+            {
+                JobSettings = new Dictionary<string, string?>();
+            }
         }
 
-        public Dictionary<string, string?> JobSettings { get; set; } = new Dictionary<string, string?>();
+        public Dictionary<string, string?> JobSettings { get; set; }
 
         public bool Recovering { get; private set; }
 

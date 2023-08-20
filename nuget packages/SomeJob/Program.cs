@@ -4,7 +4,8 @@ using SomeJob;
 PlanarJob.Debugger.AddProfile<Worker>("Demo 1", builder =>
     builder
         .WithJobData("X", "1")
-        .WithJobData("Z", "2"));
+        .WithJobData("Z", "2")
+        .WithGlobalSettings("RabbitMQ:Host", "127.0.0.1"));
 
 PlanarJob.Debugger.AddProfile<Worker>("Demo 100", builder =>
     builder
@@ -25,5 +26,12 @@ PlanarJob.Debugger.AddProfile<Worker>("Demo With Recovery", builder =>
         .WithJobData("Z", "200")
         .WithJobData("SomeMappedInt", 555)
         .SetRecoveringMode());
+
+PlanarJob.Debugger.AddProfile<Worker>("Override Global Settings", builder =>
+    builder
+        .WithJobData("X", "100")
+        .WithJobData("Z", "200")
+        .WithJobData("SomeMappedInt", 555)
+        .WithGlobalSettings("Max Diffrance Hours", 999));
 
 PlanarJob.Start<Worker>();

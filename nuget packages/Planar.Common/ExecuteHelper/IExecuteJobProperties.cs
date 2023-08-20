@@ -8,14 +8,14 @@ namespace Planar.Common
         TimeSpan? CancelJobAfter { get; }
         string Environment { get; }
         DateTimeOffset? ExecutionDate { get; }
-        Dictionary<string, string?> GlobalSettings { get; }
-        Dictionary<string, object?> JobData { get; }
+        IDictionary<string, string?> GlobalSettings { get; }
+        IDictionary<string, object?> JobData { get; }
         string JobKeyGroup { get; }
         string JobKeyName { get; }
         Type? JobType { get; }
         bool Recovering { get; }
         int RefireCount { get; }
-        Dictionary<string, object?> TriggerData { get; }
+        IDictionary<string, object?> TriggerData { get; }
         string TriggerKeyGroup { get; }
         string TriggerKeyName { get; }
     }

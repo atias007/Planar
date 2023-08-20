@@ -26,7 +26,7 @@ namespace Planar.Job
                 throw new PlanarJobException("Debug profile name is empty");
             }
 
-            if (name.Length > 20)
+            if (name.Length > 50)
             {
                 throw new PlanarJobException($"Debug profile name has {name.Length} chars. Maximum allowed chars is 20");
             }

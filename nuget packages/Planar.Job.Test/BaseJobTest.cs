@@ -81,8 +81,7 @@ namespace Planar.Job.Test
             mapper.MapJobInstanceProperties(context, instance);
 
             // Load Job Setting & merge with Global Settings
-            var settings = JobSettingsLoader.LoadJobSettingsForUnitTest(properties.JobType);
-            settings = settings.Merge(properties.GlobalSettings);
+            var settings = JobSettingsLoader.LoadJobSettingsForUnitTest(properties.JobType).Merge(context.JobSettings);
             context.JobSettings = settings;
 
             // Serialize Job Context
