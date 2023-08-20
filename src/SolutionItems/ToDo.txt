@@ -13,7 +13,7 @@ PLAN FOR V 1.5.0
 - api security headers
 - api rate limit
 - circuit breaker (option to pause job after {x} fails in row)
-
+- cli trigger describe
 - cli: job apply (do add or update)
 - search in history by free text from log
 - add cli plot statistics
