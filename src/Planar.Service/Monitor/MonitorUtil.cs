@@ -36,24 +36,34 @@ namespace Planar.Service.Monitor
 
         internal static void SafeSystemScan(IServiceProvider serviceProvider, ILogger logger, MonitorEvents @event, MonitorSystemInfo details, Exception? exception = default)
         {
-            using var scope = serviceProvider.CreateScope();
-            SafeSystemScanInner(scope, logger, @event, details, exception);
+            try
+            {
+                if (!MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
+
+                using var scope = serviceProvider.CreateScope();
+                var monitorUtil = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
+                monitorUtil.Scan(@event, details, exception);
+            }
+            catch (ObjectDisposedException)
+            {
+                ServiceUtil.AddDisposeWarningToLog(logger);
+            }
+            catch (Exception ex)
+            {
+                var source = nameof(SafeSystemScan);
+                logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
+            }
         }
 
         internal static void SafeSystemScan(IServiceScopeFactory serviceScopeFactory, ILogger logger, MonitorEvents @event, MonitorSystemInfo details, Exception? exception = default)
-        {
-            using var scope = serviceScopeFactory.CreateScope();
-            SafeSystemScanInner(scope, logger, @event, details, exception);
-        }
-
-        private static void SafeSystemScanInner(IServiceScope scope, ILogger logger, MonitorEvents @event, MonitorSystemInfo details, Exception? exception = default)
         {
             try
             {
                 if (!MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
 
-                var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
-                monitor.Scan(@event, details, exception);
+                using var scope = serviceScopeFactory.CreateScope();
+                var monitorUtil = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
+                monitorUtil.Scan(@event, details, exception);
             }
             catch (ObjectDisposedException)
             {

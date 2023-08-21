@@ -11,7 +11,6 @@ PLAN FOR V 1.5.0
 - add daily report system job
 
 - api security headers
-- api rate limit
 - circuit breaker (option to pause job after {x} fails in row)
 - cli trigger describe
 - cli: job apply (do add or update)
@@ -202,7 +201,8 @@ V 1.4.0
 V1.5.0
 ------
 - add smart process job (implement https://github.com/dotnet/MQTTnet) + (https://behroozbc.hashnode.dev/basic-mqtt-broker-with-c-sharp)
-- add adminisrator rele to pause-all /resume-all
+- add adminisrator role to pause-all /resume-all
+- api rate limit
 - ask are you sure on pause-all / resume-all
 - security audit (all login senarios, change role of group, add/remove user from group)
 - always remove swagger & redoc on production

@@ -91,6 +91,9 @@ namespace Planar.Startup
 
             app.UseAuthorization();
             app.MapControllers();
+
+            //Rate limitter middleware
+            app.UseRateLimiter();
             app.MapGrpcService<ClusterService>();
         }
     }

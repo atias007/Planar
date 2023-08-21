@@ -74,6 +74,8 @@ namespace Planar.Common
 
         public static TimeSpan AuthenticationTokenExpire { get; set; }
 
+        public static int ConcurrencyRateLimiting { get; set; }
+
         public static SymmetricSecurityKey AuthenticationKey { get; set; } = null!;
 
         public static LogLevel LogLevel { get; set; }
@@ -113,6 +115,12 @@ namespace Planar.Common
             DeveloperExceptionPage = GetSettings(configuration, Consts.DeveloperExceptionPageVariableKey, nameof(DeveloperExceptionPage), true);
             SchedulerStartupDelay = GetSettings(configuration, Consts.SchedulerStartupDelayVariableKey, nameof(SchedulerStartupDelay), TimeSpan.FromSeconds(30));
             RunDatabaseMigration = GetSettings(configuration, Consts.RunDatabaseMigrationVariableKey, nameof(RunDatabaseMigration), true);
+            ConcurrencyRateLimiting = GetSettings(configuration, Consts.ConcurrencyRateLimitingVariableKey, nameof(ConcurrencyRateLimiting), 10);
+
+            if (ConcurrencyRateLimiting < 1)
+            {
+                throw new AppSettingsException($"Concurrency rate limiting have minimum value of 1 minute. Current length is {ConcurrencyRateLimiting}");
+            }
         }
 
         private static void InitializeEnvironment(IConfiguration configuration)
