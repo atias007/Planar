@@ -6,14 +6,6 @@ namespace Planar.Common
     {
         IExecuteJobProperties Build();
 
-        IExecuteJobPropertiesBuilder CancelJobAfter(TimeSpan timeSpan);
-
-        IExecuteJobPropertiesBuilder CancelJobAfterMilliseconds(uint milliseconds);
-
-        IExecuteJobPropertiesBuilder CancelJobAfterMinutes(uint minutes);
-
-        IExecuteJobPropertiesBuilder CancelJobAfterSeconds(uint seconds);
-
         IExecuteJobPropertiesBuilder SetEnvironment(string environment);
 
         IExecuteJobPropertiesBuilder SetRecoveringMode();

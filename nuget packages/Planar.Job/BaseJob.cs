@@ -69,12 +69,12 @@ namespace Planar.Job
 
             if (PlanarJob.Mode == RunningMode.Release)
             {
-                MqttClient.Start(_context.FireInstanceId).ConfigureAwait(false).GetAwaiter().GetResult();
+                MqttClient.Start(_context.FireInstanceId).Wait();
                 SpinWait.SpinUntil(() => MqttClient.IsConnected, TimeSpan.FromSeconds(5));
                 if (MqttClient.IsConnected)
                 {
-                    MqttClient.Ping().ConfigureAwait(false).GetAwaiter().GetResult();
-                    MqttClient.Publish(MessageBrokerChannels.HealthCheck).ConfigureAwait(false).GetAwaiter().GetResult();
+                    MqttClient.Ping().Wait();
+                    MqttClient.Publish(MessageBrokerChannels.HealthCheck).Wait();
                 }
                 else
                 {
@@ -87,7 +87,7 @@ namespace Planar.Job
 
             try
             {
-                ExecuteJob(_context).ConfigureAwait(false).GetAwaiter().GetResult();
+                ExecuteJob(_context).Wait();
                 MapJobInstancePropertiesBack(_context);
             }
             catch (Exception ex)
@@ -103,7 +103,7 @@ namespace Planar.Job
             }
             finally
             {
-                MqttClient.Stop().ConfigureAwait(false).GetAwaiter().GetResult();
+                MqttClient.Stop().Wait();
             }
         }
 
@@ -119,7 +119,7 @@ namespace Planar.Job
 
             Logger = ServiceProvider.GetRequiredService<ILogger>();
 
-            ExecuteJob(_context).ConfigureAwait(false).GetAwaiter().GetResult();
+            ExecuteJob(_context).Wait();
 
             var result = new UnitTestResult
             {
@@ -237,6 +237,7 @@ namespace Planar.Job
                 FilterJobData(ctx.JobDetails.JobDataMap);
                 FilterJobData(ctx.TriggerDetails.TriggerDataMap);
 
+                // Debug mode need to manually read settings file/s
                 if (PlanarJob.Mode == RunningMode.Debug)
                 {
                     var settings = JobSettingsLoader.LoadJobSettings(null, ctx.JobSettings);

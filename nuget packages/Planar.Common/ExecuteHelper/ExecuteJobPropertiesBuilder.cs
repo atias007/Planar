@@ -118,50 +118,6 @@ namespace Planar.Common
             return this;
         }
 
-        public IExecuteJobPropertiesBuilder CancelJobAfter(TimeSpan timeSpan)
-        {
-            if (timeSpan == TimeSpan.Zero)
-            {
-                throw new ExecuteJobPropertiesBuilderException("timeSpan parameter should be greater then TimeSpan.Zero");
-            }
-
-            _properties.CancelJobAfter = timeSpan;
-            return this;
-        }
-
-        public IExecuteJobPropertiesBuilder CancelJobAfterSeconds(uint seconds)
-        {
-            if (seconds == 0)
-            {
-                throw new ExecuteJobPropertiesBuilderException("seconds parameter should be greater then 0");
-            }
-
-            _properties.CancelJobAfter = TimeSpan.FromSeconds(seconds);
-            return this;
-        }
-
-        public IExecuteJobPropertiesBuilder CancelJobAfterMinutes(uint minutes)
-        {
-            if (minutes == 0)
-            {
-                throw new ExecuteJobPropertiesBuilderException("minutes parameter should be greater then 0");
-            }
-
-            _properties.CancelJobAfter = TimeSpan.FromMinutes(minutes);
-            return this;
-        }
-
-        public IExecuteJobPropertiesBuilder CancelJobAfterMilliseconds(uint milliseconds)
-        {
-            if (milliseconds == 0)
-            {
-                throw new ExecuteJobPropertiesBuilderException("milliseconds parameter should be greater then 0");
-            }
-
-            _properties.CancelJobAfter = TimeSpan.FromMilliseconds(milliseconds);
-            return this;
-        }
-
         public IExecuteJobProperties Build()
         {
             return _properties;

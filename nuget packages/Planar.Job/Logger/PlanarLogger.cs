@@ -48,7 +48,7 @@ namespace Planar.Job.Logger
 
             var message = $"<{typeof(TContext).Name}> {formatter(state, exception)}";
             var entity = new LogEntity { Message = message, Level = logLevel };
-            MqttClient.Publish(MessageBrokerChannels.AppendLog, entity).ConfigureAwait(false).GetAwaiter().GetResult();
+            MqttClient.Publish(MessageBrokerChannels.AppendLog, entity).Wait();
             LogToConsole(entity.ToString());
         }
     }
@@ -61,7 +61,7 @@ namespace Planar.Job.Logger
 
             var message = $"{formatter(state, exception)}";
             var entity = new LogEntity { Message = message, Level = logLevel };
-            MqttClient.Publish(MessageBrokerChannels.AppendLog, entity).ConfigureAwait(false).GetAwaiter().GetResult();
+            MqttClient.Publish(MessageBrokerChannels.AppendLog, entity).Wait();
             LogToConsole(entity.ToString());
         }
     }

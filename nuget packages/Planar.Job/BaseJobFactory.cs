@@ -65,7 +65,7 @@ namespace Planar.Job
             {
                 var message = new ExceptionDto(ex);
                 _exceptions.Add(message);
-                MqttClient.Publish(MessageBrokerChannels.AddAggregateException, message).ConfigureAwait(false).GetAwaiter().GetResult();
+                MqttClient.Publish(MessageBrokerChannels.AddAggregateException, message).Wait();
             }
         }
 
@@ -117,13 +117,13 @@ namespace Planar.Job
         public void PutJobData(string key, object? value)
         {
             var message = new { Key = key, Value = value };
-            MqttClient.Publish(MessageBrokerChannels.PutJobData, message).ConfigureAwait(false).GetAwaiter().GetResult();
+            MqttClient.Publish(MessageBrokerChannels.PutJobData, message).Wait();
         }
 
         public void PutTriggerData(string key, object? value)
         {
             var message = new { Key = key, Value = value };
-            MqttClient.Publish(MessageBrokerChannels.PutTriggerData, message).ConfigureAwait(false).GetAwaiter().GetResult();
+            MqttClient.Publish(MessageBrokerChannels.PutTriggerData, message).Wait();
         }
 
         #endregion Data
@@ -138,7 +138,7 @@ namespace Planar.Job
                 lock (Locker)
                 {
                     _effectedRows = value;
-                    MqttClient.Publish(MessageBrokerChannels.SetEffectedRows, value).ConfigureAwait(false).GetAwaiter().GetResult();
+                    MqttClient.Publish(MessageBrokerChannels.SetEffectedRows, value).Wait();
                 }
             }
         }
@@ -154,7 +154,7 @@ namespace Planar.Job
 
         public void ReportExceptionText(string text)
         {
-            MqttClient.Publish(MessageBrokerChannels.ReportException, text).ConfigureAwait(false).GetAwaiter().GetResult();
+            MqttClient.Publish(MessageBrokerChannels.ReportException, text).Wait();
         }
 
         #endregion Inner
@@ -163,7 +163,7 @@ namespace Planar.Job
 
         public void UpdateProgress(byte value)
         {
-            MqttClient.Publish(MessageBrokerChannels.UpdateProgress, value).ConfigureAwait(false).GetAwaiter().GetResult();
+            MqttClient.Publish(MessageBrokerChannels.UpdateProgress, value).Wait();
         }
 
         public void UpdateProgress(int current, int total)

@@ -12,8 +12,6 @@ namespace Planar.Common
 
         public Type? JobType { get; set; }
 
-        public TimeSpan? CancelJobAfter { get; set; }
-
         public DateTimeOffset? ExecutionDate { get; set; }
 
         public bool Recovering { get; set; }

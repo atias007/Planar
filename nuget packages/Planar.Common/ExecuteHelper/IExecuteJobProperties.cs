@@ -5,7 +5,6 @@ namespace Planar.Common
 {
     public interface IExecuteJobProperties
     {
-        TimeSpan? CancelJobAfter { get; }
         string Environment { get; }
         DateTimeOffset? ExecutionDate { get; }
         IDictionary<string, string?> GlobalSettings { get; }

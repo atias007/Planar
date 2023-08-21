@@ -7,6 +7,18 @@
 		<Version>1.4.0</Version>
 		<StartupObject>Planar.CLI.Program</StartupObject>
 		<Nullable>enable</Nullable>
+
+		<Description>Planar CLI tool</Description>
+		<RepositoryType>git</RepositoryType>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<PackageProjectUrl>https://github.com/atias007/Planar</PackageProjectUrl>
+		<Title>Planar CLI tool</Title>
+		<RepositoryUrl>https://github.com/atias007/Planar</RepositoryUrl>
+		<PackageTags>planar;job;schedule;task;automation</PackageTags>
+		<PackAsTool>true</PackAsTool>
+		<ToolCommandName>planar-cli</ToolCommandName>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
@@ -40,8 +52,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Update="nuget_logo.png">
+		  <Pack>True</Pack>
+		  <PackagePath>\</PackagePath>
+		</None>
 		<None Update="planar-cli">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>
 </Project>
