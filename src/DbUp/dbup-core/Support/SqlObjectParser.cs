@@ -6,9 +6,9 @@ namespace DbUp.Support
 {
     public abstract class SqlObjectParser : ISqlObjectParser
     {
-        readonly string quotePrefix;
-        readonly string quoteSuffix;
-        readonly Regex matchQuotes;
+        private readonly string quotePrefix;
+        private readonly string quoteSuffix;
+        private readonly Regex matchQuotes;
 
         protected SqlObjectParser(string quotePrefix, string quoteSuffix)
         {
@@ -17,7 +17,7 @@ namespace DbUp.Support
 
             var prefix = Regex.Escape(quotePrefix);
             var suffix = Regex.Escape(quoteSuffix);
-            matchQuotes = new Regex($"^({prefix}){{1}}?(?<unquoted>.*)({suffix}){{1}}$");
+            matchQuotes = new Regex($"^({prefix}){{1}}?(?<unquoted>.*)({suffix}){{1}}$", RegexOptions.None, TimeSpan.FromSeconds(5));
         }
 
         /// <summary>
