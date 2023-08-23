@@ -16,9 +16,7 @@ rmdir "c:\temp\Planar\publish\database_migrations" /S /Q
 @ECHO --------------------------------------------------------------------------------------
 cd ..\Planar.CLI
 dotnet publish -p:PublishProfile=Properties\PublishProfiles\win-x64.pubxml
-dotnet publish -p:PublishProfile=Properties\PublishProfiles\win-x64_self_contained.pubxml
 dotnet publish -p:PublishProfile=Properties\PublishProfiles\win-x86.pubxml
-dotnet publish -p:PublishProfile=Properties\PublishProfiles\win-x86_self_contained.pubxml
 
 cd ..\DatabaseMigrations
 dotnet publish -c release -o C:\temp\Planar\publish\database_migrations
@@ -36,14 +34,6 @@ cd planar-cli_x64
 del *.pdb
 del planar-cli
 cd..
-cd planar-cli_contained_x64
-del *.pdb
-del planar-cli
-cd..
-cd planar-cli_contained_x86
-del *.pdb
-del planar-cli
-cd..
 cd planar-cli_x86
 del *.pdb
 del planar-cli
@@ -55,14 +45,6 @@ del planar-cli
 cd..
 cd planar-cli_x64
 "C:\Program Files\7-Zip\7z.exe" a ..\planar-cli_x64.zip planar-cli.exe 
-
-cd..
-cd planar-cli_contained_x64
-"C:\Program Files\7-Zip\7z.exe" a ..\planar-cli_contained_x64.zip planar-cli.exe 
-
-cd..
-cd planar-cli_contained_x86
-"C:\Program Files\7-Zip\7z.exe" a ..\planar-cli_contained_x86.zip planar-cli.exe 
 
 cd..
 cd planar-cli_x86
@@ -84,8 +66,6 @@ cd planar
 @ECHO Delete Publish Folders
 @ECHO --------------------------------------------------------------------------------------
 
-rmdir "c:\temp\Planar\publish\planar-cli_contained_x86" /S /Q
-rmdir "c:\temp\Planar\publish\planar-cli_contained_x64" /S /Q
 rmdir "c:\temp\Planar\publish\planar-cli_x86" /S /Q
 rmdir "c:\temp\Planar\publish\planar-cli_x64" /S /Q
 rmdir "c:\temp\Planar\publish\planar" /S /Q

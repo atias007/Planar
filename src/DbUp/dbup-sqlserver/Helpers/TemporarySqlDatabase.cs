@@ -1,25 +1,23 @@
 ﻿using System;
-#if SUPPORTS_MICROSOFT_SQL_CLIENT
 using Microsoft.Data.SqlClient;
-#else
-using System.Data.SqlClient;
-#endif
 using DbUp.Helpers;
-
 
 namespace DbUp.SqlServer.Helpers
 {
     /// <summary>
     /// Used to create databases that are deleted at the end of a unit test.
     /// </summary>
-    public class TemporarySqlDatabase : IDisposable
-    {
-        const string localSqlInstance = @"(local)";
+#pragma warning disable S3881 // "IDisposable" should be implemented correctly
 
-        readonly string databaseName;
-        readonly AdHocSqlRunner master;
-        readonly SqlConnection sqlConnection;
-        readonly SqlConnection masterSqlConnection;
+    public class TemporarySqlDatabase : IDisposable
+#pragma warning restore S3881 // "IDisposable" should be implemented correctly
+    {
+        private const string localSqlInstance = @"(local)";
+
+        private readonly string databaseName;
+        private readonly AdHocSqlRunner master;
+        private readonly SqlConnection sqlConnection;
+        private readonly SqlConnection masterSqlConnection;
 
         /// <summary>
         /// Creates new <see cref="TemporarySqlDatabase"/> against (local)
@@ -82,6 +80,7 @@ namespace DbUp.SqlServer.Helpers
             }
             catch
             {
+                // *** DO NOTHING *** //
             }
             master.ExecuteNonQuery("create database [" + databaseName + "]");
             sqlConnection.Open();

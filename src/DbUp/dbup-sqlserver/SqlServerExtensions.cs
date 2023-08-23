@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Data;
-#if SUPPORTS_MICROSOFT_SQL_CLIENT
 using Microsoft.Data.SqlClient;
-#else
-using System.Data.SqlClient;
-#endif
 using DbUp;
 using DbUp.Builder;
 using DbUp.Engine.Output;
@@ -18,7 +14,11 @@ using DbUp.SqlServer;
 // Since the class just contains extension methods, we leave it in the global:: namespace so that it is always available
 // ReSharper disable CheckNamespace
 #pragma warning disable CA1050 // Declare types in namespaces
+
+#pragma warning disable S3903 // Types should be defined in named namespaces
+
 public static class SqlServerExtensions
+#pragma warning restore S3903 // Types should be defined in named namespaces
 // ReSharper restore CheckNamespace
 {
     /// <summary>
@@ -29,7 +29,10 @@ public static class SqlServerExtensions
     /// <returns>
     /// A builder for a database upgrader designed for SQL Server databases.
     /// </returns>
+#pragma warning disable S4136 // Method overloads should be grouped together
+
     public static UpgradeEngineBuilder SqlDatabase(this SupportedDatabases supported, string connectionString)
+#pragma warning restore S4136 // Method overloads should be grouped together
     {
         return SqlDatabase(supported, connectionString, null);
     }
@@ -89,7 +92,7 @@ public static class SqlServerExtensions
     /// <returns>
     /// A builder for a database upgrader designed for SQL Server databases.
     /// </returns>
-    static UpgradeEngineBuilder SqlDatabase(IConnectionManager connectionManager, string schema)
+    private static UpgradeEngineBuilder SqlDatabase(IConnectionManager connectionManager, string schema)
     {
         var builder = new UpgradeEngineBuilder();
         builder.Configure(c => c.ConnectionManager = connectionManager);
@@ -271,17 +274,19 @@ public static class SqlServerExtensions
                 case AzureDatabaseEdition.None:
                     sqlCommandText += ";";
                     break;
+
                 case AzureDatabaseEdition.Basic:
                     sqlCommandText += " ( EDITION = ''basic'' );";
                     break;
+
                 case AzureDatabaseEdition.Standard:
                     sqlCommandText += " ( EDITION = ''standard'' );";
                     break;
+
                 case AzureDatabaseEdition.Premium:
                     sqlCommandText += " ( EDITION = ''premium'' );";
                     break;
             }
-
 
             // Create the database...
             using (var command = new SqlCommand(sqlCommandText, connection)
@@ -301,7 +306,7 @@ public static class SqlServerExtensions
         }
     }
 
-    static bool DatabaseExistsIfConnectedToDirectly(IUpgradeLog logger, string connectionString, string databaseName)
+    private static bool DatabaseExistsIfConnectedToDirectly(IUpgradeLog logger, string connectionString, string databaseName)
     {
         try
         {
@@ -369,7 +374,7 @@ public static class SqlServerExtensions
         }
     }
 
-    static void GetMasterConnectionStringBuilder(string connectionString, IUpgradeLog logger, out string masterConnectionString, out string databaseName)
+    private static void GetMasterConnectionStringBuilder(string connectionString, IUpgradeLog logger, out string masterConnectionString, out string databaseName)
     {
         if (string.IsNullOrEmpty(connectionString) || connectionString.Trim() == string.Empty)
             throw new ArgumentNullException("connectionString");
@@ -393,7 +398,7 @@ public static class SqlServerExtensions
         masterConnectionString = masterConnectionStringBuilder.ConnectionString;
     }
 
-    static bool DatabaseExists(SqlConnection connection, string databaseName)
+    private static bool DatabaseExists(SqlConnection connection, string databaseName)
     {
         var sqlCommandText = string.Format
         (
