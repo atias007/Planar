@@ -18,7 +18,7 @@ namespace SomeJob
 
         public void TestMe()
         {
-            _logger.LogInformation("Test IBaseJob: {JobRunTime}", _base.JobRunTime);
+            _logger.LogInformation("Test WorkerChild with DI: {JobRunTime}", _base.JobRunTime);
         }
     }
 }

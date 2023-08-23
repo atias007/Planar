@@ -216,7 +216,7 @@ namespace Planar.Service.General
             return result;
         }
 
-        public static void AddDisposeWarningToLog<T>(ILogger<T> logger)
+        public static void AddDisposeWarningToLog(ILogger logger)
         {
             lock (_locker)
             {

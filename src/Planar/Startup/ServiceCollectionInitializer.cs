@@ -3,6 +3,7 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Planar.API.Common.Entities;
@@ -13,6 +14,7 @@ using Planar.Service;
 using Planar.Service.Services;
 using System;
 using System.Net;
+using System.Threading.RateLimiting;
 
 namespace Planar.Startup
 {
@@ -50,6 +52,17 @@ namespace Planar.Startup
                     options.HttpsPort = AppSettings.HttpsPort;
                 });
             }
+
+            services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = (int)HttpStatusCode.TooManyRequests;
+                options.AddConcurrencyLimiter("concurrency", config =>
+                {
+                    config.PermitLimit = AppSettings.ConcurrencyRateLimiting;
+                    config.QueueLimit = AppSettings.ConcurrencyRateLimiting / 2;
+                    config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                });
+            });
 
             services.AddMemoryCache();
             services.AddPlanarServices();

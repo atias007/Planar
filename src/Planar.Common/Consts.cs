@@ -74,6 +74,7 @@ namespace Planar
         public const string AuthenticationTokenExpireVariableKey = "PLANAR_AUTHTOKENEXPIRE";
         public const string SchedulerStartupDelayVariableKey = "PLANAR_SCHEDULER_DELAY";
         public const string RunDatabaseMigrationVariableKey = "PLANAR_RUN_DBMIGRATION";
+        public const string ConcurrencyRateLimitingVariableKey = "PLANAR_CONCURRENCY_RATELIMITING";
 
         public const string InstanceIdVariableKey = "PLANAR_INSTANCEID";
         public const string ServiceNameVariableKey = "PLANAR_SERVICENAME";

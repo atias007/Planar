@@ -17,7 +17,7 @@ namespace LongRunningJob
             for (int i = 0; i < 130; i++)
             {
                 UpdateProgress(i, 130);
-                SetEffectedRows(i + 1);
+                EffectedRows = i + 1;
 
                 if (i % 10 == 0)
                 {

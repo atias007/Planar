@@ -16,13 +16,13 @@ namespace HelloWorld
             var durationSeconds = new Random().Next(3, 40);
             Console.WriteLine($"Start execute job: {context.JobDetails.Key.Name}");
             Logger.LogInformation("Start execute job: {Name}", context.JobDetails.Key.Name);
-
+            EffectedRows = 0;
             for (int i = 0; i < durationSeconds; i++)
             {
                 Logger.LogInformation("Hello world: step {Iteration}", i);
                 await Task.Delay(1000);
                 UpdateProgress(i + 1, durationSeconds);
-                IncreaseEffectedRows();
+                EffectedRows++;
             }
 
             Logger.LogInformation("Finish");

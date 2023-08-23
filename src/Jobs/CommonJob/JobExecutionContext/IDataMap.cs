@@ -9,5 +9,7 @@ namespace Planar.Job
         string? Get(string key);
 
         bool Exists(string key);
+
+        Dictionary<string, string?> ToDictionary();
     }
 }

@@ -241,20 +241,22 @@ namespace Planar.Job
                 selectedIndex = GetMenuItem(quiet: true);
             }
 
+            MockJobExecutionContext context;
+            IExecuteJobProperties properties;
             if (selectedIndex == null)
             {
-                var properties = new ExecuteJobPropertiesBuilder(typeof(TJob)).SetDevelopmentEnvironment().Build();
-                var context = new MockJobExecutionContext(properties);
-                var json = JsonSerializer.Serialize(context);
-                return json;
+                properties = new ExecuteJobPropertiesBuilder(typeof(TJob)).SetDevelopmentEnvironment().Build();
+                context = new MockJobExecutionContext(properties);
             }
             else
             {
-                var properties = Debugger.Profiles.Values.ToList()[selectedIndex.Value - 1];
-                var context = new MockJobExecutionContext(properties);
-                var json = JsonSerializer.Serialize(context);
-                return json;
+                properties = Debugger.Profiles.Values.ToList()[selectedIndex.Value - 1];
+                context = new MockJobExecutionContext(properties);
             }
+
+            Environment = properties.Environment;
+            var json = JsonSerializer.Serialize(context);
+            return json;
         }
 
         private static void ShowErrorMenu(string message)

@@ -39,13 +39,14 @@ namespace BankOfIsraelCurrency
             var response = await client.ExecuteAsync<Currencies>(request);
             if (response.IsSuccessful)
             {
+                EffectedRows = 0;
                 var counter = 0;
                 var data = response.Data.ExchangeRates;
                 foreach (var item in data)
                 {
                     UpdateProgress(counter, data.Length);
                     Logger.LogInformation(" [x] Handle currency {Currency} with value {Value}", item.Key, item.CurrentExchangeRate);
-                    IncreaseEffectedRows();
+                    EffectedRows++;
                     await Task.Delay(3000);
                     counter++;
                 }

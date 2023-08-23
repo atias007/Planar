@@ -1,5 +1,4 @@
-﻿using Azure;
-using CommonJob;
+﻿using CommonJob;
 using YamlDotNet.Serialization;
 
 namespace Planar

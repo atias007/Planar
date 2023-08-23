@@ -12,8 +12,6 @@ namespace Planar.Common
 
         public Type? JobType { get; set; }
 
-        public TimeSpan? CancelJobAfter { get; set; }
-
         public DateTimeOffset? ExecutionDate { get; set; }
 
         public bool Recovering { get; set; }
@@ -27,10 +25,10 @@ namespace Planar.Common
         public string TriggerKeyName { get; set; } = DefaultTriggerName;
         public string TriggerKeyGroup { get; set; } = DefaultGroup;
 
-        public Dictionary<string, object?> TriggerData { get; set; } = new Dictionary<string, object?>();
+        public IDictionary<string, object?> TriggerData { get; set; } = new Dictionary<string, object?>();
 
-        public Dictionary<string, object?> JobData { get; set; } = new Dictionary<string, object?>();
+        public IDictionary<string, object?> JobData { get; set; } = new Dictionary<string, object?>();
 
-        public Dictionary<string, string?> GlobalSettings { get; set; } = new Dictionary<string, string?>();
+        public IDictionary<string, string?> GlobalSettings { get; set; } = new Dictionary<string, string?>();
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Planar.Job;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -28,7 +29,7 @@ namespace Planar.Common
             if (properties.ExecutionDate.HasValue)
             {
                 _now = properties.ExecutionDate.Value;
-                ((DataMap)JobDetail.JobDataMap).Add(Consts.NowOverrideValue, _now.ToString());
+                ((DataMap)JobDetails.JobDataMap).Add(Consts.NowOverrideValue, _now.ToString());
                 ((DataMap)Trigger.TriggerDataMap).Add(Consts.NowOverrideValue, _now.ToString());
             }
 
@@ -37,15 +38,22 @@ namespace Planar.Common
             Recovering = properties.Recovering;
             RefireCount = properties.RefireCount;
             Environment = properties.Environment;
+
+            if (properties.GlobalSettings.Any())
+            {
+                JobSettings = new Dictionary<string, string?>(properties.GlobalSettings);
+            }
+            else
+            {
+                JobSettings = new Dictionary<string, string?>();
+            }
         }
 
-        public Dictionary<string, string?> JobSettings { get; set; } = new Dictionary<string, string?>();
+        public Dictionary<string, string?> JobSettings { get; set; }
 
         public bool Recovering { get; private set; }
 
         public int RefireCount { get; private set; }
-
-        public IJobDetail JobDetail => _jobDetail;
 
         public string FireInstanceId { get; private set; }
 

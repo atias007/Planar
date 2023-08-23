@@ -69,12 +69,12 @@ namespace Planar.Job
 
             if (PlanarJob.Mode == RunningMode.Release)
             {
-                MqttClient.Start(_context.FireInstanceId).ConfigureAwait(false).GetAwaiter().GetResult();
+                MqttClient.Start(_context.FireInstanceId).Wait();
                 SpinWait.SpinUntil(() => MqttClient.IsConnected, TimeSpan.FromSeconds(5));
                 if (MqttClient.IsConnected)
                 {
-                    MqttClient.Ping().ConfigureAwait(false).GetAwaiter().GetResult();
-                    MqttClient.Publish(MessageBrokerChannels.HealthCheck).ConfigureAwait(false).GetAwaiter().GetResult();
+                    MqttClient.Ping().Wait();
+                    MqttClient.Publish(MessageBrokerChannels.HealthCheck).Wait();
                 }
                 else
                 {
@@ -87,7 +87,7 @@ namespace Planar.Job
 
             try
             {
-                ExecuteJob(_context).ConfigureAwait(false).GetAwaiter().GetResult();
+                ExecuteJob(_context).Wait();
                 MapJobInstancePropertiesBack(_context);
             }
             catch (Exception ex)
@@ -103,11 +103,11 @@ namespace Planar.Job
             }
             finally
             {
-                MqttClient.Stop().ConfigureAwait(false).GetAwaiter().GetResult();
+                MqttClient.Stop().Wait();
             }
         }
 
-        internal void ExecuteUnitTest(
+        internal UnitTestResult ExecuteUnitTest(
             string json,
             Action<IConfigurationBuilder, IJobExecutionContext> configureAction,
             Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction)
@@ -119,7 +119,15 @@ namespace Planar.Job
 
             Logger = ServiceProvider.GetRequiredService<ILogger>();
 
-            ExecuteJob(_context).ConfigureAwait(false).GetAwaiter().GetResult();
+            ExecuteJob(_context).Wait();
+
+            var result = new UnitTestResult
+            {
+                EffectedRows = EffectedRows,
+                Log = BaseLogger.LogText
+            };
+
+            return result;
         }
 
         protected void AddAggregateException(Exception ex)
@@ -132,14 +140,12 @@ namespace Planar.Job
             _baseJobFactory.CheckAggragateException();
         }
 
-        protected int? GetEffectedRows()
-        {
-            return _baseJobFactory.GetEffectedRows();
-        }
+        protected int ExceptionCount => _baseJobFactory.ExceptionCount;
 
-        protected void IncreaseEffectedRows(int delta = 1)
+        protected int? EffectedRows
         {
-            _baseJobFactory.IncreaseEffectedRows(delta);
+            get { return _baseJobFactory.EffectedRows; }
+            set { _baseJobFactory.EffectedRows = value; }
         }
 
         protected void MapJobInstancePropertiesBack(IJobExecutionContext context)
@@ -176,11 +182,6 @@ namespace Planar.Job
         protected void PutTriggerData(string key, object? value)
         {
             _baseJobFactory.PutTriggerData(key, value);
-        }
-
-        protected void SetEffectedRows(int value)
-        {
-            _baseJobFactory.SetEffectedRows(value);
         }
 
         protected void UpdateProgress(byte value)
@@ -236,9 +237,11 @@ namespace Planar.Job
                 FilterJobData(ctx.JobDetails.JobDataMap);
                 FilterJobData(ctx.TriggerDetails.TriggerDataMap);
 
+                // Debug mode need to manually read settings file/s
                 if (PlanarJob.Mode == RunningMode.Debug)
                 {
-                    ctx.JobSettings = new Dictionary<string, string?>(JobSettingsLoader.LoadJobSettings(ctx.JobSettings));
+                    var settings = JobSettingsLoader.LoadJobSettings(null, ctx.JobSettings);
+                    ctx.JobSettings = new Dictionary<string, string?>(settings);
                 }
 
                 _context = ctx;

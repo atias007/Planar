@@ -32,11 +32,9 @@ namespace Planar
             Validation.CheckNotNull(formatter, nameof(formatter));
             Validation.CheckNotNull(message, nameof(message));
 
-            // TODO: Determine if there's a sensible content type we should apply.
             return formatter.DecodeStructuredModeMessage(message.PayloadSegment, contentType: null, extensionAttributes);
         }
 
-        // TODO: Update to a newer version of MQTTNet and support both binary and structured mode?
         /// <summary>
         /// Converts a CloudEvent to <see cref="MqttApplicationMessage"/>.
         /// </summary>

@@ -5,7 +5,7 @@ namespace Planar.Common
 {
     internal static class DataMapUtils
     {
-        public static DataMap Convert(Dictionary<string, object?> source)
+        public static DataMap Convert(IDictionary<string, object?> source)
         {
             var result = new DataMap();
             if (source == null) { return result; }

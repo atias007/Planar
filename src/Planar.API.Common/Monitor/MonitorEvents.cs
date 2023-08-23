@@ -38,6 +38,7 @@ namespace Planar.Common
         [Description("Trigger Resumed")] TriggerResumed = 312,
         [Description("Cluster Node Join")] ClusterNodeJoin = 313,
         [Description("Cluster Node Removed")] ClusterNodeRemoved = 314,
-        [Description("Cluster Health Check Fail")] ClusterHealthCheckFail = 315
+        [Description("Cluster Health Check Fail")] ClusterHealthCheckFail = 315,
+        [Description("Job Updated")] JobUpdated = 316,
     }
 }

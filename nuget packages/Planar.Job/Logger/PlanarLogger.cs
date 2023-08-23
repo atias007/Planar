@@ -1,10 +1,14 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
+using System.Text;
 
 namespace Planar.Job.Logger
 {
     internal class BaseLogger
     {
+        private static readonly StringBuilder _logBuilder = new StringBuilder();
+        private static readonly object _locker = new object();
+
 #pragma warning disable IDE0060 // Remove unused parameter
 
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => default;
@@ -17,11 +21,18 @@ namespace Planar.Job.Logger
 
 #pragma warning restore IDE0060 // Remove unused parameter
 
+        public static string LogText => _logBuilder.ToString();
+
         protected void LogToConsole(string message)
         {
             Console.ForegroundColor = ConsoleColor.DarkCyan;
             Console.Out.WriteLineAsync(message);
             Console.ForegroundColor = ConsoleColor.White;
+
+            lock (_locker)
+            {
+                _logBuilder.AppendLine(message);
+            }
         }
     }
 
@@ -37,7 +48,7 @@ namespace Planar.Job.Logger
 
             var message = $"<{typeof(TContext).Name}> {formatter(state, exception)}";
             var entity = new LogEntity { Message = message, Level = logLevel };
-            MqttClient.Publish(MessageBrokerChannels.AppendLog, entity).ConfigureAwait(false).GetAwaiter().GetResult();
+            MqttClient.Publish(MessageBrokerChannels.AppendLog, entity).Wait();
             LogToConsole(entity.ToString());
         }
     }
@@ -50,7 +61,7 @@ namespace Planar.Job.Logger
 
             var message = $"{formatter(state, exception)}";
             var entity = new LogEntity { Message = message, Level = logLevel };
-            MqttClient.Publish(MessageBrokerChannels.AppendLog, entity).ConfigureAwait(false).GetAwaiter().GetResult();
+            MqttClient.Publish(MessageBrokerChannels.AppendLog, entity).Wait();
             LogToConsole(entity.ToString());
         }
     }

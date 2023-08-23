@@ -5,6 +5,7 @@ using Planar.Job.Test.Common;
 using System;
 using System.Reflection;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Job.Test
@@ -38,7 +39,7 @@ namespace Planar.Job.Test
 
         protected abstract void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context);
 
-        private static MethodInfo ValidateBaseJob(Type? type)
+        private static MethodInfo ValidateAndGetExecutionMethod(Type? type)
         {
             if (type == null)
             {
@@ -66,47 +67,63 @@ namespace Planar.Job.Test
 
         private IJobExecutionResult ExecuteJob(IExecuteJobProperties properties)
         {
-            var context = new MockJobExecutionContext(properties);
-            var method = ValidateBaseJob(properties.JobType);
             if (properties.JobType == null) { return JobExecutionResult.Empty; }
 
+            // Build mock of  IJobExecutionContext
+            var context = new MockJobExecutionContext(properties);
+
+            // Get Execution Method
+            var method = ValidateAndGetExecutionMethod(properties.JobType);
+
+            // Create Job Instance
             var instance = Activator.CreateInstance(properties.JobType);
+
+            // Map instance properties (from job Merged Data Map)
             var mapper = new JobMapper();
             mapper.MapJobInstanceProperties(context, instance);
-            var settings = JobSettingsLoader.LoadJobSettingsForUnitTest(properties.JobType);
-            settings = settings.Merge(properties.GlobalSettings);
+
+            // Load Job Setting & merge with Global Settings
+            var settings = JobSettingsLoader.LoadJobSettingsForUnitTest(properties.JobType).Merge(context.JobSettings);
             context.JobSettings = settings;
+
+            // Serialize Job Context
             var json = JsonSerializer.Serialize(context);
             Exception? jobException = null;
+            object? baseJob = null;
 
-            // JobMessageBroker _broker = null!;
-
+            // Execute Job
             try
             {
-                // _broker = new JobMessageBroker(context, properties, settings);
                 Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
                 Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
-                var result = method.Invoke(instance, new object[] { json, configureAction, registerServicesAction }) as Task;
-                result?.ConfigureAwait(false).GetAwaiter().GetResult();
+                baseJob = method.Invoke(instance, new object[] { json, configureAction, registerServicesAction });
             }
             catch (Exception ex)
             {
                 jobException = ex;
             }
 
+            // Get result object
+            var log = GetJobExecutionResult(context, instance, jobException, baseJob);
+            return log;
+        }
+
+        private static JobExecutionResult GetJobExecutionResult(MockJobExecutionContext context, object instance, Exception? jobException, object? baseJob)
+        {
             var duration = context.JobRunTime.TotalMilliseconds;
             var endDate = context.FireTimeUtc.DateTime.Add(context.JobRunTime);
             var status = jobException == null ? StatusMembers.Success : StatusMembers.Fail;
 
-            var metadata = context.Result as JobExecutionMetadata;
+            var jsonResult = JsonSerializer.Serialize(baseJob);
+            var unitTestResult = JsonSerializer.Deserialize<UnitTestResult>(jsonResult);
 
             var log = new JobExecutionResult
             {
                 InstanceId = context.FireInstanceId,
                 Data = context.MergedJobDataMap,
                 StartDate = context.FireTimeUtc.DateTime,
-                JobName = context.JobDetail.Key.Name,
-                JobGroup = context.JobDetail.Key.Group,
+                JobName = context.JobDetails.Key.Name,
+                JobGroup = context.JobDetails.Key.Group,
                 JobId = "UnitTest_FixedJobId",
                 TriggerName = context.Trigger.Key.Name,
                 TriggerGroup = context.Trigger.Key.Group,
@@ -114,15 +131,14 @@ namespace Planar.Job.Test
                 Duration = Convert.ToInt32(duration),
                 EndDate = endDate,
                 Exception = jobException,
-                EffectedRows = metadata?.EffectedRows,
-                Log = metadata?.GetLog(),
+                EffectedRows = unitTestResult?.EffectedRows,
+                Log = unitTestResult?.Log,
                 Id = -1,
                 IsCanceled = false,
                 Retry = false,
                 Status = status,
                 Instance = instance
             };
-
             return log;
         }
     }

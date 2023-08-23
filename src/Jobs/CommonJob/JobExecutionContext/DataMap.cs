@@ -51,5 +51,10 @@ namespace Planar.Job
 
             return value;
         }
+
+        public Dictionary<string, string?> ToDictionary()
+        {
+            return this;
+        }
     }
 }

@@ -29,6 +29,7 @@ namespace Planar.Service.API
                 Enum.GetValues(typeof(MonitorEvents))
                 .Cast<MonitorEvents>()
                 .Select(e => new MonitorEventModel { EventName = e.ToString(), EventTitle = e.GetEnumDescription() })
+                .OrderBy(e => e.EventName)
                 .ToList();
 
             return result;

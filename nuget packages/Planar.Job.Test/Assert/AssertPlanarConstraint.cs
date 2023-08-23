@@ -1,6 +1,4 @@
-﻿using Planar.Job.Test.Assert;
-
-namespace Planar.Job.Test
+﻿namespace Planar.Job.Test
 {
     public class AssertPlanarConstraint : BasePlanarConstraint
     {
@@ -10,6 +8,5 @@ namespace Planar.Job.Test
 
         public EffectedRowsConstraint EffectedRows => new EffectedRowsConstraint(_result);
         public StatusConstraint Status => new StatusConstraint(_result);
-        public DataConstraint Data => new DataConstraint(_result);
     }
 }

@@ -17,6 +17,7 @@ namespace TestAggEx
 
         public override Task ExecuteJob(IJobExecutionContext context)
         {
+            EffectedRows = 0;
             for (int i = 0; i < 6; i++)
             {
                 Thread.Sleep(1000);
@@ -29,7 +30,7 @@ namespace TestAggEx
 
                     Logger.LogInformation("This is loop no. {Index}", i);
 
-                    IncreaseEffectedRows();
+                    EffectedRows++;
                 }
                 catch (Exception ex)
                 {
