@@ -46,7 +46,7 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <Reference Include="System" />
-    <PackageReference Include="MySql.Data" Version="6.9.5" />
+    <PackageReference Include="MySql.Data" Version="6.10.9" />
     <!-- last version to support < .NET 4.5.2. -->
   </ItemGroup>
 
