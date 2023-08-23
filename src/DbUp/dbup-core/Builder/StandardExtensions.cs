@@ -17,7 +17,10 @@ using DbUp.Support;
 // Since the class just contains extension methods, we leave it in the root so that it is always discovered
 // and people don't have to manually add using statements.
 // ReSharper disable CheckNamespace
+#pragma warning disable S3903 // Types should be defined in named namespaces
+
 public static class StandardExtensions
+#pragma warning restore S3903 // Types should be defined in named namespaces
 // ReSharper restore CheckNamespace
 {
     /// <summary>
@@ -59,6 +62,7 @@ public static class StandardExtensions
     }
 
 #if SUPPORTS_LIBLOG
+
     /// <summary>
     /// Logs to a automatically detected globally configured logger supported by LibLog.
     /// </summary>
@@ -70,6 +74,7 @@ public static class StandardExtensions
     {
         return LogTo(builder, new AutodetectUpgradeLog());
     }
+
 #endif
 
     /// <summary>
@@ -98,7 +103,7 @@ public static class StandardExtensions
     }
 
     /// <summary>
-    /// Resets any loggers configured with 
+    /// Resets any loggers configured with
     /// </summary>
     /// <param name="builder"></param>
     /// <returns></returns>
@@ -210,7 +215,7 @@ public static class StandardExtensions
     /// <param name="builder">The builder.</param>
     /// <param name="name">The name of the script. This should never change once executed.</param>
     /// <param name="contents">The script body.</param>
-    /// <param name="sqlScriptOptions">The sql script options.</param>    
+    /// <param name="sqlScriptOptions">The sql script options.</param>
     /// <returns>
     /// The same builder
     /// </returns>
@@ -238,7 +243,7 @@ public static class StandardExtensions
     /// <param name="builder">The builder.</param>
     /// <param name="name">The name of the script</param>
     /// <param name="script">The script instance</param>
-    /// <param name="sqlScriptOptions">The sql script options.</param>    
+    /// <param name="sqlScriptOptions">The sql script options.</param>
     /// <returns>
     /// The same builder
     /// </returns>
@@ -298,8 +303,8 @@ public static class StandardExtensions
     /// Adds all scripts from a folder on the file system, with custom encoding.
     /// </summary>
     /// <param name="builder">The builder.</param>
-    /// <param name="path">The directory path.</param>    
-    /// <param name="sqlScriptOptions">The sql script options</param>    
+    /// <param name="path">The directory path.</param>
+    /// <param name="sqlScriptOptions">The sql script options</param>
     /// <returns>
     /// The same builder
     /// </returns>
@@ -327,7 +332,7 @@ public static class StandardExtensions
     /// </summary>
     /// <param name="builder">The builder.</param>
     /// <param name="path">The directory path.</param>
-    /// <param name="filter">The filter. Use the static <see cref="Filters"/> class to get some pre-defined filters.</param>    
+    /// <param name="filter">The filter. Use the static <see cref="Filters"/> class to get some pre-defined filters.</param>
     /// <param name="sqlScriptOptions">The sql script options</param>
     /// <returns>
     /// The same builder
@@ -605,7 +610,7 @@ public static class StandardExtensions
     /// <param name="assembly">The assembly.</param>
     /// <param name="filter">The script filter. Don't forget to ignore any non- .SQL files.</param>
     /// <param name="codeScriptFilter">The embedded script filter.</param>
-    /// <param name="sqlScriptOptions">The sql script options.</param>    
+    /// <param name="sqlScriptOptions">The sql script options.</param>
     /// <returns>
     /// The same builder
     /// </returns>
@@ -620,7 +625,7 @@ public static class StandardExtensions
     /// <param name="builder">The builder.</param>
     /// <param name="assembly">The assembly.</param>
     /// <param name="filter">The script filter. Don't forget to ignore any non- .SQL files.</param>
-    /// <param name="sqlScriptOptions">The sql script options.</param>    
+    /// <param name="sqlScriptOptions">The sql script options.</param>
     /// <returns>
     /// The same builder
     /// </returns>
@@ -827,8 +832,8 @@ public static class StandardExtensions
     /// </summary>
     /// <param name="builder">The builder.</param>
     /// <param name="assemblies">The assemblies.</param>
-    /// <param name="filter">The filter. Don't forget to ignore any non- .SQL files.</param>    
-    /// <param name="sqlScriptOptions">The sql script options.</param>    
+    /// <param name="filter">The filter. Don't forget to ignore any non- .SQL files.</param>
+    /// <param name="sqlScriptOptions">The sql script options.</param>
     /// <returns>
     /// The same builder
     /// </returns>
@@ -873,7 +878,7 @@ public static class StandardExtensions
     /// <param name="assemblies">The assemblies.</param>
     /// <param name="filter">The filter. Don't forget to ignore any non- .SQL files.</param>
     /// <param name="encoding">The encoding.</param>
-    /// <param name="sqlScriptOptions">The sql script options.</param>    
+    /// <param name="sqlScriptOptions">The sql script options.</param>
     /// <returns>
     /// The same builder
     /// </returns>
