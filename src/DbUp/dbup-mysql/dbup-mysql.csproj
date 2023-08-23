@@ -46,16 +46,16 @@
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <Reference Include="System" />
-    <PackageReference Include="MySql.Data" Version="6.9.5" />
+    <PackageReference Include="MySql.Data" Version="8.1.0" />
     <!-- last version to support < .NET 4.5.2. -->
   </ItemGroup>
 
    <ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.3'">
-    <PackageReference Include="MySql.Data" Version="6.10.9" />
+    <PackageReference Include="MySql.Data" Version="8.1.0" />
    </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="MySql.Data" Version="8.0.33" />
+    <PackageReference Include="MySql.Data" Version="8.1.0" />
   </ItemGroup>
 
 </Project>
