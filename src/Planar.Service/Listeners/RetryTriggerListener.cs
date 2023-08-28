@@ -71,8 +71,9 @@ namespace Planar.Service.Listeners
                 var key = JobHelper.GetKeyTitle(context.JobDetail);
                 if (numTries >= maxRetries)
                 {
-                    _logger.LogError("Job with key {Key} fail and retry for {MaxRetries} times but failed each time", key, maxRetries);
+                    _logger.LogError("Job with key {Key} fail and retry for {NumberTries} times but failed each time", key, numTries);
                     SafeScan(MonitorEvents.ExecutionLastRetryFail, context);
+                    return;
                 }
 
                 // Calculate the next start retry
