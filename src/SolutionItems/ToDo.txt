@@ -30,6 +30,8 @@ PLAN FOR V 1.5.0
 - cli: service status [time scope] dashboard command
 - add anomaly monitor events
 - add angular dashboard
+- trigger describe
+- 
 - cli: add string similarity (https://github.com/glienard/StringSimilarity.NET)
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt)
 - create update version script
