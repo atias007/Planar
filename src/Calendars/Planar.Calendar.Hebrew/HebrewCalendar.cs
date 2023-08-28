@@ -10,7 +10,7 @@ namespace Planar.Calendar.Hebrew
     [Serializable]
     public class HebrewCalendar : PlanarBaseCalendar
     {
-        private HebrewCalendarSettings _settings;
+        private HebrewCalendarSettings _settings = null!;
         private static readonly object Locker = new();
         private readonly Dictionary<long, bool> _cache = new();
 
@@ -93,10 +93,10 @@ namespace Planar.Calendar.Hebrew
             return validHours;
         }
 
-        private static DateTime GetStartOfDay(DateTime date, DayScope scope)
+        private static DateTime GetStartOfDay(DateTime date, DayScope? scope)
         {
             var result = date.Date;
-            if (scope.StartTime.HasValue)
+            if (scope?.StartTime != null)
             {
                 result = result.Add(scope.StartTime.Value);
             }
@@ -104,10 +104,10 @@ namespace Planar.Calendar.Hebrew
             return result;
         }
 
-        private static DateTime GetEndOfDay(DateTime date, DayScope scope)
+        private static DateTime GetEndOfDay(DateTime date, DayScope? scope)
         {
             var result = date.Date;
-            if (scope.EndTime.HasValue)
+            if (scope?.EndTime != null)
             {
                 result = result.Add(scope.EndTime.Value);
             }
