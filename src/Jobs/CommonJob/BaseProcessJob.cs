@@ -24,6 +24,7 @@ namespace CommonJob
         private string? _filename;
         private bool _listenOutput = true;
         private long _peakWorkingSet64;
+        private double _peakCpuUsage;
 
         protected BaseProcessJob(ILogger<TInstance> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
         {
@@ -220,7 +221,18 @@ namespace CommonJob
             }
             catch
             {
-                // *** DO NOTHING ***
+                DoNothingMethod();
+            }
+
+            try
+            {
+                var value = GetCpuUsageForProcess(process);
+                if (value > _peakCpuUsage) { _peakCpuUsage = value; }
+                //_output.AppendLine($"CPU Usage: {GetCpuUsageForProcess(process):##.##}%");
+            }
+            catch
+            {
+                DoNothingMethod();
             }
         }
 
