@@ -6,6 +6,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using System.Timers;
 
 namespace CommonJob
@@ -22,7 +23,6 @@ namespace CommonJob
         private readonly object Locker = new();
         private string? _filename;
         private bool _listenOutput = true;
-        private long _peakPagedMemorySize64;
         private long _peakWorkingSet64;
 
         protected BaseProcessJob(ILogger<TInstance> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
@@ -100,10 +100,9 @@ namespace CommonJob
             if (!_process.HasExited) { return; }
 
             MessageBroker.AppendLog(LogLevel.Information, _seperator);
-            MessageBroker.AppendLog(LogLevel.Information, " - Process information:");
+            MessageBroker.AppendLog(LogLevel.Information, " Process information:");
             MessageBroker.AppendLog(LogLevel.Information, _seperator);
-            MessageBroker.AppendLog(LogLevel.Information, $"ExitCode: {_process.ExitCode}");
-            MessageBroker.AppendLog(LogLevel.Information, $"PeakPagedMemorySize64: {FormatBytes(_peakPagedMemorySize64)}");
+            MessageBroker.AppendLog(LogLevel.Information, $"Exit Code: {_process.ExitCode}");
             MessageBroker.AppendLog(LogLevel.Information, $"PeakWorkingSet64: {FormatBytes(_peakWorkingSet64)}");
             MessageBroker.AppendLog(LogLevel.Information, _seperator);
         }
@@ -210,14 +209,12 @@ namespace CommonJob
         private void UpdatePeakVariables(Process? process)
         {
             if (process == null) { return; }
-
             if (process.HasExited) { return; }
 
             try
             {
                 lock (Locker)
                 {
-                    _peakPagedMemorySize64 = process.PeakPagedMemorySize64;
                     _peakWorkingSet64 = process.PeakWorkingSet64;
                 }
             }
@@ -225,6 +222,20 @@ namespace CommonJob
             {
                 // *** DO NOTHING ***
             }
+        }
+
+        private static double GetCpuUsageForProcess(Process process)
+        {
+            var startTime = DateTimeOffset.UtcNow;
+            var startCpuUsage = process.TotalProcessorTime;
+            Task.Delay(500).Wait();
+
+            var endTime = DateTimeOffset.UtcNow;
+            var endCpuUsage = process.TotalProcessorTime;
+            var cpuUsedMs = (endCpuUsage - startCpuUsage).TotalMilliseconds;
+            var totalMsPassed = (endTime - startTime).TotalMilliseconds;
+            var cpuUsageTotal = cpuUsedMs / (Environment.ProcessorCount * totalMsPassed);
+            return cpuUsageTotal * 100;
         }
     }
 }
