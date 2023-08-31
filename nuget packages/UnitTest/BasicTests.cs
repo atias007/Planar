@@ -70,5 +70,17 @@ namespace UnitTest
             var result = ExecuteJob(run);
             result.Assert.Status.Success();
         }
+
+        [Test]
+        public void MapError()
+        {
+            var run = CreateJobPropertiesBuilder<Worker>()
+                .WithJobData("X", 10)
+                .WithJobData("Z", "SomeString")
+                .WithJobData("SomeMappedDate", null);
+
+            var result = ExecuteJob(run);
+            result.Assert.Status.Success();
+        }
     }
 }

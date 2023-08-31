@@ -71,14 +71,13 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<PagingResponse<JobHistory>> GetLastHistoryCallForJob(GetLastHistoryCallForJobRequest request)
+        public async Task<PagingResponse<JobLastRun>> GetLastHistoryCallForJob(GetLastHistoryCallForJobRequest request)
         {
             request.SetPagingDefaults();
             request.LastDays ??= 365;
             var parameters1 = new { request.LastDays, request.PageNumber, request.PageSize };
             var data = await DataLayer.GetLastHistoryCallForJob(parameters1);
-            var mappedData = Mapper.Map<List<JobHistory>>(data.Data);
-            var result = new PagingResponse<JobHistory>(mappedData);
+            var result = new PagingResponse<JobLastRun>(data);
             result.SetPagingData(request, data.TotalRows);
             return result;
         }

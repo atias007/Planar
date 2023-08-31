@@ -24,7 +24,7 @@ namespace CommonJob
         private string? _filename;
         private bool _listenOutput = true;
         private long _peakWorkingSet64;
-        private double _peakCpuUsage;
+        private long _peakVirtualMemorySize64;
 
         protected BaseProcessJob(ILogger<TInstance> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
         {
@@ -104,7 +104,8 @@ namespace CommonJob
             MessageBroker.AppendLog(LogLevel.Information, " Process information:");
             MessageBroker.AppendLog(LogLevel.Information, _seperator);
             MessageBroker.AppendLog(LogLevel.Information, $"Exit Code: {_process.ExitCode}");
-            MessageBroker.AppendLog(LogLevel.Information, $"PeakWorkingSet64: {FormatBytes(_peakWorkingSet64)}");
+            MessageBroker.AppendLog(LogLevel.Information, $"Peak Working Set Memory: {FormatBytes(_peakWorkingSet64)}");
+            MessageBroker.AppendLog(LogLevel.Information, $"Peak Virtual Memory: {FormatBytes(_peakVirtualMemorySize64)}");
             MessageBroker.AppendLog(LogLevel.Information, _seperator);
         }
 
@@ -226,28 +227,12 @@ namespace CommonJob
 
             try
             {
-                var value = GetCpuUsageForProcess(process);
-                if (value > _peakCpuUsage) { _peakCpuUsage = value; }
-                //_output.AppendLine($"CPU Usage: {GetCpuUsageForProcess(process):##.##}%");
+                _peakVirtualMemorySize64 = process.PeakVirtualMemorySize64;
             }
             catch
             {
                 DoNothingMethod();
             }
-        }
-
-        private static double GetCpuUsageForProcess(Process process)
-        {
-            var startTime = DateTimeOffset.UtcNow;
-            var startCpuUsage = process.TotalProcessorTime;
-            Task.Delay(500).Wait();
-
-            var endTime = DateTimeOffset.UtcNow;
-            var endCpuUsage = process.TotalProcessorTime;
-            var cpuUsedMs = (endCpuUsage - startCpuUsage).TotalMilliseconds;
-            var totalMsPassed = (endTime - startTime).TotalMilliseconds;
-            var cpuUsageTotal = cpuUsedMs / (Environment.ProcessorCount * totalMsPassed);
-            return cpuUsageTotal * 100;
         }
     }
 }

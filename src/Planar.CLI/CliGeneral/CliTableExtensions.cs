@@ -149,7 +149,7 @@ namespace Planar.CLI
             return table;
         }
 
-        public static CliTable GetTable(PagingResponse<JobHistory>? response)
+        public static CliTable GetTable(PagingResponse<JobLastRun>? response)
         {
             var table = new CliTable(paging: response);
             if (response == null || response.Data == null) { return table; }

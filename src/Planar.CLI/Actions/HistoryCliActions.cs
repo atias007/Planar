@@ -107,7 +107,7 @@ namespace Planar.CLI.Actions
             }
 
             restRequest.AddQueryPagingParameter(request);
-            var result = await RestProxy.Invoke<PagingResponse<JobHistory>>(restRequest, cancellationToken);
+            var result = await RestProxy.Invoke<PagingResponse<JobLastRun>>(restRequest, cancellationToken);
             var table = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, table);
         }

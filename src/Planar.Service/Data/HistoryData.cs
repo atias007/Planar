@@ -167,7 +167,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<PagingResponse<JobInstanceLog>> GetLastHistoryCallForJob(object parameters)
+        public async Task<PagingResponse<JobLastRun>> GetLastHistoryCallForJob(object parameters)
         {
             var cmd = new CommandDefinition(
                 commandText: "dbo.GetLastHistoryCallForJob",
@@ -175,9 +175,9 @@ namespace Planar.Service.Data
                 parameters: parameters);
 
             var multi = await DbConnection.QueryMultipleAsync(cmd);
-            var data = await multi.ReadAsync<JobInstanceLog>();
+            var data = await multi.ReadAsync<JobLastRun>();
             var count = await multi.ReadSingleAsync<int>();
-            return new PagingResponse<JobInstanceLog>(data.ToList(), count);
+            return new PagingResponse<JobLastRun>(data.ToList(), count);
         }
 
         public async Task<LastInstanceId?> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime)
