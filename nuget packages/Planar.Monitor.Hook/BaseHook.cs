@@ -145,7 +145,7 @@ namespace Planar.Monitor.Hook
             }
             catch (Exception ex)
             {
-                throw new PlanarMonitorException($"Fail to deserialize monitor details context at {nameof(BaseHook)}.{nameof(ExecuteHandleSystem)}", ex);
+                throw new PlanarMonitorException($"Fail to deserialize monitor details context at {nameof(BaseHook)}.{nameof(SafeDeserialize)}", ex);
             }
         }
 

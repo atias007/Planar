@@ -63,7 +63,6 @@ namespace Planar.Common
                 _logger?.LogWarning(ex,
                     "Fail to map data key '{Key}' with value {Value} to property {Name} of job {JobGroup}.{JobName}",
                     data.Key, data.Value, prop.Name, jobKey.Group, jobKey.Name);
-                throw;
             }
         }
 

@@ -13,6 +13,12 @@ PlanarJob.Debugger.AddProfile<Worker>("Demo 100", builder =>
         .WithJobData("Z", "200")
         .WithJobData("SomeMappedInt", 555));
 
+PlanarJob.Debugger.AddProfile<Worker>("Map Error", builder =>
+    builder
+        .WithJobData("X", "100")
+        .WithJobData("Z", "200")
+        .WithJobData("SomeMappedDate", "X"));
+
 PlanarJob.Debugger.AddProfile<Worker>("Demo With Date", builder =>
     builder
         .WithJobData("X", "100")

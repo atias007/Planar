@@ -11,6 +11,8 @@ namespace SomeJob
 
         public int? SomeMappedInt { get; set; }
 
+        public DateTime SomeMappedDate { get; set; }
+
         public int SimpleInt { get; set; }
 
         [IgnoreDataMap]
