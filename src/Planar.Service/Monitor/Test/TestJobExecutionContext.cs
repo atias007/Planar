@@ -34,7 +34,7 @@ namespace Planar.Service.Monitor.Test
             }
         }
 
-        public IScheduler Scheduler => null;
+        public IScheduler Scheduler => null!;
 
         public ITrigger Trigger { get; private set; }
 
@@ -44,7 +44,7 @@ namespace Planar.Service.Monitor.Test
 
         // ****** ATTENTION: any changes should reflect in Monitor Util ******
 
-        public TriggerKey RecoveringTriggerKey => null;
+        public TriggerKey RecoveringTriggerKey => null!;
 
         public int RefireCount => 0;
 
@@ -52,7 +52,7 @@ namespace Planar.Service.Monitor.Test
 
         public IJobDetail JobDetail { get; private set; }
 
-        public IJob JobInstance => null;
+        public IJob JobInstance => null!;
 
         public DateTimeOffset FireTimeUtc => DateTimeOffset.UtcNow.AddMinutes(-5);
 

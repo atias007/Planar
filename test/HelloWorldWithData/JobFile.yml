@@ -1,0 +1,12 @@
+job type: PlanarJob
+name: HelloWorld With Data
+group: Demo
+description: Demo Hello World Job With Data
+durable: true
+concurrent: false
+properties:
+  filename: HelloWorldWithData.exe
+simple triggers:
+  - name: default_trigger
+    interval: 00:10:00
+    misfire behaviour: FireNow

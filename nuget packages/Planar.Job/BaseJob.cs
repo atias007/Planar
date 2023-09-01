@@ -6,7 +6,6 @@ using Planar.Job.Logger;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -88,7 +87,8 @@ namespace Planar.Job
             try
             {
                 ExecuteJob(_context).Wait();
-                MapJobInstancePropertiesBack(_context);
+                var mapperBack = new JobBackMapper(_logger, _baseJobFactory);
+                mapperBack.MapJobInstancePropertiesBack(_context, this);
             }
             catch (Exception ex)
             {
@@ -146,27 +146,6 @@ namespace Planar.Job
         {
             get { return _baseJobFactory.EffectedRows; }
             set { _baseJobFactory.EffectedRows = value; }
-        }
-
-        protected void MapJobInstancePropertiesBack(IJobExecutionContext context)
-        {
-            try
-            {
-                if (context == null) { return; }
-
-                var propInfo = this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance).ToList();
-                foreach (var prop in propInfo)
-                {
-                    if (prop.Name.StartsWith(Consts.ConstPrefix)) { continue; }
-                    SafePutData(context, prop);
-                }
-            }
-            catch (Exception ex)
-            {
-                var source = nameof(MapJobInstancePropertiesBack);
-                _logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetails.Key.Group, context.JobDetails.Key.Name);
-                throw;
-            }
         }
 
         protected DateTime Now()
@@ -270,92 +249,6 @@ namespace Planar.Job
             services.AddSingleton(typeof(ILogger<>), typeof(PlanarLogger<>));
             registerServicesAction.Invoke(Configuration, services, context);
             _provider = services.BuildServiceProvider();
-        }
-
-        private void SafePutData(IJobExecutionContext context, PropertyInfo prop)
-        {
-            var jobAttribute = prop.GetCustomAttribute<JobDataAttribute>();
-            var triggerAttribute = prop.GetCustomAttribute<TriggerDataAttribute>();
-            var ignoreAttribute = prop.GetCustomAttribute<IgnoreDataMapAttribute>();
-
-            if (ignoreAttribute != null)
-            {
-                var jobKey = context.JobDetails.Key;
-
-                _logger.LogDebug("ATTENTION: Ignore map back property {PropertyName} of job '{JobGroup}.{JobName}' to data map",
-                    prop.Name,
-                    jobKey.Group,
-                    jobKey.Name);
-
-                return;
-            }
-
-            if (jobAttribute != null)
-            {
-                SafePutJobDataMap(context, prop);
-            }
-
-            if (triggerAttribute != null)
-            {
-                SafePutTiggerDataMap(context, prop);
-            }
-
-            if (jobAttribute == null && triggerAttribute == null)
-            {
-                if (context.JobDetails.JobDataMap.ContainsKey(prop.Name))
-                {
-                    SafePutJobDataMap(context, prop);
-                }
-
-                if (context.TriggerDetails.TriggerDataMap.ContainsKey(prop.Name))
-                {
-                    SafePutTiggerDataMap(context, prop);
-                }
-            }
-        }
-
-        private void SafePutJobDataMap(IJobExecutionContext context, PropertyInfo prop)
-        {
-            string? value = null;
-            try
-            {
-                if (!Consts.IsDataKeyValid(prop.Name))
-                {
-                    throw new PlanarJobException($"the data key {prop.Name} in invalid");
-                }
-
-                value = PlanarConvert.ToString(prop.GetValue(this));
-                PutJobData(prop.Name, value);
-            }
-            catch (Exception ex)
-            {
-                var jobKey = context.JobDetails.Key;
-                _logger.LogWarning(ex,
-                    "Fail to save back value {Value} from property {Name} to JobDetails at job {JobGroup}.{JobName}",
-                    value, prop.Name, jobKey.Group, jobKey.Name);
-            }
-        }
-
-        private void SafePutTiggerDataMap(IJobExecutionContext context, PropertyInfo prop)
-        {
-            string? value = null;
-            try
-            {
-                if (!Consts.IsDataKeyValid(prop.Name))
-                {
-                    throw new PlanarJobException($"the data key {prop.Name} in invalid");
-                }
-
-                value = PlanarConvert.ToString(prop.GetValue(this));
-                PutTriggerData(prop.Name, value);
-            }
-            catch (Exception ex)
-            {
-                var jobKey = context.JobDetails.Key;
-                _logger.LogWarning(ex,
-                    "Fail to save back value {Value} from property {Name} to TriggerDetails at job {JobGroup}.{JobName}",
-                    value, prop.Name, jobKey.Group, jobKey.Name);
-            }
         }
     }
 }
