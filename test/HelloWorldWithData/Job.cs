@@ -20,6 +20,8 @@ namespace HelloWorldWithData
             Logger.LogInformation("Start execute job: {Name}", context.JobDetails.Key.Name);
             Logger.LogInformation("DurationSeconds data: {DurationSeconds}", DurationSeconds);
 
+            var x = context.MergedJobDataMap.Get<DateTime>("DurationSeconds");
+
             EffectedRows = 0;
             for (int i = 0; i < DurationSeconds; i++)
             {

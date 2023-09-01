@@ -187,9 +187,12 @@ namespace Planar.Job
         private static string GetExceptionText(Exception ex)
         {
             var lines = ex.ToString().Split('\n');
-            var filterLines = lines.Where(l => !l.Contains($"{nameof(Planar)}.{nameof(Job)}\\{nameof(BaseJob)}.cs"));
-            var text = string.Join("\n", filterLines);
-            return text;
+            var filterLines = lines
+                .Where(l => !l.Contains($"{nameof(Planar)}.{nameof(Job)}\\{nameof(BaseJob)}.cs"))
+                .Select(l => l?.TrimEnd());
+
+            var text = string.Join(Environment.NewLine, filterLines);
+            return text.Trim();
         }
 
         private void InitializeBaseJobFactory(string json)
