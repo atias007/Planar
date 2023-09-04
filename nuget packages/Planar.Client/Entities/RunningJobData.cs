@@ -1,6 +1,6 @@
-﻿namespace Planar.API.Common.Entities
+﻿namespace Planar.Client.Entities
 {
-    public class GetRunningDataResponse
+    public class RunningJobData
     {
         public string? Log { get; set; }
 

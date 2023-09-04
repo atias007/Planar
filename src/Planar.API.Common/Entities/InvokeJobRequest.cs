@@ -2,9 +2,8 @@
 
 namespace Planar.API.Common.Entities
 {
-    public class QueueInvokeJobRequest : JobOrTriggerKey
+    public class InvokeJobRequest : JobOrTriggerKey
     {
-        public DateTime DueDate { get; set; }
-        public TimeSpan? Timeout { get; set; }
+        public DateTime? NowOverrideValue { get; set; }
     }
 }

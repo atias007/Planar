@@ -106,7 +106,7 @@ namespace Planar.Service.General
             return response;
         }
 
-        public async Task<GetRunningDataResponse?> GetRunningData(string instanceId, CancellationToken cancellationToken = default)
+        public async Task<RunningJobData?> GetRunningData(string instanceId, CancellationToken cancellationToken = default)
         {
             var context = (await _scheduler.GetCurrentlyExecutingJobs(cancellationToken))
                 .FirstOrDefault(j => j.FireInstanceId == instanceId);
@@ -124,7 +124,7 @@ namespace Planar.Service.General
                 count = metadata.Exceptions.Count;
             }
 
-            var response = new GetRunningDataResponse
+            var response = new RunningJobData
             {
                 Log = log,
                 Exceptions = exceptions,
@@ -203,14 +203,14 @@ namespace Planar.Service.General
             return result;
         }
 
-        public static JobRowDetails MapJobRowDetails(IJobDetail source)
+        public static JobBasicDetails MapJobRowDetails(IJobDetail source)
         {
-            var result = new JobRowDetails();
+            var result = new JobBasicDetails();
             MapJobRowDetails(source, result);
             return result;
         }
 
-        public static void MapJobRowDetails(IJobDetail source, JobRowDetails target)
+        public static void MapJobRowDetails(IJobDetail source, JobBasicDetails target)
         {
             target.Id = JobKeyHelper.GetJobId(source) ?? string.Empty;
             target.Name = source.Key.Name;
