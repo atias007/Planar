@@ -251,13 +251,6 @@ namespace Planar.Service.API
             }
         }
 
-        private static IEnumerable<GlobalConfig> ConvertToGlobalConfig(Dictionary<string, string?> config)
-        {
-            if (config == null) { return Array.Empty<GlobalConfig>(); }
-            var result = config.Select(c => new GlobalConfig { Key = c.Key, Value = c.Value, Type = "string" });
-            return result;
-        }
-
         private static string CreateJobId(IJobDetail job)
         {
             // job id
@@ -422,15 +415,6 @@ namespace Planar.Service.API
             });
         }
 
-        private static async Task ValidateGlobalConfig(IEnumerable<GlobalConfig> config)
-        {
-            foreach (var p in config)
-            {
-                var validator = new GlobalConfigDataValidator();
-                await validator.ValidateAndThrowAsync(p);
-            }
-        }
-
         private static JobKey ValidateJobMetadata(SetJobRequest metadata, IScheduler scheduler)
         {
             metadata.JobData ??= new Dictionary<string, string?>();
@@ -515,16 +499,6 @@ namespace Planar.Service.API
             CheckForInvalidDataKeys(metadata.JobData, "job");
 
             #endregion JobData
-
-            #region GlobalConfig
-
-            foreach (var item in metadata.GlobalConfig)
-            {
-                ValidateRange(item.Key, 1, 100, "key", "job global config");
-                ValidateMaxLength(item.Value, 1000, "value", "job global config");
-            }
-
-            #endregion GlobalConfig
 
             var triggersCount = metadata.CronTriggers?.Count + metadata.SimpleTriggers?.Count;
             if (triggersCount == 0 && metadata.Durable == false)
@@ -750,11 +724,6 @@ namespace Planar.Service.API
             var jobKey = ValidateJobMetadata(request, Scheduler);
             await ValidateJobNotExists(jobKey);
 
-            // Global Config
-            var config = ConvertToGlobalConfig(request.GlobalConfig);
-            await ValidateGlobalConfig(config);
-            await PutGlobalConfig(config);
-
             // Create Job (JobType+Concurrent, JobGroup, JobName, Description, Durable)
             var job = BuildJobDetails(request, jobKey);
 
@@ -808,15 +777,6 @@ namespace Planar.Service.API
             }
 
             return yml;
-        }
-
-        private async Task PutGlobalConfig(IEnumerable<GlobalConfig> config)
-        {
-            var configDomain = Resolve<ConfigDomain>();
-            foreach (var p in config)
-            {
-                await configDomain.Put(p);
-            }
         }
 
         private async Task ValidateAddPath(SetJobPathRequest request)
