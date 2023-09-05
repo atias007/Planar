@@ -1,7 +1,5 @@
 ﻿using FluentValidation;
 using Planar.Service.General;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -33,13 +31,6 @@ namespace Planar.Service.Validation
                 .When(j => j.Transaction)
                 .WithMessage("{PropertyName} must be false when transaction is true");
 
-            RuleFor(j => j.ConnectionStrings)
-                .Must(NoDuplicates)
-                .WithMessage("{PropertyName} name must be unique. there are duplicate in name property of {PropertyName}");
-
-            RuleForEach(j => j.ConnectionStrings)
-                .SetValidator(new SqlConnectionStringValidator());
-
             RuleFor(j => j.Steps).NotEmpty();
             RuleForEach(j => j.Steps).SetValidator((a, b) => new SqlStepValidator());
             RuleForEach(j => j.Steps)
@@ -47,15 +38,6 @@ namespace Planar.Service.Validation
                 .When(p => string.IsNullOrWhiteSpace(p.DefaultConnectionName))
                 .WithMessage("connection name property for step must have value when no default connection name");
             RuleForEach(j => j.Steps).MustAsync(FilenameExists);
-        }
-
-        private bool NoDuplicates(List<SqlConnectionString>? list)
-        {
-            if (list == null || list.Count == 0) { return true; }
-            var names = list.Select(l => l.Name).ToList();
-            var origin = names.Count;
-            var check = names.Distinct().Count();
-            return origin == check;
         }
 
         private async Task<bool> FilenameExists(SqlJobProperties properties, SqlStep step, ValidationContext<SqlJobProperties> context, CancellationToken cancellationToken = default)

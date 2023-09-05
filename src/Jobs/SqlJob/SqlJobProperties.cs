@@ -21,9 +21,6 @@ namespace Planar
 
         public List<SqlStep>? Steps { get; set; } = new List<SqlStep>();
 
-        [YamlMember(Alias = "connection strings")]
-        public List<SqlConnectionString>? ConnectionStrings { get; set; }
-
         [YamlIgnore]
         internal string? DefaultConnectionString { get; set; }
     }
