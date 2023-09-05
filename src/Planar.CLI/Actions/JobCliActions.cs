@@ -318,7 +318,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("job/{instanceId}/running-data", Method.Get)
                 .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
 
-            var result = await RestProxy.Invoke<GetRunningDataResponse>(restRequest, cancellationToken);
+            var result = await RestProxy.Invoke<RunningJobData>(restRequest, cancellationToken);
             if (string.IsNullOrEmpty(result.Data?.Log)) { return new CliActionResponse(result); }
 
             return new CliActionResponse(result, result.Data?.Log);
@@ -330,7 +330,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("job/{instanceId}/running-data", Method.Get)
                 .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
 
-            var result = await RestProxy.Invoke<GetRunningDataResponse>(restRequest, cancellationToken);
+            var result = await RestProxy.Invoke<RunningJobData>(restRequest, cancellationToken);
             if (string.IsNullOrEmpty(result.Data?.Exceptions)) { return new CliActionResponse(result); }
 
             return new CliActionResponse(result, result.Data?.Exceptions);

@@ -286,10 +286,10 @@ namespace Planar.Controllers
         [HttpGet("{instanceId}/running-data")]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job_running_data_instanceid", Description = "Get running job log & exception", Summary = "Get Running Job Data")]
-        [OkJsonResponse(typeof(GetRunningDataResponse))]
+        [OkJsonResponse(typeof(RunningJobData))]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<GetRunningDataResponse>> GetRunningData([FromRoute][Required] string instanceId)
+        public async Task<ActionResult<RunningJobData>> GetRunningData([FromRoute][Required] string instanceId)
         {
             var result = await BusinesLayer.GetRunningData(instanceId);
             return Ok(result);

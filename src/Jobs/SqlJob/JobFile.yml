@@ -17,9 +17,6 @@ properties:                                   # Properties for job with 'PlanarJ
   transaction: false                          # Use transaction for all steps
   transaction isolation level: Unspecified    # The isolation level of transaction. The default is Unspecified [Unspecified, Chaos, ReadUncommitted, ReadCommitted, RepeatableRead, Serializable, Snapshot]
   continue on error: false                    # Continue to next step if error occur. The defualt is false
-  connection strings:                         # List of connection strings which are not specified in configuration and need to be used in steps
-    - name: <connection name>                 # Name of connection [mandatory, 1 to 50 characters]
-      connection string: <connection string>  # Connection string [mandatory, 5 to 500 characters]
   steps:                                      # list of scripts to execute
     - name: Step1                             # Name of step [1 to 50 characters]
       filename: step1.sql                     # Script filename [1 to 100 characters]
