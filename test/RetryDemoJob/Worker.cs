@@ -24,7 +24,15 @@ namespace RetryDemoJob
                 hasRetry, isRetryTrigger, retryNumber, maxRetries, isLastRetry);
 
             Logger.LogInformation("Lets throw some exception and check for retry...");
-            throw new PlanarJobException("This is some test exception");
+            try
+            {
+                throw new PlanarJobException("This is some test exception");
+            }
+            catch (System.Exception ex)
+            {
+                Logger.LogError(ex, "Exception thrown, lets see if we retry...");
+                throw;
+            }
         }
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

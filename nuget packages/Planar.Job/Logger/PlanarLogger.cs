@@ -23,6 +23,13 @@ namespace Planar.Job.Logger
 
         public static string LogText => _logBuilder.ToString();
 
+        protected void Log(LogLevel logLevel, string message)
+        {
+            var entity = new LogEntity { Message = message, Level = logLevel };
+            MqttClient.Publish(MessageBrokerChannels.AppendLog, entity).Wait();
+            LogToConsole(entity.ToString());
+        }
+
         protected void LogToConsole(string message)
         {
             Console.ForegroundColor = ConsoleColor.DarkCyan;
@@ -47,9 +54,13 @@ namespace Planar.Job.Logger
             if (!IsEnabled(logLevel)) { return; }
 
             var message = $"<{typeof(TContext).Name}> {formatter(state, exception)}";
-            var entity = new LogEntity { Message = message, Level = logLevel };
-            MqttClient.Publish(MessageBrokerChannels.AppendLog, entity).Wait();
-            LogToConsole(entity.ToString());
+            Log(logLevel, message);
+
+            if (exception != null)
+            {
+                message = $"<{typeof(TContext).Name}> {exception}";
+                Log(logLevel, message);
+            }
         }
     }
 
@@ -60,9 +71,12 @@ namespace Planar.Job.Logger
             if (!IsEnabled(logLevel)) { return; }
 
             var message = $"{formatter(state, exception)}";
-            var entity = new LogEntity { Message = message, Level = logLevel };
-            MqttClient.Publish(MessageBrokerChannels.AppendLog, entity).Wait();
-            LogToConsole(entity.ToString());
+            Log(logLevel, message);
+
+            if (exception != null)
+            {
+                Log(logLevel, exception.ToString());
+            }
         }
     }
 }
