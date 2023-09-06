@@ -42,6 +42,9 @@ namespace Planar.Service.API
         {
             var data = await DataLayer.GetHistoryById(id);
             var result = ValidateExistingEntity(data, "history");
+
+            // fix bug cause save \r\n in database
+            result.Data = result.Data?.Trim();
             return result;
         }
 

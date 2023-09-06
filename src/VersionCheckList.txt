@@ -21,7 +21,7 @@ Check List
 - fix sonar issues
 - approve pull request
 - switch to master branch + git pull
-- run planar_publish.bat
+- run publish.bat
 
 Docker
 ------
@@ -44,7 +44,7 @@ GitHub
 `planar`: the main windows service
 `planar-cli`: command line interface tool
 `database_migrations`: setup helper tool for installing and updating versions of SQL scripts
-
+install CLI tool as dotnet tool as follow: `dotnet tool install --global planar-cli --version 1.5.1`
 
 # Planar For Docker
 

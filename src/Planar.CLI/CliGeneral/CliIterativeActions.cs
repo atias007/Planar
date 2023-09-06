@@ -60,7 +60,8 @@ namespace Planar.CLI
                 table.UpdateCell(i, 3, $"[grey]completed[/]");
                 table.UpdateCell(i, 4, "---");
                 table.UpdateCell(i, 5, "---");
-                table.UpdateCell(i, 6, "[grey]---[/]");
+                table.UpdateCell(i, 6, "---");
+                table.UpdateCell(i, 7, "[grey]---[/]");
             }
             else
             {
@@ -69,8 +70,9 @@ namespace Planar.CLI
 
                 table.UpdateCell(i, 3, $"[gold3_1]{item.Progress}%[/]");
                 table.UpdateCell(i, 4, item.EffectedRows.GetValueOrDefault().ToString());
-                table.UpdateCell(i, 5, runtime);
-                table.UpdateCell(i, 6, $"[grey]{estimated}[/]");
+                table.UpdateCell(i, 5, item.ExceptionsCount.ToString());
+                table.UpdateCell(i, 6, runtime);
+                table.UpdateCell(i, 7, $"[grey]{estimated}[/]");
             }
         }
     }

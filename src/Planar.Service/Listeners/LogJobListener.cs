@@ -195,7 +195,7 @@ namespace Planar.Service.Listeners
             if (items?.Count == 0) { return null; }
 
             var yml = YmlUtil.Serialize(items);
-            return yml;
+            return yml?.Trim();
         }
 
         private async Task AddConcurrentStatistics(IJobExecutionContext context)

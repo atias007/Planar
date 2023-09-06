@@ -18,6 +18,10 @@ COPY ["Jobs/SqlJob/SqlJob.csproj", "Jobs/SqlJob/"]
 COPY ["Jobs/RestJob/RestJob.csproj", "Jobs/RestJob/"]
 COPY ["Jobs/PowerShellJob/PowerShellJob.csproj", "Jobs/PowerShellJob/"]
 COPY ["DatabaseMigrations/DatabaseMigrations.csproj", "DatabaseMigrations/"]
+COPY ["DatabaseMigrations.Factory/DatabaseMigrations.Factory.csproj", "DatabaseMigrations.Factory/"]
+COPY ["DbUp/dbup-core/dbup-core.csproj", "DbUp/dbup-core/"]
+COPY ["DbUp/dbup-sqlserver/dbup-sqlserver.csproj", "DbUp/dbup-sqlserver/"]
+COPY ["DbUp/dbup-mysql/dbup-mysql.csproj", "DbUp/dbup-mysql/"]
 COPY ["Planar/Planar.csproj", "Planar/"]
 COPY ["Planar.API.Common/Planar.API.Common.csproj", "Planar.API.Common/"]
 COPY ["Planar.CLI/Planar.CLI.csproj", "Planar.CLI/"]
@@ -37,6 +41,7 @@ WORKDIR "/src/Planar"
 FROM build AS publish
 RUN dotnet publish "../Planar.CLI/Planar.CLI.csproj" -c Release -o /app/publish /p:UseAppHost=false
 RUN dotnet publish "Planar.csproj" -c Release -o /app/publish /p:UseAppHost=false
+COPY ["Planar.CLI/planar-cli", "/app/publish"]
 
 # ---------------------------- Final Image -------------------------------------------
 FROM base AS final

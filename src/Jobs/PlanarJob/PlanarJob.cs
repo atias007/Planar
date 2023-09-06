@@ -192,10 +192,7 @@ namespace Planar
                 _logger.LogError(ex, $"fail to handle health chek at {nameof(FinalizeProcess)}");
             }
 
-            if (!_isHealthCheck)
-            {
-                throw new PlanarJobException("no health check signal from job. See job log for more information");
-            }
+            throw new PlanarJobException("no health check signal from job. See job log for more information");
         }
 
         private void UnregisterMqttBrokerService()
