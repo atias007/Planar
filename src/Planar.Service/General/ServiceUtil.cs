@@ -94,7 +94,7 @@ namespace Planar.Service.General
 
             if (result)
             {
-                logger.LogInformation("Add monitor hook '{Name}' from type '{FullName}'", name, t.FullName);
+                logger.LogInformation("Add monitor hook {Name} from type {FullName}", name, t.FullName);
             }
 
             return result;
@@ -114,11 +114,11 @@ namespace Planar.Service.General
 
             if (result)
             {
-                logger.LogInformation("Add system monitor hook '{Name}'", name);
+                logger.LogInformation("Add system monitor hook {Name}", name);
             }
             else
             {
-                logger.LogError("Fail to add system monitor hook '{Name}'", name);
+                logger.LogError("Fail to add system monitor hook {Name}", name);
             }
         }
 
