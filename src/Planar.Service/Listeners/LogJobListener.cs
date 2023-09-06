@@ -12,7 +12,6 @@ using Planar.Service.General;
 using Planar.Service.Listeners.Base;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
-using Polly;
 using Quartz;
 using System;
 using System.Collections.Generic;
