@@ -1,15 +1,23 @@
 ﻿--------------------------------------------------------
-PLAN FOR V 1.5.0
+PLAN FOR V 1.5.1
 ----------------
-- BUG: SECUTIRY: user with role that can create new user (not admin) may create user with admin role
-- cli command to changhe interval/count
-- cli command to changhe cron expr
+- BUG: SECURITY: user with role that can create new user (not admin) may create user with admin role
+- BUG: SECURITY: no audit for login, group add, user add
+
+
+PLAN FOR V 1.5.1
+----------------
+- add data to job test, invoke, queue-invoke
 
 - BACKLOG ----------------------------------------------------------------------------
 - add WorkflowJob
 - add SSIS job
 - add SSRS job
 - add daily report system job
+
+
+- cli command to changhe interval/count
+- cli command to changhe cron expr
 
 - api security headers
 - circuit breaker (option to pause job after {x} fails in row)
