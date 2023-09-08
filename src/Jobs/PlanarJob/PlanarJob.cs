@@ -10,6 +10,7 @@ using Quartz;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -208,7 +209,32 @@ namespace Planar
             startInfo.Arguments = $"--planar-service-mode --context {base64String}";
             startInfo.StandardErrorEncoding = Encoding.UTF8;
             startInfo.StandardOutputEncoding = Encoding.UTF8;
+            SetProcessToLinuxOs(startInfo);
             return startInfo;
+        }
+
+        private void SetProcessToLinuxOs(ProcessStartInfo startInfo)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                var filename = GetFilenameFoLinux(startInfo.FileName);
+                startInfo.Arguments = $"\"{filename}\" {startInfo.Arguments}";
+            }
+        }
+
+        private string GetFilenameFoLinux(string filename)
+        {
+            var fi = new FileInfo(filename);
+            if (string.Equals(fi.Extension, ".exe", StringComparison.OrdinalIgnoreCase))
+            {
+                var fileNameWithoutExtension = Path.GetFileNameWithoutExtension(filename);
+                var newFileName = $"{fileNameWithoutExtension}.dll";
+                return newFileName;
+            }
+            else
+            {
+                return filename;
+            }
         }
 
         private void InterceptingPublishAsync(object? sender, CloudEventArgs e)
