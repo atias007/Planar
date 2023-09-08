@@ -311,7 +311,7 @@ namespace Planar.Common
                 throw new AppSettingsException($"Authentication token expire have minimum value of 1 minute. Current length is {AuthenticationTokenExpire.TotalSeconds:N0} seconds");
             }
 
-            AuthenticationKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AuthenticationSecret));
+            AuthenticationKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes($"{AuthenticationSecret}"));
         }
 
         private static T GetSettings<T>(IConfiguration configuration, string environmentKey, string appSettingsKey, T defaultValue = default)

@@ -18,6 +18,11 @@ namespace Planar.Service.API
         {
         }
 
+        public static IEnumerable<string> GetAllGroupsRoles()
+        {
+            return Enum.GetNames<Roles>().Select(r => r.ToLower());
+        }
+
         public async Task<EntityIdResponse> AddGroup(AddGroupRequest request)
         {
             if (await DataLayer.IsGroupNameExists(request.Name, 0))
@@ -26,93 +31,14 @@ namespace Planar.Service.API
             }
 
             var group = Mapper.Map<Group>(request);
+            if ((int)UserRole < group.RoleId)
+            {
+                throw new RestForbiddenException();
+            }
+
             await DataLayer.AddGroup(group);
+            AuditSecuritySafe($"group '{group.Name}' was created with role '{group.Role.Name?.ToLower()}'");
             return new EntityIdResponse(group.Id);
-        }
-
-        public async Task<GroupDetails> GetGroupByName(string name)
-        {
-            var group = await DataLayer.GetGroup(name);
-            ValidateExistingEntity(group, "group");
-            var users = await DataLayer.GetUsersInGroup(group!.Id);
-            var mapper = Resolve<IMapper>();
-            var result = mapper.Map<GroupDetails>(group);
-            users.ForEach(u => result.Users.Add(u.ToString()));
-
-            return result;
-        }
-
-        public async Task<PagingResponse<GroupInfo>> GetAllGroups(IPagingRequest request)
-        {
-            return await DataLayer.GetGroups(request);
-        }
-
-        public static IEnumerable<string> GetAllGroupsRoles()
-        {
-            return Enum.GetNames<Roles>().Select(r => r.ToLower());
-        }
-
-        public async Task DeleteGroup(string name)
-        {
-            var id = await DataLayer.GetGroupId(name);
-            if (id == 0) { throw new RestNotFoundException($"group '{name}' could not be found"); }
-
-            await ValidateMonitorForGroup(id);
-            await ValidateUsersForGroup(id);
-
-            var count = await DataLayer.RemoveGroup(id);
-            if (count < 1)
-            {
-                throw new RestNotFoundException($"group '{name}' could not be found");
-            }
-        }
-
-        private async Task ValidateMonitorForGroup(int groupId)
-        {
-            var hasMonitor = await DataLayer.IsGroupHasMonitors(groupId);
-            if (hasMonitor)
-            {
-                throw new RestValidationException("id", "group has one or more monitor item/s and can not be deleted");
-            }
-        }
-
-        private async Task ValidateUsersForGroup(int groupId)
-        {
-            var hasMonitor = await DataLayer.IsGroupHasUsers(groupId);
-            if (hasMonitor)
-            {
-                throw new RestValidationException("id", $"group has one or more user/s and can not be deleted");
-            }
-        }
-
-        public async Task PartialUpdateGroup(UpdateEntityRequestByName request)
-        {
-            ForbbidenPartialUpdateProperties(request, "to update role use 'group set-role' command", nameof(UpdateGroupRequest.Role), nameof(UpdateGroupRequest.RoleId));
-            ForbbidenPartialUpdateProperties(request, "to join user to group use 'group join'", nameof(GroupDetails.Users));
-            ForbbidenPartialUpdateProperties(request, null, nameof(GroupDetails.Users));
-
-            var group = await DataLayer.GetGroup(request.Name);
-            ValidateExistingEntity(group, "group");
-            var updateGroup = Mapper.Map<UpdateGroupRequest>(group);
-            updateGroup.CurrentName = request.Name;
-            updateGroup.Role = null;
-            var validator = Resolve<IValidator<UpdateGroupRequest>>();
-            await SetEntityProperties(updateGroup, request, validator);
-            await Update(updateGroup);
-        }
-
-        public async Task Update(UpdateGroupRequest request)
-        {
-            var id = await DataLayer.GetGroupId(request.CurrentName);
-            if (id == 0) { throw new RestNotFoundException($"group '{request.CurrentName}' could not be found"); }
-
-            if (await DataLayer.IsGroupNameExists(request.Name, id))
-            {
-                throw new RestConflictException($"group '{request.Name}' already exists");
-            }
-
-            var group = Mapper.Map<Group>(request);
-            await DataLayer.UpdateGroup(group);
         }
 
         public async Task AddUserToGroup(string name, string username)
@@ -134,6 +60,7 @@ namespace Planar.Service.API
 
             await DataLayer.AddUserToGroup(userId, groupId);
 
+            AuditSecuritySafe($"user '{username}' was joined to group '{name}'");
             if (targetUserRole > currentUserRole)
             {
                 var currentUserRoleTitle = ((Roles)currentUserRole).ToString().ToLower();
@@ -142,32 +69,54 @@ namespace Planar.Service.API
             }
         }
 
-        public async Task SetRoleToGroup(string name, string role)
+        public async Task DeleteGroup(string name)
         {
-            var entity = await DataLayer.GetGroup(name);
-            var group = ValidateExistingEntity(entity, "group");
+            var id = await DataLayer.GetGroupId(name);
+            if (id == 0) { throw new RestNotFoundException($"group '{name}' could not be found"); }
 
-            if (!Enum.TryParse<Roles>(role, true, out var roleEnum))
+            await ValidateMonitorForGroup(id);
+            await ValidateUsersForGroup(id);
+
+            var count = await DataLayer.RemoveGroup(id);
+            if (count < 1)
             {
-                throw new RestNotFoundException($"role '{role?.ToLower()}' could not be found");
+                throw new RestNotFoundException($"group '{name}' could not be found");
             }
 
-            if ((int)roleEnum == group.RoleId)
-            {
-                throw new RestNotFoundException($"group '{name}' already has role '{role?.ToLower()}'");
-            }
+            AuditSecuritySafe($"group '{name}' was deleted");
+        }
 
-            var isWarning = (int)roleEnum > group.RoleId;
-            if (isWarning)
-            {
-                AuditSecuritySafe($"the group '{name}' elevate its role from '{group.Role.Name?.ToLower()}' to '{role}'", isWarning: true);
-            }
-            else
-            {
-                AuditSecuritySafe($"the group '{name}' bring down its role from '{group.Role.Name?.ToLower()}' to '{role}'", isWarning: false);
-            }
+        public async Task<PagingResponse<GroupInfo>> GetAllGroups(IPagingRequest request)
+        {
+            return await DataLayer.GetGroups(request);
+        }
 
-            await DataLayer.SetRoleToGroup(group.Id, (int)roleEnum);
+        public async Task<GroupDetails> GetGroupByName(string name)
+        {
+            var group = await DataLayer.GetGroup(name);
+            ValidateExistingEntity(group, "group");
+            var users = await DataLayer.GetUsersInGroup(group!.Id);
+            var mapper = Resolve<IMapper>();
+            var result = mapper.Map<GroupDetails>(group);
+            users.ForEach(u => result.Users.Add(u.ToString()));
+
+            return result;
+        }
+
+        public async Task PartialUpdateGroup(UpdateEntityRequestByName request)
+        {
+            ForbbidenPartialUpdateProperties(request, "to update role use 'group set-role' command", nameof(UpdateGroupRequest.Role), nameof(UpdateGroupRequest.RoleId));
+            ForbbidenPartialUpdateProperties(request, "to join user to group use 'group join'", nameof(GroupDetails.Users));
+            ForbbidenPartialUpdateProperties(request, null, nameof(GroupDetails.Users));
+
+            var group = await DataLayer.GetGroup(request.Name);
+            ValidateExistingEntity(group, "group");
+            var updateGroup = Mapper.Map<UpdateGroupRequest>(group);
+            updateGroup.CurrentName = request.Name;
+            updateGroup.Role = null;
+            var validator = Resolve<IValidator<UpdateGroupRequest>>();
+            await SetEntityProperties(updateGroup, request, validator);
+            await Update(updateGroup);
         }
 
         public async Task RemoveUserFromGroup(string name, string username)
@@ -185,6 +134,68 @@ namespace Planar.Service.API
             }
 
             await DataLayer.RemoveUserFromGroup(userId, groupId);
+
+            AuditSecuritySafe($"user '{username}' was removed from group '{name}'");
+        }
+
+        public async Task SetRoleToGroup(string name, string role)
+        {
+            var entity = await DataLayer.GetGroup(name);
+            var group = ValidateExistingEntity(entity, "group");
+
+            if (!Enum.TryParse<Roles>(role, true, out var roleEnum))
+            {
+                throw new RestNotFoundException($"role '{role?.ToLower()}' could not be found");
+            }
+
+            if ((int)roleEnum == group.RoleId)
+            {
+                throw new RestNotFoundException($"group '{name}' already has role '{role.ToLower()}'");
+            }
+
+            await DataLayer.SetRoleToGroup(group.Id, (int)roleEnum);
+
+            var isWarning = (int)roleEnum > group.RoleId;
+            if (isWarning)
+            {
+                AuditSecuritySafe($"the group '{name}' elevate its role from '{group.Role.Name?.ToLower()}' to '{role}'", isWarning: true);
+            }
+            else
+            {
+                AuditSecuritySafe($"the group '{name}' bring down its role from '{group.Role.Name?.ToLower()}' to '{role}'", isWarning: false);
+            }
+        }
+
+        public async Task Update(UpdateGroupRequest request)
+        {
+            var id = await DataLayer.GetGroupId(request.CurrentName);
+            if (id == 0) { throw new RestNotFoundException($"group '{request.CurrentName}' could not be found"); }
+
+            if (await DataLayer.IsGroupNameExists(request.Name, id))
+            {
+                throw new RestConflictException($"group '{request.Name}' already exists");
+            }
+
+            var group = Mapper.Map<Group>(request);
+            await DataLayer.UpdateGroup(group);
+        }
+
+        private async Task ValidateMonitorForGroup(int groupId)
+        {
+            var hasMonitor = await DataLayer.IsGroupHasMonitors(groupId);
+            if (hasMonitor)
+            {
+                throw new RestValidationException("id", "group has one or more monitor item/s and can not be deleted");
+            }
+        }
+
+        private async Task ValidateUsersForGroup(int groupId)
+        {
+            var hasMonitor = await DataLayer.IsGroupHasUsers(groupId);
+            if (hasMonitor)
+            {
+                throw new RestValidationException("id", $"group has one or more user/s and can not be deleted");
+            }
         }
     }
 }

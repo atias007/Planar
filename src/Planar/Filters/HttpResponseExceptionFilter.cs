@@ -121,6 +121,13 @@ namespace Planar.Filters
                 return;
             }
 
+            if (context.Exception is RestForbiddenException)
+            {
+                context.Result = new ForbidResult();
+                context.ExceptionHandled = true;
+                return;
+            }
+
             if (context.Exception is RestConflictException conflictException)
             {
                 context.Result = new ConflictObjectResult(conflictException.Value);

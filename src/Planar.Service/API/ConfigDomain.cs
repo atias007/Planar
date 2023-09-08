@@ -93,8 +93,6 @@ namespace Planar.Service.API
                 .OrderBy(kv => kv.Key)
                 .Select(g => new KeyValueItem(g.Key.Trim(), g.Value));
 
-            if (RoleId == Roles.Administrator) { return data; }
-
             return data;
         }
 

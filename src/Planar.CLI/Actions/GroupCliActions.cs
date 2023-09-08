@@ -145,6 +145,11 @@ namespace Planar.CLI.Actions
 
         private static async Task<CliPromptWrapper> FillCliAddGroupRequest(CliAddGroupRequest request, CancellationToken cancellationToken)
         {
+            if (string.IsNullOrEmpty(request.Name))
+            {
+                request.Name = CollectCliValue("name", true, 2, 50) ?? string.Empty;
+            }
+
             if (request.Role == null)
             {
                 var p1 = await CliPromptUtil.Roles(cancellationToken);

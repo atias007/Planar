@@ -7,7 +7,6 @@ using Planar.Service.General.Hash;
 using Planar.Service.General.Password;
 using Planar.Service.Model;
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -31,12 +30,26 @@ namespace Planar.Service.API
             user.Salt = hash.Salt;
 
             _ = await DataLayer.AddUser(user);
+
+            AuditSecuritySafe($"user '{user.Username}' was created");
+
             var response = new AddUserResponse
             {
                 Password = hash.Value
             };
 
             return response;
+        }
+
+        public async Task Delete(string username)
+        {
+            var count = await DataLayer.RemoveUser(username);
+            if (count < 1)
+            {
+                throw new RestNotFoundException($"user with username '{username}' could not be found");
+            }
+
+            AuditSecuritySafe($"user '{username}' was deleted");
         }
 
         public async Task<UserDetails> Get(string username)
@@ -51,6 +64,13 @@ namespace Planar.Service.API
             return result;
         }
 
+        public async Task<PagingResponse<UserRowModel>> GetAll(IPagingRequest request)
+        {
+            var query = DataLayer.GetUsers();
+            var result = await query.ProjectToWithPagingAsyc<User, UserRowModel>(Mapper, request);
+            return result;
+        }
+
         public async Task<string> GetRole(string username)
         {
             if (!await DataLayer.IsUsernameExists(username))
@@ -61,22 +81,6 @@ namespace Planar.Service.API
             var roleId = await DataLayer.GetUserRole(username);
             var result = RoleHelper.GetTitle(roleId);
             return result;
-        }
-
-        public async Task<PagingResponse<UserRowModel>> GetAll(IPagingRequest request)
-        {
-            var query = DataLayer.GetUsers();
-            var result = await query.ProjectToWithPagingAsyc<User, UserRowModel>(Mapper, request);
-            return result;
-        }
-
-        public async Task Delete(string username)
-        {
-            var count = await DataLayer.RemoveUser(username);
-            if (count < 1)
-            {
-                throw new RestNotFoundException($"user with username '{username}' could not be found");
-            }
         }
 
         public async Task PartialUpdate(UpdateEntityRequestByName request)
@@ -95,6 +99,34 @@ namespace Planar.Service.API
             await Update(updateUser);
         }
 
+        public async Task<string> ResetPassword(string username)
+        {
+            var existsUser = await DataLayer.GetUser(username, withTracking: true);
+            ValidateExistingEntity(existsUser, "user");
+            if (existsUser == null) { return string.Empty; }
+            var hash = GeneratePassword();
+            existsUser.Password = hash.Hash;
+            existsUser.Salt = hash.Salt;
+            await DataLayer.SaveChangesAsync();
+
+            AuditSecuritySafe($"password for user '{username}' was reset");
+
+            return hash.Value;
+        }
+
+        public async Task SetPassword(string username, SetPasswordRequest request)
+        {
+            var existsUser = await DataLayer.GetUser(username, withTracking: true);
+            ValidateExistingEntity(existsUser, "user");
+            if (existsUser == null) { return; }
+            var hash = HashUtil.CreateHash(request.Password);
+            existsUser.Password = hash.Hash;
+            existsUser.Salt = hash.Salt;
+            await DataLayer.SaveChangesAsync();
+
+            AuditSecuritySafe($"password for user '{username}' was changed");
+        }
+
         public async Task Update(UpdateUserRequest request)
         {
             var exists = await DataLayer.IsUsernameExists(request.CurrentUsername);
@@ -110,29 +142,6 @@ namespace Planar.Service.API
 
             var user = Mapper.Map<User>(request);
             await DataLayer.UpdateUser(user);
-        }
-
-        public async Task<string> ResetPassword(string username)
-        {
-            var existsUser = await DataLayer.GetUser(username, withTracking: true);
-            ValidateExistingEntity(existsUser, "user");
-            if (existsUser == null) { return string.Empty; }
-            var hash = GeneratePassword();
-            existsUser.Password = hash.Hash;
-            existsUser.Salt = hash.Salt;
-            await DataLayer.SaveChangesAsync();
-            return hash.Value;
-        }
-
-        public async Task SetPassword(string username, SetPasswordRequest request)
-        {
-            var existsUser = await DataLayer.GetUser(username, withTracking: true);
-            ValidateExistingEntity(existsUser, "user");
-            if (existsUser == null) { return; }
-            var hash = HashUtil.CreateHash(request.Password);
-            existsUser.Password = hash.Hash;
-            existsUser.Salt = hash.Salt;
-            await DataLayer.SaveChangesAsync();
         }
 
         private static HashEntity GeneratePassword()

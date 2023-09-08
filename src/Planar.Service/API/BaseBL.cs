@@ -39,7 +39,7 @@ namespace Planar.Service.API
             }
         }
 
-        protected Roles RoleId
+        protected Roles UserRole
         {
             get
             {
