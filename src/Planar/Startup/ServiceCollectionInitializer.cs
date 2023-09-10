@@ -14,6 +14,7 @@ using Planar.Service;
 using Planar.Service.Services;
 using System;
 using System.Net;
+using System.Text;
 using System.Threading.RateLimiting;
 
 namespace Planar.Startup
@@ -73,28 +74,36 @@ namespace Planar.Startup
         {
             if (AppSettings.HasAuthontication)
             {
-                services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                    .AddJwtBearer(options =>
+                services.AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.RequireHttpsMetadata = false;
+                    options.TokenValidationParameters = new TokenValidationParameters()
                     {
-                        options.TokenValidationParameters = new TokenValidationParameters
-                        {
-                            ValidateIssuerSigningKey = true,
-                            IssuerSigningKey = AppSettings.AuthenticationKey,
-                            ValidateIssuer = false,
-                            ValidateAudience = false
-                        };
-                    });
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidAudience = AppSettings.AuthonticationAudience,
+                        ValidIssuer = AppSettings.AuthonticationIssuer,
+                        ClockSkew = TimeSpan.Zero,
+                        IssuerSigningKey = AppSettings.AuthenticationKey
+                    };
+                });
+
+                services.AddAuthorization(option =>
+                {
+                    option.AddPolicy(Roles.Administrator.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Administrator)));
+                    option.AddPolicy(Roles.Editor.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Editor)));
+                    option.AddPolicy(Roles.Tester.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Tester)));
+                    option.AddPolicy(Roles.Viewer.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Viewer)));
+                });
+
+                services.AddSingleton<IAuthorizationHandler, MinimumRoleHandler>();
             }
-
-            services.AddAuthorization(option =>
-            {
-                option.AddPolicy(Roles.Administrator.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Administrator)));
-                option.AddPolicy(Roles.Editor.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Editor)));
-                option.AddPolicy(Roles.Tester.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Tester)));
-                option.AddPolicy(Roles.Viewer.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Viewer)));
-            });
-
-            services.AddSingleton<IAuthorizationHandler, MinimumRoleHandler>();
         }
     }
 }

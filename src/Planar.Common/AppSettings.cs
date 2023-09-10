@@ -86,6 +86,9 @@ namespace Planar.Common
 
         public static bool NoAuthontication => AuthenticationMode == AuthMode.AllAnonymous;
 
+        public const string AuthonticationIssuer = "http://planar.me";
+        public const string AuthonticationAudience = "http://planar.audience.me";
+
         public static void Initialize(IConfiguration configuration)
         {
             Console.WriteLine("[x] Initialize AppSettings");
@@ -274,7 +277,7 @@ namespace Planar.Common
 
         private static void InitializeAuthentication(IConfiguration configuration)
         {
-            const string DefaultAuthenticationSecret = "DWPVy9Xefs7JnI4mMbZMrPhp39QWpDIO";
+            const string DefaultAuthenticationSecret = "ecawiasqrpqrgyhwnolrudpbsrwaynbqdayndnmcehjnwqyouikpodzaqxivwkconwqbhrmxfgccbxbyljguwlxhdlcvxlutbnwjlgpfhjgqbegtbxbvwnacyqnltrby";
 
             var mode = GetSettings(configuration, Consts.AuthenticationModeVariableKey, nameof(AuthenticationMode), AuthMode.AllAnonymous.ToString());
             AuthenticationSecret = GetSettings(configuration, Consts.AuthenticationSecretVariableKey, nameof(AuthenticationSecret), DefaultAuthenticationSecret);
@@ -296,9 +299,9 @@ namespace Planar.Common
                 throw new AppSettingsException($"Authentication secret must have value when authentication mode is {AuthenticationMode}");
             }
 
-            if (AuthenticationSecret.Length < 16)
+            if (AuthenticationSecret.Length < 65)
             {
-                throw new AppSettingsException($"Authentication secret must have minimum length of 16 charecters. Current length is {AuthenticationSecret.Length}");
+                throw new AppSettingsException($"Authentication secret must have minimum length of 65 charecters. Current length is {AuthenticationSecret.Length}");
             }
 
             if (AuthenticationSecret.Length > 256)
@@ -311,7 +314,7 @@ namespace Planar.Common
                 throw new AppSettingsException($"Authentication token expire have minimum value of 1 minute. Current length is {AuthenticationTokenExpire.TotalSeconds:N0} seconds");
             }
 
-            AuthenticationKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes($"{AuthenticationSecret}"));
+            AuthenticationKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AuthenticationSecret));
         }
 
         private static T GetSettings<T>(IConfiguration configuration, string environmentKey, string appSettingsKey, T defaultValue = default)

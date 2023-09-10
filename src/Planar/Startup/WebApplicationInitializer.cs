@@ -83,18 +83,20 @@ namespace Planar.Startup
 
             app.UseRouting();
 
+            //Rate limitter middleware
+            app.UseRateLimiter();
+            app.MapGrpcService<ClusterService>();
+
             // Authorization
+            // ATTENTION: Always UseAuthentication should be before UseAuthorization
             if (AppSettings.HasAuthontication)
             {
                 app.UseAuthentication();
             }
 
+            // ATTENTION: Always UseAuthentication should be before UseAuthorization
             app.UseAuthorization();
             app.MapControllers();
-
-            //Rate limitter middleware
-            app.UseRateLimiter();
-            app.MapGrpcService<ClusterService>();
         }
     }
 }

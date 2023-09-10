@@ -47,12 +47,13 @@ namespace Planar.Service.General.Hash
                 new Claim(ClaimTypes.GivenName, user.GivenName ?? string.Empty),
             };
 
-            var creds = new SigningCredentials(AppSettings.AuthenticationKey, SecurityAlgorithms.HmacSha256);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
+                Issuer = AppSettings.AuthonticationIssuer,
+                Audience = AppSettings.AuthonticationAudience,
+                Expires = DateTime.UtcNow.Add(AppSettings.AuthenticationTokenExpire),
+                SigningCredentials = new SigningCredentials(AppSettings.AuthenticationKey, SecurityAlgorithms.HmacSha256),
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.Now.Add(AppSettings.AuthenticationTokenExpire),
-                SigningCredentials = creds
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
