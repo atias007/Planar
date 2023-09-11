@@ -41,7 +41,7 @@ namespace Planar.CLI.Actions
 
         protected static string? CollectCliValue(string field, bool required, int minLength, int maxLength, string? regex = null, string? regexErrorMessage = null, string? defaultValue = null, bool secret = false)
         {
-            var prompt = new TextPrompt<string>($"[turquoise2]  > {field.EscapeMarkup()?.Trim()}: [/]")
+            var prompt = new TextPrompt<string>($"[turquoise2]  > {field.EscapeMarkup()?.Trim()}:[/]")
                 .Validate(value =>
                 {
                     if (required && string.IsNullOrWhiteSpace(value)) { return GetValidationResultError($"{field} is required field"); }

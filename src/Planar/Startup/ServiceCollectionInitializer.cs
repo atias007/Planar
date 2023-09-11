@@ -93,17 +93,18 @@ namespace Planar.Startup
                         IssuerSigningKey = AppSettings.AuthenticationKey
                     };
                 });
-
-                services.AddAuthorization(option =>
-                {
-                    option.AddPolicy(Roles.Administrator.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Administrator)));
-                    option.AddPolicy(Roles.Editor.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Editor)));
-                    option.AddPolicy(Roles.Tester.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Tester)));
-                    option.AddPolicy(Roles.Viewer.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Viewer)));
-                });
-
-                services.AddSingleton<IAuthorizationHandler, MinimumRoleHandler>();
             }
+
+            // ATTENTION: Always set this policies event when no Authontication
+            services.AddAuthorization(option =>
+            {
+                option.AddPolicy(Roles.Administrator.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Administrator)));
+                option.AddPolicy(Roles.Editor.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Editor)));
+                option.AddPolicy(Roles.Tester.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Tester)));
+                option.AddPolicy(Roles.Viewer.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Viewer)));
+            });
+
+            services.AddSingleton<IAuthorizationHandler, MinimumRoleHandler>();
         }
     }
 }

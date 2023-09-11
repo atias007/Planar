@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
@@ -68,7 +69,8 @@ namespace Planar.Authorization
             var role = (Roles)roleId;
             if (role == Roles.Anonymous)
             {
-                AuditWarningSecuritySafe(context.User.Claims, $"user role is not authorize to perform this action. action rule is: {requirement.Role.ToString().ToLower()} while user rule is: anonymous");
+                var action = GetCurrentAction();
+                AuditWarningSecuritySafe(context.User.Claims, $"user role is not authorize to perform action: {action}. action rule is: {requirement.Role.ToString().ToLower()} while user rule is: anonymous");
                 return Task.CompletedTask;
             }
 
@@ -78,7 +80,8 @@ namespace Planar.Authorization
             }
             else
             {
-                AuditWarningSecuritySafe(context.User.Claims, $"user role is not authorize to perform this action. action rule is: {requirement.Role.ToString().ToLower()} while user rule is: {role.ToString().ToLower()}");
+                var action = GetCurrentAction();
+                AuditWarningSecuritySafe(context.User.Claims, $"user role is not authorize to perform action: {action}. action rule is: {requirement.Role.ToString().ToLower()} while user rule is: {role.ToString().ToLower()}");
             }
 
             return Task.CompletedTask;
@@ -101,6 +104,19 @@ namespace Planar.Authorization
             catch (Exception ex)
             {
                 LogFailureSafe(ex, title);
+            }
+        }
+
+        private string GetCurrentAction()
+        {
+            try
+            {
+                var context = _serviceProvider.GetRequiredService<IHttpContextAccessor>();
+                return $"{context.HttpContext.Request.Method} {context.HttpContext.Request.Path}";
+            }
+            catch
+            {
+                return string.Empty;
             }
         }
 

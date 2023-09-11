@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
+using Azure.Core;
 using FluentValidation;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
@@ -31,13 +33,14 @@ namespace Planar.Service.API
             }
 
             var group = Mapper.Map<Group>(request);
-            if ((int)UserRole < group.RoleId)
+            if (AppSettings.HasAuthontication && (int)UserRole < group.RoleId)
             {
+                AuditSecuritySafe($"creating a group with name '{group.Name}' and role '{request.Role}' blocked because the current user role is '{UserRole}'", isWarning: true);
                 throw new RestForbiddenException();
             }
 
             await DataLayer.AddGroup(group);
-            AuditSecuritySafe($"group '{group.Name}' was created with role '{group.Role.Name?.ToLower()}'");
+            AuditSecuritySafe($"group '{group.Name}' was created with role '{request.Role?.ToLower()}'");
             return new EntityIdResponse(group.Id);
         }
 
@@ -57,6 +60,12 @@ namespace Planar.Service.API
 
             var currentUserRole = await Resolve<UserData>().GetUserRole(userId);
             var targetUserRole = await DataLayer.GetGroupRole(name);
+
+            if (AppSettings.HasAuthontication && targetUserRole > (int)UserRole)
+            {
+                AuditSecuritySafe($"adding user '{username}' to group '{name}' with role '{(Roles)targetUserRole}' blocked because the current user role is '{UserRole}'", isWarning: true);
+                throw new RestForbiddenException();
+            }
 
             await DataLayer.AddUserToGroup(userId, groupId);
 
@@ -158,11 +167,11 @@ namespace Planar.Service.API
             var isWarning = (int)roleEnum > group.RoleId;
             if (isWarning)
             {
-                AuditSecuritySafe($"the group '{name}' elevate its role from '{group.Role.Name?.ToLower()}' to '{role}'", isWarning: true);
+                AuditSecuritySafe($"the group '{name}' elevate its role from '{roleEnum}' to '{role}'", isWarning: true);
             }
             else
             {
-                AuditSecuritySafe($"the group '{name}' bring down its role from '{group.Role.Name?.ToLower()}' to '{role}'", isWarning: false);
+                AuditSecuritySafe($"the group '{name}' bring down its role from '{roleEnum}' to '{role}'", isWarning: false);
             }
         }
 

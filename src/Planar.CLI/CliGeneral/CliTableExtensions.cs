@@ -191,7 +191,7 @@ namespace Planar.CLI
             var table = new CliTable();
             if (response == null)
             {
-                return new List<CliTable> { table };
+                return new List<CliTable> { table, table };
             }
 
             table.Table.AddColumns("Property Name", "Value");
