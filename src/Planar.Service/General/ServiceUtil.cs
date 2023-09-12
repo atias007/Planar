@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Hooks;
+using Planar.Monitor.Hook;
 using Planar.Service.Monitor;
 using Quartz;
 using System;
@@ -103,9 +104,11 @@ namespace Planar.Service.General
         private static void LoadSystemHooks<TLogger>(ILogger<TLogger> logger)
         {
             LoadSystemHook<TLogger, PlanarRestHook>(logger);
+            LoadSystemHook<TLogger, PlanarSmtpHook>(logger);
         }
 
         private static void LoadSystemHook<TLogger, THook>(ILogger<TLogger> logger)
+            where THook : BaseHook
         {
             var type = typeof(THook);
             var name = type.Name;

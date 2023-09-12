@@ -451,7 +451,7 @@ namespace Planar.Service.API
                 var job = await Scheduler.GetJobDetail(jobKey);
                 if (job == null) { return; }
 
-                job.JobDataMap.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value);
+                job.JobDataMap.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value.ToString());
                 await Scheduler.TriggerJob(jobKey, job.JobDataMap);
             }
             else

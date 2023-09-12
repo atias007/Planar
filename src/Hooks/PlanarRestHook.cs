@@ -7,7 +7,7 @@ namespace Planar.Hooks
 {
     public class PlanarRestHook : BaseHook
     {
-        public override string Name => nameof(PlanarRestHook);
+        public override string Name => "Planar.Rest";
 
         private static readonly object Locker = new();
         private static HttpClient _sharedClient = null!;
