@@ -63,7 +63,7 @@
 	<ItemGroup>
 		<PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
 		<PackageReference Include="Grpc.AspNetCore" Version="2.57.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.10" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.11" />
 		<PackageReference Include="Microsoft.AspNetCore.OData" Version="8.2.3" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.1" />
 		<PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.1.0" />
