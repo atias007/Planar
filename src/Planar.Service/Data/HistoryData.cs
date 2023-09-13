@@ -46,6 +46,19 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
+        public async Task<PagingResponse<JobInstanceLog>> GetHistorySummary(object parameters)
+        {
+            var cmd = new CommandDefinition(
+                commandText: "dbo.GetHistorySummary",
+                commandType: CommandType.StoredProcedure,
+                parameters: parameters);
+
+            var multi = await DbConnection.QueryMultipleAsync(cmd);
+            var data = await multi.ReadAsync<JobInstanceLog>();
+            var count = await multi.ReadSingleAsync<int>();
+            return new PagingResponse<JobInstanceLog>(data.ToList(), count);
+        }
+
         public IQueryable<JobInstanceLog> GetHistory(long key)
         {
             return _context.JobInstanceLogs.AsNoTracking().Where(l => l.Id == key);
@@ -112,6 +125,16 @@ namespace Planar.Service.Data
             var result = await _context.JobInstanceLogs
                 .AsNoTracking()
                 .Where(l => l.Id == id)
+                .FirstOrDefaultAsync();
+
+            return result;
+        }
+
+        public async Task<JobInstanceLog?> GetHistoryByInstanceId(string instanceid)
+        {
+            var result = await _context.JobInstanceLogs
+                .AsNoTracking()
+                .Where(l => l.InstanceId == instanceid)
                 .FirstOrDefaultAsync();
 
             return result;

@@ -7,6 +7,7 @@ using Planar.Service.API;
 using Planar.Service.Model;
 using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -39,6 +40,18 @@ namespace Planar.Controllers
         public async Task<ActionResult<JobInstanceLog>> GetHistoryById([FromRoute][LongId] long id)
         {
             var result = await BusinesLayer.GetHistoryById(id);
+            return Ok(result);
+        }
+
+        [HttpGet("by-instanceid/{instanceid}")]
+        [ViewerAuthorize]
+        [SwaggerOperation(OperationId = "get_history_by_instanceid_instanceid", Description = "Get history by instance id", Summary = "Get History By Instance Id")]
+        [OkJsonResponse(typeof(JobInstanceLog))]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<ActionResult<JobInstanceLog>> GetHistoryByInstanceId([FromRoute][Required] string instanceid)
+        {
+            var result = await BusinesLayer.GetHistoryByInstanceId(instanceid);
             return Ok(result);
         }
 
