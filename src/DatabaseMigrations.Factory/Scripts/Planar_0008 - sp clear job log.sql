@@ -1,8 +1,11 @@
-SET ANSI_NULLS ON
+IF EXISTS(SELECT 1 FROM sys.procedures WHERE  Name = N'ClearLogInstance')
+BEGIN
+  DROP PROCEDURE [dbo].[ClearLogInstance]
+END
+
 GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE OR ALTER PROCEDURE [dbo].[ClearLogInstance]
+
+CREATE PROCEDURE [dbo].[ClearLogInstance]
 @OverDays int = 365
 AS
 BEGIN

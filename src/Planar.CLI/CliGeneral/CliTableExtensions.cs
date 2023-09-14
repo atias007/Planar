@@ -158,6 +158,23 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetTable(PagingResponse<HistorySummary>? response)
+        {
+            var table = new CliTable(paging: response);
+            if (response == null || response.Data == null) { return table; }
+            table.Table.AddColumns("Job Id", "Job Key", "Job Type", "Total Runs", "Success", "Fail", "Running", "Retries");
+            response.Data.ForEach(r => table.Table.AddRow(
+                r.JobId ?? string.Empty,
+                CliTableFormat.FormatJobKey(r.JobGroup, r.JobName),
+                r.JobType.EscapeMarkup(),
+                CliTableFormat.FormatSummaryNumber(r.TotalRuns),
+                CliTableFormat.FormatSummaryNumber(r.Success, CliFormat.OkColor),
+                CliTableFormat.FormatSummaryNumber(r.Fail, CliFormat.ErrorColor),
+                CliTableFormat.FormatSummaryNumber(r.Running, CliFormat.WarningColor),
+                CliTableFormat.FormatSummaryNumber(r.Retries, "turquoise2")));
+            return table;
+        }
+
         public static CliTable GetTable(PagingResponse<SecurityAuditModel>? response)
         {
             var table = new CliTable(paging: response);

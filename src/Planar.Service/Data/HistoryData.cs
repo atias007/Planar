@@ -46,7 +46,7 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
-        public async Task<PagingResponse<JobInstanceLog>> GetHistorySummary(object parameters)
+        public async Task<PagingResponse<HistorySummary>> GetHistorySummary(object parameters)
         {
             var cmd = new CommandDefinition(
                 commandText: "dbo.GetHistorySummary",
@@ -54,9 +54,9 @@ namespace Planar.Service.Data
                 parameters: parameters);
 
             var multi = await DbConnection.QueryMultipleAsync(cmd);
-            var data = await multi.ReadAsync<JobInstanceLog>();
+            var data = await multi.ReadAsync<HistorySummary>();
             var count = await multi.ReadSingleAsync<int>();
-            return new PagingResponse<JobInstanceLog>(data.ToList(), count);
+            return new PagingResponse<HistorySummary>(data.ToList(), count);
         }
 
         public IQueryable<JobInstanceLog> GetHistory(long key)

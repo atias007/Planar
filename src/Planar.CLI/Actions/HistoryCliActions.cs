@@ -60,12 +60,12 @@ namespace Planar.CLI.Actions
 
             if (request.FromDate > DateTime.MinValue)
             {
-                restRequest.AddQueryParameter("fromDate", request.FromDate);
+                restRequest.AddQueryParameter("fromDate", request.FromDate.ToString("u"));
             }
 
             if (request.ToDate > DateTime.MinValue)
             {
-                restRequest.AddQueryParameter("toDate", request.ToDate);
+                restRequest.AddQueryParameter("toDate", request.ToDate.ToString("u"));
             }
 
             if (request.Status != null)
@@ -137,6 +137,33 @@ namespace Planar.CLI.Actions
 
             restRequest.AddQueryPagingParameter(request);
             var result = await RestProxy.Invoke<PagingResponse<JobLastRun>>(restRequest, cancellationToken);
+            var table = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, table);
+        }
+
+        [Action("summary")]
+        public static async Task<CliActionResponse> GetHistorySummary(CliGetHistorySummaryRequest request, CancellationToken cancellationToken = default)
+        {
+            if (request.FromDate == default && request.ToDate == default)
+            {
+                var dates = GetSummaryDateRates();
+                request.FromDate = dates.Item1 ?? default;
+                request.ToDate = dates.Item2 ?? default;
+            }
+
+            var restRequest = new RestRequest("history/summary", Method.Get);
+            if (request.FromDate > DateTime.MinValue)
+            {
+                restRequest.AddQueryParameter("fromDate", request.FromDate.ToString("u"));
+            }
+
+            if (request.ToDate > DateTime.MinValue)
+            {
+                restRequest.AddQueryParameter("toDate", request.ToDate.ToString("u"));
+            }
+
+            restRequest.AddQueryPagingParameter(request);
+            var result = await RestProxy.Invoke<PagingResponse<HistorySummary>>(restRequest, cancellationToken);
             var table = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, table);
         }

@@ -38,10 +38,11 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<PagingResponse<JobInstanceLog>> GetHistorySummary(GetHistoryRequest request)
+        public async Task<PagingResponse<HistorySummary>> GetHistorySummary(GetSummaryRequest request)
         {
+            request.SetPagingDefaults();
             var data = await DataLayer.GetHistorySummary(request);
-            var result = new PagingResponse<JobInstanceLog>(data);
+            var result = new PagingResponse<HistorySummary>(data);
             return result;
         }
 

@@ -1,4 +1,11 @@
-CREATE OR ALTER PROCEDURE [Statistics].[FillJobCounters]
+IF EXISTS(SELECT 1 FROM sys.procedures WHERE  Name = N'FillJobCounters')
+BEGIN
+  DROP PROCEDURE [Statistics].[FillJobCounters]
+END
+
+GO
+
+CREATE PROCEDURE [Statistics].[FillJobCounters]
 AS
 TRUNCATE TABLE [Statistics].[JobCounters]
 

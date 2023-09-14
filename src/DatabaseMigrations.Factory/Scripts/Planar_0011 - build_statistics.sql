@@ -1,4 +1,11 @@
-CREATE OR ALTER PROCEDURE [Statistics].[BuildJobStatistics]
+IF EXISTS(SELECT 1 FROM sys.procedures WHERE  Name = N'BuildJobStatistics')
+BEGIN
+  DROP PROCEDURE [Statistics].[BuildJobStatistics]
+END
+
+GO
+
+CREATE PROCEDURE [Statistics].[BuildJobStatistics]
 AS
 
 BEGIN TRANSACTION

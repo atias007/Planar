@@ -253,6 +253,23 @@ namespace Planar.CLI.Actions
             if (parts[1][0] == 'd') { return num * 24; }
             return 0;
         }
+
+        protected static (DateTime?, DateTime?) GetSummaryDateRates()
+        {
+            var items = new[] { "Today", "Yesterday", "This Week", "Last Week", "This Month", "Last Month", "This Year", "Custom..." };
+            var select = PromptSelection(items, "select date period", true);
+            return select switch
+            {
+                "Today" => (DateTime.Today, null),
+                "Yesterday" => (DateTime.Today.AddDays(-1), DateTime.Today),
+                "This Week" => (DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek), DateTime.Today.AddDays(7 - (int)DateTime.Today.DayOfWeek)),
+                "Last Week" => (DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek - 7), DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek)),
+                "This Month" => (DateTime.Today.AddDays(-DateTime.Today.Day + 1), DateTime.Today.AddDays(-DateTime.Today.Day + 1).AddMonths(1)),
+                "Last Month" => (DateTime.Today.AddDays(-DateTime.Today.Day + 1).AddMonths(-1), DateTime.Today.AddDays(-DateTime.Today.Day + 1)),
+                "This Year" => (DateTime.Today.AddDays(-DateTime.Today.DayOfYear + 1), DateTime.Today.AddDays(-DateTime.Today.DayOfYear + 1).AddYears(1)),
+                _ => (null, null)
+            };
+        }
     }
 
     public class BaseCliAction<T> : BaseCliAction
