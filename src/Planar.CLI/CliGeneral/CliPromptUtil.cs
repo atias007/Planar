@@ -111,7 +111,7 @@ namespace Planar.CLI.CliGeneral
             return new CliPromptWrapper<Roles>(enumSelect);
         }
 
-        private static void CheckForCancelOption(string value)
+        internal static void CheckForCancelOption(string? value)
         {
             if (value == CancelOption)
             {
