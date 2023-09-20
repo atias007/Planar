@@ -147,7 +147,7 @@ namespace Planar.CLI.Actions
 
         private static CliAddUserRequest GetCliAddUserRequest()
         {
-            const string phone_pattern = "^[0-9]+$";
+            const string phone_pattern = "^0[0-9]+$";
             const string email_pattern = @"\A(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9]{2,8}(?:[a-z0-9-]*[a-z0-9])?)\Z";
 
             var result = new CliAddUserRequest

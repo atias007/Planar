@@ -1,14 +1,13 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Planar;
 using Planar.Job;
 using System;
 using System.Threading.Tasks;
 
 namespace TestAction
 {
-    public class ActionJob : BaseJob
+    public class Job : BaseJob
     {
         public string Message { get; set; }
 
@@ -22,6 +21,10 @@ namespace TestAction
 
         public override async Task ExecuteJob(IJobExecutionContext context)
         {
+            Logger.LogInformation("Start Exist...");
+            await Task.Delay(3000);
+            Environment.Exit(-1);
+
             if (Value == 100.1)
             {
                 for (int i = 0; i < 130; i++)

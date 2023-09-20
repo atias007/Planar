@@ -1,8 +1,11 @@
-SET ANSI_NULLS ON
+IF EXISTS(SELECT 1 FROM sys.procedures WHERE  Name = N'UpdateJobInstanceLogAnomaly')
+BEGIN
+  DROP PROCEDURE  [dbo].[UpdateJobInstanceLogAnomaly]
+END
+
 GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE OR ALTER PROCEDURE [dbo].[UpdateJobInstanceLogAnomaly]
+
+CREATE PROCEDURE [dbo].[UpdateJobInstanceLogAnomaly]
   @InstanceId varchar(250),
   @Anomaly tinyint
   AS

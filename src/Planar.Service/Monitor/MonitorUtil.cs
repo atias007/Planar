@@ -279,11 +279,7 @@ namespace Planar.Service.Monitor
 
         private static HookInstance? GetMonitorHookInstance(string hook)
         {
-            var factory = ServiceUtil.MonitorHooks[hook];
-            if (factory == null) { return null; }
-            if (factory.Type == null) { return null; }
-
-            var instance = Activator.CreateInstance(factory.Type);
+            var instance = ServiceUtil.MonitorHooks[hook];
             if (instance == null) { return null; }
 
             var method1 = SafeGetMethod(hook, HookInstance.HandleMethodName, instance);

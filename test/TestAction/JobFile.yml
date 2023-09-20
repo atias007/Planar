@@ -1,23 +1,18 @@
 ﻿job type: PlanarJob
-name: TestAction
-group: Infrastructure
-description: long running task test
+name: TestEnvironmentExit
+group: Demo
+description: test environment.exit command
+author: Tsahi Atias (Administrator)
 durable: true
 concurrent: false
 job data:
   Message: This is long running task
   Value: 100.1
   MaxId: 100
-global config:
-  ParamKey1: ParamValue1
-  ParamKey2: ParamValue2
-  ParamKey3: ParamValue3
 properties:
-  path: TestAction
-  filename: TestAction.dll
-  class name: TestAction.ActionJob
+  filename: TestAction.exe
 simple triggers:
-- name: every-minute-trigger
+- name: every-5minute-trigger
   interval: 00:05:00
   misfire behaviour: FireNow
 

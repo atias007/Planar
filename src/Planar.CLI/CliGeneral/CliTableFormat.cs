@@ -91,6 +91,13 @@ namespace Planar.CLI
             }
         }
 
+        public static string FormatSummaryNumber(int number, string? color = null)
+        {
+            if (number == 0) { return $"[gray]-[/]"; }
+            if (string.IsNullOrEmpty(color)) { return $"{number:N0}"; }
+            return $"[{color}]{number:N0}[/]";
+        }
+
         public static string FormatJobKey(string? group, string? name)
         {
             var noGroup = string.IsNullOrWhiteSpace(group);

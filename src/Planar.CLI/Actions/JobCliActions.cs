@@ -736,50 +736,70 @@ namespace Planar.CLI.Actions
         private static UpdateJobOptions MapUpdateJobOptions()
         {
             using var _ = new TokenBlockerScope();
-            var options = AnsiConsole.Prompt(
-                new MultiSelectionPrompt<string>()
-                    .Title("select update options:")
-                    .Required() // Not required to have a favorite fruit
-                    .InstructionsText(
-                        "[grey](Press [blue]<space>[/] to toggle a choise, [green]<enter>[/] to accept)[/]")
-                    .PageSize(15)
-                    .AddChoices("without data (default)", "with job data", "with triggers data", CliPromptUtil.CancelOption)
-                    );
-
-            CliPromptUtil.CheckForCancelOption(options);
-            var result = MapUpdateJobOptions(options);
+            var options = new[] { "without data (default)", "with job data", "with triggers data", "all data" };
+            var selected = CliPromptUtil.PromptSelection(options, "select update options");
+            CliPromptUtil.CheckForCancelOption(selected);
+            var result = MapUpdateJobOptions(selected);
             return result;
         }
 
         private static UpdateJobOptions MapUpdateJobOptions(JobUpdateOptions options)
         {
-            var items = new List<string> { options.ToString() };
-            var result = MapUpdateJobOptions(items);
+            var result = UpdateJobOptions.Default;
+            switch (options)
+            {
+                case JobUpdateOptions.NoData:
+                    return result;
+
+                case JobUpdateOptions.JobData:
+                    result.UpdateJobData = true;
+                    result.UpdateTriggersData = false;
+                    break;
+
+                case JobUpdateOptions.TriggersData:
+                    result.UpdateJobData = false;
+                    result.UpdateTriggersData = true;
+                    break;
+
+                case JobUpdateOptions.All:
+                    result.UpdateJobData = true;
+                    result.UpdateTriggersData = true;
+                    return result;
+
+                default:
+                    throw new CliValidationException($"option {options} is invalid. use one or more from the following options: no-data, job-data, triggers-data, all");
+            }
+
             return result;
         }
 
-        private static UpdateJobOptions MapUpdateJobOptions(IEnumerable<string> items)
+        private static UpdateJobOptions MapUpdateJobOptions(string? selected)
         {
-            var result = new UpdateJobOptions();
+            var result = UpdateJobOptions.Default;
+            if (string.IsNullOrWhiteSpace(selected)) { return result; }
 
-            foreach (var item in items)
+            switch (selected.ToLower())
             {
-                switch (item.ToLower())
-                {
-                    case "without data (default)":
-                        break;
+                case "without data (default)":
+                    return result;
 
-                    case "with job data":
-                        result.UpdateJobData = true;
-                        break;
+                case "with job data":
+                    result.UpdateJobData = true;
+                    result.UpdateTriggersData = false;
+                    break;
 
-                    case "with triggers data":
-                        result.UpdateTriggersData = true;
-                        break;
+                case "with triggers data":
+                    result.UpdateJobData = false;
+                    result.UpdateTriggersData = true;
+                    break;
 
-                    default:
-                        throw new CliValidationException($"option {item} is invalid. use one or more from the following options: all,all-job,all-trigger,job,job-data,properties,triggers,triggers-data");
-                }
+                case "all data":
+                    result.UpdateJobData = true;
+                    result.UpdateTriggersData = true;
+                    return result;
+
+                default:
+                    throw new CliValidationException($"option {selected} is invalid. use one or more from the following options: no-data, job-data, triggers-data, all");
             }
 
             return result;

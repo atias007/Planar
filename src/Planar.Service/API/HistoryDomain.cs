@@ -38,12 +38,30 @@ namespace Planar.Service.API
             return result;
         }
 
+        public async Task<PagingResponse<HistorySummary>> GetHistorySummary(GetSummaryRequest request)
+        {
+            request.SetPagingDefaults();
+            var data = await DataLayer.GetHistorySummary(request);
+            var result = new PagingResponse<HistorySummary>(data);
+            return result;
+        }
+
         public async Task<JobInstanceLog> GetHistoryById(long id)
         {
             var data = await DataLayer.GetHistoryById(id);
             var result = ValidateExistingEntity(data, "history");
 
-            // fix bug cause save \r\n in database
+            // === fix bug cause save \r\n in database ===
+            result.Data = result.Data?.Trim();
+            return result;
+        }
+
+        public async Task<JobInstanceLog> GetHistoryByInstanceId(string instanceid)
+        {
+            var data = await DataLayer.GetHistoryByInstanceId(instanceid);
+            var result = ValidateExistingEntity(data, "history");
+
+            // === fix bug cause save \r\n in database ===
             result.Data = result.Data?.Trim();
             return result;
         }
