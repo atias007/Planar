@@ -9,6 +9,7 @@ using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
 using Planar.CLI.General;
 using Planar.CLI.Proxy;
+using Planar.Common;
 using RestSharp;
 using Spectre.Console;
 using System;
@@ -22,8 +23,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Planar.Common;
-using System.Reflection.PortableExecutable;
 
 namespace Planar.CLI
 {

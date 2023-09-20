@@ -17,7 +17,7 @@ namespace Planar.Service.General
 {
     public static class ServiceUtil
     {
-        public static ConcurrentDictionary<string, MonitorHookFactory> MonitorHooks { get; private set; } = new();
+        public static ConcurrentDictionary<string, BaseHook> MonitorHooks { get; private set; } = new();
         private static bool _disposeFlag;
         private static readonly object _locker = new();
         private const string _monitorHookAssemblyContextName = "MonitorHook_";
@@ -76,7 +76,7 @@ namespace Planar.Service.General
                     var types = GetHookTypesFromFile(assemblyContext, f);
                     foreach (var t in types)
                     {
-                        hasHook = LoadHook(logger, dir, assemblyContext, t);
+                        hasHook = LoadHook(logger, dir, t);
                     }
                 }
 
@@ -87,15 +87,20 @@ namespace Planar.Service.General
             }
         }
 
-        private static bool LoadHook<T>(ILogger<T> logger, string dir, AssemblyLoadContext assemblyContext, Type t)
+        private static bool LoadHook<T>(ILogger<T> logger, string dir, Type t)
         {
-            string name = new DirectoryInfo(dir).Name;
-            var hook = new MonitorHookFactory { Name = name, Type = t, AssemblyContext = assemblyContext };
-            var result = MonitorHooks.TryAdd(name, hook);
+            if (Activator.CreateInstance(t) is not BaseHook instance)
+            {
+                var name = new DirectoryInfo(dir).Name;
+                logger.LogWarning("Fail to add monitor hook from directory {Name} with type {FullName}", name, t.FullName);
+                return false;
+            }
+
+            var result = MonitorHooks.TryAdd(instance.Name, instance);
 
             if (result)
             {
-                logger.LogInformation("Add monitor hook {Name} from type {FullName}", name, t.FullName);
+                logger.LogInformation("Add monitor hook {Name} from type {FullName}", instance.Name, t.FullName);
             }
 
             return result;
@@ -110,18 +115,16 @@ namespace Planar.Service.General
         private static void LoadSystemHook<TLogger, THook>(ILogger<TLogger> logger)
             where THook : BaseHook
         {
-            var type = typeof(THook);
-            var name = type.Name;
-            var hook = new MonitorHookFactory { Name = name, Type = type, AssemblyContext = AssemblyLoadContext.Default };
-            var result = MonitorHooks.TryAdd(name, hook);
+            var instance = Activator.CreateInstance<THook>();
+            var result = MonitorHooks.TryAdd(instance.Name, instance);
 
             if (result)
             {
-                logger.LogInformation("Add system monitor hook {Name}", name);
+                logger.LogInformation("Add system monitor hook {Name}", instance.Name);
             }
             else
             {
-                logger.LogError("Fail to add system monitor hook {Name}", name);
+                logger.LogError("Fail to add system monitor hook {Name}", instance.Name);
             }
         }
 

@@ -5,6 +5,7 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -111,7 +112,7 @@ namespace Planar.CLI.CliGeneral
             return new CliPromptWrapper<Roles>(enumSelect);
         }
 
-        private static void CheckForCancelOption(string value)
+        internal static void CheckForCancelOption(string? value)
         {
             if (value == CancelOption)
             {
@@ -125,6 +126,35 @@ namespace Planar.CLI.CliGeneral
             {
                 throw new CliWarningException("operation was canceled");
             }
+        }
+
+        internal static DateTime? PromptForDate(string title)
+        {
+            var select = AnsiConsole.Prompt(
+                new TextPrompt<string>($"[turquoise2]  > {title.EscapeMarkup()} [grey]({CliActionMetadata.GetCurrentDateTimeFormat()}):[/][/]")
+                .AllowEmpty()
+                .Validate(date =>
+                {
+                    if (string.IsNullOrWhiteSpace(date))
+                    {
+                        return ValidationResult.Success();
+                    }
+
+                    date = date.Trim();
+                    if (!DateTime.TryParse(date, CultureInfo.CurrentCulture, out var _))
+                    {
+                        return ValidationResult.Error("[red]invalid date format[/]");
+                    }
+
+                    return ValidationResult.Success();
+                }));
+
+            if (string.IsNullOrEmpty(select))
+            {
+                return null;
+            }
+
+            return DateTime.Parse(select, CultureInfo.CurrentCulture);
         }
     }
 }

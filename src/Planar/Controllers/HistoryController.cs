@@ -7,6 +7,7 @@ using Planar.Service.API;
 using Planar.Service.Model;
 using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -39,6 +40,18 @@ namespace Planar.Controllers
         public async Task<ActionResult<JobInstanceLog>> GetHistoryById([FromRoute][LongId] long id)
         {
             var result = await BusinesLayer.GetHistoryById(id);
+            return Ok(result);
+        }
+
+        [HttpGet("by-instanceid/{instanceid}")]
+        [ViewerAuthorize]
+        [SwaggerOperation(OperationId = "get_history_by_instanceid_instanceid", Description = "Get history by instance id", Summary = "Get History By Instance Id")]
+        [OkJsonResponse(typeof(JobInstanceLog))]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<ActionResult<JobInstanceLog>> GetHistoryByInstanceId([FromRoute][Required] string instanceid)
+        {
+            var result = await BusinesLayer.GetHistoryByInstanceId(instanceid);
             return Ok(result);
         }
 
@@ -80,12 +93,23 @@ namespace Planar.Controllers
 
         [HttpGet("last")]
         [ViewerAuthorize]
-        [SwaggerOperation(OperationId = "get_history_last", Description = "Get summary of last running of each job", Summary = "Get Last Running Per Job")]
+        [SwaggerOperation(OperationId = "get_history_last", Description = "Get last running of each job", Summary = "Get Last Running Of Each Job")]
         [OkJsonResponse(typeof(PagingResponse<JobHistory>))]
         [BadRequestResponse]
         public async Task<ActionResult<PagingResponse<JobHistory>>> GetLastHistoryCallForJob([FromQuery] GetLastHistoryCallForJobRequest request)
         {
             var result = await BusinesLayer.GetLastHistoryCallForJob(request);
+            return Ok(result);
+        }
+
+        [HttpGet("summary")]
+        [ViewerAuthorize]
+        [SwaggerOperation(OperationId = "get_history_summary", Description = "Get summary of last running jobs", Summary = "Get Summary Of Last Running Jobs")]
+        [OkJsonResponse(typeof(PagingResponse<HistorySummary>))]
+        [BadRequestResponse]
+        public async Task<ActionResult<PagingResponse<HistorySummary>>> GetHistorySummary([FromQuery] GetSummaryRequest request)
+        {
+            var result = await BusinesLayer.GetHistorySummary(request);
             return Ok(result);
         }
 

@@ -4,9 +4,9 @@ using System;
 
 namespace Planar.Service.Validation
 {
-    public class SecurityAuditsFilterValidator : AbstractValidator<SecurityAuditsFilter>
+    internal class GetSummaryRequestValidator : AbstractValidator<GetSummaryRequest>
     {
-        public SecurityAuditsFilterValidator()
+        public GetSummaryRequestValidator()
         {
             Include(new PagingRequestValidator());
             RuleFor(r => r.FromDate).ValidSqlDateTime().LessThan(DateTime.Now);

@@ -1,9 +1,13 @@
-﻿namespace Planar.API.Common.Entities
+﻿using System.Runtime.CompilerServices;
+
+namespace Planar.API.Common.Entities
 {
     public class UpdateJobOptions
     {
-        public bool UpdateJobData { get; set; } = true;
+        public bool UpdateJobData { get; set; }
 
-        public bool UpdateTriggersData { get; set; } = true;
+        public bool UpdateTriggersData { get; set; }
+
+        public static UpdateJobOptions Default => new() { UpdateJobData = false, UpdateTriggersData = false };
     }
 }

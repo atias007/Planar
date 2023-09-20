@@ -4,13 +4,10 @@ namespace Planar.CLI.Entities
 {
     public enum JobUpdateOptions
     {
-        [ActionEnumOption("all")] All,
-        [ActionEnumOption("all-job")] AllJob,
-        [ActionEnumOption("all-trigger")] AllTrigger,
-        [ActionEnumOption("job-details")] JobDetails,
+        [ActionEnumOption("no-data")] NoData,
         [ActionEnumOption("job-data")] JobData,
-        [ActionEnumOption("properties")] Properties,
-        [ActionEnumOption("triggers-data")] TriggersData
+        [ActionEnumOption("triggers-data")] TriggersData,
+        [ActionEnumOption("all")] All,
     }
 
     public class CliUpdateJobRequest : CliAddJobRequest

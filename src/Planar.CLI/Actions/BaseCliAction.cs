@@ -253,6 +253,56 @@ namespace Planar.CLI.Actions
             if (parts[1][0] == 'd') { return num * 24; }
             return 0;
         }
+
+        protected static (DateTime?, DateTime?) GetSummaryDateRates()
+        {
+            var items = new[] { "today", "yesterday", "this week", "last week", "this month", "last month", "this year", "last year", "custom..." };
+            var select = PromptSelection(items, "select date period", true);
+
+            if (string.Equals(select, "custom...", StringComparison.OrdinalIgnoreCase))
+            {
+                return GetSummaryCustomDateRates();
+            }
+
+            (DateTime?, DateTime?) result = select switch
+            {
+                "today" => (DateTime.Today, null),
+                "yesterday" => (DateTime.Today.AddDays(-1), DateTime.Today),
+                "this week" => (DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek), DateTime.Today.AddDays(7 - (int)DateTime.Today.DayOfWeek)),
+                "last week" => (DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek - 7), DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek)),
+                "this month" => (DateTime.Today.AddDays(-DateTime.Today.Day + 1), DateTime.Today.AddDays(-DateTime.Today.Day + 1).AddMonths(1)),
+                "last month" => (DateTime.Today.AddDays(-DateTime.Today.Day + 1).AddMonths(-1), DateTime.Today.AddDays(-DateTime.Today.Day + 1)),
+                "this year" => (DateTime.Today.AddDays(-DateTime.Today.DayOfYear + 1), DateTime.Today.AddDays(-DateTime.Today.DayOfYear + 1).AddYears(1)),
+                "last year" => (DateTime.Today.AddDays(-DateTime.Today.DayOfYear + 1).AddYears(-1), DateTime.Today.AddDays(-DateTime.Today.DayOfYear + 1)),
+                _ => (null, null)
+            };
+
+            PrintSummaryDate("from date:", result.Item1);
+            PrintSummaryDate("to date:  ", result.Item2);
+
+            return result;
+        }
+
+        private static void PrintSummaryDate(string title, DateTime? date)
+        {
+            if (date == null)
+            {
+                AnsiConsole.MarkupLine($"[turquoise2]  > {title.EscapeMarkup()} [/] [[empty]]");
+            }
+            else
+            {
+                var format = CliActionMetadata.GetCurrentDateTimeFormat();
+                var value = date.Value.ToString(format);
+                AnsiConsole.MarkupLine($"[turquoise2]  > {title.EscapeMarkup()} [/] {value}");
+            }
+        }
+
+        private static (DateTime?, DateTime?) GetSummaryCustomDateRates()
+        {
+            var from = CliPromptUtil.PromptForDate("from date");
+            var to = CliPromptUtil.PromptForDate("to date  ");
+            return (from, to);
+        }
     }
 
     public class BaseCliAction<T> : BaseCliAction

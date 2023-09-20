@@ -40,7 +40,7 @@ namespace Planar.Hooks
             client.Connect("smtp.gmail.com", port: 587, useSsl: false, tokenSource.Token);
             client.Authenticate("tsahiatias@gmail.com", "abbconwfeacvwklo", tokenSource.Token);
             await client.SendAsync(message, tokenSource.Token);
-            client.Disconnect(true);
+            client.Disconnect(quit: true, tokenSource.Token);
         }
 
         public override Task HandleSystem(IMonitorSystemDetails monitorDetails)

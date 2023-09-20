@@ -5,6 +5,8 @@ using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
 using System;
+using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,13 +16,40 @@ namespace Planar.CLI.Actions
     public class HistoryCliActions : BaseCliAction<HistoryCliActions>
     {
         [Action("get")]
-        public static async Task<CliActionResponse> GetHistoryById(CliGetByLongIdRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> GetHistoryById(CliGetBySomeIdRequest request, CancellationToken cancellationToken = default)
+        {
+            if (IsOnlyDigits(request.Id.ToString()))
+            {
+                return await GetHistoryById(request.Id, cancellationToken);
+            }
+
+            return await GetHistoryByInstanceId(request.Id, cancellationToken);
+        }
+
+        private static async Task<CliActionResponse> GetHistoryById(string id, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("history/{id}", Method.Get)
-               .AddParameter("id", request.Id, ParameterType.UrlSegment);
+               .AddParameter("id", id, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<JobHistory>(restRequest, cancellationToken);
             return new CliActionResponse(result, dumpObject: result.Data);
+        }
+
+        private static async Task<CliActionResponse> GetHistoryByInstanceId(string id, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("history/by-instanceid/{instanceid}", Method.Get)
+                    .AddParameter("instanceid", id, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<JobHistory>(restRequest, cancellationToken);
+            return new CliActionResponse(result, dumpObject: result.Data);
+        }
+
+        private static bool IsOnlyDigits(string value)
+        {
+            if (value == null) { return true; }
+            const string pattern = "^[0-9]+$";
+            var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+            return regex.IsMatch(value);
         }
 
         [Action("ls")]
@@ -31,12 +60,12 @@ namespace Planar.CLI.Actions
 
             if (request.FromDate > DateTime.MinValue)
             {
-                restRequest.AddQueryParameter("fromDate", request.FromDate);
+                restRequest.AddQueryParameter("fromDate", request.FromDate.ToString("u"));
             }
 
             if (request.ToDate > DateTime.MinValue)
             {
-                restRequest.AddQueryParameter("toDate", request.ToDate);
+                restRequest.AddQueryParameter("toDate", request.ToDate.ToString("u"));
             }
 
             if (request.Status != null)
@@ -108,6 +137,33 @@ namespace Planar.CLI.Actions
 
             restRequest.AddQueryPagingParameter(request);
             var result = await RestProxy.Invoke<PagingResponse<JobLastRun>>(restRequest, cancellationToken);
+            var table = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, table);
+        }
+
+        [Action("summary")]
+        public static async Task<CliActionResponse> GetHistorySummary(CliGetHistorySummaryRequest request, CancellationToken cancellationToken = default)
+        {
+            if (request.FromDate == default && request.ToDate == default)
+            {
+                var dates = GetSummaryDateRates();
+                request.FromDate = dates.Item1 ?? default;
+                request.ToDate = dates.Item2 ?? default;
+            }
+
+            var restRequest = new RestRequest("history/summary", Method.Get);
+            if (request.FromDate > DateTime.MinValue)
+            {
+                restRequest.AddQueryParameter("fromDate", request.FromDate.ToString("u"));
+            }
+
+            if (request.ToDate > DateTime.MinValue)
+            {
+                restRequest.AddQueryParameter("toDate", request.ToDate.ToString("u"));
+            }
+
+            restRequest.AddQueryPagingParameter(request);
+            var result = await RestProxy.Invoke<PagingResponse<HistorySummary>>(restRequest, cancellationToken);
             var table = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, table);
         }
