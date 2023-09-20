@@ -80,6 +80,8 @@ namespace Planar.Common
 
         public static LogLevel LogLevel { get; set; }
 
+        public static SmtpServerSettings SmtpServer { get; private set; } = new();
+
         public static bool RunDatabaseMigration { get; set; }
 
         public static bool HasAuthontication => AuthenticationMode != AuthMode.AllAnonymous;

@@ -35,5 +35,5 @@ SmtpServer:
   Host: smtp.gmail.com
   Port: 25
   UseSsl: false
-  username: null
-  password: null
+  Username: null
+  Password: null
