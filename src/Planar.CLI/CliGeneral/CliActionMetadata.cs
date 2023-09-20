@@ -70,10 +70,6 @@ namespace Planar.CLI
                 }
             }
 
-            var ci = CultureInfo.CurrentCulture;
-            string shortDateFormatString = ci.DateTimeFormat.ShortDatePattern;
-            string shortTimeFormatString = ci.DateTimeFormat.LongTimePattern;
-
             foreach (var item in otherArgs)
             {
                 var enumType = item.EnumType;
@@ -85,7 +81,7 @@ namespace Planar.CLI
                 }
                 else if (info != null && (info.PropertyType == typeof(DateTime) || info.PropertyType == typeof(DateTime?)))
                 {
-                    ArgumentsDisplayNameItems.Add($"[{item.DisplayName} <\"{shortDateFormatString} {shortTimeFormatString}>\"]");
+                    ArgumentsDisplayNameItems.Add($"[{item.DisplayName} <\"{GetCurrentDateTimeFormat()}>\"]");
                 }
                 else if (enumType != null)
                 {
@@ -99,6 +95,14 @@ namespace Planar.CLI
             }
 
             ArgumentsDisplayName = string.Join(' ', ArgumentsDisplayNameItems);
+        }
+
+        public static string GetCurrentDateTimeFormat()
+        {
+            var ci = CultureInfo.CurrentCulture;
+            string shortDateFormatString = ci.DateTimeFormat.ShortDatePattern;
+            string shortTimeFormatString = ci.DateTimeFormat.LongTimePattern;
+            return $"{shortDateFormatString} {shortTimeFormatString}";
         }
 
         public static IEnumerable<string> GetEnumOptions(Type type)

@@ -256,19 +256,52 @@ namespace Planar.CLI.Actions
 
         protected static (DateTime?, DateTime?) GetSummaryDateRates()
         {
-            var items = new[] { "Today", "Yesterday", "This Week", "Last Week", "This Month", "Last Month", "This Year", "Custom..." };
+            var items = new[] { "today", "yesterday", "this week", "last week", "this month", "last month", "this year", "last year", "custom..." };
             var select = PromptSelection(items, "select date period", true);
-            return select switch
+
+            if (string.Equals(select, "custom...", StringComparison.OrdinalIgnoreCase))
             {
-                "Today" => (DateTime.Today, null),
-                "Yesterday" => (DateTime.Today.AddDays(-1), DateTime.Today),
-                "This Week" => (DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek), DateTime.Today.AddDays(7 - (int)DateTime.Today.DayOfWeek)),
-                "Last Week" => (DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek - 7), DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek)),
-                "This Month" => (DateTime.Today.AddDays(-DateTime.Today.Day + 1), DateTime.Today.AddDays(-DateTime.Today.Day + 1).AddMonths(1)),
-                "Last Month" => (DateTime.Today.AddDays(-DateTime.Today.Day + 1).AddMonths(-1), DateTime.Today.AddDays(-DateTime.Today.Day + 1)),
-                "This Year" => (DateTime.Today.AddDays(-DateTime.Today.DayOfYear + 1), DateTime.Today.AddDays(-DateTime.Today.DayOfYear + 1).AddYears(1)),
+                return GetSummaryCustomDateRates();
+            }
+
+            (DateTime?, DateTime?) result = select switch
+            {
+                "today" => (DateTime.Today, null),
+                "yesterday" => (DateTime.Today.AddDays(-1), DateTime.Today),
+                "this week" => (DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek), DateTime.Today.AddDays(7 - (int)DateTime.Today.DayOfWeek)),
+                "last week" => (DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek - 7), DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek)),
+                "this month" => (DateTime.Today.AddDays(-DateTime.Today.Day + 1), DateTime.Today.AddDays(-DateTime.Today.Day + 1).AddMonths(1)),
+                "last month" => (DateTime.Today.AddDays(-DateTime.Today.Day + 1).AddMonths(-1), DateTime.Today.AddDays(-DateTime.Today.Day + 1)),
+                "this year" => (DateTime.Today.AddDays(-DateTime.Today.DayOfYear + 1), DateTime.Today.AddDays(-DateTime.Today.DayOfYear + 1).AddYears(1)),
+                "last year" => (DateTime.Today.AddDays(-DateTime.Today.DayOfYear + 1).AddYears(-1), DateTime.Today.AddDays(-DateTime.Today.DayOfYear + 1)),
                 _ => (null, null)
             };
+
+            PrintSummaryDate("from date:", result.Item1);
+            PrintSummaryDate("to date:  ", result.Item2);
+
+            return result;
+        }
+
+        private static void PrintSummaryDate(string title, DateTime? date)
+        {
+            if (date == null)
+            {
+                AnsiConsole.MarkupLine($"[turquoise2]  > {title.EscapeMarkup()} [/] [[empty]]");
+            }
+            else
+            {
+                var format = CliActionMetadata.GetCurrentDateTimeFormat();
+                var value = date.Value.ToString(format);
+                AnsiConsole.MarkupLine($"[turquoise2]  > {title.EscapeMarkup()}: [/] {value}");
+            }
+        }
+
+        private static (DateTime?, DateTime?) GetSummaryCustomDateRates()
+        {
+            var from = CliPromptUtil.PromptForDate("from date");
+            var to = CliPromptUtil.PromptForDate("to date  ");
+            return (from, to);
         }
     }
 

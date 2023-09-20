@@ -272,7 +272,7 @@ namespace Planar.CLI.Actions
         private static string? GetEventArguments(string eventName)
         {
             var result = MonitorEventsExtensions.IsMonitorEventHasArguments(eventName) ?
-                AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > event argument:[/] ").AllowEmpty()) :
+                AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > event argument:[/]").AllowEmpty()) :
                 null;
 
             if (!string.IsNullOrEmpty(result))
@@ -440,7 +440,7 @@ namespace Planar.CLI.Actions
         private static string GetTitle()
         {
             // === Title ===
-            var title = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > title: [/]")
+            var title = AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > title:[/]")
                 .Validate(title =>
                 {
                     if (string.IsNullOrWhiteSpace(title)) { return ValidationResult.Error("[red]title is required field[/]"); }
