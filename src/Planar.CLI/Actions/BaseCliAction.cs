@@ -293,7 +293,7 @@ namespace Planar.CLI.Actions
             {
                 var format = CliActionMetadata.GetCurrentDateTimeFormat();
                 var value = date.Value.ToString(format);
-                AnsiConsole.MarkupLine($"[turquoise2]  > {title.EscapeMarkup()}: [/] {value}");
+                AnsiConsole.MarkupLine($"[turquoise2]  > {title.EscapeMarkup()} [/] {value}");
             }
         }
 
