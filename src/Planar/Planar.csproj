@@ -13,6 +13,13 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Remove="Data\MonitorHooks\Http\**" />
+	  <Content Remove="Data\MonitorHooks\Http\**" />
+	  <EmbeddedResource Remove="Data\MonitorHooks\Http\**" />
+	  <None Remove="Data\MonitorHooks\Http\**" />
+	</ItemGroup>
 	<ItemGroup>
 		<Content Remove="Data\Settings\HebrewCalendar.json" />
 	</ItemGroup>
@@ -107,7 +114,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Data\MonitorHooks\Http\" />
 		<Folder Include="Protos\" />
 	</ItemGroup>
 </Project>

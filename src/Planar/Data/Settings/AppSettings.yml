@@ -28,3 +28,12 @@ AuthenticationMode: AllAnonymous                   # options: AllAnonymous | Vie
 AuthenticationSecret: ecawiasqrpqrgyhwnolrudpbsrwaynbqdayndnmcehjnwqyouikpodzaqxivwkconwqbhrmxfgccbxbyljguwlxhdlcvxlutbnwjlgpfhjgqbegtbxbvwnacyqnltrby     # 65 to 256 charecters secret to encrypt and decrypt jwt tokens
 AuthenticationTokenExpire: 00:20:00                # the expiration time of token generated at login service. default is 20 minutes. minimum value 1 minute
 ConcurrencyRateLimiting: 10                        # the total number of concurrent requests allowed to be processed by the application. default is 10. minimum value 1
+
+SmtpServer: 
+  FromAddress: admin@planar.me
+  FromName: Planar
+  Host: smtp.gmail.com
+  Port: 25
+  UseSsl: false
+  username: null
+  password: null
