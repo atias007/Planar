@@ -89,6 +89,13 @@ namespace Planar
         public const string UseHttpsRedirectVariableKey = "PLANAR_HTTPSREDIRECT";
         public const string UseHttpsVariableKey = "PLANAR_HTTPS";
 
+        public const string SmtpServerHost = "PLANAR_SMTPHOST";
+        public const string SmtpServerPort = "PLANAR_SMTPPORT";
+        public const string SmtpServerFromAddress = "PLANAR_SMTPFROMADDRESS";
+        public const string SmtpServerFromName = "PLANAR_SMTPFROMNAME";
+        public const string SmtpServerUsername = "PLANAR_SMTPUSERNAME";
+        public const string SmtpServerPassword = "PLANAR_SMTPPASSWORD";
+
         public static bool IsDataKeyValid(string key)
         {
             return !Array.Exists(AllDataKeys, k => string.Equals(k, key, StringComparison.OrdinalIgnoreCase));

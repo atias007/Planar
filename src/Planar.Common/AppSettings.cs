@@ -102,25 +102,26 @@ namespace Planar.Common
             InitializePorts(configuration);
             InitializeLogLevel(configuration);
             InitializeAuthentication(configuration);
+            InitializeSmtpServer(configuration);
 
-            InstanceId = GetSettings(configuration, Consts.InstanceIdVariableKey, nameof(InstanceId), "AUTO");
-            ServiceName = GetSettings(configuration, Consts.ServiceNameVariableKey, nameof(ServiceName), "PlanarService");
-            Clustering = GetSettings(configuration, Consts.ClusteringVariableKey, nameof(Clustering), false);
-            JobAutoStopSpan = GetSettings(configuration, Consts.JobAutoStopSpanVariableKey, nameof(JobAutoStopSpan), TimeSpan.FromHours(2));
-            ClusteringCheckinInterval = GetSettings(configuration, Consts.ClusteringCheckinIntervalVariableKey, nameof(ClusteringCheckinInterval), TimeSpan.FromSeconds(5));
-            ClusteringCheckinMisfireThreshold = GetSettings(configuration, Consts.ClusteringCheckinMisfireThresholdVariableKey, nameof(ClusteringCheckinMisfireThreshold), TimeSpan.FromSeconds(5));
-            ClusterHealthCheckInterval = GetSettings(configuration, Consts.ClusterHealthCheckIntervalVariableKey, nameof(ClusterHealthCheckInterval), TimeSpan.FromMinutes(1));
-            ClusterPort = GetSettings<short>(configuration, Consts.ClusterPortVariableKey, nameof(ClusterPort), 12306);
-            DatabaseProvider = GetSettings(configuration, Consts.DatabaseProviderVariableKey, nameof(DatabaseProvider), "Npgsql");
-            ClearTraceTableOverDays = GetSettings(configuration, Consts.ClearTraceTableOverDaysVariableKey, nameof(ClearTraceTableOverDays), 365);
-            ClearJobLogTableOverDays = GetSettings(configuration, Consts.ClearJobLogTableOverDaysVariableKey, nameof(ClearJobLogTableOverDays), 365);
-            ClearStatisticsTablesOverDays = GetSettings(configuration, Consts.ClearStatisticsTablesOverDaysVariableKey, nameof(ClearStatisticsTablesOverDays), 365);
-            SwaggerUI = GetSettings(configuration, Consts.SwaggerUIVariableKey, nameof(SwaggerUI), true);
-            OpenApiUI = GetSettings(configuration, Consts.OpenApiUIVariableKey, nameof(OpenApiUI), true);
-            DeveloperExceptionPage = GetSettings(configuration, Consts.DeveloperExceptionPageVariableKey, nameof(DeveloperExceptionPage), true);
-            SchedulerStartupDelay = GetSettings(configuration, Consts.SchedulerStartupDelayVariableKey, nameof(SchedulerStartupDelay), TimeSpan.FromSeconds(30));
-            RunDatabaseMigration = GetSettings(configuration, Consts.RunDatabaseMigrationVariableKey, nameof(RunDatabaseMigration), true);
-            ConcurrencyRateLimiting = GetSettings(configuration, Consts.ConcurrencyRateLimitingVariableKey, nameof(ConcurrencyRateLimiting), 10);
+            InstanceId = GetSettings(configuration, Consts.InstanceIdVariableKey, "General", nameof(InstanceId), "AUTO");
+            ServiceName = GetSettings(configuration, Consts.ServiceNameVariableKey, "General", nameof(ServiceName), "PlanarService");
+            Clustering = GetSettings(configuration, Consts.ClusteringVariableKey, "Cluster", nameof(Clustering), false);
+            JobAutoStopSpan = GetSettings(configuration, Consts.JobAutoStopSpanVariableKey, "General", nameof(JobAutoStopSpan), TimeSpan.FromHours(2));
+            ClusteringCheckinInterval = GetSettings(configuration, Consts.ClusteringCheckinIntervalVariableKey, "Cluster", nameof(ClusteringCheckinInterval), TimeSpan.FromSeconds(5));
+            ClusteringCheckinMisfireThreshold = GetSettings(configuration, Consts.ClusteringCheckinMisfireThresholdVariableKey, "Cluster", nameof(ClusteringCheckinMisfireThreshold), TimeSpan.FromSeconds(5));
+            ClusterHealthCheckInterval = GetSettings(configuration, Consts.ClusterHealthCheckIntervalVariableKey, "Cluster", nameof(ClusterHealthCheckInterval), TimeSpan.FromMinutes(1));
+            ClusterPort = GetSettings<short>(configuration, Consts.ClusterPortVariableKey, "Cluster", nameof(ClusterPort), 12306);
+            DatabaseProvider = GetSettings(configuration, Consts.DatabaseProviderVariableKey, "Database", nameof(DatabaseProvider), "Npgsql");
+            ClearTraceTableOverDays = GetSettings(configuration, Consts.ClearTraceTableOverDaysVariableKey, "Retention", nameof(ClearTraceTableOverDays), 365);
+            ClearJobLogTableOverDays = GetSettings(configuration, Consts.ClearJobLogTableOverDaysVariableKey, "Retention", nameof(ClearJobLogTableOverDays), 365);
+            ClearStatisticsTablesOverDays = GetSettings(configuration, Consts.ClearStatisticsTablesOverDaysVariableKey, "Retention", nameof(ClearStatisticsTablesOverDays), 365);
+            SwaggerUI = GetSettings(configuration, Consts.SwaggerUIVariableKey, "General", nameof(SwaggerUI), true);
+            OpenApiUI = GetSettings(configuration, Consts.OpenApiUIVariableKey, "General", nameof(OpenApiUI), true);
+            DeveloperExceptionPage = GetSettings(configuration, Consts.DeveloperExceptionPageVariableKey, "General", nameof(DeveloperExceptionPage), true);
+            SchedulerStartupDelay = GetSettings(configuration, Consts.SchedulerStartupDelayVariableKey, "General", nameof(SchedulerStartupDelay), TimeSpan.FromSeconds(30));
+            RunDatabaseMigration = GetSettings(configuration, Consts.RunDatabaseMigrationVariableKey, "Database", nameof(RunDatabaseMigration), true);
+            ConcurrencyRateLimiting = GetSettings(configuration, Consts.ConcurrencyRateLimitingVariableKey, "General", nameof(ConcurrencyRateLimiting), 10);
 
             if (ConcurrencyRateLimiting < 1)
             {
@@ -130,7 +131,7 @@ namespace Planar.Common
 
         private static void InitializeEnvironment(IConfiguration configuration)
         {
-            Environment = GetSettings(configuration, Consts.EnvironmentVariableKey, nameof(Environment), Consts.ProductionEnvironment);
+            Environment = GetSettings(configuration, Consts.EnvironmentVariableKey, "General", nameof(Environment), Consts.ProductionEnvironment);
             Global.Environment = Environment;
             if (Environment == Consts.ProductionEnvironment)
             {
@@ -142,9 +143,19 @@ namespace Planar.Common
             }
         }
 
+        private static void InitializeSmtpServer(IConfiguration configuration)
+        {
+            SmtpServer.Host = GetSettings(configuration, Consts.SmtpServerHost, "SmtpServer", nameof(SmtpServer.Host), string.Empty);
+            SmtpServer.Port = GetSettings(configuration, Consts.SmtpServerPort, "SmtpServer", nameof(SmtpServer.Port), 25);
+            SmtpServer.FromAddress = GetSettings(configuration, Consts.SmtpServerFromAddress, "SmtpServer", nameof(SmtpServer.FromAddress), string.Empty);
+            SmtpServer.FromName = GetSettings(configuration, Consts.SmtpServerFromName, "SmtpServer", nameof(SmtpServer.FromName), string.Empty);
+            SmtpServer.Username = GetSettings(configuration, Consts.SmtpServerUsername, "SmtpServer", nameof(SmtpServer.Username), string.Empty);
+            SmtpServer.Password = GetSettings(configuration, Consts.SmtpServerPassword, "SmtpServer", nameof(SmtpServer.Password), string.Empty);
+        }
+
         private static void InitializePersistanceSpan(IConfiguration configuration)
         {
-            PersistRunningJobsSpan = GetSettings<TimeSpan>(configuration, Consts.PersistRunningJobsSpanVariableKey, nameof(PersistRunningJobsSpan));
+            PersistRunningJobsSpan = GetSettings<TimeSpan>(configuration, Consts.PersistRunningJobsSpanVariableKey, "General", nameof(PersistRunningJobsSpan));
 
             if (PersistRunningJobsSpan == TimeSpan.Zero)
             {
@@ -157,7 +168,7 @@ namespace Planar.Common
 
         private static void InitializeMaxConcurrency(IConfiguration configuration)
         {
-            MaxConcurrency = GetSettings<int>(configuration, Consts.MaxConcurrencyVariableKey, nameof(MaxConcurrency));
+            MaxConcurrency = GetSettings<int>(configuration, Consts.MaxConcurrencyVariableKey, "General", nameof(MaxConcurrency));
 
             if (MaxConcurrency == default)
             {
@@ -178,7 +189,7 @@ namespace Planar.Common
 
         private static void InitializeConnectionString(IConfiguration configuration)
         {
-            DatabaseConnectionString = GetSettings(configuration, Consts.ConnectionStringVariableKey, nameof(DatabaseConnectionString), string.Empty);
+            DatabaseConnectionString = GetSettings(configuration, Consts.ConnectionStringVariableKey, "Database", nameof(DatabaseConnectionString), string.Empty);
 
             if (string.IsNullOrEmpty(DatabaseConnectionString))
             {
@@ -256,15 +267,15 @@ namespace Planar.Common
 
         private static void InitializePorts(IConfiguration configuration)
         {
-            HttpPort = GetSettings<short>(configuration, Consts.HttpPortVariableKey, nameof(HttpPort), 2306);
-            HttpsPort = GetSettings<short>(configuration, Consts.HttpsPortVariableKey, nameof(HttpsPort), 2610);
-            UseHttps = GetSettings(configuration, Consts.UseHttpsVariableKey, nameof(UseHttps), false);
-            UseHttpsRedirect = GetSettings(configuration, Consts.UseHttpsRedirectVariableKey, nameof(UseHttpsRedirect), true);
+            HttpPort = GetSettings<short>(configuration, Consts.HttpPortVariableKey, "General", nameof(HttpPort), 2306);
+            HttpsPort = GetSettings<short>(configuration, Consts.HttpsPortVariableKey, "General", nameof(HttpsPort), 2610);
+            UseHttps = GetSettings(configuration, Consts.UseHttpsVariableKey, "General", nameof(UseHttps), false);
+            UseHttpsRedirect = GetSettings(configuration, Consts.UseHttpsRedirectVariableKey, "General", nameof(UseHttpsRedirect), true);
         }
 
         private static void InitializeLogLevel(IConfiguration configuration)
         {
-            var level = GetSettings(configuration, Consts.LogLevelVariableKey, nameof(AuthenticationMode), LogLevel.Information.ToString());
+            var level = GetSettings(configuration, Consts.LogLevelVariableKey, "General", nameof(LogLevel), LogLevel.Information.ToString());
             if (Enum.TryParse<LogLevel>(level, true, out var tempLevel))
             {
                 LogLevel = tempLevel;
@@ -281,9 +292,9 @@ namespace Planar.Common
         {
             const string DefaultAuthenticationSecret = "ecawiasqrpqrgyhwnolrudpbsrwaynbqdayndnmcehjnwqyouikpodzaqxivwkconwqbhrmxfgccbxbyljguwlxhdlcvxlutbnwjlgpfhjgqbegtbxbvwnacyqnltrby";
 
-            var mode = GetSettings(configuration, Consts.AuthenticationModeVariableKey, nameof(AuthenticationMode), AuthMode.AllAnonymous.ToString());
-            AuthenticationSecret = GetSettings(configuration, Consts.AuthenticationSecretVariableKey, nameof(AuthenticationSecret), DefaultAuthenticationSecret);
-            AuthenticationTokenExpire = GetSettings(configuration, Consts.AuthenticationTokenExpireVariableKey, nameof(AuthenticationTokenExpire), TimeSpan.FromMinutes(20));
+            var mode = GetSettings(configuration, Consts.AuthenticationModeVariableKey, "Authentication", nameof(AuthenticationMode), AuthMode.AllAnonymous.ToString());
+            AuthenticationSecret = GetSettings(configuration, Consts.AuthenticationSecretVariableKey, "Authentication", nameof(AuthenticationSecret), DefaultAuthenticationSecret);
+            AuthenticationTokenExpire = GetSettings(configuration, Consts.AuthenticationTokenExpireVariableKey, "Authentication", nameof(AuthenticationTokenExpire), TimeSpan.FromMinutes(20));
 
             if (Enum.TryParse<AuthMode>(mode, true, out var tempMode))
             {
@@ -319,31 +330,39 @@ namespace Planar.Common
             AuthenticationKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(AuthenticationSecret));
         }
 
-        private static T GetSettings<T>(IConfiguration configuration, string environmentKey, string appSettingsKey, T defaultValue = default)
+        private static T GetSettings<T>(IConfiguration configuration, string environmentKey, string section, string appSettingsKey, T defaultValue = default)
             where T : struct
         {
             // Environment Variable
             var property = configuration.GetValue<T?>(environmentKey);
+
+            // AppSettings File
             property ??= configuration.GetValue<T?>(appSettingsKey);
+            if (property == null && !string.IsNullOrEmpty(section))
+            {
+                property = configuration.GetValue<T?>($"{section}:{appSettingsKey}");
+            }
+
+            // Default Value
             property ??= defaultValue;
 
             return property.GetValueOrDefault();
         }
 
-        private static string GetSettings(IConfiguration configuration, string environmentKey, string appSettingsKey, string defaultValue)
+        private static string GetSettings(IConfiguration configuration, string environmentKey, string section, string appSettingsKey, string defaultValue)
         {
             // Environment Variable
             var property = configuration.GetValue<string>(environmentKey);
-            if (string.IsNullOrEmpty(property))
+
+            // AppSettings File
+            property ??= configuration.GetValue<string>(appSettingsKey);
+            if (property == null && !string.IsNullOrEmpty(section))
             {
-                // AppSettings
-                property = configuration.GetValue<string>(appSettingsKey);
+                property = configuration.GetValue<string>($"{section}:{appSettingsKey}");
             }
 
-            if (string.IsNullOrEmpty(property))
-            {
-                property = defaultValue;
-            }
+            // Default Value
+            property ??= defaultValue;
 
             return property;
         }

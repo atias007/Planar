@@ -44,23 +44,23 @@ namespace Planar
                 _mqttServer.StartedAsync += StartedAsync;
                 _mqttServer.StoppedAsync += StoppedAsync;
                 await _mqttServer.StartAsync();
-                _logger.LogInformation("Initialize: {Operation}", "Starting MQTT Service...");
+                _logger.LogInformation("Initialize: {Operation}", "Starting MQTT Broker Service...");
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, "Initialize: Fail To {Operation}", "Start MQTT Service");
+                _logger.LogCritical(ex, "Initialize: Fail To {Operation}", "Start MQTT Broker Service");
             }
         }
 
         private async Task StoppedAsync(EventArgs arg)
         {
-            _logger.LogWarning("Stopped MQTT Service");
+            _logger.LogWarning("Stopped MQTT Broker Service");
             await Task.CompletedTask;
         }
 
         private async Task StartedAsync(EventArgs arg)
         {
-            _logger.LogInformation("Initialize: {Operation}", "MQTT Service started");
+            _logger.LogInformation("Initialize: {Operation}", "MQTT Broker Service started");
             await Task.CompletedTask;
         }
 
