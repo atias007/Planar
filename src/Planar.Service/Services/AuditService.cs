@@ -107,7 +107,7 @@ namespace Planar.Service.Services
                 AdditionalInfo = message.AdditionalInfo == null ? null : YmlUtil.Serialize(message.AdditionalInfo),
                 JobId = jobId ?? string.Empty,
                 Username = usernameClaim ?? Roles.Anonymous.ToString().ToLower(),
-                UserTitle = title ?? Roles.Anonymous.ToString().ToLower(),
+                UserTitle = string.IsNullOrEmpty(title) ? Roles.Anonymous.ToString().ToLower() : title,
                 JobKey = message.JobKey == null ? string.Empty : $"{message.JobKey.Group}.{message.JobKey.Name}"
             };
 

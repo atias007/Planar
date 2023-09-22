@@ -45,8 +45,8 @@ namespace Planar.Service
 
             services.AddQuartz(q =>
             {
-                q.SchedulerName = AppSettings.ServiceName;
-                q.SchedulerId = AppSettings.InstanceId;
+                q.SchedulerName = AppSettings.General.ServiceName;
+                q.SchedulerId = AppSettings.General.InstanceId;
                 q.UseDefaultThreadPool(tp => { tp.MaxConcurrency = 10; });
 
                 // this also injects scoped services (like EF DbContext)
@@ -57,7 +57,7 @@ namespace Planar.Service
                 q.UseTimeZoneConverter();
                 q.UseJobAutoInterrupt(options =>
                 {
-                    options.DefaultMaxRunTime = AppSettings.JobAutoStopSpan;
+                    options.DefaultMaxRunTime = AppSettings.General.JobAutoStopSpan;
                 });
 
                 q.AddJobListener<LogJobListener>();
@@ -78,23 +78,23 @@ namespace Planar.Service
                     // serialization format breaks, defaults to false
                     x.UseProperties = true;
 
-                    if (AppSettings.Clustering)
+                    if (AppSettings.Cluster.Clustering)
                     {
                         x.UseClustering(x =>
                         {
-                            x.CheckinInterval = AppSettings.ClusteringCheckinInterval;
-                            x.CheckinMisfireThreshold = AppSettings.ClusteringCheckinMisfireThreshold;
+                            x.CheckinInterval = AppSettings.Cluster.CheckinInterval;
+                            x.CheckinMisfireThreshold = AppSettings.Cluster.CheckinMisfireThreshold;
                         });
                     }
 
-                    switch (AppSettings.DatabaseProvider)
+                    switch (AppSettings.Database.Provider)
                     {
                         case "SqlServer":
-                            x.UseSqlServer(AppSettings.DatabaseConnectionString ?? string.Empty);
+                            x.UseSqlServer(AppSettings.Database.ConnectionString ?? string.Empty);
                             break;
 
                         default:
-                            throw new NotImplementedException($"Database provider {AppSettings.DatabaseProvider} is not supported");
+                            throw new NotImplementedException($"Database provider {AppSettings.Database.Provider} is not supported");
                     }
 
                     // this requires Quartz.Serialization.Json NuGet package
@@ -107,7 +107,7 @@ namespace Planar.Service
                 // when shutting down we want jobs to complete gracefully
                 options.WaitForJobsToComplete = true;
                 options.AwaitApplicationStarted = true;
-                var delaySeconds = AppSettings.SchedulerStartupDelay;
+                var delaySeconds = AppSettings.General.SchedulerStartupDelay;
                 options.StartDelay = delaySeconds;
             });
 

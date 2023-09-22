@@ -115,7 +115,7 @@ namespace Planar.Common.Helpers
                 return specificTimeout.Value;
             }
 
-            return AppSettings.JobAutoStopSpan;
+            return AppSettings.General.JobAutoStopSpan;
         }
     }
 }

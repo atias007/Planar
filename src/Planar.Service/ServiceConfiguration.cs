@@ -64,7 +64,7 @@ namespace Planar.Service
             services.AddHostedService(p => p.GetRequiredService<MainService>());
             services.AddHostedService(p => p.GetRequiredService<AuditService>());
             services.AddHostedService(p => p.GetRequiredService<MqttBrokerService>());
-            if (AppSettings.HasAuthontication)
+            if (AppSettings.Authentication.HasAuthontication)
             {
                 services.AddHostedService(p => p.GetRequiredService<SecurityService>());
             }
@@ -120,7 +120,7 @@ namespace Planar.Service
         internal static IServiceCollection AddPlanarDbContext(this IServiceCollection services)
         {
             services.AddDbContext<PlanarContext>(o => o.UseSqlServer(
-                    AppSettings.DatabaseConnectionString,
+                    AppSettings.Database.ConnectionString,
                     options => options.EnableRetryOnFailure(12, TimeSpan.FromSeconds(5), null)),
                 contextLifetime: ServiceLifetime.Transient,
                 optionsLifetime: ServiceLifetime.Singleton

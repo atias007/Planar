@@ -39,7 +39,7 @@ namespace Planar.Service.API
         public async Task Flush(CancellationToken stoppingToken = default)
         {
             await FlushInner(stoppingToken);
-            if (AppSettings.Clustering)
+            if (AppSettings.Cluster.Clustering)
             {
                 await ClusterUtil.ConfigFlush();
             }

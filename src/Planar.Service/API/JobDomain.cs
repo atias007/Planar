@@ -352,7 +352,7 @@ namespace Planar.Service.API
         public async Task<List<RunningJobDetails>> GetRunning()
         {
             var result = await SchedulerUtil.GetRunningJobs();
-            if (AppSettings.Clustering)
+            if (AppSettings.Cluster.Clustering)
             {
                 var clusterResult = await ClusterUtil.GetRunningJobs();
                 result ??= new List<RunningJobDetails>();
@@ -371,7 +371,7 @@ namespace Planar.Service.API
         public async Task<RunningJobDetails> GetRunning(string instanceId)
         {
             var result = await SchedulerUtil.GetRunningJob(instanceId);
-            if (result == null && AppSettings.Clustering)
+            if (result == null && AppSettings.Cluster.Clustering)
             {
                 result = await ClusterUtil.GetRunningJob(instanceId);
             }
@@ -394,7 +394,7 @@ namespace Planar.Service.API
                 return result;
             }
 
-            if (AppSettings.Clustering)
+            if (AppSettings.Cluster.Clustering)
             {
                 result = await ClusterUtil.GetRunningData(instanceId);
             }
@@ -577,7 +577,7 @@ namespace Planar.Service.API
         public async Task<bool> Cancel(FireInstanceIdRequest request)
         {
             var stop = await SchedulerUtil.StopRunningJob(request.FireInstanceId);
-            if (AppSettings.Clustering && !stop)
+            if (AppSettings.Cluster.Clustering && !stop)
             {
                 stop = await ClusterUtil.StopRunningJob(request.FireInstanceId);
             }

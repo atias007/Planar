@@ -174,7 +174,7 @@ namespace Planar.Service.General
             var runningJobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
             foreach (var context in runningJobs)
             {
-                if (context.JobRunTime.TotalSeconds > AppSettings.PersistRunningJobsSpan.TotalSeconds)
+                if (context.JobRunTime.TotalSeconds > AppSettings.General.PersistRunningJobsSpan.TotalSeconds)
                 {
                     if (context.Result is not JobExecutionMetadata metadata)
                     {

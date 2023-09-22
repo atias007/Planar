@@ -37,7 +37,7 @@ namespace Planar.Service.SystemJobs
 
         private async Task DoWork()
         {
-            if (AppSettings.Clustering)
+            if (AppSettings.Cluster.Clustering)
             {
                 var util = _serviceProvider.GetRequiredService<ClusterUtil>();
                 await util.HealthCheckWithUpdate();
@@ -47,10 +47,10 @@ namespace Planar.Service.SystemJobs
         public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
         {
             const string description = "System job for check health of cluster nodes";
-            var span = AppSettings.ClusterHealthCheckInterval;
+            var span = AppSettings.Cluster.CheckinInterval;
             var jobKey = await Schedule<ClusterHealthCheckJob>(scheduler, description, span, stoppingToken: stoppingToken);
 
-            if (!AppSettings.Clustering)
+            if (!AppSettings.Cluster.Clustering)
             {
                 await scheduler.PauseJob(jobKey, stoppingToken);
             }

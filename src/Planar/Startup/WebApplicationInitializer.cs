@@ -18,7 +18,7 @@ namespace Planar.Startup
             {
                 Args = args,
                 ContentRootPath = WindowsServiceHelpers.IsWindowsService() ? AppContext.BaseDirectory : default,
-                EnvironmentName = AppSettings.Environment
+                EnvironmentName = AppSettings.General.Environment
             };
 
             var builder = WebApplication.CreateBuilder(options);
@@ -27,21 +27,21 @@ namespace Planar.Startup
 
             builder.WebHost.ConfigureKestrel(options =>
             {
-                options.ListenAnyIP(AppSettings.HttpPort);
-                if (AppSettings.Clustering)
+                options.ListenAnyIP(AppSettings.General.HttpPort);
+                if (AppSettings.Cluster.Clustering)
                 {
-                    options.ListenAnyIP(AppSettings.HttpPort + 10000, x => x.Protocols = HttpProtocols.Http2);
+                    options.ListenAnyIP(AppSettings.General.HttpPort + 10000, x => x.Protocols = HttpProtocols.Http2);
                 }
 
-                if (AppSettings.UseHttps)
+                if (AppSettings.General.UseHttps)
                 {
-                    options.ListenAnyIP(AppSettings.HttpsPort, opts => opts.UseHttps());
+                    options.ListenAnyIP(AppSettings.General.HttpsPort, opts => opts.UseHttps());
                 }
             });
 
             Console.WriteLine("[x] Load configuration & app settings");
             var file1 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.yml");
-            var file2 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, $"AppSettings.{AppSettings.Environment}.yml");
+            var file2 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, $"AppSettings.{AppSettings.General.Environment}.yml");
 
             builder.Configuration
                 .AddYamlFile(file1, optional: false, reloadOnChange: true)
@@ -59,12 +59,12 @@ namespace Planar.Startup
         {
             //// app.UseHttpLogging();
 
-            if (AppSettings.DeveloperExceptionPage && !app.Environment.IsProduction())
+            if (AppSettings.General.DeveloperExceptionPage && !app.Environment.IsProduction())
             {
                 app.UseDeveloperExceptionPage();
             }
 
-            if (AppSettings.SwaggerUI && !app.Environment.IsProduction())
+            if (AppSettings.General.SwaggerUI && !app.Environment.IsProduction())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI(c =>
@@ -74,7 +74,7 @@ namespace Planar.Startup
                 });
             }
 
-            if (AppSettings.UseHttpsRedirect)
+            if (AppSettings.General.UseHttpsRedirect)
             {
                 app.UseHttpsRedirection();
             }
@@ -89,7 +89,7 @@ namespace Planar.Startup
 
             // Authorization
             // ATTENTION: Always UseAuthentication should be before UseAuthorization
-            if (AppSettings.HasAuthontication)
+            if (AppSettings.Authentication.HasAuthontication)
             {
                 app.UseAuthentication();
             }

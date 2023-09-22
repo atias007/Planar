@@ -25,7 +25,7 @@ namespace Planar.Authorization
         protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, MinimumRoleRequirement requirement)
         {
             // No Authorization
-            if (AppSettings.NoAuthontication)
+            if (AppSettings.Authentication.NoAuthontication)
             {
                 context.Succeed(requirement);
                 return Task.CompletedTask;
@@ -35,7 +35,7 @@ namespace Planar.Authorization
             if (claim == null)
             {
                 // View Anonymous Authorization
-                if (AppSettings.AuthenticationMode == AuthMode.ViewAnonymous &&
+                if (AppSettings.Authentication.Mode == AuthMode.ViewAnonymous &&
                     Roles.Viewer >= requirement.Role)
                 {
                     context.Succeed(requirement);

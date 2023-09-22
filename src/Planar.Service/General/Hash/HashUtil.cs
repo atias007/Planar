@@ -49,10 +49,10 @@ namespace Planar.Service.General.Hash
 
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Issuer = AppSettings.AuthonticationIssuer,
-                Audience = AppSettings.AuthonticationAudience,
-                Expires = DateTime.UtcNow.Add(AppSettings.AuthenticationTokenExpire),
-                SigningCredentials = new SigningCredentials(AppSettings.AuthenticationKey, SecurityAlgorithms.HmacSha256),
+                Issuer = AuthenticationSettings.AuthenticationIssuer,
+                Audience = AuthenticationSettings.AuthenticationAudience,
+                Expires = DateTime.UtcNow.Add(AppSettings.Authentication.TokenExpire),
+                SigningCredentials = new SigningCredentials(AppSettings.Authentication.Key, SecurityAlgorithms.HmacSha256),
                 Subject = new ClaimsIdentity(claims),
             };
 

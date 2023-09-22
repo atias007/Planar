@@ -62,9 +62,9 @@ namespace Planar
         public const string MaxConcurrencyVariableKey = "PLANAR_MAXCONCURRENCY";
         public const string JobAutoStopSpanVariableKey = "PLANAR_AUTOSTOPSPAN";
         public const string PersistRunningJobsSpanVariableKey = "PLANAR_PERSISTSPAN";
-        public const string ClearTraceTableOverDaysVariableKey = "PLANAR_CLEARTRACEDAYS";
-        public const string ClearJobLogTableOverDaysVariableKey = "PLANAR_CLEARJOBLOGYDAYS";
-        public const string ClearStatisticsTablesOverDaysVariableKey = "PLANAR_CLEARSTATSDAYS";
+        public const string TraceRetentionDaysVariableKey = "PLANAR_TRACERETENTIONDAYS";
+        public const string JobLogRetentionDaysVariableKey = "PLANAR_JOBLOGRETENTIONDAYS";
+        public const string StatisticsRetentionDaysVariableKey = "PLANAR_STATSRETENTIONDAYS";
         public const string SwaggerUIVariableKey = "PLANAR_SWAGGERUI";
         public const string OpenApiUIVariableKey = "PLANAR_OPENAPIUI";
         public const string DeveloperExceptionPageVariableKey = "PLANAR_DEVEXPAGE";
@@ -89,12 +89,12 @@ namespace Planar
         public const string UseHttpsRedirectVariableKey = "PLANAR_HTTPSREDIRECT";
         public const string UseHttpsVariableKey = "PLANAR_HTTPS";
 
-        public const string SmtpServerHost = "PLANAR_SMTPHOST";
-        public const string SmtpServerPort = "PLANAR_SMTPPORT";
-        public const string SmtpServerFromAddress = "PLANAR_SMTPFROMADDRESS";
-        public const string SmtpServerFromName = "PLANAR_SMTPFROMNAME";
-        public const string SmtpServerUsername = "PLANAR_SMTPUSERNAME";
-        public const string SmtpServerPassword = "PLANAR_SMTPPASSWORD";
+        public const string SmtpHost = "PLANAR_SMTPHOST";
+        public const string SmtpPort = "PLANAR_SMTPPORT";
+        public const string SmtpFromAddress = "PLANAR_SMTPFROMADDRESS";
+        public const string SmtpFromName = "PLANAR_SMTPFROMNAME";
+        public const string SmtpUsername = "PLANAR_SMTPUSERNAME";
+        public const string SmtpPassword = "PLANAR_SMTPPASSWORD";
 
         public static bool IsDataKeyValid(string key)
         {

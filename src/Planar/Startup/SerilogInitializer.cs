@@ -56,7 +56,7 @@ namespace Planar.Startup
 
             config.ReadFrom.Configuration(configuration);
             config.WriteTo.MSSqlServer(
-                connectionString: AppSettings.DatabaseConnectionString,
+                connectionString: AppSettings.Database.ConnectionString,
                 sinkOptions: sqlSink,
                 columnOptions: sqlColumns);
 

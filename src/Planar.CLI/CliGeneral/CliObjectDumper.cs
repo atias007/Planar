@@ -2,8 +2,6 @@
 using Spectre.Console.Rendering;
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics.Metrics;
 using System.Linq;
 
 namespace Planar.CLI.CliGeneral

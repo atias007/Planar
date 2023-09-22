@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.Monitor
@@ -30,7 +31,7 @@ namespace Planar.Service.Monitor
             });
         }
 
-        public Task HandleSystem(MonitorSystemDetails details, ILogger<MonitorUtil> logger)
+        public Task HandleSystem(MonitorSystemDetails details, ILogger<MonitorUtil> logger, CancellationToken cancellationToken = default)
         {
             if (HandleSystemMethod == null)
             {
@@ -43,7 +44,7 @@ namespace Planar.Service.Monitor
             {
                 var result = HandleSystemMethod.Invoke(Instance, new object[] { messageBroker });
                 (result as Task)?.Wait();
-            });
+            }, cancellationToken);
         }
     }
 }

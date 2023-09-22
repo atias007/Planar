@@ -34,7 +34,7 @@ namespace Planar.Service.Monitor
             _serviceScopeFactory = serviceScopeFactory;
         }
 
-        internal static void SafeSystemScan(IServiceProvider serviceProvider, ILogger logger, MonitorEvents @event, MonitorSystemInfo details, Exception? exception = default)
+        internal static void SafeSystemScan(IServiceProvider serviceProvider, ILogger logger, MonitorEvents @event, MonitorSystemInfo details, Exception? exception = default, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -42,7 +42,7 @@ namespace Planar.Service.Monitor
 
                 using var scope = serviceProvider.CreateScope();
                 var monitorUtil = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
-                monitorUtil.Scan(@event, details, exception);
+                monitorUtil.Scan(@event, details, exception, cancellationToken);
             }
             catch (ObjectDisposedException)
             {
@@ -118,7 +118,7 @@ namespace Planar.Service.Monitor
             }
         }
 
-        public async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception? exception)
+        public async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception? exception, CancellationToken cancellationToken = default)
         {
             MonitorSystemDetails? details = null;
 
@@ -138,7 +138,7 @@ namespace Planar.Service.Monitor
                 {
                     details = GetMonitorDetails(action, info, exception);
                     _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
-                    await hookInstance.HandleSystem(details, _logger);
+                    await hookInstance.HandleSystem(details, _logger, cancellationToken);
                     await SaveMonitorAlert(action, details);
                     return ExecuteMonitorResult.Ok;
                 }
@@ -172,16 +172,16 @@ namespace Planar.Service.Monitor
                 });
         }
 
-        public void Scan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default)
+        public void Scan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default, CancellationToken cancellationToken = default)
         {
-            _ = ScanInner(@event, info, exception)
+            _ = ScanInner(@event, info, exception, cancellationToken)
                 .ContinueWith(task =>
                 {
                     if (task.Exception != null)
                     {
                         _logger.LogError(task.Exception, "Fail to handle monitor item(s)");
                     }
-                });
+                }, cancellationToken);
         }
 
         public async Task Validate()
@@ -598,7 +598,7 @@ namespace Planar.Service.Monitor
             return _lockJobEvents.ContainsKey(keyString);
         }
 
-        private async Task ScanInner(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default)
+        private async Task ScanInner(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default, CancellationToken cancellationToken = default)
         {
             List<MonitorAction> items;
             var hookTasks = new List<Task>();
@@ -621,7 +621,7 @@ namespace Planar.Service.Monitor
 
             foreach (var action in items)
             {
-                var task = ExecuteMonitor(action, @event, info, exception);
+                var task = ExecuteMonitor(action, @event, info, exception, cancellationToken);
                 hookTasks.Add(task);
             }
 

@@ -7,12 +7,9 @@ using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.General.Hash;
 using Planar.Service.Model;
-using Quartz;
-using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -29,59 +26,14 @@ namespace Planar.Service.API
             return ServiceVersion ?? Consts.Undefined;
         }
 
-        public async Task<GetServiceInfoResponse> GetServiceInfo()
+        public async Task<AppSettingsInfo> GetServiceInfo()
         {
-            var totalJobs = Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
-            var totalGroups = Scheduler.GetJobGroupNames();
-            var metadata = Scheduler.GetMetaData();
-
-            var response = new GetServiceInfoResponse
+            var result = new AppSettingsInfo
             {
-                InStandbyMode = Scheduler.InStandbyMode,
-                IsShutdown = Scheduler.IsShutdown,
-                IsStarted = Scheduler.IsStarted,
-                Environment = AppSettings.Environment,
-                TotalJobs = (await totalJobs).Count,
-                TotalGroups = (await totalGroups).Count,
-                Clustering = (await metadata).JobStoreClustered,
-                DatabaseProvider = (await metadata).JobStoreType.FullName ?? Consts.Undefined,
-                RunningSince = (await metadata).RunningSince?.DateTime,
-                QuartzVersion = (await metadata).Version,
-                JobAutoStopSpan = AppSettings.JobAutoStopSpan,
-                ClusteringCheckinInterval = AppSettings.ClusteringCheckinInterval,
-                ClusteringCheckinMisfireThreshold = AppSettings.ClusteringCheckinMisfireThreshold,
-                ClusterPort = AppSettings.ClusterPort,
-                ClearTraceTableOverDays = AppSettings.ClearTraceTableOverDays,
-                ClearJobLogTableOverDays = AppSettings.ClearJobLogTableOverDays,
-                ClearStatisticsTablesOverDays = AppSettings.ClearStatisticsTablesOverDays,
-                HttpPort = AppSettings.HttpPort,
-                HttpsPort = AppSettings.HttpsPort,
-                MaxConcurrency = AppSettings.MaxConcurrency,
-                UseHttps = AppSettings.UseHttps,
-                UseHttpsRedirect = AppSettings.UseHttpsRedirect,
-                ServiceVersion = ServiceVersion ?? Consts.Undefined,
-                LogLevel = AppSettings.LogLevel.ToString(),
-                SwaggerUI = AppSettings.SwaggerUI,
-                OpenApiUI = AppSettings.OpenApiUI,
-                DeveloperExceptionPage = AppSettings.DeveloperExceptionPage,
-                AuthenticationMode = AppSettings.AuthenticationMode.ToString(),
-                AuthenticationTokenExpire = AppSettings.AuthenticationTokenExpire,
+                General = Mapper.Map<GeneralSettingsInfo>(AppSettings.General)
             };
 
-            return response;
-        }
-
-        public async Task<string?> GetServiceInfo(string key)
-        {
-            var lowerKey = key.Replace(" ", string.Empty).ToLower();
-            var info = await GetServiceInfo();
-            var props = info.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            var prop =
-                Array.Find(props, p => p.Name.ToLower() == lowerKey) ??
-                throw new RestNotFoundException($"key '{key}' was not found in service information");
-
-            var value = prop.GetValue(info);
-            return PlanarConvert.ToString(value);
+            return await Task.FromResult(result);
         }
 
         public async Task<string> HealthCheck()
@@ -111,7 +63,7 @@ namespace Planar.Service.API
                 result.AppendLine($"Database unhealthy: {ex.Message}");
             }
 
-            if (AppSettings.Clustering)
+            if (AppSettings.Cluster.Clustering)
             {
                 var util = _serviceProvider.GetRequiredService<ClusterUtil>();
                 hc = await util.HealthCheck();
@@ -149,7 +101,7 @@ namespace Planar.Service.API
         public async Task HaltScheduler()
         {
             await SchedulerUtil.Stop();
-            if (AppSettings.Clustering)
+            if (AppSettings.Cluster.Clustering)
             {
                 var util = _serviceProvider.GetRequiredService<ClusterUtil>();
                 await util.StopScheduler();
@@ -159,7 +111,7 @@ namespace Planar.Service.API
         public async Task StartScheduler()
         {
             await SchedulerUtil.Start();
-            if (AppSettings.Clustering)
+            if (AppSettings.Cluster.Clustering)
             {
                 var util = _serviceProvider.GetRequiredService<ClusterUtil>();
                 await util.StartScheduler();
@@ -168,7 +120,7 @@ namespace Planar.Service.API
 
         public async Task<LoginResponse> Login(LoginRequest request)
         {
-            if (AppSettings.NoAuthontication)
+            if (AppSettings.Authentication.NoAuthontication)
             {
                 throw new RestConflictException("login service is not avaliable when authentication mode is disabled (AllAnonymous)");
             }

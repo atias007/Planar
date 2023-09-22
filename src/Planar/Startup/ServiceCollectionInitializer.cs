@@ -40,17 +40,17 @@ namespace Planar.Startup
             var mvcBuilder = services.AddControllers();
             ODataInitializer.RegisterOData(mvcBuilder);
 
-            if (AppSettings.SwaggerUI)
+            if (AppSettings.General.SwaggerUI)
             {
                 services.AddSwaggerGen(SwaggerInitializer.InitializeSwagger);
             }
 
-            if (AppSettings.UseHttpsRedirect)
+            if (AppSettings.General.UseHttpsRedirect)
             {
                 services.AddHttpsRedirection(options =>
                 {
                     options.RedirectStatusCode = (int)HttpStatusCode.TemporaryRedirect;
-                    options.HttpsPort = AppSettings.HttpsPort;
+                    options.HttpsPort = AppSettings.General.HttpsPort;
                 });
             }
 
@@ -59,8 +59,8 @@ namespace Planar.Startup
                 options.RejectionStatusCode = (int)HttpStatusCode.TooManyRequests;
                 options.AddConcurrencyLimiter("concurrency", config =>
                 {
-                    config.PermitLimit = AppSettings.ConcurrencyRateLimiting;
-                    config.QueueLimit = AppSettings.ConcurrencyRateLimiting / 2;
+                    config.PermitLimit = AppSettings.General.ConcurrencyRateLimiting;
+                    config.QueueLimit = AppSettings.General.ConcurrencyRateLimiting / 2;
                     config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                 });
             });
@@ -72,7 +72,7 @@ namespace Planar.Startup
 
         private static void SetAuthorization(IServiceCollection services)
         {
-            if (AppSettings.HasAuthontication)
+            if (AppSettings.Authentication.HasAuthontication)
             {
                 services.AddAuthentication(options =>
                 {
@@ -87,10 +87,10 @@ namespace Planar.Startup
                     {
                         ValidateIssuer = true,
                         ValidateAudience = true,
-                        ValidAudience = AppSettings.AuthonticationAudience,
-                        ValidIssuer = AppSettings.AuthonticationIssuer,
+                        ValidAudience = AuthenticationSettings.AuthenticationAudience,
+                        ValidIssuer = AuthenticationSettings.AuthenticationIssuer,
                         ClockSkew = TimeSpan.Zero,
-                        IssuerSigningKey = AppSettings.AuthenticationKey
+                        IssuerSigningKey = AppSettings.Authentication.Key
                     };
                 });
             }

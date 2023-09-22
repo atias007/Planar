@@ -1,6 +1,6 @@
 ﻿namespace Planar.Common
 {
-    public class SmtpServerSettings
+    public class SmtpSettings
     {
         public string? FromAddress { get; set; }
         public string? FromName { get; set; }

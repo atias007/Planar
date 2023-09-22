@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Service.Model;
 
 namespace Planar.Service.MapperProfiles
@@ -9,6 +10,8 @@ namespace Planar.Service.MapperProfiles
         public ServiceProfiler()
         {
             CreateMap<SecurityAudit, SecurityAuditModel>();
+
+            CreateMap<GeneralSettings, GeneralSettingsInfo>();
         }
     }
 }
