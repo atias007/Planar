@@ -77,7 +77,7 @@
 		<PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
 		<PackageReference Include="Serilog.Enrichers.GlobalLogContext" Version="3.0.0" />
 		<PackageReference Include="Serilog.Sinks.MSSqlServer" Version="6.3.0" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.9.0.77355">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.11.0.78383">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
