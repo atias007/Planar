@@ -395,9 +395,12 @@ namespace Planar.CLI
             {
                 PrintTables(console, response);
             }
-            else if (response.DumpObject != null)
+            else if (response.DumpObjects != null)
             {
-                CliObjectDumper.Dump(console, response.DumpObject);
+                foreach (var item in response.DumpObjects)
+                {
+                    CliObjectDumper.Dump(console, item);
+                }
             }
             else
             {

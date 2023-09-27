@@ -28,10 +28,23 @@ namespace Planar.Service.API
 
         public async Task<AppSettingsInfo> GetServiceInfo()
         {
+            const string scrt = "********";
             var result = new AppSettingsInfo
             {
-                General = Mapper.Map<GeneralSettingsInfo>(AppSettings.General)
+                General = Mapper.Map<GeneralSettingsInfo>(AppSettings.General),
+                Database = Mapper.Map<DatabaseSettingsInfo>(AppSettings.Database),
+                Authentication = Mapper.Map<AuthenticationSettingsInfo>(AppSettings.Authentication),
+                Cluster = Mapper.Map<ClusterSettingsInfo>(AppSettings.Cluster),
+                Retention = Mapper.Map<RetentionSettingsInfo>(AppSettings.Retention),
+                Smtp = Mapper.Map<SmtpSettingsInfo>(AppSettings.Smtp),
             };
+
+            if (UserRole != Roles.Administrator)
+            {
+                result.Database.ConnectionString = scrt;
+                result.Smtp.Username = scrt;
+                result.Smtp.Password = scrt;
+            }
 
             return await Task.FromResult(result);
         }

@@ -29,6 +29,12 @@ namespace Planar.CLI
             Tables = new List<CliTable> { table };
         }
 
+        public CliActionResponse(RestResponse? response, List<CliTable> tables)
+            : this(response)
+        {
+            Tables = tables;
+        }
+
         public CliActionResponse(RestResponse? response, CliPlot plot)
             : this(response)
         {
@@ -38,7 +44,7 @@ namespace Planar.CLI
         public CliActionResponse(RestResponse? response, object? dumpObject)
             : this(response)
         {
-            DumpObject = dumpObject;
+            DumpObjects = new List<CliDumpObject> { new CliDumpObject(dumpObject) };
 
             if (dumpObject != null)
             {
@@ -46,17 +52,33 @@ namespace Planar.CLI
             }
         }
 
-        public CliActionResponse(RestResponse? response, List<CliTable> tables)
+        public CliActionResponse(RestResponse? response, CliDumpObject dumpObject)
             : this(response)
         {
-            Tables = tables;
+            DumpObjects = new List<CliDumpObject> { dumpObject };
+
+            if (dumpObject != null)
+            {
+                Message = SerializeResponse(dumpObject);
+            }
+        }
+
+        public CliActionResponse(RestResponse? response, List<CliDumpObject> dumpObjects)
+            : this(response)
+        {
+            DumpObjects = dumpObjects;
+
+            if (dumpObjects != null)
+            {
+                Message = SerializeResponse(dumpObjects);
+            }
         }
 
         public RestResponse Response { get; private set; }
 
         public string? Message { get; private set; }
 
-        public object? DumpObject { get; private set; }
+        public List<CliDumpObject>? DumpObjects { get; private set; }
 
         public List<CliTable>? Tables { get; private set; }
 

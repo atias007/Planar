@@ -8,8 +8,9 @@ namespace Planar.CLI.CliGeneral
 {
     internal static class CliObjectDumper
     {
-        public static void Dump(IAnsiConsole console, object obj)
+        public static void Dump(IAnsiConsole console, CliDumpObject dumpObject)
         {
+            var obj = dumpObject.Object;
             if (obj == null) { return; }
 
             var type = obj.GetType();
@@ -23,7 +24,8 @@ namespace Planar.CLI.CliGeneral
             {
                 foreach (var item in arr)
                 {
-                    Dump(console, item);
+                    var dumpItem = new CliDumpObject(item);
+                    Dump(console, dumpItem);
                 }
 
                 return;

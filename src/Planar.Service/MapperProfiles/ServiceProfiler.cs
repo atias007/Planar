@@ -10,8 +10,12 @@ namespace Planar.Service.MapperProfiles
         public ServiceProfiler()
         {
             CreateMap<SecurityAudit, SecurityAuditModel>();
-
             CreateMap<GeneralSettings, GeneralSettingsInfo>();
+            CreateMap<DatabaseSettings, DatabaseSettingsInfo>();
+            CreateMap<AuthenticationSettings, AuthenticationSettingsInfo>();
+            CreateMap<ClusterSettings, ClusterSettingsInfo>();
+            CreateMap<SmtpSettings, SmtpSettingsInfo>();
+            CreateMap<RetentionSettings, RetentionSettingsInfo>();
         }
     }
 }

@@ -40,7 +40,20 @@ namespace Planar.CLI.Actions
                 var restRequest = new RestRequest("service", Method.Get);
                 var result = await RestProxy.Invoke<AppSettingsInfo>(restRequest, cancellationToken);
 
-                return new CliActionResponse(result, result.Data);
+                List<object?> data =
+                    result.Data == null ?
+                    new List<object?>() :
+                    new List<object?>
+                    {
+                         result.Data.Authentication,
+                         result.Data.Cluster,
+                         result.Data.Database,
+                         result.Data.General,
+                         result.Data.Retention,
+                         result.Data.Smtp,
+                    };
+
+                return new CliActionResponse(result, data);
             }
             else
             {
