@@ -1,6 +1,7 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
+using Planar.Common;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
@@ -216,11 +217,11 @@ namespace Planar.CLI
             table.Table.AddRow(nameof(response.Group), response.Group.EscapeMarkup());
             table.Table.AddRow(nameof(response.Name), response.Name.EscapeMarkup());
             table.Table.AddRow(nameof(response.Author), response.Author.EscapeMarkup());
-            table.Table.AddRow(nameof(response.LogRetentionDays), Convert.ToString(response.LogRetentionDays) ?? string.Empty);
-            table.Table.AddRow(nameof(response.JobType), response.JobType.EscapeMarkup());
+            table.Table.AddRow(nameof(response.LogRetentionDays).SplitWords(), Convert.ToString(response.LogRetentionDays) ?? string.Empty);
+            table.Table.AddRow(nameof(response.JobType).SplitWords(), response.JobType.EscapeMarkup());
             table.Table.AddRow(nameof(response.Description), response.Description.EscapeMarkup());
             table.Table.AddRow(nameof(response.Durable), response.Durable.ToString());
-            table.Table.AddRow(nameof(response.RequestsRecovery), response.RequestsRecovery.ToString());
+            table.Table.AddRow(nameof(response.RequestsRecovery).SplitWords(), response.RequestsRecovery.ToString());
             table.Table.AddRow(nameof(response.Concurrent), response.Concurrent.ToString());
 
             var dataMap = SerializeJobDetailsData(response);

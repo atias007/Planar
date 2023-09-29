@@ -399,13 +399,24 @@ namespace Planar.CLI
             {
                 foreach (var item in response.DumpObjects)
                 {
-                    CliObjectDumper.Dump(console, item);
+                    DumpObject(console, item);
                 }
             }
             else
             {
                 WriteInfo(console, response);
             }
+        }
+
+        private static void DumpObject(IAnsiConsole console, CliDumpObject? obj)
+        {
+            if (obj == null) { return; }
+            if (!string.IsNullOrWhiteSpace(obj.Title))
+            {
+                console.MarkupLine($"[black on white]{obj.Title}[/]");
+            }
+
+            CliObjectDumper.Dump(console, obj);
         }
 
         private static void PrintTables(IAnsiConsole console, CliActionResponse response)

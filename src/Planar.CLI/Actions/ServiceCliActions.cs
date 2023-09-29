@@ -1,5 +1,6 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
+using Planar.CLI.CliGeneral;
 using Planar.CLI.DataProtect;
 using Planar.CLI.Entities;
 using Planar.CLI.General;
@@ -40,17 +41,17 @@ namespace Planar.CLI.Actions
                 var restRequest = new RestRequest("service", Method.Get);
                 var result = await RestProxy.Invoke<AppSettingsInfo>(restRequest, cancellationToken);
 
-                List<object?> data =
+                var data =
                     result.Data == null ?
-                    new List<object?>() :
-                    new List<object?>
+                    new List<CliDumpObject>() :
+                    new List<CliDumpObject>
                     {
-                         result.Data.Authentication,
-                         result.Data.Cluster,
-                         result.Data.Database,
-                         result.Data.General,
-                         result.Data.Retention,
-                         result.Data.Smtp,
+                         new CliDumpObject(result.Data.Authentication){ Title=nameof(result.Data.Authentication) },
+                         new CliDumpObject(result.Data.Cluster){ Title=nameof(result.Data.Cluster) },
+                         new CliDumpObject(result.Data.Database){ Title=nameof(result.Data.Database) },
+                         new CliDumpObject(result.Data.General){ Title=nameof(result.Data.General) },
+                         new CliDumpObject(result.Data.Retention){ Title=nameof(result.Data.Retention) },
+                         new CliDumpObject(result.Data.Smtp){ Title=nameof(result.Data.Smtp) },
                     };
 
                 return new CliActionResponse(result, data);

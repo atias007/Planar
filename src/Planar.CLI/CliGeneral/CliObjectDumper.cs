@@ -1,4 +1,5 @@
-﻿using Spectre.Console;
+﻿using Planar.Common;
+using Spectre.Console;
 using Spectre.Console.Rendering;
 using System;
 using System.Collections;
@@ -46,7 +47,7 @@ namespace Planar.CLI.CliGeneral
             foreach (var p in properties)
             {
                 var value = p.GetValue(obj);
-                var r1 = new Markup($"[grey74]{p.Name}[/]");
+                var r1 = new Markup($"[grey74]{p.Name.SplitWords()}[/]");
                 var r2 = GetRenderableMarkup(value);
                 table.AddRow(r1, r2);
             }
