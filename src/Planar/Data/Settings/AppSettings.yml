@@ -1,39 +1,48 @@
-Environment: Development
-DatabaseProvider: SqlServer                        # options: SqlServer
-ServiceName: PlanarService
-InstanceId: AUTO
-DatabaseConnectionString: Password=PlanarSqlPassword12345@;Persist Security Info=True;User ID=sa;Initial Catalog=Planar;Data Source=planar-db,1433;MultipleActiveResultSets=True;Encrypt=False
-MaxConcurrency: 10
-Clustering: false
-ClusterPort: 12306
-JobAutoStopSpan: 02:00:00
-ClusteringCheckinInterval: 00:00:05
-ClusteringCheckinMisfireThreshold: 00:00:05
-ClusterHealthCheckInterval: 00:01:00
-PersistRunningJobsSpan: 00:00:30
-SchedulerStartupDelay: 00:00:05
-HttpPort: 2306                                     
-UseHttps: false	                                   # set this value to true in production environment
-HttpsPort: 2610
-UseHttpsRedirect: false                            # set this value to true in production environment
-LogLevel: Debug                                    # options: Trace | Debug | Information | Warning | Error | Critical | None
-SwaggerUI: true                                    # set this value to false in production environment
-OpenApiUI: true                                    # set this value to false in production environment
-DeveloperExceptionPage: true                       # this value is automatically set to false in production environment
-ClearTraceTableOverDays: 365
-ClearJobLogTableOverDays: 365
-ClearStatisticsTablesOverDays: 365
-RunDatabaseMigration: true
-AuthenticationMode: AllAnonymous                   # options: AllAnonymous | ViewAnonymous | Authenticate */ /* set this value to ViewAnonymous or Authenticate in production environment
-AuthenticationSecret: ecawiasqrpqrgyhwnolrudpbsrwaynbqdayndnmcehjnwqyouikpodzaqxivwkconwqbhrmxfgccbxbyljguwlxhdlcvxlutbnwjlgpfhjgqbegtbxbvwnacyqnltrby     # 65 to 256 charecters secret to encrypt and decrypt jwt tokens
-AuthenticationTokenExpire: 00:20:00                # the expiration time of token generated at login service. default is 20 minutes. minimum value 1 minute
-ConcurrencyRateLimiting: 10                        # the total number of concurrent requests allowed to be processed by the application. default is 10. minimum value 1
+general:
+  environment: Development
+  service name: PlanarService
+  instance id: AUTO
+  max concurrency: 10
+  job auto stop span: 02:00:00
+  persist running jobs span: 00:00:30
+  scheduler startup delay: 00:00:05
+  http port: 2306                                     
+  use https: false	                                 # set this value to true in production environment
+  https port: 2610
+  use https redirect: false                          # set this value to true in production environment
+  log level: Debug                                   # options: Trace | Debug | Information | Warning | Error | Critical | None
+  swagger ui: true                                   # set this value to false in production environment
+  open api ui: true                                  # set this value to false in production environment
+  developer exception page: true                     # this value is automatically set to false in production environment
+  concurrency rate limiting: 10                      # the total number of concurrent requests allowed to be processed by the application. default is 10. minimum value 1
 
-SmtpServer: 
-  FromAddress: admin@planar.me
-  FromName: Planar
-  Host: smtp.gmail.com
-  Port: 25
-  UseSsl: false
-  Username: null
-  Password: null
+database:
+  provider: SqlServer                                # options: SqlServer
+  connection string: Password=PlanarSqlPassword12345@;Persist Security Info=True;User ID=sa;Initial Catalog=Planar;Data Source=planar-db,1433;MultipleActiveResultSets=True;Encrypt=False
+  run migration: true
+
+cluster:
+  clustering: false
+  port: 12306
+  checkin interval: 00:00:05
+  checkin misfire threshold: 00:00:05
+  health check interval: 00:01:00
+
+retention:
+  trace retention days: 365
+  job log retention days: 365
+  statistics retention days: 365
+
+authentication:
+  mode: all anonymous                  # options: all anonymous | view anonymous | authenticate */ /* set this value to ViewAnonymous or Authenticate in production environment
+  secret: ecawiasqrpqrgyhwnolrudpbsrwaynbqdayndnmcehjnwqyouikpodzaqxivwkconwqbhrmxfgccbxbyljguwlxhdlcvxlutbnwjlgpfhjgqbegtbxbvwnacyqnltrby     # 65 to 256 charecters secret to encrypt and decrypt jwt tokens
+  token expire: 00:20:00               # the expiration time of token generated at login service. default is 20 minutes. minimum value 1 minute
+
+smtp: 
+  from address: admin@planar.me
+  from name: Planar
+  host: smtp.gmail.com
+  port: 25
+  use ssl: false
+  username: null
+  password: null

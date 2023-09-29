@@ -56,7 +56,7 @@ namespace Planar.Calendar.Hebrew
             catch (Exception ex)
             {
                 Console.WriteLine($"Fail to invoke IsTimeIncluded with DateTimeOffset={timeStampUtc}. {ex.Message}");
-                throw;
+                return false;
             }
         }
 

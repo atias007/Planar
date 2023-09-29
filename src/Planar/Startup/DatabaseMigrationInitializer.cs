@@ -23,7 +23,7 @@ namespace Planar.Startup
 
         public static void RunMigration()
         {
-            if (!AppSettings.RunDatabaseMigration)
+            if (!AppSettings.Database.RunMigration)
             {
                 Console.WriteLine("[x] Skip database migration");
                 var count = CountScriptsToExecute();
@@ -39,7 +39,7 @@ namespace Planar.Startup
             {
                 Console.WriteLine("[x] Run database migration");
 
-                Runner.EnsureDatabaseExists(AppSettings.DatabaseConnectionString);
+                Runner.EnsureDatabaseExists(AppSettings.Database.ConnectionString);
 
                 var count = CountScriptsToExecute();
                 Console.WriteLine($"    - Found {count} scripts to run");
@@ -50,7 +50,7 @@ namespace Planar.Startup
                 }
 
                 Console.WriteLine(string.Empty.PadLeft(80, '-'));
-                var result = Runner.Execute(AppSettings.DatabaseConnectionString);
+                var result = Runner.Execute(AppSettings.Database.ConnectionString);
 
                 if (result.Successful)
                 {
@@ -71,7 +71,7 @@ namespace Planar.Startup
 
         private static int CountScriptsToExecute()
         {
-            var list = Runner.GetScripts(AppSettings.DatabaseConnectionString);
+            var list = Runner.GetScripts(AppSettings.Database.ConnectionString);
             return list.Count();
         }
     }

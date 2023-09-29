@@ -57,12 +57,12 @@ namespace Planar.Service.SystemJobs
             try
             {
                 var data = _serviceProvider.GetRequiredService<MetricsData>();
-                var rows = await data.ClearStatisticsTables(AppSettings.ClearStatisticsTablesOverDays);
-                _logger.LogDebug("clear statistics tables rows (older then {Days} days) with {Total} effected row(s)", AppSettings.ClearStatisticsTablesOverDays, rows);
+                var rows = await data.ClearStatisticsTables(AppSettings.Retention.StatisticsRetentionDays);
+                _logger.LogDebug("clear statistics tables rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.StatisticsRetentionDays, rows);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "fail to clear statistics tables rows (older then {Days} days)", AppSettings.ClearStatisticsTablesOverDays);
+                _logger.LogError(ex, "fail to clear statistics tables rows (older then {Days} days)", AppSettings.Retention.StatisticsRetentionDays);
             }
         }
 
@@ -71,12 +71,12 @@ namespace Planar.Service.SystemJobs
             try
             {
                 var data = _serviceProvider.GetRequiredService<HistoryData>();
-                var rows = await data.ClearJobLogTable(AppSettings.ClearJobLogTableOverDays);
-                _logger.LogDebug("clear job log table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.ClearJobLogTableOverDays, rows);
+                var rows = await data.ClearJobLogTable(AppSettings.Retention.JobLogRetentionDays);
+                _logger.LogDebug("clear job log table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.JobLogRetentionDays, rows);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "fail to clear job log table rows (older then {Days} days)", AppSettings.ClearJobLogTableOverDays);
+                _logger.LogError(ex, "fail to clear job log table rows (older then {Days} days)", AppSettings.Retention.JobLogRetentionDays);
             }
         }
 
@@ -111,12 +111,12 @@ namespace Planar.Service.SystemJobs
             try
             {
                 var data = _serviceProvider.GetRequiredService<TraceData>();
-                var rows = await data.ClearTraceTable(AppSettings.ClearTraceTableOverDays);
-                _logger.LogDebug("clear trace table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.ClearTraceTableOverDays, rows);
+                var rows = await data.ClearTraceTable(AppSettings.Retention.TraceRetentionDays);
+                _logger.LogDebug("clear trace table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.TraceRetentionDays, rows);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "fail to clear trace table rows (older then {Days} days)", AppSettings.ClearTraceTableOverDays);
+                _logger.LogError(ex, "fail to clear trace table rows (older then {Days} days)", AppSettings.Retention.TraceRetentionDays);
             }
         }
 

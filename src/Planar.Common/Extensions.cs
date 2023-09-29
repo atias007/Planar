@@ -105,7 +105,7 @@ namespace Planar.Common
             {
                 if (controller(str[c]))
                 {
-                    yield return str?[nextPiece..c];
+                    yield return str[nextPiece..c];
                     nextPiece = c + 1;
                 }
             }

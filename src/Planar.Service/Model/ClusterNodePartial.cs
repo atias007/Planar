@@ -14,7 +14,7 @@ namespace Planar.Service.Model
         {
             get
             {
-                return HealthCheckGap.Subtract(AppSettings.ClusterHealthCheckInterval);
+                return HealthCheckGap.Subtract(AppSettings.Cluster.CheckinInterval);
             }
         }
 

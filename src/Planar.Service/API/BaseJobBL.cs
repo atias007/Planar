@@ -129,7 +129,7 @@ namespace Planar.Service.API
         protected async Task ValidateJobNotRunning(JobKey jobKey)
         {
             var isRunning = await SchedulerUtil.IsJobRunning(jobKey);
-            if (AppSettings.Clustering)
+            if (AppSettings.Cluster.Clustering)
             {
                 isRunning = isRunning && await ClusterUtil.IsJobRunning(jobKey);
             }

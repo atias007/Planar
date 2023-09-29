@@ -57,7 +57,7 @@ namespace Planar.Startup
         public static void MapContent(WebApplication app)
         {
             var isProduction = app.Environment.IsProduction();
-            if (!isProduction && AppSettings.OpenApiUI)
+            if (!isProduction && AppSettings.General.OpenApiUI)
             {
                 app.MapGet("/", () => Content.OpenApiHtml.Value);
                 app.MapGet("/content/redoc.standalone.js", () => Content.OpenApiJavaScript.Value);
@@ -70,7 +70,7 @@ namespace Planar.Startup
                 app.MapGet("/", () => Content.NoAccessImage.Value);
             }
 
-            if (!AppSettings.SwaggerUI)
+            if (!AppSettings.General.SwaggerUI)
             {
                 app.MapGet("/swagger", () => Content.NoAccessImage.Value);
             }

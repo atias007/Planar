@@ -35,7 +35,7 @@ namespace Planar.Service.Services
 
         public async Task Run(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Service environment: {Environment}", AppSettings.Environment);
+            _logger.LogInformation("Service environment: {Environment}", AppSettings.General.Environment);
 
             await LoadGlobalConfigInner(stoppingToken);
 
@@ -109,7 +109,7 @@ namespace Planar.Service.Services
 
         private void SafeSystemScan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default, CancellationToken cancellationToken = default)
         {
-            MonitorUtil.SafeSystemScan(_serviceProvider, _logger, @event, info, exception);
+            MonitorUtil.SafeSystemScan(_serviceProvider, _logger, @event, info, exception, cancellationToken);
         }
 
         private static async Task<bool> WaitForAppStartup(IHostApplicationLifetime lifetime, CancellationToken stoppingToken)
@@ -156,7 +156,7 @@ namespace Planar.Service.Services
 
         private async Task JoinToCluster(CancellationToken stoppingToken)
         {
-            if (!AppSettings.Clustering)
+            if (!AppSettings.Cluster.Clustering)
             {
                 try
                 {
@@ -195,7 +195,7 @@ namespace Planar.Service.Services
 
                     // Monitoring
                     var info = new MonitorSystemInfo("Cluster node join to {{MachineName}}");
-                    info.MessagesParameters.Add("Port", AppSettings.HttpPort.ToString());
+                    info.MessagesParameters.Add("Port", AppSettings.General.HttpPort.ToString());
                     info.MessagesParameters.Add("InstanceId", _schedulerUtil.SchedulerInstanceId);
                     info.AddMachineName();
                     SafeSystemScan(MonitorEvents.ClusterNodeJoin, info, cancellationToken: stoppingToken);
@@ -248,7 +248,7 @@ namespace Planar.Service.Services
 
         private void LogClustering()
         {
-            if (AppSettings.Clustering)
+            if (AppSettings.Cluster.Clustering)
             {
                 _logger.LogInformation("Join to cluster [instance id: {Id}]", _schedulerUtil.SchedulerInstanceId);
             }
@@ -272,7 +272,7 @@ namespace Planar.Service.Services
             var cluster = new ClusterNode
             {
                 Server = Environment.MachineName,
-                Port = AppSettings.HttpPort,
+                Port = AppSettings.General.HttpPort,
                 InstanceId = _schedulerUtil.SchedulerInstanceId
             };
 
@@ -283,11 +283,11 @@ namespace Planar.Service.Services
             var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
             await dal.RemoveClusterNode(cluster);
 
-            if (!AppSettings.Clustering) { return; }
+            if (!AppSettings.Cluster.Clustering) { return; }
 
             // Monotoring
             var info = new MonitorSystemInfo("Cluster node removed from {{MachineName}}");
-            info.MessagesParameters.Add("Port", AppSettings.HttpPort.ToString());
+            info.MessagesParameters.Add("Port", AppSettings.General.HttpPort.ToString());
             info.MessagesParameters.Add("InstanceId", _schedulerUtil.SchedulerInstanceId);
             info.AddMachineName();
             SafeSystemScan(MonitorEvents.ClusterNodeRemoved, info);

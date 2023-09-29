@@ -158,7 +158,7 @@ namespace Planar.Service.API
             }
 
             // Audit
-            object? obj = details.SimpleTriggers.Any() ? details?.SimpleTriggers[0] : details?.CronTriggers.FirstOrDefault();
+            object? obj = details.SimpleTriggers.Any() ? details.SimpleTriggers[0] : details.CronTriggers.FirstOrDefault();
             AuditJobSafe(trigger.JobKey, $"trigger removed (id: {triggerIdentifier})", obj);
         }
 

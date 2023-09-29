@@ -35,7 +35,7 @@ namespace Planar.Service.General
             var cluster = new ClusterNode
             {
                 Server = Environment.MachineName,
-                Port = AppSettings.HttpPort,
+                Port = AppSettings.General.HttpPort,
             };
 
             return cluster;
@@ -158,7 +158,7 @@ namespace Planar.Service.General
         {
             // only if current node is not clustering
             // and there is active cluster in same database --> throw exception
-            if (AppSettings.Clustering) { return; }
+            if (AppSettings.Cluster.Clustering) { return; }
 
             foreach (var node in nodes)
             {
@@ -207,20 +207,20 @@ namespace Planar.Service.General
             var item = await _dal.GetClusterNode(currentNode);
             if (item == null)
             {
-                currentNode.ClusterPort = AppSettings.ClusterPort;
+                currentNode.ClusterPort = AppSettings.Cluster.Port;
                 currentNode.JoinDate = DateTime.Now;
                 currentNode.HealthCheckDate = DateTime.Now;
                 currentNode.InstanceId = _schedulerUtil.SchedulerInstanceId;
-                currentNode.MaxConcurrency = AppSettings.MaxConcurrency;
+                currentNode.MaxConcurrency = AppSettings.General.MaxConcurrency;
                 await _dal.AddClusterNode(currentNode);
             }
             else
             {
-                item.ClusterPort = AppSettings.ClusterPort;
+                item.ClusterPort = AppSettings.Cluster.Port;
                 item.JoinDate = DateTime.Now;
                 item.HealthCheckDate = DateTime.Now;
                 item.InstanceId = _schedulerUtil.SchedulerInstanceId;
-                item.MaxConcurrency = AppSettings.MaxConcurrency;
+                item.MaxConcurrency = AppSettings.General.MaxConcurrency;
                 await _dal.SaveChangesAsync();
             }
         }
@@ -682,7 +682,7 @@ namespace Planar.Service.General
             {
                 var currentNode = new ClusterNode
                 {
-                    ClusterPort = AppSettings.ClusterPort,
+                    ClusterPort = AppSettings.Cluster.Port,
                     JoinDate = DateTime.Now,
                     InstanceId = _schedulerUtil.SchedulerInstanceId,
                     HealthCheckDate = DateTime.Now,
@@ -700,9 +700,9 @@ namespace Planar.Service.General
                 node.JoinDate = DateTime.Now;
             }
 
-            if (node.ClusterPort != AppSettings.ClusterPort)
+            if (node.ClusterPort != AppSettings.Cluster.Port)
             {
-                node.ClusterPort = AppSettings.ClusterPort;
+                node.ClusterPort = AppSettings.Cluster.Port;
             }
 
             node.HealthCheckDate = DateTime.Now;

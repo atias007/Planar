@@ -6,7 +6,6 @@ using Planar.Authorization;
 using Planar.Service.API;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -32,27 +31,17 @@ namespace Planar.Controllers
         [HttpGet]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_service", Description = "Get service information", Summary = "Get Information")]
-        [OkJsonResponse(typeof(GetServiceInfoResponse))]
-        public async Task<ActionResult<GetServiceInfoResponse>> GetServiceInfo()
+        [OkJsonResponse(typeof(AppSettingsInfo))]
+        public async Task<ActionResult<AppSettingsInfo>> GetServiceInfo()
         {
             var response = await BusinesLayer.GetServiceInfo();
-            return Ok(response);
-        }
-
-        [HttpGet("{key}")]
-        [EditorAuthorize]
-        [SwaggerOperation(OperationId = "get_service_key", Description = "Get service information key", Summary = "Get Information Key")]
-        [OkJsonResponse(typeof(GetServiceInfoResponse))]
-        public async Task<ActionResult<string>> GetServiceInfo(string key)
-        {
-            var response = await BusinesLayer.GetServiceInfo(key);
             return Ok(response);
         }
 
         [HttpGet("health-check")]
         [AllowAnonymous]
         [SwaggerOperation(OperationId = "get_service_health_check", Description = "Service health check", Summary = "Health Check")]
-        [OkJsonResponse(typeof(GetServiceInfoResponse))]
+        [OkTextResponse]
         [ServiceUnavailableResponse]
         public async Task<ActionResult<string>> HealthCheck()
         {

@@ -19,7 +19,7 @@ namespace Planar.Service.Audit
 
         public void Publish(SecurityMessage message)
         {
-            if (AppSettings.NoAuthontication) { return; }
+            if (AppSettings.Authentication.NoAuthontication) { return; }
             _ = SafePublishInner(message);
         }
 

@@ -1,5 +1,6 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
+using Planar.CLI.CliGeneral;
 using Planar.CLI.DataProtect;
 using Planar.CLI.Entities;
 using Planar.CLI.General;
@@ -38,14 +39,22 @@ namespace Planar.CLI.Actions
             if (string.IsNullOrEmpty(request.Key))
             {
                 var restRequest = new RestRequest("service", Method.Get);
-                var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest, cancellationToken);
+                var result = await RestProxy.Invoke<AppSettingsInfo>(restRequest, cancellationToken);
 
-                if (result.IsSuccessful && result.Data != null)
-                {
-                    result.Data.CliVersion = Program.Version;
-                }
+                var data =
+                    result.Data == null ?
+                    new List<CliDumpObject>() :
+                    new List<CliDumpObject>
+                    {
+                         new CliDumpObject(result.Data.Authentication){ Title=nameof(result.Data.Authentication) },
+                         new CliDumpObject(result.Data.Cluster){ Title=nameof(result.Data.Cluster) },
+                         new CliDumpObject(result.Data.Database){ Title=nameof(result.Data.Database) },
+                         new CliDumpObject(result.Data.General){ Title=nameof(result.Data.General) },
+                         new CliDumpObject(result.Data.Retention){ Title=nameof(result.Data.Retention) },
+                         new CliDumpObject(result.Data.Smtp){ Title=nameof(result.Data.Smtp) },
+                    };
 
-                return new CliActionResponse(result, result.Data);
+                return new CliActionResponse(result, data);
             }
             else
             {
@@ -90,16 +99,16 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> GetEnvironment(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("service", Method.Get);
-            var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest, cancellationToken);
-            return new CliActionResponse(result, message: result.Data?.Environment);
+            var result = await RestProxy.Invoke<AppSettingsInfo>(restRequest, cancellationToken);
+            return new CliActionResponse(result, message: result.Data?.General.Environment);
         }
 
         [Action("log-level")]
         public static async Task<CliActionResponse> GetLogLevel(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("service", Method.Get);
-            var result = await RestProxy.Invoke<GetServiceInfoResponse>(restRequest, cancellationToken);
-            return new CliActionResponse(result, message: result.Data?.LogLevel);
+            var result = await RestProxy.Invoke<AppSettingsInfo>(restRequest, cancellationToken);
+            return new CliActionResponse(result, message: result.Data?.General.LogLevel);
         }
 
         [Action("calendars")]

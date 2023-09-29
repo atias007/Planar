@@ -32,7 +32,7 @@ namespace Planar
             _monitorUtil = monitorUtil;
 
             MqttBrokerService.InterceptingPublishAsync += InterceptingPublishAsync;
-            _isDevelopment = string.Equals(AppSettings.Environment, "development", StringComparison.OrdinalIgnoreCase);
+            _isDevelopment = string.Equals(AppSettings.General.Environment, "development", StringComparison.OrdinalIgnoreCase);
         }
 
         public override async Task Execute(IJobExecutionContext context)
@@ -213,7 +213,7 @@ namespace Planar
             return startInfo;
         }
 
-        private void SetProcessToLinuxOs(ProcessStartInfo startInfo)
+        private static void SetProcessToLinuxOs(ProcessStartInfo startInfo)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
@@ -222,7 +222,7 @@ namespace Planar
             }
         }
 
-        private string GetFilenameFoLinux(string filename)
+        private static string GetFilenameFoLinux(string filename)
         {
             var fi = new FileInfo(filename);
             if (string.Equals(fi.Extension, ".exe", StringComparison.OrdinalIgnoreCase))

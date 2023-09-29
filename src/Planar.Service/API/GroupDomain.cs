@@ -33,7 +33,7 @@ namespace Planar.Service.API
             }
 
             var group = Mapper.Map<Group>(request);
-            if (AppSettings.HasAuthontication && (int)UserRole < group.RoleId)
+            if (AppSettings.Authentication.HasAuthontication && (int)UserRole < group.RoleId)
             {
                 AuditSecuritySafe($"creating a group with name '{group.Name}' and role '{request.Role}' blocked because the current user role is '{UserRole}'", isWarning: true);
                 throw new RestForbiddenException();
@@ -61,7 +61,7 @@ namespace Planar.Service.API
             var currentUserRole = await Resolve<UserData>().GetUserRole(userId);
             var targetUserRole = await DataLayer.GetGroupRole(name);
 
-            if (AppSettings.HasAuthontication && targetUserRole > (int)UserRole)
+            if (AppSettings.Authentication.HasAuthontication && targetUserRole > (int)UserRole)
             {
                 AuditSecuritySafe($"adding user '{username}' to group '{name}' with role '{(Roles)targetUserRole}' blocked because the current user role is '{UserRole}'", isWarning: true);
                 throw new RestForbiddenException();

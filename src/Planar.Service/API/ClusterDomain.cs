@@ -22,7 +22,7 @@ namespace Planar.Service.API
         public async Task<List<ClusterNode>> GetNodes()
         {
             var result = await DataLayer.GetClusterNodes();
-            if (!AppSettings.Clustering && result.Count == 1)
+            if (!AppSettings.Cluster.Clustering && result.Count == 1)
             {
                 var hc = SchedulerUtil.IsSchedulerRunning;
                 if (hc)
@@ -31,7 +31,7 @@ namespace Planar.Service.API
                 }
                 else
                 {
-                    result[0].HealthCheckDate = DateTime.Now.Add(-AppSettings.ClusteringCheckinInterval).AddMinutes(-1);
+                    result[0].HealthCheckDate = DateTime.Now.Add(-AppSettings.Cluster.CheckinInterval).AddMinutes(-1);
                 }
             }
 
@@ -50,7 +50,7 @@ namespace Planar.Service.API
             var serviceUnavaliable = false;
             var result = new StringBuilder();
 
-            if (AppSettings.Clustering)
+            if (AppSettings.Cluster.Clustering)
             {
                 var util = _serviceProvider.GetRequiredService<ClusterUtil>();
                 var hc = await util.HealthCheck();

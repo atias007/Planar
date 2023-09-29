@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 
@@ -75,7 +76,7 @@ namespace Planar.Calendar.Hebrew
     public enum HebrewMonth
     {
 #pragma warning disable CA1707 // Identifiers should not contain underscores
-        תשרי, חשוון, כסלו, טבת, שבט, אדר_ב, אדר, ניסן, אייר, סיון, תמוז, אב, אלול
+        תשרי, חשוון, כסלו, טבת, שבט, אדר_ב, אדר_א, אדר, ניסן, אייר, סיון, תמוז, אב, אלול
 #pragma warning restore CA1707 // Identifiers should not contain underscores
     }
 
@@ -1142,7 +1143,8 @@ namespace Planar.Calendar.Hebrew
 
             var dayString = date.ToString("dd", _ci).Replace("'", string.Empty).Replace("\"", string.Empty);
             var monthString = date.ToString("MMM", _ci)
-                .Replace(" ", "_");
+                .Replace(" ", "_")
+                .Replace("׳", string.Empty);
 
             Day = (HebrewDay)Enum.Parse(typeof(HebrewDay), dayString);
             Month = (HebrewMonth)Enum.Parse(typeof(HebrewMonth), monthString);
@@ -1216,7 +1218,13 @@ namespace Planar.Calendar.Hebrew
         {
             var day = Day.ToString();
             day = day.Length == 1 ? day + "'" : day[0] + "\"" + day[1];
-            var month = Month.ToString().Replace("_", " ");
+            var month = Month.ToString();
+
+            if (month == HebrewMonth.אדר_א.ToString() || month == HebrewMonth.אדר_ב.ToString())
+            {
+                month = $"{month.Replace("_", " ")}׳";
+            }
+
             var dateString = day + " " + month + " " + Year;
             return dateString;
         }

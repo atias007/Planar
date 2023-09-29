@@ -75,11 +75,11 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<MonitorItem?> GetMonitorItem(int id)
+        public async Task<MonitorItem> GetMonitorItem(int id)
         {
-            var query = DataLayer.GetMonitorActions();
-            var result = await Mapper.ProjectTo<MonitorItem>(query).FirstOrDefaultAsync();
-            ValidateExistingEntity(result, "monitor");
+            var action = await DataLayer.GetMonitorAction(id);
+            var item = Mapper.Map<MonitorItem>(action);
+            var result = ValidateExistingEntity(item, "monitor");
             return result;
         }
 
@@ -147,7 +147,7 @@ namespace Planar.Service.API
         public async Task<string> Reload()
         {
             ServiceUtil.LoadMonitorHooks(Logger);
-            if (AppSettings.Clustering)
+            if (AppSettings.Cluster.Clustering)
             {
                 await ClusterUtil.LoadMonitorHooks();
             }
