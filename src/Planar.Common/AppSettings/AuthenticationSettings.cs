@@ -6,8 +6,8 @@ namespace Planar.Common
 {
     public class AuthenticationSettings
     {
-        private const string AuthenticationIssuerValue = "http://planar.me";
-        private const string AuthenticationAudienceValue = "http://planar.audience.me";
+        private const string AuthenticationIssuerValue = "https://planar.me";
+        private const string AuthenticationAudienceValue = "https://planar.audience.me";
 
         public AuthMode Mode { get; set; }
 

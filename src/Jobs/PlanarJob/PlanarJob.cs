@@ -213,7 +213,7 @@ namespace Planar
             return startInfo;
         }
 
-        private void SetProcessToLinuxOs(ProcessStartInfo startInfo)
+        private static void SetProcessToLinuxOs(ProcessStartInfo startInfo)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
