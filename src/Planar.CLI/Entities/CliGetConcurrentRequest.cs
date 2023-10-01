@@ -1,15 +1,15 @@
-﻿using Planar.CLI.Attributes;
+﻿using Planar.API.Common.Entities;
+using Planar.CLI.Attributes;
+using System;
 
 namespace Planar.CLI.Entities
 {
-    public enum ConcurrentPeriod
+    public class CliGetConcurrentRequest : CliPagingRequest, ICliDateScope
     {
-        Day, Week, Month, Year
-    }
+        [ActionProperty("f", "from")]
+        public DateTime FromDate { get; set; }
 
-    public class CliGetConcurrentRequest
-    {
-        [ActionProperty(DefaultOrder = 0)]
-        public ConcurrentPeriod? Period { get; set; }
+        [ActionProperty("t", "to")]
+        public DateTime ToDate { get; set; }
     }
 }

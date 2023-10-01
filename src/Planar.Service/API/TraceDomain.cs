@@ -58,7 +58,7 @@ namespace Planar.Service.API
         public async Task<CounterResponse> GetTraceCounter(CounterRequest request)
         {
             var result = new CounterResponse();
-            var data = await DataLayer.GetTraceCounter(request.Hours);
+            var data = await DataLayer.GetTraceCounter(request);
             var list = new List<StatisticsCountItem>
             {
                 new StatisticsCountItem { Label = nameof(data.Fatal), Count = data.Fatal },

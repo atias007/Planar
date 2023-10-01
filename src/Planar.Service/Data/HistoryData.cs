@@ -140,12 +140,11 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<HistoryStatusDto> GetHistoryCounter(int hours)
+        public async Task<HistoryStatusDto> GetHistoryCounter(CounterRequest counterRequest)
         {
-            var parameters = new { Hours = hours };
             var definition = new CommandDefinition(
                 commandText: "[Statistics].[StatusCounter]",
-                parameters: parameters,
+                parameters: counterRequest,
                 commandType: CommandType.StoredProcedure);
 
             var result = await DbConnection.QueryFirstOrDefaultAsync<HistoryStatusDto>(definition);

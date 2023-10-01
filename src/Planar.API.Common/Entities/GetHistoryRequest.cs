@@ -2,7 +2,7 @@
 
 namespace Planar.API.Common.Entities
 {
-    public class GetHistoryRequest : PagingRequest
+    public class GetHistoryRequest : PagingRequest, IDateScope
     {
         public string? JobId { get; set; }
 
@@ -12,9 +12,9 @@ namespace Planar.API.Common.Entities
 
         public DateTime? FromDate { get; set; }
 
-        public bool Ascending { get; set; }
-
         public DateTime? ToDate { get; set; }
+
+        public bool Ascending { get; set; }
 
         public StatusMembers? Status { get; set; }
     }

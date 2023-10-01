@@ -11,6 +11,10 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Planar.Monitor.Hook" Version="1.5.1" />
   </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
+  </ItemGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>

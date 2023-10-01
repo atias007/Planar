@@ -114,7 +114,7 @@ namespace Planar.Service.API
         public async Task<CounterResponse> GetHistoryCounter(CounterRequest request)
         {
             var result = new CounterResponse();
-            var data = await DataLayer.GetHistoryCounter(request.Hours);
+            var data = await DataLayer.GetHistoryCounter(request);
             var list = new List<StatisticsCountItem>
             {
                 new StatisticsCountItem { Label = nameof(data.Running), Count = data.Running },

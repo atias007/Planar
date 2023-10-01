@@ -2,7 +2,7 @@
 
 namespace Planar.API.Common.Entities
 {
-    public class GetSummaryRequest : PagingRequest
+    public class GetSummaryRequest : PagingRequest, IDateScope
     {
         public DateTime? FromDate { get; set; }
 

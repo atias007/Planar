@@ -2,7 +2,7 @@
 
 namespace Planar.API.Common.Entities
 {
-    public class GetMonitorsAlertsRequest : PagingRequest
+    public class GetMonitorsAlertsRequest : PagingRequest, IDateScope
     {
         public string? EventTitle { get; set; }
         public int? MonitorId { get; set; }

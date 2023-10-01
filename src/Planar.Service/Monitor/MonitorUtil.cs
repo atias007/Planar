@@ -218,7 +218,7 @@ namespace Planar.Service.Monitor
         {
             monitor.Users = new List<MonitorUser>();
             monitor.EventId = action.EventId;
-            monitor.EventTitle = ((MonitorEvents)action.EventId).ToString();
+            monitor.EventTitle = ((MonitorEvents)action.EventId).GetEnumDescription();
             monitor.Group = new MonitorGroup(action.Group);
             monitor.MonitorTitle = action.Title;
             monitor.Users.AddRange(action.Group.Users.Select(u => new MonitorUser(u)).ToList());

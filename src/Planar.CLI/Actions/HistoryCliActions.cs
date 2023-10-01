@@ -144,12 +144,7 @@ namespace Planar.CLI.Actions
         [Action("summary")]
         public static async Task<CliActionResponse> GetHistorySummary(CliGetHistorySummaryRequest request, CancellationToken cancellationToken = default)
         {
-            if (request.FromDate == default && request.ToDate == default)
-            {
-                var dates = GetSummaryDateRates();
-                request.FromDate = dates.Item1 ?? default;
-                request.ToDate = dates.Item2 ?? default;
-            }
+            FillDatesScope(request);
 
             var restRequest = new RestRequest("history/summary", Method.Get);
             if (request.FromDate > DateTime.MinValue)
@@ -171,13 +166,10 @@ namespace Planar.CLI.Actions
         [Action("count")]
         public static async Task<CliActionResponse> GetHistoryCount(CliGetCountRequest request, CancellationToken cancellationToken = default)
         {
-            if (request.Hours == 0)
-            {
-                request.Hours = GetCounterHours();
-            }
+            FillDatesScope(request);
 
             var restRequest = new RestRequest("history/count", Method.Get)
-                .AddQueryParameter("hours", request.Hours);
+                .AddQueryDateScope(request);
 
             var result = await RestProxy.Invoke<CounterResponse>(restRequest, cancellationToken);
             if (!result.IsSuccessful || result.Data == null)
@@ -187,7 +179,7 @@ namespace Planar.CLI.Actions
 
             var counter = result.Data.Counter;
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine($"[grey54 bold underline]history status count for last {request.Hours} hours[/]");
+            AnsiConsole.MarkupLine("[grey54 bold underline]history status count[/]");
             AnsiConsole.WriteLine();
             AnsiConsole.Write(new BarChart()
                 .Width(60)

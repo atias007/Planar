@@ -2,7 +2,7 @@
 
 namespace Planar.API.Common.Entities
 {
-    public class GetTraceRequest : PagingRequest
+    public class GetTraceRequest : PagingRequest, IDateScope
     {
         public bool Ascending { get; set; }
 

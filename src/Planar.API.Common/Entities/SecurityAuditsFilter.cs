@@ -2,7 +2,7 @@
 
 namespace Planar.API.Common.Entities
 {
-    public class SecurityAuditsFilter : PagingRequest
+    public class SecurityAuditsFilter : PagingRequest, IDateScope
     {
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }

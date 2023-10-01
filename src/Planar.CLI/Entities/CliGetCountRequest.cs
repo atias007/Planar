@@ -1,10 +1,14 @@
-﻿using Planar.CLI.Attributes;
+﻿using Planar.API.Common.Entities;
+using Planar.CLI.Attributes;
+using System;
 
-namespace Planar.CLI.Entities
+namespace Planar.CLI.Entities;
+
+public class CliGetCountRequest : ICliDateScope
 {
-    public class CliGetCountRequest
-    {
-        [ActionProperty(DefaultOrder = 0, Name = "hours")]
-        public int Hours { get; set; }
-    }
+    [ActionProperty("f", "from")]
+    public DateTime FromDate { get; set; }
+
+    [ActionProperty("t", "to")]
+    public DateTime ToDate { get; set; }
 }

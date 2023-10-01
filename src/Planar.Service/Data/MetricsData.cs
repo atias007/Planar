@@ -166,7 +166,7 @@ namespace Planar.Service.Data
             if (request.Server.HasValue()) { query = query.Where(c => c.Server.ToLower() == request.Server.ToLower()); }
             if (request.InstanceId.HasValue()) { query = query.Where(c => c.InstanceId.ToLower() == request.InstanceId.ToLower()); }
 
-            query = query.OrderByDescending(c => c.RecordDate).Take(1000);
+            query = query.OrderByDescending(c => c.RecordDate);
             return query;
         }
 

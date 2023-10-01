@@ -176,6 +176,20 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetTable(PagingResponse<ConcurrentExecutionModel>? response)
+        {
+            var table = new CliTable(paging: response);
+            if (response == null || response.Data == null) { return table; }
+            table.Table.AddColumns("Record Date", "Server", "InstanceId", "Max Concurrent");
+            response.Data.ForEach(r => table.Table.AddRow(
+                CliTableFormat.FormatDateTime(r.RecordDate),
+                r.Server.EscapeMarkup(),
+                r.InstanceId.EscapeMarkup(),
+                CliTableFormat.FormatNumber(r.MaxConcurrent)));
+
+            return table;
+        }
+
         public static CliTable GetTable(PagingResponse<SecurityAuditModel>? response)
         {
             var table = new CliTable(paging: response);

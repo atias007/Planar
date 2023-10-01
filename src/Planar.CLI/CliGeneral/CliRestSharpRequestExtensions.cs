@@ -1,4 +1,5 @@
 ﻿using Planar.API.Common.Entities;
+using System;
 
 namespace RestSharp
 {
@@ -30,6 +31,21 @@ namespace RestSharp
         {
             pagingRequest.SetPagingDefaults();
             request.AddQueryPagingParameter(pagingRequest.PageSize.GetValueOrDefault(), pagingRequest.PageNumber.GetValueOrDefault());
+            return request;
+        }
+
+        public static RestRequest AddQueryDateScope(this RestRequest request, ICliDateScope dateScopeRequest)
+        {
+            if (dateScopeRequest.FromDate > DateTime.MinValue)
+            {
+                request.AddQueryParameter(nameof(IDateScope.FromDate), dateScopeRequest.FromDate.ToString("u"));
+            }
+
+            if (dateScopeRequest.ToDate > DateTime.MinValue)
+            {
+                request.AddQueryParameter(nameof(IDateScope.ToDate), dateScopeRequest.ToDate.ToString("u"));
+            }
+
             return request;
         }
     }

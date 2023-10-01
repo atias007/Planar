@@ -1,5 +1,6 @@
 ﻿using MailKit.Net.Smtp;
 using MimeKit;
+using Planar.Common;
 using Planar.Monitor.Hook;
 using System.Text;
 
@@ -11,8 +12,10 @@ namespace Planar.Hooks
 
         public override async Task Handle(IMonitorDetails monitorDetails)
         {
+            var smtp = AppSettings.Smtp;
+
             var message = new MimeMessage();
-            message.From.Add(new MailboxAddress("Planar", "admin@planar.me"));
+            message.From.Add(new MailboxAddress(smtp.FromName, smtp.FromAddress));
             var emails1 = monitorDetails.Users.Select(u => u.EmailAddress1);
             var emails2 = monitorDetails.Users.Select(u => u.EmailAddress2);
             var emails3 = monitorDetails.Users.Select(u => u.EmailAddress3);
@@ -26,7 +29,7 @@ namespace Planar.Hooks
                 }
             }
 
-            message.Subject = $"Planar Monitor Alert. Name: \"{monitorDetails.MonitorTitle}\", Event: \"{monitorDetails.EventTitle}\"";
+            message.Subject = $"Planar Alert. Name: [{monitorDetails.MonitorTitle}], Event: [{monitorDetails.EventTitle}]";
             var body = new BodyBuilder
             {
                 TextBody = GetText(monitorDetails),
@@ -37,8 +40,9 @@ namespace Planar.Hooks
 
             using var client = new SmtpClient();
             var tokenSource = new CancellationTokenSource(30000);
-            client.Connect("smtp.gmail.com", port: 587, useSsl: false, tokenSource.Token);
-            client.Authenticate("tsahiatias@gmail.com", "abbconwfeacvwklo", tokenSource.Token);
+
+            client.Connect(smtp.Host, port: smtp.Port, useSsl: smtp.UseSsl, tokenSource.Token);
+            client.Authenticate(smtp.Username, smtp.Password, tokenSource.Token);
             await client.SendAsync(message, tokenSource.Token);
             client.Disconnect(quit: true, tokenSource.Token);
         }

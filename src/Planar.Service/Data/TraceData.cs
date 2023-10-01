@@ -93,12 +93,11 @@ namespace Planar.Service.Data
             return await _context.Traces.AnyAsync(t => t.Id == id);
         }
 
-        public async Task<TraceStatusDto> GetTraceCounter(int hours)
+        public async Task<TraceStatusDto> GetTraceCounter(CounterRequest request)
         {
-            var parameters = new { Hours = hours };
             var definition = new CommandDefinition(
                 commandText: "[Statistics].[TraceCounter]",
-                parameters: parameters,
+                parameters: request,
                 commandType: CommandType.StoredProcedure);
 
             var result = await DbConnection.QueryFirstOrDefaultAsync<TraceStatusDto>(definition);

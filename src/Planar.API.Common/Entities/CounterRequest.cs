@@ -1,7 +1,10 @@
-﻿namespace Planar.API.Common.Entities
+﻿using System;
+
+namespace Planar.API.Common.Entities
 {
-    public class CounterRequest
+    public class CounterRequest : IDateScope
     {
-        public int Hours { get; set; }
+        public DateTime? FromDate { get; set; }
+        public DateTime? ToDate { get; set; }
     }
 }

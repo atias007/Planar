@@ -254,14 +254,24 @@ namespace Planar.CLI.Actions
             return 0;
         }
 
-        protected static (DateTime?, DateTime?) GetSummaryDateRates()
+        protected static void FillDatesScope(ICliDateScope request)
         {
-            var items = new[] { "today", "yesterday", "this week", "last week", "this month", "last month", "this year", "last year", "custom..." };
+            if (request.FromDate == default && request.ToDate == default)
+            {
+                var dates = GetDateScope();
+                request.FromDate = dates.Item1 ?? default;
+                request.ToDate = dates.Item2 ?? default;
+            }
+        }
+
+        private static (DateTime?, DateTime?) GetDateScope()
+        {
+            var items = new[] { "today", "yesterday", "this week", "last week", "this month", "last month", "this year", "last year", "since forever", "custom..." };
             var select = PromptSelection(items, "select date period", true);
 
             if (string.Equals(select, "custom...", StringComparison.OrdinalIgnoreCase))
             {
-                return GetSummaryCustomDateRates();
+                return GetCustomDateScope();
             }
 
             (DateTime?, DateTime?) result = select switch
@@ -274,6 +284,7 @@ namespace Planar.CLI.Actions
                 "last month" => (DateTime.Today.AddDays(-DateTime.Today.Day + 1).AddMonths(-1), DateTime.Today.AddDays(-DateTime.Today.Day + 1)),
                 "this year" => (DateTime.Today.AddDays(-DateTime.Today.DayOfYear + 1), DateTime.Today.AddDays(-DateTime.Today.DayOfYear + 1).AddYears(1)),
                 "last year" => (DateTime.Today.AddDays(-DateTime.Today.DayOfYear + 1).AddYears(-1), DateTime.Today.AddDays(-DateTime.Today.DayOfYear + 1)),
+                "since forever" => (null, null),
                 _ => (null, null)
             };
 
@@ -297,7 +308,7 @@ namespace Planar.CLI.Actions
             }
         }
 
-        private static (DateTime?, DateTime?) GetSummaryCustomDateRates()
+        private static (DateTime?, DateTime?) GetCustomDateScope()
         {
             var from = CliPromptUtil.PromptForDate("from date");
             var to = CliPromptUtil.PromptForDate("to date  ");

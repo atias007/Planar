@@ -64,13 +64,10 @@ namespace Planar.CLI.Actions
         [Action("count")]
         public static async Task<CliActionResponse> GetTraceCount(CliGetCountRequest request, CancellationToken cancellationToken = default)
         {
-            if (request.Hours == 0)
-            {
-                request.Hours = GetCounterHours();
-            }
+            FillDatesScope(request);
 
             var restRequest = new RestRequest("trace/count", Method.Get)
-                .AddQueryParameter("hours", request.Hours);
+                .AddQueryDateScope(request);
 
             var result = await RestProxy.Invoke<CounterResponse>(restRequest, cancellationToken);
             if (!result.IsSuccessful || result.Data == null)
@@ -81,7 +78,7 @@ namespace Planar.CLI.Actions
             var counter = result.Data.Counter;
 
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine($"[grey54 bold underline]trace level count for last {request.Hours} hours[/]");
+            AnsiConsole.MarkupLine("[grey54 bold underline]trace level count[/]");
             AnsiConsole.WriteLine();
             AnsiConsole.Write(new BreakdownChart()
                 .Width(60)

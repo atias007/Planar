@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Service.Data;
+using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using Planar.Service.SystemJobs;
 using System;
@@ -54,11 +55,11 @@ namespace Planar.Service.API
             return await DataLayer.GetAllJobsCounters(request.FromDate);
         }
 
-        public async Task<IEnumerable<ConcurrentExecutionModel>> GetConcurrentExecution(ConcurrentExecutionRequest request)
+        public async Task<PagingResponse<ConcurrentExecutionModel>> GetConcurrentExecution(ConcurrentExecutionRequest request)
         {
             ResetRequestHours(request);
             var query = DataLayer.GetConcurrentExecution(request);
-            var result = await Mapper.ProjectTo<ConcurrentExecutionModel>(query).ToListAsync();
+            var result = await query.ProjectToWithPagingAsyc<ConcurrentExecution, ConcurrentExecutionModel>(Mapper, request);
             return result;
         }
 
@@ -72,7 +73,8 @@ namespace Planar.Service.API
 
             var result = new MaxConcurrentExecution
             {
-                Value = max
+                Value = max,
+                Maximum = total
             };
 
             if (percentage < 0.7) { result.Status = "Ok"; }
@@ -81,7 +83,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        private static void ResetRequestHours(MaxConcurrentExecutionRequest request)
+        private static void ResetRequestHours(IDateScope request)
         {
             if (request.FromDate.HasValue)
             {
