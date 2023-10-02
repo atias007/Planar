@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Planar.API.Common.Entities
+﻿namespace Planar.Client.Entities
 {
     public class JobDetails : JobBasicDetails
     {
@@ -16,10 +14,10 @@ namespace Planar.API.Common.Entities
 
         public string Properties { get; set; } = string.Empty;
 
-        public SortedDictionary<string, string?> DataMap { get; set; } = new();
+        public Dictionary<string, string?> DataMap { get; set; } = new Dictionary<string, string?>();
 
-        public List<SimpleTriggerDetails> SimpleTriggers { get; set; } = new();
+        public List<SimpleTriggerDetails> SimpleTriggers { get; set; } = new List<SimpleTriggerDetails>();
 
-        public List<CronTriggerDetails> CronTriggers { get; set; } = new();
+        public List<CronTriggerDetails> CronTriggers { get; set; } = new List<CronTriggerDetails>();
     }
 }

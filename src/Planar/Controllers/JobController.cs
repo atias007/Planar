@@ -60,8 +60,8 @@ namespace Planar.Controllers
         [HttpGet]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job", Description = "Get all jobs", Summary = "Get All Jobs")]
-        [OkJsonResponse(typeof(PagingResponse<JobRowDetails>))]
-        public async Task<ActionResult<PagingResponse<JobRowDetails>>> GetAll([FromQuery] GetAllJobsRequest request)
+        [OkJsonResponse(typeof(PagingResponse<JobBasicDetails>))]
+        public async Task<ActionResult<PagingResponse<JobBasicDetails>>> GetAll([FromQuery] GetAllJobsRequest request)
         {
             var result = await BusinesLayer.GetAll(request);
             return Ok(result);
@@ -109,7 +109,7 @@ namespace Planar.Controllers
         [OkTextResponse]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<string>> GetNextRunning([FromRoute][Required] string id)
+        public async Task<ActionResult<DateTime?>> GetNextRunning([FromRoute][Required] string id)
         {
             var result = await BusinesLayer.GetNextRunning(id);
             return Ok(result);

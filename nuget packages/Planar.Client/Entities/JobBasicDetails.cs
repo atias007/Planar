@@ -1,6 +1,6 @@
-﻿namespace Planar.API.Common.Entities
+﻿namespace Planar.Client.Entities
 {
-    public class JobRowDetails
+    public class JobBasicDetails
     {
         public string Id { get; set; } = string.Empty;
 

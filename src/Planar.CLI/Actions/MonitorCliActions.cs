@@ -292,7 +292,7 @@ namespace Planar.CLI.Actions
             return selectedHook ?? string.Empty;
         }
 
-        private static AddMonitorJobData GetJob(IEnumerable<JobRowDetails> jobs, string eventName)
+        private static AddMonitorJobData GetJob(IEnumerable<JobBasicDetails> jobs, string eventName)
         {
             if (MonitorEventsExtensions.IsSystemMonitorEvent(eventName))
             {
@@ -381,7 +381,7 @@ namespace Planar.CLI.Actions
             var jobsRequest = new RestRequest("job", Method.Get)
                 .AddQueryParameter("filter", (int)AllJobsMembers.AllUserJobs)
                 .AddQueryPagingParameter(1000);
-            var jobsTask = RestProxy.Invoke<PagingResponse<JobRowDetails>>(jobsRequest, cancellationToken);
+            var jobsTask = RestProxy.Invoke<PagingResponse<JobBasicDetails>>(jobsRequest, cancellationToken);
 
             var groupsRequest = new RestRequest("group", Method.Get)
                 .AddQueryPagingParameter(1000);
@@ -404,7 +404,7 @@ namespace Planar.CLI.Actions
             }
 
             var jobs = await jobsTask;
-            data.Jobs = jobs.Data?.Data ?? new List<JobRowDetails>();
+            data.Jobs = jobs.Data?.Data ?? new List<JobBasicDetails>();
             if (!jobs.IsSuccessful)
             {
                 data.FailResponse = jobs;
@@ -484,7 +484,7 @@ namespace Planar.CLI.Actions
             public List<MonitorEventModel> Events { get; set; }
             public List<GroupInfo> Groups { get; set; }
             public List<string> Hooks { get; set; }
-            public List<JobRowDetails> Jobs { get; set; }
+            public List<JobBasicDetails> Jobs { get; set; }
             public RestResponse FailResponse { get; set; }
             public readonly bool IsSuccessful => FailResponse == null;
         }

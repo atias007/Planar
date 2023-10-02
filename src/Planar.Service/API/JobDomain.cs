@@ -141,7 +141,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<PagingResponse<JobRowDetails>> GetAll(GetAllJobsRequest request)
+        public async Task<PagingResponse<JobBasicDetails>> GetAll(GetAllJobsRequest request)
         {
             var jobs = new List<IJobDetail>();
 
@@ -171,7 +171,7 @@ namespace Planar.Service.API
                 .ThenBy(j => j.Name)
                 .ToList();
 
-            return new PagingResponse<JobRowDetails>(request, result, jobs.Count);
+            return new PagingResponse<JobBasicDetails>(request, result, jobs.Count);
         }
 
         public async Task<IEnumerable<AvailableJobToAdd>> GetAvailableJobsToAdd()
@@ -386,7 +386,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<GetRunningDataResponse> GetRunningData(string instanceId)
+        public async Task<RunningJobData> GetRunningData(string instanceId)
         {
             var result = await SchedulerUtil.GetRunningData(instanceId);
             if (result != null)

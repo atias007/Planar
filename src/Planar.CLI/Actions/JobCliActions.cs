@@ -48,7 +48,7 @@ namespace Planar.CLI.Actions
         }
 
         [IgnoreHelp]
-        public static string? ChooseGroup(IEnumerable<JobRowDetails> data)
+        public static string? ChooseGroup(IEnumerable<JobBasicDetails> data)
         {
             return ShowGroupsMenu(data);
         }
@@ -61,7 +61,7 @@ namespace Planar.CLI.Actions
             restRequest.AddQueryParameter("filter", (int)p)
                 .AddQueryPagingParameter(1000);
 
-            var result = await RestProxy.Invoke<PagingResponse<JobRowDetails>>(restRequest, cancellationToken);
+            var result = await RestProxy.Invoke<PagingResponse<JobBasicDetails>>(restRequest, cancellationToken);
             if (!result.IsSuccessful)
             {
                 var message = "fail to fetch list of jobs";
@@ -77,7 +77,7 @@ namespace Planar.CLI.Actions
         }
 
         [IgnoreHelp]
-        public static string ChooseJob(IEnumerable<JobRowDetails>? data)
+        public static string ChooseJob(IEnumerable<JobBasicDetails>? data)
         {
             if (data == null) { return string.Empty; }
 
@@ -152,7 +152,7 @@ namespace Planar.CLI.Actions
 
             restRequest.AddQueryPagingParameter(request);
 
-            var result = await RestProxy.Invoke<PagingResponse<JobRowDetails>>(restRequest, cancellationToken);
+            var result = await RestProxy.Invoke<PagingResponse<JobBasicDetails>>(restRequest, cancellationToken);
             var message = string.Empty;
             CliActionResponse response;
             if (request.Quiet)
@@ -826,7 +826,7 @@ namespace Planar.CLI.Actions
             return selectedFolder == null ? selectedItem : selectedFolder.Value[1..^1];
         }
 
-        private static string? ShowGroupsMenu(IEnumerable<JobRowDetails> data)
+        private static string? ShowGroupsMenu(IEnumerable<JobBasicDetails> data)
         {
             var groups = data
                 .OrderBy(d => d.Group)
@@ -837,7 +837,7 @@ namespace Planar.CLI.Actions
             return PromptSelection(groups, "job group");
         }
 
-        private static string ShowJobsMenu(IEnumerable<JobRowDetails> data, string? groupName = null)
+        private static string ShowJobsMenu(IEnumerable<JobBasicDetails> data, string? groupName = null)
         {
             var query = data.AsQueryable();
 

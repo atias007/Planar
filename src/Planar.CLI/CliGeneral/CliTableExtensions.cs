@@ -105,7 +105,7 @@ namespace Planar.CLI
             return table;
         }
 
-        public static CliTable GetTable(PagingResponse<JobRowDetails>? response)
+        public static CliTable GetTable(PagingResponse<JobBasicDetails>? response)
         {
             var table = new CliTable(paging: response, entityName: "job");
             if (response == null || response.Data == null) { return table; }

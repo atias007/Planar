@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Monitor.Hook", "Plan
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Common", "Planar.Common\Planar.Common.csproj", "{71487E4E-0C31-4D88-8CAC-6C2DA15DF4D2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planar.Client", "Planar.Client\Planar.Client.csproj", "{608FF823-6F41-4E9B-8390-08AF779DBB16}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -47,6 +49,10 @@ Global
 		{71487E4E-0C31-4D88-8CAC-6C2DA15DF4D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71487E4E-0C31-4D88-8CAC-6C2DA15DF4D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71487E4E-0C31-4D88-8CAC-6C2DA15DF4D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{608FF823-6F41-4E9B-8390-08AF779DBB16}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{608FF823-6F41-4E9B-8390-08AF779DBB16}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{608FF823-6F41-4E9B-8390-08AF779DBB16}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{608FF823-6F41-4E9B-8390-08AF779DBB16}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
