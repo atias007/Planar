@@ -229,32 +229,22 @@ namespace Planar
 
         private string? ValidateConnectionName(string? name)
         {
-            if (string.IsNullOrEmpty(name)) { return null; }
-            var connectionString = Properties.ConnectionStrings?
-                .Find(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
-
-            if (connectionString != null)
-            {
-                if (string.IsNullOrWhiteSpace(connectionString.ConnectionString))
-                {
-                    throw new SqlJobException($"connection name '{name}' in job properties has null or empty value");
-                }
-
-                return connectionString.ConnectionString;
-            }
+            if (string.IsNullOrWhiteSpace(name)) { return null; }
 
             var settingsKey = Settings.Keys
-                .FirstOrDefault(k => string.Equals(k, name, StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefault(k =>
+                    string.Equals(k, name, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(k, $"ConnectionStrings:{name}", StringComparison.OrdinalIgnoreCase));
 
-            if (string.IsNullOrWhiteSpace(settingsKey))
+            if (settingsKey == null)
             {
-                throw new SqlJobException($"connection name '{name}' could not be found in job settings / global config / job connection strings property");
+                throw new SqlJobException($"connection string name '{name}' could not be found in global config");
             }
 
             var value = Settings[settingsKey];
             if (string.IsNullOrWhiteSpace(value))
             {
-                throw new SqlJobException($"connection name '{name}' in job settings / global config has null or empty value");
+                throw new SqlJobException($"connection string name '{name}' in global config has null or empty value");
             }
 
             return value;
