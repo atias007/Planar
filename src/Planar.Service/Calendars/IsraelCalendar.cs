@@ -57,27 +57,52 @@ namespace Planar.Service.Calendars
         private bool IsWorkingDateTime(DateTime date)
         {
             var hebrewDate = HebrewEvent.GetHebrewEventInfo(date);
-            IEnumerable<WorkingHourScope> scopes;
+            IEnumerable<WorkingHourScope>? scopes;
 
             if (hebrewDate.IsHoliday)
             {
-                scopes = _calendar.;
+                scopes = _calendar.GetDay(WorkingHoursDayType.PublicHoliday)?.Scopes;
             }
             else if (hebrewDate.IsHolidayEve)
             {
-                start = GetStartOfDay(date, _settings.WorkingHours.HolidayEve);
-                end = GetEndOfDay(date, _settings.WorkingHours.HolidayEve);
+                scopes = _calendar.GetDay(WorkingHoursDayType.PublicHolidayEve)?.Scopes;
             }
             else if (hebrewDate.IsSabbaton)
             {
-                start = GetStartOfDay(date, _settings.WorkingHours.Sabbaton);
-                end = GetEndOfDay(date, _settings.WorkingHours.Sabbaton);
+                scopes = _calendar.GetDay(WorkingHoursDayType.AuthoritiesHoliday)?.Scopes;
             }
             else
             {
-                var scope = _settings.GetDayScope(date.DayOfWeek);
-                start = GetStartOfDay(date, scope);
-                end = GetEndOfDay(date, scope);
+                switch (date.DayOfWeek)
+                {
+                    case DayOfWeek.Sunday:
+                        scopes = _calendar.GetDay(WorkingHoursDayType.Sunday)?.Scopes;
+                        break;
+
+                    case DayOfWeek.Monday:
+                        scopes = _calendar.GetDay(WorkingHoursDayType.Monday)?.Scopes;
+                        break;
+
+                    case DayOfWeek.Tuesday:
+                        scopes = _calendar.GetDay(WorkingHoursDayType.Tuesday)?.Scopes;
+                        break;
+
+                    case DayOfWeek.Wednesday:
+                        scopes = _calendar.GetDay(WorkingHoursDayType.Wednesday)?.Scopes;
+                        break;
+
+                    case DayOfWeek.Thursday:
+                        scopes = _calendar.GetDay(WorkingHoursDayType.Thursday)?.Scopes;
+                        break;
+
+                    case DayOfWeek.Friday:
+                        scopes = _calendar.GetDay(WorkingHoursDayType.Friday)?.Scopes;
+                        break;
+
+                    case DayOfWeek.Saturday:
+                        scopes = _calendar.GetDay(WorkingHoursDayType.Saturday)?.Scopes;
+                        break;
+                }
             }
 
             var validHours = date >= start && date <= end;
