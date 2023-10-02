@@ -1,4 +1,6 @@
-﻿namespace Planar.Client.Entities
+﻿using System.Collections.Generic;
+
+namespace Planar.Client.Entities
 {
     public interface IPagingResponse<T> where T : class
     {

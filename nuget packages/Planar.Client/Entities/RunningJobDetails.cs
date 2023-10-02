@@ -1,4 +1,7 @@
-﻿namespace Planar.Client.Entities
+﻿using System;
+using System.Collections.Generic;
+
+namespace Planar.Client.Entities
 {
     public class RunningJobDetails : JobBasicDetails
     {

@@ -1,4 +1,6 @@
-﻿namespace Planar.Client
+﻿using System;
+
+namespace Planar.Client
 {
     public class PlanarException : Exception
     {

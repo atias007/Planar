@@ -1,4 +1,6 @@
-﻿namespace Planar.Client.Entities
+﻿using System;
+
+namespace Planar.Client.Entities
 {
     public class JobMetrics
     {
