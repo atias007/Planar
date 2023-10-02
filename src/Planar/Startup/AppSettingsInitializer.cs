@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Planar.Common;
@@ -7,7 +6,6 @@ using Planar.Common.Exceptions;
 using System;
 using System.Dynamic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using YamlDotNet.Serialization;
@@ -27,7 +25,7 @@ namespace Planar.Startup
 
             try
             {
-                Console.WriteLine("[x] Read AppSettings files");
+                Console.WriteLine("[x] Read AppSettings file");
 
                 config = new ConfigurationBuilder()
                     .AddYamlFile(file, optional: false, reloadOnChange: true)

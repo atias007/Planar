@@ -1,0 +1,37 @@
+﻿- calendar: default
+  default scopes:
+    - start: 08:00:00
+      end: 20:00:00
+  days: 
+  - day of week: sunday
+    default scopes: true
+  - day of week: monday
+    default scopes: true
+  - day of week: tuesday
+    default scopes: true
+  - day of week: wednesday
+    default scopes: true
+  - day of week: thursday
+    default scopes: true
+  - day of week: friday
+    scopes:
+      - start: 08:00:00
+        end: 14:00:00
+  - day of week: saturday
+    scopes: null
+  - day of week: public holiday eve    # The day before public holiday
+    scopes:
+      - start: 08:00:00
+        end: 14:00:00
+  - day of week: public holiday        # Public holiday
+    scopes: null
+  - day of week: bank holiday          # Bank holiday, banks and offices are closed
+    default scopes: true
+  - day of week: authorities holiday   # Authorities are closed
+    default scopes: true
+  - day of week: otional holiday       # Majority of people take a day off
+    default scopes: true
+  - day of week: observance holiday    # Optional festivity, no paid day off
+    default scopes: true
+
+# ----------------------------------------------------------------------------------------------------

@@ -12,6 +12,7 @@ namespace Planar
 
             DataFolderInitializer.CreateFolderAndFiles();
             AppSettingsInitializer.Initialize();
+            WorkingHoursInitializer.Initialize();
             DatabaseMigrationInitializer.RunMigration();
             AppSettingsInitializer.TestDatabaseConnection();
             AppSettingsInitializer.TestDatabasePermission();

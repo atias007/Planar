@@ -10,13 +10,11 @@ namespace Planar.Calendar.Hebrew
     [Serializable]
     public class HebrewCalendar : PlanarBaseCalendar
     {
-        private HebrewCalendarSettings _settings = null!;
-        private static readonly object Locker = new();
         private readonly Dictionary<long, bool> _cache = new();
+        private HebrewCalendarSettings _settings = new HebrewCalendarSettings();
 
         public HebrewCalendar()
         {
-            _settings ??= LoadSettings<HebrewCalendarSettings>();
         }
 
         public HebrewCalendar(SerializationInfo info, StreamingContext context) : base(info, context)
@@ -27,17 +25,13 @@ namespace Planar.Calendar.Hebrew
         {
             get
             {
-                lock (Locker)
-                {
-                    _settings ??= LoadSettings<HebrewCalendarSettings>();
-
-                    return _settings;
-                }
+                return _settings;
             }
         }
 
         public override bool IsTimeIncluded(DateTimeOffset timeStampUtc)
         {
+            return true;
             try
             {
                 var cache = GetCache(timeStampUtc);

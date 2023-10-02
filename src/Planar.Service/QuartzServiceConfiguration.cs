@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Planar.Calendar;
-using Planar.Calendar.Hebrew;
 using Planar.Common;
+using Planar.Service.Calendars;
 using Planar.Service.Listeners;
 using Quartz;
 using Quartz.Simpl;
@@ -26,22 +25,10 @@ namespace Planar.Service
             }
         }
 
-        private static string GetCalendarName<T>()
-            where T : PlanarBaseCalendar
-        {
-            const string replace = "Calendar";
-            var name = typeof(T).Name;
-            if (name.EndsWith(replace))
-            {
-                name = name[0..^replace.Length];
-            }
-
-            return name;
-        }
-
         private static IServiceCollection AddQuartzServiceInner(IServiceCollection services)
         {
-            JsonObjectSerializer.AddCalendarSerializer<HebrewCalendar>(new CustomCalendarSerializer());
+            JsonObjectSerializer.AddCalendarSerializer<IsraelCalendar>(new IsraelCalendarSerializer());
+            JsonObjectSerializer.AddCalendarSerializer<GlobalCalendar>(new GlobalCalendarSerializer());
 
             services.AddQuartz(q =>
             {
@@ -64,8 +51,15 @@ namespace Planar.Service
                 q.AddTriggerListener<RetryTriggerListener>();
                 q.AddSchedulerListener<SchedulerListener>();
 
-                var calendarName = GetCalendarName<HebrewCalendar>();
-                q.AddCalendar<HebrewCalendar>(calendarName, true, true, a => { });
+                q.AddCalendar<IsraelCalendar>(IsraelCalendar.Name, replace: true, updateTriggers: true, a => { });
+                foreach (var item in CalendarInfo.Items)
+                {
+                    q.AddCalendar<GlobalCalendar>(item.Value, replace: true, updateTriggers: true, calendar =>
+                    {
+                        calendar.Name = item.Value;
+                        calendar.Key = item.Key;
+                    });
+                }
 
                 q.UsePersistentStore(x =>
                 {
