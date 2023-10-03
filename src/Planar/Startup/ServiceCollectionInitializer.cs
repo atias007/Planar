@@ -15,6 +15,7 @@ using Planar.Service.Services;
 using System;
 using System.Net;
 using System.Threading.RateLimiting;
+using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 
 namespace Planar.Startup
 {
@@ -42,6 +43,7 @@ namespace Planar.Startup
             if (AppSettings.General.SwaggerUI)
             {
                 services.AddSwaggerGen(SwaggerInitializer.InitializeSwagger);
+                services.AddFluentValidationRulesToSwagger();
             }
 
             if (AppSettings.General.UseHttpsRedirect)
