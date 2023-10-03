@@ -17,7 +17,7 @@ namespace Planar
             AppSettingsInitializer.TestDatabaseConnection();
             AppSettingsInitializer.TestDatabasePermission();
             var app = WebApplicationInitializer.Initialize(args);
-            SerilogInitializer.CalendarsInitializer(app.Services).Wait();
+            CalendarsInitializer.Initialize(app.Services);
             WebApplicationInitializer.Configure(app);
             ContentInitializer.MapContent(app);
             SerilogInitializer.ConfigureSelfLog();

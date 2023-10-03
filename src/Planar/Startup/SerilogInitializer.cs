@@ -98,20 +98,5 @@ namespace Planar.Startup
                 Console.WriteLine($"[-] WARNING: Upgrade Serilog settings file from json to yml format fail: {ex.Message}");
             }
         }
-
-        public static async Task CalendarsInitializer(IServiceProvider serviceProvider)
-        {
-            var scheduler = serviceProvider.GetRequiredService<IScheduler>();
-            var calendars = await scheduler.GetCalendarNames();
-            var logger = serviceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<BaseCalendar>>();
-            foreach (var name in calendars)
-            {
-                var cal = await scheduler.GetCalendar(name);
-                if (cal is ICalendarWithLogger logCal)
-                {
-                    logCal.Logger = logger;
-                }
-            }
-        }
     }
 }
