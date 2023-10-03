@@ -14,7 +14,6 @@ using Planar.Service;
 using Planar.Service.Services;
 using System;
 using System.Net;
-using System.Text;
 using System.Threading.RateLimiting;
 
 namespace Planar.Startup

@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Authors>Tino Hager</Authors>
+    <Company>nager.at</Company>
+    <Description>Calculate Public Holidays / Federal Holidays for a given year, translation native and english. Country and County support. Supports more than 100 countries</Description>
+    <TargetFramework>net7.0</TargetFramework>
+    <Version>1.45.0</Version>
+  </PropertyGroup>
+</Project>

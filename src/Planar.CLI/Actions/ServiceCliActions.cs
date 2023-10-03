@@ -115,7 +115,9 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> GetAllCalendars(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("service/calendars", Method.Get);
-            return await ExecuteEntity<List<string>>(restRequest, cancellationToken);
+            var result = await RestProxy.Invoke<List<string>>(restRequest, cancellationToken);
+            var table = CliTableExtensions.GetCalendarsTable(result.Data);
+            return new CliActionResponse(result, table);
         }
 
         [Action("login")]

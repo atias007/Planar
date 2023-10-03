@@ -1,0 +1,37 @@
+﻿- calendar: default                   # calendar name: get list of avaliable calendarsfrom cli by following command: planar-ali service calendars, use default for default working hours of any calendar which not specified
+  default scopes:                     # default time scopes for reuse later in this file
+    - start: 08:00:00                 # start time of day (local clock)
+      end: 17:00:00                   # end time of day (local clock)
+  days:                               # list of special days
+  - day of week: sunday               # specisal day: sunday, monday, tuesday, wednesday, thursday, friday, saturday, public holiday eve, public holiday, bank holiday, authorities holiday, optional holiday, observance holiday
+    default scopes: true              # use the default scopes for this day
+  - day of week: monday
+    default scopes: true
+  - day of week: tuesday
+    default scopes: true
+  - day of week: wednesday
+    default scopes: true
+  - day of week: thursday
+    default scopes: true
+  - day of week: friday
+    scopes:                            # use custom scopes for this day (can have multiple scopes)
+      - start: 08:00:00
+        end: 14:00:00
+  - day of week: saturday
+    scopes: null
+  - day of week: public holiday eve    # the day before public holiday (only relevant for israel calendar)
+    scopes:
+      - start: 08:00:00
+        end: 12:00:00
+  - day of week: public holiday        # Public holiday (in israel calendar -> jewish religios holiday)
+    scopes: null
+  - day of week: bank holiday          # Bank holiday, banks and offices are closed (not relevant for israel calendar)
+    default scopes: true
+  - day of week: authorities holiday   # Authorities are closed (not relevant for israel calendar)
+    default scopes: true
+  - day of week: optional holiday      # Majority of people take a day off (in israel calendar -> jewish religios HOL HA-MOED)
+    default scopes: true
+  - day of week: observance holiday    # Optional festivity, no paid day off (not relevant for israel calendar)
+    default scopes: true
+
+# ----------------------------------------------------------------------------------------------------

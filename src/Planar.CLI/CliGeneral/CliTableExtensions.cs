@@ -5,12 +5,52 @@ using Planar.Common;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using YamlDotNet.Serialization;
 
 namespace Planar.CLI
 {
     internal static class CliTableExtensions
     {
+        public static CliTable GetCalendarsTable(IEnumerable<string>? items)
+        {
+            var table = new CliTable();
+            if (items == null || !items.Any()) { return table; }
+
+            var array = items.ToArray();
+            const int columns = 5;
+            var rows = Convert.ToInt32(Math.Ceiling(array.Length / (columns * 1.0)));
+
+            int index = 0;
+            string[,] matrix = new string[rows, columns];
+
+            for (int x = 0; x < rows; x++)
+            {
+                for (int y = 0; y < columns; y++)
+                {
+                    matrix[x, y] = array[index];
+                    index++;
+                    if (index >= array.Length) { break; }
+                }
+            }
+
+            table.Table.AddColumns(new int[columns].Select(i => i.ToString()).ToArray());
+            table.Table.HideHeaders();
+
+            for (int r = 0; r < rows; r++)
+            {
+                var rowItems = new string[columns];
+                for (int i = 0; i < columns; i++)
+                {
+                    rowItems[i] = matrix[r, i].EscapeMarkup() ?? string.Empty;
+                }
+
+                table.Table.AddRow(rowItems);
+            }
+
+            return table;
+        }
+
         public static CliTable GetTable(AddUserResponse? response)
         {
             var table = new CliTable();

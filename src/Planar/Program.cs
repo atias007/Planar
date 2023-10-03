@@ -12,14 +12,15 @@ namespace Planar
 
             DataFolderInitializer.CreateFolderAndFiles();
             AppSettingsInitializer.Initialize();
+            WorkingHoursInitializer.Initialize();
             DatabaseMigrationInitializer.RunMigration();
             AppSettingsInitializer.TestDatabaseConnection();
             AppSettingsInitializer.TestDatabasePermission();
             var app = WebApplicationInitializer.Initialize(args);
+            SerilogInitializer.CalendarsInitializer(app.Services).Wait();
             WebApplicationInitializer.Configure(app);
             ContentInitializer.MapContent(app);
             SerilogInitializer.ConfigureSelfLog();
-
             app.Run();
         }
     }

@@ -30,12 +30,12 @@
 	  <None Remove="Content\no_access.jpg" />
 	  <None Remove="Content\redoc.standalone.js" />
 	  <None Remove="Content\theme-flattop.css" />
-	  <None Remove="Data\Calendars\readme.md" />
 	  <None Remove="Data\Jobs\readme.md" />
 	  <None Remove="Data\MonitorHooks\readme.md" />
 	  <None Remove="Data\MonitorHooks\Teams\readme.md" />
 	  <None Remove="Data\Settings\AppSettings.yml" />
 	  <None Remove="Data\Settings\Serilog.yml" />
+	  <None Remove="Data\Settings\WorkingHours.yml" />
 	  <None Remove="planar_openapi.html" />
 	</ItemGroup>
 	<ItemGroup>
@@ -45,6 +45,7 @@
 
 	<ItemGroup>
 		<Compile Include="..\Planar.Common\Consts.cs" Link="Consts.cs" />
+		<EmbeddedResource Include="Data\Settings\WorkingHours.yml" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -90,12 +91,6 @@
 		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
 	</PropertyGroup>
 	<ItemGroup>
-		<EmbeddedResource Include="Data\Calendars\Hebrew\HebrewCalendar.json">
-			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
-		</EmbeddedResource>
-		<EmbeddedResource Include="Data\Calendars\readme.md">
-		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-		</EmbeddedResource>
 		<EmbeddedResource Include="Data\Jobs\readme.md">
 		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</EmbeddedResource>
