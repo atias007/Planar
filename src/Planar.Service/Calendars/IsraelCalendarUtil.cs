@@ -385,6 +385,11 @@ namespace Planar.Service.Calendars
         public bool IsZom { get; private set; }
 
         /// <summary>
+        /// Gets or sets the is hol hamoed.
+        /// </summary>
+        public bool IsHolHamoed { get; private set; }
+
+        /// <summary>
         /// Gets a value indicating whether this instance is shabat.
         /// </summary>
         /// <value>
@@ -717,24 +722,29 @@ namespace Planar.Service.Calendars
 
                 case "ט\"ז ניסן":
                     EventType = HebrewEventType.PesahHolHamoed1;
+                    IsHolHamoed = true;
                     break;
 
                 case "י\"ז ניסן":
                     EventType = HebrewEventType.PesahHolHamoed2;
+                    IsHolHamoed = true;
                     break;
 
                 case "י\"ח ניסן":
                     EventType = HebrewEventType.PesahHolHamoed3;
+                    IsHolHamoed = true;
                     break;
 
                 case "י\"ט ניסן":
                     EventType = HebrewEventType.PesahHolHamoed4;
+                    IsHolHamoed = true;
                     break;
 
                 case "כ' ניסן":
                     EventType = HebrewEventType.PesahHolHamoed5;
                     EventDetail = HebrewEventDetail.ErevShviaiShelPesah;
                     IsHolidayEve = true;
+                    IsHolHamoed = true;
                     break;
 
                 case "כ\"א ניסן":
@@ -861,26 +871,32 @@ namespace Planar.Service.Calendars
 
                 case "ט\"ז תשרי":
                     EventType = HebrewEventType.SukotHolHamoedDay1;
+                    IsHolHamoed = true;
                     break;
 
                 case "י\"ז תשרי":
                     EventType = HebrewEventType.SukotHolHamoedDay2;
+                    IsHolHamoed = true;
                     break;
 
                 case "י\"ח תשרי":
                     EventType = HebrewEventType.SukotHolHamoedDay3;
+                    IsHolHamoed = true;
                     break;
 
                 case "י\"ט תשרי":
                     EventType = HebrewEventType.SukotHolHamoedDay4;
+                    IsHolHamoed = true;
                     break;
 
                 case "כ' תשרי":
                     EventType = HebrewEventType.SukotHolHamoedDay5;
+                    IsHolHamoed = true;
                     break;
 
                 case "כ\"א תשרי":
                     EventType = HebrewEventType.HoshanaRaba;
+                    IsHolHamoed = true;
                     EventDetail = HebrewEventDetail.ErevShminiAzeret;
                     IsHolidayEve = true;
                     break;

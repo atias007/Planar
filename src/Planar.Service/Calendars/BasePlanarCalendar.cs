@@ -42,6 +42,21 @@ namespace Planar.Service.Calendars
             }
         }
 
+        protected static WorkingHoursDayType Convert(DayOfWeek dayOfWeek)
+        {
+            return dayOfWeek switch
+            {
+                DayOfWeek.Sunday => WorkingHoursDayType.Sunday,
+                DayOfWeek.Monday => WorkingHoursDayType.Monday,
+                DayOfWeek.Tuesday => WorkingHoursDayType.Tuesday,
+                DayOfWeek.Wednesday => WorkingHoursDayType.Wednesday,
+                DayOfWeek.Thursday => WorkingHoursDayType.Thursday,
+                DayOfWeek.Friday => WorkingHoursDayType.Friday,
+                DayOfWeek.Saturday => WorkingHoursDayType.Saturday,
+                _ => throw new PlanarCalendarException($"Invalid day of week '{dayOfWeek}'"),
+            };
+        }
+
         protected bool IsWorkingDateTime(WorkingHoursDayType dayType, DateTime date)
         {
             var day = WorkingHours.WorkingHourDay(dayType);

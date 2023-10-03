@@ -43,18 +43,12 @@ namespace Planar.Service.Calendars
             {
                 return WorkingHoursDayType.AuthoritiesHoliday;
             }
-
-            return dateTime.DayOfWeek switch
+            else if (eventInfo.IsHolHamoed)
             {
-                DayOfWeek.Sunday => WorkingHoursDayType.Sunday,
-                DayOfWeek.Monday => WorkingHoursDayType.Monday,
-                DayOfWeek.Tuesday => WorkingHoursDayType.Tuesday,
-                DayOfWeek.Wednesday => WorkingHoursDayType.Wednesday,
-                DayOfWeek.Thursday => WorkingHoursDayType.Thursday,
-                DayOfWeek.Friday => WorkingHoursDayType.Friday,
-                DayOfWeek.Saturday => WorkingHoursDayType.Saturday,
-                _ => throw new PlanarCalendarException($"Invalid day of week '{dateTime.DayOfWeek}'"),
-            };
+                return WorkingHoursDayType.OptionalHoliday;
+            }
+
+            return Convert(dateTime.DayOfWeek);
         }
 
         private bool IsWorkingDateTime(DateTime date)

@@ -37,15 +37,17 @@ namespace Planar.Service.Calendars
 
             try
             {
-                var holidays = GetHoliday(localDate);
+                var holidays = GetHolidays(localDate);
                 foreach (var holiday in holidays)
                 {
-                    var dayType = Convert(holiday, localDate);
+                    var dayType = Convert(holiday);
                     var isWorking = IsWorkingDateTime(dayType, localDate);
                     if (isWorking) { return true; }
                 }
 
-                return false;
+                var dayowType = Convert(localDate.DayOfWeek);
+                var result = IsWorkingDateTime(dayowType, localDate);
+                return result;
             }
             catch (Exception ex)
             {
@@ -54,43 +56,20 @@ namespace Planar.Service.Calendars
             }
         }
 
-        private static WorkingHoursDayType Convert(PublicHoliday holiday, DateTime dateTime)
+        private static WorkingHoursDayType Convert(PublicHoliday holiday)
         {
-            switch (holiday.Type)
+            return holiday.Type switch
             {
-                case PublicHolidayType.Public:
-                    return WorkingHoursDayType.PublicHoliday;
-
-                case PublicHolidayType.Bank:
-                    return WorkingHoursDayType.BankHoliday;
-
-                case PublicHolidayType.Authorities:
-                    return WorkingHoursDayType.AuthoritiesHoliday;
-
-                case PublicHolidayType.Optional:
-                    return WorkingHoursDayType.OptionalHoliday;
-
-                case PublicHolidayType.Observance:
-                    return WorkingHoursDayType.ObservanceHoliday;
-
-                default:
-                    break;
-            }
-
-            return dateTime.DayOfWeek switch
-            {
-                DayOfWeek.Sunday => WorkingHoursDayType.Sunday,
-                DayOfWeek.Monday => WorkingHoursDayType.Monday,
-                DayOfWeek.Tuesday => WorkingHoursDayType.Tuesday,
-                DayOfWeek.Wednesday => WorkingHoursDayType.Wednesday,
-                DayOfWeek.Thursday => WorkingHoursDayType.Thursday,
-                DayOfWeek.Friday => WorkingHoursDayType.Friday,
-                DayOfWeek.Saturday => WorkingHoursDayType.Saturday,
-                _ => throw new PlanarCalendarException($"Invalid day of week '{dateTime.DayOfWeek}'"),
+                PublicHolidayType.Public => WorkingHoursDayType.PublicHoliday,
+                PublicHolidayType.Bank => WorkingHoursDayType.BankHoliday,
+                PublicHolidayType.Authorities => WorkingHoursDayType.AuthoritiesHoliday,
+                PublicHolidayType.Optional => WorkingHoursDayType.OptionalHoliday,
+                PublicHolidayType.Observance => WorkingHoursDayType.ObservanceHoliday,
+                _ => WorkingHoursDayType.None,
             };
         }
 
-        private IEnumerable<PublicHoliday> GetHoliday(DateTime dateTime)
+        private IEnumerable<PublicHoliday> GetHolidays(DateTime dateTime)
         {
             var list = GetHolidays(dateTime.Year)
                 .Where(l => l.Date.Date == dateTime.Date)
@@ -108,7 +87,11 @@ namespace Planar.Service.Calendars
             lock (_lock)
             {
                 if (_publicHolidays.ContainsKey(key)) { return _publicHolidays[key]; }
-                var result = DateSystem.GetPublicHolidays(year, _calendarCode);
+
+                var result =
+                    DateSystem.GetPublicHolidays(year, _calendarCode)
+                    .Where(h => h.Type != PublicHolidayType.School);
+
                 _publicHolidays.Add(key, result);
                 return result;
             }
