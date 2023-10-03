@@ -8,7 +8,9 @@
   - day of week: monday
     default scopes: true
   - day of week: tuesday
-    default scopes: true
+    scopes:
+      - start: 12:30:00
+        end: 14:00:00
   - day of week: wednesday
     default scopes: true
   - day of week: thursday
@@ -29,7 +31,7 @@
     default scopes: true
   - day of week: authorities holiday   # Authorities are closed
     default scopes: true
-  - day of week: otional holiday       # Majority of people take a day off
+  - day of week: optional holiday      # Majority of people take a day off
     default scopes: true
   - day of week: observance holiday    # Optional festivity, no paid day off
     default scopes: true

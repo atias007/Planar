@@ -1,113 +1,67 @@
-﻿using Quartz.Impl.Calendar;
+﻿using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 
 namespace Planar.Service.Calendars
 {
     [Serializable]
-    public class IsraelCalendar : BaseCalendar
+    public sealed class IsraelCalendar : BasePlanarCalendar
     {
         public const string Name = "Israel";
 
-        private static readonly Dictionary<long, bool> _cache = new();
-        private readonly WorkingHoursCalendar _calendar;
-
         public IsraelCalendar()
         {
-            var calendar = WorkingHours.GetCalendar(Name) ?? throw new PlanarCalendarException($"Invalid calendar name {Name}");
-            _calendar = calendar;
+            var calendar = Calendars.WorkingHours.GetCalendar(Name) ?? throw new PlanarCalendarException($"Invalid calendar name '{Name}'");
+            WorkingHours = calendar;
         }
 
         public override bool IsTimeIncluded(DateTimeOffset timeStampUtc)
         {
-            try
-            {
-                var cache = GetCache(timeStampUtc);
-                if (cache.HasValue) { return cache.Value; }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"WARNING: Fail to invoke IsTimeIncluded (try get cache value). {ex.Message}");
-                throw;
-            }
+            var localDate = timeStampUtc.ToLocalTime().DateTime;
 
             try
             {
-                return IsWorkingDateTime(timeStampUtc.DateTime);
+                return IsWorkingDateTime(localDate);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Fail to invoke IsTimeIncluded with DateTimeOffset={timeStampUtc}. {ex.Message}");
+                Log(LogLevel.Critical, ex, "Fail to invoke IsTimeIncluded with locate date/time={TimeStamp}", localDate);
                 return false;
             }
         }
 
-        private static bool? GetCache(DateTimeOffset date)
+        private static WorkingHoursDayType Convert(HebrewEventInfo eventInfo, DateTime dateTime)
         {
-            if (_cache.TryGetValue(date.Ticks, out var result))
+            if (eventInfo.IsHoliday)
             {
-                return result;
+                return WorkingHoursDayType.PublicHoliday;
             }
-            else
+            else if (eventInfo.IsHolidayEve)
             {
-                return null;
+                return WorkingHoursDayType.PublicHolidayEve;
             }
+            else if (eventInfo.IsSabbaton)
+            {
+                return WorkingHoursDayType.AuthoritiesHoliday;
+            }
+
+            return dateTime.DayOfWeek switch
+            {
+                DayOfWeek.Sunday => WorkingHoursDayType.Sunday,
+                DayOfWeek.Monday => WorkingHoursDayType.Monday,
+                DayOfWeek.Tuesday => WorkingHoursDayType.Tuesday,
+                DayOfWeek.Wednesday => WorkingHoursDayType.Wednesday,
+                DayOfWeek.Thursday => WorkingHoursDayType.Thursday,
+                DayOfWeek.Friday => WorkingHoursDayType.Friday,
+                DayOfWeek.Saturday => WorkingHoursDayType.Saturday,
+                _ => throw new PlanarCalendarException($"Invalid day of week '{dateTime.DayOfWeek}'"),
+            };
         }
 
         private bool IsWorkingDateTime(DateTime date)
         {
             var hebrewDate = HebrewEvent.GetHebrewEventInfo(date);
-            IEnumerable<WorkingHourScope>? scopes;
-
-            if (hebrewDate.IsHoliday)
-            {
-                scopes = _calendar.GetDay(WorkingHoursDayType.PublicHoliday)?.Scopes;
-            }
-            else if (hebrewDate.IsHolidayEve)
-            {
-                scopes = _calendar.GetDay(WorkingHoursDayType.PublicHolidayEve)?.Scopes;
-            }
-            else if (hebrewDate.IsSabbaton)
-            {
-                scopes = _calendar.GetDay(WorkingHoursDayType.AuthoritiesHoliday)?.Scopes;
-            }
-            else
-            {
-                switch (date.DayOfWeek)
-                {
-                    case DayOfWeek.Sunday:
-                        scopes = _calendar.GetDay(WorkingHoursDayType.Sunday)?.Scopes;
-                        break;
-
-                    case DayOfWeek.Monday:
-                        scopes = _calendar.GetDay(WorkingHoursDayType.Monday)?.Scopes;
-                        break;
-
-                    case DayOfWeek.Tuesday:
-                        scopes = _calendar.GetDay(WorkingHoursDayType.Tuesday)?.Scopes;
-                        break;
-
-                    case DayOfWeek.Wednesday:
-                        scopes = _calendar.GetDay(WorkingHoursDayType.Wednesday)?.Scopes;
-                        break;
-
-                    case DayOfWeek.Thursday:
-                        scopes = _calendar.GetDay(WorkingHoursDayType.Thursday)?.Scopes;
-                        break;
-
-                    case DayOfWeek.Friday:
-                        scopes = _calendar.GetDay(WorkingHoursDayType.Friday)?.Scopes;
-                        break;
-
-                    case DayOfWeek.Saturday:
-                        scopes = _calendar.GetDay(WorkingHoursDayType.Saturday)?.Scopes;
-                        break;
-                }
-            }
-
-            var validHours = date >= start && date <= end;
-
-            return validHours;
+            var dayType = Convert(hebrewDate, date);
+            return IsWorkingDateTime(dayType, date);
         }
     }
 }

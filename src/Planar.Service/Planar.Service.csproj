@@ -50,7 +50,6 @@
       <TreatAsUsed>true</TreatAsUsed>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
-    <PackageReference Include="Nager.Date" Version="1.45.0" />
     <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.7.0" />
     <PackageReference Include="Quartz.Extensions.Hosting" Version="3.7.0" />
     <PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.7.0" />
@@ -67,6 +66,7 @@
     <ProjectReference Include="..\Jobs\ProcessJob\ProcessJob.csproj" />
     <ProjectReference Include="..\Jobs\RestJob\RestJob.csproj" />
     <ProjectReference Include="..\Jobs\SqlJob\SqlJob.csproj" />
+    <ProjectReference Include="..\Nager.Date\Nager.Date.csproj" />
     <ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
   </ItemGroup>
 

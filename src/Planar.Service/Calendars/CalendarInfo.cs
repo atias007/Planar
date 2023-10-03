@@ -122,5 +122,7 @@ namespace Planar.Service.Calendars
         };
 
         public static bool Contains(string value) => Items.Any(kv => string.Equals(kv.Value, value, StringComparison.OrdinalIgnoreCase));
+
+        public static string GetCalendarCode(string value) => Items.FirstOrDefault(kv => string.Equals(kv.Value, value, StringComparison.OrdinalIgnoreCase)).Key;
     }
 }

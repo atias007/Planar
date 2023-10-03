@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>net7.0</TargetFramework>
 		<AssemblyName>Planar.Common</AssemblyName>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<Version>1.5.1</Version>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>

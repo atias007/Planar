@@ -12,7 +12,7 @@ public class WorkingHoursCalendar
 
     public List<WorkingHoursDay> Days { get; set; } = new();
 
-    public WorkingHoursDay? GetDay(WorkingHoursDayType dayType)
+    public WorkingHoursDay? WorkingHourDay(WorkingHoursDayType dayType)
     {
         return Days.Find(d => d.DayOfWeekMember == dayType);
     }

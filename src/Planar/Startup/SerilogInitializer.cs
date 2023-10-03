@@ -1,9 +1,13 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Planar.Common;
+using Planar.Service.Calendars;
 using Planar.Startup.Logging;
+using Quartz;
+using Quartz.Impl.Calendar;
 using Serilog;
 using Serilog.Debugging;
 using Serilog.Sinks.MSSqlServer;
@@ -11,6 +15,7 @@ using System;
 using System.Diagnostics;
 using System.Dynamic;
 using System.IO;
+using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -91,6 +96,21 @@ namespace Planar.Startup
             catch (Exception ex)
             {
                 Console.WriteLine($"[-] WARNING: Upgrade Serilog settings file from json to yml format fail: {ex.Message}");
+            }
+        }
+
+        public static async Task CalendarsInitializer(IServiceProvider serviceProvider)
+        {
+            var scheduler = serviceProvider.GetRequiredService<IScheduler>();
+            var calendars = await scheduler.GetCalendarNames();
+            var logger = serviceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<BaseCalendar>>();
+            foreach (var name in calendars)
+            {
+                var cal = await scheduler.GetCalendar(name);
+                if (cal is ICalendarWithLogger logCal)
+                {
+                    logCal.Logger = logger;
+                }
             }
         }
     }

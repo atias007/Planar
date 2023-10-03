@@ -13,7 +13,6 @@ PLAN FOR V 1.6.0
 - add SSIS job
 - add SSRS job
 
-
 - cli command to changhe interval/count
 - cli command to changhe cron expr
 
@@ -24,7 +23,6 @@ PLAN FOR V 1.6.0
 - search in history by free text from log
 - add cli plot statistics
 
-- https://github.com/nager/Nager.Date
 
 - use https://github.com/kellyelton/Eltons.ReflectionKit to validate signature in validate base job / hook
 - add cli command to filter history / trace with odata filter
@@ -222,3 +220,4 @@ V1.6.0
 ------
 - add summary API to history
 - BUG: SECURITY: user with role that can create new user (not admin) may create user with admin role
+- Support world wide calendars (111) - https://github.com/nager/Nager.Date
