@@ -8,6 +8,7 @@ namespace Planar.Service.Validation
     {
         public QueueInvokeJobRequestValidator()
         {
+            Include(new JobOrTriggerKeyValidator());
             RuleFor(r => r.DueDate).NotEmpty().GreaterThan(DateTime.Now);
             RuleFor(r => r.Timeout).GreaterThan(TimeSpan.Zero);
         }

@@ -7,7 +7,7 @@ namespace Planar.Service.Validation
     {
         public JobOrTriggerKeyValidator()
         {
-            RuleFor(r => r.Id).NotEmpty().MaximumLength(101);
+            RuleFor(r => r.Id).NotEmpty().Length(11, 101);
         }
     }
 }
