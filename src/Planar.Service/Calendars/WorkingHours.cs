@@ -9,9 +9,8 @@ public static class WorkingHours
 
     public static WorkingHoursCalendar? GetCalendar(string name)
     {
-        var calendar = Calendars.Find(c =>
-            string.Equals(c.Calendar, "default", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(c.Calendar, name, StringComparison.OrdinalIgnoreCase));
+        var calendar = Calendars.Find(c => string.Equals(c.CalendarName, name, StringComparison.OrdinalIgnoreCase));
+        calendar ??= Calendars.Find(c => string.Equals(c.CalendarName, "default", StringComparison.OrdinalIgnoreCase));
 
         return calendar;
     }

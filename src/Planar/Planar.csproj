@@ -37,6 +37,7 @@
 	  <None Remove="Data\MonitorHooks\Teams\readme.md" />
 	  <None Remove="Data\Settings\AppSettings.yml" />
 	  <None Remove="Data\Settings\Serilog.yml" />
+	  <None Remove="Data\Settings\WorkingHours.yml" />
 	  <None Remove="planar_openapi.html" />
 	</ItemGroup>
 	<ItemGroup>
@@ -66,6 +67,7 @@
 	  <EmbeddedResource Include="Data\Settings\Serilog.yml">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
+	  <EmbeddedResource Include="Data\Settings\WorkingHours.yml" />
 	</ItemGroup>
 
 	<ItemGroup>

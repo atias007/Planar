@@ -152,11 +152,11 @@ namespace Planar.Service.Monitor
             }
         }
 
-        public static void LockJobEvent(JobKey key, params MonitorEvents[] events)
+        public static void LockJobEvent(JobKey key, int lockSeconds, params MonitorEvents[] events)
         {
             foreach (var item in events)
             {
-                LockJobEvent(key, item);
+                LockJobEvent(key, lockSeconds, item);
             }
         }
 
@@ -507,13 +507,13 @@ namespace Planar.Service.Monitor
             return result;
         }
 
-        private static void LockJobEvent(JobKey key, MonitorEvents @event)
+        private static void LockJobEvent(JobKey key, int lockSeconds, MonitorEvents @event)
         {
             var keyString = $"{key} {@event}";
             _lockJobEvents.TryAdd(keyString, DateTimeOffset.Now);
             Task.Run(() =>
             {
-                Thread.Sleep(10000);
+                Thread.Sleep(lockSeconds * 1000);
                 ReleaseJobEvent(key, @event);
             });
         }
@@ -524,14 +524,19 @@ namespace Planar.Service.Monitor
             _lockJobEvents.TryRemove(keyString, out _);
         }
 
-        private static void ReleaseJobEvent(MonitorSystemInfo info, MonitorEvents @event)
-        {
-            if (!info.MessagesParameters.ContainsKey("JobGroup")) { return; }
-            if (!info.MessagesParameters.ContainsKey("JobName")) { return; }
-            var keyString = $"{info.MessagesParameters["JobGroup"]}.{info.MessagesParameters["JobName"]} {@event}";
+        ////private static void ReleaseJobEvent(MonitorSystemInfo info, MonitorEvents @event)
+        ////{
+        ////    if (!info.MessagesParameters.ContainsKey("JobGroup")) { return; }
+        ////    if (!info.MessagesParameters.ContainsKey("JobName")) { return; }
+        ////    var keyString = $"{info.MessagesParameters["JobGroup"]}.{info.MessagesParameters["JobName"]} {@event}";
+        ////    _lockJobEvents.TryRemove(keyString, out _);
 
-            _lockJobEvents.TryRemove(keyString, out _);
-        }
+        ////    ////Task.Run(() =>
+        ////    ////{
+        ////    ////    Thread.Sleep(1000);
+        ////    ////    _lockJobEvents.TryRemove(keyString, out _);
+        ////    ////});
+        ////}
 
         private async Task SaveMonitorAlert(MonitorAction action, MonitorDetails? details, IJobExecutionContext context, Exception? exception = null)
         {
@@ -605,7 +610,7 @@ namespace Planar.Service.Monitor
 
             if (IsJobEventLock(info, @event))
             {
-                ReleaseJobEvent(info, @event);
+                //// ReleaseJobEvent(info, @event); ==> Generate a bug!!!
                 return;
             }
 

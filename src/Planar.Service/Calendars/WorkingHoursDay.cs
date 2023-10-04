@@ -15,8 +15,8 @@ public class WorkingHoursDay
         get { return _dayOfWeek; }
         set
         {
-            _dayOfWeek = value;
-            var temp = value?.ToLower().Replace(" ", string.Empty);
+            _dayOfWeek = value?.ToLower();
+            var temp = _dayOfWeek?.Replace(" ", string.Empty);
             if (string.IsNullOrWhiteSpace(temp)) { return; }
             if (Enum.TryParse<WorkingHoursDayType>(temp, ignoreCase: true, out var dayOfWeekMember))
             {

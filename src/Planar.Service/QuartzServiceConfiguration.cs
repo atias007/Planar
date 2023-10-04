@@ -54,7 +54,7 @@ namespace Planar.Service
                 q.AddCalendar<IsraelCalendar>(IsraelCalendar.Name, replace: true, updateTriggers: true, a => { });
                 foreach (var item in CalendarInfo.Items)
                 {
-                    if (item.Value == IsraelCalendar.Name) { continue; }
+                    if (string.Equals(item.Key, IsraelCalendar.Name, StringComparison.OrdinalIgnoreCase)) { continue; }
                     q.AddCalendar<GlobalCalendar>(item.Key, replace: true, updateTriggers: true, calendar =>
                     {
                         calendar.Name = item.Key;

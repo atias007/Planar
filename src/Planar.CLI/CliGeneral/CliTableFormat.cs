@@ -2,17 +2,13 @@
 using Planar.CLI.CliGeneral;
 using Spectre.Console;
 using System;
+using System.Collections.Generic;
+using System.Text;
 
 namespace Planar.CLI
 {
     public static class CliTableFormat
     {
-        public static string FormatExceptionCount(int count)
-        {
-            if (count <= 0) { return "0"; }
-            return $"[red]{count}[/]";
-        }
-
         public static string FormatClusterHealthCheck(TimeSpan? span, TimeSpan? deviation)
         {
             var title = FromatDurationUpToSecond(span).EscapeMarkup();
@@ -58,20 +54,21 @@ namespace Planar.CLI
             }
         }
 
-        public static string FormatTimeSpan(TimeSpan? timeSpan)
+        public static string FormatExceptionCount(int count)
         {
-            if (timeSpan == null) { return "--:--:--"; }
-            return FormatTimeSpan(timeSpan.Value);
+            if (count <= 0) { return "0"; }
+            return $"[red]{count}[/]";
         }
 
-        public static string FormatTimeSpan(TimeSpan timeSpan)
+        public static string FormatJobKey(string? group, string? name)
         {
-            if (timeSpan.TotalDays >= 1)
-            {
-                return $"{timeSpan:\\(d\\)\\ hh\\:mm\\:ss}";
-            }
+            var noGroup = string.IsNullOrWhiteSpace(group);
+            var noName = string.IsNullOrWhiteSpace(name);
 
-            return $"{timeSpan:hh\\:mm\\:ss}";
+            if (noName && noGroup) { return string.Empty; }
+            if (noName) { return group!.EscapeMarkup(); }
+            if (noGroup) { return $"DEFAULT.{name}".EscapeMarkup(); }
+            return $"{group}.{name}".EscapeMarkup();
         }
 
         public static string FormatNumber(int number)
@@ -98,15 +95,25 @@ namespace Planar.CLI
             return $"[{color}]{number:N0}[/]";
         }
 
-        public static string FormatJobKey(string? group, string? name)
+        public static string FormatTimeSpan(TimeSpan? timeSpan)
         {
-            var noGroup = string.IsNullOrWhiteSpace(group);
-            var noName = string.IsNullOrWhiteSpace(name);
+            if (timeSpan == null) { return "--:--:--"; }
+            return FormatTimeSpan(timeSpan.Value);
+        }
 
-            if (noName && noGroup) { return string.Empty; }
-            if (noName) { return group!.EscapeMarkup(); }
-            if (noGroup) { return $"DEFAULT.{name}".EscapeMarkup(); }
-            return $"{group}.{name}".EscapeMarkup();
+        public static string FormatTimeSpan(TimeSpan timeSpan)
+        {
+            if (timeSpan.TotalDays >= 1)
+            {
+                return $"{timeSpan:\\(d\\)\\ hh\\:mm\\:ss}";
+            }
+
+            return $"{timeSpan:hh\\:mm\\:ss}";
+        }
+
+        public static string FormatTimeSpanShort(TimeSpan timeSpan)
+        {
+            return $"{timeSpan:h\\:mm}";
         }
 
         public static string FromatDuration(int? number)
@@ -178,19 +185,6 @@ namespace Planar.CLI
             }
         }
 
-        public static string GetStatusMarkup(int status)
-        {
-            var statusEnum = (StatusMembers)status;
-            return statusEnum switch
-            {
-                StatusMembers.Running => $"[{CliFormat.WarningColor}]{statusEnum}[/]",
-                StatusMembers.Success => $"[{CliFormat.OkColor}]{statusEnum}[/]",
-                StatusMembers.Fail => $"[{CliFormat.ErrorColor}]{statusEnum}[/]",
-                StatusMembers.Veto => $"[aqua]{statusEnum}[/]",
-                _ => $"[silver]{statusEnum}[/]",
-            };
-        }
-
         public static string GetBooleanMarkup(bool value, object? display = null)
         {
             display ??= value;
@@ -209,6 +203,11 @@ namespace Planar.CLI
                 $"{display}";
         }
 
+        public static string GetFireInstanceIdMarkup(string fireInstanceId)
+        {
+            return $"[turquoise2]{fireInstanceId}[/]";
+        }
+
         public static string GetLevelMarkup(string? level)
         {
             return level switch
@@ -223,6 +222,36 @@ namespace Planar.CLI
             };
         }
 
+        public static string GetProgressMarkup(int progress)
+        {
+            return $"[gold3_1]{progress}%[/]";
+        }
+
+        public static string GetStatusMarkup(int status)
+        {
+            var statusEnum = (StatusMembers)status;
+            return statusEnum switch
+            {
+                StatusMembers.Running => $"[{CliFormat.WarningColor}]{statusEnum}[/]",
+                StatusMembers.Success => $"[{CliFormat.OkColor}]{statusEnum}[/]",
+                StatusMembers.Fail => $"[{CliFormat.ErrorColor}]{statusEnum}[/]",
+                StatusMembers.Veto => $"[aqua]{statusEnum}[/]",
+                _ => $"[silver]{statusEnum}[/]",
+            };
+        }
+
+        public static string GetTimeScopeString(IEnumerable<WorkingHourScopeModel> scopes)
+        {
+            var sb = new StringBuilder();
+            foreach (var scope in scopes)
+            {
+                sb.Append(FormatTimeSpanShort(scope.Start));
+                sb.Append(" - ");
+                sb.AppendLine(FormatTimeSpanShort(scope.End));
+            }
+            return sb.ToString().Trim();
+        }
+
         public static string GetTriggerIdMarkup(string triggerId)
         {
             if (triggerId == Consts.ManualTriggerId)
@@ -233,16 +262,6 @@ namespace Planar.CLI
             {
                 return triggerId.EscapeMarkup();
             }
-        }
-
-        public static string GetProgressMarkup(int progress)
-        {
-            return $"[gold3_1]{progress}%[/]";
-        }
-
-        public static string GetFireInstanceIdMarkup(string fireInstanceId)
-        {
-            return $"[turquoise2]{fireInstanceId}[/]";
         }
     }
 }

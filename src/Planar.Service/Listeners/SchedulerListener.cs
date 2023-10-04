@@ -148,6 +148,7 @@ namespace Planar.Service.Listeners
             return Task.Run(() =>
             {
                 if (IsLock(nameof(SchedulerStarted), null)) { return; }
+                _logger.LogInformation("Scheduler started");
                 var info = GetSimpleMonitorSystemInfo("Scheduler was started at {{MachineName}}");
                 SafeSystemScan(MonitorEvents.SchedulerStarted, info, null);
             }, cancellationToken);

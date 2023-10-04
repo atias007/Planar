@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -749,8 +750,10 @@ namespace Planar.Service.API
                 // ScheduleJob
                 await Scheduler.ScheduleJob(job, triggers, true);
             }
-            catch
+            catch (Exception ex)
             {
+                ValidateTriggerNeverFire(ex);
+
                 // roll back
                 await DataLayer.DeleteJobProperty(id);
                 throw;
@@ -760,6 +763,37 @@ namespace Planar.Service.API
 
             // Return Id
             return new JobIdResponse { Id = id };
+        }
+
+        private void ValidateTriggerNeverFire(Exception ex)
+        {
+            if (ex is not SchedulerException) { return; }
+            var message = ex.Message;
+            if (message.Contains("the given trigger") && message.Contains("will never fire"))
+            {
+                var triggerId = GetTriggerIdFromErrorMessage(message);
+                if (string.IsNullOrEmpty(triggerId))
+                {
+                    throw new RestValidationException("trigger", "trigger will never fire. check trigger start/end times, cron expression, calendar and working hours configuration");
+                }
+                else
+                {
+                    throw new RestValidationException("trigger", $"trigger with id '{triggerId}' will never fire. check trigger start/end times, cron expression, calendar and working hours configuration");
+                }
+            }
+        }
+
+        private static string? GetTriggerIdFromErrorMessage(string message)
+        {
+            var parts = message.Split('\'');
+            if (parts.Length != 3) { return null; }
+            var triggerId = parts[1];
+            if (triggerId.Contains('.'))
+            {
+                triggerId = triggerId.Split('.')[1];
+            }
+
+            return triggerId;
         }
 
         private async Task<string> GetJobFileContent(SetJobPathRequest request)

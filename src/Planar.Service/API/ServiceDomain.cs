@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Service.Calendars;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
@@ -186,6 +187,50 @@ namespace Planar.Service.API
             var query = DataLayer.GetSecurityAudits(request);
             var data = await query.ProjectToWithPagingAsyc<SecurityAudit, SecurityAuditModel>(Mapper, request);
             var result = new PagingResponse<SecurityAuditModel>(data);
+            return result;
+        }
+
+        public IEnumerable<WorkingHoursModel> GetDefaultWorkingHours()
+        {
+            if (!WorkingHours.Calendars.Any()) { throw new RestNotFoundException("no working hours found in settings file"); }
+
+            var result = new List<WorkingHoursModel>();
+            foreach (var item in WorkingHours.Calendars)
+            {
+                result.Add(MapWorkingHours(item));
+            }
+
+            return result;
+        }
+
+        public WorkingHoursModel GetWorkingHours(string calendar)
+        {
+            var cal = WorkingHours.GetCalendar(calendar);
+            ValidateExistingEntity(cal, "calendar");
+
+            if (!string.Equals(calendar, "default", StringComparison.OrdinalIgnoreCase) && !CalendarInfo.Contains(calendar))
+            {
+                throw new RestNotFoundException($"calendar '{calendar}' not found");
+            }
+
+            var result = MapWorkingHours(cal!);
+            return result;
+        }
+
+        private WorkingHoursModel MapWorkingHours(WorkingHoursCalendar cal)
+        {
+            var result = new WorkingHoursModel { CalendarName = cal.CalendarName };
+            foreach (var d in cal.Days)
+            {
+                var dayModel = new WorkingHoursDayModel
+                {
+                    DayOfWeek = d.DayOfWeek ?? string.Empty,
+                    Scopes = Mapper.Map<List<WorkingHourScopeModel>>(d.DefaultScopes ? cal.DefaultScopes : d.Scopes)
+                };
+
+                result.Days.Add(dayModel);
+            }
+
             return result;
         }
     }
