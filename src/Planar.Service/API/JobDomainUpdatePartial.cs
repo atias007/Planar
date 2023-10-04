@@ -15,14 +15,25 @@ namespace Planar.Service.API
 {
     public partial class JobDomain
     {
-        public async Task<JobIdResponse> UpdateByPath(UpdateJobPathRequest request)
+        public async Task<JobIdResponse> UpdateById(UpdateJobRequest request)
         {
-            await ValidateAddPath(request);
-            var yml = await GetJobFileContent(request);
+            var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateSystemJob(jobKey);
+
+            var jobId = await JobKeyHelper.GetJobId(jobKey) ?? string.Empty;
+
+            var yml =
+                await DataLayer.GetJobProperty(jobId) ??
+                throw new PlanarJobException($"properties for job with id '{jobId}' could not be found");
+
+            var dynamic = YmlUtil.Deserialize<dynamic>(yml);
+            var path = dynamic["path"];
+
+            yml = await GetJobFileContent(new SetJobPathRequest { Folder = path });
             var dynamicRequest = GetJobDynamicRequest(yml);
             dynamic properties = dynamicRequest.Properties ?? new ExpandoObject();
-            properties["path"] = request.Folder;
-            var response = await Update(dynamicRequest, request.UpdateJobOptions);
+            properties["path"] = path;
+            var response = await Update(dynamicRequest, request.Options);
             return response;
         }
 

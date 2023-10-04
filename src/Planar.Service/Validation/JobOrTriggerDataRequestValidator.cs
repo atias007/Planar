@@ -7,9 +7,11 @@ namespace Planar.Service.Validation
     {
         public JobOrTriggerDataRequestValidator()
         {
+            Include(new JobOrTriggerKeyValidator());
+
             RuleFor(e => e.DataKey).NotEmpty()
                 .MaximumLength(100)
-                .Must(key => Consts.IsDataKeyValid(key))
+                .Must(Consts.IsDataKeyValid)
                 .WithMessage("the data key '{PropertyValue}' in invalid");
 
             RuleFor(e => e.DataValue)

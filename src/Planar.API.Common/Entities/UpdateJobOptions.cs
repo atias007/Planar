@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace Planar.API.Common.Entities
+﻿namespace Planar.API.Common.Entities
 {
     public class UpdateJobOptions
     {

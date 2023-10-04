@@ -33,16 +33,16 @@ namespace Planar.Controllers
             return CreatedAtAction(nameof(Get), result, result);
         }
 
-        [HttpPut("folder")]
+        [HttpPut]
         [EditorAuthorize]
-        [SwaggerOperation(OperationId = "put_job_folder", Description = "Update job by yml job file", Summary = "Update Job By Yml")]
+        [SwaggerOperation(OperationId = "put_job_id", Description = "Update job by id", Summary = "Update Job By Id")]
         [JsonConsumes]
         [CreatedResponse(typeof(JobIdResponse))]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<JobIdResponse>> UpdateByPath([FromBody] UpdateJobPathRequest request)
+        public async Task<ActionResult<JobIdResponse>> UpdateById(UpdateJobRequest request)
         {
-            var result = await BusinesLayer.UpdateByPath(request);
+            var result = await BusinesLayer.UpdateById(request);
             return CreatedAtAction(nameof(Get), result, result);
         }
 
