@@ -35,14 +35,13 @@ namespace Planar.Service.API
             var info = await GetJobDetailsForDataCommands(id, key);
             if (info.JobDetails == null) { return; }
 
-            MonitorUtil.LockJobEvent(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
-
             ValidateDataKeyExists(info.JobDetails, key, id);
             var auditValue = PlanarConvert.ToString(info.JobDetails.JobDataMap[key]);
             info.JobDetails.JobDataMap.Remove(key);
             var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
 
             // Reschedule job
+            MonitorUtil.LockJobEvent(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
             await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
             await Scheduler.PauseJob(info.JobKey);
 
@@ -53,8 +52,6 @@ namespace Planar.Service.API
         {
             var info = await GetJobDetailsForDataCommands(request.Id, request.DataKey);
             if (info.JobDetails == null) { return; }
-
-            MonitorUtil.LockJobEvent(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
 
             if (info.JobDetails.JobDataMap.ContainsKey(request.DataKey))
             {
@@ -80,6 +77,7 @@ namespace Planar.Service.API
             var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
 
             // Reschedule job
+            MonitorUtil.LockJobEvent(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
             await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
 
             // Pause job
