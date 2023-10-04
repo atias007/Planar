@@ -16,9 +16,13 @@
 
 	<ItemGroup>
 	  <Compile Remove="Data\MonitorHooks\Http\**" />
+	  <Compile Remove="Protos\**" />
 	  <Content Remove="Data\MonitorHooks\Http\**" />
+	  <Content Remove="Protos\**" />
 	  <EmbeddedResource Remove="Data\MonitorHooks\Http\**" />
+	  <EmbeddedResource Remove="Protos\**" />
 	  <None Remove="Data\MonitorHooks\Http\**" />
+	  <None Remove="Protos\**" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Remove="Content\fonts.googleapis.css" />
@@ -103,9 +107,5 @@
 		<ProjectReference Include="..\DatabaseMigrations.Factory\DatabaseMigrations.Factory.csproj" />
 		<ProjectReference Include="..\Planar.API.Common\Planar.API.Common.csproj" />
 		<ProjectReference Include="..\Planar.Service\Planar.Service.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Folder Include="Protos\" />
 	</ItemGroup>
 </Project>
