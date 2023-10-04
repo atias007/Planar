@@ -6,7 +6,7 @@ namespace Planar.Service.Calendars
     [Serializable]
     public sealed class IsraelCalendar : BasePlanarCalendar
     {
-        public const string Name = "Israel";
+        public const string Name = "israel";
 
         public IsraelCalendar()
         {

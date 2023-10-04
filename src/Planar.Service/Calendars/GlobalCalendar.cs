@@ -10,6 +10,10 @@ namespace Planar.Service.Calendars
     [Serializable]
     public sealed class GlobalCalendar : BasePlanarCalendar
     {
+        public GlobalCalendar()
+        {
+        }
+
         private string _calendarCode = string.Empty;
         private readonly Dictionary<string, IEnumerable<PublicHoliday>> _publicHolidays = new();
         private readonly object _lock = new();
