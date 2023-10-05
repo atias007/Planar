@@ -218,5 +218,6 @@ V1.6.0
 - add summary API to history
 - BUG: SECURITY: user with role that can create new user (not admin) may create user with admin role
 - Support world wide calendars (111) - https://github.com/nager/Nager.Date
+- move work hours settings to settings folder & convert yo yml
 - bug fix -> schedule job with trigger with calendar with no future dates:
 - limit data entries in add/update/invoke/queue-invoke job
