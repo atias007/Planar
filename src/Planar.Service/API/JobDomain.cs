@@ -445,8 +445,8 @@ namespace Planar.Service.API
         public async Task Invoke(InvokeJobRequest request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
+            CheckForInvalidDataKeys(request.Data, "invoke");
 
-            // TODO: validate the request data dictionary
             request.Data ??= new Dictionary<string, string?>();
             if (request.NowOverrideValue.HasValue)
             {
@@ -478,6 +478,8 @@ namespace Planar.Service.API
             // build new job
             var jobKey = await JobKeyHelper.GetJobKey(request);
             ValidateSystemJob(jobKey);
+            CheckForInvalidDataKeys(request.Data, "queue invoke");
+
             var job = await Scheduler.GetJobDetail(jobKey);
             if (job == null) { return; }
 
@@ -506,7 +508,6 @@ namespace Planar.Service.API
                 newTrigger = newTrigger.UsingJobData(Consts.TriggerTimeout, timeoutValue);
             }
 
-            // TODO: validate the request data dictionary
             if (request.Data != null && request.Data.Any())
             {
                 foreach (var item in request.Data)
