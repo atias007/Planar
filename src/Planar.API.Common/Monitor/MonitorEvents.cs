@@ -28,9 +28,11 @@ namespace Planar.Common
         [Description("Job Canceled")] JobCanceled = 302,
         [Description("Job Paused")] JobPaused = 303,
         [Description("Job Resumed")] JobResumed = 304,
-        [Description("Job Group Paused")] JobGroupPaused = 305,
-        [Description("Job Group Resumed")] JobGroupResumed = 306,
+
+        // [Description("Job Group Paused")] JobGroupPaused = 305, ==> REMOVED!
+        // [Description("Job Group Resumed")] JobGroupResumed = 306, ==> REMOVED!
         [Description("Scheduler Error")] SchedulerError = 307,
+
         [Description("Scheduler In Standby Mode")] SchedulerInStandbyMode = 308,
         [Description("Scheduler Started")] SchedulerStarted = 309,
         [Description("Scheduler Shutdown")] SchedulerShutdown = 310,

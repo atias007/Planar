@@ -765,7 +765,7 @@ namespace Planar.Service.API
             return new JobIdResponse { Id = id };
         }
 
-        private void ValidateTriggerNeverFire(Exception ex)
+        private static void ValidateTriggerNeverFire(Exception ex)
         {
             if (ex is not SchedulerException) { return; }
             var message = ex.Message;

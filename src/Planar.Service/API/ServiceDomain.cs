@@ -205,13 +205,14 @@ namespace Planar.Service.API
 
         public WorkingHoursModel GetWorkingHours(string calendar)
         {
-            var cal = WorkingHours.GetCalendar(calendar);
-            ValidateExistingEntity(cal, "calendar");
-
-            if (!string.Equals(calendar, "default", StringComparison.OrdinalIgnoreCase) && !CalendarInfo.Contains(calendar))
+            if (!CalendarInfo.Contains(calendar))
             {
                 throw new RestNotFoundException($"calendar '{calendar}' not found");
             }
+
+            var cal =
+                WorkingHours.GetCalendar(calendar) ??
+                throw new RestNotFoundException($"working hours for calendar '{calendar}' not defined. planar will use default working hours");
 
             var result = MapWorkingHours(cal!);
             return result;

@@ -282,7 +282,7 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{instanceId}/running-data")]
+        [HttpGet("running-data/{instanceId}")]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job_running_data_instanceid", Description = "Get running job log & exception", Summary = "Get Running Job Data")]
         [OkJsonResponse(typeof(RunningJobData))]
@@ -336,7 +336,7 @@ namespace Planar.Controllers
         [OkJsonResponse(typeof(LastInstanceId))]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<LastInstanceId>> GetLastInstanceId([FromRoute][Required] string id, [FromQuery] DateTime invokeDate)
+        public async Task<ActionResult<LastInstanceId>> GetLastInstanceId([FromRoute][Required] string id, [FromQuery][Required][SqlDateTime] DateTime invokeDate)
         {
             var result = await BusinesLayer.GetLastInstanceId(id, invokeDate);
             return Ok(result);

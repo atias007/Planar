@@ -29,3 +29,4 @@ using System.Diagnostics.CodeAnalysis;
 [assembly: SuppressMessage("Minor Code Smell", "S3251:Implementations should be provided for \"partial\" methods", Justification = "<Pending>", Scope = "member", Target = "~M:Planar.Service.Data.PlanarContext.OnModelCreatingPartial(Microsoft.EntityFrameworkCore.ModelBuilder)")]
 [assembly: SuppressMessage("Major Code Smell", "S3925:\"ISerializable\" should be implemented correctly", Justification = "ISerializable", Scope = "type", Target = "~T:Planar.Service.Calendars.IsraelCalendar")]
 [assembly: SuppressMessage("Major Code Smell", "S3925:\"ISerializable\" should be implemented correctly", Justification = "ISerializable", Scope = "type", Target = "~T:Planar.Service.Calendars.GlobalCalendar")]
+[assembly: SuppressMessage("Major Code Smell", "S3925:\"ISerializable\" should be implemented correctly", Justification = "ISerializable", Scope = "type", Target = "~T:Planar.Service.Calendars.DefaultCalendar")]

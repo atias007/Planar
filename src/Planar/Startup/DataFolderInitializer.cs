@@ -10,10 +10,10 @@ namespace Planar.Startup
         public static void CreateFolderAndFiles()
         {
             var assembly = Assembly.GetExecutingAssembly();
+            var names = assembly.GetManifestResourceNames();
 
             var resources =
-                assembly
-                .GetManifestResourceNames()
+                names
                 .Where(r => r.StartsWith($"{nameof(Planar)}.Data"))
                 .Select(r => new { ResourceName = r, FileInfo = ConvertResourceToPath(r) })
                 .ToList();
@@ -47,23 +47,15 @@ namespace Planar.Startup
             });
         }
 
-        private static readonly string[] sufixes = new[] { "json", "md", "ps1", "yml" };
-
         private static FileInfo ConvertResourceToPath(string resource)
         {
             var parts = resource.Split('.');
-            parts = parts[1..];
-
-            var sufix = parts[^1];
-            if (sufixes.Contains(sufix))
-            {
-                parts = parts[..^1];
-                var last = parts[^1];
-                parts[^1] = $"{last}.{sufix}";
-            }
-
-            var path = Path.Combine(parts);
-            var result = FolderConsts.GetPath(path);
+            var fileParts = parts[3..];
+            var pathParts = parts[1..3];
+            var filename = string.Join(".", fileParts);
+            var path = Path.Combine(pathParts);
+            var fullname = Path.Combine(path, filename);
+            var result = FolderConsts.GetPath(fullname);
             return new FileInfo(result);
         }
     }

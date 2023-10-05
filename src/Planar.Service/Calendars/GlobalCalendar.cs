@@ -26,8 +26,9 @@ namespace Planar.Service.Calendars
             {
                 _name = value;
                 if (string.IsNullOrWhiteSpace(_name)) { return; }
-                var calendar = Calendars.WorkingHours.GetCalendar(_name) ?? throw new PlanarCalendarException($"Invalid calendar name '{_name}'");
-                WorkingHours = calendar;
+                var calendar = Calendars.WorkingHours.GetCalendar(_name);
+                calendar ??= Calendars.WorkingHours.GetCalendar(DefaultCalendar.Name);
+                WorkingHours = calendar ?? throw new PlanarCalendarException($"Invalid calendar name '{_name}'");
             }
         }
 

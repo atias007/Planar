@@ -8,7 +8,8 @@ namespace Planar.Service.Calendars
     {
         internal static readonly IReadOnlyDictionary<string, string> Items = new SortedDictionary<string, string>()
         {
-            { "israel" , "IL"},
+            { DefaultCalendar.Name , "DF"},
+            { IsraelCalendar.Name , "IL"},
             { "andorra" ,"AD"},
             { "albania" ,"AL"},
             { "argentina" ,"AR"},
