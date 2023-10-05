@@ -85,11 +85,11 @@ namespace Planar.Service.Calendars
         {
             var cacheKey = year.ToString();
 
-            if (_publicHolidays.ContainsKey(cacheKey)) { return _publicHolidays[cacheKey]; }
+            if (_publicHolidays.TryGetValue(cacheKey, out IEnumerable<PublicHoliday>? cacheResult)) { return cacheResult; }
 
             lock (_lock)
             {
-                if (_publicHolidays.ContainsKey(cacheKey)) { return _publicHolidays[cacheKey]; }
+                if (_publicHolidays.TryGetValue(cacheKey, out IEnumerable<PublicHoliday>? cacheResult2)) { return cacheResult2; }
 
                 var result =
                     DateSystem.GetPublicHolidays(year, Key)
