@@ -446,12 +446,23 @@ namespace Planar.Service.API
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
 
+            // TODO: validate the request data dictionary
+            request.Data ??= new Dictionary<string, string?>();
             if (request.NowOverrideValue.HasValue)
+            {
+                request.Data.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value.ToString());
+            }
+
+            if (request.Data.Any())
             {
                 var job = await Scheduler.GetJobDetail(jobKey);
                 if (job == null) { return; }
 
-                job.JobDataMap.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value.ToString());
+                foreach (var item in request.Data)
+                {
+                    job.JobDataMap.Add(item.Key, item.Value ?? string.Empty);
+                }
+
                 await Scheduler.TriggerJob(jobKey, job.JobDataMap);
             }
             else
@@ -459,8 +470,7 @@ namespace Planar.Service.API
                 await Scheduler.TriggerJob(jobKey);
             }
 
-            var auditInfo = request.NowOverrideValue.HasValue ? new { NowOverrideValue = request.NowOverrideValue.Value } : null;
-            AuditJobSafe(jobKey, "job manually invoked", auditInfo);
+            AuditJobSafe(jobKey, "job manually invoked", request);
         }
 
         public async Task QueueInvoke(QueueInvokeJobRequest request)
@@ -494,6 +504,15 @@ namespace Planar.Service.API
             {
                 var timeoutValue = request.Timeout.Value.Ticks.ToString();
                 newTrigger = newTrigger.UsingJobData(Consts.TriggerTimeout, timeoutValue);
+            }
+
+            // TODO: validate the request data dictionary
+            if (request.Data != null && request.Data.Any())
+            {
+                foreach (var item in request.Data)
+                {
+                    newTrigger = newTrigger.UsingJobData(item.Key, item.Value ?? string.Empty);
+                }
             }
 
             // schedule trigger

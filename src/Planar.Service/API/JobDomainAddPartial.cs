@@ -239,6 +239,11 @@ namespace Planar.Service.API
         {
             if (data == null) { return; }
 
+            if (data.Count > 100)
+            {
+                throw new RestValidationException("key", $"{title} data has more then 100 items ({data.Count})");
+            }
+
             var invalidKeys = data
                     .Where(item => !Consts.IsDataKeyValid(item.Key))
                     .Select(item => item.Key)
