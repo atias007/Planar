@@ -10,11 +10,8 @@ namespace Planar.CLI.Entities
         [ActionEnumOption("all")] All,
     }
 
-    public class CliUpdateJobRequest
+    public class CliUpdateJobRequest : CliJobKey
     {
-        [ActionProperty(DefaultOrder = 0)]
-        public string Id { get; set; } = string.Empty;
-
         [ActionProperty(DefaultOrder = 1, Name = "options")]
         public JobUpdateOptions? Options { get; set; }
     }

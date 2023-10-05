@@ -20,7 +20,8 @@
         "PLANAR_SMTPFROMNAME": "Planar",
         "PLANAR_SMTPUSERNAME": "tsahiatias@gmail.com",
         "PLANAR_SMTPPASSWORD": "abbconwfeacvwklo",
-        "PLANAR_AUTHMODE": "all anonymous"
+        "PLANAR_AUTHMODE": "all anonymous",
+        "Serilog:MinimumLevel:Override:Quartz": "Warning"
       },
       "dotnetRunMessages": "true"
     },

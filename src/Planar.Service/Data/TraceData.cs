@@ -28,7 +28,7 @@ namespace Planar.Service.Data
 
         public IQueryable<Trace> GetTrace(int key)
         {
-            return _context.Traces.Where(t => t.Id == key);
+            return _context.Traces.AsNoTracking().Where(t => t.Id == key);
         }
 
         public async Task<PagingResponse<LogDetails>> GetTrace(GetTraceRequest request)
@@ -73,7 +73,7 @@ namespace Planar.Service.Data
 
         public IQueryable<Trace> GetTraceData()
         {
-            return _context.Traces.AsQueryable();
+            return _context.Traces.AsNoTracking().OrderByDescending(t => t.TimeStamp).AsQueryable();
         }
 
         public async Task<string?> GetTraceException(int id)

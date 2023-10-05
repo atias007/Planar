@@ -9,6 +9,7 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
+using Planar.Service.Monitor;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -38,6 +39,9 @@ namespace Planar.Service.API
             var auditValue = PlanarConvert.ToString(info.JobDetails.JobDataMap[key]);
             info.JobDetails.JobDataMap.Remove(key);
             var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
+
+            // Reschedule job
+            MonitorUtil.LockJobEvent(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
             await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
             await Scheduler.PauseJob(info.JobKey);
 
@@ -71,7 +75,12 @@ namespace Planar.Service.API
             }
 
             var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
+
+            // Reschedule job
+            MonitorUtil.LockJobEvent(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
             await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
+
+            // Pause job
             await Scheduler.PauseJob(info.JobKey);
         }
 

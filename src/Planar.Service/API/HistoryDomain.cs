@@ -117,9 +117,9 @@ namespace Planar.Service.API
             var data = await DataLayer.GetHistoryCounter(request);
             var list = new List<StatisticsCountItem>
             {
-                new StatisticsCountItem { Label = nameof(data.Running), Count = data.Running },
-                new StatisticsCountItem { Label = nameof(data.Success), Count = data.Success },
-                new StatisticsCountItem { Label = nameof(data.Fail), Count = data.Fail }
+                new StatisticsCountItem { Label = nameof(data.Running), Count = data?.Running ?? 0 },
+                new StatisticsCountItem { Label = nameof(data.Success), Count = data?.Success ?? 0},
+                new StatisticsCountItem { Label = nameof(data.Fail), Count = data ?.Fail ?? 0 }
             };
             result.Counter = list;
             return result;

@@ -8,6 +8,7 @@ using Planar.CLI.Proxy;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -195,6 +196,42 @@ namespace Planar.CLI.Actions
             var result = await RestProxy.Invoke<PagingResponse<SecurityAuditModel>>(restRequest, cancellationToken);
             var table = CliTableExtensions.GetTable(result.Data);
             return new CliActionResponse(result, table);
+        }
+
+        [Action("working-hours")]
+        public static async Task<CliActionResponse> GetWorkingHours(CliGetWorkingHoursRequest request, CancellationToken cancellationToken = default)
+        {
+            WorkingHoursModel? data = null;
+            RestResponse response;
+
+            if (string.IsNullOrEmpty(request.Calendar))
+            {
+                var restRequest = new RestRequest("service/working-hours", Method.Get);
+                var result = await RestProxy.Invoke<IEnumerable<WorkingHoursModel>>(restRequest, cancellationToken);
+                response = result;
+                if (result.Data == null) { return new CliActionResponse(response); }
+
+                if (result.Data.Count() > 1)
+                {
+                    var calendar = PromptSelection(result.Data.Select(r => r.CalendarName), "calendar", addCancelOption: true);
+                    data = result.Data.FirstOrDefault(r => r.CalendarName == calendar);
+                }
+                else
+                {
+                    data = result.Data.First();
+                }
+            }
+            else
+            {
+                var restRequest = new RestRequest("service/working-hours/{calendar}", Method.Get);
+                restRequest.AddUrlSegment("calendar", request.Calendar);
+                var result = await RestProxy.Invoke<WorkingHoursModel>(restRequest, cancellationToken);
+                response = result;
+                data = result.Data;
+            }
+
+            var table = CliTableExtensions.GetTable(data);
+            return new CliActionResponse(response, table);
         }
 
         public static async Task InitializeLogin()

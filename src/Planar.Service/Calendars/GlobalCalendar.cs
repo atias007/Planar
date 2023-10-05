@@ -10,7 +10,10 @@ namespace Planar.Service.Calendars
     [Serializable]
     public sealed class GlobalCalendar : BasePlanarCalendar
     {
-        private string _calendarCode = string.Empty;
+        public GlobalCalendar()
+        {
+        }
+
         private readonly Dictionary<string, IEnumerable<PublicHoliday>> _publicHolidays = new();
         private readonly object _lock = new();
 
@@ -23,9 +26,9 @@ namespace Planar.Service.Calendars
             {
                 _name = value;
                 if (string.IsNullOrWhiteSpace(_name)) { return; }
-                var calendar = Calendars.WorkingHours.GetCalendar(_name) ?? throw new PlanarCalendarException($"Invalid calendar name '{_name}'");
-                WorkingHours = calendar;
-                _calendarCode = CalendarInfo.GetCalendarCode(_name);
+                var calendar = Calendars.WorkingHours.GetCalendar(_name);
+                calendar ??= Calendars.WorkingHours.GetCalendar(DefaultCalendar.Name);
+                WorkingHours = calendar ?? throw new PlanarCalendarException($"Invalid calendar name '{_name}'");
             }
         }
 
@@ -80,19 +83,19 @@ namespace Planar.Service.Calendars
 
         private IEnumerable<PublicHoliday> GetHolidays(int year)
         {
-            var key = year.ToString();
+            var cacheKey = year.ToString();
 
-            if (_publicHolidays.ContainsKey(key)) { return _publicHolidays[key]; }
+            if (_publicHolidays.TryGetValue(cacheKey, out IEnumerable<PublicHoliday>? cacheResult)) { return cacheResult; }
 
             lock (_lock)
             {
-                if (_publicHolidays.ContainsKey(key)) { return _publicHolidays[key]; }
+                if (_publicHolidays.TryGetValue(cacheKey, out IEnumerable<PublicHoliday>? cacheResult2)) { return cacheResult2; }
 
                 var result =
-                    DateSystem.GetPublicHolidays(year, _calendarCode)
+                    DateSystem.GetPublicHolidays(year, Key)
                     .Where(h => h.Type != PublicHolidayType.School);
 
-                _publicHolidays.Add(key, result);
+                _publicHolidays.Add(cacheKey, result);
                 return result;
             }
         }

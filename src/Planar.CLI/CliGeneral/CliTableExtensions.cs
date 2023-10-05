@@ -1,4 +1,5 @@
-﻿using Planar.API.Common.Entities;
+﻿using Microsoft.Extensions.Primitives;
+using Planar.API.Common.Entities;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.Common;
@@ -6,6 +7,7 @@ using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using YamlDotNet.Serialization;
 
 namespace Planar.CLI
@@ -34,15 +36,19 @@ namespace Planar.CLI
                 }
             }
 
-            table.Table.AddColumns(new int[columns].Select(i => i.ToString()).ToArray());
+            table.Table.AddColumns(new int[columns * 2].Select(i => i.ToString()).ToArray());
             table.Table.HideHeaders();
 
+            index = 0;
             for (int r = 0; r < rows; r++)
             {
-                var rowItems = new string[columns];
+                var rowItems = new string[columns * 2];
                 for (int i = 0; i < columns; i++)
                 {
-                    rowItems[i] = matrix[r, i].EscapeMarkup() ?? string.Empty;
+                    var value = matrix[r, i].EscapeMarkup() ?? string.Empty;
+                    var number = string.IsNullOrEmpty(value) ? string.Empty : (++index).ToString();
+                    rowItems[i * 2] = number;
+                    rowItems[i * 2 + 1] = value;
                 }
 
                 table.Table.AddRow(rowItems);
@@ -60,6 +66,25 @@ namespace Planar.CLI
             table.Table.AddEmptyRow();
             table.Table.AddRow(CliFormat.GetWarningMarkup("make sure you copy the above password now."));
             table.Table.AddRow($"[{CliFormat.WarningColor}]we don't store it and you will not be able to see it again.[/]");
+            return table;
+        }
+
+        public static CliTable GetTable(WorkingHoursModel? response)
+        {
+            var table = new CliTable();
+            if (response == null) { return table; }
+            table.Table.AddColumns("Day Of Week", "Time Scope(s)");
+            foreach (var item in response.Days)
+            {
+                var text = CliTableFormat.GetTimeScopeString(item.Scopes);
+                if (string.IsNullOrWhiteSpace(text))
+                {
+                    text = $"[{CliFormat.ErrorColor}](no scopes)[/]";
+                }
+
+                table.Table.AddRow(item.DayOfWeek, text);
+            }
+
             return table;
         }
 

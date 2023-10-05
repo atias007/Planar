@@ -140,7 +140,7 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<HistoryStatusDto> GetHistoryCounter(CounterRequest counterRequest)
+        public async Task<HistoryStatusDto?> GetHistoryCounter(CounterRequest counterRequest)
         {
             var definition = new CommandDefinition(
                 commandText: "[Statistics].[StatusCounter]",
@@ -154,7 +154,7 @@ namespace Planar.Service.Data
 
         public IQueryable<JobInstanceLog> GetHistoryData()
         {
-            return _context.JobInstanceLogs.AsQueryable();
+            return _context.JobInstanceLogs.AsNoTracking().OrderByDescending(l => l.StartDate).AsQueryable();
         }
 
         public async Task<string?> GetHistoryDataById(long id)

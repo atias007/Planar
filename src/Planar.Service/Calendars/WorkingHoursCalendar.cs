@@ -5,7 +5,8 @@ namespace Planar.Service.Calendars;
 
 public class WorkingHoursCalendar
 {
-    public string Calendar { get; set; } = string.Empty;
+    [YamlMember(Alias = "calendar name")]
+    public string CalendarName { get; set; } = string.Empty;
 
     [YamlMember(Alias = "default scopes")]
     public List<WorkingHourScope> DefaultScopes { get; set; } = new();
