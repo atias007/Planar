@@ -8,7 +8,7 @@ namespace Planar.Service.Calendars
     {
         protected override GlobalCalendar Create(JObject source)
         {
-            var result = source.ToObject<GlobalCalendar>()!;
+            var result = new GlobalCalendar();
             return result;
         }
 

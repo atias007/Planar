@@ -110,6 +110,7 @@ namespace Planar.Service.General
         {
             LoadSystemHook<TLogger, PlanarRestHook>(logger);
             LoadSystemHook<TLogger, PlanarSmtpHook>(logger);
+            LoadSystemHook<TLogger, PlanarLogHook>(logger);
         }
 
         private static void LoadSystemHook<TLogger, THook>(ILogger<TLogger> logger)

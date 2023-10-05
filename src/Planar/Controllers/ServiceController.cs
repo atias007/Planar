@@ -6,6 +6,7 @@ using Planar.Authorization;
 using Planar.Service.API;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -99,6 +100,29 @@ namespace Planar.Controllers
         public async Task<ActionResult<PagingResponse<SecurityAuditModel>>> GetSecurityAudits([FromQuery] SecurityAuditsFilter request)
         {
             var result = await BusinesLayer.GetSecurityAudits(request);
+            return Ok(result);
+        }
+
+        [HttpGet("working-hours/{calendar}")]
+        [AdministratorAuthorize]
+        [SwaggerOperation(OperationId = "get_service_working_hours_calendar", Description = "Get working hours for calendar", Summary = "Get Working Hours For Calendar")]
+        [OkJsonResponse(typeof(WorkingHoursModel))]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public ActionResult<WorkingHoursModel> GetWorkingHours([FromRoute][Required][MaxLength(20)] string calendar)
+        {
+            var result = BusinesLayer.GetWorkingHours(calendar);
+            return Ok(result);
+        }
+
+        [HttpGet("working-hours")]
+        [AdministratorAuthorize]
+        [SwaggerOperation(OperationId = "get_service_working_hours", Description = "Get default working hours", Summary = "Get Default Working")]
+        [OkJsonResponse(typeof(IEnumerable<WorkingHoursModel>))]
+        [NotFoundResponse]
+        public ActionResult<IEnumerable<WorkingHoursModel>> GetDefaultWorkingHours()
+        {
+            var result = BusinesLayer.GetDefaultWorkingHours();
             return Ok(result);
         }
     }

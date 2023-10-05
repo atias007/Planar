@@ -12,12 +12,18 @@ namespace Planar.Startup
     {
         public static void Initialize()
         {
-            var file = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "WorkingHours.yml");
             try
             {
-                Console.WriteLine("[x] Read WorkingHours file");
-                var yml = File.ReadAllText(file);
-                WorkingHours.Calendars = YmlUtil.Deserialize<List<WorkingHoursCalendar>>(yml);
+                var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings);
+                var files = Directory.GetFiles(path, "WorkingHours*.yml", SearchOption.AllDirectories);
+                foreach (var f in files)
+                {
+                    Console.WriteLine($"[x] Read Working Hours file: {new FileInfo(f).Name}");
+                    var yml = File.ReadAllText(f);
+                    var calendar = YmlUtil.Deserialize<WorkingHoursCalendar>(yml);
+                    WorkingHours.Calendars.Add(calendar);
+                }
+
                 FixInitialize();
                 Validate();
             }
@@ -37,19 +43,35 @@ namespace Planar.Startup
             WorkingHours.Calendars ??= new List<WorkingHoursCalendar>();
             WorkingHours.Calendars.ForEach(c =>
             {
-                c.Calendar = c.Calendar?.ToLower();
+                c.CalendarName = c.CalendarName?.ToLower();
                 c.DefaultScopes ??= new List<WorkingHourScope>();
+                c.DefaultScopes = c.DefaultScopes.OrderBy(s => s.Start).ToList();
                 c.Days ??= new List<WorkingHoursDay>();
+                c.Days = c.Days.OrderBy(d => d.DayOfWeekMember).ToList();
                 c.Days.ForEach(d =>
                 {
                     d.DayOfWeek = d.DayOfWeek?.ToLower();
                     d.Scopes ??= new List<WorkingHourScope>();
+                    d.Scopes = d.Scopes.OrderBy(s => s.Start).ToList();
                 });
             });
         }
 
         private static void Validate()
         {
+            // duplicate calendars
+            var names = WorkingHours.Calendars.Select(c => c.CalendarName).ToList();
+            if (names.Count != names.Distinct().Count())
+            {
+                throw new PlanarCalendarException($"calendar name is duplicated");
+            }
+
+            // mandatory default working hours
+            if (!WorkingHours.Calendars.Exists(c => c.CalendarName == DefaultCalendar.Name))
+            {
+                throw new PlanarCalendarException($"calendar name '{DefaultCalendar.Name}' is mandatory");
+            }
+
             foreach (var calendar in WorkingHours.Calendars)
             {
                 ValidateCalendar(calendar);
@@ -61,23 +83,50 @@ namespace Planar.Startup
             // no days
             if (calendar.Days.Count == 0)
             {
-                throw new PlanarCalendarException($"Calendar '{calendar.Calendar}' han no days");
+                throw new PlanarCalendarException($"calendar name'{calendar.CalendarName}' han no days");
             }
 
-            // calendar empty or not exists
-            var exists =
-                calendar.Calendar == "default" ||
-                CalendarInfo.Contains(calendar.Calendar);
+            // duplicate days
+            var names = calendar.Days.Select(d => d.DayOfWeek).ToList();
+            if (names.Count != names.Distinct().Count())
+            {
+                throw new PlanarCalendarException($"calendar name '{calendar.CalendarName}' has duplicated days");
+            }
+
+            // default scopes
+            calendar.DefaultScopes?.ForEach(s => ValidateDefaultScope(s, calendar));
+
+            // missing days
+            Enum.GetNames(typeof(WorkingHoursDayType))
+                .Where(n => n != nameof(WorkingHoursDayType.None))
+                .ToList()
+                .ForEach(n =>
+                {
+                    if (!calendar.Days.Exists(d => d.DayOfWeekMember.ToString() == n))
+                    {
+                        if (calendar.DefaultScopes == null || !calendar.DefaultScopes.Any())
+                        {
+                            throw new PlanarCalendarException($"calendar name '{calendar.CalendarName}' has no day '{n}' and no defult scopes");
+                        }
+                        else
+                        {
+                            calendar.Days.Add(new WorkingHoursDay { DayOfWeek = n, DefaultScopes = true });
+                        }
+                    }
+                });
+
+            // calendar name empty or not exists
+            var exists = CalendarInfo.Contains(calendar.CalendarName);
 
             if (!exists)
             {
-                if (string.IsNullOrWhiteSpace(calendar.Calendar))
+                if (string.IsNullOrWhiteSpace(calendar.CalendarName))
                 {
-                    throw new PlanarCalendarException($"Calendar is null or empty");
+                    throw new PlanarCalendarException($"calendar name is null or empty");
                 }
                 else
                 {
-                    throw new PlanarCalendarException($"Calendar '{calendar}' is not supported");
+                    throw new PlanarCalendarException($"calendar name '{calendar}' is not supported");
                 }
             }
 
@@ -87,29 +136,35 @@ namespace Planar.Startup
 
         private static void ValidateDay(WorkingHoursDay day, WorkingHoursCalendar calendar)
         {
+            // day of week ==> none
+            if (day.DayOfWeekMember == WorkingHoursDayType.None)
+            {
+                throw new PlanarCalendarException($"day of week is none in calendar '{calendar.CalendarName}'");
+            }
+
             // day of week empty or not exists
             if (day.DayOfWeekMember == WorkingHoursDayType.None)
             {
                 if (string.IsNullOrWhiteSpace(day.DayOfWeek))
                 {
-                    throw new PlanarCalendarException($"Day of week is null or empty in calendar '{calendar.Calendar}'");
+                    throw new PlanarCalendarException($"day of week is null or empty in calendar '{calendar.CalendarName}'");
                 }
                 else
                 {
-                    throw new PlanarCalendarException($"Day of week '{day.DayOfWeek}' in calendar '{calendar.Calendar}' is not supported");
+                    throw new PlanarCalendarException($"day of week '{day.DayOfWeek}' in calendar '{calendar.CalendarName}' is not supported");
                 }
             }
 
             // has default scopes but no default scopes at calendar
             if (day.DefaultScopes && !calendar.DefaultScopes.Any())
             {
-                throw new PlanarCalendarException($"Day of week '{day.DayOfWeek}' declare default scopes = true but calendar '{calendar.Calendar}' has no default scopes");
+                throw new PlanarCalendarException($"day of week '{day.DayOfWeek}' declare default scopes = true but calendar '{calendar.CalendarName}' has no default scopes");
             }
 
             // both scopes and default scopes
             if (day.DefaultScopes && day.Scopes.Any())
             {
-                throw new PlanarCalendarException($"Day of week '{day.DayOfWeek}' declare both default scopes = true and scopes. calendar '{calendar.Calendar}'");
+                throw new PlanarCalendarException($"day of week '{day.DayOfWeek}' declare both default scopes = true and scopes. calendar '{calendar.CalendarName}'");
             }
 
             // validate scopes
@@ -120,17 +175,35 @@ namespace Planar.Startup
         {
             if (scope.Start.TotalDays >= 1)
             {
-                throw new PlanarCalendarException($"Scope start time '{scope.Start:\\(d\\)\\ hh\\:mm\\:ss}' is invalid in day of week '{day.DayOfWeek}' in calendar '{calendar.Calendar}'");
+                throw new PlanarCalendarException($"scope start time '{scope.Start:\\(d\\)\\ hh\\:mm\\:ss}' is invalid in day of week '{day.DayOfWeek}' in calendar '{calendar.CalendarName}'");
             }
 
             if (scope.End.TotalDays >= 1)
             {
-                throw new PlanarCalendarException($"Scope end time '{scope.End:\\(d\\)\\ hh\\:mm\\:ss}' is invalid in day of week '{day.DayOfWeek}' in calendar '{calendar.Calendar}'");
+                throw new PlanarCalendarException($"scope end time '{scope.End:\\(d\\)\\ hh\\:mm\\:ss}' is invalid in day of week '{day.DayOfWeek}' in calendar '{calendar.CalendarName}'");
             }
 
             if (scope.Start >= scope.End)
             {
-                throw new PlanarCalendarException($"Scope start time '{scope.Start:hh\\:mm\\:ss}' is greater than or equal to end time '{scope.End:hh\\:mm\\:ss}' in day of week '{day.DayOfWeek}' in calendar '{calendar.Calendar}'");
+                throw new PlanarCalendarException($"scope start time '{scope.Start:hh\\:mm\\:ss}' is greater than or equal to end time '{scope.End:hh\\:mm\\:ss}' in day of week '{day.DayOfWeek}' in calendar '{calendar.CalendarName}'");
+            }
+        }
+
+        private static void ValidateDefaultScope(WorkingHourScope scope, WorkingHoursCalendar calendar)
+        {
+            if (scope.Start.TotalDays >= 1)
+            {
+                throw new PlanarCalendarException($"default scope start time '{scope.Start:\\(d\\)\\ hh\\:mm\\:ss}' is invalid in calendar '{calendar.CalendarName}'");
+            }
+
+            if (scope.End.TotalDays >= 1)
+            {
+                throw new PlanarCalendarException($"default scope end time '{scope.End:\\(d\\)\\ hh\\:mm\\:ss}' is invalid in calendar '{calendar.CalendarName}'");
+            }
+
+            if (scope.Start >= scope.End)
+            {
+                throw new PlanarCalendarException($"default scope start time '{scope.Start:hh\\:mm\\:ss}' is greater than or equal to end time '{scope.End:hh\\:mm\\:ss}' in calendar '{calendar.CalendarName}'");
             }
         }
     }

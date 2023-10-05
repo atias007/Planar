@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Service.Calendars;
 using Planar.Service.Model;
 
 namespace Planar.Service.MapperProfiles
@@ -16,6 +17,8 @@ namespace Planar.Service.MapperProfiles
             CreateMap<ClusterSettings, ClusterSettingsInfo>();
             CreateMap<SmtpSettings, SmtpSettingsInfo>();
             CreateMap<RetentionSettings, RetentionSettingsInfo>();
+
+            CreateMap<WorkingHourScope, WorkingHourScopeModel>();
         }
     }
 }

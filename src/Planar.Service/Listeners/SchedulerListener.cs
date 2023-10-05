@@ -49,6 +49,7 @@ namespace Planar.Service.Listeners
         {
             return Task.Run(() =>
             {
+                if (IsSystemJobKey(jobKey)) { return; }
                 if (IsLock(nameof(JobDeleted), jobKey.ToString())) { return; }
                 var info = GetJobKeyMonitorSystemInfo(jobKey, "deleted");
                 SafeSystemScan(MonitorEvents.JobDeleted, info, null);
@@ -60,7 +61,7 @@ namespace Planar.Service.Listeners
             return Task.Run(() =>
             {
                 if (IsLock(nameof(JobInterrupted), jobKey.ToString())) { return; }
-                var info = GetJobKeyMonitorSystemInfo(jobKey, "interrupted");
+                var info = GetJobKeyMonitorSystemInfo(jobKey, "canceled");
                 SafeSystemScan(MonitorEvents.JobCanceled, info, null);
             }, cancellationToken);
         }
@@ -69,6 +70,7 @@ namespace Planar.Service.Listeners
         {
             return Task.Run(() =>
             {
+                if (IsSystemJobKey(jobKey)) { return; }
                 if (IsLock(nameof(JobPaused), jobKey.ToString())) { return; }
                 var info = GetJobKeyMonitorSystemInfo(jobKey, "paused");
                 SafeSystemScan(MonitorEvents.JobPaused, info, null);
@@ -79,9 +81,10 @@ namespace Planar.Service.Listeners
         {
             return Task.Run(() =>
             {
+                if (IsSystemJobKey(jobKey)) { return; }
                 if (IsLock(nameof(JobResumed), jobKey.ToString())) { return; }
                 var info = GetJobKeyMonitorSystemInfo(jobKey, "resumed");
-                SafeSystemScan(MonitorEvents.JobPaused, info, null);
+                SafeSystemScan(MonitorEvents.JobResumed, info, null);
             }, cancellationToken);
         }
 
@@ -92,22 +95,12 @@ namespace Planar.Service.Listeners
 
         public Task JobsPaused(string jobGroup, CancellationToken cancellationToken = default)
         {
-            return Task.Run(() =>
-            {
-                if (IsLock(nameof(JobsPaused), jobGroup)) { return; }
-                var info = GetSimpleMonitorSystemInfo("Job group {{JobGroup}} was paused");
-                SafeSystemScan(MonitorEvents.JobGroupPaused, info, null);
-            }, cancellationToken);
+            return Task.CompletedTask;
         }
 
         public Task JobsResumed(string jobGroup, CancellationToken cancellationToken = default)
         {
-            return Task.Run(() =>
-            {
-                if (IsLock(nameof(JobsResumed), jobGroup)) { return; }
-                var info = GetSimpleMonitorSystemInfo("Job group {{JobGroup}} was resumed");
-                SafeSystemScan(MonitorEvents.JobGroupResumed, info, null);
-            }, cancellationToken);
+            return Task.CompletedTask;
         }
 
         public Task JobUnscheduled(TriggerKey triggerKey, CancellationToken cancellationToken = default)
@@ -117,7 +110,19 @@ namespace Planar.Service.Listeners
 
         public Task SchedulerError(string msg, SchedulerException cause, CancellationToken cancellationToken = default)
         {
-            return Task.CompletedTask;
+            return Task.Run(() =>
+            {
+                if (IsLock(nameof(SchedulerError), null)) { return; }
+                _logger.LogError(cause, "Scheduler error with message {Message}", msg);
+                var info = new MonitorSystemInfo
+                (
+                    "Scheduler has error with message '{{ErrorMessage}}' at {{MachineName}}"
+                );
+
+                info.MessagesParameters.Add("ErrorMessage", msg);
+                info.AddMachineName();
+                SafeSystemScan(MonitorEvents.SchedulerError, info, cause);
+            }, cancellationToken);
         }
 
         public Task SchedulerInStandbyMode(CancellationToken cancellationToken = default)
@@ -131,15 +136,15 @@ namespace Planar.Service.Listeners
 
         public Task SchedulerShutdown(CancellationToken cancellationToken = default)
         {
-            // *** DONT USE TASK.RUN ***
-            if (IsLock(nameof(SchedulerShutdown), null)) { return Task.CompletedTask; }
-            var info = GetSimpleMonitorSystemInfo("Scheduler was shutdown at {{MachineName}}");
-            SafeSystemScan(MonitorEvents.SchedulerShutdown, info, null);
             return Task.CompletedTask;
         }
 
         public Task SchedulerShuttingdown(CancellationToken cancellationToken = default)
         {
+            // *** DONT USE TASK.RUN ***
+            if (IsLock(nameof(SchedulerShutdown), null)) { return Task.CompletedTask; }
+            var info = GetSimpleMonitorSystemInfo("Scheduler shuting down at {{MachineName}}");
+            SafeSystemScan(MonitorEvents.SchedulerShutdown, info, null);
             return Task.CompletedTask;
         }
 
@@ -148,6 +153,7 @@ namespace Planar.Service.Listeners
             return Task.Run(() =>
             {
                 if (IsLock(nameof(SchedulerStarted), null)) { return; }
+                _logger.LogInformation("Scheduler started");
                 var info = GetSimpleMonitorSystemInfo("Scheduler was started at {{MachineName}}");
                 SafeSystemScan(MonitorEvents.SchedulerStarted, info, null);
             }, cancellationToken);
@@ -239,7 +245,7 @@ namespace Planar.Service.Listeners
         private static bool IsLock(string operation, string? key)
         {
             var cacheKey = GetCacheKey(operation, key ?? string.Empty);
-            return LockUtil.TryLock(cacheKey, TimeSpan.FromSeconds(10));
+            return LockUtil.TryLock(cacheKey, TimeSpan.FromSeconds(5));
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿calendar name: default              # to get list of avaliable calendars use:
+﻿calendar name: israel               # to get list of avaliable calendars use:
                                     #   (1) cli command: planar-cli service calendars
                                     #   (2) api call: GET /service/calendars
                                     # use 'default' for default working hours calendar (no special days, only day of week)
@@ -9,7 +9,7 @@ default scopes:                     # default time scopes for reuse later in thi
 
 days:                               # list of special days
 - day of week: sunday               # OPTIONS: sunday, monday, tuesday, wednesday, thursday, friday, saturday, public holiday eve, public holiday, bank holiday, authorities holiday, optional holiday, observance holiday
-  default scopes: true              # use the default scopes for this day
+  default scopes: true              # use the default calendar scopes for this day
 - day of week: monday
   default scopes: true
 - day of week: tuesday
@@ -21,13 +21,15 @@ days:                               # list of special days
 - day of week: friday
   scopes:                           # use custom scopes for this day (can have multiple scopes)
     - start: 8:00:00
-      end: 14:00:00
+      end: 15:00:00
 - day of week: saturday
-  scopes: null
+  scopes: null                      # day off - no working hours
 - day of week: public holiday eve   # the day before public holiday (only relevant for israel calendar, EREV-CHAG)
-  default scopes: true
+  scopes:
+    - start: 8:00:00
+      end: 12:00:00
 - day of week: public holiday       # Public holiday (in israel calendar -> jewish religios holiday)
-  default scopes: true
+  scopes: null
 - day of week: bank holiday         # Bank holiday, banks and offices are closed (not relevant for israel calendar)
   default scopes: true
 - day of week: authorities holiday  # Authorities are closed (not relevant for israel calendar)

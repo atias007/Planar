@@ -315,7 +315,7 @@ namespace Planar.CLI.Actions
         [Action("running-log")]
         public static async Task<CliActionResponse> GetRunningData(CliFireInstanceIdRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("job/{instanceId}/running-data", Method.Get)
+            var restRequest = new RestRequest("job/running-data/{instanceId}", Method.Get)
                 .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<RunningJobData>(restRequest, cancellationToken);
@@ -327,7 +327,7 @@ namespace Planar.CLI.Actions
         [Action("running-ex")]
         public static async Task<CliActionResponse> GetRunningExceptions(CliFireInstanceIdRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("job/{instanceId}/running-data", Method.Get)
+            var restRequest = new RestRequest("job/running-data/{instanceId}", Method.Get)
                 .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<RunningJobData>(restRequest, cancellationToken);

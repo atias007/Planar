@@ -1,17 +1,16 @@
-﻿calendar name: default              # to get list of avaliable calendars use:
+﻿calendar name: italy                # to get list of avaliable calendars use:
                                     #   (1) cli command: planar-cli service calendars
                                     #   (2) api call: GET /service/calendars
                                     # use 'default' for default working hours calendar (no special days, only day of week)
 
 default scopes:                     # default time scopes for reuse later in this file
-  - start: 8:00:00                  # start time of day (local clock)
-    end: 20:00:00                   # end time of day (local clock)
-
+  - start: 10:00:00                 # start time of day (local clock)
+    end: 18:00:00                   # end time of day (local clock)
 days:                               # list of special days
 - day of week: sunday               # OPTIONS: sunday, monday, tuesday, wednesday, thursday, friday, saturday, public holiday eve, public holiday, bank holiday, authorities holiday, optional holiday, observance holiday
-  default scopes: true              # use the default scopes for this day
+  scopes: null                      # day off - no working hours
 - day of week: monday
-  default scopes: true
+  default scopes: true              # use the default calendar scopes for this day
 - day of week: tuesday
   default scopes: true
 - day of week: wednesday
@@ -20,19 +19,23 @@ days:                               # list of special days
   default scopes: true
 - day of week: friday
   scopes:                           # use custom scopes for this day (can have multiple scopes)
-    - start: 8:00:00
-      end: 14:00:00
+    - start: 6:00:00
+      end: 10:00:00
+    - start: 20:00:00
+      end: 23:00:00
 - day of week: saturday
-  scopes: null
-- day of week: public holiday eve   # the day before public holiday (only relevant for israel calendar, EREV-CHAG)
+  default scopes: true
+- day of week: public holiday eve   # the day before public holiday (only relevant for israel calendar)
   default scopes: true
 - day of week: public holiday       # Public holiday (in israel calendar -> jewish religios holiday)
-  default scopes: true
+  scopes: null
 - day of week: bank holiday         # Bank holiday, banks and offices are closed (not relevant for israel calendar)
   default scopes: true
 - day of week: authorities holiday  # Authorities are closed (not relevant for israel calendar)
-  default scopes: true
+  scopes: null
 - day of week: optional holiday     # Majority of people take a day off (in israel calendar -> jewish religios HOL HA-MOED)
   default scopes: true
 - day of week: observance holiday   # Optional festivity, no paid day off (not relevant for israel calendar)
-  default scopes: true
+  scopes:                           
+    - start: 6:00:00
+      end: 16:00:00
