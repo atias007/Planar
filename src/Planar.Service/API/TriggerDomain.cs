@@ -54,6 +54,11 @@ namespace Planar.Service.API
                     throw new RestConflictException($"data with key '{request.DataKey}' already exists");
                 }
 
+                if (info.Trigger.JobDataMap.Count >= Consts.MaximumJobDataItems)
+                {
+                    throw new RestValidationException("trigger data", $"trigger data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
+                }
+
                 info.Trigger.JobDataMap.Put(request.DataKey, request.DataValue);
                 AuditTriggerSafe(info.TriggerKey, GetTriggerAuditDescription("update", request.DataKey), new { value = request.DataValue?.Trim() });
             }

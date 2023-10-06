@@ -156,7 +156,7 @@ namespace CommonJob
             }
 
             var dic = map
-                .Where(k => !k.Key.StartsWith(Consts.ConstPrefix) && !k.Key.StartsWith(Consts.QuartzPrefix))
+                .Where(k => Consts.IsDataKeyValid(k.Key))
                 .OrderBy(k => k.Key)
                 .ToDictionary(k => k.Key, v => PlanarConvert.ToString(v.Value));
 

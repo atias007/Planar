@@ -19,6 +19,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using static Quartz.Logging.OperationName;
 
 namespace Planar.Service.API
 {
@@ -58,6 +59,11 @@ namespace Planar.Service.API
                 if (mode == PutMode.Add)
                 {
                     throw new RestConflictException($"data with key '{request.DataKey}' already exists");
+                }
+
+                if (info.JobDetails.JobDataMap.Count >= Consts.MaximumJobDataItems)
+                {
+                    throw new RestValidationException("job data", $"job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
                 }
 
                 info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
@@ -454,7 +460,7 @@ namespace Planar.Service.API
         public async Task Invoke(InvokeJobRequest request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
-            CheckForInvalidDataKeys(request.Data, "invoke");
+            ValidateDataMap(request.Data, "invoke");
 
             request.Data ??= new Dictionary<string, string?>();
             if (request.NowOverrideValue.HasValue)
@@ -464,15 +470,8 @@ namespace Planar.Service.API
 
             if (request.Data.Any())
             {
-                var job = await Scheduler.GetJobDetail(jobKey);
-                if (job == null) { return; }
-
-                foreach (var item in request.Data)
-                {
-                    job.JobDataMap.Add(item.Key, item.Value ?? string.Empty);
-                }
-
-                await Scheduler.TriggerJob(jobKey, job.JobDataMap);
+                var data = new JobDataMap(request.Data);
+                await Scheduler.TriggerJob(jobKey, data);
             }
             else
             {
@@ -487,7 +486,7 @@ namespace Planar.Service.API
             // build new job
             var jobKey = await JobKeyHelper.GetJobKey(request);
             ValidateSystemJob(jobKey);
-            CheckForInvalidDataKeys(request.Data, "queue invoke");
+            ValidateDataMap(request.Data, "queue invoke");
 
             var job = await Scheduler.GetJobDetail(jobKey);
             if (job == null) { return; }
