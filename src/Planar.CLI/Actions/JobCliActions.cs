@@ -371,7 +371,6 @@ namespace Planar.CLI.Actions
         {
             var prm = JsonMapper.Map<QueueInvokeJobRequest, CliQueueInvokeJobRequest>(request);
             prm ??= new QueueInvokeJobRequest();
-            if (prm.Timeout == TimeSpan.Zero) { prm.Timeout = null; }
 
             var restRequest = new RestRequest("job/queue-invoke", Method.Post)
                 .AddBody(prm);
@@ -678,7 +677,6 @@ namespace Planar.CLI.Actions
         {
             var prm = JsonMapper.Map<InvokeJobRequest, CliInvokeJobRequest>(request);
             prm ??= new InvokeJobRequest();
-            if (prm.NowOverrideValue == DateTime.MinValue) { prm.NowOverrideValue = null; }
 
             var restRequest = new RestRequest("job/invoke", Method.Post)
                 .AddBody(prm);

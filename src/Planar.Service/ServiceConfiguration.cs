@@ -88,6 +88,7 @@ namespace Planar.Service
 
             services.AddTransient<UserData>();
             services.AddTransient<GroupData>();
+            services.AddTransient<AutoMapperData>();
             services.AddTransient<MonitorData>();
             services.AddTransient<ConfigData>();
             services.AddTransient<ClusterData>();

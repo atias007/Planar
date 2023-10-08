@@ -15,20 +15,15 @@ using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
 
 namespace Planar.Service.SystemJobs
 {
-    public class PersistDataJob : SystemJob, IJob
+    public sealed class PersistDataJob : SystemJob, IJob
     {
         private readonly ILogger<PersistDataJob> _logger;
+        private readonly IServiceScopeFactory _scopeFactory;
 
-        private readonly HistoryData _dal;
-        private readonly ClusterUtil _clusterUtil;
-        private readonly SchedulerUtil _schedulerUtil;
-
-        public PersistDataJob(IServiceProvider serviceProvider)
+        public PersistDataJob(IServiceScopeFactory scopeFactory, ILogger<PersistDataJob> logger)
         {
-            _logger = serviceProvider.GetRequiredService<ILogger<PersistDataJob>>();
-            _dal = serviceProvider.GetRequiredService<HistoryData>();
-            _clusterUtil = serviceProvider.GetRequiredService<ClusterUtil>();
-            _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
+            _logger = logger;
+            _scopeFactory = scopeFactory;
         }
 
         public Task Execute(IJobExecutionContext context)
@@ -53,11 +48,14 @@ namespace Planar.Service.SystemJobs
 
         private async Task DoWork()
         {
-            var runningJobs = await _schedulerUtil.GetPersistanceRunningJobsInfo();
+            using var scope = _scopeFactory.CreateScope();
+            var schedulerUtil = scope.ServiceProvider.GetRequiredService<SchedulerUtil>();
+            var runningJobs = await schedulerUtil.GetPersistanceRunningJobsInfo();
 
             if (AppSettings.Cluster.Clustering)
             {
-                var clusterRunningJobs = await _clusterUtil.GetPersistanceRunningJobsInfo();
+                var clusterUtil = scope.ServiceProvider.GetRequiredService<ClusterUtil>();
+                var clusterRunningJobs = await clusterUtil.GetPersistanceRunningJobsInfo();
                 runningJobs ??= new List<PersistanceRunningJobsInfo>();
 
                 if (clusterRunningJobs != null)
@@ -78,9 +76,10 @@ namespace Planar.Service.SystemJobs
                     Duration = context.Duration,
                 };
 
+                var dal = scope.ServiceProvider.GetService<HistoryData>();
                 await Policy.Handle<Exception>()
                         .WaitAndRetryAsync(3, i => TimeSpan.FromSeconds(1 * i))
-                        .ExecuteAsync(() => _dal?.PersistJobInstanceData(log));
+                        .ExecuteAsync(() => dal?.PersistJobInstanceData(log));
             }
         }
     }

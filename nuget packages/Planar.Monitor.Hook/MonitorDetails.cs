@@ -13,7 +13,6 @@ namespace Planar.Monitor.Hook
         public string? TriggerName { get; set; }
         public string? TriggerGroup { get; set; }
         public string TriggerId { get; set; } = string.Empty;
-        public string? TriggerDescription { get; set; }
         public string? Calendar { get; set; }
         public string? Author { get; set; }
         public Dictionary<string, string> MergedJobDataMap { get; set; } = new Dictionary<string, string>();

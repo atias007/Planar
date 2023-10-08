@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs
 {
-    public class ClusterHealthCheckJob : SystemJob, IJob
+    public sealed class ClusterHealthCheckJob : SystemJob, IJob
     {
         private readonly ILogger<ClusterHealthCheckJob> _logger;
         private readonly IServiceProvider _serviceProvider;

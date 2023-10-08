@@ -2,8 +2,11 @@
 
 PLAN FOR V 1.6.0
 ----------------
-- add data to job test, invoke, queue-invoke
-- add api/cli to cancel queue-invoke trigger
+- postman: delete queue-invoke after success create one
+- postman: test queue-invoke with data and validate the creation of data
+- postman: remove "Demo.HelloWorld With Data" job before start
+- test smtp hook with exception + event with arguments
+- test update hook for existsing monitor to hook not exists
 - build anomaly job statistics exception count
 - add anomaly monitor events
 - add daily report system job
@@ -13,6 +16,8 @@ PLAN FOR V 1.6.0
 - add WorkflowJob
 - add SSIS job
 - add SSRS job
+
+- validate the argument details in add monitor
 
 - cli command to changhe interval/count
 - cli command to changhe cron expr
@@ -221,3 +226,5 @@ V1.6.0
 - move work hours settings to settings folder & convert yo yml
 - bug fix -> schedule job with trigger with calendar with no future dates:
 - limit data entries in add/update/invoke/queue-invoke job
+- add data to job test, invoke, queue-invoke
+- postman collection tests

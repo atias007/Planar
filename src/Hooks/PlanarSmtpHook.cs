@@ -3,6 +3,7 @@ using MimeKit;
 using Planar.Common;
 using Planar.Monitor.Hook;
 using System.Text;
+using System.Web;
 
 namespace Planar.Hooks
 {
@@ -57,9 +58,8 @@ namespace Planar.Hooks
             var sb = new StringBuilder();
 
             sb.AppendLine($"Title: {details.MonitorTitle}");
-            sb.AppendLine($"Event Title: {details.EventTitle}");
             sb.AppendLine($"Event: {details.EventTitle}");
-            sb.AppendLine($"Job: {details.JobGroup}.{details.JobName}");
+            sb.AppendLine($"Job Key: {details.JobGroup}.{details.JobName}");
             sb.AppendLine($"Job Description: {details.JobDescription}");
             sb.AppendLine($"Author: {details.Author}");
             sb.AppendLine($"Fire Instance Id: {details.FireInstanceId}");
@@ -91,6 +91,10 @@ table {
   border-collapse: collapse;
   direction: ltr;
 }
+p {
+  font-family: arial, sans-serif;
+  direction: ltr;
+}
 td, th {
   border: 1px solid #dddddd;
   text-align: left;
@@ -117,16 +121,24 @@ td, th {
 
             var sb = new StringBuilder();
             sb.AppendLine("<table>");
-            sb.AppendLine(itempTemplate.Replace("{{KEY}}", "Title").Replace("{{VALUE}}", details.MonitorTitle));
-            sb.AppendLine(itempTemplate.Replace("{{KEY}}", "Event").Replace("{{VALUE}}", details.EventTitle));
-            sb.AppendLine(itempTemplate.Replace("{{KEY}}", "Job Key").Replace("{{VALUE}}", $"{details.JobGroup}.{details.JobName}"));
-            sb.AppendLine(itempTemplate.Replace("{{KEY}}", "Job Description").Replace("{{VALUE}}", details.JobDescription));
-            sb.AppendLine(itempTemplate.Replace("{{KEY}}", "Author").Replace("{{VALUE}}", details.Author));
-            sb.AppendLine(itempTemplate.Replace("{{KEY}}", "Fire Instance Id").Replace("{{VALUE}}", details.FireInstanceId));
-            sb.AppendLine(itempTemplate.Replace("{{KEY}}", "Fire Time").Replace("{{VALUE}}", details.FireTime.ToString()));
+            sb.AppendLine(itempTemplate.Replace("{{KEY}}", "Title").Replace("{{VALUE}}", HttpUtility.HtmlEncode(details.MonitorTitle)));
+            sb.AppendLine(itempTemplate.Replace("{{KEY}}", "Event").Replace("{{VALUE}}", HttpUtility.HtmlEncode(details.EventTitle)));
+            sb.AppendLine(itempTemplate.Replace("{{KEY}}", "Job Key").Replace("{{VALUE}}", HttpUtility.HtmlEncode($"{details.JobGroup}.{details.JobName}")));
+            sb.AppendLine(itempTemplate.Replace("{{KEY}}", "Job Description").Replace("{{VALUE}}", HttpUtility.HtmlEncode(details.JobDescription)));
+            sb.AppendLine(itempTemplate.Replace("{{KEY}}", "Author").Replace("{{VALUE}}", HttpUtility.HtmlEncode(details.Author)));
+            sb.AppendLine(itempTemplate.Replace("{{KEY}}", "Fire Instance Id").Replace("{{VALUE}}", HttpUtility.HtmlEncode(details.FireInstanceId)));
+            sb.AppendLine(itempTemplate.Replace("{{KEY}}", "Fire Time").Replace("{{VALUE}}", HttpUtility.HtmlEncode(details.FireTime.ToString())));
             sb.AppendLine(itempTemplate.Replace("{{KEY}}", "Run Time").Replace("{{VALUE}}", FormatTimeSpan(details.JobRunTime)));
-            sb.AppendLine(itempTemplate.Replace("{{KEY}}", "Trigger Name").Replace("{{VALUE}}", details.TriggerName));
+            sb.AppendLine(itempTemplate.Replace("{{KEY}}", "Trigger Name").Replace("{{VALUE}}", HttpUtility.HtmlEncode(details.TriggerName)));
             sb.AppendLine("</table>");
+
+            if (!string.IsNullOrEmpty(details.Exception))
+            {
+                sb.AppendLine("<p>");
+                sb.AppendLine(HttpUtility.HtmlEncode(details.Exception));
+                sb.AppendLine("</p>");
+            }
+
             return template.Replace("{{TABLE}}", sb.ToString());
         }
 

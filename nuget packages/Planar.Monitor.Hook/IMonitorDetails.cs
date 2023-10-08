@@ -17,7 +17,6 @@ namespace Planar.Monitor.Hook
         TimeSpan JobRunTime { get; }
         Dictionary<string, string> MergedJobDataMap { get; }
         bool Recovering { get; }
-        string? TriggerDescription { get; }
         string? TriggerGroup { get; }
         string TriggerId { get; }
         string? TriggerName { get; }
