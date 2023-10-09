@@ -76,7 +76,7 @@ public class MonitorUtil : IMonitorUtil
         }
     }
 
-    public async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception? exception)
+    internal async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, IJobExecutionContext context, Exception? exception)
     {
         MonitorDetails? details = null;
 
@@ -118,7 +118,7 @@ public class MonitorUtil : IMonitorUtil
         }
     }
 
-    public async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception? exception, CancellationToken cancellationToken = default)
+    internal async Task<ExecuteMonitorResult> ExecuteMonitor(MonitorAction action, MonitorEvents @event, MonitorSystemInfo info, Exception? exception, CancellationToken cancellationToken = default)
     {
         MonitorSystemDetails? details = null;
 
@@ -152,7 +152,7 @@ public class MonitorUtil : IMonitorUtil
         }
     }
 
-    public static void LockJobEvent(JobKey key, int lockSeconds, params MonitorEvents[] events)
+    internal static void LockJobEvent(JobKey key, int lockSeconds, params MonitorEvents[] events)
     {
         foreach (var item in events)
         {
@@ -172,7 +172,7 @@ public class MonitorUtil : IMonitorUtil
             });
     }
 
-    public void Scan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default, CancellationToken cancellationToken = default)
+    internal void Scan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default, CancellationToken cancellationToken = default)
     {
         _ = ScanInner(@event, info, exception, cancellationToken)
             .ContinueWith(task =>
@@ -184,7 +184,7 @@ public class MonitorUtil : IMonitorUtil
             }, cancellationToken);
     }
 
-    public async Task Validate()
+    internal async Task Validate()
     {
         using var scope = _serviceScopeFactory.CreateScope();
         var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
@@ -254,7 +254,6 @@ public class MonitorUtil : IMonitorUtil
 
     private static MonitorDetails GetMonitorDetails(MonitorAction action, IJobExecutionContext context, Exception? exception)
     {
-        // ****** ATTENTION: any changes should reflect in TestJobExecutionContext ******
         var result = new MonitorDetails
         {
             Calendar = context.Trigger.CalendarName,
@@ -278,8 +277,6 @@ public class MonitorUtil : IMonitorUtil
         FillMonitor(result, action, exception);
 
         return result;
-
-        // ****** ATTENTION: any changes should reflect in TestJobExecutionContext ******
     }
 
     private static MonitorSystemDetails GetMonitorDetails(MonitorAction action, MonitorSystemInfo details, Exception? exception)

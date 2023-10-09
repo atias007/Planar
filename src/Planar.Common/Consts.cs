@@ -34,9 +34,9 @@ namespace Planar
         public const string MaxRetries = "__Job_Retry_Max";
         public const int DefaultMaxRetries = 3;
 
-        public const string QueueInvokeTriggerGroup = "QueueInvoke";
+        public const string QueueInvokeTriggerGroup = "__QueueInvoke";
         public const string RetryTriggerGroup = "__RetryTrigger";
-        public const string RetryTriggerNamePrefix = "__RetryCount";
+        public const string RetryTriggerNamePrefix = "Retry.Count";
         public const string PlanarSystemGroup = "__System";
 
         public const string JobId = "__Job_Id";

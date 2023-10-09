@@ -178,14 +178,14 @@ namespace Planar.CLI.Actions
             return result;
         }
 
-        protected static void AssertCreated(RestResponse<JobIdResponse> response)
+        protected static void AssertCreated(RestResponse<PlanarIdResponse> response)
         {
             if (!response.IsSuccessful) { return; }
             Util.SetLastJobOrTriggerId(response);
-            Console.WriteLine(response?.Data?.Id);
+            Console.WriteLine(response.Data?.Id);
         }
 
-        protected static void AssertJobUpdated(RestResponse<JobIdResponse> response)
+        protected static void AssertJobUpdated(RestResponse<PlanarIdResponse> response)
         {
             if (!response.IsSuccessful) { return; }
             Util.SetLastJobOrTriggerId(response);

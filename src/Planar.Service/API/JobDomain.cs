@@ -481,7 +481,7 @@ namespace Planar.Service.API
             AuditJobSafe(jobKey, "job manually invoked", request);
         }
 
-        public async Task QueueInvoke(QueueInvokeJobRequest request)
+        public async Task<PlanarIdResponse> QueueInvoke(QueueInvokeJobRequest request)
         {
             // build new job
             var jobKey = await JobKeyHelper.GetJobKey(request);
@@ -489,7 +489,7 @@ namespace Planar.Service.API
             ValidateDataMap(request.Data, "queue invoke");
 
             var job = await Scheduler.GetJobDetail(jobKey);
-            if (job == null) { return; }
+            if (job == null) { return new PlanarIdResponse(); }
 
             // build new trigger
             var triggerId = ServiceUtil.GenerateId();
@@ -528,6 +528,8 @@ namespace Planar.Service.API
             await Scheduler.ScheduleJob(newTrigger.Build());
 
             AuditJobSafe(jobKey, "job queue invoked", request);
+
+            return new PlanarIdResponse { Id = triggerId };
         }
 
         public async Task Pause(JobOrTriggerKey request)

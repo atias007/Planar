@@ -2,11 +2,8 @@
 
 PLAN FOR V 1.6.0
 ----------------
-- postman: delete queue-invoke after success create one
 - postman: test queue-invoke with data and validate the creation of data
 - postman: remove "Demo.HelloWorld With Data" job before start
-- test smtp hook with exception + event with arguments
-- test update hook for existsing monitor to hook not exists
 - build anomaly job statistics exception count
 - add anomaly monitor events
 - add daily report system job

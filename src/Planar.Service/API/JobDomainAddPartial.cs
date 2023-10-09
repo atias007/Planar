@@ -100,7 +100,7 @@ namespace Planar.Service.API
             ValidateTriggerCalendar(pool, scheduler);
         }
 
-        public async Task<JobIdResponse> AddByPath(SetJobPathRequest request)
+        public async Task<PlanarIdResponse> AddByPath(SetJobPathRequest request)
         {
             await ValidateAddPath(request);
             var yml = await GetJobFileContent(request);
@@ -718,7 +718,7 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task<JobIdResponse> Add(SetJobDynamicRequest request)
+        private async Task<PlanarIdResponse> Add(SetJobDynamicRequest request)
         {
             // Validation
             ValidateRequestNoNull(request);
@@ -763,7 +763,7 @@ namespace Planar.Service.API
             AuditJobSafe(jobKey, "job added", request);
 
             // Return Id
-            return new JobIdResponse { Id = id };
+            return new PlanarIdResponse { Id = id };
         }
 
         private static void ValidateTriggerNeverFire(Exception ex)

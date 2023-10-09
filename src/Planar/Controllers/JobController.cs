@@ -24,10 +24,10 @@ namespace Planar.Controllers
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_job_folder", Description = "Add job by yml job file", Summary = "Add Job By Yml")]
         [JsonConsumes]
-        [CreatedResponse(typeof(JobIdResponse))]
+        [CreatedResponse(typeof(PlanarIdResponse))]
         [BadRequestResponse]
         [ConflictResponse]
-        public async Task<ActionResult<JobIdResponse>> AddByPath([FromBody] SetJobPathRequest request)
+        public async Task<ActionResult<PlanarIdResponse>> AddByPath([FromBody] SetJobPathRequest request)
         {
             var result = await BusinesLayer.AddByPath(request);
             return CreatedAtAction(nameof(Get), result, result);
@@ -37,10 +37,10 @@ namespace Planar.Controllers
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "put_job_id", Description = "Update job by id", Summary = "Update Job By Id")]
         [JsonConsumes]
-        [CreatedResponse(typeof(JobIdResponse))]
+        [CreatedResponse(typeof(PlanarIdResponse))]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<JobIdResponse>> UpdateById(UpdateJobRequest request)
+        public async Task<ActionResult<PlanarIdResponse>> UpdateById(UpdateJobRequest request)
         {
             var result = await BusinesLayer.UpdateById(request);
             return CreatedAtAction(nameof(Get), result, result);
@@ -182,13 +182,13 @@ namespace Planar.Controllers
         [TesterAuthorize]
         [SwaggerOperation(OperationId = "post_job_queue_invoke", Description = "Queue invokation of job", Summary = "Queue Invokation Of Job")]
         [JsonConsumes]
-        [AcceptedContentResponse]
+        [CreatedResponse(typeof(PlanarIdResponse))]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<IActionResult> QueueInvoke([FromBody] QueueInvokeJobRequest request)
+        public async Task<ActionResult<PlanarIdResponse>> QueueInvoke([FromBody] QueueInvokeJobRequest request)
         {
-            await BusinesLayer.QueueInvoke(request);
-            return Accepted();
+            var response = await BusinesLayer.QueueInvoke(request);
+            return Created(string.Empty, response);
         }
 
         [HttpPost("pause")]

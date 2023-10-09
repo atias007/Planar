@@ -97,7 +97,7 @@ namespace Planar.Service.Listeners
                 var retryTrigger = TriggerBuilder
                         .Create()
                         .ForJob(context.JobDetail)
-                        .WithIdentity($"{Consts.RetryTriggerNamePrefix}_{numTries}_{name}", Consts.RetryTriggerGroup)
+                        .WithIdentity($"{Consts.RetryTriggerNamePrefix}.{numTries}.{name}", Consts.RetryTriggerGroup)
                         .UsingJobData(Consts.TriggerId, ServiceUtil.GenerateId())
                         .UsingJobData(Consts.RetrySpan, span.GetValueOrDefault().ToSimpleTimeString())
                         .UsingJobData(Consts.RetryCounter, numTries.ToString())
