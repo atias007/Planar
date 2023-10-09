@@ -1,5 +1,4 @@
 ﻿using FluentValidation;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -10,7 +9,6 @@ using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
-using Planar.Service.Validation;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -102,7 +100,7 @@ namespace Planar.Service.API
             ValidateTriggerCalendar(pool, scheduler);
         }
 
-        public async Task<JobIdResponse> AddByPath(SetJobPathRequest request)
+        public async Task<PlanarIdResponse> AddByPath(SetJobPathRequest request)
         {
             await ValidateAddPath(request);
             var yml = await GetJobFileContent(request);
@@ -199,12 +197,10 @@ namespace Planar.Service.API
 
         private static void BuildJobData(SetJobRequest metadata, IJobDetail job)
         {
-            if (metadata.JobData != null)
+            if (metadata.JobData == null) { return; }
+            foreach (var item in metadata.JobData)
             {
-                foreach (var item in metadata.JobData)
-                {
-                    job.JobDataMap.Put(item.Key, item.Value);
-                }
+                job.JobDataMap.Put(item.Key, item.Value);
             }
         }
 
@@ -236,9 +232,25 @@ namespace Planar.Service.API
             return allTriggers;
         }
 
-        private static void CheckForInvalidDataKeys(Dictionary<string, string?>? data, string title)
+        private static void ValidateDataMap(Dictionary<string, string?>? data, string title)
         {
             if (data == null) { return; }
+
+            if (data.Count > Consts.MaximumJobDataItems)
+            {
+                throw new RestValidationException("key", $"{title} data has more then {Consts.MaximumJobDataItems} items ({data.Count})");
+            }
+
+            if (data.Any(item => string.IsNullOrWhiteSpace(item.Key)))
+            {
+                throw new RestValidationException("key", "job data key must have value");
+            }
+
+            foreach (var item in data)
+            {
+                ValidateRange(item.Key, 1, 100, "key", "job data");
+                ValidateMaxLength(item.Value, 1000, "value", "job data");
+            }
 
             var invalidKeys = data
                     .Where(item => !Consts.IsDataKeyValid(item.Key))
@@ -434,11 +446,6 @@ namespace Planar.Service.API
             if (string.IsNullOrWhiteSpace(metadata.Name)) throw new RestValidationException("name", "job name is mandatory");
             if (string.IsNullOrWhiteSpace(metadata.JobType)) throw new RestValidationException("type", "job type is mandatory");
 
-            if (metadata.JobData.Any(item => string.IsNullOrWhiteSpace(item.Key)))
-            {
-                throw new RestValidationException("key", "job data key must have value");
-            }
-
             #endregion Mandatory
 
             #region JobType
@@ -477,12 +484,6 @@ namespace Planar.Service.API
             ValidateMaxLength(metadata.Author, 200, "author", "job");
             ValidateMaxLength(metadata.Description, 100, "description", "job");
 
-            foreach (var item in metadata.JobData)
-            {
-                ValidateRange(item.Key, 1, 100, "key", "job data");
-                ValidateMaxLength(item.Value, 1000, "value", "job data");
-            }
-
             if (metadata.LogRetentionDays.GetValueOrDefault() > AppSettings.Retention.JobLogRetentionDays)
             {
                 throw new RestValidationException("log retention days", $"log retention days can not be greater than {AppSettings.Retention.JobLogRetentionDays} (global app settings)");
@@ -497,7 +498,7 @@ namespace Planar.Service.API
                 throw new RestValidationException("concurrent", $"job with concurrent=true can not have data. persist data with concurrent running may cause unexpected results");
             }
 
-            CheckForInvalidDataKeys(metadata.JobData, "job");
+            ValidateDataMap(metadata.JobData, "job");
 
             #endregion JobData
 
@@ -590,7 +591,7 @@ namespace Planar.Service.API
                 t.TriggerData ??= new Dictionary<string, string?>();
                 if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid (preserved value)"); }
                 if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"simple trigger name '{t.Name}' has invalid prefix"); }
-                CheckForInvalidDataKeys(t.TriggerData, "trigger");
+                ValidateDataMap(t.TriggerData, "trigger");
             }
         }
 
@@ -717,7 +718,7 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task<JobIdResponse> Add(SetJobDynamicRequest request)
+        private async Task<PlanarIdResponse> Add(SetJobDynamicRequest request)
         {
             // Validation
             ValidateRequestNoNull(request);
@@ -762,7 +763,7 @@ namespace Planar.Service.API
             AuditJobSafe(jobKey, "job added", request);
 
             // Return Id
-            return new JobIdResponse { Id = id };
+            return new PlanarIdResponse { Id = id };
         }
 
         private static void ValidateTriggerNeverFire(Exception ex)

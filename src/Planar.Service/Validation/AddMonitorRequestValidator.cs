@@ -35,14 +35,14 @@ namespace Planar.Service.Validation
             RuleFor(r => r.GroupName)
                 .Must(g => dal.IsGroupNameExists(g).Result)
                 .When(r => !string.IsNullOrWhiteSpace(r.GroupName))
-                .WithMessage("{PropertyName} field with value '{PropertyValue}' does not exist");
+                .WithMessage("{PropertyName} '{PropertyValue}' does not exist");
 
             RuleFor(r => r.Hook).NotEmpty();
 
             RuleFor(r => r.Hook)
                 .Must(ValidationUtil.IsHookExists)
                 .When(r => !string.IsNullOrWhiteSpace(r.Hook))
-                .WithMessage("{PropertyName} field with value '{PropertyValue}' does not exist");
+                .WithMessage("{PropertyName} '{PropertyValue}' does not exist");
 
             RuleFor(r => r.EventArgument).NotEmpty()
                 .When(r => !string.IsNullOrWhiteSpace(r.EventName) && MonitorEventsExtensions.IsMonitorEventHasArguments(r.EventName))

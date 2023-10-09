@@ -41,7 +41,7 @@ namespace Planar.CLI.Actions
             var body = new SetJobPathRequest { Folder = request.Folder };
             var restRequest = new RestRequest("job/folder", Method.Post)
                 .AddBody(body);
-            var result = await RestProxy.Invoke<JobIdResponse>(restRequest, cancellationToken);
+            var result = await RestProxy.Invoke<PlanarIdResponse>(restRequest, cancellationToken);
 
             AssertCreated(result);
             return new CliActionResponse(result);
@@ -371,11 +371,11 @@ namespace Planar.CLI.Actions
         {
             var prm = JsonMapper.Map<QueueInvokeJobRequest, CliQueueInvokeJobRequest>(request);
             prm ??= new QueueInvokeJobRequest();
-            if (prm.Timeout == TimeSpan.Zero) { prm.Timeout = null; }
 
             var restRequest = new RestRequest("job/queue-invoke", Method.Post)
                 .AddBody(prm);
-            var result = await RestProxy.Invoke(restRequest, cancellationToken);
+            var result = await RestProxy.Invoke<PlanarIdResponse>(restRequest, cancellationToken);
+            AssertCreated(result);
             return new CliActionResponse(result);
         }
 
@@ -513,7 +513,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("job", Method.Put)
                 .AddBody(body);
 
-            var result = await RestProxy.Invoke<JobIdResponse>(restRequest, cancellationToken);
+            var result = await RestProxy.Invoke<PlanarIdResponse>(restRequest, cancellationToken);
             AssertJobUpdated(result);
             return new CliActionResponse(result);
         }
@@ -678,7 +678,6 @@ namespace Planar.CLI.Actions
         {
             var prm = JsonMapper.Map<InvokeJobRequest, CliInvokeJobRequest>(request);
             prm ??= new InvokeJobRequest();
-            if (prm.NowOverrideValue == DateTime.MinValue) { prm.NowOverrideValue = null; }
 
             var restRequest = new RestRequest("job/invoke", Method.Post)
                 .AddBody(prm);

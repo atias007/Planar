@@ -155,12 +155,29 @@ namespace Planar.Job
 
         protected void PutJobData(string key, object? value)
         {
+            var data = _context.JobDetails.JobDataMap;
+            if (data.Count >= Consts.MaximumJobDataItems && !ContainsKey(key, data))
+            {
+                throw new PlanarJobException($"Job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
+            }
+
             _baseJobFactory.PutJobData(key, value);
         }
 
         protected void PutTriggerData(string key, object? value)
         {
+            var data = _context.TriggerDetails.TriggerDataMap;
+            if (data.Count >= Consts.MaximumJobDataItems && !ContainsKey(key, data))
+            {
+                throw new PlanarJobException($"Trigger data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
+            }
+
             _baseJobFactory.PutTriggerData(key, value);
+        }
+
+        private bool ContainsKey(string key, IDataMap data)
+        {
+            return data.Any(k => string.Equals(k.Key, key, StringComparison.OrdinalIgnoreCase));
         }
 
         protected void UpdateProgress(byte value)

@@ -15,7 +15,7 @@ namespace Planar.Service.API
 {
     public partial class JobDomain
     {
-        public async Task<JobIdResponse> UpdateById(UpdateJobRequest request)
+        public async Task<PlanarIdResponse> UpdateById(UpdateJobRequest request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
             ValidateSystemJob(jobKey);
@@ -147,7 +147,7 @@ namespace Planar.Service.API
             await Resolve<JobData>().UpdateJobProperty(property);
         }
 
-        private async Task<JobIdResponse> Update(SetJobDynamicRequest request, UpdateJobOptions options)
+        private async Task<PlanarIdResponse> Update(SetJobDynamicRequest request, UpdateJobOptions options)
         {
             var metadata = new JobUpdateMetadata();
 
@@ -162,7 +162,7 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task<JobIdResponse> UpdateInner(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+        private async Task<PlanarIdResponse> UpdateInner(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
         {
             // Validation
             await ValidateUpdateJob(request, options, metadata);
@@ -207,7 +207,7 @@ namespace Planar.Service.API
             MonitorUtil.SafeSystemScan(_serviceProvider, Logger, MonitorEvents.ClusterNodeJoin, info);
 
             // Return Id
-            return new JobIdResponse { Id = metadata.JobId };
+            return new PlanarIdResponse { Id = metadata.JobId };
         }
 
         private async Task UpdateJobDetails(SetJobDynamicRequest request, JobUpdateMetadata metadata)

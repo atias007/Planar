@@ -19,6 +19,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using static Quartz.Logging.OperationName;
 
 namespace Planar.Service.API
 {
@@ -58,6 +59,11 @@ namespace Planar.Service.API
                 if (mode == PutMode.Add)
                 {
                     throw new RestConflictException($"data with key '{request.DataKey}' already exists");
+                }
+
+                if (info.JobDetails.JobDataMap.Count >= Consts.MaximumJobDataItems)
+                {
+                    throw new RestValidationException("job data", $"job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
                 }
 
                 info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
@@ -454,31 +460,36 @@ namespace Planar.Service.API
         public async Task Invoke(InvokeJobRequest request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateDataMap(request.Data, "invoke");
 
+            request.Data ??= new Dictionary<string, string?>();
             if (request.NowOverrideValue.HasValue)
             {
-                var job = await Scheduler.GetJobDetail(jobKey);
-                if (job == null) { return; }
+                request.Data.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value.ToString());
+            }
 
-                job.JobDataMap.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value.ToString());
-                await Scheduler.TriggerJob(jobKey, job.JobDataMap);
+            if (request.Data.Any())
+            {
+                var data = new JobDataMap(request.Data);
+                await Scheduler.TriggerJob(jobKey, data);
             }
             else
             {
                 await Scheduler.TriggerJob(jobKey);
             }
 
-            var auditInfo = request.NowOverrideValue.HasValue ? new { NowOverrideValue = request.NowOverrideValue.Value } : null;
-            AuditJobSafe(jobKey, "job manually invoked", auditInfo);
+            AuditJobSafe(jobKey, "job manually invoked", request);
         }
 
-        public async Task QueueInvoke(QueueInvokeJobRequest request)
+        public async Task<PlanarIdResponse> QueueInvoke(QueueInvokeJobRequest request)
         {
             // build new job
             var jobKey = await JobKeyHelper.GetJobKey(request);
             ValidateSystemJob(jobKey);
+            ValidateDataMap(request.Data, "queue invoke");
+
             var job = await Scheduler.GetJobDetail(jobKey);
-            if (job == null) { return; }
+            if (job == null) { return new PlanarIdResponse(); }
 
             // build new trigger
             var triggerId = ServiceUtil.GenerateId();
@@ -505,10 +516,20 @@ namespace Planar.Service.API
                 newTrigger = newTrigger.UsingJobData(Consts.TriggerTimeout, timeoutValue);
             }
 
+            if (request.Data != null && request.Data.Any())
+            {
+                foreach (var item in request.Data)
+                {
+                    newTrigger = newTrigger.UsingJobData(item.Key, item.Value ?? string.Empty);
+                }
+            }
+
             // schedule trigger
             await Scheduler.ScheduleJob(newTrigger.Build());
 
             AuditJobSafe(jobKey, "job queue invoked", request);
+
+            return new PlanarIdResponse { Id = triggerId };
         }
 
         public async Task Pause(JobOrTriggerKey request)

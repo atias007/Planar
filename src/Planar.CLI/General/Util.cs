@@ -20,7 +20,7 @@ namespace Planar.CLI.General
             return result;
         }
 
-        public static void SetLastJobOrTriggerId(RestResponse<JobIdResponse> response)
+        public static void SetLastJobOrTriggerId(RestResponse<PlanarIdResponse> response)
         {
             if (response == null) { return; }
             if (!response.IsSuccessful) { return; }

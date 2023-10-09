@@ -62,15 +62,6 @@ namespace Planar.Service.Data
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<string?> GetGroupName(int id)
-        {
-            return await _context.Groups
-                .AsNoTracking()
-                .Where(g => g.Id == id)
-                .Select(g => g.Name)
-                .FirstOrDefaultAsync();
-        }
-
         public async Task<PagingResponse<GroupInfo>> GetGroups(IPagingRequest request)
         {
             var result = await _context.Groups

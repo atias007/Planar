@@ -17,15 +17,15 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs
 {
-    public class StatisticsJob : SystemJob, IJob
+    public sealed class StatisticsJob : SystemJob, IJob
     {
         private readonly ILogger<StatisticsJob> _logger;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IServiceScopeFactory _serviceScope;
 
-        public StatisticsJob(IServiceProvider serviceProvider)
+        public StatisticsJob(IServiceScopeFactory serviceScope, ILogger<StatisticsJob> logger)
         {
-            _logger = serviceProvider.GetRequiredService<ILogger<StatisticsJob>>();
-            _serviceProvider = serviceProvider;
+            _logger = logger;
+            _serviceScope = serviceScope;
         }
 
         public Task Execute(IJobExecutionContext context)
@@ -43,9 +43,10 @@ namespace Planar.Service.SystemJobs
 
         private async Task SafeDoWork()
         {
+            using var scope = _serviceScope.CreateScope();
             try
             {
-                var data = _serviceProvider.GetRequiredService<MetricsData>();
+                var data = scope.ServiceProvider.GetRequiredService<MetricsData>();
                 var rows = await data.SetMaxConcurrentExecution();
                 _logger.LogDebug("statistics job execute {Method} with {Total} effected row(s)", nameof(data.SetMaxConcurrentExecution), rows);
             }
@@ -56,7 +57,7 @@ namespace Planar.Service.SystemJobs
 
             try
             {
-                var rows = await FillAnomaly();
+                var rows = await FillAnomaly(scope.ServiceProvider);
                 _logger.LogDebug("statistics job execute {Method} with {Total} effected row(s)", nameof(FillAnomaly), rows);
             }
             catch (Exception ex)
@@ -66,7 +67,7 @@ namespace Planar.Service.SystemJobs
 
             try
             {
-                var data = _serviceProvider.GetRequiredService<MetricsData>();
+                var data = scope.ServiceProvider.GetRequiredService<MetricsData>();
                 var rows = await data.FillJobCounters();
                 _logger.LogDebug("statistics job execute {Method} with {Total} effected row(s)", nameof(MetricsData.FillJobCounters), rows);
             }
@@ -77,7 +78,7 @@ namespace Planar.Service.SystemJobs
 
             try
             {
-                var data = _serviceProvider.GetRequiredService<MetricsData>();
+                var data = scope.ServiceProvider.GetRequiredService<MetricsData>();
                 var rows = await data.BuildJobStatistics();
                 _logger.LogDebug("statistics job execute {Method} with {Total} effected row(s)", nameof(data.BuildJobStatistics), rows);
             }
@@ -105,9 +106,10 @@ namespace Planar.Service.SystemJobs
             IEnumerable<JobDurationStatistic> statistics = new List<JobDurationStatistic>();
             try
             {
-                var data = _serviceProvider.GetRequiredService<MetricsData>();
+                using var scope = _serviceScope.CreateScope();
+                var data = scope.ServiceProvider.GetRequiredService<MetricsData>();
                 statistics = await data.GetJobDurationStatistics();
-                var cache = _serviceProvider.GetRequiredService<IMemoryCache>();
+                var cache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
                 cache.Set(nameof(MetricsData.GetJobDurationStatistics), statistics, StatisticsUtil.DefaultCacheSpan);
             }
             catch (Exception ex)
@@ -124,9 +126,10 @@ namespace Planar.Service.SystemJobs
 
             try
             {
-                var data = _serviceProvider.GetRequiredService<MetricsData>();
+                using var scope = _serviceScope.CreateScope();
+                var data = scope.ServiceProvider.GetRequiredService<MetricsData>();
                 statistics = await data.GetJobEffectedRowsStatistics();
-                var cache = _serviceProvider.GetRequiredService<IMemoryCache>();
+                var cache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
                 cache.Set(nameof(MetricsData.GetJobEffectedRowsStatistics), statistics, StatisticsUtil.DefaultCacheSpan);
             }
             catch (Exception ex)
@@ -137,9 +140,9 @@ namespace Planar.Service.SystemJobs
             return statistics;
         }
 
-        private async Task<int> FillAnomaly()
+        private async Task<int> FillAnomaly(IServiceProvider serviceProvider)
         {
-            var data = _serviceProvider.GetRequiredService<MetricsData>();
+            var data = serviceProvider.GetRequiredService<MetricsData>();
             var logsQuery = data.GetNullAnomaly();
             var config = new MapperConfiguration(cfg => cfg.AddProfile<MetricsProfile>());
             var mapper = config.CreateMapper();

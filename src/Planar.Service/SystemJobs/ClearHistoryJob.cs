@@ -14,15 +14,15 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs
 {
-    public class ClearHistoryJob : SystemJob, IJob
+    public sealed class ClearHistoryJob : SystemJob, IJob
     {
         private readonly ILogger<ClearHistoryJob> _logger;
-        private readonly IServiceProvider _serviceProvider;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public ClearHistoryJob(IServiceProvider serviceProvider)
+        public ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, ILogger<ClearHistoryJob> logger)
         {
-            _logger = serviceProvider.GetRequiredService<ILogger<ClearHistoryJob>>();
-            _serviceProvider = serviceProvider;
+            _logger = logger;
+            _serviceScopeFactory = serviceScopeFactory;
         }
 
         public Task Execute(IJobExecutionContext context)
@@ -56,7 +56,8 @@ namespace Planar.Service.SystemJobs
         {
             try
             {
-                var data = _serviceProvider.GetRequiredService<MetricsData>();
+                using var scope = _serviceScopeFactory.CreateScope();
+                var data = scope.ServiceProvider.GetRequiredService<MetricsData>();
                 var rows = await data.ClearStatisticsTables(AppSettings.Retention.StatisticsRetentionDays);
                 _logger.LogDebug("clear statistics tables rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.StatisticsRetentionDays, rows);
             }
@@ -70,7 +71,8 @@ namespace Planar.Service.SystemJobs
         {
             try
             {
-                var data = _serviceProvider.GetRequiredService<HistoryData>();
+                using var scope = _serviceScopeFactory.CreateScope();
+                var data = scope.ServiceProvider.GetRequiredService<HistoryData>();
                 var rows = await data.ClearJobLogTable(AppSettings.Retention.JobLogRetentionDays);
                 _logger.LogDebug("clear job log table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.JobLogRetentionDays, rows);
             }
@@ -84,9 +86,10 @@ namespace Planar.Service.SystemJobs
         {
             try
             {
-                var scheduler = _serviceProvider.GetRequiredService<IScheduler>();
+                using var scope = _serviceScopeFactory.CreateScope();
+                var scheduler = scope.ServiceProvider.GetRequiredService<IScheduler>();
                 var jobs = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
-                var data = _serviceProvider.GetRequiredService<HistoryData>();
+                var data = scope.ServiceProvider.GetRequiredService<HistoryData>();
 
                 foreach (var item in jobs)
                 {
@@ -110,7 +113,8 @@ namespace Planar.Service.SystemJobs
         {
             try
             {
-                var data = _serviceProvider.GetRequiredService<TraceData>();
+                using var scope = _serviceScopeFactory.CreateScope();
+                var data = scope.ServiceProvider.GetRequiredService<TraceData>();
                 var rows = await data.ClearTraceTable(AppSettings.Retention.TraceRetentionDays);
                 _logger.LogDebug("clear trace table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.TraceRetentionDays, rows);
             }
@@ -122,7 +126,8 @@ namespace Planar.Service.SystemJobs
 
         private async Task<IEnumerable<string>> GetExistsJobIds()
         {
-            var scheduler = _serviceProvider.GetRequiredService<IScheduler>();
+            using var scope = _serviceScopeFactory.CreateScope();
+            var scheduler = scope.ServiceProvider.GetRequiredService<IScheduler>();
             var existsKeys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
             var filterKeys = existsKeys.Where(x => x.Group != Consts.PlanarSystemGroup).ToList();
             var jobDetails = filterKeys.Select(k => scheduler.GetJobDetail(k).Result);
@@ -139,7 +144,8 @@ namespace Planar.Service.SystemJobs
         {
             try
             {
-                var data = _serviceProvider.GetRequiredService<JobData>();
+                using var scope = _serviceScopeFactory.CreateScope();
+                var data = scope.ServiceProvider.GetRequiredService<JobData>();
                 var ids = await data.GetJobPropertiesIds();
                 var rows = 0;
                 foreach (var id in ids)
@@ -164,7 +170,8 @@ namespace Planar.Service.SystemJobs
         {
             try
             {
-                var data = _serviceProvider.GetRequiredService<MetricsData>();
+                using var scope = _serviceScopeFactory.CreateScope();
+                var data = scope.ServiceProvider.GetRequiredService<MetricsData>();
                 var ids1 = await data.GetJobDurationStatisticsIds();
 
                 var rows = 0;

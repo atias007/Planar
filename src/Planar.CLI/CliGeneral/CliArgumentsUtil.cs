@@ -91,6 +91,31 @@ namespace Planar.CLI
 
         public string Module { get; set; }
 
+        private static KeyValuePair<string, string> ParseKeyValuePair(string value)
+        {
+            var index = value.IndexOf('=');
+            if (index == -1)
+            {
+                throw new CliException($"value '{value}' is invalid. value must be in format <key>=<value>");
+            }
+
+            var key = value[..index];
+            var val = value.Length <= index + 1 ? string.Empty : value[(index + 1)..];
+            return new KeyValuePair<string, string>(key, val ?? string.Empty);
+        }
+
+        public static void AddDataToDictionary(PropertyInfo propertyInfo, object instance, string value)
+        {
+            if (propertyInfo.GetValue(instance) is not Dictionary<string, string> dictionary)
+            {
+                dictionary = new Dictionary<string, string>();
+            }
+
+            var kvp = ParseKeyValuePair(value);
+            dictionary.Add(kvp.Key, kvp.Value);
+            propertyInfo.SetValue(instance, dictionary);
+        }
+
         public static object? ParseEnum(Type type, string? value)
         {
             if (value == null) { return null; }
@@ -423,20 +448,24 @@ namespace Planar.CLI
             if (prop == null) { return; }
             if (instance == null) { return; }
 
-            if (string.Equals(value, prop.Name, StringComparison.OrdinalIgnoreCase) && prop.PropertyType == typeof(bool))
-            {
-                prop.SetValue(instance, true);
-                return;
-            }
-
             try
             {
+                // bool data type
+                if (string.Equals(value, prop.Name, StringComparison.OrdinalIgnoreCase) &&
+                    prop.PropertyType == typeof(bool))
+                {
+                    prop.SetValue(instance, true);
+                    return;
+                }
+
+                // Enum data type
                 object? objValue = value;
                 if (value != null && prop.PropertyType.BaseType == typeof(Enum))
                 {
                     objValue = ParseEnum(prop.PropertyType, value);
                 }
 
+                // Nullable Enum data type
                 if (value != null &&
                     prop.PropertyType.GenericTypeArguments.Length == 1 &&
                     prop.PropertyType.GenericTypeArguments[0].BaseType == typeof(Enum))
@@ -446,13 +475,21 @@ namespace Planar.CLI
                     return;
                 }
 
+                // TimeSpan data type
                 if (value != null && prop.PropertyType == typeof(TimeSpan))
                 {
-                    objValue = TimeSpan.Parse(Convert.ToString(value));
+                    objValue = TimeSpan.Parse(Convert.ToString(value), CultureInfo.CurrentCulture);
                     prop.SetValue(instance, objValue);
                     return;
                 }
 
+                if (value != null && prop.PropertyType == typeof(Dictionary<string, string>))
+                {
+                    AddDataToDictionary(prop, instance, value);
+                    return;
+                }
+
+                // Check for nullable types
                 var nullableType = Nullable.GetUnderlyingType(prop.PropertyType);
                 if (nullableType == null)
                 {
