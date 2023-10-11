@@ -102,19 +102,19 @@ namespace Planar.Common
 
         public IExecuteJobPropertiesBuilder WithJobData(string key, object? value)
         {
-            _properties.JobData.Add(key, value);
+            _properties.JobData.AddOrUpdate(key, value);
             return this;
         }
 
         public IExecuteJobPropertiesBuilder WithTriggerData(string key, object? value)
         {
-            _properties.TriggerData.Add(key, value);
+            _properties.TriggerData.AddOrUpdate(key, value);
             return this;
         }
 
         public IExecuteJobPropertiesBuilder WithGlobalSettings(string key, object? value)
         {
-            _properties.GlobalSettings.Add(key, PlanarConvert.ToString(value));
+            _properties.GlobalSettings.AddOrUpdate(key, PlanarConvert.ToString(value));
             return this;
         }
 
