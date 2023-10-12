@@ -5,8 +5,10 @@ using Planar.Service.Data;
 using Quartz;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,6 +20,7 @@ namespace Planar.Service.SystemJobs
         private readonly IServiceScopeFactory _serviceScope;
 
         private record struct HistorySummaryCounters(int Total, int Success, int Fail, int Running, int Retries, int Concurrent);
+        private record struct DateScope(DateTime From, DateTime To);
 
         public SummaryReportJob(IServiceScopeFactory serviceScope, ILogger<StatisticsJob> logger)
         {
@@ -29,7 +32,7 @@ namespace Planar.Service.SystemJobs
         {
             const string description = "System job for generating and send summary report";
             var span = TimeSpan.FromHours(24);
-            var start = DateTime.Now.Date.AddDays(1).AddSeconds(5);
+            var start = DateTime.Now.Date.AddDays(1).AddSeconds(1);
             await Schedule<SummaryReportJob>(scheduler, description, span, start, stoppingToken);
         }
 
@@ -37,23 +40,114 @@ namespace Planar.Service.SystemJobs
         {
             try
             {
-                var summaryTask = GetSummaryData();
-                var concurrentTask = GetMaxConcurrentExecutionData();
+                var dateScope = GetDateScope(context);
+                var summaryTask = GetSummaryData(dateScope);
+                var concurrentTask = GetMaxConcurrentExecutionData(dateScope);
                 var summaryCounters = GetSummaryCounter(await summaryTask, await concurrentTask);
+                var summaryTable = GetSummaryTable(await summaryTask);
 
                 var main = GetResource("main");
-                main = ReplacePlaceHolder(main, "ReportDate", DateTime.Now.AddDays(-1).ToString("dd/MM/yyyy"));
-                main = ReplacePlaceHolder(main, "CubeTotal", summaryCounters.Total.ToString("N0"));
-                main = ReplacePlaceHolder(main, "CubeSuccess", summaryCounters.Success.ToString("N0"));
-                main = ReplacePlaceHolder(main, "CubeFail", summaryCounters.Fail.ToString("N0"));
-                main = ReplacePlaceHolder(main, "CubeRunning", summaryCounters.Running.ToString("N0"));
-                main = ReplacePlaceHolder(main, "CubeReries", summaryCounters.Retries.ToString("N0"));
-                main = ReplacePlaceHolder(main, "CubeConcurrent", summaryCounters.Concurrent.ToString("N0"));
+                main = ReplacePlaceHolder(main, "ReportDate", dateScope.From.ToString("dd/MM/yyyy"));
+                main = ReplacePlaceHolder(main, "CubeTotal", GetSummaryRowCounter(summaryCounters.Total));
+                main = ReplacePlaceHolder(main, "CubeSuccess", GetSummaryRowCounter(summaryCounters.Success));
+                main = ReplacePlaceHolder(main, "CubeFail", GetSummaryRowCounter(summaryCounters.Fail));
+                main = ReplacePlaceHolder(main, "CubeRunning", GetSummaryRowCounter(summaryCounters.Running));
+                main = ReplacePlaceHolder(main, "CubeReries", GetSummaryRowCounter(summaryCounters.Retries));
+                main = ReplacePlaceHolder(main, "CubeConcurrent", GetSummaryRowCounter(summaryCounters.Concurrent));
+                main = ReplacePlaceHolder(main, "SummaryTable", summaryTable);
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Fail to send summary report: {Message}", ex.Message);
             }
+        }
+
+        private static DateScope GetDateScope(IJobExecutionContext context)
+        {
+            const string dataKey = "report.date";
+            var from = DateTime.Now.Date.AddDays(-1);
+
+            if (context.MergedJobDataMap.ContainsKey(dataKey))
+            {
+                var dateObject = context.MergedJobDataMap.Get(dataKey);
+                var dateString = Convert.ToString(dateObject);
+                if (DateTime.TryParse(dateString, CultureInfo.CurrentCulture, DateTimeStyles.None, out var reportDate))
+                {
+                    from = reportDate.Date;
+                }
+            }
+
+            var to = from.AddDays(1);
+            return new DateScope(from, to);
+        }
+
+        private static string GetSummaryTable(IEnumerable<HistorySummary> data)
+        {
+            if (!data.Any())
+            {
+                return GetResource("empty_table");
+            }
+
+            var rows = new StringBuilder();
+
+            foreach (var item in data)
+            {
+                var rowTemplate = GetResource("summary_row");
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobId", item.JobId.ToString());
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobKey", $"{item.JobGroup}.{item.JobName}");
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobType", item.JobType);
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "Total", GetSummaryRowCounter(item.Total));
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "Success", GetSummaryRowCounter(item.Success));
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "Fail", GetSummaryRowCounter(item.Fail));
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "Running", GetSummaryRowCounter(item.Running));
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "Retries", GetSummaryRowCounter(item.Retries));
+                rowTemplate = SetSummaryRowColors(rowTemplate, item);
+                rows.AppendLine(rowTemplate);
+            }
+
+            var table = GetResource("summary_table");
+            table = ReplacePlaceHolder(table, "SummaryRows", rows.ToString());
+            return table;
+        }
+
+        private static string GetSummaryRowCounter(int counter)
+        {
+            if (counter == 0) { return "-"; }
+            return counter.ToString("N0");
+        }
+
+        private static string SetSummaryRowColors(string row, HistorySummary data)
+        {
+            const string transparent = "transparent";
+            row = data.Total == 0 ? row.Replace("#000", transparent) : row.Replace("#000", "#bac8d3");
+            row = data.Success == 0 ? row.Replace("#111", transparent) : row.Replace("#111", "#d5e8d4");
+            row = data.Fail == 0 ? row.Replace("#222", transparent) : row.Replace("#222", "#f8cecc");
+            row = data.Running == 0 ? row.Replace("#333", transparent) : row.Replace("#333", "#fff2cc");
+            row = data.Retries == 0 ? row.Replace("#444", transparent) : row.Replace("#444", "#dae8fc");
+
+            return row;
+        }
+
+        private static string GetPausedTable(IEnumerable<HistorySummary> data)
+        {
+            if (!data.Any())
+            {
+                return GetResource("empty_table");
+            }
+
+            var rows = new StringBuilder();
+
+            foreach (var item in data)
+            {
+                var rowTemplate = GetResource("paused_row");
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobId", item.JobId.ToString());
+
+                rows.AppendLine(rowTemplate);
+            }
+
+            var table = GetResource("paused_table");
+            table = ReplacePlaceHolder(table, "PausedRow", rows.ToString());
+            return table;
         }
 
         private static HistorySummaryCounters GetSummaryCounter(IEnumerable<HistorySummary> summaryData, int concurrentData)
@@ -71,14 +165,14 @@ namespace Planar.Service.SystemJobs
             return result;
         }
 
-        private async Task<IEnumerable<HistorySummary>> GetSummaryData()
+        private async Task<IEnumerable<HistorySummary>> GetSummaryData(DateScope dateScope)
         {
             using var scope = _serviceScope.CreateScope();
             var historyData = scope.ServiceProvider.GetRequiredService<HistoryData>();
             var request = new GetSummaryRequest
             {
-                FromDate = DateTime.Now.Date.AddDays(-1),
-                ToDate = DateTime.Now.Date,
+                FromDate = dateScope.From,
+                ToDate = dateScope.To,
                 PageNumber = 1,
                 PageSize = 1000
             };
@@ -86,14 +180,14 @@ namespace Planar.Service.SystemJobs
             return response.Data ?? new List<HistorySummary>();
         }
 
-        private async Task<int> GetMaxConcurrentExecutionData()
+        private async Task<int> GetMaxConcurrentExecutionData(DateScope dateScope)
         {
             using var scope = _serviceScope.CreateScope();
             var metricsData = scope.ServiceProvider.GetRequiredService<MetricsData>();
             var request = new MaxConcurrentExecutionRequest
             {
-                FromDate = DateTime.Now.Date.AddDays(-1),
-                ToDate = DateTime.Now.Date,
+                FromDate = dateScope.From,
+                ToDate = dateScope.To,
             };
 
             var response = await metricsData.GetMaxConcurrentExecution(request);
