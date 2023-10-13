@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
+using Planar.Service.API;
 using Planar.Service.Data;
 using Quartz;
 using System;
@@ -44,17 +45,27 @@ namespace Planar.Service.SystemJobs
                 var summaryTask = GetSummaryData(dateScope);
                 var concurrentTask = GetMaxConcurrentExecutionData(dateScope);
                 var summaryCounters = GetSummaryCounter(await summaryTask, await concurrentTask);
+                var pausedTask = GetPausedTask();
+                var lastRunningTask = GetLastRunningTask();
                 var summaryTable = GetSummaryTable(await summaryTask);
+                var pausedTable = GetPausedTable(await pausedTask, await lastRunningTask);
 
                 var main = GetResource("main");
-                main = ReplacePlaceHolder(main, "ReportDate", dateScope.From.ToString("dd/MM/yyyy"));
+                main = ReplacePlaceHolder(main, "ReportDate", dateScope.From.ToShortTimeString());
+                main = ReplacePlaceHolder(main, "RunningDate", $"{DateTime.Now.ToShortDateString()} {DateTime.Now:HH:mm:ss}");
+
                 main = ReplacePlaceHolder(main, "CubeTotal", GetSummaryRowCounter(summaryCounters.Total));
                 main = ReplacePlaceHolder(main, "CubeSuccess", GetSummaryRowCounter(summaryCounters.Success));
                 main = ReplacePlaceHolder(main, "CubeFail", GetSummaryRowCounter(summaryCounters.Fail));
                 main = ReplacePlaceHolder(main, "CubeRunning", GetSummaryRowCounter(summaryCounters.Running));
                 main = ReplacePlaceHolder(main, "CubeReries", GetSummaryRowCounter(summaryCounters.Retries));
                 main = ReplacePlaceHolder(main, "CubeConcurrent", GetSummaryRowCounter(summaryCounters.Concurrent));
+
                 main = ReplacePlaceHolder(main, "SummaryTable", summaryTable);
+                main = ReplacePlaceHolder(main, "PausedTable", pausedTable);
+
+                File.WriteAllText(@"C:\temp\planar.html", main);
+                _logger?.LogInformation("Summary report generated");
             }
             catch (Exception ex)
             {
@@ -128,21 +139,33 @@ namespace Planar.Service.SystemJobs
             return row;
         }
 
-        private static string GetPausedTable(IEnumerable<HistorySummary> data)
+        private static string GetPausedTable(IEnumerable<JobBasicDetails> data, IEnumerable<JobLastRun> lastRuns)
         {
             if (!data.Any())
             {
                 return GetResource("empty_table");
             }
 
-            var rows = new StringBuilder();
-
+            var dictionary = new SortedDictionary<long, string>();
             foreach (var item in data)
             {
                 var rowTemplate = GetResource("paused_row");
-                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobId", item.JobId.ToString());
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobId", item.Id.ToString());
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobKey", $"{item.Group}.{item.Name}");
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobType", item.JobType);
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobDescription", item.Description);
 
-                rows.AppendLine(rowTemplate);
+                var lastRun = lastRuns.FirstOrDefault(x => x.JobId == item.Id);
+                var lastDate = lastRun?.StartDate;
+                var lastTitle = lastDate == null ? "Never" : $"{lastDate.Value.ToShortDateString()} {lastDate.Value:HH:mm:ss}";
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "LastRunning", lastTitle);
+                dictionary.Add(lastRun?.StartDate.Ticks ?? 0, rowTemplate);
+            }
+
+            var rows = new StringBuilder();
+            foreach (var item in dictionary.Reverse())
+            {
+                rows.AppendLine(item.Value);
             }
 
             var table = GetResource("paused_table");
@@ -178,6 +201,35 @@ namespace Planar.Service.SystemJobs
             };
             var response = await historyData.GetHistorySummary(request);
             return response.Data ?? new List<HistorySummary>();
+        }
+
+        private async Task<IEnumerable<JobBasicDetails>> GetPausedTask()
+        {
+            using var scope = _serviceScope.CreateScope();
+            var jobDomain = scope.ServiceProvider.GetRequiredService<JobDomain>();
+            var request = new GetAllJobsRequest
+            {
+                PageNumber = 1,
+                PageSize = 1000,
+                Active = false
+            };
+
+            var response = await jobDomain.GetAll(request);
+            return response.Data ?? new List<JobBasicDetails>();
+        }
+
+        private async Task<IEnumerable<JobLastRun>> GetLastRunningTask()
+        {
+            using var scope = _serviceScope.CreateScope();
+            var historyDomain = scope.ServiceProvider.GetRequiredService<HistoryDomain>();
+            var request = new GetLastHistoryCallForJobRequest
+            {
+                PageNumber = 1,
+                PageSize = 1000
+            };
+
+            var response = await historyDomain.GetLastHistoryCallForJob(request);
+            return response.Data ?? new List<JobLastRun>();
         }
 
         private async Task<int> GetMaxConcurrentExecutionData(DateScope dateScope)

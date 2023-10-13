@@ -19,7 +19,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using static Quartz.Logging.OperationName;
 
 namespace Planar.Service.API
 {
