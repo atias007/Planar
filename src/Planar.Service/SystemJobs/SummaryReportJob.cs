@@ -51,7 +51,7 @@ namespace Planar.Service.SystemJobs
                 var pausedTable = GetPausedTable(await pausedTask, await lastRunningTask);
 
                 var main = GetResource("main");
-                main = ReplacePlaceHolder(main, "ReportDate", dateScope.From.ToShortTimeString());
+                main = ReplacePlaceHolder(main, "ReportDate", dateScope.From.ToShortDateString());
                 main = ReplacePlaceHolder(main, "RunningDate", $"{DateTime.Now.ToShortDateString()} {DateTime.Now:HH:mm:ss}");
 
                 main = ReplacePlaceHolder(main, "CubeTotal", GetSummaryRowCounter(summaryCounters.Total));
