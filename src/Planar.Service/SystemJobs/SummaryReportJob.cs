@@ -3,6 +3,8 @@ using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
 using Planar.Service.Data;
+using Planar.Service.Model;
+using Polly;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -42,6 +44,7 @@ namespace Planar.Service.SystemJobs
             try
             {
                 var dateScope = GetDateScope(context);
+                var emailsTask = GetEmails(context);
                 var summaryTask = GetSummaryData(dateScope);
                 var concurrentTask = GetMaxConcurrentExecutionData(dateScope);
                 var summaryCounters = GetSummaryCounter(await summaryTask, await concurrentTask);
@@ -90,6 +93,44 @@ namespace Planar.Service.SystemJobs
 
             var to = from.AddDays(1);
             return new DateScope(from, to);
+        }
+
+        private async Task<IEnumerable<string>> GetEmails(IJobExecutionContext context)
+        {
+            const string dataKey = "report.group";
+            if (!context.MergedJobDataMap.ContainsKey(dataKey))
+            {
+                throw new InvalidOperationException($"job data key '{dataKey}' (name of distribution group) could not found");
+            }
+
+            using var scope = _serviceScope.CreateScope();
+            var groupData = scope.ServiceProvider.GetRequiredService<GroupData>();
+            var groupName = context.MergedJobDataMap.GetString(dataKey);
+            if (string.IsNullOrEmpty(groupName))
+            {
+                throw new InvalidOperationException($"distribution group '{dataKey}' could not found");
+            }
+
+            var id = await groupData.GetGroupId(groupName);
+            var group = await groupData.GetGroupWithUsers(id)
+                ?? throw new InvalidOperationException($"distribution group '{dataKey}' could not found");
+
+            if (!group.Users.Any())
+            {
+                throw new InvalidOperationException($"distribution group '{dataKey}' has no users");
+            }
+
+            var emails1 = group.Users.Select(x => x.EmailAddress1);
+            var emails2 = group.Users.Select(x => x.EmailAddress2);
+            var emails3 = group.Users.Select(x => x.EmailAddress3);
+            var allEmails = emails1.Union(emails2).Union(emails3).Where(x => !string.IsNullOrEmpty(x)).Distinct();
+
+            if (!allEmails.Any())
+            {
+                throw new InvalidOperationException($"distribution group '{dataKey}' has no users with email");
+            }
+
+            return allEmails;
         }
 
         private static string GetSummaryTable(IEnumerable<HistorySummary> data)
