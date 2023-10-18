@@ -1,9 +1,13 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using MailKit.Net.Smtp;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using MimeKit;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Service.API;
 using Planar.Service.Data;
 using Planar.Service.Model;
+using Planar.Service.Monitor;
 using Polly;
 using Quartz;
 using System;
@@ -54,26 +58,53 @@ namespace Planar.Service.SystemJobs
                 var pausedTable = GetPausedTable(await pausedTask, await lastRunningTask);
 
                 var main = GetResource("main");
+
                 main = ReplacePlaceHolder(main, "ReportDate", dateScope.From.ToShortDateString());
                 main = ReplacePlaceHolder(main, "RunningDate", $"{DateTime.Now.ToShortDateString()} {DateTime.Now:HH:mm:ss}");
-
-                main = ReplacePlaceHolder(main, "CubeTotal", GetSummaryRowCounter(summaryCounters.Total));
-                main = ReplacePlaceHolder(main, "CubeSuccess", GetSummaryRowCounter(summaryCounters.Success));
-                main = ReplacePlaceHolder(main, "CubeFail", GetSummaryRowCounter(summaryCounters.Fail));
-                main = ReplacePlaceHolder(main, "CubeRunning", GetSummaryRowCounter(summaryCounters.Running));
-                main = ReplacePlaceHolder(main, "CubeReries", GetSummaryRowCounter(summaryCounters.Retries));
-                main = ReplacePlaceHolder(main, "CubeConcurrent", GetSummaryRowCounter(summaryCounters.Concurrent));
-
+                main = FillCubes(main, summaryCounters);
                 main = ReplacePlaceHolder(main, "SummaryTable", summaryTable);
                 main = ReplacePlaceHolder(main, "PausedTable", pausedTable);
 
-                File.WriteAllText(@"C:\temp\planar.html", main);
-                _logger?.LogInformation("Summary report generated");
+                await SendReport(main, await emailsTask);
+                _logger?.LogInformation("Summary report send via smtp");
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Fail to send summary report: {Message}", ex.Message);
             }
+        }
+
+        private static async Task SendReport(string html, IEnumerable<string> emails)
+        {
+            var smtp = AppSettings.Smtp;
+
+            var message = new MimeMessage();
+            message.From.Add(new MailboxAddress(smtp.FromName, smtp.FromAddress));
+
+            foreach (var recipient in emails)
+            {
+                if (!string.IsNullOrEmpty(recipient))
+                {
+                    // TODO: validate email
+                    message.To.Add(new MailboxAddress(recipient, recipient));
+                }
+            }
+
+            message.Subject = $"Planar Summary Daily Report";
+            var body = new BodyBuilder
+            {
+                HtmlBody = html,
+            }.ToMessageBody();
+
+            message.Body = body;
+
+            using var client = new SmtpClient();
+            var tokenSource = new CancellationTokenSource(30000);
+
+            client.Connect(smtp.Host, port: smtp.Port, useSsl: smtp.UseSsl, tokenSource.Token);
+            client.Authenticate(smtp.Username, smtp.Password, tokenSource.Token);
+            await client.SendAsync(message, tokenSource.Token);
+            client.Disconnect(quit: true, tokenSource.Token);
         }
 
         private static DateScope GetDateScope(IJobExecutionContext context)
@@ -120,9 +151,9 @@ namespace Planar.Service.SystemJobs
                 throw new InvalidOperationException($"distribution group '{dataKey}' has no users");
             }
 
-            var emails1 = group.Users.Select(x => x.EmailAddress1);
-            var emails2 = group.Users.Select(x => x.EmailAddress2);
-            var emails3 = group.Users.Select(x => x.EmailAddress3);
+            var emails1 = group.Users.Select(x => x.EmailAddress1 ?? string.Empty);
+            var emails2 = group.Users.Select(x => x.EmailAddress2 ?? string.Empty);
+            var emails3 = group.Users.Select(x => x.EmailAddress3 ?? string.Empty);
             var allEmails = emails1.Union(emails2).Union(emails3).Where(x => !string.IsNullOrEmpty(x)).Distinct();
 
             if (!allEmails.Any())
@@ -131,6 +162,17 @@ namespace Planar.Service.SystemJobs
             }
 
             return allEmails;
+        }
+
+        private static string FillCubes(string html, HistorySummaryCounters summaryCounters)
+        {
+            html = ReplacePlaceHolder(html, "CubeTotal", GetSummaryRowCounter(summaryCounters.Total));
+            html = ReplacePlaceHolder(html, "CubeSuccess", GetSummaryRowCounter(summaryCounters.Success));
+            html = ReplacePlaceHolder(html, "CubeFail", GetSummaryRowCounter(summaryCounters.Fail));
+            html = ReplacePlaceHolder(html, "CubeRunning", GetSummaryRowCounter(summaryCounters.Running));
+            html = ReplacePlaceHolder(html, "CubeReries", GetSummaryRowCounter(summaryCounters.Retries));
+            html = ReplacePlaceHolder(html, "CubeConcurrent", GetSummaryRowCounter(summaryCounters.Concurrent));
+            return html;
         }
 
         private static string GetSummaryTable(IEnumerable<HistorySummary> data)
