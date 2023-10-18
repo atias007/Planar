@@ -10,6 +10,50 @@ PLAN FOR V 1.6.0
 	https://codepen.io/jerrylow/pen/OJyREdw
 	https://codepen.io/MarkBoots/pen/YzvPRKr
 	https://chartscss.org/charts/bar/
+
+    PATCH /reports/summary
+	request:
+	{
+	    "enable": true,
+		"period": "day",
+		"group": "admins"
+	}
+
+	GET /reports/summary
+	response:
+	[
+		{
+			"enable": true,
+			"group": "admins",
+			"period": "day"
+		},
+		{
+			"enable": false,
+			"group": null,
+			"period": "month"
+		},
+	]
+
+	POST /reports/summary/invoke
+	request:
+	{
+	    "fromDate": "2023-01-01",
+		"toDate": "2023-01-10",
+		"group": "admins"
+	}
+
+	GET /reports/summary/view?fromDate=2023-01-01&toDate=2023-01-10
+
+	----
+	CLI
+	----
+	report enable <summary|...> <-p|--period [day|month|quarter|year]> [-g|--group <group>]
+	report disable <summary|...> <-p|--period [day|month|quarter|year]>
+	report get <summary|...> --> table with all reports status
+	report invoke <summary|...> [-f|--from <from date>] [-t|--to <to date>] <-g|--group <group>>
+	report export <summary|...> [-f|--from <from date>] [-t|--to <to date>]
+
+
 - BACKLOG ----------------------------------------------------------------------------
 - add WorkflowJob
 - add SSIS job
