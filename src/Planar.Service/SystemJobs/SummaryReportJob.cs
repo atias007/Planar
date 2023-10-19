@@ -2,10 +2,14 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MimeKit;
+using Planar.Api.Common.Entities;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Helpers;
 using Planar.Service.API;
 using Planar.Service.Data;
+using Planar.Service.General;
+using Planar.Service.Model;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -32,12 +36,74 @@ namespace Planar.Service.SystemJobs
             _serviceScope = serviceScope;
         }
 
-        public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
+        public static async Task Schedule(IScheduler scheduler, UpdateSummaryReportRequest request, CancellationToken stoppingToken = default)
         {
             const string description = "System job for generating and send summary report";
-            var span = TimeSpan.FromHours(24);
-            var start = DateTime.Now.Date.AddDays(1).AddSeconds(1);
-            await Schedule<SummaryReportJob>(scheduler, description, span, start, stoppingToken);
+
+            var jobKey = CreateJobKey<SummaryReportJob>();
+            var job =
+                await scheduler.GetJobDetail(jobKey, stoppingToken) ??
+                CreateJob<SummaryReportJob>(jobKey, description);
+
+            var dailyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Daily, request, jobKey);
+            var weeklyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Weekly, request, jobKey);
+            var monthlyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Monthly, request, jobKey);
+            var quarterlyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Quarterly, request, jobKey);
+            var yearlyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Yearly, request, jobKey);
+            var triggers = new[] { dailyTrigger, weeklyTrigger, monthlyTrigger, quarterlyTrigger, yearlyTrigger };
+
+            await scheduler.ScheduleJob(job, triggers, true, stoppingToken);
+            // TODO: pause all triggers with enable=false
+        }
+
+        private static async Task<ITrigger> GetTrigger(IScheduler scheduler, SummaryReportPeriods period, UpdateSummaryReportRequest request, JobKey jobKey)
+        {
+            const string enableKey = "enable";
+            const string groupKey = "group";
+
+            var requestPeriod = Enum.Parse<SummaryReportPeriods>(request.Period ?? SummaryReportPeriods.Daily.ToString(), true);
+
+            var triggerKey = new TriggerKey(period.ToString(), jobKey.Group);
+            var existsTrigger = await scheduler.GetTrigger(triggerKey);
+            var triggerId = TriggerHelper.GetTriggerId(existsTrigger) ?? ServiceUtil.GenerateId();
+            var cronExpression = GetCronExpression(period);
+            var enable = existsTrigger?.JobDataMap.GetBoolean(enableKey) ?? false;
+            var group = existsTrigger?.JobDataMap.GetString(groupKey) ?? string.Empty;
+
+            if (requestPeriod == period)
+            {
+                enable = request.Enable;
+                group = request.Group ?? string.Empty;
+            }
+
+            var trigger = TriggerBuilder.Create()
+                    .WithIdentity(period.ToString(), jobKey.Group)
+                    .UsingJobData(Consts.TriggerId, triggerId)
+                    .UsingJobData(enableKey, enable)
+                    .UsingJobData(groupKey, group)
+                    .WithCronSchedule(cronExpression, builder => builder.WithMisfireHandlingInstructionFireAndProceed())
+                    .WithPriority(int.MinValue)
+                    .Build();
+
+            return trigger;
+        }
+
+        private static string GetCronExpression(SummaryReportPeriods period)
+        {
+            const string dailyExpression = "3 0 0 ? * * *";
+            const string weeklyExpression = "3 0 0 ? * SUN *";
+            const string monthlyExpressin = "3 0 0 1 * ? *";
+            const string quarterlyExpressinn = "3 0 0 1 1,4,7,10 ? *";
+            const string yearlyExpression = "3 0 0 1 1 ? *";
+
+            return period switch
+            {
+                SummaryReportPeriods.Weekly => weeklyExpression,
+                SummaryReportPeriods.Monthly => monthlyExpressin,
+                SummaryReportPeriods.Quarterly => quarterlyExpressinn,
+                SummaryReportPeriods.Yearly => yearlyExpression,
+                _ => dailyExpression,
+            };
         }
 
         public async Task Execute(IJobExecutionContext context)
@@ -151,7 +217,9 @@ namespace Planar.Service.SystemJobs
             var emails1 = group.Users.Select(x => x.EmailAddress1 ?? string.Empty);
             var emails2 = group.Users.Select(x => x.EmailAddress2 ?? string.Empty);
             var emails3 = group.Users.Select(x => x.EmailAddress3 ?? string.Empty);
-            var allEmails = emails1.Union(emails2).Union(emails3).Where(x => !string.IsNullOrEmpty(x)).Distinct();
+            var allEmails = emails1.Union(emails2).Union(emails3)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct();
 
             if (!allEmails.Any())
             {

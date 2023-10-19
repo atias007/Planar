@@ -20,14 +20,13 @@ namespace Planar.Hooks
             var emails1 = monitorDetails.Users.Select(u => u.EmailAddress1);
             var emails2 = monitorDetails.Users.Select(u => u.EmailAddress2);
             var emails3 = monitorDetails.Users.Select(u => u.EmailAddress3);
-            var allEmails = emails1.Concat(emails2).Concat(emails3).Distinct();
+            var allEmails = emails1.Concat(emails2).Concat(emails3)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct();
 
             foreach (var recipient in allEmails)
             {
-                if (!string.IsNullOrEmpty(recipient))
-                {
-                    message.To.Add(new MailboxAddress(recipient, recipient));
-                }
+                message.To.Add(new MailboxAddress(recipient, recipient));
             }
 
             message.Subject = $"Planar Alert. Name: [{monitorDetails.MonitorTitle}], Event: [{monitorDetails.EventTitle}]";
