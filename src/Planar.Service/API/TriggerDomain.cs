@@ -1,7 +1,4 @@
-﻿using Azure;
-using Azure.Core;
-using CommonJob;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
@@ -42,9 +39,9 @@ namespace Planar.Service.API
             AuditTriggerSafe(info.TriggerKey, GetTriggerAuditDescription("remove", key), new { value = auditValue?.Trim() }, addTriggerInfo: true);
         }
 
-        public async Task PutData(JobOrTriggerDataRequest request, PutMode mode)
+        public async Task PutData(JobOrTriggerDataRequest request, PutMode mode, bool skipSystemCheck = false)
         {
-            var info = await GetTriggerDetailsForDataCommands(request.Id, request.DataKey);
+            var info = await GetTriggerDetailsForDataCommands(request.Id, request.DataKey, skipSystemCheck);
             if (info.Trigger == null || info.JobDetails == null) { return; }
 
             if (IsDataKeyExists(info.Trigger, request.DataKey))
@@ -91,7 +88,7 @@ namespace Planar.Service.API
             return triggers;
         }
 
-        private async Task<DataCommandDto> GetTriggerDetailsForDataCommands(string triggerId, string key)
+        private async Task<DataCommandDto> GetTriggerDetailsForDataCommands(string triggerId, string key, bool skipSystemCheck = false)
         {
 #pragma warning disable IDE0017 // Simplify object initialization
             var result = new DataCommandDto();
@@ -107,11 +104,17 @@ namespace Planar.Service.API
             if (result.JobDetails == null) { return result; }
 
             // Validation
-            ValidateSystemTrigger(result.TriggerKey);
-            ValidateSystemJob(result.JobKey);
             ValidateSystemDataKey(key);
-            await ValidateJobPaused(result.JobKey);
+
+            if (!skipSystemCheck)
+            {
+                ValidateSystemTrigger(result.TriggerKey);
+                ValidateSystemJob(result.JobKey);
+                await ValidateJobPaused(result.JobKey);
+            }
+
             await ValidateJobNotRunning(result.JobKey);
+
             return result;
         }
 

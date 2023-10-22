@@ -11,14 +11,6 @@ PLAN FOR V 1.6.0
 	https://codepen.io/MarkBoots/pen/YzvPRKr
 	https://chartscss.org/charts/bar/
 
-    PATCH /report/summary
-	request:
-	{
-	    "enable": true,
-		"period": "day",
-		"group": "admins"
-	}
-
 	GET /report/summary
 	response:
 	[
@@ -42,7 +34,10 @@ PLAN FOR V 1.6.0
 		"group": "admins"
 	}
 
-	GET /reports/summary/view?fromDate=2023-01-01&toDate=2023-01-10
+	GET /report/summary/view?fromDate=2023-01-01&toDate=2023-01-10
+
+	GET /report/periods
+
 
 	----
 	CLI
@@ -52,7 +47,7 @@ PLAN FOR V 1.6.0
 	report get <summary|...> --> table with all reports status
 	report invoke <summary|...> [-f|--from <from date>] [-t|--to <to date>] <-g|--group <group>>
 	report export <summary|...> [-f|--from <from date>] [-t|--to <to date>]
-
+	report periods --> list with all periods
 
 - BACKLOG ----------------------------------------------------------------------------
 - add WorkflowJob

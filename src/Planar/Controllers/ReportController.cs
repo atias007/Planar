@@ -18,10 +18,11 @@ namespace Planar.Controllers
 
         [HttpPatch("summary")]
         [EditorAuthorize]
+        [JsonConsumes]
         [SwaggerOperation(OperationId = "patch_report_summary", Description = "Update summary report definition", Summary = "Update Summary Report Definition")]
         [NoContentResponse]
         [BadRequestResponse]
-        public async Task<IActionResult> Update(UpdateSummaryReportRequest request)
+        public async Task<IActionResult> Update([FromBody] UpdateSummaryReportRequest request)
         {
             await BusinesLayer.Update(request);
             return NoContent();

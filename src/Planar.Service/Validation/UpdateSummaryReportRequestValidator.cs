@@ -10,7 +10,7 @@ namespace Planar.Service.Validation
         {
             RuleFor(e => e.Group).Length(2, 50);
             RuleFor(e => e.Group).NotEmpty().When(e => e.Enable).WithMessage("{PropertyName} is mandatory when Enable property is true");
-            RuleFor(e => e.Period).IsEnumName(typeof(SummaryReportPeriods), caseSensitive: false);
+            RuleFor(e => e.Period).NotEmpty().IsEnumName(typeof(SummaryReportPeriods), caseSensitive: false);
         }
     }
 }

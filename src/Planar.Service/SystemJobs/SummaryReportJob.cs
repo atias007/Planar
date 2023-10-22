@@ -2,7 +2,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MimeKit;
-using Planar.Api.Common.Entities;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Helpers;
@@ -10,6 +9,7 @@ using Planar.Service.API;
 using Planar.Service.Data;
 using Planar.Service.General;
 using Planar.Service.Model;
+using Planar.Service.Monitor;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -24,6 +24,9 @@ namespace Planar.Service.SystemJobs
 {
     public sealed class SummaryReportJob : SystemJob, IJob
     {
+        internal const string EnableTriggerDataKey = "report.enable";
+        internal const string GroupTriggerDataKey = "report.group";
+
         private readonly ILogger<StatisticsJob> _logger;
         private readonly IServiceScopeFactory _serviceScope;
 
@@ -36,51 +39,100 @@ namespace Planar.Service.SystemJobs
             _serviceScope = serviceScope;
         }
 
-        public static async Task Schedule(IScheduler scheduler, UpdateSummaryReportRequest request, CancellationToken stoppingToken = default)
+        public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
         {
             const string description = "System job for generating and send summary report";
 
             var jobKey = CreateJobKey<SummaryReportJob>();
-            var job =
-                await scheduler.GetJobDetail(jobKey, stoppingToken) ??
-                CreateJob<SummaryReportJob>(jobKey, description);
+            var job = await scheduler.GetJobDetail(jobKey, stoppingToken);
 
-            var dailyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Daily, request, jobKey);
-            var weeklyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Weekly, request, jobKey);
-            var monthlyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Monthly, request, jobKey);
-            var quarterlyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Quarterly, request, jobKey);
-            var yearlyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Yearly, request, jobKey);
+            if (job != null && await IsAllTriggersExists(scheduler, jobKey))
+            {
+                // Job & Triggers already exists
+                return;
+            }
+
+            job ??= CreateJob<SummaryReportJob>(jobKey, description);
+
+            var dailyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Daily, jobKey);
+            var weeklyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Weekly, jobKey);
+            var monthlyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Monthly, jobKey);
+            var quarterlyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Quarterly, jobKey);
+            var yearlyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Yearly, jobKey);
+
             var triggers = new[] { dailyTrigger, weeklyTrigger, monthlyTrigger, quarterlyTrigger, yearlyTrigger };
 
-            await scheduler.ScheduleJob(job, triggers, true, stoppingToken);
-            // TODO: pause all triggers with enable=false
+            MonitorUtil.Lock(job.Key, 5, MonitorEvents.JobAdded);
+            await scheduler.ScheduleJob(job, triggers, replace: true, stoppingToken);
+            await PauseDisabledTrigger(scheduler, dailyTrigger, stoppingToken);
+            await PauseDisabledTrigger(scheduler, weeklyTrigger, stoppingToken);
+            await PauseDisabledTrigger(scheduler, monthlyTrigger, stoppingToken);
+            await PauseDisabledTrigger(scheduler, quarterlyTrigger, stoppingToken);
+            await PauseDisabledTrigger(scheduler, yearlyTrigger, stoppingToken);
         }
 
-        private static async Task<ITrigger> GetTrigger(IScheduler scheduler, SummaryReportPeriods period, UpdateSummaryReportRequest request, JobKey jobKey)
+        private static async Task PauseDisabledTrigger(IScheduler scheduler, ITrigger trigger, CancellationToken stoppingToken = default)
         {
-            const string enableKey = "enable";
-            const string groupKey = "group";
+            if (!IsTriggerEnabledInData(trigger))
+            {
+                var state = await scheduler.GetTriggerState(trigger.Key, stoppingToken);
+                if (state == TriggerState.Paused) { return; }
 
-            var requestPeriod = Enum.Parse<SummaryReportPeriods>(request.Period ?? SummaryReportPeriods.Daily.ToString(), true);
+                MonitorUtil.Lock(trigger.Key, 5, MonitorEvents.TriggerPaused);
+                await scheduler.PauseTrigger(trigger.Key, stoppingToken);
+            }
+        }
 
+        internal static bool IsTriggerEnabledInData(ITrigger? trigger)
+        {
+            if (trigger == null) { return false; }
+            var exists = trigger.JobDataMap.ContainsKey(EnableTriggerDataKey);
+            if (!exists) { return false; }
+            var result = trigger.JobDataMap.GetBoolean(EnableTriggerDataKey);
+            return result;
+        }
+
+        private static string GetTriggerGroup(ITrigger? trigger)
+        {
+            if (trigger == null) { return string.Empty; }
+            var exists = trigger.JobDataMap.ContainsKey(GroupTriggerDataKey);
+            if (!exists) { return string.Empty; }
+            var result = trigger.JobDataMap.GetString(GroupTriggerDataKey) ?? string.Empty;
+            return result;
+        }
+
+        private static async Task<bool> IsAllTriggersExists(IScheduler scheduler, JobKey jobKey)
+        {
+            var triggers = await scheduler.GetTriggersOfJob(jobKey);
+            if (triggers.Count != 5) { return false; }
+
+            var group = triggers.Select(t => t.Key.Group).Distinct();
+            if (group.Count() != 1) { return false; }
+            if (group.First() != jobKey.Group) { return false; }
+
+            if (!triggers.Any(x => x.Key.Name == SummaryReportPeriods.Daily.ToString())) { return false; }
+            if (!triggers.Any(x => x.Key.Name == SummaryReportPeriods.Weekly.ToString())) { return false; }
+            if (!triggers.Any(x => x.Key.Name == SummaryReportPeriods.Monthly.ToString())) { return false; }
+            if (!triggers.Any(x => x.Key.Name == SummaryReportPeriods.Quarterly.ToString())) { return false; }
+            if (!triggers.Any(x => x.Key.Name == SummaryReportPeriods.Yearly.ToString())) { return false; }
+
+            return true;
+        }
+
+        private static async Task<ITrigger> GetTrigger(IScheduler scheduler, SummaryReportPeriods period, JobKey jobKey)
+        {
             var triggerKey = new TriggerKey(period.ToString(), jobKey.Group);
             var existsTrigger = await scheduler.GetTrigger(triggerKey);
             var triggerId = TriggerHelper.GetTriggerId(existsTrigger) ?? ServiceUtil.GenerateId();
             var cronExpression = GetCronExpression(period);
-            var enable = existsTrigger?.JobDataMap.GetBoolean(enableKey) ?? false;
-            var group = existsTrigger?.JobDataMap.GetString(groupKey) ?? string.Empty;
-
-            if (requestPeriod == period)
-            {
-                enable = request.Enable;
-                group = request.Group ?? string.Empty;
-            }
+            var enable = IsTriggerEnabledInData(existsTrigger);
+            var group = GetTriggerGroup(existsTrigger);
 
             var trigger = TriggerBuilder.Create()
                     .WithIdentity(period.ToString(), jobKey.Group)
                     .UsingJobData(Consts.TriggerId, triggerId)
-                    .UsingJobData(enableKey, enable)
-                    .UsingJobData(groupKey, group)
+                    .UsingJobData(EnableTriggerDataKey, enable.ToString())
+                    .UsingJobData(GroupTriggerDataKey, group)
                     .WithCronSchedule(cronExpression, builder => builder.WithMisfireHandlingInstructionFireAndProceed())
                     .WithPriority(int.MinValue)
                     .Build();
@@ -191,27 +243,26 @@ namespace Planar.Service.SystemJobs
 
         private async Task<IEnumerable<string>> GetEmails(IJobExecutionContext context)
         {
-            const string dataKey = "report.group";
-            if (!context.MergedJobDataMap.ContainsKey(dataKey))
+            var groupName = GetTriggerGroup(context.Trigger);
+            if (string.IsNullOrEmpty(groupName))
             {
-                throw new InvalidOperationException($"job data key '{dataKey}' (name of distribution group) could not found");
+                throw new InvalidOperationException($"job data key '{GroupTriggerDataKey}' (name of distribution group) could not found");
             }
 
             using var scope = _serviceScope.CreateScope();
             var groupData = scope.ServiceProvider.GetRequiredService<GroupData>();
-            var groupName = context.MergedJobDataMap.GetString(dataKey);
             if (string.IsNullOrEmpty(groupName))
             {
-                throw new InvalidOperationException($"distribution group '{dataKey}' could not found");
+                throw new InvalidOperationException($"distribution group '{groupName}' could not found");
             }
 
             var id = await groupData.GetGroupId(groupName);
             var group = await groupData.GetGroupWithUsers(id)
-                ?? throw new InvalidOperationException($"distribution group '{dataKey}' could not found");
+                ?? throw new InvalidOperationException($"distribution group '{groupName}' could not found");
 
             if (!group.Users.Any())
             {
-                throw new InvalidOperationException($"distribution group '{dataKey}' has no users");
+                throw new InvalidOperationException($"distribution group '{groupName}' has no users");
             }
 
             var emails1 = group.Users.Select(x => x.EmailAddress1 ?? string.Empty);
@@ -223,7 +274,7 @@ namespace Planar.Service.SystemJobs
 
             if (!allEmails.Any())
             {
-                throw new InvalidOperationException($"distribution group '{dataKey}' has no users with email");
+                throw new InvalidOperationException($"distribution group '{groupName}' has no users with email");
             }
 
             return allEmails;
