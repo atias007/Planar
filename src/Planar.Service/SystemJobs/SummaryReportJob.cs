@@ -8,11 +8,13 @@ using Planar.Common.Helpers;
 using Planar.Service.API;
 using Planar.Service.Data;
 using Planar.Service.General;
-using Planar.Service.Model;
 using Planar.Service.Monitor;
+using Planar.Service.Reports;
+using Planar.Service.Validation;
 using Quartz;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -24,16 +26,13 @@ namespace Planar.Service.SystemJobs
 {
     public sealed class SummaryReportJob : SystemJob, IJob
     {
-        internal const string EnableTriggerDataKey = "report.enable";
-        internal const string GroupTriggerDataKey = "report.group";
-
-        private readonly ILogger<StatisticsJob> _logger;
+        private readonly ILogger<SummaryReportJob> _logger;
         private readonly IServiceScopeFactory _serviceScope;
 
         private record struct HistorySummaryCounters(int Total, int Success, int Fail, int Running, int Retries, int Concurrent);
         private record struct DateScope(DateTime From, DateTime To);
 
-        public SummaryReportJob(IServiceScopeFactory serviceScope, ILogger<StatisticsJob> logger)
+        public SummaryReportJob(IServiceScopeFactory serviceScope, ILogger<SummaryReportJob> logger)
         {
             _logger = logger;
             _serviceScope = serviceScope;
@@ -54,11 +53,11 @@ namespace Planar.Service.SystemJobs
 
             job ??= CreateJob<SummaryReportJob>(jobKey, description);
 
-            var dailyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Daily, jobKey);
-            var weeklyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Weekly, jobKey);
-            var monthlyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Monthly, jobKey);
-            var quarterlyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Quarterly, jobKey);
-            var yearlyTrigger = await GetTrigger(scheduler, SummaryReportPeriods.Yearly, jobKey);
+            var dailyTrigger = await GetTrigger(scheduler, ReportPeriods.Daily, jobKey);
+            var weeklyTrigger = await GetTrigger(scheduler, ReportPeriods.Weekly, jobKey);
+            var monthlyTrigger = await GetTrigger(scheduler, ReportPeriods.Monthly, jobKey);
+            var quarterlyTrigger = await GetTrigger(scheduler, ReportPeriods.Quarterly, jobKey);
+            var yearlyTrigger = await GetTrigger(scheduler, ReportPeriods.Yearly, jobKey);
 
             var triggers = new[] { dailyTrigger, weeklyTrigger, monthlyTrigger, quarterlyTrigger, yearlyTrigger };
 
@@ -86,18 +85,18 @@ namespace Planar.Service.SystemJobs
         internal static bool IsTriggerEnabledInData(ITrigger? trigger)
         {
             if (trigger == null) { return false; }
-            var exists = trigger.JobDataMap.ContainsKey(EnableTriggerDataKey);
+            var exists = trigger.JobDataMap.ContainsKey(ReportConsts.EnableTriggerDataKey);
             if (!exists) { return false; }
-            var result = trigger.JobDataMap.GetBoolean(EnableTriggerDataKey);
+            var result = trigger.JobDataMap.GetBoolean(ReportConsts.EnableTriggerDataKey);
             return result;
         }
 
         private static string GetTriggerGroup(ITrigger? trigger)
         {
             if (trigger == null) { return string.Empty; }
-            var exists = trigger.JobDataMap.ContainsKey(GroupTriggerDataKey);
+            var exists = trigger.JobDataMap.ContainsKey(ReportConsts.GroupTriggerDataKey);
             if (!exists) { return string.Empty; }
-            var result = trigger.JobDataMap.GetString(GroupTriggerDataKey) ?? string.Empty;
+            var result = trigger.JobDataMap.GetString(ReportConsts.GroupTriggerDataKey) ?? string.Empty;
             return result;
         }
 
@@ -110,16 +109,16 @@ namespace Planar.Service.SystemJobs
             if (group.Count() != 1) { return false; }
             if (group.First() != jobKey.Group) { return false; }
 
-            if (!triggers.Any(x => x.Key.Name == SummaryReportPeriods.Daily.ToString())) { return false; }
-            if (!triggers.Any(x => x.Key.Name == SummaryReportPeriods.Weekly.ToString())) { return false; }
-            if (!triggers.Any(x => x.Key.Name == SummaryReportPeriods.Monthly.ToString())) { return false; }
-            if (!triggers.Any(x => x.Key.Name == SummaryReportPeriods.Quarterly.ToString())) { return false; }
-            if (!triggers.Any(x => x.Key.Name == SummaryReportPeriods.Yearly.ToString())) { return false; }
+            if (!triggers.Any(x => x.Key.Name == ReportPeriods.Daily.ToString())) { return false; }
+            if (!triggers.Any(x => x.Key.Name == ReportPeriods.Weekly.ToString())) { return false; }
+            if (!triggers.Any(x => x.Key.Name == ReportPeriods.Monthly.ToString())) { return false; }
+            if (!triggers.Any(x => x.Key.Name == ReportPeriods.Quarterly.ToString())) { return false; }
+            if (!triggers.Any(x => x.Key.Name == ReportPeriods.Yearly.ToString())) { return false; }
 
             return true;
         }
 
-        private static async Task<ITrigger> GetTrigger(IScheduler scheduler, SummaryReportPeriods period, JobKey jobKey)
+        private static async Task<ITrigger> GetTrigger(IScheduler scheduler, ReportPeriods period, JobKey jobKey)
         {
             var triggerKey = new TriggerKey(period.ToString(), jobKey.Group);
             var existsTrigger = await scheduler.GetTrigger(triggerKey);
@@ -131,8 +130,9 @@ namespace Planar.Service.SystemJobs
             var trigger = TriggerBuilder.Create()
                     .WithIdentity(period.ToString(), jobKey.Group)
                     .UsingJobData(Consts.TriggerId, triggerId)
-                    .UsingJobData(EnableTriggerDataKey, enable.ToString())
-                    .UsingJobData(GroupTriggerDataKey, group)
+                    .UsingJobData(ReportConsts.EnableTriggerDataKey, enable.ToString())
+                    .UsingJobData(ReportConsts.GroupTriggerDataKey, group)
+                    .UsingJobData(ReportConsts.PeriodDataKey, period.ToString())
                     .WithCronSchedule(cronExpression, builder => builder.WithMisfireHandlingInstructionFireAndProceed())
                     .WithPriority(int.MinValue)
                     .Build();
@@ -140,7 +140,7 @@ namespace Planar.Service.SystemJobs
             return trigger;
         }
 
-        private static string GetCronExpression(SummaryReportPeriods period)
+        private static string GetCronExpression(ReportPeriods period)
         {
             const string dailyExpression = "3 0 0 ? * * *";
             const string weeklyExpression = "3 0 0 ? * SUN *";
@@ -150,10 +150,10 @@ namespace Planar.Service.SystemJobs
 
             return period switch
             {
-                SummaryReportPeriods.Weekly => weeklyExpression,
-                SummaryReportPeriods.Monthly => monthlyExpressin,
-                SummaryReportPeriods.Quarterly => quarterlyExpressinn,
-                SummaryReportPeriods.Yearly => yearlyExpression,
+                ReportPeriods.Weekly => weeklyExpression,
+                ReportPeriods.Monthly => monthlyExpressin,
+                ReportPeriods.Quarterly => quarterlyExpressinn,
+                ReportPeriods.Yearly => yearlyExpression,
                 _ => dailyExpression,
             };
         }
@@ -189,7 +189,7 @@ namespace Planar.Service.SystemJobs
             }
         }
 
-        private static async Task SendReport(string html, IEnumerable<string> emails)
+        private async Task SendReport(string html, IEnumerable<string> emails)
         {
             var smtp = AppSettings.Smtp;
 
@@ -198,9 +198,13 @@ namespace Planar.Service.SystemJobs
 
             foreach (var recipient in emails)
             {
-                if (!string.IsNullOrEmpty(recipient))
+                if (string.IsNullOrEmpty(recipient)) { continue; }
+                if (!ValidationUtil.IsValidEmail(recipient))
                 {
-                    // TODO: validate email
+                    _logger.LogWarning("send report warning: email address '{Email}' is not valid", recipient);
+                }
+                else
+                {
                     message.To.Add(new MailboxAddress(recipient, recipient));
                 }
             }
@@ -222,23 +226,72 @@ namespace Planar.Service.SystemJobs
             client.Disconnect(quit: true, tokenSource.Token);
         }
 
-        private static DateScope GetDateScope(IJobExecutionContext context)
+        private static DateScope GetDateScope(ReportPeriods periods, DateTime? referenceDate)
         {
-            const string dataKey = "report.date";
-            var from = DateTime.Now.Date.AddDays(-1);
-
-            if (context.MergedJobDataMap.ContainsKey(dataKey))
+            if (referenceDate == null)
             {
-                var dateObject = context.MergedJobDataMap.Get(dataKey);
-                var dateString = Convert.ToString(dateObject);
-                if (DateTime.TryParse(dateString, CultureInfo.CurrentCulture, DateTimeStyles.None, out var reportDate))
-                {
-                    from = reportDate.Date;
-                }
+                referenceDate = DateTime.Now;
             }
 
-            var to = from.AddDays(1);
-            return new DateScope(from, to);
+            var date = referenceDate.Value.Date;
+            switch (periods)
+            {
+                default:
+                case ReportPeriods.Daily:
+                    return new DateScope(date.AddDays(-1), date);
+
+                case ReportPeriods.Weekly:
+                    var from1 = date.AddDays(-(int)date.DayOfWeek);
+                    return new DateScope(from1, from1.AddDays(7));
+
+                case ReportPeriods.Monthly:
+                    var from2 = date.AddDays(1 - date.Day);
+                    return new DateScope(from2, from2.AddMonths(1));
+
+                case ReportPeriods.Quarterly:
+                    var quarter = (date.Month - 1) / 3 + 1;
+                    var year = date.Year;
+                    var from3 = new DateTime(year, quarter, 1, 0, 0, 0, DateTimeKind.Local);
+                    return new DateScope(from3, from3.AddMonths(3));
+
+                case ReportPeriods.Yearly:
+                    var year2 = date.Year;
+                    var from4 = new DateTime(year2, 1, 1, 0, 0, 0, DateTimeKind.Local);
+                    return new DateScope(from4, from4.AddYears(1));
+            }
+        }
+
+        private static DateScope GetDateScope(IJobExecutionContext context)
+        {
+            var fromExists = context.MergedJobDataMap.ContainsKey(ReportConsts.FromDateDataKey);
+            var toExists = context.MergedJobDataMap.ContainsKey(ReportConsts.ToDateDataKey);
+            var periodExists = context.MergedJobDataMap.ContainsKey(ReportConsts.PeriodDataKey);
+
+            // no period & no from/to
+            if (!periodExists && (!fromExists || !toExists))
+            {
+                throw new InvalidOperationException($"job data key '{ReportConsts.FromDateDataKey}' or '{ReportConsts.ToDateDataKey}' (report from/to date) could not found while no period data key '{ReportConsts.PeriodDataKey}' found");
+            }
+
+            var formString = context.MergedJobDataMap.GetString(ReportConsts.FromDateDataKey) ?? string.Empty;
+            var toString = context.MergedJobDataMap.GetString(ReportConsts.ToDateDataKey) ?? string.Empty;
+
+            var from = fromExists ? DateTime.Parse(formString, CultureInfo.CurrentCulture) : (DateTime?)null;
+            var to = toExists ? DateTime.Parse(toString, CultureInfo.CurrentCulture) : (DateTime?)null;
+
+            if (periodExists)
+            {
+                var periodString = context.MergedJobDataMap.GetString(ReportConsts.PeriodDataKey);
+                if (!Enum.TryParse<ReportPeriods>(periodString, ignoreCase: true, out var period))
+                {
+                    throw new InvalidOperationException($"job data key '{ReportConsts.PeriodDataKey}' (report period) value '{periodString}' is not valid");
+                }
+
+                var scopes = GetDateScope(period, to);
+                return scopes;
+            }
+
+            return new DateScope(from!.Value, to!.Value);
         }
 
         private async Task<IEnumerable<string>> GetEmails(IJobExecutionContext context)
@@ -246,7 +299,7 @@ namespace Planar.Service.SystemJobs
             var groupName = GetTriggerGroup(context.Trigger);
             if (string.IsNullOrEmpty(groupName))
             {
-                throw new InvalidOperationException($"job data key '{GroupTriggerDataKey}' (name of distribution group) could not found");
+                throw new InvalidOperationException($"job data key '{ReportConsts.GroupTriggerDataKey}' (name of distribution group) could not found");
             }
 
             using var scope = _serviceScope.CreateScope();

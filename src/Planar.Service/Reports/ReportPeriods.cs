@@ -1,6 +1,6 @@
-﻿namespace Planar.Service.Model
+﻿namespace Planar.Service.Reports
 {
-    internal enum SummaryReportPeriods
+    internal enum ReportPeriods
     {
         Daily,
         Weekly,

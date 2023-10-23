@@ -6,12 +6,11 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
-using Planar.Service.SystemJobs;
+using Planar.Service.Reports;
 using Quartz;
 using System;
-using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -29,7 +28,7 @@ namespace Planar.Service.API
                 await ValidateGroupAndEmails(request.Group);
             }
 
-            var requestPeriod = Enum.Parse<SummaryReportPeriods>(request.Period, true);
+            var requestPeriod = Enum.Parse<ReportPeriods>(request.Period, true);
             var triggerKey = new TriggerKey(requestPeriod.ToString(), Consts.PlanarSystemGroup);
             var scheduler = Resolve<IScheduler>();
             var trigger = await scheduler.GetTrigger(triggerKey);
@@ -49,7 +48,7 @@ namespace Planar.Service.API
             var triggerDomain = Resolve<TriggerDomain>();
             var putDataRequest = new JobOrTriggerDataRequest
             {
-                DataKey = SummaryReportJob.EnableTriggerDataKey,
+                DataKey = ReportConsts.EnableTriggerDataKey,
                 DataValue = request.Enable.ToString(),
                 Id = triggerId
             };
@@ -57,7 +56,7 @@ namespace Planar.Service.API
 
             putDataRequest = new JobOrTriggerDataRequest
             {
-                DataKey = SummaryReportJob.GroupTriggerDataKey,
+                DataKey = ReportConsts.GroupTriggerDataKey,
                 DataValue = groupName,
                 Id = triggerId
             };
@@ -71,6 +70,48 @@ namespace Planar.Service.API
             {
                 await PauseDisabledTrigger(scheduler, trigger);
             }
+        }
+
+        public async Task<IEnumerable<ReportsStatus>> GetReport(string name)
+        {
+            if (!Enum.TryParse<ReportNames>(name, true, out var reportEnum))
+            {
+                throw new RestNotFoundException($"report name '{name}' is not valid");
+            }
+
+            var jobKey = new JobKey($"{reportEnum}ReportJob", Consts.PlanarSystemGroup);
+            var scheduler = Resolve<IScheduler>();
+            var triggers = await scheduler.GetTriggersOfJob(jobKey);
+
+            if (triggers == null || !triggers.Any())
+            {
+                throw new InvalidOperationException($"could not found triggers for report with key {jobKey}. report name '{name}'");
+            }
+
+            var result = triggers.Select(t => new ReportsStatus
+            {
+                Period = t.JobDataMap.GetString(ReportConsts.PeriodDataKey)?.ToLower() ?? string.Empty,
+                Enabled = t.JobDataMap.GetBoolean(ReportConsts.EnableTriggerDataKey),
+                Group = t.JobDataMap.GetString(ReportConsts.GroupTriggerDataKey)
+            });
+
+            return result;
+        }
+
+        public static IEnumerable<string> GetReports()
+        {
+            var items = Enum.GetNames<ReportNames>()
+                .Select(n => n.ToLower());
+
+            return items;
+        }
+
+        public static IEnumerable<string> GetPeriods()
+        {
+            var items = Enum.GetNames<ReportPeriods>()
+                .Select(n => n.ToLower());
+
+            return items;
         }
 
         private static async Task PauseDisabledTrigger(IScheduler scheduler, ITrigger trigger)
