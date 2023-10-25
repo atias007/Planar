@@ -4,7 +4,6 @@ using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
-using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.Reports;
 using Quartz;
@@ -21,8 +20,9 @@ namespace Planar.Service.API
         {
         }
 
-        public async Task Update(UpdateSummaryReportRequest request)
+        public async Task Update(UpdateReportRequest request)
         {
+            // validate group & emails
             if (!string.IsNullOrWhiteSpace(request.Group))
             {
                 await ValidateGroupAndEmails(request.Group);
@@ -38,6 +38,15 @@ namespace Planar.Service.API
             {
                 throw new InvalidOperationException($"trigger with id '{triggerId}' is not exists");
             }
+
+            // validate mandatory group
+            var existsGroup = trigger.JobDataMap.GetString(ReportConsts.GroupTriggerDataKey);
+            if (request.Enable && string.IsNullOrEmpty(existsGroup) && string.IsNullOrWhiteSpace(request.Group))
+            {
+                throw new RestValidationException("group", $"group is mandatory to enable report");
+            }
+
+            request.Group ??= existsGroup;
 
             var groupDal = Resolve<GroupData>();
             var groupName =
@@ -92,7 +101,11 @@ namespace Planar.Service.API
             {
                 Period = t.JobDataMap.GetString(ReportConsts.PeriodDataKey)?.ToLower() ?? string.Empty,
                 Enabled = t.JobDataMap.GetBoolean(ReportConsts.EnableTriggerDataKey),
-                Group = t.JobDataMap.GetString(ReportConsts.GroupTriggerDataKey)
+                Group = t.JobDataMap.GetString(ReportConsts.GroupTriggerDataKey),
+                NextRunning =
+                     t.JobDataMap.GetBoolean(ReportConsts.EnableTriggerDataKey) ?
+                    t.GetNextFireTimeUtc()?.LocalDateTime :
+                    null
             });
 
             return result;

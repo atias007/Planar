@@ -126,7 +126,7 @@ namespace Planar.Service.SystemJobs
                     .UsingJobData(ReportConsts.EnableTriggerDataKey, enable.ToString())
                     .UsingJobData(ReportConsts.GroupTriggerDataKey, group)
                     .UsingJobData(ReportConsts.PeriodDataKey, period.ToString())
-                    .WithCronSchedule(cronExpression, builder => builder.WithMisfireHandlingInstructionFireAndProceed())
+                    .WithCronSchedule(cronExpression, builder => builder.WithMisfireHandlingInstructionDoNothing())
                     .WithPriority(int.MinValue)
                     .Build();
 
@@ -159,7 +159,7 @@ namespace Planar.Service.SystemJobs
                 var emailsTask = GetEmails(context);
                 var report = new SummaryReport(_serviceScope);
                 var main = await report.Generate(dateScope);
-                await SendReport(main, await emailsTask);
+                // await SendReport(main, await emailsTask);
                 _logger?.LogInformation("Summary report send via smtp");
             }
             catch (Exception ex)

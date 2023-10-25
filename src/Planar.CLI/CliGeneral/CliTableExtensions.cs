@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Primitives;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.Common;
@@ -7,7 +6,6 @@ using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using YamlDotNet.Serialization;
 
 namespace Planar.CLI
@@ -129,6 +127,24 @@ namespace Planar.CLI
                 {
                     table.Table.AddRow(item.Id.ToString(), CliTableFormat.FormatDateTime(item.DateCreated), item.Username, item.UserTitle, SafeCliString(item.Description));
                 }
+            }
+
+            return table;
+        }
+
+        public static CliTable GetTable(IEnumerable<ReportsStatus>? response)
+        {
+            var table = new CliTable();
+            if (response == null) { return table; }
+            table.Table.AddColumns("Period", "Enable", "Group", "Next Running");
+            foreach (var item in response)
+            {
+                if (item == null) { continue; }
+                table.Table.AddRow(
+                    SafeCliString(item.Period),
+                    CliTableFormat.GetBooleanMarkup(item.Enabled),
+                    SafeCliString(item.Group),
+                    $"{CliTableFormat.FormatDate(item.NextRunning)} {CliTableFormat.FormatTime(item.NextRunning)}");
             }
 
             return table;

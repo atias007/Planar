@@ -25,7 +25,7 @@ namespace Planar.Controllers
         [SwaggerOperation(OperationId = "patch_report_summary", Description = "Update summary report definition", Summary = "Update Summary Report Definition")]
         [NoContentResponse]
         [BadRequestResponse]
-        public async Task<IActionResult> Update([FromBody] UpdateSummaryReportRequest request)
+        public async Task<IActionResult> Update([FromBody] UpdateReportRequest request)
         {
             await BusinesLayer.Update(request);
             return NoContent();

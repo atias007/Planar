@@ -2,6 +2,7 @@
 
 PLAN FOR V 1.6.0
 ----------------
+- BUG: log listenetr fail on service stop while job is running
 - postman: test queue-invoke with data and validate the creation of data
 - postman: remove "Demo.HelloWorld With Data" job before start
 - build anomaly job statistics exception count
@@ -20,19 +21,16 @@ PLAN FOR V 1.6.0
 	}
 
 	GET /report/summary/view?fromDate=2023-01-01&toDate=2023-01-10
-
-	GET /report/periods
-	GET /report
+	
 
 	----
 	CLI
 	----
-	report enable <summary|...> <-p|--period [day|month|quarter|year]> [-g|--group <group>]
-	report disable <summary|...> <-p|--period [day|month|quarter|year]>
-	report get <summary|...> --> table with all reports status
 	report invoke <summary|...> [-f|--from <from date>] [-t|--to <to date>] <-g|--group <group>>
 	report export <summary|...> [-f|--from <from date>] [-t|--to <to date>]
-	report periods --> list with all periods
+	
+	** report periods --> list with all periods
+	** report list|ls
 
 - BACKLOG ----------------------------------------------------------------------------
 - add WorkflowJob
