@@ -20,8 +20,13 @@ namespace Planar.Service.API
         {
         }
 
-        public async Task Update(UpdateReportRequest request)
+        public async Task Update(string name, UpdateReportRequest request)
         {
+            if (!Enum.TryParse<ReportNames>(name, ignoreCase: true, out var reportName))
+            {
+                throw new RestNotFoundException($"report name '{name}' is not valid");
+            }
+
             // validate group & emails
             if (!string.IsNullOrWhiteSpace(request.Group))
             {
@@ -29,7 +34,7 @@ namespace Planar.Service.API
             }
 
             var requestPeriod = Enum.Parse<ReportPeriods>(request.Period, true);
-            var triggerKey = new TriggerKey(requestPeriod.ToString(), Consts.PlanarSystemGroup);
+            var triggerKey = new TriggerKey(requestPeriod.ToString(), reportName.ToString());
             var scheduler = Resolve<IScheduler>();
             var trigger = await scheduler.GetTrigger(triggerKey);
             var triggerId = TriggerHelper.GetTriggerId(trigger);

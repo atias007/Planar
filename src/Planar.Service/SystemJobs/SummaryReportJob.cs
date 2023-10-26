@@ -46,11 +46,11 @@ namespace Planar.Service.SystemJobs
 
             job ??= CreateJob<SummaryReportJob>(jobKey, description);
 
-            var dailyTrigger = await GetTrigger(scheduler, ReportPeriods.Daily, jobKey);
-            var weeklyTrigger = await GetTrigger(scheduler, ReportPeriods.Weekly, jobKey);
-            var monthlyTrigger = await GetTrigger(scheduler, ReportPeriods.Monthly, jobKey);
-            var quarterlyTrigger = await GetTrigger(scheduler, ReportPeriods.Quarterly, jobKey);
-            var yearlyTrigger = await GetTrigger(scheduler, ReportPeriods.Yearly, jobKey);
+            var dailyTrigger = await GetTrigger(scheduler, ReportPeriods.Daily);
+            var weeklyTrigger = await GetTrigger(scheduler, ReportPeriods.Weekly);
+            var monthlyTrigger = await GetTrigger(scheduler, ReportPeriods.Monthly);
+            var quarterlyTrigger = await GetTrigger(scheduler, ReportPeriods.Quarterly);
+            var yearlyTrigger = await GetTrigger(scheduler, ReportPeriods.Yearly);
 
             var triggers = new[] { dailyTrigger, weeklyTrigger, monthlyTrigger, quarterlyTrigger, yearlyTrigger };
 
@@ -111,9 +111,9 @@ namespace Planar.Service.SystemJobs
             return true;
         }
 
-        private static async Task<ITrigger> GetTrigger(IScheduler scheduler, ReportPeriods period, JobKey jobKey)
+        private static async Task<ITrigger> GetTrigger(IScheduler scheduler, ReportPeriods period)
         {
-            var triggerKey = new TriggerKey(period.ToString(), jobKey.Group);
+            var triggerKey = new TriggerKey(period.ToString(), ReportNames.Summary.ToString());
             var existsTrigger = await scheduler.GetTrigger(triggerKey);
             var triggerId = TriggerHelper.GetTriggerId(existsTrigger) ?? ServiceUtil.GenerateId();
             var cronExpression = GetCronExpression(period);
@@ -121,12 +121,13 @@ namespace Planar.Service.SystemJobs
             var group = GetTriggerGroup(existsTrigger);
 
             var trigger = TriggerBuilder.Create()
-                    .WithIdentity(period.ToString(), jobKey.Group)
+                    .WithIdentity(triggerKey)
                     .UsingJobData(Consts.TriggerId, triggerId)
                     .UsingJobData(ReportConsts.EnableTriggerDataKey, enable.ToString())
                     .UsingJobData(ReportConsts.GroupTriggerDataKey, group)
                     .UsingJobData(ReportConsts.PeriodDataKey, period.ToString())
-                    .WithCronSchedule(cronExpression, builder => builder.WithMisfireHandlingInstructionDoNothing())
+                    .WithCronSchedule(cronExpression, builder => builder.WithMisfireHandlingInstructionFireAndProceed())
+                    .StartAt(DateTimeOffset.Now.Date.AddDays(1).AddSeconds(-1))
                     .WithPriority(int.MinValue)
                     .Build();
 
@@ -159,7 +160,7 @@ namespace Planar.Service.SystemJobs
                 var emailsTask = GetEmails(context);
                 var report = new SummaryReport(_serviceScope);
                 var main = await report.Generate(dateScope);
-                // await SendReport(main, await emailsTask);
+                await SendReport(main, await emailsTask);
                 _logger?.LogInformation("Summary report send via smtp");
             }
             catch (Exception ex)
