@@ -122,19 +122,10 @@ namespace Planar.CLI.Actions
                 .Select(r => r.Group)
                 .FirstOrDefault();
 
-            bool groupMenu;
             if (string.IsNullOrWhiteSpace(currentGroup))
             {
                 // enable report while current group is null
-                groupMenu = true;
-            }
-            else
-            {
-                groupMenu = AnsiConsole.Confirm($"do you want to change distributiog group? (current value: {currentGroup})", false);
-            }
-
-            if (groupMenu)
-            {
+                // fill group name
                 var p3 = await CliPromptUtil.Groups(cancellationToken);
                 if (!p3.IsSuccessful) { return p3; }
                 request.Group = p3.Value ?? string.Empty;

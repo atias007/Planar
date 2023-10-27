@@ -195,7 +195,7 @@ namespace Planar.Service.SystemJobs
                     throw new InvalidOperationException($"job data key '{ReportConsts.PeriodDataKey}' (report period) value '{periodString}' is not valid");
                 }
 
-                var scopes = GetDateScope(period, to);
+                var scopes = GetDateScope(period, from);
                 return scopes;
             }
 

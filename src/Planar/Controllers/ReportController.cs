@@ -7,6 +7,7 @@ using Planar.Service.API;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -25,6 +26,7 @@ namespace Planar.Controllers
         [SwaggerOperation(OperationId = "patch_report_name", Description = "Update report definition", Summary = "Update Report Definition")]
         [NoContentResponse]
         [BadRequestResponse]
+        [NotFoundResponse]
         public async Task<IActionResult> Update([FromRoute][Required] string name, [FromBody] UpdateReportRequest request)
         {
             await BusinesLayer.Update(name, request);
@@ -32,7 +34,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("{name}")]
-        [EditorAuthorize]
+        [TesterAuthorize]
         [SwaggerOperation(OperationId = "get_report_name", Description = "Get report schedule details", Summary = "Get Report Schedule Details")]
         [BadRequestResponse]
         [NotFoundResponse]
@@ -43,8 +45,21 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
+        [HttpPost("{name}/run")]
+        [TesterAuthorize]
+        [JsonConsumes]
+        [SwaggerOperation(OperationId = "post_report_name_run", Description = "Run and deliver report", Summary = "Run And Deliver Report")]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        [AcceptedContentResponse]
+        public async Task<IActionResult> Run([FromRoute][Required] string name, [FromBody] RunReportRequest request)
+        {
+            await BusinesLayer.Run(name, request);
+            return Accepted();
+        }
+
         [HttpGet]
-        [EditorAuthorize]
+        [TesterAuthorize]
         [SwaggerOperation(OperationId = "get_report", Description = "Get list of reports", Summary = "Get List Of Reports")]
         [OkJsonResponse(typeof(IEnumerable<string>))]
         public ActionResult<IEnumerable<string>> GetAll()
@@ -54,7 +69,7 @@ namespace Planar.Controllers
         }
 
         [HttpGet("periods")]
-        [EditorAuthorize]
+        [TesterAuthorize]
         [SwaggerOperation(OperationId = "get_report_periods", Description = "Get list of report periods", Summary = "Get List Of Reports Periods")]
         [OkJsonResponse(typeof(IEnumerable<string>))]
         public ActionResult<IEnumerable<string>> GetAllPeriods()

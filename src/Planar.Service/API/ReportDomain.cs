@@ -6,6 +6,7 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Monitor;
 using Planar.Service.Reports;
+using Planar.Service.SystemJobs;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -20,12 +21,19 @@ namespace Planar.Service.API
         {
         }
 
-        public async Task Update(string name, UpdateReportRequest request)
+        private static ReportNames ValidateReportName(string name)
         {
             if (!Enum.TryParse<ReportNames>(name, ignoreCase: true, out var reportName))
             {
                 throw new RestNotFoundException($"report name '{name}' is not valid");
             }
+
+            return reportName;
+        }
+
+        public async Task Update(string name, UpdateReportRequest request)
+        {
+            var reportName = ValidateReportName(name);
 
             // validate group & emails
             if (!string.IsNullOrWhiteSpace(request.Group))
@@ -88,12 +96,9 @@ namespace Planar.Service.API
 
         public async Task<IEnumerable<ReportsStatus>> GetReport(string name)
         {
-            if (!Enum.TryParse<ReportNames>(name, true, out var reportEnum))
-            {
-                throw new RestNotFoundException($"report name '{name}' is not valid");
-            }
+            var reportName = ValidateReportName(name);
 
-            var jobKey = new JobKey($"{reportEnum}ReportJob", Consts.PlanarSystemGroup);
+            var jobKey = new JobKey($"{reportName}ReportJob", Consts.PlanarSystemGroup);
             var scheduler = Resolve<IScheduler>();
             var triggers = await scheduler.GetTriggersOfJob(jobKey);
 
@@ -114,6 +119,70 @@ namespace Planar.Service.API
             });
 
             return result;
+        }
+
+        public async Task Run(string name, RunReportRequest request)
+        {
+            var reportName = ValidateReportName(name);
+            var jobKey = new JobKey($"{reportName}ReportJob", Consts.PlanarSystemGroup);
+
+            if (string.IsNullOrWhiteSpace(request.Group))
+            {
+                var scheduler = Resolve<IScheduler>();
+                var triggerKey = new TriggerKey(ReportPeriods.Daily.ToString(), reportName.ToString());
+                var trigger = await scheduler.GetTrigger(triggerKey);
+                request.Group = trigger?.JobDataMap.GetString(ReportConsts.GroupTriggerDataKey);
+            }
+
+            // validate group & emails
+            if (string.IsNullOrWhiteSpace(request.Group))
+            {
+                throw new RestValidationException("group", $"group is mandatory to run report");
+            }
+
+            await ValidateGroupAndEmails(request.Group);
+
+            // validate period & dates not null
+            var allEmpty = string.IsNullOrEmpty(request.Period) && request.FromDate == null && request.ToDate == null;
+            if (allEmpty)
+            {
+                throw new RestValidationException("period", $"if from & to dates has no value, period is mandatory to run report");
+            }
+
+            // validate period & dates not all has value
+            var allHasValue = !string.IsNullOrEmpty(request.Period) && request.FromDate != null && request.ToDate != null;
+            if (allHasValue)
+            {
+                throw new RestValidationException("period", $"if period has value, 'to date' must not have value");
+            }
+
+            var jobDomain = Resolve<JobDomain>();
+            var invokeRequest = new InvokeJobRequest
+            {
+                Id = jobKey.ToString(),
+                Data = new Dictionary<string, string?>
+                {
+                    { ReportConsts.GroupTriggerDataKey, request.Group },
+                }
+            };
+
+            if (!string.IsNullOrEmpty(request.Period))
+            {
+                var period = Enum.Parse<ReportPeriods>(request.Period, ignoreCase: true);
+                invokeRequest.Data.Add(ReportConsts.PeriodDataKey, period.ToString());
+            }
+
+            if (request.FromDate.HasValue)
+            {
+                invokeRequest.Data.Add(ReportConsts.FromDateDataKey, request.FromDate.Value.ToShortDateString());
+            }
+
+            if (request.ToDate.HasValue)
+            {
+                invokeRequest.Data.Add(ReportConsts.ToDateDataKey, request.ToDate.Value.ToShortDateString());
+            }
+
+            await jobDomain.Invoke(invokeRequest);
         }
 
         public static IEnumerable<string> GetReports()

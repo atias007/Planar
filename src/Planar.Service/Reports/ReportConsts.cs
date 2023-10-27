@@ -2,7 +2,8 @@
 {
     internal static class ReportConsts
     {
-        // invoke wuyjsa0d455 --data report.group=admins report.period=monthly
+        // example: invoke wuyjsa0d455 --data report.group=admins --data report.period=qurterly
+
         internal const string EnableTriggerDataKey = "report.enable";
         internal const string GroupTriggerDataKey = "report.group";
         internal const string FromDateDataKey = "report.from.date";
