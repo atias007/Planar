@@ -12,14 +12,13 @@ PLAN FOR V 1.6.0
 	https://chartscss.org/charts/bar/
 
 
-	GET /report/summary/view?fromDate=2023-01-01&toDate=2023-01-10
+	GET /report/summary/view?fromDate=2023-01-01&toDate=2023-01-10&period=daily
 	
 	----
 	CLI
 	----
 	report run <summary|...> [-f|--from <from date>] [-t|--to <to date>] <-g|--group <group>>
 	report export <summary|...> [-f|--from <from date>] [-t|--to <to date>]
-	report group <summary|..> <group>
 
 - BACKLOG ----------------------------------------------------------------------------
 - add WorkflowJob

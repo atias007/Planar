@@ -52,9 +52,12 @@ namespace Planar.Service.API
                 throw new InvalidOperationException($"trigger with id '{triggerId}' is not exists");
             }
 
+            // get current enable value if its null
+            request.Enable ??= trigger.JobDataMap.GetBoolean(ReportConsts.EnableTriggerDataKey);
+
             // validate mandatory group
             var existsGroup = trigger.JobDataMap.GetString(ReportConsts.GroupTriggerDataKey);
-            if (request.Enable && string.IsNullOrEmpty(existsGroup) && string.IsNullOrWhiteSpace(request.Group))
+            if (request.Enable.Value && string.IsNullOrEmpty(existsGroup) && string.IsNullOrWhiteSpace(request.Group))
             {
                 throw new RestValidationException("group", $"group is mandatory to enable report");
             }
@@ -84,7 +87,7 @@ namespace Planar.Service.API
             };
             await triggerDomain.PutData(putDataRequest, JobDomain.PutMode.Update, skipSystemCheck: true);
 
-            if (request.Enable)
+            if (request.Enable.Value)
             {
                 await ResumeEnabledTrigger(scheduler, trigger);
             }
