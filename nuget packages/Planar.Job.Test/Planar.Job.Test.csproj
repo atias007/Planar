@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
-		<Version>1.5.1</Version>
+		<Version>1.6.0</Version>
 		<Description>Library for writing DotNet unit tests for Planar jobs</Description>
 		<RepositoryType>git</RepositoryType>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -41,7 +41,7 @@
 		<Compile Include="..\..\src\Planar\FolderConsts.cs" Link="Common\FolderConsts.cs" />
 		<Compile Include="..\Planar.Common\ExecuteHelper\ExecuteJobProperties.cs" Link="ExecuteHelper\ExecuteJobProperties.cs" />
 		<Compile Include="..\Planar.Common\ExecuteHelper\ExecuteJobPropertiesBuilder.cs" Link="ExecuteHelper\ExecuteJobPropertiesBuilder.cs" />
-		<Compile Include="..\Planar.Common\Extensions.cs" Link="Common\Extensions.cs" />
+		<Compile Include="..\Planar.Common\Extensions.cs" Link="Extensions.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\DataMapUtils.cs" Link="JobExecutionContext\DataMapUtils.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\MockJobDetails.cs" Link="JobExecutionContext\MockJobDetails.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\MockJobExecutionContext.cs" Link="JobExecutionContext\MockJobExecutionContext.cs" />

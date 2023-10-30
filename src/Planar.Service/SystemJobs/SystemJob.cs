@@ -8,17 +8,11 @@ namespace Planar.Service.SystemJobs
 {
     public abstract class SystemJob
     {
-        protected static async Task<JobKey> Schedule<T>(IScheduler scheduler, string description, TimeSpan span, DateTime? startDate = null, CancellationToken stoppingToken = default)
+        protected static IJobDetail CreateJob<T>(JobKey jobKey, string description)
             where T : IJob
         {
-            var name = typeof(T).Name;
-            var jobKey = new JobKey(name, Consts.PlanarSystemGroup);
-            var job = await scheduler.GetJobDetail(jobKey, stoppingToken);
-
-            if (job != null) { return jobKey; }
-
             var jobId = ServiceUtil.GenerateId();
-            job = JobBuilder.Create(typeof(T))
+            var job = JobBuilder.Create(typeof(T))
                 .WithIdentity(jobKey)
                 .UsingJobData(Consts.JobId, jobId)
                 .DisallowConcurrentExecution()
@@ -26,6 +20,25 @@ namespace Planar.Service.SystemJobs
                 .WithDescription(description)
                 .StoreDurably(true)
                 .Build();
+
+            return job;
+        }
+
+        protected static JobKey CreateJobKey<T>()
+            where T : IJob
+        {
+            var name = typeof(T).Name;
+            var jobKey = new JobKey(name, Consts.PlanarSystemGroup);
+            return jobKey;
+        }
+
+        protected static async Task<JobKey> Schedule<T>(IScheduler scheduler, string description, TimeSpan span, DateTime? startDate = null, CancellationToken stoppingToken = default)
+                            where T : IJob
+        {
+            var jobKey = CreateJobKey<T>();
+            var job = await scheduler.GetJobDetail(jobKey, stoppingToken);
+            if (job != null) { return jobKey; }
+            job = CreateJob<T>(jobKey, description);
 
             var triggerId = ServiceUtil.GenerateId();
             DateTimeOffset jobStart;
@@ -44,7 +57,7 @@ namespace Planar.Service.SystemJobs
                 .WithIdentity(jobKey.Name, jobKey.Group)
                 .StartAt(jobStart)
                 .UsingJobData(Consts.TriggerId, triggerId)
-                .WithSimpleSchedule(s => BuildScheduler(s, span))
+                .WithSimpleSchedule(s => BuildSimpleSchedule(s, span))
                 .WithPriority(int.MinValue)
                 .Build();
 
@@ -53,7 +66,7 @@ namespace Planar.Service.SystemJobs
             return jobKey;
         }
 
-        private static void BuildScheduler(SimpleScheduleBuilder builder, TimeSpan span)
+        private static void BuildSimpleSchedule(SimpleScheduleBuilder builder, TimeSpan span)
         {
             builder
                 .WithInterval(span)

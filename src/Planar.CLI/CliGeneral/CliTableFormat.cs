@@ -54,6 +54,47 @@ namespace Planar.CLI
             }
         }
 
+        public static string FormatDate(DateTime? dateTime)
+        {
+            if (dateTime.HasValue)
+            {
+                return FormatDate(dateTime.Value);
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
+
+        public static string FormatDate(DateTime dateTime)
+        {
+            if (DateTime.Today == dateTime.Date)
+            {
+                return $"today     ";
+            }
+            else
+            {
+                return $"{dateTime.ToShortDateString()}";
+            }
+        }
+
+        public static string FormatTime(DateTime? dateTime)
+        {
+            if (dateTime.HasValue)
+            {
+                return FormatTime(dateTime.Value);
+            }
+            else
+            {
+                return string.Empty;
+            }
+        }
+
+        public static string FormatTime(DateTime dateTime)
+        {
+            return $"{dateTime.ToShortTimeString()}";
+        }
+
         public static string FormatExceptionCount(int count)
         {
             if (count <= 0) { return "0"; }

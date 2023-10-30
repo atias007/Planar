@@ -87,6 +87,44 @@ namespace Planar.CLI.CliGeneral
             return new CliPromptWrapper<string>(select);
         }
 
+        internal static async Task<CliPromptWrapper<string>> Reports(CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("report", Method.Get);
+            var result = await RestProxy.Invoke<List<string>>(restRequest, cancellationToken);
+            if (!result.IsSuccessful)
+            {
+                return new CliPromptWrapper<string>(result);
+            }
+
+            var data = result.Data;
+            if (data == null || !data.Any())
+            {
+                throw new CliWarningException("no available reports to perform the opertaion");
+            }
+
+            var select = PromptSelection(data, "report", true);
+            return new CliPromptWrapper<string>(select);
+        }
+
+        internal static async Task<CliPromptWrapper<string>> ReportPeriods(CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("report/periods", Method.Get);
+            var result = await RestProxy.Invoke<List<string>>(restRequest, cancellationToken);
+            if (!result.IsSuccessful)
+            {
+                return new CliPromptWrapper<string>(result);
+            }
+
+            var data = result.Data;
+            if (data == null || !data.Any())
+            {
+                throw new CliWarningException("no available periods to perform the opertaion");
+            }
+
+            var select = PromptSelection(data, "period", true);
+            return new CliPromptWrapper<string>(select);
+        }
+
         internal static async Task<CliPromptWrapper<Roles>> Roles(CancellationToken cancellationToken)
         {
             var restRequest = new RestRequest("group/roles", Method.Get);

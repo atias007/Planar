@@ -12,6 +12,7 @@ using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Validation;
 using Quartz;
+using Quartz.Util;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -152,11 +153,11 @@ public class MonitorUtil : IMonitorUtil
         }
     }
 
-    internal static void LockJobEvent(JobKey key, int lockSeconds, params MonitorEvents[] events)
+    internal static void Lock<T>(Key<T> key, int lockSeconds, params MonitorEvents[] events)
     {
         foreach (var item in events)
         {
-            LockJobEvent(key, lockSeconds, item);
+            LockJobOrTriggerEvent(key, lockSeconds, item);
         }
     }
 
@@ -530,18 +531,18 @@ public class MonitorUtil : IMonitorUtil
         return result;
     }
 
-    private static void LockJobEvent(JobKey key, int lockSeconds, MonitorEvents @event)
+    private static void LockJobOrTriggerEvent<T>(Key<T> key, int lockSeconds, MonitorEvents @event)
     {
         var keyString = $"{key} {@event}";
         _lockJobEvents.TryAdd(keyString, DateTimeOffset.Now);
         Task.Run(() =>
         {
             Thread.Sleep(lockSeconds * 1000);
-            ReleaseJobEvent(key, @event);
+            ReleaseJobOrTriggerEvent(key, @event);
         });
     }
 
-    private static void ReleaseJobEvent(JobKey key, MonitorEvents @event)
+    private static void ReleaseJobOrTriggerEvent<T>(Key<T> key, MonitorEvents @event)
     {
         var keyString = $"{key} {@event}";
         _lockJobEvents.TryRemove(keyString, out _);
@@ -598,17 +599,33 @@ public class MonitorUtil : IMonitorUtil
         }
     }
 
-    private static bool IsJobEventLock(JobKey key, MonitorEvents @event)
+    private static bool IsJobOrTriggerEventLock<T>(Key<T> key, MonitorEvents @event)
     {
         var keyString = $"{key} {@event}";
         return _lockJobEvents.ContainsKey(keyString);
     }
 
-    private static bool IsJobEventLock(MonitorSystemInfo info, MonitorEvents @event)
+    private static bool IsJobOrTriggerEventLock(MonitorSystemInfo info, MonitorEvents @event)
     {
-        if (!info.MessagesParameters.ContainsKey("JobGroup")) { return false; }
-        if (!info.MessagesParameters.ContainsKey("JobName")) { return false; }
-        var keyString = $"{info.MessagesParameters["JobGroup"]}.{info.MessagesParameters["JobName"]} {@event}";
+        var keyString = string.Empty;
+
+        if (info.MessagesParameters.ContainsKey("JobGroup") &&
+            info.MessagesParameters.ContainsKey("JobName"))
+        {
+            keyString = $"{info.MessagesParameters["JobGroup"]}.{info.MessagesParameters["JobName"]} {@event}";
+        }
+
+        if (info.MessagesParameters.ContainsKey("TriggerGroup") &&
+            info.MessagesParameters.ContainsKey("TriggerName"))
+        {
+            keyString = $"{info.MessagesParameters["TriggerGroup"]}.{info.MessagesParameters["TriggerName"]} {@event}";
+        }
+
+        if (string.IsNullOrEmpty(keyString))
+        {
+            return false;
+        }
+
         return _lockJobEvents.ContainsKey(keyString);
     }
 
@@ -617,7 +634,7 @@ public class MonitorUtil : IMonitorUtil
         List<MonitorAction> items;
         var hookTasks = new List<Task>();
 
-        if (IsJobEventLock(info, @event)) { return; }
+        if (IsJobOrTriggerEventLock(info, @event)) { return; }
 
         try
         {
@@ -658,9 +675,9 @@ public class MonitorUtil : IMonitorUtil
             return;
         }
 
-        if (IsJobEventLock(context.JobDetail.Key, @event))
+        if (IsJobOrTriggerEventLock(context.JobDetail.Key, @event))
         {
-            ReleaseJobEvent(context.JobDetail.Key, @event);
+            ReleaseJobOrTriggerEvent(context.JobDetail.Key, @event);
             return;
         }
 
