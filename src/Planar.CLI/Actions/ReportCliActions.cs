@@ -17,30 +17,6 @@ namespace Planar.CLI.Actions
     [Module("report", "Actions to execute, schedule and configure reports", Synonyms = "reports")]
     public class ReportCliActions : BaseCliAction<ReportCliActions>
     {
-        [Action("group")]
-        [NullRequest]
-        public static async Task<CliActionResponse> Group(CliEnableReport request, CancellationToken cancellationToken = default)
-        {
-            if (request == null)
-            {
-                request = new CliEnableReport();
-                await GetCliSetReportGroup(request, cancellationToken);
-            }
-
-            var body = new UpdateReportRequest
-            {
-                Enable = null,
-                Group = request.Group,
-                Period = request.Period.ToString()
-            };
-
-            var restRequest = new RestRequest("report/{name}", Method.Patch)
-                .AddUrlSegment("name", request.Report)
-                .AddBody(body);
-
-            return await Execute(restRequest, cancellationToken);
-        }
-
         [Action("enable")]
         [NullRequest]
         public static async Task<CliActionResponse> Enable(CliEnableReport request, CancellationToken cancellationToken = default)
@@ -83,6 +59,53 @@ namespace Planar.CLI.Actions
             };
 
             var restRequest = new RestRequest("report/{name}", Method.Patch)
+                .AddUrlSegment("name", request.Report)
+                .AddBody(body);
+
+            return await Execute(restRequest, cancellationToken);
+        }
+
+        [Action("group")]
+        [NullRequest]
+        public static async Task<CliActionResponse> Group(CliEnableReport request, CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+            {
+                request = new CliEnableReport();
+                await GetCliSetReportGroup(request, cancellationToken);
+            }
+
+            var body = new UpdateReportRequest
+            {
+                Enable = null,
+                Group = request.Group,
+                Period = request.Period.ToString()
+            };
+
+            var restRequest = new RestRequest("report/{name}", Method.Patch)
+                .AddUrlSegment("name", request.Report)
+                .AddBody(body);
+
+            return await Execute(restRequest, cancellationToken);
+        }
+
+        [Action("run")]
+        [NullRequest]
+        public static async Task<CliActionResponse> Run(CliEnableReport request, CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+            {
+                request = new CliEnableReport();
+                await GetCliEnableReport(request, cancellationToken);
+            }
+
+            var body = new RunReportRequest
+            {
+                Group = request.Group,
+                Period = request.Period.ToString()
+            };
+
+            var restRequest = new RestRequest("report/{name}/run", Method.Post)
                 .AddUrlSegment("name", request.Report)
                 .AddBody(body);
 
