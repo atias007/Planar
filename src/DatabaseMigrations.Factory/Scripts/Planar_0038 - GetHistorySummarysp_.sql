@@ -5,7 +5,7 @@ END
 
 GO
 
-CREATE PROCEDURE dbo.GetHistorySummary
+CREATE PROCEDURE [dbo].[GetHistorySummary]
   @FromDate datetime,
   @ToDate datetime,
   @PageNumber int,
@@ -16,7 +16,7 @@ SELECT
       ,[JobName]
       ,[JobGroup]
       ,[JobType]
-	  ,COUNT(*) [TotalRuns]
+	  ,COUNT(*) [Total]
       ,SUM(CASE [Status] WHEN 0 THEN 1 ELSE 0 END) [Success]
 	  ,SUM(CASE [Status] WHEN 1 THEN 1 ELSE 0 END) [Fail]
 	  ,SUM(CASE [Status] WHEN -1 THEN 1 ELSE 0 END) [Running]
