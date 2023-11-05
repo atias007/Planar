@@ -213,7 +213,7 @@ namespace Planar.Service.Listeners
 
         private async Task FillAnomaly(DbJobInstanceLog item)
         {
-            var statistics = await GetJobStatistics();
+            var statistics = await SafeGetJobStatistics();
             StatisticsUtil.SetAnomaly(item, statistics);
 
             if (item.Anomaly != null)
@@ -223,10 +223,36 @@ namespace Planar.Service.Listeners
             }
         }
 
+        private async Task<JobStatistics> SafeGetJobStatistics()
+        {
+            try
+            {
+                var result = await GetJobStatistics();
+                return result;
+            }
+            catch (ObjectDisposedException)
+            {
+                var result = await GetJobStatisticsRaw();
+                return result;
+            }
+        }
+
+        private async Task<JobStatistics> GetJobStatisticsRaw()
+        {
+            var durationStatistics = await ExecuteDal<MetricsData, IEnumerable<JobDurationStatistic>>(d => d.GetJobDurationStatistics());
+            var effectedStatistics = await ExecuteDal<MetricsData, IEnumerable<JobEffectedRowsStatistic>>(d => d.GetJobEffectedRowsStatistics());
+            return new JobStatistics
+            {
+                JobDurationStatistics = durationStatistics,
+                JobEffectedRowsStatistic = effectedStatistics
+            };
+        }
+
         private async Task<JobStatistics> GetJobStatistics()
         {
             var durationKey = nameof(MetricsData.GetJobDurationStatistics);
             var effectedKey = nameof(MetricsData.GetJobEffectedRowsStatistics);
+
             using var scope = ServiceScopeFactory.CreateScope();
             var cache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
 

@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Primitives;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.Common;
@@ -7,7 +6,6 @@ using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using YamlDotNet.Serialization;
 
 namespace Planar.CLI
@@ -134,6 +132,24 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetTable(IEnumerable<ReportsStatus>? response)
+        {
+            var table = new CliTable();
+            if (response == null) { return table; }
+            table.Table.AddColumns("Period", "Enable", "Group", "Next Running");
+            foreach (var item in response)
+            {
+                if (item == null) { continue; }
+                table.Table.AddRow(
+                    SafeCliString(item.Period),
+                    CliTableFormat.GetBooleanMarkup(item.Enabled),
+                    SafeCliString(item.Group),
+                    $"{CliTableFormat.FormatDate(item.NextRunning)} {CliTableFormat.FormatTime(item.NextRunning)}");
+            }
+
+            return table;
+        }
+
         public static CliTable GetTable(IEnumerable<KeyValueItem>? response)
         {
             var table = new CliTable(showCount: true);
@@ -228,12 +244,12 @@ namespace Planar.CLI
         {
             var table = new CliTable(paging: response);
             if (response == null || response.Data == null) { return table; }
-            table.Table.AddColumns("Job Id", "Job Key", "Job Type", "Total Runs", "Success", "Fail", "Running", "Retries");
+            table.Table.AddColumns("Job Id", "Job Key", "Job Type", "Total", "Success", "Fail", "Running", "Retries");
             response.Data.ForEach(r => table.Table.AddRow(
                 r.JobId ?? string.Empty,
                 CliTableFormat.FormatJobKey(r.JobGroup, r.JobName),
                 r.JobType.EscapeMarkup(),
-                CliTableFormat.FormatSummaryNumber(r.TotalRuns),
+                CliTableFormat.FormatSummaryNumber(r.Total),
                 CliTableFormat.FormatSummaryNumber(r.Success, CliFormat.OkColor),
                 CliTableFormat.FormatSummaryNumber(r.Fail, CliFormat.ErrorColor),
                 CliTableFormat.FormatSummaryNumber(r.Running, CliFormat.WarningColor),

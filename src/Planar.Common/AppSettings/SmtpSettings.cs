@@ -1,4 +1,6 @@
-﻿namespace Planar.Common
+﻿using System.Net.Http.Headers;
+
+namespace Planar.Common
 {
     public class SmtpSettings
     {

@@ -1,4 +1,5 @@
-﻿using Planar.Service.API.Helpers;
+﻿using Planar.API.Common.Entities;
+using Planar.Service.API.Helpers;
 using Planar.Service.Validation;
 using System;
 
