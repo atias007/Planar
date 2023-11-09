@@ -205,7 +205,12 @@ namespace Planar.Service.Data
         public async Task<LastInstanceId?> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime)
         {
             var result = await _context.JobInstanceLogs
-                .Where(l => l.JobName == jobKey.Name && l.JobGroup == jobKey.Group && l.StartDate >= invokeDateTime && l.TriggerId == Consts.ManualTriggerId)
+                .Where(l =>
+                    l.JobName == jobKey.Name &&
+                    l.JobGroup == jobKey.Group &&
+                    l.StartDate >= invokeDateTime &&
+                    l.TriggerId == Consts.ManualTriggerId)
+                .OrderByDescending(l => l.StartDate)
                 .Select(l => new LastInstanceId
                 {
                     InstanceId = l.InstanceId,

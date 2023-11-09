@@ -33,11 +33,11 @@ namespace DbUp.SqlServer
             return string.Format(@"IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = N'{0}') Exec('CREATE SCHEMA [{0}]')", Schema);
         }
 
-        protected override void ExecuteCommandsWithinExceptionHandler(int index, SqlScript script, Action executeCommand)
+        protected override void ExecuteCommandsWithinExceptionHandler(int index, SqlScript script, Action executeCallback)
         {
             try
             {
-                executeCommand();
+                executeCallback();
             }
             catch (SqlException sqlException)
             {

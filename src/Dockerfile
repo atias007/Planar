@@ -9,8 +9,6 @@ EXPOSE 443
 # ---------------------------- Build Image -------------------------------------------
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
-COPY ["Calendars/Planar.Calendar/Planar.Calendar.csproj", "Calendars/Planar.Calendar/"]
-COPY ["Calendars/Planar.Calendar.Hebrew/Planar.Calendar.Hebrew.csproj", "Calendars/Planar.Calendar.Hebrew/"]
 COPY ["Jobs/CommonJob/CommonJob.csproj", "Jobs/CommonJob/"]
 COPY ["Jobs/PlanarJob/PlanarJob.csproj", "Jobs/PlanarJob/"]
 COPY ["Jobs/ProcessJob/ProcessJob.csproj", "Jobs/ProcessJob/"]

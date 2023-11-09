@@ -27,24 +27,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="HtmlTemplates\SummaryReport\empty_table.html" />
-    <None Remove="HtmlTemplates\SummaryReport\main.html" />
-    <None Remove="HtmlTemplates\SummaryReport\paused_row.html" />
-    <None Remove="HtmlTemplates\SummaryReport\paused_table.html" />
-    <None Remove="HtmlTemplates\SummaryReport\summary_row.html" />
-    <None Remove="HtmlTemplates\SummaryReport\summary_table.html" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Include="..\Jobs\CommonJob\JobSettingsLoader.cs" Link="General\JobSettingsLoader.cs" />
     <Compile Include="..\Planar.Common\Consts.cs" Link="General\Consts.cs" />
     <Compile Include="..\Planar\FolderConsts.cs" Link="General\FolderConsts.cs" />
-    <EmbeddedResource Include="HtmlTemplates\SummaryReport\paused_row.html" />
-    <EmbeddedResource Include="HtmlTemplates\SummaryReport\paused_table.html" />
-    <EmbeddedResource Include="HtmlTemplates\SummaryReport\summary_row.html" />
-    <EmbeddedResource Include="HtmlTemplates\SummaryReport\summary_table.html" />
-    <EmbeddedResource Include="HtmlTemplates\SummaryReport\empty_table.html" />
-    <EmbeddedResource Include="HtmlTemplates\SummaryReport\main.html" />
   </ItemGroup>
 
   <ItemGroup>

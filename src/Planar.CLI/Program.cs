@@ -36,9 +36,8 @@ namespace Planar.CLI
             get
             {
                 var result = Assembly.GetEntryAssembly()
-                                    ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-                                    ?.InformationalVersion
-                                    .ToString();
+                                    ?.GetCustomAttribute<AssemblyFileVersionAttribute>()
+                                    ?.Version;
 
                 return result ?? string.Empty;
             }

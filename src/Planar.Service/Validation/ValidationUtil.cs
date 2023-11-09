@@ -5,6 +5,8 @@ using Planar.Service.General;
 using System;
 using System.Data.SqlTypes;
 using System.Dynamic;
+using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using YamlDotNet.Serialization;
 
@@ -46,9 +48,10 @@ namespace Planar.Service.Validation
         {
             if (value == null) { return true; }
 
-            const string pattern = @"^(?:\w+\\?)*$";
-            var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(5));
-            return regex.IsMatch(value);
+            var badChars = Path.GetInvalidPathChars();
+
+            // check if value contains any of chars in badChars
+            return !Array.Exists(badChars, value.Contains);
         }
 
         #region SqlDateTime

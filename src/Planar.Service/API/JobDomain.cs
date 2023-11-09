@@ -275,7 +275,7 @@ namespace Planar.Service.API
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
 
-            if (Helpers.JobKeyHelper.IsSystemJobKey(jobKey))
+            if (JobKeyHelper.IsSystemJobKey(jobKey))
             {
                 throw new RestValidationException("id", "this is system job and it does not have instance id");
             }

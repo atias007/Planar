@@ -103,9 +103,8 @@ namespace Planar.Service.API
             get
             {
                 var versionString = Assembly.GetEntryAssembly()
-                                       ?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()
-                                       ?.InformationalVersion
-                                       .ToString();
+                                       ?.GetCustomAttribute<AssemblyFileVersionAttribute>()
+                                       ?.Version;
                 return versionString;
             }
         }

@@ -9,19 +9,19 @@ Solutions
 ----------------------------------------
 Check List
 ----------------------------------------
+- Update projects version number
 - update nuget packages
 - optional: remove unsused nuget packages
 - run database migrations on Planar_Test
 - run SqlSchemaCompare
 - run SqlDataCompare (Roles table)
-- drop Planar_Test database
 - build all solutions with 0 0 0 (error, warning, info)
 - publish nuget packages
-- create pull request to master
-- fix sonar issues
-- approve pull request
 - switch to master branch + git pull
+- Update Planar.Monitor.Hook nuget on Planar project
+- Run Postman Collection
 - run publish.bat
+- drop Planar_Test database
 
 Docker
 ------
@@ -44,7 +44,7 @@ GitHub
 `planar`: the main windows service
 `planar-cli`: command line interface tool
 `database_migrations`: setup helper tool for installing and updating versions of SQL scripts
-install CLI tool as dotnet tool as follow: `dotnet tool install --global planar-cli --version 1.5.1`
+install CLI tool as dotnet tool as follow: `dotnet tool install --global planar-cli`
 
 # Planar For Docker
 
