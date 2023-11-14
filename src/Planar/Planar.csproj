@@ -38,7 +38,6 @@
 	  <None Remove="Data\Settings\AppSettings.yml" />
 	  <None Remove="Data\Settings\Serilog.yml" />
 	  <None Remove="Data\Settings\WorkingHours.Israel.yml" />
-	  <None Remove="Data\Settings\WorkingHours.Italy.yml" />
 	  <None Remove="Data\Settings\WorkingHours.yml" />
 	  <None Remove="planar_openapi.html" />
 	</ItemGroup>
@@ -69,7 +68,6 @@
 	  <EmbeddedResource Include="Data\Settings\Serilog.yml">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
-	  <EmbeddedResource Include="Data\Settings\WorkingHours.Italy.yml" />
 	  <EmbeddedResource Include="Data\Settings\WorkingHours.Israel.yml" />
 	  <EmbeddedResource Include="Data\Settings\WorkingHours.yml" />
 	</ItemGroup>
