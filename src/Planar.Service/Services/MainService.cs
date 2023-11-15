@@ -34,7 +34,7 @@ namespace Planar.Service.Services
 
         public async Task Run(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Service environment: {Environment}", AppSettings.General.Environment);
+            _logger.LogInformation("service environment: {Environment}", AppSettings.General.Environment);
 
             await LoadGlobalConfigInner(stoppingToken);
 
@@ -75,7 +75,7 @@ namespace Planar.Service.Services
                 {
                     if (t.Exception != null)
                     {
-                        _logger.LogError(t.Exception, "Unhandled exception: {Message}", t.Exception.Message);
+                        _logger.LogError(t.Exception, "unhandled exception: {Message}", t.Exception.Message);
                     }
                 }, stoppingToken);
 
@@ -90,7 +90,7 @@ namespace Planar.Service.Services
                 }
                 catch
                 {
-                    _logger.LogWarning("Fail to {Operation}", nameof(RemoveSchedulerCluster));
+                    _logger.LogWarning("fail to {Operation}", nameof(RemoveSchedulerCluster));
                 }
 
                 try
@@ -250,11 +250,11 @@ namespace Planar.Service.Services
         {
             if (AppSettings.Cluster.Clustering)
             {
-                _logger.LogInformation("Join to cluster [instance id: {Id}]", _schedulerUtil.SchedulerInstanceId);
+                _logger.LogInformation("join to cluster [instance id: {Id}]", _schedulerUtil.SchedulerInstanceId);
             }
             else
             {
-                _logger.LogInformation("Non clustering instance");
+                _logger.LogInformation("non clustering instance");
             }
         }
 
@@ -263,7 +263,7 @@ namespace Planar.Service.Services
             if (nodes != null && nodes.Any())
             {
                 var text = string.Join(',', nodes.Select(n => $"{n.Server}:{n.Port}").ToArray());
-                _logger.LogWarning("There are dead cluster nodes. Current node will not check health with them {Nodes}", text);
+                _logger.LogWarning("there are dead cluster nodes. Current node will not check health with them {Nodes}", text);
             }
         }
 

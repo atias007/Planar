@@ -54,7 +54,7 @@ namespace Planar
 
         private async Task StoppedAsync(EventArgs arg)
         {
-            _logger.LogWarning("Stopped MQTT Broker Service");
+            _logger.LogWarning("stopped MQTT Broker Service");
             await Task.CompletedTask;
         }
 

@@ -146,10 +146,10 @@ namespace Planar.Common
 
             try
             {
-                var builder = new SqlConnectionStringBuilder(Database.ConnectionString)
-                {
-                    MultipleActiveResultSets = true
-                };
+                var builder = new SqlConnectionStringBuilder(Database.ConnectionString);
+                if (builder.MultipleActiveResultSets) { return; }
+
+                builder.MultipleActiveResultSets = true;
                 Database.ConnectionString = builder.ConnectionString;
             }
             catch (Exception ex)

@@ -170,7 +170,7 @@ namespace CommonJob
             catch (Exception ex)
             {
                 var source = nameof(ValidateProcessJob);
-                _logger.LogError(ex, "Fail at {Source}. Message: {Message}", source, ex.Message);
+                _logger.LogError(ex, "fail at {Source}. Message: {Message}", source, ex.Message);
                 MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
                 throw;
             }
@@ -191,7 +191,7 @@ namespace CommonJob
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to kill process job {Filename}", _process.StartInfo.FileName);
+                _logger.LogError(ex, "fail to kill process job {Filename}", _process.StartInfo.FileName);
                 MessageBroker.AppendLog(LogLevel.Error, $"Fail to kill process job {_process.StartInfo.FileName}. {ex.Message}");
             }
         }

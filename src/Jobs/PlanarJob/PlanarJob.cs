@@ -87,7 +87,7 @@ namespace Planar
             catch (Exception ex)
             {
                 var source = nameof(ValidateExeFile);
-                _logger.LogError(ex, "Fail at {Source}. Message: {Message}", source, ex.Message);
+                _logger.LogError(ex, "fail at {Source}. Message: {Message}", source, ex.Message);
                 MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
                 throw;
             }
@@ -274,7 +274,7 @@ namespace Planar
         {
             if (!Enum.TryParse<MessageBrokerChannels>(e.CloudEvent.Type, ignoreCase: true, out var channel))
             {
-                _logger.LogError("Message broker channels '{Type}' is not valid", e.CloudEvent.Type);
+                _logger.LogError("message broker channels '{Type}' is not valid", e.CloudEvent.Type);
                 return;
             }
 

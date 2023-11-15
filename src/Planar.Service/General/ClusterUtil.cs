@@ -87,7 +87,7 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to validate job folder exists at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "fail to validate job folder exists at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
                 }
             }
         }
@@ -117,7 +117,7 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to validate job folder exists at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "fail to validate job folder exists at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
                 }
             }
         }
@@ -240,7 +240,7 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to load monitor hooks at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "fail to load monitor hooks at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
                 }
             }
         }
@@ -260,7 +260,7 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to stop scheduler at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "fail to stop scheduler at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
                 }
             }
         }
@@ -280,7 +280,7 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to start scheduler at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "fail to start scheduler at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
                 }
             }
         }
@@ -300,7 +300,7 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to flush config at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "fail to flush config at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
                 }
             }
         }
@@ -324,7 +324,7 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to check if job is running at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "fail to check if job is running at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
                 }
             }
 
@@ -351,7 +351,7 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to get running job {InstanceId} at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "fail to get running job {InstanceId} at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
                 }
             }
 
@@ -378,7 +378,7 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to get running job {InstanceId} data at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "fail to get running job {InstanceId} data at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
                 }
             }
 
@@ -402,7 +402,7 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to check is job {InstanceId} running at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "fail to check is job {InstanceId} running at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
                 }
             }
 
@@ -426,7 +426,7 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to stop running instance {InstanceId} at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "fail to stop running instance {InstanceId} at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
                 }
             }
 
@@ -451,7 +451,7 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to get all running jobs at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "fail to get all running jobs at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
                 }
             }
 
@@ -477,7 +477,7 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "Fail to get persistance running jobs info at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "fail to get persistance running jobs info at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
                 }
             }
 

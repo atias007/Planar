@@ -161,11 +161,11 @@ namespace Planar.Service.SystemJobs
                 var report = new SummaryReport(_serviceScope);
                 var main = await report.Generate(dateScope);
                 await SendReport(main, await emailsTask);
-                _logger?.LogInformation("Summary report send via smtp");
+                _logger?.LogInformation("summary report send via smtp");
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Fail to send summary report: {Message}", ex.Message);
+                _logger?.LogError(ex, "fail to send summary report: {Message}", ex.Message);
             }
         }
 

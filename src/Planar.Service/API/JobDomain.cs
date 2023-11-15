@@ -559,7 +559,7 @@ namespace Planar.Service.API
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Fail to delete properties after delete job id {Id}", id);
+                Logger.LogError(ex, "fail to delete properties after delete job id {Id}", id);
             }
 
             try
@@ -568,7 +568,7 @@ namespace Planar.Service.API
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Fail to delete audit after delete job id {Id}", id);
+                Logger.LogError(ex, "fail to delete audit after delete job id {Id}", id);
             }
 
             try
@@ -577,7 +577,7 @@ namespace Planar.Service.API
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Fail to delete monitor after delete job id {Id}", id);
+                Logger.LogError(ex, "fail to delete monitor after delete job id {Id}", id);
             }
 
             try
@@ -586,7 +586,7 @@ namespace Planar.Service.API
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Fail to delete job statistics after delete job id {Id}", id);
+                Logger.LogError(ex, "fail to delete job statistics after delete job id {Id}", id);
             }
         }
 

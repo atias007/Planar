@@ -113,7 +113,7 @@ namespace Planar.Service.Listeners
             return Task.Run(() =>
             {
                 if (IsLock(nameof(SchedulerError), null)) { return; }
-                _logger.LogError(cause, "Scheduler error with message {Message}", msg);
+                _logger.LogError(cause, "scheduler error with message {Message}", msg);
                 var info = new MonitorSystemInfo
                 (
                     "Scheduler has error with message '{{ErrorMessage}}' at {{MachineName}}"
@@ -153,7 +153,7 @@ namespace Planar.Service.Listeners
             return Task.Run(() =>
             {
                 if (IsLock(nameof(SchedulerStarted), null)) { return; }
-                _logger.LogInformation("Scheduler started");
+                _logger.LogInformation("scheduler started");
                 var info = GetSimpleMonitorSystemInfo("Scheduler was started at {{MachineName}}");
                 SafeSystemScan(MonitorEvents.SchedulerStarted, info, null);
             }, cancellationToken);

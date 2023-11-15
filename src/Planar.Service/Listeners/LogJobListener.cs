@@ -285,7 +285,7 @@ namespace Planar.Service.Listeners
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Fail to invoke {nameof(FillAnomaly)} in {nameof(LogJobListener)}");
+                _logger.LogError(ex, $"fail to invoke {nameof(FillAnomaly)} in {nameof(LogJobListener)}");
             }
         }
 

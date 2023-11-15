@@ -162,7 +162,7 @@ namespace Planar.Service.SystemJobs
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to clear properties table rows");
+                _logger.LogError(ex, "fail to clear properties table rows");
             }
         }
 
@@ -202,7 +202,7 @@ namespace Planar.Service.SystemJobs
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to clear statistics rows");
+                _logger.LogError(ex, "fail to clear statistics rows");
             }
         }
     }

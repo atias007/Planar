@@ -9,7 +9,7 @@ namespace Planar.Service.General
         {
             if (hook == null)
             {
-                logger.LogWarning("Fail to load monitor hook. Hook instance is null");
+                logger.LogWarning("fail to load monitor hook. Hook instance is null");
                 return;
             }
 
@@ -27,14 +27,14 @@ namespace Planar.Service.General
             var handleMethod = hook.GetType().GetMethod(nameof(BaseHook.Handle));
             if (handleMethod == null)
             {
-                logger.LogWarning("Fail to load monitor hook {Hook}. It does not have a handle method", hook.GetType().Name);
+                logger.LogWarning("fail to load monitor hook {Hook}. It does not have a handle method", hook.GetType().Name);
                 return;
             }
 
             var handleSystemMethod = hook.GetType().GetMethod(nameof(BaseHook.HandleSystem));
             if (handleSystemMethod == null)
             {
-                logger.LogWarning("Fail to load monitor hook {Hook}. It does not have a handle system method", hook.GetType().Name);
+                logger.LogWarning("fail to load monitor hook {Hook}. It does not have a handle system method", hook.GetType().Name);
                 return;
             }
 

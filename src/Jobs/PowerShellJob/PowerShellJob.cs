@@ -86,7 +86,7 @@ namespace RunPowerShellJob
             {
                 _scripts.Clear();
                 var source = nameof(Validate);
-                _logger.LogError(ex, "Fail at {Source}", source);
+                _logger.LogError(ex, "fail at {Source}", source);
                 throw;
             }
         }

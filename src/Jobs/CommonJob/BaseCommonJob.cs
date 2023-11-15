@@ -98,7 +98,7 @@ namespace CommonJob
             catch (Exception ex)
             {
                 var source = nameof(FinalizeJob);
-                _logger.LogError(ex, "Fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+                _logger.LogError(ex, "fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
             }
         }
 
@@ -132,7 +132,7 @@ namespace CommonJob
             catch (Exception ex)
             {
                 var source = nameof(LoadJobSettings);
-                _logger.LogError(ex, "Fail at {Source}", source);
+                _logger.LogError(ex, "fail at {Source}", source);
                 throw;
             }
         }

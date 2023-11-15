@@ -41,7 +41,7 @@ namespace Planar.Service.SystemJobs
 
         public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
         {
-            const string description = "System job for persist log & exception from running jobs";
+            const string description = "system job for persist log & exception from running jobs";
             var span = AppSettings.General.PersistRunningJobsSpan;
             await Schedule<PersistDataJob>(scheduler, description, span, stoppingToken: stoppingToken);
         }

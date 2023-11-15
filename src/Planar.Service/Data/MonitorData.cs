@@ -89,8 +89,7 @@ namespace Planar.Service.Data
             var result = await _context.MonitorActions
                 .Include(m => m.Group)
                 .Where(m =>
-                    m.JobGroup != null && m.JobGroup.ToLower() == group.ToLower() &&
-                    m.JobName == null)
+                    m.JobGroup != null && m.JobGroup.ToLower() == group.ToLower())
                 .OrderByDescending(d => d.Active)
                 .ThenBy(d => d.JobGroup)
                 .ThenBy(d => d.JobName)

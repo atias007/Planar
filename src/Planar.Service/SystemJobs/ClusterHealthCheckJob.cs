@@ -30,7 +30,7 @@ namespace Planar.Service.SystemJobs
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "Fail check health of cluster: {Message}", ex.Message);
+                _logger?.LogError(ex, "fail check health of cluster: {Message}", ex.Message);
                 _monitorUtil.Scan(MonitorEvents.ClusterHealthCheckFail, context, ex);
             }
         }

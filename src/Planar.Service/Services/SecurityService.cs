@@ -57,7 +57,7 @@ namespace Planar.Service.Services
         {
             if (string.IsNullOrWhiteSpace(message.Title))
             {
-                _logger.LogWarning("Security audit item has no title. message: {@Message}", message);
+                _logger.LogWarning("security audit item has no title. message: {@Message}", message);
                 return;
             }
 

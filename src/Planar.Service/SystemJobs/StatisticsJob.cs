@@ -52,7 +52,7 @@ namespace Planar.Service.SystemJobs
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to set max concurrent execution");
+                _logger.LogError(ex, "fail to set max concurrent execution");
             }
 
             try
@@ -62,7 +62,7 @@ namespace Planar.Service.SystemJobs
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to fill anomaly execution");
+                _logger.LogError(ex, "fail to fill anomaly execution");
             }
 
             try
@@ -73,7 +73,7 @@ namespace Planar.Service.SystemJobs
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to fill job counter execution");
+                _logger.LogError(ex, "fail to fill job counter execution");
             }
 
             try
@@ -84,7 +84,7 @@ namespace Planar.Service.SystemJobs
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Fail to build job statistics execution");
+                _logger.LogError(ex, "fail to build job statistics execution");
             }
         }
 

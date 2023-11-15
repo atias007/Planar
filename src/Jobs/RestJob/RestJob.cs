@@ -219,7 +219,7 @@ namespace Planar
             catch (Exception ex)
             {
                 var source = nameof(ValidateRestJob);
-                _logger.LogError(ex, "Fail at {Source}", source);
+                _logger.LogError(ex, "fail at {Source}", source);
                 MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
                 throw;
             }

@@ -89,7 +89,7 @@ public class MonitorUtil : IMonitorUtil
             var hookInstance = GetMonitorHookInstance(action.Hook);
             if (hookInstance == null)
             {
-                _logger.LogWarning("Hook {Hook} in monitor item id: {Id}, title: '{Title}' does not exist in service", action.Hook, action.Id, action.Title);
+                _logger.LogWarning("hook {Hook} in monitor item id: {Id}, title: '{Title}' does not exist in service", action.Hook, action.Id, action.Title);
                 var message = $"Hook {action.Hook} in monitor item id: {action.Id}, title: '{action.Title}' does not exist in service";
                 return ExecuteMonitorResult.Fail(message);
             }
@@ -98,11 +98,11 @@ public class MonitorUtil : IMonitorUtil
                 details = GetMonitorDetails(action, context, exception);
                 if (@event == MonitorEvents.ExecutionProgressChanged)
                 {
-                    _logger.LogDebug("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
+                    _logger.LogDebug("monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
                 }
                 else
                 {
-                    _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
+                    _logger.LogInformation("monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
                 }
 
                 await hookInstance.Handle(details, _logger);
@@ -113,7 +113,7 @@ public class MonitorUtil : IMonitorUtil
         catch (Exception ex)
         {
             await SaveMonitorAlert(action, details, context, ex);
-            _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, action.Hook, action.Group.Name);
+            _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: '{Title}' with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, action.Hook, action.Group.Name);
             var message = $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook: {action.Hook}. Error message: {ex.Message}";
             return ExecuteMonitorResult.Fail(message);
         }
@@ -131,14 +131,14 @@ public class MonitorUtil : IMonitorUtil
             var hookInstance = GetMonitorHookInstance(action.Hook);
             if (hookInstance == null)
             {
-                _logger.LogWarning("Hook {Hook} in monitor item id: {Id}, title: '{Title}' does not exist in service", action.Hook, action.Id, action.Title);
+                _logger.LogWarning("hook {Hook} in monitor item id: {Id}, title: '{Title}' does not exist in service", action.Hook, action.Id, action.Title);
                 var message = $"Hook {action.Hook} in monitor item id: {action.Id}, title: '{action.Title}' does not exist in service";
                 return ExecuteMonitorResult.Fail(message);
             }
             else
             {
                 details = GetMonitorDetails(action, info, exception);
-                _logger.LogInformation("Monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
+                _logger.LogInformation(",onitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
                 await hookInstance.HandleSystem(details, _logger, cancellationToken);
                 await SaveMonitorAlert(action, details);
                 return ExecuteMonitorResult.Ok;
@@ -147,7 +147,7 @@ public class MonitorUtil : IMonitorUtil
         catch (Exception ex)
         {
             await SaveMonitorAlert(action, details, ex);
-            _logger.LogError(ex, "Fail to handle monitor item id: {Id}, title: '{Title}' with hook: {Hook}", action.Id, action.Title, action.Hook);
+            _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: '{Title}' with hook: {Hook}", action.Id, action.Title, action.Hook);
             var message = $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook: {action.Hook}. Error message: {ex.Message}";
             return ExecuteMonitorResult.Fail(message);
         }
@@ -168,7 +168,7 @@ public class MonitorUtil : IMonitorUtil
             {
                 if (task.Exception != null)
                 {
-                    _logger.LogError(task.Exception, "Fail to handle monitor item(s)");
+                    _logger.LogError(task.Exception, "fail to handle monitor item(s)");
                 }
             });
     }
@@ -180,7 +180,7 @@ public class MonitorUtil : IMonitorUtil
             {
                 if (task.Exception != null)
                 {
-                    _logger.LogError(task.Exception, "Fail to handle monitor item(s)");
+                    _logger.LogError(task.Exception, "fail to handle monitor item(s)");
                 }
             }, cancellationToken);
     }
@@ -192,12 +192,12 @@ public class MonitorUtil : IMonitorUtil
         var count = await dal.GetMonitorCount();
         if (count == 0)
         {
-            _logger.LogWarning("There is no monitor items. Service does not have any monitor");
+            _logger.LogWarning("there is no monitor items. service does not have any monitor");
         }
 
         var hooks = await dal.GetMonitorUsedHooks();
         var missingHooks = hooks.Where(h => !ServiceUtil.MonitorHooks.ContainsKey(h)).ToList();
-        missingHooks.ForEach(h => _logger.LogWarning("Monitor with hook '{Hook}' is invalid. Missing hook in service", h));
+        missingHooks.ForEach(h => _logger.LogWarning("monitor with hook '{Hook}' is invalid. missing hook in service", h));
     }
 
     private static void FillException(Monitor monitor, Exception? exception)
@@ -462,7 +462,7 @@ public class MonitorUtil : IMonitorUtil
 
         if (string.IsNullOrWhiteSpace(jobId))
         {
-            _logger.LogWarning("Monitor action {Id}, Title '{Title}' --> missing job group/name", action.Id, action.Title);
+            _logger.LogWarning("monitor action {Id}, Title '{Title}' --> missing job group/name", action.Id, action.Title);
             return MonitorArguments.Empty;
         }
 
@@ -568,7 +568,7 @@ public class MonitorUtil : IMonitorUtil
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                "Fail to save monitor alert for monitor '{Title}' with event id {Id}",
+                "fail to save monitor alert for monitor '{Title}' with event id {Id}",
                 details?.MonitorTitle ?? "[null]",
                 details?.EventId ?? 0);
         }
@@ -593,7 +593,7 @@ public class MonitorUtil : IMonitorUtil
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                "Fail to save monitor alert for monitor '{Title}' with event id {Id}",
+                "fail to save monitor alert for monitor '{Title}' with event id {Id}",
                 details?.MonitorTitle ?? "[null]",
                 details?.EventId ?? 0);
         }
@@ -642,7 +642,7 @@ public class MonitorUtil : IMonitorUtil
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Fail to handle monitor item(s) --> LoadMonitorItems");
+            _logger.LogError(ex, "fail to handle monitor item(s) --> LoadMonitorItems");
             return;
         }
 
@@ -658,7 +658,7 @@ public class MonitorUtil : IMonitorUtil
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Fail to handle monitor item(s)");
+            _logger.LogError(ex, "fail to handle monitor item(s)");
         }
     }
 
@@ -690,7 +690,7 @@ public class MonitorUtil : IMonitorUtil
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Fail to handle monitor item(s) --> LoadMonitorItems");
+            _logger.LogError(ex, "fail to handle monitor item(s) --> LoadMonitorItems");
             return;
         }
 
@@ -706,7 +706,7 @@ public class MonitorUtil : IMonitorUtil
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Fail to handle monitor item(s)");
+            _logger.LogError(ex, "fail to handle monitor item(s)");
         }
     }
 }
