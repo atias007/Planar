@@ -143,6 +143,19 @@ namespace Planar.Common
             {
                 throw new AppSettingsException($"ERROR: database connection string could not be initialized\r\nMissing key 'connection string' or value is empty in AppSettings.yml file and there is no environment variable '{Consts.ConnectionStringVariableKey}'");
             }
+
+            try
+            {
+                var builder = new SqlConnectionStringBuilder(Database.ConnectionString)
+                {
+                    MultipleActiveResultSets = true
+                };
+                Database.ConnectionString = builder.ConnectionString;
+            }
+            catch (Exception ex)
+            {
+                throw new AppSettingsException($"ERROR: database connection is not valid\r\nerror message: {ex.Message}\r\nconnection string: {Database.ConnectionString}");
+            }
         }
 
         public static void TestDatabasePermission()

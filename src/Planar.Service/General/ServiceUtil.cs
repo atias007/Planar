@@ -4,7 +4,6 @@ using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Hooks;
 using Planar.Monitor.Hook;
-using Planar.Service.Monitor;
 using Quartz;
 using System;
 using System.Collections.Concurrent;
@@ -17,7 +16,7 @@ namespace Planar.Service.General
 {
     public static class ServiceUtil
     {
-        public static ConcurrentDictionary<string, BaseHook> MonitorHooks { get; private set; } = new();
+        internal static ConcurrentDictionary<string, object> MonitorHooks { get; private set; } = new();
         private static bool _disposeFlag;
         private static readonly object _locker = new();
         private const string _monitorHookAssemblyContextName = "MonitorHook_";
@@ -76,7 +75,7 @@ namespace Planar.Service.General
                     var types = GetHookTypesFromFile(assemblyContext, f);
                     foreach (var t in types)
                     {
-                        hasHook = LoadHook(logger, dir, t);
+                        hasHook = LoadHook(logger, t);
                     }
                 }
 
@@ -87,20 +86,16 @@ namespace Planar.Service.General
             }
         }
 
-        private static bool LoadHook<T>(ILogger<T> logger, string dir, Type t)
+        private static bool LoadHook<T>(ILogger<T> logger, Type t)
         {
-            if (Activator.CreateInstance(t) is not BaseHook instance)
-            {
-                var name = new DirectoryInfo(dir).Name;
-                logger.LogWarning("Fail to add monitor hook from directory {Name} with type {FullName}", name, t.FullName);
-                return false;
-            }
-
-            var result = MonitorHooks.TryAdd(instance.Name, instance);
+            var instance = Activator.CreateInstance(t);
+            var validator = new HookValidator(instance, logger);
+            if (!validator.IsValid) { return false; }
+            var result = MonitorHooks.TryAdd(validator.Name, instance!);
 
             if (result)
             {
-                logger.LogInformation("Add monitor hook {Name} from type {FullName}", instance.Name, t.FullName);
+                logger.LogInformation("Add monitor hook {Name} from type {FullName}", validator.Name, t.FullName);
             }
 
             return result;
@@ -117,7 +112,9 @@ namespace Planar.Service.General
             where THook : BaseHook
         {
             var instance = Activator.CreateInstance<THook>();
-            var result = MonitorHooks.TryAdd(instance.Name, instance);
+            var hookWrapper = new HookValidator(instance, logger);
+            if (!hookWrapper.IsValid) { return; }
+            var result = MonitorHooks.TryAdd(instance.Name, hookWrapper);
 
             if (result)
             {
@@ -149,7 +146,7 @@ namespace Planar.Service.General
             {
                 try
                 {
-                    var isHook = t.BaseType != null && t.BaseType.FullName == _monitorHookBaseClassName;
+                    var isHook = IsHookType(t);
                     if (isHook)
                     {
                         result.Add(t);
@@ -162,6 +159,13 @@ namespace Planar.Service.General
             }
 
             return result;
+        }
+
+        private static bool IsHookType(Type t)
+        {
+            if (t.BaseType == null) { return false; }
+            if (t.BaseType.FullName == _monitorHookBaseClassName) { return true; }
+            return IsHookType(t.BaseType);
         }
 
         public static string GetJobFolder(string? folder)
