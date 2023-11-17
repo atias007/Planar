@@ -122,6 +122,7 @@ namespace Planar.CLI.Actions
         }
 
         [Action("login")]
+        [ActionWizard]
         public static async Task<CliActionResponse> Login(CliLoginRequest request, CancellationToken cancellationToken = default)
         {
             var notnullRequest = FillLoginRequest(request);
