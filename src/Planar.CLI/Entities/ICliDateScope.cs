@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Planar.API.Common.Entities;
+namespace Planar.CLI.Entities;
 
 public interface ICliDateScope
 {

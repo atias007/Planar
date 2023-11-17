@@ -121,7 +121,7 @@ namespace Planar.CLI.Actions
 
             var restRequest = new RestRequest("group/{name}/user/{username}", Method.Patch)
                .AddParameter("name", request.GroupName, ParameterType.UrlSegment)
-               .AddParameter("username", request.Username, ParameterType.UrlSegment);
+               .AddParameter("username", request.Name, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);
             return new CliActionResponse(result);
@@ -138,7 +138,7 @@ namespace Planar.CLI.Actions
 
             var restRequest = new RestRequest("group/{name}/user/{username}", Method.Delete)
                .AddParameter("name", request.GroupName, ParameterType.UrlSegment)
-               .AddParameter("username", request.Username, ParameterType.UrlSegment);
+               .AddParameter("username", request.Name, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);
             return new CliActionResponse(result);
@@ -163,11 +163,11 @@ namespace Planar.CLI.Actions
 
         private static async Task<CliPromptWrapper> FillCliUserToGroupRequest(CliUserToGroupRequest request, CancellationToken cancellationToken)
         {
-            if (string.IsNullOrEmpty(request.Username))
+            if (string.IsNullOrEmpty(request.Name))
             {
                 var p1 = await CliPromptUtil.Users(cancellationToken);
                 if (!p1.IsSuccessful) { return p1; }
-                request.Username = p1.Value ?? string.Empty;
+                request.Name = p1.Value ?? string.Empty;
             }
 
             if (string.IsNullOrEmpty(request.GroupName))
