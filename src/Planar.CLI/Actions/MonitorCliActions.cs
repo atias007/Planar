@@ -38,8 +38,7 @@ namespace Planar.CLI.Actions
             var restRequestAdd = new RestRequest("monitor", Method.Post)
                 .AddBody(mappedRequest);
             var resultAdd = await RestProxy.Invoke<EntityIdResponse>(restRequestAdd, cancellationToken);
-
-            return new CliActionResponse(resultAdd, message: Convert.ToString(resultAdd.Data?.Id));
+            return new CliActionResponse(resultAdd);
         }
 
         [Action("remove")]
