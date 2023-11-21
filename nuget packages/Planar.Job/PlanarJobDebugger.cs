@@ -16,6 +16,8 @@ namespace Planar.Job
         public void AddProfile<T>(string name, Action<IExecuteJobPropertiesBuilder> builderAction)
             where T : class, new()
         {
+            if (PlanarJob.Mode == RunningMode.Release) { return; }
+
             if (_profiles.ContainsKey(name))
             {
                 throw new PlanarJobException($"Debug profile '{name}' already exists");

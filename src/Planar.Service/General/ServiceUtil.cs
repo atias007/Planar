@@ -95,7 +95,7 @@ namespace Planar.Service.General
 
             if (result)
             {
-                logger.LogInformation("ad monitor hook {Name} from type {FullName}", validator.Name, t.FullName);
+                logger.LogInformation("add monitor hook {Name} from type {FullName}", validator.Name, t.FullName);
             }
 
             return result;

@@ -197,7 +197,7 @@ public class MonitorUtil : IMonitorUtil
 
         var hooks = await dal.GetMonitorUsedHooks();
         var missingHooks = hooks.Where(h => !ServiceUtil.MonitorHooks.ContainsKey(h)).ToList();
-        missingHooks.ForEach(h => _logger.LogWarning("monitor with hook '{Hook}' is invalid. missing hook in service", h));
+        missingHooks.ForEach(h => _logger.LogWarning("monitor item with hook '{Hook}' is invalid. missing hook", h));
     }
 
     private static void FillException(Monitor monitor, Exception? exception)
