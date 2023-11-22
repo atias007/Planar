@@ -318,6 +318,52 @@ namespace Planar.Service.Data
             return count;
         }
 
+        public async Task<IEnumerable<string>> GetMonitorCounterJobIds()
+        {
+            var count = await _context.MonitorCounters
+                .AsNoTracking()
+                .Select(m => m.JobId)
+                .Distinct()
+                .ToListAsync();
+
+            return count;
+        }
+
+        public async Task<IEnumerable<int>> GetMonitorCounterIds()
+        {
+            var count = await _context.MonitorCounters
+                .AsNoTracking()
+                .Select(m => m.MonitorId)
+                .Distinct()
+                .ToListAsync();
+
+            return count;
+        }
+
+        public async Task DeleteMonitorCounterByJobId(string jobId)
+        {
+            await _context.MonitorCounters
+                .Where(m => m.JobId == jobId)
+                .ExecuteDeleteAsync();
+        }
+
+        public async Task DeleteMonitorCounterByMonitorId(int monitorId)
+        {
+            await _context.MonitorCounters
+                .Where(m => m.MonitorId == monitorId)
+                .ExecuteDeleteAsync();
+        }
+
+        public async Task<IEnumerable<int>> GetMonitorActionIds()
+        {
+            var count = await _context.MonitorActions
+                .AsNoTracking()
+                .Select(m => m.Id)
+                .ToListAsync();
+
+            return count;
+        }
+
         private IQueryable<MonitorAction> GetMonitorData()
         {
             var query = _context.MonitorActions

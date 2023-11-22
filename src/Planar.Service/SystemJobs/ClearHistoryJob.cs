@@ -48,6 +48,8 @@ namespace Planar.Service.SystemJobs
                 ClearJobWithRetentionDaysLog(),
                 ClearStatistics(),
                 ClearProperties(ids.Result),
+                ClearMonitorCountersByJob(ids.Result),
+                ClearMonitorCountersByMonitor(),
                 ClearJobStatistics(ids.Result)
                 );
         }
@@ -163,6 +165,59 @@ namespace Planar.Service.SystemJobs
             catch (Exception ex)
             {
                 _logger.LogError(ex, "fail to clear properties table rows");
+            }
+        }
+
+        private async Task ClearMonitorCountersByJob(IEnumerable<string> existsIds)
+        {
+            try
+            {
+                using var scope = _serviceScopeFactory.CreateScope();
+                var data = scope.ServiceProvider.GetRequiredService<MonitorData>();
+                var ids = await data.GetMonitorCounterJobIds();
+                var rows = 0;
+                foreach (var id in ids)
+                {
+                    if (!existsIds.Contains(id))
+                    {
+                        await data.DeleteMonitorCounterByJobId(id);
+                        _logger.LogDebug("delete monitor counter for job id {JobId}", id);
+                        rows++;
+                    }
+                }
+
+                _logger.LogDebug("clear monitor counter rows with {Total} effected row(s)", rows);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "fail to clear monitor counter rows");
+            }
+        }
+
+        private async Task ClearMonitorCountersByMonitor()
+        {
+            try
+            {
+                using var scope = _serviceScopeFactory.CreateScope();
+                var data = scope.ServiceProvider.GetRequiredService<MonitorData>();
+                var ids = await data.GetMonitorCounterIds();
+                var existsIds = await data.GetMonitorActionIds();
+                var rows = 0;
+                foreach (var id in ids)
+                {
+                    if (!existsIds.Contains(id))
+                    {
+                        await data.DeleteMonitorCounterByMonitorId(id);
+                        _logger.LogDebug("delete monitor counter for monitor id {MonitorId}", id);
+                        rows++;
+                    }
+                }
+
+                _logger.LogDebug("clear monitor counter rows with {Total} effected row(s)", rows);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "fail to clear monitor counter rows");
             }
         }
 
