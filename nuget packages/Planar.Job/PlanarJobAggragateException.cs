@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Planar
 {
 #pragma warning disable S3925 // "ISerializable" should be implemented correctly
 
     [Serializable]
-    public class PlanarJobAggragateException : Exception
+    public class PlanarJobAggragateException : AggregateException
 #pragma warning restore S3925 // "ISerializable" should be implemented correctly
     {
         public PlanarJobAggragateException(string message)
@@ -13,7 +14,7 @@ namespace Planar
         {
         }
 
-        public PlanarJobAggragateException(string message, Exception innerException) : base(message, innerException)
+        public PlanarJobAggragateException(string message, IEnumerable<Exception> innerExceptions) : base(message, innerExceptions)
         {
         }
     }

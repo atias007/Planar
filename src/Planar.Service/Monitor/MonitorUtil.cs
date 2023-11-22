@@ -608,17 +608,18 @@ public class MonitorUtil : IMonitorUtil
     private static bool IsJobOrTriggerEventLock(MonitorSystemInfo info, MonitorEvents @event)
     {
         var keyString = string.Empty;
-
-        if (info.MessagesParameters.ContainsKey("JobGroup") &&
-            info.MessagesParameters.ContainsKey("JobName"))
+        var hasGroup = info.MessagesParameters.TryGetValue("JobGroup", out var jobGroup);
+        var hasName = info.MessagesParameters.TryGetValue("JobName", out var jobName);
+        if (hasGroup && hasName)
         {
-            keyString = $"{info.MessagesParameters["JobGroup"]}.{info.MessagesParameters["JobName"]} {@event}";
+            keyString = $"{jobGroup}.{jobName} {@event}";
         }
 
-        if (info.MessagesParameters.ContainsKey("TriggerGroup") &&
-            info.MessagesParameters.ContainsKey("TriggerName"))
+        hasGroup = info.MessagesParameters.TryGetValue("TriggerGroup", out var triggerGroup);
+        hasName = info.MessagesParameters.TryGetValue("TriggerName", out var triggerName);
+        if (hasGroup && hasName)
         {
-            keyString = $"{info.MessagesParameters["TriggerGroup"]}.{info.MessagesParameters["TriggerName"]} {@event}";
+            keyString = $"{triggerGroup}.{triggerName} {@event}";
         }
 
         if (string.IsNullOrEmpty(keyString))

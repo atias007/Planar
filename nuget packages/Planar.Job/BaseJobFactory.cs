@@ -12,7 +12,7 @@ namespace Planar.Job
         private readonly bool _isNowOverrideValueExists;
         private readonly DateTime? _nowOverrideValue;
         private readonly IJobExecutionContext _context;
-        private readonly List<ExceptionDto> _exceptions = new List<ExceptionDto>();
+        private readonly List<Exception> _exceptions = new List<Exception>();
         private int? _effectedRows;
 
         public BaseJobFactory(IJobExecutionContext context)
@@ -64,35 +64,23 @@ namespace Planar.Job
             lock (Locker)
             {
                 var message = new ExceptionDto(ex);
-                _exceptions.Add(message);
+                _exceptions.Add(ex);
                 MqttClient.Publish(MessageBrokerChannels.AddAggregateException, message).Wait();
             }
         }
 
         public void CheckAggragateException()
         {
-            var text = GetExceptionsText();
-            if (!string.IsNullOrWhiteSpace(text))
-            {
-                var ex = new PlanarJobAggragateException(text);
-                throw ex;
-            }
-        }
-
-        public int ExceptionCount => _exceptions.Count;
-
-        private string GetExceptionsText()
-        {
             lock (Locker)
             {
                 if (_exceptions == null || !_exceptions.Any())
                 {
-                    return string.Empty;
+                    return;
                 }
 
                 if (_exceptions.Count == 1)
                 {
-                    return _exceptions[0].ExceptionText ?? string.Empty;
+                    throw _exceptions[0];
                 }
 
                 var seperator = string.Empty.PadLeft(80, '-');
@@ -102,13 +90,15 @@ namespace Planar.Job
                 sb.AppendLine(seperator);
                 _exceptions.ForEach(e =>
                 {
-                    sb.AppendLine(e.ExceptionText);
+                    sb.AppendLine(e.Message);
                     sb.AppendLine(seperator);
                 });
 
-                return sb.ToString();
+                throw new PlanarJobAggragateException(sb.ToString(), _exceptions);
             }
         }
+
+        public int ExceptionCount => _exceptions.Count;
 
         #endregion AggregateException
 
