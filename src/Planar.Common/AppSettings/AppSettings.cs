@@ -32,6 +32,8 @@ namespace Planar.Common
 
         public static DatabaseSettings Database { get; private set; } = new();
 
+        public static MonitorSettings Monitor { get; private set; } = new();
+
         public static void Initialize(IConfiguration configuration)
         {
             Console.WriteLine("[x] Initialize AppSettings");
@@ -44,6 +46,7 @@ namespace Planar.Common
             InitializeLogLevel(configuration);
             InitializeAuthentication(configuration);
             InitializeSmtp(configuration);
+            InitializeMonitor(configuration);
 
             // Database
             Database.Provider = GetSettings(configuration, Consts.DatabaseProviderVariableKey, "database", "provider", "Npgsql");
@@ -73,7 +76,7 @@ namespace Planar.Common
 
             if (General.ConcurrencyRateLimiting < 1)
             {
-                throw new AppSettingsException($"Concurrency rate limiting have minimum value of 1 minute. Current length is {General.ConcurrencyRateLimiting}");
+                throw new AppSettingsException($"'concurrency rate limiting' have minimum value of 1 minute. Current length is {General.ConcurrencyRateLimiting}");
             }
         }
 
@@ -101,6 +104,22 @@ namespace Planar.Common
             Smtp.Password = GetSettings(configuration, Consts.SmtpPassword, "smtp", "password", string.Empty);
         }
 
+        private static void InitializeMonitor(IConfiguration configuration)
+        {
+            Monitor.MaxAlertsPerMonitor = GetSettings(configuration, Consts.MonitorMaxAlerts, "monitor", "max alerts per monitor", 10);
+            Monitor.MaxAlertsPeriod = GetSettings(configuration, Consts.MonitorMaxAlertsPeriod, "monitor", "max alerts period", TimeSpan.FromDays(1));
+
+            if (Monitor.MaxAlertsPerMonitor < 1)
+            {
+                throw new AppSettingsException($"'max alerts per monitor' value of {Monitor.MaxAlertsPerMonitor} is invalid. minimum value is 1");
+            }
+
+            if (Monitor.MaxAlertsPeriod.TotalHours < 1)
+            {
+                throw new AppSettingsException("'max alerts period' value of is invalid. minimum value is 1 hour");
+            }
+        }
+
         private static void InitializePersistanceSpan(IConfiguration configuration)
         {
             General.PersistRunningJobsSpan = GetSettings<TimeSpan>(configuration, Consts.PersistRunningJobsSpanVariableKey, "general", "persist running jobs span");
@@ -108,7 +127,7 @@ namespace Planar.Common
             if (General.PersistRunningJobsSpan == TimeSpan.Zero)
             {
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine($"WARNING: PersistRunningJobsSpan settings is Zero (00:00:00). Set to default value {Consts.PersistRunningJobsSpanDefaultValue}");
+                Console.WriteLine($"WARNING: 'persist running jobs span' settings is Zero (00:00:00). Set to default value {Consts.PersistRunningJobsSpanDefaultValue}");
                 Console.ResetColor();
                 General.PersistRunningJobsSpan = Consts.PersistRunningJobsSpanDefaultValue;
             }
@@ -121,7 +140,7 @@ namespace Planar.Common
             if (General.MaxConcurrency == default)
             {
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine($"WARNING: MaxConcurrency settings is null. Set to default value {Consts.MaxConcurrencyDefaultValue}");
+                Console.WriteLine($"WARNING: 'max concurrency' settings is null. Set to default value {Consts.MaxConcurrencyDefaultValue}");
                 Console.ResetColor();
                 General.MaxConcurrency = Consts.MaxConcurrencyDefaultValue;
             }
@@ -129,7 +148,7 @@ namespace Planar.Common
             if (General.MaxConcurrency < 1)
             {
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine($"WARNING: MaxConcurrency settings is less then 1 ({General.MaxConcurrency}). Set to default value {Consts.MaxConcurrencyDefaultValue}");
+                Console.WriteLine($"WARNING: 'max concurrency' settings is less then 1 ({General.MaxConcurrency}). Set to default value {Consts.MaxConcurrencyDefaultValue}");
                 Console.ResetColor();
                 General.MaxConcurrency = Consts.MaxConcurrencyDefaultValue;
             }
@@ -141,7 +160,7 @@ namespace Planar.Common
 
             if (string.IsNullOrEmpty(Database.ConnectionString))
             {
-                throw new AppSettingsException($"ERROR: database connection string could not be initialized\r\nMissing key 'connection string' or value is empty in AppSettings.yml file and there is no environment variable '{Consts.ConnectionStringVariableKey}'");
+                throw new AppSettingsException($"ERROR: 'database connection' string could not be initialized\r\nMissing key 'connection string' or value is empty in AppSettings.yml file and there is no environment variable '{Consts.ConnectionStringVariableKey}'");
             }
 
             try
@@ -154,7 +173,7 @@ namespace Planar.Common
             }
             catch (Exception ex)
             {
-                throw new AppSettingsException($"ERROR: database connection is not valid\r\nerror message: {ex.Message}\r\nconnection string: {Database.ConnectionString}");
+                throw new AppSettingsException($"ERROR: 'database connection' is not valid\r\nerror message: {ex.Message}\r\nconnection string: {Database.ConnectionString}");
             }
         }
 
@@ -264,29 +283,29 @@ namespace Planar.Common
             }
             else
             {
-                throw new AppSettingsException($"Authentication mode {mode} is invalid");
+                throw new AppSettingsException($"authentication mode {mode} is invalid");
             }
 
             if (Authentication.Mode == AuthMode.AllAnonymous) { return; }
 
             if (string.IsNullOrEmpty(Authentication.Secret))
             {
-                throw new AppSettingsException($"Authentication secret must have value when authentication mode is {Authentication.Mode}");
+                throw new AppSettingsException($"authentication secret must have value when authentication mode is {Authentication.Mode}");
             }
 
             if (Authentication.Secret.Length < 65)
             {
-                throw new AppSettingsException($"Authentication secret must have minimum length of 65 charecters. Current length is {Authentication.Secret.Length}");
+                throw new AppSettingsException($"authentication secret must have minimum length of 65 charecters. Current length is {Authentication.Secret.Length}");
             }
 
             if (Authentication.Secret.Length > 256)
             {
-                throw new AppSettingsException($"Authentication secret must have maximum length of 256 charecters. Current length is {Authentication.Secret.Length}");
+                throw new AppSettingsException($"authentication secret must have maximum length of 256 charecters. Current length is {Authentication.Secret.Length}");
             }
 
             if (Authentication.TokenExpire.TotalMinutes < 1)
             {
-                throw new AppSettingsException($"Authentication token expire have minimum value of 1 minute. Current length is {Authentication.TokenExpire.TotalSeconds:N0} seconds");
+                throw new AppSettingsException($"authentication token expire have minimum value of 1 minute. Current length is {Authentication.TokenExpire.TotalSeconds:N0} seconds");
             }
 
             Authentication.Key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Authentication.Secret));

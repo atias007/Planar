@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar.API.Common.Entities;
@@ -28,6 +29,17 @@ public class MonitorUtil : IMonitorUtil
     private static readonly ConcurrentDictionary<string, DateTimeOffset> _lockJobEvents = new();
     private readonly ILogger<MonitorUtil> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
+
+    private static readonly int[] _counterEvents = new[] {
+            (int) MonitorEvents.ClusterHealthCheckFail,
+            (int) MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx,
+            (int) MonitorEvents.ExecutionEndWithEffectedRowsLessThanx,
+            (int) MonitorEvents.ExecutionFail,
+            (int) MonitorEvents.ExecutionFailxTimesInRow,
+            (int) MonitorEvents.ExecutionFailxTimesInyHours,
+            (int) MonitorEvents.ExecutionLastRetryFail,
+            (int) MonitorEvents.ExecutionSuccessWithNoEffectedRows,
+            (int) MonitorEvents.ExecutionVetoed};
 
     public MonitorUtil(IServiceScopeFactory serviceScopeFactory, ILogger<MonitorUtil> logger)
     {
@@ -96,6 +108,13 @@ public class MonitorUtil : IMonitorUtil
             else
             {
                 details = GetMonitorDetails(action, context, exception);
+
+                if (await CheckForMutedMonitor(details))
+                {
+                    _logger.LogWarning("monitor item id: {Id}, title: '{Title}' is muted", action.Id, action.Title);
+                    return ExecuteMonitorResult.Ok;
+                }
+
                 if (@event == MonitorEvents.ExecutionProgressChanged)
                 {
                     _logger.LogDebug("monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
@@ -107,6 +126,7 @@ public class MonitorUtil : IMonitorUtil
 
                 await hookInstance.Handle(details, _logger);
                 await SaveMonitorAlert(action, details, context);
+                await SaveMonitorCounter(action, details);
                 return ExecuteMonitorResult.Ok;
             }
         }
@@ -203,6 +223,14 @@ public class MonitorUtil : IMonitorUtil
     private static void FillException(Monitor monitor, Exception? exception)
     {
         if (exception == null) { return; }
+        if (exception is PlanarJobExecutionException jobException)
+        {
+            monitor.Exception = jobException.ExceptionText;
+            monitor.MostInnerException = jobException.MostInnerExceptionText;
+            monitor.MostInnerExceptionMessage = jobException.MostInnerMessage;
+            return;
+        }
+
         exception = GetTopRelevantException(exception);
         if (exception == null) { return; }
 
@@ -548,6 +576,76 @@ public class MonitorUtil : IMonitorUtil
         _lockJobEvents.TryRemove(keyString, out _);
     }
 
+    private async Task SaveMonitorCounter(MonitorAction action, MonitorDetails? details)
+    {
+        try
+        {
+            if (details == null) { return; }
+            if (details.JobId == null) { return; }
+            if (!_counterEvents.Contains(action.EventId)) { return; }
+
+            var counter = new MonitorCounter
+            {
+                Counter = 1,
+                JobId = details.JobId,
+                LastUpdate = DateTime.Now,
+                MonitorId = action.Id
+            };
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dataLayer = scope.ServiceProvider.GetRequiredService<MonitorData>();
+
+            var exists = await dataLayer.IsMonitorCounterExists(counter.JobId);
+            if (exists)
+            {
+                await dataLayer.IncreaseMonitorCounter(counter.JobId);
+            }
+            else
+            {
+                try
+                {
+                    await dataLayer.AddMonitorCounter(counter);
+                }
+                catch (DbUpdateException)
+                {
+                    await dataLayer.IncreaseMonitorCounter(counter.JobId);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "fail to save monitor counter for monitor '{Title}' with event '{Event}'",
+                details?.MonitorTitle ?? "[null]",
+                details?.EventTitle ?? "[null]");
+        }
+    }
+
+    private async Task<bool> CheckForMutedMonitor(MonitorDetails? details)
+    {
+        try
+        {
+            if (details == null) { return false; }
+            if (details.JobId == null) { return false; }
+            if (!_counterEvents.Contains(details.EventId)) { return false; }
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dataLayer = scope.ServiceProvider.GetRequiredService<MonitorData>();
+            var count = await dataLayer.GetMonitorCounter(details.JobId);
+
+            return count > AppSettings.Monitor.MaxAlertsPerMonitor;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "fail to check monitor counter for monitor '{Title}' with event '{Event}'",
+                details?.MonitorTitle ?? "[null]",
+                details?.EventTitle ?? "[null]");
+        }
+
+        return false;
+    }
+
     private async Task SaveMonitorAlert(MonitorAction action, MonitorDetails? details, IJobExecutionContext context, Exception? exception = null)
     {
         try
@@ -568,9 +666,9 @@ public class MonitorUtil : IMonitorUtil
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                "fail to save monitor alert for monitor '{Title}' with event id {Id}",
+                "fail to save monitor alert for monitor '{Title}' with event '{Event}'",
                 details?.MonitorTitle ?? "[null]",
-                details?.EventId ?? 0);
+                details?.EventTitle ?? "[null]");
         }
     }
 

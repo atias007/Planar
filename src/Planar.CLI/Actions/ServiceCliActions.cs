@@ -35,41 +35,26 @@ namespace Planar.CLI.Actions
         }
 
         [Action("info")]
-        public static async Task<CliActionResponse> GetInfo(CliGetInfoRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> GetInfo(CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(request.Key))
-            {
-                var restRequest = new RestRequest("service", Method.Get);
-                var result = await RestProxy.Invoke<AppSettingsInfo>(restRequest, cancellationToken);
+            var restRequest = new RestRequest("service", Method.Get);
+            var result = await RestProxy.Invoke<AppSettingsInfo>(restRequest, cancellationToken);
 
-                var data =
-                    result.Data == null ?
-                    new List<CliDumpObject>() :
-                    new List<CliDumpObject>
-                    {
+            var data =
+                result.Data == null ?
+                new List<CliDumpObject>() :
+                new List<CliDumpObject>
+                {
                          new CliDumpObject(result.Data.Authentication){ Title=nameof(result.Data.Authentication) },
                          new CliDumpObject(result.Data.Cluster){ Title=nameof(result.Data.Cluster) },
                          new CliDumpObject(result.Data.Database){ Title=nameof(result.Data.Database) },
                          new CliDumpObject(result.Data.General){ Title=nameof(result.Data.General) },
                          new CliDumpObject(result.Data.Retention){ Title=nameof(result.Data.Retention) },
+                         new CliDumpObject(result.Data.Monitor){ Title=nameof(result.Data.Monitor) },
                          new CliDumpObject(result.Data.Smtp){ Title=nameof(result.Data.Smtp) },
-                    };
+                };
 
-                return new CliActionResponse(result, data);
-            }
-            else
-            {
-                var key = request.Key.Replace(" ", string.Empty).ToLower();
-                if (key == "cliversion")
-                {
-                    return CliActionResponse.Empty;
-                }
-
-                var restRequest = new RestRequest("service/{key}", Method.Get);
-                restRequest.AddUrlSegment("key", request.Key);
-                var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
-                return new CliActionResponse(result, result.Data);
-            }
+            return new CliActionResponse(result, data);
         }
 
         [Action("version")]

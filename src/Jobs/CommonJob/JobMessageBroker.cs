@@ -156,7 +156,7 @@ namespace CommonJob
             }
 
             var dic = map
-                .Where(k => Consts.IsDataKeyValid(k.Key))
+                // .Where(k => Consts.IsDataKeyValid(k.Key)) // *** do the filter in job process (in BaseJob.FilterJobData)
                 .OrderBy(k => k.Key)
                 .ToDictionary(k => k.Key, v => PlanarConvert.ToString(v.Value));
 

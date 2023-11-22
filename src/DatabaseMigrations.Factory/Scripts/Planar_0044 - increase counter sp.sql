@@ -1,0 +1,30 @@
+IF EXISTS(SELECT 1 FROM sys.procedures WHERE  Name = N'IncreaseMonitorCounter')
+BEGIN
+  DROP PROCEDURE dbo.IncreaseMonitorCounter
+END
+
+GO
+
+
+CREATE PROCEDURE dbo.IncreaseMonitorCounter
+  @JobId nvarchar(20)
+AS
+
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;  
+BEGIN TRANSACTION;  
+
+UPDATE [dbo].[MonitorCounters] SET 
+	[Counter] = [Counter] + 1,
+	[LastUpdate] = GETDATE()
+WHERE [JobId] = @JobId;
+
+COMMIT
+SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
+
+GO
+
+ALTER TABLE dbo.MonitorCounters ADD CONSTRAINT
+	IX_MonitorCounters UNIQUE NONCLUSTERED 
+	(
+	JobId
+	) WITH( STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using PlanarJobInner;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -137,14 +138,43 @@ namespace Planar.Job
 
         #region Inner
 
-        public void ReportException(Exception ex)
+        public string ReportException(Exception ex)
         {
-            ReportExceptionText(ex.ToString());
+            var text = GetExceptionText(ex);
+            var innerEx = GetMostInnerException(ex);
+            var dto = new PlanarJobExecutionExceptionDto
+            {
+                ExceptionText = text,
+                Message = ex.Message,
+                MostInnerExceptionText = GetExceptionText(innerEx),
+                MostInnerMessage = innerEx.Message,
+            };
+
+            MqttClient.Publish(MessageBrokerChannels.ReportExceptionV2, dto).Wait();
+
+            return text;
         }
 
-        public void ReportExceptionText(string text)
+        private static Exception GetMostInnerException(Exception ex)
         {
-            MqttClient.Publish(MessageBrokerChannels.ReportException, text).Wait();
+            var innerException = ex;
+            while (innerException.InnerException != null)
+            {
+                innerException = innerException.InnerException;
+            }
+
+            return innerException;
+        }
+
+        private static string GetExceptionText(Exception ex)
+        {
+            var lines = ex.ToString().Split('\n');
+            var filterLines = lines
+                .Where(l => !l.Contains($"{nameof(Planar)}.{nameof(Job)}\\{nameof(BaseJob)}.cs"))
+                .Select(l => l?.TrimEnd());
+
+            var text = string.Join(Environment.NewLine, filterLines);
+            return text.Trim();
         }
 
         #endregion Inner

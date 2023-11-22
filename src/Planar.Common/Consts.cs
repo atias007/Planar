@@ -97,6 +97,9 @@ namespace Planar
         public const string SmtpUsername = "PLANAR_SMTPUSERNAME";
         public const string SmtpPassword = "PLANAR_SMTPPASSWORD";
 
+        public const string MonitorMaxAlerts = "PLANAR_MONITORMAXALERTS";
+        public const string MonitorMaxAlertsPeriod = "PLANAR_MONITORMAXALERTSPERIOD";
+
         public static bool IsDataKeyValid(string key)
         {
             return !Array.Exists(AllDataKeys, k => string.Equals(k, key, StringComparison.OrdinalIgnoreCase));

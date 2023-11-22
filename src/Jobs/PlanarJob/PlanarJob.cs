@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
+using PlanarJobInner;
 using Quartz;
 using System;
 using System.Diagnostics;
@@ -22,7 +23,7 @@ namespace Planar
         private readonly object ConsoleLocker = new();
         private readonly bool _isDevelopment;
         private bool _isHealthCheck;
-        private string? _executionException;
+        private PlanarJobExecutionException? _executionException;
 
         protected PlanarJob(
             ILogger<PlanarJob> logger,
@@ -71,8 +72,8 @@ namespace Planar
 
         private void CheckJobErrorReport()
         {
-            if (string.IsNullOrWhiteSpace(_executionException)) { return; }
-            throw new PlanarJobExecutionException(_executionException);
+            if (_executionException == null) { return; }
+            throw _executionException;
         }
 
         private void ValidateExeFile()
@@ -319,7 +320,18 @@ namespace Planar
                     break;
 
                 case MessageBrokerChannels.ReportException:
-                    _executionException = GetCloudEventStringValue(e.CloudEvent);
+                    var value = GetCloudEventStringValue(e.CloudEvent);
+                    _executionException = new PlanarJobExecutionException(value);
+                    break;
+
+                case MessageBrokerChannels.ReportExceptionV2:
+                    var exValue = GetCloudEventEntityValue<PlanarJobExecutionExceptionDto>(e.CloudEvent);
+                    _executionException = new PlanarJobExecutionException(exValue.Message ?? "[no message]")
+                    {
+                        ExceptionText = exValue.ExceptionText,
+                        MostInnerMessage = exValue.MostInnerMessage,
+                        MostInnerExceptionText = exValue.MostInnerExceptionText
+                    };
                     break;
 
                 case MessageBrokerChannels.HealthCheck:

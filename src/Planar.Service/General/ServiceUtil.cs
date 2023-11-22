@@ -114,7 +114,7 @@ namespace Planar.Service.General
             var instance = Activator.CreateInstance<THook>();
             var hookWrapper = new HookValidator(instance, logger);
             if (!hookWrapper.IsValid) { return; }
-            var result = MonitorHooks.TryAdd(instance.Name, hookWrapper);
+            var result = MonitorHooks.TryAdd(instance.Name, instance);
 
             if (result)
             {

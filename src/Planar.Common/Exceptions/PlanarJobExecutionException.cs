@@ -1,21 +1,17 @@
 ﻿using System;
-using System.Runtime.Serialization;
 
 namespace Planar.Common.Exceptions
 {
-    [Serializable]
     public class PlanarJobExecutionException : Exception
     {
-        public PlanarJobExecutionException(string exceptionText) : base(nameof(PlanarJobExecutionException))
+        public PlanarJobExecutionException(string message) : base(message)
         {
-            ExceptionText = exceptionText;
         }
 
-        protected PlanarJobExecutionException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-            ExceptionText = string.Empty;
-        }
+        public string? ExceptionText { get; set; }
 
-        public string ExceptionText { get; }
+        public string? MostInnerMessage { get; set; }
+
+        public string? MostInnerExceptionText { get; set; }
     }
 }

@@ -30,6 +30,7 @@
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\Key.cs" Link="JobExecutionContext\Key.cs" />
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\TriggerDetail.cs" Link="JobExecutionContext\TriggerDetail.cs" />
 		<Compile Include="..\..\src\Jobs\PlanarJob\MessageBrokerChannels.cs" Link="MessageBrokerChannels.cs" />
+		<Compile Include="..\..\src\Jobs\PlanarJob\PlanarJobExecutionExceptionDto.cs" Link="PlanarJobExecutionExceptionDto.cs" />
 		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
 		<Compile Include="..\Planar.Common\ExecuteHelper\ExecuteJobProperties.cs" Link="ExecuteHelper\ExecuteJobProperties.cs" />
 		<Compile Include="..\Planar.Common\ExecuteHelper\ExecuteJobPropertiesBuilder.cs" Link="ExecuteHelper\ExecuteJobPropertiesBuilder.cs" />

@@ -92,8 +92,7 @@ namespace Planar.Job
             }
             catch (Exception ex)
             {
-                var text = GetExceptionText(ex);
-                _baseJobFactory.ReportExceptionText(text);
+                var text = _baseJobFactory.ReportException(ex);
                 if (PlanarJob.Mode == RunningMode.Debug)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
@@ -192,24 +191,15 @@ namespace Planar.Job
 
         private static void FilterJobData(IDataMap dictionary)
         {
-            foreach (var item in Consts.AllDataKeys)
+            var toRemove = dictionary
+                .Where(k => !Consts.IsDataKeyValid(k.Key))
+                .Select(pair => pair.Key)
+                .ToList();
+
+            foreach (var key in toRemove)
             {
-                if (dictionary.ContainsKey(item))
-                {
-                    ((DataMap)dictionary).Remove(item);
-                }
+                ((DataMap)dictionary).Remove(key);
             }
-        }
-
-        private static string GetExceptionText(Exception ex)
-        {
-            var lines = ex.ToString().Split('\n');
-            var filterLines = lines
-                .Where(l => !l.Contains($"{nameof(Planar)}.{nameof(Job)}\\{nameof(BaseJob)}.cs"))
-                .Select(l => l?.TrimEnd());
-
-            var text = string.Join(Environment.NewLine, filterLines);
-            return text.Trim();
         }
 
         private void InitializeBaseJobFactory(string json)

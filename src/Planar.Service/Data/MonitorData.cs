@@ -166,6 +166,39 @@ namespace Planar.Service.Data
             return data;
         }
 
+        public async Task AddMonitorCounter(MonitorCounter counter)
+        {
+            _context.MonitorCounters.Add(counter);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<bool> IsMonitorCounterExists(string jobId)
+        {
+            return await _context.MonitorCounters.AnyAsync(m => m.JobId == jobId);
+        }
+
+        public async Task ResetMonitorCounter(int delta)
+        {
+            var parameters = new { Delta = delta };
+            var cmd = new CommandDefinition(
+                commandText: "dbo.ResetMonitorCounter",
+                commandType: CommandType.StoredProcedure,
+                parameters: parameters);
+
+            await DbConnection.ExecuteAsync(cmd);
+        }
+
+        public async Task IncreaseMonitorCounter(string jobId)
+        {
+            var parameters = new { JobId = jobId };
+            var cmd = new CommandDefinition(
+                commandText: "dbo.IncreaseMonitorCounter",
+                commandType: CommandType.StoredProcedure,
+                parameters: parameters);
+
+            await DbConnection.ExecuteAsync(cmd);
+        }
+
         public IQueryable<MonitorAlert> GetMonitorAlerts(GetMonitorsAlertsRequest request)
         {
             var query = _context.MonitorAlerts.AsNoTracking();
@@ -272,6 +305,17 @@ namespace Planar.Service.Data
         {
             _context.MonitorActions.Update(monitor);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<int> GetMonitorCounter(string jobId)
+        {
+            var count = await _context.MonitorCounters
+                .AsNoTracking()
+                .Where(m => m.JobId == jobId)
+                .Select(m => m.Counter)
+                .FirstOrDefaultAsync();
+
+            return count;
         }
 
         private IQueryable<MonitorAction> GetMonitorData()
