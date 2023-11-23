@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
@@ -72,7 +73,26 @@ namespace Planar.Service.API
         {
             var query = DataLayer.GetMonitorActions();
             var result = await query.ProjectToWithPagingAsyc<MonitorAction, MonitorItem>(Mapper, request);
+            FillDistributionGroupName(result.Data);
             return result;
+        }
+
+        private void FillDistributionGroupName(IEnumerable<MonitorItem>? items)
+        {
+            if (items == null) { return; }
+            var mappaerData = Resolve<AutoMapperData>();
+            var dic = items.Select(i => i.GroupId).Distinct().ToDictionary(i => i, i => mappaerData.GetGroupName(i).Result ?? string.Empty);
+            foreach (var item in items)
+            {
+                item.DistributionGroupName = dic[item.GroupId];
+            }
+        }
+
+        private void FillDistributionGroupName(MonitorItem? item)
+        {
+            if (item == null) { return; }
+            var mappaerData = Resolve<AutoMapperData>();
+            item.DistributionGroupName = mappaerData.GetGroupName(item.GroupId).Result ?? string.Empty;
         }
 
         public async Task<MonitorItem> GetMonitorItem(int id)
@@ -100,6 +120,7 @@ namespace Planar.Service.API
             var item = await DataLayer.GetMonitorAction(id);
             var monitor = ValidateExistingEntity(item, "monitor");
             var result = Mapper.Map<MonitorAction, MonitorItem>(monitor);
+            FillDistributionGroupName(result);
             return result;
         }
 
@@ -231,6 +252,61 @@ namespace Planar.Service.API
             }
 
             await DataLayer.UpdateMonitorAction(monitor);
+        }
+
+        public async Task Mute(MonitorMuteRequest request)
+        {
+            var jobId = await ValidateUnmutedRequest(request);
+
+            var entity = new MonitorMute
+            {
+                DueDate = request.DueDate,
+                JobId = jobId,
+                MonitorId = request.MonitorId,
+            };
+
+            await DataLayer.AddMonitorMute(entity);
+        }
+
+        public async Task UnMute(MonitorUnmuteRequest request)
+        {
+            var jobId = await ValidateUnmutedRequest(request);
+            var hasJobId = jobId != null;
+            var hasMonitorId = request.MonitorId.HasValue;
+
+            if (hasJobId && hasMonitorId)
+            {
+                await DataLayer.UnMute(jobId!, request.MonitorId.GetValueOrDefault());
+            }
+            else if (!hasJobId && hasMonitorId)
+            {
+                await DataLayer.UnMute(request.MonitorId.GetValueOrDefault());
+            }
+            else if (hasJobId)
+            {
+                await DataLayer.UnMute(jobId!);
+            }
+            else
+            {
+                await DataLayer.UnMute();
+            }
+        }
+
+        private async Task<string?> ValidateUnmutedRequest(MonitorUnmuteRequest request)
+        {
+            string? jobId = null;
+            if (!string.IsNullOrEmpty(request.JobId))
+            {
+                jobId = await JobKeyHelper.GetJobId(request.JobId)
+                    ?? throw new RestValidationException(nameof(request.JobId), $"job with id '{request.JobId}' is not exists");
+            }
+
+            if (request.MonitorId.HasValue && !await DataLayer.IsMonitorExists(request.MonitorId.Value))
+            {
+                throw new RestValidationException(nameof(request.MonitorId), $"monitor id '{request.MonitorId}' is not exists");
+            }
+
+            return jobId;
         }
     }
 }

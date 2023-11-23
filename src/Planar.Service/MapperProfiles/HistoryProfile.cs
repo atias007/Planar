@@ -2,14 +2,13 @@
 using Planar.API.Common.Entities;
 using Planar.Service.Model;
 
-namespace Planar.Service.MapperProfiles
+namespace Planar.Service.MapperProfiles;
+
+internal class HistoryProfile : Profile
 {
-    internal class HistoryProfile : Profile
+    public HistoryProfile()
     {
-        public HistoryProfile()
-        {
-            CreateMap<JobInstanceLog, JobInstanceLogRow>();
-            CreateMap<JobInstanceLog, JobHistory>();
-        }
+        CreateMap<JobInstanceLog, JobInstanceLogRow>();
+        CreateMap<JobInstanceLog, JobHistory>();
     }
 }

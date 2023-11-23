@@ -18,7 +18,7 @@ general:
 
 database:
   provider: SqlServer                                # options: SqlServer
-  connection string: Password=PlanarSqlPassword12345@;Persist Security Info=True;User ID=sa;Initial Catalog=Planar;Data Source=planar-db,1433;MultipleActiveResultSets=True;Encrypt=False
+  connection string: Password=PlanarSqlPassword12345@;Persist Security Info=True;User ID=sa;Initial Catalog=Planar;Data Source=planar-db,1433;Encrypt=False
   run migration: true
 
 cluster:
@@ -41,6 +41,7 @@ authentication:
 monitor:
   max alerts per monitor: 10           # the maximum alert per monitor item and per job per period. default is 10. minimum value 1
   max alerts period: 1.00:00:00        # the period for maximum monitor alerts. default is 1 day. minimum value 1 hour
+  manual mute max period: 1.00:00:00   # the maximum period for manual mute. default is 1 day. minimum value 1 hour
 
 smtp: 
   from address: admin@planar.me

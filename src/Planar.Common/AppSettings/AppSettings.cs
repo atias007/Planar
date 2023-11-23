@@ -108,6 +108,7 @@ namespace Planar.Common
         {
             Monitor.MaxAlertsPerMonitor = GetSettings(configuration, Consts.MonitorMaxAlerts, "monitor", "max alerts per monitor", 10);
             Monitor.MaxAlertsPeriod = GetSettings(configuration, Consts.MonitorMaxAlertsPeriod, "monitor", "max alerts period", TimeSpan.FromDays(1));
+            Monitor.ManualMuteMaxPeriod = GetSettings(configuration, Consts.ManualMuteMaxPeriod, "monitor", "manual mute max period", TimeSpan.FromDays(1));
 
             if (Monitor.MaxAlertsPerMonitor < 1)
             {
@@ -116,7 +117,12 @@ namespace Planar.Common
 
             if (Monitor.MaxAlertsPeriod.TotalHours < 1)
             {
-                throw new AppSettingsException("'max alerts period' value of is invalid. minimum value is 1 hour");
+                throw new AppSettingsException("'max alerts period' value is invalid. minimum value is 1 hour");
+            }
+
+            if (Monitor.ManualMuteMaxPeriod.TotalHours < 1)
+            {
+                throw new AppSettingsException("'manual mute max period' value is invalid. minimum value is 1 hour");
             }
         }
 
@@ -166,9 +172,9 @@ namespace Planar.Common
             try
             {
                 var builder = new SqlConnectionStringBuilder(Database.ConnectionString);
-                if (builder.MultipleActiveResultSets) { return; }
+                if (!builder.MultipleActiveResultSets) { return; }
 
-                builder.MultipleActiveResultSets = true;
+                builder.MultipleActiveResultSets = false;
                 Database.ConnectionString = builder.ConnectionString;
             }
             catch (Exception ex)

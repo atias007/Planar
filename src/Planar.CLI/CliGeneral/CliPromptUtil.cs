@@ -9,6 +9,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Planar.CLI.CliGeneral
 {
@@ -66,6 +67,66 @@ namespace Planar.CLI.CliGeneral
             return new CliPromptWrapper<string>(select);
         }
 
+        internal static async Task<CliPromptWrapper<string>> GroupsForUser(string username, CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("user/{username}", Method.Get)
+               .AddParameter("username", username, ParameterType.UrlSegment);
+            var userResult = await RestProxy.Invoke<UserDetails>(restRequest, cancellationToken);
+            if (!userResult.IsSuccessful)
+            {
+                return new CliPromptWrapper<string>(userResult);
+            }
+
+            var items = userResult.Data?.Groups;
+            if (items == null || !items.Any())
+            {
+                throw new CliWarningException("no available groups to perform the opertaion");
+            }
+
+            var select = PromptSelection(items, "group", true);
+            return new CliPromptWrapper<string>(select);
+        }
+
+        internal static async Task<CliPromptWrapper<string>> GroupsWithoutUser(string username, CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("group", Method.Get)
+                .AddQueryPagingParameter(1000);
+
+            var result = await RestProxy.Invoke<PagingResponse<GroupInfo>>(restRequest, cancellationToken);
+            if (!result.IsSuccessful)
+            {
+                return new CliPromptWrapper<string>(result);
+            }
+
+            var data = result.Data?.Data;
+            if (data == null || !data.Any())
+            {
+                throw new CliWarningException("no available groups to perform the opertaion");
+            }
+
+            restRequest = new RestRequest("user/{username}", Method.Get)
+               .AddParameter("username", username, ParameterType.UrlSegment);
+            var userResult = await RestProxy.Invoke<UserDetails>(restRequest, cancellationToken);
+            if (!userResult.IsSuccessful)
+            {
+                return new CliPromptWrapper<string>(userResult);
+            }
+
+            var groupsincludeUser = userResult.Data?.Groups;
+            var items =
+                groupsincludeUser == null ?
+                data.Select(g => g.Name ?? string.Empty) :
+                data.Select(g => g.Name ?? string.Empty).Except(groupsincludeUser);
+
+            if (!items.Any())
+            {
+                throw new CliWarningException("no available groups to perform the opertaion");
+            }
+
+            var select = PromptSelection(items, "group", true);
+            return new CliPromptWrapper<string>(select);
+        }
+
         internal static async Task<CliPromptWrapper<string>> Users(CancellationToken cancellationToken)
         {
             var restRequest = new RestRequest("user", Method.Get)
@@ -83,6 +144,67 @@ namespace Planar.CLI.CliGeneral
             }
 
             var items = data.Select(g => g.Username ?? string.Empty);
+            var select = PromptSelection(items, "user", true);
+            return new CliPromptWrapper<string>(select);
+        }
+
+        internal static async Task<CliPromptWrapper<string>> UsersInGroup(string groupName, CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("group/{name}", Method.Get)
+                .AddParameter("name", groupName, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<GroupDetails>(restRequest, cancellationToken);
+            if (!result.IsSuccessful)
+            {
+                return new CliPromptWrapper<string>(result);
+            }
+
+            var items = result.Data?.Users.Select(u => u.Username);
+            if (items == null || !items.Any())
+            {
+                throw new CliWarningException("no available users to perform the opertaion");
+            }
+
+            var select = PromptSelection(items, "user", true);
+            return new CliPromptWrapper<string>(select);
+        }
+
+        internal static async Task<CliPromptWrapper<string>> UsersNotInGroup(string groupName, CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("user", Method.Get)
+                .AddQueryPagingParameter(1000);
+            var result = await RestProxy.Invoke<PagingResponse<UserRowModel>>(restRequest, cancellationToken);
+            if (!result.IsSuccessful)
+            {
+                return new CliPromptWrapper<string>(result);
+            }
+
+            var data = result.Data?.Data;
+            if (data == null || !data.Any())
+            {
+                throw new CliWarningException("no available users to perform the opertaion");
+            }
+
+            restRequest = new RestRequest("group/{name}", Method.Get)
+                .AddParameter("name", groupName, ParameterType.UrlSegment);
+
+            var groupResult = await RestProxy.Invoke<GroupDetails>(restRequest, cancellationToken);
+            if (!groupResult.IsSuccessful)
+            {
+                return new CliPromptWrapper<string>(groupResult);
+            }
+
+            var usersInGroup = groupResult.Data?.Users.Select(u => u.Username);
+            var items =
+                usersInGroup == null ?
+                data.Select(g => g.Username ?? string.Empty) :
+                data.Select(g => g.Username ?? string.Empty).Except(usersInGroup);
+
+            if (!items.Any())
+            {
+                throw new CliWarningException("no available users to perform the opertaion");
+            }
+
             var select = PromptSelection(items, "user", true);
             return new CliPromptWrapper<string>(select);
         }

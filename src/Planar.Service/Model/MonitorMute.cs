@@ -6,19 +6,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Planar.Service.Model;
 
-public partial class MonitorCounter
+[Table("MonitorMute")]
+public partial class MonitorMute
 {
     [Key]
     public int Id { get; set; }
 
-    public int MonitorId { get; set; }
-
     [StringLength(20)]
     [Unicode(false)]
-    public string JobId { get; set; } = null!;
+    public string? JobId { get; set; }
 
-    public int Counter { get; set; }
+    public int? MonitorId { get; set; }
 
     [Column(TypeName = "datetime")]
-    public DateTime? LastUpdate { get; set; }
+    public DateTime? DueDate { get; set; }
 }

@@ -2,14 +2,13 @@
 using Planar.API.Common.Entities;
 using Planar.Service.Model;
 
-namespace Planar.Service.MapperProfiles
+namespace Planar.Service.MapperProfiles;
+
+internal class JobProfile : Profile
 {
-    internal class JobProfile : Profile
+    public JobProfile()
     {
-        public JobProfile()
-        {
-            CreateMap<JobAudit, JobAuditWithInfoDto>();
-            CreateMap<JobAudit, JobAuditDto>();
-        }
+        CreateMap<JobAudit, JobAuditWithInfoDto>();
+        CreateMap<JobAudit, JobAuditDto>();
     }
 }

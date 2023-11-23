@@ -1,7 +1,9 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Service.Model;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -19,6 +21,19 @@ namespace Planar.Service.Data
         {
             _context.MonitorActions.Add(request);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task AddMonitorMute(MonitorMute request)
+        {
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
+            {
+                using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
+                await _context.MonitorMutes.Where(m => m.JobId == request.JobId && m.MonitorId == request.MonitorId).ExecuteDeleteAsync();
+                _context.MonitorMutes.Add(request);
+                await _context.SaveChangesAsync();
+                tran.Commit();
+            });
         }
 
         public async Task<int> CountFailsInHourForJob(object parameters)
@@ -188,9 +203,9 @@ namespace Planar.Service.Data
             await DbConnection.ExecuteAsync(cmd);
         }
 
-        public async Task IncreaseMonitorCounter(string jobId)
+        public async Task IncreaseMonitorCounter(string jobId, int monitorId)
         {
-            var parameters = new { JobId = jobId };
+            var parameters = new { JobId = jobId, MonitorId = monitorId };
             var cmd = new CommandDefinition(
                 commandText: "dbo.IncreaseMonitorCounter",
                 commandType: CommandType.StoredProcedure,
@@ -307,37 +322,59 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
-        public async Task<int> GetMonitorCounter(string jobId)
+        public async Task<int> GetMonitorCounter(string jobId, int monitorId)
         {
             var count = await _context.MonitorCounters
                 .AsNoTracking()
-                .Where(m => m.JobId == jobId)
+                .Where(m =>
+                    m.JobId == jobId &&
+                    m.MonitorId == monitorId &&
+                    EF.Functions.DateDiffMinute(m.LastUpdate, DateTime.Now) <= AppSettings.Monitor.MaxAlertsPeriod.TotalMinutes)
                 .Select(m => m.Counter)
                 .FirstOrDefaultAsync();
 
             return count;
         }
 
+        public async Task<bool> IsMonitorMuted(string jobId, int monitorId)
+        {
+            var result = await _context.MonitorMutes
+                .AsNoTracking()
+                .Where(m => (
+                    (m.JobId == null && m.MonitorId == null)
+                    ||
+                    (m.JobId == jobId && m.MonitorId == monitorId)
+                    ||
+                    (m.JobId == jobId && m.MonitorId == null)
+                    ||
+                    (m.JobId == null && m.MonitorId == monitorId))
+                    &&
+                    m.DueDate < DateTime.Now)
+                .AnyAsync();
+
+            return result;
+        }
+
         public async Task<IEnumerable<string>> GetMonitorCounterJobIds()
         {
-            var count = await _context.MonitorCounters
+            var result = await _context.MonitorCounters
                 .AsNoTracking()
                 .Select(m => m.JobId)
                 .Distinct()
                 .ToListAsync();
 
-            return count;
+            return result;
         }
 
         public async Task<IEnumerable<int>> GetMonitorCounterIds()
         {
-            var count = await _context.MonitorCounters
+            var result = await _context.MonitorCounters
                 .AsNoTracking()
                 .Select(m => m.MonitorId)
                 .Distinct()
                 .ToListAsync();
 
-            return count;
+            return result;
         }
 
         public async Task DeleteMonitorCounterByJobId(string jobId)
@@ -362,6 +399,54 @@ namespace Planar.Service.Data
                 .ToListAsync();
 
             return count;
+        }
+
+        public async Task UnMute(string jobId, int monitorId)
+        {
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
+            {
+                using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
+                await _context.MonitorMutes.Where(m => m.JobId == jobId && m.MonitorId == monitorId).ExecuteDeleteAsync();
+                await _context.MonitorCounters.Where(m => m.JobId == jobId && m.MonitorId == monitorId).ExecuteDeleteAsync();
+                tran.Commit();
+            });
+        }
+
+        public async Task UnMute(string jobId)
+        {
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
+            {
+                using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
+                await _context.MonitorMutes.Where(m => m.JobId == jobId).ExecuteDeleteAsync();
+                await _context.MonitorCounters.Where(m => m.JobId == jobId).ExecuteDeleteAsync();
+                tran.Commit();
+            });
+        }
+
+        public async Task UnMute(int monitorId)
+        {
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
+            {
+                using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
+                await _context.MonitorMutes.Where(m => m.MonitorId == monitorId).ExecuteDeleteAsync();
+                await _context.MonitorCounters.Where(m => m.MonitorId == monitorId).ExecuteDeleteAsync();
+                tran.Commit();
+            });
+        }
+
+        public async Task UnMute()
+        {
+            var strategy = _context.Database.CreateExecutionStrategy();
+            await strategy.ExecuteAsync(async () =>
+            {
+                using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
+                await _context.MonitorMutes.ExecuteDeleteAsync();
+                await _context.MonitorCounters.ExecuteDeleteAsync();
+                tran.Commit();
+            });
         }
 
         private IQueryable<MonitorAction> GetMonitorData()

@@ -40,6 +40,8 @@ public partial class PlanarContext : DbContext
 
     public virtual DbSet<MonitorCounter> MonitorCounters { get; set; }
 
+    public virtual DbSet<MonitorMute> MonitorMutes { get; set; }
+
     public virtual DbSet<Role> Roles { get; set; }
 
     public virtual DbSet<SecurityAudit> SecurityAudits { get; set; }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace Planar
 {
@@ -99,6 +100,7 @@ namespace Planar
 
         public const string MonitorMaxAlerts = "PLANAR_MONITORMAXALERTS";
         public const string MonitorMaxAlertsPeriod = "PLANAR_MONITORMAXALERTSPERIOD";
+        public const string ManualMuteMaxPeriod = "PLANAR_MONITORMANUALMUTEPERIOD";
 
         public static bool IsDataKeyValid(string key)
         {

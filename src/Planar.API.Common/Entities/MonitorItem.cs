@@ -1,4 +1,6 @@
-﻿namespace Planar.API.Common.Entities
+﻿using System.Text.Json.Serialization;
+
+namespace Planar.API.Common.Entities
 {
     public class MonitorItem
     {
@@ -11,5 +13,8 @@
         public string? EventArgument { get; set; }
         public string Hook { get; set; } = string.Empty;
         public bool Active { get; set; }
+
+        [JsonIgnore]
+        public int GroupId { get; set; }
     }
 }

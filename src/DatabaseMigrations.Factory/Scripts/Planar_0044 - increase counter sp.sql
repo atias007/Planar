@@ -7,7 +7,8 @@ GO
 
 
 CREATE PROCEDURE dbo.IncreaseMonitorCounter
-  @JobId nvarchar(20)
+  @JobId nvarchar(20),
+  @MonitorId int
 AS
 
 SET TRANSACTION ISOLATION LEVEL READ COMMITTED;  
@@ -16,15 +17,10 @@ BEGIN TRANSACTION;
 UPDATE [dbo].[MonitorCounters] SET 
 	[Counter] = [Counter] + 1,
 	[LastUpdate] = GETDATE()
-WHERE [JobId] = @JobId;
+WHERE [JobId] = @JobId AND [MonitorId]=@MonitorId
 
 COMMIT
 SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; 
 
 GO
 
-ALTER TABLE dbo.MonitorCounters ADD CONSTRAINT
-	IX_MonitorCounters UNIQUE NONCLUSTERED 
-	(
-	JobId
-	) WITH( STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]

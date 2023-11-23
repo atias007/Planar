@@ -26,10 +26,6 @@ namespace Planar.Service.Monitor;
 
 public class MonitorUtil : IMonitorUtil
 {
-    private static readonly ConcurrentDictionary<string, DateTimeOffset> _lockJobEvents = new();
-    private readonly ILogger<MonitorUtil> _logger;
-    private readonly IServiceScopeFactory _serviceScopeFactory;
-
     private static readonly int[] _counterEvents = new[] {
             (int) MonitorEvents.ClusterHealthCheckFail,
             (int) MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx,
@@ -41,10 +37,34 @@ public class MonitorUtil : IMonitorUtil
             (int) MonitorEvents.ExecutionSuccessWithNoEffectedRows,
             (int) MonitorEvents.ExecutionVetoed};
 
+    private static readonly ConcurrentDictionary<string, DateTimeOffset> _lockJobEvents = new();
+    private readonly ILogger<MonitorUtil> _logger;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
+
     public MonitorUtil(IServiceScopeFactory serviceScopeFactory, ILogger<MonitorUtil> logger)
     {
         _logger = logger;
         _serviceScopeFactory = serviceScopeFactory;
+    }
+
+    public void Scan(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
+    {
+        _ = ScanInner(@event, context, exception)
+            .ContinueWith(task =>
+            {
+                if (task.Exception != null)
+                {
+                    _logger.LogError(task.Exception, "fail to handle monitor item(s)");
+                }
+            });
+    }
+
+    internal static void Lock<T>(Key<T> key, int lockSeconds, params MonitorEvents[] events)
+    {
+        foreach (var item in events)
+        {
+            LockJobOrTriggerEvent(key, lockSeconds, item);
+        }
     }
 
     internal static void SafeSystemScan(IServiceProvider serviceProvider, ILogger logger, MonitorEvents @event, MonitorSystemInfo details, Exception? exception = default, CancellationToken cancellationToken = default)
@@ -95,9 +115,11 @@ public class MonitorUtil : IMonitorUtil
 
         try
         {
+            // Analyze
             var toBeContinue = await Analyze(@event, action, context);
             if (!toBeContinue) { return ExecuteMonitorResult.Ok; }
 
+            // Get hook
             var hookInstance = GetMonitorHookInstance(action.Hook);
             if (hookInstance == null)
             {
@@ -107,14 +129,17 @@ public class MonitorUtil : IMonitorUtil
             }
             else
             {
+                // Create the monitor details
                 details = GetMonitorDetails(action, context, exception);
 
-                if (await CheckForMutedMonitor(details))
+                // Check for mute
+                if (await CheckForMutedMonitor(details, action.Id))
                 {
                     _logger.LogWarning("monitor item id: {Id}, title: '{Title}' is muted", action.Id, action.Title);
                     return ExecuteMonitorResult.Ok;
                 }
 
+                // Log the start of the monitor
                 if (@event == MonitorEvents.ExecutionProgressChanged)
                 {
                     _logger.LogDebug("monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
@@ -124,9 +149,16 @@ public class MonitorUtil : IMonitorUtil
                     _logger.LogInformation("monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
                 }
 
+                // Handle the monitor
                 await hookInstance.Handle(details, _logger);
+
+                // Save the monitor alert
                 await SaveMonitorAlert(action, details, context);
+
+                // Save the monitor counter
                 await SaveMonitorCounter(action, details);
+
+                // Exit
                 return ExecuteMonitorResult.Ok;
             }
         }
@@ -171,26 +203,6 @@ public class MonitorUtil : IMonitorUtil
             var message = $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook: {action.Hook}. Error message: {ex.Message}";
             return ExecuteMonitorResult.Fail(message);
         }
-    }
-
-    internal static void Lock<T>(Key<T> key, int lockSeconds, params MonitorEvents[] events)
-    {
-        foreach (var item in events)
-        {
-            LockJobOrTriggerEvent(key, lockSeconds, item);
-        }
-    }
-
-    public void Scan(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
-    {
-        _ = ScanInner(@event, context, exception)
-            .ContinueWith(task =>
-            {
-                if (task.Exception != null)
-                {
-                    _logger.LogError(task.Exception, "fail to handle monitor item(s)");
-                }
-            });
     }
 
     internal void Scan(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default, CancellationToken cancellationToken = default)
@@ -256,31 +268,6 @@ public class MonitorUtil : IMonitorUtil
         FillException(monitor, exception);
     }
 
-    private static string GetMonitorEventTitle(MonitorAction monitorAction)
-    {
-        var title = ((MonitorEvents)monitorAction.EventId).GetEnumDescription();
-        if (string.IsNullOrWhiteSpace(monitorAction.EventArgument))
-        {
-            return title;
-        }
-
-        var args = monitorAction.EventArgument.Split(',');
-        var argChar = 'x';
-        for (int i = 0; i < args.Length; i++)
-        {
-            var arg = args[i];
-            var pharse = $"{{{argChar}}}";
-            if (title.Contains(pharse))
-            {
-                title = title.Replace(pharse, arg);
-            }
-
-            argChar++;
-        }
-
-        return title;
-    }
-
     private static MonitorDetails GetMonitorDetails(MonitorAction action, IJobExecutionContext context, Exception? exception)
     {
         var result = new MonitorDetails
@@ -328,6 +315,31 @@ public class MonitorUtil : IMonitorUtil
         return result;
     }
 
+    private static string GetMonitorEventTitle(MonitorAction monitorAction)
+    {
+        var title = ((MonitorEvents)monitorAction.EventId).GetEnumDescription();
+        if (string.IsNullOrWhiteSpace(monitorAction.EventArgument))
+        {
+            return title;
+        }
+
+        var args = monitorAction.EventArgument.Split(',');
+        var argChar = 'x';
+        for (int i = 0; i < args.Length; i++)
+        {
+            var arg = args[i];
+            var pharse = $"{{{argChar}}}";
+            if (title.Contains(pharse))
+            {
+                title = title.Replace(pharse, arg);
+            }
+
+            argChar++;
+        }
+
+        return title;
+    }
+
     private static HookInstance? GetMonitorHookInstance(string hook)
     {
         var instance = ServiceUtil.MonitorHooks[hook];
@@ -371,12 +383,54 @@ public class MonitorUtil : IMonitorUtil
         return ex;
     }
 
+    private static bool IsJobOrTriggerEventLock<T>(Key<T> key, MonitorEvents @event)
+    {
+        var keyString = $"{key} {@event}";
+        return _lockJobEvents.ContainsKey(keyString);
+    }
+
+    private static bool IsJobOrTriggerEventLock(MonitorSystemInfo info, MonitorEvents @event)
+    {
+        var keyString = string.Empty;
+        var hasGroup = info.MessagesParameters.TryGetValue("JobGroup", out var jobGroup);
+        var hasName = info.MessagesParameters.TryGetValue("JobName", out var jobName);
+        if (hasGroup && hasName)
+        {
+            keyString = $"{jobGroup}.{jobName} {@event}";
+        }
+
+        hasGroup = info.MessagesParameters.TryGetValue("TriggerGroup", out var triggerGroup);
+        hasName = info.MessagesParameters.TryGetValue("TriggerName", out var triggerName);
+        if (hasGroup && hasName)
+        {
+            keyString = $"{triggerGroup}.{triggerName} {@event}";
+        }
+
+        if (string.IsNullOrEmpty(keyString))
+        {
+            return false;
+        }
+
+        return _lockJobEvents.ContainsKey(keyString);
+    }
+
     private static bool IsRelevantException(Exception? ex)
     {
         const string source = $"{nameof(Planar)}.{nameof(Job)}";
         if (ex == null) { return false; }
         if (ex is AggregateException && ex.Source == source) { return true; }
         return false;
+    }
+
+    private static void LockJobOrTriggerEvent<T>(Key<T> key, int lockSeconds, MonitorEvents @event)
+    {
+        var keyString = $"{key} {@event}";
+        _lockJobEvents.TryAdd(keyString, DateTimeOffset.Now);
+        Task.Run(() =>
+        {
+            Thread.Sleep(lockSeconds * 1000);
+            ReleaseJobOrTriggerEvent(key, @event);
+        });
     }
 
     private static void MapActionToMonitorAlert(MonitorAction action, MonitorAlert alert)
@@ -419,11 +473,16 @@ public class MonitorUtil : IMonitorUtil
         alert.UsersCount = monitor.Users?.Count ?? 0;
     }
 
+    private static void ReleaseJobOrTriggerEvent<T>(Key<T> key, MonitorEvents @event)
+    {
+        var keyString = $"{key} {@event}";
+        _lockJobEvents.TryRemove(keyString, out _);
+    }
+
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields", Justification = "reflection base class with internal")]
     private static MethodInfo SafeGetMethod(string hook, string methodName, object instance)
     {
-#pragma warning disable S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
         var method = instance.GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
-#pragma warning restore S3011 // Reflection should not be used to increase accessibility of classes, methods, or fields
         return method ?? throw new PlanarException($"method {methodName} could not found in hook {hook}");
     }
 
@@ -482,6 +541,39 @@ public class MonitorUtil : IMonitorUtil
                 var rows1 = ServiceUtil.GetEffectedRows(context);
                 return rows1 != null && rows1 < args.Args[0];
         }
+    }
+
+    private async Task<bool> CheckForMutedMonitor(MonitorDetails? details, int monitorId)
+    {
+        try
+        {
+            if (details == null) { return false; }
+            if (details.JobId == null) { return false; }
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dataLayer = scope.ServiceProvider.GetRequiredService<MonitorData>();
+
+            // Check for auto muted monitor
+            if (_counterEvents.Contains(details.EventId))
+            {
+                var count = await dataLayer.GetMonitorCounter(details.JobId, monitorId);
+                var isAutoMuted = count > AppSettings.Monitor.MaxAlertsPerMonitor;
+                if (isAutoMuted) { return true; }
+            }
+
+            // Check for manual muted monitor
+            var muted = await dataLayer.IsMonitorMuted(details.JobId, monitorId);
+            return muted;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "fail to check monitor counter for monitor '{Title}' with event '{Event}'",
+                details?.MonitorTitle ?? "[null]",
+                details?.EventTitle ?? "[null]");
+        }
+
+        return false;
     }
 
     private async Task<MonitorArguments> GetAndValidateArgs(MonitorAction action, JobKeyHelper jobKeyHelper)
@@ -559,93 +651,6 @@ public class MonitorUtil : IMonitorUtil
         return result;
     }
 
-    private static void LockJobOrTriggerEvent<T>(Key<T> key, int lockSeconds, MonitorEvents @event)
-    {
-        var keyString = $"{key} {@event}";
-        _lockJobEvents.TryAdd(keyString, DateTimeOffset.Now);
-        Task.Run(() =>
-        {
-            Thread.Sleep(lockSeconds * 1000);
-            ReleaseJobOrTriggerEvent(key, @event);
-        });
-    }
-
-    private static void ReleaseJobOrTriggerEvent<T>(Key<T> key, MonitorEvents @event)
-    {
-        var keyString = $"{key} {@event}";
-        _lockJobEvents.TryRemove(keyString, out _);
-    }
-
-    private async Task SaveMonitorCounter(MonitorAction action, MonitorDetails? details)
-    {
-        try
-        {
-            if (details == null) { return; }
-            if (details.JobId == null) { return; }
-            if (!_counterEvents.Contains(action.EventId)) { return; }
-
-            var counter = new MonitorCounter
-            {
-                Counter = 1,
-                JobId = details.JobId,
-                LastUpdate = DateTime.Now,
-                MonitorId = action.Id
-            };
-
-            using var scope = _serviceScopeFactory.CreateScope();
-            var dataLayer = scope.ServiceProvider.GetRequiredService<MonitorData>();
-
-            var exists = await dataLayer.IsMonitorCounterExists(counter.JobId);
-            if (exists)
-            {
-                await dataLayer.IncreaseMonitorCounter(counter.JobId);
-            }
-            else
-            {
-                try
-                {
-                    await dataLayer.AddMonitorCounter(counter);
-                }
-                catch (DbUpdateException)
-                {
-                    await dataLayer.IncreaseMonitorCounter(counter.JobId);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "fail to save monitor counter for monitor '{Title}' with event '{Event}'",
-                details?.MonitorTitle ?? "[null]",
-                details?.EventTitle ?? "[null]");
-        }
-    }
-
-    private async Task<bool> CheckForMutedMonitor(MonitorDetails? details)
-    {
-        try
-        {
-            if (details == null) { return false; }
-            if (details.JobId == null) { return false; }
-            if (!_counterEvents.Contains(details.EventId)) { return false; }
-
-            using var scope = _serviceScopeFactory.CreateScope();
-            var dataLayer = scope.ServiceProvider.GetRequiredService<MonitorData>();
-            var count = await dataLayer.GetMonitorCounter(details.JobId);
-
-            return count > AppSettings.Monitor.MaxAlertsPerMonitor;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "fail to check monitor counter for monitor '{Title}' with event '{Event}'",
-                details?.MonitorTitle ?? "[null]",
-                details?.EventTitle ?? "[null]");
-        }
-
-        return false;
-    }
-
     private async Task SaveMonitorAlert(MonitorAction action, MonitorDetails? details, IJobExecutionContext context, Exception? exception = null)
     {
         try
@@ -697,35 +702,49 @@ public class MonitorUtil : IMonitorUtil
         }
     }
 
-    private static bool IsJobOrTriggerEventLock<T>(Key<T> key, MonitorEvents @event)
+    private async Task SaveMonitorCounter(MonitorAction action, MonitorDetails? details)
     {
-        var keyString = $"{key} {@event}";
-        return _lockJobEvents.ContainsKey(keyString);
-    }
-
-    private static bool IsJobOrTriggerEventLock(MonitorSystemInfo info, MonitorEvents @event)
-    {
-        var keyString = string.Empty;
-        var hasGroup = info.MessagesParameters.TryGetValue("JobGroup", out var jobGroup);
-        var hasName = info.MessagesParameters.TryGetValue("JobName", out var jobName);
-        if (hasGroup && hasName)
+        try
         {
-            keyString = $"{jobGroup}.{jobName} {@event}";
-        }
+            if (details == null) { return; }
+            if (details.JobId == null) { return; }
+            if (!_counterEvents.Contains(action.EventId)) { return; }
 
-        hasGroup = info.MessagesParameters.TryGetValue("TriggerGroup", out var triggerGroup);
-        hasName = info.MessagesParameters.TryGetValue("TriggerName", out var triggerName);
-        if (hasGroup && hasName)
+            var counter = new MonitorCounter
+            {
+                Counter = 1,
+                JobId = details.JobId,
+                LastUpdate = DateTime.Now,
+                MonitorId = action.Id
+            };
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dataLayer = scope.ServiceProvider.GetRequiredService<MonitorData>();
+
+            var exists = await dataLayer.IsMonitorCounterExists(counter.JobId);
+            if (exists)
+            {
+                await dataLayer.IncreaseMonitorCounter(counter.JobId, counter.MonitorId);
+            }
+            else
+            {
+                try
+                {
+                    await dataLayer.AddMonitorCounter(counter);
+                }
+                catch (DbUpdateException)
+                {
+                    await dataLayer.IncreaseMonitorCounter(counter.JobId, counter.MonitorId);
+                }
+            }
+        }
+        catch (Exception ex)
         {
-            keyString = $"{triggerGroup}.{triggerName} {@event}";
+            _logger.LogError(ex,
+                "fail to save monitor counter for monitor '{Title}' with event '{Event}'",
+                details?.MonitorTitle ?? "[null]",
+                details?.EventTitle ?? "[null]");
         }
-
-        if (string.IsNullOrEmpty(keyString))
-        {
-            return false;
-        }
-
-        return _lockJobEvents.ContainsKey(keyString);
     }
 
     private async Task ScanInner(MonitorEvents @event, MonitorSystemInfo info, Exception? exception = default, CancellationToken cancellationToken = default)

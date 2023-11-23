@@ -107,7 +107,7 @@ namespace Planar.Service.API
             var users = await DataLayer.GetUsersInGroup(group!.Id);
             var mapper = Resolve<IMapper>();
             var result = mapper.Map<GroupDetails>(group);
-            users.ForEach(u => result.Users.Add(u.ToString()));
+            users.ForEach(result.Users.Add);
 
             return result;
         }
