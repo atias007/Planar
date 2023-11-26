@@ -9,7 +9,6 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Planar.CLI.CliGeneral
 {
@@ -228,6 +227,30 @@ namespace Planar.CLI.CliGeneral
             return new CliPromptWrapper<string>(select);
         }
 
+        internal static async Task<CliPromptWrapper<MonitorItem>> Monitors(CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("monitor", Method.Get)
+                .AddQueryPagingParameter(1000);
+            var result = await RestProxy.Invoke<PagingResponse<MonitorItem>>(restRequest, cancellationToken);
+            if (!result.IsSuccessful)
+            {
+                return new CliPromptWrapper<MonitorItem>(result);
+            }
+
+            var data = result.Data?.Data;
+            if (data == null || !data.Any())
+            {
+                throw new CliWarningException("no available monitors to perform the opertaion");
+            }
+
+            var prompt = data.Select(data => $"{data.Id} - {data.Title}");
+            var select = PromptSelection(prompt, "monitor", true);
+            var id = select?.Split('-').FirstOrDefault()?.Trim();
+            _ = int.TryParse(id, out var monitorId);
+            var item = data.First(data => data.Id == monitorId);
+            return new CliPromptWrapper<MonitorItem>(item);
+        }
+
         internal static async Task<CliPromptWrapper<string>> ReportPeriods(CancellationToken cancellationToken)
         {
             var restRequest = new RestRequest("report/periods", Method.Get);
@@ -315,6 +338,36 @@ namespace Planar.CLI.CliGeneral
             }
 
             return DateTime.Parse(select, CultureInfo.CurrentCulture);
+        }
+
+        internal static TimeSpan? PromptForTimeSpan(string title, bool required = false)
+        {
+            var select = AnsiConsole.Prompt(
+                new TextPrompt<string>($"[turquoise2]  > {title.EscapeMarkup()} [grey]([[days.]]hh:mm:ss):[/][/]")
+                .AllowEmpty()
+                .Validate(ts =>
+                {
+                    if (string.IsNullOrWhiteSpace(ts))
+                    {
+                        if (required) { return ValidationResult.Error("[red]value is required[/]"); }
+                        return ValidationResult.Success();
+                    }
+
+                    ts = ts.Trim();
+                    if (!TimeSpan.TryParse(ts, CultureInfo.CurrentCulture, out var _))
+                    {
+                        return ValidationResult.Error("[red]invalid date format[/]");
+                    }
+
+                    return ValidationResult.Success();
+                }));
+
+            if (string.IsNullOrEmpty(select))
+            {
+                return null;
+            }
+
+            return TimeSpan.Parse(select, CultureInfo.CurrentCulture);
         }
     }
 }

@@ -6,6 +6,7 @@ using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
+using Planar.Service.API;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -26,17 +27,6 @@ namespace Planar.Service.Monitor;
 
 public class MonitorUtil : IMonitorUtil
 {
-    private static readonly int[] _counterEvents = new[] {
-            (int) MonitorEvents.ClusterHealthCheckFail,
-            (int) MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx,
-            (int) MonitorEvents.ExecutionEndWithEffectedRowsLessThanx,
-            (int) MonitorEvents.ExecutionFail,
-            (int) MonitorEvents.ExecutionFailxTimesInRow,
-            (int) MonitorEvents.ExecutionFailxTimesInyHours,
-            (int) MonitorEvents.ExecutionLastRetryFail,
-            (int) MonitorEvents.ExecutionSuccessWithNoEffectedRows,
-            (int) MonitorEvents.ExecutionVetoed};
-
     private static readonly ConcurrentDictionary<string, DateTimeOffset> _lockJobEvents = new();
     private readonly ILogger<MonitorUtil> _logger;
     private readonly IServiceScopeFactory _serviceScopeFactory;
@@ -545,32 +535,21 @@ public class MonitorUtil : IMonitorUtil
 
     private async Task<bool> CheckForMutedMonitor(MonitorDetails? details, int monitorId)
     {
+        if (details == null) { return false; }
+
         try
         {
-            if (details == null) { return false; }
             if (details.JobId == null) { return false; }
-
             using var scope = _serviceScopeFactory.CreateScope();
-            var dataLayer = scope.ServiceProvider.GetRequiredService<MonitorData>();
-
-            // Check for auto muted monitor
-            if (_counterEvents.Contains(details.EventId))
-            {
-                var count = await dataLayer.GetMonitorCounter(details.JobId, monitorId);
-                var isAutoMuted = count > AppSettings.Monitor.MaxAlertsPerMonitor;
-                if (isAutoMuted) { return true; }
-            }
-
-            // Check for manual muted monitor
-            var muted = await dataLayer.IsMonitorMuted(details.JobId, monitorId);
-            return muted;
+            var bl = scope.ServiceProvider.GetRequiredService<MonitorDomain>();
+            return await bl.CheckForMutedMonitor(details.EventId, details.JobId, monitorId);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex,
                 "fail to check monitor counter for monitor '{Title}' with event '{Event}'",
-                details?.MonitorTitle ?? "[null]",
-                details?.EventTitle ?? "[null]");
+                details.MonitorTitle,
+                details.EventTitle);
         }
 
         return false;
@@ -704,39 +683,15 @@ public class MonitorUtil : IMonitorUtil
 
     private async Task SaveMonitorCounter(MonitorAction action, MonitorDetails? details)
     {
+        if (details == null) { return; }
+
         try
         {
-            if (details == null) { return; }
             if (details.JobId == null) { return; }
-            if (!_counterEvents.Contains(action.EventId)) { return; }
-
-            var counter = new MonitorCounter
-            {
-                Counter = 1,
-                JobId = details.JobId,
-                LastUpdate = DateTime.Now,
-                MonitorId = action.Id
-            };
 
             using var scope = _serviceScopeFactory.CreateScope();
-            var dataLayer = scope.ServiceProvider.GetRequiredService<MonitorData>();
-
-            var exists = await dataLayer.IsMonitorCounterExists(counter.JobId);
-            if (exists)
-            {
-                await dataLayer.IncreaseMonitorCounter(counter.JobId, counter.MonitorId);
-            }
-            else
-            {
-                try
-                {
-                    await dataLayer.AddMonitorCounter(counter);
-                }
-                catch (DbUpdateException)
-                {
-                    await dataLayer.IncreaseMonitorCounter(counter.JobId, counter.MonitorId);
-                }
-            }
+            var bl = scope.ServiceProvider.GetRequiredService<MonitorDomain>();
+            await bl.SaveMonitorCounter(action, details);
         }
         catch (Exception ex)
         {

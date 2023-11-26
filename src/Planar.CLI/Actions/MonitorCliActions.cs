@@ -1,6 +1,8 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.VisualBasic;
+using Newtonsoft.Json;
 using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
+using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.CLI.General;
 using Planar.CLI.Proxy;
@@ -185,6 +187,47 @@ namespace Planar.CLI.Actions
             return await Execute(restRequest, cancellationToken);
         }
 
+        [Action("mute")]
+        [NullRequest]
+        public static async Task<CliActionResponse> MuteMonitor(CliMonitorMuteRequest request, CancellationToken cancellationToken = default)
+        {
+            request ??= new CliMonitorMuteRequest();
+            var wrapper = await CollectCliMonitorMuteRequest(request, cancellationToken);
+            if (!wrapper.IsSuccessful)
+            {
+                return new CliActionResponse(wrapper.FailResponse);
+            }
+
+            if (!ConfirmAction($"mute monitor (see details above)")) { return CliActionResponse.Empty; }
+
+            var restRequest = new RestRequest("monitor/mute", Method.Patch)
+                .AddBody(new
+                {
+                    request.JobId,
+                    request.MonitorId,
+                    DueDate = DateTime.Now.Add(request.TimeSpan)
+                });
+
+            return await Execute(restRequest, cancellationToken);
+        }
+
+        [Action("unmute")]
+        [NullRequest]
+        public static async Task<CliActionResponse> UnmuteMonitor(CliMonitorUnmuteRequest request, CancellationToken cancellationToken = default)
+        {
+            request ??= new CliMonitorMuteRequest();
+            var wrapper = await CollectCliMonitorUnmuteRequest(request, cancellationToken);
+            if (!wrapper.IsSuccessful)
+            {
+                return new CliActionResponse(wrapper.FailResponse);
+            }
+
+            var restRequest = new RestRequest("monitor/unmute", Method.Patch)
+                .AddBody(request);
+
+            return await Execute(restRequest, cancellationToken);
+        }
+
         private static async Task<RequestBuilderWrapper<CliMonitorTestRequest>> CollectTestMonitorRequestData(CancellationToken cancellationToken = default)
         {
             var data = await GetTestMonitorData(cancellationToken);
@@ -205,6 +248,68 @@ namespace Planar.CLI.Actions
             };
 
             return new RequestBuilderWrapper<CliMonitorTestRequest> { Request = monitor };
+        }
+
+        private static async Task<CliPromptWrapper> CollectCliMonitorMuteRequest(CliMonitorMuteRequest request, CancellationToken cancellationToken = default)
+        {
+            var wrapper = await CollectCliMonitorUnmuteRequest(request, cancellationToken);
+            if (!wrapper.IsSuccessful)
+            {
+                return wrapper;
+            }
+
+            if (request.TimeSpan == TimeSpan.Zero)
+            {
+                var ts = CliPromptUtil.PromptForTimeSpan("mute duration", required: true);
+                request.TimeSpan = ts ?? TimeSpan.Zero;
+            }
+
+            return CliPromptWrapper.Success;
+        }
+
+        private static async Task<CliPromptWrapper> CollectCliMonitorUnmuteRequest(CliMonitorUnmuteRequest request, CancellationToken cancellationToken = default)
+        {
+            if (request.MonitorId == null)
+            {
+                const string opt1 = "all monitors";
+                const string opt2 = "specific monitor";
+
+                var opt = CliPromptUtil.PromptSelection(new[] { opt1, opt2 }, "monitor/s to mute");
+                if (opt == opt1)
+                {
+                    AnsiConsole.MarkupLine($"[turquoise2]  > {opt1}[/]");
+                }
+                else
+                {
+                    var monitorWrapper = await CliPromptUtil.Monitors(cancellationToken);
+                    if (!monitorWrapper.IsSuccessful)
+                    {
+                        return monitorWrapper;
+                    }
+
+                    request.MonitorId = monitorWrapper.Value?.Id;
+                    AnsiConsole.MarkupLine($"[turquoise2]  > monitor :[/] {monitorWrapper.Value?.Id} - {monitorWrapper.Value?.EventTitle}");
+                }
+            }
+
+            if (string.IsNullOrEmpty(request.JobId))
+            {
+                const string opt1 = "all jobs";
+                const string opt2 = "specific job";
+
+                var opt = CliPromptUtil.PromptSelection(new[] { opt1, opt2 }, "job/s to mute");
+                if (opt == opt1)
+                {
+                    AnsiConsole.MarkupLine($"[turquoise2]  > {opt1}[/]");
+                }
+                else
+                {
+                    request.JobId = await JobCliActions.ChooseJob(cancellationToken);
+                    AnsiConsole.MarkupLine($"[turquoise2]  > job id :[/] {request.JobId}");
+                }
+            }
+
+            return CliPromptWrapper.Success;
         }
 
         private static async Task<RequestBuilderWrapper<CliAddMonitorRequest>> CollectAddMonitorRequestData(CancellationToken cancellationToken)

@@ -36,6 +36,13 @@ namespace Planar.Service.Data
             });
         }
 
+        public async Task DeleteOldMonitorMutes()
+        {
+            await _context.MonitorMutes
+               .Where(m => m.DueDate <= DateTime.Now)
+               .ExecuteDeleteAsync();
+        }
+
         public async Task<int> CountFailsInHourForJob(object parameters)
         {
             var cmd = new CommandDefinition(

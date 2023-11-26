@@ -20,6 +20,17 @@ namespace Planar.Service.API
 {
     public class MonitorDomain : BaseBL<MonitorDomain, MonitorData>
     {
+        private static readonly int[] _counterEvents = new[] {
+            (int) MonitorEvents.ClusterHealthCheckFail,
+            (int) MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx,
+            (int) MonitorEvents.ExecutionEndWithEffectedRowsLessThanx,
+            (int) MonitorEvents.ExecutionFail,
+            (int) MonitorEvents.ExecutionFailxTimesInRow,
+            (int) MonitorEvents.ExecutionFailxTimesInyHours,
+            (int) MonitorEvents.ExecutionLastRetryFail,
+            (int) MonitorEvents.ExecutionSuccessWithNoEffectedRows,
+            (int) MonitorEvents.ExecutionVetoed};
+
         public MonitorDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
@@ -289,6 +300,52 @@ namespace Planar.Service.API
             else
             {
                 await DataLayer.UnMute();
+            }
+        }
+
+        public async Task<bool> CheckForMutedMonitor(int? eventId, string jobId, int monitorId)
+        {
+            // Check for auto muted monitor
+            if (eventId == null || _counterEvents.Contains(eventId.GetValueOrDefault()))
+            {
+                var count = await DataLayer.GetMonitorCounter(jobId, monitorId);
+                var isAutoMuted = count > AppSettings.Monitor.MaxAlertsPerMonitor;
+                if (isAutoMuted) { return true; }
+            }
+
+            // Check for manual muted monitor
+            var muted = await DataLayer.IsMonitorMuted(jobId, monitorId);
+            return muted;
+        }
+
+        public async Task SaveMonitorCounter(MonitorAction action, MonitorDetails details)
+        {
+            if (!_counterEvents.Contains(action.EventId)) { return; }
+            if (details.JobId == null) { return; }
+
+            var counter = new MonitorCounter
+            {
+                Counter = 1,
+                JobId = details.JobId,
+                LastUpdate = DateTime.Now,
+                MonitorId = action.Id
+            };
+
+            var exists = await DataLayer.IsMonitorCounterExists(counter.JobId);
+            if (exists)
+            {
+                await DataLayer.IncreaseMonitorCounter(counter.JobId, counter.MonitorId);
+            }
+            else
+            {
+                try
+                {
+                    await DataLayer.AddMonitorCounter(counter);
+                }
+                catch (DbUpdateException)
+                {
+                    await DataLayer.IncreaseMonitorCounter(counter.JobId, counter.MonitorId);
+                }
             }
         }
 
