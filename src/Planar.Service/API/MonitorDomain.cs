@@ -279,6 +279,29 @@ namespace Planar.Service.API
             await DataLayer.AddMonitorMute(entity);
         }
 
+        public async Task<IEnumerable<MuteItem>> Mutes()
+        {
+            var mutes = await DataLayer.GetMonitorMutes();
+            var counters = await DataLayer.GetMonitorCounters(AppSettings.Monitor.MaxAlertsPerMonitor);
+
+            var mutesDto = Mapper.Map<List<MuteItem>>(mutes);
+            var countersDto = Mapper.Map<List<MuteItem>>(counters);
+            var all = mutesDto.Union(countersDto);
+            var result = all
+                .Where(i => i.DueDate > DateTime.Now)
+                .GroupBy(i => new { i.JobId, i.MonitorId })
+                .Select(g => new MuteItem
+                {
+                    JobId = g.Key.JobId,
+                    MonitorId = g.Key.MonitorId,
+                    DueDate = g.Max(i => i.DueDate)
+                })
+                .OrderBy(i => i.DueDate)
+                .Take(1000);
+
+            return result;
+        }
+
         public async Task UnMute(MonitorUnmuteRequest request)
         {
             var jobId = await ValidateUnmutedRequest(request);
@@ -352,15 +375,26 @@ namespace Planar.Service.API
         private async Task<string?> ValidateUnmutedRequest(MonitorUnmuteRequest request)
         {
             string? jobId = null;
-            if (!string.IsNullOrEmpty(request.JobId))
+            var hasJobId = !string.IsNullOrEmpty(request.JobId);
+            var hasMonitorId = request.MonitorId.HasValue;
+            if (hasJobId)
             {
-                jobId = await JobKeyHelper.GetJobId(request.JobId)
+                jobId = await JobKeyHelper.GetJobId(request.JobId!)
                     ?? throw new RestValidationException(nameof(request.JobId), $"job with id '{request.JobId}' is not exists");
             }
 
-            if (request.MonitorId.HasValue && !await DataLayer.IsMonitorExists(request.MonitorId.Value))
+            if (hasMonitorId)
             {
-                throw new RestValidationException(nameof(request.MonitorId), $"monitor id '{request.MonitorId}' is not exists");
+                if (!await DataLayer.IsMonitorExists(request.MonitorId.GetValueOrDefault()))
+                {
+                    throw new RestValidationException(nameof(request.MonitorId), $"monitor id '{request.MonitorId}' is not exists");
+                }
+
+                var eventId = await DataLayer.GetMonitorEventId(request.MonitorId.GetValueOrDefault());
+                if (MonitorEventsExtensions.IsSystemMonitorEvent(eventId) && hasJobId)
+                {
+                    throw new RestValidationException(nameof(request.JobId), $"job id is invalid for monitor id '{request.MonitorId}'. this monitor has system event so job id is not relevand");
+                }
             }
 
             return jobId;

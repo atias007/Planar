@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Azure.Core;
 using FluentValidation;
 using Planar.API.Common.Entities;
 using Planar.Common;

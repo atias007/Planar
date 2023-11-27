@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -347,27 +348,59 @@ namespace Planar.CLI.CliGeneral
                 .AllowEmpty()
                 .Validate(ts =>
                 {
-                    if (string.IsNullOrWhiteSpace(ts))
+                    if (required && string.IsNullOrWhiteSpace(ts))
                     {
-                        if (required) { return ValidationResult.Error("[red]value is required[/]"); }
-                        return ValidationResult.Success();
+                        return ValidationResult.Error("[red]value is required[/]");
                     }
 
-                    ts = ts.Trim();
-                    if (!TimeSpan.TryParse(ts, CultureInfo.CurrentCulture, out var _))
+                    var span = ParseTimeSpan(ts);
+                    if (span == null)
                     {
-                        return ValidationResult.Error("[red]invalid date format[/]");
+                        return ValidationResult.Error("[red]invalid time span format[/]");
                     }
 
                     return ValidationResult.Success();
                 }));
 
-            if (string.IsNullOrEmpty(select))
+            if (!required && string.IsNullOrEmpty(select)) { return null; }
+
+            return ParseTimeSpan(select);
+        }
+
+        private static TimeSpan? ParseTimeSpan(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) { return null; }
+
+            value = value.Trim();
+            var parseTs = ParseTimeSpanPharse(value);
+            if (parseTs != null) { return parseTs; }
+
+            if (TimeSpan.TryParse(value, CultureInfo.CurrentCulture, out var newTs))
             {
-                return null;
+                return newTs;
             }
 
-            return TimeSpan.Parse(select, CultureInfo.CurrentCulture);
+            return null;
+        }
+
+        private static TimeSpan? ParseTimeSpanPharse(string value)
+        {
+            var regex = new Regex("^(\\d+)(\\s)?(sec|second|seconds|min|minute|minutes|hour|hours|day|days)$", RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+            var match = regex.Matches(value);
+            if (match.Count == 0) { return null; }
+            if (match[0].Groups.Count < 4) { return null; }
+
+            var number = int.Parse(match[0].Groups[1].Value);
+            var unit = match[0].Groups[3].Value;
+
+            return unit switch
+            {
+                "sec" or "second" or "seconds" => (TimeSpan?)TimeSpan.FromSeconds(number),
+                "min" or "minute" or "minutes" => (TimeSpan?)TimeSpan.FromMinutes(number),
+                "hour" or "hours" => (TimeSpan?)TimeSpan.FromHours(number),
+                "day" or "days" => (TimeSpan?)TimeSpan.FromDays(number),
+                _ => null,
+            };
         }
     }
 }

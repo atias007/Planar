@@ -205,5 +205,15 @@ namespace Planar.Controllers
             await BusinesLayer.UnMute(request);
             return NoContent();
         }
+
+        [HttpGet("mutes")]
+        [ViewerAuthorize]
+        [SwaggerOperation(OperationId = "get_monitor_mutes", Description = "Get all monitor mutes", Summary = "Get All Monitor Mutes")]
+        [OkJsonResponse(typeof(IEnumerable<MuteItem>))]
+        public async Task<ActionResult<IEnumerable<MuteItem>>> Mutes()
+        {
+            var result = await BusinesLayer.Mutes();
+            return Ok(result);
+        }
     }
 }
