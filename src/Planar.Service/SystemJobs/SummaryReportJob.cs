@@ -266,7 +266,7 @@ public sealed class SummaryReportJob : SystemJob, IJob
         message.Body = body;
 
         using var client = new SmtpClient();
-        var tokenSource = new CancellationTokenSource(30000);
+        using var tokenSource = new CancellationTokenSource(30000);
 
         client.Connect(smtp.Host, port: smtp.Port, useSsl: smtp.UseSsl, tokenSource.Token);
         client.Authenticate(smtp.Username, smtp.Password, tokenSource.Token);
