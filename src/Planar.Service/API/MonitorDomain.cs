@@ -1,5 +1,4 @@
 ﻿using FluentValidation;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
@@ -73,6 +72,7 @@ namespace Planar.Service.API
             try
             {
                 await DataLayer.DeleteMonitor(monitor);
+                AuditSecuritySafe($"monitor id {id} was deleted by user", true);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -277,6 +277,8 @@ namespace Planar.Service.API
             };
 
             await DataLayer.AddMonitorMute(entity);
+            var message = $"monitor {entity.JobId ?? "[all monitors]"} with job {entity.JobId ?? "[all jobs]"}  was muted by user";
+            AuditSecuritySafe(message, true);
         }
 
         public async Task<IEnumerable<MuteItem>> Mutes()
@@ -326,7 +328,7 @@ namespace Planar.Service.API
             }
         }
 
-        public async Task<bool> CheckForMutedMonitor(int? eventId, string jobId, int monitorId)
+        internal async Task<bool> CheckForMutedMonitor(int? eventId, string jobId, int monitorId)
         {
             // Check for auto muted monitor
             if (eventId == null || _counterEvents.Contains(eventId.GetValueOrDefault()))
@@ -341,7 +343,7 @@ namespace Planar.Service.API
             return muted;
         }
 
-        public async Task SaveMonitorCounter(MonitorAction action, MonitorDetails details)
+        internal async Task SaveMonitorCounter(MonitorAction action, MonitorDetails details)
         {
             if (!_counterEvents.Contains(action.EventId)) { return; }
             if (details.JobId == null) { return; }

@@ -12,6 +12,8 @@ PLAN FOR V 1.6.1
 	https://codepen.io/MarkBoots/pen/YzvPRKr
 	https://chartscss.org/charts/bar/
 - split summary report to summary & paused reports
+- Alerts report
+- Security & Audit report
 - add alerts report
 
 	

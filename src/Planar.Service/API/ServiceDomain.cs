@@ -115,6 +115,7 @@ namespace Planar.Service.API
 
         public async Task HaltScheduler()
         {
+            AuditSecuritySafe("scheduler was halted by user", true);
             await SchedulerUtil.Stop();
             if (AppSettings.Cluster.Clustering)
             {
