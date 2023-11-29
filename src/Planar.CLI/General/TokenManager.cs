@@ -50,7 +50,6 @@ namespace Planar.CLI.General
             lock (Lock)
             {
                 _blocked = false;
-                _tokenSource?.Dispose();
             }
         }
 
@@ -60,7 +59,6 @@ namespace Planar.CLI.General
             {
                 if (_blocked) { return; }
                 _tokenSource?.Cancel();
-                _tokenSource?.Dispose();
             }
         }
     }
