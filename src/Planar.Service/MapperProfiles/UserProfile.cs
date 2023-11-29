@@ -2,19 +2,18 @@
 using Planar.API.Common.Entities;
 using Planar.Service.Model;
 
-namespace Planar.Service.MapperProfiles
+namespace Planar.Service.MapperProfiles;
+
+internal class UserProfile : Profile
 {
-    internal class UserProfile : Profile
+    public UserProfile()
     {
-        public UserProfile()
-        {
-            CreateMap<User, UserDetails>();
+        CreateMap<User, UserDetails>();
 
-            CreateMap<User, UserRowModel>();
+        CreateMap<User, UserRowModel>();
 
-            CreateMap<AddUserRequest, User>();
+        CreateMap<AddUserRequest, User>();
 
-            CreateMap<UpdateUserRequest, User>().ReverseMap();
-        }
+        CreateMap<UpdateUserRequest, User>().ReverseMap();
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace Planar
 {
@@ -96,6 +97,10 @@ namespace Planar
         public const string SmtpFromName = "PLANAR_SMTPFROMNAME";
         public const string SmtpUsername = "PLANAR_SMTPUSERNAME";
         public const string SmtpPassword = "PLANAR_SMTPPASSWORD";
+
+        public const string MonitorMaxAlerts = "PLANAR_MONITORMAXALERTS";
+        public const string MonitorMaxAlertsPeriod = "PLANAR_MONITORMAXALERTSPERIOD";
+        public const string ManualMuteMaxPeriod = "PLANAR_MONITORMANUALMUTEPERIOD";
 
         public static bool IsDataKeyValid(string key)
         {

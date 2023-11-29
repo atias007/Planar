@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Net.Http.Headers;
 
 namespace Planar.API.Common.Entities
 {
@@ -12,6 +13,6 @@ namespace Planar.API.Common.Entities
         public string? AdditionalField5 { get; set; }
         public string? Role { get; set; }
 
-        public List<string> Users { get; set; } = new();
+        public List<EntityTitle> Users { get; set; } = new();
     }
 }

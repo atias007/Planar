@@ -10,6 +10,7 @@
         PutTriggerData,
         UpdateProgress,
         ReportException,
+        ReportExceptionV2,
         HealthCheck
     }
 }

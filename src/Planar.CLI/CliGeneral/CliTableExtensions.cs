@@ -164,6 +164,22 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetTable(IEnumerable<MuteItem>? response)
+        {
+            var table = new CliTable(showCount: true);
+            if (response == null) { return table; }
+            table.Table.AddColumns("Job Id", "Monitor Id", "Due Date");
+            foreach (var item in response)
+            {
+                if (item == null) { continue; }
+                var jobid = item.JobId ?? $"[{CliFormat.WarningColor}][[all jobs]][/]";
+                var monitorid= item.MonitorId?.ToString() ?? $"[{CliFormat.WarningColor}][[all monitors]][/]";
+                table.Table.AddRow(jobid, monitorid, CliTableFormat.FormatDateTime(item.DueDate));
+            }
+
+            return table;
+        }
+
         public static CliTable GetTable(IEnumerable<LovItem>? response, string entityName)
         {
             var table = new CliTable(showCount: true, entityName);

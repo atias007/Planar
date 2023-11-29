@@ -3,10 +3,6 @@
 PLAN FOR V 1.6.1
 ----------------
 - postman: test queue-invoke with data and validate the creation of data
-- cli: group get (with no parameter)
-- cli: user get (with no parameter)
-- cli: user/group join (show only relevant users/group)
-- monitor: add alert mute option for selected events
 
 
 - build anomaly job statistics exception count
@@ -16,6 +12,8 @@ PLAN FOR V 1.6.1
 	https://codepen.io/MarkBoots/pen/YzvPRKr
 	https://chartscss.org/charts/bar/
 - split summary report to summary & paused reports
+- Alerts report
+- Security & Audit report
 - add alerts report
 
 	
@@ -238,3 +236,11 @@ V1.6.0
 - add data to job test, invoke, queue-invoke
 - postman collection tests
 - add daily report system job
+
+V1.6.1
+------
+- auto mute monitor alerts
+- manual mute monitor alerts
+- cli: group get, remove (with no parameter)
+- cli: user get, remove, get-role (with no parameter)
+- cli: user/group join (show only relevant users/group)

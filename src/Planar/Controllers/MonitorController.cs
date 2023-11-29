@@ -176,10 +176,44 @@ namespace Planar.Controllers
         [SwaggerOperation(OperationId = "post_monitor_try", Description = "Try monitor", Summary = "Try Monitor")]
         [NoContentResponse]
         [BadRequestResponse]
-        public async Task<ActionResult<ExecuteMonitorResult>> Try(MonitorTestRequest request)
+        public async Task<ActionResult> Try(MonitorTestRequest request)
         {
             await BusinesLayer.Try(request);
             return NoContent();
+        }
+
+        [HttpPatch("mute")]
+        [EditorAuthorize]
+        [JsonConsumes]
+        [SwaggerOperation(OperationId = "patch_monitor_mute", Description = "Mute monitor", Summary = "Mute Monitor")]
+        [NoContentResponse]
+        [BadRequestResponse]
+        public async Task<IActionResult> Mute(MonitorMuteRequest request)
+        {
+            await BusinesLayer.Mute(request);
+            return NoContent();
+        }
+
+        [HttpPatch("unmute")]
+        [EditorAuthorize]
+        [JsonConsumes]
+        [SwaggerOperation(OperationId = "patch_monitor_unmute", Description = "Unmute monitor", Summary = "Unmute Monitor")]
+        [NoContentResponse]
+        [BadRequestResponse]
+        public async Task<IActionResult> Unmute(MonitorUnmuteRequest request)
+        {
+            await BusinesLayer.UnMute(request);
+            return NoContent();
+        }
+
+        [HttpGet("mutes")]
+        [ViewerAuthorize]
+        [SwaggerOperation(OperationId = "get_monitor_mutes", Description = "Get all monitor mutes", Summary = "Get All Monitor Mutes")]
+        [OkJsonResponse(typeof(IEnumerable<MuteItem>))]
+        public async Task<ActionResult<IEnumerable<MuteItem>>> Mutes()
+        {
+            var result = await BusinesLayer.Mutes();
+            return Ok(result);
         }
     }
 }

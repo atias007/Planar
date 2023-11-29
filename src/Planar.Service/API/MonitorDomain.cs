@@ -19,6 +19,17 @@ namespace Planar.Service.API
 {
     public class MonitorDomain : BaseBL<MonitorDomain, MonitorData>
     {
+        private static readonly int[] _counterEvents = new[] {
+            (int) MonitorEvents.ClusterHealthCheckFail,
+            (int) MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx,
+            (int) MonitorEvents.ExecutionEndWithEffectedRowsLessThanx,
+            (int) MonitorEvents.ExecutionFail,
+            (int) MonitorEvents.ExecutionFailxTimesInRow,
+            (int) MonitorEvents.ExecutionFailxTimesInyHours,
+            (int) MonitorEvents.ExecutionLastRetryFail,
+            (int) MonitorEvents.ExecutionSuccessWithNoEffectedRows,
+            (int) MonitorEvents.ExecutionVetoed};
+
         public MonitorDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
@@ -61,6 +72,7 @@ namespace Planar.Service.API
             try
             {
                 await DataLayer.DeleteMonitor(monitor);
+                AuditSecuritySafe($"monitor id {id} was deleted by user", true);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -72,7 +84,26 @@ namespace Planar.Service.API
         {
             var query = DataLayer.GetMonitorActions();
             var result = await query.ProjectToWithPagingAsyc<MonitorAction, MonitorItem>(Mapper, request);
+            FillDistributionGroupName(result.Data);
             return result;
+        }
+
+        private void FillDistributionGroupName(IEnumerable<MonitorItem>? items)
+        {
+            if (items == null) { return; }
+            var mappaerData = Resolve<AutoMapperData>();
+            var dic = items.Select(i => i.GroupId).Distinct().ToDictionary(i => i, i => mappaerData.GetGroupName(i).Result ?? string.Empty);
+            foreach (var item in items)
+            {
+                item.DistributionGroupName = dic[item.GroupId];
+            }
+        }
+
+        private void FillDistributionGroupName(MonitorItem? item)
+        {
+            if (item == null) { return; }
+            var mappaerData = Resolve<AutoMapperData>();
+            item.DistributionGroupName = mappaerData.GetGroupName(item.GroupId).Result ?? string.Empty;
         }
 
         public async Task<MonitorItem> GetMonitorItem(int id)
@@ -100,6 +131,7 @@ namespace Planar.Service.API
             var item = await DataLayer.GetMonitorAction(id);
             var monitor = ValidateExistingEntity(item, "monitor");
             var result = Mapper.Map<MonitorAction, MonitorItem>(monitor);
+            FillDistributionGroupName(result);
             return result;
         }
 
@@ -231,6 +263,143 @@ namespace Planar.Service.API
             }
 
             await DataLayer.UpdateMonitorAction(monitor);
+        }
+
+        public async Task Mute(MonitorMuteRequest request)
+        {
+            var jobId = await ValidateUnmutedRequest(request);
+
+            var entity = new MonitorMute
+            {
+                DueDate = request.DueDate,
+                JobId = jobId,
+                MonitorId = request.MonitorId,
+            };
+
+            await DataLayer.AddMonitorMute(entity);
+            var message = $"monitor {entity.JobId ?? "[all monitors]"} with job {entity.JobId ?? "[all jobs]"}  was muted by user";
+            AuditSecuritySafe(message, true);
+        }
+
+        public async Task<IEnumerable<MuteItem>> Mutes()
+        {
+            var mutes = await DataLayer.GetMonitorMutes();
+            var counters = await DataLayer.GetMonitorCounters(AppSettings.Monitor.MaxAlertsPerMonitor);
+
+            var mutesDto = Mapper.Map<List<MuteItem>>(mutes);
+            var countersDto = Mapper.Map<List<MuteItem>>(counters);
+            var all = mutesDto.Union(countersDto);
+            var result = all
+                .Where(i => i.DueDate > DateTime.Now)
+                .GroupBy(i => new { i.JobId, i.MonitorId })
+                .Select(g => new MuteItem
+                {
+                    JobId = g.Key.JobId,
+                    MonitorId = g.Key.MonitorId,
+                    DueDate = g.Max(i => i.DueDate)
+                })
+                .OrderBy(i => i.DueDate)
+                .Take(1000);
+
+            return result;
+        }
+
+        public async Task UnMute(MonitorUnmuteRequest request)
+        {
+            var jobId = await ValidateUnmutedRequest(request);
+            var hasJobId = jobId != null;
+            var hasMonitorId = request.MonitorId.HasValue;
+
+            if (hasJobId && hasMonitorId)
+            {
+                await DataLayer.UnMute(jobId!, request.MonitorId.GetValueOrDefault());
+            }
+            else if (!hasJobId && hasMonitorId)
+            {
+                await DataLayer.UnMute(request.MonitorId.GetValueOrDefault());
+            }
+            else if (hasJobId)
+            {
+                await DataLayer.UnMute(jobId!);
+            }
+            else
+            {
+                await DataLayer.UnMute();
+            }
+        }
+
+        internal async Task<bool> CheckForMutedMonitor(int? eventId, string jobId, int monitorId)
+        {
+            // Check for auto muted monitor
+            if (eventId == null || _counterEvents.Contains(eventId.GetValueOrDefault()))
+            {
+                var count = await DataLayer.GetMonitorCounter(jobId, monitorId);
+                var isAutoMuted = count > AppSettings.Monitor.MaxAlertsPerMonitor;
+                if (isAutoMuted) { return true; }
+            }
+
+            // Check for manual muted monitor
+            var muted = await DataLayer.IsMonitorMuted(jobId, monitorId);
+            return muted;
+        }
+
+        internal async Task SaveMonitorCounter(MonitorAction action, MonitorDetails details)
+        {
+            if (!_counterEvents.Contains(action.EventId)) { return; }
+            if (details.JobId == null) { return; }
+
+            var counter = new MonitorCounter
+            {
+                Counter = 1,
+                JobId = details.JobId,
+                LastUpdate = DateTime.Now,
+                MonitorId = action.Id
+            };
+
+            var exists = await DataLayer.IsMonitorCounterExists(counter.JobId);
+            if (exists)
+            {
+                await DataLayer.IncreaseMonitorCounter(counter.JobId, counter.MonitorId);
+            }
+            else
+            {
+                try
+                {
+                    await DataLayer.AddMonitorCounter(counter);
+                }
+                catch (DbUpdateException)
+                {
+                    await DataLayer.IncreaseMonitorCounter(counter.JobId, counter.MonitorId);
+                }
+            }
+        }
+
+        private async Task<string?> ValidateUnmutedRequest(MonitorUnmuteRequest request)
+        {
+            string? jobId = null;
+            var hasJobId = !string.IsNullOrEmpty(request.JobId);
+            var hasMonitorId = request.MonitorId.HasValue;
+            if (hasJobId)
+            {
+                jobId = await JobKeyHelper.GetJobId(request.JobId!)
+                    ?? throw new RestValidationException(nameof(request.JobId), $"job with id '{request.JobId}' is not exists");
+            }
+
+            if (hasMonitorId)
+            {
+                if (!await DataLayer.IsMonitorExists(request.MonitorId.GetValueOrDefault()))
+                {
+                    throw new RestValidationException(nameof(request.MonitorId), $"monitor id '{request.MonitorId}' is not exists");
+                }
+
+                var eventId = await DataLayer.GetMonitorEventId(request.MonitorId.GetValueOrDefault());
+                if (MonitorEventsExtensions.IsSystemMonitorEvent(eventId) && hasJobId)
+                {
+                    throw new RestValidationException(nameof(request.JobId), $"job id is invalid for monitor id '{request.MonitorId}'. this monitor has system event so job id is not relevand");
+                }
+            }
+
+            return jobId;
         }
     }
 }

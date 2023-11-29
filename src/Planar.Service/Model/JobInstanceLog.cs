@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Planar.Service.Model;
 
 [Table("JobInstanceLog")]
+[Index("InstanceId", Name = "IX_JobInstanceLog")]
 public partial class JobInstanceLog
 {
     [Key]

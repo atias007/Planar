@@ -1,0 +1,65 @@
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Planar.Common;
+using Planar.Service.Data;
+using Quartz;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace Planar.Service.SystemJobs;
+
+internal class MonitorJob : SystemJob, IJob
+{
+    private readonly ILogger<MonitorJob> _logger;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private static readonly int _periodMinutes = Convert.ToInt32(AppSettings.Monitor.MaxAlertsPeriod.TotalMinutes);
+
+    public MonitorJob(IServiceScopeFactory scopeFactory, ILogger<MonitorJob> logger)
+    {
+        _logger = logger;
+        _scopeFactory = scopeFactory;
+    }
+
+    public async Task Execute(IJobExecutionContext context)
+    {
+        try
+        {
+            await ResetMonitorCounter();
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "fail to reset monitor counter: {Message}", ex.Message);
+        }
+
+        try
+        {
+            await DeleteOldMonitorMutes();
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "fail to delete old monitor mutes: {Message}", ex.Message);
+        }
+    }
+
+    public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
+    {
+        const string description = "system job for reset monirors with mute status";
+        var span = TimeSpan.FromMinutes(15);
+        await Schedule<MonitorJob>(scheduler, description, span, stoppingToken: stoppingToken);
+    }
+
+    private async Task ResetMonitorCounter()
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
+        await dal.ResetMonitorCounter(_periodMinutes);
+    }
+
+    private async Task DeleteOldMonitorMutes()
+    {
+        using var scope = _scopeFactory.CreateScope();
+        var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
+        await dal.DeleteOldMonitorMutes();
+    }
+}

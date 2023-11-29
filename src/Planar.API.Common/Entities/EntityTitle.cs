@@ -1,7 +1,12 @@
-﻿namespace Planar.Service.Model.DataObjects
+﻿namespace Planar.API.Common.Entities
 {
     public class EntityTitle
     {
+        public EntityTitle()
+        {
+            Username = string.Empty;
+        }
+
         public EntityTitle(string name)
         {
             Username = name;

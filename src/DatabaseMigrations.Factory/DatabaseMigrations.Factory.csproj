@@ -54,6 +54,9 @@
     <None Remove="Scripts\Planar_0040 - fix_counter_2.sql" />
     <None Remove="Scripts\Planar_0041 - clear_calendars.sql" />
     <None Remove="Scripts\Planar_0042 - fix_summary_sp.sql" />
+    <None Remove="Scripts\Planar_0043 - add monitor counters.sql" />
+    <None Remove="Scripts\Planar_0044 - increase counter sp.sql" />
+    <None Remove="Scripts\Planar_0045 - reset_counter.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -98,6 +101,9 @@
     <EmbeddedResource Include="Scripts\Planar_0040 - fix_counter_2.sql" />
     <EmbeddedResource Include="Scripts\Planar_0041 - clear_calendars.sql" />
     <EmbeddedResource Include="Scripts\Planar_0042 - fix_summary_sp.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0043 - add monitor counters.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0044 - increase counter sp.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0045 - reset_counter.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DbUp\dbup-sqlserver\dbup-sqlserver.csproj" />

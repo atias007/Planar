@@ -18,7 +18,7 @@ general:
 
 database:
   provider: SqlServer                                # options: SqlServer
-  connection string: Password=PlanarSqlPassword12345@;Persist Security Info=True;User ID=sa;Initial Catalog=Planar;Data Source=planar-db,1433;MultipleActiveResultSets=True;Encrypt=False
+  connection string: Password=PlanarSqlPassword12345@;Persist Security Info=True;User ID=sa;Initial Catalog=Planar;Data Source=planar-db,1433;Encrypt=False
   run migration: true
 
 cluster:
@@ -37,6 +37,11 @@ authentication:
   mode: all anonymous                  # options: all anonymous | view anonymous | authenticate */ /* set this value to ViewAnonymous or Authenticate in production environment
   secret: ecawiasqrpqrgyhwnolrudpbsrwaynbqdayndnmcehjnwqyouikpodzaqxivwkconwqbhrmxfgccbxbyljguwlxhdlcvxlutbnwjlgpfhjgqbegtbxbvwnacyqnltrby     # 65 to 256 charecters secret to encrypt and decrypt jwt tokens
   token expire: 00:20:00               # the expiration time of token generated at login service. default is 20 minutes. minimum value 1 minute
+
+monitor:
+  max alerts per monitor: 10           # the maximum alert per monitor item and per job per period. default is 10. minimum value 1
+  max alerts period: 1.00:00:00        # the period for maximum monitor alerts. default is 1 day. minimum value 1 hour
+  manual mute max period: 1.00:00:00   # the maximum period for manual mute. default is 1 day. minimum value 1 hour
 
 smtp: 
   from address: admin@planar.me

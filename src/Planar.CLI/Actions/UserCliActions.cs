@@ -27,8 +27,16 @@ namespace Planar.CLI.Actions
         }
 
         [Action("get")]
+        [NullRequest]
         public static async Task<CliActionResponse> GetUserByUsername(CliGetByNameRequest request, CancellationToken cancellationToken = default)
         {
+            request ??= new CliGetByNameRequest();
+            var wrapper = await FillGetRequest(request, cancellationToken);
+            if (!wrapper.IsSuccessful)
+            {
+                return new CliActionResponse(wrapper.FailResponse);
+            }
+
             var restRequest = new RestRequest("user/{username}", Method.Get)
                 .AddParameter("username", request.Name, ParameterType.UrlSegment);
 
@@ -36,8 +44,16 @@ namespace Planar.CLI.Actions
         }
 
         [Action("get-role")]
+        [NullRequest]
         public static async Task<CliActionResponse> GetUserRoleById(CliGetByNameRequest request, CancellationToken cancellationToken = default)
         {
+            request ??= new CliGetByNameRequest();
+            var wrapper = await FillGetRequest(request, cancellationToken);
+            if (!wrapper.IsSuccessful)
+            {
+                return new CliActionResponse(wrapper.FailResponse);
+            }
+
             var restRequest = new RestRequest("user/{username}/role", Method.Get)
                 .AddParameter("username", request.Name, ParameterType.UrlSegment);
 
@@ -46,8 +62,16 @@ namespace Planar.CLI.Actions
         }
 
         [Action("reset-password")]
+        [NullRequest]
         public static async Task<CliActionResponse> ResetUserPassword(CliGetByNameRequest request, CancellationToken cancellationToken = default)
         {
+            request ??= new CliGetByNameRequest();
+            var wrapper = await FillGetRequest(request, cancellationToken);
+            if (!wrapper.IsSuccessful)
+            {
+                return new CliActionResponse(wrapper.FailResponse);
+            }
+
             var restRequest = new RestRequest("user/{username}/reset-password", Method.Patch)
                 .AddParameter("username", request.Name, ParameterType.UrlSegment);
 
@@ -113,7 +137,7 @@ namespace Planar.CLI.Actions
         [Action("join")]
         public static async Task<CliActionResponse> AddGroupToUser(CliUserToGroupRequest request, CancellationToken cancellationToken = default)
         {
-            var wrapper = await FillCliUserToGroupRequest(request, cancellationToken);
+            var wrapper = await FillCliUserToGroupRequest1(request, cancellationToken);
             if (!wrapper.IsSuccessful)
             {
                 return new CliActionResponse(wrapper.FailResponse);
@@ -130,7 +154,7 @@ namespace Planar.CLI.Actions
         [Action("exclude")]
         public static async Task<CliActionResponse> RemoveUserFromGroup(CliUserToGroupRequest request, CancellationToken cancellationToken = default)
         {
-            var wrapper = await FillCliUserToGroupRequest(request, cancellationToken);
+            var wrapper = await FillCliUserToGroupRequest2(request, cancellationToken);
             if (!wrapper.IsSuccessful)
             {
                 return new CliActionResponse(wrapper.FailResponse);
@@ -161,7 +185,19 @@ namespace Planar.CLI.Actions
             return result;
         }
 
-        private static async Task<CliPromptWrapper> FillCliUserToGroupRequest(CliUserToGroupRequest request, CancellationToken cancellationToken)
+        private static async Task<CliPromptWrapper> FillGetRequest(CliGetByNameRequest request, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(request.Name))
+            {
+                var p1 = await CliPromptUtil.Users(cancellationToken);
+                if (!p1.IsSuccessful) { return p1; }
+                request.Name = p1.Value ?? string.Empty;
+            }
+
+            return CliPromptWrapper.Success;
+        }
+
+        private static async Task<CliPromptWrapper> FillCliUserToGroupRequest1(CliUserToGroupRequest request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(request.Name))
             {
@@ -172,7 +208,26 @@ namespace Planar.CLI.Actions
 
             if (string.IsNullOrEmpty(request.GroupName))
             {
-                var p1 = await CliPromptUtil.Groups(cancellationToken);
+                var p1 = await CliPromptUtil.GroupsWithoutUser(request.Name, cancellationToken);
+                if (!p1.IsSuccessful) { return p1; }
+                request.GroupName = p1.Value ?? string.Empty;
+            }
+
+            return CliPromptWrapper.Success;
+        }
+
+        private static async Task<CliPromptWrapper> FillCliUserToGroupRequest2(CliUserToGroupRequest request, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(request.Name))
+            {
+                var p1 = await CliPromptUtil.Users(cancellationToken);
+                if (!p1.IsSuccessful) { return p1; }
+                request.Name = p1.Value ?? string.Empty;
+            }
+
+            if (string.IsNullOrEmpty(request.GroupName))
+            {
+                var p1 = await CliPromptUtil.GroupsForUser(request.Name, cancellationToken);
                 if (!p1.IsSuccessful) { return p1; }
                 request.GroupName = p1.Value ?? string.Empty;
             }

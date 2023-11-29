@@ -38,6 +38,7 @@ namespace Planar.Service.API
                 Cluster = Mapper.Map<ClusterSettingsInfo>(AppSettings.Cluster),
                 Retention = Mapper.Map<RetentionSettingsInfo>(AppSettings.Retention),
                 Smtp = Mapper.Map<SmtpSettingsInfo>(AppSettings.Smtp),
+                Monitor = Mapper.Map<MonitorSettingsInfo>(AppSettings.Monitor),
             };
 
             if (UserRole != Roles.Administrator)
@@ -114,6 +115,7 @@ namespace Planar.Service.API
 
         public async Task HaltScheduler()
         {
+            AuditSecuritySafe("scheduler was halted by user", true);
             await SchedulerUtil.Stop();
             if (AppSettings.Cluster.Clustering)
             {
