@@ -1,78 +1,78 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Library</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
-    <Version>1.6.0</Version>
-    <Nullable>enable</Nullable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Library</OutputType>
+		<TargetFramework>net7.0</TargetFramework>
+		<Version>1.6.1</Version>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
 	<ItemGroup>
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
 	</ItemGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <NoWarn>1701;1702;NU1803</NoWarn>
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<NoWarn>1701;1702;NU1803</NoWarn>
+	</PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <NoWarn>1701;1702;NU1803</NoWarn>
-  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<NoWarn>1701;1702;NU1803</NoWarn>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Compile Remove="Classes\**" />
-    <Compile Remove="MonitorHooks\**" />
-    <EmbeddedResource Remove="Classes\**" />
-    <EmbeddedResource Remove="MonitorHooks\**" />
-    <None Remove="Classes\**" />
-    <None Remove="MonitorHooks\**" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Remove="Classes\**" />
+		<Compile Remove="MonitorHooks\**" />
+		<EmbeddedResource Remove="Classes\**" />
+		<EmbeddedResource Remove="MonitorHooks\**" />
+		<None Remove="Classes\**" />
+		<None Remove="MonitorHooks\**" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="..\Jobs\CommonJob\JobSettingsLoader.cs" Link="General\JobSettingsLoader.cs" />
-    <Compile Include="..\Planar.Common\Consts.cs" Link="General\Consts.cs" />
-    <Compile Include="..\Planar\FolderConsts.cs" Link="General\FolderConsts.cs" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Include="..\Jobs\CommonJob\JobSettingsLoader.cs" Link="General\JobSettingsLoader.cs" />
+		<Compile Include="..\Planar.Common\Consts.cs" Link="General\Consts.cs" />
+		<Compile Include="..\Planar\FolderConsts.cs" Link="General\FolderConsts.cs" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
-    <PackageReference Include="CronExpressionDescriptor" Version="2.21.0" />
-    <PackageReference Include="FluentValidation" Version="11.8.1" />
-    <PackageReference Include="Google.Protobuf" Version="3.25.0" />
-    <PackageReference Include="Grpc.Net.ClientFactory" Version="2.58.0" />
-    <PackageReference Include="Grpc.Tools" Version="2.59.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.AspNetCore.Authorization" Version="7.0.13" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.13" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.13">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <TreatAsUsed>true</TreatAsUsed>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
-    <PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.7.0" />
-    <PackageReference Include="Quartz.Extensions.Hosting" Version="3.7.0" />
-    <PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.7.0" />
-    <PackageReference Include="Quartz.Serialization.Json" Version="3.7.0" />
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="9.14.0.81108">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+		<PackageReference Include="CronExpressionDescriptor" Version="2.21.0" />
+		<PackageReference Include="FluentValidation" Version="11.8.1" />
+		<PackageReference Include="Google.Protobuf" Version="3.25.0" />
+		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.58.0" />
+		<PackageReference Include="Grpc.Tools" Version="2.59.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.AspNetCore.Authorization" Version="7.0.14" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.14" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.14">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<TreatAsUsed>true</TreatAsUsed>
+		</PackageReference>
+		<PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
+		<PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.8.0" />
+		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.8.0" />
+		<PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.8.0" />
+		<PackageReference Include="Quartz.Serialization.Json" Version="3.8.0" />
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.14.0.81108">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Hooks\Planar.Hooks.csproj" />
-    <ProjectReference Include="..\Jobs\PlanarJob\PlanarJob.csproj" />
-    <ProjectReference Include="..\Jobs\ProcessJob\ProcessJob.csproj" />
-    <ProjectReference Include="..\Jobs\RestJob\RestJob.csproj" />
-    <ProjectReference Include="..\Jobs\SqlJob\SqlJob.csproj" />
-    <ProjectReference Include="..\Nager.Date\Nager.Date.csproj" />
-    <ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\Hooks\Planar.Hooks.csproj" />
+		<ProjectReference Include="..\Jobs\PlanarJob\PlanarJob.csproj" />
+		<ProjectReference Include="..\Jobs\ProcessJob\ProcessJob.csproj" />
+		<ProjectReference Include="..\Jobs\RestJob\RestJob.csproj" />
+		<ProjectReference Include="..\Jobs\SqlJob\SqlJob.csproj" />
+		<ProjectReference Include="..\Nager.Date\Nager.Date.csproj" />
+		<ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Protobuf Include="..\SolutionItems\cluster.proto" GrpcServices="Both">
-      <Link>Protos\cluster.proto</Link>
-    </Protobuf>
-  </ItemGroup>
+	<ItemGroup>
+		<Protobuf Include="..\SolutionItems\cluster.proto" GrpcServices="Both">
+			<Link>Protos\cluster.proto</Link>
+		</Protobuf>
+	</ItemGroup>
 </Project>
