@@ -333,7 +333,7 @@ namespace Planar.Service.API
             // Check for auto muted monitor
             if (eventId == null || _counterEvents.Contains(eventId.GetValueOrDefault()))
             {
-                var count = await DataLayer.GetMonitorCounter(jobId, monitorId);
+                var count = await DataLayer.GetMonitorCounter(jobId, monitorId, AppSettings.Monitor.MaxAlertsPeriod);
                 var isAutoMuted = count > AppSettings.Monitor.MaxAlertsPerMonitor;
                 if (isAutoMuted) { return true; }
             }

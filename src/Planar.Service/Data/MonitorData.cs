@@ -251,14 +251,14 @@ namespace Planar.Service.Data
             return await _context.MonitorActions.AsNoTracking().CountAsync();
         }
 
-        public async Task<int> GetMonitorCounter(string jobId, int monitorId)
+        public async Task<int> GetMonitorCounter(string jobId, int monitorId, TimeSpan maxAlertsPeriod)
         {
             var count = await _context.MonitorCounters
                 .AsNoTracking()
                 .Where(m =>
                     m.JobId == jobId &&
                     m.MonitorId == monitorId &&
-                    EF.Functions.DateDiffMinute(m.LastUpdate, DateTime.Now) <= AppSettings.Monitor.MaxAlertsPeriod.TotalMinutes)
+                    EF.Functions.DateDiffMinute(m.LastUpdate, DateTime.Now) <= maxAlertsPeriod.TotalMinutes)
                 .Select(m => m.Counter)
                 .FirstOrDefaultAsync();
 
