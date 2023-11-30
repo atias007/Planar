@@ -1,33 +1,50 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace Planar.Monitor.Hook
 {
     public static class PlanarHook
     {
+        public static PlanarHookDebugger Debugger { get; } = new PlanarHookDebugger();
         internal static string Environment { get; private set; } = null!;
         internal static RunningMode Mode { get; set; } = RunningMode.Debug;
         internal static Stopwatch Stopwatch { get; private set; } = new Stopwatch();
         private static List<Argument> Arguments { get; set; } = new List<Argument>();
         private static string? ContextBase64 { get; set; }
+        private static Dictionary<int, string> _menuMapper = new Dictionary<int, string>();
 
         public static void Start<THook>()
             where THook : BaseHook, new()
         {
             Stopwatch.Start();
             FillProperties();
+
+            try
+            {
+                Execute<THook>();
+            }
+            catch (Exception ex)
+            {
+                var log = new LogEntity { Level = LogLevel.Critical, Message = $"Fail to execute {typeof(THook).Name}" };
+                Console.Error.WriteLine(log.ToString());
+                log.Message = ex.ToString();
+                Console.Error.WriteLine(log.ToString());
+            }
         }
 
         private static void Execute<THook>()
-                    where THook : BaseHook, new()
+            where THook : BaseHook, new()
         {
             string json;
             if (Mode == RunningMode.Debug)
             {
-                json = ShowDebugMenu<TJob>();
+                json = ShowDebugMenu<THook>();
             }
             else
             {
@@ -55,6 +72,124 @@ namespace Planar.Monitor.Hook
                 Console.WriteLine("---------------------------------------");
                 Console.ReadKey(true);
             }
+        }
+
+        private static string ShowDebugMenu<THook>()
+             where THook : BaseHook, new()
+        {
+            int? selectedIndex;
+
+            if (Debugger.MonitorProfiles.Any() || Debugger.MonitorSystemProfiles.Any())
+            {
+                var typeName = typeof(THook).Name;
+                Console.Write("type the profile code ");
+                Console.Write("to start executing the ");
+                Console.ForegroundColor = ConsoleColor.Magenta;
+                Console.Write($"{typeName} ");
+                Console.ResetColor();
+                Console.WriteLine("hook");
+                Console.WriteLine();
+
+                var index = 1;
+                foreach (var p in Debugger.MonitorProfiles)
+                {
+                    PrintMenuItem(p.Key, index.ToString());
+                    _menuMapper.Add(index, p.Key);
+                    index++;
+                }
+
+                foreach (var p in Debugger.MonitorSystemProfiles)
+                {
+                    PrintMenuItem(p.Key, index.ToString());
+                    _menuMapper.Add(index, p.Key);
+                    index++;
+                }
+
+                Console.WriteLine("------------------");
+                PrintMenuItem("<Default>", "Enter");
+                Console.WriteLine();
+                selectedIndex = GetMenuItem(quiet: false);
+            }
+            else
+            {
+                var typeName = typeof(THook).Name;
+                Console.Write("[x] Press ");
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.Write("[Enter] ");
+                Console.ResetColor();
+                Console.Write("to start executing the ");
+                Console.ForegroundColor = ConsoleColor.Magenta;
+                Console.Write($"{typeName} ");
+                Console.ResetColor();
+                Console.WriteLine("hook with default profile");
+                Console.WriteLine();
+                selectedIndex = GetMenuItem(quiet: true);
+            }
+
+            MonitorMessageWrapper wrapper;
+
+            if (selectedIndex == null)
+            {
+                var details = new MonitorDetailsBuilder().SetDevelopmentEnvironment().Build();
+                wrapper = new MonitorMessageWrapper((MonitorDetails)details);
+            }
+            else
+            {
+                var name = _menuMapper[selectedIndex.Value];
+                if (Debugger.MonitorProfiles.TryGetValue(name, out var monitor))
+                {
+                    wrapper = new MonitorMessageWrapper((MonitorDetails)monitor);
+                }
+                else if (Debugger.MonitorSystemProfiles.TryGetValue(name, out var systemMonitor))
+                {
+                    wrapper = new MonitorMessageWrapper((MonitorSystemDetails)systemMonitor);
+                }
+                else
+                {
+                    throw new PlanarHookException("Hook was executed with empty context");
+                }
+            }
+
+            return JsonSerializer.Serialize(wrapper);
+        }
+
+        private static int? GetMenuItem(bool quiet)
+        {
+            int index = 0;
+            var valid = false;
+            while (!valid)
+            {
+                if (!quiet) { Console.Write("Code: "); }
+                var selected = Console.ReadLine();
+                if (string.IsNullOrEmpty(selected))
+                {
+                    if (!quiet) { Console.WriteLine("<Default>"); }
+                    return null;
+                }
+
+                if (!int.TryParse(selected, out index))
+                {
+                    ShowErrorMenu($"Selected value '{selected}' is not valid numeric value");
+                }
+                else if (index > Debugger.MonitorProfiles.Count + Debugger.MonitorSystemProfiles.Count || index <= 0)
+                {
+                    ShowErrorMenu($"Selected value '{index}' is not exists");
+                }
+                else
+                {
+                    valid = true;
+                }
+            }
+
+            return index;
+        }
+
+        private static void PrintMenuItem(string text, string key)
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write($"[{key}] ");
+            Console.ResetColor();
+            Console.WriteLine(text);
         }
 
         private static void FillProperties()
@@ -102,7 +237,7 @@ namespace Planar.Monitor.Hook
 
         private static string GetJsonFromArgs()
         {
-            if (string.IsNullOrWhiteSpace(ContextBase64)) { throw new PlanarHookException("Job was executed with empty context"); }
+            if (string.IsNullOrWhiteSpace(ContextBase64)) { throw new PlanarHookException("Hook was executed with empty context"); }
             var json = DecodeBase64ToString(ContextBase64);
             return json;
         }
@@ -121,7 +256,7 @@ namespace Planar.Monitor.Hook
             }
             catch (Exception ex)
             {
-                throw new PlanarHookException("Fail to convert Base64 job arg to string", ex);
+                throw new PlanarHookException("Fail to convert Base64 monitor arg to string", ex);
             }
         }
 
@@ -135,6 +270,13 @@ namespace Planar.Monitor.Hook
             if (string.IsNullOrEmpty(arg.Key)) { return false; }
             const string template = "^--[a-z,A-Z]";
             return Regex.IsMatch(arg.Key, template, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+        }
+
+        private static void ShowErrorMenu(string message)
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(message);
+            Console.ResetColor();
         }
     }
 }

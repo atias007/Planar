@@ -11,7 +11,6 @@ namespace Planar.Common
         IDictionary<string, object?> JobData { get; }
         string JobKeyGroup { get; }
         string JobKeyName { get; }
-        Type? JobType { get; }
         bool Recovering { get; }
         int RefireCount { get; }
         IDictionary<string, object?> TriggerData { get; }

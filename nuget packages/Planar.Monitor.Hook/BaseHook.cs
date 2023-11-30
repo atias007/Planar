@@ -8,18 +8,34 @@ namespace Planar.Monitor.Hook
 {
     public abstract class BaseHook
     {
-        private MessageBroker? _messageBroker;
-
         public abstract string Name { get; }
 
         public abstract Task Handle(IMonitorDetails monitorDetails);
 
         public abstract Task HandleSystem(IMonitorSystemDetails monitorDetails);
 
-        internal Task ExecuteHandle(ref object messageBroker)
+        internal Task Execute(string json)
         {
-            InitializeMessageBroker(ref messageBroker);
-            var monitorDetails = InitializeMessageDetails<MonitorDetails>(_messageBroker);
+            var wrapper = JsonSerializer.Deserialize<MonitorMessageWrapper>(json)
+                ?? throw new PlanarHookException("Fail to deserialize MonitorMessageWrapper");
+
+            if (wrapper.Subject == nameof(MonitorDetails))
+            {
+                return ExecuteHandle(wrapper);
+            }
+            else if (wrapper.Subject == nameof(MonitorSystemDetails))
+            {
+                return ExecuteHandleSystem(wrapper);
+            }
+            else
+            {
+                throw new PlanarHookException($"MonitorMessageWrapper with subject {wrapper.Subject} are not supported");
+            }
+        }
+
+        private Task ExecuteHandle(MonitorMessageWrapper wrapper)
+        {
+            var monitorDetails = InitializeMessageDetails<MonitorDetails>(wrapper);
 
             return Handle(monitorDetails)
                 .ContinueWith(t =>
@@ -28,10 +44,9 @@ namespace Planar.Monitor.Hook
                 });
         }
 
-        internal Task ExecuteHandleSystem(ref object messageBroker)
+        private Task ExecuteHandleSystem(MonitorMessageWrapper wrapper)
         {
-            InitializeMessageBroker(ref messageBroker);
-            var monitorDetails = InitializeMessageDetails<MonitorSystemDetails>(_messageBroker);
+            var monitorDetails = InitializeMessageDetails<MonitorSystemDetails>(wrapper);
 
             return HandleSystem(monitorDetails)
                 .ContinueWith(t =>
@@ -50,7 +65,7 @@ namespace Planar.Monitor.Hook
         {
             if (string.IsNullOrEmpty(key))
             {
-                LogError(null, "GetHookParameter with key null (or empty) is invalid");
+                LogError("GetHookParameter with key null (or empty) is invalid");
                 return null;
             }
 
@@ -62,14 +77,14 @@ namespace Planar.Monitor.Hook
                 return details.GlobalConfig[key];
             }
 
-            LogError(null, $"missing hook parameter with key '{key}' at monitor '{details.MonitorTitle}'");
+            LogError($"missing hook parameter with key '{key}' at monitor '{details.MonitorTitle}'");
 
             return null;
         }
 
-        protected void LogError(Exception? exception, string message, params object?[] args)
+        protected void LogError(string message)
         {
-            _messageBroker?.Publish(exception, message, args);
+            Console.WriteLine($"<hook.error>{message}</hook.error>");
         }
 
         private static string? GetHookParameterFromGroup(string key, IMonitorGroup group)
@@ -108,7 +123,7 @@ namespace Planar.Monitor.Hook
             return null;
         }
 
-        private static T InitializeMessageDetails<T>(MessageBroker? messageBroker)
+        private static T InitializeMessageDetails<T>(MonitorMessageWrapper messageBroker)
             where T : Monitor, new()
         {
             var options = new JsonSerializerOptions
@@ -147,16 +162,6 @@ namespace Planar.Monitor.Hook
             {
                 throw new PlanarHookException($"Fail to deserialize monitor details context at {nameof(BaseHook)}.{nameof(SafeDeserialize)}", ex);
             }
-        }
-
-        private void InitializeMessageBroker(ref object messageBroker)
-        {
-            if (messageBroker == null)
-            {
-                throw new PlanarHookException("The MessageBroker provided to hook is null");
-            }
-
-            _messageBroker = new MessageBroker(messageBroker);
         }
     }
 }

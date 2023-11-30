@@ -1,58 +1,54 @@
 ﻿using System;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Planar.Monitor.Hook
 {
     internal class MonitorDetailsBuilder : IMonitorDetailsBuilder
     {
         private readonly MonitorDetails _monitorDetails = new MonitorDetails();
+        private const string development = "Development";
+        private const string unitTest = "UnitTest";
 
-        public static IMonitorDetails Default
+        internal MonitorDetailsBuilder()
         {
-            get
+            _monitorDetails = new MonitorDetails
             {
-                var monitor = new MonitorDetails
-                {
-                    Author = "Test Author",
-                    Calendar = "Test Calendar",
-                    Durable = true,
-                    EventId = 100,
-                    EventTitle = "Test Event Title",
-                    Exception = "Test Exception",
-                    FireInstanceId = "Test Fire Instance Id",
-                    FireTime = DateTime.Now,
-                    JobDescription = "Test Job Description",
-                    JobGroup = "Test Job Group",
-                    JobId = "Test Job Id",
-                    JobName = "Test Job Name",
-                    JobRunTime = TimeSpan.Parse("00:12:25.723", CultureInfo.CurrentCulture),
-                    MonitorTitle = "Test Monitor Title",
-                    Recovering = true,
-                    TriggerGroup = "Test Trigger Group",
-                    TriggerId = "Test Trigger Id",
-                    TriggerName = "Test Trigger Name",
-                    MostInnerException = "Test Most Inner Exception",
-                    MostInnerExceptionMessage = "Test Most Inner Exception Message",
-                    Group = MonitorGroupBuilder.Default
-                };
-
-                monitor.AddMergedJobDataMap("Test DataMap Key1", "Test DataMap Value1");
-                monitor.AddMergedJobDataMap("Test DataMap Key2", "Test DataMap Value2");
-                monitor.AddMergedJobDataMap("Test DataMap Key3", "Test DataMap Value3");
-
-                monitor.AddGlobalConfig("Test GlobalConfig Key1", "Test GlobalConfig Value1");
-                monitor.AddGlobalConfig("Test GlobalConfig Key2", "Test GlobalConfig Value2");
-                monitor.AddGlobalConfig("Test GlobalConfig Key3", "Test GlobalConfig Value3");
-
-                monitor.AddUser(MonitorUserBuilder.Default);
-
-                return monitor;
-            }
+                Author = "Some Author",
+                Calendar = "Italy",
+                Durable = true,
+                EventId = 100,
+                EventTitle = "Test Event Title",
+                Exception = "Test Exception",
+                FireInstanceId = $"JobTest_{GenerateFireInstanceId()}",
+                FireTime = DateTime.Now,
+                JobDescription = "Test Job Description",
+                JobGroup = "Test Job Group",
+                JobId = "Test Job Id",
+                JobName = "Test Job Name",
+                JobRunTime = TimeSpan.Parse("00:12:25.723", CultureInfo.CurrentCulture),
+                MonitorTitle = "Test Monitor Title",
+                Recovering = true,
+                TriggerGroup = "Test Trigger Group",
+                TriggerId = "Test Trigger Id",
+                TriggerName = "Test Trigger Name",
+                MostInnerException = "Test Most Inner Exception",
+                MostInnerExceptionMessage = "Test Most Inner Exception Message",
+                Group = new MonitorGroupBuilder().Build(),
+                Environment = development
+            };
         }
 
         public IMonitorDetails Build()
         {
             return _monitorDetails;
+        }
+
+        public IMonitorDetailsBuilder AddTestUser()
+        {
+            _monitorDetails.AddUser(new MonitorUserBuilder().Build());
+            return this;
         }
 
         public IMonitorDetailsBuilder AddDataMap(string key, string? value)
@@ -203,6 +199,35 @@ namespace Planar.Monitor.Hook
         {
             _monitorDetails.TriggerName = triggerName;
             return this;
+        }
+
+        public IMonitorDetailsBuilder WithEnvironment(string environment)
+        {
+            _monitorDetails.Environment = environment;
+            return this;
+        }
+
+        public IMonitorDetailsBuilder SetDevelopmentEnvironment()
+        {
+            return WithEnvironment(development);
+        }
+
+        public IMonitorDetailsBuilder SetUnitTestEnvironment()
+        {
+            return WithEnvironment(unitTest);
+        }
+
+        private static string GenerateFireInstanceId()
+        {
+            var result = new StringBuilder();
+            var offset = '0';
+            for (var i = 0; i < 18; i++)
+            {
+                var @char = (char)RandomNumberGenerator.GetInt32(offset, offset + 10);
+                result.Append(@char);
+            }
+
+            return result.ToString();
         }
     }
 }

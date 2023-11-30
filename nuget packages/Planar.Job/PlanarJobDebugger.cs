@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Planar.Job
 {
-    public class PlanarJobDebugger
+    public sealed class PlanarJobDebugger
     {
         private readonly Dictionary<string, IExecuteJobProperties> _profiles = new Dictionary<string, IExecuteJobProperties>();
         internal Dictionary<string, IExecuteJobProperties> Profiles => _profiles;
@@ -30,10 +30,10 @@ namespace Planar.Job
 
             if (name.Length > 50)
             {
-                throw new PlanarJobException($"Debug profile name has {name.Length} chars. Maximum allowed chars is 20");
+                throw new PlanarJobException($"Debug profile name has {name.Length} chars. Maximum allowed chars is 50");
             }
 
-            var builder = new ExecuteJobPropertiesBuilder(typeof(T)).SetDevelopmentEnvironment();
+            var builder = new ExecuteJobPropertiesBuilder().SetDevelopmentEnvironment();
             builderAction(builder);
             var properties = builder.Build();
             _profiles.Add(name, properties);

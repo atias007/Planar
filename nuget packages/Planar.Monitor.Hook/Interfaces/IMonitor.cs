@@ -13,5 +13,6 @@ namespace Planar.Monitor.Hook
         string? Exception { get; }
         string? MostInnerException { get; }
         string? MostInnerExceptionMessage { get; }
+        public string Environment { get; set; }
     }
 }

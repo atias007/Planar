@@ -139,7 +139,7 @@ public class MonitorUtil : IMonitorUtil
                 }
 
                 // Handle the monitor
-                await hookInstance.Handle(details, _logger);
+                await hookInstance.Handle(details);
 
                 // Save the monitor alert
                 await SaveMonitorAlert(action, details, context);
@@ -180,7 +180,7 @@ public class MonitorUtil : IMonitorUtil
             {
                 details = GetMonitorDetails(action, info, exception);
                 _logger.LogInformation(",onitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
-                await hookInstance.HandleSystem(details, _logger, cancellationToken);
+                await hookInstance.HandleSystem(details, cancellationToken);
                 await SaveMonitorAlert(action, details);
                 return ExecuteMonitorResult.Ok;
             }

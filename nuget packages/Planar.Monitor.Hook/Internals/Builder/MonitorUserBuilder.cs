@@ -4,31 +4,17 @@
     {
         private readonly User _user = new User();
 
-        internal static IMonitorUser Default
+        internal MonitorUserBuilder()
         {
-            get
+            _user = new User
             {
-                var user = new User
-                {
-                    AdditionalField1 = "Test AdditionalField 1",
-                    AdditionalField2 = "Test AdditionalField 2",
-                    AdditionalField3 = "Test AdditionalField 3",
-                    AdditionalField4 = "Test AdditionalField 4",
-                    AdditionalField5 = "Test AdditionalField 5",
-                    EmailAddress1 = "TestEmail1@gmail.com",
-                    EmailAddress2 = "TestEmail2@gmail.com",
-                    EmailAddress3 = "TestEmail3@gmail.com",
-                    FirstName = "Test First Name",
-                    Id = 1,
-                    LastName = "Test Last Name",
-                    PhoneNumber1 = "0504567890",
-                    PhoneNumber2 = "0504567891",
-                    PhoneNumber3 = "0504567892",
-                    Username = "Test Username"
-                };
-
-                return user;
-            }
+                EmailAddress1 = "TestEmail1@gmail.com",
+                FirstName = "Israel",
+                Id = 1,
+                LastName = "Israeli",
+                PhoneNumber1 = "0504567890",
+                Username = "Test Username"
+            };
         }
 
         public IMonitorUser Build()

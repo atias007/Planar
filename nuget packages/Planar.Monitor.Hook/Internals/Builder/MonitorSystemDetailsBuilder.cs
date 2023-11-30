@@ -5,10 +5,18 @@ namespace Planar.Monitor.Hook
     public class MonitorSystemDetailsBuilder : IMonitorSystemDetailsBuilder
     {
         private readonly MonitorSystemDetails _monitorDetails = new MonitorSystemDetails();
+        private const string development = "Development";
+        private const string unitTest = "UnitTest";
 
         public IMonitorSystemDetailsBuilder AddGlobalConfig(string key, string? value)
         {
             _monitorDetails.AddGlobalConfig(key, value);
+            return this;
+        }
+
+        public IMonitorSystemDetailsBuilder AddTestUser()
+        {
+            _monitorDetails.AddUser(new MonitorUserBuilder().Build());
             return this;
         }
 
@@ -87,6 +95,22 @@ namespace Planar.Monitor.Hook
         {
             _monitorDetails.MessageTemplate = messageTemplate;
             return this;
+        }
+
+        public IMonitorSystemDetailsBuilder WithEnvironment(string environment)
+        {
+            _monitorDetails.Environment = environment;
+            return this;
+        }
+
+        public IMonitorSystemDetailsBuilder SetDevelopmentEnvironment()
+        {
+            return WithEnvironment(development);
+        }
+
+        public IMonitorSystemDetailsBuilder SetUnitTestEnvironment()
+        {
+            return WithEnvironment(unitTest);
         }
     }
 }

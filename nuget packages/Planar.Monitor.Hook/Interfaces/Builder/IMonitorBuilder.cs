@@ -21,5 +21,9 @@ namespace Planar.Monitor.Hook
         T WithMostInnerException(Exception ex);
 
         T WithMostInnerExceptionMessage(string message);
+
+        T WithEnvironment(string environment);
+
+        T AddTestUser();
     }
 }

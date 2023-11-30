@@ -4,6 +4,8 @@ namespace Planar.Monitor.Hook
 {
     internal class Monitor : IMonitor
     {
+        public string Environment { get; set; } = string.Empty;
+
         public int EventId { get; set; }
 
         public string EventTitle { get; set; } = string.Empty;

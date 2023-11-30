@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,14 +15,14 @@ namespace Planar.Service.Monitor
 
         public MethodInfo? HandleSystemMethod { get; set; }
 
-        public Task Handle(MonitorDetails details, ILogger<MonitorUtil> logger)
+        public Task Handle(MonitorDetails details)
         {
             if (HandleMethod == null)
             {
                 throw new PlanarMonitorException($"method '{HandleMethodName}' could not be found in hook");
             }
 
-            var messageBroker = new MonitorMessageBroker(logger, details);
+            var messageBroker = new MonitorMessageWrapper(details);
             return Task.Run(() =>
             {
                 var result = HandleMethod.Invoke(Instance, new object[] { messageBroker });
@@ -31,14 +30,14 @@ namespace Planar.Service.Monitor
             });
         }
 
-        public Task HandleSystem(MonitorSystemDetails details, ILogger<MonitorUtil> logger, CancellationToken cancellationToken = default)
+        public Task HandleSystem(MonitorSystemDetails details, CancellationToken cancellationToken)
         {
             if (HandleSystemMethod == null)
             {
                 throw new PlanarMonitorException($"method '{HandleMethodName}' could not be found in hook");
             }
 
-            var messageBroker = new MonitorMessageBroker(logger, details);
+            var messageBroker = new MonitorMessageWrapper(details);
 
             return Task.Run(() =>
             {

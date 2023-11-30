@@ -27,6 +27,7 @@
 	<ItemGroup>
 	  <Compile Include="..\Planar.Common\PlanarConvert.cs" Link="Internals\PlanarConvert.cs" />
 	  <Compile Include="..\Planar.Job\Argument.cs" Link="Internals\Argument.cs" />
+	  <Compile Include="..\Planar.Job\LogEntity.cs" Link="Internals\LogEntity.cs" />
 	  <Compile Include="..\Planar.Job\RunningMode.cs" Link="Internals\RunningMode.cs" />
 	  <Compile Include="..\Planar.Job\TypeMappingConverter.cs" Link="Internals\TypeMappingConverter.cs" />
 	</ItemGroup>
@@ -38,6 +39,7 @@
 	  </None>
 	</ItemGroup>
 	<ItemGroup>
+		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
 		<PackageReference Include="System.Text.Json" Version="7.0.3" />
 	</ItemGroup>
 

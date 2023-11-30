@@ -21,7 +21,7 @@ namespace UnitTest
         [Test]
         public void GeneralTest()
         {
-            var run = CreateJobPropertiesBuilder<Worker>()
+            var run = CreateJobPropertiesBuilder()
                 .WithJobData("X", 10)
                 .WithJobData("Z", "SomeString")
                 .WithJobData("SomeDate", DateTime.Now)
@@ -31,7 +31,7 @@ namespace UnitTest
                 .WithExecutionDate(DateTime.Now.AddDays(-2))
                 .WithGlobalSettings("Port", 1234);
 
-            var result = ExecuteJob(run);
+            var result = ExecuteJob<Worker>(run);
             result.Assert.Status.Success()
                 .EffectedRows.IsNotEmpty();
         }
@@ -39,47 +39,47 @@ namespace UnitTest
         [Test]
         public void FailOnMissingData()
         {
-            var run = CreateJobPropertiesBuilder<Worker>()
+            var run = CreateJobPropertiesBuilder()
                 .WithJobData("Z", "SomeString")
                 .WithJobData("SimpleInt", 44);
 
-            var result = ExecuteJob(run);
+            var result = ExecuteJob<Worker>(run);
             result.Assert.Status.Fail();
         }
 
         [Test]
         public void SimpleIntIncrease()
         {
-            var run = CreateJobPropertiesBuilder<Worker>()
+            var run = CreateJobPropertiesBuilder()
                 .WithJobData("X", 10)
                 .WithJobData("Z", "SomeString")
                 .WithJobData("SimpleInt", 44);
 
-            var result = ExecuteJob(run);
+            var result = ExecuteJob<Worker>(run);
             result.Assert.Status.Success();
         }
 
         [Test]
         public void IgnoreData()
         {
-            var run = CreateJobPropertiesBuilder<Worker>()
+            var run = CreateJobPropertiesBuilder()
                 .WithJobData("X", 10)
                 .WithJobData("Z", "SomeString")
                 .WithJobData("IgnoreData", null);
 
-            var result = ExecuteJob(run);
+            var result = ExecuteJob<Worker>(run);
             result.Assert.Status.Success();
         }
 
         [Test]
         public void MapError()
         {
-            var run = CreateJobPropertiesBuilder<Worker>()
+            var run = CreateJobPropertiesBuilder()
                 .WithJobData("X", 10)
                 .WithJobData("Z", "SomeString")
                 .WithJobData("SomeMappedDate", null);
 
-            var result = ExecuteJob(run);
+            var result = ExecuteJob<Worker>(run);
             result.Assert.Status.Success();
         }
     }
