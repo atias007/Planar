@@ -25,8 +25,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Include="..\Planar.Common\PlanarConvert.cs" Link="PlanarConvert.cs" />
-	  <Compile Include="..\Planar.Job\TypeMappingConverter.cs" Link="TypeMappingConverter.cs" />
+	  <Compile Include="..\Planar.Common\PlanarConvert.cs" Link="Internals\PlanarConvert.cs" />
+	  <Compile Include="..\Planar.Job\Argument.cs" Link="Internals\Argument.cs" />
+	  <Compile Include="..\Planar.Job\RunningMode.cs" Link="Internals\RunningMode.cs" />
+	  <Compile Include="..\Planar.Job\TypeMappingConverter.cs" Link="Internals\TypeMappingConverter.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

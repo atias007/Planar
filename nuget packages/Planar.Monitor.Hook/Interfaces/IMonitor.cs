@@ -9,7 +9,7 @@ namespace Planar.Monitor.Hook
         string MonitorTitle { get; }
         IMonitorGroup Group { get; }
         IEnumerable<IMonitorUser> Users { get; }
-        Dictionary<string, string?> GlobalConfig { get; }
+        IReadOnlyDictionary<string, string?> GlobalConfig { get; }
         string? Exception { get; }
         string? MostInnerException { get; }
         string? MostInnerExceptionMessage { get; }

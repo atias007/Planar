@@ -2,7 +2,6 @@
 {
     public interface IMonitorGroup
     {
-        public int Id { get; }
         public string Name { get; }
         public string? AdditionalField1 { get; }
         public string? AdditionalField2 { get; }

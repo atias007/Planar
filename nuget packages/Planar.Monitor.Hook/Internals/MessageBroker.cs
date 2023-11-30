@@ -21,7 +21,7 @@ namespace Planar.Monitor.Hook
 
             if (_method == null)
             {
-                throw new PlanarMonitorException("MessageBroker does not contains 'LogError' method");
+                throw new PlanarHookException("MessageBroker does not contains 'LogError' method");
             }
 
             Details = GetProperty<string>(type, nameof(Details));
@@ -53,7 +53,7 @@ namespace Planar.Monitor.Hook
         private T GetProperty<T>(Type type, string name)
         {
             var prop = type.GetProperty(name) ??
-                throw new PlanarMonitorException($"MessageBroker does not contains '{name}' property");
+                throw new PlanarHookException($"MessageBroker does not contains '{name}' property");
 
             var value = prop.GetValue(Instance);
             var result = (T)Convert.ChangeType(value, typeof(T), CultureInfo.InvariantCulture);

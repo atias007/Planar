@@ -15,7 +15,7 @@ namespace Planar.Monitor.Hook
         string JobId { get; }
         string JobName { get; }
         TimeSpan JobRunTime { get; }
-        Dictionary<string, string> MergedJobDataMap { get; }
+        IReadOnlyDictionary<string, string?> MergedJobDataMap { get; }
         bool Recovering { get; }
         string? TriggerGroup { get; }
         string TriggerId { get; }

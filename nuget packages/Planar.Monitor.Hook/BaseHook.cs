@@ -133,7 +133,7 @@ namespace Planar.Monitor.Hook
             {
                 if (string.IsNullOrEmpty(json))
                 {
-                    throw new PlanarMonitorException($"Fail to deserialize {typeof(T).Name}. Json is null or empty");
+                    throw new PlanarHookException($"Fail to deserialize {typeof(T).Name}. Json is null or empty");
                 }
 
                 var result =
@@ -141,11 +141,11 @@ namespace Planar.Monitor.Hook
                     JsonSerializer.Deserialize<T>(json) :
                     JsonSerializer.Deserialize<T>(json, options);
 
-                return result ?? throw new PlanarMonitorException($"Fail to deserialize {typeof(T).Name}. Result was null");
+                return result ?? throw new PlanarHookException($"Fail to deserialize {typeof(T).Name}. Result was null");
             }
             catch (Exception ex)
             {
-                throw new PlanarMonitorException($"Fail to deserialize monitor details context at {nameof(BaseHook)}.{nameof(SafeDeserialize)}", ex);
+                throw new PlanarHookException($"Fail to deserialize monitor details context at {nameof(BaseHook)}.{nameof(SafeDeserialize)}", ex);
             }
         }
 
@@ -153,7 +153,7 @@ namespace Planar.Monitor.Hook
         {
             if (messageBroker == null)
             {
-                throw new PlanarMonitorException("The MessageBroker provided to hook is null");
+                throw new PlanarHookException("The MessageBroker provided to hook is null");
             }
 
             _messageBroker = new MessageBroker(messageBroker);

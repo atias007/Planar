@@ -15,10 +15,16 @@ namespace Planar.Monitor.Hook
         public string TriggerId { get; set; } = string.Empty;
         public string? Calendar { get; set; }
         public string? Author { get; set; }
-        public Dictionary<string, string> MergedJobDataMap { get; set; } = new Dictionary<string, string>();
+        public IReadOnlyDictionary<string, string?> MergedJobDataMap { get; set; } = new Dictionary<string, string?>();
         public string FireInstanceId { get; set; } = string.Empty;
         public DateTime FireTime { get; set; }
         public TimeSpan JobRunTime { get; set; }
         public bool Recovering { get; set; }
+
+        internal void AddMergedJobDataMap(string key, string? value)
+        {
+            var mergedJobDataMap = (Dictionary<string, string?>)MergedJobDataMap;
+            mergedJobDataMap.Add(key, value);
+        }
     }
 }

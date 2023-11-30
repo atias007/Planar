@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using Planar.Common;
 using System;
 using System.Text.Json;
 
@@ -34,6 +33,8 @@ namespace Planar.Service.Monitor
 
             Details = JsonSerializer.Serialize(monitor);
         }
+
+        public string SpecVersion => "1.0";
 
         public string Users { get; set; } = null!;
 

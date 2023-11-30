@@ -10,12 +10,6 @@ using System.Text.RegularExpressions;
 
 namespace Planar.Job
 {
-    internal enum RunningMode
-    {
-        Debug,
-        Release
-    }
-
     public static class PlanarJob
     {
         public static PlanarJobDebugger Debugger { get; } = new PlanarJobDebugger();

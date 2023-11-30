@@ -14,12 +14,24 @@ namespace Planar.Monitor.Hook
 
         public IEnumerable<IMonitorUser> Users { get; set; } = new List<User>();
 
-        public Dictionary<string, string?> GlobalConfig { get; set; } = new Dictionary<string, string?>();
+        public IReadOnlyDictionary<string, string?> GlobalConfig { get; set; } = new Dictionary<string, string?>();
 
         public string? Exception { get; set; }
 
         public string? MostInnerException { get; set; }
 
         public string? MostInnerExceptionMessage { get; set; }
+
+        internal void AddUser(IMonitorUser user)
+        {
+            var users = (List<IMonitorUser>)Users;
+            users.Add(user);
+        }
+
+        internal void AddGlobalConfig(string key, string? value)
+        {
+            var globalConfig = (Dictionary<string, string?>)GlobalConfig;
+            globalConfig.Add(key, value);
+        }
     }
 }

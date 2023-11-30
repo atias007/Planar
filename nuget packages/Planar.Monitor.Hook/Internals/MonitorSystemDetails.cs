@@ -9,5 +9,11 @@ namespace Planar.Monitor.Hook
         public string Message { get; set; } = string.Empty;
 
         public IReadOnlyDictionary<string, string?> MessagesParameters { get; set; } = new Dictionary<string, string?>();
+
+        internal void AddMessageParameter(string key, string? value)
+        {
+            var messagesParameters = (Dictionary<string, string?>)MessagesParameters;
+            messagesParameters.Add(key, value);
+        }
     }
 }
