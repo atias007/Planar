@@ -1,26 +1,22 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.Logging;
-using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Hooks;
 using Planar.Monitor.Hook;
+using Planar.Service.Monitor;
 using Quartz;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.Loader;
 
 namespace Planar.Service.General
 {
     public static class ServiceUtil
     {
-        internal static ConcurrentDictionary<string, object> MonitorHooks { get; private set; } = new();
+        internal static ConcurrentDictionary<string, HookWrapper> MonitorHooks { get; private set; } = new();
         private static bool _disposeFlag;
         private static readonly object _locker = new();
-        private const string _monitorHookAssemblyContextName = "MonitorHook_";
-        private const string _monitorHookBaseClassName = "Planar.Monitor.Hook.BaseHook";
 
         public static IEnumerable<string> JobTypes => new[]
         {
@@ -36,18 +32,6 @@ namespace Planar.Service.General
             return id;
         }
 
-        private static void ClearMonitorHooks()
-        {
-            MonitorHooks.Clear();
-            var contexts = AssemblyLoadContext.All
-                .Where(c => c.IsCollectible && c.Name != null && c.Name.StartsWith(_monitorHookAssemblyContextName));
-
-            foreach (var c in contexts)
-            {
-                c.Unload();
-            }
-        }
-
         public static void LoadMonitorHooks<T>(ILogger<T> logger)
         {
             var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.MonitorHooks);
@@ -60,42 +44,36 @@ namespace Planar.Service.General
 
             logger.LogInformation("load monitor hooks at node {MachineName}", Environment.MachineName);
 
-            ClearMonitorHooks();
+            MonitorHooks.Clear();
             LoadSystemHooks(logger);
             var directories = Directory.GetDirectories(path);
             foreach (var dir in directories)
             {
-                var folder = Path.GetDirectoryName(dir);
-                var assemblyContext = AssemblyLoader.CreateAssemblyLoadContext($"{_monitorHookAssemblyContextName}{folder}", true);
-                var files = Directory.GetFiles(dir, "*.dll");
-                var hasHook = false;
+                var files = Directory.GetFiles(dir, "*.exe");
 
                 foreach (var f in files)
                 {
-                    var types = GetHookTypesFromFile(assemblyContext, f);
-                    foreach (var t in types)
-                    {
-                        hasHook = LoadHook(logger, t);
-                    }
-                }
-
-                if (!hasHook)
-                {
-                    assemblyContext.Unload();
+                    var success = LoadHook(logger, f);
+                    if (success) { break; }
                 }
             }
         }
 
-        private static bool LoadHook<T>(ILogger<T> logger, Type t)
+        private static bool LoadHook<T>(ILogger<T> logger, string filename)
         {
-            var instance = Activator.CreateInstance(t);
-            var validator = new HookValidator(instance, logger);
+            var validator = new HookValidator(filename, logger);
             if (!validator.IsValid) { return false; }
-            var result = MonitorHooks.TryAdd(validator.Name, instance!);
+
+            var wrapper = HookWrapper.CreateExternal(filename);
+            var result = MonitorHooks.TryAdd(validator.Name, wrapper);
 
             if (result)
             {
-                logger.LogInformation("add monitor hook {Name} from type {FullName}", validator.Name, t.FullName);
+                logger.LogInformation("add monitor hook {Name} from file {Filename}", validator.Name, filename);
+            }
+            else
+            {
+                logger.LogError("fail to add monitor hook {Name} from file {Filename}. already contains monitor with this name", validator.Name, filename);
             }
 
             return result;
@@ -111,61 +89,25 @@ namespace Planar.Service.General
         private static void LoadSystemHook<TLogger, THook>(ILogger<TLogger> logger)
             where THook : BaseHook
         {
-            var instance = Activator.CreateInstance<THook>();
-            var hookWrapper = new HookValidator(instance, logger);
-            if (!hookWrapper.IsValid) { return; }
-            var result = MonitorHooks.TryAdd(instance.Name, instance);
-
-            if (result)
-            {
-                logger.LogInformation("add system monitor hook {Name}", instance.Name);
-            }
-            else
-            {
-                logger.LogError("fail to add system monitor hook {Name}", instance.Name);
-            }
-        }
-
-        private static IEnumerable<Type> GetHookTypesFromFile(AssemblyLoadContext assemblyContext, string file)
-        {
-            var result = new List<Type>();
-            IEnumerable<Type> allTypes = new List<Type>();
-
             try
             {
-                var assembly = AssemblyLoader.LoadFromAssemblyPath(file, assemblyContext);
-                if (assembly == null) { return allTypes; }
-                allTypes = assembly.GetTypes().Where(t => !t.IsInterface && !t.IsAbstract);
-            }
-            catch
-            {
-                return result;
-            }
+                var instance = Activator.CreateInstance<THook>();
+                var wrapper = HookWrapper.CreateInternal(instance);
+                var result = MonitorHooks.TryAdd(instance.Name, wrapper);
 
-            foreach (var t in allTypes)
-            {
-                try
+                if (result)
                 {
-                    var isHook = IsHookType(t);
-                    if (isHook)
-                    {
-                        result.Add(t);
-                    }
+                    logger.LogInformation("add system monitor hook {Name}", instance.Name);
                 }
-                catch
+                else
                 {
-                    // *** DO NOTHING --> SKIP TYPE *** //
+                    logger.LogError("fail to add system monitor hook {Name}. already contains monitor with this name", instance.Name);
                 }
             }
-
-            return result;
-        }
-
-        private static bool IsHookType(Type t)
-        {
-            if (t.BaseType == null) { return false; }
-            if (t.BaseType.FullName == _monitorHookBaseClassName) { return true; }
-            return IsHookType(t.BaseType);
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "fail to load system hook {Name}", typeof(THook).Name);
+            }
         }
 
         public static string GetJobFolder(string? folder)

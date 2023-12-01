@@ -109,7 +109,7 @@ public class MonitorUtil : IMonitorUtil
             if (!toBeContinue) { return ExecuteMonitorResult.Ok; }
 
             // Get hook
-            var hookInstance = GetMonitorHookInstance(action.Hook);
+            var hookInstance = ServiceUtil.MonitorHooks.TryGetAndReturn(action.Hook);
             if (hookInstance == null)
             {
                 _logger.LogWarning("hook {Hook} in monitor item id: {Id}, title: '{Title}' does not exist in service", action.Hook, action.Id, action.Title);
@@ -169,7 +169,7 @@ public class MonitorUtil : IMonitorUtil
             var toBeContinue = await Analyze(@event, action, null);
             if (!toBeContinue) { return ExecuteMonitorResult.Ok; }
 
-            var hookInstance = GetMonitorHookInstance(action.Hook);
+            var hookInstance = ServiceUtil.MonitorHooks.TryGetAndReturn(action.Hook);
             if (hookInstance == null)
             {
                 _logger.LogWarning("hook {Hook} in monitor item id: {Id}, title: '{Title}' does not exist in service", action.Hook, action.Id, action.Title);
@@ -329,18 +329,6 @@ public class MonitorUtil : IMonitorUtil
         return title;
     }
 
-    private static HookInstance? GetMonitorHookInstance(string hook)
-    {
-        var instance = ServiceUtil.MonitorHooks[hook];
-        if (instance == null) { return null; }
-
-        var method1 = SafeGetMethod(hook, HookInstance.HandleMethodName, instance);
-        var method2 = SafeGetMethod(hook, HookInstance.HandleSystemMethodName, instance);
-
-        var result = new HookInstance { Instance = instance, HandleMethod = method1, HandleSystemMethod = method2 };
-        return result;
-    }
-
     private static Exception GetMostInnerException(Exception ex)
     {
         var innerException = ex;
@@ -466,13 +454,6 @@ public class MonitorUtil : IMonitorUtil
     {
         var keyString = $"{key} {@event}";
         _lockJobEvents.TryRemove(keyString, out _);
-    }
-
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields", Justification = "reflection base class with internal")]
-    private static MethodInfo SafeGetMethod(string hook, string methodName, object instance)
-    {
-        var method = instance.GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
-        return method ?? throw new PlanarException($"method {methodName} could not found in hook {hook}");
     }
 
     private async Task<bool> Analyze(MonitorEvents @event, MonitorAction action, IJobExecutionContext? context)
