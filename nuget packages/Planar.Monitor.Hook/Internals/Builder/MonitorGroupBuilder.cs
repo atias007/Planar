@@ -9,10 +9,6 @@
             _group = new Group
             {
                 AdditionalField1 = "Test AdditionalField 1",
-                AdditionalField2 = "Test AdditionalField 2",
-                AdditionalField3 = "Test AdditionalField 3",
-                AdditionalField4 = "Test AdditionalField 4",
-                AdditionalField5 = "Test AdditionalField 5",
                 Id = 1,
                 Name = "Test Group"
             };

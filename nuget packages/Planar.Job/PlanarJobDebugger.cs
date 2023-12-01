@@ -13,8 +13,7 @@ namespace Planar.Job
         {
         }
 
-        public void AddProfile<T>(string name, Action<IExecuteJobPropertiesBuilder> builderAction)
-            where T : class, new()
+        public void AddProfile(string name, Action<IExecuteJobPropertiesBuilder> builderAction)
         {
             if (PlanarJob.Mode == RunningMode.Release) { return; }
 

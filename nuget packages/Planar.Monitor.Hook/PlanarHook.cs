@@ -17,7 +17,7 @@ namespace Planar.Monitor.Hook
         internal static Stopwatch Stopwatch { get; private set; } = new Stopwatch();
         private static List<Argument> Arguments { get; set; } = new List<Argument>();
         private static string? ContextBase64 { get; set; }
-        private static Dictionary<int, string> _menuMapper = new Dictionary<int, string>();
+        private static readonly Dictionary<int, string> _menuMapper = new Dictionary<int, string>();
 
         public static void Start<THook>()
             where THook : BaseHook, new()
@@ -77,83 +77,67 @@ namespace Planar.Monitor.Hook
         private static string ShowDebugMenu<THook>()
              where THook : BaseHook, new()
         {
-            int? selectedIndex;
+            int selectedIndex;
 
-            if (Debugger.MonitorProfiles.Any() || Debugger.MonitorSystemProfiles.Any())
+            if (!Debugger.MonitorProfiles.Any())
             {
-                var typeName = typeof(THook).Name;
-                Console.Write("type the profile code ");
-                Console.Write("to start executing the ");
-                Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.Write($"{typeName} ");
-                Console.ResetColor();
-                Console.WriteLine("hook");
-                Console.WriteLine();
-
-                var index = 1;
-                foreach (var p in Debugger.MonitorProfiles)
-                {
-                    PrintMenuItem(p.Key, index.ToString());
-                    _menuMapper.Add(index, p.Key);
-                    index++;
-                }
-
-                foreach (var p in Debugger.MonitorSystemProfiles)
-                {
-                    PrintMenuItem(p.Key, index.ToString());
-                    _menuMapper.Add(index, p.Key);
-                    index++;
-                }
-
-                Console.WriteLine("------------------");
-                PrintMenuItem("<Default>", "Enter");
-                Console.WriteLine();
-                selectedIndex = GetMenuItem(quiet: false);
+                Debugger.AddMonitorProfile("Default monitor profile", builder => builder.AddTestUser());
             }
-            else
+
+            if (!Debugger.MonitorSystemProfiles.Any())
             {
-                var typeName = typeof(THook).Name;
-                Console.Write("[x] Press ");
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write("[Enter] ");
-                Console.ResetColor();
-                Console.Write("to start executing the ");
-                Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.Write($"{typeName} ");
-                Console.ResetColor();
-                Console.WriteLine("hook with default profile");
-                Console.WriteLine();
-                selectedIndex = GetMenuItem(quiet: true);
+                Debugger.AddMonitorSystemProfile("Default system monitor profile", builder => builder.AddTestUser());
             }
+
+            var typeName = typeof(THook).Name;
+            Console.Write("type the profile code ");
+            Console.Write("to start executing the ");
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.Write($"{typeName} ");
+            Console.ResetColor();
+            Console.WriteLine("hook");
+            Console.WriteLine();
+
+            var index = 1;
+            foreach (var p in Debugger.MonitorProfiles)
+            {
+                PrintMenuItem(p.Key, index.ToString());
+                _menuMapper.Add(index, p.Key);
+                index++;
+            }
+
+            foreach (var p in Debugger.MonitorSystemProfiles)
+            {
+                PrintMenuItem(p.Key, index.ToString());
+                _menuMapper.Add(index, p.Key);
+                index++;
+            }
+
+            Console.WriteLine("------------------");
+            PrintMenuItem("<Default>", "Enter");
+            Console.WriteLine();
+            selectedIndex = GetMenuItem(quiet: false);
 
             MonitorMessageWrapper wrapper;
 
-            if (selectedIndex == null)
+            var name = _menuMapper[selectedIndex];
+            if (Debugger.MonitorProfiles.TryGetValue(name, out var monitor))
             {
-                var details = new MonitorDetailsBuilder().SetDevelopmentEnvironment().Build();
-                wrapper = new MonitorMessageWrapper((MonitorDetails)details);
+                wrapper = new MonitorMessageWrapper((MonitorDetails)monitor);
+            }
+            else if (Debugger.MonitorSystemProfiles.TryGetValue(name, out var systemMonitor))
+            {
+                wrapper = new MonitorMessageWrapper((MonitorSystemDetails)systemMonitor);
             }
             else
             {
-                var name = _menuMapper[selectedIndex.Value];
-                if (Debugger.MonitorProfiles.TryGetValue(name, out var monitor))
-                {
-                    wrapper = new MonitorMessageWrapper((MonitorDetails)monitor);
-                }
-                else if (Debugger.MonitorSystemProfiles.TryGetValue(name, out var systemMonitor))
-                {
-                    wrapper = new MonitorMessageWrapper((MonitorSystemDetails)systemMonitor);
-                }
-                else
-                {
-                    throw new PlanarHookException("Hook was executed with empty context");
-                }
+                throw new PlanarHookException("Hook was executed with empty context");
             }
 
             return JsonSerializer.Serialize(wrapper);
         }
 
-        private static int? GetMenuItem(bool quiet)
+        private static int GetMenuItem(bool quiet)
         {
             int index = 0;
             var valid = false;
@@ -161,12 +145,6 @@ namespace Planar.Monitor.Hook
             {
                 if (!quiet) { Console.Write("Code: "); }
                 var selected = Console.ReadLine();
-                if (string.IsNullOrEmpty(selected))
-                {
-                    if (!quiet) { Console.WriteLine("<Default>"); }
-                    return null;
-                }
-
                 if (!int.TryParse(selected, out index))
                 {
                     ShowErrorMenu($"Selected value '{selected}' is not valid numeric value");

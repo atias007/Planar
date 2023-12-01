@@ -29,7 +29,6 @@ namespace Planar.Monitor.Hook
         public void AddMonitorSystemProfile(string name, Action<IMonitorSystemDetailsBuilder> builderAction)
         {
             if (PlanarHook.Mode == RunningMode.Release) { return; }
-
             ValidateProfileName(name);
 
             var builder = new MonitorSystemDetailsBuilder().SetDevelopmentEnvironment();

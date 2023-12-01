@@ -26,8 +26,11 @@ namespace Planar.Monitor.Hook
 
         internal void AddUser(IMonitorUser user)
         {
-            var users = (List<IMonitorUser>)Users;
-            users.Add(user);
+            if (user is User castUser)
+            {
+                var users = (List<User>)Users;
+                users.Add(castUser);
+            }
         }
 
         internal void AddGlobalConfig(string key, string? value)

@@ -40,7 +40,7 @@ namespace Planar.Hooks
             var url = GetHookParameter(key, detials);
             if (!IsValidUri(url))
             {
-                LogError(exception: null, $"url '{url}' of parameter '{key}' is invalid");
+                LogError($"url '{url}' of parameter '{key}' is invalid");
                 return;
             }
 
