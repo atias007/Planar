@@ -215,7 +215,7 @@ namespace Planar
         private void HandleStepException(SqlStep step, Exception ex)
         {
             var sqlEx = new SqlJobException($"Fail to execute step name '{step.Name}'", ex);
-            _logger.LogError(ex, "fail to execute step name '{Name}'", step.Name);
+            _logger.LogError(ex, "fail to execute step name {Name}", step.Name);
             MessageBroker.AppendLog(LogLevel.Error, $"Fail to execute step name '{step.Name}'. {ex.Message}");
             if (Properties.ContinueOnError)
             {

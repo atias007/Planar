@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Planar.Monitor.Hook\Planar.Monitor.Hook.csproj" />
+    <ProjectReference Include="..\Planar.Hook\Planar.Hook.csproj" />
   </ItemGroup>
 
 </Project>

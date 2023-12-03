@@ -61,11 +61,11 @@ namespace Planar.Service.API
             var data = await DataLayer.GetTraceCounter(request);
             var list = new List<StatisticsCountItem>
             {
-                new StatisticsCountItem { Label = nameof(data.Fatal), Count = data.Fatal },
-                new StatisticsCountItem { Label = nameof(data.Error), Count = data.Error },
-                new StatisticsCountItem { Label = nameof(data.Warning), Count = data.Warning },
-                new StatisticsCountItem { Label = nameof(data.Information), Count = data.Information },
-                new StatisticsCountItem { Label = nameof(data.Debug), Count = data.Debug }
+                new StatisticsCountItem { Label = nameof(data.Fatal), Count = data?.Fatal  ?? 0},
+                new StatisticsCountItem { Label = nameof(data.Error), Count = data?.Error  ?? 0 },
+                new StatisticsCountItem { Label = nameof(data.Warning), Count = data?.Warning ?? 0 },
+                new StatisticsCountItem { Label = nameof(data.Information), Count = data?.Information ?? 0 },
+                new StatisticsCountItem { Label = nameof(data.Debug), Count = data?.Debug ?? 0 }
             };
 
             result.Counter = list;

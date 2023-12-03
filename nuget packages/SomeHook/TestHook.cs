@@ -1,4 +1,4 @@
-﻿using Planar.Monitor.Hook;
+﻿using Planar.Hook;
 
 namespace SomeHook
 {

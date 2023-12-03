@@ -12,16 +12,16 @@ using DbUp.Helpers;
 namespace DbUp.Support
 {
     /// <summary>
-    /// A standard implementation of the IScriptExecutor interface that executes against a SQL Server 
+    /// A standard implementation of the IScriptExecutor interface that executes against a SQL Server
     /// database.
     /// </summary>
     public abstract class ScriptExecutor : IScriptExecutor
     {
-        readonly Func<IConnectionManager> connectionManagerFactory;
-        readonly IEnumerable<IScriptPreprocessor> scriptPreprocessors;
-        readonly Func<IJournal> journalFactory;
-        readonly Func<bool> variablesEnabled;
-        readonly ISqlObjectParser sqlObjectParser;
+        private readonly Func<IConnectionManager> connectionManagerFactory;
+        private readonly IEnumerable<IScriptPreprocessor> scriptPreprocessors;
+        private readonly Func<IJournal> journalFactory;
+        private readonly Func<bool> variablesEnabled;
+        private readonly ISqlObjectParser sqlObjectParser;
 
         /// <summary>
         /// SQLCommand Timeout in seconds. If not set, the default SQLCommand timeout is not changed.
@@ -115,7 +115,7 @@ namespace DbUp.Support
         public virtual void Execute(SqlScript script, IDictionary<string, string> variables)
         {
             var contents = PreprocessScriptContents(script, variables);
-            Log().WriteInformation("Executing Database Server script '{0}'", script.Name);
+            Log().WriteInformation("Executing Database Server script {0}", script.Name);
 
             var connectionManager = connectionManagerFactory();
             var scriptStatements = connectionManager.SplitScriptIntoCommands(contents);
@@ -170,14 +170,14 @@ namespace DbUp.Support
             }
             catch (DbException sqlException)
             {
-                Log().WriteInformation("DB exception has occured in script: '{0}'", script.Name);
+                Log().WriteInformation("DB exception has occured in script: {0}'", script.Name);
                 Log().WriteError("Script block number: {0}; Message: {1}", index, sqlException.Message);
                 Log().WriteError("{0}", sqlException.ToString());
                 throw;
             }
             catch (Exception ex)
             {
-                Log().WriteInformation("Exception has occured in script: '{0}'", script.Name);
+                Log().WriteInformation("Exception has occured in script: {0}", script.Name);
                 Log().WriteError("{0}", ex.ToString());
                 throw;
             }

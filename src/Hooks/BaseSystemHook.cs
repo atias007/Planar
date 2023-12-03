@@ -11,6 +11,7 @@ namespace Planar.Hooks
         {
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "INF")]
         protected override void LogError(string message)
         {
             if (_logger == null)
@@ -23,6 +24,7 @@ namespace Planar.Hooks
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "INF")]
         protected override void LogCritical(string message)
         {
             if (_logger == null)
@@ -35,6 +37,7 @@ namespace Planar.Hooks
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "INF")]
         protected override void LogDebug(string message)
         {
             if (_logger == null)
@@ -47,6 +50,7 @@ namespace Planar.Hooks
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "INF")]
         protected override void LogInformation(string message)
         {
             if (_logger == null)
@@ -59,6 +63,7 @@ namespace Planar.Hooks
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "INF")]
         protected override void LogTrace(string message)
         {
             if (_logger == null)
@@ -71,6 +76,7 @@ namespace Planar.Hooks
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "INF")]
         protected override void LogWarning(string message)
         {
             if (_logger == null)

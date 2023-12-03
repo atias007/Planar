@@ -1,4 +1,4 @@
-﻿using Planar.Monitor.Hook;
+﻿using Planar.Hook;
 using SomeHook;
 
 ////PlanarHook.Debugger.AddMonitorProfile("Test Monitor 1", b => b
