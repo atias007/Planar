@@ -64,7 +64,7 @@ namespace Planar.Service.General
             var validator = new HookValidator(filename, logger);
             if (!validator.IsValid) { return false; }
 
-            var wrapper = HookWrapper.CreateExternal(filename);
+            var wrapper = HookWrapper.CreateExternal(filename, logger);
             var result = MonitorHooks.TryAdd(validator.Name, wrapper);
 
             if (result)
@@ -87,12 +87,12 @@ namespace Planar.Service.General
         }
 
         private static void LoadSystemHook<TLogger, THook>(ILogger<TLogger> logger)
-            where THook : BaseHook
+            where THook : BaseSystemHook
         {
             try
             {
                 var instance = Activator.CreateInstance<THook>();
-                var wrapper = HookWrapper.CreateInternal(instance);
+                var wrapper = HookWrapper.CreateInternal(instance, logger);
                 var result = MonitorHooks.TryAdd(instance.Name, wrapper);
 
                 if (result)

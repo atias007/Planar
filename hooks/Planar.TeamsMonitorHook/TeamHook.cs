@@ -42,13 +42,13 @@ namespace Planar.TeamsMonitorHook
         {
             if (string.IsNullOrEmpty(url))
             {
-                LogError(null, "Group '{Name}' has invalid uri value (null or empty) at reference property", group.Name);
+                LogError($"Group '{group.Name}' has invalid uri value (null or empty) at reference property");
                 return false;
             }
 
             if (!IsValidUri(url))
             {
-                LogError(null, "Group '{Name}' has invalid url value '{Reference}' at reference property", group.Name, url);
+                LogError($"Group '{group.Name}' has invalid url value '{url}' at reference property");
                 return false;
             }
 
@@ -69,12 +69,12 @@ namespace Planar.TeamsMonitorHook
                 var response = await httpClient.SendAsync(request);
                 if (!response.IsSuccessStatusCode)
                 {
-                    LogError(null, "Send message to Teams hook channel at url '{Url}' fail with status code {StatusCode}", url, response.StatusCode);
+                    LogError($"Send message to Teams hook channel at url '{url}' fail with status code {response.StatusCode}");
                 }
             }
             catch (Exception ex)
             {
-                LogError(ex, "Send message to Teams hook channel at url '{Url}' fail with error: {Message}", url, ex.Message);
+                LogError($"Send message to Teams hook channel at url '{url}' fail with error: {ex.Message}");
             }
         }
 

@@ -1,11 +1,12 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Planar.Monitor.Hook;
 using System.Text;
 
 namespace Planar.Hooks
 {
-    public class PlanarRestHook : BaseHook
+    public class PlanarRestHook : BaseSystemHook
     {
         public override string Name => "Planar.Rest";
 

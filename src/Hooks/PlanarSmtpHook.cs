@@ -1,4 +1,5 @@
 ﻿using MailKit.Net.Smtp;
+using Microsoft.Extensions.Logging;
 using MimeKit;
 using Planar.Common;
 using Planar.Monitor.Hook;
@@ -7,7 +8,7 @@ using System.Web;
 
 namespace Planar.Hooks
 {
-    public class PlanarSmtpHook : BaseHook
+    public class PlanarSmtpHook : BaseSystemHook
     {
         public override string Name => "Planar.Smtp";
 

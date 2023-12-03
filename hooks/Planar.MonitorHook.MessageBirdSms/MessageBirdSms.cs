@@ -68,13 +68,15 @@ namespace Planar.MonitorHook.MessageBirdSms
                 {
                     if (item.Status != Recipient.RecipientStatus.Sent)
                     {
-                        LogError(null, "sms message to {Phone} fail with status {Status}", item.Msisdn, item.Status.ToString());
+                        LogError($"sms message to {item.Msisdn} fail with status {item.Status}");
                     }
                 }
+
+                Console.WriteLine("All OK");
             }
             catch (Exception ex)
             {
-                LogError(ex, "fail to send sms message from {Hook}. Error: {Error}", nameof(MessageBirdSmsHook), ex.Message);
+                LogError($"fail to send sms message from {nameof(MessageBirdSmsHook)}. Error: {ex.Message}");
             }
         }
 
@@ -88,7 +90,7 @@ namespace Planar.MonitorHook.MessageBirdSms
         {
             if (string.IsNullOrEmpty(accessKey))
             {
-                LogError(null, "fail to get access key parameter for {Hook}", nameof(MessageBirdSmsHook));
+                LogError($"fail to get access key parameter for {nameof(MessageBirdSmsHook)}");
                 return false;
             }
 
@@ -99,7 +101,7 @@ namespace Planar.MonitorHook.MessageBirdSms
         {
             if (!phones.Any())
             {
-                LogError(null, "fail to get valid phones for {Hook} with distribution group {Group}", nameof(MessageBirdSmsHook), monitor.Group.Id);
+                LogError($"fail to get valid phones for {nameof(MessageBirdSmsHook)} with distribution group {monitor.Group.Name}");
                 return false;
             }
 

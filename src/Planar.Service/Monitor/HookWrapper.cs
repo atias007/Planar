@@ -1,5 +1,6 @@
-﻿using Planar.Common.Exceptions;
-using Planar.Monitor.Hook;
+﻿using Microsoft.Extensions.Logging;
+using Planar.Common.Exceptions;
+using Planar.Hooks;
 using System.Reflection;
 using System.Text.Json;
 using System.Threading;
@@ -15,23 +16,28 @@ namespace Planar.Service.Monitor
         {
         }
 
-        public static HookWrapper CreateInternal(BaseHook instance)
+        public static HookWrapper CreateInternal(BaseSystemHook instance, ILogger logger)
         {
-            return new HookWrapper
+            var wrapper = new HookWrapper
             {
                 HookType = HookTypeMembers.Internal,
                 Name = instance.Name,
                 Instance = instance,
-                ExecuteMethod = SafeGetMethod(instance.Name, ExecuteMethodName, instance)
+                ExecuteMethod = SafeGetMethod(instance.Name, ExecuteMethodName, instance),
+                Logger = logger
             };
+
+            instance.SetLogger(logger);
+            return wrapper;
         }
 
-        public static HookWrapper CreateExternal(string filename)
+        public static HookWrapper CreateExternal(string filename, ILogger logger)
         {
             return new HookWrapper
             {
                 HookType = HookTypeMembers.External,
-                Filename = filename
+                Filename = filename,
+                Logger = logger
             };
         }
 
@@ -45,14 +51,26 @@ namespace Planar.Service.Monitor
 
         public HookTypeMembers HookType { get; private set; }
 
-        public BaseHook? Instance { get; private set; }
+        public BaseSystemHook? Instance { get; private set; }
 
         public string? Filename { get; private set; }
 
         public string? Name { get; private set; }
 
+        public ILogger Logger { get; private set; } = null!;
+
         public Task Handle(MonitorDetails details)
         {
+            if (HookType == HookTypeMembers.External)
+            {
+                HookExecuter exe = null!;
+                return Task.Run(() =>
+                {
+                    exe = new HookExecuter(Logger, Filename);
+                    exe.HandleByExternalHook(details);
+                }).ContinueWith(t => exe.Dispose());
+            }
+
             if (ExecuteMethod == null)
             {
                 throw new PlanarMonitorException($"method '{ExecuteMethod}' could not be found in hook '{Name}'");
@@ -69,6 +87,16 @@ namespace Planar.Service.Monitor
 
         public Task HandleSystem(MonitorSystemDetails details, CancellationToken cancellationToken)
         {
+            if (HookType == HookTypeMembers.External)
+            {
+                HookExecuter exe = null!;
+                return Task.Run(() =>
+                {
+                    exe = new HookExecuter(Logger, Filename);
+                    exe.HandleSystemByExternalHook(details);
+                }, cancellationToken).ContinueWith(t => exe.Dispose(), cancellationToken);
+            }
+
             if (ExecuteMethod == null)
             {
                 throw new PlanarMonitorException($"method '{ExecuteMethod}' could not be found in hook '{Name}'");

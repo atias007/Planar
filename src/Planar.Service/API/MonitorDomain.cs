@@ -345,6 +345,7 @@ namespace Planar.Service.API
 
         internal async Task SaveMonitorCounter(MonitorAction action, MonitorDetails details)
         {
+            if (action.Id == 0) { return; }
             if (!_counterEvents.Contains(action.EventId)) { return; }
             if (details.JobId == null) { return; }
 

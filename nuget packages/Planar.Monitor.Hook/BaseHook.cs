@@ -82,7 +82,7 @@ namespace Planar.Monitor.Hook
             return null;
         }
 
-        protected void LogError(string message)
+        protected virtual void LogError(string message)
         {
             Console.WriteLine($"<hook.error>{message}</hook.error>");
         }

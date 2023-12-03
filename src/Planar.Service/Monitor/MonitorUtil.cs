@@ -516,6 +516,7 @@ public class MonitorUtil : IMonitorUtil
     private async Task<bool> CheckForMutedMonitor(MonitorDetails? details, int monitorId)
     {
         if (details == null) { return false; }
+        if (monitorId == 0) { return false; }
 
         try
         {
@@ -615,6 +616,7 @@ public class MonitorUtil : IMonitorUtil
         try
         {
             if (details == null) { return; }
+            if (action.Id == 0) { return; }
 
             var alert = new MonitorAlert();
             MapDetailsToMonitorAlert(details, alert);
@@ -664,6 +666,7 @@ public class MonitorUtil : IMonitorUtil
     private async Task SaveMonitorCounter(MonitorAction action, MonitorDetails? details)
     {
         if (details == null) { return; }
+        if (action.Id == 0) { return; }
 
         try
         {
