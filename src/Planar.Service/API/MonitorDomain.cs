@@ -111,6 +111,7 @@ namespace Planar.Service.API
             var action = await DataLayer.GetMonitorAction(id);
             var item = Mapper.Map<MonitorItem>(action);
             var result = ValidateExistingEntity(item, "monitor");
+            FillDistributionGroupName(result);
             return result;
         }
 
@@ -123,6 +124,7 @@ namespace Planar.Service.API
 
             var items = await DataLayer.GetMonitorActionsByGroup(group);
             var result = Mapper.Map<List<MonitorItem>>(items);
+            FillDistributionGroupName(result);
             return result;
         }
 
@@ -130,7 +132,7 @@ namespace Planar.Service.API
         {
             var item = await DataLayer.GetMonitorAction(id);
             var monitor = ValidateExistingEntity(item, "monitor");
-            var result = Mapper.Map<MonitorAction, MonitorItem>(monitor);
+            var result = Mapper.Map<MonitorItem>(monitor);
             FillDistributionGroupName(result);
             return result;
         }
@@ -141,6 +143,7 @@ namespace Planar.Service.API
             if (jobKey == null) { return new List<MonitorItem>(); }
             var items = await DataLayer.GetMonitorActionsByJob(jobKey.Group, jobKey.Name);
             var result = Mapper.Map<List<MonitorItem>>(items);
+            FillDistributionGroupName(result);
             return result;
         }
 

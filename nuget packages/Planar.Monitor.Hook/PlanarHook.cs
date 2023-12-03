@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Planar.Monitor.Hook.Internals;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;

@@ -72,7 +72,7 @@ namespace Planar.MonitorHook.MessageBirdSms
                     }
                 }
 
-                Console.WriteLine("All OK");
+                LogInformation("MessageBirdSms SMS send");
             }
             catch (Exception ex)
             {

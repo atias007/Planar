@@ -82,9 +82,40 @@ namespace Planar.Monitor.Hook
             return null;
         }
 
+        protected virtual void Log(LogLevel level, string message)
+        {
+            var key = level.ToString().ToLower();
+            Console.WriteLine($"<hook.log.{key}>{message}</hook.log.{key}>");
+        }
+
         protected virtual void LogError(string message)
         {
-            Console.WriteLine($"<hook.error>{message}</hook.error>");
+            Log(LogLevel.Error, message);
+        }
+
+        protected virtual void LogWarning(string message)
+        {
+            Log(LogLevel.Warning, message);
+        }
+
+        protected virtual void LogInformation(string message)
+        {
+            Log(LogLevel.Information, message);
+        }
+
+        protected virtual void LogDebug(string message)
+        {
+            Log(LogLevel.Debug, message);
+        }
+
+        protected virtual void LogCritical(string message)
+        {
+            Log(LogLevel.Critical, message);
+        }
+
+        protected virtual void LogTrace(string message)
+        {
+            Log(LogLevel.Trace, message);
         }
 
         private static string? GetHookParameterFromGroup(string key, IMonitorGroup group)

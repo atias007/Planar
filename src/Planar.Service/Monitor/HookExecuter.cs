@@ -1,18 +1,23 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar.Common.Exceptions;
+using Planar.Monitor.Hook.Internals;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Planar.Service.Monitor
 {
     internal sealed class HookExecuter : IDisposable
     {
-        private readonly StringBuilder _output = new();
+        private readonly List<string> _output = new();
         private static readonly TimeSpan _timeout = TimeSpan.FromMinutes(3);
         private readonly ILogger _logger;
         private readonly string _filename;
@@ -46,6 +51,7 @@ namespace Planar.Service.Monitor
             finally
             {
                 FinalizeProcess();
+                AnalyzeOutput();
             }
 
             return Task.CompletedTask;
@@ -68,6 +74,7 @@ namespace Planar.Service.Monitor
             finally
             {
                 FinalizeProcess();
+                AnalyzeOutput();
             }
 
             return Task.CompletedTask;
@@ -168,7 +175,7 @@ namespace Planar.Service.Monitor
         private void ProcessOutputDataReceived(object sender, DataReceivedEventArgs eventArgs)
         {
             if (string.IsNullOrEmpty(eventArgs.Data)) { return; }
-            _output.AppendLine(eventArgs.Data);
+            _output.Add(eventArgs.Data);
         }
 
         private void OnTimeout()
@@ -202,6 +209,28 @@ namespace Planar.Service.Monitor
             try { _process?.Dispose(); } catch { DoNothingMethod(); }
             try { if (_process != null) { _process.EnableRaisingEvents = false; } } catch { DoNothingMethod(); }
             UnsubscribeOutput();
+        }
+
+        private void AnalyzeOutput()
+        {
+            const string pattern = "^<hook\\.log\\.(trace|debug|information|warning|error|critical)>.+<\\/hook\\.log\\.(trace|debug|information|warning|error|critical)>$";
+            var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+            foreach (var item in _output)
+            {
+                var matches = regex.Matches(item);
+                if (
+                    matches.Any() &&
+                    matches[0].Success &&
+                    matches[0].Groups.Count == 3 &&
+                    matches[0].Groups[1].Value == matches[0].Groups[2].Value)
+                {
+                    var doc = XDocument.Parse(matches[0].Groups[0].Value);
+                    var message = doc.Root?.Value;
+                    var level = matches[0].Groups[1].Value;
+                    if (!Enum.TryParse<LogLevel>(level, ignoreCase: true, out var logLevel)) { continue; }
+                    _logger.Log(logLevel, message);
+                }
+            }
         }
 
         private static void DoNothingMethod()
