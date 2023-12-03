@@ -253,6 +253,7 @@ public class MonitorUtil : IMonitorUtil
         monitor.MonitorTitle = action.Title;
         monitor.Users.AddRange(action.Group.Users.Select(u => new MonitorUser(u)).ToList());
         monitor.GlobalConfig = Global.GlobalConfig;
+        monitor.Environment = AppSettings.General.Environment;
 
         FillException(monitor, exception);
     }
