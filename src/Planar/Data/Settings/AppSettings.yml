@@ -51,3 +51,15 @@ smtp:
   use ssl: false
   username: null
   password: null
+
+hooks:
+  rest:
+    default url: http://localhost:2306/api/hooks/rest
+  teams:
+    default url: https://teams.microsoft.com
+    send to multiple urls: false
+  twilio sms:
+    account sid: null
+    auth token: null
+    from number: null
+    default phone prefix: +972

@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Planar.Monitor.Hook;
+﻿using Planar.Monitor.Hook;
 
 namespace Planar.Hooks
 {

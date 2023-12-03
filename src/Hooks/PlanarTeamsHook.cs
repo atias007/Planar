@@ -1,58 +1,38 @@
-﻿using Planar.Hook;
-using Planar.TeamsMonitorHook.TeamsCards;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
+﻿using Planar.Monitor.Hook;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using System.Threading.Tasks;
+using Planar.Hooks.Enities;
+using System.Diagnostics.CodeAnalysis;
 
-namespace Planar.TeamsMonitorHook
+namespace Planar.Hooks
 {
-    // https://docs.microsoft.com/en-us/graph/api/chatmessage-post?view=graph-rest-1.0&tabs=powershell
-    public class TeamHook : BaseHook
+    public class PlanarTeamsHook : BaseSystemHook
     {
-        private const string ImageSource = "https://raw.githubusercontent.com/atias007/Planar/master/hooks/Planar.TeamsMonitorHook/Icons/{0}.png";
-        private const string HookKey = "TeamsMonitorHook.ChannelUrl";
+        public override string Name => "Planar.Teams";
+        private bool _sendToAllChannels;
 
-        public override string Name => "Teams";
+        private const string ImageSource = "https://raw.githubusercontent.com/atias007/Planar/master/hooks/Planar.TeamsMonitorHook/Icons/{0}.png";
 
         public override async Task Handle(IMonitorDetails monitorDetails)
         {
-            var url = GetHookParameter(HookKey, monitorDetails);
-            if (url == null) { return; }
-            if (!IsValidUrl(url, monitorDetails.Group)) { return; }
-
+            var urls = GetTeamsUrls(monitorDetails);
             var message = GetMessageText(monitorDetails);
-            await SendMessageToChannel(url, message);
+            foreach (var url in urls)
+            {
+                await SendMessageToChannel(url, message);
+                if (!_sendToAllChannels) { break; }
+            }
         }
 
         public override async Task HandleSystem(IMonitorSystemDetails monitorDetails)
         {
-            var url = GetHookParameter(HookKey, monitorDetails);
-            if (url == null) { return; }
-            if (!IsValidUrl(url, monitorDetails.Group)) { return; }
-
+            var urls = GetTeamsUrls(monitorDetails);
             var message = GetSystemMessageText(monitorDetails);
-            await SendMessageToChannel(url, message);
-        }
-
-        private bool IsValidUrl(string? url, IMonitorGroup group)
-        {
-            if (string.IsNullOrEmpty(url))
+            foreach (var url in urls)
             {
-                LogError($"Group '{group.Name}' has invalid uri value (null or empty) at reference property");
-                return false;
+                await SendMessageToChannel(url, message);
+                if (!_sendToAllChannels) { break; }
             }
-
-            if (!IsValidUri(url))
-            {
-                LogError($"Group '{group.Name}' has invalid url value '{url}' at reference property");
-                return false;
-            }
-
-            return true;
         }
 
         private async Task SendMessageToChannel(string url, string json)
@@ -87,7 +67,7 @@ namespace Planar.TeamsMonitorHook
             var icon = GetIcon(details);
             var image = string.Format(ImageSource, icon);
 
-            var card = new JobMessageCard
+            var card = new TeamsMessageCard
             {
                 Title = $"Monitor Event: {details.EventTitle}",
                 Sections = new List<Section>
@@ -118,7 +98,7 @@ namespace Planar.TeamsMonitorHook
             var icon = GetIcon(details);
             var image = string.Format(ImageSource, icon);
 
-            var card = new JobMessageCard
+            var card = new TeamsMessageCard
             {
                 Title = $"Planar Event: {details.EventTitle}",
                 Sections = new List<Section>
@@ -170,6 +150,39 @@ namespace Planar.TeamsMonitorHook
                 312 => "info",
                 _ => "info",
             };
+        }
+
+        private static IEnumerable<string> GetTeamsUrls(IMonitor monitor)
+        {
+            var defaultUrl = "xxx";
+
+            var g = monitor.Group;
+            var fields = new[] { g.AdditionalField1, g.AdditionalField2, g.AdditionalField3, g.AdditionalField4, g.AdditionalField5 };
+
+            foreach (var item in fields)
+            {
+                if (IsTeamsUrl(item))
+                {
+                    yield return item;
+                }
+            }
+
+            if (IsTeamsUrl(defaultUrl))
+            {
+                yield return defaultUrl;
+            }
+        }
+
+        private static bool IsTeamsUrl([NotNullWhen(true)] string? url)
+        {
+            const string pattern = "https://teams.microsoft.com";
+            if (string.IsNullOrWhiteSpace(url)) { return false; }
+            if (url.Trim().StartsWith(pattern, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return false;
         }
     }
 }

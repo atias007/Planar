@@ -1,4 +1,4 @@
-﻿namespace Planar.Hooks
+﻿namespace Planar.Hooks.Enities
 {
     internal class MonitorPayload
     {

@@ -61,27 +61,6 @@ namespace Planar.Hook
             return Uri.TryCreate(url, UriKind.Absolute, out _);
         }
 
-        protected string? GetHookParameter(string key, IMonitor details)
-        {
-            if (string.IsNullOrEmpty(key))
-            {
-                LogError("GetHookParameter with key null (or empty) is invalid");
-                return null;
-            }
-
-            var groupResult = GetHookParameterFromGroup(key, details.Group);
-            if (!string.IsNullOrEmpty(groupResult)) { return groupResult; }
-
-            if (details.GlobalConfig.ContainsKey(key))
-            {
-                return details.GlobalConfig[key];
-            }
-
-            LogError($"missing hook parameter with key '{key}' at monitor '{details.MonitorTitle}'");
-
-            return null;
-        }
-
         protected virtual void Log(LogLevel level, string message)
         {
             var key = level.ToString().ToLower();
@@ -116,42 +95,6 @@ namespace Planar.Hook
         protected virtual void LogTrace(string message)
         {
             Log(LogLevel.Trace, message);
-        }
-
-        private static string? GetHookParameterFromGroup(string key, IMonitorGroup group)
-        {
-            string? url;
-
-            url = GetHookParameterReference(key, group.AdditionalField1);
-            if (url != null) { return url; }
-
-            url = GetHookParameterReference(key, group.AdditionalField2);
-            if (url != null) { return url; }
-
-            url = GetHookParameterReference(key, group.AdditionalField3);
-            if (url != null) { return url; }
-
-            url = GetHookParameterReference(key, group.AdditionalField4);
-            if (url != null) { return url; }
-
-            url = GetHookParameterReference(key, group.AdditionalField5);
-            if (url != null) { return url; }
-
-            return null;
-        }
-
-        private static string? GetHookParameterReference(string key, string? reference)
-        {
-            if (!string.IsNullOrEmpty(reference) && reference.StartsWith(key))
-            {
-                var url = reference[key.Length..];
-                if (url.StartsWith(':') || url.StartsWith('=') || url.StartsWith(' '))
-                {
-                    return url[1..];
-                }
-            }
-
-            return null;
         }
 
         private static T InitializeMessageDetails<T>(MonitorMessageWrapper messageBroker)

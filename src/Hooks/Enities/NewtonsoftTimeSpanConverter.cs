@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace Planar.Hooks
+namespace Planar.Hooks.Enities
 {
     public class NewtonsoftTimeSpanConverter : JsonConverter<TimeSpan>
     {

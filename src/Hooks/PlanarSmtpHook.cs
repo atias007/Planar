@@ -1,5 +1,4 @@
 ﻿using MailKit.Net.Smtp;
-using Microsoft.Extensions.Logging;
 using MimeKit;
 using Planar.Common;
 using Planar.Monitor.Hook;
