@@ -8,6 +8,7 @@ using Polly;
 using System;
 using System.Data;
 using System.Text;
+using EC = Planar.Common.EnvironmentVariableConsts;
 
 namespace Planar.Common
 {
@@ -34,6 +35,8 @@ namespace Planar.Common
 
         public static MonitorSettings Monitor { get; private set; } = new();
 
+        public static HooksSettings Hooks { get; private set; } = new();
+
         public static void Initialize(IConfiguration configuration)
         {
             Console.WriteLine("[x] Initialize AppSettings");
@@ -47,32 +50,33 @@ namespace Planar.Common
             InitializeAuthentication(configuration);
             InitializeSmtp(configuration);
             InitializeMonitor(configuration);
+            InitializeHooks(configuration);
 
             // Database
-            Database.Provider = GetSettings(configuration, Consts.DatabaseProviderVariableKey, "database", "provider", "Npgsql");
-            Database.RunMigration = GetSettings(configuration, Consts.RunDatabaseMigrationVariableKey, "database", "run migration", true);
+            Database.Provider = GetSettings(configuration, EC.DatabaseProviderVariableKey, "database", "provider", "Npgsql");
+            Database.RunMigration = GetSettings(configuration, EC.RunDatabaseMigrationVariableKey, "database", "run migration", true);
 
             // General
-            General.InstanceId = GetSettings(configuration, Consts.InstanceIdVariableKey, "general", "instance id", "AUTO");
-            General.ServiceName = GetSettings(configuration, Consts.ServiceNameVariableKey, "general", "service name", "PlanarService");
-            General.JobAutoStopSpan = GetSettings(configuration, Consts.JobAutoStopSpanVariableKey, "general", "job auto stop span", TimeSpan.FromHours(2));
-            General.SwaggerUI = GetSettings(configuration, Consts.SwaggerUIVariableKey, "general", "swagger ui", true);
-            General.OpenApiUI = GetSettings(configuration, Consts.OpenApiUIVariableKey, "general", "open api ui", true);
-            General.DeveloperExceptionPage = GetSettings(configuration, Consts.DeveloperExceptionPageVariableKey, "general", "developer exception page", true);
-            General.SchedulerStartupDelay = GetSettings(configuration, Consts.SchedulerStartupDelayVariableKey, "general", "scheduler startup delay", TimeSpan.FromSeconds(30));
-            General.ConcurrencyRateLimiting = GetSettings(configuration, Consts.ConcurrencyRateLimitingVariableKey, "general", "concurrency rate limiting", 10);
+            General.InstanceId = GetSettings(configuration, EC.InstanceIdVariableKey, "general", "instance id", "AUTO");
+            General.ServiceName = GetSettings(configuration, EC.ServiceNameVariableKey, "general", "service name", "PlanarService");
+            General.JobAutoStopSpan = GetSettings(configuration, EC.JobAutoStopSpanVariableKey, "general", "job auto stop span", TimeSpan.FromHours(2));
+            General.SwaggerUI = GetSettings(configuration, EC.SwaggerUIVariableKey, "general", "swagger ui", true);
+            General.OpenApiUI = GetSettings(configuration, EC.OpenApiUIVariableKey, "general", "open api ui", true);
+            General.DeveloperExceptionPage = GetSettings(configuration, EC.DeveloperExceptionPageVariableKey, "general", "developer exception page", true);
+            General.SchedulerStartupDelay = GetSettings(configuration, EC.SchedulerStartupDelayVariableKey, "general", "scheduler startup delay", TimeSpan.FromSeconds(30));
+            General.ConcurrencyRateLimiting = GetSettings(configuration, EC.ConcurrencyRateLimitingVariableKey, "general", "concurrency rate limiting", 10);
 
             // Cluster
-            Cluster.Clustering = GetSettings(configuration, Consts.ClusteringVariableKey, "cluster", "clustering", false);
-            Cluster.CheckinInterval = GetSettings(configuration, Consts.ClusteringCheckinIntervalVariableKey, "cluster", "checkin interval", TimeSpan.FromSeconds(5));
-            Cluster.CheckinMisfireThreshold = GetSettings(configuration, Consts.ClusteringCheckinMisfireThresholdVariableKey, "cluster", "checkin misfire threshold", TimeSpan.FromSeconds(5));
-            Cluster.HealthCheckInterval = GetSettings(configuration, Consts.ClusterHealthCheckIntervalVariableKey, "cluster", "health check interval", TimeSpan.FromMinutes(1));
-            Cluster.Port = GetSettings<short>(configuration, Consts.ClusterPortVariableKey, "cluster", "port", 12306);
+            Cluster.Clustering = GetSettings(configuration, EC.ClusteringVariableKey, "cluster", "clustering", false);
+            Cluster.CheckinInterval = GetSettings(configuration, EC.ClusteringCheckinIntervalVariableKey, "cluster", "checkin interval", TimeSpan.FromSeconds(5));
+            Cluster.CheckinMisfireThreshold = GetSettings(configuration, EC.ClusteringCheckinMisfireThresholdVariableKey, "cluster", "checkin misfire threshold", TimeSpan.FromSeconds(5));
+            Cluster.HealthCheckInterval = GetSettings(configuration, EC.ClusterHealthCheckIntervalVariableKey, "cluster", "health check interval", TimeSpan.FromMinutes(1));
+            Cluster.Port = GetSettings<short>(configuration, EC.ClusterPortVariableKey, "cluster", "port", 12306);
 
             // Retention
-            Retention.TraceRetentionDays = GetSettings(configuration, Consts.TraceRetentionDaysVariableKey, "retention", "trace retention days", 365);
-            Retention.JobLogRetentionDays = GetSettings(configuration, Consts.JobLogRetentionDaysVariableKey, "retention", "job log retention days", 365);
-            Retention.StatisticsRetentionDays = GetSettings(configuration, Consts.StatisticsRetentionDaysVariableKey, "retention", "statistics retention days", 365);
+            Retention.TraceRetentionDays = GetSettings(configuration, EC.TraceRetentionDaysVariableKey, "retention", "trace retention days", 365);
+            Retention.JobLogRetentionDays = GetSettings(configuration, EC.JobLogRetentionDaysVariableKey, "retention", "job log retention days", 365);
+            Retention.StatisticsRetentionDays = GetSettings(configuration, EC.MetricssRetentionDaysVariableKey, "retention", "statistics retention days", 365);
 
             if (General.ConcurrencyRateLimiting < 1)
             {
@@ -82,7 +86,7 @@ namespace Planar.Common
 
         private static void InitializeEnvironment(IConfiguration configuration)
         {
-            General.Environment = GetSettings(configuration, Consts.EnvironmentVariableKey, "general", "environment", Consts.ProductionEnvironment);
+            General.Environment = GetSettings(configuration, EC.EnvironmentVariableKey, "general", "environment", Consts.ProductionEnvironment);
             Global.Environment = General.Environment;
             if (General.Environment == Consts.ProductionEnvironment)
             {
@@ -96,19 +100,19 @@ namespace Planar.Common
 
         private static void InitializeSmtp(IConfiguration configuration)
         {
-            Smtp.Host = GetSettings(configuration, Consts.SmtpHost, "smtp", "host", string.Empty);
-            Smtp.Port = GetSettings(configuration, Consts.SmtpPort, "smtp", "port", 25);
-            Smtp.FromAddress = GetSettings(configuration, Consts.SmtpFromAddress, "smtp", "from address", string.Empty);
-            Smtp.FromName = GetSettings(configuration, Consts.SmtpFromName, "smtp", "from name", string.Empty);
-            Smtp.Username = GetSettings(configuration, Consts.SmtpUsername, "smtp", "username", string.Empty);
-            Smtp.Password = GetSettings(configuration, Consts.SmtpPassword, "smtp", "password", string.Empty);
+            Smtp.Host = GetSettings(configuration, EC.SmtpHost, "smtp", "host", string.Empty);
+            Smtp.Port = GetSettings(configuration, EC.SmtpPort, "smtp", "port", 25);
+            Smtp.FromAddress = GetSettings(configuration, EC.SmtpFromAddress, "smtp", "from address", string.Empty);
+            Smtp.FromName = GetSettings(configuration, EC.SmtpFromName, "smtp", "from name", string.Empty);
+            Smtp.Username = GetSettings(configuration, EC.SmtpUsername, "smtp", "username", string.Empty);
+            Smtp.Password = GetSettings(configuration, EC.SmtpPassword, "smtp", "password", string.Empty);
         }
 
         private static void InitializeMonitor(IConfiguration configuration)
         {
-            Monitor.MaxAlertsPerMonitor = GetSettings(configuration, Consts.MonitorMaxAlerts, "monitor", "max alerts per monitor", 10);
-            Monitor.MaxAlertsPeriod = GetSettings(configuration, Consts.MonitorMaxAlertsPeriod, "monitor", "max alerts period", TimeSpan.FromDays(1));
-            Monitor.ManualMuteMaxPeriod = GetSettings(configuration, Consts.ManualMuteMaxPeriod, "monitor", "manual mute max period", TimeSpan.FromDays(1));
+            Monitor.MaxAlertsPerMonitor = GetSettings(configuration, EC.MonitorMaxAlerts, "monitor", "max alerts per monitor", 10);
+            Monitor.MaxAlertsPeriod = GetSettings(configuration, EC.MonitorMaxAlertsPeriod, "monitor", "max alerts period", TimeSpan.FromDays(1));
+            Monitor.ManualMuteMaxPeriod = GetSettings(configuration, EC.MonitorManualMuteMaxPeriod, "monitor", "manual mute max period", TimeSpan.FromDays(1));
 
             if (Monitor.MaxAlertsPerMonitor < 1)
             {
@@ -126,9 +130,20 @@ namespace Planar.Common
             }
         }
 
+        private static void InitializeHooks(IConfiguration configuration)
+        {
+            Hooks.Rest.DefaultUrl = GetSettings(configuration, EC.HooksRestDefaultUrl, "hooks:rest", "default url", string.Empty);
+            Hooks.Teams.DefaultUrl = GetSettings(configuration, EC.MonitorMaxAlertsPeriod, "hooks:teams", "default url", string.Empty);
+            Hooks.Teams.SendToMultipleUrls = GetSettings(configuration, EC.HooksTeamsSendToMultipleUrls, "hooks:teams", "send to multiple urls", false);
+            Hooks.TwilioSms.AccountSid = GetSettings(configuration, EC.HooksTwilioSmsAccountSid, "hooks:twilio sms", "account sid", string.Empty);
+            Hooks.TwilioSms.AuthToken = GetSettings(configuration, EC.HooksTwilioSmsAuthToken, "hooks:twilio sms", "auth token", string.Empty);
+            Hooks.TwilioSms.FromNumber = GetSettings(configuration, EC.HooksTwilioSmsFromNumber, "hooks:twilio sms", "from number", string.Empty);
+            Hooks.TwilioSms.DefaultPhonePrefix = GetSettings(configuration, EC.HooksTwilioSmsDefaultPhonePrefix, "hooks:twilio sms", "default phone prefix", string.Empty);
+        }
+
         private static void InitializePersistanceSpan(IConfiguration configuration)
         {
-            General.PersistRunningJobsSpan = GetSettings<TimeSpan>(configuration, Consts.PersistRunningJobsSpanVariableKey, "general", "persist running jobs span");
+            General.PersistRunningJobsSpan = GetSettings<TimeSpan>(configuration, EC.PersistRunningJobsSpanVariableKey, "general", "persist running jobs span");
 
             if (General.PersistRunningJobsSpan == TimeSpan.Zero)
             {
@@ -141,7 +156,7 @@ namespace Planar.Common
 
         private static void InitializeMaxConcurrency(IConfiguration configuration)
         {
-            General.MaxConcurrency = GetSettings<int>(configuration, Consts.MaxConcurrencyVariableKey, "general", "max concurrency");
+            General.MaxConcurrency = GetSettings<int>(configuration, EC.MaxConcurrencyVariableKey, "general", "max concurrency");
 
             if (General.MaxConcurrency == default)
             {
@@ -162,11 +177,11 @@ namespace Planar.Common
 
         private static void InitializeConnectionString(IConfiguration configuration)
         {
-            Database.ConnectionString = GetSettings(configuration, Consts.ConnectionStringVariableKey, "database", "connection string", string.Empty);
+            Database.ConnectionString = GetSettings(configuration, EC.ConnectionStringVariableKey, "database", "connection string", string.Empty);
 
             if (string.IsNullOrEmpty(Database.ConnectionString))
             {
-                throw new AppSettingsException($"ERROR: 'database connection' string could not be initialized\r\nMissing key 'connection string' or value is empty in AppSettings.yml file and there is no environment variable '{Consts.ConnectionStringVariableKey}'");
+                throw new AppSettingsException($"ERROR: 'database connection' string could not be initialized\r\nMissing key 'connection string' or value is empty in AppSettings.yml file and there is no environment variable '{EC.ConnectionStringVariableKey}'");
             }
 
             try
@@ -253,15 +268,15 @@ namespace Planar.Common
 
         private static void InitializePorts(IConfiguration configuration)
         {
-            General.HttpPort = GetSettings<short>(configuration, Consts.HttpPortVariableKey, "general", "http port", 2306);
-            General.HttpsPort = GetSettings<short>(configuration, Consts.HttpsPortVariableKey, "general", "https port", 2610);
-            General.UseHttps = GetSettings(configuration, Consts.UseHttpsVariableKey, "general", "use https", false);
-            General.UseHttpsRedirect = GetSettings(configuration, Consts.UseHttpsRedirectVariableKey, "general", "use https redirect", true);
+            General.HttpPort = GetSettings<short>(configuration, EC.HttpPortVariableKey, "general", "http port", 2306);
+            General.HttpsPort = GetSettings<short>(configuration, EC.HttpsPortVariableKey, "general", "https port", 2610);
+            General.UseHttps = GetSettings(configuration, EC.UseHttpsVariableKey, "general", "use https", false);
+            General.UseHttpsRedirect = GetSettings(configuration, EC.UseHttpsRedirectVariableKey, "general", "use https redirect", true);
         }
 
         private static void InitializeLogLevel(IConfiguration configuration)
         {
-            var level = GetSettings(configuration, Consts.LogLevelVariableKey, "general", "log level", LogLevel.Information.ToString());
+            var level = GetSettings(configuration, EC.LogLevelVariableKey, "general", "log level", LogLevel.Information.ToString());
             if (Enum.TryParse<LogLevel>(level, true, out var tempLevel))
             {
                 General.LogLevel = tempLevel;
@@ -278,9 +293,9 @@ namespace Planar.Common
         {
             const string DefaultAuthenticationSecret = "ecawiasqrpqrgyhwnolrudpbsrwaynbqdayndnmcehjnwqyouikpodzaqxivwkconwqbhrmxfgccbxbyljguwlxhdlcvxlutbnwjlgpfhjgqbegtbxbvwnacyqnltrby";
 
-            var mode = GetSettings(configuration, Consts.AuthenticationModeVariableKey, "authentication", "mode", AuthMode.AllAnonymous.ToString());
-            Authentication.Secret = GetSettings(configuration, Consts.AuthenticationSecretVariableKey, "authentication", "secret", DefaultAuthenticationSecret);
-            Authentication.TokenExpire = GetSettings(configuration, Consts.AuthenticationTokenExpireVariableKey, "authentication", "token expire", TimeSpan.FromMinutes(20));
+            var mode = GetSettings(configuration, EC.AuthenticationModeVariableKey, "authentication", "mode", AuthMode.AllAnonymous.ToString());
+            Authentication.Secret = GetSettings(configuration, EC.AuthenticationSecretVariableKey, "authentication", "secret", DefaultAuthenticationSecret);
+            Authentication.TokenExpire = GetSettings(configuration, EC.AuthenticationTokenExpireVariableKey, "authentication", "token expire", TimeSpan.FromMinutes(20));
 
             mode = mode.Replace(" ", string.Empty);
             if (Enum.TryParse<AuthMode>(mode, true, out var tempMode))

@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using Planar.Common.Exceptions;
 using Planar.Hooks;
-using Planar.Monitor.Hook;
 using Planar.Service.Monitor;
 using Quartz;
 using System;
@@ -84,6 +83,8 @@ namespace Planar.Service.General
             LoadSystemHook<TLogger, PlanarRestHook>(logger);
             LoadSystemHook<TLogger, PlanarSmtpHook>(logger);
             LoadSystemHook<TLogger, PlanarLogHook>(logger);
+            LoadSystemHook<TLogger, PlanarTeamsHook>(logger);
+            LoadSystemHook<TLogger, PlanarTwilioSmsHook>(logger);
         }
 
         private static void LoadSystemHook<TLogger, THook>(ILogger<TLogger> logger)

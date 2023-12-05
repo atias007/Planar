@@ -40,12 +40,12 @@ authentication:
 
 monitor:
   max alerts per monitor: 10           # the maximum alert per monitor item and per job per period. default is 10. minimum value 1
-  max alerts period: 1.00:00:00        # the period for maximum monitor alerts. default is 1 day. minimum value 1 hour
+  max alerts period: 12:00:00          # the period for maximum monitor alerts. default is 1 day. minimum value 1 hour
   manual mute max period: 1.00:00:00   # the maximum period for manual mute. default is 1 day. minimum value 1 hour
 
 smtp: 
   from address: admin@planar.me
-  from name: Planar
+  from name: Planar [Do Not Reply]
   host: smtp.gmail.com
   port: 25
   use ssl: false
@@ -57,7 +57,7 @@ hooks:
     default url: http://localhost:2306/api/hooks/rest
   teams:
     default url: https://teams.microsoft.com
-    send to multiple urls: false
+    send to multiple urls: true
   twilio sms:
     account sid: null
     auth token: null
