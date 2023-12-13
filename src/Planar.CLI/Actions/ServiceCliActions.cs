@@ -52,6 +52,7 @@ namespace Planar.CLI.Actions
                          new CliDumpObject(result.Data.Retention){ Title=nameof(result.Data.Retention) },
                          new CliDumpObject(result.Data.Monitor){ Title=nameof(result.Data.Monitor) },
                          new CliDumpObject(result.Data.Smtp){ Title=nameof(result.Data.Smtp) },
+                         new CliDumpObject(result.Data.Hooks) { Title = nameof(result.Data.Hooks)}
                 };
 
             return new CliActionResponse(result, data);

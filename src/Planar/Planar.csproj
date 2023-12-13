@@ -34,7 +34,6 @@
 	  <None Remove="Data\Calendars\readme.md" />
 	  <None Remove="Data\Jobs\readme.md" />
 	  <None Remove="Data\MonitorHooks\readme.md" />
-	  <None Remove="Data\MonitorHooks\Teams\readme.md" />
 	  <None Remove="Data\Settings\AppSettings.yml" />
 	  <None Remove="Data\Settings\Serilog.yml" />
 	  <None Remove="Data\Settings\WorkingHours.Israel.yml" />
@@ -100,9 +99,6 @@
 		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</EmbeddedResource>
 		<EmbeddedResource Include="Data\MonitorHooks\readme.md">
-		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-		</EmbeddedResource>
-		<EmbeddedResource Include="Data\MonitorHooks\Teams\readme.md">
 		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</EmbeddedResource>
 	</ItemGroup>

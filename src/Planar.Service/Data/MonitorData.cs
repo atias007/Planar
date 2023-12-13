@@ -406,7 +406,8 @@ namespace Planar.Service.Data
         {
             var result = await _context.MonitorMutes
                 .AsNoTracking()
-                .Where(m => (
+                .Where(m => m.DueDate >= DateTime.Now)
+                .Where(m =>
                     (m.JobId == null && m.MonitorId == null)
                     ||
                     (m.JobId == jobId && m.MonitorId == monitorId)
@@ -414,8 +415,6 @@ namespace Planar.Service.Data
                     (m.JobId == jobId && m.MonitorId == null)
                     ||
                     (m.JobId == null && m.MonitorId == monitorId))
-                    &&
-                    m.DueDate < DateTime.Now)
                 .AnyAsync();
 
             return result;
