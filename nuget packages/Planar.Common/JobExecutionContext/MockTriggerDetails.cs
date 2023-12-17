@@ -1,6 +1,7 @@
 ﻿using Planar.Job;
 using Planar.Job.Test.JobExecutionContext;
 using System;
+using System.Security.Cryptography;
 
 namespace Planar.Common
 {
@@ -40,5 +41,6 @@ namespace Planar.Common
         public TimeSpan? RetrySpan => null;
         public int? RetryNumber => null;
         public int? MaxRetries => null;
+        public string Id { get; } = General.GenerateId();
     }
 }

@@ -36,6 +36,7 @@
 		<Compile Include="..\Planar.Common\ExecuteHelper\ExecuteJobPropertiesBuilder.cs" Link="ExecuteHelper\ExecuteJobPropertiesBuilder.cs" />
 		<Compile Include="..\Planar.Common\Extensions.cs" Link="Extensions.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\DataMapUtils.cs" Link="JobExecutionContext\DataMapUtils.cs" />
+		<Compile Include="..\Planar.Common\JobExecutionContext\General.cs" Link="JobExecutionContext\General.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\MockJobDetails.cs" Link="JobExecutionContext\MockJobDetails.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\MockJobExecutionContext.cs" Link="JobExecutionContext\MockJobExecutionContext.cs" />
 		<Compile Include="..\Planar.Common\JobExecutionContext\MockKey.cs" Link="JobExecutionContext\MockKey.cs" />

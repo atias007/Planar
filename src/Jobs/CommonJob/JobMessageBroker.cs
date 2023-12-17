@@ -7,6 +7,7 @@ using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
 using Planar.Job;
+using Planar.Service.API.Helpers;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -171,6 +172,8 @@ namespace CommonJob
             var maxRetries = TriggerHelper.GetMaxRetries(context.Trigger);
             var retrySpan = TriggerHelper.GetRetrySpan(context.Trigger);
             var lastRetry = hasRetry ? retryNumber >= maxRetries : (bool?)null;
+            var jobId = JobHelper.GetJobId(context.JobDetail) ?? string.Empty;
+            var triggerId = TriggerHelper.GetTriggerId(context.Trigger) ?? string.Empty;
 
             var result = new JobExecutionContext
             {
@@ -195,7 +198,8 @@ namespace CommonJob
                         Group = context.JobDetail.Key.Group
                     },
                     PersistJobDataAfterExecution = context.JobDetail.PersistJobDataAfterExecution,
-                    RequestsRecovery = context.JobDetail.RequestsRecovery
+                    RequestsRecovery = context.JobDetail.RequestsRecovery,
+                    Id = jobId
                 },
                 TriggerDetails = new TriggerDetail
                 {
@@ -217,7 +221,8 @@ namespace CommonJob
                     IsRetryTrigger = isRetryTrigger,
                     MaxRetries = maxRetries,
                     RetryNumber = retryNumber == 0 ? null : retryNumber,
-                    RetrySpan = retrySpan
+                    RetrySpan = retrySpan,
+                    Id = triggerId
                 },
                 Environment = Global.Environment
             };

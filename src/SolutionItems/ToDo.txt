@@ -244,3 +244,6 @@ V1.6.1
 - cli: group get, remove (with no parameter)
 - cli: user get, remove, get-role (with no parameter)
 - cli: user/group join (show only relevant users/group)
+- Add teams hook
+- Add Twilio sms hook
+- Add job id & trigger id to nuget packs

@@ -7,6 +7,7 @@
         bool Durable { get; }
         IDataMap JobDataMap { get; }
         IKey Key { get; }
+        string Id { get; }
         bool PersistJobDataAfterExecution { get; }
         bool RequestsRecovery { get; }
     }
