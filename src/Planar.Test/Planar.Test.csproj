@@ -12,6 +12,10 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Remove="JobTests.cs" />
+	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="MathNet.Numerics" Version="5.0.0" />
 		<PackageReference Include="NUnit" Version="4.0.1" />
@@ -30,6 +34,10 @@
 
 	<ItemGroup>
 	  <Folder Include="HttpFiles\" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="JobTests.cs" />
 	</ItemGroup>
 
 </Project>

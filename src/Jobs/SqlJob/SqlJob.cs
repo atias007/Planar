@@ -234,12 +234,8 @@ namespace Planar
             var settingsKey = Settings.Keys
                 .FirstOrDefault(k =>
                     string.Equals(k, name, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(k, $"ConnectionStrings:{name}", StringComparison.OrdinalIgnoreCase));
-
-            if (settingsKey == null)
-            {
-                throw new SqlJobException($"connection string name '{name}' could not be found in global config");
-            }
+                    string.Equals(k, $"ConnectionStrings:{name}", StringComparison.OrdinalIgnoreCase))
+                ?? throw new SqlJobException($"connection string name '{name}' could not be found in global config");
 
             var value = Settings[settingsKey];
             if (string.IsNullOrWhiteSpace(value))
