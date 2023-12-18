@@ -31,10 +31,6 @@ jobs:
 #      run: dotnet test "nuget packages" --no-build --verbosity normal
     - name: Restore dependencies [hooks]
       run: dotnet restore hooks
-    - name: Build [hooks]
-      run: dotnet build hooks --no-restore
-#    - name: Test [hooks]
-#      run: dotnet test hooks --no-build --verbosity normal
     - name: Restore dependencies [test]
       run: dotnet restore test
     - name: Build [test]
