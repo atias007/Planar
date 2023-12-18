@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Text;
 using DbUp.Engine;
 using DbUp.Engine.Output;
 using DbUp.Engine.Preprocessors;
@@ -37,7 +38,7 @@ namespace DbUp.Support
         /// <param name="variablesEnabled">Function that returns <c>true</c> if variables should be replaced, <c>false</c> otherwise.</param>
         /// <param name="scriptPreprocessors">Script Preprocessors in addition to variable substitution</param>
         /// <param name="journalFactory">Database journal</param>
-        public ScriptExecutor(
+        protected ScriptExecutor(
             Func<IConnectionManager> connectionManagerFactory, ISqlObjectParser sqlObjectParser,
             Func<IUpgradeLog> log, string schema, Func<bool> variablesEnabled,
             IEnumerable<IScriptPreprocessor> scriptPreprocessors,
@@ -56,15 +57,6 @@ namespace DbUp.Support
         /// Database Schema, should be null if database does not support schemas
         /// </summary>
         public string Schema { get; set; }
-
-        /// <summary>
-        /// Executes the specified script against a database at a given connection string.
-        /// </summary>
-        /// <param name="script">The script.</param>
-        public virtual void Execute(SqlScript script)
-        {
-            Execute(script, null);
-        }
 
         /// <summary>
         /// Verifies the existence of targeted schema. If schema is not verified, will check for the existence of the dbo schema.
@@ -91,8 +83,7 @@ namespace DbUp.Support
 
         protected virtual string PreprocessScriptContents(SqlScript script, IDictionary<string, string> variables)
         {
-            if (variables == null)
-                variables = new Dictionary<string, string>();
+            variables ??= new Dictionary<string, string>();
             if (Schema != null && !variables.ContainsKey("schema"))
                 variables.Add("schema", QuoteSqlObjectName(Schema));
 
@@ -101,10 +92,19 @@ namespace DbUp.Support
                 contents = new StripSchemaPreprocessor().Process(contents);
             if (variablesEnabled())
                 contents = new VariableSubstitutionPreprocessor(variables).Process(contents);
-            contents = (scriptPreprocessors ?? new IScriptPreprocessor[0])
+            contents = (scriptPreprocessors ?? Array.Empty<IScriptPreprocessor>())
                 .Aggregate(contents, (current, additionalScriptPreprocessor) => additionalScriptPreprocessor.Process(current));
 
             return contents;
+        }
+
+        /// <summary>
+        /// Executes the specified script against a database at a given connection string.
+        /// </summary>
+        /// <param name="script">The script.</param>
+        public virtual void Execute(SqlScript script)
+        {
+            Execute(script, null);
         }
 
         /// <summary>
@@ -131,27 +131,25 @@ namespace DbUp.Support
                     foreach (var statement in scriptStatements)
                     {
                         index++;
-                        using (var command = dbCommandFactory())
-                        {
-                            command.CommandText = statement;
-                            if (ExecutionTimeoutSeconds != null)
-                                command.CommandTimeout = ExecutionTimeoutSeconds.Value;
+                        using var command = dbCommandFactory();
+                        command.CommandText = statement;
+                        if (ExecutionTimeoutSeconds != null)
+                            command.CommandTimeout = ExecutionTimeoutSeconds.Value;
 
-                            Action<IDbCommand> executeAction;
-                            if (connectionManager.IsScriptOutputLogged)
-                            {
-                                executeAction = ExecuteAndLogOutput;
-                            }
-                            else
-                            {
-                                executeAction = ExecuteNonQuery;
-                            }
-                            // Execute within a wrapper that allows a provider specific derived class to handle provider specific exception.
-                            ExecuteCommandsWithinExceptionHandler(index, script, () =>
-                            {
-                                executeAction(command);
-                            });
+                        Action<IDbCommand> executeAction;
+                        if (connectionManager.IsScriptOutputLogged)
+                        {
+                            executeAction = ExecuteAndLogOutput;
                         }
+                        else
+                        {
+                            executeAction = ExecuteNonQuery;
+                        }
+                        // Execute within a wrapper that allows a provider specific derived class to handle provider specific exception.
+                        ExecuteCommandsWithinExceptionHandler(index, script, () =>
+                        {
+                            executeAction(command);
+                        });
                     }
 
                     if (UseTheSameTransactionForJournalTableAndScripts)
@@ -192,10 +190,8 @@ namespace DbUp.Support
 
         protected virtual void ExecuteAndLogOutput(IDbCommand command)
         {
-            using (var reader = command.ExecuteReader())
-            {
-                WriteReaderToLog(reader);
-            }
+            using var reader = command.ExecuteReader();
+            WriteReaderToLog(reader);
         }
 
         /// <summary>
@@ -237,24 +233,24 @@ namespace DbUp.Support
                     lines.Add(line);
                 }
 
-                var format = "";
+                var format = new StringBuilder();
                 var totalLength = 0;
                 for (var i = 0; i < reader.FieldCount; i++)
                 {
                     var maxLength = (lines.Count == 0 ? 0 : lines.Max(l => (l[i] ?? "").Length)) + 2;
-                    format += " {" + i + ", " + maxLength + "} |";
+                    format.Append($" {{{i}, {maxLength}}} |");
                     totalLength += (maxLength + 3);
                 }
-                format = "|" + format;
+                format.Append($"|{format}");
                 totalLength += 1;
 
                 var delimiterLine = new string('-', totalLength);
                 Log().WriteInformation(delimiterLine);
-                Log().WriteInformation(string.Format(format, names.ToArray()));
+                Log().WriteInformation(string.Format(format.ToString(), names.ToArray()));
                 Log().WriteInformation(delimiterLine);
                 foreach (var line in lines)
                 {
-                    Log().WriteInformation(string.Format(format, line.ToArray()));
+                    Log().WriteInformation(string.Format(format.ToString(), line.ToArray()));
                 }
                 Log().WriteInformation(delimiterLine);
                 Log().WriteInformation("\r\n");

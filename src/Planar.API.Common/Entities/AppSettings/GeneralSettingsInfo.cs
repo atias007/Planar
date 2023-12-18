@@ -34,6 +34,6 @@ namespace Planar.API.Common.Entities
 
         public int ConcurrencyRateLimiting { get; set; }
 
-        public string LogLevel { get; set; }
+        public string LogLevel { get; set; } = string.Empty;
     }
 }

@@ -58,7 +58,7 @@ namespace Planar.CLI.DataProtect
             {
                 LogoutOldItems();
                 var last = Data.Logins
-                    .Where(l => l.Key == key)
+                    .Where(l => string.Equals(l.Key, key, StringComparison.OrdinalIgnoreCase))
                     .OrderByDescending(l => l.ConnectDate)
                     .FirstOrDefault();
 
