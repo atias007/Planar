@@ -42,6 +42,7 @@
         public const string SmtpFromName = "PLANAR_SMTP_FROM_NAME";
         public const string SmtpUsername = "PLANAR_SMTP_USERNAME";
         public const string SmtpPassword = "PLANAR_SMTP_PASSWORD";
+        public const string UseSmtpDefaultCredentials = "PLANAR_SMTP_USE_DEFAULT_CREDENTIALS";
 
         public const string MonitorMaxAlerts = "PLANAR_MONITOR_MAX_ALERTS";
         public const string MonitorMaxAlertsPeriod = "PLANAR_MONITOR_MAX_ALERTS_PERIOD";

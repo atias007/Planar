@@ -337,9 +337,22 @@ namespace Planar.Service.Data
 
         public async Task<IEnumerable<MonitorMute>> GetMonitorMutes()
         {
-            return await _context.MonitorMutes
-                .AsNoTracking()
-                .Where(m => m.DueDate > DateTime.Now)
+            var outer = _context.MonitorMutes.AsNoTracking()
+                .Where(m => m.DueDate > DateTime.Now);
+
+            var inner = _context.MonitorActions.AsNoTracking();
+
+            return await
+                outer.Join(inner,
+                    mutes => mutes.MonitorId,
+                    monitor => monitor.Id,
+                    (mute, monitor) => new MonitorMute
+                    {
+                        DueDate = mute.DueDate,
+                        JobId = mute.JobId,
+                        MonitorId = mute.MonitorId,
+                        MonitorTitle = monitor.Title
+                    })
                 .OrderBy(c => c.DueDate)
                 .Take(1000)
                 .ToListAsync();
@@ -347,9 +360,23 @@ namespace Planar.Service.Data
 
         public async Task<IEnumerable<MonitorCounter>> GetMonitorCounters(int limit)
         {
-            return await _context.MonitorCounters
+            var outer = _context.MonitorCounters
                 .AsNoTracking()
-                .Where(c => c.Counter >= limit)
+                .Where(c => c.Counter >= limit);
+
+            var inner = _context.MonitorActions.AsNoTracking();
+
+            return await outer.Join(inner,
+                    mutes => mutes.MonitorId,
+                    monitor => monitor.Id,
+                    (mute, monitor) => new MonitorCounter
+                    {
+                        LastUpdate = mute.LastUpdate,
+                        JobId = mute.JobId,
+                        MonitorId = mute.MonitorId,
+                        MonitorTitle = monitor.Title
+                    })
+
                 .OrderBy(c => c.LastUpdate)
                 .Take(1000)
                 .ToListAsync();

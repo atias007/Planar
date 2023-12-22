@@ -1,6 +1,4 @@
-﻿using MailKit.Net.Smtp;
-using MimeKit;
-using Planar.Common;
+﻿using MimeKit;
 using Planar.Hook;
 using System.Text;
 using System.Web;
@@ -13,10 +11,7 @@ public class PlanarSmtpHook : BaseSystemHook
 
     public override async Task Handle(IMonitorDetails monitorDetails)
     {
-        var smtp = AppSettings.Smtp;
-
         var message = new MimeMessage();
-        message.From.Add(new MailboxAddress(smtp.FromName, smtp.FromAddress));
         var emails1 = monitorDetails.Users.Select(u => u.EmailAddress1);
         var emails2 = monitorDetails.Users.Select(u => u.EmailAddress2);
         var emails3 = monitorDetails.Users.Select(u => u.EmailAddress3);
@@ -38,13 +33,8 @@ public class PlanarSmtpHook : BaseSystemHook
 
         message.Body = body;
 
-        using var client = new SmtpClient();
-        using var tokenSource = new CancellationTokenSource(30000);
-
-        client.Connect(smtp.Host, port: smtp.Port, useSsl: smtp.UseSsl, tokenSource.Token);
-        client.Authenticate(smtp.Username, smtp.Password, tokenSource.Token);
-        await client.SendAsync(message, tokenSource.Token);
-        client.Disconnect(quit: true, tokenSource.Token);
+        var result = await SmtpUtil.SendMessage(message);
+        LogDebug($"SMTP send result: {result}");
     }
 
     public override Task HandleSystem(IMonitorSystemDetails monitorDetails)

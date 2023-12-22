@@ -294,12 +294,13 @@ namespace Planar.Service.API
             var all = mutesDto.Union(countersDto);
             var result = all
                 .Where(i => i.DueDate > DateTime.Now)
-                .GroupBy(i => new { i.JobId, i.MonitorId })
+                .GroupBy(i => new { i.JobId, i.MonitorId, i.MonitorTitle })
                 .Select(g => new MuteItem
                 {
                     JobId = g.Key.JobId,
                     MonitorId = g.Key.MonitorId,
-                    DueDate = g.Max(i => i.DueDate)
+                    DueDate = g.Max(i => i.DueDate),
+                    MonitorTitle = g.Key.MonitorTitle
                 })
                 .OrderBy(i => i.DueDate)
                 .Take(1000);

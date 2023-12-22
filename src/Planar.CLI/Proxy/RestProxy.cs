@@ -28,22 +28,21 @@ namespace Planar.CLI.Proxy
         {
             get
             {
+                if (_client != null) { return _client; }
                 lock (_lock)
                 {
-                    if (_client == null)
+                    if (_client != null) { return _client; }
+                    var options = new RestClientOptions
                     {
-                        var options = new RestClientOptions
-                        {
-                            BaseUrl = BaseUri,
-                            MaxTimeout = 10000,
-                        };
+                        BaseUrl = BaseUri,
+                        MaxTimeout = 10000,
+                    };
 
-                        _client = new RestClient(options);
+                    _client = new RestClient(options);
 
-                        if (!string.IsNullOrEmpty(LoginProxy.Token))
-                        {
-                            _client.AddDefaultHeader("Authorization", $"Bearer {LoginProxy.Token}");
-                        }
+                    if (!string.IsNullOrEmpty(LoginProxy.Token))
+                    {
+                        _client.AddDefaultHeader("Authorization", $"Bearer {LoginProxy.Token}");
                     }
 
                     return _client;

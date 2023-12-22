@@ -1,5 +1,4 @@
-﻿using MailKit.Net.Smtp;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MimeKit;
 using Planar.Common;
@@ -239,10 +238,7 @@ public sealed class SummaryReportJob : SystemJob, IJob
 
     private async Task SendReport(string html, IEnumerable<string> emails)
     {
-        var smtp = AppSettings.Smtp;
-
         var message = new MimeMessage();
-        message.From.Add(new MailboxAddress(smtp.FromName, smtp.FromAddress));
 
         foreach (var recipient in emails)
         {
@@ -265,13 +261,8 @@ public sealed class SummaryReportJob : SystemJob, IJob
 
         message.Body = body;
 
-        using var client = new SmtpClient();
-        using var tokenSource = new CancellationTokenSource(30000);
-
-        client.Connect(smtp.Host, port: smtp.Port, useSsl: smtp.UseSsl, tokenSource.Token);
-        client.Authenticate(smtp.Username, smtp.Password, tokenSource.Token);
-        await client.SendAsync(message, tokenSource.Token);
-        client.Disconnect(quit: true, tokenSource.Token);
+        var result = await SmtpUtil.SendMessage(message);
+        _logger.LogDebug("SMTP send result: {Message}", result);
     }
 
     private async Task<IEnumerable<string>> GetEmails(IJobExecutionContext context)

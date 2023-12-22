@@ -53,6 +53,7 @@ public class PlanarRestHook : BaseSystemHook
 
         var body = new CloudEvent
         {
+            Id = Guid.NewGuid().ToString("N"),
             Time = DateTimeOffset.Now,
             Subject = Name,
             Data = detials,

@@ -106,6 +106,7 @@ namespace Planar.Common
             Smtp.FromName = GetSettings(configuration, EC.SmtpFromName, "smtp", "from name", string.Empty);
             Smtp.Username = GetSettings(configuration, EC.SmtpUsername, "smtp", "username", string.Empty);
             Smtp.Password = GetSettings(configuration, EC.SmtpPassword, "smtp", "password", string.Empty);
+            Smtp.UseDefaultCredentials = GetSettings(configuration, EC.UseSmtpDefaultCredentials, "smtp", "default credentials", false);
         }
 
         private static void InitializeMonitor(IConfiguration configuration)

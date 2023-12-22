@@ -55,7 +55,7 @@ namespace Planar.MonitorHook.MessageBirdSms
                 .Where(p => !string.IsNullOrEmpty(p))
                 .Select(p => $"{prefix}{p}")
                 .Where(p => long.TryParse(p, out _))
-                .Select(p => long.Parse(p));
+                .Select(long.Parse);
 
             if (!ValidatePhones(phones, monitor)) { return; }
 

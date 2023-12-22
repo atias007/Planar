@@ -21,7 +21,8 @@
         "PLANAR_SMTP_USERNAME": "tsahiatias@gmail.com",
         "PLANAR_SMTP_PASSWORD": "abbconwfeacvwklo",
         "PLANAR_AUTHENTICATION_MODE": "all anonymous",
-        "Serilog:MinimumLevel:Override:Quartz": "Warning"
+        "Serilog:MinimumLevel:Override:Quartz": "Warning",
+        "PLANAR_SMTP_USE_DEFAULT_CREDENTIALS": "False"
       },
       "dotnetRunMessages": "true"
     },

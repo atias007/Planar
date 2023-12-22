@@ -168,13 +168,13 @@ namespace Planar.CLI
         {
             var table = new CliTable(showCount: true);
             if (response == null) { return table; }
-            table.Table.AddColumns("Job Id", "Monitor Id", "Due Date");
+            table.Table.AddColumns("Job Id", "Monitor Id", "Monitor Title", "Due Date");
             foreach (var item in response)
             {
                 if (item == null) { continue; }
                 var jobid = item.JobId ?? $"[{CliFormat.WarningColor}][[all jobs]][/]";
-                var monitorid= item.MonitorId?.ToString() ?? $"[{CliFormat.WarningColor}][[all monitors]][/]";
-                table.Table.AddRow(jobid, monitorid, CliTableFormat.FormatDateTime(item.DueDate));
+                var monitorid = item.MonitorId?.ToString() ?? $"[{CliFormat.WarningColor}][[all monitors]][/]";
+                table.Table.AddRow(jobid, monitorid, SafeCliString(item.MonitorTitle), CliTableFormat.FormatDateTime(item.DueDate));
             }
 
             return table;
@@ -393,13 +393,13 @@ namespace Planar.CLI
             table.Table.AddColumns("Id", "Monitor Title", "Event Title", "Event Arguments", "Alert Date", "JobId", "Job Key", "Dist. Group", "Hook", "Has Error");
             response.Data.ForEach(r => table.Table.AddRow(
                 r.Id.ToString(),
-                r.MonitorTitle.EscapeMarkup(),
+                SafeCliString(r.MonitorTitle),
                 r.EventTitle.EscapeMarkup(),
                 r.EventArgument.EscapeMarkup(),
                 CliTableFormat.FormatDateTime(r.AlertDate),
                 r.JobId.EscapeMarkup(),
                 CliTableFormat.FormatJobKey(r.JobGroup, r.JobName),
-                r.GroupName.EscapeMarkup(),
+                SafeCliString(r.GroupName),
                 r.Hook.EscapeMarkup(),
                 r.HasError.ToString()));
 
