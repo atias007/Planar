@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 
 namespace Planar.Job
 {
@@ -20,5 +19,6 @@ namespace Planar.Job
         public int? RetryNumber { get; set; }
         public int? MaxRetries { get; set; }
         public TimeSpan? RetrySpan { get; set; }
+        public string Id { get; set; } = null!;
     }
 }

@@ -32,7 +32,7 @@ Docker
 GitHub
 ------
 - Draft new release
-- Carete new tag: version x.x.x
+- Carete new tag: versio_ x.x.x
 - Release Title: Version x.x.x
 - Release text as folowing...
 - Add all publish files

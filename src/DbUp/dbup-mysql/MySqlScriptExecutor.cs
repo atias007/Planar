@@ -33,11 +33,11 @@ namespace DbUp.MySql
             throw new NotSupportedException();
         }
 
-        protected override void ExecuteCommandsWithinExceptionHandler(int index, SqlScript script, Action executeCommand)
+        protected override void ExecuteCommandsWithinExceptionHandler(int index, SqlScript script, Action executeCallback)
         {
             try
             {
-                executeCommand();
+                executeCallback();
             }
             catch (MySqlException exception)
             {
@@ -52,6 +52,5 @@ namespace DbUp.MySql
                 throw;
             }
         }
-
     }
 }

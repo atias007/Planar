@@ -1,102 +1,115 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using Planar.Monitor.Hook;
+﻿using CloudNative.CloudEvents;
+using CloudNative.CloudEvents.SystemTextJson;
+using Planar.Common;
+using Planar.Hook;
+using Planar.Hooks.Enities;
+using System.Net.Mime;
 using System.Text;
+using System.Text.Json;
 
-namespace Planar.Hooks
+namespace Planar.Hooks;
+
+public class PlanarRestHook : BaseSystemHook
 {
-    public class PlanarRestHook : BaseHook
+    public override string Name => "Planar.Rest";
+
+    private static readonly object Locker = new();
+    private static HttpClient _sharedClient = null!;
+
+    private static readonly JsonSerializerOptions _jsonSerializerSettings = new()
     {
-        public override string Name => "Planar.Rest";
-
-        private static readonly object Locker = new();
-        private static HttpClient _sharedClient = null!;
-
-        private static readonly JsonSerializerSettings _jsonSerializerSettings = new()
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters =
         {
-            ContractResolver = new CamelCasePropertyNamesContractResolver(),
-            DefaultValueHandling = DefaultValueHandling.Include,
-            TypeNameHandling = TypeNameHandling.None,
-            NullValueHandling = NullValueHandling.Ignore,
-            Formatting = Formatting.None,
-            ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor
+            new SystemTextTimeSpanConverter()
+        }
+    };
+
+    private static readonly JsonEventFormatter _formatter = new(
+        serializerOptions: _jsonSerializerSettings,
+         documentOptions: default
+        );
+
+    public override async Task Handle(IMonitorDetails monitorDetails)
+    {
+        await InvokeRest(monitorDetails);
+    }
+
+    public override async Task HandleSystem(IMonitorSystemDetails monitorDetails)
+    {
+        await InvokeRest(monitorDetails);
+    }
+
+    private async Task InvokeRest<T>(T detials)
+        where T : IMonitor
+    {
+        var url = AppSettings.Hooks.Rest.DefaultUrl;
+        if (!IsValidUri(url))
+        {
+            LogError($"url '{url}' of rest hook settings is invalid");
+            return;
+        }
+
+        var body = new CloudEvent
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Time = DateTimeOffset.Now,
+            Subject = Name,
+            Data = detials,
+            DataContentType = MediaTypeNames.Application.Json,
+            Source = new Uri(url!),
+            Type = typeof(T).Name
         };
 
-        static PlanarRestHook() => _jsonSerializerSettings.Converters.Add(new NewtonsoftTimeSpanConverter());
+        body.SetAttributeFromString("version", "1.0.0");
 
-        public override async Task Handle(IMonitorDetails monitorDetails)
-        {
-            await InvokeRest(monitorDetails);
-        }
+        var client = GetHttpClient();
+        var method = new HttpMethod("Post");
 
-        public override async Task HandleSystem(IMonitorSystemDetails monitorDetails)
-        {
-            await InvokeRest(monitorDetails);
-        }
+        using var restRequest = new HttpRequestMessage(method, url);
+        var bytes = _formatter.EncodeStructuredModeMessage(body, out _);
+        var json = Encoding.UTF8.GetString(bytes.Span);
+        var content = new StringContent(json, Encoding.UTF8, MediaTypeNames.Application.Json);
+        restRequest.Content = content;
 
-        private async Task InvokeRest(IMonitor detials)
+        try
         {
-            const string key = "RestHookUrl";
-            var url = GetHookParameter(key, detials);
-            if (!IsValidUri(url))
+            using HttpResponseMessage response = await client.SendAsync(restRequest);
+            if (!response.IsSuccessStatusCode)
             {
-                LogError(exception: null, $"url '{url}' of parameter '{key}' is invalid");
-                return;
+                var message = GetErrorMessage(response);
+                throw new PlanarHookException($"fail to invoke '{detials.MonitorTitle}' with '{Name}' hook. message: {message}");
             }
+        }
+        catch (Exception ex)
+        {
+            throw new PlanarHookException($"fail to invoke '{detials.MonitorTitle}' with '{Name}' hook. message: {ex.Message}", ex);
+        }
+    }
 
-            var body = new MonitorPayload
+    private static string GetErrorMessage(HttpResponseMessage response)
+    {
+        var uri = response.RequestMessage?.RequestUri;
+        var message = $"REST call POST: {uri} has response status {response.StatusCode}. Reason phrase: {response.ReasonPhrase}";
+        return message;
+    }
+
+    private static HttpClient GetHttpClient()
+    {
+        lock (Locker)
+        {
+            if (_sharedClient == null)
             {
-                Created = DateTime.Now,
-                HookName = Name,
-                Message = detials,
-                SourceUrl = url!
-            };
-
-            var client = GetHttpClient();
-            var method = new HttpMethod("Post");
-            var restRequest = new HttpRequestMessage(method, url);
-            var json = JsonConvert.SerializeObject(body, _jsonSerializerSettings);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            restRequest.Content = content;
-
-            try
-            {
-                HttpResponseMessage response = await client.SendAsync(restRequest);
-                if (!response.IsSuccessStatusCode)
+                var handler = new SocketsHttpHandler
                 {
-                    var message = GetErrorMessage(response);
-                    throw new PlanarHookException($"fail to invoke '{detials.MonitorTitle}' with '{Name}' hook. message: {message}");
-                }
+                    PooledConnectionLifetime = TimeSpan.FromMinutes(15) // Recreate every 15 minutes
+                };
+
+                _sharedClient = new HttpClient(handler);
             }
-            catch (Exception ex)
-            {
-                throw new PlanarHookException($"fail to invoke '{detials.MonitorTitle}' with '{Name}' hook. message: {ex.Message}", ex);
-            }
-        }
 
-        private static string GetErrorMessage(HttpResponseMessage response)
-        {
-            var uri = response.RequestMessage?.RequestUri;
-            var message = $"REST call POST: {uri} has response status {response.StatusCode}. Reason phrase: {response.ReasonPhrase}";
-            return message;
-        }
-
-        private static HttpClient GetHttpClient()
-        {
-            lock (Locker)
-            {
-                if (_sharedClient == null)
-                {
-                    var handler = new SocketsHttpHandler
-                    {
-                        PooledConnectionLifetime = TimeSpan.FromMinutes(15) // Recreate every 15 minutes
-                    };
-
-                    _sharedClient = new HttpClient(handler);
-                }
-
-                return _sharedClient;
-            }
+            return _sharedClient;
         }
     }
 }

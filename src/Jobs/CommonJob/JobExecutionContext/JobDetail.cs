@@ -1,6 +1,4 @@
-﻿using System.Collections.Generic;
-
-namespace Planar.Job
+﻿namespace Planar.Job
 {
     internal class JobDetail : IJobDetail
     {
@@ -17,5 +15,7 @@ namespace Planar.Job
         public bool ConcurrentExecutionDisallowed { get; set; }
 
         public bool RequestsRecovery { get; set; }
+
+        public string Id { get; set; } = null!;
     }
 }

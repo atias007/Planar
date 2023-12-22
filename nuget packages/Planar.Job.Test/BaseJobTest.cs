@@ -5,8 +5,6 @@ using Planar.Job.Test.Common;
 using System;
 using System.Reflection;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Planar.Job.Test
 {
@@ -15,26 +13,26 @@ namespace Planar.Job.Test
         protected abstract void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
         protected IJobExecutionResult ExecuteJob<T>()
-            where T : class, new()
+            where T : BaseJob, new()
         {
             var props = new ExecuteJobProperties
             {
                 JobType = typeof(T)
             };
 
-            return ExecuteJob(props);
+            return ExecuteJob<T>(props);
         }
 
-        protected IJobExecutionResult ExecuteJob(IExecuteJobPropertiesBuilder builder)
+        protected IJobExecutionResult ExecuteJob<T>(IExecuteJobPropertiesBuilder builder)
+            where T : BaseJob, new()
         {
             var props = builder.Build();
-            return ExecuteJob(props);
+            return ExecuteJob<T>(props);
         }
 
-        protected IExecuteJobPropertiesBuilder CreateJobPropertiesBuilder<TJob>()
-            where TJob : BaseJob, new()
+        protected IExecuteJobPropertiesBuilder CreateJobPropertiesBuilder()
         {
-            return new ExecuteJobPropertiesBuilder(typeof(TJob));
+            return new ExecuteJobPropertiesBuilder();
         }
 
         protected abstract void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context);
@@ -65,25 +63,26 @@ namespace Planar.Job.Test
             return method;
         }
 
-        private IJobExecutionResult ExecuteJob(IExecuteJobProperties properties)
+        private IJobExecutionResult ExecuteJob<T>(IExecuteJobProperties properties)
+            where T : BaseJob, new()
         {
-            if (properties.JobType == null) { return JobExecutionResult.Empty; }
+            var jobType = typeof(T);
 
             // Build mock of  IJobExecutionContext
             var context = new MockJobExecutionContext(properties);
 
             // Get Execution Method
-            var method = ValidateAndGetExecutionMethod(properties.JobType);
+            var method = ValidateAndGetExecutionMethod(jobType);
 
             // Create Job Instance
-            var instance = Activator.CreateInstance(properties.JobType);
+            var instance = Activator.CreateInstance(jobType);
 
             // Map instance properties (from job Merged Data Map)
             var mapper = new JobMapper();
             mapper.MapJobInstanceProperties(context, instance);
 
             // Load Job Setting & merge with Global Settings
-            var settings = JobSettingsLoader.LoadJobSettingsForUnitTest(properties.JobType).Merge(context.JobSettings);
+            var settings = JobSettingsLoader.LoadJobSettingsForUnitTest(jobType).Merge(context.JobSettings);
             context.JobSettings = settings;
 
             // Serialize Job Context

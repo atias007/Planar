@@ -109,10 +109,10 @@ public class MonitorUtil : IMonitorUtil
             if (!toBeContinue) { return ExecuteMonitorResult.Ok; }
 
             // Get hook
-            var hookInstance = GetMonitorHookInstance(action.Hook);
+            var hookInstance = ServiceUtil.MonitorHooks.TryGetAndReturn(action.Hook);
             if (hookInstance == null)
             {
-                _logger.LogWarning("hook {Hook} in monitor item id: {Id}, title: '{Title}' does not exist in service", action.Hook, action.Id, action.Title);
+                _logger.LogWarning("hook {Hook} in monitor item id: {Id}, title: {Title} does not exist in service", action.Hook, action.Id, action.Title);
                 var message = $"Hook {action.Hook} in monitor item id: {action.Id}, title: '{action.Title}' does not exist in service";
                 return ExecuteMonitorResult.Fail(message);
             }
@@ -124,22 +124,22 @@ public class MonitorUtil : IMonitorUtil
                 // Check for mute
                 if (await CheckForMutedMonitor(details, action.Id))
                 {
-                    _logger.LogWarning("monitor item id: {Id}, title: '{Title}' is muted", action.Id, action.Title);
+                    _logger.LogWarning("monitor item id: {Id}, title: {Title} is muted", action.Id, action.Title);
                     return ExecuteMonitorResult.Ok;
                 }
 
                 // Log the start of the monitor
                 if (@event == MonitorEvents.ExecutionProgressChanged)
                 {
-                    _logger.LogDebug("monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
+                    _logger.LogDebug("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook: {Hook} and distribution group {Group}", action.Id, action.Title, @event, action.Hook, action.Group.Name);
                 }
                 else
                 {
-                    _logger.LogInformation("monitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
+                    _logger.LogInformation("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook: {Hook} and distribution group {Group}", action.Id, action.Title, @event, action.Hook, action.Group.Name);
                 }
 
                 // Handle the monitor
-                await hookInstance.Handle(details, _logger);
+                await hookInstance.Handle(details);
 
                 // Save the monitor alert
                 await SaveMonitorAlert(action, details, context);
@@ -154,7 +154,7 @@ public class MonitorUtil : IMonitorUtil
         catch (Exception ex)
         {
             await SaveMonitorAlert(action, details, context, ex);
-            _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: '{Title}' with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, action.Hook, action.Group.Name);
+            _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title} with hook: {Hook} and distribution group {Group}", action.Id, action.Title, action.Hook, action.Group.Name);
             var message = $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook: {action.Hook}. Error message: {ex.Message}";
             return ExecuteMonitorResult.Fail(message);
         }
@@ -169,18 +169,18 @@ public class MonitorUtil : IMonitorUtil
             var toBeContinue = await Analyze(@event, action, null);
             if (!toBeContinue) { return ExecuteMonitorResult.Ok; }
 
-            var hookInstance = GetMonitorHookInstance(action.Hook);
+            var hookInstance = ServiceUtil.MonitorHooks.TryGetAndReturn(action.Hook);
             if (hookInstance == null)
             {
-                _logger.LogWarning("hook {Hook} in monitor item id: {Id}, title: '{Title}' does not exist in service", action.Hook, action.Id, action.Title);
+                _logger.LogWarning("hook {Hook} in monitor item id: {Id}, title: {Title} does not exist in service", action.Hook, action.Id, action.Title);
                 var message = $"Hook {action.Hook} in monitor item id: {action.Id}, title: '{action.Title}' does not exist in service";
                 return ExecuteMonitorResult.Fail(message);
             }
             else
             {
                 details = GetMonitorDetails(action, info, exception);
-                _logger.LogInformation(",onitor item id: {Id}, title: '{Title}' start to handle event {Event} with hook: {Hook} and distribution group '{Group}'", action.Id, action.Title, @event, action.Hook, action.Group.Name);
-                await hookInstance.HandleSystem(details, _logger, cancellationToken);
+                _logger.LogInformation(",onitor item id: {Id}, title: {Title} start to handle event {Event} with hook: {Hook} and distribution group {Group}", action.Id, action.Title, @event, action.Hook, action.Group.Name);
+                await hookInstance.HandleSystem(details, cancellationToken);
                 await SaveMonitorAlert(action, details);
                 return ExecuteMonitorResult.Ok;
             }
@@ -188,7 +188,7 @@ public class MonitorUtil : IMonitorUtil
         catch (Exception ex)
         {
             await SaveMonitorAlert(action, details, ex);
-            _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: '{Title}' with hook: {Hook}", action.Id, action.Title, action.Hook);
+            _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title} with hook: {Hook}", action.Id, action.Title, action.Hook);
             var message = $"Fail to handle monitor item id: {action.Id}, title: '{action.Title}' with hook: {action.Hook}. Error message: {ex.Message}";
             return ExecuteMonitorResult.Fail(message);
         }
@@ -218,7 +218,7 @@ public class MonitorUtil : IMonitorUtil
 
         var hooks = await dal.GetMonitorUsedHooks();
         var missingHooks = hooks.Where(h => !ServiceUtil.MonitorHooks.ContainsKey(h)).ToList();
-        missingHooks.ForEach(h => _logger.LogWarning("monitor item with hook '{Hook}' is invalid. missing hook", h));
+        missingHooks.ForEach(h => _logger.LogWarning("monitor item with hook {Hook} is invalid. missing hook", h));
     }
 
     private static void FillException(Monitor monitor, Exception? exception)
@@ -253,6 +253,7 @@ public class MonitorUtil : IMonitorUtil
         monitor.MonitorTitle = action.Title;
         monitor.Users.AddRange(action.Group.Users.Select(u => new MonitorUser(u)).ToList());
         monitor.GlobalConfig = Global.GlobalConfig;
+        monitor.Environment = AppSettings.General.Environment;
 
         FillException(monitor, exception);
     }
@@ -327,18 +328,6 @@ public class MonitorUtil : IMonitorUtil
         }
 
         return title;
-    }
-
-    private static HookInstance? GetMonitorHookInstance(string hook)
-    {
-        var instance = ServiceUtil.MonitorHooks[hook];
-        if (instance == null) { return null; }
-
-        var method1 = SafeGetMethod(hook, HookInstance.HandleMethodName, instance);
-        var method2 = SafeGetMethod(hook, HookInstance.HandleSystemMethodName, instance);
-
-        var result = new HookInstance { Instance = instance, HandleMethod = method1, HandleSystemMethod = method2 };
-        return result;
     }
 
     private static Exception GetMostInnerException(Exception ex)
@@ -468,13 +457,6 @@ public class MonitorUtil : IMonitorUtil
         _lockJobEvents.TryRemove(keyString, out _);
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S3011:Reflection should not be used to increase accessibility of classes, methods, or fields", Justification = "reflection base class with internal")]
-    private static MethodInfo SafeGetMethod(string hook, string methodName, object instance)
-    {
-        var method = instance.GetType().GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
-        return method ?? throw new PlanarException($"method {methodName} could not found in hook {hook}");
-    }
-
     private async Task<bool> Analyze(MonitorEvents @event, MonitorAction action, IJobExecutionContext? context)
     {
         if (@event == MonitorEvents.ExecutionSuccessWithNoEffectedRows)
@@ -535,6 +517,7 @@ public class MonitorUtil : IMonitorUtil
     private async Task<bool> CheckForMutedMonitor(MonitorDetails? details, int monitorId)
     {
         if (details == null) { return false; }
+        if (monitorId == 0) { return false; }
 
         try
         {
@@ -546,7 +529,7 @@ public class MonitorUtil : IMonitorUtil
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                "fail to check monitor counter for monitor '{Title}' with event '{Event}'",
+                "fail to check monitor counter for monitor {Title} with event {Event}",
                 details.MonitorTitle,
                 details.EventTitle);
         }
@@ -560,7 +543,7 @@ public class MonitorUtil : IMonitorUtil
 
         if (string.IsNullOrWhiteSpace(jobId))
         {
-            _logger.LogWarning("monitor action {Id}, Title '{Title}' --> missing job group/name", action.Id, action.Title);
+            _logger.LogWarning("monitor action {Id}, Title {Title} --> missing job group/name", action.Id, action.Title);
             return MonitorArguments.Empty;
         }
 
@@ -634,6 +617,7 @@ public class MonitorUtil : IMonitorUtil
         try
         {
             if (details == null) { return; }
+            if (action.Id == 0) { return; }
 
             var alert = new MonitorAlert();
             MapDetailsToMonitorAlert(details, alert);
@@ -649,7 +633,7 @@ public class MonitorUtil : IMonitorUtil
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                "fail to save monitor alert for monitor '{Title}' with event '{Event}'",
+                "fail to save monitor alert for monitor {Title} with event {Event}",
                 details?.MonitorTitle ?? "[null]",
                 details?.EventTitle ?? "[null]");
         }
@@ -674,7 +658,7 @@ public class MonitorUtil : IMonitorUtil
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                "fail to save monitor alert for monitor '{Title}' with event id {Id}",
+                "fail to save monitor alert for monitor {Title} with event id {Id}",
                 details?.MonitorTitle ?? "[null]",
                 details?.EventId ?? 0);
         }
@@ -683,6 +667,7 @@ public class MonitorUtil : IMonitorUtil
     private async Task SaveMonitorCounter(MonitorAction action, MonitorDetails? details)
     {
         if (details == null) { return; }
+        if (action.Id == 0) { return; }
 
         try
         {
@@ -695,7 +680,7 @@ public class MonitorUtil : IMonitorUtil
         catch (Exception ex)
         {
             _logger.LogError(ex,
-                "fail to save monitor counter for monitor '{Title}' with event '{Event}'",
+                "fail to save monitor counter for monitor {Title} with event {Event}",
                 details?.MonitorTitle ?? "[null]",
                 details?.EventTitle ?? "[null]");
         }

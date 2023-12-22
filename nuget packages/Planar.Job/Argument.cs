@@ -1,4 +1,4 @@
-﻿namespace Planar.Job
+﻿namespace Planar
 {
     internal class Argument
     {

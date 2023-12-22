@@ -4,7 +4,7 @@
 		<TargetFramework>net7.0</TargetFramework>
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 		<BaseOutputPath>bin</BaseOutputPath>
-		<Version>1.6.1</Version>
+		<Version>1.6.2</Version>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
@@ -34,7 +34,6 @@
 	  <None Remove="Data\Calendars\readme.md" />
 	  <None Remove="Data\Jobs\readme.md" />
 	  <None Remove="Data\MonitorHooks\readme.md" />
-	  <None Remove="Data\MonitorHooks\Teams\readme.md" />
 	  <None Remove="Data\Settings\AppSettings.yml" />
 	  <None Remove="Data\Settings\Serilog.yml" />
 	  <None Remove="Data\Settings\WorkingHours.Israel.yml" />
@@ -75,15 +74,15 @@
 	<ItemGroup>
 		<PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
 		<PackageReference Include="Grpc.AspNetCore" Version="2.59.0" />
-		<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="5.7.0" />
+		<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="6.0.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.14" />
 		<PackageReference Include="Microsoft.AspNetCore.OData" Version="8.2.3" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="7.0.1" />
+		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0" />
 		<PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.1.0" />
 		<PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
 		<PackageReference Include="Serilog.Enrichers.GlobalLogContext" Version="3.0.0" />
-		<PackageReference Include="Serilog.Sinks.MSSqlServer" Version="6.4.0" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.14.0.81108">
+		<PackageReference Include="Serilog.Sinks.MSSqlServer" Version="6.5.0" />
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.15.0.81779">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
@@ -100,9 +99,6 @@
 		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</EmbeddedResource>
 		<EmbeddedResource Include="Data\MonitorHooks\readme.md">
-		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-		</EmbeddedResource>
-		<EmbeddedResource Include="Data\MonitorHooks\Teams\readme.md">
 		  <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</EmbeddedResource>
 	</ItemGroup>

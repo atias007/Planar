@@ -6,11 +6,6 @@ namespace Planar.Common
     {
         private readonly ExecuteJobProperties _properties = new ExecuteJobProperties();
 
-        internal ExecuteJobPropertiesBuilder(Type type)
-        {
-            _properties.JobType = type;
-        }
-
         public IExecuteJobPropertiesBuilder SetRecoveringMode()
         {
             _properties.Recovering = true;
@@ -33,7 +28,7 @@ namespace Planar.Common
             return this;
         }
 
-        public IExecuteJobPropertiesBuilder SetEnvironment(string environment)
+        public IExecuteJobPropertiesBuilder WithEnvironment(string environment)
         {
             if (string.IsNullOrWhiteSpace(environment))
             {
@@ -47,13 +42,13 @@ namespace Planar.Common
         public IExecuteJobPropertiesBuilder SetDevelopmentEnvironment()
         {
             const string development = "Development";
-            return SetEnvironment(development);
+            return WithEnvironment(development);
         }
 
         public IExecuteJobPropertiesBuilder SetUnitTestEnvironment()
         {
-            const string development = "UnitTest";
-            return SetEnvironment(development);
+            const string unitTest = "UnitTest";
+            return WithEnvironment(unitTest);
         }
 
         public IExecuteJobPropertiesBuilder WithJobName(string name)

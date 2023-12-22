@@ -1,5 +1,6 @@
 ﻿using Planar.Job;
 using Planar.Job.Test.JobExecutionContext;
+using System.IO;
 
 namespace Planar.Common
 {
@@ -27,5 +28,7 @@ namespace Planar.Common
         public bool ConcurrentExecutionDisallowed => false;
 
         public bool RequestsRecovery => false;
+
+        public string Id { get; } = General.GenerateId();
     }
 }

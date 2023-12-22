@@ -10,12 +10,6 @@ using System.Text.RegularExpressions;
 
 namespace Planar.Job
 {
-    internal enum RunningMode
-    {
-        Debug,
-        Release
-    }
-
     public static class PlanarJob
     {
         public static PlanarJobDebugger Debugger { get; } = new PlanarJobDebugger();
@@ -199,7 +193,7 @@ namespace Planar.Job
         }
 
         private static string ShowDebugMenu<TJob>()
-            where TJob : class, new()
+            where TJob : BaseJob, new()
         {
             int? selectedIndex;
 
@@ -245,7 +239,7 @@ namespace Planar.Job
             IExecuteJobProperties properties;
             if (selectedIndex == null)
             {
-                properties = new ExecuteJobPropertiesBuilder(typeof(TJob)).SetDevelopmentEnvironment().Build();
+                properties = new ExecuteJobPropertiesBuilder().SetDevelopmentEnvironment().Build();
                 context = new MockJobExecutionContext(properties);
             }
             else

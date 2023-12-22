@@ -215,7 +215,7 @@ namespace Planar
         private void HandleStepException(SqlStep step, Exception ex)
         {
             var sqlEx = new SqlJobException($"Fail to execute step name '{step.Name}'", ex);
-            _logger.LogError(ex, "fail to execute step name '{Name}'", step.Name);
+            _logger.LogError(ex, "fail to execute step name {Name}", step.Name);
             MessageBroker.AppendLog(LogLevel.Error, $"Fail to execute step name '{step.Name}'. {ex.Message}");
             if (Properties.ContinueOnError)
             {
@@ -234,12 +234,8 @@ namespace Planar
             var settingsKey = Settings.Keys
                 .FirstOrDefault(k =>
                     string.Equals(k, name, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(k, $"ConnectionStrings:{name}", StringComparison.OrdinalIgnoreCase));
-
-            if (settingsKey == null)
-            {
-                throw new SqlJobException($"connection string name '{name}' could not be found in global config");
-            }
+                    string.Equals(k, $"ConnectionStrings:{name}", StringComparison.OrdinalIgnoreCase))
+                ?? throw new SqlJobException($"connection string name '{name}' could not be found in global config");
 
             var value = Settings[settingsKey];
             if (string.IsNullOrWhiteSpace(value))

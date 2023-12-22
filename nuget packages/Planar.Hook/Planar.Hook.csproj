@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.1</TargetFramework>
+		<Version>1.6.5</Version>
+		<Description>Library for writing monitor hooks for Planar jobs</Description>
+		<RepositoryType>git</RepositoryType>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<Title>Library for writing DotNet unit tests for Planar jobs</Title>
+		<PackageProjectUrl>https://github.com/atias007/Planar</PackageProjectUrl>
+		
+		<RepositoryUrl>https://github.com/atias007/Planar</RepositoryUrl>
+		<PackageTags>planar;job;schedule;task;automation</PackageTags>
+		<PackageIcon>nuget_logo.png</PackageIcon>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<NoWarn>1701;1702;NU1803</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<NoWarn>1701;1702;NU1803</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Include="..\Planar.Common\PlanarConvert.cs" Link="Internals\PlanarConvert.cs" />
+	  <Compile Include="..\Planar.Job\Argument.cs" Link="Internals\Argument.cs" />
+	  <Compile Include="..\Planar.Job\RunningMode.cs" Link="Internals\RunningMode.cs" />
+	  <Compile Include="..\Planar.Job\TypeMappingConverter.cs" Link="Internals\TypeMappingConverter.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="..\..\res\nuget_logo.png" Link="nuget_logo.png">
+	    <Pack>True</Pack>
+	    <PackagePath>\</PackagePath>
+	  </None>
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="System.Text.Json" Version="7.0.3" />
+	</ItemGroup>
+
+</Project>

@@ -111,6 +111,7 @@ namespace Planar.Service.API
             var action = await DataLayer.GetMonitorAction(id);
             var item = Mapper.Map<MonitorItem>(action);
             var result = ValidateExistingEntity(item, "monitor");
+            FillDistributionGroupName(result);
             return result;
         }
 
@@ -123,6 +124,7 @@ namespace Planar.Service.API
 
             var items = await DataLayer.GetMonitorActionsByGroup(group);
             var result = Mapper.Map<List<MonitorItem>>(items);
+            FillDistributionGroupName(result);
             return result;
         }
 
@@ -130,7 +132,7 @@ namespace Planar.Service.API
         {
             var item = await DataLayer.GetMonitorAction(id);
             var monitor = ValidateExistingEntity(item, "monitor");
-            var result = Mapper.Map<MonitorAction, MonitorItem>(monitor);
+            var result = Mapper.Map<MonitorItem>(monitor);
             FillDistributionGroupName(result);
             return result;
         }
@@ -141,6 +143,7 @@ namespace Planar.Service.API
             if (jobKey == null) { return new List<MonitorItem>(); }
             var items = await DataLayer.GetMonitorActionsByJob(jobKey.Group, jobKey.Name);
             var result = Mapper.Map<List<MonitorItem>>(items);
+            FillDistributionGroupName(result);
             return result;
         }
 
@@ -291,12 +294,13 @@ namespace Planar.Service.API
             var all = mutesDto.Union(countersDto);
             var result = all
                 .Where(i => i.DueDate > DateTime.Now)
-                .GroupBy(i => new { i.JobId, i.MonitorId })
+                .GroupBy(i => new { i.JobId, i.MonitorId, i.MonitorTitle })
                 .Select(g => new MuteItem
                 {
                     JobId = g.Key.JobId,
                     MonitorId = g.Key.MonitorId,
-                    DueDate = g.Max(i => i.DueDate)
+                    DueDate = g.Max(i => i.DueDate),
+                    MonitorTitle = g.Key.MonitorTitle
                 })
                 .OrderBy(i => i.DueDate)
                 .Take(1000);
@@ -334,7 +338,7 @@ namespace Planar.Service.API
             if (eventId == null || _counterEvents.Contains(eventId.GetValueOrDefault()))
             {
                 var count = await DataLayer.GetMonitorCounter(jobId, monitorId, AppSettings.Monitor.MaxAlertsPeriod);
-                var isAutoMuted = count > AppSettings.Monitor.MaxAlertsPerMonitor;
+                var isAutoMuted = count >= AppSettings.Monitor.MaxAlertsPerMonitor;
                 if (isAutoMuted) { return true; }
             }
 
@@ -345,6 +349,7 @@ namespace Planar.Service.API
 
         internal async Task SaveMonitorCounter(MonitorAction action, MonitorDetails details)
         {
+            if (action.Id == 0) { return; }
             if (!_counterEvents.Contains(action.EventId)) { return; }
             if (details.JobId == null) { return; }
 

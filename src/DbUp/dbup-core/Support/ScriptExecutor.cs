@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Text;
 using DbUp.Engine;
 using DbUp.Engine.Output;
 using DbUp.Engine.Preprocessors;
@@ -12,16 +13,16 @@ using DbUp.Helpers;
 namespace DbUp.Support
 {
     /// <summary>
-    /// A standard implementation of the IScriptExecutor interface that executes against a SQL Server 
+    /// A standard implementation of the IScriptExecutor interface that executes against a SQL Server
     /// database.
     /// </summary>
     public abstract class ScriptExecutor : IScriptExecutor
     {
-        readonly Func<IConnectionManager> connectionManagerFactory;
-        readonly IEnumerable<IScriptPreprocessor> scriptPreprocessors;
-        readonly Func<IJournal> journalFactory;
-        readonly Func<bool> variablesEnabled;
-        readonly ISqlObjectParser sqlObjectParser;
+        private readonly Func<IConnectionManager> connectionManagerFactory;
+        private readonly IEnumerable<IScriptPreprocessor> scriptPreprocessors;
+        private readonly Func<IJournal> journalFactory;
+        private readonly Func<bool> variablesEnabled;
+        private readonly ISqlObjectParser sqlObjectParser;
 
         /// <summary>
         /// SQLCommand Timeout in seconds. If not set, the default SQLCommand timeout is not changed.
@@ -37,7 +38,7 @@ namespace DbUp.Support
         /// <param name="variablesEnabled">Function that returns <c>true</c> if variables should be replaced, <c>false</c> otherwise.</param>
         /// <param name="scriptPreprocessors">Script Preprocessors in addition to variable substitution</param>
         /// <param name="journalFactory">Database journal</param>
-        public ScriptExecutor(
+        protected ScriptExecutor(
             Func<IConnectionManager> connectionManagerFactory, ISqlObjectParser sqlObjectParser,
             Func<IUpgradeLog> log, string schema, Func<bool> variablesEnabled,
             IEnumerable<IScriptPreprocessor> scriptPreprocessors,
@@ -56,15 +57,6 @@ namespace DbUp.Support
         /// Database Schema, should be null if database does not support schemas
         /// </summary>
         public string Schema { get; set; }
-
-        /// <summary>
-        /// Executes the specified script against a database at a given connection string.
-        /// </summary>
-        /// <param name="script">The script.</param>
-        public virtual void Execute(SqlScript script)
-        {
-            Execute(script, null);
-        }
 
         /// <summary>
         /// Verifies the existence of targeted schema. If schema is not verified, will check for the existence of the dbo schema.
@@ -91,8 +83,7 @@ namespace DbUp.Support
 
         protected virtual string PreprocessScriptContents(SqlScript script, IDictionary<string, string> variables)
         {
-            if (variables == null)
-                variables = new Dictionary<string, string>();
+            variables ??= new Dictionary<string, string>();
             if (Schema != null && !variables.ContainsKey("schema"))
                 variables.Add("schema", QuoteSqlObjectName(Schema));
 
@@ -101,10 +92,19 @@ namespace DbUp.Support
                 contents = new StripSchemaPreprocessor().Process(contents);
             if (variablesEnabled())
                 contents = new VariableSubstitutionPreprocessor(variables).Process(contents);
-            contents = (scriptPreprocessors ?? new IScriptPreprocessor[0])
+            contents = (scriptPreprocessors ?? Array.Empty<IScriptPreprocessor>())
                 .Aggregate(contents, (current, additionalScriptPreprocessor) => additionalScriptPreprocessor.Process(current));
 
             return contents;
+        }
+
+        /// <summary>
+        /// Executes the specified script against a database at a given connection string.
+        /// </summary>
+        /// <param name="script">The script.</param>
+        public virtual void Execute(SqlScript script)
+        {
+            Execute(script, null);
         }
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace DbUp.Support
         public virtual void Execute(SqlScript script, IDictionary<string, string> variables)
         {
             var contents = PreprocessScriptContents(script, variables);
-            Log().WriteInformation("Executing Database Server script '{0}'", script.Name);
+            Log().WriteInformation("Executing Database Server script {0}", script.Name);
 
             var connectionManager = connectionManagerFactory();
             var scriptStatements = connectionManager.SplitScriptIntoCommands(contents);
@@ -131,27 +131,25 @@ namespace DbUp.Support
                     foreach (var statement in scriptStatements)
                     {
                         index++;
-                        using (var command = dbCommandFactory())
-                        {
-                            command.CommandText = statement;
-                            if (ExecutionTimeoutSeconds != null)
-                                command.CommandTimeout = ExecutionTimeoutSeconds.Value;
+                        using var command = dbCommandFactory();
+                        command.CommandText = statement;
+                        if (ExecutionTimeoutSeconds != null)
+                            command.CommandTimeout = ExecutionTimeoutSeconds.Value;
 
-                            Action<IDbCommand> executeAction;
-                            if (connectionManager.IsScriptOutputLogged)
-                            {
-                                executeAction = ExecuteAndLogOutput;
-                            }
-                            else
-                            {
-                                executeAction = ExecuteNonQuery;
-                            }
-                            // Execute within a wrapper that allows a provider specific derived class to handle provider specific exception.
-                            ExecuteCommandsWithinExceptionHandler(index, script, () =>
-                            {
-                                executeAction(command);
-                            });
+                        Action<IDbCommand> executeAction;
+                        if (connectionManager.IsScriptOutputLogged)
+                        {
+                            executeAction = ExecuteAndLogOutput;
                         }
+                        else
+                        {
+                            executeAction = ExecuteNonQuery;
+                        }
+                        // Execute within a wrapper that allows a provider specific derived class to handle provider specific exception.
+                        ExecuteCommandsWithinExceptionHandler(index, script, () =>
+                        {
+                            executeAction(command);
+                        });
                     }
 
                     if (UseTheSameTransactionForJournalTableAndScripts)
@@ -170,14 +168,14 @@ namespace DbUp.Support
             }
             catch (DbException sqlException)
             {
-                Log().WriteInformation("DB exception has occured in script: '{0}'", script.Name);
+                Log().WriteInformation("DB exception has occured in script: {0}'", script.Name);
                 Log().WriteError("Script block number: {0}; Message: {1}", index, sqlException.Message);
                 Log().WriteError("{0}", sqlException.ToString());
                 throw;
             }
             catch (Exception ex)
             {
-                Log().WriteInformation("Exception has occured in script: '{0}'", script.Name);
+                Log().WriteInformation("Exception has occured in script: {0}", script.Name);
                 Log().WriteError("{0}", ex.ToString());
                 throw;
             }
@@ -192,10 +190,8 @@ namespace DbUp.Support
 
         protected virtual void ExecuteAndLogOutput(IDbCommand command)
         {
-            using (var reader = command.ExecuteReader())
-            {
-                WriteReaderToLog(reader);
-            }
+            using var reader = command.ExecuteReader();
+            WriteReaderToLog(reader);
         }
 
         /// <summary>
@@ -237,24 +233,24 @@ namespace DbUp.Support
                     lines.Add(line);
                 }
 
-                var format = "";
+                var format = new StringBuilder();
                 var totalLength = 0;
                 for (var i = 0; i < reader.FieldCount; i++)
                 {
                     var maxLength = (lines.Count == 0 ? 0 : lines.Max(l => (l[i] ?? "").Length)) + 2;
-                    format += " {" + i + ", " + maxLength + "} |";
+                    format.Append($" {{{i}, {maxLength}}} |");
                     totalLength += (maxLength + 3);
                 }
-                format = "|" + format;
+                format.Append($"|{format}");
                 totalLength += 1;
 
                 var delimiterLine = new string('-', totalLength);
                 Log().WriteInformation(delimiterLine);
-                Log().WriteInformation(string.Format(format, names.ToArray()));
+                Log().WriteInformation(string.Format(format.ToString(), names.ToArray()));
                 Log().WriteInformation(delimiterLine);
                 foreach (var line in lines)
                 {
-                    Log().WriteInformation(string.Format(format, line.ToArray()));
+                    Log().WriteInformation(string.Format(format.ToString(), line.ToArray()));
                 }
                 Log().WriteInformation(delimiterLine);
                 Log().WriteInformation("\r\n");

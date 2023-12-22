@@ -40,7 +40,7 @@ namespace Planar.Service.Validation
 
             if (string.IsNullOrWhiteSpace(arguments))
             {
-                _logger?.LogWarning("event argument is required with '{Event}' event type", @event);
+                _logger?.LogWarning("event argument is required with {Event} event type", @event);
                 throw new RestValidationException("Event Argument", $"event argument is required with '{@event}' event type");
             }
 
@@ -76,7 +76,7 @@ namespace Planar.Service.Validation
         {
             if (string.IsNullOrEmpty(arguments) || !ValidationUtil.IsOnlyDigits(arguments))
             {
-                _logger?.LogWarning("event argument '{Arguments}' is not valid numeric integer value", arguments);
+                _logger?.LogWarning("event argument {Arguments} is not valid numeric integer value", arguments);
                 throw new RestValidationException("Event Argument", $"event argument '{arguments}' is not valid numeric integer value");
             }
 
@@ -87,13 +87,13 @@ namespace Planar.Service.Validation
         {
             if (value < min)
             {
-                _logger?.LogWarning("event argument '{Value}' should be greater then or equals to {Min}", value, min);
+                _logger?.LogWarning("event argument {Value} should be greater then or equals to {Min}", value, min);
                 throw new RestValidationException("Event Argument", $"event argument '{value}' should be greater then or equals to {min}");
             }
 
             if (value > max)
             {
-                _logger?.LogWarning("event argument '{Value}' should be less then or equals to {Max}", value, max);
+                _logger?.LogWarning("event argument {Value} should be less then or equals to {Max}", value, max);
                 throw new RestValidationException("Event Argument", $"event argument '{value}' should be less then or equals to {max}");
             }
         }
@@ -103,7 +103,7 @@ namespace Planar.Service.Validation
             var parts = arguments.Split(',').Select(p => p?.ToLower()).ToList();
             if (parts.Count != size)
             {
-                _logger?.LogWarning("event argument '{Arguments}' should have {Size} numeric integers seperated by comma (,)", arguments, size);
+                _logger?.LogWarning("event argument {Arguments} should have {Size} numeric integers seperated by comma (,)", arguments, size);
                 throw new RestValidationException("Event Argument", $"event argument '{arguments}' should have {size} numeric integer seperated by comma (,)");
             }
 

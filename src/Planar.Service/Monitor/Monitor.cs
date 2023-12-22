@@ -13,5 +13,6 @@ namespace Planar.Service.Monitor
         public string? Exception { get; set; }
         public string? MostInnerException { get; set; }
         public string? MostInnerExceptionMessage { get; set; }
+        public string Environment { get; set; } = null!;
     }
 }

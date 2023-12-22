@@ -13,11 +13,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UnitTest", "UnitTest\UnitTe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SomeJob", "SomeJob\SomeJob.csproj", "{7E6940F7-9205-41C9-B442-0C9DFC1B38EA}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Monitor.Hook", "Planar.Monitor.Hook\Planar.Monitor.Hook.csproj", "{896C13C2-55DD-4CF3-9168-C271DC3B9768}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Common", "Planar.Common\Planar.Common.csproj", "{71487E4E-0C31-4D88-8CAC-6C2DA15DF4D2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Planar.Client", "Planar.Client\Planar.Client.csproj", "{608FF823-6F41-4E9B-8390-08AF779DBB16}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Client", "Planar.Client\Planar.Client.csproj", "{608FF823-6F41-4E9B-8390-08AF779DBB16}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SomeHook", "SomeHook\SomeHook.csproj", "{3C2064DA-DB8F-4F7A-A6CE-071801653FCA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Hook.Test", "Planar.Hook.Test\Planar.Hook.Test.csproj", "{8FF39155-8ED7-4226-B70E-E69A7822C10F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Planar.Hook", "Planar.Hook\Planar.Hook.csproj", "{CAA858C4-9EAA-4D76-94CF-F9D99EDD851D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,10 +45,6 @@ Global
 		{7E6940F7-9205-41C9-B442-0C9DFC1B38EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7E6940F7-9205-41C9-B442-0C9DFC1B38EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7E6940F7-9205-41C9-B442-0C9DFC1B38EA}.Release|Any CPU.Build.0 = Release|Any CPU
-		{896C13C2-55DD-4CF3-9168-C271DC3B9768}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{896C13C2-55DD-4CF3-9168-C271DC3B9768}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{896C13C2-55DD-4CF3-9168-C271DC3B9768}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{896C13C2-55DD-4CF3-9168-C271DC3B9768}.Release|Any CPU.Build.0 = Release|Any CPU
 		{71487E4E-0C31-4D88-8CAC-6C2DA15DF4D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{71487E4E-0C31-4D88-8CAC-6C2DA15DF4D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71487E4E-0C31-4D88-8CAC-6C2DA15DF4D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -53,6 +53,18 @@ Global
 		{608FF823-6F41-4E9B-8390-08AF779DBB16}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{608FF823-6F41-4E9B-8390-08AF779DBB16}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{608FF823-6F41-4E9B-8390-08AF779DBB16}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C2064DA-DB8F-4F7A-A6CE-071801653FCA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C2064DA-DB8F-4F7A-A6CE-071801653FCA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C2064DA-DB8F-4F7A-A6CE-071801653FCA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C2064DA-DB8F-4F7A-A6CE-071801653FCA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FF39155-8ED7-4226-B70E-E69A7822C10F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FF39155-8ED7-4226-B70E-E69A7822C10F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FF39155-8ED7-4226-B70E-E69A7822C10F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FF39155-8ED7-4226-B70E-E69A7822C10F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CAA858C4-9EAA-4D76-94CF-F9D99EDD851D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CAA858C4-9EAA-4D76-94CF-F9D99EDD851D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CAA858C4-9EAA-4D76-94CF-F9D99EDD851D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CAA858C4-9EAA-4D76-94CF-F9D99EDD851D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -60,6 +72,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{191E89DF-5293-41DB-B777-6B3720A37E88} = {CFFFF68A-BF9D-4297-9E81-FE2ACF6B60C5}
 		{7E6940F7-9205-41C9-B442-0C9DFC1B38EA} = {CFFFF68A-BF9D-4297-9E81-FE2ACF6B60C5}
+		{3C2064DA-DB8F-4F7A-A6CE-071801653FCA} = {CFFFF68A-BF9D-4297-9E81-FE2ACF6B60C5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {052EE731-D23D-43DF-822D-72DA17A54D1E}
