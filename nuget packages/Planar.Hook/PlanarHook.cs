@@ -79,15 +79,8 @@ namespace Planar.Hook
         {
             int selectedIndex;
 
-            if (!Debugger.MonitorProfiles.Any())
-            {
-                Debugger.AddMonitorProfile("Default monitor profile", builder => builder.AddTestUser());
-            }
-
-            if (!Debugger.MonitorSystemProfiles.Any())
-            {
-                Debugger.AddMonitorSystemProfile("Default system monitor profile", builder => builder.AddTestUser());
-            }
+            Debugger.AddMonitorProfile("Default monitor profile", builder => builder.AddTestUser());
+            Debugger.AddMonitorSystemProfile("Default system monitor profile", builder => builder.AddTestUser());
 
             var typeName = typeof(THook).Name;
             Console.Write("type the profile code ");

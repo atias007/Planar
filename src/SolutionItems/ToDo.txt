@@ -2,7 +2,6 @@
 
 PLAN FOR V 1.6.3
 ----------------
-- hook debugger show always default profile in menu
 
 - postman: test queue-invoke with data and validate the creation of data
 - 'service info hooks'
@@ -255,3 +254,7 @@ V1.6.2
 - new hook infrastructure
 - cli mutes: show monitor name
 - add use default credentials on smtp util
+
+V1.6.3
+------
+- hook debugger show always default profile in menu

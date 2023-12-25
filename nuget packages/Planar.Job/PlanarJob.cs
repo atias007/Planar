@@ -197,43 +197,30 @@ namespace Planar.Job
         {
             int? selectedIndex;
 
-            if (Debugger.Profiles.Any())
+            if (!Debugger.Profiles.Any())
             {
-                var typeName = typeof(TJob).Name;
-                Console.Write("type the profile code ");
-                Console.Write("to start executing the ");
-                Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.Write($"{typeName} ");
-                Console.ResetColor();
-                Console.WriteLine("job");
-                Console.WriteLine();
+                Debugger.AddDefaultProfile();
+            }
 
-                var index = 1;
-                foreach (var p in Debugger.Profiles)
-                {
-                    PrintMenuItem(p.Key, index.ToString());
-                    index++;
-                }
-                Console.WriteLine("------------------");
-                PrintMenuItem("<Default>", "Enter");
-                Console.WriteLine();
-                selectedIndex = GetMenuItem(quiet: false);
-            }
-            else
+            var typeName = typeof(TJob).Name;
+            Console.Write("type the profile code ");
+            Console.Write("to start executing the ");
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.Write($"{typeName} ");
+            Console.ResetColor();
+            Console.WriteLine("job");
+            Console.WriteLine();
+
+            var index = 1;
+            foreach (var p in Debugger.Profiles)
             {
-                var typeName = typeof(TJob).Name;
-                Console.Write("[x] Press ");
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.Write("[Enter] ");
-                Console.ResetColor();
-                Console.Write("to start executing the ");
-                Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.Write($"{typeName} ");
-                Console.ResetColor();
-                Console.WriteLine("job with default profile");
-                Console.WriteLine();
-                selectedIndex = GetMenuItem(quiet: true);
+                PrintMenuItem(p.Key, index.ToString());
+                index++;
             }
+            Console.WriteLine("------------------");
+            PrintMenuItem("<Default>", "Enter");
+            Console.WriteLine();
+            selectedIndex = GetMenuItem(quiet: false);
 
             MockJobExecutionContext context;
             IExecuteJobProperties properties;
