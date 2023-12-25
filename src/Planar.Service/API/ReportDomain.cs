@@ -1,12 +1,10 @@
-﻿using Planar.Api.Common.Entities;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Monitor;
 using Planar.Service.Reports;
-using Planar.Service.SystemJobs;
 using Quartz;
 using System;
 using System.Collections.Generic;

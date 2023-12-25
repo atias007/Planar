@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Planar.Api.Common.Entities;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
@@ -7,7 +6,6 @@ using Planar.Service.API;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers

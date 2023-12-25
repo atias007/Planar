@@ -1,7 +1,7 @@
 ﻿using Planar.API.Common.Entities;
 using System;
 
-namespace Planar.Api.Common.Entities
+namespace Planar.API.Common.Entities
 {
     public class RunReportRequest : IDateScope
     {

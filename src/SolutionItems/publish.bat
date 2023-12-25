@@ -51,16 +51,9 @@ cd planar-cli_x86
 "C:\Program Files\7-Zip\7z.exe" a ..\planar-cli_x86.zip planar-cli.exe 
 
 cd..
-cd database_migrations
-"C:\Program Files\7-Zip\7z.exe" a ..\database_migrations.zip *.*
-
-cd..
-cd planar_contained_x64
-"C:\Program Files\7-Zip\7z.exe" a ..\planar_contained_x64.zip *.*
-
-cd..
-cd planar
-"C:\Program Files\7-Zip\7z.exe" a ..\planar.zip *.*
+"C:\Program Files\7-Zip\7z.exe" a database_migrations.zip database_migrations
+"C:\Program Files\7-Zip\7z.exe" a planar_contained_x64.zip planar_contained_x64
+"C:\Program Files\7-Zip\7z.exe" a planar.zip planar
 
 @ECHO --------------------------------------------------------------------------------------
 @ECHO Delete Publish Folders

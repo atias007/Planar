@@ -1,5 +1,4 @@
-﻿using Planar.Api.Common.Entities;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;

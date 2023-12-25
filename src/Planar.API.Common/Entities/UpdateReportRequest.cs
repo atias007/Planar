@@ -1,4 +1,4 @@
-﻿namespace Planar.Api.Common.Entities
+﻿namespace Planar.API.Common.Entities
 {
     public class UpdateReportRequest
     {
