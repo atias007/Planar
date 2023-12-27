@@ -6,17 +6,17 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs;
 
-public sealed class SummaryReportJob : BaseReportJob<SummaryReportJob>, IJob
+public sealed class PauseReportJob : BaseReportJob<PauseReportJob>, IJob
 {
-    public static ReportNames ReportName => ReportNames.Summary;
+    public static ReportNames ReportName => ReportNames.Pause;
 
-    public SummaryReportJob(IServiceScopeFactory serviceScope, ILogger<SummaryReportJob> logger)
+    public PauseReportJob(IServiceScopeFactory serviceScope, ILogger<PauseReportJob> logger)
         : base(serviceScope, logger)
     {
     }
 
     public async Task Execute(IJobExecutionContext context)
     {
-        await Execute<SummaryReport>(context, ReportName);
+        await Execute<PauseReport>(context, ReportName);
     }
 }

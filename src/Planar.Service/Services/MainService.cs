@@ -145,7 +145,8 @@ namespace Planar.Service.Services
                 await ClusterHealthCheckJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
                 await ClearHistoryJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
                 await StatisticsJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
-                await SummaryReportJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
+                await SummaryReportJob.Schedule(_schedulerUtil.Scheduler, SummaryReportJob.ReportName, stoppingToken);
+                await PauseReportJob.Schedule(_schedulerUtil.Scheduler, PauseReportJob.ReportName, stoppingToken);
                 await MonitorJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
             }
             catch (Exception ex)
