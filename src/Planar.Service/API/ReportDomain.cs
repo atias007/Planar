@@ -5,6 +5,7 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Monitor;
 using Planar.Service.Reports;
+using Planar.Service.SystemJobs;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -84,6 +85,16 @@ namespace Planar.Service.API
                 Id = triggerId
             };
             await triggerDomain.PutData(putDataRequest, JobDomain.PutMode.Update, skipSystemCheck: true);
+
+            if (request.HourOfDay.HasValue && request.HourOfDay.Value != trigger.StartTimeUtc.Hour)
+            {
+                var cronExpression = BaseReportJob.GetCronExpression(requestPeriod, request.HourOfDay.Value);
+                var newTrigger = trigger.GetTriggerBuilder()
+                    .WithCronSchedule(cronExpression)
+                    .Build();
+
+                await scheduler.RescheduleJob(trigger.Key, newTrigger);
+            }
 
             if (request.Enable.Value)
             {

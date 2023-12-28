@@ -18,82 +18,26 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs;
 
-public abstract class BaseReportJob<TJob> : SystemJob
-    where TJob : IJob
+public abstract class BaseReportJob : SystemJob
 {
-    private readonly ILogger<TJob> _logger;
-    private readonly IServiceScopeFactory _serviceScope;
+    protected readonly ILogger _logger;
+    protected readonly IServiceScopeFactory _serviceScope;
 
-    protected BaseReportJob(IServiceScopeFactory serviceScope, ILogger<TJob> logger)
+    protected BaseReportJob(IServiceScopeFactory serviceScope, ILogger logger)
     {
         _logger = logger;
         _serviceScope = serviceScope;
     }
 
-    public static async Task Schedule(IScheduler scheduler, ReportNames reportName, CancellationToken stoppingToken = default)
+    internal static string GetCronExpression(ReportPeriods period, int hour = 7)
     {
-        var description = $"System job for generating and send {reportName} report";
+        const string dailyExpression = "3 0 [hour] ? * * *";
+        const string weeklyExpression = "3 0 [hour] ? * SUN *";
+        const string monthlyExpressin = "3 0 [hour] 1 * ? *";
+        const string quarterlyExpressinn = "3 0 [hour] 1 1,4,7,10 ? *";
+        const string yearlyExpression = "3 0 [hour] 1 1 ? *";
 
-        var jobKey = CreateJobKey<TJob>();
-        var job = await scheduler.GetJobDetail(jobKey, stoppingToken);
-
-        if (job != null && await IsAllTriggersExists(scheduler, jobKey))
-        {
-            // Job & Triggers already exists
-            return;
-        }
-
-        job ??= CreateJob<TJob>(jobKey, description);
-
-        var dailyTrigger = await GetTrigger(scheduler, ReportPeriods.Daily, reportName);
-        var weeklyTrigger = await GetTrigger(scheduler, ReportPeriods.Weekly, reportName);
-        var monthlyTrigger = await GetTrigger(scheduler, ReportPeriods.Monthly, reportName);
-        var quarterlyTrigger = await GetTrigger(scheduler, ReportPeriods.Quarterly, reportName);
-        var yearlyTrigger = await GetTrigger(scheduler, ReportPeriods.Yearly, reportName);
-
-        var triggers = new[] { dailyTrigger, weeklyTrigger, monthlyTrigger, quarterlyTrigger, yearlyTrigger };
-
-        MonitorUtil.Lock(job.Key, 5, MonitorEvents.JobAdded);
-        await scheduler.ScheduleJob(job, triggers, replace: true, stoppingToken);
-        await PauseDisabledTrigger(scheduler, dailyTrigger, stoppingToken);
-        await PauseDisabledTrigger(scheduler, weeklyTrigger, stoppingToken);
-        await PauseDisabledTrigger(scheduler, monthlyTrigger, stoppingToken);
-        await PauseDisabledTrigger(scheduler, quarterlyTrigger, stoppingToken);
-        await PauseDisabledTrigger(scheduler, yearlyTrigger, stoppingToken);
-    }
-
-    protected async Task Execute<TReport>(IJobExecutionContext context, ReportNames reportName)
-        where TReport : BaseReport
-    {
-        try
-        {
-            var dateScope = GetDateScope(context);
-            var emailsTask = GetEmails(context);
-            var report = Activator.CreateInstance(typeof(TReport), _serviceScope) as TReport;
-            if (report == null)
-            {
-                throw new InvalidOperationException($"could not create instance of {typeof(TReport).Name} report");
-            }
-
-            var main = await report.Generate(dateScope);
-            await SendReport(main, await emailsTask, reportName);
-            _logger?.LogInformation($"{reportName.ToString().ToLower()} report send via smtp");
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogError(ex, "fail to send {Report} report: {Message}", reportName.ToString().ToLower(), ex.Message);
-        }
-    }
-
-    private static string GetCronExpression(ReportPeriods period)
-    {
-        const string dailyExpression = "3 0 0 ? * * *";
-        const string weeklyExpression = "3 0 0 ? * SUN *";
-        const string monthlyExpressin = "3 0 0 1 * ? *";
-        const string quarterlyExpressinn = "3 0 0 1 1,4,7,10 ? *";
-        const string yearlyExpression = "3 0 0 1 1 ? *";
-
-        return period switch
+        var result = period switch
         {
             ReportPeriods.Weekly => weeklyExpression,
             ReportPeriods.Monthly => monthlyExpressin,
@@ -101,9 +45,12 @@ public abstract class BaseReportJob<TJob> : SystemJob
             ReportPeriods.Yearly => yearlyExpression,
             _ => dailyExpression,
         };
+
+        result = result.Replace("[hour]", hour.ToString());
+        return result;
     }
 
-    private static DateScope GetDateScope(IJobExecutionContext context)
+    protected static DateScope GetDateScope(IJobExecutionContext context)
     {
         var fromExists = context.MergedJobDataMap.ContainsKey(ReportConsts.FromDateDataKey);
         var toExists = context.MergedJobDataMap.ContainsKey(ReportConsts.ToDateDataKey);
@@ -134,6 +81,128 @@ public abstract class BaseReportJob<TJob> : SystemJob
         }
 
         return new DateScope(from!.Value, to!.Value, "Custom Date Scope");
+    }
+
+    protected static async Task<ITrigger> GetTrigger(IScheduler scheduler, ReportPeriods period, ReportNames reportName)
+    {
+        var triggerKey = new TriggerKey(period.ToString(), reportName.ToString());
+        var existsTrigger = await scheduler.GetTrigger(triggerKey);
+        var triggerId = TriggerHelper.GetTriggerId(existsTrigger) ?? ServiceUtil.GenerateId();
+        var cronExpression = GetCronExpression(period);
+        var enable = IsTriggerEnabledInData(existsTrigger);
+        var group = GetTriggerGroup(existsTrigger);
+
+        var trigger = TriggerBuilder.Create()
+                .WithIdentity(triggerKey)
+                .UsingJobData(Consts.TriggerId, triggerId)
+                .UsingJobData(ReportConsts.EnableTriggerDataKey, enable.ToString())
+                .UsingJobData(ReportConsts.GroupTriggerDataKey, group)
+                .UsingJobData(ReportConsts.PeriodDataKey, period.ToString())
+                .WithCronSchedule(cronExpression, builder => builder.WithMisfireHandlingInstructionFireAndProceed())
+                .StartAt(DateTimeOffset.Now.Date.AddDays(1).AddSeconds(-1))
+                .WithPriority(int.MinValue)
+                .Build();
+
+        return trigger;
+    }
+
+    protected static async Task<bool> IsAllTriggersExists(IScheduler scheduler, JobKey jobKey)
+    {
+        var triggers = await scheduler.GetTriggersOfJob(jobKey);
+        if (triggers.Count != 5) { return false; }
+
+        var group = triggers.Select(t => t.Key.Group).Distinct();
+        if (group.Count() != 1) { return false; }
+        if (group.First() != jobKey.Group) { return false; }
+
+        if (!triggers.Any(x => x.Key.Name == ReportPeriods.Daily.ToString())) { return false; }
+        if (!triggers.Any(x => x.Key.Name == ReportPeriods.Weekly.ToString())) { return false; }
+        if (!triggers.Any(x => x.Key.Name == ReportPeriods.Monthly.ToString())) { return false; }
+        if (!triggers.Any(x => x.Key.Name == ReportPeriods.Quarterly.ToString())) { return false; }
+        if (!triggers.Any(x => x.Key.Name == ReportPeriods.Yearly.ToString())) { return false; }
+
+        return true;
+    }
+
+    protected static async Task PauseDisabledTrigger(IScheduler scheduler, ITrigger trigger, CancellationToken stoppingToken = default)
+    {
+        if (!IsTriggerEnabledInData(trigger))
+        {
+            var state = await scheduler.GetTriggerState(trigger.Key, stoppingToken);
+            if (state == TriggerState.Paused) { return; }
+
+            MonitorUtil.Lock(trigger.Key, 5, MonitorEvents.TriggerPaused);
+            await scheduler.PauseTrigger(trigger.Key, stoppingToken);
+        }
+    }
+
+    protected async Task<IEnumerable<string>> GetEmails(IJobExecutionContext context)
+    {
+        var groupName = GetTriggerGroup(context.Trigger);
+        if (string.IsNullOrEmpty(groupName))
+        {
+            throw new InvalidOperationException($"job data key '{ReportConsts.GroupTriggerDataKey}' (name of distribution group) could not found");
+        }
+
+        using var scope = _serviceScope.CreateScope();
+        var groupData = scope.ServiceProvider.GetRequiredService<GroupData>();
+        if (string.IsNullOrEmpty(groupName))
+        {
+            throw new InvalidOperationException($"distribution group '{groupName}' could not found");
+        }
+
+        var id = await groupData.GetGroupId(groupName);
+        var group = await groupData.GetGroupWithUsers(id)
+            ?? throw new InvalidOperationException($"distribution group '{groupName}' could not found");
+
+        if (!group.Users.Any())
+        {
+            throw new InvalidOperationException($"distribution group '{groupName}' has no users");
+        }
+
+        var emails1 = group.Users.Select(x => x.EmailAddress1 ?? string.Empty);
+        var emails2 = group.Users.Select(x => x.EmailAddress2 ?? string.Empty);
+        var emails3 = group.Users.Select(x => x.EmailAddress3 ?? string.Empty);
+        var allEmails = emails1.Union(emails2).Union(emails3)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct();
+
+        if (!allEmails.Any())
+        {
+            throw new InvalidOperationException($"distribution group '{groupName}' has no users with email");
+        }
+
+        return allEmails;
+    }
+
+    protected async Task SendReport(string html, IEnumerable<string> emails, ReportNames reportName, string period)
+    {
+        var message = new MimeMessage();
+
+        foreach (var recipient in emails)
+        {
+            if (string.IsNullOrEmpty(recipient)) { continue; }
+            if (!ValidationUtil.IsValidEmail(recipient))
+            {
+                _logger.LogWarning("send report warning: email address '{Email}' is not valid", recipient);
+            }
+            else
+            {
+                message.To.Add(new MailboxAddress(recipient, recipient));
+            }
+        }
+
+        var reportTitle = reportName.GetEnumDescription();
+        message.Subject = $"Planar Report | {reportTitle} | {period} | {AppSettings.General.Environment}";
+        var body = new BodyBuilder
+        {
+            HtmlBody = html,
+        }.ToMessageBody();
+
+        message.Body = body;
+
+        var result = await SmtpUtil.SendMessage(message);
+        _logger.LogDebug("SMTP send result: {Message}", result);
     }
 
     private static DateScope GetDateScope(ReportPeriods periods, DateTime? referenceDate)
@@ -180,24 +249,6 @@ public abstract class BaseReportJob<TJob> : SystemJob
         return result;
     }
 
-    private static async Task<bool> IsAllTriggersExists(IScheduler scheduler, JobKey jobKey)
-    {
-        var triggers = await scheduler.GetTriggersOfJob(jobKey);
-        if (triggers.Count != 5) { return false; }
-
-        var group = triggers.Select(t => t.Key.Group).Distinct();
-        if (group.Count() != 1) { return false; }
-        if (group.First() != jobKey.Group) { return false; }
-
-        if (!triggers.Any(x => x.Key.Name == ReportPeriods.Daily.ToString())) { return false; }
-        if (!triggers.Any(x => x.Key.Name == ReportPeriods.Weekly.ToString())) { return false; }
-        if (!triggers.Any(x => x.Key.Name == ReportPeriods.Monthly.ToString())) { return false; }
-        if (!triggers.Any(x => x.Key.Name == ReportPeriods.Quarterly.ToString())) { return false; }
-        if (!triggers.Any(x => x.Key.Name == ReportPeriods.Yearly.ToString())) { return false; }
-
-        return true;
-    }
-
     private static bool IsTriggerEnabledInData(ITrigger? trigger)
     {
         if (trigger == null) { return false; }
@@ -206,107 +257,66 @@ public abstract class BaseReportJob<TJob> : SystemJob
         var result = trigger.JobDataMap.GetBoolean(ReportConsts.EnableTriggerDataKey);
         return result;
     }
+}
 
-    private static async Task PauseDisabledTrigger(IScheduler scheduler, ITrigger trigger, CancellationToken stoppingToken = default)
+public abstract class BaseReportJob<TJob> : BaseReportJob
+    where TJob : IJob
+{
+    protected BaseReportJob(IServiceScopeFactory serviceScope, ILogger<TJob> logger) : base(serviceScope, logger)
     {
-        if (!IsTriggerEnabledInData(trigger))
-        {
-            var state = await scheduler.GetTriggerState(trigger.Key, stoppingToken);
-            if (state == TriggerState.Paused) { return; }
-
-            MonitorUtil.Lock(trigger.Key, 5, MonitorEvents.TriggerPaused);
-            await scheduler.PauseTrigger(trigger.Key, stoppingToken);
-        }
     }
 
-    private async Task<IEnumerable<string>> GetEmails(IJobExecutionContext context)
+    public static async Task Schedule(IScheduler scheduler, ReportNames reportName, CancellationToken stoppingToken = default)
     {
-        var groupName = GetTriggerGroup(context.Trigger);
-        if (string.IsNullOrEmpty(groupName))
+        var description = $"System job for generating and send {reportName} report";
+
+        var jobKey = CreateJobKey<TJob>();
+        var job = await scheduler.GetJobDetail(jobKey, stoppingToken);
+
+        if (job != null && await IsAllTriggersExists(scheduler, jobKey))
         {
-            throw new InvalidOperationException($"job data key '{ReportConsts.GroupTriggerDataKey}' (name of distribution group) could not found");
+            // Job & Triggers already exists
+            return;
         }
 
-        using var scope = _serviceScope.CreateScope();
-        var groupData = scope.ServiceProvider.GetRequiredService<GroupData>();
-        if (string.IsNullOrEmpty(groupName))
-        {
-            throw new InvalidOperationException($"distribution group '{groupName}' could not found");
-        }
+        job ??= CreateJob<TJob>(jobKey, description);
 
-        var id = await groupData.GetGroupId(groupName);
-        var group = await groupData.GetGroupWithUsers(id)
-            ?? throw new InvalidOperationException($"distribution group '{groupName}' could not found");
+        var dailyTrigger = await GetTrigger(scheduler, ReportPeriods.Daily, reportName);
+        var weeklyTrigger = await GetTrigger(scheduler, ReportPeriods.Weekly, reportName);
+        var monthlyTrigger = await GetTrigger(scheduler, ReportPeriods.Monthly, reportName);
+        var quarterlyTrigger = await GetTrigger(scheduler, ReportPeriods.Quarterly, reportName);
+        var yearlyTrigger = await GetTrigger(scheduler, ReportPeriods.Yearly, reportName);
 
-        if (!group.Users.Any())
-        {
-            throw new InvalidOperationException($"distribution group '{groupName}' has no users");
-        }
+        var triggers = new[] { dailyTrigger, weeklyTrigger, monthlyTrigger, quarterlyTrigger, yearlyTrigger };
 
-        var emails1 = group.Users.Select(x => x.EmailAddress1 ?? string.Empty);
-        var emails2 = group.Users.Select(x => x.EmailAddress2 ?? string.Empty);
-        var emails3 = group.Users.Select(x => x.EmailAddress3 ?? string.Empty);
-        var allEmails = emails1.Union(emails2).Union(emails3)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct();
-
-        if (!allEmails.Any())
-        {
-            throw new InvalidOperationException($"distribution group '{groupName}' has no users with email");
-        }
-
-        return allEmails;
+        MonitorUtil.Lock(job.Key, 5, MonitorEvents.JobAdded);
+        await scheduler.ScheduleJob(job, triggers, replace: true, stoppingToken);
+        await PauseDisabledTrigger(scheduler, dailyTrigger, stoppingToken);
+        await PauseDisabledTrigger(scheduler, weeklyTrigger, stoppingToken);
+        await PauseDisabledTrigger(scheduler, monthlyTrigger, stoppingToken);
+        await PauseDisabledTrigger(scheduler, quarterlyTrigger, stoppingToken);
+        await PauseDisabledTrigger(scheduler, yearlyTrigger, stoppingToken);
     }
 
-    private static async Task<ITrigger> GetTrigger(IScheduler scheduler, ReportPeriods period, ReportNames reportName)
+    protected async Task Execute<TReport>(IJobExecutionContext context, ReportNames reportName)
+        where TReport : BaseReport
     {
-        var triggerKey = new TriggerKey(period.ToString(), reportName.ToString());
-        var existsTrigger = await scheduler.GetTrigger(triggerKey);
-        var triggerId = TriggerHelper.GetTriggerId(existsTrigger) ?? ServiceUtil.GenerateId();
-        var cronExpression = GetCronExpression(period);
-        var enable = IsTriggerEnabledInData(existsTrigger);
-        var group = GetTriggerGroup(existsTrigger);
-
-        var trigger = TriggerBuilder.Create()
-                .WithIdentity(triggerKey)
-                .UsingJobData(Consts.TriggerId, triggerId)
-                .UsingJobData(ReportConsts.EnableTriggerDataKey, enable.ToString())
-                .UsingJobData(ReportConsts.GroupTriggerDataKey, group)
-                .UsingJobData(ReportConsts.PeriodDataKey, period.ToString())
-                .WithCronSchedule(cronExpression, builder => builder.WithMisfireHandlingInstructionFireAndProceed())
-                .StartAt(DateTimeOffset.Now.Date.AddDays(1).AddSeconds(-1))
-                .WithPriority(int.MinValue)
-                .Build();
-
-        return trigger;
-    }
-
-    private async Task SendReport(string html, IEnumerable<string> emails, ReportNames reportName)
-    {
-        var message = new MimeMessage();
-
-        foreach (var recipient in emails)
+        try
         {
-            if (string.IsNullOrEmpty(recipient)) { continue; }
-            if (!ValidationUtil.IsValidEmail(recipient))
+            var dateScope = GetDateScope(context);
+            var emailsTask = GetEmails(context);
+            if (Activator.CreateInstance(typeof(TReport), _serviceScope) is not TReport report)
             {
-                _logger.LogWarning("send report warning: email address '{Email}' is not valid", recipient);
+                throw new InvalidOperationException($"could not create instance of {typeof(TReport).Name} report");
             }
-            else
-            {
-                message.To.Add(new MailboxAddress(recipient, recipient));
-            }
+
+            var main = await report.Generate(dateScope);
+            await SendReport(main, await emailsTask, reportName, context.Trigger.Key.Name);
+            _logger?.LogInformation("{Name} report send via smtp", reportName.ToString().ToLower());
         }
-
-        message.Subject = $"Planar {reportName} Daily Report";
-        var body = new BodyBuilder
+        catch (Exception ex)
         {
-            HtmlBody = html,
-        }.ToMessageBody();
-
-        message.Body = body;
-
-        var result = await SmtpUtil.SendMessage(message);
-        _logger.LogDebug("SMTP send result: {Message}", result);
+            _logger?.LogError(ex, "fail to send {Report} report: {Message}", reportName.ToString().ToLower(), ex.Message);
+        }
     }
 }
