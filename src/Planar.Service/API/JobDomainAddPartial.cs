@@ -634,7 +634,7 @@ namespace Planar.Service.API
         {
             container.SimpleTriggers?.ForEach(t =>
             {
-                if (t.RepeatCount > 0 && t.Interval.TotalSeconds < 60) { throw new RestValidationException("interval", $"interval has invalid value. interval must be greater or equals to 1 minute"); }
+                if (t.RepeatCount >= 0 && t.Interval.TotalSeconds < 60) { throw new RestValidationException("interval", $"interval has invalid value. interval must be greater or equals to 1 minute"); }
             });
         }
 
@@ -733,19 +733,27 @@ namespace Planar.Service.API
         {
             container.SimpleTriggers?.ForEach(t =>
             {
-                if (t.Start.HasValue && t.Start.Value.Date == default)
+                if (t.Start.HasValue && t.Start.Value.Date < DateTime.Now)
                 {
                     t.Start = DateTime.Now.Date.Add(t.Start.Value.TimeOfDay);
+                    if (t.Start < DateTime.Now)
+                    {
+                        var interval = (int)Math.Floor(t.Interval.TotalSeconds);
+                        var delta = Math.Floor(DateTimeOffset.UtcNow.Subtract(t.Start.Value.ToUniversalTime()).TotalSeconds);
+                        var steps = (int)Math.Ceiling(delta / interval);
+                        var increase = steps * interval;
+                        t.Start = t.Start.Value.AddSeconds(increase);
+                    }
                 }
 
                 if (t.Start.HasValue && t.End.HasValue && t.Start.Value >= t.End.Value)
                 {
-                    throw new RestValidationException("end", $"end time has invalid value. end time cannot be before start time");
+                    throw new RestValidationException("end", $"end time has invalid value. end time cannot be before/equals start time");
                 }
 
                 if (t.End.HasValue && t.End.Value <= DateTime.Now)
                 {
-                    throw new RestValidationException("end", $"end time has invalid value. end time cannot be before current server time");
+                    throw new RestValidationException("end", $"end time has invalid value. end time cannot be before/equals current server time");
                 }
             });
         }
