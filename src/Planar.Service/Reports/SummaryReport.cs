@@ -26,7 +26,7 @@ namespace Planar.Service.Reports
             var summaryCounters = GetSummaryCounter(await summaryTask, await concurrentTask);
             var summaryTable = GetSummaryTable(await summaryTask);
 
-            var main = GetResource("main");
+            var main = GetMainTemplate();
 
             main = ReplacePlaceHolder(main, "ReportPeriod", dateScope.Period);
             main = ReplacePlaceHolder(main, "ReportDate.From", dateScope.From.ToShortDateString());

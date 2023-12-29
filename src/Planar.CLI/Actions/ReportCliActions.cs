@@ -64,9 +64,9 @@ namespace Planar.CLI.Actions
             return await Execute(restRequest, cancellationToken);
         }
 
-        [Action("group")]
+        [Action("set-group")]
         [NullRequest]
-        public static async Task<CliActionResponse> Group(CliEnableReport request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> SetGroup(CliEnableReport request, CancellationToken cancellationToken = default)
         {
             if (request == null)
             {
@@ -79,6 +79,30 @@ namespace Planar.CLI.Actions
                 Enable = null,
                 Group = request.Group,
                 Period = request.Period.ToString()
+            };
+
+            var restRequest = new RestRequest("report/{name}", Method.Patch)
+                .AddUrlSegment("name", request.Report)
+                .AddBody(body);
+
+            return await Execute(restRequest, cancellationToken);
+        }
+
+        [Action("set-hour")]
+        [NullRequest]
+        public static async Task<CliActionResponse> SetHour(CliSetHourOfReport request, CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+            {
+                request = new CliSetHourOfReport();
+                await GetCliSetHourOfReport(request, cancellationToken);
+            }
+
+            var body = new UpdateReportRequest
+            {
+                Enable = null,
+                Period = request.Period.ToString(),
+                HourOfDay = request.HourOfDay
             };
 
             var restRequest = new RestRequest("report/{name}", Method.Patch)
@@ -193,6 +217,38 @@ namespace Planar.CLI.Actions
             var p3 = await CliPromptUtil.Groups(cancellationToken);
             if (!p3.IsSuccessful) { return p3; }
             request.Group = p3.Value ?? string.Empty;
+
+            return CliPromptWrapper.Success;
+        }
+
+        private static async Task<CliPromptWrapper> GetCliSetHourOfReport(CliSetHourOfReport request, CancellationToken cancellationToken)
+        {
+            // report
+            var p1 = await CliPromptUtil.Reports(cancellationToken);
+            if (!p1.IsSuccessful) { return p1; }
+            request.Report = p1.Value ?? string.Empty;
+
+            // periods
+            var p2 = PromptSelection<ReportPeriods>("period");
+            request.Period = p2;
+
+            // hour
+            var p3 = CollectCliValue(
+                field: "hour of report",
+                required: true,
+                minLength: 1,
+                maxLength: 2,
+                regex: @"^\d+$",
+                regexErrorMessage: "value must be a number between 0 to 23",
+                defaultValue: "7",
+                secret: false);
+
+            if (string.IsNullOrWhiteSpace(p3))
+            {
+                throw new CliException("hour of report is required");
+            }
+
+            request.HourOfDay = int.Parse(p3);
 
             return CliPromptWrapper.Success;
         }

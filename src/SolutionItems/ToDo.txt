@@ -3,6 +3,8 @@
 PLAN FOR V 1.6.3
 ----------------
 
+- remove resume-all, pause-all
+
 - postman: test queue-invoke with data and validate the creation of data
 - 'service info hooks'
 
@@ -258,3 +260,5 @@ V1.6.2
 V1.6.3
 ------
 - hook debugger show always default profile in menu
+- set author api & cli
+- set report hour api & cli

@@ -106,14 +106,14 @@ public abstract class BaseReportJob : SystemJob
         return trigger;
     }
 
-    protected static async Task<bool> IsAllTriggersExists(IScheduler scheduler, JobKey jobKey)
+    protected static async Task<bool> IsAllTriggersExists(IScheduler scheduler, JobKey jobKey, ReportNames reportName)
     {
         var triggers = await scheduler.GetTriggersOfJob(jobKey);
         if (triggers.Count != 5) { return false; }
 
         var group = triggers.Select(t => t.Key.Group).Distinct();
         if (group.Count() != 1) { return false; }
-        if (group.First() != jobKey.Group) { return false; }
+        if (!string.Equals(group.First(), reportName.ToString(), StringComparison.OrdinalIgnoreCase)) { return false; }
 
         if (!triggers.Any(x => x.Key.Name == ReportPeriods.Daily.ToString())) { return false; }
         if (!triggers.Any(x => x.Key.Name == ReportPeriods.Weekly.ToString())) { return false; }
@@ -273,7 +273,7 @@ public abstract class BaseReportJob<TJob> : BaseReportJob
         var jobKey = CreateJobKey<TJob>();
         var job = await scheduler.GetJobDetail(jobKey, stoppingToken);
 
-        if (job != null && await IsAllTriggersExists(scheduler, jobKey))
+        if (job != null && await IsAllTriggersExists(scheduler, jobKey, reportName))
         {
             // Job & Triggers already exists
             return;

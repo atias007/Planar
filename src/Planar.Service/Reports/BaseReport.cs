@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Planar.API.Common.Entities;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -41,6 +42,19 @@ namespace Planar.Service.Reports
         protected string GetResource(string key)
         {
             return GetResource(ReportName, key);
+        }
+
+        protected string GetMainTemplate()
+        {
+            var main = GetResource("main");
+            var header = GetResource(null, "header");
+            var footer = GetResource(null, "footer");
+            var style = GetResource(null, "style");
+
+            main = ReplacePlaceHolder(main, "Style", style);
+            main = ReplacePlaceHolder(main, "Header", header);
+            main = ReplacePlaceHolder(main, "Footer", footer);
+            return main;
         }
 
         protected static string ReplacePlaceHolder(string template, string placeHolder, string? value)

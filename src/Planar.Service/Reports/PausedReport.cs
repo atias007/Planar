@@ -23,7 +23,7 @@ namespace Planar.Service.Reports
             var lastRunningTask = GetLastRunningTask();
             var pausedTable = GetPausedTable(await pausedTask, await lastRunningTask);
 
-            var main = GetResource("main");
+            var main = GetMainTemplate();
 
             main = ReplacePlaceHolder(main, "ReportPeriod", dateScope.Period);
             main = ReplacePlaceHolder(main, "RunningDate", $"{DateTime.Now.ToShortDateString()} {DateTime.Now:HH:mm:ss}");

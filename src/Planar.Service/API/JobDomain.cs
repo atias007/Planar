@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
@@ -534,6 +535,7 @@ namespace Planar.Service.API
         public async Task Pause(JobOrTriggerKey request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateSystemJob(jobKey);
             await Scheduler.PauseJob(jobKey);
 
             AuditJobSafe(jobKey, "job paused");
@@ -593,6 +595,7 @@ namespace Planar.Service.API
         public async Task Resume(JobOrTriggerKey request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateSystemJob(jobKey);
             await Scheduler.ResumeJob(jobKey);
             AuditJobSafe(jobKey, "job resumed");
         }
@@ -617,6 +620,29 @@ namespace Planar.Service.API
             }
 
             return stop;
+        }
+
+        public async Task SetAuthor(SetJobAuthorRequest request)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateSystemJob(jobKey);
+            await ValidateJobPaused(jobKey);
+            await ValidateJobNotRunning(jobKey);
+
+            var info = await Scheduler.GetJobDetail(jobKey);
+            if (info == null) { return; }
+            var oldAuthor = JobHelper.GetJobAuthor(info);
+            request.Author = request.Author?.Trim() ?? string.Empty;
+            info.JobDataMap.Put(Consts.Author, request.Author);
+            AuditJobSafe(jobKey, $"set job author from '{oldAuthor}' to '{request.Author}'");
+
+            // Reschedule job
+            var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+            MonitorUtil.Lock(jobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            await Scheduler.ScheduleJob(info, triggers, true);
+
+            // Pause job
+            await Scheduler.PauseJob(jobKey);
         }
 
         private async Task<bool> IsActiveJob(JobKey jobKey)

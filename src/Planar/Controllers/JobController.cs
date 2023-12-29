@@ -376,5 +376,19 @@ namespace Planar.Controllers
             var result = await BusinesLayer.GetAudits(request);
             return Ok(result);
         }
+
+        //// ------------- new code -------------
+
+        [HttpPatch("author")]
+        [EditorAuthorize]
+        [SwaggerOperation(OperationId = "patch_job_author", Description = "Set the author of job", Summary = "Set The Author Of Job")]
+        [JsonConsumes]
+        [BadRequestResponse]
+        [NoContentResponse]
+        public async Task<IActionResult> SetAuthor([FromBody] SetJobAuthorRequest request)
+        {
+            await BusinesLayer.SetAuthor(request);
+            return NoContent();
+        }
     }
 }

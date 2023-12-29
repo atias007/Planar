@@ -434,6 +434,27 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
+        [Action("set-author")]
+        [NullRequest]
+        public static async Task<CliActionResponse> SetAuthor(CliSetAuthorOfJob request, CancellationToken cancellationToken = default)
+        {
+            request ??= new CliSetAuthorOfJob
+            {
+                Id = await ChooseJob(cancellationToken),
+                Author = BaseCliAction.CollectCliValue(
+                      field: "author of the job",
+                      required: true,
+                      minLength: 0,
+                      maxLength: 200)
+            };
+
+            var restRequest = new RestRequest("job/author", Method.Patch)
+                .AddBody(request);
+
+            var result = await RestProxy.Invoke(restRequest, cancellationToken);
+            return new CliActionResponse(result);
+        }
+
         [Action("cancel")]
         [NullRequest]
         public static async Task<CliActionResponse> CancelRunningJob(CliFireInstanceIdRequest request, CancellationToken cancellationToken = default)

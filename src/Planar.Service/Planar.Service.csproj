@@ -28,9 +28,12 @@
 
 	<ItemGroup>
 	  <None Remove="HtmlTemplates\empty_table.html" />
+	  <None Remove="HtmlTemplates\footer.html" />
+	  <None Remove="HtmlTemplates\Header.html" />
 	  <None Remove="HtmlTemplates\PauseReport\main.html" />
 	  <None Remove="HtmlTemplates\PauseReport\pause_row.html" />
 	  <None Remove="HtmlTemplates\PauseReport\pause_table.html" />
+	  <None Remove="HtmlTemplates\style.html" />
 	  <None Remove="HtmlTemplates\SummaryReport\main.html" />
 	  <None Remove="HtmlTemplates\SummaryReport\summary_row.html" />
 	  <None Remove="HtmlTemplates\SummaryReport\summary_table.html" />
@@ -44,6 +47,9 @@
 
 	<ItemGroup>
 	  <EmbeddedResource Include="HtmlTemplates\empty_table.html" />
+	  <EmbeddedResource Include="HtmlTemplates\style.html" />
+	  <EmbeddedResource Include="HtmlTemplates\footer.html" />
+	  <EmbeddedResource Include="HtmlTemplates\header.html" />
 	  <EmbeddedResource Include="HtmlTemplates\PauseReport\main.html" />
 	  <EmbeddedResource Include="HtmlTemplates\PauseReport\pause_row.html" />
 	  <EmbeddedResource Include="HtmlTemplates\PauseReport\pause_table.html" />
