@@ -204,16 +204,6 @@ namespace Planar.Controllers
             return Accepted();
         }
 
-        [HttpPost("pause-all")]
-        [AdministratorAuthorize]
-        [SwaggerOperation(OperationId = "post_job_pause_all", Description = "Pause all jobs", Summary = "Pause All Jobs")]
-        [AcceptedContentResponse]
-        public async Task<IActionResult> PauseAll()
-        {
-            await BusinesLayer.PauseAll();
-            return Accepted();
-        }
-
         [HttpPost("resume")]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_job_resume", Description = "Resume job", Summary = "Resume Job")]
@@ -224,16 +214,6 @@ namespace Planar.Controllers
         public async Task<IActionResult> Resume([FromBody] JobOrTriggerKey request)
         {
             await BusinesLayer.Resume(request);
-            return Accepted();
-        }
-
-        [HttpPost("resume-all")]
-        [AdministratorAuthorize]
-        [SwaggerOperation(OperationId = "post_job_resumeall", Description = "Resume all jobs", Summary = "Resume All Jobs")]
-        [AcceptedContentResponse]
-        public async Task<IActionResult> ResumeAll()
-        {
-            await BusinesLayer.ResumeAll();
             return Accepted();
         }
 

@@ -8,6 +8,7 @@ using Planar.Service.Data;
 using Planar.Service.General;
 using Planar.Service.Monitor;
 using Planar.Service.Services;
+using PlanarJob.Notify;
 using Quartz;
 using System;
 using System.Reflection;
@@ -73,8 +74,10 @@ namespace Planar.Service
             // Channel
             services.AddSingleton(Channel.CreateUnbounded<AuditMessage>());
             services.AddSingleton(Channel.CreateUnbounded<SecurityMessage>());
+            services.AddSingleton(Channel.CreateUnbounded<NotifyMessage>());
             services.AddSingleton<AuditProducer>();
             services.AddSingleton<SecurityProducer>();
+            services.AddSingleton<NotifyProducer>();
 
             // AutoMapper
             var assemply = Assembly.Load($"{nameof(Planar)}.{nameof(Service)}");

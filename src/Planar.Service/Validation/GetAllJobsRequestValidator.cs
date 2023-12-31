@@ -12,6 +12,7 @@ namespace Planar.Service.Validation
         {
             RuleFor(r => r.Group).MaximumLength(50);
             RuleFor(r => r.JobType).MaximumLength(50);
+            RuleFor(r => r.Filter).MaximumLength(50);
 
             RuleFor(r => r.JobType)
                 .Must(r => ServiceUtil.JobTypes.Any(t => string.Equals(r, t, StringComparison.OrdinalIgnoreCase)))
@@ -19,9 +20,9 @@ namespace Planar.Service.Validation
                 .WithMessage("'{PropertyValue}' is invalid job type");
 
             RuleFor(r => r.Group)
-                .Must(r => string.IsNullOrEmpty(r))
-                .When(r => r.Filter == AllJobsMembers.AllSystemJobs)
-                .WithMessage("group property must be null when filter is: system jobs (1)");
+                .Must(string.IsNullOrEmpty)
+                .When(r => r.JobCategory == AllJobsMembers.AllSystemJobs)
+                .WithMessage("group property must be null when filter is: system jobs");
         }
     }
 }

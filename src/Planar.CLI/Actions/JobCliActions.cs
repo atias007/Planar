@@ -125,7 +125,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("job", Method.Get);
             var p = AllJobsMembers.AllUserJobs;
             if (request.System) { p = AllJobsMembers.AllSystemJobs; }
-            restRequest.AddQueryParameter("filter", (int)p);
+            restRequest.AddQueryParameter("jobCategory", (int)p);
 
             if (!string.IsNullOrEmpty(request.JobType))
             {
@@ -137,7 +137,7 @@ namespace Planar.CLI.Actions
                 restRequest.AddQueryParameter("group", request.JobGroup);
             }
 
-            if (request.Active ^ request.Inactive)
+            if (request.Active ^ request.Inactive) // XOR Operator
             {
                 if (request.Active)
                 {
@@ -148,6 +148,11 @@ namespace Planar.CLI.Actions
                 {
                     restRequest.AddQueryParameter("active", false.ToString());
                 }
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Filter))
+            {
+                restRequest.AddQueryParameter("filter", request.Filter);
             }
 
             restRequest.AddQueryPagingParameter(request);
@@ -379,17 +384,6 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
-        [Action("pause-all")]
-        public static async Task<CliActionResponse> PauseAll(CancellationToken cancellationToken = default)
-        {
-            if (!ConfirmAction("pause all jobs")) { return CliActionResponse.Empty; }
-
-            var restRequest = new RestRequest("job/pause-all", Method.Post);
-
-            var result = await RestProxy.Invoke(restRequest, cancellationToken);
-            return new CliActionResponse(result);
-        }
-
         [Action("pause")]
         public static async Task<CliActionResponse> PauseJob(CliJobKey jobKey, CancellationToken cancellationToken = default)
         {
@@ -408,17 +402,6 @@ namespace Planar.CLI.Actions
 
             var restRequest = new RestRequest("job/{id}", Method.Delete)
                 .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
-
-            var result = await RestProxy.Invoke(restRequest, cancellationToken);
-            return new CliActionResponse(result);
-        }
-
-        [Action("resume-all")]
-        public static async Task<CliActionResponse> ResumeAll(CancellationToken cancellationToken = default)
-        {
-            if (!ConfirmAction("resume all jobs")) { return CliActionResponse.Empty; }
-
-            var restRequest = new RestRequest("job/resume-all", Method.Post);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);
             return new CliActionResponse(result);

@@ -9,11 +9,13 @@
 
     public class GetAllJobsRequest : PagingRequest
     {
-        public AllJobsMembers Filter { get; set; }
+        public AllJobsMembers JobCategory { get; set; }
 
         public string? JobType { get; set; }
 
         public string? Group { get; set; }
+
+        public string? Filter { get; set; }
 
         public bool? Active { get; set; }
     }

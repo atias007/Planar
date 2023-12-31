@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Planar.Common;
+using PlanarJob.Notify;
 
 namespace Planar
 {
@@ -8,7 +9,8 @@ namespace Planar
         public PlanarJobConcurrent(
             ILogger<PlanarJob> logger,
             IJobPropertyDataLayer dataLayer,
-            IMonitorUtil monitorUtil) : base(logger, dataLayer, monitorUtil)
+            IMonitorUtil monitorUtil,
+            NotifyProducer notifyProducer) : base(logger, dataLayer, monitorUtil, notifyProducer)
         {
         }
     }

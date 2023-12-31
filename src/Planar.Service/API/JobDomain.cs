@@ -160,6 +160,7 @@ namespace Planar.Service.API
         {
             var jobs = new List<IJobDetail>();
 
+            // get all jobs
             foreach (var jobKey in await GetJobKeys(request))
             {
                 var info = await Scheduler.GetJobDetail(jobKey);
@@ -167,6 +168,7 @@ namespace Planar.Service.API
                 jobs.Add(info);
             }
 
+            // filter by job type
             if (!string.IsNullOrEmpty(request.JobType))
             {
                 jobs = jobs
@@ -174,11 +176,25 @@ namespace Planar.Service.API
                     .ToList();
             }
 
+            // filter by active
             if (request.Active.HasValue)
             {
                 jobs = jobs.Where(r => IsActiveJob(r.Key).Result == request.Active.Value).ToList();
             }
 
+            // filter by search
+            if (!string.IsNullOrWhiteSpace(request.Filter))
+            {
+                jobs = jobs
+                    .Where(r =>
+                        r.Key.Name.Contains(request.Filter, StringComparison.OrdinalIgnoreCase) ||
+                        r.Key.Group.Contains(request.Filter, StringComparison.OrdinalIgnoreCase) ||
+                        (r.Description != null && r.Description.Contains(request.Filter, StringComparison.OrdinalIgnoreCase))
+                        )
+                    .ToList();
+            }
+
+            // paging & order by
             var result = jobs
                 .Select(SchedulerUtil.MapJobRowDetails)
                 .SetPaging(request)
@@ -541,12 +557,6 @@ namespace Planar.Service.API
             AuditJobSafe(jobKey, "job paused");
         }
 
-        public async Task PauseAll()
-        {
-            await Scheduler.PauseAll();
-            AuditJobsSafe("all jobs paused");
-        }
-
         public async Task Remove(string id)
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
@@ -598,12 +608,6 @@ namespace Planar.Service.API
             ValidateSystemJob(jobKey);
             await Scheduler.ResumeJob(jobKey);
             AuditJobSafe(jobKey, "job resumed");
-        }
-
-        public async Task ResumeAll()
-        {
-            await Scheduler.ResumeAll();
-            AuditJobsSafe("all jobs resumed");
         }
 
         public async Task<bool> Cancel(FireInstanceIdRequest request)
@@ -702,7 +706,7 @@ namespace Planar.Service.API
                 GroupMatcher<JobKey>.AnyGroup() :
                 GroupMatcher<JobKey>.GroupEquals(request.Group);
 
-            switch (request.Filter)
+            switch (request.JobCategory)
             {
                 case AllJobsMembers.AllUserJobs:
                     var result = await Scheduler.GetJobKeys(matcher);

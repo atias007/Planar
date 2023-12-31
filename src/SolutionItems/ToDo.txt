@@ -2,8 +2,6 @@
 
 PLAN FOR V 1.6.3
 ----------------
-- job list -s {search}
-- remove resume-all, pause-all
 
 - postman: test queue-invoke with data and validate the creation of data
 - 'service info hooks'
@@ -264,3 +262,5 @@ V1.6.3
 - summary report 
 - paused jobs reports
 - alerts report
+- remove resume-all, pause-all
+- job list -s {search}
