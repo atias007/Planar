@@ -29,6 +29,7 @@
 	<ItemGroup>
 	  <None Remove="HtmlTemplates\empty_table.html" />
 	  <None Remove="HtmlTemplates\footer.html" />
+	  <None Remove="HtmlTemplates\head.html" />
 	  <None Remove="HtmlTemplates\Header.html" />
 	  <None Remove="HtmlTemplates\PauseReport\main.html" />
 	  <None Remove="HtmlTemplates\PauseReport\pause_row.html" />
@@ -47,6 +48,7 @@
 
 	<ItemGroup>
 	  <EmbeddedResource Include="HtmlTemplates\empty_table.html" />
+	  <EmbeddedResource Include="HtmlTemplates\head.html" />
 	  <EmbeddedResource Include="HtmlTemplates\style.html" />
 	  <EmbeddedResource Include="HtmlTemplates\footer.html" />
 	  <EmbeddedResource Include="HtmlTemplates\header.html" />

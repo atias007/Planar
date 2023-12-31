@@ -50,7 +50,10 @@ namespace Planar.Service.Reports
             var header = GetResource(null, "header");
             var footer = GetResource(null, "footer");
             var style = GetResource(null, "style");
+            var head = GetResource(null, "head");
 
+            head = ReplacePlaceHolder(head, "Title", ReportName);
+            main = ReplacePlaceHolder(main, "Head", head);
             main = ReplacePlaceHolder(main, "Style", style);
             main = ReplacePlaceHolder(main, "Header", header);
             main = ReplacePlaceHolder(main, "Footer", footer);

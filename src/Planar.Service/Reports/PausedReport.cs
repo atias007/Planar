@@ -11,7 +11,7 @@ namespace Planar.Service.Reports
 {
     public sealed class PausedReport : BaseReport
     {
-        public override string ReportName => "Pause";
+        public override string ReportName => "Paused Jobs";
 
         public PausedReport(IServiceScopeFactory serviceScope) : base(serviceScope)
         {
