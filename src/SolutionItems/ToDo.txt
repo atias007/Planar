@@ -2,7 +2,7 @@
 
 PLAN FOR V 1.6.3
 ----------------
-
+- job list -s {search}
 - remove resume-all, pause-all
 
 - postman: test queue-invoke with data and validate the creation of data
