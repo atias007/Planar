@@ -27,6 +27,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Remove="HtmlTemplates\AlertsReport\alerts_row.html" />
+	  <None Remove="HtmlTemplates\AlertsReport\alerts_table.html" />
+	  <None Remove="HtmlTemplates\AlertsReport\main.html" />
 	  <None Remove="HtmlTemplates\empty_table.html" />
 	  <None Remove="HtmlTemplates\footer.html" />
 	  <None Remove="HtmlTemplates\head.html" />
@@ -47,6 +50,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <EmbeddedResource Include="HtmlTemplates\AlertsReport\main.html" />
+	  <EmbeddedResource Include="HtmlTemplates\AlertsReport\alerts_table.html" />
+	  <EmbeddedResource Include="HtmlTemplates\AlertsReport\alerts_row.html" />
 	  <EmbeddedResource Include="HtmlTemplates\empty_table.html" />
 	  <EmbeddedResource Include="HtmlTemplates\head.html" />
 	  <EmbeddedResource Include="HtmlTemplates\style.html" />
@@ -86,6 +92,7 @@
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
+		<PackageReference Include="WebMarkupMin.Core" Version="2.14.0" />
 	</ItemGroup>
 
 	<ItemGroup>

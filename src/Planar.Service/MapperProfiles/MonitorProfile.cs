@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using Planar.API.Common.Entities;
 using Planar.Common;
-using Planar.Service.Data;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
 using System;
@@ -10,11 +9,10 @@ namespace Planar.Service.MapperProfiles;
 
 public class MonitorProfile : Profile
 {
-    public MonitorProfile(AutoMapperData mappaerData)
+    public MonitorProfile()
     {
         CreateMap<AddMonitorRequest, MonitorAction>()
             .ForMember(t => t.EventId, map => map.MapFrom(s => (int)Enum.Parse<MonitorEvents>(s.EventName ?? string.Empty)))
-            .ForMember(t => t.GroupId, map => map.MapFrom(s => mappaerData.GetGroupId(s.GroupName).Result))
             .ForMember(t => t.JobGroup, map => map.MapFrom(s => string.IsNullOrEmpty(s.JobGroup) ? null : s.JobGroup))
             .ForMember(t => t.EventArgument, map => map.MapFrom(s => string.IsNullOrEmpty(s.EventArgument) ? null : s.EventArgument));
 
@@ -25,14 +23,12 @@ public class MonitorProfile : Profile
         CreateMap<UpdateMonitorRequest, MonitorAction>()
             .ForMember(t => t.EventId, map => map.MapFrom(s => (int)Enum.Parse<MonitorEvents>(s.EventName ?? string.Empty)))
             .ForMember(t => t.JobGroup, map => map.MapFrom(s => string.IsNullOrEmpty(s.JobGroup) ? null : s.JobGroup))
-            .ForMember(t => t.EventArgument, map => map.MapFrom(s => string.IsNullOrEmpty(s.EventArgument) ? null : s.EventArgument))
-            .ForMember(t => t.GroupId, map => map.MapFrom(s => mappaerData.GetGroupId(s.GroupName).Result));
+            .ForMember(t => t.EventArgument, map => map.MapFrom(s => string.IsNullOrEmpty(s.EventArgument) ? null : s.EventArgument));
 
         CreateMap<MonitorAction, UpdateMonitorRequest>()
             .ForMember(t => t.EventName, map => map.MapFrom(s => ((MonitorEvents)s.EventId).ToString()))
             .ForMember(t => t.JobGroup, map => map.MapFrom(s => string.IsNullOrEmpty(s.JobGroup) ? null : s.JobGroup))
-            .ForMember(t => t.EventArgument, map => map.MapFrom(s => string.IsNullOrEmpty(s.EventArgument) ? null : s.EventArgument))
-            .ForMember(t => t.GroupName, map => map.MapFrom(s => mappaerData.GetGroupName(s.GroupId).Result));
+            .ForMember(t => t.EventArgument, map => map.MapFrom(s => string.IsNullOrEmpty(s.EventArgument) ? null : s.EventArgument));
 
         CreateMap<MonitorAlert, MonitorAlertRowModel>();
         CreateMap<MonitorAlert, MonitorAlertModel>();

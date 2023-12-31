@@ -313,7 +313,14 @@ public class MonitorUtil : IMonitorUtil
             return title;
         }
 
-        var args = monitorAction.EventArgument.Split(',');
+        return GetMonitorEventTitle(title, monitorAction.EventArgument);
+    }
+
+    internal static string GetMonitorEventTitle(string title, string? eventArguments)
+    {
+        if (string.IsNullOrWhiteSpace(eventArguments)) { return title; }
+
+        var args = eventArguments.Split(',');
         var argChar = 'x';
         for (int i = 0; i < args.Length; i++)
         {

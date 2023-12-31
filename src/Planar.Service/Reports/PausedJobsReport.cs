@@ -9,11 +9,11 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Reports
 {
-    public sealed class PausedReport : BaseReport
+    public sealed class PausedJobsReport : BaseReport
     {
         public override string ReportName => "Paused Jobs";
 
-        public PausedReport(IServiceScopeFactory serviceScope) : base(serviceScope)
+        public PausedJobsReport(IServiceScopeFactory serviceScope) : base(serviceScope)
         {
         }
 

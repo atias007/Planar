@@ -8,6 +8,9 @@ namespace Planar.Service.Reports
         Summary,
 
         [Description("Paused Jobs")]
-        Paused
+        Paused,
+
+        [Description("Alerts")]
+        Alerts
     }
 }

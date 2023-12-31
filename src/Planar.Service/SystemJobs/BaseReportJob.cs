@@ -15,6 +15,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using WebMarkupMin.Core;
 
 namespace Planar.Service.SystemJobs;
 
@@ -311,12 +312,28 @@ public abstract class BaseReportJob<TJob> : BaseReportJob
             }
 
             var main = await report.Generate(dateScope);
+            main = MinifyHtml(main);
             await SendReport(main, await emailsTask, reportName, context.Trigger.Key.Name);
             _logger?.LogInformation("{Name} report send via smtp", reportName.ToString().ToLower());
         }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "fail to send {Report} report: {Message}", reportName.ToString().ToLower(), ex.Message);
+        }
+    }
+
+    private static string MinifyHtml(string html)
+    {
+        try
+        {
+            var htmlMinifier = new HtmlMinifier();
+            var result = htmlMinifier.Minify(html, generateStatistics: false);
+            if (result.Errors.Count == 0) { return result.MinifiedContent; }
+            return html;
+        }
+        catch
+        {
+            return html;
         }
     }
 }

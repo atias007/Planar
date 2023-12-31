@@ -11,6 +11,10 @@ namespace Planar.Service.MapperProfiles;
 
 internal class TriggerDetailsProfile : Profile
 {
+    public TriggerDetailsProfile()
+    {
+    }
+
     public TriggerDetailsProfile(IScheduler scheduler, JobKeyHelper jobKeyHelper)
     {
         CreateMap<ITrigger, PausedTriggerDetails>()
