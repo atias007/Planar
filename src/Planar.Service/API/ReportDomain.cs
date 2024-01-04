@@ -218,7 +218,8 @@ namespace Planar.Service.API
         public static IEnumerable<string> GetReports()
         {
             var items = Enum.GetNames<ReportNames>()
-                .Select(n => n.ToLower());
+                .Select(n => n.ToLower())
+                .OrderBy(n => n);
 
             return items;
         }

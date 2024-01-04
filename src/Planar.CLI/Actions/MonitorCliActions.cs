@@ -516,7 +516,7 @@ namespace Planar.CLI.Actions
             var hooksTask = RestProxy.Invoke<List<string>>(hooksRequest, cancellationToken);
 
             var jobsRequest = new RestRequest("job", Method.Get)
-                .AddQueryParameter("filter", (int)AllJobsMembers.AllUserJobs)
+                .AddQueryParameter("jobCategory", (int)AllJobsMembers.AllUserJobs)
                 .AddQueryPagingParameter(1000);
             var jobsTask = RestProxy.Invoke<PagingResponse<JobBasicDetails>>(jobsRequest, cancellationToken);
 

@@ -64,3 +64,10 @@ hooks:
     auth token: null
     from number: null
     default phone prefix: +972
+  redis stream:
+    endpoints: redis-server-1:6379,redis-server-2:6379
+    user: null
+    password: null
+    database: 0
+    stream name: planar
+    pub sub channel: planar

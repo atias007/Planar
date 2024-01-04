@@ -37,12 +37,12 @@ namespace Planar.Service.Data
 
             if (request.FromDate.HasValue)
             {
-                query = query.Where(l => l.TimeStamp.LocalDateTime >= request.FromDate);
+                query = query.Where(l => l.TimeStamp >= request.FromDate);
             }
 
             if (request.ToDate.HasValue)
             {
-                query = query.Where(l => l.TimeStamp.LocalDateTime < request.ToDate);
+                query = query.Where(l => l.TimeStamp < request.ToDate);
             }
 
             if (!string.IsNullOrEmpty(request.Level))
@@ -73,19 +73,30 @@ namespace Planar.Service.Data
 
         public async Task<PagingResponse<LogDetails>> GetTraceForReport(GetTraceRequest request)
         {
-            var query = _context.Traces.AsNoTracking().AsQueryable()
-                .Where(l =>
-                    l.TimeStamp.LocalDateTime >= request.FromDate.GetValueOrDefault() &&
-                    l.TimeStamp.LocalDateTime < request.ToDate.GetValueOrDefault())
+            var query = _context.Traces.AsNoTracking().AsQueryable();
+
+            if (request.FromDate.HasValue)
+            {
+                query = query.Where(l => l.TimeStamp >= request.FromDate);
+            }
+
+            if (request.ToDate.HasValue)
+            {
+                query = query.Where(l => l.TimeStamp < request.ToDate);
+            }
+
+            var final = query
+                .OrderBy(l => l.TimeStamp)
+                .ThenBy(l => l.Id)
                 .Select(l => new LogDetails
                 {
                     Id = l.Id,
                     Message = l.Message,
                     Level = l.Level,
                     TimeStamp = l.TimeStamp.ToLocalTime().DateTime
-                })
-                .OrderBy(l => l.TimeStamp).ThenBy(l => l.Id);
-            var result = await query.ToPagingListAsync(request);
+                });
+
+            var result = await final.ToPagingListAsync(request);
             return result;
         }
 

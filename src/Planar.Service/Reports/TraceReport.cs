@@ -45,8 +45,8 @@ namespace Planar.Service.Reports
                 sb.AppendLine(rowTemplate);
             }
 
-            var table = GetResource("pause_table");
-            table = ReplacePlaceHolder(table, "PausedRow", sb.ToString());
+            var table = GetResource("trace_table");
+            table = ReplacePlaceHolder(table, "TraceRow", sb.ToString());
             return table;
         }
 

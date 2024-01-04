@@ -7,6 +7,7 @@ using Planar.Common.Exceptions;
 using Polly;
 using System;
 using System.Data;
+using System.Linq;
 using System.Text;
 using EC = Planar.Common.EnvironmentVariableConsts;
 
@@ -140,6 +141,12 @@ namespace Planar.Common
             Hooks.TwilioSms.AuthToken = GetSettings(configuration, EC.HooksTwilioSmsAuthToken, "hooks:twilio sms", "auth token", string.Empty);
             Hooks.TwilioSms.FromNumber = GetSettings(configuration, EC.HooksTwilioSmsFromNumber, "hooks:twilio sms", "from number", string.Empty);
             Hooks.TwilioSms.DefaultPhonePrefix = GetSettings(configuration, EC.HooksTwilioSmsDefaultPhonePrefix, "hooks:twilio sms", "default phone prefix", string.Empty);
+            Hooks.Redis.Endpoints = GetSettings(configuration, EC.HooksRedisEndpoints, "hooks:redis stream", "endpoints", string.Empty).Split(',').ToList();
+            Hooks.Redis.Password = GetSettings(configuration, EC.HooksRedisPassword, "hooks:redis stream", "password", string.Empty);
+            Hooks.Redis.User = GetSettings(configuration, EC.HooksRedisUser, "hooks:redis stream", "user", string.Empty);
+            Hooks.Redis.Database = GetSettings(configuration, EC.HooksRedisDatabase, "hooks:redis stream", "db", (ushort)0);
+            Hooks.Redis.StreamName = GetSettings(configuration, EC.HooksRedisStreamName, "hooks:redis stream", "stream name", string.Empty);
+            Hooks.Redis.PubSubChannel = GetSettings(configuration, EC.HooksRedisPubSubChannel, "hooks:redis stream", "pub sub channel", string.Empty);
         }
 
         private static void InitializePersistanceSpan(IConfiguration configuration)

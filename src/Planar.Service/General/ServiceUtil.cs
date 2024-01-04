@@ -85,6 +85,8 @@ namespace Planar.Service.General
             LoadSystemHook<TLogger, PlanarLogHook>(logger);
             LoadSystemHook<TLogger, PlanarTeamsHook>(logger);
             LoadSystemHook<TLogger, PlanarTwilioSmsHook>(logger);
+            LoadSystemHook<TLogger, PlanarRedisStreamHook>(logger);
+            LoadSystemHook<TLogger, PlanarRedisPubSubHook>(logger);
         }
 
         private static void LoadSystemHook<TLogger, THook>(ILogger<TLogger> logger)
