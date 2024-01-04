@@ -11,6 +11,9 @@ namespace Planar.Service.Reports
         Paused,
 
         [Description("Alerts")]
-        Alerts
+        Alerts,
+
+        [Description("Trace")]
+        Trace
     }
 }

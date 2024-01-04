@@ -6,7 +6,6 @@ using Newtonsoft.Json;
 using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
-using PlanarJob.Notify;
 using PlanarJobInner;
 using Quartz;
 using System;
@@ -15,7 +14,6 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using static Quartz.Logging.OperationName;
 
 namespace Planar
 {
@@ -24,20 +22,16 @@ namespace Planar
         private readonly IMonitorUtil _monitorUtil;
         private readonly object ConsoleLocker = new();
         private readonly bool _isDevelopment;
-        private readonly NotifyProducer _notifyProducer;
         private bool _isHealthCheck;
-        private string _jobId = string.Empty;
 
         private PlanarJobExecutionException? _executionException;
 
         protected PlanarJob(
             ILogger<PlanarJob> logger,
             IJobPropertyDataLayer dataLayer,
-            IMonitorUtil monitorUtil,
-            NotifyProducer notifyProducer) : base(logger, dataLayer)
+            IMonitorUtil monitorUtil) : base(logger, dataLayer)
         {
             _monitorUtil = monitorUtil;
-            _notifyProducer = notifyProducer;
             MqttBrokerService.InterceptingPublishAsync += InterceptingPublishAsync;
             _isDevelopment = string.Equals(AppSettings.General.Environment, "development", StringComparison.OrdinalIgnoreCase);
         }
@@ -49,7 +43,6 @@ namespace Planar
                 await Initialize(context, _monitorUtil);
                 ValidateProcessJob();
                 ValidateExeFile();
-                SetJobId(context);
                 context.CancellationToken.Register(OnCancel);
                 var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
                 var startInfo = GetProcessStartInfo();
@@ -73,14 +66,6 @@ namespace Planar
                 FinalizeJob(context);
                 FinalizeProcess();
                 UnregisterMqttBrokerService();
-            }
-        }
-
-        private void SetJobId(IJobExecutionContext context)
-        {
-            if (context.JobDetail.JobDataMap.TryGetValue(Consts.JobId, out var id))
-            {
-                _jobId = PlanarConvert.ToString(id) ?? string.Empty;
             }
         }
 
@@ -331,12 +316,6 @@ namespace Planar
                 case MessageBrokerChannels.UpdateProgress:
                     var progress = GetCloudEventByteValue(e.CloudEvent);
                     MessageBroker.UpdateProgress(progress);
-                    _notifyProducer.Publish(new NotifyMessage
-                    {
-                        JobId = _jobId,
-                        FireInstanceId = FireInstanceId,
-                        Progress = progress
-                    });
                     break;
 
                 case MessageBrokerChannels.ReportException:

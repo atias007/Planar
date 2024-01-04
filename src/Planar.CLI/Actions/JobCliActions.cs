@@ -58,7 +58,7 @@ namespace Planar.CLI.Actions
         {
             var restRequest = new RestRequest("job", Method.Get);
             var p = AllJobsMembers.AllUserJobs;
-            restRequest.AddQueryParameter("filter", (int)p)
+            restRequest.AddQueryParameter("jobCategory", (int)p)
                 .AddQueryPagingParameter(1000);
 
             var result = await RestProxy.Invoke<PagingResponse<JobBasicDetails>>(restRequest, cancellationToken);
@@ -878,7 +878,7 @@ namespace Planar.CLI.Actions
             return response;
         }
 
-        private static async Task<CliActionResponse?> TestStep4GetRunningData(string instanceId, DateTime invokeDate, CancellationToken cancellationToken)
+        private static async Task<(CliActionResponse?, bool, RestResponse<RunningJobDetails>)> InitGetRunningData(string instanceId, CancellationToken cancellationToken)
         {
             var restRequest = new RestRequest("job/running-instance/{instanceId}", Method.Get)
                 .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
@@ -888,33 +888,102 @@ namespace Planar.CLI.Actions
             {
                 // Not Found: job finish in very short time
                 AnsiConsole.Markup($" [gold3_1][[x]][/] Progress: 100%  |  ");
-                if (runResult.StatusCode == HttpStatusCode.NotFound) { return null; }
+                if (runResult.StatusCode == HttpStatusCode.NotFound) { return (null, true, runResult); }
 
                 // Fail to get running data
-                return new CliActionResponse(runResult);
+                return (new CliActionResponse(runResult), true, runResult);
             }
 
-            Console.WriteLine();
-            var sleepTime = 2000;
-            var max = 0;
-            while (runResult.Data != null)
+            return (null, false, runResult);
+        }
+
+        private static bool WriteRunningData(RestResponse<RunningJobDetails> runResult, DateTime invokeDate, DateTime? estimateEnd)
+        {
+            if (runResult.Data == null) { return true; }
+            var data = runResult.Data;
+
+            Console.CursorTop -= 1;
+            var span = DateTimeOffset.Now.Subtract(invokeDate);
+            var endSpan = estimateEnd == null ? data.EstimatedEndTime : estimateEnd.Value.Subtract(DateTime.Now);
+            var title =
+                    $" [gold3_1][[x]][/] Progress: [wheat1]{data.Progress}[/]%  |" +
+                    $"  Effected Row(s): [wheat1]{data.EffectedRows.GetValueOrDefault()}[/]  |" +
+                    $"  Ex. Count: {CliTableFormat.FormatExceptionCount(data.ExceptionsCount)}  |" +
+                    $"  Run Time: [wheat1]{CliTableFormat.FormatTimeSpan(span)}[/]  |" +
+                    $"  End Time: [wheat1]{CliTableFormat.FormatTimeSpan(endSpan)}[/]     ";
+            AnsiConsole.MarkupLine(title);
+
+            return false;
+        }
+
+        private static DateTime? GetEstimatedEndTime(RestResponse<RunningJobDetails> runResult)
+        {
+            if (runResult.Data == null) { return null; }
+            if (runResult.Data.EstimatedEndTime == null) { return null; }
+            var estimateEnd = DateTime.Now.Add(runResult.Data.EstimatedEndTime.Value);
+            return estimateEnd;
+        }
+
+        private static async Task<(RestResponse<RunningJobDetails>, DateTime?)> LongPollingGetRunningData(
+            RestResponse<RunningJobDetails> runResult,
+            string instanceId,
+            DateTime invokeDate,
+            CancellationToken cancellationToken)
+        {
+            var data = runResult.Data;
+            var currentHash = $"{data?.Progress}.{data?.EffectedRows}.{data?.ExceptionsCount}";
+            var restRequest = new RestRequest("job/running-instance/{instanceId}/long-polling", Method.Get)
+                .AddParameter("instanceId", instanceId, ParameterType.UrlSegment)
+                .AddQueryParameter("hash", currentHash);
+            restRequest.Timeout = 300_000; // 6 min
+            var counter = 1;
+            while (counter <= 3)
             {
-                Console.CursorTop -= 1;
-                var span = DateTimeOffset.Now.Subtract(invokeDate);
-                var title =
-                        $" [gold3_1][[x]][/] Progress: [wheat1]{runResult.Data.Progress}[/]%  |" +
-                        $"  Effected Row(s): [wheat1]{runResult.Data.EffectedRows.GetValueOrDefault()}[/]  |" +
-                        $"  Ex. Count: {CliTableFormat.FormatExceptionCount(runResult.Data.ExceptionsCount)}  |" +
-                        $"  Run Time: [wheat1]{CliTableFormat.FormatTimeSpan(span)}[/]  |" +
-                        $"  End Time: [wheat1]{CliTableFormat.FormatTimeSpan(runResult.Data.EstimatedEndTime)}[/]     ";
-                max = Math.Max(max, title.Length);
-                AnsiConsole.MarkupLine(title);
-                await Task.Delay(sleepTime, cancellationToken);
                 runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest, cancellationToken);
+                if (runResult.IsSuccessful) { break; }
+                if (runResult.StatusCode == HttpStatusCode.NotFound) { break; }
+                await Task.Delay(500 + ((counter - 1) ^ 2) * 500, cancellationToken);
+                counter++;
+            }
+
+            var estimateEnd = GetEstimatedEndTime(runResult);
+            WriteRunningData(runResult, invokeDate, estimateEnd);
+
+            return (runResult, estimateEnd);
+        }
+
+        private static async Task<CliActionResponse?> TestStep4GetRunningData(string instanceId, DateTime invokeDate, CancellationToken cancellationToken)
+        {
+            var result = await InitGetRunningData(instanceId, cancellationToken);
+            if (result.Item2) { return result.Item1; }
+
+            Console.WriteLine();
+
+            Task dataTask = Task.CompletedTask;
+            var runResult = result.Item3;
+            DateTime? estimateEnd = null;
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                var brk = WriteRunningData(runResult, invokeDate, estimateEnd);
+                if (brk) { break; }
+
+                if (dataTask.Status == TaskStatus.RanToCompletion)
+                {
+                    dataTask = Task.Run(async () =>
+                    {
+                        var data = await LongPollingGetRunningData(runResult, instanceId, invokeDate, cancellationToken);
+                        runResult = data.Item1;
+                        estimateEnd = data.Item2;
+                    }, cancellationToken);
+                }
+
+                for (int i = 0; i < 5; i++)
+                {
+                    await Task.Delay(200, cancellationToken);
+                    if (dataTask.Status == TaskStatus.RanToCompletion) { break; }
+                }
+
                 if (!runResult.IsSuccessful) { break; }
-                if (span.TotalMinutes >= 5) { sleepTime = 10000; }
-                else if (span.TotalMinutes >= 15) { sleepTime = 20000; }
-                else if (span.TotalMinutes >= 30) { sleepTime = 30000; }
             }
 
             Console.CursorTop -= 1;

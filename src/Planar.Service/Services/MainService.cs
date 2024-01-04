@@ -149,6 +149,7 @@ namespace Planar.Service.Services
                 await PausedReportJob.Schedule(_schedulerUtil.Scheduler, PausedReportJob.ReportName, stoppingToken);
                 await MonitorJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
                 await AlertsReportJob.Schedule(_schedulerUtil.Scheduler, AlertsReportJob.ReportName, stoppingToken);
+                await TraceReportJob.Schedule(_schedulerUtil.Scheduler, TraceReportJob.ReportName, stoppingToken);
             }
             catch (Exception ex)
             {

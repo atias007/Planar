@@ -33,7 +33,7 @@ namespace Planar.Service.Data
 
         public async Task<PagingResponse<LogDetails>> GetTrace(GetTraceRequest request)
         {
-            var query = _context.Traces.AsQueryable();
+            var query = _context.Traces.AsNoTracking().AsQueryable();
 
             if (request.FromDate.HasValue)
             {
@@ -68,6 +68,24 @@ namespace Planar.Service.Data
             });
 
             var result = await final.ToPagingListAsync(request);
+            return result;
+        }
+
+        public async Task<PagingResponse<LogDetails>> GetTraceForReport(GetTraceRequest request)
+        {
+            var query = _context.Traces.AsNoTracking().AsQueryable()
+                .Where(l =>
+                    l.TimeStamp.LocalDateTime >= request.FromDate.GetValueOrDefault() &&
+                    l.TimeStamp.LocalDateTime < request.ToDate.GetValueOrDefault())
+                .Select(l => new LogDetails
+                {
+                    Id = l.Id,
+                    Message = l.Message,
+                    Level = l.Level,
+                    TimeStamp = l.TimeStamp.ToLocalTime().DateTime
+                })
+                .OrderBy(l => l.TimeStamp).ThenBy(l => l.Id);
+            var result = await query.ToPagingListAsync(request);
             return result;
         }
 

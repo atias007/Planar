@@ -8,6 +8,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -250,6 +251,31 @@ namespace Planar.Controllers
         {
             var result = await BusinesLayer.GetRunning(instanceId);
             return Ok(result);
+        }
+
+        [ApiExplorerSettings(IgnoreApi = true)]
+        [HttpGet("running-instance/{instanceId}/long-polling")]
+        [ViewerAuthorize]
+        public async Task<ActionResult<RunningJobDetails>> GetRunningInstanceLongPolling(
+            [FromRoute][Required] string instanceId,
+            [FromQuery][Required] string hash,
+            CancellationToken cancellationToken)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromMinutes(5));
+            while (!cts.IsCancellationRequested)
+            {
+                var data = await BusinesLayer.GetRunning(instanceId);
+                var currentHash = $"{data.Progress}.{data.EffectedRows}.{data.ExceptionsCount}";
+                if (currentHash != hash)
+                {
+                    return Ok(data);
+                }
+
+                await Task.Delay(500, cancellationToken);
+            }
+
+            return NotFound();
         }
 
         [HttpGet("running")]

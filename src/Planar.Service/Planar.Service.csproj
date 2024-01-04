@@ -41,6 +41,9 @@
 	  <None Remove="HtmlTemplates\SummaryReport\main.html" />
 	  <None Remove="HtmlTemplates\SummaryReport\summary_row.html" />
 	  <None Remove="HtmlTemplates\SummaryReport\summary_table.html" />
+	  <None Remove="HtmlTemplates\TraceReport\main.html" />
+	  <None Remove="HtmlTemplates\TraceReport\trace_row.html" />
+	  <None Remove="HtmlTemplates\TraceReport\Trace_table.html" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -64,6 +67,9 @@
 	  <EmbeddedResource Include="HtmlTemplates\SummaryReport\main.html" />
 	  <EmbeddedResource Include="HtmlTemplates\SummaryReport\summary_row.html" />
 	  <EmbeddedResource Include="HtmlTemplates\SummaryReport\summary_table.html" />
+	  <EmbeddedResource Include="HtmlTemplates\TraceReport\main.html" />
+	  <EmbeddedResource Include="HtmlTemplates\TraceReport\trace_table.html" />
+	  <EmbeddedResource Include="HtmlTemplates\TraceReport\trace_row.html" />
 	</ItemGroup>
 
 	<ItemGroup>

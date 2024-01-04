@@ -1,8 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
-using Planar.Service.Data;
 using Planar.Service.Monitor;
 using System.Collections.Generic;
 using System.Linq;
@@ -78,6 +76,7 @@ namespace Planar.Service.Reports
                 PageSize = 1000,
                 FromDate = dateScope.From,
                 ToDate = dateScope.To,
+                Ascending = true
             };
 
             var response = await monitorData.GetMonitorsAlerts(request);
