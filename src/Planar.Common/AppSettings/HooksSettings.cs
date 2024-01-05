@@ -37,5 +37,6 @@ namespace Planar.Common
         public ushort Database { get; set; }
         public string? StreamName { get; set; }
         public string? PubSubChannel { get; set; }
+        public bool Ssl { get; set; }
     }
 }

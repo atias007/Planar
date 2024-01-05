@@ -13,6 +13,14 @@ public class PlanarRestHook : BaseSystemHook
 {
     public override string Name => "Planar.Rest";
 
+    public override string Description =>
+"""
+This hook send a REST HTTP POST request with application/json body content type.
+You can find the default url of the request is in appsettings.yml (data folder of Planar).
+To use different url, you can set one of the 'AdditionalField' of monitor group to the following value:
+  rest-http-url:http://your-server/your-path
+""";
+
     private static readonly object Locker = new();
     private static HttpClient _sharedClient = null!;
 

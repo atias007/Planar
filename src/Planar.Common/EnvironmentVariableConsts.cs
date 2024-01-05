@@ -61,5 +61,6 @@
         public const string HooksRedisDatabase = "PLANAR_HOOKS_REDIS_DATABASE";
         public const string HooksRedisStreamName = "PLANAR_HOOKS_REDIS_STREAM_NAME";
         public const string HooksRedisPubSubChannel = "PLANAR_HOOKS_REDIS_PUBSUB_CHANNEL";
+        public const string HooksRedisSsl = "PLANAR_HOOKS_REDIS_SSL";
     }
 }

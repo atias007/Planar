@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using MimeKit.Text;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -14,13 +15,19 @@ namespace Planar.Service.Reports
             _serviceScope = serviceScope;
         }
 
-        public string EmptyTableHtml => GetResource(null, "empty_table");
+        public static string EmptyTableHtml => GetResource(null, "empty_table");
 
         public IServiceScopeFactory ServiceScope => _serviceScope;
 
         public abstract string ReportName { get; }
 
         public abstract Task<string> Generate(DateScope dateScope);
+
+        protected static string GetCounterText(int counter)
+        {
+            if (counter == 0) { return "-"; }
+            return counter.ToString("N0");
+        }
 
         private static string GetResource(string? reportName, string key)
         {
@@ -59,10 +66,16 @@ namespace Planar.Service.Reports
             return main;
         }
 
-        protected static string ReplacePlaceHolder(string template, string placeHolder, string? value)
+        protected static string ReplacePlaceHolder(string template, string placeHolder, string? value, bool encode = false)
         {
             var find = $"<!-- {{{{{placeHolder}}}}} -->";
-            return template.Replace(find, value);
+
+            var encodeValue =
+                encode ?
+                HtmlUtils.HtmlEncode(value) :
+                value;
+
+            return template.Replace(find, encodeValue);
         }
     }
 }

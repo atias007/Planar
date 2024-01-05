@@ -13,7 +13,7 @@
   <ItemGroup>
     <PackageReference Include="CloudNative.CloudEvents.SystemTextJson" Version="2.7.1" />
     <PackageReference Include="MailKit" Version="4.3.0" />
-    <PackageReference Include="Planar.Hook" Version="1.6.5" />
+    <PackageReference Include="Planar.Hook" Version="1.6.6-beta1" />
     <PackageReference Include="StackExchange.Redis" Version="2.7.10" />
     <PackageReference Include="Twilio" Version="6.15.2" />
   </ItemGroup>

@@ -11,6 +11,17 @@ public class PlanarTeamsHook : BaseSystemHook
 {
     public override string Name => "Planar.Teams";
 
+    public override string Description =>
+    """
+This hook send message to Teams channel via microsoft Teams server.
+You can find the configuration of Teams server is in appsettings.yml (data folder of Planar).
+The configuration also define the default channel address.
+To use different channel address, you can set one of the 'AdditionalField' of monitor group to the following value:
+  teams-channel-address:http://your-channel-url
+To send to multiple channels, you can set the following value (in appsettings.yml, teams section) to true:
+  send to multiple urls: true
+""";
+
     private const string ImageSource = "https://raw.githubusercontent.com/atias007/Planar/master/hooks/Planar.TeamsMonitorHook/Icons/{0}.png";
 
     public override async Task Handle(IMonitorDetails monitorDetails)

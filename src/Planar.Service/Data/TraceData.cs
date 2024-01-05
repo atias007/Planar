@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
@@ -73,7 +74,11 @@ namespace Planar.Service.Data
 
         public async Task<PagingResponse<LogDetails>> GetTraceForReport(GetTraceRequest request)
         {
-            var query = _context.Traces.AsNoTracking().AsQueryable();
+            var levels = new string[] { nameof(LogLevel.Critical), nameof(LogLevel.Warning), nameof(LogLevel.Error), "Fatal" };
+            var query = _context.Traces
+                .AsNoTracking()
+                .AsQueryable()
+                .Where(l => levels.Contains(l.Level));
 
             if (request.FromDate.HasValue)
             {

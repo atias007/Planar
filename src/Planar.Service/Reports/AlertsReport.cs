@@ -40,11 +40,11 @@ namespace Planar.Service.Reports
             foreach (var item in data)
             {
                 var rowTemplate = GetResource("alerts_row");
-                rowTemplate = ReplacePlaceHolder(rowTemplate, "MonitorTitle", item.MonitorTitle);
-                rowTemplate = ReplacePlaceHolder(rowTemplate, "EventTitle", MonitorUtil.GetMonitorEventTitle(item.EventTitle, item.EventArgument));
-                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobKey", GetJobKey(item));
-                rowTemplate = ReplacePlaceHolder(rowTemplate, "Group", item.GroupName);
-                rowTemplate = ReplacePlaceHolder(rowTemplate, "Hook", item.Hook);
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "MonitorTitle", item.MonitorTitle, encode: true);
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "EventTitle", MonitorUtil.GetMonitorEventTitle(item.EventTitle, item.EventArgument), encode: true);
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobKey", GetJobKey(item), encode: true);
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "Group", item.GroupName, encode: true);
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "Hook", item.Hook, encode: true);
                 rowTemplate = ReplacePlaceHolder(rowTemplate, "AlertDate", $"{item.AlertDate.ToShortDateString()} {item.AlertDate:HH:mm:ss}");
                 rows.AppendLine(rowTemplate);
             }

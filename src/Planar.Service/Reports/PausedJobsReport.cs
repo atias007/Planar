@@ -41,9 +41,9 @@ namespace Planar.Service.Reports
             {
                 var rowTemplate = GetResource("pause_row");
                 rowTemplate = ReplacePlaceHolder(rowTemplate, "JobId", item.Id.ToString());
-                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobKey", $"{item.Group}.{item.Name}");
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobKey", $"{item.Group}.{item.Name}", encode: true);
                 rowTemplate = ReplacePlaceHolder(rowTemplate, "JobType", item.JobType);
-                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobDescription", item.Description);
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobDescription", item.Description, encode: true);
 
                 var lastRun = lastRuns.FirstOrDefault(x => x.JobId == item.Id);
                 var lastDate = lastRun?.StartDate;

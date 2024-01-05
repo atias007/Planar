@@ -40,12 +40,12 @@ namespace Planar.Service.Reports
 
         private static string FillCubes(string html, HistorySummaryCounters summaryCounters)
         {
-            html = ReplacePlaceHolder(html, "CubeTotal", GetSummaryRowCounter(summaryCounters.Total));
-            html = ReplacePlaceHolder(html, "CubeSuccess", GetSummaryRowCounter(summaryCounters.Success));
-            html = ReplacePlaceHolder(html, "CubeFail", GetSummaryRowCounter(summaryCounters.Fail));
-            html = ReplacePlaceHolder(html, "CubeRunning", GetSummaryRowCounter(summaryCounters.Running));
-            html = ReplacePlaceHolder(html, "CubeReries", GetSummaryRowCounter(summaryCounters.Retries));
-            html = ReplacePlaceHolder(html, "CubeConcurrent", GetSummaryRowCounter(summaryCounters.Concurrent));
+            html = ReplacePlaceHolder(html, "CubeTotal", GetCounterText(summaryCounters.Total));
+            html = ReplacePlaceHolder(html, "CubeSuccess", GetCounterText(summaryCounters.Success));
+            html = ReplacePlaceHolder(html, "CubeFail", GetCounterText(summaryCounters.Fail));
+            html = ReplacePlaceHolder(html, "CubeRunning", GetCounterText(summaryCounters.Running));
+            html = ReplacePlaceHolder(html, "CubeReries", GetCounterText(summaryCounters.Retries));
+            html = ReplacePlaceHolder(html, "CubeConcurrent", GetCounterText(summaryCounters.Concurrent));
             return html;
         }
 
@@ -59,13 +59,13 @@ namespace Planar.Service.Reports
             {
                 var rowTemplate = GetResource("summary_row");
                 rowTemplate = ReplacePlaceHolder(rowTemplate, "JobId", item.JobId.ToString());
-                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobKey", $"{item.JobGroup}.{item.JobName}");
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobKey", $"{item.JobGroup}.{item.JobName}", encode: true);
                 rowTemplate = ReplacePlaceHolder(rowTemplate, "JobType", item.JobType);
-                rowTemplate = ReplacePlaceHolder(rowTemplate, "Total", GetSummaryRowCounter(item.Total));
-                rowTemplate = ReplacePlaceHolder(rowTemplate, "Success", GetSummaryRowCounter(item.Success));
-                rowTemplate = ReplacePlaceHolder(rowTemplate, "Fail", GetSummaryRowCounter(item.Fail));
-                rowTemplate = ReplacePlaceHolder(rowTemplate, "Running", GetSummaryRowCounter(item.Running));
-                rowTemplate = ReplacePlaceHolder(rowTemplate, "Retries", GetSummaryRowCounter(item.Retries));
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "Total", GetCounterText(item.Total));
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "Success", GetCounterText(item.Success));
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "Fail", GetCounterText(item.Fail));
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "Running", GetCounterText(item.Running));
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "Retries", GetCounterText(item.Retries));
                 rowTemplate = SetSummaryRowColors(rowTemplate, item);
                 rows.AppendLine(rowTemplate);
             }
@@ -73,12 +73,6 @@ namespace Planar.Service.Reports
             var table = GetResource("summary_table");
             table = ReplacePlaceHolder(table, "SummaryRows", rows.ToString());
             return table;
-        }
-
-        private static string GetSummaryRowCounter(int counter)
-        {
-            if (counter == 0) { return "-"; }
-            return counter.ToString("N0");
         }
 
         private static string SetSummaryRowColors(string row, HistorySummary data)

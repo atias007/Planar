@@ -14,6 +14,15 @@ public class PlanarRedisStreamHook : BaseSystemHook
 {
     public override string Name => "Planar.Redis.PubSub";
 
+    public override string Description =>
+"""
+This hook use redis server to publish message via Pub/Sub component.
+You can find the configuration of redis server is in appsettings.yml (data folder of Planar).
+The configuration also define the default channel name.
+To use different channel name, you can set one of the 'AdditionalField' of monitor group to the following value:
+  redis-channel-name:your-channel-name
+""";
+
     private static readonly JsonSerializerOptions _jsonSerializerSettings = new()
     {
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never,
@@ -50,6 +59,7 @@ public class PlanarRedisStreamHook : BaseSystemHook
 
         try
         {
+#pragma warning disable S1075 // URIs should not be hardcoded
             var body = new CloudEvent
             {
                 Id = Guid.NewGuid().ToString("N"),
@@ -60,6 +70,7 @@ public class PlanarRedisStreamHook : BaseSystemHook
                 Source = new Uri("http://www.planar.com"),
                 Type = typeof(T).Name
             };
+#pragma warning restore S1075 // URIs should not be hardcoded
 
             body.SetAttributeFromString("version", "1.0.0");
             var bytes = _formatter.EncodeStructuredModeMessage(body, out _);

@@ -10,6 +10,15 @@ public class PlanarRedisPubSubHook : BaseSystemHook
 {
     public override string Name => "Planar.Redis.Stream";
 
+    public override string Description =>
+"""
+This hook use redis server to add message to stream component.
+You can find the configuration of redis server is in appsettings.yml (data folder of Planar).
+The configuration also define the default stream name.
+To use different stream name, you can set one of the 'AdditionalField' of monitor group to the following value:
+  redis-stream-name:your-stream-name
+""";
+
     private static readonly JsonSerializerOptions _jsonSerializerSettings = new()
     {
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.Never,
