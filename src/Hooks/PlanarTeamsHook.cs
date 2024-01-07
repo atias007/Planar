@@ -14,7 +14,7 @@ public class PlanarTeamsHook : BaseSystemHook
     public override string Description =>
     """
 This hook send message to Teams channel via microsoft Teams server.
-You can find the configuration of Teams server is in appsettings.yml (data folder of Planar).
+You can find the configuration of Teams server is in appsettings.yml (Data folder of Planar).
 The configuration also define the default channel address.
 To use different channel address, you can set one of the 'AdditionalField' of monitor group to the following value:
   teams-channel-address:http://your-channel-url
@@ -163,34 +163,38 @@ To send to multiple channels, you can set the following value (in appsettings.ym
         };
     }
 
-    private static IEnumerable<string> GetTeamsUrls(IMonitor monitor)
+    private IEnumerable<string> GetTeamsUrls(IMonitor monitor)
     {
         var g = monitor.Group;
-        var fields = new[] { g.AdditionalField1, g.AdditionalField2, g.AdditionalField3, g.AdditionalField4, g.AdditionalField5 };
+        var fields = new[]
+        {
+            g.AdditionalField1,
+            g.AdditionalField2,
+            g.AdditionalField3,
+            g.AdditionalField4,
+            g.AdditionalField5,
+            AppSettings.Hooks.Teams.DefaultUrl
+        };
 
         foreach (var item in fields)
         {
-            if (IsTeamsUrl(item))
-            {
-                yield return item;
-            }
-        }
-
-        if (IsTeamsUrl(AppSettings.Hooks.Teams.DefaultUrl))
-        {
-            yield return AppSettings.Hooks.Teams.DefaultUrl;
+            var url = GetTeamsUrl(item);
+            if (url != null) { yield return url; }
+            if (!AppSettings.Hooks.Teams.SendToMultipleUrls) { break; }
         }
     }
 
-    private static bool IsTeamsUrl([NotNullWhen(true)] string? url)
+    private string? GetTeamsUrl(string? additionalField)
     {
-        const string pattern = "https://teams.microsoft.com";
-        if (string.IsNullOrWhiteSpace(url)) { return false; }
-        if (url.Trim().StartsWith(pattern, StringComparison.OrdinalIgnoreCase))
+        var url = GetParameter("teams-channel-address", additionalField);
+        if (url == null) { return null; }
+
+        if (!IsValidUri(url))
         {
-            return true;
+            LogError($"url '{url}' of teams hook is invalid");
+            return null;
         }
 
-        return false;
+        return url;
     }
 }

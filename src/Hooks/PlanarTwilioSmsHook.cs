@@ -12,7 +12,7 @@ public class PlanarTwilioSmsHook : BaseSystemHook
     public override string Description =>
         """
 This hook send SMS message via Twilio API server.
-You can find the configuration of Twilio API server is in appsettings.yml (data folder of Planar).
+You can find the configuration of Twilio API server is in appsettings.yml (Data folder of Planar).
 SMS will be sent to all users of the monitor group.
 The phone number of the user is defined in the user profile at 'PhoneNumber' fields.
 Hook will send the message to all valid phone numbers of the user.

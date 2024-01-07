@@ -122,8 +122,9 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> GetMonitorHooks(CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("monitor/hooks", Method.Get);
-            var result = await RestProxy.Invoke<List<string>>(restRequest, cancellationToken);
-            return new CliActionResponse(result, dumpObject: result.Data);
+            var result = await RestProxy.Invoke<List<HookInfo>>(restRequest, cancellationToken);
+            var table = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, table: table);
         }
 
         [Action("reload")]

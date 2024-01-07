@@ -13,7 +13,7 @@ public class PlanarRedisPubSubHook : BaseSystemHook
     public override string Description =>
 """
 This hook use redis server to add message to stream component.
-You can find the configuration of redis server is in appsettings.yml (data folder of Planar).
+You can find the configuration of redis server is in appsettings.yml (Data folder of Planar).
 The configuration also define the default stream name.
 To use different stream name, you can set one of the 'AdditionalField' of monitor group to the following value:
   redis-stream-name:your-stream-name
@@ -39,14 +39,28 @@ To use different stream name, you can set one of the 'AdditionalField' of monito
         await InvokeStream(monitorDetails);
     }
 
-    private async Task InvokeStream<T>(T detials)
-        where T : IMonitor
+    private string? GetStreamName(IMonitor monitor)
     {
+        var stream = GetParameter("redis-stream-name", monitor.Group);
+        if (string.IsNullOrWhiteSpace(stream))
+        {
+            stream = AppSettings.Hooks.Redis.PubSubChannel;
+        }
+
         if (string.IsNullOrWhiteSpace(AppSettings.Hooks.Redis.StreamName))
         {
             LogError("Redis.Stream.Hook: stream name is null or empty");
-            return;
+            return null;
         }
+
+        return stream;
+    }
+
+    private async Task InvokeStream<T>(T detials)
+        where T : IMonitor
+    {
+        var streamName = GetStreamName(detials);
+        if (string.IsNullOrWhiteSpace(streamName)) { return; }
 
         try
         {
@@ -61,7 +75,7 @@ To use different stream name, you can set one of the 'AdditionalField' of monito
             };
 
             var db = RedisFactory.Connection.GetDatabase(AppSettings.Hooks.Redis.Database);
-            await db.StreamAddAsync(AppSettings.Hooks.Redis.StreamName, entries);
+            await db.StreamAddAsync(streamName, entries);
         }
         catch (Exception ex)
         {

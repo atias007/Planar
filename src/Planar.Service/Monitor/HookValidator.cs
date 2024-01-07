@@ -50,6 +50,44 @@ namespace Planar.Service.Monitor
                 return;
             }
 
+            SetName(hook);
+            SetDescription(hook);
+
+            var handleMethod = hook.GetType().GetMethod(nameof(BaseHook.Handle));
+            if (handleMethod == null)
+            {
+                logger.LogWarning("fail to load monitor hook with type {Type}. It does not have a {MethodName} method", t.FullName, nameof(BaseHook.HandleSystem));
+                return;
+            }
+
+            var handleSystemMethod = hook.GetType().GetMethod(nameof(BaseHook.HandleSystem));
+            if (handleSystemMethod == null)
+            {
+                logger.LogWarning("fail to load monitor hook with type {Type}. It does not have a {MethodName} method", t.FullName, nameof(BaseHook.HandleSystem));
+                return;
+            }
+
+            IsValid = true;
+        }
+
+        private void SetDescription(object hook)
+        {
+            var descProp = hook.GetType().GetProperty(nameof(Description));
+            if (descProp != null)
+            {
+                try
+                {
+                    Description = descProp.GetValue(hook) as string ?? string.Empty;
+                }
+                catch
+                {
+                    Description = string.Empty;
+                }
+            }
+        }
+
+        private void SetName(object hook)
+        {
             var nameProp = hook.GetType().GetProperty(nameof(Name));
             if (nameProp != null)
             {
@@ -67,22 +105,6 @@ namespace Planar.Service.Monitor
             {
                 Name = hook.GetType().Name;
             }
-
-            var handleMethod = hook.GetType().GetMethod(nameof(BaseHook.Handle));
-            if (handleMethod == null)
-            {
-                logger.LogWarning("fail to load monitor hook with type {Type}. It does not have a {MethodName} method", t.FullName, nameof(BaseHook.HandleSystem));
-                return;
-            }
-
-            var handleSystemMethod = hook.GetType().GetMethod(nameof(BaseHook.HandleSystem));
-            if (handleSystemMethod == null)
-            {
-                logger.LogWarning("fail to load monitor hook with type {Type}. It does not have a {MethodName} method", t.FullName, nameof(BaseHook.HandleSystem));
-                return;
-            }
-
-            IsValid = true;
         }
 
         private static IEnumerable<Type> GetHookTypesFromFile(AssemblyLoadContext assemblyContext, string file)
@@ -130,5 +152,7 @@ namespace Planar.Service.Monitor
         public bool IsValid { get; private set; }
 
         public string Name { get; private set; } = string.Empty;
+
+        public string Description { get; set; } = string.Empty;
     }
 }

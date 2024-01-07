@@ -9,7 +9,7 @@ public class PlanarLogHook : BaseSystemHook
     public override string Description =>
 """
 This mock hook.
-This hook does nothing but add an entry to the system log.
+This hook does nothing but add an entry to the system trace log.
 """;
 
     public override Task Handle(IMonitorDetails monitorDetails)

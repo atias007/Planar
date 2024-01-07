@@ -167,9 +167,12 @@ namespace Planar.Service.API
             return result;
         }
 
-        public List<string> GetHooks()
+        public IEnumerable<HookInfo> GetHooks()
         {
-            return ServiceUtil.MonitorHooks.Keys.OrderBy(k => k).ToList();
+            var result = Mapper.Map<List<HookInfo>>(ServiceUtil.MonitorHooks.Values)
+                .OrderBy(h => h.Name);
+
+            return result;
         }
 
         public async Task PartialUpdateMonitor(UpdateEntityRequestById request)

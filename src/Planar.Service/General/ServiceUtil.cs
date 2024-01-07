@@ -63,7 +63,7 @@ namespace Planar.Service.General
             var validator = new HookValidator(filename, logger);
             if (!validator.IsValid) { return false; }
 
-            var wrapper = HookWrapper.CreateExternal(filename, logger);
+            var wrapper = HookWrapper.CreateExternal(filename, validator, logger);
             var result = MonitorHooks.TryAdd(validator.Name, wrapper);
 
             if (result)

@@ -16,7 +16,7 @@ public class PlanarRestHook : BaseSystemHook
     public override string Description =>
 """
 This hook send a REST HTTP POST request with application/json body content type.
-You can find the default url of the request is in appsettings.yml (data folder of Planar).
+You can find the default url of the request is in appsettings.yml (Data folder of Planar).
 To use different url, you can set one of the 'AdditionalField' of monitor group to the following value:
   rest-http-url:http://your-server/your-path
 """;
@@ -49,15 +49,34 @@ To use different url, you can set one of the 'AdditionalField' of monitor group 
         await InvokeRest(monitorDetails);
     }
 
+    private string? GetUrl(IMonitor monitor)
+    {
+        var url = GetParameter("rest-http-url", monitor.Group);
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            url = AppSettings.Hooks.Rest.DefaultUrl;
+        }
+
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            LogError("Rest.Hook: url is null or empty");
+            return null;
+        }
+
+        if (!IsValidUri(url))
+        {
+            LogError($"url '{url}' of rest hook is invalid");
+            return null;
+        }
+
+        return url;
+    }
+
     private async Task InvokeRest<T>(T detials)
         where T : IMonitor
     {
-        var url = AppSettings.Hooks.Rest.DefaultUrl;
-        if (!IsValidUri(url))
-        {
-            LogError($"url '{url}' of rest hook settings is invalid");
-            return;
-        }
+        var url = GetUrl(detials);
+        if (string.IsNullOrWhiteSpace(url)) { return; }
 
         var body = new CloudEvent
         {

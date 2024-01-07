@@ -48,5 +48,8 @@ public class MonitorProfile : Profile
         CreateMap<MonitorMute, MuteItem>();
         CreateMap<MonitorCounter, MuteItem>()
             .ForMember(d => d.DueDate, map => map.MapFrom(s => (s.LastUpdate ?? DateTime.Now).Add(AppSettings.Monitor.MaxAlertsPeriod)));
+
+        CreateMap<HookWrapper, HookInfo>()
+            .ForMember(d => d.HookType, map => map.MapFrom(s => s.HookType.ToString()));
     }
 }

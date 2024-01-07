@@ -17,7 +17,7 @@ public class PlanarRedisStreamHook : BaseSystemHook
     public override string Description =>
 """
 This hook use redis server to publish message via Pub/Sub component.
-You can find the configuration of redis server is in appsettings.yml (data folder of Planar).
+You can find the configuration of redis server is in appsettings.yml (Data folder of Planar).
 The configuration also define the default channel name.
 To use different channel name, you can set one of the 'AdditionalField' of monitor group to the following value:
   redis-channel-name:your-channel-name
@@ -48,14 +48,28 @@ To use different channel name, you can set one of the 'AdditionalField' of monit
         await InvokeStream(monitorDetails);
     }
 
-    private async Task InvokeStream<T>(T detials)
-        where T : IMonitor
+    private string? GetChannel(IMonitor monitor)
     {
+        var channel = GetParameter("redis-channel-name", monitor.Group);
+        if (string.IsNullOrWhiteSpace(channel))
+        {
+            channel = AppSettings.Hooks.Redis.PubSubChannel;
+        }
+
         if (string.IsNullOrWhiteSpace(AppSettings.Hooks.Redis.PubSubChannel))
         {
             LogError("Redis.Stream.Hook: pub sub channel is null or empty");
-            return;
+            return null;
         }
+
+        return channel;
+    }
+
+    private async Task InvokeStream<T>(T detials)
+        where T : IMonitor
+    {
+        var channelName = GetChannel(detials);
+        if (string.IsNullOrWhiteSpace(channelName)) { return; }
 
         try
         {
@@ -76,7 +90,7 @@ To use different channel name, you can set one of the 'AdditionalField' of monit
             var bytes = _formatter.EncodeStructuredModeMessage(body, out _);
             var json = Encoding.UTF8.GetString(bytes.Span);
             var db = RedisFactory.Connection.GetDatabase(AppSettings.Hooks.Redis.Database);
-            var channel = new RedisChannel(AppSettings.Hooks.Redis.PubSubChannel, RedisChannel.PatternMode.Auto);
+            var channel = new RedisChannel(channelName, RedisChannel.PatternMode.Auto);
             await db.PublishAsync(channel, json);
         }
         catch (Exception ex)
