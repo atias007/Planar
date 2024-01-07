@@ -81,7 +81,7 @@ To use different channel name, you can set one of the 'AdditionalField' of monit
                 Subject = Name,
                 Data = detials,
                 DataContentType = MediaTypeNames.Application.Json,
-                Source = new Uri("http://www.planar.com"),
+                Source = new Uri("https://www.planar.me"),
                 Type = typeof(T).Name
             };
 #pragma warning restore S1075 // URIs should not be hardcoded
