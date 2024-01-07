@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
+using Planar.Service.API;
 using Planar.Service.Data;
 using System;
 using System.Collections.Generic;
@@ -60,7 +61,7 @@ namespace Planar.Service.Reports
                 var rowTemplate = GetResource("summary_row");
                 rowTemplate = ReplacePlaceHolder(rowTemplate, "JobId", item.JobId.ToString());
                 rowTemplate = ReplacePlaceHolder(rowTemplate, "JobKey", $"{item.JobGroup}.{item.JobName}", encode: true);
-                rowTemplate = ReplacePlaceHolder(rowTemplate, "JobType", item.JobType);
+                rowTemplate = ReplacePlaceHolder(rowTemplate, "Author", item.Author);
                 rowTemplate = ReplacePlaceHolder(rowTemplate, "Total", GetCounterText(item.Total));
                 rowTemplate = ReplacePlaceHolder(rowTemplate, "Success", GetCounterText(item.Success));
                 rowTemplate = ReplacePlaceHolder(rowTemplate, "Fail", GetCounterText(item.Fail));
@@ -105,7 +106,7 @@ namespace Planar.Service.Reports
         private async Task<IEnumerable<HistorySummary>> GetSummaryData(DateScope dateScope)
         {
             using var scope = ServiceScope.CreateScope();
-            var historyData = scope.ServiceProvider.GetRequiredService<HistoryData>();
+            var historyDomain = scope.ServiceProvider.GetRequiredService<HistoryDomain>();
             var request = new GetSummaryRequest
             {
                 FromDate = dateScope.From,
@@ -113,7 +114,8 @@ namespace Planar.Service.Reports
                 PageNumber = 1,
                 PageSize = 1000
             };
-            var response = await historyData.GetHistorySummary(request);
+
+            var response = await historyDomain.GetHistorySummary(request);
             return response.Data ?? new List<HistorySummary>();
         }
 

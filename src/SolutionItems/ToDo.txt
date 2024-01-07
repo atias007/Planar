@@ -14,7 +14,7 @@ PLAN FOR V 1.6.3
 	https://chartscss.org/charts/bar/
 
 - Security & Audit report
-- Trace report
+
 - Telegram Hook
 - SendGrid Hook
 	
@@ -262,5 +262,9 @@ V1.6.3
 - summary report 
 - paused jobs reports
 - alerts report
+- trace report
 - remove resume-all, pause-all
 - job list -s {search}
+- redis stream hook
+- redis pub/sub hook
+- hook description

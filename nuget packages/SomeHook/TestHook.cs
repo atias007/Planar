@@ -6,6 +6,8 @@ namespace SomeHook
     {
         public override string Name => nameof(TestHook);
 
+        public override string Description => "Some Description....";
+
         public override Task Handle(IMonitorDetails monitorDetails)
         {
             Console.WriteLine("Handle");
