@@ -514,7 +514,7 @@ namespace Planar.CLI.Actions
             var eventsTask = RestProxy.Invoke<List<MonitorEventModel>>(eventsRequest, cancellationToken);
 
             var hooksRequest = new RestRequest("monitor/hooks", Method.Get);
-            var hooksTask = RestProxy.Invoke<List<string>>(hooksRequest, cancellationToken);
+            var hooksTask = RestProxy.Invoke<List<HookInfo>>(hooksRequest, cancellationToken);
 
             var jobsRequest = new RestRequest("job", Method.Get)
                 .AddQueryParameter("jobCategory", (int)AllJobsMembers.AllUserJobs)
@@ -534,7 +534,7 @@ namespace Planar.CLI.Actions
             }
 
             var hooks = await hooksTask;
-            data.Hooks = hooks.Data ?? new List<string>();
+            data.Hooks = hooks.Data == null ? new List<string>() : hooks.Data.Select(d => d.Name).ToList();
             if (!hooks.IsSuccessful)
             {
                 data.FailResponse = hooks;

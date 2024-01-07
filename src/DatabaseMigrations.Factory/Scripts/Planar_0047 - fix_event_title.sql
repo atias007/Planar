@@ -1,0 +1,1 @@
+ALTER TABLE [dbo].[MonitorAlerts] ALTER COLUMN [EventTitle] varchar(100)

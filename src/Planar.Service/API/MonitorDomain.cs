@@ -13,7 +13,6 @@ using Planar.Service.Validation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -24,6 +23,8 @@ namespace Planar.Service.API
             (int) MonitorEvents.ClusterHealthCheckFail,
             (int) MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx,
             (int) MonitorEvents.ExecutionEndWithEffectedRowsLessThanx,
+            (int) MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanxInyHours,
+            (int) MonitorEvents.ExecutionEndWithEffectedRowsLessThanxInyHours,
             (int) MonitorEvents.ExecutionFail,
             (int) MonitorEvents.ExecutionFailxTimesInRow,
             (int) MonitorEvents.ExecutionFailxTimesInyHours,

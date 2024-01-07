@@ -18,7 +18,7 @@ public partial class MonitorAlert
 
     public int EventId { get; set; }
 
-    [StringLength(50)]
+    [StringLength(100)]
     [Unicode(false)]
     public string EventTitle { get; set; } = null!;
 

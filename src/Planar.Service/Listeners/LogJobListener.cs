@@ -294,6 +294,8 @@ namespace Planar.Service.Listeners
             SafeScan(MonitorEvents.ExecutionEnd, context, exception);
             SafeScan(MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx, context, exception);
             SafeScan(MonitorEvents.ExecutionEndWithEffectedRowsLessThanx, context, exception);
+            SafeScan(MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanxInyHours, context, exception);
+            SafeScan(MonitorEvents.ExecutionEndWithEffectedRowsLessThanxInyHours, context, exception);
 
             var success = exception == null;
             if (success)
