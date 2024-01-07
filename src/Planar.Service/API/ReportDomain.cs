@@ -5,6 +5,7 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Monitor;
 using Planar.Service.Reports;
+using Planar.Service.SystemJobs;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -31,6 +32,7 @@ namespace Planar.Service.API
 
         public async Task Update(string name, UpdateReportRequest request)
         {
+            // validate report name
             var reportName = ValidateReportName(name);
 
             // validate group & emails
@@ -39,6 +41,7 @@ namespace Planar.Service.API
                 await ValidateGroupAndEmails(request.Group);
             }
 
+            // get trigger
             var requestPeriod = Enum.Parse<ReportPeriods>(request.Period, true);
             var triggerKey = new TriggerKey(requestPeriod.ToString(), reportName.ToString());
             var scheduler = Resolve<IScheduler>();
@@ -52,6 +55,10 @@ namespace Planar.Service.API
 
             // get current enable value if its null
             request.Enable ??= trigger.JobDataMap.GetBoolean(ReportConsts.EnableTriggerDataKey);
+            if (!request.Enable.GetValueOrDefault() && request.HourOfDay.HasValue)
+            {
+                throw new RestValidationException("hourOfDay", $"report hour is not valid for disabled report");
+            }
 
             // validate mandatory group
             var existsGroup = trigger.JobDataMap.GetString(ReportConsts.GroupTriggerDataKey);
@@ -85,6 +92,16 @@ namespace Planar.Service.API
             };
             await triggerDomain.PutData(putDataRequest, JobDomain.PutMode.Update, skipSystemCheck: true);
 
+            if (request.HourOfDay.HasValue && request.HourOfDay.Value != trigger.StartTimeUtc.Hour)
+            {
+                var cronExpression = BaseReportJob.GetCronExpression(requestPeriod, request.HourOfDay.Value);
+                var newTrigger = trigger.GetTriggerBuilder()
+                    .WithCronSchedule(cronExpression)
+                    .Build();
+
+                await scheduler.RescheduleJob(trigger.Key, newTrigger);
+            }
+
             if (request.Enable.Value)
             {
                 await ResumeEnabledTrigger(scheduler, trigger);
@@ -108,18 +125,30 @@ namespace Planar.Service.API
                 throw new InvalidOperationException($"could not found triggers for report with key {jobKey}. report name '{name}'");
             }
 
-            var result = triggers.Select(t => new ReportsStatus
-            {
-                Period = t.JobDataMap.GetString(ReportConsts.PeriodDataKey)?.ToLower() ?? string.Empty,
-                Enabled = t.JobDataMap.GetBoolean(ReportConsts.EnableTriggerDataKey),
-                Group = t.JobDataMap.GetString(ReportConsts.GroupTriggerDataKey),
-                NextRunning =
-                     t.JobDataMap.GetBoolean(ReportConsts.EnableTriggerDataKey) ?
-                    t.GetNextFireTimeUtc()?.LocalDateTime :
-                    null
-            });
+            var result = triggers
+                .Select(t => new ReportsStatus
+                {
+                    Period = t.JobDataMap.GetString(ReportConsts.PeriodDataKey)?.ToLower() ?? string.Empty,
+                    Enabled = t.JobDataMap.GetBoolean(ReportConsts.EnableTriggerDataKey),
+                    Group = t.JobDataMap.GetString(ReportConsts.GroupTriggerDataKey),
+                    NextRunning =
+                         t.JobDataMap.GetBoolean(ReportConsts.EnableTriggerDataKey) ?
+                        t.GetNextFireTimeUtc()?.LocalDateTime :
+                        null,
+                });
 
-            return result;
+            var final = result
+                .Select(t => new
+                {
+                    Entity = t,
+                    Order = Enum.TryParse<ReportPeriods>(t.Period, ignoreCase: true, out var period) ?
+                        (int)period :
+                        -1
+                })
+                .OrderBy(t => t.Order)
+                .Select(t => t.Entity);
+
+            return final;
         }
 
         public async Task Run(string name, RunReportRequest request)
@@ -189,7 +218,8 @@ namespace Planar.Service.API
         public static IEnumerable<string> GetReports()
         {
             var items = Enum.GetNames<ReportNames>()
-                .Select(n => n.ToLower());
+                .Select(n => n.ToLower())
+                .OrderBy(n => n);
 
             return items;
         }

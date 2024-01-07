@@ -10,6 +10,8 @@ namespace Planar.Hook
     {
         public abstract string Name { get; }
 
+        public abstract string Description { get; }
+
         public abstract Task Handle(IMonitorDetails monitorDetails);
 
         public abstract Task HandleSystem(IMonitorSystemDetails monitorDetails);

@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
@@ -33,16 +34,16 @@ namespace Planar.Service.Data
 
         public async Task<PagingResponse<LogDetails>> GetTrace(GetTraceRequest request)
         {
-            var query = _context.Traces.AsQueryable();
+            var query = _context.Traces.AsNoTracking().AsQueryable();
 
             if (request.FromDate.HasValue)
             {
-                query = query.Where(l => l.TimeStamp.LocalDateTime >= request.FromDate);
+                query = query.Where(l => l.TimeStamp >= request.FromDate);
             }
 
             if (request.ToDate.HasValue)
             {
-                query = query.Where(l => l.TimeStamp.LocalDateTime < request.ToDate);
+                query = query.Where(l => l.TimeStamp < request.ToDate);
             }
 
             if (!string.IsNullOrEmpty(request.Level))
@@ -66,6 +67,39 @@ namespace Planar.Service.Data
                 Level = l.Level,
                 TimeStamp = l.TimeStamp.ToLocalTime().DateTime
             });
+
+            var result = await final.ToPagingListAsync(request);
+            return result;
+        }
+
+        public async Task<PagingResponse<LogDetails>> GetTraceForReport(GetTraceRequest request)
+        {
+            var levels = new string[] { nameof(LogLevel.Critical), nameof(LogLevel.Warning), nameof(LogLevel.Error), "Fatal" };
+            var query = _context.Traces
+                .AsNoTracking()
+                .AsQueryable()
+                .Where(l => levels.Contains(l.Level));
+
+            if (request.FromDate.HasValue)
+            {
+                query = query.Where(l => l.TimeStamp >= request.FromDate);
+            }
+
+            if (request.ToDate.HasValue)
+            {
+                query = query.Where(l => l.TimeStamp < request.ToDate);
+            }
+
+            var final = query
+                .OrderBy(l => l.TimeStamp)
+                .ThenBy(l => l.Id)
+                .Select(l => new LogDetails
+                {
+                    Id = l.Id,
+                    Message = l.Message,
+                    Level = l.Level,
+                    TimeStamp = l.TimeStamp.ToLocalTime().DateTime
+                });
 
             var result = await final.ToPagingListAsync(request);
             return result;

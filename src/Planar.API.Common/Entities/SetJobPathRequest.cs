@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Planar.API.Common.Entities
+﻿namespace Planar.API.Common.Entities
 {
     public class SetJobPathRequest
     {

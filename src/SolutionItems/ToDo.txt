@@ -12,15 +12,18 @@ PLAN FOR V 1.6.3
 	https://codepen.io/jerrylow/pen/OJyREdw
 	https://codepen.io/MarkBoots/pen/YzvPRKr
 	https://chartscss.org/charts/bar/
-- split summary report to summary & paused reports
-- Alerts report
+
 - Security & Audit report
-- Trace report
+
 - Telegram Hook
 - SendGrid Hook
 	
 
 - BACKLOG ----------------------------------------------------------------------------
+
+- add Execution End With Effected Rows Greater Than {x} in {y} hours
+- add Execution End With Effected Rows Less Than {x} in {y} hours
+
 - add WorkflowJob
 - add SSIS job
 - add SSRS job
@@ -35,9 +38,7 @@ PLAN FOR V 1.6.3
 - cli trigger describe
 - cli: job apply (do add or update)
 - search in history by free text from log
-- add cli plot statistics
 
-- use https://github.com/kellyelton/Eltons.ReflectionKit to validate signature in validate base job / hook
 - add cli command to filter history / trace with odata filter
 - security monitoring
 - nuget package for client library
@@ -258,3 +259,14 @@ V1.6.2
 V1.6.3
 ------
 - hook debugger show always default profile in menu
+- set author api & cli
+- set report hour api & cli
+- summary report 
+- paused jobs reports
+- alerts report
+- trace report
+- remove resume-all, pause-all
+- job list -s {search}
+- redis stream hook
+- redis pub/sub hook
+- hook description

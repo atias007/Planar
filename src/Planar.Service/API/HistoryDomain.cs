@@ -1,7 +1,10 @@
 ﻿using Planar.API.Common.Entities;
+using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
+using Quartz;
+using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,8 +44,22 @@ namespace Planar.Service.API
         public async Task<PagingResponse<HistorySummary>> GetHistorySummary(GetSummaryRequest request)
         {
             request.SetPagingDefaults();
-            var data = await DataLayer.GetHistorySummary(request);
-            var result = new PagingResponse<HistorySummary>(data);
+            var result = await DataLayer.GetHistorySummary(request);
+
+            // fill author
+            if (result.Data == null || !result.Data.Any()) { return result; }
+
+            var jobs = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
+            foreach (var item in result.Data)
+            {
+                if (!string.IsNullOrWhiteSpace(item.Author)) { continue; }
+                var key = jobs.FirstOrDefault(j => j.Name == item.JobName && j.Group == item.JobGroup);
+                if (key == null) { continue; }
+                var job = await Scheduler.GetJobDetail(key);
+                if (job == null) { continue; }
+                item.Author = JobHelper.GetJobAuthor(job) ?? string.Empty;
+            }
+
             return result;
         }
 

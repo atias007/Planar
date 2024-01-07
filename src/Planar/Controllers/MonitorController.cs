@@ -163,8 +163,8 @@ namespace Planar.Controllers
         [HttpGet("hooks")]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_monitor_hooks", Description = "Get all monitor hooks", Summary = "Get Monitor Hooks")]
-        [OkJsonResponse(typeof(string))]
-        public ActionResult<List<string>> GetHooks()
+        [OkJsonResponse(typeof(IEnumerable<HookInfo>))]
+        public ActionResult<IEnumerable<HookInfo>> GetHooks()
         {
             var result = BusinesLayer.GetHooks();
             return Ok(result);

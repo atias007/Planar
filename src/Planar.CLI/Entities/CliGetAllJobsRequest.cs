@@ -21,5 +21,8 @@ namespace Planar.CLI.Entities
 
         [ActionProperty("t", "type")]
         public string? JobType { get; set; }
+
+        [ActionProperty("f", "filter")]
+        public string? Filter { get; set; }
     }
 }

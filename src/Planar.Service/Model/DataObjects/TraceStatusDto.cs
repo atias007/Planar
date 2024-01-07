@@ -7,5 +7,6 @@
         public int Warning { get; set; }
         public int Information { get; set; }
         public int Debug { get; set; }
+        public int Trace { get; set; }
     }
 }

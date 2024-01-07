@@ -55,5 +55,12 @@
         public const string HooksTwilioSmsAuthToken = "PLANAR_HOOKS_TWILIO_SMS_AUTH_TOKEN";
         public const string HooksTwilioSmsFromNumber = "PLANAR_HOOKS_TWILIO_SMS_FROM_NUMBER";
         public const string HooksTwilioSmsDefaultPhonePrefix = "PLANAR_HOOKS_TWILIO_SMS_DEFAULT_PHONE_PREFIX";
+        public const string HooksRedisEndpoints = "PLANAR_HOOKS_REDIS_ENDPOINTS";
+        public const string HooksRedisPassword = "PLANAR_HOOKS_REDIS_PASSWORD";
+        public const string HooksRedisUser = "PLANAR_HOOKS_REDIS_USER";
+        public const string HooksRedisDatabase = "PLANAR_HOOKS_REDIS_DATABASE";
+        public const string HooksRedisStreamName = "PLANAR_HOOKS_REDIS_STREAM_NAME";
+        public const string HooksRedisPubSubChannel = "PLANAR_HOOKS_REDIS_PUBSUB_CHANNEL";
+        public const string HooksRedisSsl = "PLANAR_HOOKS_REDIS_SSL";
     }
 }

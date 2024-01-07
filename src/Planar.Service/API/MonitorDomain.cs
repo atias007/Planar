@@ -13,6 +13,7 @@ using Planar.Service.Validation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -51,7 +52,10 @@ namespace Planar.Service.API
             var validator = new MonitorActionValidator();
             validator.ValidateMonitorArguments(request);
 
+            var mapperData = Resolve<AutoMapperData>();
             var monitor = Mapper.Map<MonitorAction>(request);
+            monitor.GroupId = await mapperData.GetGroupId(request.GroupName);
+
             if (string.IsNullOrWhiteSpace(monitor.JobGroup)) { monitor.JobGroup = null; }
             if (string.IsNullOrWhiteSpace(monitor.JobName)) { monitor.JobName = null; }
             monitor.Active = true;
@@ -163,17 +167,22 @@ namespace Planar.Service.API
             return result;
         }
 
-        public List<string> GetHooks()
+        public IEnumerable<HookInfo> GetHooks()
         {
-            return ServiceUtil.MonitorHooks.Keys.OrderBy(k => k).ToList();
+            var result = Mapper.Map<List<HookInfo>>(ServiceUtil.MonitorHooks.Values)
+                .OrderBy(h => h.Name);
+
+            return result;
         }
 
         public async Task PartialUpdateMonitor(UpdateEntityRequestById request)
         {
-            var monitor = await DataLayer.GetMonitorAction(request.Id);
-            ValidateExistingEntity(monitor, "monitor");
+            var dbMonitor = await DataLayer.GetMonitorAction(request.Id);
+            var monitor = ValidateExistingEntity(dbMonitor, "monitor");
             ForbbidenPartialUpdateProperties(request, "EventId", "GroupId");
+            var mapperData = Resolve<AutoMapperData>();
             var updateMonitor = Mapper.Map<UpdateMonitorRequest>(monitor);
+            updateMonitor.GroupName = await mapperData.GetGroupName(monitor.GroupId) ?? string.Empty;
             var validator = Resolve<IValidator<UpdateMonitorRequest>>();
             await SetEntityProperties(updateMonitor, request, validator);
             await Update(updateMonitor);
@@ -256,8 +265,9 @@ namespace Planar.Service.API
 
             var validator = new MonitorActionValidator();
             validator.ValidateMonitorArguments(request);
-
+            var mapperData = Resolve<AutoMapperData>();
             var monitor = Mapper.Map<MonitorAction>(request);
+            monitor.GroupId = await mapperData.GetGroupId(request.GroupName);
             if (string.IsNullOrWhiteSpace(monitor.JobGroup)) { monitor.JobGroup = null; }
             if (string.IsNullOrWhiteSpace(monitor.JobName)) { monitor.JobName = null; }
             if (await DataLayer.IsMonitorExists(monitor, request.Id))

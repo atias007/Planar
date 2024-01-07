@@ -20,11 +20,19 @@ namespace HelloWorldWithData
             Logger.LogInformation("Start execute job: {Name}", context.JobDetails.Key.Name);
             Logger.LogInformation("DurationSeconds data: {DurationSeconds}", DurationSeconds);
 
+            var isSpeed = context.JobDetails.JobDataMap.ContainsKey("Speed Running");
+            if (isSpeed)
+            {
+                Logger.LogInformation("==>> Speed Running");
+            }
+
+            var delay = isSpeed ? 500 : 1000;
+
             EffectedRows = 0;
             for (int i = 0; i < DurationSeconds; i++)
             {
                 Logger.LogInformation("Hello world with data: step {Iteration}", i);
-                await Task.Delay(1000);
+                await Task.Delay(delay);
                 UpdateProgress(i + 1, DurationSeconds);
                 EffectedRows++;
             }

@@ -8,6 +8,7 @@ using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -204,16 +205,6 @@ namespace Planar.Controllers
             return Accepted();
         }
 
-        [HttpPost("pause-all")]
-        [AdministratorAuthorize]
-        [SwaggerOperation(OperationId = "post_job_pause_all", Description = "Pause all jobs", Summary = "Pause All Jobs")]
-        [AcceptedContentResponse]
-        public async Task<IActionResult> PauseAll()
-        {
-            await BusinesLayer.PauseAll();
-            return Accepted();
-        }
-
         [HttpPost("resume")]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_job_resume", Description = "Resume job", Summary = "Resume Job")]
@@ -224,16 +215,6 @@ namespace Planar.Controllers
         public async Task<IActionResult> Resume([FromBody] JobOrTriggerKey request)
         {
             await BusinesLayer.Resume(request);
-            return Accepted();
-        }
-
-        [HttpPost("resume-all")]
-        [AdministratorAuthorize]
-        [SwaggerOperation(OperationId = "post_job_resumeall", Description = "Resume all jobs", Summary = "Resume All Jobs")]
-        [AcceptedContentResponse]
-        public async Task<IActionResult> ResumeAll()
-        {
-            await BusinesLayer.ResumeAll();
             return Accepted();
         }
 
@@ -270,6 +251,31 @@ namespace Planar.Controllers
         {
             var result = await BusinesLayer.GetRunning(instanceId);
             return Ok(result);
+        }
+
+        [ApiExplorerSettings(IgnoreApi = true)]
+        [HttpGet("running-instance/{instanceId}/long-polling")]
+        [ViewerAuthorize]
+        public async Task<ActionResult<RunningJobDetails>> GetRunningInstanceLongPolling(
+            [FromRoute][Required] string instanceId,
+            [FromQuery][Required] string hash,
+            CancellationToken cancellationToken)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromMinutes(5));
+            while (!cts.IsCancellationRequested)
+            {
+                var data = await BusinesLayer.GetRunning(instanceId);
+                var currentHash = $"{data.Progress}.{data.EffectedRows}.{data.ExceptionsCount}";
+                if (currentHash != hash)
+                {
+                    return Ok(data);
+                }
+
+                await Task.Delay(500, cancellationToken);
+            }
+
+            return NotFound();
         }
 
         [HttpGet("running")]
@@ -375,6 +381,20 @@ namespace Planar.Controllers
         {
             var result = await BusinesLayer.GetAudits(request);
             return Ok(result);
+        }
+
+        //// ------------- new code -------------
+
+        [HttpPatch("author")]
+        [EditorAuthorize]
+        [SwaggerOperation(OperationId = "patch_job_author", Description = "Set the author of job", Summary = "Set The Author Of Job")]
+        [JsonConsumes]
+        [BadRequestResponse]
+        [NoContentResponse]
+        public async Task<IActionResult> SetAuthor([FromBody] SetJobAuthorRequest request)
+        {
+            await BusinesLayer.SetAuthor(request);
+            return NoContent();
         }
     }
 }

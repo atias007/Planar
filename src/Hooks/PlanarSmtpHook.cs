@@ -9,6 +9,15 @@ public class PlanarSmtpHook : BaseSystemHook
 {
     public override string Name => "Planar.Smtp";
 
+    public override string Description =>
+"""
+This hook send email message via SMTP server.
+You can find the configuration of SMTP server is in appsettings.yml (Data folder of Planar).
+Email will be sent to all users of the monitor group.
+The email address of the user is defined in the user profile at 'EmailAddress' fields.
+Hook will send the message to all valid email addresses of the user.
+""";
+
     public override async Task Handle(IMonitorDetails monitorDetails)
     {
         var message = new MimeMessage();

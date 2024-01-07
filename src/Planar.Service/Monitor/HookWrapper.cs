@@ -22,6 +22,7 @@ namespace Planar.Service.Monitor
             {
                 HookType = HookTypeMembers.Internal,
                 Name = instance.Name,
+                Description = instance.Description,
                 Instance = instance,
                 ExecuteMethod = SafeGetMethod(instance.Name, ExecuteMethodName, instance),
                 Logger = logger
@@ -31,11 +32,13 @@ namespace Planar.Service.Monitor
             return wrapper;
         }
 
-        public static HookWrapper CreateExternal(string filename, ILogger logger)
+        public static HookWrapper CreateExternal(string filename, HookValidator validator, ILogger logger)
         {
             return new HookWrapper
             {
                 HookType = HookTypeMembers.External,
+                Name = validator.Name,
+                Description = validator.Description,
                 Filename = filename,
                 Logger = logger
             };
@@ -55,7 +58,9 @@ namespace Planar.Service.Monitor
 
         public string? Filename { get; private set; }
 
-        public string? Name { get; private set; }
+        public string Name { get; private set; }
+
+        public string Description { get; private set; }
 
         public ILogger Logger { get; private set; } = null!;
 

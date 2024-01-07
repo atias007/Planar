@@ -63,7 +63,7 @@ namespace Planar.Service.General
             var validator = new HookValidator(filename, logger);
             if (!validator.IsValid) { return false; }
 
-            var wrapper = HookWrapper.CreateExternal(filename, logger);
+            var wrapper = HookWrapper.CreateExternal(filename, validator, logger);
             var result = MonitorHooks.TryAdd(validator.Name, wrapper);
 
             if (result)
@@ -85,6 +85,8 @@ namespace Planar.Service.General
             LoadSystemHook<TLogger, PlanarLogHook>(logger);
             LoadSystemHook<TLogger, PlanarTeamsHook>(logger);
             LoadSystemHook<TLogger, PlanarTwilioSmsHook>(logger);
+            LoadSystemHook<TLogger, PlanarRedisStreamHook>(logger);
+            LoadSystemHook<TLogger, PlanarRedisPubSubHook>(logger);
         }
 
         private static void LoadSystemHook<TLogger, THook>(ILogger<TLogger> logger)

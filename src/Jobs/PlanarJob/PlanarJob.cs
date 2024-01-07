@@ -23,6 +23,7 @@ namespace Planar
         private readonly object ConsoleLocker = new();
         private readonly bool _isDevelopment;
         private bool _isHealthCheck;
+
         private PlanarJobExecutionException? _executionException;
 
         protected PlanarJob(
@@ -31,7 +32,6 @@ namespace Planar
             IMonitorUtil monitorUtil) : base(logger, dataLayer)
         {
             _monitorUtil = monitorUtil;
-
             MqttBrokerService.InterceptingPublishAsync += InterceptingPublishAsync;
             _isDevelopment = string.Equals(AppSettings.General.Environment, "development", StringComparison.OrdinalIgnoreCase);
         }
@@ -44,7 +44,6 @@ namespace Planar
                 ValidateProcessJob();
                 ValidateExeFile();
                 context.CancellationToken.Register(OnCancel);
-
                 var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
                 var startInfo = GetProcessStartInfo();
                 var success = StartProcess(startInfo, timeout);

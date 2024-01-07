@@ -81,25 +81,6 @@ namespace Planar.Service.API
             return result;
         }
 
-        public static void ValidateTriggerMetadata(ITriggersContainer container, IScheduler scheduler)
-        {
-            var pool = new TriggerPool(container);
-            TrimTriggerProperties(container);
-            ValidateMandatoryTriggerProperties(container);
-            ValidateTriggerNameProperties(pool);
-            ValidateMaxCharsTiggerProperties(pool);
-            ValidatePreserveWordsTriggerProperties(pool);
-            ValidateTriggerPriority(pool);
-            ValidateTriggerTimeout(pool);
-            ValidateTriggerInterval(container);
-            ValidateTriggerRepeatCount(container);
-            ValidateTriggerRetry(pool);
-            ValidateTriggerStartEnd(container);
-            ValidateCronExpression(container);
-            ValidateTriggerMisfireBehaviour(container);
-            ValidateTriggerCalendar(pool, scheduler);
-        }
-
         public async Task<PlanarIdResponse> AddByPath(SetJobPathRequest request)
         {
             await ValidateAddPath(request);
@@ -150,7 +131,10 @@ namespace Planar.Service.API
 
         private static void BuidSimpleSchedule(SimpleScheduleBuilder builder, JobSimpleTriggerMetadata trigger)
         {
+            // Interval
             builder = builder.WithInterval(trigger.Interval);
+
+            // Repeat
             if (trigger.RepeatCount.HasValue)
             {
                 builder = builder.WithRepeatCount(trigger.RepeatCount.Value);
@@ -160,6 +144,7 @@ namespace Planar.Service.API
                 builder = builder.RepeatForever();
             }
 
+            // MisfireBehaviour
             if (!string.IsNullOrEmpty(trigger.MisfireBehaviour))
             {
                 var value = trigger.MisfireBehaviour.ToLower();
@@ -230,38 +215,6 @@ namespace Planar.Service.API
             if (quartzTriggers1 != null) { allTriggers.AddRange(quartzTriggers1); }
             if (quartzTriggers2 != null) { allTriggers.AddRange(quartzTriggers2); }
             return allTriggers;
-        }
-
-        private static void ValidateDataMap(Dictionary<string, string?>? data, string title)
-        {
-            if (data == null) { return; }
-
-            if (data.Count > Consts.MaximumJobDataItems)
-            {
-                throw new RestValidationException("key", $"{title} data has more then {Consts.MaximumJobDataItems} items ({data.Count})");
-            }
-
-            if (data.Any(item => string.IsNullOrWhiteSpace(item.Key)))
-            {
-                throw new RestValidationException("key", "job data key must have value");
-            }
-
-            foreach (var item in data)
-            {
-                ValidateRange(item.Key, 1, 100, "key", "job data");
-                ValidateMaxLength(item.Value, 1000, "value", "job data");
-            }
-
-            var invalidKeys = data
-                    .Where(item => !Consts.IsDataKeyValid(item.Key))
-                    .Select(item => item.Key)
-                    .ToList();
-
-            if (invalidKeys.Count > 0)
-            {
-                var keys = string.Join(',', invalidKeys);
-                throw new RestValidationException("key", $"{title} data key(s) '{keys}' is invalid");
-            }
         }
 
         private static string CreateJobId(IJobDetail job)
@@ -398,6 +351,19 @@ namespace Planar.Service.API
             return yml;
         }
 
+        private static string? GetTriggerIdFromErrorMessage(string message)
+        {
+            var parts = message.Split('\'');
+            if (parts.Length != 3) { return null; }
+            var triggerId = parts[1];
+            if (triggerId.Contains('.'))
+            {
+                triggerId = triggerId.Split('.')[1];
+            }
+
+            return triggerId;
+        }
+
         private static bool IsRegexMatch(Regex regex, string? value)
         {
             if (value == null) { return true; }
@@ -426,6 +392,38 @@ namespace Planar.Service.API
             {
                 if (string.IsNullOrEmpty(t.CronExpression)) { throw new RestValidationException("priority", "cron expression is mandatory in cron trigger"); }
             });
+        }
+
+        private static void ValidateDataMap(Dictionary<string, string?>? data, string title)
+        {
+            if (data == null) { return; }
+
+            if (data.Count > Consts.MaximumJobDataItems)
+            {
+                throw new RestValidationException("key", $"{title} data has more then {Consts.MaximumJobDataItems} items ({data.Count})");
+            }
+
+            if (data.Any(item => string.IsNullOrWhiteSpace(item.Key)))
+            {
+                throw new RestValidationException("key", "job data key must have value");
+            }
+
+            foreach (var item in data)
+            {
+                ValidateRange(item.Key, 1, 100, "key", "job data");
+                ValidateMaxLength(item.Value, 1000, "value", "job data");
+            }
+
+            var invalidKeys = data
+                    .Where(item => !Consts.IsDataKeyValid(item.Key))
+                    .Select(item => item.Key)
+                    .ToList();
+
+            if (invalidKeys.Count > 0)
+            {
+                var keys = string.Join(',', invalidKeys);
+                throw new RestValidationException("key", $"{title} data key(s) '{keys}' is invalid");
+            }
         }
 
         private static JobKey ValidateJobMetadata(SetJobRequest metadata, IScheduler scheduler)
@@ -636,8 +634,27 @@ namespace Planar.Service.API
         {
             container.SimpleTriggers?.ForEach(t =>
             {
-                if (t.RepeatCount > 0 && t.Interval.TotalSeconds < 60) { throw new RestValidationException("interval", $"interval has invalid value. interval must be greater or equals to 1 minute"); }
+                if (t.RepeatCount >= 0 && t.Interval.TotalSeconds < 60) { throw new RestValidationException("interval", $"interval has invalid value. interval must be greater or equals to 1 minute"); }
             });
+        }
+
+        private static void ValidateTriggerMetadata(ITriggersContainer container, IScheduler scheduler)
+        {
+            var pool = new TriggerPool(container);
+            TrimTriggerProperties(container);
+            ValidateMandatoryTriggerProperties(container);
+            ValidateTriggerNameProperties(pool);
+            ValidateMaxCharsTiggerProperties(pool);
+            ValidatePreserveWordsTriggerProperties(pool);
+            ValidateTriggerPriority(pool);
+            ValidateTriggerTimeout(pool);
+            ValidateTriggerInterval(container);
+            ValidateTriggerRepeatCount(container);
+            ValidateTriggerRetry(pool);
+            ValidateTriggerStartEnd(container);
+            ValidateCronExpression(container);
+            ValidateTriggerMisfireBehaviour(container);
+            ValidateTriggerCalendar(pool, scheduler);
         }
 
         private static void ValidateTriggerMisfireBehaviour(ITriggersContainer container)
@@ -670,6 +687,24 @@ namespace Planar.Service.API
             }
         }
 
+        private static void ValidateTriggerNeverFire(Exception ex)
+        {
+            if (ex is not SchedulerException) { return; }
+            var message = ex.Message;
+            if (message.Contains("the given trigger") && message.Contains("will never fire"))
+            {
+                var triggerId = GetTriggerIdFromErrorMessage(message);
+                if (string.IsNullOrEmpty(triggerId))
+                {
+                    throw new RestValidationException("trigger", "trigger will never fire. check trigger start/end times, cron expression, calendar and working hours configuration");
+                }
+                else
+                {
+                    throw new RestValidationException("trigger", $"trigger with id '{triggerId}' will never fire. check trigger start/end times, cron expression, calendar and working hours configuration");
+                }
+            }
+        }
+
         private static void ValidateTriggerPriority(TriggerPool pool)
         {
             foreach (var t in pool.Triggers)
@@ -698,14 +733,27 @@ namespace Planar.Service.API
         {
             container.SimpleTriggers?.ForEach(t =>
             {
+                if (t.Start.HasValue && t.Start.Value.Date < DateTime.Now)
+                {
+                    t.Start = DateTime.Now.Date.Add(t.Start.Value.TimeOfDay);
+                    if (t.Start < DateTime.Now)
+                    {
+                        var interval = (int)Math.Floor(t.Interval.TotalSeconds);
+                        var delta = Math.Floor(DateTimeOffset.UtcNow.Subtract(t.Start.Value.ToUniversalTime()).TotalSeconds);
+                        var steps = (int)Math.Ceiling(delta / interval);
+                        var increase = steps * interval;
+                        t.Start = t.Start.Value.AddSeconds(increase);
+                    }
+                }
+
                 if (t.Start.HasValue && t.End.HasValue && t.Start.Value >= t.End.Value)
                 {
-                    throw new RestValidationException("end", $"end time has invalid value. end time cannot be before start time");
+                    throw new RestValidationException("end", $"end time has invalid value. end time cannot be before/equals start time");
                 }
 
                 if (t.End.HasValue && t.End.Value <= DateTime.Now)
                 {
-                    throw new RestValidationException("end", $"end time has invalid value. end time cannot be before current server time");
+                    throw new RestValidationException("end", $"end time has invalid value. end time cannot be before/equals current server time");
                 }
             });
         }
@@ -764,37 +812,6 @@ namespace Planar.Service.API
 
             // Return Id
             return new PlanarIdResponse { Id = id };
-        }
-
-        private static void ValidateTriggerNeverFire(Exception ex)
-        {
-            if (ex is not SchedulerException) { return; }
-            var message = ex.Message;
-            if (message.Contains("the given trigger") && message.Contains("will never fire"))
-            {
-                var triggerId = GetTriggerIdFromErrorMessage(message);
-                if (string.IsNullOrEmpty(triggerId))
-                {
-                    throw new RestValidationException("trigger", "trigger will never fire. check trigger start/end times, cron expression, calendar and working hours configuration");
-                }
-                else
-                {
-                    throw new RestValidationException("trigger", $"trigger with id '{triggerId}' will never fire. check trigger start/end times, cron expression, calendar and working hours configuration");
-                }
-            }
-        }
-
-        private static string? GetTriggerIdFromErrorMessage(string message)
-        {
-            var parts = message.Split('\'');
-            if (parts.Length != 3) { return null; }
-            var triggerId = parts[1];
-            if (triggerId.Contains('.'))
-            {
-                triggerId = triggerId.Split('.')[1];
-            }
-
-            return triggerId;
         }
 
         private async Task<string> GetJobFileContent(SetJobPathRequest request)

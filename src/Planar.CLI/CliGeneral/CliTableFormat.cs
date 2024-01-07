@@ -107,9 +107,9 @@ namespace Planar.CLI
             var noName = string.IsNullOrWhiteSpace(name);
 
             if (noName && noGroup) { return string.Empty; }
-            if (noName) { return group!.EscapeMarkup(); }
-            if (noGroup) { return $"DEFAULT.{name}".EscapeMarkup(); }
-            return $"{group}.{name}".EscapeMarkup();
+            if (noName) { return $"[gray23]{group!.EscapeMarkup()}[/]"; }
+            if (noGroup) { return $"[gray23]default.[/]{name.EscapeMarkup()}"; }
+            return $"[gray23]{group.EscapeMarkup()}.[/]{name.EscapeMarkup()}";
         }
 
         public static string FormatNumber(int number)

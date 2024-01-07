@@ -1,7 +1,19 @@
-﻿namespace Planar.Service.Reports
+﻿using System.ComponentModel;
+
+namespace Planar.Service.Reports
 {
     public enum ReportNames
     {
-        Summary
+        [Description("Job Summary")]
+        Summary,
+
+        [Description("Paused Jobs")]
+        Paused,
+
+        [Description("Alerts")]
+        Alerts,
+
+        [Description("Trace")]
+        Trace
     }
 }

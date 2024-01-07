@@ -180,6 +180,20 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetTable(IEnumerable<HookInfo>? response)
+        {
+            var table = new CliTable(showCount: true);
+            if (response == null) { return table; }
+            table.Table.AddColumns("Name", "Type", "Description");
+            foreach (var item in response)
+            {
+                if (item == null) { continue; }
+                table.Table.AddRow(SafeCliString(item.Name), SafeCliString(item.HookType), SafeCliString(item.Description));
+            }
+
+            return table;
+        }
+
         public static CliTable GetTable(IEnumerable<LovItem>? response, string entityName)
         {
             var table = new CliTable(showCount: true, entityName);
