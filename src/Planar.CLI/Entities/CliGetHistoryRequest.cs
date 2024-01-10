@@ -26,5 +26,8 @@ namespace Planar.CLI.Entities
 
         [ActionProperty("jg", "job-group")]
         public string? JobGroup { get; set; }
+
+        [ActionProperty("o", "outlier")]
+        public bool? Outlier { get; set; }
     }
 }

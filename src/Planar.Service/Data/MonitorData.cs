@@ -59,6 +59,7 @@ namespace Planar.Service.Data
             var result = await _context.JobInstanceLogs
                 .AsNoTracking()
                 .Where(l =>
+                    l.JobId == jobId &&
                     l.EffectedRows != null &&
                     EF.Functions.DateDiffSecond(l.StartDate, DateTime.Now) <= hours * 3600)
                 .Select(l => l.EffectedRows.GetValueOrDefault())

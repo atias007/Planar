@@ -69,27 +69,13 @@ namespace Planar.Service.Reports
         private static string SetTraceRowColors(string row, LogDetails data)
         {
             const string transparent = "transparent";
-            string color;
-            switch (data.Level)
+            string color = data.Level switch
             {
-                case nameof(LogLevel.Error):
-                    color = "#f8cecc";
-                    break;
-
-                case nameof(LogLevel.Warning):
-                    color = "#fff2cc";
-                    break;
-
-                case nameof(LogLevel.Critical):
-                case "Fatal":
-                    color = "#dae8fc";
-                    break;
-
-                default:
-                    color = transparent;
-                    break;
-            }
-
+                nameof(LogLevel.Error) => "#f8cecc",
+                nameof(LogLevel.Warning) => "#fff2cc",
+                nameof(LogLevel.Critical) or "Fatal" => "#dae8fc",
+                _ => transparent,
+            };
             row = row.Replace("#000", color);
 
             return row;

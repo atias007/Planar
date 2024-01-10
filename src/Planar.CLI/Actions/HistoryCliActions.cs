@@ -88,6 +88,11 @@ namespace Planar.CLI.Actions
                 restRequest.AddQueryParameter("jobtype", request.JobType);
             }
 
+            if (request.Outlier.HasValue)
+            {
+                restRequest.AddQueryParameter("outlier", request.Outlier.Value);
+            }
+
             restRequest.AddQueryParameter("ascending", request.Ascending);
             restRequest.AddQueryPagingParameter(request);
 

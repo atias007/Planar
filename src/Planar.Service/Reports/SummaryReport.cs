@@ -116,7 +116,9 @@ namespace Planar.Service.Reports
             };
 
             var response = await historyDomain.GetHistorySummary(request);
-            return response.Data ?? new List<HistorySummary>();
+            if (response.Data == null) { return Array.Empty<HistorySummary>(); }
+
+            return response.Data.OrderBy(d => d.Author).ToList();
         }
 
         private async Task<int> GetMaxConcurrentExecutionData(DateScope dateScope)
