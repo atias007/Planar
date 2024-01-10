@@ -119,6 +119,7 @@ namespace Planar.Service.Listeners
 
                 var log = new DbJobInstanceLog
                 {
+                    JobId = JobKeyHelper.GetJobId(context.JobDetail) ?? string.Empty, // for function: SafeFillAnomaly(log);
                     InstanceId = context.FireInstanceId,
                     Duration = Convert.ToInt32(duration),
                     EndDate = endDate,
@@ -263,7 +264,7 @@ namespace Planar.Service.Listeners
                 cache.Set(durationKey, durationStatistics, StatisticsUtil.DefaultCacheSpan);
             }
 
-            exists = cache.TryGetValue<IEnumerable<JobEffectedRowsStatistic>>(durationKey, out var effectedStatistics);
+            exists = cache.TryGetValue<IEnumerable<JobEffectedRowsStatistic>>(effectedKey, out var effectedStatistics);
             if (!exists || effectedStatistics == null)
             {
                 effectedStatistics = await ExecuteDal<MetricsData, IEnumerable<JobEffectedRowsStatistic>>(d => d.GetJobEffectedRowsStatistics());
