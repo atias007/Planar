@@ -2,11 +2,11 @@
 
 namespace Planar.CLI.Entities
 {
-    public class CliTriggerDataRequest : CliTriggerKey
+    public class CliTriggerDataRequest : CliTriggerKey, ICliDataRequest
     {
         [ActionProperty(DefaultOrder = 1, Name = "action")]
         [Required("action argument is required")]
-        public DataActions Action { get; set; }
+        public DataActions? Action { get; set; }
 
         [ActionProperty(DefaultOrder = 2, Name = "key")]
         public string DataKey { get; set; } = string.Empty;

@@ -1,7 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using Planar.Common;
 using Planar.Hook;
-using System;
 
 namespace Planar.Hooks;
 

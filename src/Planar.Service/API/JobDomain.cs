@@ -675,7 +675,7 @@ namespace Planar.Service.API
         {
             if (details == null || !details.JobDataMap.ContainsKey(key))
             {
-                throw new RestValidationException($"{key}", $"data with Key '{key}' could not found in job '{jobId}' (Name '{details?.Key.Name}' and Group '{details?.Key.Group}')");
+                throw new RestValidationException($"{key}", $"data with Key '{key}' could not found in job '{jobId}' (name '{details?.Key.Name}' and group '{details?.Key.Group}')");
             }
         }
 

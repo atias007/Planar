@@ -139,6 +139,7 @@ namespace Planar.CLI.Actions
         [Action("data")]
         public static async Task<CliActionResponse> PutTriggerData(CliTriggerDataRequest request, CancellationToken cancellationToken = default)
         {
+            FillMissingDataProperties(request);
             RestResponse result;
             switch (request.Action)
             {

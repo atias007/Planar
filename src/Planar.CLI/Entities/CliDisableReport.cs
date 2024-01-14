@@ -4,7 +4,7 @@ namespace Planar.CLI.Entities
 {
     public class CliDisableReport : CliReport
     {
-        [Required]
+        [Required("period argument is required")]
         [ActionProperty(DefaultOrder = 1)]
         public ReportPeriods Period { get; set; }
     }

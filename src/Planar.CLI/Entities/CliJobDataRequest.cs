@@ -2,11 +2,11 @@
 
 namespace Planar.CLI.Entities
 {
-    public class CliJobDataRequest : CliJobKey
+    public class CliJobDataRequest : CliJobKey, ICliDataRequest
     {
         [ActionProperty(DefaultOrder = 1, Name = "action")]
         [Required("action argument is required")]
-        public DataActions Action { get; set; }
+        public DataActions? Action { get; set; }
 
         [ActionProperty(DefaultOrder = 2, Name = "key")]
         [Required("data key argument is required")]

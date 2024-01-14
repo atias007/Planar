@@ -252,13 +252,17 @@ namespace Planar.CLI
                 }
             }
 
-            var allRequired = action.Arguments
-                .Where(a => a.MissingRequired)
-                .OrderBy(a => a.DefaultOrder);
-
-            foreach (var item in allRequired)
+            // Validate requierd properties
+            if (!BaseCliAction.InteractiveMode)
             {
-                ValidateMissingRequiredProperties(item);
+                var allRequired = action.Arguments
+                    .Where(a => a.MissingRequired)
+                    .OrderBy(a => a.DefaultOrder);
+
+                foreach (var item in allRequired)
+                {
+                    ValidateMissingRequiredProperties(item);
+                }
             }
 
             return result;

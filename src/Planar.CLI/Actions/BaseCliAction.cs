@@ -39,6 +39,37 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result);
         }
 
+        protected static void FillMissingDataProperties(ICliDataRequest request)
+        {
+            if (request.Action == null)
+            {
+                var items = Enum.GetNames<DataActions>()
+                    .Select(n => n.ToLower())
+                    .OrderBy(n => n);
+
+                var action = CliPromptUtil.PromptSelection(items, "action") ?? string.Empty;
+                request.Action = Enum.Parse<DataActions>(action, true);
+            }
+
+            if (string.IsNullOrWhiteSpace(request.DataKey))
+            {
+                request.DataKey = CollectCliValue(
+                    field: "data key",
+                    required: true,
+                    minLength: 1,
+                    maxLength: 100) ?? string.Empty;
+            }
+
+            if (string.IsNullOrWhiteSpace(request.DataValue) && request.Action == DataActions.Put)
+            {
+                request.DataValue = CollectCliValue(
+                    field: "data value",
+                    required: false,
+                    minLength: 0,
+                    maxLength: 1000);
+            }
+        }
+
         protected static string? CollectCliValue(string field, bool required, int minLength, int maxLength, string? regex = null, string? regexErrorMessage = null, string? defaultValue = null, bool secret = false)
         {
             var prompt = new TextPrompt<string>($"[turquoise2]  > {field.EscapeMarkup()?.Trim()}:[/]")

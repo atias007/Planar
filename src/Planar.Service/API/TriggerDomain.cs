@@ -122,7 +122,7 @@ namespace Planar.Service.API
         {
             if (!IsDataKeyExists(trigger, key))
             {
-                throw new RestValidationException($"{key}", $"data with Key '{key}' could not found in trigger '{triggerId}' (Name '{trigger?.Key.Name}'");
+                throw new RestValidationException($"{key}", $"data with Key '{key}' could not found in trigger '{triggerId}' (name '{trigger?.Key.Name}')");
             }
         }
 

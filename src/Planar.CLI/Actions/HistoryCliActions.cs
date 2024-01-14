@@ -15,43 +15,6 @@ namespace Planar.CLI.Actions
     [Module("history", "Actions to inspect history runs of actions")]
     public class HistoryCliActions : BaseCliAction<HistoryCliActions>
     {
-        [Action("get")]
-        public static async Task<CliActionResponse> GetHistoryById(CliGetBySomeIdRequest request, CancellationToken cancellationToken = default)
-        {
-            if (IsOnlyDigits(request.Id.ToString()))
-            {
-                return await GetHistoryById(request.Id, cancellationToken);
-            }
-
-            return await GetHistoryByInstanceId(request.Id, cancellationToken);
-        }
-
-        private static async Task<CliActionResponse> GetHistoryById(string id, CancellationToken cancellationToken = default)
-        {
-            var restRequest = new RestRequest("history/{id}", Method.Get)
-               .AddParameter("id", id, ParameterType.UrlSegment);
-
-            var result = await RestProxy.Invoke<JobHistory>(restRequest, cancellationToken);
-            return new CliActionResponse(result, dumpObject: result.Data);
-        }
-
-        private static async Task<CliActionResponse> GetHistoryByInstanceId(string id, CancellationToken cancellationToken = default)
-        {
-            var restRequest = new RestRequest("history/by-instanceid/{instanceid}", Method.Get)
-                    .AddParameter("instanceid", id, ParameterType.UrlSegment);
-
-            var result = await RestProxy.Invoke<JobHistory>(restRequest, cancellationToken);
-            return new CliActionResponse(result, dumpObject: result.Data);
-        }
-
-        private static bool IsOnlyDigits(string value)
-        {
-            if (value == null) { return true; }
-            const string pattern = "^[0-9]+$";
-            var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-            return regex.IsMatch(value);
-        }
-
         [Action("ls")]
         [Action("list")]
         public static async Task<CliActionResponse> GetHistory(CliGetHistoryRequest request, CancellationToken cancellationToken = default)
@@ -101,71 +64,15 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, table);
         }
 
-        [Action("data")]
-        public static async Task<CliActionResponse> GetHistoryDataById(CliGetByLongIdRequest request, CancellationToken cancellationToken = default)
+        [Action("get")]
+        public static async Task<CliActionResponse> GetHistoryById(CliGetBySomeIdRequest request, CancellationToken cancellationToken = default)
         {
-            var restRequest = new RestRequest("history/{id}/data", Method.Get)
-               .AddParameter("id", request.Id, ParameterType.UrlSegment);
-
-            var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
-            return new CliActionResponse(result, message: result.Data);
-        }
-
-        [Action("log")]
-        public static async Task<CliActionResponse> GetHistoryLogById(CliGetByLongIdRequestWithOutput request, CancellationToken cancellationToken = default)
-        {
-            var restRequest = new RestRequest("history/{id}/log", Method.Get)
-               .AddParameter("id", request.Id, ParameterType.UrlSegment);
-
-            var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
-            return new CliActionResponse(result, message: result.Data);
-        }
-
-        [Action("ex")]
-        public static async Task<CliActionResponse> GetHistoryExceptionById(CliGetByLongIdRequestWithOutput request, CancellationToken cancellationToken = default)
-        {
-            var restRequest = new RestRequest("history/{id}/exception", Method.Get)
-               .AddParameter("id", request.Id, ParameterType.UrlSegment);
-
-            var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
-            return new CliActionResponse(result, message: result.Data);
-        }
-
-        [Action("last")]
-        public static async Task<CliActionResponse> GetLastHistoryCallForJob(CliGetLastHistoryCallForJobRequest request, CancellationToken cancellationToken = default)
-        {
-            var restRequest = new RestRequest("history/last", Method.Get);
-            if (request.LastDays > 0)
+            if (IsOnlyDigits(request.Id.ToString()))
             {
-                restRequest.AddQueryParameter("lastDays", request.LastDays);
+                return await GetHistoryById(request.Id, cancellationToken);
             }
 
-            restRequest.AddQueryPagingParameter(request);
-            var result = await RestProxy.Invoke<PagingResponse<JobLastRun>>(restRequest, cancellationToken);
-            var table = CliTableExtensions.GetTable(result.Data);
-            return new CliActionResponse(result, table);
-        }
-
-        [Action("summary")]
-        public static async Task<CliActionResponse> GetHistorySummary(CliGetHistorySummaryRequest request, CancellationToken cancellationToken = default)
-        {
-            FillDatesScope(request);
-
-            var restRequest = new RestRequest("history/summary", Method.Get);
-            if (request.FromDate > DateTime.MinValue)
-            {
-                restRequest.AddQueryParameter("fromDate", request.FromDate.ToString("u"));
-            }
-
-            if (request.ToDate > DateTime.MinValue)
-            {
-                restRequest.AddQueryParameter("toDate", request.ToDate.ToString("u"));
-            }
-
-            restRequest.AddQueryPagingParameter(request);
-            var result = await RestProxy.Invoke<PagingResponse<HistorySummary>>(restRequest, cancellationToken);
-            var table = CliTableExtensions.GetTable(result.Data);
-            return new CliActionResponse(result, table);
+            return await GetHistoryByInstanceId(request.Id, cancellationToken);
         }
 
         [Action("count")]
@@ -193,6 +100,99 @@ namespace Planar.CLI.Actions
                 .AddItem(counter[2].Label, counter[2].Count, Color.Red1));
 
             return CliActionResponse.Empty;
+        }
+
+        [Action("data")]
+        public static async Task<CliActionResponse> GetHistoryDataById(CliGetByLongIdRequest request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("history/{id}/data", Method.Get)
+               .AddParameter("id", request.Id, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
+            return new CliActionResponse(result, message: result.Data);
+        }
+
+        [Action("ex")]
+        public static async Task<CliActionResponse> GetHistoryExceptionById(CliGetByLongIdRequestWithOutput request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("history/{id}/exception", Method.Get)
+               .AddParameter("id", request.Id, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
+            return new CliActionResponse(result, message: result.Data);
+        }
+
+        [Action("log")]
+        public static async Task<CliActionResponse> GetHistoryLogById(CliGetByLongIdRequestWithOutput request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("history/{id}/log", Method.Get)
+               .AddParameter("id", request.Id, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
+            return new CliActionResponse(result, message: result.Data);
+        }
+
+        [Action("summary")]
+        public static async Task<CliActionResponse> GetHistorySummary(CliGetHistorySummaryRequest request, CancellationToken cancellationToken = default)
+        {
+            FillDatesScope(request);
+
+            var restRequest = new RestRequest("history/summary", Method.Get);
+            if (request.FromDate > DateTime.MinValue)
+            {
+                restRequest.AddQueryParameter("fromDate", request.FromDate.ToString("u"));
+            }
+
+            if (request.ToDate > DateTime.MinValue)
+            {
+                restRequest.AddQueryParameter("toDate", request.ToDate.ToString("u"));
+            }
+
+            restRequest.AddQueryPagingParameter(request);
+            var result = await RestProxy.Invoke<PagingResponse<HistorySummary>>(restRequest, cancellationToken);
+            var table = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, table);
+        }
+
+        [Action("last")]
+        public static async Task<CliActionResponse> GetLastHistoryCallForJob(CliGetLastHistoryCallForJobRequest request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("history/last", Method.Get);
+            if (request.LastDays > 0)
+            {
+                restRequest.AddQueryParameter("lastDays", request.LastDays);
+            }
+
+            restRequest.AddQueryPagingParameter(request);
+            var result = await RestProxy.Invoke<PagingResponse<JobLastRun>>(restRequest, cancellationToken);
+            var table = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, table);
+        }
+
+        private static async Task<CliActionResponse> GetHistoryById(string id, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("history/{id}", Method.Get)
+               .AddParameter("id", id, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<JobHistory>(restRequest, cancellationToken);
+            return new CliActionResponse(result, dumpObject: result.Data);
+        }
+
+        private static async Task<CliActionResponse> GetHistoryByInstanceId(string id, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("history/by-instanceid/{instanceid}", Method.Get)
+                    .AddParameter("instanceid", id, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<JobHistory>(restRequest, cancellationToken);
+            return new CliActionResponse(result, dumpObject: result.Data);
+        }
+
+        private static bool IsOnlyDigits(string value)
+        {
+            if (value == null) { return true; }
+            const string pattern = "^[0-9]+$";
+            var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+            return regex.IsMatch(value);
         }
     }
 }
