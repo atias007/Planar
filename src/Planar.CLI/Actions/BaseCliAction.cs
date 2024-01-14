@@ -190,7 +190,7 @@ namespace Planar.CLI.Actions
         {
             if (!response.IsSuccessful) { return; }
             Util.SetLastJobOrTriggerId(response);
-            AssertUpdated(response?.Data?.Id, "job");
+            AssertUpdated(response.Data?.Id, "job");
         }
 
         protected static void AssertJobDataUpdated(RestResponse response, string id)
@@ -208,7 +208,6 @@ namespace Planar.CLI.Actions
         protected static void AssertUpdated(string? id, string entity)
         {
             if (string.IsNullOrEmpty(id)) { return; }
-            // Console.WriteLine(id)
             string message = entity switch
             {
                 "job" => CliFormat.GetWarningMarkup("job is in 'pause' state and none of its triggers will fire"),

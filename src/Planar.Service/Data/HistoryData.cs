@@ -108,6 +108,16 @@ namespace Planar.Service.Data
                 query = query.Where(l => l.JobType == request.JobType);
             }
 
+            if (request.Outlier.HasValue && request.Outlier.Value)
+            {
+                query = query.Where(l => l.Anomaly > 0);
+            }
+
+            if (request.Outlier.HasValue && !request.Outlier.Value)
+            {
+                query = query.Where(l => l.Anomaly == 0);
+            }
+
             if (request.Ascending)
             {
                 query = query.OrderBy(l => l.StartDate);

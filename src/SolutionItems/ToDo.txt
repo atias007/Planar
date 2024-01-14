@@ -270,3 +270,5 @@ V1.6.3
 - redis stream hook
 - redis pub/sub hook
 - hook description
+- fix anomaly bug
+- add outlier to history filter

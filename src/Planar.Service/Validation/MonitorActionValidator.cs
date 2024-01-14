@@ -48,13 +48,13 @@ namespace Planar.Service.Validation
             {
                 case MonitorEvents.ExecutionFailxTimesInRow:
                     var value1 = ValidateNumeric(arguments);
-                    ValidateRange(value1, 2, 100);
+                    ValidateRange(value1, 2, 1000);
                     return new int[] { value1 };
 
                 case MonitorEvents.ExecutionFailxTimesInyHours:
                     var values = ValidateNumericArray(arguments, 2);
-                    ValidateRange(values[0], 2, 100);
-                    ValidateRange(values[1], 1, 24);
+                    ValidateRange(values[0], 2, 1000);
+                    ValidateRange(values[1], 1, 72);
                     return values;
 
                 case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx:
@@ -66,6 +66,18 @@ namespace Planar.Service.Validation
                     var value4 = ValidateNumeric(arguments);
                     ValidateRange(value4, 2, int.MaxValue);
                     return new int[] { value4 };
+
+                case MonitorEvents.ExecutionEndWithEffectedRowsLessThanxInyHours:
+                    var values2 = ValidateNumericArray(arguments, 2);
+                    ValidateRange(values2[0], 1, int.MaxValue);
+                    ValidateRange(values2[1], 1, 72);
+                    return values2;
+
+                case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanxInyHours:
+                    var values3 = ValidateNumericArray(arguments, 2);
+                    ValidateRange(values3[0], 0, int.MaxValue);
+                    ValidateRange(values3[1], 1, 72);
+                    return values3;
 
                 default:
                     return null;

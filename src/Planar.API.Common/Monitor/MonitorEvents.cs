@@ -20,6 +20,8 @@ namespace Planar.Common
         [Description("Execution Fail {x} Times In {y} Hours")] ExecutionFailxTimesInyHours = 201,
         [Description("Execution End With Effected Rows Greater Than {x}")] ExecutionEndWithEffectedRowsGreaterThanx = 202,
         [Description("Execution End With Effected Rows Less Than {x}")] ExecutionEndWithEffectedRowsLessThanx = 203,
+        [Description("Execution End With Effected Rows Greater Than {x} In {y} Hours")] ExecutionEndWithEffectedRowsGreaterThanxInyHours = 204,
+        [Description("Execution End With Effected Rows Less Than {x} In {y} Hours")] ExecutionEndWithEffectedRowsLessThanxInyHours = 205,
 
         //// -------------------------------------------------------
         [Description("Job Added")] JobAdded = 300,

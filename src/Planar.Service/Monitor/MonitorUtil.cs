@@ -518,6 +518,14 @@ public class MonitorUtil : IMonitorUtil
             case MonitorEvents.ExecutionEndWithEffectedRowsLessThanx:
                 var rows1 = ServiceUtil.GetEffectedRows(context);
                 return rows1 != null && rows1 < args.Args[0];
+
+            case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanxInyHours:
+                var er1 = await dal.CountEffectedRowsInHourForJob(args.JobId, args.Args[1]);
+                return er1 > args.Args[0];
+
+            case MonitorEvents.ExecutionEndWithEffectedRowsLessThanxInyHours:
+                var er2 = await dal.CountEffectedRowsInHourForJob(args.JobId, args.Args[1]);
+                return er2 < args.Args[0];
         }
     }
 

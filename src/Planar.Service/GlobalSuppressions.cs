@@ -5,15 +5,12 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-[assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Planar BL Standart", Scope = "member", Target = "~M:Planar.Service.API.JobDomain.PauseAll~System.Threading.Tasks.Task")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Planar BL Standart", Scope = "member", Target = "~M:Planar.Service.API.JobDomain.Pause(Planar.API.Common.Entities.JobOrTriggerKey)~System.Threading.Tasks.Task")]
-[assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Planar BL Standart", Scope = "member", Target = "~M:Planar.Service.API.JobDomain.ResumeAll~System.Threading.Tasks.Task")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Planar BL Standart", Scope = "member", Target = "~M:Planar.Service.API.JobDomain.Resume(Planar.API.Common.Entities.JobOrTriggerKey)~System.Threading.Tasks.Task")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Planar BL Standart", Scope = "member", Target = "~M:Planar.Service.API.JobDomain.RemoveData(System.String,System.String)~System.Threading.Tasks.Task")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Planar BL Standart", Scope = "member", Target = "~M:Planar.Service.API.JobDomain.Get(System.String)~System.Threading.Tasks.Task{Planar.API.Common.Entities.JobDetails}")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Planar BL Standart", Scope = "member", Target = "~M:Planar.Service.API.JobDomain.Remove(System.String)~System.Threading.Tasks.Task")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Planar BL Standart", Scope = "member", Target = "~M:Planar.Service.API.JobDomain.Invoke(Planar.API.Common.Entities.InvokeJobRequest)~System.Threading.Tasks.Task")]
-[assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Planar BL Standart", Scope = "member", Target = "~M:Planar.Service.API.MonitorDomain.GetHooks~System.Collections.Generic.List{System.String}")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Planar BL Standart", Scope = "member", Target = "~M:Planar.Service.API.TriggerDomain.Get(System.String)~System.Threading.Tasks.Task{Planar.API.Common.Entities.TriggerRowDetails}")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Planar BL Standart", Scope = "member", Target = "~M:Planar.Service.API.TriggerDomain.GetByJob(System.String)~System.Threading.Tasks.Task{Planar.API.Common.Entities.TriggerRowDetails}")]
 [assembly: SuppressMessage("Performance", "CA1822:Mark members as static", Justification = "Planar BL Standart", Scope = "member", Target = "~M:Planar.Service.API.TriggerDomain.Delete(System.String)~System.Threading.Tasks.Task")]

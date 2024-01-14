@@ -16,6 +16,8 @@ namespace Planar.API.Common.Entities
 
         public bool Ascending { get; set; }
 
+        public bool? Outlier { get; set; }
+
         public StatusMembers? Status { get; set; }
     }
 }
