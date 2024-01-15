@@ -94,7 +94,7 @@ namespace Planar.Service.Listeners
 
                 var id = TriggerHelper.GetTriggerId(trigger);
                 var name = string.IsNullOrEmpty(id) ? Guid.NewGuid().ToString().Replace("-", string.Empty) : id;
-                var retryTrigger = TriggerBuilder
+                var retryBuilder = TriggerBuilder
                         .Create()
                         .ForJob(context.JobDetail)
                         .WithIdentity($"{Consts.RetryTriggerNamePrefix}.{numTries}.{name}", Consts.RetryTriggerGroup)
@@ -102,8 +102,15 @@ namespace Planar.Service.Listeners
                         .UsingJobData(Consts.RetrySpan, span.GetValueOrDefault().ToSimpleTimeString())
                         .UsingJobData(Consts.RetryCounter, numTries.ToString())
                         .UsingJobData(Consts.MaxRetries, maxRetries.ToString())
-                        .StartAt(start)
-                        .Build();
+                        .StartAt(start);
+
+                foreach (var item in trigger.JobDataMap)
+                {
+                    if (string.Equals(item.Key, Consts.TriggerId, StringComparison.OrdinalIgnoreCase)) { continue; }
+                    retryBuilder = retryBuilder.UsingJobData(item.Key, Convert.ToString(item.Value) ?? string.Empty);
+                }
+
+                var retryTrigger = retryBuilder.Build();
 
                 context.Scheduler.ScheduleJob(retryTrigger, cancellationToken).Wait(cancellationToken);
                 SafeScan(MonitorEvents.ExecutionRetry, context);
