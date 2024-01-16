@@ -1,9 +1,11 @@
-﻿using Planar.Common;
+﻿using Planar.API.Common;
+using Planar.Common;
 using Spectre.Console;
 using Spectre.Console.Rendering;
 using System;
 using System.Collections;
 using System.Linq;
+using System.Reflection;
 
 namespace Planar.CLI.CliGeneral
 {
@@ -48,7 +50,7 @@ namespace Planar.CLI.CliGeneral
             {
                 var value = p.GetValue(obj);
                 var r1 = new Markup($"[grey74]{p.Name.SplitWords()}[/]");
-                var r2 = GetRenderableMarkup(value);
+                var r2 = GetRenderableMarkup(value, p);
                 table.AddRow(r1, r2);
             }
 
@@ -56,14 +58,14 @@ namespace Planar.CLI.CliGeneral
             return table;
         }
 
-        private static IRenderable GetRenderableMarkup(object? value)
+        private static IRenderable GetRenderableMarkup(object? value, PropertyInfo propertyInfo)
         {
             if (value == null)
             {
                 return new Markup("[lightskyblue1][[null]][/]");
             }
 
-            var vt = value.GetType();
+            var vt = propertyInfo.PropertyType;
 
             if (typeof(IDictionary).IsAssignableFrom(vt))
             {
@@ -108,19 +110,34 @@ namespace Planar.CLI.CliGeneral
                 return table;
             }
 
-            var text = GetRenderableString(value);
+            var text = GetRenderableString(value, propertyInfo);
             return new Markup(text);
         }
 
-        private static string GetRenderableString(object value)
+        private static string GetRenderableString(object value, PropertyInfo propertyInfo)
         {
             var simpleTypes = new Type[] { typeof(byte), typeof(byte?), typeof(int), typeof(int?), typeof(short), typeof(short?), typeof(byte), typeof(byte?), typeof(long), typeof(bool), typeof(bool?) };
             var dateTypes = new Type[] { typeof(DateTime), typeof(DateTime?) };
             var timeSpanTypes = new Type[] { typeof(TimeSpan), typeof(TimeSpan?) };
 
-            var vt = value.GetType();
+            var vt = propertyInfo.PropertyType;
             if (vt == typeof(string)) { return $"{value.ToString().EscapeMarkup()}"; }
-            if (simpleTypes.Contains(vt)) { return $"{value}"; }
+
+            // check for DisplayFormatAttribute
+            var attr = propertyInfo.GetCustomAttribute<DisplayFormatAttribute>();
+            if (
+                attr != null &&
+                !string.IsNullOrWhiteSpace(attr.Format) &&
+                value is IFormattable formattable)
+            {
+                return formattable.ToString(attr.Format, attr.FormatProvider).EscapeMarkup();
+            }
+
+            if (simpleTypes.Contains(vt))
+            {
+                return $"{value}";
+            }
+
             if (dateTypes.Contains(vt))
             {
                 var dtValue = Convert.ToDateTime(value);

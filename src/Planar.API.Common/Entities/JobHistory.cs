@@ -34,6 +34,7 @@ namespace Planar.API.Common.Entities
 
         public int? Duration { get; set; }
 
+        [DisplayFormat("N0")]
         public int? EffectedRows { get; set; }
 
         public string? Data { get; set; }
