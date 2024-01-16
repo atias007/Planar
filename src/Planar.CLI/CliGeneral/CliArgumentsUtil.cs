@@ -48,7 +48,6 @@ namespace Planar.CLI
                 }
             }
 
-#pragma warning disable S4158 // Empty collections should not be accessed or iterated
             foreach (var item in list)
             {
                 if (item.Key != null && string.IsNullOrEmpty(item.Value))
@@ -56,7 +55,6 @@ namespace Planar.CLI
                     item.Value = true.ToString();
                 }
             }
-#pragma warning restore S4158 // Empty collections should not be accessed or iterated
 
             CliArguments = list.Where(l => l.Key != null).ToList();
             _outputFilename = CliArguments
