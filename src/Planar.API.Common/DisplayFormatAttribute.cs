@@ -10,13 +10,6 @@ namespace Planar.API.Common
             Format = format;
         }
 
-        public DisplayFormatAttribute(string format, IFormatProvider formatProvider) : this(format)
-        {
-            FormatProvider = formatProvider;
-        }
-
         public string Format { get; }
-
-        public IFormatProvider? FormatProvider { get; }
     }
 }

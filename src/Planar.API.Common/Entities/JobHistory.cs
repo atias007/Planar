@@ -32,6 +32,7 @@ namespace Planar.API.Common.Entities
 
         public DateTime? EndDate { get; set; }
 
+        [DisplayFormat("duration")]
         public int? Duration { get; set; }
 
         [DisplayFormat("N0")]

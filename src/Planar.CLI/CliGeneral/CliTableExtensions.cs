@@ -95,10 +95,10 @@ namespace Planar.CLI
             table.Table.AddRow("Standard Deviation Duration", CliTableFormat.FormatTimeSpan(response.StdevDuration));
             table.Table.AddRow("Average Effected Rows", response.AvgEffectedRows.ToString("N2"));
             table.Table.AddRow("Standard Deviation Effected Rows", response.StdevEffectedRows.ToString("N2"));
-            table.Table.AddRow("Total Runs", response.TotalRuns.ToString());
-            table.Table.AddRow("Success Retries", response.SuccessRetries.ToString());
-            table.Table.AddRow("Fail Retries", response.FailRetries.ToString());
-            table.Table.AddRow("Recovers", response.Recovers.ToString());
+            table.Table.AddRow("Total Runs", response.TotalRuns.ToString("N0"));
+            table.Table.AddRow("Success Retries", response.SuccessRetries.ToString("N0"));
+            table.Table.AddRow("Fail Retries", response.FailRetries.ToString("N0"));
+            table.Table.AddRow("Recovers", response.Recovers.ToString("N0"));
             return table;
         }
 

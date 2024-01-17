@@ -4,6 +4,7 @@ using Spectre.Console;
 using Spectre.Console.Rendering;
 using System;
 using System.Collections;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 
@@ -130,7 +131,12 @@ namespace Planar.CLI.CliGeneral
                 !string.IsNullOrWhiteSpace(attr.Format) &&
                 value is IFormattable formattable)
             {
-                return formattable.ToString(attr.Format, attr.FormatProvider).EscapeMarkup();
+                if (string.Equals(attr.Format, "duration", StringComparison.OrdinalIgnoreCase))
+                {
+                    return $"{CliTableFormat.FromatDuration((int)value)}";
+                }
+
+                return formattable.ToString(attr.Format, CultureInfo.CurrentCulture).EscapeMarkup();
             }
 
             if (simpleTypes.Contains(vt))
