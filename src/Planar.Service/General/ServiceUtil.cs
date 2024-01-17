@@ -8,6 +8,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace Planar.Service.General
 {
@@ -48,12 +49,25 @@ namespace Planar.Service.General
             var directories = Directory.GetDirectories(path);
             foreach (var dir in directories)
             {
-                var files = Directory.GetFiles(dir, "*.exe");
+                var files1 = Directory.GetFiles(dir, "*.exe");
+                var files2 = Directory.GetFiles(dir, "*.dll");
+                var files = files1.Concat(files2).ToList();
 
+                if (!files.Any())
+                {
+                    logger.LogWarning("folder {Folder} (under hook folder) is not valid hook folder which not contains exe or dll file/s", dir);
+                }
+
+                var success = false;
                 foreach (var f in files)
                 {
-                    var success = LoadHook(logger, f);
+                    success = LoadHook(logger, f);
                     if (success) { break; }
+                }
+
+                if (!success)
+                {
+                    logger.LogWarning("folder {Folder} (under hook folder) has no valid hook", dir);
                 }
             }
         }

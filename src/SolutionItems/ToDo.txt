@@ -3,6 +3,8 @@
 PLAN FOR V 1.6.3
 ----------------
 
+- run hook in linux
+
 - postman: test queue-invoke with data and validate the creation of data
 - 'service info hooks'
 

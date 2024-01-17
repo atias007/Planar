@@ -8,9 +8,11 @@ namespace Planar.MonitorHook.MessageBirdSms
     {
         public override string Name => "MessageBirdSms";
 
-        private const string MessageBirdSmsAccessKey = "MessageBirdSmsAccessKey";
-        private const string MessageBirdSmsFrom = "MessageBirdSmsFrom";
-        private const string MessageBirdCountryCode = "MessageBirdCountryCode";
+        public override string Description => "MessageBirdSms";
+
+        // private const string MessageBirdSmsAccessKey = "MessageBirdSmsAccessKey"
+        // private const string MessageBirdSmsFrom = "MessageBirdSmsFrom"
+        // private const string MessageBirdCountryCode = "MessageBirdCountryCode"
 
         public override Task Handle(IMonitorDetails monitorDetails)
         {
@@ -36,9 +38,9 @@ namespace Planar.MonitorHook.MessageBirdSms
 
         private void SendMessage(string message, IMonitor monitor)
         {
-            var accessKey = GetHookParameter(MessageBirdSmsAccessKey, monitor);
-            var from = GetHookParameter(MessageBirdSmsFrom, monitor);
-            var prefix = GetHookParameter(MessageBirdCountryCode, monitor);
+            var accessKey = string.Empty; // GetHookParameter(MessageBirdSmsAccessKey, monitor)
+            var from = string.Empty; // GetHookParameter(MessageBirdSmsFrom, monitor)
+            var prefix = string.Empty; // GetHookParameter(MessageBirdCountryCode, monitor)
 
             if (string.IsNullOrEmpty(from))
             {

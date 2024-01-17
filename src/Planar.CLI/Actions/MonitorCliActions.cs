@@ -471,14 +471,14 @@ namespace Planar.CLI.Actions
         {
             var data = new TestMonitorData();
             var hooksRequest = new RestRequest("monitor/hooks", Method.Get);
-            var hooksTask = RestProxy.Invoke<List<string>>(hooksRequest, cancellationToken);
+            var hooksTask = RestProxy.Invoke<List<HookInfo>>(hooksRequest, cancellationToken);
 
             var groupsRequest = new RestRequest("group", Method.Get)
                 .AddQueryPagingParameter(1000);
             var groupsTask = RestProxy.Invoke<PagingResponse<GroupInfo>>(groupsRequest, cancellationToken);
 
             var hooks = await hooksTask;
-            data.Hooks = hooks.Data ?? new List<string>();
+            data.Hooks = hooks.Data?.Select(h => h.Name).ToList() ?? new List<string>();
             if (!hooks.IsSuccessful)
             {
                 data.FailResponse = hooks;

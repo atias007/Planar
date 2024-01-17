@@ -11,8 +11,8 @@ namespace Planar.Service.Monitor
 {
     internal sealed class HookValidator
     {
-        private const string _monitorHookBaseClassName = "Planar.Monitor.Hook.BaseHook";
-        private const string _monitorHookAssemblyContextName = "Planar.Monitor.Hook.";
+        private const string _monitorHookBaseClassName = "Planar.Hook.BaseHook";
+        private const string _monitorHookAssemblyContextName = "Planar.Hook";
 
         public HookValidator(string filename, ILogger logger)
         {
@@ -27,7 +27,7 @@ namespace Planar.Service.Monitor
             var files = Directory.GetFiles(path, "*.dll").ToList();
             files.Insert(0, filename);
 
-            var assemblyContext = AssemblyLoader.CreateAssemblyLoadContext($"{_monitorHookAssemblyContextName}{folder}", enableUnload: true);
+            var assemblyContext = AssemblyLoader.CreateAssemblyLoadContext($"{_monitorHookAssemblyContextName}.{folder}", enableUnload: true);
 
             foreach (var f in files)
             {
