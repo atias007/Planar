@@ -61,17 +61,30 @@ namespace Planar.Client
 
         public async Task<IPagingResponse<JobAudit>> GetAllAuditsAsync(PagingRequest? paging, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            paging ??= new PagingRequest();
+            paging.SetPagingDefaults();
+            var restRequest = new RestRequest("job/audits", Method.Get)
+                .AddQueryPagingParameter(paging);
+
+            var result = await _proxy.InvokeAsync<PagingResponse<JobAudit>>(restRequest, cancellationToken);
+            return result;
         }
 
         public async Task<JobAuditWithInformation> GetAuditAsync(int auditId, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            var restRequest = new RestRequest("job/audit/{auditId}", Method.Get)
+                .AddParameter("auditId", auditId, ParameterType.UrlSegment);
+            var result = await _proxy.InvokeAsync<JobAuditWithInformation>(restRequest, cancellationToken);
+            return result;
         }
 
         public async Task<IPagingResponse<JobAudit>> GetAuditsAsync(string id, PagingRequest? paging, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            ValidateMandatory(id, nameof(id));
+            var restRequest = new RestRequest("job/{id}/audit", Method.Get)
+                .AddParameter("id", id, ParameterType.UrlSegment);
+            var result = await _proxy.InvokeAsync<PagingResponse<JobAudit>>(restRequest, cancellationToken);
+            return result;
         }
 
         public async Task<JobDetails> GetAsync(string id, CancellationToken cancellationToken = default)
@@ -187,22 +200,32 @@ namespace Planar.Client
 
         public async Task PauseAsync(string id, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            ValidateMandatory(id, nameof(id));
+            var restRequest = new RestRequest("job/pause", Method.Post)
+                .AddBody(new { id });
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
         public async Task QueueInvokeAsync(string id, DateTime dueDate, CancellationToken cancellationToken = default)
         {
+            ValidateMandatory(id, nameof(id));
             throw new NotImplementedException();
         }
 
         public async Task QueueInvokeAsync(string id, DateTime dueDate, TimeSpan timeout, CancellationToken cancellationToken = default)
         {
+            ValidateMandatory(id, nameof(id));
             throw new NotImplementedException();
         }
 
         public async Task ResumeAsync(string id, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            ValidateMandatory(id, nameof(id));
+            var restRequest = new RestRequest("job/resume", Method.Post)
+               .AddBody(new { id });
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
         public async Task<string> UpdateAsync(string folder, bool updateJobData = true, bool updateTriggerData = true, CancellationToken cancellationToken = default)

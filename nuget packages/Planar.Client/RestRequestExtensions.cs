@@ -29,6 +29,7 @@ namespace RestSharp
 
         public static RestRequest AddQueryPagingParameter(this RestRequest request, IPagingRequest pagingRequest)
         {
+            if (pagingRequest == null) { return request; }
             pagingRequest.SetPagingDefaults();
             request.AddQueryPagingParameter(pagingRequest.PageSize.GetValueOrDefault(), pagingRequest.PageNumber.GetValueOrDefault());
             return request;

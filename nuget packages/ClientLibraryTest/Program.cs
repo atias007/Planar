@@ -26,7 +26,10 @@ Console.WriteLine($"    - {result3.Description}");
 Console.WriteLine($"[x] Get Job File:");
 var result4 = await client.Jobs.GetJobFileAsync(result1.First());
 var result5 = await client.Jobs.DescribeJobAsync("Infrastructure.BankOfIsraelCurrency");
+await client.Jobs.ResumeAsync("5c1sgknnaj5");
+Thread.Sleep(2000);
 var result6 = await client.Jobs.GetNextRunningAsync("Infrastructure.BankOfIsraelCurrency");
 var result7 = await client.Jobs.GetPreviousRunningAsync("5c1sgknnaj5");
+await client.Jobs.PauseAsync("5c1sgknnaj5");
 
 Console.ReadLine();
