@@ -1,0 +1,32 @@
+﻿using Planar.Client;
+
+var client = new PlanarClient();
+var login = await client.ConnectAsync("http://localhost:2306");
+Console.WriteLine($"[x] Login as {login.Role}");
+var result1 = await client.Jobs.GetJobTypesAsync();
+Console.WriteLine($"[x] Job Types:");
+foreach (var jobType in result1)
+{
+    Console.WriteLine($"    - {jobType}");
+}
+
+Console.WriteLine($"[x] List Job:");
+var result2 = await client.Jobs.ListAsync();
+
+foreach (var job in result2.Data!)
+{
+    Console.WriteLine($"    - {job.Id} - {job.Group}.{job.Name}");
+}
+
+Console.WriteLine($"[x] Get Job:");
+var id = result2.Data![0].Id;
+var result3 = await client.Jobs.GetAsync(id);
+Console.WriteLine($"    - {result3.Description}");
+
+Console.WriteLine($"[x] Get Job File:");
+var result4 = await client.Jobs.GetJobFileAsync(result1.First());
+var result5 = await client.Jobs.DescribeJobAsync("Infrastructure.BankOfIsraelCurrency");
+var result6 = await client.Jobs.GetNextRunningAsync("Infrastructure.BankOfIsraelCurrency");
+var result7 = await client.Jobs.GetPreviousRunningAsync("5c1sgknnaj5");
+
+Console.ReadLine();

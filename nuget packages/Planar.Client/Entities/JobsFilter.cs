@@ -9,12 +9,18 @@
 
     public class JobsFilter : PagingRequest
     {
-        public AllJobsMembers Filter { get; set; }
+        public AllJobsMembers Category { get; set; } = AllJobsMembers.AllUserJobs;
 
         public string? JobType { get; set; }
 
         public string? Group { get; set; }
 
         public bool? Active { get; set; }
+
+        public bool? Inactive { get; set; }
+
+        public string? Filter { get; set; }
+
+        internal static JobsFilter Empty => new JobsFilter();
     }
 }

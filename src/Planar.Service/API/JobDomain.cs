@@ -266,16 +266,28 @@ namespace Planar.Service.API
 
         public string GetJobFileTemplate(string typeName)
         {
-            var assembly =
-                Assembly.Load(typeName) ??
-                throw new RestNotFoundException($"type '{typeName}' could not be found");
+            var notFoundException = new Lazy<RestNotFoundException>(() => new RestNotFoundException($"type '{typeName}' could not be found"));
+
+            Assembly assembly;
+
+            try
+            {
+                assembly = Assembly.Load(typeName);
+            }
+            catch
+            {
+                throw notFoundException.Value;
+            }
 
             var resources = assembly.GetManifestResourceNames();
             var resourceName =
                 Array.Find(resources, r => r.ToLower() == $"{typeName}.JobFile.yml".ToLower()) ??
-                throw new RestNotFoundException($"type '{typeName}' could not be found");
+                throw notFoundException.Value;
 
-            using Stream? stream = assembly.GetManifestResourceStream(resourceName) ?? throw new RestNotFoundException("jobfile.yml resource could not be found");
+            using Stream? stream =
+                assembly.GetManifestResourceStream(resourceName) ??
+                throw new RestNotFoundException("jobfile.yml resource could not be found");
+
             using StreamReader reader = new(stream);
             var result = reader.ReadToEnd();
 

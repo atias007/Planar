@@ -1,20 +1,13 @@
-﻿using RestSharp;
+﻿using Planar.Client.Entities;
+using RestSharp;
 using System;
 using System.Net;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Client
 {
-    internal struct LoginData
-    {
-        public string? Host { get; set; }
-        public bool SecureProtocol { get; set; }
-        public int Port { get; set; }
-        public string? Username { get; set; }
-        public string? Password { get; set; }
-    }
-
     internal class RestProxy
     {
         public const string DefaultHost = "localhost";
@@ -24,15 +17,15 @@ namespace Planar.Client
         private readonly object _lock = new object();
         private RestClient? _client;
 
-        public string Host { get; set; } = DefaultHost;
-        public int Port { get; set; } = DefaultPort;
-        public bool SecureProtocol { get; set; }
-        public string? Username { get; set; }
-        public string? Password { get; set; }
-        public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(10);
+        public string Host { get; private set; } = DefaultHost;
+        public int Port { get; private set; } = DefaultPort;
+        public bool SecureProtocol { get; private set; }
+        public string? Username { get; private set; }
+        public string? Password { get; private set; }
+        public TimeSpan Timeout { get; private set; } = TimeSpan.FromSeconds(10);
         public string? Role { get; private set; }
-        public string FirstName { get; set; } = null!;
-        public string? LastName { get; set; }
+        public string FirstName { get; private set; } = null!;
+        public string? LastName { get; private set; }
         private string? Token { get; set; }
 
         private Uri BaseUri => new UriBuilder(Schema, Host, Port).Uri;
@@ -80,7 +73,46 @@ namespace Planar.Client
             return reloginResponse.IsSuccessful;
         }
 
-        public async Task<RestResponse<TResponse>> Invoke<TResponse>(RestRequest request, CancellationToken cancellationToken)
+        private void ValidateResponse(RestResponse response)
+        {
+            if (response.IsSuccessful) { return; }
+
+            if (response.IsSuccessStatusCode)
+            {
+                var message = "Planar service return success status code but the response content is invalid";
+                if (!string.IsNullOrWhiteSpace(response.ErrorMessage))
+                {
+                    message += $". Inner error message: {response.ErrorMessage}";
+                }
+
+                if (response.ErrorException == null)
+                {
+                    throw new PlanarException(message);
+                }
+
+                throw new PlanarException(message, response.ErrorException);
+            }
+
+            if (response.StatusCode == HttpStatusCode.BadRequest && !string.IsNullOrEmpty(response.Content))
+            {
+                try
+                {
+                    var errors = JsonSerializer.Deserialize<PlanarValidationErrors>(response.Content);
+                    if (errors != null)
+                    {
+                        throw new PlanarException("Planar service return validation errors. For more detais see errors property", errors);
+                    }
+                }
+                catch
+                {
+                    // *** DO NOTHING ***
+                }
+            }
+
+            throw new PlanarException($"Planar service return error status code {response.StatusCode}");
+        }
+
+        public async Task<TResponse> InvokeAsync<TResponse>(RestRequest request, CancellationToken cancellationToken)
         {
             var response = await Proxy.ExecuteAsync<TResponse>(request, cancellationToken);
             if (await RefreshToken(response, cancellationToken))
@@ -88,10 +120,12 @@ namespace Planar.Client
                 response = await Proxy.ExecuteAsync<TResponse>(request, cancellationToken);
             }
 
-            return response;
+            ValidateResponse(response);
+
+            return response.Data!;
         }
 
-        public async Task<RestResponse> Invoke(RestRequest request, CancellationToken cancellationToken)
+        public async Task InvokeAsync(RestRequest request, CancellationToken cancellationToken)
         {
             var response = await Proxy.ExecuteAsync(request, cancellationToken);
             if (await RefreshToken(response, cancellationToken))
@@ -99,7 +133,7 @@ namespace Planar.Client
                 response = await Proxy.ExecuteAsync(request, cancellationToken);
             }
 
-            return response;
+            ValidateResponse(response);
         }
 
         private async Task<RestResponse> Relogin(CancellationToken cancellationToken)
@@ -126,7 +160,13 @@ namespace Planar.Client
 
         public async Task<RestResponse<LoginResponse>> Login(LoginData login, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(login.Host)) { throw new PlanarException("host is mandatory"); }
+            if (string.IsNullOrEmpty(login.Host)) { throw new PlanarException("Host is mandatory"); }
+            if (login.Timeout.HasValue)
+            {
+                if (login.Timeout == TimeSpan.Zero) { throw new PlanarException("Login timeout must be greater the 0"); }
+                Timeout = login.Timeout.Value;
+            }
+
             var schema = GetSchema(login.SecureProtocol);
 
             var options = new RestClientOptions
@@ -141,9 +181,20 @@ namespace Planar.Client
             restRequest.AddBody(body);
 
             var result = await client.ExecuteAsync<LoginResponse>(restRequest, cancellationToken);
-            if (result.IsSuccessStatusCode)
+            if (result.StatusCode == HttpStatusCode.Conflict)
             {
-                if (result.Data == null) { throw new PlanarException("the data from login service is null"); }
+                Host = login.Host;
+                Port = login.Port;
+                SecureProtocol = login.SecureProtocol;
+                Flush();
+
+                Username = login.Username;
+                Password = login.Password;
+            }
+
+            if (result.IsSuccessful)
+            {
+                if (result.Data == null) { throw new PlanarException("The data return from login service is invalid"); }
 
                 Host = login.Host;
                 Port = login.Port;
