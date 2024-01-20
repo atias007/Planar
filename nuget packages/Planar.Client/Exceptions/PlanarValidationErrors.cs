@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Text.Json.Serialization;
+using Planar.Client.Entities;
 
-namespace Planar.Client.Entities
+namespace Planar.Client.Exceptions
 {
-    public class PlanarValidationErrors
+    internal class PlanarValidationErrors : IPlanarValidationErrors
     {
         //
         // Summary:
@@ -46,6 +47,6 @@ namespace Planar.Client.Entities
         public string Instance { get; set; } = null!;
 
         [JsonPropertyName("errors")]
-        public List<PlanarError> Errors { get; set; } = new List<PlanarError>();
+        public IEnumerable<PlanarError> Errors { get; set; } = new List<PlanarError>();
     }
 }

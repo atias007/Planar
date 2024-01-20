@@ -478,7 +478,7 @@ namespace Planar.CLI.Actions
             request ??= new CliSetAuthorOfJob
             {
                 Id = await ChooseJob(cancellationToken),
-                Author = BaseCliAction.CollectCliValue(
+                Author = CollectCliValue(
                       field: "author of the job",
                       required: true,
                       minLength: 0,

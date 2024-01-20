@@ -1,4 +1,4 @@
-﻿using Planar.Client.Entities;
+﻿using Planar.Client.Exceptions;
 using RestSharp;
 using System;
 using System.Net;
@@ -93,20 +93,40 @@ namespace Planar.Client
                 throw new PlanarException(message, response.ErrorException);
             }
 
-            if (response.StatusCode == HttpStatusCode.BadRequest && !string.IsNullOrEmpty(response.Content))
+            if (response.StatusCode == HttpStatusCode.BadRequest)
             {
-                try
+                if (!string.IsNullOrWhiteSpace(response.Content))
                 {
-                    var errors = JsonSerializer.Deserialize<PlanarValidationErrors>(response.Content);
-                    if (errors != null)
+                    try
                     {
-                        throw new PlanarException("Planar service return validation errors. For more detais see errors property", errors);
+                        var errors = JsonSerializer.Deserialize<PlanarValidationErrors>(response.Content);
+                        if (errors != null)
+                        {
+                            throw new PlanarValidationException("Planar service return validation errors. For more detais see errors property", errors);
+                        }
+                    }
+                    catch
+                    {
+                        // *** DO NOTHING ***
                     }
                 }
-                catch
+
+                throw new PlanarValidationException("Planar service return validation errors");
+            }
+
+            if (response.StatusCode == HttpStatusCode.Conflict) { throw new PlanarConflictException(); }
+            if (response.StatusCode == HttpStatusCode.Forbidden) { throw new PlanarForbiddenException(); }
+            if (response.StatusCode == HttpStatusCode.ServiceUnavailable) { throw new PlanarServiceUnavailableException(); }
+            if (response.StatusCode == HttpStatusCode.Unauthorized) { throw new PlanarUnauthorizedException(); }
+            if (response.StatusCode == HttpStatusCode.TooManyRequests) { throw new PlanarTooManyRequestsException(); }
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                if (string.IsNullOrWhiteSpace(response.Content))
                 {
-                    // *** DO NOTHING ***
+                    throw new PlanarNotFoundException();
                 }
+
+                throw new PlanarNotFoundException(response.Content);
             }
 
             throw new PlanarException($"Planar service return error status code {response.StatusCode}");

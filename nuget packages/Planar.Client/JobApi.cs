@@ -1,4 +1,5 @@
 ﻿using Planar.Client.Entities;
+using Planar.Client.Exceptions;
 using RestSharp;
 using System;
 using System.Collections.Generic;
@@ -13,36 +14,71 @@ namespace Planar.Client
         {
         }
 
-        public async Task<string> AddAsync(string folder, CancellationToken cancellationToken = default)
+        public async Task<string> AddAsync(string folder, string? jobFileName, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            ValidateMandatory(folder, nameof(folder));
+            var body = new
+            {
+                folder,
+                jobFileName
+            };
+
+            var restRequest = new RestRequest("job/folder", Method.Post)
+                .AddBody(body);
+
+            var result = await _proxy.InvokeAsync<PlanarIdResponse>(restRequest, cancellationToken);
+            return result.Id;
         }
 
-        public async Task<string> AddAsync(string folder, string jobFileName, CancellationToken cancellationToken = default)
+        public async Task PutDataAsync(string id, string key, string? value, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
-        }
+            ValidateMandatory(id, nameof(id));
+            ValidateMandatory(key, nameof(key));
+            var prm1 = new
+            {
+                Id = id,
+                DataKey = key,
+                DataValue = value
+            };
 
-        public async Task AddDataAsync(string id, string key, string value, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
+            var restRequest = new RestRequest("job/data", Method.Post).AddBody(prm1);
+            try
+            {
+                await _proxy.InvokeAsync(restRequest, cancellationToken);
+            }
+            catch (PlanarConflictException)
+            {
+                restRequest = new RestRequest("job/data", Method.Put).AddBody(prm1);
+                await _proxy.InvokeAsync(restRequest, cancellationToken);
+            }
         }
 
         public async Task CancelRunningAsync(string fireInstanceId, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            ValidateMandatory(fireInstanceId, nameof(fireInstanceId));
+            var restRequest = new RestRequest("job/cancel", Method.Post)
+                .AddBody(new { fireInstanceId });
+            await _proxy.InvokeAsync<JobDescription>(restRequest, cancellationToken);
         }
 
         public async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
-            throw new NotImplementedException();
+            var restRequest = new RestRequest("job/{id}", Method.Delete)
+                .AddParameter("id", id, ParameterType.UrlSegment);
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
         public async Task DeleteDataAsync(string id, string key, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
-            throw new NotImplementedException();
+            ValidateMandatory(key, nameof(key));
+            var restRequest = new RestRequest("job/{id}/data/{key}", Method.Delete)
+                       .AddParameter("id", id, ParameterType.UrlSegment)
+                       .AddParameter("key", key, ParameterType.UrlSegment);
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
         public async Task<JobDescription> DescribeJobAsync(string id, CancellationToken cancellationToken = default)
@@ -56,7 +92,12 @@ namespace Planar.Client
 
         public async Task<IEnumerable<KeyValueItem>> GatSettingsAsync(string id, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            ValidateMandatory(id, nameof(id));
+            var restRequest = new RestRequest("job/{id}/settings", Method.Get)
+               .AddParameter("id", id, ParameterType.UrlSegment);
+
+            var result = await _proxy.InvokeAsync<IEnumerable<KeyValueItem>>(restRequest, cancellationToken);
+            return result;
         }
 
         public async Task<IPagingResponse<JobAudit>> GetAllAuditsAsync(PagingRequest? paging, CancellationToken cancellationToken = default)
@@ -136,27 +177,43 @@ namespace Planar.Client
 
         public async Task<IEnumerable<RunningJobDetails>> GetRunningAsync(CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            var restRequest = new RestRequest("job/running", Method.Get);
+            var result = await _proxy.InvokeAsync<List<RunningJobDetails>>(restRequest, cancellationToken);
+            return result;
+        }
+
+        public async Task<RunningJobDetails> GetRunningAsync(string instanceId, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(instanceId, nameof(instanceId));
+            var restRequest = new RestRequest("job/running-instance/{instanceId}", Method.Get)
+                    .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
+            var result = await _proxy.InvokeAsync<RunningJobDetails>(restRequest, cancellationToken);
+            return result;
         }
 
         public async Task<RunningJobData> GetRunningDataAsync(string instanceId, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            ValidateMandatory(instanceId, nameof(instanceId));
+            var restRequest = new RestRequest("job/running-data/{instanceId}", Method.Get)
+                .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
+
+            var result = await _proxy.InvokeAsync<RunningJobData>(restRequest, cancellationToken);
+            return result;
         }
 
-        public async Task<RunningJobDetails> GetRunningInfoAsync(string instanceId, CancellationToken cancellationToken = default)
+        public async Task InvokeAsync(string id, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
-        }
+            ValidateMandatory(id, nameof(id));
+            var request = new
+            {
+                id,
+                nowOverrideValue,
+                data
+            };
 
-        public async Task InvokeAsync(string id, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public async Task InvokeAsync(string id, DateTime nowOverrideValue, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
+            var restRequest = new RestRequest("job/invoke", Method.Post)
+                .AddBody(request);
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
         public async Task<IPagingResponse<JobBasicDetails>> ListAsync(JobsFilter? filter = null, CancellationToken cancellationToken = default)
@@ -207,16 +264,28 @@ namespace Planar.Client
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
-        public async Task QueueInvokeAsync(string id, DateTime dueDate, CancellationToken cancellationToken = default)
+        public async Task<string> QueueInvokeAsync(
+            string id,
+            DateTime dueDate,
+            TimeSpan? timeout,
+            DateTime? nowOverrideValue = null,
+            Dictionary<string, string>? data = null,
+            CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
-            throw new NotImplementedException();
-        }
+            var request = new
+            {
+                id,
+                dueDate,
+                timeout,
+                nowOverrideValue,
+                data
+            };
 
-        public async Task QueueInvokeAsync(string id, DateTime dueDate, TimeSpan timeout, CancellationToken cancellationToken = default)
-        {
-            ValidateMandatory(id, nameof(id));
-            throw new NotImplementedException();
+            var restRequest = new RestRequest("job/queue-invoke", Method.Post)
+                .AddBody(request);
+            var result = await _proxy.InvokeAsync<PlanarIdResponse>(restRequest, cancellationToken);
+            return result.Id;
         }
 
         public async Task ResumeAsync(string id, CancellationToken cancellationToken = default)
@@ -228,17 +297,41 @@ namespace Planar.Client
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
-        public async Task<string> UpdateAsync(string folder, bool updateJobData = true, bool updateTriggerData = true, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateAsync(string id, bool updateJobData = false, bool updateTriggersData = false, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            ValidateMandatory(id, nameof(id));
+            var body = new
+            {
+                id,
+                options = new
+                {
+                    updateJobData,
+                    updateTriggersData
+                }
+            };
+
+            var restRequest = new RestRequest("job", Method.Put)
+                .AddBody(body);
+
+            var result = await _proxy.InvokeAsync<PlanarIdResponse>(restRequest, cancellationToken);
+            return result.Id;
         }
 
-        public async Task<string> UpdateAsync(string folder, string jobFileName, bool updateJobData = true, bool updateTriggerData = true, CancellationToken cancellationToken = default)
+        public async Task SetAuthor(string id, string author, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            ValidateMandatory(id, nameof(id));
+            ValidateMandatory(author, nameof(author));
+            var restRequest = new RestRequest("job/author", Method.Patch)
+                .AddBody(new
+                {
+                    id,
+                    author
+                });
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
-        public async Task UpdateJobDataAsync(string id, string key, string value, CancellationToken cancellationToken = default)
+        public Task<TestStatus> TestAsync(string id, Action<RunningJobDetails> callback, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

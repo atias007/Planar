@@ -1,4 +1,5 @@
 ﻿using Planar.Client.Entities;
+using Planar.Client.Exceptions;
 using System;
 using System.Net;
 using System.Threading;

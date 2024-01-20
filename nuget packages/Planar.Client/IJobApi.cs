@@ -108,7 +108,7 @@ namespace Planar.Client
         /// </summary>
         /// <param name="instanceId"></param>
         /// <returns>RunningJobDetails</returns>
-        Task<RunningJobDetails> GetRunningInfoAsync(string instanceId, CancellationToken cancellationToken = default);
+        Task<RunningJobDetails> GetRunningAsync(string instanceId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get Running Job Data
@@ -134,28 +134,25 @@ namespace Planar.Client
         /// Add Job
         /// </summary>
         /// <returns>string</returns>
-        Task<string> AddAsync(string folder, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Add Job
-        /// </summary>
-        /// <returns>string</returns>
-        Task<string> AddAsync(string folder, string jobFileName, CancellationToken cancellationToken = default);
+        Task<string> AddAsync(string folder, string? jobFileName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Invoke Job
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <returns></returns>
-        Task InvokeAsync(string id, CancellationToken cancellationToken = default);
+        Task InvokeAsync(string id, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Invoke Job
+        /// Invoke Job, track progress and wait for completion
         /// </summary>
-        /// <param name="id">Job id or job key (Group.Name)</param>
+        /// <param name="id"></param>
+        /// <param name="callback"></param>
         /// <param name="nowOverrideValue"></param>
+        /// <param name="data"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task InvokeAsync(string id, DateTime nowOverrideValue, CancellationToken cancellationToken = default);
+        Task<TestStatus> TestAsync(string id, Action<RunningJobDetails> callback, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Pause Job
@@ -169,17 +166,18 @@ namespace Planar.Client
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <param name="dueDate">Invocation due date</param>
+        /// <param name="timeout">Specific timeout</param>
+        /// <param name="nowOverrideValue"></param>
+        /// <param name="data">Key/Value dictionary</param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task QueueInvokeAsync(string id, DateTime dueDate, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Queue Invokation Of Job Queue invokation of job
-        /// </summary>
-        /// <param name="id">Job id or job key (Group.Name)</param>
-        /// <param name="dueDate">Invocation due date</param>
-        /// <param name="timeout">specific timeout</param>
-        /// <returns></returns>
-        Task QueueInvokeAsync(string id, DateTime dueDate, TimeSpan timeout, CancellationToken cancellationToken = default);
+        Task<string> QueueInvokeAsync(
+            string id,
+            DateTime dueDate,
+            TimeSpan? timeout,
+            DateTime? nowOverrideValue = null,
+            Dictionary<string, string>? data = null,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Resume Job
@@ -189,31 +187,27 @@ namespace Planar.Client
         Task ResumeAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Add Job Data
+        /// Add Or Update Job Data
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <param name="key">Data key</param>
         /// <param name="key">Data value</param>
         /// <returns></returns>
-        Task AddDataAsync(string id, string key, string value, CancellationToken cancellationToken = default);
+        Task PutDataAsync(string id, string key, string value, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Update Job Data
+        /// Update Job
+        /// </summary>
+        /// <returns>string</returns>
+        Task<string> UpdateAsync(string id, bool updateJobData = false, bool updateTriggersData = false, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        ///
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
+        /// <param name="author">Author name</param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task UpdateJobDataAsync(string id, string key, string value, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Update Job
-        /// </summary>
-        /// <returns>string</returns>
-        Task<string> UpdateAsync(string folder, bool updateJobData = true, bool updateTriggerData = true, CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Update Job
-        /// </summary>
-        /// <returns>string</returns>
-        Task<string> UpdateAsync(string folder, string jobFileName, bool updateJobData = true, bool updateTriggerData = true, CancellationToken cancellationToken = default);
+        Task SetAuthor(string id, string author, CancellationToken cancellationToken = default);
     }
 }
