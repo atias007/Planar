@@ -8,6 +8,7 @@ using Quartz;
 using System;
 using System.Data;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.Data
@@ -212,7 +213,7 @@ namespace Planar.Service.Data
             return new PagingResponse<JobLastRun>(data.ToList(), count);
         }
 
-        public async Task<LastInstanceId?> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime)
+        public async Task<LastInstanceId?> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime, CancellationToken cancellationToken)
         {
             var result = await _context.JobInstanceLogs
                 .Where(l =>
@@ -226,7 +227,7 @@ namespace Planar.Service.Data
                     InstanceId = l.InstanceId,
                     LogId = l.Id,
                 })
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
 
             return result;
         }

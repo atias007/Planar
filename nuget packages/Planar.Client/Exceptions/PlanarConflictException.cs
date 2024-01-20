@@ -7,5 +7,9 @@ namespace Planar.Client.Exceptions
         internal PlanarConflictException()
         {
         }
+
+        internal PlanarConflictException(string message) : base(message)
+        {
+        }
     }
 }

@@ -604,7 +604,7 @@ namespace Planar.CLI.Actions
             var result = await CheckJobInner(cancellationToken);
             if (result.IsSuccessful)
             {
-                var exists = result.Data?.Exists(d => d.Id == request.Id || $"{d.Group}.{d.Name}" == request.Id) ?? false;
+                var exists = result.Data?.Exists(d => d.Id == request.Id || string.Equals($"{d.Group}.{d.Name}", request.Id, StringComparison.OrdinalIgnoreCase)) ?? false;
                 if (exists) { throw new CliException($"job id {request.Id} already running. test can not be invoked until job done"); }
             }
 
@@ -687,9 +687,12 @@ namespace Planar.CLI.Actions
             // UTC
             var dateParameter = invokeDate.ToString("s", CultureInfo.InvariantCulture);
 
-            var restRequest = new RestRequest("job/{id}/last-instance-id", Method.Get)
+            var restRequest = new RestRequest("job/{id}/last-instance-id/long-polling", Method.Get)
                 .AddParameter("id", id, ParameterType.UrlSegment)
                 .AddParameter("invokeDate", dateParameter, ParameterType.QueryString);
+
+            restRequest.Timeout = 35_000; // 35 sec
+
             var result = await RestProxy.Invoke<LastInstanceId>(restRequest, cancellationToken);
             return result;
         }
@@ -900,38 +903,31 @@ namespace Planar.CLI.Actions
         private static async Task<TestData> TestStep2GetInstanceId(CliInvokeJobRequest request, DateTime invokeDate, CancellationToken cancellationToken)
         {
             AnsiConsole.Markup(" [gold3_1][[x]][/] Get instance id... ");
-            RestResponse<LastInstanceId> instanceId = null!;
-            var response = new TestData();
 
-            for (int i = 0; i < 20; i++)
+            var result = new TestData();
+            var response = await GetLastInstanceId(request.Id, invokeDate, cancellationToken);
+            if (response.StatusCode == HttpStatusCode.Conflict)
             {
-                instanceId = await GetLastInstanceId(request.Id, invokeDate, cancellationToken);
-                if (!instanceId.IsSuccessful)
-                {
-                    AnsiConsole.WriteLine();
-                    response.Response = new CliActionResponse(instanceId);
-                    return response;
-                }
-
-                if (instanceId.Data != null) { break; }
-                if (i > 5)
-                {
-                    await CheckAlreadyRunningJob(request, cancellationToken);
-                }
-
-                await Task.Delay(1000, cancellationToken);
+                throw new CliException($"job id {request.Id} already running. test can not be invoked until job done");
             }
 
-            if (instanceId.Data == null)
+            if (!response.IsSuccessful)
+            {
+                AnsiConsole.WriteLine();
+                result.Response = new CliActionResponse(response);
+                return result;
+            }
+
+            if (response.Data == null)
             {
                 AnsiConsole.WriteLine();
                 throw new CliException("could not found running instance id. check whether job is paused or maybe another instance already running");
             }
 
-            AnsiConsole.MarkupLine($"[turquoise2]{instanceId.Data.InstanceId}[/]");
-            response.InstanceId = instanceId.Data.InstanceId;
-            response.LogId = instanceId.Data.LogId;
-            return response;
+            AnsiConsole.MarkupLine($"[turquoise2]{response.Data.InstanceId}[/]");
+            result.InstanceId = response.Data.InstanceId;
+            result.LogId = response.Data.LogId;
+            return result;
         }
 
         private static async Task<CliActionResponse?> TestStep4GetRunningData(string instanceId, DateTime invokeDate, CancellationToken cancellationToken)

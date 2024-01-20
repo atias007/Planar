@@ -3,6 +3,8 @@ using Planar.Client.Exceptions;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -331,9 +333,75 @@ namespace Planar.Client
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
-        public Task<TestStatus> TestAsync(string id, Action<RunningJobDetails> callback, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default)
+        public async Task<TestStatus> TestAsync(string id, Action<RunningJobDetails> callback, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            ValidateMandatory(id, nameof(id));
+            var invokeDate = DateTime.Now.AddSeconds(-1);
+
+            // (0) Check the job
+            await CheckAlreadyRunningJobInner(id, cancellationToken);
+
+            // (1) Invoke job
+            await InvokeJobInner(id, nowOverrideValue, data, cancellationToken);
+
+            // (2) Sleep 1 sec
+            await Task.Delay(1000, cancellationToken);
+
+            // (3) Get last instance id
+            var lastInstanceId = await GetLastInstanceId(id, invokeDate, cancellationToken);
+            var instanceId = lastInstanceId.InstanceId;
+            var logId = lastInstanceId.LogId;
+
+            // (4) Get running info
+
+            // (5) Sleep 1 sec
+            await Task.Delay(1000, cancellationToken);
+        }
+
+        private async Task CheckAlreadyRunningJobInner(string id, CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("job/running", Method.Get);
+            var result = await _proxy.InvokeAsync<List<RunningJobDetails>>(restRequest, cancellationToken);
+
+            var exists = result.Exists(d => d.Id == id || string.Equals($"{d.Group}.{d.Name}", id, StringComparison.OrdinalIgnoreCase));
+            if (exists) { throw new PlanarException($"job id {id} already running. test can not be invoked until job done"); }
+        }
+
+        private async Task InvokeJobInner(string id, DateTime? nowOverrideValue, Dictionary<string, string>? data, CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("job/invoke", Method.Post)
+                .AddBody(new
+                {
+                    id,
+                    nowOverrideValue,
+                    data
+                });
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
+        private async Task<LastInstanceId> GetLastInstanceId(string id, DateTime invokeDate, CancellationToken cancellationToken)
+        {
+            // UTC
+            var dateParameter = invokeDate.ToString("s", CultureInfo.InvariantCulture);
+
+            var restRequest = new RestRequest("job/{id}/last-instance-id/long-polling", Method.Get)
+                .AddParameter("id", id, ParameterType.UrlSegment)
+                .AddParameter("invokeDate", dateParameter, ParameterType.QueryString);
+
+            restRequest.Timeout = 35_000; // 35 sec
+
+            try
+            {
+                var result = await _proxy.InvokeAsync<LastInstanceId?>(restRequest, cancellationToken)
+                    ?? throw new PlanarException("could not found running instance id. check whether job is paused or maybe another instance already running");
+
+                return result;
+            }
+            catch (PlanarConflictException)
+            {
+                throw new PlanarConflictException($"job id {id} already running. test can not be invoked until job done");
+            }
         }
     }
 }
