@@ -495,13 +495,6 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<GetTestStatusResponse> GetTestStatus(int id)
-        {
-            var dal = Resolve<HistoryData>();
-            var result = await dal.GetTestStatus(id);
-            return result ?? throw new RestNotFoundException($"test with id {id} not found");
-        }
-
         public async Task Invoke(InvokeJobRequest request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);

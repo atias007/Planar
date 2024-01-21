@@ -1,10 +1,10 @@
-﻿using System;
+﻿using RestSharp;
 
 namespace Planar.Client.Exceptions
 {
-    public sealed class PlanarConflictException : Exception
+    public sealed class PlanarConflictException : BaseException
     {
-        internal PlanarConflictException()
+        internal PlanarConflictException(RestResponse response) : base(response)
         {
         }
 

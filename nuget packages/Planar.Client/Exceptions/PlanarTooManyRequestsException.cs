@@ -1,10 +1,10 @@
-﻿using System;
+﻿using RestSharp;
 
 namespace Planar.Client.Exceptions
 {
-    public sealed class PlanarTooManyRequestsException : Exception
+    public sealed class PlanarTooManyRequestsException : BaseException
     {
-        internal PlanarTooManyRequestsException()
+        internal PlanarTooManyRequestsException(RestResponse response) : base(response)
         { }
     }
 }

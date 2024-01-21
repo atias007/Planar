@@ -505,24 +505,21 @@ namespace Planar.CLI.Actions
             var step1 = await TestStep1InvokeJob(request, cancellationToken);
             if (step1 != null) { return step1; }
 
-            // (2) Sleep 1 sec
-            await Task.Delay(1000, cancellationToken);
-
-            // (3) Get instance id
+            // (2) Get instance id
             var step3 = await TestStep2GetInstanceId(request, invokeDate, cancellationToken);
             if (step3.Response != null) { return step3.Response; }
             var instanceId = step3.InstanceId;
             var logId = step3.LogId;
 
-            // (4) Get running info
-            var step4 = await TestStep4GetRunningData(instanceId, invokeDate, cancellationToken);
+            // (3) Get running info
+            var step4 = await TestStep3GetRunningData(instanceId, invokeDate, cancellationToken);
             if (step4 != null) { return step4; }
 
-            // (5) Sleep 1 sec
-            await Task.Delay(1000, cancellationToken);
+            // (4) Sleep 1 sec
+            await Task.Delay(500, cancellationToken);
 
-            // (6) Check log
-            var step6 = await TestStep6CheckLog(logId, cancellationToken);
+            // (5) Check log
+            var step6 = await TestStep5CheckLog(logId, cancellationToken);
             if (step6 != null) { return step6; }
             return CliActionResponse.Empty;
         }
@@ -734,7 +731,7 @@ namespace Planar.CLI.Actions
             CancellationToken cancellationToken)
         {
             var data = runResult.Data;
-            var currentHash = $"{data?.Progress}.{data?.EffectedRows}.{data?.ExceptionsCount}";
+            var currentHash = $"{data?.Progress ?? 0}.{data?.EffectedRows ?? 0}.{data?.ExceptionsCount ?? 0}";
             var restRequest = new RestRequest("job/running-instance/{instanceId}/long-polling", Method.Get)
                 .AddParameter("instanceId", instanceId, ParameterType.UrlSegment)
                 .AddQueryParameter("hash", currentHash);
@@ -930,8 +927,9 @@ namespace Planar.CLI.Actions
             return result;
         }
 
-        private static async Task<CliActionResponse?> TestStep4GetRunningData(string instanceId, DateTime invokeDate, CancellationToken cancellationToken)
+        private static async Task<CliActionResponse?> TestStep3GetRunningData(string instanceId, DateTime invokeDate, CancellationToken cancellationToken)
         {
+            // check for very fast finish job
             var result = await InitGetRunningData(instanceId, cancellationToken);
             if (result.Item2) { return result.Item1; }
 
@@ -978,32 +976,34 @@ namespace Planar.CLI.Actions
             return null;
         }
 
-        private static async Task<CliActionResponse?> TestStep6CheckLog(long logId, CancellationToken cancellationToken)
+        private static async Task<CliActionResponse?> TestStep5CheckLog(long logId, CancellationToken cancellationToken)
         {
-            var restTestRequest = new RestRequest("job/{id}/test-status", Method.Get)
-                .AddParameter("id", logId, ParameterType.UrlSegment);
-            var status = await RestProxy.Invoke<GetTestStatusResponse>(restTestRequest, cancellationToken);
+            var restRequest = new RestRequest("history/{id}", Method.Get)
+               .AddParameter("id", logId, ParameterType.UrlSegment);
 
-            if (!status.IsSuccessful) { return new CliActionResponse(status); }
-            if (status.Data == null)
+            var result = await RestProxy.Invoke<JobHistory>(restRequest, cancellationToken);
+
+            if (result.StatusCode == HttpStatusCode.NotFound || result.Data == null)
             {
                 Console.WriteLine();
                 throw new CliException($"could not found log data for log id {logId}");
             }
 
-            var finalSpan = TimeSpan.FromMilliseconds(status.Data.Duration.GetValueOrDefault());
-            AnsiConsole.Markup($"Effected Row(s): {status.Data.EffectedRows.GetValueOrDefault()}  |");
-            AnsiConsole.Markup($"  Ex. Count: {CliTableFormat.FormatExceptionCount(status.Data.ExceptionCount)}  |");
+            if (!result.IsSuccessful) { return new CliActionResponse(result); }
+
+            var finalSpan = TimeSpan.FromMilliseconds(result.Data.Duration.GetValueOrDefault());
+            AnsiConsole.Markup($"Effected Row(s): {result.Data.EffectedRows.GetValueOrDefault()}  |");
+            AnsiConsole.Markup($"  Ex. Count: {CliTableFormat.FormatExceptionCount(result.Data.ExceptionCount)}  |");
             AnsiConsole.Markup($"  Run Time: {CliTableFormat.FormatTimeSpan(finalSpan)}  |");
             AnsiConsole.MarkupLine($"  End Time: --:--:--     ");
             AnsiConsole.Markup(" [gold3_1][[x]][/] ");
-            if (status.Data.Status == 0)
+            if (result.Data.Status == 0)
             {
                 AnsiConsole.Markup("[green]Success[/]");
             }
             else
             {
-                AnsiConsole.Markup($"[red]Fail (status {status.Data.Status})[/]");
+                AnsiConsole.Markup($"[red]Fail (status {result.Data.Status})[/]");
             }
 
             Console.WriteLine();
@@ -1016,7 +1016,7 @@ namespace Planar.CLI.Actions
             table.AddRow($"[grey54]history log[/] [grey62]{logId}[/]");
             table.AddRow($"[grey54]history data[/] [grey62]{logId}[/]");
 
-            if (status.Data.Status == 1)
+            if (result.Data.Status == 1)
             {
                 table.AddRow($"[grey54]history ex[/] [grey62]{logId}[/]");
             }

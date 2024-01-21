@@ -1,7 +1,15 @@
 ﻿using Planar.Client;
+using Planar.Client.Entities;
 
 var client = new PlanarClient();
 var login = await client.ConnectAsync("http://localhost:2306");
+
+//await client.Jobs.TestAsync("Infrastructure.BankOfIsraelCurrency", DoIt);
+
+var res1 = await client.History.Get(24610);
+var res2 = await client.History.Get("NON_CLUSTERED638306436561775750");
+
+return;
 Console.WriteLine($"[x] Login as {login.Role}");
 var result1 = await client.Jobs.GetJobTypesAsync();
 Console.WriteLine($"[x] Job Types:");
@@ -33,3 +41,8 @@ var result7 = await client.Jobs.GetPreviousRunningAsync("5c1sgknnaj5");
 await client.Jobs.PauseAsync("5c1sgknnaj5");
 
 Console.ReadLine();
+
+static async Task DoIt(RunningJobDetails data)
+{
+    await Console.Out.WriteLineAsync(data.Progress.ToString());
+}

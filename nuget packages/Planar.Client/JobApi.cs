@@ -4,7 +4,6 @@ using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -333,7 +332,7 @@ namespace Planar.Client
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
-        public async Task<TestStatus> TestAsync(string id, Action<RunningJobDetails> callback, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default)
+        public async Task TestAsync(string id, Func<RunningJobDetails, Task> callback, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
             var invokeDate = DateTime.Now.AddSeconds(-1);
@@ -344,18 +343,163 @@ namespace Planar.Client
             // (1) Invoke job
             await InvokeJobInner(id, nowOverrideValue, data, cancellationToken);
 
-            // (2) Sleep 1 sec
-            await Task.Delay(1000, cancellationToken);
-
-            // (3) Get last instance id
+            // (2) Get last instance id
             var lastInstanceId = await GetLastInstanceId(id, invokeDate, cancellationToken);
             var instanceId = lastInstanceId.InstanceId;
             var logId = lastInstanceId.LogId;
 
-            // (4) Get running info
+            // (3) Get running info
+            await GetRunningData(callback, instanceId, invokeDate, logId, cancellationToken);
 
-            // (5) Sleep 1 sec
-            await Task.Delay(1000, cancellationToken);
+            // (4) Sleep 1 sec
+            await Task.Delay(500, cancellationToken);
+
+            // (5) Check log
+            await CheckLog(callback, logId, cancellationToken);
+        }
+
+        private async Task CheckLog(Func<RunningJobDetails, Task> callback, long logId, CancellationToken cancellationToken)
+        {
+            var restTestRequest = new RestRequest("history/{id}", Method.Get)
+               .AddParameter("id", logId, ParameterType.UrlSegment);
+            HistoryDetails status;
+
+            try
+            {
+                status = await _proxy.InvokeAsync<HistoryDetails>(restTestRequest, cancellationToken);
+            }
+            catch (PlanarNotFoundException)
+            {
+                throw new PlanarNotFoundException($"could not found log data for log id {logId}");
+            }
+
+            var details = new RunningJobDetails
+            {
+                EffectedRows = status.EffectedRows,
+                ExceptionsCount = status.ExceptionCount,
+                FireInstanceId = status.InstanceId,
+                FireTime = status.StartDate,
+                Group = status.JobGroup,
+                Id = status.JobId,
+                JobType = status.JobType,
+                Name = status.JobName,
+                Progress = 100,
+                RunTime = TimeSpan.FromMilliseconds(status.Duration.GetValueOrDefault()),
+                TriggerGroup = status.TriggerGroup,
+                TriggerId = status.TriggerId,
+                TriggerName = status.TriggerName
+            };
+
+            _ = callback(details);
+        }
+
+        private async Task GetRunningData(Func<RunningJobDetails, Task> callback, string instanceId, DateTime invokeDate, long logId, CancellationToken cancellationToken)
+        {
+            // check for very fast finish job
+            var result = await InitGetRunningData(instanceId, cancellationToken);
+            if (result.Item1 || result.Item2 == null)
+            {
+                await CheckLog(callback, logId, cancellationToken);
+                return;
+            }
+
+            Task dataTask = Task.CompletedTask;
+            var runResult = result.Item2;
+            DateTime? estimateEnd = null;
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                if (dataTask.Status == TaskStatus.RanToCompletion)
+                {
+                    dataTask = Task.Run(async () =>
+                    {
+                        var data = await LongPollingGetRunningData(callback, runResult, instanceId, invokeDate, cancellationToken);
+                        runResult = data.Item1;
+                        estimateEnd = data.Item2;
+                    }, cancellationToken);
+                }
+
+                for (int i = 0; i < 5; i++)
+                {
+                    await Task.Delay(200, cancellationToken);
+                    if (dataTask.Status == TaskStatus.RanToCompletion) { break; }
+                }
+
+                if (runResult == null) { break; }
+            }
+        }
+
+        private async Task<(RunningJobDetails?, DateTime?)> LongPollingGetRunningData(
+            Func<RunningJobDetails, Task> callback,
+            RunningJobDetails? data,
+            string instanceId,
+            DateTime invokeDate,
+            CancellationToken cancellationToken)
+        {
+            var currentHash = $"{data?.Progress}.{data?.EffectedRows}.{data?.ExceptionsCount}";
+            var restRequest = new RestRequest("job/running-instance/{instanceId}/long-polling", Method.Get)
+                .AddParameter("instanceId", instanceId, ParameterType.UrlSegment)
+                .AddQueryParameter("hash", currentHash);
+            restRequest.Timeout = 300_000; // 6 min
+            var counter = 1;
+            while (counter <= 3)
+            {
+                try
+                {
+                    data = await _proxy.InvokeAsync<RunningJobDetails>(restRequest, cancellationToken);
+                    break;
+                }
+                catch (PlanarNotFoundException)
+                {
+                    return (null, null);
+                }
+                catch (Exception)
+                {
+                    await Task.Delay(500 + ((counter - 1) ^ 2) * 500, cancellationToken);
+                    counter++;
+                }
+            }
+
+            var estimateEnd = GetEstimatedEndTime(data);
+            InvokeCallback(callback, data, invokeDate, estimateEnd);
+
+            return (data, estimateEnd);
+        }
+
+        private static DateTime? GetEstimatedEndTime(RunningJobDetails? data)
+        {
+            if (data == null) { return null; }
+            if (data.EstimatedEndTime == null) { return null; }
+            var estimateEnd = DateTime.Now.Add(data.EstimatedEndTime.Value);
+            return estimateEnd;
+        }
+
+        private void InvokeCallback(Func<RunningJobDetails, Task> callback, RunningJobDetails? data, DateTime invokeDate, DateTime? estimateEnd)
+        {
+            if (data == null) { return; }
+
+            var span = DateTimeOffset.Now.Subtract(invokeDate);
+            var endSpan = estimateEnd == null ? data.EstimatedEndTime : estimateEnd.Value.Subtract(DateTime.Now);
+            data.RunTime = span;
+            data.EstimatedEndTime = endSpan;
+            _ = callback(data);
+        }
+
+        private async Task<(bool, RunningJobDetails?)> InitGetRunningData(string instanceId, CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("job/running-instance/{instanceId}", Method.Get)
+                .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
+
+            RunningJobDetails? runResult;
+            try
+            {
+                runResult = await _proxy.InvokeAsync<RunningJobDetails>(restRequest, cancellationToken);
+            }
+            catch (PlanarNotFoundException)
+            {
+                return (true, null);
+            }
+
+            return (false, runResult);
         }
 
         private async Task CheckAlreadyRunningJobInner(string id, CancellationToken cancellationToken)
@@ -389,7 +533,7 @@ namespace Planar.Client
                 .AddParameter("id", id, ParameterType.UrlSegment)
                 .AddParameter("invokeDate", dateParameter, ParameterType.QueryString);
 
-            restRequest.Timeout = 35_000; // 35 sec
+            restRequest.Timeout = 40_000; // 40 sec
 
             try
             {

@@ -323,19 +323,6 @@ namespace Planar.Controllers
         }
 
         [ApiExplorerSettings(IgnoreApi = true)]
-        [HttpGet("{id}/test-status")]
-        [TesterAuthorize]
-        [SwaggerOperation(OperationId = "get_job_teststatus_id", Description = "", Summary = "")]
-        [OkJsonResponse(typeof(GetTestStatusResponse))]
-        [BadRequestResponse]
-        [NotFoundResponse]
-        public async Task<ActionResult<GetTestStatusResponse>> GetTestStatus([FromRoute][Id] int id)
-        {
-            var result = await BusinesLayer.GetTestStatus(id);
-            return Ok(result);
-        }
-
-        [ApiExplorerSettings(IgnoreApi = true)]
         [HttpGet("{id}/last-instance-id/long-polling")]
         [TesterAuthorize]
         [OkJsonResponse(typeof(LastInstanceId))]

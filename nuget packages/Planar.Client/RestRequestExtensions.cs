@@ -37,14 +37,14 @@ namespace RestSharp
 
         public static RestRequest AddQueryDateScope(this RestRequest request, IDateScope dateScopeRequest)
         {
-            if (dateScopeRequest.FromDate > DateTime.MinValue)
+            if (dateScopeRequest.FromDate.HasValue && dateScopeRequest.FromDate > DateTime.MinValue)
             {
-                request.AddQueryParameter(nameof(IDateScope.FromDate), dateScopeRequest.FromDate.ToString("u"));
+                request.AddQueryParameter(nameof(IDateScope.FromDate), dateScopeRequest.FromDate.Value.ToString("u"));
             }
 
-            if (dateScopeRequest.ToDate > DateTime.MinValue)
+            if (dateScopeRequest.ToDate.HasValue && dateScopeRequest.ToDate > DateTime.MinValue)
             {
-                request.AddQueryParameter(nameof(IDateScope.ToDate), dateScopeRequest.ToDate.ToString("u"));
+                request.AddQueryParameter(nameof(IDateScope.ToDate), dateScopeRequest.ToDate.Value.ToString("u"));
             }
 
             return request;

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Planar.Client
 {
     /// <summary>
-    /// Represents a collection of functions to interact with the API endpoints
+    /// Represents a collection of functions to interact with the Job API endpoints
     /// </summary>
     public interface IJobApi
     {
@@ -152,7 +152,7 @@ namespace Planar.Client
         /// <param name="data"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task<TestStatus> TestAsync(string id, Action<RunningJobDetails> callback, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default);
+        Task TestAsync(string id, Func<RunningJobDetails, Task> callback, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Pause Job

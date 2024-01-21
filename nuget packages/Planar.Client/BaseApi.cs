@@ -15,7 +15,15 @@ namespace Planar.Client
         {
             if (string.IsNullOrWhiteSpace(value))
             {
-                throw new ArgumentException($"'{name}' cannot be null or whitespace.", name);
+                throw new ArgumentException($"'{name}' cannot be null or whitespace", name);
+            }
+        }
+
+        protected void ValidateMandatory(long value, string name)
+        {
+            if (value <= 0)
+            {
+                throw new ArgumentException($"'{name}' must be greater then 0", name);
             }
         }
     }

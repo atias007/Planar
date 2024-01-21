@@ -1,10 +1,10 @@
-﻿using System;
+﻿using RestSharp;
 
 namespace Planar.Client.Exceptions
 {
-    public sealed class PlanarNotFoundException : Exception
+    public sealed class PlanarNotFoundException : BaseException
     {
-        internal PlanarNotFoundException()
+        internal PlanarNotFoundException(RestResponse response) : base(response)
         {
         }
 

@@ -1,10 +1,11 @@
-﻿using System;
+﻿using RestSharp;
+using System;
 
 namespace Planar.Client.Exceptions
 {
-    public sealed class PlanarForbiddenException : Exception
+    public sealed class PlanarForbiddenException : BaseException
     {
-        internal PlanarForbiddenException()
+        internal PlanarForbiddenException(RestResponse response) : base(response)
         {
         }
     }

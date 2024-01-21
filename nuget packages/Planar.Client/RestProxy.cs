@@ -114,22 +114,22 @@ namespace Planar.Client
                 throw new PlanarValidationException("Planar service return validation errors");
             }
 
-            if (response.StatusCode == HttpStatusCode.Conflict) { throw new PlanarConflictException(); }
-            if (response.StatusCode == HttpStatusCode.Forbidden) { throw new PlanarForbiddenException(); }
-            if (response.StatusCode == HttpStatusCode.ServiceUnavailable) { throw new PlanarServiceUnavailableException(); }
-            if (response.StatusCode == HttpStatusCode.Unauthorized) { throw new PlanarUnauthorizedException(); }
-            if (response.StatusCode == HttpStatusCode.TooManyRequests) { throw new PlanarTooManyRequestsException(); }
+            if (response.StatusCode == HttpStatusCode.Conflict) { throw new PlanarConflictException(response); }
+            if (response.StatusCode == HttpStatusCode.Forbidden) { throw new PlanarForbiddenException(response); }
+            if (response.StatusCode == HttpStatusCode.ServiceUnavailable) { throw new PlanarServiceUnavailableException(response); }
+            if (response.StatusCode == HttpStatusCode.Unauthorized) { throw new PlanarUnauthorizedException(response); }
+            if (response.StatusCode == HttpStatusCode.TooManyRequests) { throw new PlanarTooManyRequestsException(response); }
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 if (string.IsNullOrWhiteSpace(response.Content))
                 {
-                    throw new PlanarNotFoundException();
+                    throw new PlanarNotFoundException(response);
                 }
 
                 throw new PlanarNotFoundException(response.Content);
             }
 
-            throw new PlanarException($"Planar service return error status code {response.StatusCode}");
+            throw new PlanarException(response);
         }
 
         public async Task<TResponse> InvokeAsync<TResponse>(RestRequest request, CancellationToken cancellationToken)

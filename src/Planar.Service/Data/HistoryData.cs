@@ -232,22 +232,6 @@ namespace Planar.Service.Data
             return result;
         }
 
-        public async Task<GetTestStatusResponse?> GetTestStatus(long id)
-        {
-            var result = await _context.JobInstanceLogs
-                .Where(l => l.Id == id)
-                .Select(l => new GetTestStatusResponse
-                {
-                    EffectedRows = l.EffectedRows,
-                    Status = l.Status,
-                    Duration = l.Duration,
-                    ExceptionCount = l.ExceptionCount
-                })
-                .FirstOrDefaultAsync();
-
-            return result;
-        }
-
         public async Task<bool> IsHistoryExists(long id)
         {
             var result = await _context.JobInstanceLogs
