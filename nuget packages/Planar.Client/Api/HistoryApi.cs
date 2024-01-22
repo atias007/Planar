@@ -12,7 +12,7 @@ namespace Planar.Client
         {
         }
 
-        public async Task<HistoryDetails> Get(long id, CancellationToken cancellationToken = default)
+        public async Task<HistoryDetails> GetAsync(long id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
             var restRequest = new RestRequest("history/{id}", Method.Get)
@@ -22,7 +22,7 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<HistoryDetails> Get(string instanceId, CancellationToken cancellationToken = default)
+        public async Task<HistoryDetails> GetAsync(string instanceId, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(instanceId, nameof(instanceId));
             var restRequest = new RestRequest("history/by-instanceid/{instanceid}", Method.Get)
@@ -32,12 +32,18 @@ namespace Planar.Client
             return result;
         }
 
-        public Task<CounterResponse> GetCounter(CounterFilter filter, CancellationToken cancellationToken = default)
+        public async Task<CounterResponse> GetCounterAsync(CounterFilter? filter = null, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            filter ??= new CounterFilter();
+
+            var restRequest = new RestRequest("history/count", Method.Get)
+                .AddQueryDateScope(filter);
+
+            var result = await _proxy.InvokeAsync<CounterResponse>(restRequest, cancellationToken);
+            return result;
         }
 
-        public async Task<string> GetData(long id, CancellationToken cancellationToken = default)
+        public async Task<string> GetDataAsync(long id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
 
@@ -48,7 +54,7 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<string> GetException(long id, CancellationToken cancellationToken = default)
+        public async Task<string> GetExceptionAsync(long id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
 
@@ -59,12 +65,21 @@ namespace Planar.Client
             return result;
         }
 
-        public Task<PagingResponse<HistoryDetails>> GetLast(LastFilter filter, CancellationToken cancellationToken = default)
+        public async Task<PagingResponse<LastRunDetails>> GetLastAsync(LastFilter? filter = null, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            filter ??= new LastFilter();
+            var restRequest = new RestRequest("history/last", Method.Get);
+            if (filter.LastDays.GetValueOrDefault() > 0)
+            {
+                restRequest.AddQueryParameter("lastDays", filter.LastDays.GetValueOrDefault());
+            }
+
+            restRequest.AddQueryPagingParameter(filter);
+            var result = await _proxy.InvokeAsync<PagingResponse<LastRunDetails>>(restRequest, cancellationToken);
+            return result;
         }
 
-        public async Task<string> GetLog(long id, CancellationToken cancellationToken = default)
+        public async Task<string> GetLogAsync(long id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
 
@@ -75,12 +90,18 @@ namespace Planar.Client
             return result;
         }
 
-        public Task<PagingResponse<HistorySummary>> GetSummary(SummaryFilter filter, CancellationToken cancellationToken = default)
+        public async Task<PagingResponse<HistorySummary>> GetSummaryAsync(SummaryFilter? filter = null, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            filter ??= new SummaryFilter();
+            var restRequest = new RestRequest("history/summary", Method.Get)
+                .AddQueryDateScope(filter)
+                .AddQueryPagingParameter(filter);
+
+            var result = await _proxy.InvokeAsync<PagingResponse<HistorySummary>>(restRequest, cancellationToken);
+            return result;
         }
 
-        public async Task<PagingResponse<HistoryBasicDetails>> List(HistoryFilter? filter = null, CancellationToken cancellationToken = default)
+        public async Task<PagingResponse<HistoryBasicDetails>> ListAsync(HistoryFilter? filter = null, CancellationToken cancellationToken = default)
         {
             filter ??= new HistoryFilter();
 

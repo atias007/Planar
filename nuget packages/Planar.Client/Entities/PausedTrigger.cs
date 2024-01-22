@@ -1,6 +1,6 @@
 ﻿namespace Planar.Client.Entities
 {
-    public class PausedTriggerDetails
+    public class PausedTrigger
     {
         public string Id { get; set; } = string.Empty;
 

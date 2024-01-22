@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace Planar.Client.Entities
 {
-    public class TriggerDetails : PausedTriggerDetails
+    public class TriggerDetails : PausedTrigger
     {
         public DateTime Start { get; set; }
 

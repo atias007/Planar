@@ -14,14 +14,14 @@ namespace Planar.Client
         /// </summary>
         /// <param name="filter"></param>
         /// <returns></returns>
-        Task<PagingResponse<HistoryBasicDetails>> List(HistoryFilter? filter = null, CancellationToken cancellationToken = default);
+        Task<PagingResponse<HistoryBasicDetails>> ListAsync(HistoryFilter? filter = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        Task<HistoryDetails> Get(long id, CancellationToken cancellationToken = default);
+        Task<HistoryDetails> GetAsync(long id, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///
@@ -29,48 +29,48 @@ namespace Planar.Client
         /// <param name="instanceId"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task<HistoryDetails> Get(string instanceId, CancellationToken cancellationToken = default);
+        Task<HistoryDetails> GetAsync(string instanceId, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        Task<string> GetData(long id, CancellationToken cancellationToken = default);
+        Task<string> GetDataAsync(long id, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        Task<string> GetLog(long id, CancellationToken cancellationToken = default);
+        Task<string> GetLogAsync(long id, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        Task<string> GetException(long id, CancellationToken cancellationToken = default);
+        Task<string> GetExceptionAsync(long id, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///
         /// </summary>
         /// <param name="filter"></param>
         /// <returns></returns>
-        Task<PagingResponse<HistoryDetails>> GetLast(LastFilter filter, CancellationToken cancellationToken = default);
+        Task<PagingResponse<LastRunDetails>> GetLastAsync(LastFilter? filter = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///
         /// </summary>
         /// <param name="filter"></param>
         /// <returns></returns>
-        Task<PagingResponse<HistorySummary>> GetSummary(SummaryFilter filter, CancellationToken cancellationToken = default);
+        Task<PagingResponse<HistorySummary>> GetSummaryAsync(SummaryFilter? filter = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///
         /// </summary>
         /// <param name="filter"></param>
         /// <returns></returns>
-        Task<CounterResponse> GetCounter(CounterFilter filter, CancellationToken cancellationToken = default);
+        Task<CounterResponse> GetCounterAsync(CounterFilter? filter = null, CancellationToken cancellationToken = default);
     }
 }

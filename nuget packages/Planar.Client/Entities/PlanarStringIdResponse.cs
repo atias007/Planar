@@ -1,6 +1,6 @@
 ﻿namespace Planar.Client.Entities
 {
-    internal class PlanarIdResponse
+    internal class PlanarStringIdResponse
     {
         public string Id { get; set; } = string.Empty;
     }

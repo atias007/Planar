@@ -1,4 +1,5 @@
-﻿using Planar.Client.Entities;
+﻿using Planar.Client.Api;
+using Planar.Client.Entities;
 using Planar.Client.Exceptions;
 using System;
 using System.Net;
@@ -14,11 +15,15 @@ namespace Planar.Client
         private readonly RestProxy _proxy = new RestProxy();
         private readonly Lazy<JobApi> _jobApi;
         private readonly Lazy<HistoryApi> _historyApi;
+        private readonly Lazy<TriggerApi> _triggerApi;
+        private readonly Lazy<MonitorApi> _monitorApi;
 
         public PlanarClient()
         {
             _jobApi = new Lazy<JobApi>(() => new JobApi(_proxy), isThreadSafe: true);
             _historyApi = new Lazy<HistoryApi>(() => new HistoryApi(_proxy), isThreadSafe: true);
+            _triggerApi = new Lazy<TriggerApi>(() => new TriggerApi(_proxy), isThreadSafe: true);
+            _monitorApi = new Lazy<MonitorApi>(() => new MonitorApi(_proxy), isThreadSafe: true);
         }
 
         public async Task<LoginDetails> ConnectAsync(string host, string username, string password)
@@ -75,8 +80,9 @@ namespace Planar.Client
             };
         }
 
-        public IJobApi Jobs => _jobApi.Value;
-
+        public IJobApi Job => _jobApi.Value;
         public IHistoryApi History => _historyApi.Value;
+        public ITriggerApi Trigger => _triggerApi.Value;
+        public IMonitorApi Monitor => _monitorApi.Value;
     }
 }

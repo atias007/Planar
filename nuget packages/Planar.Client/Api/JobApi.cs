@@ -27,7 +27,7 @@ namespace Planar.Client
             var restRequest = new RestRequest("job/folder", Method.Post)
                 .AddBody(body);
 
-            var result = await _proxy.InvokeAsync<PlanarIdResponse>(restRequest, cancellationToken);
+            var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
             return result.Id;
         }
 
@@ -35,21 +35,21 @@ namespace Planar.Client
         {
             ValidateMandatory(id, nameof(id));
             ValidateMandatory(key, nameof(key));
-            var prm1 = new
+            var prm = new
             {
                 Id = id,
                 DataKey = key,
                 DataValue = value
             };
 
-            var restRequest = new RestRequest("job/data", Method.Post).AddBody(prm1);
+            var restRequest = new RestRequest("job/data", Method.Post).AddBody(prm);
             try
             {
                 await _proxy.InvokeAsync(restRequest, cancellationToken);
             }
             catch (PlanarConflictException)
             {
-                restRequest = new RestRequest("job/data", Method.Put).AddBody(prm1);
+                restRequest = new RestRequest("job/data", Method.Put).AddBody(prm);
                 await _proxy.InvokeAsync(restRequest, cancellationToken);
             }
         }
@@ -285,7 +285,7 @@ namespace Planar.Client
 
             var restRequest = new RestRequest("job/queue-invoke", Method.Post)
                 .AddBody(request);
-            var result = await _proxy.InvokeAsync<PlanarIdResponse>(restRequest, cancellationToken);
+            var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
             return result.Id;
         }
 
@@ -314,7 +314,7 @@ namespace Planar.Client
             var restRequest = new RestRequest("job", Method.Put)
                 .AddBody(body);
 
-            var result = await _proxy.InvokeAsync<PlanarIdResponse>(restRequest, cancellationToken);
+            var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
             return result.Id;
         }
 
