@@ -101,9 +101,12 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<IPagingResponse<JobAudit>> GetAllAuditsAsync(PagingRequest? paging, CancellationToken cancellationToken = default)
+        public async Task<IPagingResponse<JobAudit>> GetAllAuditsAsync(
+            int? pageNumber = null,
+            int? pageSize = null,
+            CancellationToken cancellationToken = default)
         {
-            paging ??= new PagingRequest();
+            var paging = new Paging(pageNumber, pageSize);
             paging.SetPagingDefaults();
             var restRequest = new RestRequest("job/audits", Method.Get)
                 .AddQueryPagingParameter(paging);
@@ -120,7 +123,7 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<IPagingResponse<JobAudit>> GetAuditsAsync(string id, PagingRequest? paging, CancellationToken cancellationToken = default)
+        public async Task<IPagingResponse<JobAudit>> GetAuditsAsync(string id, Paging? paging, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
             var restRequest = new RestRequest("job/{id}/audit", Method.Get)
@@ -217,9 +220,9 @@ namespace Planar.Client
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
-        public async Task<IPagingResponse<JobBasicDetails>> ListAsync(JobsFilter? filter = null, CancellationToken cancellationToken = default)
+        public async Task<IPagingResponse<JobBasicDetails>> ListAsync(ListJobsFilter? filter = null, CancellationToken cancellationToken = default)
         {
-            var f = filter ?? JobsFilter.Empty;
+            var f = filter ?? ListJobsFilter.Empty;
             var restRequest = new RestRequest("job", Method.Get);
             restRequest.AddQueryParameter("jobCategory", (int)f.Category);
             if (!string.IsNullOrEmpty(f.JobType))

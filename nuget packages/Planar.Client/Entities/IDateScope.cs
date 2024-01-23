@@ -2,7 +2,7 @@
 
 namespace Planar.Client.Entities
 {
-    public interface IDateScope
+    internal interface IDateScope
     {
         DateTime? FromDate { get; set; }
         DateTime? ToDate { get; set; }

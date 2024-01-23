@@ -11,7 +11,7 @@ namespace RestSharp
         {
             if (pageSize > 0)
             {
-                request.AddQueryParameter(nameof(IPagingRequest.PageSize), pageSize);
+                request.AddQueryParameter(nameof(IPaging.PageSize), pageSize);
             }
 
             return request;
@@ -23,13 +23,13 @@ namespace RestSharp
 
             if (pageNumber > 0)
             {
-                request.AddQueryParameter(nameof(IPagingRequest.PageNumber), pageNumber);
+                request.AddQueryParameter(nameof(IPaging.PageNumber), pageNumber);
             }
 
             return request;
         }
 
-        public static RestRequest AddQueryPagingParameter(this RestRequest request, IPagingRequest pagingRequest)
+        public static RestRequest AddQueryPagingParameter(this RestRequest request, IPaging pagingRequest)
         {
             if (pagingRequest == null) { return request; }
             pagingRequest.SetPagingDefaults();

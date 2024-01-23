@@ -2,7 +2,7 @@
 
 namespace Planar.Client.Entities
 {
-    public class SummaryFilter : PagingRequest, IDateScope
+    internal class SummaryFilter : Paging, IDateScope
     {
         public DateTime? FromDate { get; set; }
 

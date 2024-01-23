@@ -2,8 +2,14 @@
 
 namespace Planar.Client.Entities
 {
-    public class CounterFilter : IDateScope
+    internal class CounterFilter : IDateScope
     {
+        public CounterFilter(DateTime? fromDate, DateTime? toDate)
+        {
+            FromDate = fromDate;
+            ToDate = toDate;
+        }
+
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
     }

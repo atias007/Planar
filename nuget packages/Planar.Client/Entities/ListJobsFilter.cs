@@ -7,7 +7,7 @@
         All
     }
 
-    public class JobsFilter : PagingRequest
+    public class ListJobsFilter : Paging
     {
         public AllJobsMembers Category { get; set; } = AllJobsMembers.AllUserJobs;
 
@@ -21,6 +21,6 @@
 
         public string? Filter { get; set; }
 
-        internal static JobsFilter Empty => new JobsFilter();
+        internal static ListJobsFilter Empty => new ListJobsFilter();
     }
 }

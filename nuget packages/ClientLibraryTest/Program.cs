@@ -9,7 +9,7 @@ var login = await client.ConnectAsync("http://localhost:2306");
 var res0 = await client.Monitor.ListAsync();
 var res1 = await client.Trigger.ListAsync("Infrastructure.BankOfIsraelCurrency");
 var res2 = await client.History.GetAsync("NON_CLUSTERED638306436561775750");
-var res3 = await client.History.GetLastAsync();
+var res3 = await client.History.LastAsync();
 
 return;
 Console.WriteLine($"[x] Login as {login.Role}");

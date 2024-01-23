@@ -2,7 +2,7 @@
 
 namespace Planar.Client.Entities
 {
-    public class ListAlertsFilter : PagingRequest, IDateScope
+    public class ListAlertsFilter : Paging, IDateScope
     {
         public string? EventTitle { get; set; }
         public int? MonitorId { get; set; }

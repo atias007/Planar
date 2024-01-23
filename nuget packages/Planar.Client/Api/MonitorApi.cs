@@ -66,9 +66,12 @@ namespace Planar.Client.Api
             return result;
         }
 
-        public async Task<PagingResponse<MonitorDetails>> ListAsync(PagingRequest? filter = null, CancellationToken cancellationToken = default)
+        public async Task<PagingResponse<MonitorDetails>> ListAsync(
+            int? pageNumber = null,
+            int? pageSize = null,
+            CancellationToken cancellationToken = default)
         {
-            filter ??= new PagingRequest();
+            var filter = new Paging(pageNumber, pageSize);
 
             var restRequest = new RestRequest("monitor", Method.Get)
                     .AddQueryPagingParameter(filter);

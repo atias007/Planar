@@ -32,9 +32,9 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<CounterResponse> GetCounterAsync(CounterFilter? filter = null, CancellationToken cancellationToken = default)
+        public async Task<CounterResponse> GetCounterAsync(DateTime? fromDate = null, DateTime? toDate = null, CancellationToken cancellationToken = default)
         {
-            filter ??= new CounterFilter();
+            var filter = new CounterFilter(fromDate, toDate);
 
             var restRequest = new RestRequest("history/count", Method.Get)
                 .AddQueryDateScope(filter);
@@ -65,7 +65,7 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<PagingResponse<LastRunDetails>> GetLastAsync(LastFilter? filter = null, CancellationToken cancellationToken = default)
+        public async Task<PagingResponse<LastRunDetails>> LastAsync(LastFilter? filter = null, CancellationToken cancellationToken = default)
         {
             filter ??= new LastFilter();
             var restRequest = new RestRequest("history/last", Method.Get);
@@ -90,20 +90,32 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<PagingResponse<HistorySummary>> GetSummaryAsync(SummaryFilter? filter = null, CancellationToken cancellationToken = default)
+        public async Task<PagingResponse<HistorySummary>> SummaryAsync(
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            int? pageNumber = null,
+            int? pageSize = null,
+            CancellationToken cancellationToken = default)
         {
-            filter ??= new SummaryFilter();
+            var filter = new SummaryFilter
+            {
+                FromDate = fromDate,
+                ToDate = toDate,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+
             var restRequest = new RestRequest("history/summary", Method.Get)
-                .AddQueryDateScope(filter)
-                .AddQueryPagingParameter(filter);
+              .AddQueryDateScope(filter)
+              .AddQueryPagingParameter(filter);
 
             var result = await _proxy.InvokeAsync<PagingResponse<HistorySummary>>(restRequest, cancellationToken);
             return result;
         }
 
-        public async Task<PagingResponse<HistoryBasicDetails>> ListAsync(HistoryFilter? filter = null, CancellationToken cancellationToken = default)
+        public async Task<PagingResponse<HistoryBasicDetails>> ListAsync(ListHistoryFilter? filter = null, CancellationToken cancellationToken = default)
         {
-            filter ??= new HistoryFilter();
+            filter ??= new ListHistoryFilter();
 
             var restRequest = new RestRequest("history", Method.Get);
             restRequest.AddQueryDateScope(filter);

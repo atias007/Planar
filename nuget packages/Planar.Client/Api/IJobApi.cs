@@ -38,7 +38,7 @@ namespace Planar.Client
         /// </summary>
         /// <param name="filter"></param>
         /// <returns>IPagingResponse&lt;JobRowDetails&gt;</returns>
-        Task<IPagingResponse<JobBasicDetails>> ListAsync(JobsFilter? filter = null, CancellationToken cancellationToken = default);
+        Task<IPagingResponse<JobBasicDetails>> ListAsync(ListJobsFilter? filter = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get Audit
@@ -52,7 +52,10 @@ namespace Planar.Client
         /// </summary>
         /// <param name="paging"></param>
         /// <returns>IPagingResponse&lt;JobAudit&gt</returns>
-        Task<IPagingResponse<JobAudit>> GetAllAuditsAsync(PagingRequest? paging, CancellationToken cancellationToken = default);
+        Task<IPagingResponse<JobAudit>> GetAllAuditsAsync(
+            int? pageNumber = null,
+            int? pageSize = null,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get Job Detaild
@@ -67,7 +70,7 @@ namespace Planar.Client
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <param name="paging"></param>
         /// <returns>IPagingResponse&lt;JobAudit&gt</returns>
-        Task<IPagingResponse<JobAudit>> GetAuditsAsync(string id, PagingRequest? paging, CancellationToken cancellationToken = default);
+        Task<IPagingResponse<JobAudit>> GetAuditsAsync(string id, Paging? paging, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get Job Peripheral Detials
@@ -152,7 +155,12 @@ namespace Planar.Client
         /// <param name="data"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task TestAsync(string id, Func<RunningJobDetails, Task> callback, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default);
+        Task TestAsync(
+            string id,
+            Func<RunningJobDetails, Task> callback,
+            DateTime? nowOverrideValue = null,
+            Dictionary<string, string>? data = null,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Pause Job
@@ -199,7 +207,11 @@ namespace Planar.Client
         /// Update Job
         /// </summary>
         /// <returns>string</returns>
-        Task<string> UpdateAsync(string id, bool updateJobData = false, bool updateTriggersData = false, CancellationToken cancellationToken = default);
+        Task<string> UpdateAsync(
+            string id,
+            bool updateJobData = false,
+            bool updateTriggersData = false,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         ///

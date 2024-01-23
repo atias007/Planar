@@ -2,7 +2,7 @@
 
 namespace Planar.Client.Entities
 {
-    public class HistoryFilter : PagingRequest, IDateScope
+    public class ListHistoryFilter : Paging, IDateScope
     {
         public string? JobId { get; set; }
 

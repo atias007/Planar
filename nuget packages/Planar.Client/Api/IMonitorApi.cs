@@ -8,7 +8,10 @@ namespace Planar.Client.Api
 {
     public interface IMonitorApi
     {
-        Task<PagingResponse<MonitorDetails>> ListAsync(PagingRequest? filter = null, CancellationToken cancellationToken = default);
+        Task<PagingResponse<MonitorDetails>> ListAsync(
+            int? pageNumber = null,
+            int? pageSize = null,
+            CancellationToken cancellationToken = default);
 
         Task<IEnumerable<MonitorDetails>> ListByJobAsync(string jobId, CancellationToken cancellationToken = default);
 
