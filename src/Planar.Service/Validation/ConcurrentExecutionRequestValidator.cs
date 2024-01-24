@@ -9,11 +9,11 @@ namespace Planar.Service.Validation
         public ConcurrentExecutionRequestValidator()
         {
             var maxHour = DateTime.Now.AddHours(-1);
-            RuleFor(c => c.ToDate).LessThan(maxHour);
             RuleFor(c => c.FromDate)
                 .LessThanOrEqualTo(r => r.ToDate.GetValueOrDefault().AddHours(-1))
                 .When(r => r.ToDate.HasValue);
-            RuleFor(c => c.FromDate).LessThan(maxHour);
+            RuleFor(c => c.FromDate).ValidSqlDateTime().LessThan(maxHour);
+            RuleFor(c => c.ToDate).ValidSqlDateTime();
 
             RuleFor(c => c.Server).MaximumLength(100);
             RuleFor(c => c.InstanceId).MaximumLength(100);
