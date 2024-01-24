@@ -4,6 +4,8 @@ using Planar.Client.Entities;
 var client = new PlanarClient();
 var login = await client.ConnectAsync("http://localhost:2306");
 
+await TestGroup(client);
+
 //await client.Jobs.TestAsync("Infrastructure.BankOfIsraelCurrency", DoIt);
 
 var res0 = await client.Monitor.ListAsync();
@@ -29,7 +31,7 @@ foreach (var job in result2.Data!)
 }
 
 Console.WriteLine($"[x] Get Job:");
-var id = result2.Data![0].Id;
+var id = result2.Data!.First().Id;
 var result3 = await client.Job.GetAsync(id);
 Console.WriteLine($"    - {result3.Description}");
 
@@ -47,4 +49,12 @@ Console.ReadLine();
 static async Task DoIt(RunningJobDetails data)
 {
     await Console.Out.WriteLineAsync(data.Progress.ToString());
+}
+
+static async Task TestGroup(PlanarClient client)
+{
+    await client.Group.AddAsync(new Group { Name = "ClientTest", AdditionalField1 = "Test1", Role = Roles.Editor });
+    var group = await client.Group.GetAsync("ClientTest");
+    await Console.Out.WriteLineAsync(group.AdditionalField1);
+    var all = await client.Group.ListAsync();
 }

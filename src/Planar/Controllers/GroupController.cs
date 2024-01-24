@@ -22,10 +22,10 @@ namespace Planar.Controllers
         [HttpPost]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_group", Description = "Add new group", Summary = "Add Group")]
-        [CreatedResponse(typeof(EntityIdResponse))]
+        [CreatedResponse]
         [JsonConsumes]
         [ConflictResponse]
-        public async Task<ActionResult<EntityIdResponse>> AddGroup([FromBody] AddGroupRequest request)
+        public async Task<ActionResult<string>> AddGroup([FromBody] AddGroupRequest request)
         {
             await BusinesLayer.AddGroup(request);
             return CreatedAtAction(nameof(GetGroup), new { request.Name }, null);
@@ -56,7 +56,7 @@ namespace Planar.Controllers
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_group_roles", Description = "Get all group roles", Summary = "Get All Group Roles")]
         [OkJsonResponse(typeof(IEnumerable<string>))]
-        public async Task<ActionResult<List<GroupInfo>>> GetAllGroupsRoles()
+        public async Task<ActionResult<IEnumerable<string>>> GetAllGroupsRoles()
         {
             var result = await Task.FromResult(GroupDomain.GetAllGroupsRoles());
             return Ok(result);

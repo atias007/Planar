@@ -151,7 +151,7 @@ namespace Planar.Service.API
             var entity = await DataLayer.GetGroup(name);
             var group = ValidateExistingEntity(entity, "group");
 
-            if (!Enum.TryParse<Roles>(role, true, out var roleEnum))
+            if (!Enum.TryParse<Roles>(role, ignoreCase: true, out var roleEnum))
             {
                 throw new RestNotFoundException($"role '{role?.ToLower()}' could not be found");
             }

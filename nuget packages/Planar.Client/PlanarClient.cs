@@ -18,6 +18,7 @@ namespace Planar.Client
         private readonly Lazy<TriggerApi> _triggerApi;
         private readonly Lazy<MonitorApi> _monitorApi;
         private readonly Lazy<ClusterApi> _clusterApi;
+        private readonly Lazy<GroupApi> _groupApi;
 
         public PlanarClient()
         {
@@ -26,6 +27,7 @@ namespace Planar.Client
             _triggerApi = new Lazy<TriggerApi>(() => new TriggerApi(_proxy), isThreadSafe: true);
             _monitorApi = new Lazy<MonitorApi>(() => new MonitorApi(_proxy), isThreadSafe: true);
             _clusterApi = new Lazy<ClusterApi>(() => new ClusterApi(_proxy), isThreadSafe: true);
+            _groupApi = new Lazy<GroupApi>(() => new GroupApi(_proxy), isThreadSafe: true);
         }
 
         public async Task<LoginDetails> ConnectAsync(string host, string username, string password)
@@ -87,5 +89,6 @@ namespace Planar.Client
         public ITriggerApi Trigger => _triggerApi.Value;
         public IMonitorApi Monitor => _monitorApi.Value;
         public IClusterApi Cluster => _clusterApi.Value;
+        public IGroupApi Group => _groupApi.Value;
     }
 }

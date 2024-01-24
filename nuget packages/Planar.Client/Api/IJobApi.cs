@@ -68,9 +68,12 @@ namespace Planar.Client
         /// Get Audits For Job
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
-        /// <param name="paging"></param>
         /// <returns>IPagingResponse&lt;JobAudit&gt</returns>
-        Task<IPagingResponse<JobAudit>> GetAuditsAsync(string id, Paging? paging, CancellationToken cancellationToken = default);
+        Task<IPagingResponse<JobAudit>> GetAuditsAsync(
+            string id,
+            int? pageNumber = null,
+            int? pageSize = null,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get Job Peripheral Detials

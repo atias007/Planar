@@ -123,11 +123,18 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<IPagingResponse<JobAudit>> GetAuditsAsync(string id, Paging? paging, CancellationToken cancellationToken = default)
+        public async Task<IPagingResponse<JobAudit>> GetAuditsAsync(
+            string id,
+            int? pageNumber = null,
+            int? pageSize = null,
+            CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
+            var paging = new Paging(pageNumber, pageSize);
             var restRequest = new RestRequest("job/{id}/audit", Method.Get)
-                .AddParameter("id", id, ParameterType.UrlSegment);
+                .AddParameter("id", id, ParameterType.UrlSegment)
+                .AddQueryPagingParameter(paging);
+
             var result = await _proxy.InvokeAsync<PagingResponse<JobAudit>>(restRequest, cancellationToken);
             return result;
         }

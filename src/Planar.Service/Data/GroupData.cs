@@ -69,7 +69,6 @@ namespace Planar.Service.Data
                 .Include(g => g.Role)
                 .Select(g => new GroupInfo
                 {
-                    Id = g.Id,
                     Name = g.Name,
                     UsersCount = g.Users.Count,
                     Role = g.Role.Name
