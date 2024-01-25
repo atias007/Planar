@@ -1,9 +1,9 @@
 ﻿namespace Planar.Client.Entities
 {
-    public class UserBasicDetails
+    public class UserBasicDetails : UserMostBasicDetails
     {
-        public string Username { get; set; } = null!;
-        public string? FirstName { get; set; }
-        public string? LastName { get; set; }
+        public string? EmailAddress1 { get; set; }
+        public int Id { get; set; }
+        public string? PhoneNumber1 { get; set; }
     }
 }

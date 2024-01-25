@@ -4,7 +4,9 @@ using Planar.Client.Entities;
 var client = new PlanarClient();
 var login = await client.ConnectAsync("http://localhost:2306");
 
-await TestGroup(client);
+//await TestGroup(client);
+
+await TestUsers(client);
 
 //await client.Jobs.TestAsync("Infrastructure.BankOfIsraelCurrency", DoIt);
 
@@ -57,4 +59,9 @@ static async Task TestGroup(PlanarClient client)
     var group = await client.Group.GetAsync("ClientTest");
     await Console.Out.WriteLineAsync(group.AdditionalField1);
     var all = await client.Group.ListAsync();
+}
+
+static async Task TestUsers(PlanarClient client)
+{
+    var users = await client.User.ListAsync();
 }

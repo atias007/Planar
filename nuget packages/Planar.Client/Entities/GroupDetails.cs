@@ -4,10 +4,10 @@ namespace Planar.Client.Entities
 {
     public class GroupDetails : Group
     {
-        private readonly List<UserBasicDetails> _users = new List<UserBasicDetails>();
-        public IEnumerable<UserBasicDetails> Users => _users;
+        private readonly List<UserMostBasicDetails> _users = new List<UserMostBasicDetails>();
+        public IEnumerable<UserMostBasicDetails> Users => _users;
 
-        internal void AddUser(UserBasicDetails user)
+        internal void AddUser(UserMostBasicDetails user)
         {
             _users.Add(user);
         }

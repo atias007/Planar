@@ -99,7 +99,7 @@ namespace Planar.CLI.Actions
                 .AddParameter("username", request.Name, ParameterType.UrlSegment)
                 .AddBody(request);
 
-            var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
+            var result = await RestProxy.Invoke(restRequest, cancellationToken);
             return new CliActionResponse(result);
         }
 

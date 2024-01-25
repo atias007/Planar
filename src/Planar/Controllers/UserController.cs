@@ -63,7 +63,7 @@ namespace Planar.Controllers
         [OkTextResponse]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<UserDetails>> GetRole([FromRoute][Name] string username)
+        public async Task<ActionResult<string>> GetRole([FromRoute][Name] string username)
         {
             var result = await BusinesLayer.GetRole(username);
             return Ok(result);

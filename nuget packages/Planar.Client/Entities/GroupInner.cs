@@ -13,7 +13,7 @@ namespace Planar.Client.Entities
         public string? AdditionalField5 { get; set; }
         public string? Role { get; set; }
 
-        public List<UserBasicDetails> Users { get; set; } = new List<UserBasicDetails>();
+        public List<UserMostBasicDetails> Users { get; set; } = new List<UserMostBasicDetails>();
 
         public GroupDetails GetGroupDetails()
         {
@@ -34,7 +34,7 @@ namespace Planar.Client.Entities
 
             Users?.ForEach(u =>
             {
-                var user = new UserBasicDetails
+                var user = new UserMostBasicDetails
                 {
                     FirstName = u.FirstName,
                     LastName = u.LastName,
