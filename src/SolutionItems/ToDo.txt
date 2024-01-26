@@ -1,9 +1,12 @@
 ﻿--------------------------------------------------------
 
-PLAN FOR V 1.6.3
+PLAN FOR V 1.7.0
 ----------------
 
 - run hook in linux
+
+- add ExecutingDurationGreaterThan {x} minutes
+- add ExecutionTimeout
 
 - postman: test queue-invoke with data and validate the creation of data
 - 'service info hooks'
@@ -18,7 +21,9 @@ PLAN FOR V 1.6.3
 - Security & Audit report
 
 - Telegram Hook
-- SendGrid Hook
+- .net 8
+- prometeus endpoint
+- add total effected rows to summary
 	
 
 - BACKLOG ----------------------------------------------------------------------------
@@ -274,3 +279,8 @@ V1.6.3
 - hook description
 - fix anomaly bug
 - add outlier to history filter
+
+V1.6.4
+------
+- add cli ? argument with filter
+- client Libraries

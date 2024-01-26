@@ -337,7 +337,7 @@ namespace Planar.CLI.Actions
                 }
                 else
                 {
-                    request.JobId = await JobCliActions.ChooseJob(cancellationToken);
+                    request.JobId = await JobCliActions.ChooseJob(null, cancellationToken);
                     AnsiConsole.MarkupLine($"[turquoise2]  > job id :[/] {request.JobId}");
                 }
             }

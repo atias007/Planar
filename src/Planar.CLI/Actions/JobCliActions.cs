@@ -70,7 +70,7 @@ namespace Planar.CLI.Actions
         }
 
         [IgnoreHelp]
-        public static async Task<string> ChooseJob(CancellationToken cancellationToken)
+        public static async Task<string> ChooseJob(string? filter, CancellationToken cancellationToken)
         {
             var restRequest = new RestRequest("job", Method.Get);
             var p = AllJobsMembers.AllUserJobs;
@@ -89,7 +89,8 @@ namespace Planar.CLI.Actions
                 throw new CliException(message, result);
             }
 
-            return ChooseJob(result.Data?.Data);
+            var filterData = FilterJobs(result.Data?.Data, filter);
+            return ChooseJob(filterData);
         }
 
         [IgnoreHelp]
@@ -107,9 +108,9 @@ namespace Planar.CLI.Actions
         }
 
         [IgnoreHelp]
-        public static async Task<string> ChooseTrigger(CancellationToken cancellationToken = default)
+        public static async Task<string> ChooseTrigger(string? filter, CancellationToken cancellationToken = default)
         {
-            var jobId = await ChooseJob(cancellationToken);
+            var jobId = await ChooseJob(filter, cancellationToken);
             var restRequest = new RestRequest("trigger/{jobId}/by-job", Method.Get);
             restRequest.AddUrlSegment("jobId", jobId);
             var result = await RestProxy.Invoke<TriggerRowDetails>(restRequest, cancellationToken);
@@ -477,7 +478,7 @@ namespace Planar.CLI.Actions
         {
             request ??= new CliSetAuthorOfJob
             {
-                Id = await ChooseJob(cancellationToken),
+                Id = await ChooseJob(null, cancellationToken),
                 Author = CollectCliValue(
                       field: "author of the job",
                       required: true,
@@ -533,7 +534,7 @@ namespace Planar.CLI.Actions
             request ??= new CliUpdateJobRequest();
             if (string.IsNullOrWhiteSpace(request.Id))
             {
-                body.Id = await ChooseJob(cancellationToken);
+                body.Id = await ChooseJob(null, cancellationToken);
             }
             else
             {
@@ -631,6 +632,22 @@ namespace Planar.CLI.Actions
             var selection = PromptSelection(items, "running job instance") ?? string.Empty;
             var parts = selection.Split(' ');
             return parts[0];
+        }
+
+        private static List<JobBasicDetails>? FilterJobs(List<JobBasicDetails>? data, string? filter)
+        {
+            if (data == null) { return null; }
+            if (string.IsNullOrWhiteSpace(filter)) { return data; }
+
+            if (filter.StartsWith('?')) { filter = filter[1..]; }
+
+            data = data.Where(d =>
+                d.Name.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                d.Group.Contains(filter, StringComparison.OrdinalIgnoreCase) ||
+                (!string.IsNullOrEmpty(d.Description) && d.Description.Contains(filter, StringComparison.OrdinalIgnoreCase)))
+                .ToList();
+
+            return data;
         }
 
         private static async Task<RequestBuilderWrapper<CliAddJobRequest>> GetCliAddJobRequest(CancellationToken cancellationToken)

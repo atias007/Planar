@@ -2,7 +2,7 @@
 
 namespace Planar.Hooks;
 
-public class PlanarLogHook : BaseSystemHook
+public sealed class PlanarLogHook : BaseSystemHook
 {
     public override string Name => "Planar.Log";
 

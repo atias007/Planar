@@ -3,6 +3,7 @@ using Planar.CLI.Attributes;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Exceptions;
 using Planar.CLI.General;
+using Planar.Common;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
@@ -303,9 +304,10 @@ namespace Planar.CLI
 
         private static async Task FillJobId(CliArgumentMetadata metadata, CliArgument arg, CancellationToken cancellationToken)
         {
-            if (metadata.JobKey && arg.Value == "?")
+            if (metadata.JobKey && arg.Value.HasValue() && arg.Value.StartsWith('?'))
             {
-                var jobId = await JobCliActions.ChooseJob(cancellationToken);
+                var filter = arg.Value.Length == 1 ? null : arg.Value[1..].Trim();
+                var jobId = await JobCliActions.ChooseJob(filter, cancellationToken);
                 arg.Value = jobId;
                 if (arg.Key == "?")
                 {
@@ -340,7 +342,7 @@ namespace Planar.CLI
                 }
                 else
                 {
-                    if (arg.Value != "?")
+                    if (string.IsNullOrEmpty(arg.Value) || !arg.Value.StartsWith('?'))
                     {
                         Util.LastJobOrTriggerId = arg.Value;
                     }
@@ -350,9 +352,10 @@ namespace Planar.CLI
 
         private static async Task FillTriggerId(CliArgumentMetadata prop, CliArgument arg)
         {
-            if (prop.TriggerKey && arg.Value == "?")
+            if (prop.TriggerKey && arg.Value.HasValue() && arg.Value.StartsWith('?'))
             {
-                var triggerId = await JobCliActions.ChooseTrigger();
+                var filter = arg.Value.Length == 1 ? null : arg.Value[1..].Trim();
+                var triggerId = await JobCliActions.ChooseTrigger(filter);
                 arg.Value = triggerId;
                 Util.LastJobOrTriggerId = triggerId;
             }

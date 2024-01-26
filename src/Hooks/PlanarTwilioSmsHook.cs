@@ -5,7 +5,7 @@ using Twilio.Rest.Api.V2010.Account;
 
 namespace Planar.Hooks;
 
-public class PlanarTwilioSmsHook : BaseSystemHook
+public sealed class PlanarTwilioSmsHook : BaseSystemHook
 {
     public override string Name => "Planar.Twilio.Sms";
 
