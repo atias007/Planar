@@ -3,10 +3,14 @@ using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
+using Polly;
 using Quartz;
+using Quartz.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using IJobExecutionContext = Quartz.IJobExecutionContext;
 
@@ -15,10 +19,20 @@ namespace CommonJob
     public abstract class BaseCommonJob
     {
         private JobMessageBroker _messageBroker = null!;
+        private CancellationTokenSource? _tokenSource;
+        private readonly JobMonitorUtil _jobMonitorUtil;
+        private readonly ILogger _logger;
 
         protected IDictionary<string, string?> Settings { get; private set; } = new Dictionary<string, string?>();
 
+        protected BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logger)
+        {
+            _jobMonitorUtil = jobMonitorUtil;
+            _logger = logger;
+        }
+
         protected JobMessageBroker MessageBroker => _messageBroker;
+        protected IMonitorUtil MonitorUtil => _jobMonitorUtil.MonitorUtil;
 
         protected static void DoNothingMethod()
         {
@@ -44,11 +58,57 @@ namespace CommonJob
             var finish = task.Wait(timeout);
             if (!finish)
             {
-                MessageBroker.AppendLog(LogLevel.Warning, $"Timeout occur, sent cancel requst to job (timeout value: {FormatTimeSpan(timeout)})");
+                SafeScan(MonitorEvents.ExecutionTimeout, context);
+                MessageBroker.AppendLog(Microsoft.Extensions.Logging.LogLevel.Warning, $"Timeout occur, sent cancel requst to job (timeout value: {FormatTimeSpan(timeout)})");
                 await context.Scheduler.Interrupt(context.JobDetail.Key);
             }
 
             task.Wait();
+        }
+
+        protected void StartMonitorDuration(IJobExecutionContext context)
+        {
+            var minutes = _jobMonitorUtil.MonitorDurationCache.GetMonitorMinutes(context);
+            if (!minutes.Any()) { return; }
+
+            _tokenSource = new();
+
+            foreach (var min in minutes)
+            {
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(min * 60_000, _tokenSource.Token);
+                        if (_tokenSource.IsCancellationRequested) { return; }
+                        SafeScan(MonitorEvents.ExecutionDurationGreaterThanxMinutes, context);
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        // *** DO NOTHING ***
+                    }
+                });
+            }
+        }
+
+        protected void SafeScan(MonitorEvents @event, IJobExecutionContext context)
+        {
+            try
+            {
+                MonitorUtil.Scan(@event, context);
+            }
+            catch (Exception ex)
+            {
+                var source = nameof(SafeScan);
+                _logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
+            }
+        }
+
+        protected void StopMonitorDuration()
+        {
+            _tokenSource?.Cancel();
+            _tokenSource?.Dispose();
+            _tokenSource = null;
         }
 
         internal void FillSettings(IDictionary<string, string?> settings)
@@ -76,7 +136,10 @@ namespace CommonJob
         protected readonly ILogger<TInstance> _logger;
         private readonly IJobPropertyDataLayer _dataLayer;
 
-        protected BaseCommonJob(ILogger<TInstance> logger, IJobPropertyDataLayer dataLayer)
+        protected BaseCommonJob(
+            ILogger<TInstance> logger,
+            IJobPropertyDataLayer dataLayer,
+            JobMonitorUtil jobMonitorUtil) : base(jobMonitorUtil, logger)
         {
             _logger = logger;
             _dataLayer = dataLayer;
@@ -92,6 +155,16 @@ namespace CommonJob
         {
             try
             {
+                StopMonitorDuration();
+            }
+            catch (Exception ex)
+            {
+                var source = nameof(FinalizeJob);
+                _logger.LogError(ex, "fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+            }
+
+            try
+            {
                 var metadata = JobExecutionMetadata.GetInstance(context);
                 metadata.Progress = 100;
             }
@@ -102,7 +175,7 @@ namespace CommonJob
             }
         }
 
-        protected async Task Initialize(IJobExecutionContext context, IMonitorUtil? monitorUtil = null)
+        protected async Task Initialize(IJobExecutionContext context)
         {
             await SetProperties(context);
 
@@ -113,11 +186,11 @@ namespace CommonJob
             }
 
             FillSettings(LoadJobSettings(path));
-            SetMessageBroker(new JobMessageBroker(context, Settings, monitorUtil));
+            SetMessageBroker(new JobMessageBroker(context, Settings, MonitorUtil));
 
             context.CancellationToken.Register(() =>
             {
-                MessageBroker.AppendLog(LogLevel.Warning, "Service get a request for cancel job");
+                MessageBroker.AppendLog(Microsoft.Extensions.Logging.LogLevel.Warning, "Service get a request for cancel job");
             });
         }
 

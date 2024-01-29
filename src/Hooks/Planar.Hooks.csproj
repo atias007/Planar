@@ -14,16 +14,12 @@
     <PackageReference Include="CloudNative.CloudEvents.SystemTextJson" Version="2.7.1" />
     <PackageReference Include="MailKit" Version="4.3.0" />
     <PackageReference Include="Planar.Hook" Version="1.6.6" />
-    <PackageReference Include="StackExchange.Redis" Version="2.7.10" />
-    <PackageReference Include="Twilio" Version="6.15.2" />
+    <PackageReference Include="StackExchange.Redis" Version="2.7.17" />
+    <PackageReference Include="Twilio" Version="6.16.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="General\" />
   </ItemGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>

@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using CommonJob;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
@@ -67,6 +68,7 @@ namespace Planar.Service.API
             }
 
             await DataLayer.AddMonitor(monitor);
+            _ = Resolve<MonitorDurationCache>().Flush();
             return monitor.Id;
         }
 
@@ -77,6 +79,7 @@ namespace Planar.Service.API
             try
             {
                 await DataLayer.DeleteMonitor(monitor);
+                _ = Resolve<MonitorDurationCache>().Flush();
                 AuditSecuritySafe($"monitor id {id} was deleted by user", true);
             }
             catch (DbUpdateConcurrencyException)
@@ -90,33 +93,6 @@ namespace Planar.Service.API
             var query = DataLayer.GetMonitorActions();
             var result = await query.ProjectToWithPagingAsyc<MonitorAction, MonitorItem>(Mapper, request);
             FillDistributionGroupName(result.Data);
-            return result;
-        }
-
-        private void FillDistributionGroupName(IEnumerable<MonitorItem>? items)
-        {
-            if (items == null) { return; }
-            var mappaerData = Resolve<AutoMapperData>();
-            var dic = items.Select(i => i.GroupId).Distinct().ToDictionary(i => i, i => mappaerData.GetGroupName(i).Result ?? string.Empty);
-            foreach (var item in items)
-            {
-                item.DistributionGroupName = dic[item.GroupId];
-            }
-        }
-
-        private void FillDistributionGroupName(MonitorItem? item)
-        {
-            if (item == null) { return; }
-            var mappaerData = Resolve<AutoMapperData>();
-            item.DistributionGroupName = mappaerData.GetGroupName(item.GroupId).Result ?? string.Empty;
-        }
-
-        public async Task<MonitorItem> GetMonitorItem(int id)
-        {
-            var action = await DataLayer.GetMonitorAction(id);
-            var item = Mapper.Map<MonitorItem>(action);
-            var result = ValidateExistingEntity(item, "monitor");
-            FillDistributionGroupName(result);
             return result;
         }
 
@@ -152,12 +128,29 @@ namespace Planar.Service.API
             return result;
         }
 
+        public IEnumerable<HookInfo> GetHooks()
+        {
+            var result = Mapper.Map<List<HookInfo>>(ServiceUtil.MonitorHooks.Values)
+                .OrderBy(h => h.Name);
+
+            return result;
+        }
+
         public async Task<MonitorAlertModel> GetMonitorAlert(int id)
         {
             var query = DataLayer.GetMonitorAlert(id);
             var result = await Mapper.ProjectTo<MonitorAlertModel>(query).FirstOrDefaultAsync();
             ValidateExistingEntity(result, "monitor alert");
             return result!;
+        }
+
+        public async Task<MonitorItem> GetMonitorItem(int id)
+        {
+            var action = await DataLayer.GetMonitorAction(id);
+            var item = Mapper.Map<MonitorItem>(action);
+            var result = ValidateExistingEntity(item, "monitor");
+            FillDistributionGroupName(result);
+            return result;
         }
 
         public async Task<PagingResponse<MonitorAlertRowModel>> GetMonitorsAlerts(GetMonitorsAlertsRequest request)
@@ -168,10 +161,42 @@ namespace Planar.Service.API
             return result;
         }
 
-        public IEnumerable<HookInfo> GetHooks()
+        public async Task Mute(MonitorMuteRequest request)
         {
-            var result = Mapper.Map<List<HookInfo>>(ServiceUtil.MonitorHooks.Values)
-                .OrderBy(h => h.Name);
+            var jobId = await ValidateUnmutedRequest(request);
+
+            var entity = new MonitorMute
+            {
+                DueDate = request.DueDate,
+                JobId = jobId,
+                MonitorId = request.MonitorId,
+            };
+
+            await DataLayer.AddMonitorMute(entity);
+            var message = $"monitor {entity.JobId ?? "[all monitors]"} with job {entity.JobId ?? "[all jobs]"}  was muted by user";
+            AuditSecuritySafe(message, true);
+        }
+
+        public async Task<IEnumerable<MuteItem>> Mutes()
+        {
+            var mutes = await DataLayer.GetMonitorMutes();
+            var counters = await DataLayer.GetMonitorCounters(AppSettings.Monitor.MaxAlertsPerMonitor);
+
+            var mutesDto = Mapper.Map<List<MuteItem>>(mutes);
+            var countersDto = Mapper.Map<List<MuteItem>>(counters);
+            var all = mutesDto.Union(countersDto);
+            var result = all
+                .Where(i => i.DueDate > DateTime.Now)
+                .GroupBy(i => new { i.JobId, i.MonitorId, i.MonitorTitle })
+                .Select(g => new MuteItem
+                {
+                    JobId = g.Key.JobId,
+                    MonitorId = g.Key.MonitorId,
+                    DueDate = g.Max(i => i.DueDate),
+                    MonitorTitle = g.Key.MonitorTitle
+                })
+                .OrderBy(i => i.DueDate)
+                .Take(1000);
 
             return result;
         }
@@ -256,69 +281,6 @@ namespace Planar.Service.API
             }
         }
 
-        public async Task Update(UpdateMonitorRequest request)
-        {
-            var exists = await DataLayer.IsMonitorExists(request.Id);
-            if (!exists)
-            {
-                throw new RestNotFoundException($"monitor with id '{request.Id}' is not exists");
-            }
-
-            var validator = new MonitorActionValidator();
-            validator.ValidateMonitorArguments(request);
-            var mapperData = Resolve<AutoMapperData>();
-            var monitor = Mapper.Map<MonitorAction>(request);
-            monitor.GroupId = await mapperData.GetGroupId(request.GroupName);
-            if (string.IsNullOrWhiteSpace(monitor.JobGroup)) { monitor.JobGroup = null; }
-            if (string.IsNullOrWhiteSpace(monitor.JobName)) { monitor.JobName = null; }
-            if (await DataLayer.IsMonitorExists(monitor, request.Id))
-            {
-                throw new RestConflictException("monitor with same properties already exists");
-            }
-
-            await DataLayer.UpdateMonitorAction(monitor);
-        }
-
-        public async Task Mute(MonitorMuteRequest request)
-        {
-            var jobId = await ValidateUnmutedRequest(request);
-
-            var entity = new MonitorMute
-            {
-                DueDate = request.DueDate,
-                JobId = jobId,
-                MonitorId = request.MonitorId,
-            };
-
-            await DataLayer.AddMonitorMute(entity);
-            var message = $"monitor {entity.JobId ?? "[all monitors]"} with job {entity.JobId ?? "[all jobs]"}  was muted by user";
-            AuditSecuritySafe(message, true);
-        }
-
-        public async Task<IEnumerable<MuteItem>> Mutes()
-        {
-            var mutes = await DataLayer.GetMonitorMutes();
-            var counters = await DataLayer.GetMonitorCounters(AppSettings.Monitor.MaxAlertsPerMonitor);
-
-            var mutesDto = Mapper.Map<List<MuteItem>>(mutes);
-            var countersDto = Mapper.Map<List<MuteItem>>(counters);
-            var all = mutesDto.Union(countersDto);
-            var result = all
-                .Where(i => i.DueDate > DateTime.Now)
-                .GroupBy(i => new { i.JobId, i.MonitorId, i.MonitorTitle })
-                .Select(g => new MuteItem
-                {
-                    JobId = g.Key.JobId,
-                    MonitorId = g.Key.MonitorId,
-                    DueDate = g.Max(i => i.DueDate),
-                    MonitorTitle = g.Key.MonitorTitle
-                })
-                .OrderBy(i => i.DueDate)
-                .Take(1000);
-
-            return result;
-        }
-
         public async Task UnMute(MonitorUnmuteRequest request)
         {
             var jobId = await ValidateUnmutedRequest(request);
@@ -341,6 +303,30 @@ namespace Planar.Service.API
             {
                 await DataLayer.UnMute();
             }
+        }
+
+        public async Task Update(UpdateMonitorRequest request)
+        {
+            var exists = await DataLayer.IsMonitorExists(request.Id);
+            if (!exists)
+            {
+                throw new RestNotFoundException($"monitor with id '{request.Id}' is not exists");
+            }
+
+            var validator = new MonitorActionValidator();
+            validator.ValidateMonitorArguments(request);
+            var mapperData = Resolve<AutoMapperData>();
+            var monitor = Mapper.Map<MonitorAction>(request);
+            monitor.GroupId = await mapperData.GetGroupId(request.GroupName);
+            if (string.IsNullOrWhiteSpace(monitor.JobGroup)) { monitor.JobGroup = null; }
+            if (string.IsNullOrWhiteSpace(monitor.JobName)) { monitor.JobName = null; }
+            if (await DataLayer.IsMonitorExists(monitor, request.Id))
+            {
+                throw new RestConflictException("monitor with same properties already exists");
+            }
+
+            await DataLayer.UpdateMonitorAction(monitor);
+            _ = Resolve<MonitorDurationCache>().Flush();
         }
 
         internal async Task<bool> CheckForMutedMonitor(int? eventId, string jobId, int monitorId)
@@ -388,6 +374,24 @@ namespace Planar.Service.API
                     await DataLayer.IncreaseMonitorCounter(counter.JobId, counter.MonitorId);
                 }
             }
+        }
+
+        private void FillDistributionGroupName(IEnumerable<MonitorItem>? items)
+        {
+            if (items == null) { return; }
+            var mappaerData = Resolve<AutoMapperData>();
+            var dic = items.Select(i => i.GroupId).Distinct().ToDictionary(i => i, i => mappaerData.GetGroupName(i).Result ?? string.Empty);
+            foreach (var item in items)
+            {
+                item.DistributionGroupName = dic[item.GroupId];
+            }
+        }
+
+        private void FillDistributionGroupName(MonitorItem? item)
+        {
+            if (item == null) { return; }
+            var mappaerData = Resolve<AutoMapperData>();
+            item.DistributionGroupName = mappaerData.GetGroupName(item.GroupId).Result ?? string.Empty;
         }
 
         private async Task<string?> ValidateUnmutedRequest(MonitorUnmuteRequest request)

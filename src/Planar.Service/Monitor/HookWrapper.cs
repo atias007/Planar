@@ -12,17 +12,17 @@ namespace Planar.Service.Monitor
     {
         public const string ExecuteMethodName = "Execute";
 
-        private HookWrapper()
+        private HookWrapper(string name, string description)
         {
+            Name = name;
+            Description = description;
         }
 
         public static HookWrapper CreateInternal(BaseSystemHook instance, ILogger logger)
         {
-            var wrapper = new HookWrapper
+            var wrapper = new HookWrapper(instance.Name, instance.Description)
             {
                 HookType = HookTypeMembers.Internal,
-                Name = instance.Name,
-                Description = instance.Description,
                 Instance = instance,
                 ExecuteMethod = SafeGetMethod(instance.Name, ExecuteMethodName, instance),
                 Logger = logger
@@ -34,11 +34,9 @@ namespace Planar.Service.Monitor
 
         public static HookWrapper CreateExternal(string filename, HookValidator validator, ILogger logger)
         {
-            return new HookWrapper
+            return new HookWrapper(validator.Name, validator.Description)
             {
                 HookType = HookTypeMembers.External,
-                Name = validator.Name,
-                Description = validator.Description,
                 Filename = filename,
                 Logger = logger
             };

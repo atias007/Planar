@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using CommonJob;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.Common;
+using Planar.Common.Monitor;
 using Planar.Service.API;
 using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
@@ -43,6 +45,7 @@ namespace Planar.Service
             services.AddScoped<ClusterUtil>();
             services.AddScoped<MonitorUtil>();
             services.AddScoped<IMonitorUtil>(p => p.GetRequiredService<MonitorUtil>());
+            services.AddScoped<JobMonitorUtil>();
 
             // AutoMapper
             services.AddAutoMapper(Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));
@@ -55,6 +58,7 @@ namespace Planar.Service
             services.AddSingleton<AuditService>();
             services.AddSingleton<SecurityService>();
             services.AddSingleton<MqttBrokerService>();
+            services.AddSingleton<MonitorDurationCache>();
 
             // Scheduler
             services.AddSingleton(p => p.GetRequiredService<ISchedulerFactory>().GetScheduler().Result);
@@ -100,6 +104,7 @@ namespace Planar.Service
             services.AddTransient<ReportData>();
             services.AddTransient<JobData>();
             services.AddTransient<IJobPropertyDataLayer, JobData>();
+            services.AddTransient<IMonitorDurationDataLayer, MonitorData>();
 
             return services;
         }

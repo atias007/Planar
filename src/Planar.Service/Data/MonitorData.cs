@@ -2,17 +2,17 @@
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Monitor;
 using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Service.Data
 {
-    public class MonitorData : BaseDataLayer
+    public class MonitorData : BaseDataLayer, IMonitorDurationDataLayer
     {
         public MonitorData(PlanarContext context) : base(context)
         {
@@ -169,6 +169,7 @@ namespace Planar.Service.Data
         {
             var result = await _context.MonitorActions
                 .Include(m => m.Group)
+                .AsNoTracking()
                 .Where(m =>
                     m.JobGroup == group &&
                     (string.IsNullOrEmpty(m.JobName) || m.JobName.ToLower() == name.ToLower()))
@@ -176,6 +177,25 @@ namespace Planar.Service.Data
                 .ThenBy(d => d.JobGroup)
                 .ThenBy(d => d.JobName)
                 .ThenBy(d => d.Title)
+                .ToListAsync();
+
+            return result;
+        }
+
+        public async Task<List<MonitorCacheItem>> GetDurationMonitorActions()
+        {
+            var result = await _context.MonitorActions
+                .AsNoTracking()
+                .Where(m =>
+                    m.EventId == (int)MonitorEvents.ExecutionDurationGreaterThanxMinutes &&
+                    m.Active == true
+                )
+                .Select(m => new MonitorCacheItem
+                {
+                    EventArgument = m.EventArgument,
+                    JobGroup = m.JobGroup,
+                    JobName = m.JobName
+                })
                 .ToListAsync();
 
             return result;

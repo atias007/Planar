@@ -19,7 +19,6 @@ namespace Planar
 {
     public abstract class PlanarJob : BaseProcessJob<PlanarJob, PlanarJobProperties>
     {
-        private readonly IMonitorUtil _monitorUtil;
         private readonly object ConsoleLocker = new();
         private readonly bool _isDevelopment;
         private bool _isHealthCheck;
@@ -29,9 +28,8 @@ namespace Planar
         protected PlanarJob(
             ILogger<PlanarJob> logger,
             IJobPropertyDataLayer dataLayer,
-            IMonitorUtil monitorUtil) : base(logger, dataLayer)
+            JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
         {
-            _monitorUtil = monitorUtil;
             MqttBrokerService.InterceptingPublishAsync += InterceptingPublishAsync;
             _isDevelopment = string.Equals(AppSettings.General.Environment, "development", StringComparison.OrdinalIgnoreCase);
         }
@@ -40,16 +38,18 @@ namespace Planar
         {
             try
             {
-                await Initialize(context, _monitorUtil);
+                await Initialize(context);
                 ValidateProcessJob();
                 ValidateExeFile();
                 context.CancellationToken.Register(OnCancel);
                 var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
                 var startInfo = GetProcessStartInfo();
+                StartMonitorDuration(context);
                 var success = StartProcess(startInfo, timeout);
+                StopMonitorDuration();
                 if (!success)
                 {
-                    OnTimeout();
+                    OnTimeout(context);
                 }
 
                 ValidateHealthCheck();
@@ -250,6 +250,10 @@ namespace Planar
             catch (PlanarJobException ex)
             {
                 _logger.LogCritical("Fail intercepting published message on MQTT broker event. {Error}", ex.Message);
+            }
+            catch (JobMonitorException ex)
+            {
+                _logger.LogError(ex, "Fail to execute monitor event");
             }
             catch (Exception ex)
             {

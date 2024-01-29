@@ -50,8 +50,16 @@ namespace Planar.Service.API.Helpers
 
         public async Task<string?> GetJobId(MonitorAction action)
         {
+            if (!action.MonitorForJob) { return null; }
             var key = $"{action.JobGroup}.{action.JobName}";
-            return await GetJobId(key);
+            try
+            {
+                return await GetJobId(key);
+            }
+            catch (RestNotFoundException)
+            {
+                return null;
+            }
         }
 
         public async Task<JobKey> GetJobKey(string id)

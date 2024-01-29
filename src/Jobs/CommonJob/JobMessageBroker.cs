@@ -1,6 +1,5 @@
 ﻿using CommonJob.MessageBrokerEntities;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Abstractions;
 using Newtonsoft.Json;
 using Planar;
 using Planar.Common;
@@ -20,16 +19,11 @@ namespace CommonJob
     {
         private static readonly object Locker = new();
         private readonly IJobExecutionContext _context;
-        private readonly IMonitorUtil? _monitorUtil;
+        private readonly IMonitorUtil _monitorUtil;
 
-        public JobMessageBroker(IJobExecutionContext context, IDictionary<string, string?> settings, IMonitorUtil? monitorUtil)
-            : this(context, settings)
+        public JobMessageBroker(IJobExecutionContext context, IDictionary<string, string?> settings, IMonitorUtil monitorUtil)
         {
             _monitorUtil = monitorUtil;
-        }
-
-        public JobMessageBroker(IJobExecutionContext context, IDictionary<string, string?> settings)
-        {
             _context = context;
             var mapContext = MapContext(context, settings);
             SetLogLevel(settings);
@@ -146,7 +140,14 @@ namespace CommonJob
                 Metadata.Progress = value;
             }
 
-            _monitorUtil?.Scan(MonitorEvents.ExecutionProgressChanged, _context);
+            try
+            {
+                _monitorUtil?.Scan(MonitorEvents.ExecutionProgressChanged, _context);
+            }
+            catch (Exception ex)
+            {
+                throw new JobMonitorException("Fail to scan ExecutionProgressChanged monitor event", ex);
+            }
         }
 
         private static DataMap ConvertDataMap(JobDataMap? map)

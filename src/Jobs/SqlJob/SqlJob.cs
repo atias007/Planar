@@ -15,7 +15,10 @@ namespace Planar
     {
         private readonly List<SqlJobException> _exceptions = new();
 
-        protected SqlJob(ILogger<SqlJob> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
+        protected SqlJob(
+            ILogger<SqlJob> logger,
+            IJobPropertyDataLayer dataLayer,
+            JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
         {
         }
 
@@ -25,8 +28,10 @@ namespace Planar
             {
                 await Initialize(context);
                 ValidateSqlJob();
+                StartMonitorDuration(context);
                 var task = Task.Run(() => ExecuteSql(context));
                 await WaitForJobTask(context, task);
+                StopMonitorDuration();
             }
             catch (Exception ex)
             {
@@ -75,7 +80,15 @@ namespace Planar
                     await ExecuteSqlStep(context, step, defaultConnection, transaction);
                     counter++;
                     var progress = Convert.ToByte(counter * 100.0 / total);
-                    MessageBroker.UpdateProgress(progress);
+
+                    try
+                    {
+                        MessageBroker.UpdateProgress(progress);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Fail to update job progress");
+                    }
                 }
 
                 if (_exceptions.Any())

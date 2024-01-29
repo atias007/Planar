@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using CommonJob;
+using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Quartz;
 
@@ -8,7 +9,10 @@ namespace Planar
     [PersistJobDataAfterExecution]
     public class RestJobNoConcurrent : RestJob
     {
-        public RestJobNoConcurrent(ILogger<RestJob> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
+        public RestJobNoConcurrent(
+            ILogger<RestJob> logger,
+            IJobPropertyDataLayer dataLayer,
+            JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
         {
         }
     }

@@ -179,7 +179,7 @@ public class MonitorUtil : IMonitorUtil
             else
             {
                 details = GetMonitorDetails(action, info, exception);
-                _logger.LogInformation(",onitor item id: {Id}, title: {Title} start to handle event {Event} with hook: {Hook} and distribution group {Group}", action.Id, action.Title, @event, action.Hook, action.Group.Name);
+                _logger.LogInformation("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook: {Hook} and distribution group {Group}", action.Id, action.Title, @event, action.Hook, action.Group.Name);
                 await hookInstance.HandleSystem(details, cancellationToken);
                 await SaveMonitorAlert(action, details);
                 return ExecuteMonitorResult.Ok;
@@ -492,6 +492,8 @@ public class MonitorUtil : IMonitorUtil
 
     private async Task<bool> AnalyzeMonitorEventsWithArguments(MonitorEvents @event, MonitorAction action, IJobExecutionContext? context)
     {
+        if (@event == MonitorEvents.ExecutionDurationGreaterThanxMinutes) { return true; }
+
         using var scope = _serviceScopeFactory.CreateScope();
         var jobKeyHelper = scope.ServiceProvider.GetRequiredService<JobKeyHelper>();
         var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
@@ -504,10 +506,12 @@ public class MonitorUtil : IMonitorUtil
                 return false;
 
             case MonitorEvents.ExecutionFailxTimesInRow:
+                if (args.JobId == null) { return false; }
                 var count1 = await dal.CountFailsInRowForJob(new { args.JobId, Total = args.Args[0] });
                 return count1 >= args.Args[0];
 
             case MonitorEvents.ExecutionFailxTimesInyHours:
+                if (args.JobId == null) { return false; }
                 var count2 = await dal.CountFailsInHourForJob(new { args.JobId, Hours = args.Args[1] });
                 return count2 >= args.Args[0];
 
@@ -520,10 +524,12 @@ public class MonitorUtil : IMonitorUtil
                 return rows1 != null && rows1 < args.Args[0];
 
             case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanxInyHours:
+                if (args.JobId == null) { return false; }
                 var er1 = await dal.CountEffectedRowsInHourForJob(args.JobId, args.Args[1]);
                 return er1 > args.Args[0];
 
             case MonitorEvents.ExecutionEndWithEffectedRowsLessThanxInyHours:
+                if (args.JobId == null) { return false; }
                 var er2 = await dal.CountEffectedRowsInHourForJob(args.JobId, args.Args[1]);
                 return er2 < args.Args[0];
         }
@@ -556,7 +562,7 @@ public class MonitorUtil : IMonitorUtil
     {
         var jobId = await jobKeyHelper.GetJobId(action);
 
-        if (string.IsNullOrWhiteSpace(jobId))
+        if (action.MonitorForJob && string.IsNullOrWhiteSpace(jobId))
         {
             _logger.LogWarning("monitor action {Id}, Title {Title} --> missing job group/name", action.Id, action.Title);
             return MonitorArguments.Empty;

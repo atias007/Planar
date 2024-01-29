@@ -23,6 +23,8 @@ namespace Planar.CLI.Actions
     [Module("job", "Actions to add, remove, list, update and operate jobs", Synonyms = "jobs")]
     public class JobCliActions : BaseCliAction<JobCliActions>
     {
+        public static readonly object _locker = new();
+
         [Action("add")]
         [NullRequest]
         public static async Task<CliActionResponse> AddJob(CliAddJobRequest request, CancellationToken cancellationToken = default)
@@ -1045,21 +1047,24 @@ namespace Planar.CLI.Actions
 
         private static bool WriteRunningData(RestResponse<RunningJobDetails> runResult, DateTime invokeDate, DateTime? estimateEnd)
         {
-            if (runResult.Data == null) { return true; }
-            var data = runResult.Data;
+            lock (_locker)
+            {
+                if (runResult.Data == null) { return true; }
+                var data = runResult.Data;
 
-            Console.CursorTop -= 1;
-            var span = DateTimeOffset.Now.Subtract(invokeDate);
-            var endSpan = estimateEnd == null ? data.EstimatedEndTime : estimateEnd.Value.Subtract(DateTime.Now);
-            var title =
-                    $" [gold3_1][[x]][/] Progress: [wheat1]{data.Progress}[/]%  |" +
-                    $"  Effected Row(s): [wheat1]{data.EffectedRows.GetValueOrDefault()}[/]  |" +
-                    $"  Ex. Count: {CliTableFormat.FormatExceptionCount(data.ExceptionsCount)}  |" +
-                    $"  Run Time: [wheat1]{CliTableFormat.FormatTimeSpan(span)}[/]  |" +
-                    $"  End Time: [wheat1]{CliTableFormat.FormatTimeSpan(endSpan)}[/]     ";
-            AnsiConsole.MarkupLine(title);
+                Console.CursorTop -= 1;
+                var span = DateTimeOffset.Now.Subtract(invokeDate);
+                var endSpan = estimateEnd == null ? data.EstimatedEndTime : estimateEnd.Value.Subtract(DateTime.Now);
+                var title =
+                        $" [gold3_1][[x]][/] Progress: [wheat1]{data.Progress}[/]%  |" +
+                        $"  Effected Row(s): [wheat1]{data.EffectedRows.GetValueOrDefault()}[/]  |" +
+                        $"  Ex. Count: {CliTableFormat.FormatExceptionCount(data.ExceptionsCount)}  |" +
+                        $"  Run Time: [wheat1]{CliTableFormat.FormatTimeSpan(span)}[/]  |" +
+                        $"  End Time: [wheat1]{CliTableFormat.FormatTimeSpan(endSpan)}[/]     ";
+                AnsiConsole.MarkupLine(title);
 
-            return false;
+                return false; 
+            }
         }
 
         private struct TestData

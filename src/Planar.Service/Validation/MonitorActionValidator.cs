@@ -79,6 +79,11 @@ namespace Planar.Service.Validation
                     ValidateRange(values3[1], 1, 72);
                     return values3;
 
+                case MonitorEvents.ExecutionDurationGreaterThanxMinutes:
+                    var value2 = ValidateNumeric(arguments);
+                    ValidateRange(value2, 1, 1440);
+                    return new int[] { value2 };
+
                 default:
                     return null;
             }

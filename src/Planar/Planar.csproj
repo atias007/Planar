@@ -75,21 +75,21 @@
 		<PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
 		<PackageReference Include="Grpc.AspNetCore" Version="2.60.0" />
 		<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="6.0.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.14" />
-		<PackageReference Include="Microsoft.AspNetCore.OData" Version="8.2.3" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.15" />
+		<PackageReference Include="Microsoft.AspNetCore.OData" Version="8.2.4" />
 		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0" />
 		<PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.1.0" />
-		<PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
+		<PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />
 		<PackageReference Include="Serilog.Enrichers.GlobalLogContext" Version="3.0.0" />
 		<PackageReference Include="Serilog.Sinks.MSSqlServer" Version="6.5.0" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.16.0.82469">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.18.0.83559">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.5.0" />
-		<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="7.0.12" />
-		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.0.3" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="8.0.0" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.2.0" />
 	</ItemGroup>
 	<PropertyGroup>
 		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
