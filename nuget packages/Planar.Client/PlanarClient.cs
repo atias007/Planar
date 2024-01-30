@@ -21,6 +21,7 @@ namespace Planar.Client
         private readonly Lazy<GroupApi> _groupApi;
         private readonly Lazy<UserApi> _userApi;
         private readonly Lazy<MetricsApi> _metricsApi;
+        private readonly Lazy<ReportApi> _reportApi;
 
         public PlanarClient()
         {
@@ -32,6 +33,7 @@ namespace Planar.Client
             _groupApi = new Lazy<GroupApi>(() => new GroupApi(_proxy), isThreadSafe: true);
             _userApi = new Lazy<UserApi>(() => new UserApi(_proxy), isThreadSafe: true);
             _metricsApi = new Lazy<MetricsApi>(() => new MetricsApi(_proxy), isThreadSafe: true);
+            _reportApi = new Lazy<ReportApi>(() => new ReportApi(_proxy), isThreadSafe: true);
         }
 
         public async Task<LoginDetails> ConnectAsync(string host, string username, string password)
@@ -96,5 +98,6 @@ namespace Planar.Client
         public IGroupApi Group => _groupApi.Value;
         public IUserApi User => _userApi.Value;
         public IMetricsApi Metrics => _metricsApi.Value;
+        public IReportApi Report => _reportApi.Value;
     }
 }

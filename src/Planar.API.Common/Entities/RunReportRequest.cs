@@ -1,5 +1,4 @@
-﻿using Planar.API.Common.Entities;
-using System;
+﻿using System;
 
 namespace Planar.API.Common.Entities
 {

@@ -504,7 +504,6 @@ public class MonitorUtil : IMonitorUtil
     private async Task<bool> AnalyzeMonitorEventsWithArguments(MonitorEvents @event, MonitorAction action, IJobExecutionContext? context)
     {
         if (context == null) { return false; } // analyze only for job execution (not for system execution)
-        if (@event == MonitorEvents.ExecutionDurationGreaterThanxMinutes) { return true; }
 
         using var scope = _serviceScopeFactory.CreateScope();
         var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
@@ -544,6 +543,10 @@ public class MonitorUtil : IMonitorUtil
                 if (args.JobId == null) { return false; }
                 var er2 = await dal.CountEffectedRowsInHourForJob(args.JobId, args.Args[1]);
                 return er2 < args.Args[0];
+
+            case MonitorEvents.ExecutionDurationGreaterThanxMinutes:
+                var duration = context.JobRunTime.TotalMinutes;
+                return duration >= args.Args[0];
         }
     }
 

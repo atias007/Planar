@@ -171,8 +171,8 @@ namespace Planar.Service.Data
                 .Include(m => m.Group)
                 .AsNoTracking()
                 .Where(m =>
-                    m.JobGroup == group &&
-                    (string.IsNullOrEmpty(m.JobName) || m.JobName.ToLower() == name.ToLower()))
+                    (m.JobGroup == null && m.JobName == null && m.EventId < 300) ||
+                    (m.JobGroup == group && (string.IsNullOrEmpty(m.JobName) || m.JobName.ToLower() == name.ToLower())))
                 .OrderByDescending(d => d.Active)
                 .ThenBy(d => d.JobGroup)
                 .ThenBy(d => d.JobName)

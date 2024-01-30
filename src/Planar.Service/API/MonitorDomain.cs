@@ -96,7 +96,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<List<MonitorItem>> GetByGroup(string group)
+        public async Task<List<MonitorItem>> GetMonitorActionsByGroup(string group)
         {
             if (!await JobKeyHelper.IsJobGroupExists(group))
             {
@@ -109,7 +109,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<MonitorItem> GetById(int id)
+        public async Task<MonitorItem> GetMonitorActionById(int id)
         {
             var item = await DataLayer.GetMonitorAction(id);
             var monitor = ValidateExistingEntity(item, "monitor");

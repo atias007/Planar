@@ -81,7 +81,7 @@ namespace Planar.Service.Services
 
             var waiter = new CancellationTokenAwaiter(stoppingToken);
 
-            waiter.OnCompleted(async () =>
+            waiter.OnCompleted(() =>
             {
                 _logger.LogInformation("IsCancellationRequested = {Value}", stoppingToken.IsCancellationRequested);
                 try
@@ -95,7 +95,7 @@ namespace Planar.Service.Services
 
                 try
                 {
-                    await _schedulerUtil.Shutdown(stoppingToken);
+                    _schedulerUtil.Shutdown(stoppingToken).Wait();
                 }
                 catch
                 {
@@ -116,8 +116,8 @@ namespace Planar.Service.Services
             var startedSource = new TaskCompletionSource();
             var cancelledSource = new TaskCompletionSource();
 
-            using var reg1 = lifetime.ApplicationStarted.Register(() => startedSource.SetResult());
-            using var reg2 = stoppingToken.Register(() => cancelledSource.SetResult());
+            using var reg1 = lifetime.ApplicationStarted.Register(startedSource.SetResult);
+            using var reg2 = stoppingToken.Register(cancelledSource.SetResult);
 
             Task completedTask = await Task.WhenAny(
                 startedSource.Task,

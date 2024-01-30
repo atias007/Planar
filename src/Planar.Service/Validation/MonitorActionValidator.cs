@@ -46,40 +46,40 @@ namespace Planar.Service.Validation
 
             switch (@event)
             {
-                case MonitorEvents.ExecutionFailxTimesInRow:
+                case MonitorEvents.ExecutionFailxTimesInRow: // 200
                     var value1 = ValidateNumeric(arguments);
                     ValidateRange(value1, 2, 1000);
                     return new int[] { value1 };
 
-                case MonitorEvents.ExecutionFailxTimesInyHours:
+                case MonitorEvents.ExecutionFailxTimesInyHours: // 201
                     var values = ValidateNumericArray(arguments, 2);
                     ValidateRange(values[0], 2, 1000);
                     ValidateRange(values[1], 1, 72);
                     return values;
 
-                case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx:
+                case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx: // 202
                     var value3 = ValidateNumeric(arguments);
                     ValidateRange(value3, 0, int.MaxValue);
                     return new int[] { value3 };
 
-                case MonitorEvents.ExecutionEndWithEffectedRowsLessThanx:
+                case MonitorEvents.ExecutionEndWithEffectedRowsLessThanx: // 203
                     var value4 = ValidateNumeric(arguments);
                     ValidateRange(value4, 2, int.MaxValue);
                     return new int[] { value4 };
 
-                case MonitorEvents.ExecutionEndWithEffectedRowsLessThanxInyHours:
-                    var values2 = ValidateNumericArray(arguments, 2);
-                    ValidateRange(values2[0], 1, int.MaxValue);
-                    ValidateRange(values2[1], 1, 72);
-                    return values2;
-
-                case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanxInyHours:
+                case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanxInyHours: // 204
                     var values3 = ValidateNumericArray(arguments, 2);
                     ValidateRange(values3[0], 0, int.MaxValue);
                     ValidateRange(values3[1], 1, 72);
                     return values3;
 
-                case MonitorEvents.ExecutionDurationGreaterThanxMinutes:
+                case MonitorEvents.ExecutionEndWithEffectedRowsLessThanxInyHours: // 205
+                    var values2 = ValidateNumericArray(arguments, 2);
+                    ValidateRange(values2[0], 1, int.MaxValue);
+                    ValidateRange(values2[1], 1, 72);
+                    return values2;
+
+                case MonitorEvents.ExecutionDurationGreaterThanxMinutes: // 206
                     var value2 = ValidateNumeric(arguments);
                     ValidateRange(value2, 1, 1440);
                     return new int[] { value2 };

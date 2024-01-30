@@ -10,7 +10,9 @@ var login = await client.ConnectAsync("http://localhost:2306");
 
 //await client.Jobs.TestAsync("Infrastructure.BankOfIsraelCurrency", DoIt);
 
-var metrics = await client.Metrics.ListMetricsAsync();
+//var metrics = await client.Metrics.ListMetricsAsync();
+
+var summ = await client.Report.GetAsync(ReportNames.Summary);
 
 var res0 = await client.Monitor.ListAsync();
 var res1 = await client.Trigger.ListAsync("Infrastructure.BankOfIsraelCurrency");
