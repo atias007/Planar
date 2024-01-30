@@ -316,6 +316,17 @@ public class MonitorUtil : IMonitorUtil
         return GetMonitorEventTitle(title, monitorAction.EventArgument);
     }
 
+    internal static string GetMonitorEventTitle(int eventId, string? arguments)
+    {
+        var title = ((MonitorEvents)eventId).GetEnumDescription();
+        if (string.IsNullOrWhiteSpace(arguments))
+        {
+            return title;
+        }
+
+        return GetMonitorEventTitle(title, arguments);
+    }
+
     internal static string GetMonitorEventTitle(string title, string? eventArguments)
     {
         if (string.IsNullOrWhiteSpace(eventArguments)) { return title; }
@@ -425,7 +436,7 @@ public class MonitorUtil : IMonitorUtil
         alert.MonitorId = action.Id;
         alert.Hook = action.Hook;
         alert.EventArgument = action.EventArgument;
-        alert.EventTitle = ((MonitorEvents)action.EventId).GetEnumDescription();
+        alert.EventTitle = GetMonitorEventTitle(action);
     }
 
     private static void MapDetailsToMonitorAlert(MonitorDetails details, MonitorAlert alert)
@@ -492,12 +503,13 @@ public class MonitorUtil : IMonitorUtil
 
     private async Task<bool> AnalyzeMonitorEventsWithArguments(MonitorEvents @event, MonitorAction action, IJobExecutionContext? context)
     {
+        if (context == null) { return false; } // analyze only for job execution (not for system execution)
         if (@event == MonitorEvents.ExecutionDurationGreaterThanxMinutes) { return true; }
 
         using var scope = _serviceScopeFactory.CreateScope();
-        var jobKeyHelper = scope.ServiceProvider.GetRequiredService<JobKeyHelper>();
         var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
-        var args = await GetAndValidateArgs(action, jobKeyHelper);
+        var args = GetAndValidateArgs(action);
+        args.JobId = JobKeyHelper.GetJobId(context.JobDetail);
         if (!args.Handle || args.Args == null) { return false; }
 
         switch (@event)
@@ -558,17 +570,9 @@ public class MonitorUtil : IMonitorUtil
         return false;
     }
 
-    private async Task<MonitorArguments> GetAndValidateArgs(MonitorAction action, JobKeyHelper jobKeyHelper)
+    private MonitorArguments GetAndValidateArgs(MonitorAction action)
     {
-        var jobId = await jobKeyHelper.GetJobId(action);
-
-        if (action.MonitorForJob && string.IsNullOrWhiteSpace(jobId))
-        {
-            _logger.LogWarning("monitor action {Id}, Title {Title} --> missing job group/name", action.Id, action.Title);
-            return MonitorArguments.Empty;
-        }
-
-        var result = new MonitorArguments { Handle = true, JobId = jobId };
+        var result = new MonitorArguments { Handle = true };
 
         try
         {

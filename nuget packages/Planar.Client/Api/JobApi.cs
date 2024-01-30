@@ -500,9 +500,18 @@ namespace Planar.Client
                 .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
 
             RunningJobDetails? runResult;
+
             try
             {
-                runResult = await _proxy.InvokeAsync<RunningJobDetails>(restRequest, cancellationToken);
+                try
+                {
+                    runResult = await _proxy.InvokeAsync<RunningJobDetails>(restRequest, cancellationToken);
+                }
+                catch (PlanarNotFoundException)
+                {
+                    await Task.Delay(1000);
+                    runResult = await _proxy.InvokeAsync<RunningJobDetails>(restRequest, cancellationToken);
+                }
             }
             catch (PlanarNotFoundException)
             {

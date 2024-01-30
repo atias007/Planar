@@ -1,11 +1,9 @@
 ﻿using Newtonsoft.Json.Linq;
 using Planar.Hook;
-using Planar.Hooks.General;
+using System.Globalization;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Net.Mime;
 using System.Text.Json;
-using System.Web;
 
 namespace Planar.Hooks
 {
@@ -31,12 +29,14 @@ To use different bot token/chat id per group, you can set one of the 'Additional
 
         public override async Task Handle(IMonitorDetails monitorDetails)
         {
-            await SendMessage(monitorDetails, string.Empty);
+            var message = GetMessage(monitorDetails);
+            await SendMessage(monitorDetails, message);
         }
 
         public override async Task HandleSystem(IMonitorSystemDetails monitorDetails)
         {
-            await SendMessage(monitorDetails, string.Empty);
+            var message = GetMessage(monitorDetails);
+            await SendMessage(monitorDetails, message);
         }
 
         private async Task SendMessage(IMonitor monitor, string message)
@@ -48,8 +48,8 @@ To use different bot token/chat id per group, you can set one of the 'Additional
             {
                 text = message,
                 parse_mode = "Markdown",
-                disable_web_page_preview = false,
-                disable_notification = false,
+                //disable_web_page_preview = false,
+                //disable_notification = false,
                 chat_id = chatid
             };
             var json = JsonSerializer.Serialize(entity);
@@ -62,8 +62,7 @@ To use different bot token/chat id per group, you can set one of the 'Additional
                 RequestUri = new Uri(url),
                 Headers =
                 {
-                    { "accept", "application/json" },
-                    { "User-Agent", "Planar: Telegram Bot SDK" },
+                    { "accept", "application/json" }
                 },
                 Content = new StringContent(json)
                 {
@@ -76,7 +75,6 @@ To use different bot token/chat id per group, you can set one of the 'Additional
 
             using var client = new HttpClient();
             using var response = await client.SendAsync(request);
-            response.EnsureSuccessStatusCode();
             var body = await response.Content.ReadAsStringAsync();
             var jtoken = JToken.Parse(body);
             var ok = jtoken.Value<bool>("ok");
@@ -88,6 +86,54 @@ To use different bot token/chat id per group, you can set one of the 'Additional
             {
                 LogError($"Telegram response error: {jtoken["description"]}");
             }
+        }
+
+        private static string GetMessage(IMonitorDetails monitor)
+        {
+            var template =
+$"""
+`Planar Monitor Alert`
+
+*Event:* {monitor.EventTitle}
+*Job:* {monitor.JobGroup}.{monitor.JobName}
+*Fire Time:* {monitor.FireTime.ToShortDateString()} at {monitor.FireTime.ToShortTimeString()}
+*Job Run Time:* {monitor.JobRunTime.ToString("hh\\:mm\\:ss", CultureInfo.CurrentCulture)}
+*Fire Instance Id:* {monitor.FireInstanceId}
+*Author:* {monitor.Author}
+""";
+
+            if (!string.IsNullOrWhiteSpace(monitor.MostInnerExceptionMessage))
+                template +=
+$"""
+
+---------------
+*Exception:*
+---------------
+{monitor.MostInnerExceptionMessage}
+""";
+            return template.Replace("_", "-");
+        }
+
+        private static string GetMessage(IMonitorSystemDetails monitor)
+        {
+            var template =
+$"""
+**`Planar Monitor Alert`**
+
+*Event:* {monitor.EventTitle}
+*Message:* {monitor.Message}
+""";
+
+            if (!string.IsNullOrWhiteSpace(monitor.MostInnerExceptionMessage))
+                template +=
+$"""
+
+---------------
+*Exception:*
+---------------
+{monitor.MostInnerExceptionMessage}
+""";
+            return template.Replace("_", "-");
         }
     }
 }

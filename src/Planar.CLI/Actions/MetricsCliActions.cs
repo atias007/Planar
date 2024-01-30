@@ -39,7 +39,8 @@ namespace Planar.CLI.Actions
             FillDatesScope(request);
 
             var restRequest = new RestRequest("metrics/concurrent", Method.Get)
-                .AddQueryDateScope(request);
+                .AddQueryDateScope(request)
+                .AddQueryPagingParameter(request);
 
             var result = await RestProxy.Invoke<PagingResponse<ConcurrentExecutionModel>>(restRequest, cancellationToken);
             var table = CliTableExtensions.GetTable(result.Data);

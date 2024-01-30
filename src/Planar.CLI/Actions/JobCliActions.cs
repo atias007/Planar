@@ -719,6 +719,14 @@ namespace Planar.CLI.Actions
                 .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
             var runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest, cancellationToken);
 
+            var counter = 0;
+            while (!runResult.IsSuccessful && counter < 3)
+            {
+                await Task.Delay(500, cancellationToken);
+                runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest, cancellationToken);
+                counter++;
+            }
+
             if (!runResult.IsSuccessful)
             {
                 // Not Found: job finish in very short time
@@ -1063,7 +1071,7 @@ namespace Planar.CLI.Actions
                         $"  End Time: [wheat1]{CliTableFormat.FormatTimeSpan(endSpan)}[/]     ";
                 AnsiConsole.MarkupLine(title);
 
-                return false; 
+                return false;
             }
         }
 

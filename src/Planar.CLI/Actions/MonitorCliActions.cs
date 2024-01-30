@@ -436,16 +436,18 @@ namespace Planar.CLI.Actions
                 return new AddMonitorJobData();
             }
 
-            string selectedEvent;
-            if (MonitorEventsExtensions.IsMonitorEventHasArguments(eventName))
-            {
-                selectedEvent = "single (monitor for single job)";
-            }
-            else
-            {
-                var types = new[] { "single (monitor for single job)", "group (monitor for group of jobs)", "all (monitor for all jobs)" };
-                selectedEvent = PromptSelection(types, "monitor type") ?? string.Empty;
-            }
+            var types = new[] { "single (monitor for single job)", "group (monitor for group of jobs)", "all (monitor for all jobs)" };
+            var selectedEvent = PromptSelection(types, "monitor type") ?? string.Empty;
+            ////string selectedEvent;
+            ////if (MonitorEventsExtensions.IsMonitorEventHasArguments(eventName))
+            ////{
+            ////    selectedEvent = "single (monitor for single job)";
+            ////}
+            ////else
+            ////{
+            ////    var types = new[] { "single (monitor for single job)", "group (monitor for group of jobs)", "all (monitor for all jobs)" };
+            ////    selectedEvent = PromptSelection(types, "monitor type") ?? string.Empty;
+            ////}
 
             selectedEvent = selectedEvent.Split(' ')[0];
             if (selectedEvent == "all")
