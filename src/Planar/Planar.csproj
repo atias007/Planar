@@ -32,6 +32,7 @@
 	  <None Remove="Content\redoc.standalone.js" />
 	  <None Remove="Content\theme-flattop.css" />
 	  <None Remove="Data\Calendars\readme.md" />
+	  <None Remove="Data\Certificate\readme.md" />
 	  <None Remove="Data\Jobs\readme.md" />
 	  <None Remove="Data\MonitorHooks\readme.md" />
 	  <None Remove="Data\Settings\AppSettings.yml" />
@@ -59,6 +60,9 @@
 	  </EmbeddedResource>
 	  <EmbeddedResource Include="Content\redoc.standalone.js" />
 	  <EmbeddedResource Include="Content\theme-flattop.css">
+	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Data\Certificate\readme.md">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
 	  <EmbeddedResource Include="Data\Settings\AppSettings.yml">

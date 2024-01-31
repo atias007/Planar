@@ -15,6 +15,8 @@ namespace Planar.Startup
 {
     public static class AppSettingsInitializer
     {
+        private const string encryptedPrefix = "encrypted:";
+
         public static void Initialize()
         {
             UpgradeToYml();
@@ -27,8 +29,10 @@ namespace Planar.Startup
             {
                 Console.WriteLine("[x] Read AppSettings file");
 
+                using var stream = YmlFileReader.ReadStreamAsync(file).Result;
+
                 config = new ConfigurationBuilder()
-                    .AddYamlFile(file, optional: false, reloadOnChange: true)
+                    .AddYamlStream(stream)
                     .AddEnvironmentVariables()
                     .Build();
             }
@@ -84,6 +88,7 @@ namespace Planar.Startup
             if (!jsonFileInfo.Exists) { return; }
 
             var ymlContent = File.ReadAllText(ymlFile);
+            if (ymlContent.StartsWith(encryptedPrefix)) { return; }
             var lines = File.ReadAllLines(ymlFile);
             if (Array.Exists(lines, l => l.StartsWith("general:"))) { return; }
 

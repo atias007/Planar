@@ -4,6 +4,8 @@ namespace Planar
 {
     internal static class Consts
     {
+        public const string CryptographyKeyVariableKey = "PLANAR_CRYPTOGRAPHY_KEY";
+
         public static readonly string[] PreserveGroupNames = new string[] { RetryTriggerGroup, PlanarSystemGroup };
 
         public static readonly string[] AllDataKeys = new[]

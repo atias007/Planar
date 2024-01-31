@@ -3,7 +3,6 @@
     internal static class EnvironmentVariableConsts
     {
         public const string EnvironmentVariableKey = "PLANAR_ENVIRONMENT";
-
         public const string ConnectionStringVariableKey = "PLANAR_DB_CONNECTION_STRING";
         public const string DatabaseProviderVariableKey = "PLANAR_DB_PROVIDER";
         public const string MaxConcurrencyVariableKey = "PLANAR_MAX_CONCURRENCY";
@@ -50,7 +49,7 @@
 
         public const string HooksRestDefaultUrl = "PLANAR_HOOKS_REST_DEFAULT_URL";
         public const string HooksTeamsDefaultUrl = "PLANAR_HOOKS_TEAMS_DEFAULT_URL";
-        public const string HooksTeamsSendToMultipleUrls = "PLANAR_HOOKS_TEAMS_SEND_TO_MULTIPLE_URLS";
+        public const string HooksTeamsSendToMultipleChannels = "PLANAR_HOOKS_TEAMS_SEND_TO_MULTIPLE_CHANNELS";
         public const string HooksTwilioSmsAccountSid = "PLANAR_HOOKS_TWILIO_SMS_ACCOUNT_SID";
         public const string HooksTwilioSmsAuthToken = "PLANAR_HOOKS_TWILIO_SMS_AUTH_TOKEN";
         public const string HooksTwilioSmsFromNumber = "PLANAR_HOOKS_TWILIO_SMS_FROM_NUMBER";
@@ -62,5 +61,7 @@
         public const string HooksRedisStreamName = "PLANAR_HOOKS_REDIS_STREAM_NAME";
         public const string HooksRedisPubSubChannel = "PLANAR_HOOKS_REDIS_PUBSUB_CHANNEL";
         public const string HooksRedisSsl = "PLANAR_HOOKS_REDIS_SSL";
+        public const string HooksTelegramBotToken = "PLANAR_HOOKS_TELEGRAM_BOT_TOKEN";
+        public const string HooksTelegramChatId = "PLANAR_HOOKS_TELEGRAM_CHAT_ID";
     }
 }

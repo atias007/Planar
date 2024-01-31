@@ -36,6 +36,7 @@
 		<Compile Include="..\Planar.Common\Extensions.cs" Link="General\Extensions.cs" />
 		<Compile Include="..\Planar.Common\YmlUtil.cs" Link="General\YmlUtil.cs" />
 		<Compile Include="..\Planar.Service\Monitor\MonitorEventsExtensions.cs" Link="General\MonitorEventsExtensions.cs" />
+		<Compile Include="..\Planar\Startup\Aes256Cipher.cs" Link="General\Aes256Cipher.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

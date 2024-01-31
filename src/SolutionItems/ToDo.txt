@@ -279,3 +279,4 @@ V1.6.4
 - add ExecutionTimeout moniotr event
 - add total effected rows to summary
 - Telegram Hook
+- add settings encrypt / decrypt options

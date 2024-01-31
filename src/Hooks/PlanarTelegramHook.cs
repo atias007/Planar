@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using Planar.Common;
 using Planar.Hook;
 using System.Globalization;
 using System.Net.Http.Headers;
@@ -39,10 +40,42 @@ To use different bot token/chat id per group, you can set one of the 'Additional
             await SendMessage(monitorDetails, message);
         }
 
+        private static string GetBotToken(IMonitor monitor)
+        {
+            var token = GetParameter("telegram-bot-token", monitor.Group);
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                token = AppSettings.Hooks.Telegram.BotToken; // 5574394171:AAErT6psb6210KpTl8xotKTl5PLIL-QtJQg
+            }
+
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                throw new PlanarHookException("Telegram bot token is not defined.");
+            }
+
+            return token;
+        }
+
+        private static string GetChatId(IMonitor monitor)
+        {
+            var chatid = GetParameter("telegram-chat-id", monitor.Group);
+            if (string.IsNullOrWhiteSpace(chatid))
+            {
+                chatid = AppSettings.Hooks.Telegram.ChatId; // -1002028679199
+            }
+
+            if (string.IsNullOrWhiteSpace(chatid))
+            {
+                throw new PlanarHookException("Telegram chat id is not defined.");
+            }
+
+            return chatid;
+        }
+
         private async Task SendMessage(IMonitor monitor, string message)
         {
-            var token = GetParameter("telegram-bot-token", monitor.Group); // 5574394171:AAErT6psb6210KpTl8xotKTl5PLIL-QtJQg
-            var chatid = GetParameter("telegram-chat-id", monitor.Group);  // -1002028679199
+            var token = GetBotToken(monitor);
+            var chatid = GetChatId(monitor);
 
             var entity = new
             {

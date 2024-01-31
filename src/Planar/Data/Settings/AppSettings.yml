@@ -1,7 +1,7 @@
 general:
   environment: Development
   service name: PlanarService
-  instance id: AUTO
+  instance id: Default
   max concurrency: 10
   job auto stop span: 02:00:00
   persist running jobs span: 00:00:30
@@ -9,6 +9,8 @@ general:
   http port: 2306                                     
   use https: false	                                 # set this value to true in production environment
   https port: 2610
+  certificate file: null                             # certificate file path. set this value in production environment
+  certificate password: null                         # certificate password. set this value in production environment
   use https redirect: false                          # set this value to true in production environment
   log level: Debug                                   # options: Trace | Debug | Information | Warning | Error | Critical | None
   swagger ui: true                                   # set this value to false in production environment
@@ -58,7 +60,7 @@ hooks:
     default url: http://localhost:2306/api/hooks/rest
   teams:
     default url: https://teams.microsoft.com/channel-id
-    send to multiple urls: true
+    send to multiple channels: true
   twilio sms:
     account sid: null
     auth token: null
@@ -72,3 +74,6 @@ hooks:
     database: 0
     stream name: planar
     pub sub channel: planar
+  telegram:
+    bot token: null
+    chat id: null

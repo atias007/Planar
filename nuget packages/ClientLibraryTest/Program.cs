@@ -3,6 +3,8 @@ using Planar.Client.Entities;
 
 var client = new PlanarClient();
 var login = await client.ConnectAsync("http://localhost:2306");
+var list = await client.History.ListAsync(new ListHistoryFilter { PageSize = 5, PageNumber = 1, JobId = "Demo.TestEnvironmentExit" });
+var details = await client.Job.GetAsync("Demo.TestEnvironmentExit");
 
 //await TestGroup(client);
 

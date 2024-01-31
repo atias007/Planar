@@ -21,7 +21,7 @@ To use different channel address per group, you can set one of the 'AdditionalFi
 -------------------------------------------------
 To send to multiple channels, you can set the following value (in appsettings.yml, teams section) to true:
 -----------------------------
-  send to multiple urls: true
+  send to multiple channels: true
 -----------------------------
 """;
 
@@ -34,7 +34,7 @@ To send to multiple channels, you can set the following value (in appsettings.ym
         foreach (var url in urls)
         {
             await SendMessageToChannel(url, message);
-            if (!AppSettings.Hooks.Teams.SendToMultipleUrls) { break; }
+            if (!AppSettings.Hooks.Teams.SendToMultipleChannels) { break; }
         }
     }
 
@@ -45,7 +45,7 @@ To send to multiple channels, you can set the following value (in appsettings.ym
         foreach (var url in urls)
         {
             await SendMessageToChannel(url, message);
-            if (!AppSettings.Hooks.Teams.SendToMultipleUrls) { break; }
+            if (!AppSettings.Hooks.Teams.SendToMultipleChannels) { break; }
         }
     }
 
@@ -183,7 +183,7 @@ To send to multiple channels, you can set the following value (in appsettings.ym
         {
             var url = GetTeamsUrl(item);
             if (url != null) { yield return url; }
-            if (!AppSettings.Hooks.Teams.SendToMultipleUrls) { break; }
+            if (!AppSettings.Hooks.Teams.SendToMultipleChannels) { break; }
         }
     }
 

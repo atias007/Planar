@@ -23,7 +23,7 @@ namespace Planar.CLI.Actions
     [Module("job", "Actions to add, remove, list, update and operate jobs", Synonyms = "jobs")]
     public class JobCliActions : BaseCliAction<JobCliActions>
     {
-        public static readonly object _locker = new();
+        private static readonly object _locker = new();
 
         [Action("add")]
         [NullRequest]

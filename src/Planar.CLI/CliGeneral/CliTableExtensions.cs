@@ -67,6 +67,18 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetTable(string key)
+        {
+            var table = new CliTable();
+            table.Table.AddColumns("Cryptography Key");
+            table.Table.AddRow(SafeCliString(key));
+            table.Table.AddEmptyRow();
+            table.Table.AddRow(CliFormat.GetWarningMarkup("make sure you copy the above cryptography key now."));
+            table.Table.AddRow($"[{CliFormat.WarningColor}]set the key in server environment variable: PLANAR_CRYPTOGRAPHY_KEY[/]");
+            table.Table.AddRow($"[{CliFormat.WarningColor}]we don't store it and you will not be able to see it again.[/]");
+            return table;
+        }
+
         public static CliTable GetTable(WorkingHoursModel? response)
         {
             var table = new CliTable();
