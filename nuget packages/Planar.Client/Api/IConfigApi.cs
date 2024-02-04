@@ -13,7 +13,11 @@ namespace Planar.Client.Api
 
         Task<GlobalConfig> GetAsync(string key, CancellationToken cancellationToken = default);
 
-        Task PutAsync(string key, string? value, ConfigType configType = ConfigType.String, CancellationToken cancellationToken = default);
+        Task PutAsync(
+            string key,
+            string? value,
+            ConfigType configType = ConfigType.String,
+            CancellationToken cancellationToken = default);
 
         Task DeleteAsync(string key, CancellationToken cancellationToken = default);
 

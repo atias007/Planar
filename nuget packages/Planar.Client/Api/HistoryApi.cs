@@ -65,16 +65,20 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<PagingResponse<LastRunDetails>> LastAsync(LastFilter? filter = null, CancellationToken cancellationToken = default)
+        public async Task<PagingResponse<LastRunDetails>> LastAsync(
+            int? lastDays = null,
+            int? pageNumber = null,
+            int? pageSize = null,
+            CancellationToken cancellationToken = default)
         {
-            filter ??= new LastFilter();
+            var paging = new Paging(pageNumber, pageSize);
             var restRequest = new RestRequest("history/last", Method.Get);
-            if (filter.LastDays.GetValueOrDefault() > 0)
+            if (lastDays.GetValueOrDefault() > 0)
             {
-                restRequest.AddQueryParameter("lastDays", filter.LastDays.GetValueOrDefault());
+                restRequest.AddQueryParameter("lastDays", lastDays.GetValueOrDefault());
             }
 
-            restRequest.AddQueryPagingParameter(filter);
+            restRequest.AddQueryPagingParameter(paging);
             var result = await _proxy.InvokeAsync<PagingResponse<LastRunDetails>>(restRequest, cancellationToken);
             return result;
         }
