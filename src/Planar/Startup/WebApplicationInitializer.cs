@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting.WindowsServices;
 using Planar.Common;
 using Serilog;
 using System;
+using Prometheus;
 
 namespace Planar.Startup
 {
@@ -96,6 +97,12 @@ namespace Planar.Startup
 
             app.UseRouting();
 
+            // Capture metrics about all received HTTP requests.
+            app.UseHttpMetrics();
+
+            // Capture metrics about received gRPC requests.
+            app.UseGrpcMetrics();
+
             //Rate limitter middleware
             app.UseRateLimiter();
             app.MapGrpcService<ClusterService>();
@@ -110,6 +117,8 @@ namespace Planar.Startup
             // ATTENTION: Always UseAuthentication should be before UseAuthorization
             app.UseAuthorization();
             app.MapControllers();
+
+            app.MapMetrics();
         }
     }
 }

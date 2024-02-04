@@ -17,6 +17,6 @@ public sealed class SummaryReportJob : BaseReportJob<SummaryReportJob>, IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
-        await Execute<SummaryReport>(context, ReportName);
+        await SafeExecute<SummaryReport>(context, ReportName);
     }
 }

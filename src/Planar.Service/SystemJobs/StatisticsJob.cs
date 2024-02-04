@@ -8,6 +8,7 @@ using Planar.Service.General;
 using Planar.Service.MapperProfiles;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
+using Polly;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -28,20 +29,20 @@ public sealed class StatisticsJob : SystemJob, IJob
         _serviceScope = serviceScope;
     }
 
-    public Task Execute(IJobExecutionContext context)
+    public async Task Execute(IJobExecutionContext context)
     {
-        return SafeDoWork();
+        await SafeDoWork(context);
     }
 
     public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
     {
         const string description = "System job for saving statistics data to database";
         var span = TimeSpan.FromHours(24);
-        var start = DateTime.Now.Date.AddDays(1).AddMinutes(10);
+        var start = DateTime.Now.Date.AddDays(1).AddMinutes(5);
         await Schedule<StatisticsJob>(scheduler, description, span, start, stoppingToken);
     }
 
-    private async Task SafeDoWork()
+    private async Task SafeDoWork(IJobExecutionContext context)
     {
         using var scope = _serviceScope.CreateScope();
         try
@@ -86,6 +87,8 @@ public sealed class StatisticsJob : SystemJob, IJob
         {
             _logger.LogError(ex, "fail to build job statistics execution");
         }
+
+        SafeSetLastRun(context, _logger);
     }
 
     private async Task<JobStatistics> SafeSetStatisticsCache()

@@ -299,7 +299,7 @@ public abstract class BaseReportJob<TJob> : BaseReportJob
         await PauseDisabledTrigger(scheduler, yearlyTrigger, stoppingToken);
     }
 
-    protected async Task Execute<TReport>(IJobExecutionContext context, ReportNames reportName)
+    protected async Task<bool> SafeExecute<TReport>(IJobExecutionContext context, ReportNames reportName)
         where TReport : BaseReport
     {
         try
@@ -314,11 +314,14 @@ public abstract class BaseReportJob<TJob> : BaseReportJob
             var main = await report.Generate(dateScope);
             main = MinifyHtml(main);
             await SendReport(main, await emailsTask, reportName, context.Trigger.Key.Name);
-            _logger?.LogInformation("{Name} report send via smtp", reportName.ToString().ToLower());
+            _logger.LogInformation("{Name} report send via smtp", reportName.ToString().ToLower());
+            SafeSetLastRun(context, _logger);
+            return true;
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "fail to send {Report} report: {Message}", reportName.ToString().ToLower(), ex.Message);
+            _logger.LogError(ex, "fail to send {Report} report: {Message}", reportName.ToString().ToLower(), ex.Message);
+            return false;
         }
     }
 

@@ -17,6 +17,6 @@ public sealed class PausedReportJob : BaseReportJob<PausedReportJob>, IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
-        await Execute<PausedJobsReport>(context, ReportName);
+        await SafeExecute<PausedJobsReport>(context, ReportName);
     }
 }

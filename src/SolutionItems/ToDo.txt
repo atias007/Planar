@@ -3,12 +3,11 @@
 PLAN FOR V 1.7.0
 ----------------
 
-- run hook in linux
 - nuget package for client library
+
 - postman: test queue-invoke with data and validate the creation of data
 - 'service info hooks'
 
-- build anomaly job statistics exception count
 - add anomaly monitor events
 - add charts to report
 	https://codepen.io/jerrylow/pen/OJyREdw
@@ -18,8 +17,6 @@ PLAN FOR V 1.7.0
 - Security & Audit report
 
 - .net 8
-- prometeus endpoint
-
 	
 
 - BACKLOG ----------------------------------------------------------------------------
@@ -28,7 +25,9 @@ PLAN FOR V 1.7.0
 - add SSIS job
 - add SSRS job
 
-- validate the argument details in add monitor
+- run hook in linux
+
+
 
 - cli command to changhe interval/count
 - cli command to changhe cron expr
@@ -280,3 +279,5 @@ V1.6.4
 - add total effected rows to summary
 - Telegram Hook
 - add settings encrypt / decrypt options
+- prometeus endpoint
+- validate the argument details in add monitor

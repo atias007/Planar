@@ -17,6 +17,7 @@ general:
   open api ui: true                                  # set this value to false in production environment
   developer exception page: true                     # this value is automatically set to false in production environment
   concurrency rate limiting: 10                      # the total number of concurrent requests allowed to be processed by the application. default is 10. minimum value 1
+  encrypt all settings: false                        # encrypt all ymf files in settings folder. set this value to true in production environment
 
 database:
   provider: SqlServer                                # options: SqlServer

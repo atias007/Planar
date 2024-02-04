@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.General;
+using Polly;
 using Quartz;
 using System;
 using System.Threading;
@@ -24,13 +25,19 @@ public sealed class ClusterHealthCheckJob : SystemJob, IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
+        await SafeDoWork(context);
+    }
+
+    private async Task SafeDoWork(IJobExecutionContext context)
+    {
         try
         {
             await DoWork();
+            SafeSetLastRun(context, _logger);
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "fail check health of cluster: {Message}", ex.Message);
+            _logger.LogError(ex, "fail check health of cluster: {Message}", ex.Message);
             _monitorUtil.Scan(MonitorEvents.ClusterHealthCheckFail, context, ex);
         }
     }

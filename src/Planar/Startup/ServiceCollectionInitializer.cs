@@ -16,6 +16,7 @@ using System;
 using System.Net;
 using System.Threading.RateLimiting;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
+using Prometheus;
 
 namespace Planar.Startup
 {
@@ -34,6 +35,7 @@ namespace Planar.Startup
             });
 
             services.AddHttpContextAccessor();
+            services.UseHttpClientMetrics();
             services.AddFluentValidationAutoValidation();
             services.AddValidatorsFromAssemblies(new[] { typeof(Program).Assembly, typeof(MainService).Assembly });
 

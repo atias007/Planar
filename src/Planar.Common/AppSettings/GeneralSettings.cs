@@ -23,5 +23,6 @@ namespace Planar.Common
         public LogLevel LogLevel { get; set; }
         public string? CertificateFile { get; set; }
         public string? CertificatePassword { get; set; }
+        public bool EncryptAllSettings { get; set; }
     }
 }

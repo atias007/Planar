@@ -60,6 +60,7 @@
     <None Remove="Scripts\Planar_0046 - fix_trace_count.sql" />
     <None Remove="Scripts\Planar_0047 - fix_event_title.sql" />
     <None Remove="Scripts\Planar_0048 - add_col_to_summary.sql" />
+    <None Remove="Scripts\Planar_0049 - fix_statistics.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -110,6 +111,7 @@
     <EmbeddedResource Include="Scripts\Planar_0046 - fix_trace_count.sql" />
     <EmbeddedResource Include="Scripts\Planar_0047 - fix_event_title.sql" />
     <EmbeddedResource Include="Scripts\Planar_0048 - add_col_to_summary.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0049 - fix_statistics.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DbUp\dbup-sqlserver\dbup-sqlserver.csproj" />

@@ -1,6 +1,6 @@
 ﻿namespace Planar.Common
 {
-    internal static class EnvironmentVariableConsts
+    public static class EnvironmentVariableConsts
     {
         public const string EnvironmentVariableKey = "PLANAR_ENVIRONMENT";
         public const string ConnectionStringVariableKey = "PLANAR_DB_CONNECTION_STRING";
@@ -29,6 +29,7 @@
         public const string ClusteringCheckinMisfireThresholdVariableKey = "PLANAR_MISFIRE_THRESHOLD";
         public const string ClusterHealthCheckIntervalVariableKey = "PLANAR_CLUSTER_HEALTH_CCHECK_INTERVAL";
         public const string ClusterPortVariableKey = "PLANAR_CLUSTE_RPORT";
+        public const string EncryptAllSettingsVariableKey = "PLANAR_ENCRYPT_ALL_SETTINGS";
 
         public const string HttpPortVariableKey = "PLANAR_HTTP_PORT";
         public const string HttpsPortVariableKey = "PLANAR_HTTPS_PORT";

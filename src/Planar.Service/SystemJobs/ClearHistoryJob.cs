@@ -8,6 +8,7 @@ using Quartz;
 using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,22 +26,38 @@ public sealed class ClearHistoryJob : SystemJob, IJob
         _serviceScopeFactory = serviceScopeFactory;
     }
 
-    public Task Execute(IJobExecutionContext context)
+    public async Task Execute(IJobExecutionContext context)
     {
-        return SafeDoWork();
+        await SafeDoWork(context);
     }
 
     public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
     {
         const string description = "System job for clearing history records from database";
         var span = TimeSpan.FromHours(24);
-        var start = DateTime.Now.Date.AddDays(1).AddMinutes(5);
+        var start = DateTime.Now.Date.AddDays(1).AddMinutes(10);
         await Schedule<ClearHistoryJob>(scheduler, description, span, start, stoppingToken);
     }
 
-    private async Task SafeDoWork()
+    private async Task SafeDoWork(IJobExecutionContext context)
     {
-        var ids = GetExistsJobIds();
+        if (!await CheckIfStatisticsJobRun())
+        {
+            _logger.LogWarning("could not clear history records, statistics job did not run today");
+            return;
+        }
+
+        Task<IEnumerable<string>> ids;
+
+        try
+        {
+            ids = GetExistsJobIds();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"fail to get exists job ids at {nameof(ClearHistoryJob)}.{nameof(SafeDoWork)}()");
+            return;
+        }
 
         await Task.WhenAll(
             ClearTrace(),
@@ -52,6 +69,33 @@ public sealed class ClearHistoryJob : SystemJob, IJob
             ClearMonitorCountersByMonitor(),
             ClearJobStatistics(ids.Result)
             );
+
+        SafeSetLastRun(context, _logger);
+    }
+
+    private async Task<bool> CheckIfStatisticsJobRun()
+    {
+        try
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var scheduler = scope.ServiceProvider.GetRequiredService<IScheduler>();
+            var job = await scheduler.GetJobDetail(new JobKey(nameof(StatisticsJob), Consts.PlanarSystemGroup));
+            if (job == null || job.JobDataMap == null)
+            {
+                return false;
+            }
+
+            if (!job.JobDataMap.TryGetValue(LastRunKey, out var lastRun)) { return false; }
+            var strLastRun = Convert.ToString(lastRun);
+            if (string.IsNullOrWhiteSpace(strLastRun)) { return false; }
+            if (!DateTime.TryParse(strLastRun, CultureInfo.CurrentCulture, out var lastRunTime)) { return false; }
+            return lastRunTime.Date == DateTime.Now.Date;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "fait to check if statistics job run today. skip clear history");
+            return false;
+        }
     }
 
     private async Task ClearStatistics()

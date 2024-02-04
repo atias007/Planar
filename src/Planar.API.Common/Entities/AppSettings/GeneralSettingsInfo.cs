@@ -20,5 +20,6 @@ namespace Planar.API.Common.Entities
         public TimeSpan SchedulerStartupDelay { get; set; }
         public int ConcurrencyRateLimiting { get; set; }
         public string LogLevel { get; set; } = string.Empty;
+        public bool EncryptAllSettings { get; set; }
     }
 }

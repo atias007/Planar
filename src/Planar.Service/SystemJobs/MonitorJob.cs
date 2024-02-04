@@ -23,13 +23,15 @@ internal class MonitorJob : SystemJob, IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
+        bool success = true;
         try
         {
             await ResetMonitorCounter();
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "fail to reset monitor counter: {Message}", ex.Message);
+            success = false;
+            _logger.LogError(ex, "fail to reset monitor counter: {Message}", ex.Message);
         }
 
         try
@@ -38,7 +40,12 @@ internal class MonitorJob : SystemJob, IJob
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "fail to delete old monitor mutes: {Message}", ex.Message);
+            _logger.LogError(ex, "fail to delete old monitor mutes: {Message}", ex.Message);
+        }
+
+        if (success)
+        {
+            SafeSetLastRun(context, _logger);
         }
     }
 

@@ -21,6 +21,82 @@ namespace Planar.Startup
         {
             UpgradeToYml();
             UpgradeToYmlVersion2();
+            var config = ReadAppSettings();
+            EncryptSettings(config);
+            Initialize(config);
+        }
+
+        private static void EncryptSettings(IConfiguration config)
+        {
+            try
+            {
+                var encrypt = AppSettings.GetSettings(config, EnvironmentVariableConsts.EncryptAllSettingsVariableKey, "general", "encrypt all settings", false);
+                if (!encrypt) { return; }
+
+                Console.WriteLine("[x] Encrypt all aettings files");
+                var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings);
+                var files = Directory.GetFiles(path, "*.yml");
+
+                var cryptographyKey = Environment.GetEnvironmentVariable(Consts.CryptographyKeyVariableKey) ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(cryptographyKey))
+                {
+                    throw new AppSettingsException(
+                                               $@"Environment variable {Consts.CryptographyKeyVariableKey} not found.
+                        You can create new key with cli command: service create-cryptography-key
+                        Then set the key in environment variable (i.e. setx {Consts.CryptographyKeyVariableKey} <generated_key>)");
+                }
+
+                var cipher = new Aes256Cipher(cryptographyKey);
+
+                foreach (var file in files)
+                {
+                    var content = File.ReadAllText(file);
+                    if (content.StartsWith(encryptedPrefix)) { continue; }
+                    var encrypted = cipher.Encrypt(content);
+                    File.WriteAllText(file, $"{encryptedPrefix}{encrypted}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(string.Empty.PadLeft(80, '-'));
+                Console.WriteLine(ex.ToString());
+                Thread.Sleep(60000);
+                Console.ReadLine();
+                Environment.Exit(-1);
+            }
+        }
+
+        private static void Initialize(IConfiguration config)
+        {
+            try
+            {
+                AppSettings.Initialize(config);
+            }
+            catch (AppSettingsException ex)
+            {
+                Console.WriteLine("Fail to initialize application settings:");
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(ex.Message);
+                Thread.Sleep(60000);
+                Console.ReadLine();
+                Environment.Exit(-1);
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(string.Empty.PadLeft(80, '-'));
+                Console.WriteLine(ex.ToString());
+                Thread.Sleep(60000);
+                Console.ReadLine();
+                Environment.Exit(-1);
+            }
+        }
+
+        private static IConfiguration ReadAppSettings()
+        {
             var file = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.yml");
 
             IConfiguration config = null;
@@ -46,29 +122,7 @@ namespace Planar.Startup
                 Environment.Exit(-1);
             }
 
-            try
-            {
-                AppSettings.Initialize(config);
-            }
-            catch (AppSettingsException ex)
-            {
-                Console.WriteLine("Fail to initialize application settings:");
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(ex.Message);
-                Thread.Sleep(60000);
-                Console.ReadLine();
-                Environment.Exit(-1);
-            }
-            catch (Exception ex)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(ex.Message);
-                Console.WriteLine(string.Empty.PadLeft(80, '-'));
-                Console.WriteLine(ex.ToString());
-                Thread.Sleep(60000);
-                Console.ReadLine();
-                Environment.Exit(-1);
-            }
+            return config;
         }
 
         public static void TestDatabaseConnection()

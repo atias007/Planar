@@ -17,6 +17,6 @@ public sealed class AlertsReportJob : BaseReportJob<AlertsReportJob>, IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
-        await Execute<AlertsReport>(context, ReportName);
+        await SafeExecute<AlertsReport>(context, ReportName);
     }
 }
