@@ -1,0 +1,14 @@
+﻿job type: PlanarJob
+name: AggregateException
+group: Infrastructure
+description: Test Aggregate Exception
+durable: true
+concurrent: false
+job data:
+  LastId: 1
+properties:
+  filename: AggregateException.exe
+simple triggers:
+  - name: every_1_hour
+    interval: 01:00:00
+    misfire behaviour: FireNow

@@ -184,7 +184,7 @@ namespace Planar.Service.General
                     var log = metadata.GetLog();
                     var exceptions = metadata.GetExceptionsText();
 
-                    if (string.IsNullOrEmpty(log) && string.IsNullOrEmpty(exceptions)) { break; }
+                    if (string.IsNullOrWhiteSpace(log) && string.IsNullOrWhiteSpace(exceptions)) { break; }
 
                     var item = new PersistanceRunningJobsInfo
                     {

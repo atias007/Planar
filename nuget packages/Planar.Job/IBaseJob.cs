@@ -8,7 +8,7 @@ namespace Planar.Job
 
         TimeSpan JobRunTime { get; }
 
-        void AddAggregateException(Exception ex);
+        void AddAggregateException(Exception ex, int maxItems = 25);
 
         void CheckAggragateException();
 

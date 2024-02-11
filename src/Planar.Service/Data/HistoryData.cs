@@ -289,6 +289,7 @@ namespace Planar.Service.Data
                 log.EffectedRows,
                 log.Log,
                 log.Exception,
+                log.ExceptionCount,
                 log.IsCanceled
             };
 
