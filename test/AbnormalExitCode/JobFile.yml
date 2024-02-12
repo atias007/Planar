@@ -1,0 +1,14 @@
+﻿job type: PlanarJob
+name: AbnormalExitCode
+group: Infrastructure
+description: Test abnormal exit code
+durable: true
+concurrent: false
+job data:
+  LastId: 1
+properties:
+  filename: AbnormalExitCode.exe
+simple triggers:
+  - name: every_1_hour
+    interval: 01:00:00
+    misfire behaviour: FireNow

@@ -24,8 +24,10 @@ namespace AggregateException
                 AddAggregateException(ex, 60);
 
                 EffectedRows++;
-                UpdateProgress(i + 1, 50);
+                UpdateProgress(i + 1, 10);
             }
+
+            CheckAggragateException();
         }
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
