@@ -392,7 +392,6 @@ namespace Planar.CLI.Actions
             var allActions = type.GetMethods(BindingFlags.Public | BindingFlags.Static).ToList();
             var moduleAttribute = type.GetCustomAttribute<ModuleAttribute>();
 
-            // TODO: check for moduleAttribute == null
             foreach (var act in allActions)
             {
                 var actionAttributes = act.GetCustomAttributes<ActionAttribute>();
@@ -400,7 +399,6 @@ namespace Planar.CLI.Actions
                 var ignoreHelpAttribute = act.GetCustomAttribute<IgnoreHelpAttribute>();
                 var hasWizard = act.GetCustomAttribute<ActionWizardAttribute>();
 
-                // TODO: validate attributes (invalid name...)
                 if (actionAttributes == null || !actionAttributes.Any()) { continue; }
 
                 var requestType = GetRequestType(act);
