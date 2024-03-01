@@ -18,7 +18,6 @@ internal class ServiceProfiler : Profile
         CreateMap<SmtpSettings, SmtpSettingsInfo>();
         CreateMap<MonitorSettings, MonitorSettingsInfo>();
         CreateMap<RetentionSettings, RetentionSettingsInfo>();
-
         CreateMap<WorkingHourScope, WorkingHourScopeModel>();
     }
 }

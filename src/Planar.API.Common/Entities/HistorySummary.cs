@@ -12,5 +12,6 @@
         public int Fail { get; set; }
         public int Running { get; set; }
         public int Retries { get; set; }
+        public int TotalEffectedRows { get; set; }
     }
 }

@@ -47,7 +47,7 @@ namespace Planar.Controllers
         [BadRequestResponse]
         public async Task<ActionResult<List<MonitorItem>>> GetByGroup([FromRoute][Required] string group)
         {
-            var result = await BusinesLayer.GetByGroup(group);
+            var result = await BusinesLayer.GetMonitorActionsByGroup(group);
             return Ok(result);
         }
 
@@ -59,7 +59,7 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public async Task<ActionResult<MonitorItem>> GetById([FromRoute][Id] int id)
         {
-            var result = await BusinesLayer.GetById(id);
+            var result = await BusinesLayer.GetMonitorActionById(id);
             return Ok(result);
         }
 

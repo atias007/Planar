@@ -8,6 +8,7 @@ using Quartz;
 using System;
 using System.Data;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.Data
@@ -212,7 +213,7 @@ namespace Planar.Service.Data
             return new PagingResponse<JobLastRun>(data.ToList(), count);
         }
 
-        public async Task<LastInstanceId?> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime)
+        public async Task<LastInstanceId?> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime, CancellationToken cancellationToken)
         {
             var result = await _context.JobInstanceLogs
                 .Where(l =>
@@ -226,23 +227,7 @@ namespace Planar.Service.Data
                     InstanceId = l.InstanceId,
                     LogId = l.Id,
                 })
-                .FirstOrDefaultAsync();
-
-            return result;
-        }
-
-        public async Task<GetTestStatusResponse?> GetTestStatus(long id)
-        {
-            var result = await _context.JobInstanceLogs
-                .Where(l => l.Id == id)
-                .Select(l => new GetTestStatusResponse
-                {
-                    EffectedRows = l.EffectedRows,
-                    Status = l.Status,
-                    Duration = l.Duration,
-                    ExceptionCount = l.ExceptionCount
-                })
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(cancellationToken);
 
             return result;
         }
@@ -304,6 +289,7 @@ namespace Planar.Service.Data
                 log.EffectedRows,
                 log.Log,
                 log.Exception,
+                log.ExceptionCount,
                 log.IsCanceled
             };
 

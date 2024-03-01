@@ -1,18 +1,19 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Common.Monitor;
 using Planar.Service.Model;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Service.Data
 {
-    public class MonitorData : BaseDataLayer
+    public class MonitorData : BaseDataLayer, IMonitorDurationDataLayer
     {
         public MonitorData(PlanarContext context) : base(context)
         {
@@ -60,7 +61,6 @@ namespace Planar.Service.Data
                 .AsNoTracking()
                 .Where(l =>
                     l.JobId == jobId &&
-                    l.EffectedRows != null &&
                     EF.Functions.DateDiffSecond(l.StartDate, DateTime.Now) <= hours * 3600)
                 .Select(l => l.EffectedRows.GetValueOrDefault())
                 .CountAsync();
@@ -170,13 +170,33 @@ namespace Planar.Service.Data
         {
             var result = await _context.MonitorActions
                 .Include(m => m.Group)
+                .AsNoTracking()
                 .Where(m =>
-                    m.JobGroup == group &&
-                    (string.IsNullOrEmpty(m.JobName) || m.JobName.ToLower() == name.ToLower()))
+                    (m.JobGroup == null && m.JobName == null && m.EventId < 300) ||
+                    (m.JobGroup == group && (string.IsNullOrEmpty(m.JobName) || m.JobName.ToLower() == name.ToLower())))
                 .OrderByDescending(d => d.Active)
                 .ThenBy(d => d.JobGroup)
                 .ThenBy(d => d.JobName)
                 .ThenBy(d => d.Title)
+                .ToListAsync();
+
+            return result;
+        }
+
+        public async Task<List<MonitorCacheItem>> GetDurationMonitorActions()
+        {
+            var result = await _context.MonitorActions
+                .AsNoTracking()
+                .Where(m =>
+                    m.EventId == (int)MonitorEvents.ExecutionDurationGreaterThanxMinutes &&
+                    m.Active == true
+                )
+                .Select(m => new MonitorCacheItem
+                {
+                    EventArgument = m.EventArgument,
+                    JobGroup = m.JobGroup,
+                    JobName = m.JobName
+                })
                 .ToListAsync();
 
             return result;
@@ -356,17 +376,18 @@ namespace Planar.Service.Data
 
             var inner = _context.MonitorActions.AsNoTracking();
 
-            return await
-                outer.Join(inner,
-                    mutes => mutes.MonitorId,
-                    monitor => monitor.Id,
-                    (mute, monitor) => new MonitorMute
-                    {
-                        DueDate = mute.DueDate,
-                        JobId = mute.JobId,
-                        MonitorId = mute.MonitorId,
-                        MonitorTitle = monitor.Title
-                    })
+            var query = from o in outer
+                        join i in inner on o.MonitorId equals i.Id into joined
+                        from j in joined.DefaultIfEmpty()
+                        select new MonitorMute
+                        {
+                            DueDate = o.DueDate,
+                            JobId = o.JobId,
+                            MonitorId = o.MonitorId,
+                            MonitorTitle = j.Title
+                        };
+
+            return await query
                 .OrderBy(c => c.DueDate)
                 .Take(1000)
                 .ToListAsync();

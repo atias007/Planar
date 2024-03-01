@@ -30,6 +30,7 @@ namespace Planar.Filters
                     Title = string.Format(CultureInfo.CurrentCulture, titleTemplate, error.Key),
                     Type = ProblemType,
                     Detail = first.ErrorMessage,
+                    Errors = new(),
                 };
             }
             else
@@ -40,6 +41,7 @@ namespace Planar.Filters
                     Status = StatusCodes.Status400BadRequest,
                     Title = MultipleErrors,
                     Type = ProblemType,
+                    Detail = string.Empty,
                     Errors = context.ModelState
                                 .Where(v => v.Value.Errors.Any())
                                 .Select(v => new RestBadRequestError

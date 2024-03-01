@@ -68,8 +68,9 @@ namespace Planar.Service.General.Password
             {
                 password[characterPosition] = characterSet[RandomNumberGenerator.GetInt32(characterSetLength - 1)];
 
+#pragma warning disable S2583 // Conditionally executed code should be reachable
                 bool moreThanTwoIdenticalInARow =
-                    characterPosition > MAXIMUM_IDENTICAL_CONSECUTIVE_CHARS
+                    characterPosition >= MAXIMUM_IDENTICAL_CONSECUTIVE_CHARS
                     && password[characterPosition] == password[characterPosition - 1]
                     && password[characterPosition - 1] == password[characterPosition - 2];
 
@@ -77,6 +78,7 @@ namespace Planar.Service.General.Password
                 {
                     characterPosition--;
                 }
+#pragma warning restore S2583 // Conditionally executed code should be reachable
             }
 
             return string.Join(null, password);

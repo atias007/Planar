@@ -66,6 +66,7 @@ namespace Planar.Common
             General.DeveloperExceptionPage = GetSettings(configuration, EC.DeveloperExceptionPageVariableKey, "general", "developer exception page", true);
             General.SchedulerStartupDelay = GetSettings(configuration, EC.SchedulerStartupDelayVariableKey, "general", "scheduler startup delay", TimeSpan.FromSeconds(30));
             General.ConcurrencyRateLimiting = GetSettings(configuration, EC.ConcurrencyRateLimitingVariableKey, "general", "concurrency rate limiting", 10);
+            General.EncryptAllSettings = GetSettings(configuration, EC.EncryptAllSettingsVariableKey, "general", "encrypt all settings", false);
 
             // Cluster
             Cluster.Clustering = GetSettings(configuration, EC.ClusteringVariableKey, "cluster", "clustering", false);
@@ -136,7 +137,7 @@ namespace Planar.Common
         {
             Hooks.Rest.DefaultUrl = GetSettings(configuration, EC.HooksRestDefaultUrl, "hooks:rest", "default url", string.Empty);
             Hooks.Teams.DefaultUrl = GetSettings(configuration, EC.MonitorMaxAlertsPeriod, "hooks:teams", "default url", string.Empty);
-            Hooks.Teams.SendToMultipleUrls = GetSettings(configuration, EC.HooksTeamsSendToMultipleUrls, "hooks:teams", "send to multiple urls", false);
+            Hooks.Teams.SendToMultipleChannels = GetSettings(configuration, EC.HooksTeamsSendToMultipleChannels, "hooks:teams", "send to multiple channels", false);
             Hooks.TwilioSms.AccountSid = GetSettings(configuration, EC.HooksTwilioSmsAccountSid, "hooks:twilio sms", "account sid", string.Empty);
             Hooks.TwilioSms.AuthToken = GetSettings(configuration, EC.HooksTwilioSmsAuthToken, "hooks:twilio sms", "auth token", string.Empty);
             Hooks.TwilioSms.FromNumber = GetSettings(configuration, EC.HooksTwilioSmsFromNumber, "hooks:twilio sms", "from number", string.Empty);
@@ -148,6 +149,8 @@ namespace Planar.Common
             Hooks.Redis.StreamName = GetSettings(configuration, EC.HooksRedisStreamName, "hooks:redis", "stream name", string.Empty);
             Hooks.Redis.PubSubChannel = GetSettings(configuration, EC.HooksRedisPubSubChannel, "hooks:redis", "pub sub channel", string.Empty);
             Hooks.Redis.Ssl = GetSettings(configuration, EC.HooksRedisSsl, "hooks:redis", "ssl", false);
+            Hooks.Telegram.BotToken = GetSettings(configuration, EC.HooksTelegramBotToken, "hooks:telegram", "bot token", string.Empty);
+            Hooks.Telegram.ChatId = GetSettings(configuration, EC.HooksTelegramChatId, "hooks:telegram", "chat id", string.Empty);
         }
 
         private static void InitializePersistanceSpan(IConfiguration configuration)
@@ -341,7 +344,7 @@ namespace Planar.Common
             Authentication.Key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Authentication.Secret));
         }
 
-        private static T GetSettings<T>(IConfiguration configuration, string environmentKey, string section, string appSettingsKey, T defaultValue = default)
+        public static T GetSettings<T>(IConfiguration configuration, string environmentKey, string section, string appSettingsKey, T defaultValue = default)
             where T : struct
         {
             // Environment Variable
@@ -356,7 +359,7 @@ namespace Planar.Common
             return property.GetValueOrDefault();
         }
 
-        private static string GetSettings(IConfiguration configuration, string environmentKey, string section, string appSettingsKey, string defaultValue)
+        public static string GetSettings(IConfiguration configuration, string environmentKey, string section, string appSettingsKey, string defaultValue)
         {
             // Environment Variable
             var property = configuration.GetValue<string>(environmentKey);

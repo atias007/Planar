@@ -19,7 +19,6 @@ namespace Planar
 {
     public abstract class PlanarJob : BaseProcessJob<PlanarJob, PlanarJobProperties>
     {
-        private readonly IMonitorUtil _monitorUtil;
         private readonly object ConsoleLocker = new();
         private readonly bool _isDevelopment;
         private bool _isHealthCheck;
@@ -29,9 +28,8 @@ namespace Planar
         protected PlanarJob(
             ILogger<PlanarJob> logger,
             IJobPropertyDataLayer dataLayer,
-            IMonitorUtil monitorUtil) : base(logger, dataLayer)
+            JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
         {
-            _monitorUtil = monitorUtil;
             MqttBrokerService.InterceptingPublishAsync += InterceptingPublishAsync;
             _isDevelopment = string.Equals(AppSettings.General.Environment, "development", StringComparison.OrdinalIgnoreCase);
         }
@@ -40,18 +38,21 @@ namespace Planar
         {
             try
             {
-                await Initialize(context, _monitorUtil);
+                await Initialize(context);
                 ValidateProcessJob();
                 ValidateExeFile();
                 context.CancellationToken.Register(OnCancel);
                 var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
                 var startInfo = GetProcessStartInfo();
+                StartMonitorDuration(context);
                 var success = StartProcess(startInfo, timeout);
+                StopMonitorDuration();
                 if (!success)
                 {
-                    OnTimeout();
+                    OnTimeout(context);
                 }
 
+                ValidateExitCode();
                 ValidateHealthCheck();
                 LogProcessInformation();
                 CheckProcessCancel();
@@ -167,6 +168,17 @@ namespace Planar
             }
         }
 
+        private void ValidateExitCode()
+        {
+            if (_process == null) { return; }
+            if (!_process.HasExited) { return; }
+
+            if (_process.ExitCode != 0)
+            {
+                throw new PlanarJobException($"abnormal process exit code {_process.ExitCode}. this may cause by unwaited tasks\\threads");
+            }
+        }
+
         private void ValidateHealthCheck()
         {
             try
@@ -177,20 +189,18 @@ namespace Planar
                 {
                     MessageBroker.AppendLogRaw(_output.ToString());
                 }
-                else
-                {
-                    var log = new LogEntity
-                    {
-                        Level = LogLevel.Warning,
-                        Message = "No health check signal from job. Check if the following code: \"PlanarJob.Start<TJob>();\" exists in startup of your console project"
-                    };
 
-                    MessageBroker.AppendLog(log);
-                }
+                var log = new LogEntity
+                {
+                    Level = LogLevel.Warning,
+                    Message = "No health check signal from job. Check if the following code: \"PlanarJob.Start<TJob>();\" exists in startup of your console project (Program.cs)"
+                };
+
+                MessageBroker.AppendLog(log);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"fail to handle health chek at {nameof(FinalizeProcess)}");
+                _logger.LogError(ex, $"fail to handle health check at {nameof(FinalizeProcess)}");
             }
 
             throw new PlanarJobException("no health check signal from job. See job log for more information");
@@ -250,6 +260,10 @@ namespace Planar
             catch (PlanarJobException ex)
             {
                 _logger.LogCritical("Fail intercepting published message on MQTT broker event. {Error}", ex.Message);
+            }
+            catch (JobMonitorException ex)
+            {
+                _logger.LogError(ex, "Fail to execute monitor event");
             }
             catch (Exception ex)
             {

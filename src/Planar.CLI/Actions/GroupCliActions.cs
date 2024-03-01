@@ -32,7 +32,7 @@ namespace Planar.CLI.Actions
 
         [Action("get")]
         [NullRequest]
-        public static async Task<CliActionResponse> GetById(CliGetByNameRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> GetByName(CliGetByNameRequest request, CancellationToken cancellationToken = default)
         {
             request ??= new CliGetByNameRequest();
             var wrapper = await FillGetRequest(request, cancellationToken);

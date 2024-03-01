@@ -1,4 +1,5 @@
-﻿using Planar.API.Common.Entities;
+﻿using Microsoft.AspNetCore.DataProtection;
+using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
@@ -8,6 +9,7 @@ using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -68,6 +70,40 @@ namespace Planar.CLI.Actions
                     minLength: 0,
                     maxLength: 1000);
             }
+        }
+
+        protected static int? CollectNumericCliValue(string field, bool required, int minValue, int maxValue, int? defaultValue = null)
+        {
+            var prompt = new TextPrompt<string>($"[turquoise2]  > {field.EscapeMarkup()?.Trim()}:[/]")
+                .Validate(value =>
+                {
+                    if (required && string.IsNullOrWhiteSpace(value)) { return GetValidationResultError($"{field} is required field"); }
+                    value = value.Trim();
+
+                    if (string.IsNullOrEmpty(value) && !required)
+                    {
+                        return ValidationResult.Success();
+                    }
+
+                    if (!int.TryParse(value, out var num))
+                    {
+                        return GetValidationResultError($"{field} must be a valid integer number");
+                    }
+
+                    if (num > maxValue) { return GetValidationResultError($"{field} limited to maximum value of {maxValue}"); }
+                    if (num < minValue) { return GetValidationResultError($"{field} limited to minimum value of {minValue}"); }
+
+                    return ValidationResult.Success();
+                });
+
+            if (!required) { prompt.AllowEmpty(); }
+            if (defaultValue.HasValue)
+            {
+                prompt.DefaultValue(defaultValue.GetValueOrDefault().ToString(CultureInfo.CurrentCulture));
+            }
+
+            var result = AnsiConsole.Prompt(prompt);
+            return int.Parse(result);
         }
 
         protected static string? CollectCliValue(string field, bool required, int minLength, int maxLength, string? regex = null, string? regexErrorMessage = null, string? defaultValue = null, bool secret = false)
@@ -356,7 +392,6 @@ namespace Planar.CLI.Actions
             var allActions = type.GetMethods(BindingFlags.Public | BindingFlags.Static).ToList();
             var moduleAttribute = type.GetCustomAttribute<ModuleAttribute>();
 
-            // TODO: check for moduleAttribute == null
             foreach (var act in allActions)
             {
                 var actionAttributes = act.GetCustomAttributes<ActionAttribute>();
@@ -364,7 +399,6 @@ namespace Planar.CLI.Actions
                 var ignoreHelpAttribute = act.GetCustomAttribute<IgnoreHelpAttribute>();
                 var hasWizard = act.GetCustomAttribute<ActionWizardAttribute>();
 
-                // TODO: validate attributes (invalid name...)
                 if (actionAttributes == null || !actionAttributes.Any()) { continue; }
 
                 var requestType = GetRequestType(act);

@@ -8,6 +8,7 @@ using Planar.CLI.Proxy;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -219,6 +220,84 @@ namespace Planar.CLI.Actions
 
             var table = CliTableExtensions.GetTable(data);
             return new CliActionResponse(response, table);
+        }
+
+        [Action("create-cryptography-key")]
+        public static async Task<CliActionResponse> CreateCryptographyKey(CancellationToken cancellationToken = default)
+        {
+            var key = Aes256Cipher.GenerateKey();
+            var table = CliTableExtensions.GetTable(key);
+            var response = CliActionResponse.GetGenericSuccessRestResponse();
+            return await Task.FromResult(new CliActionResponse(response, table));
+        }
+
+        private const string encryptKey = "encrypted:";
+
+        [Action("encrypt-settings")]
+        public static async Task<CliActionResponse> EncryptSettings(CliEncryptAppsettingsRequest request, CancellationToken cancellationToken = default)
+        {
+            var filename = request.Filename ?? string.Empty;
+            var text = File.ReadAllText(filename);
+            if (text.StartsWith(encryptKey))
+            {
+                throw new CliException("file already encrypted");
+            }
+
+            var key = Cryptographic(request);
+            var aes = new Aes256Cipher(key);
+            var encrypted = $"{encryptKey}{aes.Encrypt(text)}";
+            File.WriteAllText(filename, encrypted);
+            var response = CliActionResponse.GetGenericSuccessRestResponse();
+            return await Task.FromResult(new CliActionResponse(response));
+        }
+
+        [Action("decrypt-settings")]
+        public static async Task<CliActionResponse> DecryptSettings(CliEncryptAppsettingsRequest request, CancellationToken cancellationToken = default)
+        {
+#pragma warning restore IDE0060 // Remove unused parameter
+
+            var filename = request.Filename ?? string.Empty;
+            var text = File.ReadAllText(filename);
+            if (!text.StartsWith(encryptKey))
+            {
+                throw new CliException("file is not encrypted");
+            }
+
+            var key = Cryptographic(request);
+            text = text[encryptKey.Length..];
+            var aes = new Aes256Cipher(key);
+            var decrypted = aes.Decrypt(text);
+            File.WriteAllText(filename, decrypted);
+            var response = CliActionResponse.GetGenericSuccessRestResponse();
+            return await Task.FromResult(new CliActionResponse(response));
+        }
+
+        private static string Cryptographic(CliEncryptAppsettingsRequest request)
+        {
+            var fi = new FileInfo(request.Filename ?? string.Empty);
+            if (!fi.Exists)
+            {
+                throw new CliException($"file {fi.FullName} not found");
+            }
+
+            if (!fi.Extension.Equals(".yml", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new CliException($"file {fi.FullName} is not yml file");
+            }
+
+            var key = Environment.GetEnvironmentVariable(Consts.CryptographyKeyVariableKey);
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                throw new CliException(
+                    $"""
+                        Environment variable {Consts.CryptographyKeyVariableKey} not found.
+                        You can create new key with cli command: service create-cryptography-key
+                        Then set the key in environment variable (i.e. setx {Consts.CryptographyKeyVariableKey} <generated_key>)
+                        """
+                    );
+            }
+
+            return key;
         }
 
         public static async Task InitializeLogin()

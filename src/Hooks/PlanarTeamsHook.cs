@@ -6,7 +6,7 @@ using System.Text.Json;
 
 namespace Planar.Hooks;
 
-public class PlanarTeamsHook : BaseSystemHook
+public sealed class PlanarTeamsHook : BaseSystemHook
 {
     public override string Name => "Planar.Teams";
 
@@ -15,10 +15,14 @@ public class PlanarTeamsHook : BaseSystemHook
 This hook send message to Teams channel via microsoft Teams server.
 You can find the configuration of Teams server is in appsettings.yml (Data folder of Planar).
 The configuration also define the default channel address.
-To use different channel address, you can set one of the 'AdditionalField' of monitor group to the following value:
-  teams-channel-address:http://your-channel-url
+To use different channel address per group, you can set one of the 'AdditionalField' of monitor group to the following value:
+-------------------------------------------------
+  teams-channel-address:<http://your-channel-url>
+-------------------------------------------------
 To send to multiple channels, you can set the following value (in appsettings.yml, teams section) to true:
-  send to multiple urls: true
+-----------------------------
+  send to multiple channels: true
+-----------------------------
 """;
 
     private const string ImageSource = "https://raw.githubusercontent.com/atias007/Planar/master/hooks/Planar.TeamsMonitorHook/Icons/{0}.png";
@@ -30,7 +34,7 @@ To send to multiple channels, you can set the following value (in appsettings.ym
         foreach (var url in urls)
         {
             await SendMessageToChannel(url, message);
-            if (!AppSettings.Hooks.Teams.SendToMultipleUrls) { break; }
+            if (!AppSettings.Hooks.Teams.SendToMultipleChannels) { break; }
         }
     }
 
@@ -41,7 +45,7 @@ To send to multiple channels, you can set the following value (in appsettings.ym
         foreach (var url in urls)
         {
             await SendMessageToChannel(url, message);
-            if (!AppSettings.Hooks.Teams.SendToMultipleUrls) { break; }
+            if (!AppSettings.Hooks.Teams.SendToMultipleChannels) { break; }
         }
     }
 
@@ -179,7 +183,7 @@ To send to multiple channels, you can set the following value (in appsettings.ym
         {
             var url = GetTeamsUrl(item);
             if (url != null) { yield return url; }
-            if (!AppSettings.Hooks.Teams.SendToMultipleUrls) { break; }
+            if (!AppSettings.Hooks.Teams.SendToMultipleChannels) { break; }
         }
     }
 

@@ -12,7 +12,10 @@ namespace Planar
 {
     public abstract class ProcessJob : BaseProcessJob<ProcessJob, ProcessJobProperties>
     {
-        protected ProcessJob(ILogger<ProcessJob> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
+        protected ProcessJob(
+            ILogger<ProcessJob> logger,
+            IJobPropertyDataLayer dataLayer,
+            JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
         {
         }
 
@@ -27,10 +30,12 @@ namespace Planar
 
                 var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
                 var startInfo = GetProcessStartInfo();
+                StartMonitorDuration(context);
                 var success = StartProcess(startInfo, timeout);
+                StopMonitorDuration();
                 if (!success)
                 {
-                    OnTimeout();
+                    OnTimeout(context);
                 }
 
                 LogProcessInformation();

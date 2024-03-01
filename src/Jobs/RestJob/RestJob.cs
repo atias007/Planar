@@ -12,7 +12,10 @@ namespace Planar
 {
     public class RestJob : BaseCommonJob<RestJob, RestJobProperties>
     {
-        public RestJob(ILogger<RestJob> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
+        public RestJob(
+            ILogger<RestJob> logger,
+            IJobPropertyDataLayer dataLayer,
+            JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
         {
         }
 
@@ -22,8 +25,10 @@ namespace Planar
             {
                 await Initialize(context);
                 ValidateRestJob();
+                StartMonitorDuration(context);
                 var task = Task.Run(() => ExecuteRest(context));
                 await WaitForJobTask(context, task);
+                StopMonitorDuration();
             }
             catch (Exception ex)
             {

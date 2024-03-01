@@ -17,6 +17,6 @@ public sealed class TraceReportJob : BaseReportJob<TraceReportJob>, IJob
 
     public async Task Execute(IJobExecutionContext context)
     {
-        await Execute<TraceReport>(context, ReportName);
+        await SafeExecute<TraceReport>(context, ReportName);
     }
 }

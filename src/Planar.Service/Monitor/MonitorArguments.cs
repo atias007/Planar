@@ -2,7 +2,7 @@
 {
     internal struct MonitorArguments
     {
-        public string JobId { get; set; }
+        public string? JobId { get; set; }
 
         public int[]? Args { get; set; }
 

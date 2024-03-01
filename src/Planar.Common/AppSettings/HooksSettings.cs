@@ -8,6 +8,7 @@ namespace Planar.Common
         public TeamsHookSettings Teams { get; set; } = new();
         public TwilioSmsHookSettings TwilioSms { get; set; } = new();
         public RedisSettings Redis { get; set; } = new();
+        public TelegramSettings Telegram { get; set; } = new();
     }
 
     public class RestHookSettings
@@ -18,7 +19,7 @@ namespace Planar.Common
     public class TeamsHookSettings
     {
         public string? DefaultUrl { get; set; }
-        public bool SendToMultipleUrls { get; set; }
+        public bool SendToMultipleChannels { get; set; }
     }
 
     public class TwilioSmsHookSettings
@@ -38,5 +39,11 @@ namespace Planar.Common
         public string? StreamName { get; set; }
         public string? PubSubChannel { get; set; }
         public bool Ssl { get; set; }
+    }
+
+    public class TelegramSettings
+    {
+        public string? BotToken { get; set; }
+        public string? ChatId { get; set; }
     }
 }

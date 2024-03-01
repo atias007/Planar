@@ -179,7 +179,7 @@ public class MonitorUtil : IMonitorUtil
             else
             {
                 details = GetMonitorDetails(action, info, exception);
-                _logger.LogInformation(",onitor item id: {Id}, title: {Title} start to handle event {Event} with hook: {Hook} and distribution group {Group}", action.Id, action.Title, @event, action.Hook, action.Group.Name);
+                _logger.LogInformation("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook: {Hook} and distribution group {Group}", action.Id, action.Title, @event, action.Hook, action.Group.Name);
                 await hookInstance.HandleSystem(details, cancellationToken);
                 await SaveMonitorAlert(action, details);
                 return ExecuteMonitorResult.Ok;
@@ -316,6 +316,17 @@ public class MonitorUtil : IMonitorUtil
         return GetMonitorEventTitle(title, monitorAction.EventArgument);
     }
 
+    internal static string GetMonitorEventTitle(int eventId, string? arguments)
+    {
+        var title = ((MonitorEvents)eventId).GetEnumDescription();
+        if (string.IsNullOrWhiteSpace(arguments))
+        {
+            return title;
+        }
+
+        return GetMonitorEventTitle(title, arguments);
+    }
+
     internal static string GetMonitorEventTitle(string title, string? eventArguments)
     {
         if (string.IsNullOrWhiteSpace(eventArguments)) { return title; }
@@ -425,7 +436,7 @@ public class MonitorUtil : IMonitorUtil
         alert.MonitorId = action.Id;
         alert.Hook = action.Hook;
         alert.EventArgument = action.EventArgument;
-        alert.EventTitle = ((MonitorEvents)action.EventId).GetEnumDescription();
+        alert.EventTitle = GetMonitorEventTitle(action);
     }
 
     private static void MapDetailsToMonitorAlert(MonitorDetails details, MonitorAlert alert)
@@ -492,10 +503,12 @@ public class MonitorUtil : IMonitorUtil
 
     private async Task<bool> AnalyzeMonitorEventsWithArguments(MonitorEvents @event, MonitorAction action, IJobExecutionContext? context)
     {
+        if (context == null) { return false; } // analyze only for job execution (not for system execution)
+
         using var scope = _serviceScopeFactory.CreateScope();
-        var jobKeyHelper = scope.ServiceProvider.GetRequiredService<JobKeyHelper>();
         var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
-        var args = await GetAndValidateArgs(action, jobKeyHelper);
+        var args = GetAndValidateArgs(action);
+        args.JobId = JobKeyHelper.GetJobId(context.JobDetail);
         if (!args.Handle || args.Args == null) { return false; }
 
         switch (@event)
@@ -504,10 +517,12 @@ public class MonitorUtil : IMonitorUtil
                 return false;
 
             case MonitorEvents.ExecutionFailxTimesInRow:
+                if (args.JobId == null) { return false; }
                 var count1 = await dal.CountFailsInRowForJob(new { args.JobId, Total = args.Args[0] });
                 return count1 >= args.Args[0];
 
             case MonitorEvents.ExecutionFailxTimesInyHours:
+                if (args.JobId == null) { return false; }
                 var count2 = await dal.CountFailsInHourForJob(new { args.JobId, Hours = args.Args[1] });
                 return count2 >= args.Args[0];
 
@@ -520,12 +535,18 @@ public class MonitorUtil : IMonitorUtil
                 return rows1 != null && rows1 < args.Args[0];
 
             case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanxInyHours:
+                if (args.JobId == null) { return false; }
                 var er1 = await dal.CountEffectedRowsInHourForJob(args.JobId, args.Args[1]);
                 return er1 > args.Args[0];
 
             case MonitorEvents.ExecutionEndWithEffectedRowsLessThanxInyHours:
+                if (args.JobId == null) { return false; }
                 var er2 = await dal.CountEffectedRowsInHourForJob(args.JobId, args.Args[1]);
                 return er2 < args.Args[0];
+
+            case MonitorEvents.ExecutionDurationGreaterThanxMinutes:
+                var duration = context.JobRunTime.TotalMinutes;
+                return duration >= args.Args[0];
         }
     }
 
@@ -552,17 +573,9 @@ public class MonitorUtil : IMonitorUtil
         return false;
     }
 
-    private async Task<MonitorArguments> GetAndValidateArgs(MonitorAction action, JobKeyHelper jobKeyHelper)
+    private MonitorArguments GetAndValidateArgs(MonitorAction action)
     {
-        var jobId = await jobKeyHelper.GetJobId(action);
-
-        if (string.IsNullOrWhiteSpace(jobId))
-        {
-            _logger.LogWarning("monitor action {Id}, Title {Title} --> missing job group/name", action.Id, action.Title);
-            return MonitorArguments.Empty;
-        }
-
-        var result = new MonitorArguments { Handle = true, JobId = jobId };
+        var result = new MonitorArguments { Handle = true };
 
         try
         {

@@ -26,17 +26,9 @@ public sealed class PersistDataJob : SystemJob, IJob
         _scopeFactory = scopeFactory;
     }
 
-    public Task Execute(IJobExecutionContext context)
+    public async Task Execute(IJobExecutionContext context)
     {
-        try
-        {
-            return DoWork();
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogError(ex, "Fail to persist data: {Message}", ex.Message);
-            return Task.CompletedTask;
-        }
+        await SafeDoWork(context);
     }
 
     public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
@@ -44,6 +36,19 @@ public sealed class PersistDataJob : SystemJob, IJob
         const string description = "system job for persist log & exception from running jobs";
         var span = AppSettings.General.PersistRunningJobsSpan;
         await Schedule<PersistDataJob>(scheduler, description, span, stoppingToken: stoppingToken);
+    }
+
+    private async Task SafeDoWork(IJobExecutionContext context)
+    {
+        try
+        {
+            await DoWork();
+            SafeSetLastRun(context, _logger);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Fail to persist data: {Message}", ex.Message);
+        }
     }
 
     private async Task DoWork()

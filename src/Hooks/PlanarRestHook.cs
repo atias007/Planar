@@ -9,7 +9,7 @@ using System.Text.Json;
 
 namespace Planar.Hooks;
 
-public class PlanarRestHook : BaseSystemHook
+public sealed class PlanarRestHook : BaseSystemHook
 {
     public override string Name => "Planar.Rest";
 
@@ -17,8 +17,10 @@ public class PlanarRestHook : BaseSystemHook
 """
 This hook send a REST HTTP POST request with application/json body content type.
 You can find the default url of the request is in appsettings.yml (Data folder of Planar).
-To use different url, you can set one of the 'AdditionalField' of monitor group to the following value:
-  rest-http-url:http://your-server/your-path
+To use different url per group, you can set one of the 'AdditionalField' of monitor group to the following value:
+----------------------------------------------
+  rest-http-url:<http://your-server/your-path>
+----------------------------------------------
 """;
 
     private static readonly object Locker = new();

@@ -23,7 +23,8 @@
         "PLANAR_AUTHENTICATION_MODE": "all anonymous",
         "Serilog:MinimumLevel:Override:Quartz": "Warning",
         "PLANAR_SMTP_USE_DEFAULT_CREDENTIALS": "False",
-        "PLANAR_HOOKS_REDIS_ENDPOINTS": "127.0.0.1:6379"
+        "PLANAR_HOOKS_REDIS_ENDPOINTS": "127.0.0.1:6379",
+        "PLANAR_ENCRYPT_ALL_SETTINGS": "True"
       },
       "dotnetRunMessages": "true"
     },

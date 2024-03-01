@@ -5,7 +5,7 @@ using System.Web;
 
 namespace Planar.Hooks;
 
-public class PlanarSmtpHook : BaseSystemHook
+public sealed class PlanarSmtpHook : BaseSystemHook
 {
     public override string Name => "Planar.Smtp";
 

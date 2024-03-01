@@ -323,28 +323,17 @@ namespace Planar.Controllers
         }
 
         [ApiExplorerSettings(IgnoreApi = true)]
-        [HttpGet("{id}/test-status")]
+        [HttpGet("{id}/last-instance-id/long-polling")]
         [TesterAuthorize]
-        [SwaggerOperation(OperationId = "get_job_teststatus_id", Description = "", Summary = "")]
-        [OkJsonResponse(typeof(GetTestStatusResponse))]
-        [BadRequestResponse]
-        [NotFoundResponse]
-        public async Task<ActionResult<GetTestStatusResponse>> GetTestStatus([FromRoute][Id] int id)
-        {
-            var result = await BusinesLayer.GetTestStatus(id);
-            return Ok(result);
-        }
-
-        [ApiExplorerSettings(IgnoreApi = true)]
-        [HttpGet("{id}/last-instance-id")]
-        [TesterAuthorize]
-        [SwaggerOperation(OperationId = "get_job_id_lastinstanceid", Description = "", Summary = "")]
         [OkJsonResponse(typeof(LastInstanceId))]
         [BadRequestResponse]
         [NotFoundResponse]
-        public async Task<ActionResult<LastInstanceId>> GetLastInstanceId([FromRoute][Required] string id, [FromQuery][Required][SqlDateTime] DateTime invokeDate)
+        public async Task<ActionResult<LastInstanceId>> GetLastInstanceId(
+            [FromRoute][Required] string id,
+            [FromQuery][Required][SqlDateTime] DateTime invokeDate,
+            CancellationToken cancellationToken)
         {
-            var result = await BusinesLayer.GetLastInstanceId(id, invokeDate);
+            var result = await BusinesLayer.GetLastInstanceId(id, invokeDate, cancellationToken);
             return Ok(result);
         }
 

@@ -46,6 +46,6 @@ namespace Planar.Filters
         public string Instance { get; set; }
 
         [JsonPropertyName("errors")]
-        public List<RestBadRequestError> Errors { get; set; }
+        public List<RestBadRequestError> Errors { get; set; } = new();
     }
 }

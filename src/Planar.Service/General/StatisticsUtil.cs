@@ -54,7 +54,7 @@ namespace Planar.Service.General
             return GetZScore(decValue, avg, stdev);
         }
 
-        private static bool IsOutlier(decimal zscore, decimal lowerBound = -1.96M, decimal upperBound = 1.96M)
+        private static bool IsOutlier(decimal zscore, decimal lowerBound = -3.92M, decimal upperBound = 3.92M)
         {
             return zscore > upperBound || zscore < lowerBound;
         }
@@ -63,10 +63,11 @@ namespace Planar.Service.General
         {
             if (log == null) { return false; }
 
+            var duration = log.Duration.GetValueOrDefault();
+
             var stat = statistics.FirstOrDefault(j => j.JobId == log.JobId);
             if (stat == null) { return false; }
 
-            var duration = log.Duration.GetValueOrDefault();
             var durationScore = GetZScore(duration, stat.AvgDuration, stat.StdevDuration);
             var durationAnomaly = IsOutlier(durationScore);
             return durationAnomaly;

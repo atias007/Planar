@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Globalization;
 using System.Reflection;
 
@@ -13,16 +14,30 @@ public static class MyRestRequestExtensions
         foreach (var item in props)
         {
             var name = item.Name;
-
-            // TODO: add support for ienumerable
             var value = item.GetValue(parameter, null);
             if (value == null) { continue; }
+            var type = item.PropertyType;
 
-            var type = value.GetType();
-            var @default = type.IsValueType ? Activator.CreateInstance(type) : null;
-            if (value.Equals(@default)) { continue; }
-            var stringValue = GetStringValueForQueryStringParameter(value);
-            request.AddQueryParameter(name, stringValue, encode);
+            if (typeof(IEnumerable).IsAssignableFrom(type) && type != typeof(string))
+            {
+                var arr = (IEnumerable)value;
+                foreach (var arrItem in arr)
+                {
+                    AddQueryParameter(name, arrItem, arrItem.GetType(), encode);
+                }
+            }
+            else
+            {
+                AddQueryParameter(name, value, type, encode);
+            }
+
+            void AddQueryParameter(string name, object value, Type type, bool encode)
+            {
+                var @default = type.IsValueType ? Activator.CreateInstance(type) : null;
+                if (value.Equals(@default)) { return; }
+                var stringValue = GetStringValueForQueryStringParameter(value);
+                request.AddQueryParameter(name, stringValue, encode);
+            }
         }
 
         return request;

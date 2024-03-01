@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting.WindowsServices;
 using Planar.Common;
 using Serilog;
 using System;
+using Prometheus;
 
 namespace Planar.Startup
 {
@@ -35,17 +36,30 @@ namespace Planar.Startup
 
                 if (AppSettings.General.UseHttps)
                 {
-                    options.ListenAnyIP(AppSettings.General.HttpsPort, opts => opts.UseHttps());
+                    options.ListenAnyIP(AppSettings.General.HttpsPort, opts =>
+                    {
+                        if (AppSettings.General.CertificateFile == null && AppSettings.General.CertificatePassword == null)
+                        {
+                            opts.UseHttps();
+                        }
+                        else if (AppSettings.General.CertificateFile != null && AppSettings.General.CertificatePassword == null)
+                        {
+                            opts.UseHttps(AppSettings.General.CertificateFile);
+                        }
+                        else
+                        {
+                            opts.UseHttps(AppSettings.General.CertificateFile, AppSettings.General.CertificatePassword);
+                        }
+                        opts.UseHttps();
+                    });
                 }
             });
 
             Console.WriteLine("[x] Load configuration & app settings");
-            var file1 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.yml");
-            var file2 = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, $"AppSettings.{AppSettings.General.Environment}.yml");
-
+            var file = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.yml");
+            using var stream = YmlFileReader.ReadStreamAsync(file).Result;
             builder.Configuration
-                .AddYamlFile(file1, optional: false, reloadOnChange: true)
-                .AddYamlFile(file2, optional: true, reloadOnChange: true)
+                .AddYamlStream(stream)
                 .AddCommandLine(args)
                 .AddEnvironmentVariables();
 
@@ -83,6 +97,12 @@ namespace Planar.Startup
 
             app.UseRouting();
 
+            // Capture metrics about all received HTTP requests.
+            app.UseHttpMetrics();
+
+            // Capture metrics about received gRPC requests.
+            app.UseGrpcMetrics();
+
             //Rate limitter middleware
             app.UseRateLimiter();
             app.MapGrpcService<ClusterService>();
@@ -97,6 +117,8 @@ namespace Planar.Startup
             // ATTENTION: Always UseAuthentication should be before UseAuthorization
             app.UseAuthorization();
             app.MapControllers();
+
+            app.MapMetrics();
         }
     }
 }

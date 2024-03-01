@@ -4,7 +4,7 @@ namespace Planar.Client.Entities
 {
     public class PagingResponse<T> : IPagingResponse<T> where T : class
     {
-        public List<T>? Data { get; set; }
+        public IEnumerable<T>? Data { get; set; }
 
         public int Count { get; set; }
 

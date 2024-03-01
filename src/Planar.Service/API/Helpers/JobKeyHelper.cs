@@ -48,12 +48,6 @@ namespace Planar.Service.API.Helpers
             return jobId;
         }
 
-        public async Task<string?> GetJobId(MonitorAction action)
-        {
-            var key = $"{action.JobGroup}.{action.JobName}";
-            return await GetJobId(key);
-        }
-
         public async Task<JobKey> GetJobKey(string id)
         {
             return await GetJobKey(new JobOrTriggerKey { Id = id });

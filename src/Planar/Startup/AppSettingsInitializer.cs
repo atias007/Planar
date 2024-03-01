@@ -15,33 +15,61 @@ namespace Planar.Startup
 {
     public static class AppSettingsInitializer
     {
+        private const string encryptedPrefix = "encrypted:";
+
         public static void Initialize()
         {
             UpgradeToYml();
             UpgradeToYmlVersion2();
-            var file = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.yml");
+            var config = ReadAppSettings();
+            EncryptSettings(config);
+            Initialize(config);
+        }
 
-            IConfiguration config = null;
-
+        private static void EncryptSettings(IConfiguration config)
+        {
             try
             {
-                Console.WriteLine("[x] Read AppSettings file");
+                var encrypt = AppSettings.GetSettings(config, EnvironmentVariableConsts.EncryptAllSettingsVariableKey, "general", "encrypt all settings", false);
+                if (!encrypt) { return; }
 
-                config = new ConfigurationBuilder()
-                    .AddYamlFile(file, optional: false, reloadOnChange: true)
-                    .AddEnvironmentVariables()
-                    .Build();
+                Console.WriteLine("[x] Encrypt all aettings files");
+                var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings);
+                var files = Directory.GetFiles(path, "*.yml");
+
+                var cryptographyKey = Environment.GetEnvironmentVariable(Consts.CryptographyKeyVariableKey) ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(cryptographyKey))
+                {
+                    throw new AppSettingsException(
+                                               $@"Environment variable {Consts.CryptographyKeyVariableKey} not found.
+                        You can create new key with cli command: service create-cryptography-key
+                        Then set the key in environment variable (i.e. setx {Consts.CryptographyKeyVariableKey} <generated_key>)");
+                }
+
+                var cipher = new Aes256Cipher(cryptographyKey);
+
+                foreach (var file in files)
+                {
+                    var content = File.ReadAllText(file);
+                    if (content.StartsWith(encryptedPrefix)) { continue; }
+                    var encrypted = cipher.Encrypt(content);
+                    File.WriteAllText(file, $"{encryptedPrefix}{encrypted}");
+                }
             }
             catch (Exception ex)
             {
                 Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine("Fail to read application settings:");
                 Console.WriteLine(ex.Message);
+                Console.WriteLine(string.Empty.PadLeft(80, '-'));
+                Console.WriteLine(ex.ToString());
                 Thread.Sleep(60000);
                 Console.ReadLine();
                 Environment.Exit(-1);
             }
+        }
 
+        private static void Initialize(IConfiguration config)
+        {
             try
             {
                 AppSettings.Initialize(config);
@@ -67,6 +95,36 @@ namespace Planar.Startup
             }
         }
 
+        private static IConfiguration ReadAppSettings()
+        {
+            var file = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "AppSettings.yml");
+
+            IConfiguration config = null;
+
+            try
+            {
+                Console.WriteLine("[x] Read AppSettings file");
+
+                using var stream = YmlFileReader.ReadStreamAsync(file).Result;
+
+                config = new ConfigurationBuilder()
+                    .AddYamlStream(stream)
+                    .AddEnvironmentVariables()
+                    .Build();
+            }
+            catch (Exception ex)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Fail to read application settings:");
+                Console.WriteLine(ex.Message);
+                Thread.Sleep(60000);
+                Console.ReadLine();
+                Environment.Exit(-1);
+            }
+
+            return config;
+        }
+
         public static void TestDatabaseConnection()
         {
             AppSettings.TestConnectionString();
@@ -84,6 +142,7 @@ namespace Planar.Startup
             if (!jsonFileInfo.Exists) { return; }
 
             var ymlContent = File.ReadAllText(ymlFile);
+            if (ymlContent.StartsWith(encryptedPrefix)) { return; }
             var lines = File.ReadAllLines(ymlFile);
             if (Array.Exists(lines, l => l.StartsWith("general:"))) { return; }
 

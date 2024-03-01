@@ -41,8 +41,9 @@ namespace Planar.Startup
             Console.WriteLine("[x] Configure serilog");
 
             var file = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Settings, "Serilog.yml");
+            using var stream = YmlFileReader.ReadStreamAsync(file).Result;
             var configuration = new ConfigurationBuilder()
-                        .AddYamlFile(file)
+                        .AddYamlStream(stream)
                         .AddEnvironmentVariables()
                         .Build();
 

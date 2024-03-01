@@ -119,7 +119,7 @@ namespace Planar.Service.Listeners
 
                 var log = new DbJobInstanceLog
                 {
-                    JobId = JobKeyHelper.GetJobId(context.JobDetail) ?? string.Empty, // for function: SafeFillAnomaly(log);
+                    JobId = JobKeyHelper.GetJobId(context.JobDetail) ?? string.Empty, // for function: SafeFillAnomaly(log)
                     InstanceId = context.FireInstanceId,
                     Duration = Convert.ToInt32(duration),
                     EndDate = endDate,

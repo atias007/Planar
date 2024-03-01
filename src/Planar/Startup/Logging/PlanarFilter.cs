@@ -19,12 +19,13 @@ namespace Planar.Startup.Logging
         {
             "/test-status",
             "/last-instance-id",
+            "/long-polling"
         };
 
-        private static readonly string[] filterStartWithPath = new[]
-        {
-            "/job/running-instance/",
-        };
+        ////private static readonly string[] filterStartWithPath = new[]
+        ////{
+        ////    "/job/running-instance/",
+        ////};
 
         private const string SwaggerRequestPath = "swagger";
         private const string ContentRequestPath = "/content";
@@ -48,10 +49,10 @@ namespace Planar.Startup.Logging
                     return false;
                 }
 
-                if (Array.Exists(filterStartWithPath, stringValue.StartsWith))
-                {
-                    return false;
-                }
+                ////if (Array.Exists(filterStartWithPath, stringValue.StartsWith))
+                ////{
+                ////    return false;
+                ////}
 
                 if (stringValue.Contains(SwaggerRequestPath))
                 {

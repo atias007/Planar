@@ -10,7 +10,7 @@ using System.Text.Json;
 
 namespace Planar.Hooks;
 
-public class PlanarRedisStreamHook : BaseSystemHook
+public sealed class PlanarRedisStreamHook : BaseSystemHook
 {
     public override string Name => "Planar.Redis.PubSub";
 
@@ -20,7 +20,9 @@ This hook use redis server to publish message via Pub/Sub component.
 You can find the configuration of redis server is in appsettings.yml (Data folder of Planar).
 The configuration also define the default channel name.
 To use different channel name, you can set one of the 'AdditionalField' of monitor group to the following value:
-  redis-channel-name:your-channel-name
+----------------------------------------
+  redis-channel-name:<your-channel-name>
+----------------------------------------
 """;
 
     private static readonly JsonSerializerOptions _jsonSerializerSettings = new()

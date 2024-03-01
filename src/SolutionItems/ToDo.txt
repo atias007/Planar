@@ -1,14 +1,11 @@
 ﻿--------------------------------------------------------
 
-PLAN FOR V 1.6.3
+PLAN FOR V 1.7.0
 ----------------
-
-- run hook in linux
 
 - postman: test queue-invoke with data and validate the creation of data
 - 'service info hooks'
 
-- build anomaly job statistics exception count
 - add anomaly monitor events
 - add charts to report
 	https://codepen.io/jerrylow/pen/OJyREdw
@@ -17,20 +14,20 @@ PLAN FOR V 1.6.3
 
 - Security & Audit report
 
-- Telegram Hook
-- SendGrid Hook
+- .net 8
 	
 
 - BACKLOG ----------------------------------------------------------------------------
 
-- add Execution End With Effected Rows Greater Than {x} in {y} hours
-- add Execution End With Effected Rows Less Than {x} in {y} hours
+- show warning on CLI halt command
+- show better message when CLI command is belog to more then 1 module
 
 - add WorkflowJob
 - add SSIS job
 - add SSRS job
 
-- validate the argument details in add monitor
+- run hook in container
+- run job in container
 
 - cli command to changhe interval/count
 - cli command to changhe cron expr
@@ -43,15 +40,10 @@ PLAN FOR V 1.6.3
 
 - add cli command to filter history / trace with odata filter
 - security monitoring
-- nuget package for client library
 - authorize on odata metadata
 - add validation to JobRunnerBuilder in test nuget package
-- cli: service status [time scope] dashboard command
-- add angular dashboard
-- trigger describe
 - cli: add string similarity (https://github.com/glienard/StringSimilarity.NET)
 - add auto complete to cli (https://github.com/rohankapoor/AutoPrompt)
-- create update version script
 
 -----------------------------------------DONE-----------------------------------------
 - cli login with option to remember
@@ -274,3 +266,19 @@ V1.6.3
 - hook description
 - fix anomaly bug
 - add outlier to history filter
+- add Execution End With Effected Rows Greater Than {x} in {y} hours
+- add Execution End With Effected Rows Less Than {x} in {y} hours
+
+V1.6.4
+------
+
+- client Libraries
+- add cli ? argument with filter
+- add ExecutionDurationGreaterThan {x} minutes monitor event
+- add ExecutionTimeout moniotr event
+- add total effected rows to summary
+- Telegram Hook
+- add settings encrypt / decrypt options
+- prometeus endpoint
+- validate the argument details in add monitor
+- add maxItems propery to AddAggregateException

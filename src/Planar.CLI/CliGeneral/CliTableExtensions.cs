@@ -67,6 +67,18 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetTable(string key)
+        {
+            var table = new CliTable();
+            table.Table.AddColumns("Cryptography Key");
+            table.Table.AddRow(SafeCliString(key));
+            table.Table.AddEmptyRow();
+            table.Table.AddRow(CliFormat.GetWarningMarkup("make sure you copy the above cryptography key now."));
+            table.Table.AddRow($"[{CliFormat.WarningColor}]set the key in server environment variable: PLANAR_CRYPTOGRAPHY_KEY[/]");
+            table.Table.AddRow($"[{CliFormat.WarningColor}]we don't store it and you will not be able to see it again.[/]");
+            return table;
+        }
+
         public static CliTable GetTable(WorkingHoursModel? response)
         {
             var table = new CliTable();
@@ -168,13 +180,13 @@ namespace Planar.CLI
         {
             var table = new CliTable(showCount: true);
             if (response == null) { return table; }
-            table.Table.AddColumns("Job Id", "Monitor Id", "Monitor Title", "Due Date");
+            table.Table.AddColumns("Job Id", "Job Key", "Monitor Id", "Monitor Title", "Due Date");
             foreach (var item in response)
             {
                 if (item == null) { continue; }
                 var jobid = item.JobId ?? $"[{CliFormat.WarningColor}][[all jobs]][/]";
                 var monitorid = item.MonitorId?.ToString() ?? $"[{CliFormat.WarningColor}][[all monitors]][/]";
-                table.Table.AddRow(jobid, monitorid, SafeCliString(item.MonitorTitle), CliTableFormat.FormatDateTime(item.DueDate));
+                table.Table.AddRow(jobid, CliTableFormat.FormatJobKey(item.JobGroup, item.JobName), monitorid, SafeCliString(item.MonitorTitle), CliTableFormat.FormatDateTime(item.DueDate));
             }
 
             return table;
@@ -274,16 +286,17 @@ namespace Planar.CLI
         {
             var table = new CliTable(paging: response);
             if (response == null || response.Data == null) { return table; }
-            table.Table.AddColumns("Job Id", "Job Key", "Job Type", "Total", "Success", "Fail", "Running", "Retries");
+            table.Table.AddColumns("Job Id", "Job Key", "Total", "Success", "Fail", "Running", "Retries", "Effected Rows");
             response.Data.ForEach(r => table.Table.AddRow(
                 r.JobId ?? string.Empty,
                 CliTableFormat.FormatJobKey(r.JobGroup, r.JobName),
-                r.JobType.EscapeMarkup(),
                 CliTableFormat.FormatSummaryNumber(r.Total),
                 CliTableFormat.FormatSummaryNumber(r.Success, CliFormat.OkColor),
                 CliTableFormat.FormatSummaryNumber(r.Fail, CliFormat.ErrorColor),
                 CliTableFormat.FormatSummaryNumber(r.Running, CliFormat.WarningColor),
-                CliTableFormat.FormatSummaryNumber(r.Retries, "turquoise2")));
+                CliTableFormat.FormatSummaryNumber(r.Retries, "turquoise2"),
+                CliTableFormat.FormatSummaryNumber(r.TotalEffectedRows)));
+
             return table;
         }
 

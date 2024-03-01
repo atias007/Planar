@@ -2,6 +2,8 @@
 using Planar;
 using Planar.Common;
 using Planar.Common.Exceptions;
+using Polly;
+using Quartz;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -25,7 +27,10 @@ namespace CommonJob
         private long _peakWorkingSet64;
         private long _peakVirtualMemorySize64;
 
-        protected BaseProcessJob(ILogger<TInstance> logger, IJobPropertyDataLayer dataLayer) : base(logger, dataLayer)
+        protected BaseProcessJob(
+            ILogger<TInstance> logger,
+            IJobPropertyDataLayer dataLayer,
+            JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
         {
             if (Properties is not IFileJobProperties)
             {
@@ -113,8 +118,9 @@ namespace CommonJob
             Kill("request for cancel process");
         }
 
-        protected void OnTimeout()
+        protected void OnTimeout(IJobExecutionContext context)
         {
+            SafeScan(MonitorEvents.ExecutionTimeout, context);
             Kill("timeout expire");
         }
 

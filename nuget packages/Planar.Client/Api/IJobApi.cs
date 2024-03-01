@@ -1,11 +1,13 @@
 ﻿using Planar.Client.Entities;
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Planar.Client
 {
     /// <summary>
-    /// Represents a collection of functions to interact with the API endpoints
+    /// Represents a collection of functions to interact with the Job API endpoints
     /// </summary>
     public interface IJobApi
     {
@@ -14,7 +16,7 @@ namespace Planar.Client
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <returns></returns>
-        void Delete(string id);
+        Task DeleteAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Delete Job Data
@@ -22,208 +24,205 @@ namespace Planar.Client
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <param name="key">Data key</param>
         /// <returns></returns>
-        void DeleteData(string id, string key);
+        Task DeleteDataAsync(string id, string key, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get Job Settings
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <returns>IEnumerable&lt;KeyValueItem&gt;</returns>
-        IEnumerable<KeyValueItem> GatSettings(string id);
+        Task<IEnumerable<KeyValueItem>> GatSettingsAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// List Jobs With Filter
         /// </summary>
         /// <param name="filter"></param>
         /// <returns>IPagingResponse&lt;JobRowDetails&gt;</returns>
-        IPagingResponse<JobBasicDetails> List(JobsFilter filter);
+        Task<IPagingResponse<JobBasicDetails>> ListAsync(ListJobsFilter? filter = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get Audit
         /// </summary>
         /// <param name="auditId"></param>
         /// <returns>JobAuditWithInformation</returns>
-        JobAuditWithInformation GetAudit(int auditId);
+        Task<JobAuditWithInformation> GetAuditAsync(int auditId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get All Jobs Audits
         /// </summary>
         /// <param name="paging"></param>
         /// <returns>IPagingResponse&lt;JobAudit&gt</returns>
-        IPagingResponse<JobAudit> GetAllAudits(PagingRequest? paging);
+        Task<IPagingResponse<JobAudit>> GetAllAuditsAsync(
+            int? pageNumber = null,
+            int? pageSize = null,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get Job Detaild
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <returns>JobDetails</returns>
-        JobDetails GetJob(string id);
+        Task<JobDetails> GetAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get Audits For Job
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
-        /// <param name="paging"></param>
         /// <returns>IPagingResponse&lt;JobAudit&gt</returns>
-        IPagingResponse<JobAudit> GetAudits(string id, PagingRequest? paging);
+        Task<IPagingResponse<JobAudit>> GetAuditsAsync(
+            string id,
+            int? pageNumber = null,
+            int? pageSize = null,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get Job Peripheral Detials
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <returns>JobDescription</returns>
-        JobDescription DescribeJob(string id);
+        Task<JobDescription> DescribeJobAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get JobFile.yml Template
         /// </summary>
         /// <param name="name"></param>
         /// <returns>string</returns>
-        string GetJobFile(string name);
+        Task<string> GetJobFileAsync(string name, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get Next Running
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <returns>string</returns>
-        DateTime? GetNextRunning(string id);
+        Task<DateTime?> GetNextRunningAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get Previous Running
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <returns>string</returns>
-        DateTime? GetPreviousRunning(string id);
+        Task<DateTime?> GetPreviousRunningAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gat All Running Jobs
         /// </summary>
         /// <returns>List&lt;RunningJobDetails&gt;</returns>
-        IEnumerable<RunningJobDetails> GetRunning();
+        Task<IEnumerable<RunningJobDetails>> GetRunningAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get Runnig Job Info
         /// </summary>
         /// <param name="instanceId"></param>
         /// <returns>RunningJobDetails</returns>
-        RunningJobDetails GetRunningInfo(string instanceId);
+        Task<RunningJobDetails> GetRunningAsync(string instanceId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get Running Job Data
         /// </summary>
         /// <param name="instanceId"></param>
         /// <returns>RunningJobData</returns>
-        RunningJobData GetRunningData(string instanceId);
+        Task<RunningJobData> GetRunningDataAsync(string instanceId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Get All Job Types Get all job types
         /// </summary>
         /// <returns>List&lt;string&gt;</returns>
-        IEnumerable<string> GetJobTypes();
+        Task<IEnumerable<string>> GetJobTypesAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Cancel Running Job
         /// </summary>
         /// <param name="fireInstanceId">Fire instance id</param>
         /// <returns></returns>
-        void CancelRunning(string fireInstanceId);
+        Task CancelRunningAsync(string fireInstanceId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Add Job
         /// </summary>
         /// <returns>string</returns>
-        string Add(string folder);
-
-        /// <summary>
-        /// Add Job
-        /// </summary>
-        /// <returns>string</returns>
-        string Add(string folder, string jobFileName);
+        Task<string> AddAsync(string folder, string? jobFileName, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Invoke Job
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <returns></returns>
-        void Invoke(string id);
+        Task InvokeAsync(string id, DateTime? nowOverrideValue = null, Dictionary<string, string>? data = null, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Invoke Job
+        /// Invoke Job, track progress and wait for completion
         /// </summary>
-        /// <param name="id">Job id or job key (Group.Name)</param>
+        /// <param name="id"></param>
+        /// <param name="callback"></param>
         /// <param name="nowOverrideValue"></param>
+        /// <param name="data"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        void Invoke(string id, DateTime nowOverrideValue);
+        Task TestAsync(
+            string id,
+            Func<RunningJobDetails, Task> callback,
+            DateTime? nowOverrideValue = null,
+            Dictionary<string, string>? data = null,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Pause Job
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <returns></returns>
-        void Pause(string id);
-
-        /// <summary>
-        /// Pause All Jobs
-        /// </summary>
-        /// <returns></returns>
-        void PauseAll();
+        Task PauseAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Queue Invokation Of Job Queue invokation of job
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <param name="dueDate">Invocation due date</param>
+        /// <param name="timeout">Specific timeout</param>
+        /// <param name="nowOverrideValue"></param>
+        /// <param name="data">Key/Value dictionary</param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        void QueueInvoke(string id, DateTime dueDate);
-
-        /// <summary>
-        /// Queue Invokation Of Job Queue invokation of job
-        /// </summary>
-        /// <param name="id">Job id or job key (Group.Name)</param>
-        /// <param name="dueDate">Invocation due date</param>
-        /// <param name="timeout">specific timeout</param>
-        /// <returns></returns>
-        void QueueInvoke(string id, DateTime dueDate, TimeSpan timeout);
+        Task<string> QueueInvokeAsync(
+            string id,
+            DateTime dueDate,
+            TimeSpan? timeout,
+            DateTime? nowOverrideValue = null,
+            Dictionary<string, string>? data = null,
+            CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Resume Job
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <returns></returns>
-        void Resume(string id);
+        Task ResumeAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Resume All Jobs
-        /// </summary>
-        /// <returns></returns>
-        void ResumeAll();
-
-        /// <summary>
-        /// Add Job Data
+        /// Add Or Update Job Data
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <param name="key">Data key</param>
         /// <param name="key">Data value</param>
         /// <returns></returns>
-        void AddData(string id, string key, string value);
+        Task PutDataAsync(string id, string key, string value, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Update Job Data
+        /// Update Job
+        /// </summary>
+        /// <returns>string</returns>
+        Task<string> UpdateAsync(
+            string id,
+            bool updateJobData = false,
+            bool updateTriggersData = false,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        ///
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
+        /// <param name="author">Author name</param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        void UpdateJobData(string id, string key, string value);
-
-        /// <summary>
-        /// Update Job
-        /// </summary>
-        /// <returns>string</returns>
-        string Update(string folder, bool updateJobData = true, bool updateTriggerData = true);
-
-        /// <summary>
-        /// Update Job
-        /// </summary>
-        /// <returns>string</returns>
-        string Update(string folder, string jobFileName, bool updateJobData = true, bool updateTriggerData = true);
+        Task SetAuthor(string id, string author, CancellationToken cancellationToken = default);
     }
 }

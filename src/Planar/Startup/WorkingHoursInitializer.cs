@@ -19,7 +19,7 @@ namespace Planar.Startup
                 foreach (var f in files)
                 {
                     Console.WriteLine($"[x] Read Working Hours file: {new FileInfo(f).Name}");
-                    var yml = File.ReadAllText(f);
+                    var yml = YmlFileReader.ReadTextAsync(f).Result;
                     var calendar = YmlUtil.Deserialize<WorkingHoursCalendar>(yml);
                     WorkingHours.Calendars.Add(calendar);
                 }

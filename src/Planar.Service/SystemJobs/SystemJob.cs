@@ -1,4 +1,5 @@
-﻿using Planar.Service.General;
+﻿using Microsoft.Extensions.Logging;
+using Planar.Service.General;
 using Quartz;
 using System;
 using System.Threading;
@@ -8,6 +9,8 @@ namespace Planar.Service.SystemJobs;
 
 public abstract class SystemJob
 {
+    protected const string LastRunKey = "Last.Success.Run";
+
     protected static IJobDetail CreateJob<T>(JobKey jobKey, string description)
         where T : IJob
     {
@@ -22,6 +25,18 @@ public abstract class SystemJob
             .Build();
 
         return job;
+    }
+
+    protected static void SafeSetLastRun(IJobExecutionContext context, ILogger logger)
+    {
+        try
+        {
+            context.JobDetail.JobDataMap.Put(LastRunKey, DateTime.Now.ToString());
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "fail to set last run of system job");
+        }
     }
 
     protected static JobKey CreateJobKey<T>()

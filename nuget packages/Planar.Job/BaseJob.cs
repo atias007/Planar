@@ -129,9 +129,9 @@ namespace Planar.Job
             return result;
         }
 
-        protected void AddAggregateException(Exception ex)
+        protected void AddAggregateException(Exception ex, int maxItems = 25)
         {
-            _baseJobFactory.AddAggregateException(ex);
+            _baseJobFactory.AddAggregateException(ex, maxItems);
         }
 
         protected void CheckAggragateException()

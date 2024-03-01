@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using CommonJob;
+using Microsoft.Extensions.Logging;
 using Planar.Common;
 
 namespace Planar
@@ -8,7 +9,7 @@ namespace Planar
         public PlanarJobConcurrent(
             ILogger<PlanarJob> logger,
             IJobPropertyDataLayer dataLayer,
-            IMonitorUtil monitorUtil) : base(logger, dataLayer, monitorUtil)
+            JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
         {
         }
     }

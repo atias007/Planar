@@ -60,13 +60,20 @@ namespace Planar.Job
 
         #region AggregateException
 
-        public void AddAggregateException(Exception ex)
+        public void AddAggregateException(Exception ex, int maxItems = 25)
         {
             lock (Locker)
             {
                 var message = new ExceptionDto(ex);
                 _exceptions.Add(ex);
                 MqttClient.Publish(MessageBrokerChannels.AddAggregateException, message).Wait();
+
+                if (_exceptions.Count >= maxItems)
+                {
+                    var finalEx = new PlanarJobAggragateException("Aggregate exception items exceeded maximum limit");
+                    _exceptions.Add(finalEx);
+                    CheckAggragateException();
+                }
             }
         }
 
@@ -84,16 +91,16 @@ namespace Planar.Job
                     throw _exceptions[0];
                 }
 
-                var seperator = string.Empty.PadLeft(80, '-');
+                ////var seperator = string.Empty.PadLeft(80, '-');
                 var sb = new StringBuilder();
                 sb.AppendLine($"There is {_exceptions.Count} aggregate exception");
-                _exceptions.ForEach(e => sb.AppendLine($"  - {e.Message}"));
-                sb.AppendLine(seperator);
-                _exceptions.ForEach(e =>
-                {
-                    sb.AppendLine(e.Message);
-                    sb.AppendLine(seperator);
-                });
+                ////_exceptions.ForEach(e => sb.AppendLine($"  - {e.Message}"));
+                ////sb.AppendLine(seperator);
+                ////_exceptions.ForEach(e =>
+                ////{
+                ////    sb.AppendLine(e.Message);
+                ////    sb.AppendLine(seperator);
+                ////});
 
                 throw new PlanarJobAggragateException(sb.ToString(), _exceptions);
             }

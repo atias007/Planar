@@ -315,7 +315,7 @@ namespace Planar.CLI.Actions
                     }
 
                     request.MonitorId = monitorWrapper.Value?.Id;
-                    AnsiConsole.MarkupLine($"[turquoise2]  > monitor :[/] {monitorWrapper.Value?.Id} - {monitorWrapper.Value?.EventTitle}");
+                    AnsiConsole.MarkupLine($"[turquoise2]  > monitor :[/] {monitorWrapper.Value?.Id} - {monitorWrapper.Value?.Title}");
                 }
             }
 
@@ -337,7 +337,7 @@ namespace Planar.CLI.Actions
                 }
                 else
                 {
-                    request.JobId = await JobCliActions.ChooseJob(cancellationToken);
+                    request.JobId = await JobCliActions.ChooseJob(null, cancellationToken);
                     AnsiConsole.MarkupLine($"[turquoise2]  > job id :[/] {request.JobId}");
                 }
             }
@@ -409,15 +409,54 @@ namespace Planar.CLI.Actions
         private static string? GetEventArguments(string eventName)
         {
             var result = MonitorEventsExtensions.IsMonitorEventHasArguments(eventName) ?
-                AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > event argument:[/]").AllowEmpty()) :
+                //AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > event argument:[/]").AllowEmpty()) :
+                PickEventArgument(eventName) :
                 null;
 
-            if (!string.IsNullOrEmpty(result))
-            {
-                AnsiConsole.MarkupLine($"[turquoise2]  > arguments:[/] {result}");
-            }
-
             return result;
+        }
+
+        private static string? PickEventArgument(string eventName)
+        {
+            if (!Enum.TryParse(eventName, out MonitorEvents @event)) { return null; }
+            int? x, y;
+
+            switch (@event)
+            {
+                default:
+                    return null;
+
+                case MonitorEvents.ExecutionFailxTimesInRow: // 200
+                    x = CollectNumericCliValue(" [x] number of fails", true, 2, 1000);
+                    return x?.ToString();
+
+                case MonitorEvents.ExecutionFailxTimesInyHours: // 201
+                    x = CollectNumericCliValue(" [x] number of fails", true, 2, 1000);
+                    y = CollectNumericCliValue(" [y] number of hours", true, 1, 72);
+                    return $"{x},{y}";
+
+                case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx: // 202
+                    x = CollectNumericCliValue(" [x] number of effected rows", true, 0, int.MaxValue);
+                    return x?.ToString();
+
+                case MonitorEvents.ExecutionEndWithEffectedRowsLessThanx: // 203
+                    x = CollectNumericCliValue(" [x] number of effected rows", true, 2, int.MaxValue);
+                    return x?.ToString();
+
+                case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanxInyHours: // 204
+                    x = CollectNumericCliValue(" [x] number of effected rows", true, 0, int.MaxValue);
+                    y = CollectNumericCliValue(" [y] number of hours", true, 1, 72);
+                    return $"{x},{y}";
+
+                case MonitorEvents.ExecutionEndWithEffectedRowsLessThanxInyHours: // 205
+                    x = CollectNumericCliValue(" [x] number of effected rows", true, 1, int.MaxValue);
+                    y = CollectNumericCliValue(" [y] number of hours", true, 1, 72);
+                    return $"{x},{y}";
+
+                case MonitorEvents.ExecutionDurationGreaterThanxMinutes: // 206
+                    x = CollectNumericCliValue(" [x] number of minutes", true, 1, 1440);
+                    return x?.ToString();
+            }
         }
 
         private static string GetHook(IEnumerable<string> hooks)
@@ -436,16 +475,12 @@ namespace Planar.CLI.Actions
                 return new AddMonitorJobData();
             }
 
-            string selectedEvent;
-            if (MonitorEventsExtensions.IsMonitorEventHasArguments(eventName))
-            {
-                selectedEvent = "single (monitor for single job)";
-            }
-            else
-            {
-                var types = new[] { "single (monitor for single job)", "group (monitor for group of jobs)", "all (monitor for all jobs)" };
-                selectedEvent = PromptSelection(types, "monitor type") ?? string.Empty;
-            }
+            var types = new[] {
+                "single (monitor for single job)",
+                "group (monitor for group of jobs)",
+                "all (monitor for all jobs)" };
+
+            var selectedEvent = PromptSelection(types, "monitor type") ?? string.Empty;
 
             selectedEvent = selectedEvent.Split(' ')[0];
             if (selectedEvent == "all")

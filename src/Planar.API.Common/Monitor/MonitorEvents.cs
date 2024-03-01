@@ -13,6 +13,7 @@ namespace Planar.Common
         [Description("Execution End")] ExecutionEnd = 106,
         [Description("Execution Success With No Effected Rows")] ExecutionSuccessWithNoEffectedRows = 107,
         [Description("Execution Progress Changed")] ExecutionProgressChanged = 108,
+        [Description("Execution Timeout")] ExecutionTimeout = 109,
 
         //// - Events with argument --------------------------------
         [Description("Execution Fail {x} Times In Row")] ExecutionFailxTimesInRow = 200,
@@ -22,6 +23,7 @@ namespace Planar.Common
         [Description("Execution End With Effected Rows Less Than {x}")] ExecutionEndWithEffectedRowsLessThanx = 203,
         [Description("Execution End With Effected Rows Greater Than {x} In {y} Hours")] ExecutionEndWithEffectedRowsGreaterThanxInyHours = 204,
         [Description("Execution End With Effected Rows Less Than {x} In {y} Hours")] ExecutionEndWithEffectedRowsLessThanxInyHours = 205,
+        [Description("Execution Duration Greater Than {x} Minutes")] ExecutionDurationGreaterThanxMinutes = 206,
 
         //// -------------------------------------------------------
         [Description("Job Added")] JobAdded = 300,

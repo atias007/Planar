@@ -43,7 +43,7 @@ namespace Planar.Controllers
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_cluster_max_concurrency", Description = "Get the total max concurrency of cluster", Summary = "Get Cluster Max Concurrency")]
         [OkTextResponse]
-        public async Task<ActionResult<string>> MaxConcurrency()
+        public async Task<ActionResult<int>> MaxConcurrency()
         {
             var response = await BusinesLayer.MaxConcurrency();
             return Ok(response);

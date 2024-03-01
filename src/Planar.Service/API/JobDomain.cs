@@ -18,6 +18,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar.Service.API
@@ -266,16 +267,28 @@ namespace Planar.Service.API
 
         public string GetJobFileTemplate(string typeName)
         {
-            var assembly =
-                Assembly.Load(typeName) ??
-                throw new RestNotFoundException($"type '{typeName}' could not be found");
+            var notFoundException = new Lazy<RestNotFoundException>(() => new RestNotFoundException($"type '{typeName}' could not be found"));
+
+            Assembly assembly;
+
+            try
+            {
+                assembly = Assembly.Load(typeName);
+            }
+            catch
+            {
+                throw notFoundException.Value;
+            }
 
             var resources = assembly.GetManifestResourceNames();
             var resourceName =
                 Array.Find(resources, r => r.ToLower() == $"{typeName}.JobFile.yml".ToLower()) ??
-                throw new RestNotFoundException($"type '{typeName}' could not be found");
+                throw notFoundException.Value;
 
-            using Stream? stream = assembly.GetManifestResourceStream(resourceName) ?? throw new RestNotFoundException("jobfile.yml resource could not be found");
+            using Stream? stream =
+                assembly.GetManifestResourceStream(resourceName) ??
+                throw new RestNotFoundException("jobfile.yml resource could not be found");
+
             using StreamReader reader = new(stream);
             var result = reader.ReadToEnd();
 
@@ -287,7 +300,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<LastInstanceId?> GetLastInstanceId(string id, DateTime invokeDate)
+        public async Task<LastInstanceId?> GetLastInstanceId(string id, DateTime invokeDate, CancellationToken cancellationToken)
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
 
@@ -297,8 +310,25 @@ namespace Planar.Service.API
             }
 
             var dal = Resolve<HistoryData>();
-            var result = await dal.GetLastInstanceId(jobKey, invokeDate);
-            return result;
+
+            for (int i = 0; i < 60; i++)
+            {
+                var result = await dal.GetLastInstanceId(jobKey, invokeDate, cancellationToken);
+                if (result != null) { return result; }
+                if (i % 10 == 0)
+                {
+                    var running = await GetRunning();
+                    var exists = running.Exists(d => d.Id == id || string.Equals($"{d.Group}.{d.Name}", id, StringComparison.OrdinalIgnoreCase));
+                    if (exists)
+                    {
+                        throw new RestConflictException();
+                    }
+                }
+
+                await Task.Delay(500, cancellationToken);
+            }
+
+            return null;
         }
 
         public async Task<PagingResponse<JobAuditDto>> GetJobAudits(string id, PagingRequest paging)
@@ -463,13 +493,6 @@ namespace Planar.Service.API
             result = settings.Select(d => new KeyValueItem(d.Key, d.Value)).ToList();
 
             return result;
-        }
-
-        public async Task<GetTestStatusResponse> GetTestStatus(int id)
-        {
-            var dal = Resolve<HistoryData>();
-            var result = await dal.GetTestStatus(id);
-            return result ?? throw new RestNotFoundException($"test with id {id} not found");
         }
 
         public async Task Invoke(InvokeJobRequest request)
