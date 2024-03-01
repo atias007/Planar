@@ -315,7 +315,7 @@ namespace Planar.CLI.Actions
                     }
 
                     request.MonitorId = monitorWrapper.Value?.Id;
-                    AnsiConsole.MarkupLine($"[turquoise2]  > monitor :[/] {monitorWrapper.Value?.Id} - {monitorWrapper.Value?.EventTitle}");
+                    AnsiConsole.MarkupLine($"[turquoise2]  > monitor :[/] {monitorWrapper.Value?.Id} - {monitorWrapper.Value?.Title}");
                 }
             }
 

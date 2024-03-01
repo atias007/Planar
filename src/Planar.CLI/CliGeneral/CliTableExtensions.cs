@@ -180,13 +180,13 @@ namespace Planar.CLI
         {
             var table = new CliTable(showCount: true);
             if (response == null) { return table; }
-            table.Table.AddColumns("Job Id", "Monitor Id", "Monitor Title", "Due Date");
+            table.Table.AddColumns("Job Id", "Job Key", "Monitor Id", "Monitor Title", "Due Date");
             foreach (var item in response)
             {
                 if (item == null) { continue; }
                 var jobid = item.JobId ?? $"[{CliFormat.WarningColor}][[all jobs]][/]";
                 var monitorid = item.MonitorId?.ToString() ?? $"[{CliFormat.WarningColor}][[all monitors]][/]";
-                table.Table.AddRow(jobid, monitorid, SafeCliString(item.MonitorTitle), CliTableFormat.FormatDateTime(item.DueDate));
+                table.Table.AddRow(jobid, CliTableFormat.FormatJobKey(item.JobGroup, item.JobName), monitorid, SafeCliString(item.MonitorTitle), CliTableFormat.FormatDateTime(item.DueDate));
             }
 
             return table;

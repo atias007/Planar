@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Monitor;
@@ -375,17 +376,18 @@ namespace Planar.Service.Data
 
             var inner = _context.MonitorActions.AsNoTracking();
 
-            return await
-                outer.Join(inner,
-                    mutes => mutes.MonitorId,
-                    monitor => monitor.Id,
-                    (mute, monitor) => new MonitorMute
-                    {
-                        DueDate = mute.DueDate,
-                        JobId = mute.JobId,
-                        MonitorId = mute.MonitorId,
-                        MonitorTitle = monitor.Title
-                    })
+            var query = from o in outer
+                        join i in inner on o.MonitorId equals i.Id into joined
+                        from j in joined.DefaultIfEmpty()
+                        select new MonitorMute
+                        {
+                            DueDate = o.DueDate,
+                            JobId = o.JobId,
+                            MonitorId = o.MonitorId,
+                            MonitorTitle = j.Title
+                        };
+
+            return await query
                 .OrderBy(c => c.DueDate)
                 .Take(1000)
                 .ToListAsync();

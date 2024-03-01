@@ -196,7 +196,16 @@ namespace Planar.Service.API
                     MonitorTitle = g.Key.MonitorTitle
                 })
                 .OrderBy(i => i.DueDate)
-                .Take(1000);
+                .Take(1000)
+                .ToList();
+
+            foreach (var r in result)
+            {
+                if (string.IsNullOrEmpty(r.JobId)) { continue; }
+                var key = await JobKeyHelper.GetJobKeyById(r.JobId);
+                r.JobName = key?.Name;
+                r.JobGroup = key?.Group;
+            }
 
             return result;
         }

@@ -3,8 +3,6 @@
 PLAN FOR V 1.7.0
 ----------------
 
-- nuget package for client library
-
 - postman: test queue-invoke with data and validate the creation of data
 - 'service info hooks'
 
@@ -21,13 +19,15 @@ PLAN FOR V 1.7.0
 
 - BACKLOG ----------------------------------------------------------------------------
 
+- show warning on CLI halt command
+- show better message when CLI command is belog to more then 1 module
+
 - add WorkflowJob
 - add SSIS job
 - add SSRS job
 
-- run hook in linux
-
-
+- run hook in container
+- run job in container
 
 - cli command to changhe interval/count
 - cli command to changhe cron expr

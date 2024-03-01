@@ -895,10 +895,12 @@ namespace Planar.CLI.Actions
             var jobs = query
                 .OrderBy(d => d.Group)
                 .ThenBy(d => d.Name)
-                .Select(d => $"{d.Group}.{d.Name}")
+                .Select(d => CliTableFormat.FormatJobKey(d.Group, d.Name))
                 .ToList();
 
-            return PromptSelection(jobs, "job") ?? string.Empty;
+            var result = PromptSelection(jobs, "job") ?? string.Empty;
+            result = CliTableFormat.UnformatJobName(result);
+            return result;
         }
 
         private static async Task<CliActionResponse?> TestStep0CheckJob(CliInvokeJobRequest request, CancellationToken cancellationToken)

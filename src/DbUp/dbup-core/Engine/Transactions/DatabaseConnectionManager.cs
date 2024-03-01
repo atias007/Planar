@@ -10,11 +10,11 @@ namespace DbUp.Engine.Transactions
     /// </summary>
     public abstract class DatabaseConnectionManager : IConnectionManager
     {
-        readonly IConnectionFactory connectionFactory;
-        ITransactionStrategy transactionStrategy;
-        readonly Dictionary<TransactionMode, Func<ITransactionStrategy>> transactionStrategyFactory;
-        IDbConnection upgradeConnection;
-        IConnectionFactory connectionFactoryOverride;
+        private readonly IConnectionFactory connectionFactory;
+        private ITransactionStrategy transactionStrategy;
+        private readonly Dictionary<TransactionMode, Func<ITransactionStrategy>> transactionStrategyFactory;
+        private IDbConnection upgradeConnection;
+        private IConnectionFactory connectionFactoryOverride;
 
         //The allowed TransactionModes
         protected virtual AllowedTransactionMode AllowedTransactionModes => AllowedTransactionMode.All;
@@ -68,17 +68,13 @@ namespace DbUp.Engine.Transactions
 
         private bool IsAllowed(TransactionMode mode)
         {
-            switch (mode)
+            return mode switch
             {
-                case TransactionMode.SingleTransaction:
-                    return AllowedTransactionModes.HasFlag(AllowedTransactionMode.SingleTransaction);
-                case TransactionMode.SingleTransactionAlwaysRollback:
-                    return AllowedTransactionModes.HasFlag(AllowedTransactionMode.SingleTransactionAlwaysRollback);
-                case TransactionMode.TransactionPerScript:
-                    return AllowedTransactionModes.HasFlag(AllowedTransactionMode.TransactionPerScript);
-                default:
-                    return true;
-            }
+                TransactionMode.SingleTransaction => AllowedTransactionModes.HasFlag(AllowedTransactionMode.SingleTransaction),
+                TransactionMode.SingleTransactionAlwaysRollback => AllowedTransactionModes.HasFlag(AllowedTransactionMode.SingleTransactionAlwaysRollback),
+                TransactionMode.TransactionPerScript => AllowedTransactionModes.HasFlag(AllowedTransactionMode.TransactionPerScript),
+                _ => true,
+            };
         }
 
         /// <summary>
@@ -97,11 +93,9 @@ namespace DbUp.Engine.Transactions
                     strategy.Initialise(upgradeConnection, upgradeLog, new List<SqlScript>());
                     strategy.Execute(dbCommandFactory =>
                     {
-                        using (var command = dbCommandFactory())
-                        {
-                            command.CommandText = "select 1";
-                            command.ExecuteScalar();
-                        }
+                        using var command = dbCommandFactory();
+                        command.CommandText = "select 1";
+                        command.ExecuteScalar();
                     });
                 }
 
@@ -115,7 +109,7 @@ namespace DbUp.Engine.Transactions
         }
 
         /// <summary>
-        /// Executes an action using the specified transaction mode 
+        /// Executes an action using the specified transaction mode
         /// </summary>
         /// <param name="action">The action to execute</param>
         public void ExecuteCommandsWithManagedConnection(Action<Func<IDbCommand>> action)
@@ -124,7 +118,7 @@ namespace DbUp.Engine.Transactions
         }
 
         /// <summary>
-        /// Executes an action which has a result using the specified transaction mode 
+        /// Executes an action which has a result using the specified transaction mode
         /// </summary>
         /// <param name="actionWithResult">The action to execute</param>
         /// <typeparam name="T">The result type</typeparam>
@@ -157,7 +151,7 @@ namespace DbUp.Engine.Transactions
             return new DelegateDisposable(() => connectionFactoryOverride = null);
         }
 
-        IDbConnection CreateConnection(IUpgradeLog upgradeLog)
+        private IDbConnection CreateConnection(IUpgradeLog upgradeLog)
         {
             return (connectionFactoryOverride ?? connectionFactory).CreateConnection(upgradeLog, this);
         }

@@ -2,7 +2,6 @@
 using MimeKit;
 using Planar.Common;
 using System;
-using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,11 +28,7 @@ internal static class SmtpUtil
             useSsl: smtp.UseSsl,
             cancellationToken: tokenSource.Token);
 
-        if (smtp.UseDefaultCredentials)
-        {
-            await client.AuthenticateAsync(CredentialCache.DefaultCredentials, tokenSource.Token);
-        }
-        else
+        if (!smtp.UseDefaultCredentials)
         {
             await client.AuthenticateAsync(encoding: Encoding.UTF8, smtp.Username, smtp.Password, tokenSource.Token);
         }

@@ -1,5 +1,6 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.CliGeneral;
+using Planar.CLI.General;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
@@ -107,9 +108,15 @@ namespace Planar.CLI
             var noName = string.IsNullOrWhiteSpace(name);
 
             if (noName && noGroup) { return string.Empty; }
-            if (noName) { return $"[gray23]{group!.EscapeMarkup()}[/]"; }
-            if (noGroup) { return $"[gray23]default.[/]{name.EscapeMarkup()}"; }
-            return $"[gray23]{group.EscapeMarkup()}.[/]{name.EscapeMarkup()}";
+            if (noName) { return $"{CliConsts.GroupDisplayFormat}{group!.EscapeMarkup()}[/]"; }
+            if (noGroup) { return $"{CliConsts.GroupDisplayFormat}default.[/]{name.EscapeMarkup()}"; }
+            return $"{CliConsts.GroupDisplayFormat}{group.EscapeMarkup()}.[/]{name.EscapeMarkup()}";
+        }
+
+        public static string UnformatJobName(string formattedName)
+        {
+            if (string.IsNullOrWhiteSpace(formattedName)) { return string.Empty; }
+            return formattedName.Replace($"{CliConsts.GroupDisplayFormat}", string.Empty).Replace("[/]", string.Empty);
         }
 
         public static string FormatNumber(int number)
