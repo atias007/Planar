@@ -6,13 +6,10 @@ using Quartz;
 namespace Planar
 {
     [PersistJobDataAfterExecution]
-    public class SqlJobConcurrent : SqlJob
+    public class SqlJobConcurrent(
+        ILogger<SqlJob> logger,
+        IJobPropertyDataLayer dataLayer,
+        JobMonitorUtil jobMonitorUtil) : SqlJob(logger, dataLayer, jobMonitorUtil)
     {
-        public SqlJobConcurrent(
-            ILogger<SqlJob> logger,
-            IJobPropertyDataLayer dataLayer,
-            JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
-        {
-        }
     }
 }

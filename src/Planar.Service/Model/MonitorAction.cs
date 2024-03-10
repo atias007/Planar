@@ -34,8 +34,7 @@ public partial class MonitorAction
     [Unicode(false)]
     public string Hook { get; set; } = null!;
 
-    [Required]
-    public bool? Active { get; set; }
+    public bool Active { get; set; }
 
     [ForeignKey("GroupId")]
     [InverseProperty("MonitorActions")]

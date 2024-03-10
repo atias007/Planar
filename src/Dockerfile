@@ -1,13 +1,13 @@
 #See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
 # ---------------------------- Base Image -------------------------------------------
-FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
 # ---------------------------- Build Image -------------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 COPY ["Jobs/CommonJob/CommonJob.csproj", "Jobs/CommonJob/"]
 COPY ["Jobs/PlanarJob/PlanarJob.csproj", "Jobs/PlanarJob/"]

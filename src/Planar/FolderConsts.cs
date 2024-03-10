@@ -36,7 +36,7 @@ namespace Planar
             };
 
             var folder = Path.Combine(Data, specialPath);
-            if (paths == null || !paths.Any())
+            if (paths == null || paths.Length == 0)
             {
                 return folder;
             }
@@ -47,10 +47,7 @@ namespace Planar
             return result;
         }
 
-#pragma warning disable CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
-
         public static string GetSpecialFilePath(PlanarSpecialFolder planarFolder, params string?[] paths)
-#pragma warning restore CS8632 // The annotation for nullable reference types should only be used in code within a '#nullable' annotations context.
         {
             var specialPath = planarFolder switch
             {
@@ -62,7 +59,7 @@ namespace Planar
             };
 
             var folder = Path.Combine(BasePath, Data, specialPath);
-            if (paths == null || !paths.Any())
+            if (paths == null || paths.Length == 0)
             {
                 return folder;
             }

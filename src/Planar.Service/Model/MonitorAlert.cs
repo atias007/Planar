@@ -20,7 +20,7 @@ public partial class MonitorAlert
 
     [StringLength(100)]
     [Unicode(false)]
-    public string EventTitle { get; set; } = null!;
+    public string? EventTitle { get; set; }
 
     [StringLength(50)]
     [Unicode(false)]

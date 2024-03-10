@@ -17,7 +17,6 @@ public class MonitorProfile : Profile
             .ForMember(t => t.EventArgument, map => map.MapFrom(s => string.IsNullOrEmpty(s.EventArgument) ? null : s.EventArgument));
 
         CreateMap<MonitorAction, MonitorItem>()
-         .ForMember(t => t.Active, map => map.MapFrom(s => s.Active.GetValueOrDefault()))
          .ForMember(t => t.EventTitle, map => map.MapFrom(s => MonitorUtil.GetMonitorEventTitle(s.EventId, s.EventArgument)));
 
         CreateMap<UpdateMonitorRequest, MonitorAction>()

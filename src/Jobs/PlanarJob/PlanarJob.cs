@@ -200,7 +200,7 @@ namespace Planar
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"fail to handle health check at {nameof(FinalizeProcess)}");
+                _logger.LogError(ex, "fail to handle health check at {Method}", nameof(FinalizeProcess));
             }
 
             throw new PlanarJobException("no health check signal from job. See job log for more information");
@@ -259,7 +259,7 @@ namespace Planar
             }
             catch (PlanarJobException ex)
             {
-                _logger.LogCritical("Fail intercepting published message on MQTT broker event. {Error}", ex.Message);
+                _logger.LogCritical(ex, "Fail intercepting published message on MQTT broker event. {Error}", ex.Message);
             }
             catch (JobMonitorException ex)
             {

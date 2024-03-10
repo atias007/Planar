@@ -31,14 +31,10 @@ namespace Planar.Common
 
         public static void Put<TValue>(this Dictionary<string, TValue?> dictionary, string key, TValue? value)
         {
-            if (dictionary == null) { throw new ArgumentNullException(nameof(dictionary)); }
-            if (dictionary.ContainsKey(key))
+            ArgumentNullException.ThrowIfNull(dictionary);
+            if (!dictionary.TryAdd(key, value))
             {
                 dictionary[key] = value;
-            }
-            else
-            {
-                dictionary.Add(key, value);
             }
         }
 
@@ -50,7 +46,7 @@ namespace Planar.Common
         public static Dictionary<string, string?> Merge(this Dictionary<string, string?> source, IDictionary<string, string?> target)
         {
             if (target == null) { return source; }
-            source ??= new Dictionary<string, string?>();
+            source ??= [];
 
             foreach (var item in target)
             {

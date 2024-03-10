@@ -10,15 +10,11 @@ using System.Net;
 
 namespace Planar
 {
-    public class RestJob : BaseCommonJob<RestJob, RestJobProperties>
+    public class RestJob(
+        ILogger<RestJob> logger,
+        IJobPropertyDataLayer dataLayer,
+        JobMonitorUtil jobMonitorUtil) : BaseCommonJob<RestJob, RestJobProperties>(logger, dataLayer, jobMonitorUtil)
     {
-        public RestJob(
-            ILogger<RestJob> logger,
-            IJobPropertyDataLayer dataLayer,
-            JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
-        {
-        }
-
         public override async Task Execute(IJobExecutionContext context)
         {
             try

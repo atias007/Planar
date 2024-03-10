@@ -5,13 +5,8 @@ using Planar.Service.Model;
 
 namespace Planar.Service.Data;
 
-public partial class PlanarContext : DbContext
+public partial class PlanarContext(DbContextOptions<PlanarContext> options) : DbContext(options)
 {
-    public PlanarContext(DbContextOptions<PlanarContext> options)
-        : base(options)
-    {
-    }
-
     public virtual DbSet<ClusterNode> ClusterNodes { get; set; }
 
     public virtual DbSet<ConcurrentExecution> ConcurrentExecutions { get; set; }
@@ -73,7 +68,7 @@ public partial class PlanarContext : DbContext
         {
             entity.HasKey(e => e.Id).HasName("PK_Monitor");
 
-            entity.Property(e => e.Active).HasDefaultValueSql("((1))");
+            entity.Property(e => e.Active).HasDefaultValue(true);
 
             entity.HasOne(d => d.Group).WithMany(p => p.MonitorActions)
                 .OnDelete(DeleteBehavior.ClientSetNull)

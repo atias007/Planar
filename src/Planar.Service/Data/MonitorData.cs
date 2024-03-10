@@ -1,6 +1,5 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Monitor;
@@ -13,12 +12,9 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Data
 {
-    public class MonitorData : BaseDataLayer, IMonitorDurationDataLayer
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1862:Use the 'StringComparison' method overloads to perform case-insensitive string comparisons", Justification = "EF Core")]
+    public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonitorDurationDataLayer
     {
-        public MonitorData(PlanarContext context) : base(context)
-        {
-        }
-
         public async Task AddMonitor(MonitorAction request)
         {
             _context.MonitorActions.Add(request);
@@ -189,7 +185,7 @@ namespace Planar.Service.Data
                 .AsNoTracking()
                 .Where(m =>
                     m.EventId == (int)MonitorEvents.ExecutionDurationGreaterThanxMinutes &&
-                    m.Active == true
+                    m.Active
                 )
                 .Select(m => new MonitorCacheItem
                 {
@@ -225,7 +221,7 @@ namespace Planar.Service.Data
 
             if (!string.IsNullOrWhiteSpace(request.EventTitle))
             {
-                query = query.Where(l => l.EventTitle.ToLower() == request.EventTitle.ToLower());
+                query = query.Where(l => l.EventTitle != null && l.EventTitle.ToLower() == request.EventTitle.ToLower());
             }
 
             if (!string.IsNullOrWhiteSpace(request.GroupName))
@@ -250,7 +246,7 @@ namespace Planar.Service.Data
 
             if (!string.IsNullOrEmpty(request.JobId))
             {
-                var index = request.JobId.IndexOf(".");
+                var index = request.JobId.IndexOf('.');
                 if (index > 0)
                 {
                     var group = request.JobId[0..index];
@@ -552,7 +548,7 @@ namespace Planar.Service.Data
             var query = _context.MonitorActions
                 .Include(m => m.Group)
                 .ThenInclude(ug => ug.Users)
-                .Where(m => m.Active == true);
+                .Where(m => m.Active);
 
             return query;
         }

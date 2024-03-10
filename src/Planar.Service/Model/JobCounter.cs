@@ -17,8 +17,7 @@ public partial class JobCounter
     [Unicode(false)]
     public string JobId { get; set; } = null!;
 
-    [Column(TypeName = "date")]
-    public DateTime RunDate { get; set; }
+    public DateOnly RunDate { get; set; }
 
     public int TotalRuns { get; set; }
 

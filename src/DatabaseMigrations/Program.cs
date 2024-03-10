@@ -157,7 +157,7 @@ static void ValidateAllEbbdedResource()
 
     var diff = filesList.Select(f => f.ResourceName).Except(resources).ToList();
 
-    if (diff.Any())
+    if (diff.Count != 0)
     {
         diff.ForEach(f =>
         {
@@ -182,7 +182,7 @@ static void ValidateAllSqlFiles()
         .Where(f => !f.Extension.Equals(".sql", StringComparison.CurrentCultureIgnoreCase))
         .ToList();
 
-    if (files.Any())
+    if (files.Count != 0)
     {
         files.ForEach(f =>
         {
@@ -231,7 +231,7 @@ static void AddScript()
         .Select(f => int.Parse(f, CultureInfo.CurrentCulture))
         .ToList();
 
-    var maxNumber = allFiles.Any() ? allFiles.Max() : 0;
+    var maxNumber = allFiles.Count != 0 ? allFiles.Max() : 0;
     var nextNumber = (maxNumber + 1).ToString("000#", CultureInfo.CurrentCulture);
     var scriptFile = $"{Current.ModuleName}_{nextNumber} - {name}";
     var filename = Path.Combine(Current.ScriptsPath, scriptFile);

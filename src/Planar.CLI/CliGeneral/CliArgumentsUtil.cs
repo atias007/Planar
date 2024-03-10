@@ -107,7 +107,7 @@ namespace Planar.CLI
         {
             if (propertyInfo.GetValue(instance) is not Dictionary<string, string> dictionary)
             {
-                dictionary = new Dictionary<string, string>();
+                dictionary = [];
             }
 
             var kvp = ParseKeyValuePair(value);
@@ -150,12 +150,12 @@ namespace Planar.CLI
 
             // find match
             var action = FindMatch(list, actionsMetadata);
-            args = list.ToArray();
+            args = [.. list];
             if (action != null) { return action; }
 
             // find match with swap command and module
             Swap(ref list);
-            args = list.ToArray();
+            args = [.. list];
             action = FindMatch(list, actionsMetadata);
             if (action != null) { return action; }
             Swap(ref list);
@@ -203,7 +203,7 @@ namespace Planar.CLI
                 throw new CliValidationException($"module '{list[0]}' does not support command '{list[1]}'");
             }
 
-            args = list.ToArray();
+            args = [.. list];
             action = FindMatch(list, actionsMetadata);
             if (action == null)
             {
@@ -215,7 +215,7 @@ namespace Planar.CLI
 
         public object? GetRequest(CliActionMetadata action, CancellationToken cancellationToken)
         {
-            if (!CliArguments.Any() && action.AllowNullRequest) { return null; }
+            if (CliArguments.Count == 0 && action.AllowNullRequest) { return null; }
             if (action.RequestType == null) { return null; }
 
             var result = Activator.CreateInstance(action.RequestType);

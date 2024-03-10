@@ -24,7 +24,7 @@ namespace Planar.Common
             }
         }
 
-        public static Dictionary<string, string?> GlobalConfig { get; private set; } = new();
+        public static Dictionary<string, string?> GlobalConfig { get; private set; } = [];
 
         public static LogLevel LogLevel { get; set; }
 
@@ -37,14 +37,14 @@ namespace Planar.Common
 
         public static void Clear()
         {
-            GlobalConfig = new();
+            GlobalConfig = [];
         }
 
         public static SortedDictionary<string, string?> ConvertDataMapToDictionary(JobDataMap? map)
         {
             if (map == null)
             {
-                return new SortedDictionary<string, string?>();
+                return [];
             }
 
             var dic = map

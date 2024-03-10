@@ -32,7 +32,7 @@ namespace Planar.Common
 
     public class RedisSettings
     {
-        public List<string> Endpoints { get; set; } = new();
+        public List<string> Endpoints { get; set; } = [];
         public string? Password { get; set; }
         public string? User { get; set; }
         public ushort Database { get; set; }

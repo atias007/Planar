@@ -30,7 +30,7 @@ namespace Planar.Filters
                     Title = string.Format(CultureInfo.CurrentCulture, titleTemplate, error.Key),
                     Type = ProblemType,
                     Detail = first.ErrorMessage,
-                    Errors = new(),
+                    Errors = [],
                 };
             }
             else
