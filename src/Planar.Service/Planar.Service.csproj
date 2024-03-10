@@ -2,7 +2,7 @@
 
 	<PropertyGroup>
 		<OutputType>Library</OutputType>
-		<TargetFramework>net7.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<Version>1.7.0</Version>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
@@ -83,8 +83,8 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.AspNetCore.Authorization" Version="8.0.2" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.16" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.16">
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.2" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.2">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<TreatAsUsed>true</TreatAsUsed>
@@ -94,7 +94,7 @@
 		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.8.1" />
 		<PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.8.1" />
 		<PackageReference Include="Quartz.Serialization.Json" Version="3.8.1" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.20.0.85982">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.21.0.86780">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>

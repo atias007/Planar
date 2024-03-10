@@ -211,15 +211,16 @@ namespace Planar.CLI.Actions
         }
 
         [Action("audit")]
-        public static async Task<CliActionResponse> GetJobAudits(CliJobKey jobKey, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> GetJobAudits(CliAuditRequest request, CancellationToken cancellationToken = default)
         {
-            if (int.TryParse(jobKey.Id, out var id) && id > 0)
+            if (int.TryParse(request.Id, out var id) && id > 0)
             {
                 return await GetJobAudit(id, cancellationToken);
             }
 
             var restRequest = new RestRequest("job/{id}/audit", Method.Get)
-                .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
+                .AddParameter("id", request.Id, ParameterType.UrlSegment)
+                .AddQueryPagingParameter(request);
 
             var result = await RestProxy.Invoke<PagingResponse<JobAuditDto>>(restRequest, cancellationToken);
             var tables = CliTableExtensions.GetTable(result.Data);

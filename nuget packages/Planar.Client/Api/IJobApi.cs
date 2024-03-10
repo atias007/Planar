@@ -48,11 +48,11 @@ namespace Planar.Client
         Task<JobAuditWithInformation> GetAuditAsync(int auditId, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Get All Jobs Audits
+        /// List All Jobs Audits
         /// </summary>
         /// <param name="paging"></param>
         /// <returns>IPagingResponse&lt;JobAudit&gt</returns>
-        Task<IPagingResponse<JobAudit>> GetAllAuditsAsync(
+        Task<IPagingResponse<JobAudit>> ListAllAuditsAsync(
             int? pageNumber = null,
             int? pageSize = null,
             CancellationToken cancellationToken = default);
@@ -65,11 +65,11 @@ namespace Planar.Client
         Task<JobDetails> GetAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Get Audits For Job
+        /// List Audits For Job
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <returns>IPagingResponse&lt;JobAudit&gt</returns>
-        Task<IPagingResponse<JobAudit>> GetAuditsAsync(
+        Task<IPagingResponse<JobAudit>> ListAuditsAsync(
             string id,
             int? pageNumber = null,
             int? pageSize = null,

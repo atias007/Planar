@@ -101,7 +101,7 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<IPagingResponse<JobAudit>> GetAllAuditsAsync(
+        public async Task<IPagingResponse<JobAudit>> ListAllAuditsAsync(
             int? pageNumber = null,
             int? pageSize = null,
             CancellationToken cancellationToken = default)
@@ -123,7 +123,7 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<IPagingResponse<JobAudit>> GetAuditsAsync(
+        public async Task<IPagingResponse<JobAudit>> ListAuditsAsync(
             string id,
             int? pageNumber = null,
             int? pageSize = null,

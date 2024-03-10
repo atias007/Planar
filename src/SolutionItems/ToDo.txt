@@ -14,7 +14,6 @@ PLAN FOR V 1.7.1
 
 - Security & Audit report
 
-- .net 8
 	
 
 - BACKLOG ----------------------------------------------------------------------------
@@ -282,3 +281,8 @@ V1.7.0
 - validate the argument details in add monitor
 - add maxItems propery to AddAggregateException
 - BUG FIX: send SMTP mail with default credentials
+
+V1.7.1
+------
+- migrate to dotnet 8
+- add pagingd to audit command in cli
