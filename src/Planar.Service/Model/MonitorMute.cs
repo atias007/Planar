@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Planar.Service.Model;
 
 [Table("MonitorMute")]
+[Index("JobId", "MonitorId", Name = "IX_MonitorMute", IsUnique = true)]
 public partial class MonitorMute
 {
     [Key]

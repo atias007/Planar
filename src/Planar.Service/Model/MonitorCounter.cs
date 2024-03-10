@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Planar.Service.Model;
 
+[Index("JobId", "MonitorId", Name = "IX_MonitorCounters", IsUnique = true)]
 public partial class MonitorCounter
 {
     [Key]

@@ -139,7 +139,7 @@ namespace Planar.Service.Data
 
             if (fromDate.HasValue)
             {
-                query = query.Where(j => j.RunDate >= fromDate);
+                query = query.Where(j => j.RunDate >= DateOnly.FromDateTime(fromDate.Value));
             }
 
             var groupQuery = query.GroupBy(j => 1)  // Group by a constant to get aggregate counts

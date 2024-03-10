@@ -42,7 +42,6 @@ PLAN FOR V 1.7.1
 - authorize on odata metadata
 - add validation to JobRunnerBuilder in test nuget package
 - cli: add string similarity (https://github.com/glienard/StringSimilarity.NET)
-- add auto complete to cli (https://github.com/rohankapoor/AutoPrompt)
 
 -----------------------------------------DONE-----------------------------------------
 - cli login with option to remember

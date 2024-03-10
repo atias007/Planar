@@ -4,7 +4,7 @@ using System.Runtime.Serialization;
 namespace Planar.Service.Exceptions
 {
     [Serializable]
-    public class RestConflictException : Exception
+    public sealed class RestConflictException : Exception
     {
         public RestConflictException()
         {
@@ -13,10 +13,6 @@ namespace Planar.Service.Exceptions
         public RestConflictException(object value)
         {
             Value = value;
-        }
-
-        protected RestConflictException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
         }
 
         public object? Value { get; private set; }

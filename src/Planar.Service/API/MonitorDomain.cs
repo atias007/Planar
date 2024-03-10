@@ -18,9 +18,9 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class MonitorDomain : BaseBL<MonitorDomain, MonitorData>
+    public class MonitorDomain(IServiceProvider serviceProvider) : BaseBL<MonitorDomain, MonitorData>(serviceProvider)
     {
-        private static readonly int[] _counterEvents = new[] {
+        private static readonly int[] _counterEvents = [
             (int) MonitorEvents.ClusterHealthCheckFail,
             (int) MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx,
             (int) MonitorEvents.ExecutionEndWithEffectedRowsLessThanx,
@@ -31,11 +31,7 @@ namespace Planar.Service.API
             (int) MonitorEvents.ExecutionFailxTimesInyHours,
             (int) MonitorEvents.ExecutionLastRetryFail,
             (int) MonitorEvents.ExecutionSuccessWithNoEffectedRows,
-            (int) MonitorEvents.ExecutionVetoed};
-
-        public MonitorDomain(IServiceProvider serviceProvider) : base(serviceProvider)
-        {
-        }
+            (int) MonitorEvents.ExecutionVetoed];
 
         public static List<MonitorEventModel> GetEvents()
         {
@@ -121,7 +117,7 @@ namespace Planar.Service.API
         public async Task<List<MonitorItem>> GetByJob(string jobId)
         {
             var jobKey = await JobKeyHelper.GetJobKey(jobId);
-            if (jobKey == null) { return new List<MonitorItem>(); }
+            if (jobKey == null) { return []; }
             var items = await DataLayer.GetMonitorActionsByJob(jobKey.Group, jobKey.Name);
             var result = Mapper.Map<List<MonitorItem>>(items);
             FillDistributionGroupName(result);

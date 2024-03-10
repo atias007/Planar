@@ -13,12 +13,8 @@ namespace Planar.Controllers
 {
     [ApiController]
     [Route("monitor")]
-    public class MonitorController : BaseController<MonitorDomain>
+    public class MonitorController(MonitorDomain bl) : BaseController<MonitorDomain>(bl)
     {
-        public MonitorController(MonitorDomain bl) : base(bl)
-        {
-        }
-
         [HttpGet]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_monitor", Description = "Get all monitors", Summary = "Get All Monitors")]

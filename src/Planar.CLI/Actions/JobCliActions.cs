@@ -586,7 +586,7 @@ namespace Planar.CLI.Actions
                 var result = await RestProxy.Invoke<RunningJobDetails>(restRequest, cancellationToken);
                 if (result.Data != null)
                 {
-                    resultData = new List<RunningJobDetails> { result.Data };
+                    resultData = [result.Data];
                 }
 
                 restResponse = result;
@@ -627,7 +627,7 @@ namespace Planar.CLI.Actions
                 .Select(i => $"{i.FireInstanceId} ({i.Group}.{i.Name})  [{i.Progress}%]".EscapeMarkup())
                 .ToList();
 
-            if (!items.Any())
+            if (items.Count == 0)
             {
                 throw new CliWarningException("no running job instance(s)");
             }
@@ -890,7 +890,7 @@ namespace Planar.CLI.Actions
 
             if (!string.IsNullOrEmpty(groupName))
             {
-                query = query.Where(d => d.Group.ToLower() == groupName.ToLower());
+                query = query.Where(d => d.Group.Equals(groupName, StringComparison.CurrentCultureIgnoreCase));
             }
 
             var jobs = query
