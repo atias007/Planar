@@ -36,7 +36,7 @@ namespace DbUp.SqlServer
                 throw new ArgumentOutOfRangeException(nameof(objectName), "A SQL server object name is maximum 128 characters long");
 
             // The ] in the string need to be doubled up so it means we always need an un-even number of ] 
-            if (objectName.StartsWith("[") && objectName.EndsWith("]") && objectName.Count(x => x == ']') % 2 == 1)
+            if (objectName.StartsWith('[') && objectName.EndsWith(']') && objectName.Count(x => x == ']') % 2 == 1)
                 return objectName;
 
             return string.Concat("[", objectName.Replace("]", "]]"), "]");

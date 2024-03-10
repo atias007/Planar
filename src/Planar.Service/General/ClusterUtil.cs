@@ -17,18 +17,11 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.General
 {
-    public class ClusterUtil
+    public class ClusterUtil(ClusterData dal, ILogger<ClusterUtil> logger, SchedulerUtil schedulerUtil)
     {
-        private readonly ClusterData _dal;
-        private readonly ILogger<ClusterUtil> _logger;
-        private readonly SchedulerUtil _schedulerUtil;
-
-        public ClusterUtil(ClusterData dal, ILogger<ClusterUtil> logger, SchedulerUtil schedulerUtil)
-        {
-            _dal = dal;
-            _logger = logger;
-            _schedulerUtil = schedulerUtil;
-        }
+        private readonly ClusterData _dal = dal;
+        private readonly ILogger<ClusterUtil> _logger = logger;
+        private readonly SchedulerUtil _schedulerUtil = schedulerUtil;
 
         private static ClusterNode GetCurrentClusterNode()
         {
@@ -627,7 +620,7 @@ namespace Planar.Service.General
         {
             var result = new RunningJobDetails
             {
-                DataMap = new SortedDictionary<string, string?>(),
+                DataMap = [],
                 Description = reply.Description,
                 EffectedRows = reply.EffectedRows == -1 ? null : reply.EffectedRows,
                 FireInstanceId = reply.FireInstanceId,

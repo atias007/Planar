@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Data
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1862:Use the 'StringComparison' method overloads to perform case-insensitive string comparisons", Justification = "EF Core")]
     public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonitorDurationDataLayer
     {
         public async Task AddMonitor(MonitorAction request)

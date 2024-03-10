@@ -42,7 +42,7 @@ namespace Planar.Service
         {
             if (assemblies == null)
             {
-                return new List<Type>();
+                return [];
             }
 
             var loadedProfiles = ExtractProfiles(assemblies);

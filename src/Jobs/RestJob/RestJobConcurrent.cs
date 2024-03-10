@@ -1,17 +1,16 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
+using Quartz;
 
 namespace Planar
 {
-    public class RestJobConcurrent : RestJob
+    [PersistJobDataAfterExecution]
+    public class RestJobConcurrent(
+        ILogger<RestJob> logger,
+        IJobPropertyDataLayer dataLayer,
+        JobMonitorUtil jobMonitorUtil
+            ) : RestJob(logger, dataLayer, jobMonitorUtil)
     {
-        public RestJobConcurrent(
-            ILogger<RestJob> logger,
-            IJobPropertyDataLayer dataLayer,
-            JobMonitorUtil jobMonitorUtil
-            ) : base(logger, dataLayer, jobMonitorUtil)
-        {
-        }
     }
 }
