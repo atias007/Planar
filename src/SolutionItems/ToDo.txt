@@ -271,7 +271,6 @@ V1.6.3
 
 V1.7.0
 ------
-
 - client Libraries
 - add cli ? argument with filter
 - add ExecutionDurationGreaterThan {x} minutes monitor event
@@ -282,3 +281,4 @@ V1.7.0
 - prometeus endpoint
 - validate the argument details in add monitor
 - add maxItems propery to AddAggregateException
+- BUG FIX: send SMTP mail with default credentials
