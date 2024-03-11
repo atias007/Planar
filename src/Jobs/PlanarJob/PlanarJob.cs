@@ -228,7 +228,7 @@ namespace Planar
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 var filename = GetFilenameFoLinux(startInfo.FileName);
-                startInfo.FileName = "dotnet.exe";
+                startInfo.FileName = "dotnet";
                 startInfo.Arguments = $"\"{filename}\" {startInfo.Arguments}";
             }
         }

@@ -19,6 +19,8 @@ internal class Job : BaseJob
             await Task.Delay(i * 1_000);
         });
 
+        Environment.Exit(-1);   
+
         return Task.CompletedTask;
     }
 
