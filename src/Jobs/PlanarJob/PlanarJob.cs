@@ -175,6 +175,11 @@ namespace Planar
 
             if (_process.ExitCode != 0)
             {
+                if (_output.Length > 0)
+                {
+                    MessageBroker.AppendLogRaw(_output.ToString());
+                }
+
                 throw new PlanarJobException($"abnormal process exit code {_process.ExitCode}. this may cause by unwaited tasks\\threads");
             }
         }
