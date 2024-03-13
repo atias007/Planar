@@ -172,16 +172,14 @@ namespace Planar
         {
             if (_process == null) { return; }
             if (!_process.HasExited) { return; }
-
-            if (_process.ExitCode != 0)
+            if (_process.ExitCode == 0) { return; }
+         
+            if (_output.Length > 0)
             {
-                if (_output.Length > 0)
-                {
-                    MessageBroker.AppendLogRaw(_output.ToString());
-                }
-
-                throw new PlanarJobException($"abnormal process exit code {_process.ExitCode}. this may cause by unwaited tasks\\threads");
+                MessageBroker.AppendLogRaw(_output.ToString());
             }
+
+            throw new PlanarJobException($"WARNING! Abnormal process exit code {_process.ExitCode}. this may cause by unwaited tasks\\threads");
         }
 
         private void ValidateHealthCheck()
@@ -198,7 +196,7 @@ namespace Planar
                 var log = new LogEntity
                 {
                     Level = LogLevel.Warning,
-                    Message = "No health check signal from job. Check if the following code: \"PlanarJob.Start<TJob>();\" exists in startup of your console project (Program.cs)"
+                    Message = "WARNING! No health check signal from job. Check if the following code: \"PlanarJob.Start<TJob>();\" exists in startup of your console project (Program.cs)"
                 };
 
                 MessageBroker.AppendLog(log);
