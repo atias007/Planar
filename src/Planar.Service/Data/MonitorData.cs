@@ -51,15 +51,13 @@ namespace Planar.Service.Data
             return data;
         }
 
-        public async Task<int> CountEffectedRowsInHourForJob(string jobId, int hours)
+        public async Task<int> SumEffectedRowsForJob(string jobId, DateTime since)
         {
             var result = await _context.JobInstanceLogs
                 .AsNoTracking()
-                .Where(l =>
-                    l.JobId == jobId &&
-                    EF.Functions.DateDiffSecond(l.StartDate, DateTime.Now) <= hours * 3600)
+                .Where(l => l.JobId == jobId && l.StartDate >= since)
                 .Select(l => l.EffectedRows.GetValueOrDefault())
-                .CountAsync();
+                .SumAsync();
 
             return result;
         }

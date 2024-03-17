@@ -24,17 +24,11 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Monitor;
 
-public class MonitorUtil : IMonitorUtil
+public class MonitorUtil(IServiceScopeFactory serviceScopeFactory, ILogger<MonitorUtil> logger) : IMonitorUtil
 {
     private static readonly ConcurrentDictionary<string, DateTimeOffset> _lockJobEvents = new();
-    private readonly ILogger<MonitorUtil> _logger;
-    private readonly IServiceScopeFactory _serviceScopeFactory;
-
-    public MonitorUtil(IServiceScopeFactory serviceScopeFactory, ILogger<MonitorUtil> logger)
-    {
-        _logger = logger;
-        _serviceScopeFactory = serviceScopeFactory;
-    }
+    private readonly ILogger<MonitorUtil> _logger = logger;
+    private readonly IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
 
     public void Scan(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
     {
@@ -246,7 +240,7 @@ public class MonitorUtil : IMonitorUtil
 
     private static void FillMonitor(Monitor monitor, MonitorAction action, Exception? exception)
     {
-        monitor.Users = new List<MonitorUser>();
+        monitor.Users = [];
         monitor.EventId = action.EventId;
         monitor.EventTitle = GetMonitorEventTitle(action);
         monitor.Group = new MonitorGroup(action.Group);
@@ -293,7 +287,7 @@ public class MonitorUtil : IMonitorUtil
             MessagesParameters = details.MessagesParameters,
         };
 
-        result.MessagesParameters ??= new();
+        result.MessagesParameters ??= [];
 
         result.Message = result.MessageTemplate;
         foreach (var item in result.MessagesParameters)
@@ -536,12 +530,14 @@ public class MonitorUtil : IMonitorUtil
 
             case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanxInyHours:
                 if (args.JobId == null) { return false; }
-                var er1 = await dal.CountEffectedRowsInHourForJob(args.JobId, args.Args[1]);
+                var since1 = DateTime.Now.AddHours(-args.Args[1]);
+                var er1 = await dal.SumEffectedRowsForJob(args.JobId, since1);
                 return er1 > args.Args[0];
 
             case MonitorEvents.ExecutionEndWithEffectedRowsLessThanxInyHours:
                 if (args.JobId == null) { return false; }
-                var er2 = await dal.CountEffectedRowsInHourForJob(args.JobId, args.Args[1]);
+                var since2 = DateTime.Now.AddHours(-args.Args[1]);
+                var er2 = await dal.SumEffectedRowsForJob(args.JobId, since2);
                 return er2 < args.Args[0];
 
             case MonitorEvents.ExecutionDurationGreaterThanxMinutes:
