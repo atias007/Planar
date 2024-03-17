@@ -42,7 +42,7 @@ namespace Planar.Service.API
             var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
 
             // Reschedule job
-            MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            MonitorUtil.Lock(_serviceProvider, info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
             await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
             await Scheduler.PauseJob(info.JobKey);
 
@@ -83,7 +83,7 @@ namespace Planar.Service.API
             var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
 
             // Reschedule job
-            MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            MonitorUtil.Lock(_serviceProvider, info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
             await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
 
             // Pause job
@@ -664,7 +664,7 @@ namespace Planar.Service.API
 
             // Reschedule job
             var triggers = await Scheduler.GetTriggersOfJob(jobKey);
-            MonitorUtil.Lock(jobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            MonitorUtil.Lock(_serviceProvider, jobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
             await Scheduler.ScheduleJob(info, triggers, true);
 
             // Pause job

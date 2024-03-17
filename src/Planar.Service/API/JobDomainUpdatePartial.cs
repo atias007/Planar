@@ -168,7 +168,7 @@ namespace Planar.Service.API
             await ValidateUpdateJob(request, options, metadata);
 
             // Lock monitor events
-            MonitorUtil.Lock(metadata.JobKey, lockSeconds: 5, MonitorEvents.JobDeleted, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            MonitorUtil.Lock(_serviceProvider, metadata.JobKey, lockSeconds: 5, MonitorEvents.JobDeleted, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
 
             // Save for rollback
             await FillRollbackData(metadata);

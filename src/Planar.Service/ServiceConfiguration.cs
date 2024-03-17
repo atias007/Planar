@@ -56,6 +56,7 @@ namespace Planar.Service
             // Service
             services.AddSingleton<MainService>();
             services.AddSingleton<AuditService>();
+            services.AddSingleton<MonitorService>();
             services.AddSingleton<SecurityService>();
             services.AddSingleton<MqttBrokerService>();
             services.AddSingleton<MonitorDurationCache>();
@@ -68,6 +69,7 @@ namespace Planar.Service
             // Host
             services.AddHostedService(p => p.GetRequiredService<MainService>());
             services.AddHostedService(p => p.GetRequiredService<AuditService>());
+            services.AddHostedService(p => p.GetRequiredService<MonitorService>());
             services.AddHostedService(p => p.GetRequiredService<MqttBrokerService>());
             if (AppSettings.Authentication.HasAuthontication)
             {
@@ -77,8 +79,10 @@ namespace Planar.Service
             // Channel
             services.AddSingleton(Channel.CreateUnbounded<AuditMessage>());
             services.AddSingleton(Channel.CreateUnbounded<SecurityMessage>());
+            services.AddSingleton(Channel.CreateUnbounded<MonitorScanMessage>());
             services.AddSingleton<AuditProducer>();
             services.AddSingleton<SecurityProducer>();
+            services.AddSingleton<MonitorScanProducer>();
 
             // AutoMapper
             var assemply = Assembly.Load($"{nameof(Planar)}.{nameof(Service)}");

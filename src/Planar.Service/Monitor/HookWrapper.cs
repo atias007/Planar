@@ -62,7 +62,7 @@ namespace Planar.Service.Monitor
 
         public ILogger Logger { get; private set; } = null!;
 
-        public Task Handle(MonitorDetails details)
+        public Task Handle(MonitorDetails details, CancellationToken cancellationToken)
         {
             if (HookType == HookTypeMembers.External)
             {
@@ -85,7 +85,7 @@ namespace Planar.Service.Monitor
             {
                 var result = ExecuteMethod.Invoke(Instance, new object[] { json });
                 (result as Task)?.Wait();
-            });
+            }, cancellationToken);
         }
 
         public Task HandleSystem(MonitorSystemDetails details, CancellationToken cancellationToken)

@@ -6,17 +6,8 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Audit
 {
-    public class SecurityProducer
+    public class SecurityProducer(Channel<SecurityMessage> channel, ILogger<SecurityProducer> logger)
     {
-        private readonly Channel<SecurityMessage> _channel;
-        private readonly ILogger<SecurityProducer> _logger;
-
-        public SecurityProducer(Channel<SecurityMessage> channel, ILogger<SecurityProducer> logger)
-        {
-            _channel = channel;
-            _logger = logger;
-        }
-
         public void Publish(SecurityMessage message)
         {
             if (AppSettings.Authentication.NoAuthontication) { return; }
@@ -27,14 +18,14 @@ namespace Planar.Service.Audit
         {
             try
             {
-                while (await _channel.Writer.WaitToWriteAsync().ConfigureAwait(false))
+                while (await channel.Writer.WaitToWriteAsync().ConfigureAwait(false))
                 {
-                    if (_channel.Writer.TryWrite(message)) { break; }
+                    if (channel.Writer.TryWrite(message)) { break; }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "fail to publish security message. the message: {@Message}", message);
+                logger.LogError(ex, "fail to publish security message. the message: {@Message}", message);
             }
         }
     }

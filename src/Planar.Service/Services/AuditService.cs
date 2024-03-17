@@ -20,22 +20,12 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Services
 {
-    public class AuditService : BackgroundService
+    public class AuditService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : BackgroundService
     {
-        private readonly Channel<AuditMessage> _channel;
-        private readonly ILogger<AuditService> _logger;
-        private readonly JobKeyHelper _jobKeyHelper;
-        private readonly IScheduler _scheduler;
-        private readonly IServiceScopeFactory _serviceScopeFactory;
-
-        public AuditService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory)
-        {
-            _channel = serviceProvider.GetRequiredService<Channel<AuditMessage>>();
-            _logger = serviceProvider.GetRequiredService<ILogger<AuditService>>();
-            _jobKeyHelper = serviceProvider.GetRequiredService<JobKeyHelper>();
-            _scheduler = serviceProvider.GetRequiredService<IScheduler>();
-            _serviceScopeFactory = serviceScopeFactory;
-        }
+        private readonly Channel<AuditMessage> _channel = serviceProvider.GetRequiredService<Channel<AuditMessage>>();
+        private readonly ILogger<AuditService> _logger = serviceProvider.GetRequiredService<ILogger<AuditService>>();
+        private readonly JobKeyHelper _jobKeyHelper = serviceProvider.GetRequiredService<JobKeyHelper>();
+        private readonly IScheduler _scheduler = serviceProvider.GetRequiredService<IScheduler>();
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -98,7 +88,7 @@ namespace Planar.Service.Services
 
             var jobId = message.JobKey == null ? string.Empty : await _jobKeyHelper.GetJobId(message.JobKey);
 
-            using var scope = _serviceScopeFactory.CreateScope();
+            using var scope = serviceScopeFactory.CreateScope();
             var data = scope.ServiceProvider.GetRequiredService<JobData>();
             var audit = new JobAudit
             {
@@ -122,7 +112,7 @@ namespace Planar.Service.Services
         {
             if (trigger == null) { return null; }
 
-            using var scope = _serviceScopeFactory.CreateScope();
+            using var scope = serviceScopeFactory.CreateScope();
             var mapper = scope.ServiceProvider.GetRequiredService<IMapper>();
 
             if (trigger is ISimpleTrigger t1)

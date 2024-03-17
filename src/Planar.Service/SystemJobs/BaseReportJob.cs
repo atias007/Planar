@@ -125,14 +125,14 @@ public abstract class BaseReportJob : SystemJob
         return true;
     }
 
-    protected static async Task PauseDisabledTrigger(IScheduler scheduler, ITrigger trigger, CancellationToken stoppingToken = default)
+    protected static async Task PauseDisabledTrigger(IServiceProvider serviceProvider, IScheduler scheduler, ITrigger trigger, CancellationToken stoppingToken = default)
     {
         if (!IsTriggerEnabledInData(trigger))
         {
             var state = await scheduler.GetTriggerState(trigger.Key, stoppingToken);
             if (state == TriggerState.Paused) { return; }
 
-            MonitorUtil.Lock(trigger.Key, 5, MonitorEvents.TriggerPaused);
+            MonitorUtil.Lock(serviceProvider, trigger.Key, 5, MonitorEvents.TriggerPaused);
             await scheduler.PauseTrigger(trigger.Key, stoppingToken);
         }
     }
@@ -267,7 +267,7 @@ public abstract class BaseReportJob<TJob> : BaseReportJob
     {
     }
 
-    public static async Task Schedule(IScheduler scheduler, ReportNames reportName, CancellationToken stoppingToken = default)
+    public static async Task Schedule(IServiceProvider serviceProvider, IScheduler scheduler, ReportNames reportName, CancellationToken stoppingToken = default)
     {
         var description = $"System job for generating and send {reportName} report";
 
@@ -290,13 +290,13 @@ public abstract class BaseReportJob<TJob> : BaseReportJob
 
         var triggers = new[] { dailyTrigger, weeklyTrigger, monthlyTrigger, quarterlyTrigger, yearlyTrigger };
 
-        MonitorUtil.Lock(job.Key, 5, MonitorEvents.JobAdded);
+        MonitorUtil.Lock(serviceProvider, job.Key, 5, MonitorEvents.JobAdded);
         await scheduler.ScheduleJob(job, triggers, replace: true, stoppingToken);
-        await PauseDisabledTrigger(scheduler, dailyTrigger, stoppingToken);
-        await PauseDisabledTrigger(scheduler, weeklyTrigger, stoppingToken);
-        await PauseDisabledTrigger(scheduler, monthlyTrigger, stoppingToken);
-        await PauseDisabledTrigger(scheduler, quarterlyTrigger, stoppingToken);
-        await PauseDisabledTrigger(scheduler, yearlyTrigger, stoppingToken);
+        await PauseDisabledTrigger(serviceProvider, scheduler, dailyTrigger, stoppingToken);
+        await PauseDisabledTrigger(serviceProvider, scheduler, weeklyTrigger, stoppingToken);
+        await PauseDisabledTrigger(serviceProvider, scheduler, monthlyTrigger, stoppingToken);
+        await PauseDisabledTrigger(serviceProvider, scheduler, quarterlyTrigger, stoppingToken);
+        await PauseDisabledTrigger(serviceProvider, scheduler, yearlyTrigger, stoppingToken);
     }
 
     protected async Task<bool> SafeExecute<TReport>(IJobExecutionContext context, ReportNames reportName)

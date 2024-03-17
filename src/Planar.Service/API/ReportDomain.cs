@@ -14,12 +14,8 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class ReportDomain : BaseBL<ReportDomain, ReportData>
+    public class ReportDomain(IServiceProvider serviceProvider) : BaseBL<ReportDomain, ReportData>(serviceProvider)
     {
-        public ReportDomain(IServiceProvider serviceProvider) : base(serviceProvider)
-        {
-        }
-
         private static ReportNames ValidateReportName(string name)
         {
             if (!Enum.TryParse<ReportNames>(name, ignoreCase: true, out var reportName))
@@ -120,7 +116,7 @@ namespace Planar.Service.API
             var scheduler = Resolve<IScheduler>();
             var triggers = await scheduler.GetTriggersOfJob(jobKey);
 
-            if (triggers == null || !triggers.Any())
+            if (triggers == null || triggers.Count == 0)
             {
                 throw new InvalidOperationException($"could not found triggers for report with key {jobKey}. report name '{name}'");
             }
@@ -232,21 +228,21 @@ namespace Planar.Service.API
             return items;
         }
 
-        private static async Task PauseDisabledTrigger(IScheduler scheduler, ITrigger trigger)
+        private async Task PauseDisabledTrigger(IScheduler scheduler, ITrigger trigger)
         {
             var state = await scheduler.GetTriggerState(trigger.Key);
             if (state == TriggerState.Paused) { return; }
 
-            MonitorUtil.Lock(trigger.Key, 5, MonitorEvents.TriggerPaused);
+            MonitorUtil.Lock(_serviceProvider, trigger.Key, 5, MonitorEvents.TriggerPaused);
             await scheduler.PauseTrigger(trigger.Key);
         }
 
-        private static async Task ResumeEnabledTrigger(IScheduler scheduler, ITrigger trigger)
+        private async Task ResumeEnabledTrigger(IScheduler scheduler, ITrigger trigger)
         {
             var state = await scheduler.GetTriggerState(trigger.Key);
             if (state != TriggerState.Paused) { return; }
 
-            MonitorUtil.Lock(trigger.Key, 5, MonitorEvents.TriggerResumed);
+            MonitorUtil.Lock(_serviceProvider, trigger.Key, 5, MonitorEvents.TriggerResumed);
             await scheduler.ResumeTrigger(trigger.Key);
         }
 
