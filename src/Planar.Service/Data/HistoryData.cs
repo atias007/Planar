@@ -141,6 +141,17 @@ namespace Planar.Service.Data
             return result;
         }
 
+        public async Task<int?> GetHistoryStatusById(long id)
+        {
+            var result = await _context.JobInstanceLogs
+                .AsNoTracking()
+                .Where(l => l.Id == id)
+                .Select(l => l.Status)
+                .FirstOrDefaultAsync();
+
+            return result;
+        }
+
         public async Task<JobInstanceLog?> GetHistoryByInstanceId(string instanceid)
         {
             var result = await _context.JobInstanceLogs

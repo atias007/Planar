@@ -12,12 +12,8 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class HistoryDomain : BaseBL<HistoryDomain, HistoryData>
+    public class HistoryDomain(IServiceProvider serviceProvider) : BaseBL<HistoryDomain, HistoryData>(serviceProvider)
     {
-        public HistoryDomain(IServiceProvider serviceProvider) : base(serviceProvider)
-        {
-        }
-
         #region OData
 
         public IQueryable<JobInstanceLog> GetHistoryData()
@@ -47,7 +43,7 @@ namespace Planar.Service.API
             var result = await DataLayer.GetHistorySummary(request);
 
             // fill author
-            if (result.Data == null || !result.Data.Any()) { return result; }
+            if (result.Data == null || result.Data.Count == 0) { return result; }
 
             var jobs = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
             foreach (var item in result.Data)
@@ -71,6 +67,12 @@ namespace Planar.Service.API
             // === fix bug cause save \r\n in database ===
             result.Data = result.Data?.Trim();
             return result;
+        }
+
+        public async Task<int> GetHistoryStatusById(long id)
+        {
+            var data = await DataLayer.GetHistoryStatusById(id);
+            return data == null ? throw new RestNotFoundException($"history id {id} could not be found") : data.GetValueOrDefault();
         }
 
         public async Task<JobInstanceLog> GetHistoryByInstanceId(string instanceid)
@@ -134,9 +136,9 @@ namespace Planar.Service.API
             var data = await DataLayer.GetHistoryCounter(request);
             var list = new List<StatisticsCountItem>
             {
-                new StatisticsCountItem { Label = nameof(data.Running), Count = data?.Running ?? 0 },
-                new StatisticsCountItem { Label = nameof(data.Success), Count = data?.Success ?? 0},
-                new StatisticsCountItem { Label = nameof(data.Fail), Count = data ?.Fail ?? 0 }
+                new() { Label = nameof(data.Running), Count = data?.Running ?? 0 },
+                new() { Label = nameof(data.Success), Count = data?.Success ?? 0},
+                new() { Label = nameof(data.Fail), Count = data ?.Fail ?? 0 }
             };
             result.Counter = list;
             return result;

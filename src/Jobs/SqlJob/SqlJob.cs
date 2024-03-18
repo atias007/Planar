@@ -2,7 +2,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
-using Polly;
 using Quartz;
 using System.Data;
 using System.Data.Common;
@@ -13,7 +12,7 @@ namespace Planar
 {
     public abstract class SqlJob : BaseCommonJob<SqlJob, SqlJobProperties>
     {
-        private readonly List<SqlJobException> _exceptions = new();
+        private readonly List<SqlJobException> _exceptions = [];
 
         protected SqlJob(
             ILogger<SqlJob> logger,
@@ -47,7 +46,7 @@ namespace Planar
         {
             if (Properties.Steps == null)
             {
-                Properties.Steps = new List<SqlStep>();
+                Properties.Steps = [];
             }
 
             var total = Properties.Steps.Count;
@@ -91,7 +90,7 @@ namespace Planar
                     }
                 }
 
-                if (_exceptions.Any())
+                if (_exceptions.Count != 0)
                 {
                     throw new AggregateException("there is one or more error(s) in sql job steps. See inner exceptions for more details", _exceptions);
                 }

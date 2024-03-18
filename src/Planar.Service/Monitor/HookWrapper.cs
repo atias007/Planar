@@ -71,7 +71,7 @@ namespace Planar.Service.Monitor
                 {
                     exe = new HookExecuter(Logger, Filename);
                     exe.HandleByExternalHook(details);
-                }).ContinueWith(t => exe.Dispose());
+                }, cancellationToken).ContinueWith(t => exe.Dispose(), cancellationToken);
             }
 
             if (ExecuteMethod == null)

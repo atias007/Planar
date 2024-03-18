@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
@@ -15,6 +16,7 @@ using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -426,6 +428,35 @@ namespace Planar.Service.API
             FillEstimatedEndTime(result);
 
             return result;
+        }
+
+        public async Task<RunningJobDetails> GetRunningInstanceLongPolling(
+            string instanceId,
+            string hash,
+            CancellationToken cancellationToken)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromMinutes(5));
+            while (!cts.IsCancellationRequested)
+            {
+                var data = await GetRunning(instanceId);
+                var currentHash = $"{data.Progress}.{data.EffectedRows}.{data.ExceptionsCount}";
+                if (currentHash != hash)
+                {
+                    return data;
+                }
+
+                try
+                {
+                    await Task.Delay(500, cancellationToken);
+                }
+                catch (TaskCanceledException)
+                {
+                    return data;
+                }
+            }
+
+            throw new RestNotFoundException();
         }
 
         public async Task<RunningJobDetails> GetRunning(string instanceId)

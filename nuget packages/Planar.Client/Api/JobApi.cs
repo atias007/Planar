@@ -403,6 +403,23 @@ namespace Planar.Client
             _ = callback(details);
         }
 
+        // bug fix: test finish while job still running
+        private async Task<bool> IsHistoryStatusRunning(long logId, CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("history/{id}/status", Method.Get)
+                .AddParameter("id", logId, ParameterType.UrlSegment);
+
+            try
+            {
+                var result = await _proxy.InvokeAsync<int>(restRequest, cancellationToken);
+                return result == -1;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
         private async Task GetRunningData(Func<RunningJobDetails, Task> callback, string instanceId, DateTime invokeDate, long logId, CancellationToken cancellationToken)
         {
             // check for very fast finish job
@@ -449,7 +466,7 @@ namespace Planar.Client
             var restRequest = new RestRequest("job/running-instance/{instanceId}/long-polling", Method.Get)
                 .AddParameter("instanceId", instanceId, ParameterType.UrlSegment)
                 .AddQueryParameter("hash", currentHash);
-            restRequest.Timeout = 300_000; // 6 min
+            restRequest.Timeout = 360_000; // 6 min
             var counter = 1;
             while (counter <= 3)
             {

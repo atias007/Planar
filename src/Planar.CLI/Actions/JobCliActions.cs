@@ -516,7 +516,7 @@ namespace Planar.CLI.Actions
             var logId = step3.LogId;
 
             // (3) Get running info
-            var step4 = await TestStep3GetRunningData(instanceId, invokeDate, cancellationToken);
+            var step4 = await TestStep3GetRunningData(instanceId, invokeDate, logId, cancellationToken);
             if (step4 != null) { return step4; }
 
             // (4) Sleep 1 sec
@@ -763,7 +763,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("job/running-instance/{instanceId}/long-polling", Method.Get)
                 .AddParameter("instanceId", instanceId, ParameterType.UrlSegment)
                 .AddQueryParameter("hash", currentHash);
-            restRequest.Timeout = 300_000; // 6 min
+            restRequest.Timeout = 360_000; // 6 min
             var counter = 1;
             while (counter <= 3)
             {
@@ -957,7 +957,16 @@ namespace Planar.CLI.Actions
             return result;
         }
 
-        private static async Task<CliActionResponse?> TestStep3GetRunningData(string instanceId, DateTime invokeDate, CancellationToken cancellationToken)
+        // bug fix: test finish while job still running
+        private static async Task<bool> IsHistoryStatusRunning(long logId, CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("history/{id}/status", Method.Get)
+                .AddParameter("id", logId, ParameterType.UrlSegment);
+            var result = await RestProxy.Invoke<int>(restRequest, cancellationToken);
+            return result.IsSuccessful && result.Data == -1;
+        }
+
+        private static async Task<CliActionResponse?> TestStep3GetRunningData(string instanceId, DateTime invokeDate, long logId, CancellationToken cancellationToken)
         {
             // check for very fast finish job
             var result = await InitGetRunningData(instanceId, cancellationToken);
@@ -989,7 +998,11 @@ namespace Planar.CLI.Actions
                     if (dataTask.Status == TaskStatus.RanToCompletion) { break; }
                 }
 
-                if (!runResult.IsSuccessful) { break; }
+                if (!runResult.IsSuccessful)
+                {
+                    var isRunning = await IsHistoryStatusRunning(logId, cancellationToken);
+                    if (!isRunning) { break; }
+                }
             }
 
             Console.CursorTop -= 1;

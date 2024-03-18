@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
@@ -16,7 +15,7 @@ namespace Planar.Service.Monitor
 {
     internal sealed class HookExecuter : IDisposable
     {
-        private readonly List<string> _output = new();
+        private readonly List<string> _output = [];
         private static readonly TimeSpan _timeout = TimeSpan.FromMinutes(3);
         private readonly ILogger _logger;
         private readonly string _filename;
@@ -179,7 +178,7 @@ namespace Planar.Service.Monitor
 
         private void OnTimeout()
         {
-            Kill("timeout expire");
+            Kill("hook execute timeout expire");
         }
 
         private void Kill(string reason)
@@ -218,7 +217,7 @@ namespace Planar.Service.Monitor
             {
                 var matches = regex.Matches(item);
                 if (
-                    matches.Any() &&
+                    matches.Count != 0 &&
                     matches[0].Success &&
                     matches[0].Groups.Count == 3 &&
                     matches[0].Groups[1].Value == matches[0].Groups[2].Value)

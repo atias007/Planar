@@ -50,15 +50,15 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
                     break;
 
                 case MonitorScanType.ExecuteJob:
-                    await ExecuteMonitor(monitor.MonitorAction, monitor.Event, monitor.JobExecutionContext, monitor.Exception, stoppingToken);
+                    _ = SafeExecuteMonitor(monitor.MonitorAction, monitor.Event, monitor.JobExecutionContext, monitor.Exception, stoppingToken);
                     break;
 
                 case MonitorScanType.ExecuteSystem:
-                    await ExecuteMonitor(monitor.MonitorAction, monitor.Event, monitor.MonitorSystemInfo, monitor.Exception, stoppingToken);
+                    _ = SafeExecuteMonitor(monitor.MonitorAction, monitor.Event, monitor.MonitorSystemInfo, monitor.Exception, stoppingToken);
                     break;
 
                 case MonitorScanType.Lock:
-                    LockJobOrTriggerEvent(monitor.LockKey, monitor.LockSeconds);
+                    _ = LockJobOrTriggerEvent(monitor.LockKey, monitor.LockSeconds);
                     break;
 
                 default:
@@ -102,7 +102,6 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         }
 
         List<MonitorAction> items;
-        var hookTasks = new List<Task>();
 
         if (IsJobOrTriggerEventLock(info, @event)) { return; }
 
@@ -118,17 +117,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
 
         foreach (var action in items)
         {
-            var task = ExecuteMonitor(action, @event, info, exception, cancellationToken);
-            hookTasks.Add(task);
-        }
-
-        try
-        {
-            await Task.WhenAll(hookTasks);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "fail to handle monitor item(s)");
+            _ = SafeExecuteMonitor(action, @event, info, exception, cancellationToken);
         }
     }
 
@@ -152,11 +141,10 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         }
 
         List<MonitorAction> items;
-        var hookTasks = new List<Task>();
 
         try
         {
-            items = LoadMonitorItems(@event, context).Result;
+            items = await LoadMonitorItems(@event, context);
         }
         catch (Exception ex)
         {
@@ -166,27 +154,17 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
 
         foreach (var action in items)
         {
-            var task = ExecuteMonitor(action, @event, context, exception, cancellationToken);
-            hookTasks.Add(task);
-        }
-
-        try
-        {
-            await Task.WhenAll(hookTasks);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "fail to handle monitor item(s)");
+            _ = SafeExecuteMonitor(action, @event, context, exception, cancellationToken);
         }
     }
 
     #region Lock Event
 
-    private static void LockJobOrTriggerEvent(string? key, int? lockSeconds)
+    private static async Task LockJobOrTriggerEvent(string? key, int? lockSeconds)
     {
         if (string.IsNullOrWhiteSpace(key) || lockSeconds.GetValueOrDefault() <= 0) { return; }
         _lockJobEvents.TryAdd(key, DateTimeOffset.Now);
-        Task.Run(() =>
+        await Task.Run(() =>
         {
             Thread.Sleep(lockSeconds.GetValueOrDefault() * 1000);
             _lockJobEvents.TryRemove(key, out _);
@@ -287,7 +265,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
 
     #region Execute Monitor
 
-    private async Task ExecuteMonitor(MonitorAction? action, MonitorEvents @event, IJobExecutionContext? context, Exception? exception, CancellationToken cancellationToken)
+    private async Task SafeExecuteMonitor(MonitorAction? action, MonitorEvents @event, IJobExecutionContext? context, Exception? exception, CancellationToken cancellationToken)
     {
         MonitorDetails? details = null;
         if (action == null) { return; }
@@ -332,7 +310,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
                 await hookInstance.Handle(details, cancellationToken);
 
                 // Save the monitor alert
-                await SaveMonitorAlert(action, details, context);
+                await SafeSaveMonitorAlert(action, details, context);
 
                 // Save the monitor counter
                 await SaveMonitorCounter(action, details);
@@ -342,12 +320,12 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         }
         catch (Exception ex)
         {
-            await SaveMonitorAlert(action, details, context, ex);
             _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title} with hook: {Hook} and distribution group {Group}", action.Id, action.Title, action.Hook, action.Group.Name);
+            await SafeSaveMonitorAlert(action, details, context, ex);
         }
     }
 
-    private async Task ExecuteMonitor(MonitorAction? action, MonitorEvents @event, MonitorSystemInfo? info, Exception? exception, CancellationToken cancellationToken)
+    private async Task SafeExecuteMonitor(MonitorAction? action, MonitorEvents @event, MonitorSystemInfo? info, Exception? exception, CancellationToken cancellationToken)
     {
         MonitorSystemDetails? details = null;
         if (action == null) { return; }
@@ -369,14 +347,14 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
                 details = GetMonitorDetails(action, info, exception);
                 _logger.LogInformation("monitor item id: {Id}, title: {Title} start to handle event {Event} with hook: {Hook} and distribution group {Group}", action.Id, action.Title, @event, action.Hook, action.Group.Name);
                 await hookInstance.HandleSystem(details, cancellationToken);
-                await SaveMonitorAlert(action, details);
+                await SafeSaveMonitorAlert(action, details);
                 return;
             }
         }
         catch (Exception ex)
         {
-            await SaveMonitorAlert(action, details, ex);
             _logger.LogError(ex, "fail to handle monitor item id: {Id}, title: {Title} with hook: {Hook}", action.Id, action.Title, action.Hook);
+            await SafeSaveMonitorAlert(action, details, ex);
         }
     }
 
@@ -621,7 +599,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         return false;
     }
 
-    private async Task SaveMonitorAlert(MonitorAction action, MonitorDetails? details, IJobExecutionContext context, Exception? exception = null)
+    private async Task SafeSaveMonitorAlert(MonitorAction action, MonitorDetails? details, IJobExecutionContext context, Exception? exception = null)
     {
         try
         {
@@ -648,7 +626,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         }
     }
 
-    private async Task SaveMonitorAlert(MonitorAction action, MonitorSystemDetails? details, Exception? exception = null)
+    private async Task SafeSaveMonitorAlert(MonitorAction action, MonitorSystemDetails? details, Exception? exception = null)
     {
         try
         {

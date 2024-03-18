@@ -246,6 +246,7 @@ namespace Planar.Controllers
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_job_running_instanceid", Description = "Get runnng job info", Summary = "Get Runnng Job Info")]
         [OkJsonResponse(typeof(RunningJobDetails))]
+        [NotFoundResponse]
         [BadRequestResponse]
         public async Task<ActionResult<RunningJobDetails>> GetRunningInstance([FromRoute][Required] string instanceId)
         {
@@ -261,21 +262,8 @@ namespace Planar.Controllers
             [FromQuery][Required] string hash,
             CancellationToken cancellationToken)
         {
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            cts.CancelAfter(TimeSpan.FromMinutes(5));
-            while (!cts.IsCancellationRequested)
-            {
-                var data = await BusinesLayer.GetRunning(instanceId);
-                var currentHash = $"{data.Progress}.{data.EffectedRows}.{data.ExceptionsCount}";
-                if (currentHash != hash)
-                {
-                    return Ok(data);
-                }
-
-                await Task.Delay(500, cancellationToken);
-            }
-
-            return NotFound();
+            var result = await BusinesLayer.GetRunningInstanceLongPolling(instanceId, hash, cancellationToken);
+            return Ok(result);
         }
 
         [HttpGet("running")]
