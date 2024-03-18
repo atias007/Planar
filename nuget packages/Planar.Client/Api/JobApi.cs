@@ -451,7 +451,11 @@ namespace Planar.Client
                     if (dataTask.Status == TaskStatus.RanToCompletion) { break; }
                 }
 
-                if (runResult == null) { break; }
+                if (runResult == null)
+                {
+                    var isRunning = await IsHistoryStatusRunning(logId, cancellationToken);
+                    if (!isRunning) { break; }
+                }
             }
         }
 
