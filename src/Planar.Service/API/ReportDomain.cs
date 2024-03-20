@@ -268,7 +268,7 @@ public class ReportDomain(IServiceProvider serviceProvider) : BaseBL<ReportDomai
 
         if (!allEmails.Any())
         {
-            throw new RestValidationException(group, $"group with name '{groupName}' has no users with valid emails");
+            throw new RestValidationException(groupText, $"group with name '{groupName}' has no users with valid emails");
         }
     }
 }
