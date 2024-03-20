@@ -255,7 +255,7 @@ public class ReportDomain(IServiceProvider serviceProvider) : BaseBL<ReportDomai
         var id = await groupDal.GetGroupId(groupName);
         var group =
             await groupDal.GetGroupWithUsers(id)
-            ?? throw new RestValidationException(group, $"group with name '{groupName}' is not exists");
+            ?? throw new RestValidationException(groupText, $"group with name '{groupName}' is not exists");
 
         // get all emails & validate
         var emails1 = group.Users.Select(u => u.EmailAddress1);
