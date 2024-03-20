@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace Planar.Hook
 {
@@ -16,18 +18,18 @@ namespace Planar.Hook
 
         public abstract Task HandleSystem(IMonitorSystemDetails monitorDetails);
 
-        internal Task Execute(string json)
+        internal void Execute(string json)
         {
             var wrapper = JsonSerializer.Deserialize<MonitorMessageWrapper>(json)
                 ?? throw new PlanarHookException("Fail to deserialize MonitorMessageWrapper");
 
             if (wrapper.Subject == nameof(MonitorDetails))
             {
-                return ExecuteHandle(wrapper);
+                ExecuteHandle(wrapper);
             }
             else if (wrapper.Subject == nameof(MonitorSystemDetails))
             {
-                return ExecuteHandleSystem(wrapper);
+                ExecuteHandleSystem(wrapper);
             }
             else
             {
@@ -35,26 +37,30 @@ namespace Planar.Hook
             }
         }
 
-        private Task ExecuteHandle(MonitorMessageWrapper wrapper)
+        private void ExecuteHandle(MonitorMessageWrapper wrapper)
         {
-            var monitorDetails = InitializeMessageDetails<MonitorDetails>(wrapper);
-
-            return Handle(monitorDetails)
-                .ContinueWith(t =>
-                {
-                    if (t.Exception != null) { throw t.Exception; }
-                });
+            try
+            {
+                var monitorDetails = InitializeMessageDetails<MonitorDetails>(wrapper);
+                Handle(monitorDetails).Wait();
+            }
+            catch (Exception ex)
+            {
+                LogError(ex.ToString());
+            }
         }
 
-        private Task ExecuteHandleSystem(MonitorMessageWrapper wrapper)
+        private void ExecuteHandleSystem(MonitorMessageWrapper wrapper)
         {
-            var monitorDetails = InitializeMessageDetails<MonitorSystemDetails>(wrapper);
-
-            return HandleSystem(monitorDetails)
-                .ContinueWith(t =>
-                {
-                    if (t.Exception != null) { throw t.Exception; }
-                });
+            try
+            {
+                var monitorDetails = InitializeMessageDetails<MonitorSystemDetails>(wrapper);
+                HandleSystem(monitorDetails).Wait();
+            }
+            catch (Exception ex)
+            {
+                LogError(ex.ToString());
+            }
         }
 
         protected static bool IsValidUri(string? url)
@@ -66,7 +72,15 @@ namespace Planar.Hook
         protected virtual void Log(LogLevel level, string message)
         {
             var key = level.ToString().ToLower();
-            Console.WriteLine($"<hook.log.{key}>{message}</hook.log.{key}>");
+
+            message = message
+                .Replace("\r\n", Consts.HookNewLineLogText)
+                .Replace("\r", Consts.HookNewLineLogText)
+                .Replace("\n", Consts.HookNewLineLogText);
+
+            var text = new XElement("t", message).LastNode.ToString();
+
+            Console.WriteLine($"<hook.log.{key}>{text}</hook.log.{key}>");
         }
 
         protected virtual void LogError(string message)

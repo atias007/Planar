@@ -31,9 +31,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HelloWorld", "HelloWorld\He
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HelloWorldWithData", "HelloWorldWithData\HelloWorldWithData.csproj", "{038FAD63-2ECD-4890-AF96-29BFCAE542DB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AggregateException", "AggregateException\AggregateException.csproj", "{50B307F9-662B-437A-B4B3-F56C072E9128}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AggregateException", "AggregateException\AggregateException.csproj", "{50B307F9-662B-437A-B4B3-F56C072E9128}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AbnormalExitCode", "AbnormalExitCode\AbnormalExitCode.csproj", "{0A6F808D-2952-4403-B872-5F0ABC0C3E69}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AbnormalExitCode", "AbnormalExitCode\AbnormalExitCode.csproj", "{0A6F808D-2952-4403-B872-5F0ABC0C3E69}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

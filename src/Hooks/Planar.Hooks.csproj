@@ -14,8 +14,8 @@
     <PackageReference Include="CloudNative.CloudEvents.SystemTextJson" Version="2.7.1" />
     <PackageReference Include="MailKit" Version="4.4.0" />
     <PackageReference Include="Planar.Hook" Version="1.7.0" />
-    <PackageReference Include="StackExchange.Redis" Version="2.7.27" />
-    <PackageReference Include="Twilio" Version="7.0.0" />
+    <PackageReference Include="StackExchange.Redis" Version="2.7.33" />
+    <PackageReference Include="Twilio" Version="7.0.2" />
   </ItemGroup>
 
   <ItemGroup>

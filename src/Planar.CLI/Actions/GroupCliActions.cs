@@ -115,7 +115,7 @@ namespace Planar.CLI.Actions
 
             if (request.Role == null) { return CliActionResponse.Empty; }
 
-            if (!ConfirmAction($"change group role to {request.Role.ToString()?.ToLower()}")) { return CliActionResponse.Empty; }
+            if (!ConfirmAction($"change group role to {request.Role.ToString().ToLower()}")) { return CliActionResponse.Empty; }
 
             var restRequest = new RestRequest("group/{name}/role/{role}", Method.Patch)
                .AddUrlSegment("name", request.Name)

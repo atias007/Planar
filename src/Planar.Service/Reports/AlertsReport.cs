@@ -9,13 +9,9 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Reports
 {
-    public sealed class AlertsReport : BaseReport
+    public sealed class AlertsReport(IServiceScopeFactory serviceScope) : BaseReport(serviceScope)
     {
         public override string ReportName => "Alerts";
-
-        public AlertsReport(IServiceScopeFactory serviceScope) : base(serviceScope)
-        {
-        }
 
         public override async Task<string> Generate(DateScope dateScope)
         {
@@ -80,7 +76,7 @@ namespace Planar.Service.Reports
             };
 
             var response = await monitorData.GetMonitorsAlerts(request);
-            var result = response.Data ?? new List<MonitorAlertRowModel>();
+            var result = response.Data ?? [];
             return result;
         }
     }

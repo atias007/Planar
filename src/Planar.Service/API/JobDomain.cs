@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
@@ -15,6 +16,7 @@ using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -282,7 +284,7 @@ namespace Planar.Service.API
 
             var resources = assembly.GetManifestResourceNames();
             var resourceName =
-                Array.Find(resources, r => r.ToLower() == $"{typeName}.JobFile.yml".ToLower()) ??
+                Array.Find(resources, r => r.Equals($"{typeName}.JobFile.yml", StringComparison.CurrentCultureIgnoreCase)) ??
                 throw notFoundException.Value;
 
             using Stream? stream =
@@ -409,13 +411,63 @@ namespace Planar.Service.API
             return result;
         }
 
+        public async Task<RunningJobDetails> GetRunningInstanceLongPolling(
+            string instanceId,
+            string hash,
+            CancellationToken cancellationToken)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromMinutes(5));
+            while (!cts.IsCancellationRequested)
+            {
+                var data = await GetRunning(instanceId);
+                var currentHash = $"{data.Progress}.{data.EffectedRows}.{data.ExceptionsCount}";
+                if (currentHash != hash)
+                {
+                    return data;
+                }
+
+                try
+                {
+                    await Task.Delay(500, cancellationToken);
+                }
+                catch (TaskCanceledException)
+                {
+                    return data;
+                }
+            }
+
+            throw new RestNotFoundException();
+        }
+
+        public async Task<RunningJobData> GetRunningData(string instanceId)
+        {
+            var result = await SchedulerUtil.GetRunningData(instanceId);
+            if (result != null)
+            {
+                return result;
+            }
+
+            if (AppSettings.Cluster.Clustering)
+            {
+                result = await ClusterUtil.GetRunningData(instanceId);
+            }
+
+            if (result == null)
+            {
+                throw new RestNotFoundException($"instanceId {instanceId} was not found");
+            }
+
+            return result;
+        }
+
         public async Task<List<RunningJobDetails>> GetRunning()
         {
             var result = await SchedulerUtil.GetRunningJobs();
             if (AppSettings.Cluster.Clustering)
             {
                 var clusterResult = await ClusterUtil.GetRunningJobs();
-                result ??= new List<RunningJobDetails>();
+                result ??= [];
 
                 if (clusterResult != null)
                 {
@@ -442,27 +494,6 @@ namespace Planar.Service.API
             }
 
             FillEstimatedEndTime(result);
-
-            return result;
-        }
-
-        public async Task<RunningJobData> GetRunningData(string instanceId)
-        {
-            var result = await SchedulerUtil.GetRunningData(instanceId);
-            if (result != null)
-            {
-                return result;
-            }
-
-            if (AppSettings.Cluster.Clustering)
-            {
-                result = await ClusterUtil.GetRunningData(instanceId);
-            }
-
-            if (result == null)
-            {
-                throw new RestNotFoundException($"instanceId {instanceId} was not found");
-            }
 
             return result;
         }
@@ -500,13 +531,13 @@ namespace Planar.Service.API
             var jobKey = await JobKeyHelper.GetJobKey(request);
             ValidateDataMap(request.Data, "invoke");
 
-            request.Data ??= new Dictionary<string, string?>();
+            request.Data ??= [];
             if (request.NowOverrideValue.HasValue)
             {
                 request.Data.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value.ToString());
             }
 
-            if (request.Data.Any())
+            if (request.Data.Count != 0)
             {
                 var data = new JobDataMap(request.Data);
                 await Scheduler.TriggerJob(jobKey, data);
@@ -554,7 +585,7 @@ namespace Planar.Service.API
                 newTrigger = newTrigger.UsingJobData(Consts.TriggerTimeout, timeoutValue);
             }
 
-            if (request.Data != null && request.Data.Any())
+            if (request.Data != null && request.Data.Count != 0)
             {
                 foreach (var item in request.Data)
                 {

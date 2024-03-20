@@ -60,6 +60,7 @@ namespace Planar.Service.Listeners
         {
             return Task.Run(() =>
             {
+                if (IsSystemJobKey(jobKey)) { return; }
                 if (IsLock(nameof(JobInterrupted), jobKey.ToString())) { return; }
                 var info = GetJobKeyMonitorSystemInfo(jobKey, "canceled");
                 SafeSystemScan(MonitorEvents.JobCanceled, info, null);
@@ -90,6 +91,7 @@ namespace Planar.Service.Listeners
 
         public Task JobScheduled(ITrigger trigger, CancellationToken cancellationToken = default)
         {
+            //// if (TriggerKeyHelper.IsSystemTriggerKey(trigger.Key)) { return; }
             return Task.CompletedTask;
         }
 
@@ -105,6 +107,7 @@ namespace Planar.Service.Listeners
 
         public Task JobUnscheduled(TriggerKey triggerKey, CancellationToken cancellationToken = default)
         {
+            //// if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return; }
             return Task.CompletedTask;
         }
 
@@ -178,6 +181,7 @@ namespace Planar.Service.Listeners
         {
             return Task.Run(() =>
             {
+                if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return; }
                 if (IsLock(nameof(TriggerPaused), triggerKey.ToString())) { return; }
                 var info = GetTriggerKeyMonitorSystemInfo(triggerKey, "paused");
                 SafeSystemScan(MonitorEvents.TriggerPaused, info, null);
@@ -188,6 +192,7 @@ namespace Planar.Service.Listeners
         {
             return Task.Run(() =>
             {
+                if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return; }
                 if (IsLock(nameof(TriggerResumed), triggerKey.ToString())) { return; }
                 var info = GetTriggerKeyMonitorSystemInfo(triggerKey, "resumed");
                 SafeSystemScan(MonitorEvents.TriggerResumed, info, null);

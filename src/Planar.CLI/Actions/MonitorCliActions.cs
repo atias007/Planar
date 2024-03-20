@@ -183,8 +183,6 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("monitor/try", Method.Post)
                 .AddBody(request);
 
-            restRequest.Timeout = 120000;
-            AnsiConsole.MarkupLine($"[grey62]  > (please wait... this action may take up to 2 minutes)[/]");
             return await Execute(restRequest, cancellationToken);
         }
 

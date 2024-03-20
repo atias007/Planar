@@ -21,17 +21,17 @@ namespace Planar.Service.API
     public class MonitorDomain(IServiceProvider serviceProvider) : BaseBL<MonitorDomain, MonitorData>(serviceProvider)
     {
         private static readonly int[] _counterEvents = [
-            (int) MonitorEvents.ClusterHealthCheckFail,
-            (int) MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx,
-            (int) MonitorEvents.ExecutionEndWithEffectedRowsLessThanx,
-            (int) MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanxInyHours,
-            (int) MonitorEvents.ExecutionEndWithEffectedRowsLessThanxInyHours,
-            (int) MonitorEvents.ExecutionFail,
-            (int) MonitorEvents.ExecutionFailxTimesInRow,
-            (int) MonitorEvents.ExecutionFailxTimesInyHours,
-            (int) MonitorEvents.ExecutionLastRetryFail,
-            (int) MonitorEvents.ExecutionSuccessWithNoEffectedRows,
-            (int) MonitorEvents.ExecutionVetoed];
+            (int)MonitorEvents.ClusterHealthCheckFail,
+            (int)MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx,
+            (int)MonitorEvents.ExecutionEndWithEffectedRowsLessThanx,
+            (int)MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanxInyHours,
+            (int)MonitorEvents.ExecutionEndWithEffectedRowsLessThanxInyHours,
+            (int)MonitorEvents.ExecutionFail,
+            (int)MonitorEvents.ExecutionFailxTimesInRow,
+            (int)MonitorEvents.ExecutionFailxTimesInyHours,
+            (int)MonitorEvents.ExecutionLastRetryFail,
+            (int)MonitorEvents.ExecutionSuccessWithNoEffectedRows,
+            (int)MonitorEvents.ExecutionVetoed];
 
         public static List<MonitorEventModel> GetEvents()
         {
@@ -261,28 +261,22 @@ namespace Planar.Service.API
                 Title = "Test Monitor"
             };
 
-            ExecuteMonitorResult result;
             if (MonitorEventsExtensions.IsSystemMonitorEvent(monitorEvent))
             {
                 var info = new MonitorSystemInfo
                 (
                     $"This is test monitor for system event {monitorEvent}"
                 );
-                result = await monitorUtil.ExecuteMonitor(action, monitorEvent, info, exception);
+                await monitorUtil.ExecuteMonitor(action, monitorEvent, info, exception);
             }
             else if (MonitorEventsExtensions.IsSimpleJobMonitorEvent(monitorEvent))
             {
                 var context = new TestJobExecutionContext(request);
-                result = await monitorUtil.ExecuteMonitor(action, monitorEvent, context, exception);
+                await monitorUtil.ExecuteMonitor(action, monitorEvent, context, exception);
             }
             else
             {
-                throw new RestValidationException(nameof(MonitorTestRequest.EventName), $"monitor enent '{monitorEvent}' is not supported for test");
-            }
-
-            if (!result.Success)
-            {
-                throw new RestValidationException(string.Empty, result.Failure ?? "general error");
+                throw new RestValidationException(nameof(MonitorTestRequest.EventName), $"monitor event '{monitorEvent}' is not supported for test");
             }
         }
 

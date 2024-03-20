@@ -19,12 +19,13 @@ FolderMonitorJob (Free space, max files, max file created age, max file modified
 RabbitMQMonitorJob (max items, time)
 HealthCheckMonitorJob (url, status code, timeout)
 RedisStreamMonitorJob
-RedisKeyExpireJob
 ------
 MalamCloudLatencyJob
 
 -------------------
-	
+
+SQL Query Job (https://codepen.io/FluidOfInsanity/pen/yaLRjd)
+
 
 - BACKLOG ----------------------------------------------------------------------------
 

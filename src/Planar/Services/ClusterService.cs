@@ -12,14 +12,9 @@ using System.Threading.Tasks;
 
 namespace Planar
 {
-    internal class ClusterService : PlanarCluster.PlanarClusterBase
+    internal class ClusterService(IServiceScopeFactory serviceScopeFactory) : PlanarCluster.PlanarClusterBase
     {
-        private readonly IServiceScopeFactory _serviceScopeFactory;
-
-        public ClusterService(IServiceScopeFactory serviceScopeFactory)
-        {
-            _serviceScopeFactory = serviceScopeFactory;
-        }
+        private readonly IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
 
         // NEED CHECK
         public override async Task<Empty> ConfigFlush(Empty request, ServerCallContext context)

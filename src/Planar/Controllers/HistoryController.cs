@@ -43,6 +43,15 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
+        [HttpGet("{id}/status")]
+        [ViewerAuthorize]
+        [ApiExplorerSettings(IgnoreApi = true)]
+        public async Task<ActionResult<int>> GetHistoryStatusById([FromRoute][LongId] long id)
+        {
+            var result = await BusinesLayer.GetHistoryStatusById(id);
+            return Ok(result);
+        }
+
         [HttpGet("by-instanceid/{instanceid}")]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_history_by_instanceid_instanceid", Description = "Get history by instance id", Summary = "Get History By Instance Id")]

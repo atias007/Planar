@@ -5,20 +5,17 @@ using System.Reflection;
 
 namespace FluentValidation;
 
-public class EnumValidatorForInteger<T, TProperty> : PropertyValidator<T, TProperty>
+public class EnumValidatorForInteger<T, TProperty>(Type enumType) : PropertyValidator<T, TProperty>
 {
-    private readonly Type _enumType;
-
-    public EnumValidatorForInteger(Type enumType)
-    {
-        _enumType = enumType;
-    }
+    private readonly Type _enumType = enumType;
 
     public override string Name => "EnumValidator";
 
     public override bool IsValid(ValidationContext<T> context, TProperty value)
     {
+#pragma warning disable S2955 // Generic parameters not constrained to reference types should not be compared to "null"
         if (value == null) { return true; }
+#pragma warning restore S2955 // Generic parameters not constrained to reference types should not be compared to "null"
 
         var underlyingEnumType = Nullable.GetUnderlyingType(_enumType) ?? _enumType;
 

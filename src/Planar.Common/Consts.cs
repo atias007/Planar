@@ -57,6 +57,8 @@ namespace Planar
         public const string ProductionEnvironment = "Production";
         public const string RecoveringJobsGroup = "RECOVERING_JOBS";
 
+        public const string HookNewLineLogText = "~~~<newline>~~~";
+
         public static bool IsDataKeyValid(string key)
         {
             return !Array.Exists(AllDataKeys, k => string.Equals(k, key, StringComparison.OrdinalIgnoreCase));

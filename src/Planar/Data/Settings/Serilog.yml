@@ -2,12 +2,12 @@ Serilog:
   MinimumLevel:
     Default: Debug
     Override:
-      Quartz: Information
-      Microsoft: Information
-      System: Information
-      Microsoft.Hosting.Lifetime: Information
-      Microsoft.AspNetCore: Warning
-      Microsoft.EntityFrameworkCore.Database.Command: Warning
-      Microsoft.EntityFrameworkCore.Infrastructure: Warning
+      Quartz: Debug
+      Microsoft: Debug
+      System: Debug
+      Microsoft.Hosting.Lifetime: Debug
+      Microsoft.AspNetCore: Debug
+      Microsoft.EntityFrameworkCore.Database.Command: Debug
+      Microsoft.EntityFrameworkCore.Infrastructure: Debug
   WriteTo:
   - Name: Console
