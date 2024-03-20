@@ -6,14 +6,10 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs;
 
-public sealed class AlertsReportJob : BaseReportJob<AlertsReportJob>, IJob
+public sealed class AlertsReportJob(IServiceScopeFactory serviceScope, ILogger<AlertsReportJob> logger)
+    : BaseReportJob<AlertsReportJob>(serviceScope, logger), IJob
 {
     public static ReportNames ReportName => ReportNames.Alerts;
-
-    public AlertsReportJob(IServiceScopeFactory serviceScope, ILogger<AlertsReportJob> logger)
-        : base(serviceScope, logger)
-    {
-    }
 
     public async Task Execute(IJobExecutionContext context)
     {

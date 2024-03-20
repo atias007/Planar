@@ -25,6 +25,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
 	  <Compile Include="..\Planar.Common\PlanarConvert.cs" Link="Internals\PlanarConvert.cs" />
 	  <Compile Include="..\Planar.Job\Argument.cs" Link="Internals\Argument.cs" />
 	  <Compile Include="..\Planar.Job\RunningMode.cs" Link="Internals\RunningMode.cs" />

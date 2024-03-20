@@ -222,12 +222,27 @@ namespace Planar.Service.Monitor
                     matches[0].Groups.Count == 3 &&
                     matches[0].Groups[1].Value == matches[0].Groups[2].Value)
                 {
-                    var doc = XDocument.Parse(matches[0].Groups[0].Value);
-                    var message = doc.Root?.Value;
+                    var value = matches[0].Groups[0].Value;
+                    var message = GetMessage(value);
                     var level = matches[0].Groups[1].Value;
                     if (!Enum.TryParse<LogLevel>(level, ignoreCase: true, out var logLevel)) { continue; }
                     _logger.Log(logLevel, message);
                 }
+            }
+        }
+
+        private static string GetMessage(string text)
+        {
+            try
+            {
+                text = text.Replace(Consts.HookNewLineLogText, "\r\n");
+                var doc = XDocument.Parse(text);
+                var message = doc.Root?.Value;
+                return message ?? string.Empty;
+            }
+            catch
+            {
+                return text;
             }
         }
 

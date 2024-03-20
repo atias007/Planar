@@ -99,7 +99,7 @@ namespace Planar.CLI
         public static string FormatExceptionCount(int count)
         {
             if (count <= 0) { return "0"; }
-            return $"[red]{count}[/]";
+            return $"[red]{count:N0}[/]";
         }
 
         public static string FormatJobKey(string? group, string? name)

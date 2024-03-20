@@ -132,7 +132,7 @@ public abstract class BaseReportJob : SystemJob
             var state = await scheduler.GetTriggerState(trigger.Key, stoppingToken);
             if (state == TriggerState.Paused) { return; }
 
-            MonitorUtil.Lock(serviceProvider, trigger.Key, 5, MonitorEvents.TriggerPaused);
+            MonitorUtil.Lock(serviceProvider, trigger.Key, 30, MonitorEvents.TriggerPaused);
             await scheduler.PauseTrigger(trigger.Key, stoppingToken);
         }
     }
@@ -156,7 +156,7 @@ public abstract class BaseReportJob : SystemJob
         var group = await groupData.GetGroupWithUsers(id)
             ?? throw new InvalidOperationException($"distribution group '{groupName}' could not found");
 
-        if (!group.Users.Any())
+        if (group.Users.Count == 0)
         {
             throw new InvalidOperationException($"distribution group '{groupName}' has no users");
         }

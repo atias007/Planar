@@ -35,6 +35,7 @@ namespace Planar.Service.Listeners.Base
         {
             try
             {
+                if (JobKeyHelper.IsSystemJobKey(context.JobDetail.Key)) { return; }
                 if (MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
 
                 using var scope = _serviceScopeFactory.CreateScope();

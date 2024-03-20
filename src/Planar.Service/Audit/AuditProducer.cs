@@ -5,17 +5,8 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Audit
 {
-    internal class AuditProducer
+    internal class AuditProducer(Channel<AuditMessage> channel, ILogger<AuditProducer> logger)
     {
-        private readonly Channel<AuditMessage> _channel;
-        private readonly ILogger<AuditProducer> _logger;
-
-        public AuditProducer(Channel<AuditMessage> channel, ILogger<AuditProducer> logger)
-        {
-            _channel = channel;
-            _logger = logger;
-        }
-
         public void Publish(AuditMessage message)
         {
             _ = SafePublishInner(message);
@@ -25,14 +16,14 @@ namespace Planar.Service.Audit
         {
             try
             {
-                while (await _channel.Writer.WaitToWriteAsync().ConfigureAwait(false))
+                while (await channel.Writer.WaitToWriteAsync().ConfigureAwait(false))
                 {
-                    if (_channel.Writer.TryWrite(message)) { break; }
+                    if (channel.Writer.TryWrite(message)) { break; }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "fail to publish audit message. the message: {@Message}", message);
+                logger.LogError(ex, "fail to publish audit message. the message: {@Message}", message);
             }
         }
     }

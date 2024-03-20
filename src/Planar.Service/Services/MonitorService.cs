@@ -38,15 +38,16 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         while (!reader.Completion.IsCompleted && await reader.WaitToReadAsync(stoppingToken))
         {
             if (!reader.TryRead(out var monitor)) { continue; }
+            if (IsInternalEvent(monitor)) { continue; }
 
             switch (monitor.Type)
             {
                 case MonitorScanType.ScanJob:
-                    await SafeScanInner(monitor.Event, monitor.JobExecutionContext, monitor.Exception, stoppingToken);
+                    _ = SafeScanInner(monitor.Event, monitor.JobExecutionContext, monitor.Exception, stoppingToken);
                     break;
 
                 case MonitorScanType.ScanSystem:
-                    await SafeScanInner(monitor.Event, monitor.MonitorSystemInfo, monitor.Exception, stoppingToken);
+                    _ = SafeScanInner(monitor.Event, monitor.MonitorSystemInfo, monitor.Exception, stoppingToken);
                     break;
 
                 case MonitorScanType.ExecuteJob:
@@ -67,6 +68,12 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         }
 
         _channel.Writer.TryComplete();
+    }
+
+    private static bool IsInternalEvent(MonitorScanMessage message)
+    {
+        if (message.JobExecutionContext != null && JobKeyHelper.IsSystemJobKey(message.JobExecutionContext.JobDetail.Key)) { return true; }
+        return false;
     }
 
     private async Task SafeScanInner(MonitorEvents @event, MonitorSystemInfo? info, Exception? exception, CancellationToken cancellationToken)

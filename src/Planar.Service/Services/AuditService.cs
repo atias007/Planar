@@ -30,7 +30,7 @@ namespace Planar.Service.Services
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var reader = _channel.Reader;
-            while (!reader.Completion.IsCompleted && await reader.WaitToReadAsync(stoppingToken))
+            while (!reader.Completion.IsCompleted && await reader.WaitToReadAsync(stoppingToken).ConfigureAwait(false))
             {
                 if (reader.TryRead(out var msg))
                 {

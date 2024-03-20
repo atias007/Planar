@@ -1081,7 +1081,7 @@ namespace Planar.CLI.Actions
                 var endSpan = estimateEnd == null ? data.EstimatedEndTime : estimateEnd.Value.Subtract(DateTime.Now);
                 var title =
                         $" [gold3_1][[x]][/] Progress: [wheat1]{data.Progress}[/]%  |" +
-                        $"  Effected Row(s): [wheat1]{data.EffectedRows.GetValueOrDefault()}[/]  |" +
+                        $"  Effected Row(s): [wheat1]{CliTableFormat.FormatNumber(data.EffectedRows)}[/]  |" +
                         $"  Ex. Count: {CliTableFormat.FormatExceptionCount(data.ExceptionsCount)}  |" +
                         $"  Run Time: [wheat1]{CliTableFormat.FormatTimeSpan(span)}[/]  |" +
                         $"  End Time: [wheat1]{CliTableFormat.FormatTimeSpan(endSpan)}[/]     ";
