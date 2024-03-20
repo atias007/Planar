@@ -16,7 +16,6 @@ using Planar.Service.Validation;
 using Quartz;
 using Quartz.Util;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -30,6 +29,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
 {
     private readonly Channel<MonitorScanMessage> _channel = serviceProvider.GetRequiredService<Channel<MonitorScanMessage>>();
     private readonly ILogger<MonitorService> _logger = serviceProvider.GetRequiredService<ILogger<MonitorService>>();
+    private const string nullText = "[null]";
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -563,8 +563,8 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         {
             _logger.LogError(ex,
                 "fail to save monitor alert for monitor {Title} with event {Event}",
-                details?.MonitorTitle ?? "[null]",
-                details?.EventTitle ?? "[null]");
+                details?.MonitorTitle ?? nullText,
+                details?.EventTitle ?? nullText);
         }
     }
 
@@ -588,7 +588,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         {
             _logger.LogError(ex,
                 "fail to save monitor alert for monitor {Title} with event id {Id}",
-                details?.MonitorTitle ?? "[null]",
+                details?.MonitorTitle ?? nullText,
                 details?.EventId ?? 0);
         }
     }
@@ -650,8 +650,8 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         {
             _logger.LogError(ex,
                 "fail to save monitor counter for monitor {Title} with event {Event}",
-                details?.MonitorTitle ?? "[null]",
-                details?.EventTitle ?? "[null]");
+                details?.MonitorTitle ?? nullText,
+                details?.EventTitle ?? nullText);
         }
     }
 

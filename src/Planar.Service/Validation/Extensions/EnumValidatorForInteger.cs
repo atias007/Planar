@@ -13,7 +13,9 @@ public class EnumValidatorForInteger<T, TProperty>(Type enumType) : PropertyVali
 
     public override bool IsValid(ValidationContext<T> context, TProperty value)
     {
+#pragma warning disable S2955 // Generic parameters not constrained to reference types should not be compared to "null"
         if (value == null) { return true; }
+#pragma warning restore S2955 // Generic parameters not constrained to reference types should not be compared to "null"
 
         var underlyingEnumType = Nullable.GetUnderlyingType(_enumType) ?? _enumType;
 

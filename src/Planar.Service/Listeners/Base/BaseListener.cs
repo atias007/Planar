@@ -75,7 +75,7 @@ namespace Planar.Service.Listeners.Base
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, $"Error initialize/Execute DataLayer at {nameof(BaseListener<T>)}");
+                _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(BaseListener<T>));
                 throw;
             }
         }
@@ -95,7 +95,7 @@ namespace Planar.Service.Listeners.Base
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, $"Error initialize/Execute DataLayer at {nameof(BaseListener<T>)}");
+                _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(BaseListener<T>));
                 throw;
             }
         }
@@ -115,7 +115,7 @@ namespace Planar.Service.Listeners.Base
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, $"Error initialize/Execute DataLayer at {nameof(BaseListener<T>)}");
+                _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(BaseListener<T>));
                 throw;
             }
         }
@@ -134,7 +134,7 @@ namespace Planar.Service.Listeners.Base
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, $"Error initialize/Execute DataLayer at {nameof(BaseListener<T>)}");
+                _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(BaseListener<T>));
                 throw;
             }
         }
@@ -153,7 +153,7 @@ namespace Planar.Service.Listeners.Base
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, $"Error initialize/Execute DataLayer at {nameof(BaseListener<T>)}");
+                _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(BaseListener<T>));
                 throw;
             }
         }
@@ -172,7 +172,7 @@ namespace Planar.Service.Listeners.Base
             }
             catch (Exception ex)
             {
-                _logger.LogCritical(ex, $"Error initialize/Execute DataLayer at {nameof(BaseListener<T>)}");
+                _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(BaseListener<T>));
                 throw;
             }
         }
