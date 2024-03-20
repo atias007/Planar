@@ -30,11 +30,11 @@ public class MonitorUtil(IServiceScopeFactory serviceScopeFactory, MonitorScanPr
         producer.Publish(message, cancellationToken);
     }
 
-    internal static void Lock<T>(IServiceProvider serviceProvider, Key<T> key, int lockSeconds, params MonitorEvents[] events)
+    internal static void Lock<T>(Key<T> key, int lockSeconds, params MonitorEvents[] events)
     {
         foreach (var item in events)
         {
-            LockJobOrTriggerEvent(serviceProvider, key, lockSeconds, item);
+            LockJobOrTriggerEvent(key, lockSeconds, item);
         }
     }
 
@@ -150,11 +150,9 @@ public class MonitorUtil(IServiceScopeFactory serviceScopeFactory, MonitorScanPr
         return title;
     }
 
-    private static void LockJobOrTriggerEvent<T>(IServiceProvider serviceProvider, Key<T> key, int lockSeconds, MonitorEvents @event)
+    private static void LockJobOrTriggerEvent<T>(Key<T> key, int lockSeconds, MonitorEvents @event)
     {
         var keyString = $"{key} {@event}";
-        var message = new MonitorScanMessage(@event, keyString, lockSeconds);
-        var localProducer = serviceProvider.GetRequiredService<MonitorScanProducer>();
-        localProducer.Publish(message, CancellationToken.None);
+        MonitorScanProducer.LockJobOrTriggerEvent(keyString, lockSeconds);
     }
 }

@@ -30,7 +30,6 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
 {
     private readonly Channel<MonitorScanMessage> _channel = serviceProvider.GetRequiredService<Channel<MonitorScanMessage>>();
     private readonly ILogger<MonitorService> _logger = serviceProvider.GetRequiredService<ILogger<MonitorService>>();
-    private static readonly ConcurrentDictionary<string, DateTimeOffset> _lockJobEvents = new();
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -56,10 +55,6 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
 
                 case MonitorScanType.ExecuteSystem:
                     _ = SafeExecuteMonitor(monitor.MonitorAction, monitor.Event, monitor.MonitorSystemInfo, monitor.Exception, stoppingToken);
-                    break;
-
-                case MonitorScanType.Lock:
-                    _ = LockJobOrTriggerEvent(monitor.LockKey, monitor.LockSeconds);
                     break;
 
                 default:
@@ -110,8 +105,6 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
 
         List<MonitorAction> items;
 
-        if (IsJobOrTriggerEventLock(info, @event)) { return; }
-
         try
         {
             items = await LoadMonitorItems(@event);
@@ -141,12 +134,6 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
             return;
         }
 
-        if (IsJobOrTriggerEventLock(context.JobDetail.Key, @event))
-        {
-            ReleaseJobOrTriggerEvent(context.JobDetail.Key, @event);
-            return;
-        }
-
         List<MonitorAction> items;
 
         try
@@ -164,58 +151,6 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
             _ = SafeExecuteMonitor(action, @event, context, exception, cancellationToken);
         }
     }
-
-    #region Lock Event
-
-    private static async Task LockJobOrTriggerEvent(string? key, int? lockSeconds)
-    {
-        if (string.IsNullOrWhiteSpace(key) || lockSeconds.GetValueOrDefault() <= 0) { return; }
-        _lockJobEvents.TryAdd(key, DateTimeOffset.Now);
-        await Task.Run(() =>
-        {
-            Thread.Sleep(lockSeconds.GetValueOrDefault() * 1000);
-            _lockJobEvents.TryRemove(key, out _);
-        });
-    }
-
-    private static bool IsJobOrTriggerEventLock<T>(Key<T> key, MonitorEvents @event)
-    {
-        var keyString = $"{key} {@event}";
-        return _lockJobEvents.ContainsKey(keyString);
-    }
-
-    private static bool IsJobOrTriggerEventLock(MonitorSystemInfo info, MonitorEvents @event)
-    {
-        var keyString = string.Empty;
-        var hasGroup = info.MessagesParameters.TryGetValue("JobGroup", out var jobGroup);
-        var hasName = info.MessagesParameters.TryGetValue("JobName", out var jobName);
-        if (hasGroup && hasName)
-        {
-            keyString = $"{jobGroup}.{jobName} {@event}";
-        }
-
-        hasGroup = info.MessagesParameters.TryGetValue("TriggerGroup", out var triggerGroup);
-        hasName = info.MessagesParameters.TryGetValue("TriggerName", out var triggerName);
-        if (hasGroup && hasName)
-        {
-            keyString = $"{triggerGroup}.{triggerName} {@event}";
-        }
-
-        if (string.IsNullOrEmpty(keyString))
-        {
-            return false;
-        }
-
-        return _lockJobEvents.ContainsKey(keyString);
-    }
-
-    private static void ReleaseJobOrTriggerEvent<T>(Key<T> key, MonitorEvents @event)
-    {
-        var keyString = $"{key} {@event}";
-        _lockJobEvents.TryRemove(keyString, out _);
-    }
-
-    #endregion Lock Event
 
     #region Load Monitor Items
 

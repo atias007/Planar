@@ -44,7 +44,7 @@ namespace Planar.Service.API
             var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
 
             // Reschedule job
-            MonitorUtil.Lock(_serviceProvider, info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
             await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
             await Scheduler.PauseJob(info.JobKey);
 
@@ -85,7 +85,7 @@ namespace Planar.Service.API
             var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
 
             // Reschedule job
-            MonitorUtil.Lock(_serviceProvider, info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
             await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
 
             // Pause job
@@ -284,7 +284,7 @@ namespace Planar.Service.API
 
             var resources = assembly.GetManifestResourceNames();
             var resourceName =
-                Array.Find(resources, r => r.ToLower() == $"{typeName}.JobFile.yml".ToLower()) ??
+                Array.Find(resources, r => r.Equals($"{typeName}.JobFile.yml", StringComparison.CurrentCultureIgnoreCase)) ??
                 throw notFoundException.Value;
 
             using Stream? stream =
@@ -411,25 +411,6 @@ namespace Planar.Service.API
             return result;
         }
 
-        public async Task<List<RunningJobDetails>> GetRunning()
-        {
-            var result = await SchedulerUtil.GetRunningJobs();
-            if (AppSettings.Cluster.Clustering)
-            {
-                var clusterResult = await ClusterUtil.GetRunningJobs();
-                result ??= new List<RunningJobDetails>();
-
-                if (clusterResult != null)
-                {
-                    result.AddRange(clusterResult);
-                }
-            }
-
-            FillEstimatedEndTime(result);
-
-            return result;
-        }
-
         public async Task<RunningJobDetails> GetRunningInstanceLongPolling(
             string instanceId,
             string hash,
@@ -459,24 +440,6 @@ namespace Planar.Service.API
             throw new RestNotFoundException();
         }
 
-        public async Task<RunningJobDetails> GetRunning(string instanceId)
-        {
-            var result = await SchedulerUtil.GetRunningJob(instanceId);
-            if (result == null && AppSettings.Cluster.Clustering)
-            {
-                result = await ClusterUtil.GetRunningJob(instanceId);
-            }
-
-            if (result == null)
-            {
-                throw new RestNotFoundException();
-            }
-
-            FillEstimatedEndTime(result);
-
-            return result;
-        }
-
         public async Task<RunningJobData> GetRunningData(string instanceId)
         {
             var result = await SchedulerUtil.GetRunningData(instanceId);
@@ -494,6 +457,43 @@ namespace Planar.Service.API
             {
                 throw new RestNotFoundException($"instanceId {instanceId} was not found");
             }
+
+            return result;
+        }
+
+        public async Task<List<RunningJobDetails>> GetRunning()
+        {
+            var result = await SchedulerUtil.GetRunningJobs();
+            if (AppSettings.Cluster.Clustering)
+            {
+                var clusterResult = await ClusterUtil.GetRunningJobs();
+                result ??= [];
+
+                if (clusterResult != null)
+                {
+                    result.AddRange(clusterResult);
+                }
+            }
+
+            FillEstimatedEndTime(result);
+
+            return result;
+        }
+
+        public async Task<RunningJobDetails> GetRunning(string instanceId)
+        {
+            var result = await SchedulerUtil.GetRunningJob(instanceId);
+            if (result == null && AppSettings.Cluster.Clustering)
+            {
+                result = await ClusterUtil.GetRunningJob(instanceId);
+            }
+
+            if (result == null)
+            {
+                throw new RestNotFoundException();
+            }
+
+            FillEstimatedEndTime(result);
 
             return result;
         }
@@ -531,13 +531,13 @@ namespace Planar.Service.API
             var jobKey = await JobKeyHelper.GetJobKey(request);
             ValidateDataMap(request.Data, "invoke");
 
-            request.Data ??= new Dictionary<string, string?>();
+            request.Data ??= [];
             if (request.NowOverrideValue.HasValue)
             {
                 request.Data.Add(Consts.NowOverrideValue, request.NowOverrideValue.Value.ToString());
             }
 
-            if (request.Data.Any())
+            if (request.Data.Count != 0)
             {
                 var data = new JobDataMap(request.Data);
                 await Scheduler.TriggerJob(jobKey, data);
@@ -585,7 +585,7 @@ namespace Planar.Service.API
                 newTrigger = newTrigger.UsingJobData(Consts.TriggerTimeout, timeoutValue);
             }
 
-            if (request.Data != null && request.Data.Any())
+            if (request.Data != null && request.Data.Count != 0)
             {
                 foreach (var item in request.Data)
                 {
@@ -695,7 +695,7 @@ namespace Planar.Service.API
 
             // Reschedule job
             var triggers = await Scheduler.GetTriggersOfJob(jobKey);
-            MonitorUtil.Lock(_serviceProvider, jobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            MonitorUtil.Lock(jobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
             await Scheduler.ScheduleJob(info, triggers, true);
 
             // Pause job

@@ -5,14 +5,9 @@ using System.Reflection;
 
 namespace FluentValidation;
 
-public class EnumValidatorForInteger<T, TProperty> : PropertyValidator<T, TProperty>
+public class EnumValidatorForInteger<T, TProperty>(Type enumType) : PropertyValidator<T, TProperty>
 {
-    private readonly Type _enumType;
-
-    public EnumValidatorForInteger(Type enumType)
-    {
-        _enumType = enumType;
-    }
+    private readonly Type _enumType = enumType;
 
     public override string Name => "EnumValidator";
 

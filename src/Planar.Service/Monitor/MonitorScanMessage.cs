@@ -10,20 +10,11 @@ namespace Planar.Service.Monitor
         ScanJob,
         ScanSystem,
         ExecuteJob,
-        ExecuteSystem,
-        Lock
+        ExecuteSystem
     }
 
     public class MonitorScanMessage
     {
-        public MonitorScanMessage(MonitorEvents @event, string lockKey, int lockSeconds)
-        {
-            Event = @event;
-            LockKey = lockKey;
-            LockSeconds = lockSeconds;
-            Type = MonitorScanType.Lock;
-        }
-
         public MonitorScanMessage(MonitorEvents @event, IJobExecutionContext context, Exception? exception)
         {
             ArgumentNullException.ThrowIfNull(context);
@@ -70,8 +61,6 @@ namespace Planar.Service.Monitor
         public Exception? Exception { get; set; }
         public MonitorSystemInfo? MonitorSystemInfo { get; set; }
         public MonitorAction? MonitorAction { get; set; }
-        public string? LockKey { get; set; }
-        public int? LockSeconds { get; set; }
         public bool ExecuteWithNoScan { get; set; }
     }
 }

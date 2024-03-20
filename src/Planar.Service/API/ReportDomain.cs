@@ -233,7 +233,7 @@ namespace Planar.Service.API
             var state = await scheduler.GetTriggerState(trigger.Key);
             if (state == TriggerState.Paused) { return; }
 
-            MonitorUtil.Lock(_serviceProvider, trigger.Key, 5, MonitorEvents.TriggerPaused);
+            MonitorUtil.Lock(trigger.Key, 5, MonitorEvents.TriggerPaused);
             await scheduler.PauseTrigger(trigger.Key);
         }
 
@@ -242,7 +242,7 @@ namespace Planar.Service.API
             var state = await scheduler.GetTriggerState(trigger.Key);
             if (state != TriggerState.Paused) { return; }
 
-            MonitorUtil.Lock(_serviceProvider, trigger.Key, 5, MonitorEvents.TriggerResumed);
+            MonitorUtil.Lock(trigger.Key, 5, MonitorEvents.TriggerResumed);
             await scheduler.ResumeTrigger(trigger.Key);
         }
 
