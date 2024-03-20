@@ -16,7 +16,7 @@ namespace Planar.Service.API;
 
 public class ReportDomain(IServiceProvider serviceProvider) : BaseBL<ReportDomain, ReportData>(serviceProvider)
 {
-    private const string group = "group";
+    private const string groupText = "group";
 
     private static ReportNames ValidateReportName(string name)
     {
@@ -62,7 +62,7 @@ public class ReportDomain(IServiceProvider serviceProvider) : BaseBL<ReportDomai
         var existsGroup = trigger.JobDataMap.GetString(ReportConsts.GroupTriggerDataKey);
         if (request.Enable.Value && string.IsNullOrEmpty(existsGroup) && string.IsNullOrWhiteSpace(request.Group))
         {
-            throw new RestValidationException(group, $"group is mandatory to enable report");
+            throw new RestValidationException(groupText, $"group is mandatory to enable report");
         }
 
         request.Group ??= existsGroup;
@@ -165,7 +165,7 @@ public class ReportDomain(IServiceProvider serviceProvider) : BaseBL<ReportDomai
         // validate group & emails
         if (string.IsNullOrWhiteSpace(request.Group))
         {
-            throw new RestValidationException(group, $"group is mandatory to run report");
+            throw new RestValidationException(groupText, $"group is mandatory to run report");
         }
 
         await ValidateGroupAndEmails(request.Group);
