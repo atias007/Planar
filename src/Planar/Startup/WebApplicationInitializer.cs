@@ -101,11 +101,18 @@ namespace Planar.Startup
             app.UseHttpMetrics();
 
             // Capture metrics about received gRPC requests.
-            app.UseGrpcMetrics();
+            if (AppSettings.Cluster.Clustering)
+            {
+                app.UseGrpcMetrics();
+            }
 
             //Rate limitter middleware
             app.UseRateLimiter();
-            app.MapGrpcService<ClusterService>();
+
+            if (AppSettings.Cluster.Clustering)
+            {
+                app.MapGrpcService<ClusterService>();
+            }
 
             // Authorization
             // ATTENTION: Always UseAuthentication should be before UseAuthorization

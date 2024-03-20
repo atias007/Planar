@@ -1,7 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using NUnit.Framework.Internal.Execution;
-using Planar.Common;
-using Quartz.Util;
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
