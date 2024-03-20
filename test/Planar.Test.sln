@@ -35,10 +35,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AggregateException", "Aggre
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AbnormalExitCode", "AbnormalExitCode\AbnormalExitCode.csproj", "{0A6F808D-2952-4403-B872-5F0ABC0C3E69}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Hooks", "Hooks", "{C2AD39A4-80B5-4E89-B50D-E08C47753668}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AigSmsHook", "AigSmsHook\AigSmsHook.csproj", "{C5AD1D57-EA71-47CD-858B-67750D118D92}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -105,10 +101,6 @@ Global
 		{0A6F808D-2952-4403-B872-5F0ABC0C3E69}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0A6F808D-2952-4403-B872-5F0ABC0C3E69}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0A6F808D-2952-4403-B872-5F0ABC0C3E69}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C5AD1D57-EA71-47CD-858B-67750D118D92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C5AD1D57-EA71-47CD-858B-67750D118D92}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C5AD1D57-EA71-47CD-858B-67750D118D92}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C5AD1D57-EA71-47CD-858B-67750D118D92}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -116,7 +108,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{F78E009C-B37B-4FB0-AC8D-6CA7065A8195} = {33BBD853-2616-4EFF-A553-FC4CDC022BF9}
 		{AF080F39-A0B0-434D-85E4-66915110CB9E} = {33BBD853-2616-4EFF-A553-FC4CDC022BF9}
-		{C5AD1D57-EA71-47CD-858B-67750D118D92} = {C2AD39A4-80B5-4E89-B50D-E08C47753668}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F30257B7-435D-473B-9997-2AA3DF5E7D03}
