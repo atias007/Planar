@@ -99,7 +99,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
     {
         if (info == null)
         {
-            _logger.LogWarning($"MonitorSystemInfo is null in {nameof(MonitorService)}.{nameof(ScanInner)}. Scan skipped");
+            _logger.LogWarning("MonitorSystemInfo is null in {MethodName}. Scan skipped", $"{nameof(MonitorService)}.{nameof(ScanInner)}");
             return;
         }
 
@@ -125,7 +125,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
     {
         if (context == null)
         {
-            _logger.LogWarning($"IJobExecutionContext is null in {nameof(MonitorService)}.{nameof(ScanInner)}. Scan skipped");
+            _logger.LogWarning("IJobExecutionContext is null in {MethodName}. Scan skipped", $"{nameof(MonitorService)}.{nameof(ScanInner)}");
             return;
         }
 

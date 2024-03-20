@@ -3,8 +3,6 @@
 PLAN FOR V 1.7.1
 ----------------
 
-- BUG: Block all monitors until service is up
-
 - postman: test queue-invoke with data and validate the creation of data
 - 'service info hooks'
 
