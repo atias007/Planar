@@ -14,7 +14,7 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="MessageBird" Version="4.0.0" />
+		<PackageReference Include="MessageBird" Version="4.0.1" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\..\nuget packages\Planar.Hook\Planar.Hook.csproj" />
