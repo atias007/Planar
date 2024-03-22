@@ -38,6 +38,8 @@ namespace Planar.Common
 
         public static HooksSettings Hooks { get; private set; } = new();
 
+        public static ProtectionSettings Protection { get; private set; } = new();
+
         public static void Initialize(IConfiguration configuration)
         {
             Console.WriteLine("[x] Initialize AppSettings");
@@ -51,6 +53,7 @@ namespace Planar.Common
             InitializeAuthentication(configuration);
             InitializeSmtp(configuration);
             InitializeMonitor(configuration);
+            InitializeProtection(configuration);
             InitializeHooks(configuration);
 
             // Database
@@ -111,6 +114,23 @@ namespace Planar.Common
             Smtp.UseDefaultCredentials = GetSettings(configuration, EC.UseSmtpDefaultCredentials, "smtp", "default credentials", false);
         }
 
+        private static void InitializeProtection(IConfiguration configuration)
+        {
+            Protection.MaxMemoryUsage = GetSettings(configuration, EC.ProtectionMaxMemoryUsage, "protection", "max memory usage", 5000);
+            Protection.RestartOnHighMemoryUsage = GetSettings(configuration, EC.ProtectionRestartOnHighMemoryUsage, "protection", "restart on high memory usage", true);
+            Protection.WaitBeforeRestart = GetSettings(configuration, EC.ProtectionWaitBeforeRestart, "protection", "wait before restart", TimeSpan.FromMinutes(5));
+
+            if (Protection.MaxMemoryUsage < 1000)
+            {
+                throw new AppSettingsException($"'max memory usage' value of {Protection.MaxMemoryUsage} is invalid. minimum value is 1000");
+            }
+
+            if (Protection.WaitBeforeRestart.TotalMinutes < 1)
+            {
+                throw new AppSettingsException("'wait before restart' is invalid. minimum value is 1 minute");
+            }
+        }
+
         private static void InitializeMonitor(IConfiguration configuration)
         {
             Monitor.MaxAlertsPerMonitor = GetSettings(configuration, EC.MonitorMaxAlerts, "monitor", "max alerts per monitor", 10);
@@ -142,7 +162,7 @@ namespace Planar.Common
             Hooks.TwilioSms.AuthToken = GetSettings(configuration, EC.HooksTwilioSmsAuthToken, "hooks:twilio sms", "auth token", string.Empty);
             Hooks.TwilioSms.FromNumber = GetSettings(configuration, EC.HooksTwilioSmsFromNumber, "hooks:twilio sms", "from number", string.Empty);
             Hooks.TwilioSms.DefaultPhonePrefix = GetSettings(configuration, EC.HooksTwilioSmsDefaultPhonePrefix, "hooks:twilio sms", "default phone prefix", string.Empty);
-            Hooks.Redis.Endpoints = GetSettings(configuration, EC.HooksRedisEndpoints, "hooks:redis", "endpoints", string.Empty).Split(',').ToList();
+            Hooks.Redis.Endpoints = [.. GetSettings(configuration, EC.HooksRedisEndpoints, "hooks:redis", "endpoints", string.Empty).Split(',')];
             Hooks.Redis.Password = GetSettings(configuration, EC.HooksRedisPassword, "hooks:redis", "password", string.Empty);
             Hooks.Redis.User = GetSettings(configuration, EC.HooksRedisUser, "hooks:redis", "user", string.Empty);
             Hooks.Redis.Database = GetSettings(configuration, EC.HooksRedisDatabase, "hooks:redis", "db", (ushort)0);
@@ -245,7 +265,7 @@ namespace Planar.Common
                 throw new AppSettingsException("connection string is null or empty");
             }
 
-            if (!connectionString.ToLower().Contains("Connection Timeout"))
+            if (!connectionString.Contains("Connection Timeout", StringComparison.CurrentCultureIgnoreCase))
             {
                 connectionString = $"{connectionString};Connection Timeout=3";
             }

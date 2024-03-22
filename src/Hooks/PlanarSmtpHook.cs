@@ -43,7 +43,7 @@ Hook will send the message to all valid email addresses of the user.
         message.Body = body;
 
         var result = await SmtpUtil.SendMessage(message);
-        LogDebug($"SMTP send result: {result}");
+        LogInformation($"SMTP send result: {result}");
     }
 
     public override Task HandleSystem(IMonitorSystemDetails monitorDetails)

@@ -61,7 +61,11 @@ To send to multiple channels, you can set the following value (in appsettings.ym
             request.Content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
 
             var response = await httpClient.SendAsync(request);
-            if (!response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode)
+            {
+                LogInformation($"Teams response success status code: {response.StatusCode}");
+            }
+            else
             {
                 LogError($"Send message to Teams hook channel at url '{url}' fail with status code {response.StatusCode}");
             }

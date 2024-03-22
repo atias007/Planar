@@ -68,12 +68,12 @@ To use different stream name per group, you can set one of the 'AdditionalField'
         {
             var entries = new NameValueEntry[]
             {
-                new NameValueEntry("version", "1.0.0"),
-                new NameValueEntry("environment", detials.Environment),
-                new NameValueEntry("data-type", typeof(T).Name),
-                new NameValueEntry("data", JsonSerializer.Serialize(detials, _jsonSerializerSettings)),
-                new NameValueEntry("event-id", detials.EventId),
-                new NameValueEntry("group", detials.Group.Name),
+                new("version", "1.0.0"),
+                new("environment", detials.Environment),
+                new("data-type", typeof(T).Name),
+                new("data", JsonSerializer.Serialize(detials, _jsonSerializerSettings)),
+                new("event-id", detials.EventId),
+                new("group", detials.Group.Name),
             };
 
             var db = RedisFactory.Connection.GetDatabase(AppSettings.Hooks.Redis.Database);
