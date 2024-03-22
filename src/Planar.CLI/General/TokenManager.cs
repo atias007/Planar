@@ -26,6 +26,7 @@ namespace Planar.CLI.General
             {
                 if (_tokenSource == null)
                 {
+#pragma warning disable S2930 // "IDisposables" should be disposed
                     _tokenSource = new CancellationTokenSource();
                     return;
                 }
@@ -34,6 +35,7 @@ namespace Planar.CLI.General
                 {
                     _tokenSource = new CancellationTokenSource();
                 }
+#pragma warning restore S2930 // "IDisposables" should be disposed
             }
         }
 

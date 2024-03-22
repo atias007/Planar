@@ -11,192 +11,192 @@ using System;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 
-namespace Planar.Service.Listeners.Base
+namespace Planar.Service.Listeners.Base;
+
+public abstract class BaseListener<T>
+    where T : class
 {
-    public abstract class BaseListener<T>
+    protected readonly ILogger _logger;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
+
+    protected BaseListener(IServiceScopeFactory serviceScopeFactory, ILogger logger)
     {
-        protected readonly ILogger<T> _logger;
-        private readonly IServiceScopeFactory _serviceScopeFactory;
+        _serviceScopeFactory = serviceScopeFactory;
+        _logger = logger;
+    }
 
-        protected BaseListener(IServiceScopeFactory serviceScopeFactory, ILogger<T> logger)
+    protected IServiceScopeFactory ServiceScopeFactory => _serviceScopeFactory;
+
+    protected void SafeSystemScan(MonitorEvents @event, MonitorSystemInfo details, Exception? exception = default)
+    {
+        MonitorUtil.SafeSystemScan(_serviceScopeFactory, _logger, @event, details, exception);
+    }
+
+    protected void SafeScan(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
+    {
+        try
         {
-            _serviceScopeFactory = serviceScopeFactory;
-            _logger = logger;
+            if (JobKeyHelper.IsSystemJobKey(context.JobDetail.Key)) { return; }
+            if (MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
+
+            using var scope = _serviceScopeFactory.CreateScope();
+            var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
+            monitor.Scan(@event, context, exception);
         }
-
-        protected IServiceScopeFactory ServiceScopeFactory => _serviceScopeFactory;
-
-        protected void SafeSystemScan(MonitorEvents @event, MonitorSystemInfo details, Exception? exception = default)
+        catch (ObjectDisposedException)
         {
-            MonitorUtil.SafeSystemScan(_serviceScopeFactory, _logger, @event, details, exception);
+            ServiceUtil.AddDisposeWarningToLog(_logger);
         }
-
-        protected void SafeScan(MonitorEvents @event, IJobExecutionContext context, Exception? exception = default)
+        catch (Exception ex)
         {
-            try
-            {
-                if (JobKeyHelper.IsSystemJobKey(context.JobDetail.Key)) { return; }
-                if (MonitorEventsExtensions.IsSystemMonitorEvent(@event)) { return; }
-
-                using var scope = _serviceScopeFactory.CreateScope();
-                var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
-                monitor.Scan(@event, context, exception);
-            }
-            catch (ObjectDisposedException)
-            {
-                ServiceUtil.AddDisposeWarningToLog(_logger);
-            }
-            catch (Exception ex)
-            {
-                var source = nameof(SafeScan);
-                _logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
-            }
+            var source = nameof(SafeScan);
+            _logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
         }
+    }
 
-        protected void LogCritical(string source, Exception ex)
+    protected void LogCritical(string source, Exception ex)
+    {
+        _logger.LogCritical(ex, "Error handle {Module}.{Source}: {Message}", typeof(T).Name, source, ex.Message);
+    }
+
+    #region Execute Data Layer
+
+    protected async Task ExecuteDal<TDataLayer>(Expression<Func<TDataLayer, Task>> exp)
+        where TDataLayer : BaseDataLayer
+    {
+        try
         {
-            _logger.LogCritical(ex, "Error handle {Module}.{Source}: {Message}", typeof(T).Name, source, ex.Message);
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
+            await exp.Compile().Invoke(dal);
         }
-
-        #region Execute Data Layer
-
-        protected async Task ExecuteDal<TDataLayer>(Expression<Func<TDataLayer, Task>> exp)
-            where TDataLayer : BaseDataLayer
+        catch (ObjectDisposedException)
         {
-            try
-            {
-                using var scope = _serviceScopeFactory.CreateScope();
-                var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
-                await exp.Compile().Invoke(dal);
-            }
-            catch (ObjectDisposedException)
-            {
-                await ExecuteDalOnObjectDisposedException(exp);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(BaseListener<T>));
-                throw;
-            }
+            await ExecuteDalOnObjectDisposedException(exp);
         }
-
-        protected async Task<TResponse> ExecuteDal<TDataLayer, TResponse>(Expression<Func<TDataLayer, Task<TResponse>>> exp)
-            where TDataLayer : BaseDataLayer
+        catch (Exception ex)
         {
-            try
-            {
-                using var scope = _serviceScopeFactory.CreateScope();
-                var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
-                return await exp.Compile().Invoke(dal);
-            }
-            catch (ObjectDisposedException)
-            {
-                return await ExecuteDalOnObjectDisposedException(exp);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(BaseListener<T>));
-                throw;
-            }
+            _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(ExecuteDal));
+            throw new InvalidProgramException("Error initialize/Execute DataLayer at ExecuteDal", ex);
         }
+    }
 
-        protected void ExecuteDal<TDataLayer>(Expression<Action<TDataLayer>> exp)
-            where TDataLayer : BaseDataLayer
+    protected async Task<TResponse> ExecuteDal<TDataLayer, TResponse>(Expression<Func<TDataLayer, Task<TResponse>>> exp)
+        where TDataLayer : BaseDataLayer
+    {
+        try
         {
-            try
-            {
-                using var scope = _serviceScopeFactory.CreateScope();
-                var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
-                exp.Compile().Invoke(dal);
-            }
-            catch (ObjectDisposedException)
-            {
-                ExecuteDalOnObjectDisposedException(exp);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(BaseListener<T>));
-                throw;
-            }
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
+            return await exp.Compile().Invoke(dal);
         }
-
-        private async Task ExecuteDalOnObjectDisposedException<TDataLayer>(Expression<Func<TDataLayer, Task>> exp)
-            where TDataLayer : BaseDataLayer
+        catch (ObjectDisposedException)
         {
-            try
-            {
-                var services = new ServiceCollection();
-                services.AddPlanarDataLayerWithContext();
-                var provider = services.BuildServiceProvider();
-                using var scope = provider.CreateScope();
-                var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
-                await exp.Compile().Invoke(dal);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(BaseListener<T>));
-                throw;
-            }
+            return await ExecuteDalOnObjectDisposedException(exp);
         }
-
-        private async Task<TResponse> ExecuteDalOnObjectDisposedException<TDataLayer, TResponse>(Expression<Func<TDataLayer, Task<TResponse>>> exp)
-            where TDataLayer : BaseDataLayer
+        catch (Exception ex)
         {
-            try
-            {
-                var services = new ServiceCollection();
-                services.AddPlanarDataLayerWithContext();
-                var provider = services.BuildServiceProvider();
-                using var scope = provider.CreateScope();
-                var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
-                return await exp.Compile().Invoke(dal);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(BaseListener<T>));
-                throw;
-            }
+            _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(ExecuteDal));
+            throw new InvalidProgramException("Error initialize/Execute DataLayer at ExecuteDal", ex);
         }
+    }
 
-        private void ExecuteDalOnObjectDisposedException<TDataLayer>(Expression<Action<TDataLayer>> exp)
-            where TDataLayer : BaseDataLayer
+    protected void ExecuteDal<TDataLayer>(Expression<Action<TDataLayer>> exp)
+        where TDataLayer : BaseDataLayer
+    {
+        try
         {
-            try
-            {
-                var services = new ServiceCollection();
-                services.AddPlanarDataLayerWithContext();
-                var provider = services.BuildServiceProvider();
-                using var scope = provider.CreateScope();
-                var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
-                exp.Compile().Invoke(dal);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(BaseListener<T>));
-                throw;
-            }
+            using var scope = _serviceScopeFactory.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
+            exp.Compile().Invoke(dal);
         }
-
-        #endregion Execute Data Layer
-
-        protected static bool IsSystemJobKey(JobKey jobKey)
+        catch (ObjectDisposedException)
         {
-            return JobKeyHelper.IsSystemJobKey(jobKey);
+            ExecuteDalOnObjectDisposedException(exp);
         }
-
-        protected static bool IsSystemTriggerKey(TriggerKey triggerKey)
+        catch (Exception ex)
         {
-            return TriggerHelper.IsSystemTriggerKey(triggerKey);
+            _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(ExecuteDal));
+            throw new InvalidProgramException("Error initialize/Execute DataLayer at ExecuteDal", ex);
         }
+    }
 
-        protected bool IsSystemJob(IJobDetail job)
+    private async Task ExecuteDalOnObjectDisposedException<TDataLayer>(Expression<Func<TDataLayer, Task>> exp)
+        where TDataLayer : BaseDataLayer
+    {
+        try
         {
-            return JobKeyHelper.IsSystemJobKey(job.Key);
+            var services = new ServiceCollection();
+            services.AddPlanarDataLayerWithContext();
+            var provider = services.BuildServiceProvider();
+            using var scope = provider.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
+            await exp.Compile().Invoke(dal);
         }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(ExecuteDalOnObjectDisposedException));
+            throw new InvalidProgramException("Error initialize/Execute DataLayer at ExecuteDalOnObjectDisposedException", ex);
+        }
+    }
 
-        protected bool IsSystemTrigger(ITrigger trigger)
+    private async Task<TResponse> ExecuteDalOnObjectDisposedException<TDataLayer, TResponse>(Expression<Func<TDataLayer, Task<TResponse>>> exp)
+        where TDataLayer : BaseDataLayer
+    {
+        try
         {
-            return TriggerHelper.IsSystemTriggerKey(trigger.Key);
+            var services = new ServiceCollection();
+            services.AddPlanarDataLayerWithContext();
+            var provider = services.BuildServiceProvider();
+            using var scope = provider.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
+            return await exp.Compile().Invoke(dal);
         }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(ExecuteDalOnObjectDisposedException));
+            throw new InvalidProgramException("Error initialize/Execute DataLayer at ExecuteDalOnObjectDisposedException", ex);
+        }
+    }
+
+    private void ExecuteDalOnObjectDisposedException<TDataLayer>(Expression<Action<TDataLayer>> exp)
+        where TDataLayer : BaseDataLayer
+    {
+        try
+        {
+            var services = new ServiceCollection();
+            services.AddPlanarDataLayerWithContext();
+            var provider = services.BuildServiceProvider();
+            using var scope = provider.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<TDataLayer>();
+            exp.Compile().Invoke(dal);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(ex, "Error initialize/Execute DataLayer at {MethodName}", nameof(ExecuteDalOnObjectDisposedException));
+            throw new InvalidProgramException("Error initialize/Execute DataLayer at ExecuteDalOnObjectDisposedException", ex);
+        }
+    }
+
+    #endregion Execute Data Layer
+
+    protected static bool IsSystemJobKey(JobKey jobKey)
+    {
+        return JobKeyHelper.IsSystemJobKey(jobKey);
+    }
+
+    protected static bool IsSystemTriggerKey(TriggerKey triggerKey)
+    {
+        return TriggerHelper.IsSystemTriggerKey(triggerKey);
+    }
+
+    protected bool IsSystemJob(IJobDetail job)
+    {
+        return JobKeyHelper.IsSystemJobKey(job.Key);
+    }
+
+    protected bool IsSystemTrigger(ITrigger trigger)
+    {
+        return TriggerHelper.IsSystemTriggerKey(trigger.Key);
     }
 }
