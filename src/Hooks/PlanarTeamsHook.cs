@@ -27,6 +27,8 @@ To send to multiple channels, you can set the following value (in appsettings.ym
 
     private const string ImageSource = "https://raw.githubusercontent.com/atias007/Planar/master/hooks/Planar.TeamsMonitorHook/Icons/{0}.png";
 
+    private static readonly JsonSerializerOptions _serializerOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
     public override async Task Handle(IMonitorDetails monitorDetails)
     {
         var urls = GetTeamsUrls(monitorDetails);
@@ -88,26 +90,26 @@ To send to multiple channels, you can set the following value (in appsettings.ym
         var card = new TeamsMessageCard
         {
             Title = $"Monitor Event: {details.EventTitle}",
-            Sections = new List<Section>
-            {
-                new Section
+            Sections =
+            [
+                new()
                 {
                     ActivityTitle = $"For job: {details.JobGroup}.{details.JobName}",
                     ActivitySubtitle = details.JobDescription,
                     ActivityImage = image,
                     Text = details.MostInnerExceptionMessage ?? string.Empty,
-                    Facts = new List<Fact>
-                    {
+                    Facts =
+                    [
                         new Fact("Fire time:", $"{details.FireTime:g}"),
                         new Fact("Run Time:", runtime),
-                        new Fact("Job id:", details.JobId)    ,
+                        new Fact("Job id:", details.JobId),
                         new Fact("Fire instance id:", details.FireInstanceId)
-                    }
+                    ]
                 }
-            }
+            ]
         };
 
-        var json = JsonSerializer.Serialize(card, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var json = JsonSerializer.Serialize(card, _serializerOptions);
         return json;
     }
 
@@ -119,22 +121,22 @@ To send to multiple channels, you can set the following value (in appsettings.ym
         var card = new TeamsMessageCard
         {
             Title = $"Planar Event: {details.EventTitle}",
-            Sections = new List<Section>
-            {
+            Sections =
+            [
                 new Section
                 {
                     ActivityTitle = $"System event occur at:",
                     ActivitySubtitle = DateTime.Now.ToString("dd/MM/yyyy HH:mm"),
                     ActivityImage = image,
-                    Text= details.Message,
+                    Text = details.Message,
                     Facts = details.MessagesParameters
                         .Select(i => new Fact($"{i.Key}:", i.Value))
                         .ToList()
                 }
-            }
+            ]
         };
 
-        var json = JsonSerializer.Serialize(card, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var json = JsonSerializer.Serialize(card, _serializerOptions);
         return json;
     }
 

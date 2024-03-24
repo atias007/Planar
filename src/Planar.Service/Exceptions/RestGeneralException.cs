@@ -3,7 +3,6 @@ using System.Runtime.Serialization;
 
 namespace Planar.Service.Exceptions
 {
-    [Serializable]
     public sealed class RestGeneralException : Exception
     {
         public RestGeneralException(string message) : base(message)

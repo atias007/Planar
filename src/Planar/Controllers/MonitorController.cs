@@ -146,16 +146,6 @@ namespace Planar.Controllers
             return NoContent();
         }
 
-        [HttpPost("reload")]
-        [EditorAuthorize]
-        [SwaggerOperation(OperationId = "post_monitor_reload", Description = "Refresh monitor hooks", Summary = "Refresh Monitor Hooks")]
-        [OkJsonResponse(typeof(string))]
-        public async Task<ActionResult<string>> Reload()
-        {
-            var result = await BusinesLayer.Reload();
-            return Ok(result);
-        }
-
         [HttpGet("hooks")]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_monitor_hooks", Description = "Get all monitor hooks", Summary = "Get Monitor Hooks")]
@@ -164,6 +154,40 @@ namespace Planar.Controllers
         {
             var result = BusinesLayer.GetHooks();
             return Ok(result);
+        }
+
+        [HttpGet("new-hooks")]
+        [EditorAuthorize]
+        [ApiExplorerSettings(IgnoreApi = true)]
+        [OkJsonResponse(typeof(IEnumerable<string>))]
+        public async Task<ActionResult<IEnumerable<string>>> NewHooks()
+        {
+            var result = await BusinesLayer.SearchNewHooks();
+            return Ok(result);
+        }
+
+        [HttpDelete("hook/{name}")]
+        [AdministratorAuthorize]
+        [SwaggerOperation(OperationId = "delete_monitor_hook_name", Description = "Delete monitor hook", Summary = "Delete Monitor Hook")]
+        [BadRequestResponse]
+        [NoContentResponse]
+        [NotFoundResponse]
+        public async Task<ActionResult> DeleteHook([FromRoute][Required] string name)
+        {
+            await BusinesLayer.DeleteHook(name);
+            return NoContent();
+        }
+
+        [HttpPost("hook")]
+        [AdministratorAuthorize]
+        [SwaggerOperation(OperationId = "add_monitor_hook", Description = "Add monitor hook", Summary = "Add Monitor Hook")]
+        [JsonConsumes]
+        [BadRequestResponse]
+        [CreatedResponse]
+        public async Task<ActionResult> AddHook([FromBody][Required] AddHookRequest request)
+        {
+            await BusinesLayer.AddHook(request);
+            return CreatedAtAction(null, null);
         }
 
         [HttpPost("try")]

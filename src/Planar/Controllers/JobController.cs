@@ -15,12 +15,8 @@ namespace Planar.Controllers
 {
     [ApiController]
     [Route("job")]
-    public class JobController : BaseController<JobDomain>
+    public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     {
-        public JobController(JobDomain bl) : base(bl)
-        {
-        }
-
         [HttpPost("folder")]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_job_folder", Description = "Add job by yml job file", Summary = "Add Job By Yml")]

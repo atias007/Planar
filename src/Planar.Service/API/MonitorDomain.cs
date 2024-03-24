@@ -13,6 +13,7 @@ using Planar.Service.Monitor.Test;
 using Planar.Service.Validation;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -84,6 +85,82 @@ namespace Planar.Service.API
             }
         }
 
+        public async Task DeleteHook(string name)
+        {
+            try
+            {
+                await DataLayer.DeleteMonitorHook(name);
+                await Reload(clusterReload: true);
+                AuditSecuritySafe($"monitor hook name {name} was deleted by user", true);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                throw new RestNotFoundException($"monitor  hook name {name} could not be found");
+            }
+        }
+
+        public async Task AddHook(AddHookRequest request)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            var path = request.Filename.Trim();
+            if (path.StartsWith('/') || path.StartsWith('\\')) { path = path[1..]; }
+            var filename = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.MonitorHooks, path);
+
+            if (!File.Exists(filename))
+            {
+                throw new RestValidationException("filename", $"filename '{path}' could not be found");
+            }
+
+            MonitorHookDetails? details;
+            try
+            {
+                using var exe = new HookExecuter(Logger, filename);
+                details = exe.HandleHealthCheck();
+            }
+            catch
+            {
+                throw new RestValidationException("filename", $"fail to execute hook check");
+            }
+
+            await ValidateHookDetails(details);
+            details.Path = path;
+            var entity = Mapper.Map<MonitorHook>(details);
+            await DataLayer.AddMonitorHook(entity);
+            await Reload(clusterReload: true);
+        }
+
+        private async Task ValidateHookDetails(MonitorHookDetails details)
+        {
+            if (string.IsNullOrWhiteSpace(details.Name))
+            {
+                throw new RestValidationException("filename", "hook name is null or empty");
+            }
+
+            details.Name = details.Name.Trim();
+            details.Description = details.Description.Trim();
+
+            if (details.Name.Length < 3 || details.Name.Length > 50)
+            {
+                throw new RestValidationException("filename", $"hook name '{details.Name}' length must be more or equals to 3");
+            }
+
+            if (details.Name.Length > 50)
+            {
+                throw new RestValidationException("filename", $"hook name '{details.Name}' length must be less then or equals to 50");
+            }
+
+            if (details.Description.Length > 2000)
+            {
+                throw new RestValidationException("filename", "hook description length must be less then or equals to 2000");
+            }
+
+            var exists = await DataLayer.IsMonitorHookExists(details.Name);
+            if (exists)
+            {
+                throw new RestValidationException("filename", $"hook with name '{details.Name}' already exists");
+            }
+        }
+
         public async Task<PagingResponse<MonitorItem>> GetAll(IPagingRequest request)
         {
             var query = DataLayer.GetMonitorActions();
@@ -121,6 +198,14 @@ namespace Planar.Service.API
             var items = await DataLayer.GetMonitorActionsByJob(jobKey.Group, jobKey.Name);
             var result = Mapper.Map<List<MonitorItem>>(items);
             FillDistributionGroupName(result);
+            return result;
+        }
+
+        public async Task<IEnumerable<string>> SearchNewHooks()
+        {
+            var hooks = ServiceUtil.SearchNewHooks();
+            var exists = (await DataLayer.GetAllMonitorHooks()).Select(h => h.Path);
+            var result = hooks.Where(h => !exists.Contains(h));
             return result;
         }
 
@@ -219,10 +304,12 @@ namespace Planar.Service.API
             await Update(updateMonitor);
         }
 
-        public async Task<string> Reload()
+        public async Task<string> Reload(bool clusterReload)
         {
-            ServiceUtil.LoadMonitorHooks(Logger);
-            if (AppSettings.Cluster.Clustering)
+            var hooks = await DataLayer.GetAllMonitorHooks();
+            var hooksDetails = Mapper.Map<IEnumerable<MonitorHookDetails>>(hooks);
+            ServiceUtil.LoadMonitorHooks(hooksDetails, Logger);
+            if (clusterReload && AppSettings.Cluster.Clustering)
             {
                 await ClusterUtil.LoadMonitorHooks();
             }

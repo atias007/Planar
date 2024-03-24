@@ -240,10 +240,9 @@ namespace Planar.Service.Services
             {
                 _logger.LogInformation("Initialize: {Operation}", nameof(LoadMonitorHooks));
 
-                ServiceUtil.LoadMonitorHooks(_logger);
                 using var scope = _serviceProvider.CreateScope();
-                var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
-                await monitor.Validate();
+                var monitorDomain = scope.ServiceProvider.GetRequiredService<MonitorDomain>();
+                await monitorDomain.Reload(clusterReload: false);
             }
             catch (Exception ex)
             {

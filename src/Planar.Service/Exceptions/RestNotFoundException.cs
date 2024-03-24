@@ -2,7 +2,6 @@
 
 namespace Planar.Service.Exceptions
 {
-    [Serializable]
     public sealed class RestNotFoundException : Exception
     {
         public RestNotFoundException()

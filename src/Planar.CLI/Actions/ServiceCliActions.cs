@@ -255,8 +255,6 @@ namespace Planar.CLI.Actions
         [Action("decrypt-settings")]
         public static async Task<CliActionResponse> DecryptSettings(CliEncryptAppsettingsRequest request, CancellationToken cancellationToken = default)
         {
-#pragma warning restore IDE0060 // Remove unused parameter
-
             var filename = request.Filename ?? string.Empty;
             var text = File.ReadAllText(filename);
             if (!text.StartsWith(encryptKey))

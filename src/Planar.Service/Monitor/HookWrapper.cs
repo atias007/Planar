@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Planar.API.Common.Entities;
 using Planar.Common.Exceptions;
 using Planar.Hooks;
 using System.Reflection;
@@ -32,9 +33,9 @@ namespace Planar.Service.Monitor
             return wrapper;
         }
 
-        public static HookWrapper CreateExternal(string filename, HookValidator validator, ILogger logger)
+        public static HookWrapper CreateExternal(string filename, MonitorHookDetails details, ILogger logger)
         {
-            return new HookWrapper(validator.Name, validator.Description)
+            return new HookWrapper(details.Name, details.Description)
             {
                 HookType = HookTypeMembers.External,
                 Filename = filename,

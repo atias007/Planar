@@ -16,12 +16,8 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class ServiceDomain : BaseBL<ServiceDomain, ServiceData>
+    public class ServiceDomain(IServiceProvider serviceProvider) : BaseBL<ServiceDomain, ServiceData>(serviceProvider)
     {
-        public ServiceDomain(IServiceProvider serviceProvider) : base(serviceProvider)
-        {
-        }
-
         public string GetServiceVersion()
         {
             return ServiceVersion ?? Consts.Undefined;

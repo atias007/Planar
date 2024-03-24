@@ -196,7 +196,7 @@ namespace Planar.Service.API
             try
             {
                 var stringValue = request.PropertyValue;
-                if (stringValue.ToLower() == "[null]") { stringValue = null; }
+                if (stringValue.Equals("[null]", StringComparison.CurrentCultureIgnoreCase)) { stringValue = null; }
                 var propertyType = prop.PropertyType;
 
                 if (Nullable.GetUnderlyingType(propertyType) != null && stringValue != null)

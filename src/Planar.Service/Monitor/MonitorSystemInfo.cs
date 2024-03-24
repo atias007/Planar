@@ -3,16 +3,11 @@ using System.Collections.Generic;
 
 namespace Planar.Service.Monitor
 {
-    public class MonitorSystemInfo
+    public class MonitorSystemInfo(string messageTemplate)
     {
-        public MonitorSystemInfo(string messageTemplate)
-        {
-            MessageTemplate = messageTemplate;
-        }
+        public string MessageTemplate { get; set; } = messageTemplate;
 
-        public string MessageTemplate { get; set; }
-
-        public Dictionary<string, string?> MessagesParameters { get; private set; } = new();
+        public Dictionary<string, string?> MessagesParameters { get; private set; } = [];
 
         public void AddMachineName()
         {

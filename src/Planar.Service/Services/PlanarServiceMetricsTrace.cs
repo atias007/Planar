@@ -21,6 +21,7 @@ internal sealed class PlanarServiceMetricsTrace(IServiceProvider serviceProvider
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly IScheduler _scheduler = serviceProvider.GetRequiredService<IScheduler>();
     private readonly ILogger<PlanarServiceMetricsTrace> _logger = serviceProvider.GetRequiredService<ILogger<PlanarServiceMetricsTrace>>();
+    private DateTimeOffset? _lastMemoryLog;
 
     public void Dispose()
     {
@@ -72,10 +73,11 @@ internal sealed class PlanarServiceMetricsTrace(IServiceProvider serviceProvider
                 SafeMonitorMaxMemoryUsage(usedMemory);
             }
 
-            return value > 5;
+            return value > AppSettings.Protection.WaitBeforeRestartMinutes;
         }
         else
         {
+            // reset counter
             Interlocked.Exchange(ref _memoryHighCount, 0);
             return false;
         }
@@ -98,10 +100,78 @@ internal sealed class PlanarServiceMetricsTrace(IServiceProvider serviceProvider
 
     private async Task GracefullShutDown(long usedMemory)
     {
+        SafeLog(usedMemory);
+        if (!AppSettings.Protection.RestartOnHighMemoryUsage) { return; }
+        await SafeStandBy();
+        await SafeShutdown();
+        await SafeDelay();
+        CloseApplication();
+    }
+
+    private void CloseApplication()
+    {
         try
         {
-            _logger.LogCritical("memory usage is too high. used memory: {UsedMemory}MB. start graceful end of the process", usedMemory);
-            _logger.LogCritical("memory usage is too high. stand by scheduler");
+            var task = Task.Run(() =>
+            {
+                _logger.LogCritical("memory usage is too high. stop the apllication");
+                var app = _serviceProvider.GetRequiredService<IHostApplicationLifetime>();
+                app.StopApplication();
+            });
+
+            var success = task.Wait(TimeSpan.FromMinutes(5));
+            if (!success)
+            {
+                Environment.Exit(-1);
+            }
+        }
+        catch
+        {
+            //// *** DO NOTHING *** //
+        }
+    }
+
+    private async Task SafeDelay()
+    {
+        try
+        {
+            // extra time to handle monitors
+            _logger.LogCritical("memory usage is too high. wait extra 30 seconds to handle monitoring");
+            await Task.Delay(30_000);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(ex, "fail to delay shutdown on high memory usage trace service");
+        }
+    }
+
+    private async Task SafeShutdown()
+    {
+        try
+        {
+            var count = (await _scheduler.GetCurrentlyExecutingJobs()).Count;
+            _logger.LogCritical("memory usage is too high. shut down scheduler (with wait until complete {Count} current tasks)", count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(ex, "memory usage is too high. shut down scheduler (with wait until complete current tasks)");
+        }
+
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(20));
+            await _scheduler.Shutdown(true, cts.Token);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(ex, "fail to shutdown scheduler on high memory usage trace service");
+        }
+    }
+
+    private async Task SafeStandBy()
+    {
+        try
+        {
             _timer.Stop();
             await _scheduler.Standby();
         }
@@ -109,26 +179,22 @@ internal sealed class PlanarServiceMetricsTrace(IServiceProvider serviceProvider
         {
             //// *** DO NOTHING *** //
         }
+    }
 
-        _logger.LogCritical("memory usage is too high. shut down scheduler (with wait until complete current tasks)");
-        await _scheduler.Shutdown(true);
-
-        // extra time to handle monitors
-        _logger.LogCritical("memory usage is too high. wait extra 30 seconds to handle monitoring");
-        await Task.Delay(30_000);
-
+    private void SafeLog(long usedMemory)
+    {
         try
         {
-            _logger.LogCritical("memory usage is too high. stop the apllication");
-            var app = _serviceProvider.GetRequiredService<IHostApplicationLifetime>();
-            app.StopApplication();
+            if (_lastMemoryLog == null || DateTimeOffset.Now.Subtract(_lastMemoryLog.GetValueOrDefault()).TotalHours > 1)
+            {
+                _logger.LogCritical("memory usage is too high. used memory: {UsedMemory}MB. start graceful end of the process", usedMemory);
+                _logger.LogCritical("memory usage is too high. stand by scheduler");
+                _lastMemoryLog = DateTimeOffset.Now;
+            }
         }
         catch
         {
             //// *** DO NOTHING *** //
         }
-
-        await Task.Delay(5_000);
-        Environment.Exit(-1);
     }
 }

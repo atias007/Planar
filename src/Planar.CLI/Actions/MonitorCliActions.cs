@@ -242,6 +242,9 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, table);
         }
 
+        // restRequest.Timeout = 30_000
+        // AnsiConsole.MarkupLine($"[grey62]  > (please wait... this action may take up to 30 seconds)[/]")
+
         private static async Task<RequestBuilderWrapper<CliMonitorTestRequest>> CollectTestMonitorRequestData(CancellationToken cancellationToken = default)
         {
             var data = await GetTestMonitorData(cancellationToken);
@@ -511,7 +514,7 @@ namespace Planar.CLI.Actions
             var groupsTask = RestProxy.Invoke<PagingResponse<GroupInfo>>(groupsRequest, cancellationToken);
 
             var hooks = await hooksTask;
-            data.Hooks = hooks.Data?.Select(h => h.Name).ToList() ?? new List<string>();
+            data.Hooks = hooks.Data?.Select(h => h.Name).ToList() ?? [];
             if (!hooks.IsSuccessful)
             {
                 data.FailResponse = hooks;
@@ -519,19 +522,19 @@ namespace Planar.CLI.Actions
             }
 
             var groups = await groupsTask;
-            data.Groups = groups.Data?.Data ?? new List<GroupInfo>();
+            data.Groups = groups.Data?.Data ?? [];
             if (!groups.IsSuccessful)
             {
                 data.FailResponse = groups;
                 return data;
             }
 
-            if (!data.Hooks.Any())
+            if (data.Hooks.Count == 0)
             {
                 throw new CliWarningException("there are no monitor hooks define in service");
             }
 
-            if (!data.Groups.Any())
+            if (data.Groups.Count == 0)
             {
                 throw new CliWarningException("there are no distribution groups define in service");
             }
@@ -558,7 +561,7 @@ namespace Planar.CLI.Actions
             var groupsTask = RestProxy.Invoke<PagingResponse<GroupInfo>>(groupsRequest, cancellationToken);
 
             var events = await eventsTask;
-            data.Events = events.Data ?? new List<MonitorEventModel>();
+            data.Events = events.Data ?? [];
             if (!events.IsSuccessful)
             {
                 data.FailResponse = events;
@@ -566,7 +569,7 @@ namespace Planar.CLI.Actions
             }
 
             var hooks = await hooksTask;
-            data.Hooks = hooks.Data == null ? new List<string>() : hooks.Data.Select(d => d.Name).ToList();
+            data.Hooks = hooks.Data == null ? [] : hooks.Data.Select(d => d.Name).ToList();
             if (!hooks.IsSuccessful)
             {
                 data.FailResponse = hooks;
@@ -574,7 +577,7 @@ namespace Planar.CLI.Actions
             }
 
             var jobs = await jobsTask;
-            data.Jobs = jobs.Data?.Data ?? new List<JobBasicDetails>();
+            data.Jobs = jobs.Data?.Data ?? [];
             if (!jobs.IsSuccessful)
             {
                 data.FailResponse = jobs;
@@ -582,24 +585,24 @@ namespace Planar.CLI.Actions
             }
 
             var groups = await groupsTask;
-            data.Groups = groups.Data?.Data ?? new List<GroupInfo>();
+            data.Groups = groups.Data?.Data ?? [];
             if (!groups.IsSuccessful)
             {
                 data.FailResponse = groups;
                 return data;
             }
 
-            if (!data.Jobs.Any())
+            if (data.Jobs.Count == 0)
             {
                 throw new CliWarningException("there are no jobs for monitoring");
             }
 
-            if (!data.Hooks.Any())
+            if (data.Hooks.Count == 0)
             {
                 throw new CliWarningException("there are no monitor hooks define in service");
             }
 
-            if (!data.Groups.Any())
+            if (data.Groups.Count == 0)
             {
                 throw new CliWarningException("there are no distribution groups define in service");
             }
@@ -632,7 +635,7 @@ namespace Planar.CLI.Actions
         private static RestResponse SelectRestResponse(params RestResponse[] items)
         {
             RestResponse? result = null;
-            if (items.Any())
+            if (items.Length != 0)
             {
                 result = Array.Find(items, i => !i.IsSuccessful && (int)i.StatusCode >= 500);
             }

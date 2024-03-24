@@ -541,6 +541,32 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
+        public async Task<IEnumerable<MonitorHook>> GetAllMonitorHooks()
+        {
+            return await _context.MonitorHooks
+                .OrderBy(h => h.Name)
+                .ToListAsync();
+        }
+
+        public async Task AddMonitorHook(MonitorHook monitorHook)
+        {
+            _context.MonitorHooks.Add(monitorHook);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteMonitorHook(string name)
+        {
+            await _context.MonitorHooks
+                .Where(m => m.Name == name)
+                .ExecuteDeleteAsync();
+        }
+
+        public async Task<bool> IsMonitorHookExists(string name)
+        {
+            return await _context.MonitorHooks
+                .AnyAsync(m => m.Name == name);
+        }
+
         private IQueryable<MonitorAction> GetMonitorData()
         {
             var query = _context.MonitorActions

@@ -24,10 +24,7 @@ namespace Planar.Filters
 
             problems.ForEach(i =>
             {
-                if (!result.Errors.Contains(i))
-                {
-                    result.Errors.Add(i);
-                }
+                result.Errors.Add(i);
             });
 
             return result;
@@ -97,7 +94,7 @@ namespace Planar.Filters
                     Title = MultipleErrors,
                     Type = ProblemType,
                     Errors = exception.Errors
-                        .Select(e => new RestBadRequestError { Field = e.PropertyName, Detail = new List<string> { e.ErrorMessage } })
+                        .Select(e => new RestBadRequestError { Field = e.PropertyName, Detail = [e.ErrorMessage] })
                         .ToList(),
                 };
             }
