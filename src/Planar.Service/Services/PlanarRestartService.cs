@@ -22,7 +22,7 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
     private readonly IScheduler _scheduler = serviceProvider.GetRequiredService<IScheduler>();
     private readonly ILogger<PlanarRestartService> _logger = serviceProvider.GetRequiredService<ILogger<PlanarRestartService>>();
     private DateTimeOffset? _lastMemoryLog;
-    private DateTimeOffset? _nextRegularRestart;
+    private DateTime? _nextRegularRestart;
     private bool _invokeRegularRestart;
 
     public void Dispose()
@@ -135,6 +135,21 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
         }
     }
 
+    private void SafeMonitorRegularApplicationRestart()
+    {
+        try
+        {
+            var info = new MonitorSystemInfo("Regular restart invoked. Original restart date {{OriginDate}}");
+            info.MessagesParameters.Add("OriginDate", _nextRegularRestart.ToString());
+            info.AddMachineName();
+            MonitorUtil.SafeSystemScan(serviceScopeFactory, _logger, MonitorEvents.RegularApplicationRestart, info, null);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "fail to invoke monitor of regular application restart");
+        }
+    }
+
     private async Task GracefullShutDown(long usedMemory)
     {
         SafeLog(usedMemory);
@@ -148,20 +163,21 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
     private async Task GracefullRestart()
     {
         SafeRestartLog();
+        SafeMonitorRegularApplicationRestart();
         await SafeStandBy();
         await SafeShutdown(withLog: false);
         await SafeDelay(withLog: false);
         CloseApplication(withLog: false);
     }
 
-    private DateTimeOffset? GetNextRegularRestartDate()
+    private DateTime? GetNextRegularRestartDate()
     {
         try
         {
             if (!AppSettings.Protection.HasRegularRestart) { return null; }
             var exp = new CronExpression(AppSettings.Protection.RegularRestartExpression ?? string.Empty);
-            var result = exp.GetNextValidTimeAfter(DateTimeOffset.UtcNow);
-            return result;
+            var result = exp.GetNextValidTimeAfter(DateTimeOffset.Now);
+            return result?.LocalDateTime;
         }
         catch (Exception ex)
         {
@@ -277,7 +293,7 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
     {
         try
         {
-            _logger.LogInformation("regular restart invoked. original restart date {Date}", _nextRegularRestart);
+            _logger.LogWarning("regular restart invoked. original restart date {Date}", _nextRegularRestart);
         }
         catch
         {

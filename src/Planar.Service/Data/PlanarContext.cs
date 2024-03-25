@@ -5,13 +5,8 @@ using Planar.Service.Model;
 
 namespace Planar.Service.Data;
 
-public partial class PlanarContext : DbContext
+public partial class PlanarContext(DbContextOptions<PlanarContext> options) : DbContext(options)
 {
-    public PlanarContext(DbContextOptions<PlanarContext> options)
-        : base(options)
-    {
-    }
-
     public virtual DbSet<ClusterNode> ClusterNodes { get; set; }
 
     public virtual DbSet<ConcurrentExecution> ConcurrentExecutions { get; set; }

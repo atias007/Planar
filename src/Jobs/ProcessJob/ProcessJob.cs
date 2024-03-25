@@ -8,124 +8,123 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Planar
+namespace Planar;
+
+public abstract class ProcessJob : BaseProcessJob<ProcessJobProperties>
 {
-    public abstract class ProcessJob : BaseProcessJob<ProcessJob, ProcessJobProperties>
+    protected ProcessJob(
+        ILogger logger,
+        IJobPropertyDataLayer dataLayer,
+        JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
     {
-        protected ProcessJob(
-            ILogger<ProcessJob> logger,
-            IJobPropertyDataLayer dataLayer,
-            JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
+    }
+
+    public override async Task Execute(IJobExecutionContext context)
+    {
+        try
         {
+            await Initialize(context);
+
+            ValidateProcessJob();
+            context.CancellationToken.Register(OnCancel);
+
+            var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
+            var startInfo = GetProcessStartInfo();
+            StartMonitorDuration(context);
+            var success = StartProcess(startInfo, timeout);
+            StopMonitorDuration();
+            if (!success)
+            {
+                OnTimeout(context);
+            }
+
+            LogProcessInformation();
+            CheckProcessExitCode();
+        }
+        catch (Exception ex)
+        {
+            HandleException(context, ex);
+        }
+        finally
+        {
+            FinalizeJob(context);
+            FinalizeProcess();
+        }
+    }
+
+    private void CheckProcessExitCode()
+    {
+        if (_processKilled)
+        {
+            throw new ProcessJobException($"process '{Filename}' was stopped at {DateTimeOffset.Now}");
         }
 
-        public override async Task Execute(IJobExecutionContext context)
+        if (_process == null) { return; }
+        var exitCode = _process.ExitCode;
+        if (Properties.FailExitCodes.Any())
         {
-            try
+            if (Properties.FailExitCodes.Any(f => f == exitCode))
             {
-                await Initialize(context);
-
-                ValidateProcessJob();
-                context.CancellationToken.Register(OnCancel);
-
-                var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
-                var startInfo = GetProcessStartInfo();
-                StartMonitorDuration(context);
-                var success = StartProcess(startInfo, timeout);
-                StopMonitorDuration();
-                if (!success)
-                {
-                    OnTimeout(context);
-                }
-
-                LogProcessInformation();
-                CheckProcessExitCode();
+                var codes = string.Join(',', Properties.FailExitCodes);
+                throw new ProcessJobException($"process '{Filename}' ended with exit code {exitCode} which is one of fail exit codes ({codes})");
             }
-            catch (Exception ex)
-            {
-                HandleException(context, ex);
-            }
-            finally
-            {
-                FinalizeJob(context);
-                FinalizeProcess();
-            }
+
+            return;
         }
 
-        private void CheckProcessExitCode()
+        if (Properties.SuccessExitCodes.Any())
         {
-            if (_processKilled)
+            if (!Properties.SuccessExitCodes.Any(s => s == exitCode))
             {
-                throw new ProcessJobException($"process '{Filename}' was stopped at {DateTimeOffset.Now}");
+                var codes = string.Join(',', Properties.SuccessExitCodes);
+                throw new ProcessJobException($"process '{Filename}' ended with exit code {exitCode} which is not one of success exit codes ({codes})");
             }
 
-            if (_process == null) { return; }
-            var exitCode = _process.ExitCode;
-            if (Properties.FailExitCodes.Any())
-            {
-                if (Properties.FailExitCodes.Any(f => f == exitCode))
-                {
-                    var codes = string.Join(',', Properties.FailExitCodes);
-                    throw new ProcessJobException($"process '{Filename}' ended with exit code {exitCode} which is one of fail exit codes ({codes})");
-                }
-
-                return;
-            }
-
-            if (Properties.SuccessExitCodes.Any())
-            {
-                if (!Properties.SuccessExitCodes.Any(s => s == exitCode))
-                {
-                    var codes = string.Join(',', Properties.SuccessExitCodes);
-                    throw new ProcessJobException($"process '{Filename}' ended with exit code {exitCode} which is not one of success exit codes ({codes})");
-                }
-
-                return;
-            }
-
-            if (!string.IsNullOrEmpty(Properties.FailOutputRegex))
-            {
-                var output = _output.ToString();
-                var regex = new Regex(Properties.FailOutputRegex, RegexOptions.None, TimeSpan.FromSeconds(5));
-                if (regex.IsMatch(output))
-                {
-                    throw new ProcessJobException($"process '{Filename}' ended with an output that matched the fail output message '{Properties.FailOutputRegex}'");
-                }
-
-                return;
-            }
-
-            if (!string.IsNullOrEmpty(Properties.SuccessOutputRegex))
-            {
-                var output = _output.ToString();
-                var regex = new Regex(Properties.SuccessOutputRegex, RegexOptions.None, TimeSpan.FromSeconds(5));
-                if (!regex.IsMatch(output))
-                {
-                    throw new ProcessJobException($"process '{Filename}' ended with an output that not matched the success output message '{Properties.SuccessOutputRegex}'");
-                }
-
-                return;
-            }
-
-            if (exitCode != 0)
-            {
-                throw new ProcessJobException($"process '{Filename}' ended with exit code {exitCode} which is different from success exit code 0");
-            }
+            return;
         }
 
-        protected override ProcessStartInfo GetProcessStartInfo()
+        if (!string.IsNullOrEmpty(Properties.FailOutputRegex))
         {
-            var startInfo = base.GetProcessStartInfo();
-            startInfo.Arguments = Properties.Arguments;
-
-            if (!string.IsNullOrEmpty(Properties.OutputEncoding))
+            var output = _output.ToString();
+            var regex = new Regex(Properties.FailOutputRegex, RegexOptions.None, TimeSpan.FromSeconds(5));
+            if (regex.IsMatch(output))
             {
-                var encoding = Encoding.GetEncoding(Properties.OutputEncoding);
-                startInfo.StandardErrorEncoding = encoding;
-                startInfo.StandardOutputEncoding = encoding;
+                throw new ProcessJobException($"process '{Filename}' ended with an output that matched the fail output message '{Properties.FailOutputRegex}'");
             }
 
-            return startInfo;
+            return;
         }
+
+        if (!string.IsNullOrEmpty(Properties.SuccessOutputRegex))
+        {
+            var output = _output.ToString();
+            var regex = new Regex(Properties.SuccessOutputRegex, RegexOptions.None, TimeSpan.FromSeconds(5));
+            if (!regex.IsMatch(output))
+            {
+                throw new ProcessJobException($"process '{Filename}' ended with an output that not matched the success output message '{Properties.SuccessOutputRegex}'");
+            }
+
+            return;
+        }
+
+        if (exitCode != 0)
+        {
+            throw new ProcessJobException($"process '{Filename}' ended with exit code {exitCode} which is different from success exit code 0");
+        }
+    }
+
+    protected override ProcessStartInfo GetProcessStartInfo()
+    {
+        var startInfo = base.GetProcessStartInfo();
+        startInfo.Arguments = Properties.Arguments;
+
+        if (!string.IsNullOrEmpty(Properties.OutputEncoding))
+        {
+            var encoding = Encoding.GetEncoding(Properties.OutputEncoding);
+            startInfo.StandardErrorEncoding = encoding;
+            startInfo.StandardOutputEncoding = encoding;
+        }
+
+        return startInfo;
     }
 }

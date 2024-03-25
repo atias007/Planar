@@ -7,12 +7,8 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Data
 {
-    public class ConfigData : BaseDataLayer
+    public class ConfigData(PlanarContext context) : BaseDataLayer(context)
     {
-        public ConfigData(PlanarContext context) : base(context)
-        {
-        }
-
         public async Task<GlobalConfig?> GetGlobalConfig(string key)
         {
             var result = await _context.GlobalConfigs.AsNoTracking().FirstOrDefaultAsync(c => c.Key == key);

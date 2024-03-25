@@ -50,7 +50,7 @@ protection:
   max memory usage: 5000               # the maximum memory usage in MB. default is 5000 MB. minimum value 1000 MB
   restart on high memory usage: true   # restart the service on high memory usage. default is true
   wait before restart: 00:05:00        # the time span to wait before restarting the service. default is 5 minutes. minimum value 1 minute
-  regular restart expression: 0 0 4 ? * SAT *     # cron expression for timing regular restart. the time is estimated. restart will occur when no jobs is currently running. set to null for no regular restart. the default null
+  regular restart expression: null     # cron expression for timing regular restart. the time is estimated. restart will occur when no jobs is currently running. set to null for no regular restart. the default null
 
 smtp: 
   from address: admin@planar.me

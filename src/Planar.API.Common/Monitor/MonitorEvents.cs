@@ -47,5 +47,6 @@ namespace Planar.Common
         [Description("Cluster Health Check Fail")] ClusterHealthCheckFail = 315,
         [Description("Job Updated")] JobUpdated = 316,
         [Description("Max Memory Usage")] MaxMemoryUsage = 317,
+        [Description("Regular Application Restart")] RegularApplicationRestart = 318,
     }
 }

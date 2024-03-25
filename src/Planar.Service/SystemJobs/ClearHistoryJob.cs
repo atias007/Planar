@@ -15,17 +15,8 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs;
 
-public sealed class ClearHistoryJob : SystemJob, IJob
+public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, ILogger<ClearHistoryJob> logger) : SystemJob, IJob
 {
-    private readonly ILogger<ClearHistoryJob> _logger;
-    private readonly IServiceScopeFactory _serviceScopeFactory;
-
-    public ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, ILogger<ClearHistoryJob> logger)
-    {
-        _logger = logger;
-        _serviceScopeFactory = serviceScopeFactory;
-    }
-
     public async Task Execute(IJobExecutionContext context)
     {
         await SafeDoWork(context);
@@ -43,7 +34,7 @@ public sealed class ClearHistoryJob : SystemJob, IJob
     {
         if (!await CheckIfStatisticsJobRun())
         {
-            _logger.LogWarning("could not clear history records, statistics job did not run today");
+            logger.LogWarning("could not clear history records, statistics job did not run today");
             return;
         }
 
@@ -55,7 +46,7 @@ public sealed class ClearHistoryJob : SystemJob, IJob
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "fail to get exists job ids at {Method}()", $"{nameof(ClearHistoryJob)}.{nameof(SafeDoWork)}");
+            logger.LogError(ex, "fail to get exists job ids at {Method}()", $"{nameof(ClearHistoryJob)}.{nameof(SafeDoWork)}");
             return;
         }
 
@@ -70,14 +61,14 @@ public sealed class ClearHistoryJob : SystemJob, IJob
             ClearJobStatistics(ids.Result)
             );
 
-        SafeSetLastRun(context, _logger);
+        SafeSetLastRun(context, logger);
     }
 
     private async Task<bool> CheckIfStatisticsJobRun()
     {
         try
         {
-            using var scope = _serviceScopeFactory.CreateScope();
+            using var scope = serviceScopeFactory.CreateScope();
             var scheduler = scope.ServiceProvider.GetRequiredService<IScheduler>();
             var job = await scheduler.GetJobDetail(new JobKey(nameof(StatisticsJob), Consts.PlanarSystemGroup));
             if (job == null || job.JobDataMap == null)
@@ -93,7 +84,7 @@ public sealed class ClearHistoryJob : SystemJob, IJob
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "fait to check if statistics job run today. skip clear history");
+            logger.LogError(ex, "fait to check if statistics job run today. skip clear history");
             return false;
         }
     }
@@ -102,14 +93,14 @@ public sealed class ClearHistoryJob : SystemJob, IJob
     {
         try
         {
-            using var scope = _serviceScopeFactory.CreateScope();
+            using var scope = serviceScopeFactory.CreateScope();
             var data = scope.ServiceProvider.GetRequiredService<MetricsData>();
             var rows = await data.ClearStatisticsTables(AppSettings.Retention.StatisticsRetentionDays);
-            _logger.LogDebug("clear statistics tables rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.StatisticsRetentionDays, rows);
+            logger.LogDebug("clear statistics tables rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.StatisticsRetentionDays, rows);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "fail to clear statistics tables rows (older then {Days} days)", AppSettings.Retention.StatisticsRetentionDays);
+            logger.LogError(ex, "fail to clear statistics tables rows (older then {Days} days)", AppSettings.Retention.StatisticsRetentionDays);
         }
     }
 
@@ -117,14 +108,14 @@ public sealed class ClearHistoryJob : SystemJob, IJob
     {
         try
         {
-            using var scope = _serviceScopeFactory.CreateScope();
+            using var scope = serviceScopeFactory.CreateScope();
             var data = scope.ServiceProvider.GetRequiredService<HistoryData>();
             var rows = await data.ClearJobLogTable(AppSettings.Retention.JobLogRetentionDays);
-            _logger.LogDebug("clear job log table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.JobLogRetentionDays, rows);
+            logger.LogDebug("clear job log table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.JobLogRetentionDays, rows);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "fail to clear job log table rows (older then {Days} days)", AppSettings.Retention.JobLogRetentionDays);
+            logger.LogError(ex, "fail to clear job log table rows (older then {Days} days)", AppSettings.Retention.JobLogRetentionDays);
         }
     }
 
@@ -132,7 +123,7 @@ public sealed class ClearHistoryJob : SystemJob, IJob
     {
         try
         {
-            using var scope = _serviceScopeFactory.CreateScope();
+            using var scope = serviceScopeFactory.CreateScope();
             var scheduler = scope.ServiceProvider.GetRequiredService<IScheduler>();
             var jobs = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
             var data = scope.ServiceProvider.GetRequiredService<HistoryData>();
@@ -146,12 +137,12 @@ public sealed class ClearHistoryJob : SystemJob, IJob
                 var jobId = JobHelper.GetJobId(job);
                 if (string.IsNullOrEmpty(jobId)) { continue; }
                 var rows = await data.ClearJobLogTable(jobId, days.Value);
-                _logger.LogDebug("clear job {JobId} log table rows (older then {Days} days) with {Total} effected row(s)", jobId, days, rows);
+                logger.LogDebug("clear job {JobId} log table rows (older then {Days} days) with {Total} effected row(s)", jobId, days, rows);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "fail to clear job log table rows (jobs with retention days)");
+            logger.LogError(ex, "fail to clear job log table rows (jobs with retention days)");
         }
     }
 
@@ -159,20 +150,20 @@ public sealed class ClearHistoryJob : SystemJob, IJob
     {
         try
         {
-            using var scope = _serviceScopeFactory.CreateScope();
+            using var scope = serviceScopeFactory.CreateScope();
             var data = scope.ServiceProvider.GetRequiredService<TraceData>();
             var rows = await data.ClearTraceTable(AppSettings.Retention.TraceRetentionDays);
-            _logger.LogDebug("clear trace table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.TraceRetentionDays, rows);
+            logger.LogDebug("clear trace table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.TraceRetentionDays, rows);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "fail to clear trace table rows (older then {Days} days)", AppSettings.Retention.TraceRetentionDays);
+            logger.LogError(ex, "fail to clear trace table rows (older then {Days} days)", AppSettings.Retention.TraceRetentionDays);
         }
     }
 
     private async Task<IEnumerable<string>> GetExistsJobIds()
     {
-        using var scope = _serviceScopeFactory.CreateScope();
+        using var scope = serviceScopeFactory.CreateScope();
         var scheduler = scope.ServiceProvider.GetRequiredService<IScheduler>();
         var existsKeys = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
         var filterKeys = existsKeys.Where(x => x.Group != Consts.PlanarSystemGroup).ToList();
@@ -190,7 +181,7 @@ public sealed class ClearHistoryJob : SystemJob, IJob
     {
         try
         {
-            using var scope = _serviceScopeFactory.CreateScope();
+            using var scope = serviceScopeFactory.CreateScope();
             var data = scope.ServiceProvider.GetRequiredService<JobData>();
             var ids = await data.GetJobPropertiesIds();
             var rows = 0;
@@ -199,16 +190,16 @@ public sealed class ClearHistoryJob : SystemJob, IJob
                 if (!existsIds.Contains(id))
                 {
                     await data.DeleteJobProperty(id);
-                    _logger.LogDebug("delete job property for job id {JobId}", id);
+                    logger.LogDebug("delete job property for job id {JobId}", id);
                     rows++;
                 }
             }
 
-            _logger.LogDebug("clear properties table rows with {Total} effected row(s)", rows);
+            logger.LogDebug("clear properties table rows with {Total} effected row(s)", rows);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "fail to clear properties table rows");
+            logger.LogError(ex, "fail to clear properties table rows");
         }
     }
 
@@ -216,7 +207,7 @@ public sealed class ClearHistoryJob : SystemJob, IJob
     {
         try
         {
-            using var scope = _serviceScopeFactory.CreateScope();
+            using var scope = serviceScopeFactory.CreateScope();
             var data = scope.ServiceProvider.GetRequiredService<MonitorData>();
             var ids = await data.GetMonitorCounterJobIds();
             var rows = 0;
@@ -225,16 +216,16 @@ public sealed class ClearHistoryJob : SystemJob, IJob
                 if (!existsIds.Contains(id))
                 {
                     await data.DeleteMonitorCounterByJobId(id);
-                    _logger.LogDebug("delete monitor counter for job id {JobId}", id);
+                    logger.LogDebug("delete monitor counter for job id {JobId}", id);
                     rows++;
                 }
             }
 
-            _logger.LogDebug("clear monitor counter rows with {Total} effected row(s)", rows);
+            logger.LogDebug("clear monitor counter rows with {Total} effected row(s)", rows);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "fail to clear monitor counter rows");
+            logger.LogError(ex, "fail to clear monitor counter rows");
         }
     }
 
@@ -242,7 +233,7 @@ public sealed class ClearHistoryJob : SystemJob, IJob
     {
         try
         {
-            using var scope = _serviceScopeFactory.CreateScope();
+            using var scope = serviceScopeFactory.CreateScope();
             var data = scope.ServiceProvider.GetRequiredService<MonitorData>();
             var ids = await data.GetMonitorCounterIds();
             var existsIds = await data.GetMonitorActionIds();
@@ -252,16 +243,16 @@ public sealed class ClearHistoryJob : SystemJob, IJob
                 if (!existsIds.Contains(id))
                 {
                     await data.DeleteMonitorCounterByMonitorId(id);
-                    _logger.LogDebug("delete monitor counter for monitor id {MonitorId}", id);
+                    logger.LogDebug("delete monitor counter for monitor id {MonitorId}", id);
                     rows++;
                 }
             }
 
-            _logger.LogDebug("clear monitor counter rows with {Total} effected row(s)", rows);
+            logger.LogDebug("clear monitor counter rows with {Total} effected row(s)", rows);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "fail to clear monitor counter rows");
+            logger.LogError(ex, "fail to clear monitor counter rows");
         }
     }
 
@@ -269,7 +260,7 @@ public sealed class ClearHistoryJob : SystemJob, IJob
     {
         try
         {
-            using var scope = _serviceScopeFactory.CreateScope();
+            using var scope = serviceScopeFactory.CreateScope();
             var data = scope.ServiceProvider.GetRequiredService<MetricsData>();
             var ids1 = await data.GetJobDurationStatisticsIds();
 
@@ -280,7 +271,7 @@ public sealed class ClearHistoryJob : SystemJob, IJob
                 {
                     var stat = new JobDurationStatistic { JobId = id };
                     await data.DeleteJobStatistic(stat);
-                    _logger.LogDebug("delete job duration statistics for job id {JobId}", id);
+                    logger.LogDebug("delete job duration statistics for job id {JobId}", id);
                     rows++;
                 }
             }
@@ -292,16 +283,16 @@ public sealed class ClearHistoryJob : SystemJob, IJob
                 {
                     var stat = new JobEffectedRowsStatistic { JobId = id };
                     await data.DeleteJobStatistic(stat);
-                    _logger.LogDebug("delete job effected rows statistics for job id {JobId}", id);
+                    logger.LogDebug("delete job effected rows statistics for job id {JobId}", id);
                     rows++;
                 }
             }
 
-            _logger.LogDebug("clear statistics rows with {Total} effected row(s)", rows);
+            logger.LogDebug("clear statistics rows with {Total} effected row(s)", rows);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "fail to clear statistics rows");
+            logger.LogError(ex, "fail to clear statistics rows");
         }
     }
 }

@@ -208,7 +208,7 @@ namespace Planar.Service.API
             return job;
         }
 
-        private static IReadOnlyCollection<ITrigger> BuildTriggers(SetJobRequest job, string jobId)
+        private static List<ITrigger> BuildTriggers(SetJobRequest job, string jobId)
         {
             var quartzTriggers1 = BuildTriggerWithSimpleSchedule(job.SimpleTriggers, jobId);
             var quartzTriggers2 = BuildTriggerWithCronSchedule(job.CronTriggers, jobId);
@@ -251,7 +251,7 @@ namespace Planar.Service.API
             }
 
             // Data
-            jobTrigger.TriggerData ??= new Dictionary<string, string?>();
+            jobTrigger.TriggerData ??= [];
 
             if (jobTrigger.TriggerData.Count > 0)
             {
@@ -430,7 +430,7 @@ namespace Planar.Service.API
 
         private static JobKey ValidateJobMetadata(SetJobRequest metadata, IScheduler scheduler)
         {
-            metadata.JobData ??= new Dictionary<string, string?>();
+            metadata.JobData ??= [];
 
             #region Trim
 
@@ -521,7 +521,7 @@ namespace Planar.Service.API
         {
             container.SimpleTriggers?.ForEach(t =>
             {
-                t.TriggerData ??= new Dictionary<string, string?>();
+                t.TriggerData ??= [];
                 if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
 
                 var emptyKeys = t.TriggerData.Any(item => string.IsNullOrWhiteSpace(item.Key));
@@ -529,7 +529,7 @@ namespace Planar.Service.API
             });
             container.CronTriggers?.ForEach(t =>
             {
-                t.TriggerData ??= new Dictionary<string, string?>();
+                t.TriggerData ??= [];
                 if (string.IsNullOrEmpty(t.Name)) throw new RestValidationException("name", "trigger name is mandatory");
             });
         }
@@ -538,7 +538,7 @@ namespace Planar.Service.API
         {
             foreach (var t in pool.Triggers)
             {
-                t.TriggerData ??= new Dictionary<string, string?>();
+                t.TriggerData ??= [];
                 ValidateRange(t.Name, 5, 50, "name", "trigger");
                 ValidateRange(t.Group, 1, 50, "group", "trigger");
                 ValidateMaxLength(t.Calendar, 50, "calendar", "trigger");
@@ -588,7 +588,7 @@ namespace Planar.Service.API
         {
             foreach (var t in pool.Triggers)
             {
-                t.TriggerData ??= new Dictionary<string, string?>();
+                t.TriggerData ??= [];
                 if (Consts.PreserveGroupNames.Contains(t.Group)) { throw new RestValidationException("group", $"trigger group '{t.Group}' is invalid (preserved value)"); }
                 if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"simple trigger name '{t.Name}' has invalid prefix"); }
                 ValidateDataMap(t.TriggerData, "trigger");

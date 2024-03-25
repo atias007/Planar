@@ -43,7 +43,9 @@ namespace Planar
 
             var parts = paths.ToList();
             parts.Insert(0, folder);
+#pragma warning disable IDE0305 // Simplify collection initialization
             var result = Path.Combine(parts.ToArray());
+#pragma warning restore IDE0305 // Simplify collection initialization
             return result;
         }
 
@@ -75,7 +77,9 @@ namespace Planar
         {
             var parts = paths.ToList();
             parts.Insert(0, BasePath);
+#pragma warning disable IDE0305 // Simplify collection initialization
             var result = Path.Combine(parts.ToArray());
+#pragma warning restore IDE0305 // Simplify collection initialization
             return result;
         }
     }

@@ -3,17 +3,13 @@ using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Quartz;
 
-namespace Planar
+namespace Planar;
+
+[DisallowConcurrentExecution]
+[PersistJobDataAfterExecution]
+public class PlanarJobNoConcurrent(
+    ILogger<PlanarJobNoConcurrent> logger,
+    IJobPropertyDataLayer dataLayer,
+    JobMonitorUtil jobMonitorUtil) : PlanarJob(logger, dataLayer, jobMonitorUtil)
 {
-    [DisallowConcurrentExecution]
-    [PersistJobDataAfterExecution]
-    public class PlanarJobNoConcurrent : PlanarJob
-    {
-        public PlanarJobNoConcurrent(
-            ILogger<PlanarJob> logger,
-            IJobPropertyDataLayer dataLayer,
-            JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
-        {
-        }
-    }
 }

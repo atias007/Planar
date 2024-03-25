@@ -267,7 +267,9 @@ namespace Planar.Service.Monitor
                     var message = GetMessage(value);
                     var level = matches[0].Groups[1].Value;
                     if (!Enum.TryParse<LogLevel>(level, ignoreCase: true, out var logLevel)) { continue; }
+#pragma warning disable CA2254 // Template should be a static expression
                     _logger.Log(logLevel, message);
+#pragma warning restore CA2254 // Template should be a static expression
                 }
             }
         }

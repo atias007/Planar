@@ -2,10 +2,7 @@
 
 namespace Planar
 {
-    public sealed class PlanarJobException : PlanarException
+    public sealed class PlanarJobException(string message) : PlanarException(message)
     {
-        public PlanarJobException(string message) : base(message)
-        {
-        }
     }
 }

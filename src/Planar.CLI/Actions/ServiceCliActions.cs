@@ -226,6 +226,7 @@ namespace Planar.CLI.Actions
         [Action("create-cryptography-key")]
         public static async Task<CliActionResponse> CreateCryptographyKey(CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var key = Aes256Cipher.GenerateKey();
             var table = CliTableExtensions.GetTable(key);
             var response = CliActionResponse.GetGenericSuccessRestResponse();
@@ -237,6 +238,7 @@ namespace Planar.CLI.Actions
         [Action("encrypt-settings")]
         public static async Task<CliActionResponse> EncryptSettings(CliEncryptAppsettingsRequest request, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var filename = request.Filename ?? string.Empty;
             var text = File.ReadAllText(filename);
             if (text.StartsWith(encryptKey))
@@ -255,6 +257,7 @@ namespace Planar.CLI.Actions
         [Action("decrypt-settings")]
         public static async Task<CliActionResponse> DecryptSettings(CliEncryptAppsettingsRequest request, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var filename = request.Filename ?? string.Empty;
             var text = File.ReadAllText(filename);
             if (!text.StartsWith(encryptKey))
