@@ -55,7 +55,7 @@ public sealed class ClearHistoryJob : SystemJob, IJob
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"fail to get exists job ids at {nameof(ClearHistoryJob)}.{nameof(SafeDoWork)}()");
+            _logger.LogError(ex, "fail to get exists job ids at {Method}()", $"{nameof(ClearHistoryJob)}.{nameof(SafeDoWork)}");
             return;
         }
 

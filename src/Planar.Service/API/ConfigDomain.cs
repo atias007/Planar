@@ -24,16 +24,14 @@ namespace Planar.Service.API
 
         public async Task Delete(string key)
         {
-            try
-            {
-                key = key.SafeTrim() ?? string.Empty;
-                await DataLayer.RemoveGlobalConfig(key);
-                await Flush();
-            }
-            catch (DbUpdateConcurrencyException)
+            key = key.SafeTrim() ?? string.Empty;
+            var count = await DataLayer.RemoveGlobalConfig(key);
+            if (count == 0)
             {
                 throw new RestNotFoundException($"global config with key '{key}' not found");
             }
+
+            await Flush();
         }
 
         public async Task Flush(CancellationToken stoppingToken = default)

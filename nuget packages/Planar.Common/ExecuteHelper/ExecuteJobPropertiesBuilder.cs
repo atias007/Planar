@@ -112,6 +112,11 @@ namespace Planar.Common
             _properties.GlobalSettings.AddOrUpdate(key, PlanarConvert.ToString(value));
             return this;
         }
+        public IExecuteJobPropertiesBuilder WithTriggerTimeout(TimeSpan timeout)
+        {
+            _properties.TriggerTimeout = timeout;
+            return this;
+        }
 
         public IExecuteJobProperties Build()
         {

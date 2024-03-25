@@ -3,8 +3,7 @@ using System.Runtime.Serialization;
 
 namespace Planar.CLI.Exceptions
 {
-    [Serializable]
-    public class PlanarServiceException : Exception
+    public sealed class PlanarServiceException : Exception
     {
         public PlanarServiceException(Exception innerException)
             : base(string.Empty, innerException)
@@ -13,10 +12,6 @@ namespace Planar.CLI.Exceptions
 
         public PlanarServiceException(string message)
             : base(message)
-        {
-        }
-
-        protected PlanarServiceException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

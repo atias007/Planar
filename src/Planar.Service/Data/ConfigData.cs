@@ -43,11 +43,12 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
-        public async Task RemoveGlobalConfig(string key)
+        public async Task<int> RemoveGlobalConfig(string key)
         {
-            var data = new GlobalConfig { Key = key };
-            _context.Remove(data);
-            await _context.SaveChangesAsync();
+            var count = await _context.GlobalConfigs
+                .Where(g => g.Key == key)
+                .ExecuteDeleteAsync();
+            return count;
         }
     }
 }

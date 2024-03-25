@@ -73,33 +73,35 @@ namespace Planar.Service.API
         {
             var monitor = new MonitorAction { Id = id };
 
-            try
-            {
-                await DataLayer.DeleteMonitor(monitor);
-                _ = Resolve<MonitorDurationCache>().Flush();
-                AuditSecuritySafe($"monitor id {id} was deleted by user", true);
-            }
-            catch (DbUpdateConcurrencyException)
+            var count = await DataLayer.DeleteMonitor(monitor);
+            if (count == 0)
             {
                 throw new RestNotFoundException($"monitor with id {id} could not be found");
             }
+            _ = Resolve<MonitorDurationCache>().Flush();
+            AuditSecuritySafe($"monitor id {id} was deleted by user", true);
         }
 
         public async Task DeleteHook(string name)
         {
-            try
+            if (
+                ServiceUtil.MonitorHooks.Any(h => h.Value.HookType == HookWrapper.HookTypeMembers.Internal &&
+                string.Equals(h.Value.Name, name, StringComparison.OrdinalIgnoreCase)))
             {
-                await DataLayer.DeleteMonitorHook(name);
-                await Reload(clusterReload: true);
-                AuditSecuritySafe($"monitor hook name {name} was deleted by user", true);
+                throw new RestValidationException("name", $"monitor hook name '{name}' is system internal hook and can't be deleted");
             }
-            catch (DbUpdateConcurrencyException)
+
+            var count = await DataLayer.DeleteMonitorHook(name);
+            if (count == 0)
             {
-                throw new RestNotFoundException($"monitor  hook name {name} could not be found");
+                throw new RestNotFoundException($"monitor hook name '{name}' could not be found");
             }
+
+            await Reload(clusterReload: true);
+            AuditSecuritySafe($"monitor hook name '{name}' was deleted by user", true);
         }
 
-        public async Task AddHook(AddHookRequest request)
+        public async Task<MonitorHookDetails> AddHook(AddHookRequest request)
         {
             ArgumentNullException.ThrowIfNull(request);
             var path = request.Filename.Trim();
@@ -119,45 +121,58 @@ namespace Planar.Service.API
             }
             catch
             {
-                throw new RestValidationException("filename", $"fail to execute hook check");
+                throw new RestValidationException("filename", $"fail to execute hook health check. no response from hook");
             }
 
             await ValidateHookDetails(details);
             details.Path = path;
             var entity = Mapper.Map<MonitorHook>(details);
             await DataLayer.AddMonitorHook(entity);
-            await Reload(clusterReload: true);
+            _ = Reload(clusterReload: true);
+            return details;
         }
 
         private async Task ValidateHookDetails(MonitorHookDetails details)
         {
+            // Empty string
             if (string.IsNullOrWhiteSpace(details.Name))
             {
-                throw new RestValidationException("filename", "hook name is null or empty");
+                throw new RestValidationException("name", "hook name is null or empty");
             }
 
+            if (string.IsNullOrWhiteSpace(details.Description))
+            {
+                details.Description = string.Empty;
+            }
+
+            // Trim
             details.Name = details.Name.Trim();
             details.Description = details.Description.Trim();
 
+            if (details.Name.Any(char.IsControl))
+            {
+                throw new RestValidationException("name", "hook name contains invalid special control characters");
+            }
+
             if (details.Name.Length < 3 || details.Name.Length > 50)
             {
-                throw new RestValidationException("filename", $"hook name '{details.Name}' length must be more or equals to 3");
+                throw new RestValidationException("name", $"hook name '{details.Name}' length must be more or equals to 3");
             }
 
             if (details.Name.Length > 50)
             {
-                throw new RestValidationException("filename", $"hook name '{details.Name}' length must be less then or equals to 50");
+                throw new RestValidationException("name", $"hook name '{details.Name}' length must be less then or equals to 50");
             }
 
             if (details.Description.Length > 2000)
             {
-                throw new RestValidationException("filename", "hook description length must be less then or equals to 2000");
+                throw new RestValidationException("description", "hook description length must be less then or equals to 2000");
             }
 
             var exists = await DataLayer.IsMonitorHookExists(details.Name);
             if (exists)
             {
-                throw new RestValidationException("filename", $"hook with name '{details.Name}' already exists");
+                throw new RestValidationException("name", $"hook with name '{details.Name}' already exists");
             }
         }
 

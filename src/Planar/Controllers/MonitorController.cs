@@ -183,11 +183,11 @@ namespace Planar.Controllers
         [SwaggerOperation(OperationId = "add_monitor_hook", Description = "Add monitor hook", Summary = "Add Monitor Hook")]
         [JsonConsumes]
         [BadRequestResponse]
-        [CreatedResponse]
-        public async Task<ActionResult> AddHook([FromBody][Required] AddHookRequest request)
+        [CreatedResponse(typeof(MonitorHookDetails))]
+        public async Task<ActionResult<MonitorHookDetails>> AddHook([FromBody][Required] AddHookRequest request)
         {
-            await BusinesLayer.AddHook(request);
-            return CreatedAtAction(null, null);
+            var result = await BusinesLayer.AddHook(request);
+            return CreatedAtAction(null, result);
         }
 
         [HttpPost("try")]

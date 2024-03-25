@@ -9,6 +9,8 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Timers;
+using Timer = System.Timers.Timer;
 
 namespace Planar.Job
 {
@@ -17,6 +19,7 @@ namespace Planar.Job
         private BaseJobFactory _baseJobFactory = null!;
         private IConfiguration _configuration = null!;
         private JobExecutionContext _context = new JobExecutionContext();
+        private Timer? _timer;
 
         private ILogger _logger = null!;
         private IServiceProvider _provider = null!;
@@ -86,24 +89,64 @@ namespace Planar.Job
 
             try
             {
+                var timeout = _context.TriggerDetails.Timeout;
+                if (timeout == null || timeout.Value.TotalSeconds < 1) { timeout = TimeSpan.FromHours(2); }
+                var timeoutms = timeout.Value.Add(TimeSpan.FromMinutes(3)).TotalMilliseconds;
+
+                _timer = new Timer(timeoutms);
+                _timer.Elapsed += TimerElapsed;
+                _timer.Start();
+
                 ExecuteJob(_context).Wait();
+                _timer?.Stop();
                 var mapperBack = new JobBackMapper(_logger, _baseJobFactory);
                 mapperBack.MapJobInstancePropertiesBack(_context, this);
             }
             catch (Exception ex)
             {
-                var text = _baseJobFactory.ReportException(ex);
-                if (PlanarJob.Mode == RunningMode.Debug)
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.Error.WriteLine(text);
-                    Console.ResetColor();
-                }
+                HandleException(ex);
             }
             finally
             {
                 MqttClient.Stop().Wait();
+                _timer?.Dispose();
             }
+        }
+
+        private void HandleException(Exception ex)
+        {
+            var text = _baseJobFactory.ReportException(ex);
+            if (PlanarJob.Mode == RunningMode.Debug)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Error.WriteLine(text);
+                Console.ResetColor();
+            }
+        }
+
+        private void TimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            try
+            {
+                var ex = new PlanarJobException("Execution timeout. Terminate application");
+                HandleException(ex);
+            }
+            catch
+            {
+                // *** DO NOTHING ***
+            }
+
+            try
+            {
+                MqttClient.Stop().Wait();
+                _timer?.Dispose();
+            }
+            catch
+            {
+                // *** DO NOTHING ***
+            }
+
+            Environment.Exit(-1);
         }
 
         internal UnitTestResult ExecuteUnitTest(

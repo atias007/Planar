@@ -86,7 +86,7 @@ namespace Planar.Service.API
             await ValidateUsersForGroup(id);
 
             var count = await DataLayer.RemoveGroup(id);
-            if (count < 1)
+            if (count == 0)
             {
                 throw new RestNotFoundException($"group '{name}' could not be found");
             }

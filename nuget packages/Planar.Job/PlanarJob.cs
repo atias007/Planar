@@ -180,7 +180,8 @@ namespace Planar.Job
 
         private static void TimerElapsed(object sender, ElapsedEventArgs e)
         {
-            Console.WriteLine("User input timeout. Close application");
+            Console.WriteLine("User input timeout. Terminate application");
+            System.Environment.Exit(-1);
         }
 
         private static bool HasArgument(string key)

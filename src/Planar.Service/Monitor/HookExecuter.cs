@@ -85,10 +85,11 @@ namespace Planar.Service.Monitor
             {
                 ValidateFileExists(_filename);
                 var startInfo = GetHealthCheckProcessStartInfo(_filename);
-                var success = StartProcess(startInfo, TimeSpan.FromSeconds(30));
+                var success = StartProcess(startInfo, TimeSpan.FromSeconds(20));
                 if (!success)
                 {
                     OnTimeout();
+                    throw new TimeoutException("hook health check execution timeout expire");
                 }
 
                 var result = AnalyzeHealthCheckOutput();

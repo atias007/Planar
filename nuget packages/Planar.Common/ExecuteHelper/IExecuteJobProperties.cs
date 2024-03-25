@@ -16,5 +16,6 @@ namespace Planar.Common
         IDictionary<string, object?> TriggerData { get; }
         string TriggerKeyGroup { get; }
         string TriggerKeyName { get; }
+        TimeSpan? TriggerTimeout { get; }
     }
 }

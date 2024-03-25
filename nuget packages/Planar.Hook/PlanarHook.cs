@@ -179,6 +179,7 @@ namespace Planar.Hook
         private static void TimerElapsed(object sender, ElapsedEventArgs e)
         {
             Console.WriteLine("User input timeout. Close application");
+            System.Environment.Exit(-1);
         }
 
         private static void PrintMenuItem(string text, string key)

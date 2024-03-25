@@ -44,7 +44,7 @@ namespace Planar.Service.API
         public async Task Delete(string username)
         {
             var count = await DataLayer.RemoveUser(username);
-            if (count < 1)
+            if (count == 0)
             {
                 throw new RestNotFoundException($"user with username '{username}' could not be found");
             }

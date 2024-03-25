@@ -102,7 +102,7 @@ namespace Planar.Service.Data
 
         public async Task<bool> IsGroupHasUsers(int groupId)
         {
-            var result = await _context.Groups.AnyAsync(g => g.Id == groupId && g.Users.Any());
+            var result = await _context.Groups.AnyAsync(g => g.Id == groupId && g.Users.Count != 0);
             return result;
         }
 

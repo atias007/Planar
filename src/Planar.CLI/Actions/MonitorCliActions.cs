@@ -242,8 +242,67 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, table);
         }
 
-        // restRequest.Timeout = 30_000
-        // AnsiConsole.MarkupLine($"[grey62]  > (please wait... this action may take up to 30 seconds)[/]")
+        [Action("add-hook")]
+        public static async Task<CliActionResponse> AddHook(CliAddHookjRequest request, CancellationToken cancellationToken)
+        {
+            request ??= new CliAddHookjRequest();
+            var wrapper = await FillAddHookRequest(request, cancellationToken);
+            if (!wrapper.IsSuccessful)
+            {
+                return new CliActionResponse(wrapper.FailResponse);
+            }
+
+            var restRequest = new RestRequest("monitor/hook", Method.Post)
+                .AddBody(new { request.Filename });
+
+            restRequest.Timeout = 25_000;
+            AnsiConsole.MarkupLine($"[grey62]  > (please wait... this action may take up to 20 seconds)[/]");
+
+            var result = await RestProxy.Invoke<MonitorHookDetails>(restRequest, cancellationToken);
+            var table = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, table);
+        }
+
+        [Action("remove-hook")]
+        public static async Task<CliActionResponse> RemoveHook(CliGetByNameRequest request, CancellationToken cancellationToken)
+        {
+            request ??= new CliGetByNameRequest();
+            var wrapper = await FillRemoveHookRequest(request, cancellationToken);
+            if (!wrapper.IsSuccessful)
+            {
+                return new CliActionResponse(wrapper.FailResponse);
+            }
+
+            var restRequest = new RestRequest("monitor/hook/{name}", Method.Delete)
+                .AddParameter("name", request.Name, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke(restRequest, cancellationToken);
+            return new CliActionResponse(result);
+        }
+
+        private static async Task<CliPromptWrapper> FillAddHookRequest(CliAddHookjRequest request, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(request.Filename))
+            {
+                var p1 = await CliPromptUtil.NewHooks(cancellationToken);
+                if (!p1.IsSuccessful) { return p1; }
+                request.Filename = p1.Value ?? string.Empty;
+            }
+
+            return CliPromptWrapper.Success;
+        }
+
+        private static async Task<CliPromptWrapper> FillRemoveHookRequest(CliGetByNameRequest request, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(request.Name))
+            {
+                var p1 = await CliPromptUtil.ExternalHooks(cancellationToken);
+                if (!p1.IsSuccessful) { return p1; }
+                request.Name = p1.Value ?? string.Empty;
+            }
+
+            return CliPromptWrapper.Success;
+        }
 
         private static async Task<RequestBuilderWrapper<CliMonitorTestRequest>> CollectTestMonitorRequestData(CancellationToken cancellationToken = default)
         {

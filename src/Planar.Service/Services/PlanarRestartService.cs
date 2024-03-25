@@ -13,15 +13,17 @@ using Timer = System.Timers.Timer;
 
 namespace Planar.Service.Services;
 
-internal sealed class PlanarServiceMetricsTrace(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : IHostedService, IDisposable
+internal sealed class PlanarRestartService(IServiceProvider serviceProvider, IServiceScopeFactory serviceScopeFactory) : IHostedService, IDisposable
 {
     private const int _bytesInMegaByte = 1024 * 1024;
     private int _memoryHighCount;
     private readonly Timer _timer = new(TimeSpan.FromMinutes(1));
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly IScheduler _scheduler = serviceProvider.GetRequiredService<IScheduler>();
-    private readonly ILogger<PlanarServiceMetricsTrace> _logger = serviceProvider.GetRequiredService<ILogger<PlanarServiceMetricsTrace>>();
+    private readonly ILogger<PlanarRestartService> _logger = serviceProvider.GetRequiredService<ILogger<PlanarRestartService>>();
     private DateTimeOffset? _lastMemoryLog;
+    private DateTimeOffset? _nextRegularRestart;
+    private bool _invokeRegularRestart;
 
     public void Dispose()
     {
@@ -56,10 +58,45 @@ internal sealed class PlanarServiceMetricsTrace(IServiceProvider serviceProvider
             {
                 _ = GracefullShutDown(usedMemory);
             }
+            else
+            {
+                _ = CheckForRegularRestart();
+            }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "fail monitor service memory at timer elapsed");
+        }
+    }
+
+    private async Task CheckForRegularRestart()
+    {
+        if (_invokeRegularRestart)
+        {
+            var current = (await _scheduler.GetCurrentlyExecutingJobs()).Count;
+            if (current == 0)
+            {
+                await GracefullRestart();
+            }
+
+            return;
+        }
+
+        if (!AppSettings.Protection.HasRegularRestart) { return; }
+        if (_nextRegularRestart == null)
+        {
+            _nextRegularRestart = GetNextRegularRestartDate();
+        }
+
+        if (_nextRegularRestart == null)
+        {
+            AppSettings.Protection.RegularRestartExpression = null;
+            return;
+        }
+
+        if (DateTimeOffset.UtcNow >= _nextRegularRestart)
+        {
+            _invokeRegularRestart = true;
         }
     }
 
@@ -108,13 +145,42 @@ internal sealed class PlanarServiceMetricsTrace(IServiceProvider serviceProvider
         CloseApplication();
     }
 
-    private void CloseApplication()
+    private async Task GracefullRestart()
+    {
+        SafeRestartLog();
+        await SafeStandBy();
+        await SafeShutdown(withLog: false);
+        await SafeDelay(withLog: false);
+        CloseApplication(withLog: false);
+    }
+
+    private DateTimeOffset? GetNextRegularRestartDate()
+    {
+        try
+        {
+            if (!AppSettings.Protection.HasRegularRestart) { return null; }
+            var exp = new CronExpression(AppSettings.Protection.RegularRestartExpression ?? string.Empty);
+            var result = exp.GetNextValidTimeAfter(DateTimeOffset.UtcNow);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(ex, "fail to get next regular restart date from settings. cron expression is: {Expression}", AppSettings.Protection.RegularRestartExpression);
+            return null;
+        }
+    }
+
+    private void CloseApplication(bool withLog = true)
     {
         try
         {
             var task = Task.Run(() =>
             {
-                _logger.LogCritical("memory usage is too high. stop the apllication");
+                if (withLog)
+                {
+                    _logger.LogCritical("memory usage is too high. stop the apllication");
+                }
+
                 var app = _serviceProvider.GetRequiredService<IHostApplicationLifetime>();
                 app.StopApplication();
             });
@@ -131,30 +197,39 @@ internal sealed class PlanarServiceMetricsTrace(IServiceProvider serviceProvider
         }
     }
 
-    private async Task SafeDelay()
+    private async Task SafeDelay(bool withLog = true)
     {
         try
         {
             // extra time to handle monitors
-            _logger.LogCritical("memory usage is too high. wait extra 30 seconds to handle monitoring");
+            if (withLog)
+            {
+                _logger.LogCritical("memory usage is too high. wait extra 30 seconds to handle monitoring");
+            }
             await Task.Delay(30_000);
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, "fail to delay shutdown on high memory usage trace service");
+            _logger.LogCritical(ex, "fail to delay shutdown (regular restart or high memory usage)");
         }
     }
 
-    private async Task SafeShutdown()
+    private async Task SafeShutdown(bool withLog = true)
     {
         try
         {
             var count = (await _scheduler.GetCurrentlyExecutingJobs()).Count;
-            _logger.LogCritical("memory usage is too high. shut down scheduler (with wait until complete {Count} current tasks)", count);
+            if (withLog)
+            {
+                _logger.LogCritical("memory usage is too high. shut down scheduler (with wait until complete {Count} current tasks)", count);
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, "memory usage is too high. shut down scheduler (with wait until complete current tasks)");
+            if (withLog)
+            {
+                _logger.LogCritical(ex, "memory usage is too high. shut down scheduler (with wait until complete current tasks)");
+            }
         }
 
         try
@@ -164,7 +239,7 @@ internal sealed class PlanarServiceMetricsTrace(IServiceProvider serviceProvider
         }
         catch (Exception ex)
         {
-            _logger.LogCritical(ex, "fail to shutdown scheduler on high memory usage trace service");
+            _logger.LogCritical(ex, "fail to shutdown scheduler (regular restart or high memory usage)");
         }
     }
 
@@ -191,6 +266,18 @@ internal sealed class PlanarServiceMetricsTrace(IServiceProvider serviceProvider
                 _logger.LogCritical("memory usage is too high. stand by scheduler");
                 _lastMemoryLog = DateTimeOffset.Now;
             }
+        }
+        catch
+        {
+            //// *** DO NOTHING *** //
+        }
+    }
+
+    private void SafeRestartLog()
+    {
+        try
+        {
+            _logger.LogInformation("regular restart invoked. original restart date {Date}", _nextRegularRestart);
         }
         catch
         {

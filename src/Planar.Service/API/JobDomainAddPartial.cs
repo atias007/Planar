@@ -9,6 +9,7 @@ using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
+using Planar.Service.Validation;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -390,7 +391,8 @@ namespace Planar.Service.API
         {
             container.CronTriggers?.ForEach(t =>
             {
-                if (string.IsNullOrEmpty(t.CronExpression)) { throw new RestValidationException("priority", "cron expression is mandatory in cron trigger"); }
+                if (string.IsNullOrEmpty(t.CronExpression)) { throw new RestValidationException("cron expression", "cron expression is mandatory in cron trigger"); }
+                if (!ValidationUtil.IsValidCronExpression(t.CronExpression)) { throw new RestValidationException("cron expression", $"cron expression '{t.CronExpression}' is invalid"); }
             });
         }
 
@@ -491,7 +493,7 @@ namespace Planar.Service.API
 
             #region JobData
 
-            if (metadata.JobData != null && metadata.JobData.Any() && metadata.Concurrent)
+            if (metadata.JobData != null && metadata.JobData.Count != 0 && metadata.Concurrent)
             {
                 throw new RestValidationException("concurrent", $"job with concurrent=true can not have data. persist data with concurrent running may cause unexpected results");
             }

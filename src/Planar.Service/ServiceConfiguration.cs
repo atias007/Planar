@@ -72,7 +72,7 @@ namespace Planar.Service
             services.AddHostedService(p => p.GetRequiredService<MonitorService>());
             services.AddHostedService(p => p.GetRequiredService<MqttBrokerService>());
 
-            services.AddHostedService<PlanarServiceMetricsTrace>();
+            services.AddHostedService<PlanarRestartService>();
 
             if (AppSettings.Authentication.HasAuthontication)
             {

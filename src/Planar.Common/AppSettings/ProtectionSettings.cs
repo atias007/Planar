@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Planar.Common;
 
@@ -9,6 +10,7 @@ public class ProtectionSettings
     public int MaxMemoryUsage { get; set; }
     public bool RestartOnHighMemoryUsage { get; set; }
     public TimeSpan WaitBeforeRestart { get; set; }
+    public string? RegularRestartExpression { get; set; }
 
     public int WaitBeforeRestartMinutes
     {
@@ -19,4 +21,6 @@ public class ProtectionSettings
             return _waitBeforeRestartMinutes.GetValueOrDefault();
         }
     }
+
+    public bool HasRegularRestart => !string.IsNullOrWhiteSpace(RegularRestartExpression);
 }

@@ -4,7 +4,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Planar.Common.Exceptions;
+using Planar.Common.Validation;
 using Polly;
+using Quartz.Util;
 using System;
 using System.Data;
 using System.Linq;
@@ -119,6 +121,7 @@ namespace Planar.Common
             Protection.MaxMemoryUsage = GetSettings(configuration, EC.ProtectionMaxMemoryUsage, "protection", "max memory usage", 5000);
             Protection.RestartOnHighMemoryUsage = GetSettings(configuration, EC.ProtectionRestartOnHighMemoryUsage, "protection", "restart on high memory usage", true);
             Protection.WaitBeforeRestart = GetSettings(configuration, EC.ProtectionWaitBeforeRestart, "protection", "wait before restart", TimeSpan.FromMinutes(5));
+            Protection.RegularRestartExpression = GetSettings(configuration, EC.RegularRestartExpression, "protection", "regular restart expression", string.Empty);
 
             if (Protection.MaxMemoryUsage < 1000)
             {
@@ -128,6 +131,11 @@ namespace Planar.Common
             if (Protection.WaitBeforeRestart.TotalMinutes < 1)
             {
                 throw new AppSettingsException("'wait before restart' is invalid. minimum value is 1 minute");
+            }
+
+            if (Protection.HasRegularRestart && !ValidationUtil.IsValidCronExpression(Protection.RegularRestartExpression))
+            {
+                throw new AppSettingsException($"regular restart expression '{Protection.RegularRestartExpression}' is invalid cron expression");
             }
         }
 

@@ -39,7 +39,7 @@
 	  </None>
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="System.Text.Json" Version="8.0.3" />
+		<PackageReference Include="System.Text.Json" PrivateAssets="All" Version="8.0.3" />
 	</ItemGroup>
 
 </Project>

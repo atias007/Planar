@@ -73,10 +73,13 @@ namespace Planar.Service.Data
             return data;
         }
 
-        public async Task DeleteMonitor(MonitorAction request)
+        public async Task<int> DeleteMonitor(MonitorAction request)
         {
-            _context.MonitorActions.Remove(request);
-            await _context.SaveChangesAsync();
+            var count = await _context.MonitorActions
+                .Where(a => a.Id == request.Id)
+                .ExecuteDeleteAsync();
+
+            return count;
         }
 
         public async Task DeleteMonitorByJobGroup(string jobGroup)
@@ -554,11 +557,13 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteMonitorHook(string name)
+        public async Task<int> DeleteMonitorHook(string name)
         {
-            await _context.MonitorHooks
+            var result = await _context.MonitorHooks
                 .Where(m => m.Name == name)
                 .ExecuteDeleteAsync();
+
+            return result;
         }
 
         public async Task<bool> IsMonitorHookExists(string name)

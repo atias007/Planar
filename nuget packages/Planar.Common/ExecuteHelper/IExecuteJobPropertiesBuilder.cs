@@ -27,5 +27,7 @@ namespace Planar.Common
         IExecuteJobPropertiesBuilder WithTriggerData(string key, object? value);
 
         IExecuteJobPropertiesBuilder WithTriggerName(string name);
+
+        IExecuteJobPropertiesBuilder WithTriggerTimeout(TimeSpan timeout);
     }
 }

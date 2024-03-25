@@ -53,6 +53,7 @@ namespace Planar.Common
         public const string ProtectionMaxMemoryUsage = "PLANAR_PROTECTION_MAX_MEMORY_USAGE";
         public const string ProtectionRestartOnHighMemoryUsage = "PLANAR_PROTECTION_RESTART_ON_HIGH_MEMORY_USAGE";
         public const string ProtectionWaitBeforeRestart = "PLANAR_PROTECTION_WAIT_BEFORE_RESTART";
+        public const string RegularRestartExpression = "PLANAR_PROTECTION_REGULAR_RESTART_EXPRESSION";
 
         public const string HooksRestDefaultUrl = "PLANAR_HOOKS_REST_DEFAULT_URL";
         public const string HooksTeamsDefaultUrl = "PLANAR_HOOKS_TEAMS_DEFAULT_URL";
