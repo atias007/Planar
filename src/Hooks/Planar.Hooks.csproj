@@ -7,7 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="EmailTemplates\AlertTemplate.html" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="..\Planar.Service\General\SmtpUtil.cs" Link="General\SmtpUtil.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="EmailTemplates\AlertTemplate.html" />
   </ItemGroup>
 
   <ItemGroup>
