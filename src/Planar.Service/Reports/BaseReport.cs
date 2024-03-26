@@ -29,6 +29,17 @@ namespace Planar.Service.Reports
             return counter.ToString("N0");
         }
 
+        private static string GetResourceByName(string resourceName)
+        {
+            var assembly = typeof(BaseReport).Assembly ??
+               throw new InvalidOperationException("Assembly is null");
+            using var stream = assembly.GetManifestResourceStream(resourceName) ??
+                throw new InvalidOperationException($"Resource '{resourceName}' not found");
+            using StreamReader reader = new(stream);
+            var result = reader.ReadToEnd();
+            return result;
+        }
+
         private static string GetResource(string? reportName, string key)
         {
             var resourceName =
@@ -36,13 +47,7 @@ namespace Planar.Service.Reports
                 $"{nameof(Planar)}.{nameof(Service)}.HtmlTemplates.{key}.html" :
                 $"{nameof(Planar)}.{nameof(Service)}.HtmlTemplates.{reportName}Report.{key}.html";
 
-            var assembly = typeof(BaseReport).Assembly ??
-                throw new InvalidOperationException("Assembly is null");
-            using var stream = assembly.GetManifestResourceStream(resourceName) ??
-                throw new InvalidOperationException($"Resource '{resourceName}' not found");
-            using StreamReader reader = new(stream);
-            var result = reader.ReadToEnd();
-            return result;
+            return GetResourceByName(resourceName);
         }
 
         protected string GetResource(string key)

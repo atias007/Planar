@@ -48,5 +48,6 @@ namespace Planar.Common
         [Description("Job Updated")] JobUpdated = 316,
         [Description("Max Memory Usage")] MaxMemoryUsage = 317,
         [Description("Regular Application Restart")] RegularApplicationRestart = 318,
+        [Description("Any System Event")] AnySystemEvent = 399,
     }
 }
