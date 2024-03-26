@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -87,24 +88,36 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task JobScheduled(ITrigger trigger, CancellationToken cancellationToken = default)
     {
-        //// if (TriggerKeyHelper.IsSystemTriggerKey(trigger.Key)) { return; }
-        return Task.CompletedTask;
+        if (TriggerKeyHelper.IsSystemTriggerKey(trigger.Key)) { return Task.CompletedTask; }
+        return Task.Run(() =>
+        {
+            IsLock(nameof(JobScheduled), trigger.Key.ToString());
+        }, cancellationToken);
     }
 
     public Task JobsPaused(string jobGroup, CancellationToken cancellationToken = default)
     {
-        return Task.CompletedTask;
+        return Task.Run(() =>
+        {
+            IsLock(nameof(JobsPaused), jobGroup);
+        }, cancellationToken);
     }
 
     public Task JobsResumed(string jobGroup, CancellationToken cancellationToken = default)
     {
-        return Task.CompletedTask;
+        return Task.Run(() =>
+        {
+            IsLock(nameof(JobsPaused), jobGroup);
+        }, cancellationToken);
     }
 
     public Task JobUnscheduled(TriggerKey triggerKey, CancellationToken cancellationToken = default)
     {
-        //// if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return; }
-        return Task.CompletedTask;
+        if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return Task.CompletedTask; }
+        return Task.Run(() =>
+        {
+            IsLock(nameof(JobsPaused), triggerKey.ToString());
+        }, cancellationToken);
     }
 
     public Task SchedulerError(string msg, SchedulerException cause, CancellationToken cancellationToken = default)
@@ -135,7 +148,10 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task SchedulerShutdown(CancellationToken cancellationToken = default)
     {
-        return Task.CompletedTask;
+        return Task.Run(() =>
+        {
+            IsLock(nameof(SchedulerShutdown), null);
+        }, cancellationToken);
     }
 
     public Task SchedulerShuttingdown(CancellationToken cancellationToken = default)
@@ -160,17 +176,26 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task SchedulerStarting(CancellationToken cancellationToken = default)
     {
-        return Task.CompletedTask;
+        return Task.Run(() =>
+        {
+            IsLock(nameof(SchedulerStarting), null);
+        }, cancellationToken);
     }
 
     public Task SchedulingDataCleared(CancellationToken cancellationToken = default)
     {
-        return Task.CompletedTask;
+        return Task.Run(() =>
+        {
+            IsLock(nameof(SchedulingDataCleared), null);
+        }, cancellationToken);
     }
 
     public Task TriggerFinalized(ITrigger trigger, CancellationToken cancellationToken = default)
     {
-        return Task.CompletedTask;
+        return Task.Run(() =>
+        {
+            IsLock(nameof(TriggerFinalized), null);
+        }, cancellationToken);
     }
 
     public Task TriggerPaused(TriggerKey triggerKey, CancellationToken cancellationToken = default)
@@ -197,12 +222,18 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task TriggersPaused(string? triggerGroup, CancellationToken cancellationToken = default)
     {
-        return Task.CompletedTask;
+        return Task.Run(() =>
+        {
+            IsLock(nameof(TriggersPaused), null);
+        }, cancellationToken);
     }
 
     public Task TriggersResumed(string? triggerGroup, CancellationToken cancellationToken = default)
     {
-        return Task.CompletedTask;
+        return Task.Run(() =>
+        {
+            IsLock(nameof(TriggersResumed), null);
+        }, cancellationToken);
     }
 
     private static string GetCacheKey(string operation, string key)

@@ -28,9 +28,6 @@ public class MonitorUtil(IServiceScopeFactory serviceScopeFactory, MonitorScanPr
     {
         var message = new MonitorScanMessage(@event, info, exception);
         producer.Publish(message, cancellationToken);
-
-        message = new MonitorScanMessage(MonitorEvents.AnySystemEvent, info, exception);
-        producer.Publish(message, cancellationToken);
     }
 
     internal static void Lock<T>(Key<T> key, int lockSeconds, params MonitorEvents[] events)

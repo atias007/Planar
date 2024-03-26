@@ -189,7 +189,7 @@ public abstract class BaseReportJob : SystemJob
             }
             else
             {
-                message.To.Add(new MailboxAddress(recipient, recipient));
+                message.Bcc.Add(new MailboxAddress(recipient, recipient));
             }
         }
 
