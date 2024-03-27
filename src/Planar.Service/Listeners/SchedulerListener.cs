@@ -88,36 +88,24 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task JobScheduled(ITrigger trigger, CancellationToken cancellationToken = default)
     {
-        if (TriggerKeyHelper.IsSystemTriggerKey(trigger.Key)) { return Task.CompletedTask; }
-        return Task.Run(() =>
-        {
-            IsLock(nameof(JobScheduled), trigger.Key.ToString());
-        }, cancellationToken);
+        ////if (TriggerKeyHelper.IsSystemTriggerKey(trigger.Key)) { return Task.CompletedTask; }
+        return Task.CompletedTask;
     }
 
     public Task JobsPaused(string jobGroup, CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
-        {
-            IsLock(nameof(JobsPaused), jobGroup);
-        }, cancellationToken);
+        return Task.CompletedTask;
     }
 
     public Task JobsResumed(string jobGroup, CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
-        {
-            IsLock(nameof(JobsPaused), jobGroup);
-        }, cancellationToken);
+        return Task.CompletedTask;
     }
 
     public Task JobUnscheduled(TriggerKey triggerKey, CancellationToken cancellationToken = default)
     {
-        if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return Task.CompletedTask; }
-        return Task.Run(() =>
-        {
-            IsLock(nameof(JobsPaused), triggerKey.ToString());
-        }, cancellationToken);
+        ////if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return Task.CompletedTask; }
+        return Task.CompletedTask;
     }
 
     public Task SchedulerError(string msg, SchedulerException cause, CancellationToken cancellationToken = default)
@@ -148,10 +136,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task SchedulerShutdown(CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
-        {
-            IsLock(nameof(SchedulerShutdown), null);
-        }, cancellationToken);
+        return Task.CompletedTask;
     }
 
     public Task SchedulerShuttingdown(CancellationToken cancellationToken = default)
@@ -176,26 +161,17 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task SchedulerStarting(CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
-        {
-            IsLock(nameof(SchedulerStarting), null);
-        }, cancellationToken);
+        return Task.CompletedTask;
     }
 
     public Task SchedulingDataCleared(CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
-        {
-            IsLock(nameof(SchedulingDataCleared), null);
-        }, cancellationToken);
+        return Task.CompletedTask;
     }
 
     public Task TriggerFinalized(ITrigger trigger, CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
-        {
-            IsLock(nameof(TriggerFinalized), null);
-        }, cancellationToken);
+        return Task.CompletedTask;
     }
 
     public Task TriggerPaused(TriggerKey triggerKey, CancellationToken cancellationToken = default)
@@ -222,18 +198,12 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task TriggersPaused(string? triggerGroup, CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
-        {
-            IsLock(nameof(TriggersPaused), null);
-        }, cancellationToken);
+        return Task.CompletedTask;
     }
 
     public Task TriggersResumed(string? triggerGroup, CancellationToken cancellationToken = default)
     {
-        return Task.Run(() =>
-        {
-            IsLock(nameof(TriggersResumed), null);
-        }, cancellationToken);
+        return Task.CompletedTask;
     }
 
     private static string GetCacheKey(string operation, string key)

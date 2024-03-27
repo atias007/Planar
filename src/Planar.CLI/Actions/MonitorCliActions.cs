@@ -445,8 +445,10 @@ namespace Planar.CLI.Actions
 
         private static string GetEvent(IEnumerable<MonitorEventModel> events)
         {
-            var eventsName = events.Select(e => e.EventTitle);
+            var eventsName = events.Select(e => $"{e.EventTitle} {CliConsts.GroupDisplayFormat}({e.EventType})[/]");
             var selectedEvent = PromptSelection(eventsName, "monitor event");
+            if (selectedEvent == null) { return string.Empty; }
+            selectedEvent = selectedEvent[0..(selectedEvent.IndexOf(CliConsts.GroupDisplayFormat)-1)];
             AnsiConsole.MarkupLine($"[turquoise2]  > event:[/] {selectedEvent}");
             var result = events.FirstOrDefault(e => e.EventTitle == selectedEvent)?.EventName;
             return result ?? string.Empty;

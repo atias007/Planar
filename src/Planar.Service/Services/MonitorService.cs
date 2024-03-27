@@ -5,7 +5,6 @@ using Newtonsoft.Json;
 using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
-using Planar.Hook;
 using Planar.Service.API;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
@@ -39,8 +38,6 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         {
             if (!reader.TryRead(out var monitor)) { continue; }
             if (IsInternalEvent(monitor)) { continue; }
-
-            await Console.Out.WriteLineAsync($"-Consumer-> {monitor.Type} {monitor.MonitorSystemInfo?.MessageTemplate}");
 
             switch (monitor.Type)
             {
@@ -120,8 +117,6 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
 
         foreach (var action in items)
         {
-            await Console.Out.WriteLineAsync($"///> {action.EventId} {action.Title}");
-
             _ = SafeExecuteMonitor(action, @event, info, exception, cancellationToken);
         }
     }

@@ -233,8 +233,8 @@ namespace Planar.CLI
         {
             var table = new CliTable(showCount: true, entityName: "event");
             if (response == null) { return table; }
-            table.Table.AddColumns("Event Name", "Event Title");
-            response.ForEach(r => table.Table.AddRow(r.EventName, r.EventTitle));
+            table.Table.AddColumns("Event Title", "Event Type");
+            response.ForEach(r => table.Table.AddRow(r.EventTitle, r.EventType));
             return table;
         }
 

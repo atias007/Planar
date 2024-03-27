@@ -27,6 +27,7 @@ namespace Planar.Startup
                 SwaggerCss = new Lazy<IResult>(() => Results.Content(GetContent("theme-flattop.css"), "text/css"));
                 NoAccessImage = new Lazy<IResult>(() => Results.File(GetBinaryContent("no_access.jpg"), "image/jpeg"));
                 PlanarLogo = new Lazy<IResult>(() => Results.File(GetBinaryContent("logo2.png"), "image/png"));
+                EmailLogo = new Lazy<IResult>(() => Results.File(GetBinaryContent("logo3.png"), "image/png"));
             }
 
             public static Lazy<IResult> OpenApiHtml { get; set; }
@@ -36,6 +37,8 @@ namespace Planar.Startup
             public static Lazy<IResult> NoAccessImage { get; set; }
 
             public static Lazy<IResult> PlanarLogo { get; set; }
+
+            public static Lazy<IResult> EmailLogo { get; set; }
 
             public static Lazy<IResult> SwaggerCss { get; set; }
 
@@ -64,6 +67,7 @@ namespace Planar.Startup
                 app.MapGet("/content/fonts.googleapis.css", () => Content.OpenApiCss.Value);
                 app.MapGet("/content/theme-flattop.css", () => Content.SwaggerCss.Value);
                 app.MapGet("/content/logo.png", () => Content.PlanarLogo.Value);
+                app.MapGet("/content/email-logo.png", () => Content.EmailLogo.Value);
             }
             else
             {

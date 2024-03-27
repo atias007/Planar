@@ -39,11 +39,29 @@ namespace Planar.Service.API
             var result =
                 Enum.GetValues(typeof(MonitorEvents))
                 .Cast<MonitorEvents>()
-                .Select(e => new MonitorEventModel { EventName = e.ToString(), EventTitle = e.GetEnumDescription() })
-                .OrderBy(e => e.EventName)
+                .Select(e => new MonitorEventModel
+                {
+                    EventName = e.ToString(),
+                    EventTitle = e.GetEnumDescription(),
+                    EventType = GetEventTypeTitle(e)
+                })
+                .OrderBy(e => e.EventType)
+                .ThenBy(e => e.EventName)
                 .ToList();
 
             return result;
+        }
+
+        private static string GetEventTypeTitle(MonitorEvents monitorEvents)
+        {
+            const string type1 = "Job Event";
+            const string type2 = "Job Event With Parameters";
+            const string type3 = "System Event";
+
+            var id = (int)monitorEvents;
+            if (id < 200) { return type1; }
+            if (id < 300) { return type2; }
+            return type3;
         }
 
         public async Task<int> Add(AddMonitorRequest request)

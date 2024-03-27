@@ -105,7 +105,6 @@ public class MonitorScanProducer(Channel<MonitorScanMessage> channel, ILogger<Mo
             var message2 = new MonitorScanMessage(Common.MonitorEvents.AnySystemEvent, message.MonitorSystemInfo, message.Exception);
             while (await channel.Writer.WaitToWriteAsync(cancellationToken).ConfigureAwait(false))
             {
-                await Console.Out.WriteLineAsync($"-Producer-> {message2.Type} {message2.MonitorSystemInfo?.MessageTemplate}");
                 if (channel.Writer.TryWrite(message2)) { break; }
             }
         }
