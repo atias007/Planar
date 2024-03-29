@@ -2,9 +2,9 @@
 
 namespace Planar.Attributes
 {
-    public class NotFoundResponseAttribute : SwaggerResponseAttribute
+    public class RequestTimeoutResponseAttribute : SwaggerResponseAttribute
     {
-        public NotFoundResponseAttribute() : base(404)
+        public RequestTimeoutResponseAttribute() : base(408)
         {
             Type = typeof(string);
             ContentTypes = ["plain/text"];

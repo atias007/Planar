@@ -43,7 +43,7 @@ authentication:
 
 monitor:
   max alerts per monitor: 10           # the maximum alert per monitor item and per job per period. default is 10. minimum value 1
-  max alerts period: 12:00:00          # the period for maximum monitor alerts. default is 1 day. minimum value 1 hour
+  max alerts period: 08:00:00          # the period for maximum monitor alerts. default is 8 hours. minimum value 1 hour
   manual mute max period: 1.00:00:00   # the maximum period for manual mute. default is 1 day. minimum value 1 hour
 
 protection:
@@ -61,6 +61,8 @@ smtp:
   username: null
   password: null
   default credentials: true
+  html image mode: embedded            # how to implant images in email html templates. embedded (base64 inside html. default), internal (internal link to planar server and http/s port), external (link to external internet resource)
+  html image internal base url: null   # the base url of this server (proxy serve, load balancer) for html internal images url. must be valid uri
 
 hooks:
   rest:

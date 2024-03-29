@@ -118,6 +118,13 @@ namespace Planar.Filters
                 return;
             }
 
+            if (context.Exception is RestRequestTimeoutException timeoutException)
+            {
+                context.Result = new RequestTimeoutObjectResult(timeoutException.Value);
+                context.ExceptionHandled = true;
+                return;
+            }
+
             if (context.Exception is RestForbiddenException)
             {
                 context.Result = new ForbidResult();

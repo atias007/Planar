@@ -759,17 +759,22 @@ namespace Planar.CLI.Actions
             CancellationToken cancellationToken)
         {
             var data = runResult.Data;
-            var currentHash = $"{data?.Progress ?? 0}.{data?.EffectedRows ?? 0}.{data?.ExceptionsCount ?? 0}";
+            ////var currentHash = $"{data?.Progress ?? 0}.{data?.EffectedRows ?? 0}.{data?.ExceptionsCount ?? 0}";
             var restRequest = new RestRequest("job/running-instance/{instanceId}/long-polling", Method.Get)
                 .AddParameter("instanceId", instanceId, ParameterType.UrlSegment)
-                .AddQueryParameter("hash", currentHash);
+                .AddQueryParameter("progress", data?.Progress ?? 0)
+                .AddQueryParameter("effectedRows", data?.EffectedRows ?? 0)
+                .AddQueryParameter("exceptionsCount", data?.ExceptionsCount ?? 0);
+
             restRequest.Timeout = 360_000; // 6 min
             var counter = 1;
             while (counter <= 3)
             {
                 runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest, cancellationToken);
                 if (runResult.IsSuccessful) { break; }
+                if (runResult.StatusCode == HttpStatusCode.RequestTimeout) { break; }
                 if (runResult.StatusCode == HttpStatusCode.NotFound) { break; }
+                if (runResult.StatusCode == HttpStatusCode.BadRequest) { break; }
                 await Task.Delay(500 + ((counter - 1) ^ 2) * 500, cancellationToken);
                 counter++;
             }

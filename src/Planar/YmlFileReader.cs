@@ -37,7 +37,7 @@ namespace Planar
             return GenerateStreamFromString(text);
         }
 
-        private static Stream GenerateStreamFromString(string value)
+        private static MemoryStream GenerateStreamFromString(string value)
         {
             var stream = new MemoryStream();
             var writer = new StreamWriter(stream);

@@ -27,6 +27,7 @@
 	  <None Remove="Content\fonts.googleapis.css" />
 	  <None Remove="Content\logo.png" />
 	  <None Remove="Content\logo2.png" />
+	  <None Remove="Content\logo3.png" />
 	  <None Remove="Content\no_access.jpg" />
 	  <None Remove="Content\redoc.standalone.js" />
 	  <None Remove="Content\theme-flattop.css" />
@@ -53,6 +54,7 @@
 	  <EmbeddedResource Include="Content\fonts.googleapis.css" />
 	  <EmbeddedResource Include="Content\logo.png" />
 	  <EmbeddedResource Include="Content\logo2.png" />
+	  <EmbeddedResource Include="Content\logo3.png" />
 	  <EmbeddedResource Include="Content\no_access.jpg" />
 	  <EmbeddedResource Include="Content\planar_openapi.html">
 	    <CopyToOutputDirectory>Never</CopyToOutputDirectory>
@@ -76,7 +78,6 @@
 
 	<ItemGroup>
 		<PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
-		<PackageReference Include="Grpc.AspNetCore" Version="2.61.0" />
 		<PackageReference Include="MicroElements.Swashbuckle.FluentValidation" Version="6.0.0" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.3" />
 		<PackageReference Include="Microsoft.AspNetCore.OData" Version="8.2.5" />
@@ -86,14 +87,13 @@
 		<PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />
 		<PackageReference Include="Serilog.Enrichers.GlobalLogContext" Version="3.0.0" />
 		<PackageReference Include="Serilog.Sinks.MSSqlServer" Version="6.6.0" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.22.0.87781">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.23.0.88079">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.5.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="8.0.1" />
-		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.4.1" />
 	</ItemGroup>
 	<PropertyGroup>
 		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>

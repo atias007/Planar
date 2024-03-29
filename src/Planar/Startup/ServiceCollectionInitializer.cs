@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using FluentValidation.AspNetCore;
+using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -12,11 +13,10 @@ using Planar.Common;
 using Planar.Filters;
 using Planar.Service;
 using Planar.Service.Services;
+using Prometheus;
 using System;
 using System.Net;
 using System.Threading.RateLimiting;
-using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
-using Prometheus;
 
 namespace Planar.Startup
 {
