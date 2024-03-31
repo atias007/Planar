@@ -18,10 +18,12 @@ namespace Planar.Client
         private readonly Lazy<TriggerApi> _triggerApi;
         private readonly Lazy<MonitorApi> _monitorApi;
         private readonly Lazy<ClusterApi> _clusterApi;
+        private readonly Lazy<ConfigApi> _configApi;
         private readonly Lazy<GroupApi> _groupApi;
         private readonly Lazy<UserApi> _userApi;
         private readonly Lazy<MetricsApi> _metricsApi;
         private readonly Lazy<ReportApi> _reportApi;
+        private readonly Lazy<ServiceApi> _serviceApi;
 
         public PlanarClient()
         {
@@ -34,6 +36,8 @@ namespace Planar.Client
             _userApi = new Lazy<UserApi>(() => new UserApi(_proxy), isThreadSafe: true);
             _metricsApi = new Lazy<MetricsApi>(() => new MetricsApi(_proxy), isThreadSafe: true);
             _reportApi = new Lazy<ReportApi>(() => new ReportApi(_proxy), isThreadSafe: true);
+            _configApi = new Lazy<ConfigApi>(() => new ConfigApi(_proxy), isThreadSafe: true);
+            _serviceApi = new Lazy<ServiceApi>(() => new ServiceApi(_proxy), isThreadSafe: true);
         }
 
         public async Task<LoginDetails> ConnectAsync(string host, string username, string password)
@@ -90,14 +94,16 @@ namespace Planar.Client
             };
         }
 
-        public IJobApi Job => _jobApi.Value;
-        public IHistoryApi History => _historyApi.Value;
-        public ITriggerApi Trigger => _triggerApi.Value;
-        public IMonitorApi Monitor => _monitorApi.Value;
         public IClusterApi Cluster => _clusterApi.Value;
+        public IConfigApi Config => _configApi.Value;
         public IGroupApi Group => _groupApi.Value;
-        public IUserApi User => _userApi.Value;
+        public IHistoryApi History => _historyApi.Value;
+        public IJobApi Job => _jobApi.Value;
         public IMetricsApi Metrics => _metricsApi.Value;
+        public IMonitorApi Monitor => _monitorApi.Value;
         public IReportApi Report => _reportApi.Value;
+        public IServiceApi Service => _serviceApi.Value;
+        public ITriggerApi Trigger => _triggerApi.Value;
+        public IUserApi User => _userApi.Value;
     }
 }

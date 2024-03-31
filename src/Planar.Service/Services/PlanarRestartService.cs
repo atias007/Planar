@@ -278,8 +278,7 @@ internal sealed class PlanarRestartService(IServiceProvider serviceProvider, ISe
         {
             if (_lastMemoryLog == null || DateTimeOffset.Now.Subtract(_lastMemoryLog.GetValueOrDefault()).TotalHours > 1)
             {
-                _logger.LogCritical("memory usage is too high. used memory: {UsedMemory}MB. start graceful end of the process", usedMemory);
-                _logger.LogCritical("memory usage is too high. stand by scheduler");
+                _logger.LogCritical("memory usage is too high. used memory: {UsedMemory}MB. start graceful end of the process. stand by scheduler", usedMemory);
                 _lastMemoryLog = DateTimeOffset.Now;
             }
         }

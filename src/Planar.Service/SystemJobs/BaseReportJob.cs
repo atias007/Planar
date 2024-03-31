@@ -263,7 +263,7 @@ public abstract class BaseReportJob : SystemJob
 public abstract class BaseReportJob<TJob> : BaseReportJob
     where TJob : IJob
 {
-    protected BaseReportJob(IServiceScopeFactory serviceScope, ILogger<TJob> logger) : base(serviceScope, logger)
+    protected BaseReportJob(IServiceScopeFactory serviceScope, ILogger logger) : base(serviceScope, logger)
     {
     }
 

@@ -184,10 +184,11 @@ public static class AppSettings
 
     private static void InitializeProtection(IConfiguration configuration)
     {
-        Protection.MaxMemoryUsage = GetSettings(configuration, EC.ProtectionMaxMemoryUsage, "protection", "max memory usage", 5000);
-        Protection.RestartOnHighMemoryUsage = GetSettings(configuration, EC.ProtectionRestartOnHighMemoryUsage, "protection", "restart on high memory usage", true);
-        Protection.WaitBeforeRestart = GetSettings(configuration, EC.ProtectionWaitBeforeRestart, "protection", "wait before restart", TimeSpan.FromMinutes(5));
-        Protection.RegularRestartExpression = GetSettings(configuration, EC.RegularRestartExpression, "protection", "regular restart expression", string.Empty);
+        const string protection = "protection";
+        Protection.MaxMemoryUsage = GetSettings(configuration, EC.ProtectionMaxMemoryUsage, protection, "max memory usage", 5000);
+        Protection.RestartOnHighMemoryUsage = GetSettings(configuration, EC.ProtectionRestartOnHighMemoryUsage, protection, "restart on high memory usage", true);
+        Protection.WaitBeforeRestart = GetSettings(configuration, EC.ProtectionWaitBeforeRestart, protection, "wait before restart", TimeSpan.FromMinutes(5));
+        Protection.RegularRestartExpression = GetSettings(configuration, EC.RegularRestartExpression, protection, "regular restart expression", string.Empty);
 
         ValidateMinimumValue(Protection.MaxMemoryUsage, minimum: 1000, "max memory usage");
 
@@ -223,6 +224,7 @@ public static class AppSettings
 
     private static void InitializeHooks(IConfiguration configuration)
     {
+        const string hooks_redis = "hooks:redis";
         Hooks.Rest.DefaultUrl = GetSettings(configuration, EC.HooksRestDefaultUrl, "hooks:rest", "default url", string.Empty);
         Hooks.Teams.DefaultUrl = GetSettings(configuration, EC.MonitorMaxAlertsPeriod, "hooks:teams", "default url", string.Empty);
         Hooks.Teams.SendToMultipleChannels = GetSettings(configuration, EC.HooksTeamsSendToMultipleChannels, "hooks:teams", "send to multiple channels", false);
@@ -230,13 +232,13 @@ public static class AppSettings
         Hooks.TwilioSms.AuthToken = GetSettings(configuration, EC.HooksTwilioSmsAuthToken, "hooks:twilio sms", "auth token", string.Empty);
         Hooks.TwilioSms.FromNumber = GetSettings(configuration, EC.HooksTwilioSmsFromNumber, "hooks:twilio sms", "from number", string.Empty);
         Hooks.TwilioSms.DefaultPhonePrefix = GetSettings(configuration, EC.HooksTwilioSmsDefaultPhonePrefix, "hooks:twilio sms", "default phone prefix", string.Empty);
-        Hooks.Redis.Endpoints = [.. GetSettings(configuration, EC.HooksRedisEndpoints, "hooks:redis", "endpoints", string.Empty).Split(',')];
-        Hooks.Redis.Password = GetSettings(configuration, EC.HooksRedisPassword, "hooks:redis", "password", string.Empty);
-        Hooks.Redis.User = GetSettings(configuration, EC.HooksRedisUser, "hooks:redis", "user", string.Empty);
-        Hooks.Redis.Database = GetSettings(configuration, EC.HooksRedisDatabase, "hooks:redis", "db", (ushort)0);
-        Hooks.Redis.StreamName = GetSettings(configuration, EC.HooksRedisStreamName, "hooks:redis", "stream name", string.Empty);
-        Hooks.Redis.PubSubChannel = GetSettings(configuration, EC.HooksRedisPubSubChannel, "hooks:redis", "pub sub channel", string.Empty);
-        Hooks.Redis.Ssl = GetSettings(configuration, EC.HooksRedisSsl, "hooks:redis", "ssl", false);
+        Hooks.Redis.Endpoints = [.. GetSettings(configuration, EC.HooksRedisEndpoints, hooks_redis, "endpoints", string.Empty).Split(',')];
+        Hooks.Redis.Password = GetSettings(configuration, EC.HooksRedisPassword, hooks_redis, "password", string.Empty);
+        Hooks.Redis.User = GetSettings(configuration, EC.HooksRedisUser, hooks_redis, "user", string.Empty);
+        Hooks.Redis.Database = GetSettings(configuration, EC.HooksRedisDatabase, hooks_redis, "db", (ushort)0);
+        Hooks.Redis.StreamName = GetSettings(configuration, EC.HooksRedisStreamName, hooks_redis, "stream name", string.Empty);
+        Hooks.Redis.PubSubChannel = GetSettings(configuration, EC.HooksRedisPubSubChannel, hooks_redis, "pub sub channel", string.Empty);
+        Hooks.Redis.Ssl = GetSettings(configuration, EC.HooksRedisSsl, hooks_redis, "ssl", false);
         Hooks.Telegram.BotToken = GetSettings(configuration, EC.HooksTelegramBotToken, "hooks:telegram", "bot token", string.Empty);
         Hooks.Telegram.ChatId = GetSettings(configuration, EC.HooksTelegramChatId, "hooks:telegram", "chat id", string.Empty);
     }
