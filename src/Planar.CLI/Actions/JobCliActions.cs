@@ -759,7 +759,6 @@ namespace Planar.CLI.Actions
             CancellationToken cancellationToken)
         {
             var data = runResult.Data;
-            ////var currentHash = $"{data?.Progress ?? 0}.{data?.EffectedRows ?? 0}.{data?.ExceptionsCount ?? 0}";
             var restRequest = new RestRequest("job/running-instance/{instanceId}/long-polling", Method.Get)
                 .AddParameter("instanceId", instanceId, ParameterType.UrlSegment)
                 .AddQueryParameter("progress", data?.Progress ?? 0)

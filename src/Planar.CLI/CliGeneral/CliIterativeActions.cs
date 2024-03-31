@@ -1,6 +1,7 @@
 ﻿using Planar.CLI.Actions;
 using Planar.CLI.Entities;
 using Spectre.Console;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -30,7 +31,16 @@ namespace Planar.CLI
                     context.Refresh();
 
                     if (isAllFinish) { break; }
-                    await Task.Delay(2000, cancellationToken);
+                    var delay = counter switch
+                    {
+                        >= 0 and <= 60 => 1000,
+                        > 60 and <= 180 => 2000,
+                        > 180 and <= 500 => 4_000,
+                        > 500 and <= 1000 => 10_000,
+                        _ => 30_000
+                    };
+
+                    await Task.Delay(delay, cancellationToken);
                     counter++;
                 }
             });
