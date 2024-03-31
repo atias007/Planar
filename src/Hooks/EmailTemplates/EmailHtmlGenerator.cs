@@ -1,15 +1,12 @@
 ﻿using Planar.Common;
 using Planar.Hook;
 using System.Text;
-using System.Timers;
 using WebMarkupMin.Core;
 
 namespace Planar.Hooks.EmailTemplates;
 
 public static class EmailHtmlGenerator
 {
-    public static string Logo175Content { get; set; } = null!;
-
     public static string GetEmailHtml(IMonitorDetails details)
     {
         var html = GetResource("AlertTemplate1");
@@ -53,36 +50,6 @@ public static class EmailHtmlGenerator
         return html;
     }
 
-    private static string SetLogo(string html)
-    {
-#pragma warning disable S1075 // URIs should not be hardcoded
-        const string logoUrl = "https://github.com/atias007/Planar/blob/master/src/Planar/Content/logo2.png?raw=true";
-#pragma warning restore S1075 // URIs should not be hardcoded
-        switch (AppSettings.Smtp.HtmlImageMode)
-        {
-            case ImageMode.Embedded:
-                html = Replace(html, "Logo", $"data:image/png;base64,{Logo175Content}");
-                break;
-
-            case ImageMode.External:
-                html = Replace(html, "Logo", logoUrl);
-                break;
-
-            case ImageMode.Internal:
-                if (Uri.TryCreate(AppSettings.Smtp.HtmlImageInternalBaseUrl, UriKind.Absolute, out var url))
-                {
-                    var imageUrl = new Uri(url, "/content/email-logo.png").ToString();
-                    html = Replace(html, "Logo", imageUrl);
-                }
-                else
-                {
-                    html = Replace(html, "Logo", $"data:image/png;base64,{Logo175Content}");
-                }
-                break;
-        }
-        return html;
-    }
-
     private static string Replace(string html, string key, string? value)
     {
         return html.Replace($"{{{{{key}}}}}", value);
@@ -92,7 +59,7 @@ public static class EmailHtmlGenerator
     {
         var resourceName = $"{nameof(Planar)}.{nameof(Hooks)}.EmailTemplates.{templateName}.html";
         var html = GetResourceByName(resourceName);
-        html = SetLogo(html);
+        html = HtmlUtil.SetLogo(html);
         return html;
     }
 

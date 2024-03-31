@@ -110,6 +110,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\DatabaseMigrations.Factory\DatabaseMigrations.Factory.csproj" />
 		<ProjectReference Include="..\Planar.API.Common\Planar.API.Common.csproj" />
+		<ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
 		<ProjectReference Include="..\Planar.Service\Planar.Service.csproj" />
 	</ItemGroup>
 </Project>

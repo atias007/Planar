@@ -2,8 +2,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
 using Planar.Common;
-using Planar.Hooks;
-using Planar.Hooks.EmailTemplates;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,9 +20,6 @@ public static class ContentInitializer
                 { "@@OpenApiVersion@@", SwaggerInitializer.SwaggerVersion }
             };
 
-            var logo = GetBinaryContent("logo3.png");
-            EmailHtmlGenerator.Logo175Content = Convert.ToBase64String(logo);
-
             OpenApiHtml = new Lazy<IResult>(() => Results.Content(GetContent("planar_openapi.html", htmlReplace), "text/html"));
             OpenApiJavaScript = new Lazy<IResult>(() => Results.Content(GetContent("redoc.standalone.js"), "application/javascript"));
             OpenApiCss = new Lazy<IResult>(() => Results.Content(GetContent("fonts.googleapis.css"), "text/css"));
@@ -34,7 +29,11 @@ public static class ContentInitializer
             EmailLogo = new Lazy<IResult>(() => Results.File(GetBinaryContent("logo3.png"), "image/png"));
         }
 
-        // Generate a function to add two numbers
+        public static void Initialize()
+        {
+            var logo = GetBinaryContent("logo3.png");
+            HtmlUtil.Logo175Content = Convert.ToBase64String(logo);
+        }
 
         public static Lazy<IResult> OpenApiHtml { get; set; }
 
@@ -65,6 +64,8 @@ public static class ContentInitializer
 
     public static void MapContent(WebApplication app)
     {
+        Content.Initialize();
+
         var isProduction = app.Environment.IsProduction();
         if (!isProduction && AppSettings.General.OpenApiUI)
         {

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using MimeKit.Text;
+using Planar.Common;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -64,6 +65,7 @@ namespace Planar.Service.Reports
             var head = GetResource(null, "head");
 
             head = ReplacePlaceHolder(head, "Title", ReportName);
+            header = HtmlUtil.SetLogo(header);
             main = ReplacePlaceHolder(main, "Head", head);
             main = ReplacePlaceHolder(main, "Style", style);
             main = ReplacePlaceHolder(main, "Header", header);
