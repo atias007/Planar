@@ -5,7 +5,6 @@ Solutions
 ----------------------------------------
 * Planar
 * Planar.Packages
-* Planar.Hooks
 * Planar.Test
 
 ----------------------------------------
