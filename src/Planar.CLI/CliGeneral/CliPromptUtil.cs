@@ -45,6 +45,49 @@ namespace Planar.CLI.CliGeneral
             return selectedItem;
         }
 
+        internal static async Task<CliPromptWrapper<string>> NewHooks(CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("monitor/new-hooks", Method.Get);
+            var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
+            if (!result.IsSuccessful)
+            {
+                return new CliPromptWrapper<string>(result);
+            }
+
+            var data = result.Data;
+            if (data == null || !data.Any())
+            {
+                throw new CliWarningException("no available new hooks to perform the opertaion");
+            }
+
+            var items = data.Select(g => g ?? string.Empty);
+            var select = PromptSelection(items, "new hook", addCancelOption: true);
+            return new CliPromptWrapper<string>(select);
+        }
+
+        internal static async Task<CliPromptWrapper<string>> ExternalHooks(CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("monitor/hooks", Method.Get);
+            var result = await RestProxy.Invoke<IEnumerable<HookInfo>>(restRequest, cancellationToken);
+            if (!result.IsSuccessful)
+            {
+                return new CliPromptWrapper<string>(result);
+            }
+
+            var data = result.Data;
+            if (data == null || !data.Any())
+            {
+                throw new CliWarningException("no available new hooks to perform the opertaion");
+            }
+
+            var items = data
+                .Where(h => string.Equals(h.HookType, "external", StringComparison.OrdinalIgnoreCase))
+                .Select(g => g.Name ?? string.Empty);
+
+            var select = PromptSelection(items, "hook", addCancelOption: true);
+            return new CliPromptWrapper<string>(select);
+        }
+
         internal static async Task<CliPromptWrapper<string>> Groups(CancellationToken cancellationToken)
         {
             var restRequest = new RestRequest("group", Method.Get)
@@ -57,7 +100,7 @@ namespace Planar.CLI.CliGeneral
             }
 
             var data = result.Data?.Data;
-            if (data == null || !data.Any())
+            if (data == null || data.Count == 0)
             {
                 throw new CliWarningException("no available groups to perform the opertaion");
             }

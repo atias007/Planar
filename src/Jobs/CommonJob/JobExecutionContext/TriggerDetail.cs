@@ -19,6 +19,7 @@ namespace Planar.Job
         public int? RetryNumber { get; set; }
         public int? MaxRetries { get; set; }
         public TimeSpan? RetrySpan { get; set; }
+        public TimeSpan? Timeout { get; set; }
         public string Id { get; set; } = null!;
     }
 }

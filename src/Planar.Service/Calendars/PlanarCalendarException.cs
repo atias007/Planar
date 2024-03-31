@@ -2,11 +2,7 @@
 
 namespace Planar.Service.Calendars
 {
-    [Serializable]
-    public sealed class PlanarCalendarException : Exception
+    public sealed class PlanarCalendarException(string message) : Exception(message)
     {
-        public PlanarCalendarException(string message) : base(message)
-        {
-        }
     }
 }

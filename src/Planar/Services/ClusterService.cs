@@ -184,17 +184,14 @@ namespace Planar
         public override async Task<Empty> ReloadMonitor(Empty request, ServerCallContext context)
         {
             using var scope = _serviceScopeFactory.CreateScope();
-            var logger = scope.ServiceProvider.GetService<ILogger<ClusterService>>();
-            ServiceUtil.LoadMonitorHooks(logger);
-            return await Task.FromResult(new Empty());
+            var monitorDomain = scope.ServiceProvider.GetService<MonitorDomain>();
+            await monitorDomain.Reload(clusterReload: false);
+            return new Empty();
         }
 
         private static void ValidateRequest(object request)
         {
-            if (request == null)
-            {
-                throw new ArgumentNullException(nameof(request));
-            }
+            ArgumentNullException.ThrowIfNull(request);
         }
 
         private static string SafeString(string value)

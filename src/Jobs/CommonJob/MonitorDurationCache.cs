@@ -40,7 +40,7 @@ namespace CommonJob
                 }
             }
 
-            if (data == null || !data.Any()) { return Array.Empty<int>(); }
+            if (data == null || data.Count == 0) { return Array.Empty<int>(); }
 
             var key = context.JobDetail.Key;
             var result = data.Where(d =>

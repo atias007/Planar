@@ -1,9 +1,9 @@
 ﻿using Planar.Common;
+using Planar.Hook.Internals;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
-using System.Xml;
 using System.Xml.Linq;
 
 namespace Planar.Hook
@@ -72,14 +72,7 @@ namespace Planar.Hook
         protected virtual void Log(LogLevel level, string message)
         {
             var key = level.ToString().ToLower();
-
-            message = message
-                .Replace("\r\n", Consts.HookNewLineLogText)
-                .Replace("\r", Consts.HookNewLineLogText)
-                .Replace("\n", Consts.HookNewLineLogText);
-
-            var text = new XElement("t", message).LastNode.ToString();
-
+            var text = Utils.CleanText(message);
             Console.WriteLine($"<hook.log.{key}>{text}</hook.log.{key}>");
         }
 

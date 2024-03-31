@@ -105,7 +105,11 @@ To use different url per group, you can set one of the 'AdditionalField' of moni
         try
         {
             using HttpResponseMessage response = await client.SendAsync(restRequest);
-            if (!response.IsSuccessStatusCode)
+            if (response.IsSuccessStatusCode)
+            {
+                LogInformation($"Rest hook response success status code: {response.StatusCode}");
+            }
+            else
             {
                 var message = GetErrorMessage(response);
                 throw new PlanarHookException($"fail to invoke '{detials.MonitorTitle}' with '{Name}' hook. message: {message}");

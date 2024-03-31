@@ -1,5 +1,6 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.Logging;
+using Planar.API.Common.Entities;
 using Planar.Common.Exceptions;
 using Planar.Hooks;
 using Planar.Service.Monitor;
@@ -32,64 +33,41 @@ namespace Planar.Service.General
             return id;
         }
 
-        public static void LoadMonitorHooks<T>(ILogger<T> logger)
+        public static IEnumerable<string> SearchNewHooks()
         {
             var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.MonitorHooks);
+            if (!Directory.Exists(path)) { return []; }
+            var files = Directory.GetFiles(path, "*.exe", SearchOption.AllDirectories);
+            var result = files.Select(f => f[(path.Length + 1)..]);
+            return result;
+        }
 
-            if (!Directory.Exists(path))
-            {
-                logger.LogWarning("monitor hooks path {Path} could not be found. Service does not have any monitor", path);
-                return;
-            }
-
-            logger.LogInformation("load monitor hooks at node {MachineName}", Environment.MachineName);
-
+        public static void LoadMonitorHooks<T>(IEnumerable<MonitorHookDetails> hooks, ILogger<T> logger)
+        {
             MonitorHooks.Clear();
             LoadSystemHooks(logger);
-            var directories = Directory.GetDirectories(path);
-            foreach (var dir in directories)
+
+            foreach (var item in hooks)
             {
-                var files1 = Directory.GetFiles(dir, "*.exe");
-                var files2 = Directory.GetFiles(dir, "*.dll");
-                var files = files1.Concat(files2).ToList();
-
-                if (!files.Any())
-                {
-                    logger.LogWarning("folder {Folder} (under hook folder) is not valid hook folder which not contains exe or dll file/s", dir);
-                }
-
-                var success = false;
-                foreach (var f in files)
-                {
-                    success = LoadHook(logger, f);
-                    if (success) { break; }
-                }
-
-                if (!success)
-                {
-                    logger.LogWarning("folder {Folder} (under hook folder) has no valid hook", dir);
-                }
+                LoadHook(logger, item);
             }
         }
 
-        private static bool LoadHook<T>(ILogger<T> logger, string filename)
+        private static void LoadHook<T>(ILogger<T> logger, MonitorHookDetails hookDetails)
         {
-            var validator = new HookValidator(filename, logger);
-            if (!validator.IsValid) { return false; }
-
-            var wrapper = HookWrapper.CreateExternal(filename, validator, logger);
-            var result = MonitorHooks.TryAdd(validator.Name, wrapper);
+            var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.MonitorHooks);
+            var filename = Path.Combine(path, hookDetails.Path);
+            var wrapper = HookWrapper.CreateExternal(filename, hookDetails, logger);
+            var result = MonitorHooks.TryAdd(hookDetails.Name, wrapper);
 
             if (result)
             {
-                logger.LogInformation("add monitor hook {Name} from file {Filename}", validator.Name, filename);
+                logger.LogInformation("add monitor hook {Name} from file {Filename}", hookDetails.Name, filename);
             }
             else
             {
-                logger.LogError("fail to add monitor hook {Name} from file {Filename}. already contains monitor with this name", validator.Name, filename);
+                logger.LogError("fail to add monitor hook {Name} from file {Filename}. already contains monitor with this name", hookDetails.Name, filename);
             }
-
-            return result;
         }
 
         private static void LoadSystemHooks<TLogger>(ILogger<TLogger> logger)

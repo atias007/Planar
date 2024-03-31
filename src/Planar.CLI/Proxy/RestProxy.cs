@@ -35,7 +35,7 @@ namespace Planar.CLI.Proxy
                     var options = new RestClientOptions
                     {
                         BaseUrl = BaseUri,
-                        MaxTimeout = 10000,
+                        MaxTimeout = 60_000,
                     };
 
                     _client = new RestClient(options);
@@ -68,8 +68,17 @@ namespace Planar.CLI.Proxy
             return secureProtocol ? "https" : "http";
         }
 
+        private static void SetDefaultRequestTimeout(RestRequest request)
+        {
+            if (request.Timeout == 0)
+            {
+                request.Timeout = 10_000;
+            }
+        }
+
         public static async Task<RestResponse<TResponse>> Invoke<TResponse>(RestRequest request, CancellationToken cancellationToken)
         {
+            SetDefaultRequestTimeout(request);
             var response = await Proxy.ExecuteAsync<TResponse>(request, cancellationToken);
             if (await RefreshToken(response, cancellationToken))
             {
@@ -81,6 +90,7 @@ namespace Planar.CLI.Proxy
 
         public static async Task<RestResponse> Invoke(RestRequest request, CancellationToken cancellationToken)
         {
+            SetDefaultRequestTimeout(request);
             var response = await Proxy.ExecuteAsync(request, cancellationToken);
             if (await RefreshToken(response, cancellationToken))
             {

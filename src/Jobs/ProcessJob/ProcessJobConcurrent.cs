@@ -3,14 +3,13 @@ using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Quartz;
 
-namespace Planar
+namespace Planar;
+
+[PersistJobDataAfterExecution]
+public class ProcessJobConcurrent(
+    ILogger<ProcessJobConcurrent> logger,
+    IJobPropertyDataLayer dataLayer,
+    JobMonitorUtil jobMonitorUtil
+        ) : ProcessJob(logger, dataLayer, jobMonitorUtil)
 {
-    [PersistJobDataAfterExecution]
-    public class ProcessJobConcurrent(
-        ILogger<ProcessJob> logger,
-        IJobPropertyDataLayer dataLayer,
-        JobMonitorUtil jobMonitorUtil
-            ) : ProcessJob(logger, dataLayer, jobMonitorUtil)
-    {
-    }
 }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Planar.API.Common.Entities;
 using Planar.Common.Exceptions;
 using System;
 using System.Collections.Generic;
@@ -78,6 +79,28 @@ namespace Planar.Service.Monitor
             return Task.CompletedTask;
         }
 
+        public MonitorHookDetails HandleHealthCheck()
+        {
+            try
+            {
+                ValidateFileExists(_filename);
+                var startInfo = GetHealthCheckProcessStartInfo(_filename);
+                var success = StartProcess(startInfo, TimeSpan.FromSeconds(20));
+                if (!success)
+                {
+                    OnTimeout();
+                    throw new TimeoutException("hook health check execution timeout expire");
+                }
+
+                var result = AnalyzeHealthCheckOutput();
+                return result;
+            }
+            finally
+            {
+                FinalizeProcess();
+            }
+        }
+
         private static void ValidateFileExists(string? path)
         {
             if (path == null)
@@ -117,6 +140,16 @@ namespace Planar.Service.Monitor
                 RedirectStandardOutput = true
             };
 
+            return startInfo;
+        }
+
+        private static ProcessStartInfo GetHealthCheckProcessStartInfo(string filename)
+        {
+            var startInfo = GetProcessStartInfo(filename);
+            startInfo.Arguments = $"--planar-healthcheck-mode";
+            startInfo.StandardErrorEncoding = Encoding.UTF8;
+            startInfo.StandardOutputEncoding = Encoding.UTF8;
+            SetProcessToLinuxOs(startInfo);
             return startInfo;
         }
 
@@ -163,7 +196,15 @@ namespace Planar.Service.Monitor
             _process.WaitForExit(Convert.ToInt32(timeout.TotalMilliseconds));
             if (!_process.HasExited)
             {
-                _logger.LogError("Process timeout expire. Timeout was {Timeout}", $"{timeout: hh\\:mm\\:ss}");
+                try
+                {
+                    _logger.LogError("Process timeout expire. Timeout was {Timeout}", $"{timeout:hh\\:mm\\:ss}");
+                }
+                catch
+                {
+                    // *** DO NOTHING ***
+                }
+
                 return false;
             }
 
@@ -226,9 +267,48 @@ namespace Planar.Service.Monitor
                     var message = GetMessage(value);
                     var level = matches[0].Groups[1].Value;
                     if (!Enum.TryParse<LogLevel>(level, ignoreCase: true, out var logLevel)) { continue; }
+#pragma warning disable CA2254 // Template should be a static expression
                     _logger.Log(logLevel, message);
+#pragma warning restore CA2254 // Template should be a static expression
                 }
             }
+        }
+
+        private MonitorHookDetails AnalyzeHealthCheckOutput()
+        {
+            var result = new MonitorHookDetails();
+            const string pattern = "^<hook\\.healthcheck\\.(name|description)>.+<\\/hook\\.healthcheck\\.(name|description)>$";
+            var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+            foreach (var item in _output)
+            {
+                var matches = regex.Matches(item);
+                if (
+                    matches.Count != 0 &&
+                    matches[0].Success &&
+                    matches[0].Groups.Count == 3 &&
+                    matches[0].Groups[1].Value == matches[0].Groups[2].Value)
+                {
+                    var value = matches[0].Groups[0].Value;
+                    var message = GetMessage(value);
+                    var field = matches[0].Groups[1].Value;
+
+                    switch (field)
+                    {
+                        case "name":
+                            result.Name = message;
+                            break;
+
+                        case "description":
+                            result.Description = message;
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+            }
+
+            return result;
         }
 
         private static string GetMessage(string text)

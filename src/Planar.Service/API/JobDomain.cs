@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -16,7 +16,6 @@ using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -27,6 +26,8 @@ namespace Planar.Service.API
 {
     public partial class JobDomain : BaseJobBL<JobDomain, JobData>
     {
+        private static TimeSpan _longPullingSpan = TimeSpan.FromMinutes(5);
+
         public JobDomain(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
@@ -412,12 +413,69 @@ namespace Planar.Service.API
         }
 
         public async Task<RunningJobDetails> GetRunningInstanceLongPolling(
+           string instanceId,
+           int? progress,
+           int? effectedRows,
+           int? exceptionsCount,
+           CancellationToken cancellationToken)
+        {
+            var access = _serviceProvider.GetRequiredService<IHttpContextAccessor>();
+            var hash = Convert.ToString(access.HttpContext?.Request.Query["hash"]);
+            if (string.IsNullOrWhiteSpace(hash))
+            {
+                return await GetRunningInstanceLongPollingV2(instanceId, progress, effectedRows, exceptionsCount, cancellationToken);
+            }
+            else
+            {
+                return await GetRunningInstanceLongPollingV1(instanceId, hash, cancellationToken);
+            }
+        }
+
+        public async Task<RunningJobDetails> GetRunningInstanceLongPollingV2(
+           string instanceId,
+           int? progress,
+           int? effectedRows,
+           int? exceptionsCount,
+           CancellationToken cancellationToken)
+        {
+            var hash = $"{progress}.{effectedRows}.{exceptionsCount}";
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(_longPullingSpan);
+            while (!cts.IsCancellationRequested)
+            {
+                var data = await GetRunning(instanceId);
+                if (progress == null && effectedRows == null && exceptionsCount == null) { return data; }
+
+                var currentProgress = progress == null ? (int?)null : data.Progress;
+                var currentEffectedRows = effectedRows == null ? null : data.EffectedRows;
+                var currentExceptionsCount = exceptionsCount == null ? (int?)null : data.ExceptionsCount;
+
+                var currentHash = $"{currentProgress}.{currentEffectedRows}.{currentExceptionsCount}";
+                if (currentHash != hash)
+                {
+                    return data;
+                }
+
+                try
+                {
+                    await Task.Delay(500, cancellationToken);
+                }
+                catch (TaskCanceledException)
+                {
+                    return data;
+                }
+            }
+
+            throw new RestRequestTimeoutException();
+        }
+
+        public async Task<RunningJobDetails> GetRunningInstanceLongPollingV1(
             string instanceId,
             string hash,
             CancellationToken cancellationToken)
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            cts.CancelAfter(TimeSpan.FromMinutes(5));
+            cts.CancelAfter(_longPullingSpan);
             while (!cts.IsCancellationRequested)
             {
                 var data = await GetRunning(instanceId);

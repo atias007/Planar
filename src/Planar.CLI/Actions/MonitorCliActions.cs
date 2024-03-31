@@ -242,6 +242,68 @@ namespace Planar.CLI.Actions
             return new CliActionResponse(result, table);
         }
 
+        [Action("add-hook")]
+        public static async Task<CliActionResponse> AddHook(CliAddHookjRequest request, CancellationToken cancellationToken)
+        {
+            request ??= new CliAddHookjRequest();
+            var wrapper = await FillAddHookRequest(request, cancellationToken);
+            if (!wrapper.IsSuccessful)
+            {
+                return new CliActionResponse(wrapper.FailResponse);
+            }
+
+            var restRequest = new RestRequest("monitor/hook", Method.Post)
+                .AddBody(new { request.Filename });
+
+            restRequest.Timeout = 25_000;
+            AnsiConsole.MarkupLine($"[grey62]  > (please wait... this action may take up to 20 seconds)[/]");
+
+            var result = await RestProxy.Invoke<MonitorHookDetails>(restRequest, cancellationToken);
+            var table = CliTableExtensions.GetTable(result.Data);
+            return new CliActionResponse(result, table);
+        }
+
+        [Action("remove-hook")]
+        public static async Task<CliActionResponse> RemoveHook(CliGetByNameRequest request, CancellationToken cancellationToken)
+        {
+            request ??= new CliGetByNameRequest();
+            var wrapper = await FillRemoveHookRequest(request, cancellationToken);
+            if (!wrapper.IsSuccessful)
+            {
+                return new CliActionResponse(wrapper.FailResponse);
+            }
+
+            var restRequest = new RestRequest("monitor/hook/{name}", Method.Delete)
+                .AddParameter("name", request.Name, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke(restRequest, cancellationToken);
+            return new CliActionResponse(result);
+        }
+
+        private static async Task<CliPromptWrapper> FillAddHookRequest(CliAddHookjRequest request, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(request.Filename))
+            {
+                var p1 = await CliPromptUtil.NewHooks(cancellationToken);
+                if (!p1.IsSuccessful) { return p1; }
+                request.Filename = p1.Value ?? string.Empty;
+            }
+
+            return CliPromptWrapper.Success;
+        }
+
+        private static async Task<CliPromptWrapper> FillRemoveHookRequest(CliGetByNameRequest request, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrEmpty(request.Name))
+            {
+                var p1 = await CliPromptUtil.ExternalHooks(cancellationToken);
+                if (!p1.IsSuccessful) { return p1; }
+                request.Name = p1.Value ?? string.Empty;
+            }
+
+            return CliPromptWrapper.Success;
+        }
+
         private static async Task<RequestBuilderWrapper<CliMonitorTestRequest>> CollectTestMonitorRequestData(CancellationToken cancellationToken = default)
         {
             var data = await GetTestMonitorData(cancellationToken);
@@ -383,8 +445,10 @@ namespace Planar.CLI.Actions
 
         private static string GetEvent(IEnumerable<MonitorEventModel> events)
         {
-            var eventsName = events.Select(e => e.EventTitle);
+            var eventsName = events.Select(e => $"{e.EventTitle} {CliConsts.GroupDisplayFormat}({e.EventType})[/]");
             var selectedEvent = PromptSelection(eventsName, "monitor event");
+            if (selectedEvent == null) { return string.Empty; }
+            selectedEvent = selectedEvent[0..(selectedEvent.IndexOf(CliConsts.GroupDisplayFormat)-1)];
             AnsiConsole.MarkupLine($"[turquoise2]  > event:[/] {selectedEvent}");
             var result = events.FirstOrDefault(e => e.EventTitle == selectedEvent)?.EventName;
             return result ?? string.Empty;
@@ -511,7 +575,7 @@ namespace Planar.CLI.Actions
             var groupsTask = RestProxy.Invoke<PagingResponse<GroupInfo>>(groupsRequest, cancellationToken);
 
             var hooks = await hooksTask;
-            data.Hooks = hooks.Data?.Select(h => h.Name).ToList() ?? new List<string>();
+            data.Hooks = hooks.Data?.Select(h => h.Name).ToList() ?? [];
             if (!hooks.IsSuccessful)
             {
                 data.FailResponse = hooks;
@@ -519,19 +583,19 @@ namespace Planar.CLI.Actions
             }
 
             var groups = await groupsTask;
-            data.Groups = groups.Data?.Data ?? new List<GroupInfo>();
+            data.Groups = groups.Data?.Data ?? [];
             if (!groups.IsSuccessful)
             {
                 data.FailResponse = groups;
                 return data;
             }
 
-            if (!data.Hooks.Any())
+            if (data.Hooks.Count == 0)
             {
                 throw new CliWarningException("there are no monitor hooks define in service");
             }
 
-            if (!data.Groups.Any())
+            if (data.Groups.Count == 0)
             {
                 throw new CliWarningException("there are no distribution groups define in service");
             }
@@ -558,7 +622,7 @@ namespace Planar.CLI.Actions
             var groupsTask = RestProxy.Invoke<PagingResponse<GroupInfo>>(groupsRequest, cancellationToken);
 
             var events = await eventsTask;
-            data.Events = events.Data ?? new List<MonitorEventModel>();
+            data.Events = events.Data ?? [];
             if (!events.IsSuccessful)
             {
                 data.FailResponse = events;
@@ -566,7 +630,7 @@ namespace Planar.CLI.Actions
             }
 
             var hooks = await hooksTask;
-            data.Hooks = hooks.Data == null ? new List<string>() : hooks.Data.Select(d => d.Name).ToList();
+            data.Hooks = hooks.Data == null ? [] : hooks.Data.Select(d => d.Name).ToList();
             if (!hooks.IsSuccessful)
             {
                 data.FailResponse = hooks;
@@ -574,7 +638,7 @@ namespace Planar.CLI.Actions
             }
 
             var jobs = await jobsTask;
-            data.Jobs = jobs.Data?.Data ?? new List<JobBasicDetails>();
+            data.Jobs = jobs.Data?.Data ?? [];
             if (!jobs.IsSuccessful)
             {
                 data.FailResponse = jobs;
@@ -582,24 +646,24 @@ namespace Planar.CLI.Actions
             }
 
             var groups = await groupsTask;
-            data.Groups = groups.Data?.Data ?? new List<GroupInfo>();
+            data.Groups = groups.Data?.Data ?? [];
             if (!groups.IsSuccessful)
             {
                 data.FailResponse = groups;
                 return data;
             }
 
-            if (!data.Jobs.Any())
+            if (data.Jobs.Count == 0)
             {
                 throw new CliWarningException("there are no jobs for monitoring");
             }
 
-            if (!data.Hooks.Any())
+            if (data.Hooks.Count == 0)
             {
                 throw new CliWarningException("there are no monitor hooks define in service");
             }
 
-            if (!data.Groups.Any())
+            if (data.Groups.Count == 0)
             {
                 throw new CliWarningException("there are no distribution groups define in service");
             }
@@ -632,7 +696,7 @@ namespace Planar.CLI.Actions
         private static RestResponse SelectRestResponse(params RestResponse[] items)
         {
             RestResponse? result = null;
-            if (items.Any())
+            if (items.Length != 0)
             {
                 result = Array.Find(items, i => !i.IsSuccessful && (int)i.StatusCode >= 500);
             }

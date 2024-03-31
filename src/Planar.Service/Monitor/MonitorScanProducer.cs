@@ -97,5 +97,20 @@ public class MonitorScanProducer(Channel<MonitorScanMessage> channel, ILogger<Mo
         {
             logger.LogError(ex, "fail to publish monitor scan message. the message: {@Message}", message);
         }
+
+        try
+        {
+            if (message.Type != MonitorScanType.ScanSystem) { return; }
+            if (message.MonitorSystemInfo == null) { return; }
+            var message2 = new MonitorScanMessage(Common.MonitorEvents.AnySystemEvent, message.MonitorSystemInfo, message.Exception);
+            while (await channel.Writer.WaitToWriteAsync(cancellationToken).ConfigureAwait(false))
+            {
+                if (channel.Writer.TryWrite(message2)) { break; }
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "fail to publish monitor scan message. the message: {@Message}", message);
+        }
     }
 }

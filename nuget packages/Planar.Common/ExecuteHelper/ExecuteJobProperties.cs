@@ -24,6 +24,7 @@ namespace Planar.Common
         public string JobKeyGroup { get; set; } = DefaultGroup;
         public string TriggerKeyName { get; set; } = DefaultTriggerName;
         public string TriggerKeyGroup { get; set; } = DefaultGroup;
+        public TimeSpan? TriggerTimeout { get; set; }
 
         public IDictionary<string, object?> TriggerData { get; set; } = new Dictionary<string, object?>();
 

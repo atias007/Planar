@@ -31,6 +31,7 @@ public class MonitorProfile : Profile
 
         CreateMap<MonitorAlert, MonitorAlertRowModel>();
         CreateMap<MonitorAlert, MonitorAlertModel>();
+        CreateMap<MonitorHook, MonitorHookDetails>().ReverseMap();
 
         CreateMap<MonitorDetails, MonitorAlert>()
             .ForMember(d => d.GroupId, map => map.MapFrom(s => s.Group == null ? 0 : s.Group.Id))

@@ -8,12 +8,8 @@ using Group = Planar.Service.Model.Group;
 
 namespace Planar.Service.Data
 {
-    public class GroupData : BaseDataLayer
+    public class GroupData(PlanarContext context) : BaseDataLayer(context)
     {
-        public GroupData(PlanarContext context) : base(context)
-        {
-        }
-
         public async Task AddGroup(Group group)
         {
             _context.Groups.Add(group);
@@ -37,7 +33,7 @@ namespace Planar.Service.Data
             var result = await _context.Groups
                 .Include(g => g.Role)
                 .AsNoTracking()
-                .FirstOrDefaultAsync(g => g.Name.ToLower() == name.ToLower());
+                .FirstOrDefaultAsync(g => g.Name == name);
 
             return result;
         }
@@ -46,7 +42,7 @@ namespace Planar.Service.Data
         {
             var result = await _context.Groups
                 .AsNoTracking()
-                .Where(g => g.Name.ToLower() == name.ToLower())
+                .Where(g => g.Name == name)
                 .Select(g => g.RoleId)
                 .FirstOrDefaultAsync();
 
@@ -57,7 +53,7 @@ namespace Planar.Service.Data
         {
             return await _context.Groups
                 .AsNoTracking()
-                .Where(g => g.Name.ToLower() == name.ToLower())
+                .Where(g => g.Name == name)
                 .Select(g => g.Id)
                 .FirstOrDefaultAsync();
         }
@@ -102,20 +98,20 @@ namespace Planar.Service.Data
 
         public async Task<bool> IsGroupHasUsers(int groupId)
         {
-            var result = await _context.Groups.AnyAsync(g => g.Id == groupId && g.Users.Any());
+            var result = await _context.Groups.AnyAsync(g => g.Id == groupId && g.Users.Count != 0);
             return result;
         }
 
         public async Task<bool> IsGroupNameExists(string? name, int id)
         {
             if (name == null) { return false; }
-            return await _context.Groups.AsNoTracking().AnyAsync(u => u.Id != id && u.Name.ToLower() == name.ToLower());
+            return await _context.Groups.AsNoTracking().AnyAsync(u => u.Id != id && u.Name == name);
         }
 
         public async Task<bool> IsGroupNameExists(string? name)
         {
             if (name == null) { return false; }
-            return await _context.Groups.AsNoTracking().AnyAsync(u => u.Name.ToLower() == name.ToLower());
+            return await _context.Groups.AsNoTracking().AnyAsync(u => u.Name == name);
         }
 
         public async Task<bool> IsUserExistsInGroup(int userId, int groupId)

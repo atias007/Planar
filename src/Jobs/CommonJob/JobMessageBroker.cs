@@ -154,7 +154,7 @@ namespace CommonJob
         {
             if (map == null)
             {
-                return new DataMap();
+                return [];
             }
 
             var dic = map
@@ -175,6 +175,7 @@ namespace CommonJob
             var lastRetry = hasRetry ? retryNumber >= maxRetries : (bool?)null;
             var jobId = JobHelper.GetJobId(context.JobDetail) ?? string.Empty;
             var triggerId = TriggerHelper.GetTriggerId(context.Trigger) ?? string.Empty;
+            var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
 
             var result = new JobExecutionContext
             {
@@ -223,6 +224,7 @@ namespace CommonJob
                     MaxRetries = maxRetries,
                     RetryNumber = retryNumber == 0 ? null : retryNumber,
                     RetrySpan = retrySpan,
+                    Timeout = timeout,
                     Id = triggerId
                 },
                 Environment = Global.Environment

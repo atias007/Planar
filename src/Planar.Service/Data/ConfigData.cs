@@ -7,12 +7,8 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Data
 {
-    public class ConfigData : BaseDataLayer
+    public class ConfigData(PlanarContext context) : BaseDataLayer(context)
     {
-        public ConfigData(PlanarContext context) : base(context)
-        {
-        }
-
         public async Task<GlobalConfig?> GetGlobalConfig(string key)
         {
             var result = await _context.GlobalConfigs.AsNoTracking().FirstOrDefaultAsync(c => c.Key == key);
@@ -43,11 +39,12 @@ namespace Planar.Service.Data
             await _context.SaveChangesAsync();
         }
 
-        public async Task RemoveGlobalConfig(string key)
+        public async Task<int> RemoveGlobalConfig(string key)
         {
-            var data = new GlobalConfig { Key = key };
-            _context.Remove(data);
-            await _context.SaveChangesAsync();
+            var count = await _context.GlobalConfigs
+                .Where(g => g.Key == key)
+                .ExecuteDeleteAsync();
+            return count;
         }
     }
 }

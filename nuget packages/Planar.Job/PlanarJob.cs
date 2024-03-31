@@ -7,6 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Timers;
+using Timer = System.Timers.Timer;
 
 namespace Planar.Job
 {
@@ -148,7 +150,11 @@ namespace Planar.Job
             while (!valid)
             {
                 if (!quiet) { Console.Write("Code: "); }
+                using var timer = new Timer(60_000);
+                timer.Elapsed += TimerElapsed;
+                timer.Start();
                 var selected = Console.ReadLine();
+                timer.Stop();
                 if (string.IsNullOrEmpty(selected))
                 {
                     if (!quiet) { Console.WriteLine("<Default>"); }
@@ -170,6 +176,12 @@ namespace Planar.Job
             }
 
             return index;
+        }
+
+        private static void TimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            Console.WriteLine("User input timeout. Terminate application");
+            System.Environment.Exit(-1);
         }
 
         private static bool HasArgument(string key)

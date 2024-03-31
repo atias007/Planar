@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Timers;
+using Timer = System.Timers.Timer;
 
 namespace Planar.Hook
 {
@@ -21,6 +23,9 @@ namespace Planar.Hook
         public static void Start<THook>()
             where THook : BaseHook, new()
         {
+            FillArguments();
+            CheckHealthCheckMode<THook>();
+
             Stopwatch.Start();
             FillProperties();
 
@@ -34,6 +39,20 @@ namespace Planar.Hook
                 Console.Error.WriteLine(log.ToString());
                 log.Message = ex.ToString();
                 Console.Error.WriteLine(log.ToString());
+            }
+        }
+
+        private static void CheckHealthCheckMode<THook>()
+            where THook : BaseHook, new()
+        {
+            if (HasArgument("--planar-healthcheck-mode"))
+            {
+                var hook = new THook();
+                var name = Utils.CleanText(hook.Name);
+                var description = Utils.CleanText(hook.Description);
+                Console.WriteLine($"<hook.healthcheck.name>{name}</hook.healthcheck.name>");
+                Console.WriteLine($"<hook.healthcheck.description>{description}</hook.healthcheck.description>");
+                System.Environment.Exit(0);
             }
         }
 
@@ -106,7 +125,6 @@ namespace Planar.Hook
             }
 
             Console.WriteLine("------------------");
-            PrintMenuItem("<Default>", "Enter");
             Console.WriteLine();
             selectedIndex = GetMenuItem(quiet: false);
 
@@ -136,7 +154,11 @@ namespace Planar.Hook
             while (!valid)
             {
                 if (!quiet) { Console.Write("Code: "); }
+                using var timer = new Timer(60_000);
+                timer.Elapsed += TimerElapsed;
+                timer.Start();
                 var selected = Console.ReadLine();
+                timer.Stop();
                 if (!int.TryParse(selected, out index))
                 {
                     ShowErrorMenu($"Selected value '{selected}' is not valid numeric value");
@@ -154,6 +176,12 @@ namespace Planar.Hook
             return index;
         }
 
+        private static void TimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            Console.WriteLine("User input timeout. Close application");
+            System.Environment.Exit(-1);
+        }
+
         private static void PrintMenuItem(string text, string key)
         {
             Console.ForegroundColor = ConsoleColor.Green;
@@ -164,7 +192,6 @@ namespace Planar.Hook
 
         private static void FillProperties()
         {
-            FillArguments();
             if (HasArgument("--planar-service-mode"))
             {
                 Mode = RunningMode.Release;

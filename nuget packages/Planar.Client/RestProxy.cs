@@ -116,6 +116,7 @@ namespace Planar.Client
 
             if (response.StatusCode == HttpStatusCode.Conflict) { throw new PlanarConflictException(response); }
             if (response.StatusCode == HttpStatusCode.Forbidden) { throw new PlanarForbiddenException(response); }
+            if (response.StatusCode == HttpStatusCode.RequestTimeout) { throw new PlanarRequestTimeoutException(response); }
             if (response.StatusCode == HttpStatusCode.ServiceUnavailable) { throw new PlanarServiceUnavailableException(response); }
             if (response.StatusCode == HttpStatusCode.Unauthorized) { throw new PlanarUnauthorizedException(response); }
             if (response.StatusCode == HttpStatusCode.TooManyRequests) { throw new PlanarTooManyRequestsException(response); }

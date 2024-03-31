@@ -10,5 +10,7 @@
         public bool UseDefaultCredentials { get; set; }
         public string? Username { get; set; }
         public string? Password { get; set; }
+        public string? HtmlImageMode { get; set; }
+        public string? HtmlImageInternalBaseUrl { get; set; }
     }
 }

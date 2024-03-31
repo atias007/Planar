@@ -10,15 +10,11 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Reports
 {
-    public sealed class SummaryReport : BaseReport
+    public sealed class SummaryReport(IServiceScopeFactory serviceScope) : BaseReport(serviceScope)
     {
         private record struct HistorySummaryCounters(int Total, int Success, int Fail, int Running, int Retries, int Concurrent);
 
         public override string ReportName => "Summary";
-
-        public SummaryReport(IServiceScopeFactory serviceScope) : base(serviceScope)
-        {
-        }
 
         public override async Task<string> Generate(DateScope dateScope)
         {

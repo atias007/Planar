@@ -290,5 +290,7 @@ V1.7.1
 ------
 - migrate to dotnet 8
 - add pagingd to audit command in cli
-- run hook in container
-- run job in container
+- remove any reflection in hook load\validate
+- add memory usage trace and restart + monitor event
+- add regular restart + monitor event
+- add AnySystemEvent monitor event

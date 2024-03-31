@@ -88,7 +88,7 @@ Hook will send the message to all valid phone numbers of the user.
 
             if (result.ErrorCode == null)
             {
-                LogDebug($"sms message to {phone} send with id {result.Sid}");
+                LogDebug($"Twilio sms message to {phone} send with id {result.Sid}");
             }
             else
             {

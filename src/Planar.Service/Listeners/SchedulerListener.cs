@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.API.Helpers;
@@ -87,7 +88,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task JobScheduled(ITrigger trigger, CancellationToken cancellationToken = default)
     {
-        //// if (TriggerKeyHelper.IsSystemTriggerKey(trigger.Key)) { return; }
+        ////if (TriggerKeyHelper.IsSystemTriggerKey(trigger.Key)) { return Task.CompletedTask; }
         return Task.CompletedTask;
     }
 
@@ -103,7 +104,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 
     public Task JobUnscheduled(TriggerKey triggerKey, CancellationToken cancellationToken = default)
     {
-        //// if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return; }
+        ////if (TriggerKeyHelper.IsSystemTriggerKey(triggerKey)) { return Task.CompletedTask; }
         return Task.CompletedTask;
     }
 

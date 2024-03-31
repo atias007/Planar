@@ -15,12 +15,8 @@ namespace Planar.Controllers
 {
     [ApiController]
     [Route("job")]
-    public class JobController : BaseController<JobDomain>
+    public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     {
-        public JobController(JobDomain bl) : base(bl)
-        {
-        }
-
         [HttpPost("folder")]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_job_folder", Description = "Add job by yml job file", Summary = "Add Job By Yml")]
@@ -254,17 +250,33 @@ namespace Planar.Controllers
             return Ok(result);
         }
 
-        [ApiExplorerSettings(IgnoreApi = true)]
         [HttpGet("running-instance/{instanceId}/long-polling")]
         [ViewerAuthorize]
-        public async Task<ActionResult<RunningJobDetails>> GetRunningInstanceLongPolling(
+        [SwaggerOperation(OperationId = "get_job_running_instanceid_long_polling", Description = "Get runnng job info (Long polling)", Summary = "Get Runnng Job Info (Long Polling)")]
+        [BadRequestResponse]
+        [RequestTimeoutResponse]
+        public async Task<ActionResult<RunningJobDetails>> GetRunningInstanceLongPollingV2(
             [FromRoute][Required] string instanceId,
-            [FromQuery][Required] string hash,
+            [FromQuery] int? progress,
+            [FromQuery] int? effectedRows,
+            [FromQuery] int? exceptionsCount,
             CancellationToken cancellationToken)
         {
-            var result = await BusinesLayer.GetRunningInstanceLongPolling(instanceId, hash, cancellationToken);
+            var result = await BusinesLayer.GetRunningInstanceLongPolling(instanceId, progress, effectedRows, exceptionsCount, cancellationToken);
             return Ok(result);
         }
+
+        ////[ApiExplorerSettings(IgnoreApi = true)]
+        ////[HttpGet("running-instance/{instanceId}/long-polling")]
+        ////[ViewerAuthorize]
+        ////public async Task<ActionResult<RunningJobDetails>> GetRunningInstanceLongPollingV1(
+        ////    [FromRoute][Required] string instanceId,
+        ////    [FromQuery][Required] string hash,
+        ////    CancellationToken cancellationToken)
+        ////{
+        ////    var result = await BusinesLayer.GetRunningInstanceLongPolling(instanceId, hash, cancellationToken);
+        ////    return Ok(result);
+        ////}
 
         [HttpGet("running")]
         [ViewerAuthorize]

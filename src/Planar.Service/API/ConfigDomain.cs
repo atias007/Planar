@@ -16,24 +16,18 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class ConfigDomain : BaseBL<ConfigDomain, ConfigData>
+    public class ConfigDomain(IServiceProvider serviceProvider) : BaseBL<ConfigDomain, ConfigData>(serviceProvider)
     {
-        public ConfigDomain(IServiceProvider serviceProvider) : base(serviceProvider)
-        {
-        }
-
         public async Task Delete(string key)
         {
-            try
-            {
-                key = key.SafeTrim() ?? string.Empty;
-                await DataLayer.RemoveGlobalConfig(key);
-                await Flush();
-            }
-            catch (DbUpdateConcurrencyException)
+            key = key.SafeTrim() ?? string.Empty;
+            var count = await DataLayer.RemoveGlobalConfig(key);
+            if (count == 0)
             {
                 throw new RestNotFoundException($"global config with key '{key}' not found");
             }
+
+            await Flush();
         }
 
         public async Task Flush(CancellationToken stoppingToken = default)
@@ -87,7 +81,7 @@ namespace Planar.Service.API
             return data;
         }
 
-        public IEnumerable<KeyValueItem> GetAllFlat()
+        public static IEnumerable<KeyValueItem> GetAllFlat()
         {
             var data = Global.GlobalConfig
                 .OrderBy(kv => kv.Key)
@@ -154,11 +148,11 @@ namespace Planar.Service.API
             }
         }
 
-        private IDictionary<string, string?> GetJsonConfiguration(GlobalConfig config)
+        private Dictionary<string, string?> GetJsonConfiguration(GlobalConfig config)
         {
             try
             {
-                if (string.IsNullOrEmpty(config.Value)) { return new Dictionary<string, string?>(); }
+                if (string.IsNullOrEmpty(config.Value)) { return []; }
                 using var stream = new MemoryStream();
                 using var writer = new StreamWriter(stream);
                 writer.Write(config.Value.Trim());
@@ -176,7 +170,7 @@ namespace Planar.Service.API
             catch (Exception ex)
             {
                 Logger.LogWarning(ex, "invalid json format at global config key '{Key}'", config.Key);
-                return new Dictionary<string, string?>();
+                return [];
             }
         }
     }

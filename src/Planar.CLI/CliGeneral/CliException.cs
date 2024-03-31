@@ -1,11 +1,9 @@
 ﻿using RestSharp;
 using System;
-using System.Runtime.Serialization;
 
 namespace Planar.CLI
 {
-    [Serializable]
-    public class CliException : Exception
+    public sealed class CliException : Exception
     {
         public RestResponse? RestResponse { get; private set; }
 
@@ -19,10 +17,6 @@ namespace Planar.CLI
         }
 
         public CliException(string message, Exception? innerException) : base(message, innerException)
-        {
-        }
-
-        protected CliException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

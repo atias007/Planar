@@ -2,7 +2,8 @@
 {
     public class MonitorEventModel
     {
-        public string EventName { get; set; } = null!;
-        public string EventTitle { get; set; } = null!;
+        public required string EventName { get; set; }
+        public required string EventTitle { get; set; }
+        public required string EventType { get; set; }
     }
 }

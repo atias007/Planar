@@ -66,11 +66,14 @@ namespace Planar.Service
             services.AddSingleton<SchedulerUtil>();
             services.AddSingleton<JobKeyHelper>();
 
-            // Host
+            // Hosted Services
             services.AddHostedService(p => p.GetRequiredService<MainService>());
             services.AddHostedService(p => p.GetRequiredService<AuditService>());
             services.AddHostedService(p => p.GetRequiredService<MonitorService>());
             services.AddHostedService(p => p.GetRequiredService<MqttBrokerService>());
+
+            services.AddHostedService<PlanarRestartService>();
+
             if (AppSettings.Authentication.HasAuthontication)
             {
                 services.AddHostedService(p => p.GetRequiredService<SecurityService>());
@@ -87,6 +90,9 @@ namespace Planar.Service
             // AutoMapper
             var assemply = Assembly.Load($"{nameof(Planar)}.{nameof(Service)}");
             services.AddAutoMapperProfiles(new[] { assemply });
+
+            // Utils
+            services.AddHttpContextAccessor();
 
             return services;
         }

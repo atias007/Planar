@@ -206,6 +206,16 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetTable(MonitorHookDetails? response)
+        {
+            var table = new CliTable(showCount: true);
+            if (response == null) { return table; }
+            table.Table.AddColumns("Name", "Description");
+            table.Table.AddRow(SafeCliString(response.Name), SafeCliString(response.Description));
+
+            return table;
+        }
+
         public static CliTable GetTable(IEnumerable<LovItem>? response, string entityName)
         {
             var table = new CliTable(showCount: true, entityName);
@@ -223,8 +233,8 @@ namespace Planar.CLI
         {
             var table = new CliTable(showCount: true, entityName: "event");
             if (response == null) { return table; }
-            table.Table.AddColumns("Event Name", "Event Title");
-            response.ForEach(r => table.Table.AddRow(r.EventName, r.EventTitle));
+            table.Table.AddColumns("Event Title", "Event Type");
+            response.ForEach(r => table.Table.AddRow(r.EventTitle, r.EventType));
             return table;
         }
 
@@ -395,7 +405,7 @@ namespace Planar.CLI
             var table = new CliTable();
             if (response == null)
             {
-                return new List<CliTable> { table, table };
+                return [table, table];
             }
 
             table.Table.AddColumns("Property Name", "Value");
@@ -423,7 +433,7 @@ namespace Planar.CLI
 
             var table2 = GetTable(response2);
 
-            return new List<CliTable> { table, table2 };
+            return [table, table2];
         }
 
         public static CliTable GetTable(List<CliClusterNode>? response)

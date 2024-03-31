@@ -88,9 +88,9 @@ namespace Planar.Service.Services
                 {
                     RemoveSchedulerCluster().Wait();
                 }
-                catch
+                catch (Exception ex)
                 {
-                    _logger.LogWarning("fail to {Operation}", nameof(RemoveSchedulerCluster));
+                    _logger.LogWarning(ex, "fail to {Operation}", nameof(RemoveSchedulerCluster));
                 }
 
                 try
@@ -240,10 +240,9 @@ namespace Planar.Service.Services
             {
                 _logger.LogInformation("Initialize: {Operation}", nameof(LoadMonitorHooks));
 
-                ServiceUtil.LoadMonitorHooks(_logger);
                 using var scope = _serviceProvider.CreateScope();
-                var monitor = scope.ServiceProvider.GetRequiredService<MonitorUtil>();
-                await monitor.Validate();
+                var monitorDomain = scope.ServiceProvider.GetRequiredService<MonitorDomain>();
+                await monitorDomain.Reload(clusterReload: false);
             }
             catch (Exception ex)
             {
@@ -265,7 +264,7 @@ namespace Planar.Service.Services
 
         private void LogDeadNodes(List<ClusterNode> nodes)
         {
-            if (nodes != null && nodes.Any())
+            if (nodes != null && nodes.Count != 0)
             {
                 var text = string.Join(',', nodes.Select(n => $"{n.Server}:{n.Port}").ToArray());
                 _logger.LogWarning("there are dead cluster nodes. Current node will not check health with them {Nodes}", text);

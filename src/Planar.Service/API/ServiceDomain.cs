@@ -16,12 +16,8 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class ServiceDomain : BaseBL<ServiceDomain, ServiceData>
+    public class ServiceDomain(IServiceProvider serviceProvider) : BaseBL<ServiceDomain, ServiceData>(serviceProvider)
     {
-        public ServiceDomain(IServiceProvider serviceProvider) : base(serviceProvider)
-        {
-        }
-
         public string GetServiceVersion()
         {
             return ServiceVersion ?? Consts.Undefined;
@@ -39,6 +35,7 @@ namespace Planar.Service.API
                 Retention = Mapper.Map<RetentionSettingsInfo>(AppSettings.Retention),
                 Smtp = Mapper.Map<SmtpSettingsInfo>(AppSettings.Smtp),
                 Monitor = Mapper.Map<MonitorSettingsInfo>(AppSettings.Monitor),
+                Protection = Mapper.Map<ProtectionSettingsInfo>(AppSettings.Protection),
             };
 
             if (UserRole != Roles.Administrator)
@@ -194,7 +191,7 @@ namespace Planar.Service.API
 
         public IEnumerable<WorkingHoursModel> GetDefaultWorkingHours()
         {
-            if (!WorkingHours.Calendars.Any()) { throw new RestNotFoundException("no working hours found in settings file"); }
+            if (WorkingHours.Calendars.Count == 0) { throw new RestNotFoundException("no working hours found in settings file"); }
 
             var result = new List<WorkingHoursModel>();
             foreach (var item in WorkingHours.Calendars)

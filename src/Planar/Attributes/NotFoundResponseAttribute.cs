@@ -7,7 +7,7 @@ namespace Planar.Attributes
         public NotFoundResponseAttribute() : base(404)
         {
             Type = typeof(string);
-            ContentTypes = new[] { "plain/text" };
+            ContentTypes = ["plain/text"];
         }
     }
 }

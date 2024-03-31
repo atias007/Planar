@@ -1,7 +1,6 @@
 ﻿using Planar.Job;
 using Planar.Job.Test.JobExecutionContext;
 using System;
-using System.Security.Cryptography;
 
 namespace Planar.Common
 {
@@ -18,6 +17,7 @@ namespace Planar.Common
             _triggerKey = new MockKey(properties);
             _jobKey = new MockKey(properties);
             _triggerDataMap = DataMapUtils.Convert(properties.TriggerData);
+            Timeout = properties.TriggerTimeout;
             FinalFireTime = _now.AddDays(new Random().Next(1, 30));
         }
 
@@ -36,11 +36,13 @@ namespace Planar.Common
         public DateTimeOffset? FinalFireTime { get; private set; }
         public DateTimeOffset StartTime => _now;
         public bool HasRetry => false;
-        public bool? IsLastRetry => null;
+        public bool? IsLastRetry => HasRetry && IsRetryTrigger && RetryNumber == MaxRetries;
         public bool IsRetryTrigger => false;
         public TimeSpan? RetrySpan => null;
         public int? RetryNumber => null;
         public int? MaxRetries => null;
         public string Id { get; } = General.GenerateId();
+
+        public TimeSpan? Timeout { get; private set; }
     }
 }

@@ -43,17 +43,18 @@ namespace Planar.CLI.Actions
 
             var data =
                 result.Data == null ?
-                new List<CliDumpObject>() :
+                [] :
                 new List<CliDumpObject>
                 {
-                         new CliDumpObject(result.Data.Authentication){ Title=nameof(result.Data.Authentication) },
-                         new CliDumpObject(result.Data.Cluster){ Title=nameof(result.Data.Cluster) },
-                         new CliDumpObject(result.Data.Database){ Title=nameof(result.Data.Database) },
-                         new CliDumpObject(result.Data.General){ Title=nameof(result.Data.General) },
-                         new CliDumpObject(result.Data.Retention){ Title=nameof(result.Data.Retention) },
-                         new CliDumpObject(result.Data.Monitor){ Title=nameof(result.Data.Monitor) },
-                         new CliDumpObject(result.Data.Smtp){ Title=nameof(result.Data.Smtp) },
-                         new CliDumpObject(result.Data.Hooks) { Title = nameof(result.Data.Hooks)}
+                         new (result.Data.Authentication){ Title=nameof(result.Data.Authentication) },
+                         new (result.Data.Cluster){ Title=nameof(result.Data.Cluster) },
+                         new (result.Data.Database){ Title=nameof(result.Data.Database) },
+                         new (result.Data.General){ Title=nameof(result.Data.General) },
+                         new (result.Data.Retention){ Title=nameof(result.Data.Retention) },
+                         new (result.Data.Monitor){ Title=nameof(result.Data.Monitor) },
+                         new (result.Data.Protection) { Title = nameof(result.Data.Protection)},
+                            new (result.Data.Smtp){ Title = nameof(result.Data.Smtp) },
+                         new (result.Data.Hooks) { Title = nameof(result.Data.Hooks)},
                 };
 
             return new CliActionResponse(result, data);
@@ -225,6 +226,7 @@ namespace Planar.CLI.Actions
         [Action("create-cryptography-key")]
         public static async Task<CliActionResponse> CreateCryptographyKey(CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var key = Aes256Cipher.GenerateKey();
             var table = CliTableExtensions.GetTable(key);
             var response = CliActionResponse.GetGenericSuccessRestResponse();
@@ -236,6 +238,7 @@ namespace Planar.CLI.Actions
         [Action("encrypt-settings")]
         public static async Task<CliActionResponse> EncryptSettings(CliEncryptAppsettingsRequest request, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var filename = request.Filename ?? string.Empty;
             var text = File.ReadAllText(filename);
             if (text.StartsWith(encryptKey))
@@ -254,8 +257,7 @@ namespace Planar.CLI.Actions
         [Action("decrypt-settings")]
         public static async Task<CliActionResponse> DecryptSettings(CliEncryptAppsettingsRequest request, CancellationToken cancellationToken = default)
         {
-#pragma warning restore IDE0060 // Remove unused parameter
-
+            cancellationToken.ThrowIfCancellationRequested();
             var filename = request.Filename ?? string.Empty;
             var text = File.ReadAllText(filename);
             if (!text.StartsWith(encryptKey))

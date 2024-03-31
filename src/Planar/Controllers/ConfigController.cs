@@ -13,12 +13,8 @@ namespace Planar.Controllers
 {
     [ApiController]
     [Route("config")]
-    public class ConfigController : BaseController<ConfigDomain>
+    public class ConfigController(ConfigDomain bl) : BaseController<ConfigDomain>(bl)
     {
-        public ConfigController(ConfigDomain bl) : base(bl)
-        {
-        }
-
         [HttpGet]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "get_config", Description = "Get all global configuration", Summary = "Get All Global Configurations")]
@@ -35,7 +31,7 @@ namespace Planar.Controllers
         [OkJsonResponse(typeof(IEnumerable<KeyValueItem>))]
         public async Task<ActionResult<IEnumerable<KeyValueItem>>> GetAllFlat()
         {
-            var result = await Task.FromResult(BusinesLayer.GetAllFlat());
+            var result = await Task.FromResult(ConfigDomain.GetAllFlat());
             return Ok(result);
         }
 

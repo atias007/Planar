@@ -10,12 +10,8 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Data
 {
-    public class UserData : BaseDataLayer
+    public class UserData(PlanarContext context) : BaseDataLayer(context)
     {
-        public UserData(PlanarContext context) : base(context)
-        {
-        }
-
         public async Task<User> AddUser(User user)
         {
             var result = _context.Users.Add(user);
@@ -50,7 +46,7 @@ namespace Planar.Service.Data
         public async Task<UserIdentity?> GetUserIdentity(string username)
         {
             var result = await _context.Users
-                .Where(u => u.Username.ToLower() == username.ToLower())
+                .Where(u => u.Username == username)
                 .Select(u => new UserIdentity
                 {
                     Id = u.Id,
@@ -79,7 +75,7 @@ namespace Planar.Service.Data
         public async Task<int> GetUserRole(string username)
         {
             var result = await _context.Groups
-                .Where(g => g.Users.Any(u => u.Username.ToLower() == username.ToLower()))
+                .Where(g => g.Users.Any(u => u.Username == username))
                 .Select(g => g.RoleId)
                 .OrderByDescending(g => g)
                 .FirstOrDefaultAsync();
@@ -117,7 +113,7 @@ namespace Planar.Service.Data
 
         public async Task<int> RemoveUser(string username)
         {
-            var result = await _context.Users.Where(u => u.Username.ToLower() == username.ToLower()).ExecuteDeleteAsync();
+            var result = await _context.Users.Where(u => u.Username == username).ExecuteDeleteAsync();
             return result;
         }
 
@@ -129,7 +125,7 @@ namespace Planar.Service.Data
         public async Task<int> GetUserId(string username)
         {
             return await _context.Users
-                .Where(u => u.Username.ToLower() == username.ToLower())
+                .Where(u => u.Username == username)
                 .Select(u => u.Id)
                 .FirstOrDefaultAsync();
         }
@@ -137,13 +133,13 @@ namespace Planar.Service.Data
         public async Task<bool> IsUsernameExists(string? username)
         {
             if (username == null) { return false; }
-            return await _context.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower());
+            return await _context.Users.AnyAsync(u => u.Username == username);
         }
 
         public async Task<bool> IsUsernameExists(string? username, string ignoreUsername)
         {
             if (username == null) { return false; }
-            return await _context.Users.AnyAsync(u => u.Username.ToLower() == username.ToLower() && u.Username.ToLower() != ignoreUsername.ToLower());
+            return await _context.Users.AnyAsync(u => u.Username == username && u.Username != ignoreUsername);
         }
     }
 }
