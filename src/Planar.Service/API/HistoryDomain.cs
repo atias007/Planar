@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public class HistoryDomain(IServiceProvider serviceProvider) : BaseBL<HistoryDomain, HistoryData>(serviceProvider)
+    public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<HistoryDomain, HistoryData>(serviceProvider)
     {
         #region OData
 

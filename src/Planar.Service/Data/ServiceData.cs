@@ -4,50 +4,45 @@ using Planar.Service.Model;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Planar.Service.Data
+namespace Planar.Service.Data;
+
+public class ServiceData(PlanarContext context) : BaseDataLayer(context)
 {
-    public class ServiceData : BaseDataLayer
+    public async Task HealthCheck()
     {
-        public ServiceData(PlanarContext context) : base(context)
+        const string query = "SELECT 1";
+        await _context.Database.ExecuteSqlRawAsync(query);
+    }
+
+    public async Task AddSecurityAudit(SecurityAudit audit)
+    {
+        _context.Add(audit);
+        await _context.SaveChangesAsync();
+    }
+
+    public IQueryable<SecurityAudit> GetSecurityAudits(SecurityAuditsFilter request)
+    {
+        var query = _context.SecurityAudits.AsNoTracking();
+
+        if (request.FromDate.HasValue)
         {
+            query = query.Where(l => l.DateCreated >= request.FromDate);
         }
 
-        public async Task HealthCheck()
+        if (request.ToDate.HasValue)
         {
-            const string query = "SELECT 1";
-            await _context.Database.ExecuteSqlRawAsync(query);
+            query = query.Where(l => l.DateCreated < request.ToDate);
         }
 
-        public async Task AddSecurityAudit(SecurityAudit audit)
+        if (request.Ascending)
         {
-            _context.Add(audit);
-            await _context.SaveChangesAsync();
+            query = query.OrderBy(l => l.DateCreated);
+        }
+        else
+        {
+            query = query.OrderByDescending(l => l.DateCreated);
         }
 
-        public IQueryable<SecurityAudit> GetSecurityAudits(SecurityAuditsFilter request)
-        {
-            var query = _context.SecurityAudits.AsNoTracking();
-
-            if (request.FromDate.HasValue)
-            {
-                query = query.Where(l => l.DateCreated >= request.FromDate);
-            }
-
-            if (request.ToDate.HasValue)
-            {
-                query = query.Where(l => l.DateCreated < request.ToDate);
-            }
-
-            if (request.Ascending)
-            {
-                query = query.OrderBy(l => l.DateCreated);
-            }
-            else
-            {
-                query = query.OrderByDescending(l => l.DateCreated);
-            }
-
-            return query;
-        }
+        return query;
     }
 }

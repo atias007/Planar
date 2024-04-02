@@ -101,21 +101,29 @@ namespace Planar.Service
         {
             services.AddPlanarDbContext();
 
-            services.AddTransient<UserData>();
-            services.AddTransient<GroupData>();
-            services.AddTransient<AutoMapperData>();
-            services.AddTransient<MonitorData>();
-            services.AddTransient<ConfigData>();
-            services.AddTransient<ClusterData>();
-            services.AddTransient<HistoryData>();
-            services.AddTransient<TraceData>();
-            services.AddTransient<ServiceData>();
-            services.AddTransient<MetricsData>();
-            services.AddTransient<ReportData>();
-            services.AddTransient<JobData>();
+            services.AddTransientWithLazy<UserData>();
+            services.AddTransientWithLazy<GroupData>();
+            services.AddTransientWithLazy<AutoMapperData>();
+            services.AddTransientWithLazy<MonitorData>();
+            services.AddTransientWithLazy<ConfigData>();
+            services.AddTransientWithLazy<ClusterData>();
+            services.AddTransientWithLazy<HistoryData>();
+            services.AddTransientWithLazy<TraceData>();
+            services.AddTransientWithLazy<ServiceData>();
+            services.AddTransientWithLazy<MetricsData>();
+            services.AddTransientWithLazy<ReportData>();
+            services.AddTransientWithLazy<JobData>();
             services.AddTransient<IJobPropertyDataLayer, JobData>();
             services.AddTransient<IMonitorDurationDataLayer, MonitorData>();
 
+            return services;
+        }
+
+        internal static IServiceCollection AddTransientWithLazy<T>(this IServiceCollection services)
+            where T : BaseDataLayer
+        {
+            services.AddTransient<T>();
+            services.AddTransient(p => new Lazy<T>(() => p.GetRequiredService<T>()));
             return services;
         }
 

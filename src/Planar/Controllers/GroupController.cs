@@ -13,12 +13,8 @@ namespace Planar.Controllers
 {
     [ApiController]
     [Route("group")]
-    public class GroupController : BaseController<GroupDomain>
+    public class GroupController(GroupDomain bl) : BaseController<GroupDomain>(bl)
     {
-        public GroupController(GroupDomain bl) : base(bl)
-        {
-        }
-
         [HttpPost]
         [EditorAuthorize]
         [SwaggerOperation(OperationId = "post_group", Description = "Add new group", Summary = "Add Group")]

@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API;
 
-public class GroupDomain(IServiceProvider serviceProvider) : BaseBL<GroupDomain, GroupData>(serviceProvider)
+public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDomain, GroupData>(serviceProvider)
 {
     public static IEnumerable<string> GetAllGroupsRoles()
     {

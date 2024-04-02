@@ -1,9 +1,5 @@
-﻿namespace Planar.Service.Data
+﻿namespace Planar.Service.Data;
+
+public class ReportData(PlanarContext context) : BaseDataLayer(context)
 {
-    public class ReportData : BaseDataLayer
-    {
-        public ReportData(PlanarContext context) : base(context)
-        {
-        }
-    }
 }

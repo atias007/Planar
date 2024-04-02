@@ -4,63 +4,93 @@ using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
+using System;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Planar.Service.Data
+namespace Planar.Service.Data;
+
+public class TraceData(PlanarContext context) : BaseDataLayer(context)
 {
-    public class TraceData : BaseDataLayer
+    public async Task<int> ClearTraceTable(int overDays)
     {
-        public TraceData(PlanarContext context) : base(context)
+        var parameters = new { OverDays = overDays };
+        var cmd = new CommandDefinition(
+            commandText: "dbo.ClearTrace",
+            commandType: CommandType.StoredProcedure,
+            parameters: parameters);
+
+        return await DbConnection.ExecuteAsync(cmd);
+    }
+
+    public IQueryable<Trace> GetTrace(int key)
+    {
+        return _context.Traces.AsNoTracking().Where(t => t.Id == key);
+    }
+
+    public async Task<PagingResponse<LogDetails>> GetTrace(GetTraceRequest request)
+    {
+        var query = _context.Traces.AsNoTracking().AsQueryable();
+
+        if (request.FromDate.HasValue)
         {
+            query = query.Where(l => l.TimeStamp >= request.FromDate);
         }
 
-        public async Task<int> ClearTraceTable(int overDays)
+        if (request.ToDate.HasValue)
         {
-            var parameters = new { OverDays = overDays };
-            var cmd = new CommandDefinition(
-                commandText: "dbo.ClearTrace",
-                commandType: CommandType.StoredProcedure,
-                parameters: parameters);
-
-            return await DbConnection.ExecuteAsync(cmd);
+            query = query.Where(l => l.TimeStamp < request.ToDate);
         }
 
-        public IQueryable<Trace> GetTrace(int key)
+        if (!string.IsNullOrEmpty(request.Level))
         {
-            return _context.Traces.AsNoTracking().Where(t => t.Id == key);
+            query = query.Where(l => l.Level == request.Level);
         }
 
-        public async Task<PagingResponse<LogDetails>> GetTrace(GetTraceRequest request)
+        if (request.Ascending)
         {
-            var query = _context.Traces.AsNoTracking().AsQueryable();
+            query = query.OrderBy(l => l.TimeStamp).ThenBy(l => l.Id);
+        }
+        else
+        {
+            query = query.OrderByDescending(l => l.TimeStamp).ThenBy(l => l.Id);
+        }
 
-            if (request.FromDate.HasValue)
-            {
-                query = query.Where(l => l.TimeStamp >= request.FromDate);
-            }
+        var final = query.Select(l => new LogDetails
+        {
+            Id = l.Id,
+            Message = l.Message,
+            Level = l.Level,
+            TimeStamp = l.TimeStamp.ToLocalTime().DateTime
+        });
 
-            if (request.ToDate.HasValue)
-            {
-                query = query.Where(l => l.TimeStamp < request.ToDate);
-            }
+        var result = await final.ToPagingListAsync(request);
+        return result;
+    }
 
-            if (!string.IsNullOrEmpty(request.Level))
-            {
-                query = query.Where(l => l.Level == request.Level);
-            }
+    public async Task<PagingResponse<LogDetails>> GetTraceForReport(GetTraceRequest request)
+    {
+        var levels = new string[] { nameof(LogLevel.Critical), nameof(LogLevel.Warning), nameof(LogLevel.Error), "Fatal" };
+        var query = _context.Traces
+            .AsNoTracking()
+            .AsQueryable()
+            .Where(l => levels.Contains(l.Level));
 
-            if (request.Ascending)
-            {
-                query = query.OrderBy(l => l.TimeStamp).ThenBy(l => l.Id);
-            }
-            else
-            {
-                query = query.OrderByDescending(l => l.TimeStamp).ThenBy(l => l.Id);
-            }
+        if (request.FromDate.HasValue)
+        {
+            query = query.Where(l => l.TimeStamp >= request.FromDate);
+        }
 
-            var final = query.Select(l => new LogDetails
+        if (request.ToDate.HasValue)
+        {
+            query = query.Where(l => l.TimeStamp < request.ToDate);
+        }
+
+        var final = query
+            .OrderBy(l => l.TimeStamp)
+            .ThenBy(l => l.Id)
+            .Select(l => new LogDetails
             {
                 Id = l.Id,
                 Message = l.Message,
@@ -68,75 +98,41 @@ namespace Planar.Service.Data
                 TimeStamp = l.TimeStamp.ToLocalTime().DateTime
             });
 
-            var result = await final.ToPagingListAsync(request);
-            return result;
-        }
+        var result = await final.ToPagingListAsync(request);
+        return result;
+    }
 
-        public async Task<PagingResponse<LogDetails>> GetTraceForReport(GetTraceRequest request)
-        {
-            var levels = new string[] { nameof(LogLevel.Critical), nameof(LogLevel.Warning), nameof(LogLevel.Error), "Fatal" };
-            var query = _context.Traces
-                .AsNoTracking()
-                .AsQueryable()
-                .Where(l => levels.Contains(l.Level));
+    public IQueryable<Trace> GetTraceData()
+    {
+        return _context.Traces.AsNoTracking().OrderByDescending(t => t.TimeStamp).AsQueryable();
+    }
 
-            if (request.FromDate.HasValue)
-            {
-                query = query.Where(l => l.TimeStamp >= request.FromDate);
-            }
+    public async Task<string?> GetTraceException(int id)
+    {
+        var result = (await _context.Traces.FindAsync(id))?.Exception;
+        return result;
+    }
 
-            if (request.ToDate.HasValue)
-            {
-                query = query.Where(l => l.TimeStamp < request.ToDate);
-            }
+    public async Task<string?> GetTraceProperties(int id)
+    {
+        var result = (await _context.Traces.FindAsync(id))?.LogEvent;
+        return result;
+    }
 
-            var final = query
-                .OrderBy(l => l.TimeStamp)
-                .ThenBy(l => l.Id)
-                .Select(l => new LogDetails
-                {
-                    Id = l.Id,
-                    Message = l.Message,
-                    Level = l.Level,
-                    TimeStamp = l.TimeStamp.ToLocalTime().DateTime
-                });
+    public async Task<bool> IsTraceExists(int id)
+    {
+        return await _context.Traces.AnyAsync(t => t.Id == id);
+    }
 
-            var result = await final.ToPagingListAsync(request);
-            return result;
-        }
+    public async Task<TraceStatusDto?> GetTraceCounter(CounterRequest request)
+    {
+        var definition = new CommandDefinition(
+            commandText: "[Statistics].[TraceCounter]",
+            parameters: request,
+            commandType: CommandType.StoredProcedure);
 
-        public IQueryable<Trace> GetTraceData()
-        {
-            return _context.Traces.AsNoTracking().OrderByDescending(t => t.TimeStamp).AsQueryable();
-        }
+        var result = await DbConnection.QueryFirstOrDefaultAsync<TraceStatusDto>(definition);
 
-        public async Task<string?> GetTraceException(int id)
-        {
-            var result = (await _context.Traces.FindAsync(id))?.Exception;
-            return result;
-        }
-
-        public async Task<string?> GetTraceProperties(int id)
-        {
-            var result = (await _context.Traces.FindAsync(id))?.LogEvent;
-            return result;
-        }
-
-        public async Task<bool> IsTraceExists(int id)
-        {
-            return await _context.Traces.AnyAsync(t => t.Id == id);
-        }
-
-        public async Task<TraceStatusDto?> GetTraceCounter(CounterRequest request)
-        {
-            var definition = new CommandDefinition(
-                commandText: "[Statistics].[TraceCounter]",
-                parameters: request,
-                commandType: CommandType.StoredProcedure);
-
-            var result = await DbConnection.QueryFirstOrDefaultAsync<TraceStatusDto>(definition);
-
-            return result;
-        }
+        return result;
     }
 }

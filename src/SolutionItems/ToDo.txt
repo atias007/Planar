@@ -276,7 +276,7 @@ V1.7.0
 ------
 - client Libraries
 - add cli ? argument with filter
-- add ExecutionDurationGreaterThan {x} minutes monitor event
+- add ExecutionDurationGreaterThan {x} minutes monitor event    ///// ********* /////
 - add ExecutionTimeout moniotr event
 - add total effected rows to summary
 - Telegram Hook
@@ -294,3 +294,6 @@ V1.7.1
 - add memory usage trace and restart + monitor event
 - add regular restart + monitor event
 - add AnySystemEvent monitor event
+- fix memory leak
+- performance (memory & cpu) improvements
+- new smpt email look

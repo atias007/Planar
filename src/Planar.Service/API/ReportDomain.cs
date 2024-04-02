@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API;
 
-public class ReportDomain(IServiceProvider serviceProvider) : BaseBL<ReportDomain, ReportData>(serviceProvider)
+public class ReportDomain(IServiceProvider serviceProvider) : BaseBL<ReportDomain>(serviceProvider)
 {
     private const string groupText = "group";
 

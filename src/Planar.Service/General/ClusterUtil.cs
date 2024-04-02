@@ -238,6 +238,26 @@ namespace Planar.Service.General
             }
         }
 
+        public async Task ReloadMonitorActionsAsync()
+        {
+            var nodes = await GetAllNodes();
+            foreach (var node in nodes)
+            {
+                if (node.IsCurrentNode) { continue; }
+
+                try
+                {
+                    await Policy.Handle<RpcException>()
+                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                        .ExecuteAsync(() => ReloadMonitorActionsAsync(node));
+                }
+                catch (RpcException ex)
+                {
+                    _logger.LogError(ex, "fail to set monitor actions cache at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                }
+            }
+        }
+
         public async Task StopScheduler()
         {
             var nodes = await GetAllNodes();
@@ -499,6 +519,12 @@ namespace Planar.Service.General
         {
             var client = GetClient(node);
             await client.ReloadMonitorAsync(new Empty(), deadline: GrpcDeadLine);
+        }
+
+        private static async Task ReloadMonitorActionsAsync(ClusterNode node)
+        {
+            var client = GetClient(node);
+            await client.ReloadMonitorActionsAsync(new Empty(), deadline: GrpcDeadLine);
         }
 
         private static async Task CallStopSchedulerService(ClusterNode node)

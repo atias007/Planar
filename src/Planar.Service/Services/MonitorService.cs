@@ -30,6 +30,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
     private readonly Channel<MonitorScanMessage> _channel = serviceProvider.GetRequiredService<Channel<MonitorScanMessage>>();
     private readonly ILogger<MonitorService> _logger = serviceProvider.GetRequiredService<ILogger<MonitorService>>();
     private const string nullText = "[null]";
+    private static int _instanceCount;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -103,7 +104,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
             return;
         }
 
-        List<MonitorAction> items;
+        IEnumerable<MonitorAction> items;
 
         try
         {
@@ -134,7 +135,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
             return;
         }
 
-        List<MonitorAction> items;
+        IEnumerable<MonitorAction> items;
 
         try
         {
@@ -154,52 +155,37 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
 
     #region Load Monitor Items
 
-    private async Task<List<MonitorAction>> LoadMonitorItems(MonitorEvents @event, IJobExecutionContext context)
+    private async Task<IEnumerable<MonitorAction>> LoadMonitorItems(MonitorEvents @event, IJobExecutionContext context)
     {
-        var key = context.JobDetail.Key;
+        // Check Cache
+        if (!MonitorServiceCache.IsCacheValid)
+        {
+            var items = await LoadAllMonitorItems();
+            MonitorServiceCache.SetCache(items);
+        }
 
-        var task1 = GetMonitorDataByEvent((int)@event);
-        var task2 = GetMonitorDataByGroup((int)@event, key.Group);
-        var task3 = GetMonitorDataByJob((int)@event, key.Group, key.Name);
-
-        await Task.WhenAll(task1, task2, task3);
-
-        var result = task1.Result
-            .Union(task2.Result)
-            .Union(task3.Result)
-            .Distinct()
-            .ToList();
-
+        var result = MonitorServiceCache.GetMonitorActions(@event, context);
         return result;
     }
 
-    private async Task<List<MonitorAction>> LoadMonitorItems(MonitorEvents @event)
+    private async Task<IEnumerable<MonitorAction>> LoadMonitorItems(MonitorEvents @event)
     {
-        var result = await GetMonitorDataByEvent((int)@event);
+        // Check Cache
+        if (!MonitorServiceCache.IsCacheValid)
+        {
+            var items = await LoadAllMonitorItems();
+            MonitorServiceCache.SetCache(items);
+        }
+
+        var result = MonitorServiceCache.GetMonitorActions(@event);
         return result;
     }
 
-    private async Task<List<MonitorAction>> GetMonitorDataByEvent(int @event)
+    private async Task<IEnumerable<MonitorAction>> LoadAllMonitorItems()
     {
         using var scope = serviceScopeFactory.CreateScope();
-        var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
-        var data = await dal.GetMonitorDataByEvent(@event);
-        return data;
-    }
-
-    private async Task<List<MonitorAction>> GetMonitorDataByGroup(int @event, string jobGroup)
-    {
-        using var scope = serviceScopeFactory.CreateScope();
-        var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
-        var data = await dal.GetMonitorDataByGroup(@event, jobGroup);
-        return data;
-    }
-
-    private async Task<List<MonitorAction>> GetMonitorDataByJob(int @event, string jobGroup, string jobName)
-    {
-        using var scope = serviceScopeFactory.CreateScope();
-        var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
-        var data = await dal.GetMonitorDataByJob(@event, jobGroup, jobName);
+        var bl = scope.ServiceProvider.GetRequiredService<MonitorDomain>();
+        var data = await bl.GetMonitorActions();
         return data;
     }
 
@@ -556,6 +542,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
 
             using var scope = serviceScopeFactory.CreateScope();
             var dbcontext = scope.ServiceProvider.GetRequiredService<PlanarContext>();
+            Console.WriteLine("SafeSaveMonitorAlert: " + Interlocked.Increment(ref _instanceCount));
             dbcontext.MonitorAlerts.Add(alert);
             await dbcontext.SaveChangesAsync();
         }
@@ -581,6 +568,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
 
             using var scope = serviceScopeFactory.CreateScope();
             var dbcontext = scope.ServiceProvider.GetRequiredService<PlanarContext>();
+            Console.WriteLine("SafeSaveMonitorAlert: " + Interlocked.Increment(ref _instanceCount));
             dbcontext.MonitorAlerts.Add(alert);
             await dbcontext.SaveChangesAsync();
         }

@@ -4,8 +4,6 @@
     <Description>DbUp makes it easy to deploy and upgrade SQL Server databases. This package adds PostgreSQL support.</Description>
     <Title>DbUp PostgreSQL Support</Title>
     <TargetFrameworks>net8.0</TargetFrameworks>
-    <SignAssembly>False</SignAssembly>
-    <PublicSign Condition=" '$(OS)' != 'Windows_NT' ">true</PublicSign>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
@@ -15,7 +13,7 @@
     <ProjectReference Include="..\dbup-core\dbup-core.csproj" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' != 'net35'">
+  <ItemGroup>
     <PackageReference Include="Npgsql" Version="8.0.2" />
   </ItemGroup>
 

@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API;
 
-public class UserDomain(IServiceProvider serviceProvider) : BaseBL<UserDomain, UserData>(serviceProvider)
+public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomain, UserData>(serviceProvider)
 {
     public async Task<AddUserResponse> Add(AddUserRequest request)
     {

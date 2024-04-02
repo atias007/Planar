@@ -57,7 +57,7 @@ public abstract class BaseCommonJob
         if (!finish)
         {
             SafeScan(MonitorEvents.ExecutionTimeout, context);
-            MessageBroker.AppendLog(Microsoft.Extensions.Logging.LogLevel.Warning, $"Timeout occur, sent cancel requst to job (timeout value: {FormatTimeSpan(timeout)})");
+            MessageBroker.AppendLog(LogLevel.Warning, $"Timeout occur, sent cancel requst to job (timeout value: {FormatTimeSpan(timeout)})");
             await context.Scheduler.Interrupt(context.JobDetail.Key);
         }
 
