@@ -52,13 +52,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" PrivateAssets="All" Version="2.7.1" />
+		<PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.7.1" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
-		<PackageReference Include="MQTTnet.Extensions.ManagedClient" PrivateAssets="All" Version="4.3.3.952" />
+		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.3.952" />
 		<PackageReference Include="System.Text.Json" Version="8.0.3" />
-		<PackageReference Include="YamlDotNet" PrivateAssets="All" Version="15.1.2" />
+		<PackageReference Include="YamlDotNet" Version="15.1.2" />
 	</ItemGroup>
 
 	<ItemGroup>
