@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34525.116
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RestHealthCheck", "RestHealthCheck.csproj", "{7ECE9562-460C-4BCF-BB67-19D308F8EBDA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7ECE9562-460C-4BCF-BB67-19D308F8EBDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7ECE9562-460C-4BCF-BB67-19D308F8EBDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7ECE9562-460C-4BCF-BB67-19D308F8EBDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7ECE9562-460C-4BCF-BB67-19D308F8EBDA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {50C161EB-78A8-4B28-BAA4-8C426C2165BE}
+	EndGlobalSection
+EndGlobal
