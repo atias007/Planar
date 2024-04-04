@@ -1,24 +1,23 @@
 defaults:
   success status codes: [200,201,202,204]
-  timeout: 00:05:00
   retry count: 3
   retry interval: 00:00:05
+  timeout: 00:00:05
 
 endpoints:
-  - name: "Test internet access"
-    url: "https://www.google.com" 
-    success status codes: [429]
-  - name: "GitHub"
-    url: "https://github.com" 
-  - name: "Consul"
+  - name: Test internet access
+    url: https://www.google.com
+  - name: GitHub
+    url: https://github.com
+  - name: Consul
     url: "{{host}}:8500"
   - name: "Seq"
     url: "{{host}}:9099"
-  - name: "RabbitMQ"
+  - name: RabbitMQ
     url: "{{host}}:15672/api"
-  - name: "Local IIS"
+  - name: Local IIS
     url: "{{host}}"
     success status codes: [200]
-    timeout: 00:03:00
+    timeout: 00:01:00
     retry count: 5
     retry interval: 00:00:01
