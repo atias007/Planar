@@ -8,6 +8,10 @@ namespace Planar.Job
 
         string? Get(string key);
 
+        bool TryGet<T>(string key, out T? value) where T : struct;
+
+        bool TryGet(string key, out string? value);
+
         bool Exists(string key);
 
         Dictionary<string, string?> ToDictionary();

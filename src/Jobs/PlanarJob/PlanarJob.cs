@@ -325,9 +325,27 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
                 MessageBroker.PutJobDataAction(kv);
                 break;
 
+            case MessageBrokerChannels.RemoveJobData:
+                kv = GetCloudEventEntityValue<KeyValueObject>(e.CloudEvent);
+                MessageBroker.RemoveJobDataAction(kv);
+                break;
+
             case MessageBrokerChannels.PutTriggerData:
                 kv = GetCloudEventEntityValue<KeyValueObject>(e.CloudEvent);
-                MessageBroker.PutTriggerData(kv);
+                MessageBroker.PutTriggerDataAction(kv);
+                break;
+
+            case MessageBrokerChannels.RemoveTriggerData:
+                kv = GetCloudEventEntityValue<KeyValueObject>(e.CloudEvent);
+                MessageBroker.RemoveTriggerDataAction(kv);
+                break;
+
+            case MessageBrokerChannels.ClearTriggerData:
+                MessageBroker.ClearTriggerDataAction();
+                break;
+
+            case MessageBrokerChannels.ClearJobData:
+                MessageBroker.ClearJobDataAction();
                 break;
 
             case MessageBrokerChannels.UpdateProgress:

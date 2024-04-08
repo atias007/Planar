@@ -94,7 +94,37 @@ namespace CommonJob
             }
         }
 
-        public void PutTriggerData(KeyValueObject item)
+        public void RemoveJobDataAction(KeyValueObject item)
+        {
+            if (item == null) { return; }
+            if (!Consts.IsDataKeyValid(item.Key))
+            {
+                throw new PlanarException($"the data key {item.Key} in invalid");
+            }
+
+            lock (Locker)
+            {
+                _context.JobDetail.JobDataMap.Remove(item.Key);
+            }
+        }
+
+        public void ClearJobDataAction()
+        {
+            lock (Locker)
+            {
+                _context.JobDetail.JobDataMap.Clear();
+            }
+        }
+
+        public void ClearTriggerDataAction()
+        {
+            lock (Locker)
+            {
+                _context.Trigger.JobDataMap.Clear();
+            }
+        }
+
+        public void PutTriggerDataAction(KeyValueObject item)
         {
             if (item == null) { return; }
             if (!Consts.IsDataKeyValid(item.Key))
@@ -106,6 +136,20 @@ namespace CommonJob
             {
                 var value = PlanarConvert.ToString(item.Value);
                 _context.Trigger.JobDataMap.Put(item.Key, value);
+            }
+        }
+
+        public void RemoveTriggerDataAction(KeyValueObject item)
+        {
+            if (item == null) { return; }
+            if (!Consts.IsDataKeyValid(item.Key))
+            {
+                throw new PlanarException($"the data key {item.Key} in invalid");
+            }
+
+            lock (Locker)
+            {
+                _context.Trigger.JobDataMap.Remove(item.Key);
             }
         }
 

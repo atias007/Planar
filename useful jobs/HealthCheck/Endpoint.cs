@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 
-namespace RestHealthCheck;
+namespace HealthCheck;
 
 internal class Endpoint(IConfigurationSection section, string url) : IEndpoint
 {
@@ -10,4 +10,5 @@ internal class Endpoint(IConfigurationSection section, string url) : IEndpoint
     public TimeSpan? Timeout { get; set; } = section.GetValue<TimeSpan?>("timeout");
     public int? RetryCount { get; set; } = section.GetValue<int?>("retry count");
     public TimeSpan? RetryInterval { get; set; } = section.GetValue<TimeSpan?>("retry interval");
+    public int? MaximumFailsInRow { get; set; } = section.GetValue<int?>("maximum fails in row");
 }

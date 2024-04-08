@@ -15,10 +15,8 @@ PLAN FOR V 1.7.1
 - Security & Audit report
 
 ------ JOBS ------
-FolderMonitorJob (Free space, max files, max file created age, max file modified age)
 RabbitMQMonitorJob (max items, time)
-HealthCheckMonitorJob (url, status code, timeout)
-RedisStreamMonitorJob
+RedisStream MonitorJob
 ------
 MalamCloudLatencyJob
 
@@ -297,3 +295,11 @@ V1.7.1
 - fix memory leak
 - performance (memory & cpu) improvements
 - new smpt email look
+
+V1.7.2
+------
+- Add TryGet<> to planar nuget datamap
+- Add RemoveValue to planar nuget datamap
+- Add Clear to planar nuget datamap
+- HealthCheck MonitorJob
+- FolderCheck MonitorJob

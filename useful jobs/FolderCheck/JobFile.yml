@@ -1,0 +1,20 @@
+job type: PlanarJob                   # Fixed! don't change it
+name: FolderCheck                     # Name of job [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+group: Monitoring                     # Group of job [only alphanumeric, dashes & underscore, 1 to 50 characters]
+author: israel israeli (sales)        # The author/responsible person of the job [up to 100 characters]
+description: Test folders files and directories     # Description of job [only alphanumeric, dashes & underscore, up to 200 characters]
+durable: true                         # Boolean [true/false]. Non durable job will be delete from system if no future triggers defined
+concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
+log retention days: 3                 # How many days the running logs will retain. [1 to 1000, null for system default]
+
+properties:                           # Properties for job with 'PlanarJob' type
+  filename: FolderCheck.exe           # Name of assembly file [mandatory, up to 500 characters]
+
+simple triggers:                      # List of simple triggers
+  - name: every-10minute-trigger      # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+    interval: 00:10:00                # Interval
+    misfire behaviour: FireNow        # [ FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount ]
+    priority: 1                       # Priority [value between 0 to 100]
+    calendar: null                    # Calendar name
+    timeout: 00:05:00                 # Execution timeout. If timout span passed then cancel command is executed
+    
