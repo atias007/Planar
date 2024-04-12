@@ -59,9 +59,19 @@ internal static class CommonUtil
             cleanValue = GetCleanValue(value, "seconds");
             return DateTime.Now.AddSeconds(-cleanValue);
         }
+        if (value.EndsWith("second"))
+        {
+            cleanValue = GetCleanValue(value, "second");
+            return DateTime.Now.AddSeconds(-cleanValue);
+        }
         else if (value.EndsWith("minutes"))
         {
             cleanValue = GetCleanValue(value, "minutes");
+            return DateTime.Now.AddMinutes(-cleanValue);
+        }
+        else if (value.EndsWith("minute"))
+        {
+            cleanValue = GetCleanValue(value, "minute");
             return DateTime.Now.AddMinutes(-cleanValue);
         }
         else if (value.EndsWith("hours"))
@@ -69,9 +79,19 @@ internal static class CommonUtil
             cleanValue = GetCleanValue(value, "hours");
             return DateTime.Now.AddHours(-cleanValue);
         }
+        else if (value.EndsWith("hour"))
+        {
+            cleanValue = GetCleanValue(value, "hour");
+            return DateTime.Now.AddHours(-cleanValue);
+        }
         else if (value.EndsWith("days"))
         {
             cleanValue = GetCleanValue(value, "days");
+            return DateTime.Now.AddDays(-cleanValue);
+        }
+        else if (value.EndsWith("day"))
+        {
+            cleanValue = GetCleanValue(value, "day");
             return DateTime.Now.AddDays(-cleanValue);
         }
         else if (value.EndsWith("weeks"))
@@ -79,14 +99,29 @@ internal static class CommonUtil
             cleanValue = GetCleanValue(value, "weeks");
             return DateTime.Now.AddDays(-cleanValue * 7);
         }
+        else if (value.EndsWith("week"))
+        {
+            cleanValue = GetCleanValue(value, "week");
+            return DateTime.Now.AddDays(-cleanValue * 7);
+        }
         else if (value.EndsWith("months"))
         {
             var intCleanValue = Convert.ToInt32(GetCleanValue(value, "months"));
             return DateTime.Now.AddMonths(-intCleanValue);
         }
+        else if (value.EndsWith("month"))
+        {
+            var intCleanValue = Convert.ToInt32(GetCleanValue(value, "month"));
+            return DateTime.Now.AddMonths(-intCleanValue);
+        }
         else if (value.EndsWith("years"))
         {
             var intCleanValue = Convert.ToInt32(GetCleanValue(value, "years"));
+            return DateTime.Now.AddYears(-intCleanValue);
+        }
+        else if (value.EndsWith("year"))
+        {
+            var intCleanValue = Convert.ToInt32(GetCleanValue(value, "year"));
             return DateTime.Now.AddYears(-intCleanValue);
         }
         else
@@ -107,7 +142,7 @@ internal static class CommonUtil
 
         Exception GetException()
         {
-            return new InvalidDataException($"'{fieldName}' has invalid value. value should be in the format of 'hh:mm:ss' (e.g. 1:30:00, 0:30:00, etc.)");
+            throw new InvalidDataException($"'{fieldName}' has invalid value. value should be numeric with optional one of the following suffix: seconds, minutes, hours, days, weeks, months, years (e.g. 2days, 1month, 5years, etc.)");
         }
     }
 

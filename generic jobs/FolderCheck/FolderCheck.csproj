@@ -8,6 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\BaseCheckJob.cs" Link="BaseCheckJob.cs" />
+    <Compile Include="..\BaseDefault.cs" Link="BaseDefault.cs" />
+    <Compile Include="..\CheckFailCounter.cs" Link="CheckFailCounter.cs" />
     <Compile Include="..\CommonUtil.cs" Link="CommonUtil.cs" />
     <Compile Include="..\ICheckElemnt.cs" Link="ICheckElemnt.cs" />
   </ItemGroup>

@@ -13,7 +13,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMQCheck", "RabbitMQCh
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{AA2C2A5D-C092-4C06-84D2-933B6FF8A52C}"
 	ProjectSection(SolutionItems) = preProject
+		BaseDefault.cs = BaseDefault.cs
+		BaseCheckJob.cs = BaseCheckJob.cs
 		CommonUtil.cs = CommonUtil.cs
+		CheckFailCounter.cs = CheckFailCounter.cs
 		ICheckElemnt.cs = ICheckElemnt.cs
 	EndProjectSection
 EndProject

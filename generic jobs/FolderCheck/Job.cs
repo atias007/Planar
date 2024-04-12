@@ -8,7 +8,7 @@ using System.Collections.Concurrent;
 
 namespace FolderCheck;
 
-internal class Job : BaseJob
+internal class Job : BaseCheckJob
 {
     private readonly ConcurrentQueue<FolderCheckException> _exceptions = new();
 
@@ -41,7 +41,7 @@ internal class Job : BaseJob
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
-        services.AddSingleton<FolderFailCounter>();
+        services.AddSingleton<CheckFailCounter>();
     }
 
     private static void FillDefaults(Folder folder, Defaults defaults)
@@ -107,39 +107,6 @@ internal class Job : BaseJob
         return result.Distinct();
     }
 
-    private static void Validate(IFolder folder, string section)
-    {
-        if ((folder.RetryInterval?.TotalSeconds ?? 0) < 1)
-        {
-            throw new InvalidDataException($"'retry interval' on {section} section is null or less then 1 second");
-        }
-
-        if ((folder.RetryInterval?.TotalMinutes ?? 0) > 1)
-        {
-            throw new InvalidDataException($"'retry interval' on {section} section is greater then 1 minutes");
-        }
-
-        if (folder.RetryCount < 0)
-        {
-            throw new InvalidDataException($"'retry count' on {section} section is null or less then 0");
-        }
-
-        if (folder.RetryCount > 10)
-        {
-            throw new InvalidDataException($"'retry count' on {section} section is greater then 0");
-        }
-
-        if (folder.MaximumFailsInRow < 1)
-        {
-            throw new InvalidDataException($"'maximum fails in row' on {section} section must be greater then 0");
-        }
-
-        if (folder.MaximumFailsInRow > 1000)
-        {
-            throw new InvalidDataException($"'maximum fails in row' on {section} section must be less then 1000");
-        }
-    }
-
     private static void ValidateFilesPattern(Folder folder)
     {
         if (folder.FilesPattern?.Any(p => p.Length > 100) ?? false)
@@ -153,45 +120,8 @@ internal class Job : BaseJob
         }
     }
 
-    private static void ValidateMonitorArgument(Folder folder)
+    private static void ValidatePathExists(Folder folder)
     {
-        folder.SetMonitorArguments();
-        if (folder.TotalSizeNumber <= 0)
-        {
-            throw new InvalidDataException($"'total size' on folder '{folder.Name}' must be greater then 0");
-        }
-
-        if (folder.FileSizeNumber <= 0)
-        {
-            throw new InvalidDataException($"'file size' on folder '{folder.Name}' must be greater then 0");
-        }
-
-        if (!folder.IsValid())
-        {
-            throw new InvalidDataException($"folder '{folder.Name}' has no arguments to check");
-        }
-    }
-
-    private static void ValidateName(Folder folder)
-    {
-        if (folder.Name?.Length > 50)
-        {
-            throw new InvalidDataException($"'name' on folder ({folder.Name[0..20]}...) must be less then 50");
-        }
-    }
-
-    private static void ValidatePath(Folder folder)
-    {
-        if (string.IsNullOrWhiteSpace(folder.Path))
-        {
-            throw new InvalidDataException($"'path' on folder name '{folder.Name}' is null or empty");
-        }
-
-        if (folder.Path.Length > 1000)
-        {
-            throw new InvalidDataException($"'path' on folder name '{folder.Name}' must be less then 1000");
-        }
-
         try
         {
             var directory = new DirectoryInfo(folder.Path);
@@ -232,7 +162,7 @@ internal class Job : BaseJob
             MaximumFailsInRow = defaults.GetValue<int?>("maximum fails in row") ?? empty.MaximumFailsInRow,
         };
 
-        Validate(result, "defaults");
+        ValidateBase(result, "defaults");
 
         return result;
     }
@@ -246,7 +176,7 @@ internal class Job : BaseJob
             Logger.LogInformation("path {Path} size is {Size:N0} byte(s)", folder.Path, size);
             if (size > folder.FileSizeNumber)
             {
-                throw new FolderCheckException($"folder '{folder.Path}' size is greater then {folder.TotalSizeNumber}", folder.Name);
+                throw new FolderCheckException($"folder '{folder.Path}' size is greater then {folder.TotalSizeNumber:N0}", folder.Name);
             }
         }
 
@@ -256,7 +186,7 @@ internal class Job : BaseJob
             Logger.LogInformation("path {Path} max file size is {Size:N0} byte(s)", folder.Path, max);
             if (max > folder.FileSizeNumber)
             {
-                throw new FolderCheckException($"folder '{folder.Path}' has file size that is greater then {folder.FileSizeNumber}", folder.Name);
+                throw new FolderCheckException($"folder '{folder.Path}' has file size that is greater then {folder.FileSizeNumber:N0}", folder.Name);
             }
         }
 
@@ -266,7 +196,7 @@ internal class Job : BaseJob
             Logger.LogInformation("path {Path} contains {Count:N0} file(s)", folder.Path, count);
             if (count > folder.FileCount)
             {
-                throw new FolderCheckException($"folder '{folder.Path}' contains more then {folder.FileCount} files", folder.Name);
+                throw new FolderCheckException($"folder '{folder.Path}' contains more then {folder.FileCount:N0} files", folder.Name);
             }
         }
 
@@ -294,7 +224,7 @@ internal class Job : BaseJob
                         folder.Name, folder.Path);
     }
 
-    private void SafeHandleException(Folder folder, Exception ex, FolderFailCounter counter)
+    private void SafeHandleException(Folder folder, Exception ex, CheckFailCounter counter)
     {
         try
         {
@@ -335,7 +265,7 @@ internal class Job : BaseJob
 
     private void SafeInvokeFolder(Folder folder)
     {
-        var counter = ServiceProvider.GetRequiredService<FolderFailCounter>();
+        var counter = ServiceProvider.GetRequiredService<CheckFailCounter>();
 
         try
         {
@@ -372,11 +302,24 @@ internal class Job : BaseJob
     {
         try
         {
-            Validate(folder, $"folders ({folder.Name})");
-            ValidateName(folder);
-            ValidatePath(folder);
-            ValidateMonitorArgument(folder);
+            ValidateMaxLength(folder.Name, 50, "name", "folders");
+
+            var section = $"folders ({folder.Name})";
+            ValidateBase(folder, section);
+            ValidateRequired(folder.Path, "path", "folders");
+            ValidateMaxLength(folder.Path, 1000, "path", "folders");
+            ValidatePathExists(folder);
+
+            folder.SetMonitorArguments();
+            ValidateGreaterThen(folder.TotalSizeNumber, 0, "total size", section);
+            ValidateGreaterThen(folder.FileSizeNumber, 0, "file size", section);
+            ValidateGreaterThen(folder.FileCount, 0, "file count", section);
             ValidateFilesPattern(folder);
+
+            if (!folder.IsValid())
+            {
+                throw new InvalidDataException($"folder '{folder.Name}' has no arguments to check");
+            }
         }
         catch (Exception ex)
         {

@@ -1,10 +1,15 @@
-﻿namespace FolderCheck;
+﻿using Common;
 
-internal class Defaults : IFolder
+namespace FolderCheck;
+
+internal class Defaults : BaseDefault, IFolder
 {
-    public int? RetryCount { get; set; } = 1;
-    public TimeSpan? RetryInterval { get; set; } = TimeSpan.FromSeconds(10);
-    public int? MaximumFailsInRow { get; set; } = 5;
+    public Defaults()
+    {
+        RetryCount = 1;
+        RetryInterval = TimeSpan.FromSeconds(10);
+        MaximumFailsInRow = 5;
+    }
 
     //// --------------------------------------- ////
 
