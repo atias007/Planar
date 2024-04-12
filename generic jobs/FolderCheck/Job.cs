@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Common;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
@@ -152,36 +153,22 @@ internal class Job : BaseJob
         }
     }
 
-    private static void ValidateMonitor(Folder folder)
-    {
-        if (folder.Monitor == Monitor.None)
-        {
-            throw new InvalidDataException($"'monitor' on folder name '{folder.Name}' is empty or invalid");
-        }
-    }
-
     private static void ValidateMonitorArgument(Folder folder)
     {
-        if (folder.Monitor == Monitor.CreatedAge || folder.Monitor == Monitor.ModifiedAge)
+        folder.SetMonitorArguments();
+        if (folder.TotalSizeNumber <= 0)
         {
-            folder.SetMonitorArgumentAge();
-        }
-        else if (folder.Monitor == Monitor.Size || folder.Monitor == Monitor.FileSize)
-        {
-            folder.SetMonitorArgumentSize();
-        }
-        else if (folder.Monitor == Monitor.Count)
-        {
-            folder.SetMonitorArgumentNumber();
-        }
-        else
-        {
-            folder.SetMonitorArgumentNumber();
+            throw new InvalidDataException($"'total size' on folder '{folder.Name}' must be greater then 0");
         }
 
-        if (folder.MonitorArgumentNumber <= 0)
+        if (folder.FileSizeNumber <= 0)
         {
-            throw new InvalidDataException($"'monitor argument' on folder {folder.Name} is invalid");
+            throw new InvalidDataException($"'file size' on folder '{folder.Name}' must be greater then 0");
+        }
+
+        if (!folder.IsValid())
+        {
+            throw new InvalidDataException($"folder '{folder.Name}' has no arguments to check");
         }
     }
 
@@ -253,64 +240,58 @@ internal class Job : BaseJob
     private void InvokeFolderInner(Folder folder)
     {
         var files = GetFiles(folder);
-        switch (folder.Monitor)
+        if (folder.TotalSizeNumber != null)
         {
-            default:
-            case Monitor.None:
-                return;
-
-            case Monitor.Size:
-                var size = files.Sum(f => f.Length);
-                Logger.LogInformation("path {Path} size is {Size:N0} byte(s)", folder.Path, size);
-                if (size > folder.MonitorArgumentNumber)
-                {
-                    throw new FolderCheckException($"folder '{folder.Path}' size is greater then {folder.MonitorArgument}", folder.Name);
-                }
-                break;
-
-            case Monitor.FileSize:
-                var max = files.Max(f => f.Length);
-                Logger.LogInformation("path {Path} max file size is {Size:N0} byte(s)", folder.Path, max);
-                if (max > folder.MonitorArgumentNumber)
-                {
-                    throw new FolderCheckException($"folder '{folder.Path}' has file size that is greater then {folder.MonitorArgument}", folder.Name);
-                }
-                break;
-
-            case Monitor.Count:
-                var count = files.Count();
-                Logger.LogInformation("path {Path} contains {Count:N0} file(s)", folder.Path, count);
-                if (count > folder.MonitorArgumentNumber)
-                {
-                    throw new FolderCheckException($"folder '{folder.Path}' contains more then {folder.MonitorArgument} files", folder.Name);
-                }
-                break;
-
-            case Monitor.CreatedAge:
-                var created = files.Min(f => f.CreationTimeUtc);
-                var age = DateTimeOffset.UtcNow - created;
-                var span = TimeSpan.FromMicroseconds(folder.MonitorArgumentNumber);
-                Logger.LogInformation("path {Path} most old created file is {Created}", folder.Path, created);
-                if (age > span)
-                {
-                    throw new FolderCheckException($"folder '{folder.Path}' contains files that are older then {folder.MonitorArgument}", folder.Name);
-                }
-                break;
-
-            case Monitor.ModifiedAge:
-                var modified = files.Min(f => f.LastWriteTimeUtc);
-                var mage = DateTimeOffset.UtcNow - modified;
-                var mspan = TimeSpan.FromMicroseconds(folder.MonitorArgumentNumber);
-                Logger.LogInformation("path {Path} most old modified file is {Created}", folder.Path, modified);
-                if (mage > mspan)
-                {
-                    throw new FolderCheckException($"folder '{folder.Path}' contains files that are older then {folder.MonitorArgument}", folder.Name);
-                }
-                break;
+            var size = files.Sum(f => f.Length);
+            Logger.LogInformation("path {Path} size is {Size:N0} byte(s)", folder.Path, size);
+            if (size > folder.FileSizeNumber)
+            {
+                throw new FolderCheckException($"folder '{folder.Path}' size is greater then {folder.TotalSizeNumber}", folder.Name);
+            }
         }
 
-        Logger.LogInformation("folder check success for monitor '{Monitor}', folder '{FolderName}', path '{FolderPath}'",
-                        folder.MonitorText, folder.Name, folder.Path);
+        if (folder.FileSizeNumber != null)
+        {
+            var max = files.Max(f => f.Length);
+            Logger.LogInformation("path {Path} max file size is {Size:N0} byte(s)", folder.Path, max);
+            if (max > folder.FileSizeNumber)
+            {
+                throw new FolderCheckException($"folder '{folder.Path}' has file size that is greater then {folder.FileSizeNumber}", folder.Name);
+            }
+        }
+
+        if (folder.FileCount != null)
+        {
+            var count = files.Count();
+            Logger.LogInformation("path {Path} contains {Count:N0} file(s)", folder.Path, count);
+            if (count > folder.FileCount)
+            {
+                throw new FolderCheckException($"folder '{folder.Path}' contains more then {folder.FileCount} files", folder.Name);
+            }
+        }
+
+        if (folder.CreatedAgeDate != null)
+        {
+            var created = files.Min(f => f.CreationTimeUtc);
+            Logger.LogInformation("path {Path} most old created file is {Created}", folder.Path, created);
+            if (created < folder.CreatedAgeDate)
+            {
+                throw new FolderCheckException($"folder '{folder.Path}' contains files that are created older then {folder.CreatedAge}", folder.Name);
+            }
+        }
+
+        if (folder.ModifiedAgeDate != null)
+        {
+            var modified = files.Min(f => f.LastWriteTimeUtc);
+            Logger.LogInformation("path {Path} most old modified file is {Created}", folder.Path, modified);
+            if (modified < folder.ModifiedAgeDate)
+            {
+                throw new FolderCheckException($"folder '{folder.Path}' contains files that are modified older then {folder.ModifiedAgeDate}", folder.Name);
+            }
+        }
+
+        Logger.LogInformation("folder check success, folder '{FolderName}', path '{FolderPath}'",
+                        folder.Name, folder.Path);
     }
 
     private void SafeHandleException(Folder folder, Exception ex, FolderFailCounter counter)
@@ -394,8 +375,6 @@ internal class Job : BaseJob
             Validate(folder, $"folders ({folder.Name})");
             ValidateName(folder);
             ValidatePath(folder);
-
-            ValidateMonitor(folder);
             ValidateMonitorArgument(folder);
             ValidateFilesPattern(folder);
         }
@@ -412,10 +391,7 @@ internal class Job : BaseJob
     {
         try
         {
-            if (folders == null || !folders.Any())
-            {
-                throw new InvalidDataException("folders section is null or empty");
-            }
+            CommonUtil.ValidateItems(folders, "folders", "path");
         }
         catch (Exception ex)
         {

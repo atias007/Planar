@@ -10,7 +10,10 @@ defaults:                                       # default values for all folders
 folders:
   - name: Customer X vault                      # the display name of the folder
     path: \\{{host}}\vaults\CustomerX           # the path of the folder 
-    monitor: size                               # the monitoring type of the folder. possible values are: size, file-size, count, created-age, modified-age
-    monitor argument: 10mb                      # the monitoring argument value. the meaning of this value depends on the monitoring type
     files pattern: "*.txt,*.dll"                # the pattern of the files to be monitored. this value is optional
     include subdirectories: true                # a flag to indicate if the subdirectories should be included in the monitoring or not. the defualt is false
+    total size: 1gb                             # the total size of the folder (in bytes, kb, mb, gb, tb, pb)
+    file size: 10mb                             # the size of the file (in bytes, kb, mb, gb, tb, pb)
+    file count: 100                             # the number of files in the folder
+    created age: 1day                           # the age of the file (in seconds, minutes, hours, days, weeks, months, years)
+    modified age: 1day                          # the age of the file (in seconds, minutes, hours, days, weeks, months, years)
