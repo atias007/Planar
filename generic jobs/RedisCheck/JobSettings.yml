@@ -1,0 +1,19 @@
+defaults:                                       # default values for all streams. each stream can override these values
+  retry count: 1                                # the number of retry attemp in case of failure
+  retry interval: 00:00:10                      # the interval between retry attemps
+  maximum fails in row: 5                       # the maximum number of fails in row before the job is considered as failed
+  database: 0                                   # defualt redis database number to be used
+
+# redis:                                        # the redis server parameters to be use. usualy this section defined in specific environment job settings
+#   endpoints: redis-server-1:6379,redis-server-2:6379
+#   ssl: false
+#   user: null
+#   password: null
+
+keys:
+  - key: foo                                    # the key to be used in redis
+    database: 0                                 # the redis database number to be used
+    max memory usage: 10mb                      # the maximum memory usage for the key
+    min memory usage: null                      # the minimum memory usage for the key
+    max length: 5                               # the maximum length of the key
+    min length: null                            # the minimum length of the key

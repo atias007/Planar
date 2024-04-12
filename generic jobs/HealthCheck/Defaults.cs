@@ -6,6 +6,7 @@ internal class Defaults : IEndpoint
     public int? RetryCount { get; set; } = 3;
     public TimeSpan? Timeout { get; set; } = TimeSpan.FromSeconds(5);
     public TimeSpan? RetryInterval { get; set; } = TimeSpan.FromSeconds(5);
-    public static Defaults Empty => new();
     public int? MaximumFailsInRow { get; set; } = 5;
+
+    public static Defaults Empty => new();
 }

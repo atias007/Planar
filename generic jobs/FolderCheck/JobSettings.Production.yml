@@ -1,0 +1,3 @@
+hosts:
+  - prod.server.1
+  - prod.server.2

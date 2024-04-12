@@ -1,0 +1,4 @@
+rabbitmq:                                        # the rabbitmq server parameters to be use. usualy this section defined in specific environment job settings
+  api url: http://localhost:15672                # the rabbitmq api url
+  username: guest
+  password: guest

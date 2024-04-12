@@ -5,7 +5,11 @@ VisualStudioVersion = 17.8.34525.116
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HealthCheck", "HealthCheck\HealthCheck.csproj", "{7ECE9562-460C-4BCF-BB67-19D308F8EBDA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FolderCheck", "FolderCheck\FolderCheck.csproj", "{7B0730BF-5BC8-4B7F-944A-C628E2D2B2A1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FolderCheck", "FolderCheck\FolderCheck.csproj", "{7B0730BF-5BC8-4B7F-944A-C628E2D2B2A1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisCheck", "RedisCheck\RedisCheck.csproj", "{6FC4BD0A-82E6-471E-B061-BE88AE8C81EA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMQCheck", "RabbitMQCheck\RabbitMQCheck.csproj", "{7F25F5A2-7AEB-4E1E-A497-5A59C738BCF0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +25,14 @@ Global
 		{7B0730BF-5BC8-4B7F-944A-C628E2D2B2A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B0730BF-5BC8-4B7F-944A-C628E2D2B2A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7B0730BF-5BC8-4B7F-944A-C628E2D2B2A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6FC4BD0A-82E6-471E-B061-BE88AE8C81EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6FC4BD0A-82E6-471E-B061-BE88AE8C81EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6FC4BD0A-82E6-471E-B061-BE88AE8C81EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6FC4BD0A-82E6-471E-B061-BE88AE8C81EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F25F5A2-7AEB-4E1E-A497-5A59C738BCF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F25F5A2-7AEB-4E1E-A497-5A59C738BCF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F25F5A2-7AEB-4E1E-A497-5A59C738BCF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F25F5A2-7AEB-4E1E-A497-5A59C738BCF0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

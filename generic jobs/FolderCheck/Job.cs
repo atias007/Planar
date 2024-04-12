@@ -1,0 +1,425 @@
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Planar.Job;
+using Polly;
+using System.Collections.Concurrent;
+
+namespace FolderCheck;
+
+internal class Job : BaseJob
+{
+    private readonly ConcurrentQueue<FolderCheckException> _exceptions = new();
+
+    public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
+    {
+    }
+
+    public async override Task ExecuteJob(IJobExecutionContext context)
+    {
+        var tasks = new List<Task>();
+        var defaults = GetDefaults(Configuration);
+        var hosts = GetHosts(Configuration);
+        var folders = GetFolders(Configuration, hosts);
+        ValidateFolders(folders);
+        CheckAggragateException();
+
+        foreach (var f in folders)
+        {
+            FillDefaults(f, defaults);
+            if (!ValidateFolder(f)) { continue; }
+            var task = Task.Run(() => SafeInvokeFolder(f));
+            tasks.Add(task);
+        }
+
+        await Task.WhenAll(tasks);
+
+        CheckAggragateException();
+        CheckFolderCheckExceptions();
+    }
+
+    public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
+    {
+        services.AddSingleton<FolderFailCounter>();
+    }
+
+    private static void FillDefaults(Folder folder, Defaults defaults)
+    {
+        // Fill Defaults
+        folder.Name ??= string.Empty;
+        folder.Name = folder.Name.Trim();
+        if (string.IsNullOrWhiteSpace(folder.Name))
+        {
+            folder.Name = "[no name]";
+        }
+
+        folder.RetryCount ??= defaults.RetryCount;
+        folder.MaximumFailsInRow ??= defaults.MaximumFailsInRow;
+        folder.RetryInterval ??= defaults.RetryInterval;
+    }
+
+    private static IEnumerable<FileInfo> GetFiles(Folder folder)
+    {
+        var fi = new DirectoryInfo(folder.Path);
+        if (folder.FilesPattern == null || !folder.FilesPattern.Any()) { folder.FilesPattern = new List<string> { "*.*" }; }
+        var option = folder.IncludeSubdirectories ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+        foreach (var pattern in folder.FilesPattern)
+        {
+            var files = fi.GetFiles(pattern, option);
+            foreach (var file in files)
+            {
+                yield return file;
+            }
+        }
+    }
+
+    private static IEnumerable<Folder> GetFolders(IConfiguration configuration, IEnumerable<string> hosts)
+    {
+        const string hostPlaceholder = "{{host}}";
+
+        var folders = configuration.GetRequiredSection("folders");
+        foreach (var item in folders.GetChildren())
+        {
+            var path = item.GetValue<string>("path") ?? string.Empty;
+            if (path.Contains(hostPlaceholder))
+            {
+                foreach (var host in hosts)
+                {
+                    var path2 = path.Replace(hostPlaceholder, host);
+                    var folder = new Folder(item, path2);
+                    yield return folder;
+                }
+            }
+            else
+            {
+                var folder = new Folder(item, path);
+                yield return folder;
+            }
+        }
+    }
+
+    private static IEnumerable<string> GetHosts(IConfiguration configuration)
+    {
+        var hosts = configuration.GetSection("hosts");
+        if (hosts == null) { return []; }
+        var result = hosts.Get<string[]>() ?? [];
+        return result.Distinct();
+    }
+
+    private static void Validate(IFolder folder, string section)
+    {
+        if ((folder.RetryInterval?.TotalSeconds ?? 0) < 1)
+        {
+            throw new InvalidDataException($"'retry interval' on {section} section is null or less then 1 second");
+        }
+
+        if ((folder.RetryInterval?.TotalMinutes ?? 0) > 1)
+        {
+            throw new InvalidDataException($"'retry interval' on {section} section is greater then 1 minutes");
+        }
+
+        if (folder.RetryCount < 0)
+        {
+            throw new InvalidDataException($"'retry count' on {section} section is null or less then 0");
+        }
+
+        if (folder.RetryCount > 10)
+        {
+            throw new InvalidDataException($"'retry count' on {section} section is greater then 0");
+        }
+
+        if (folder.MaximumFailsInRow < 1)
+        {
+            throw new InvalidDataException($"'maximum fails in row' on {section} section must be greater then 0");
+        }
+
+        if (folder.MaximumFailsInRow > 1000)
+        {
+            throw new InvalidDataException($"'maximum fails in row' on {section} section must be less then 1000");
+        }
+    }
+
+    private static void ValidateFilesPattern(Folder folder)
+    {
+        if (folder.FilesPattern?.Any(p => p.Length > 100) ?? false)
+        {
+            throw new InvalidDataException($"'monitor' on folder name '{folder.Name}' has file pattern length more then 100 chars");
+        }
+
+        if (folder.FilesPattern?.Any(string.IsNullOrWhiteSpace) ?? false)
+        {
+            throw new InvalidDataException($"'monitor' on folder name '{folder.Name}' has empty file pattern");
+        }
+    }
+
+    private static void ValidateMonitor(Folder folder)
+    {
+        if (folder.Monitor == Monitor.None)
+        {
+            throw new InvalidDataException($"'monitor' on folder name '{folder.Name}' is empty or invalid");
+        }
+    }
+
+    private static void ValidateMonitorArgument(Folder folder)
+    {
+        if (folder.Monitor == Monitor.CreatedAge || folder.Monitor == Monitor.ModifiedAge)
+        {
+            folder.SetMonitorArgumentAge();
+        }
+        else if (folder.Monitor == Monitor.Size || folder.Monitor == Monitor.FileSize)
+        {
+            folder.SetMonitorArgumentSize();
+        }
+        else if (folder.Monitor == Monitor.Count)
+        {
+            folder.SetMonitorArgumentNumber();
+        }
+        else
+        {
+            folder.SetMonitorArgumentNumber();
+        }
+
+        if (folder.MonitorArgumentNumber <= 0)
+        {
+            throw new InvalidDataException($"'monitor argument' on folder {folder.Name} is invalid");
+        }
+    }
+
+    private static void ValidateName(Folder folder)
+    {
+        if (folder.Name?.Length > 50)
+        {
+            throw new InvalidDataException($"'name' on folder ({folder.Name[0..20]}...) must be less then 50");
+        }
+    }
+
+    private static void ValidatePath(Folder folder)
+    {
+        if (string.IsNullOrWhiteSpace(folder.Path))
+        {
+            throw new InvalidDataException($"'path' on folder name '{folder.Name}' is null or empty");
+        }
+
+        if (folder.Path.Length > 1000)
+        {
+            throw new InvalidDataException($"'path' on folder name '{folder.Name}' must be less then 1000");
+        }
+
+        try
+        {
+            var directory = new DirectoryInfo(folder.Path);
+            if (!directory.Exists)
+            {
+                throw new InvalidDataException($"directory '{folder.Path}' not found");
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidDataException($"directory '{folder.Path}' is invalid ({ex.Message})");
+        }
+    }
+
+    private void CheckFolderCheckExceptions()
+    {
+        if (!_exceptions.IsEmpty)
+        {
+            var message = $"folder check failed for folders: {string.Join(", ", _exceptions.Select(x => x.Name).Distinct())}";
+            throw new AggregateException(message, _exceptions);
+        }
+    }
+
+    private Defaults GetDefaults(IConfiguration configuration)
+    {
+        var empty = Defaults.Empty;
+        var defaults = configuration.GetSection("defaults");
+        if (defaults == null)
+        {
+            Logger.LogWarning("no defaults section found on settings file. set job factory defaults");
+            return empty;
+        }
+
+        var result = new Defaults
+        {
+            RetryCount = defaults.GetValue<int?>("retry count") ?? empty.RetryCount,
+            RetryInterval = defaults.GetValue<TimeSpan?>("retry interval") ?? empty.RetryInterval,
+            MaximumFailsInRow = defaults.GetValue<int?>("maximum fails in row") ?? empty.MaximumFailsInRow,
+        };
+
+        Validate(result, "defaults");
+
+        return result;
+    }
+
+    private void InvokeFolderInner(Folder folder)
+    {
+        var files = GetFiles(folder);
+        switch (folder.Monitor)
+        {
+            default:
+            case Monitor.None:
+                return;
+
+            case Monitor.Size:
+                var size = files.Sum(f => f.Length);
+                Logger.LogInformation("path {Path} size is {Size:N0} byte(s)", folder.Path, size);
+                if (size > folder.MonitorArgumentNumber)
+                {
+                    throw new FolderCheckException($"folder '{folder.Path}' size is greater then {folder.MonitorArgument}", folder.Name);
+                }
+                break;
+
+            case Monitor.FileSize:
+                var max = files.Max(f => f.Length);
+                Logger.LogInformation("path {Path} max file size is {Size:N0} byte(s)", folder.Path, max);
+                if (max > folder.MonitorArgumentNumber)
+                {
+                    throw new FolderCheckException($"folder '{folder.Path}' has file size that is greater then {folder.MonitorArgument}", folder.Name);
+                }
+                break;
+
+            case Monitor.Count:
+                var count = files.Count();
+                Logger.LogInformation("path {Path} contains {Count:N0} file(s)", folder.Path, count);
+                if (count > folder.MonitorArgumentNumber)
+                {
+                    throw new FolderCheckException($"folder '{folder.Path}' contains more then {folder.MonitorArgument} files", folder.Name);
+                }
+                break;
+
+            case Monitor.CreatedAge:
+                var created = files.Min(f => f.CreationTimeUtc);
+                var age = DateTimeOffset.UtcNow - created;
+                var span = TimeSpan.FromMicroseconds(folder.MonitorArgumentNumber);
+                Logger.LogInformation("path {Path} most old created file is {Created}", folder.Path, created);
+                if (age > span)
+                {
+                    throw new FolderCheckException($"folder '{folder.Path}' contains files that are older then {folder.MonitorArgument}", folder.Name);
+                }
+                break;
+
+            case Monitor.ModifiedAge:
+                var modified = files.Min(f => f.LastWriteTimeUtc);
+                var mage = DateTimeOffset.UtcNow - modified;
+                var mspan = TimeSpan.FromMicroseconds(folder.MonitorArgumentNumber);
+                Logger.LogInformation("path {Path} most old modified file is {Created}", folder.Path, modified);
+                if (mage > mspan)
+                {
+                    throw new FolderCheckException($"folder '{folder.Path}' contains files that are older then {folder.MonitorArgument}", folder.Name);
+                }
+                break;
+        }
+
+        Logger.LogInformation("folder check success for monitor '{Monitor}', folder '{FolderName}', path '{FolderPath}'",
+                        folder.MonitorText, folder.Name, folder.Path);
+    }
+
+    private void SafeHandleException(Folder folder, Exception ex, FolderFailCounter counter)
+    {
+        try
+        {
+            var exception = ex is FolderCheckException ? null : ex;
+
+            if (exception == null)
+            {
+                Logger.LogError("folder check fail for folder name '{FolderName}' with path '{FolderPath}'. reason: {Message}",
+                  folder.Name, folder.Path, ex.Message);
+            }
+            else
+            {
+                Logger.LogError(exception, "folder check fail for folder name '{FolderName}' with path '{FolderPath}'. reason: {Message}",
+                    folder.Name, folder.Path, ex.Message);
+            }
+
+            var value = counter.IncrementFailCount(folder);
+
+            if (value > folder.MaximumFailsInRow)
+            {
+                Logger.LogWarning("folder check fail but maximum fails in row reached for folder name '{FolderName}' with path '{FolderPath}'. reason: {Message}",
+                    folder.Name, folder.Path, ex.Message);
+            }
+            else
+            {
+                var hcException = new FolderCheckException(
+                    $"folder check fail for folder name '{folder.Name}' with path '{folder.Path}'. reason: {ex.Message}",
+                    folder.Name);
+
+                _exceptions.Enqueue(hcException);
+            }
+        }
+        catch (Exception innerEx)
+        {
+            AddAggregateException(innerEx);
+        }
+    }
+
+    private void SafeInvokeFolder(Folder folder)
+    {
+        var counter = ServiceProvider.GetRequiredService<FolderFailCounter>();
+
+        try
+        {
+            if (folder.RetryCount == 0)
+            {
+                InvokeFolderInner(folder);
+                return;
+            }
+
+            Policy.Handle<Exception>()
+                    .WaitAndRetry(
+                        retryCount: folder.RetryCount.GetValueOrDefault(),
+                        sleepDurationProvider: _ => folder.RetryInterval.GetValueOrDefault(),
+                         onRetry: (ex, _) =>
+                         {
+                             var exception = ex is FolderCheckException ? null : ex;
+                             Logger.LogWarning(exception, "retry for folder name '{FolderName}' with path '{FolderPath}'. Reason: {Message}",
+                                                                     folder.Name, folder.Path, ex.Message);
+                         })
+                    .Execute(() =>
+                    {
+                        InvokeFolderInner(folder);
+                    });
+
+            counter.ResetFailCount(folder);
+        }
+        catch (Exception ex)
+        {
+            SafeHandleException(folder, ex, counter);
+        }
+    }
+
+    private bool ValidateFolder(Folder folder)
+    {
+        try
+        {
+            Validate(folder, $"folders ({folder.Name})");
+            ValidateName(folder);
+            ValidatePath(folder);
+
+            ValidateMonitor(folder);
+            ValidateMonitorArgument(folder);
+            ValidateFilesPattern(folder);
+        }
+        catch (Exception ex)
+        {
+            AddAggregateException(ex);
+            return false;
+        }
+
+        return true;
+    }
+
+    private void ValidateFolders(IEnumerable<Folder> folders)
+    {
+        try
+        {
+            if (folders == null || !folders.Any())
+            {
+                throw new InvalidDataException("folders section is null or empty");
+            }
+        }
+        catch (Exception ex)
+        {
+            AddAggregateException(ex);
+        }
+    }
+}

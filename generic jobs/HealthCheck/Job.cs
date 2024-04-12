@@ -22,11 +22,8 @@ internal sealed class Job : BaseJob
         var hosts = GetHosts(Configuration);
         var endpoints = GetEndpoints(Configuration, hosts);
 
-        if (!ValidateEndpoints(endpoints))
-        {
-            CheckAggragateException();
-            return;
-        }
+        ValidateEndpoints(endpoints);
+        CheckAggragateException();
 
         using var client = new HttpClient();
         foreach (var ep in endpoints)
@@ -68,10 +65,10 @@ internal sealed class Job : BaseJob
         }
 
         endpoint.SuccessStatusCodes ??= defaults.SuccessStatusCodes;
-        if (endpoint.Timeout == null) { endpoint.Timeout = defaults.Timeout; }
+        endpoint.Timeout ??= defaults.Timeout;
         endpoint.RetryCount ??= defaults.RetryCount;
         endpoint.MaximumFailsInRow ??= defaults.MaximumFailsInRow;
-        if (endpoint.RetryInterval == null) { endpoint.RetryInterval = defaults.RetryInterval; }
+        endpoint.RetryInterval ??= defaults.RetryInterval;
     }
 
     private static IEnumerable<Endpoint> GetEndpoints(IConfiguration configuration, IEnumerable<string> hosts)
@@ -82,7 +79,7 @@ internal sealed class Job : BaseJob
         foreach (var item in endpoints.GetChildren())
         {
             var url = item.GetValue<string>("url") ?? string.Empty;
-            if (url.StartsWith(hostPlaceholder))
+            if (url.Contains(hostPlaceholder))
             {
                 foreach (var host in hosts)
                 {
@@ -151,7 +148,7 @@ internal sealed class Job : BaseJob
 
         if (endpoint.MaximumFailsInRow > 1000)
         {
-            throw new InvalidDataException($"'maximum fails in row' on {section} section must be greater less then 1000");
+            throw new InvalidDataException($"'maximum fails in row' on {section} section must be less then 1000");
         }
     }
 
@@ -159,20 +156,25 @@ internal sealed class Job : BaseJob
     {
         if (endpoint.Name?.Length > 50)
         {
-            throw new InvalidDataException($"length at 'name' on endpoint ({endpoint.Name}) section is greater then 50");
+            throw new InvalidDataException($"'name' on endpoint name '{endpoint.Name}' must be less then 50");
         }
     }
 
     private static void ValidateUrl(Endpoint endpoint)
     {
-        if (endpoint.Url?.Length > 1000)
+        if (string.IsNullOrWhiteSpace(endpoint.Url))
         {
-            throw new InvalidDataException($"length at 'url' on endpoint ({endpoint.Name}) section is greater then 1000");
+            throw new InvalidDataException($"'url' on endpoint name '{endpoint.Name}' is null or empty");
+        }
+
+        if (endpoint.Url.Length > 1000)
+        {
+            throw new InvalidDataException($"'url' on endpoint name '{endpoint.Name}' must be less then 1000");
         }
 
         if (!Uri.TryCreate(endpoint.Url, UriKind.Absolute, out _))
         {
-            throw new InvalidDataException($"'url' on endpoint ({endpoint.Name}) with value '{endpoint.Url}' is not valid");
+            throw new InvalidDataException($"'url' on endpoint name '{endpoint.Name}' with value '{endpoint.Url}' is not valid uri");
         }
     }
 
@@ -182,7 +184,7 @@ internal sealed class Job : BaseJob
         var defaults = configuration.GetSection("defaults");
         if (defaults == null)
         {
-            Logger.LogWarning("No defaults section found on settings file. Set job factory defaults");
+            Logger.LogWarning("no defaults section found on settings file. set job factory defaults");
             return empty;
         }
 
@@ -207,7 +209,7 @@ internal sealed class Job : BaseJob
 
         if (endpoint.SuccessStatusCodes.Any(s => s == (int)response.StatusCode))
         {
-            Logger.LogInformation("Health check success for endpoint name '{EndpointName}' with url '{EndpointUrl}'",
+            Logger.LogInformation("health check success for endpoint name '{EndpointName}' with url '{EndpointUrl}'",
                 endpoint.Name, endpoint.Url);
             return;
         }
@@ -225,12 +227,12 @@ internal sealed class Job : BaseJob
 
             if (exception == null)
             {
-                Logger.LogError("Health check fail for endpoint name '{EndpointName}' with url '{EndpointUrl}'. Reason: {Message}",
+                Logger.LogError("health check fail for endpoint name '{EndpointName}' with url '{EndpointUrl}'. reason: {Message}",
                   endpoint.Name, endpoint.Url, ex.Message);
             }
             else
             {
-                Logger.LogError(exception, "Health check fail for endpoint name '{EndpointName}' with url '{EndpointUrl}'. Reason: {Message}",
+                Logger.LogError(exception, "health check fail for endpoint name '{EndpointName}' with url '{EndpointUrl}'. reason: {Message}",
                     endpoint.Name, endpoint.Url, ex.Message);
             }
 
@@ -238,13 +240,13 @@ internal sealed class Job : BaseJob
 
             if (value > endpoint.MaximumFailsInRow)
             {
-                Logger.LogWarning("Health check fail but maximum fails in row reached for endpoint name '{EndpointName}' with url '{EndpointUrl}'. Reason: {Message}",
+                Logger.LogWarning("health check fail but maximum fails in row reached for endpoint name '{EndpointName}' with url '{EndpointUrl}'. reason: {Message}",
                     endpoint.Name, endpoint.Url, ex.Message);
             }
             else
             {
                 var hcException = new HealthCheckException(
-                    $"Health check fail for endpoint name '{endpoint.Name}' with url '{endpoint.Url}'. Reason: {ex.Message}",
+                    $"health check fail for endpoint name '{endpoint.Name}' with url '{endpoint.Url}. reason: {ex.Message}",
                     endpoint.Name);
 
                 _exceptions.Enqueue(hcException);
@@ -275,7 +277,7 @@ internal sealed class Job : BaseJob
                          onRetry: (ex, _) =>
                          {
                              var exception = ex is HealthCheckException ? null : ex;
-                             Logger.LogWarning(exception, "Retry for endpoint name '{EndpointName}' with url '{EndpointUrl}'. Reason: {Message}",
+                             Logger.LogWarning(exception, "retry for endpoint name '{EndpointName}' with url '{EndpointUrl}'. Reason: {Message}",
                                                                      endpoint.Name, endpoint.Url, ex.Message);
                          })
                     .ExecuteAsync(async () =>
@@ -291,7 +293,6 @@ internal sealed class Job : BaseJob
         }
     }
 
-    // validate endpoint
     private bool ValidateEndpoint(Endpoint endpoint)
     {
         try
@@ -309,10 +310,15 @@ internal sealed class Job : BaseJob
         return true;
     }
 
-    private bool ValidateEndpoints(IEnumerable<Endpoint> endpoints)
+    private void ValidateEndpoints(IEnumerable<Endpoint> endpoints)
     {
         try
         {
+            if (endpoints == null || !endpoints.Any())
+            {
+                throw new InvalidDataException("endpoints section is null or empty");
+            }
+
             var duplicates1 = endpoints.GroupBy(x => x.Url).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
             if (duplicates1.Count != 0)
             {
@@ -322,9 +328,6 @@ internal sealed class Job : BaseJob
         catch (Exception ex)
         {
             AddAggregateException(ex);
-            return false;
         }
-
-        return true;
     }
 }
