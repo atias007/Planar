@@ -8,6 +8,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\BaseCheckJob.cs" Link="Common\BaseCheckJob.cs" />
+    <Compile Include="..\BaseDefault.cs" Link="Common\BaseDefault.cs" />
+    <Compile Include="..\CheckException.cs" Link="Common\CheckException.cs" />
+    <Compile Include="..\CheckFailCounter.cs" Link="Common\CheckFailCounter.cs" />
+    <Compile Include="..\CommonUtil.cs" Link="Common\CommonUtil.cs" />
+    <Compile Include="..\ICheckElemnt.cs" Link="Common\ICheckElemnt.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.1" />
     <PackageReference Include="Planar.Job" Version="1.7.1.2" />
     <PackageReference Include="Polly" Version="8.3.1" />
@@ -32,6 +41,10 @@
     <None Update="JobSettings.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Common\" />
   </ItemGroup>
 
 </Project>

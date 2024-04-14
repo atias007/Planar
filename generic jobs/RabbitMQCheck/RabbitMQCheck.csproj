@@ -8,7 +8,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\BaseCheckJob.cs" Link="Common\BaseCheckJob.cs" />
+    <Compile Include="..\BaseDefault.cs" Link="Common\BaseDefault.cs" />
+    <Compile Include="..\CheckException.cs" Link="Common\CheckException.cs" />
+    <Compile Include="..\CheckFailCounter.cs" Link="Common\CheckFailCounter.cs" />
+    <Compile Include="..\CommonUtil.cs" Link="Common\CommonUtil.cs" />
+    <Compile Include="..\ICheckElemnt.cs" Link="Common\ICheckElemnt.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Planar.Job" Version="1.7.1.2" />
     <PackageReference Include="RestSharp" Version="110.2.0" />
   </ItemGroup>
 
@@ -31,6 +41,10 @@
     <None Update="JobSettings.yml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Common\" />
   </ItemGroup>
 
 </Project>

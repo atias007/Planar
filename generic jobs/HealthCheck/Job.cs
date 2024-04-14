@@ -1,16 +1,14 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Common;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
 using Polly;
-using System.Collections.Concurrent;
 
 namespace HealthCheck;
 
-internal sealed class Job : BaseJob
+internal sealed class Job : BaseCheckJob
 {
-    private readonly ConcurrentQueue<HealthCheckException> _exceptions = new();
-
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
     }
@@ -21,7 +19,6 @@ internal sealed class Job : BaseJob
         var defaults = GetDefaults(Configuration);
         var hosts = GetHosts(Configuration);
         var endpoints = GetEndpoints(Configuration, hosts);
-
         ValidateEndpoints(endpoints);
         CheckAggragateException();
 
@@ -37,21 +34,12 @@ internal sealed class Job : BaseJob
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
-        CheckHealthCheckExceptions();
+        HandleCheckExceptions("endpoint");
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
-        services.AddSingleton<EndpointFailCounter>();
-    }
-
-    private void CheckHealthCheckExceptions()
-    {
-        if (!_exceptions.IsEmpty)
-        {
-            var message = $"health check failed for endpoints: {string.Join(", ", _exceptions.Select(x => x.Name).Distinct())}";
-            throw new AggregateException(message, _exceptions);
-        }
+        services.AddSingleton<CheckFailCounter>();
     }
 
     private static void FillDefaults(Endpoint endpoint, Defaults defaults)
@@ -130,26 +118,6 @@ internal sealed class Job : BaseJob
         {
             throw new InvalidDataException($"'retry interval' on {section} section is greater then 1 minutes");
         }
-
-        if (endpoint.RetryCount < 0)
-        {
-            throw new InvalidDataException($"'retry count' on {section} section is null or less then 0");
-        }
-
-        if (endpoint.RetryCount > 10)
-        {
-            throw new InvalidDataException($"'retry count' on {section} section is greater then 0");
-        }
-
-        if (endpoint.MaximumFailsInRow < 1)
-        {
-            throw new InvalidDataException($"'maximum fails in row' on {section} section must be greater then 0");
-        }
-
-        if (endpoint.MaximumFailsInRow > 1000)
-        {
-            throw new InvalidDataException($"'maximum fails in row' on {section} section must be less then 1000");
-        }
     }
 
     private static void ValidateName(Endpoint endpoint)
@@ -198,6 +166,7 @@ internal sealed class Job : BaseJob
         };
 
         Validate(result, "defaults");
+        ValidateBase(result, "defaults");
 
         return result;
     }
@@ -214,16 +183,16 @@ internal sealed class Job : BaseJob
             return;
         }
 
-        throw new HealthCheckException(
+        throw new CheckException(
             $"Status code {response.StatusCode} ({(int)response.StatusCode}) is not in success status codes list",
             endpoint.Name);
     }
 
-    private void SafeHandleException(Endpoint endpoint, Exception ex, EndpointFailCounter counter)
+    private void SafeHandleException(Endpoint endpoint, Exception ex, CheckFailCounter counter)
     {
         try
         {
-            var exception = ex is HealthCheckException ? null : ex;
+            var exception = ex is CheckException ? null : ex;
 
             if (exception == null)
             {
@@ -245,11 +214,11 @@ internal sealed class Job : BaseJob
             }
             else
             {
-                var hcException = new HealthCheckException(
+                var hcException = new CheckException(
                     $"health check fail for endpoint name '{endpoint.Name}' with url '{endpoint.Url}. reason: {ex.Message}",
                     endpoint.Name);
 
-                _exceptions.Enqueue(hcException);
+                AddCheckException(hcException);
             }
         }
         catch (Exception innerEx)
@@ -260,7 +229,7 @@ internal sealed class Job : BaseJob
 
     private async Task SafeInvokeEndpoint(Endpoint endpoint, HttpClient client)
     {
-        var counter = ServiceProvider.GetRequiredService<EndpointFailCounter>();
+        var counter = ServiceProvider.GetRequiredService<CheckFailCounter>();
 
         try
         {
@@ -276,7 +245,7 @@ internal sealed class Job : BaseJob
                         sleepDurationProvider: _ => endpoint.RetryInterval.GetValueOrDefault(),
                          onRetry: (ex, _) =>
                          {
-                             var exception = ex is HealthCheckException ? null : ex;
+                             var exception = ex is CheckException ? null : ex;
                              Logger.LogWarning(exception, "retry for endpoint name '{EndpointName}' with url '{EndpointUrl}'. Reason: {Message}",
                                                                      endpoint.Name, endpoint.Url, ex.Message);
                          })
@@ -298,6 +267,7 @@ internal sealed class Job : BaseJob
         try
         {
             Validate(endpoint, $"endpoints ({endpoint.Name})");
+            ValidateBase(endpoint, $"endpoints ({endpoint.Name})");
             ValidateName(endpoint);
             ValidateUrl(endpoint);
         }

@@ -1,44 +1,25 @@
-﻿using Newtonsoft.Json;
+﻿using Common;
 
 namespace RabbitMQCheck;
 
-public class QueueDetails
+public class QueueDetails : BaseDefault, ICheckElemnt
 {
     public string Name { get; set; } = null!;
     public int Messages { get; set; }
-
-    [JsonProperty("messages_ready")]
-    public int MessagesReady { get; set; }
-
-    [JsonProperty("messages_dlx")]
-    public int MessagesDlx { get; set; }
-
-    [JsonProperty("messages_unacknowledged")]
-    public int MessagesUnacknowledged { get; set; }
-
     public int Memory { get; set; }
     public int Consumers { get; set; }
-
-    [JsonProperty("messages_details")]
-    public MessagesDetails MessagesDetails { get; set; } = null!;
-
-    [JsonProperty("messages_ready_details")]
-    public MessagesDetails MessagesReadyDetails { get; set; } = null!;
-
-    [JsonProperty("messages_unacknowledged_details")]
-    public MessagesDetails MessagesUnacknowledgedDetails { get; set; } = null!;
-
-    public double MessagesRate => MessagesDetails.Rate;
-    public double MessagesReadyRate => MessagesReadyDetails.Rate;
-    public double MessagesUnacknowledgedRate => MessagesUnacknowledgedDetails.Rate;
-
     public int Reductions { get; set; }
-
-    [JsonProperty("reductions_details")]
-    public MessagesDetails ReductionsDetails { get; set; } = null!;
-
-    public double ReductionsRate => ReductionsDetails.Rate;
     public string State { get; set; } = null!;
+    public string Key => Name;
+
+    ////[JsonProperty("messages_ready")]
+    ////public int MessagesReady { get; set; }
+
+    ////[JsonProperty("messages_dlx")]
+    ////public int MessagesDlx { get; set; }
+
+    ////[JsonProperty("messages_unacknowledged")]/
+    //// /public int MessagesUnacknowledged { get; set; }
 
     //// public Arguments arguments { get; set; }
     //// public bool auto_delete { get; set; }
@@ -66,9 +47,4 @@ public class QueueDetails
     //// public object single_active_consumer_ctag { get; set; }
     //// public string type { get; set; }
     //// public string vhost { get; set; }
-}
-
-public class MessagesDetails
-{
-    public double Rate { get; set; }
 }

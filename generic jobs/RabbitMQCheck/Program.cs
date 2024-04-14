@@ -1,9 +1,10 @@
 ﻿// See https://aka.ms/new-console-template for more information
+using Planar.Job;
 using RabbitMQCheck;
 using RestSharp;
 using RestSharp.Authenticators;
 
-Console.WriteLine("Hello, World!");
+PlanarJob.Start<Job>();
 
 var options = new RestClientOptions
 {
@@ -21,10 +22,6 @@ if (response.IsSuccessful && response.Data != null)
         Console.WriteLine($"Queue: {queue.Name}");
         Console.WriteLine($"Messages: {queue.Messages}");
         Console.WriteLine($"Memory: {queue.Memory}");
-        Console.WriteLine($"MessageBytes: {queue.MessageBytes}");
-        Console.WriteLine($"MessagesReady: {queue.MessagesReady}");
-        Console.WriteLine($"MessagesUnacknowledged: {queue.MessagesUnacknowledged}");
-        Console.WriteLine($"MessagesDlx: {queue.MessagesDlx}");
         Console.WriteLine($"Consumers: {queue.Consumers}");
         Console.WriteLine();
     }

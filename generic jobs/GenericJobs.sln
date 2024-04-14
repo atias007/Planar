@@ -9,14 +9,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FolderCheck", "FolderCheck\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisCheck", "RedisCheck\RedisCheck.csproj", "{6FC4BD0A-82E6-471E-B061-BE88AE8C81EA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMQCheck", "RabbitMQCheck\RabbitMQCheck.csproj", "{7F25F5A2-7AEB-4E1E-A497-5A59C738BCF0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RabbitMQCheck", "RabbitMQCheck\RabbitMQCheck.csproj", "{7F25F5A2-7AEB-4E1E-A497-5A59C738BCF0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{AA2C2A5D-C092-4C06-84D2-933B6FF8A52C}"
 	ProjectSection(SolutionItems) = preProject
-		BaseDefault.cs = BaseDefault.cs
 		BaseCheckJob.cs = BaseCheckJob.cs
-		CommonUtil.cs = CommonUtil.cs
+		BaseDefault.cs = BaseDefault.cs
 		CheckFailCounter.cs = CheckFailCounter.cs
+		CheckException.cs = CheckException.cs
+		CommonUtil.cs = CommonUtil.cs
 		ICheckElemnt.cs = ICheckElemnt.cs
 	EndProjectSection
 EndProject

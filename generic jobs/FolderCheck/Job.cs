@@ -4,14 +4,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
 using Polly;
-using System.Collections.Concurrent;
 
 namespace FolderCheck;
 
 internal class Job : BaseCheckJob
 {
-    private readonly ConcurrentQueue<FolderCheckException> _exceptions = new();
-
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
     }
@@ -36,7 +33,7 @@ internal class Job : BaseCheckJob
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
-        CheckFolderCheckExceptions();
+        HandleCheckExceptions("folder");
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -136,15 +133,6 @@ internal class Job : BaseCheckJob
         }
     }
 
-    private void CheckFolderCheckExceptions()
-    {
-        if (!_exceptions.IsEmpty)
-        {
-            var message = $"folder check failed for folders: {string.Join(", ", _exceptions.Select(x => x.Name).Distinct())}";
-            throw new AggregateException(message, _exceptions);
-        }
-    }
-
     private Defaults GetDefaults(IConfiguration configuration)
     {
         var empty = Defaults.Empty;
@@ -176,7 +164,7 @@ internal class Job : BaseCheckJob
             Logger.LogInformation("path {Path} size is {Size:N0} byte(s)", folder.Path, size);
             if (size > folder.FileSizeNumber)
             {
-                throw new FolderCheckException($"folder '{folder.Path}' size is greater then {folder.TotalSizeNumber:N0}", folder.Name);
+                throw new CheckException($"folder '{folder.Path}' size is greater then {folder.TotalSizeNumber:N0}", folder.Name);
             }
         }
 
@@ -186,7 +174,7 @@ internal class Job : BaseCheckJob
             Logger.LogInformation("path {Path} max file size is {Size:N0} byte(s)", folder.Path, max);
             if (max > folder.FileSizeNumber)
             {
-                throw new FolderCheckException($"folder '{folder.Path}' has file size that is greater then {folder.FileSizeNumber:N0}", folder.Name);
+                throw new CheckException($"folder '{folder.Path}' has file size that is greater then {folder.FileSizeNumber:N0}", folder.Name);
             }
         }
 
@@ -196,7 +184,7 @@ internal class Job : BaseCheckJob
             Logger.LogInformation("path {Path} contains {Count:N0} file(s)", folder.Path, count);
             if (count > folder.FileCount)
             {
-                throw new FolderCheckException($"folder '{folder.Path}' contains more then {folder.FileCount:N0} files", folder.Name);
+                throw new CheckException($"folder '{folder.Path}' contains more then {folder.FileCount:N0} files", folder.Name);
             }
         }
 
@@ -206,7 +194,7 @@ internal class Job : BaseCheckJob
             Logger.LogInformation("path {Path} most old created file is {Created}", folder.Path, created);
             if (created < folder.CreatedAgeDate)
             {
-                throw new FolderCheckException($"folder '{folder.Path}' contains files that are created older then {folder.CreatedAge}", folder.Name);
+                throw new CheckException($"folder '{folder.Path}' contains files that are created older then {folder.CreatedAge}", folder.Name);
             }
         }
 
@@ -216,7 +204,7 @@ internal class Job : BaseCheckJob
             Logger.LogInformation("path {Path} most old modified file is {Created}", folder.Path, modified);
             if (modified < folder.ModifiedAgeDate)
             {
-                throw new FolderCheckException($"folder '{folder.Path}' contains files that are modified older then {folder.ModifiedAgeDate}", folder.Name);
+                throw new CheckException($"folder '{folder.Path}' contains files that are modified older then {folder.ModifiedAgeDate}", folder.Name);
             }
         }
 
@@ -228,7 +216,7 @@ internal class Job : BaseCheckJob
     {
         try
         {
-            var exception = ex is FolderCheckException ? null : ex;
+            var exception = ex is CheckException ? null : ex;
 
             if (exception == null)
             {
@@ -250,11 +238,11 @@ internal class Job : BaseCheckJob
             }
             else
             {
-                var hcException = new FolderCheckException(
+                var hcException = new CheckException(
                     $"folder check fail for folder name '{folder.Name}' with path '{folder.Path}'. reason: {ex.Message}",
                     folder.Name);
 
-                _exceptions.Enqueue(hcException);
+                AddCheckException(hcException);
             }
         }
         catch (Exception innerEx)
@@ -281,7 +269,7 @@ internal class Job : BaseCheckJob
                         sleepDurationProvider: _ => folder.RetryInterval.GetValueOrDefault(),
                          onRetry: (ex, _) =>
                          {
-                             var exception = ex is FolderCheckException ? null : ex;
+                             var exception = ex is CheckException ? null : ex;
                              Logger.LogWarning(exception, "retry for folder name '{FolderName}' with path '{FolderPath}'. Reason: {Message}",
                                                                      folder.Name, folder.Path, ex.Message);
                          })

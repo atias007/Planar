@@ -1,14 +1,29 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Common;
+using Microsoft.Extensions.Configuration;
 
 namespace HealthCheck;
 
-internal class Endpoint(IConfigurationSection section, string url) : IEndpoint
+internal class Endpoint : BaseDefault, IEndpoint, ICheckElemnt
 {
-    public string? Name { get; set; } = section.GetValue<string?>("name");
-    public string Url { get; private set; } = url;
-    public IEnumerable<int>? SuccessStatusCodes { get; set; } = section.GetSection("success status codes").Get<int[]?>();
-    public TimeSpan? Timeout { get; set; } = section.GetValue<TimeSpan?>("timeout");
-    public int? RetryCount { get; set; } = section.GetValue<int?>("retry count");
-    public TimeSpan? RetryInterval { get; set; } = section.GetValue<TimeSpan?>("retry interval");
-    public int? MaximumFailsInRow { get; set; } = section.GetValue<int?>("maximum fails in row");
+    public Endpoint(IConfigurationSection section, string url)
+    {
+        Url = url;
+
+        Name = section.GetValue<string?>("name");
+        SuccessStatusCodes = section.GetSection("success status codes").Get<int[]?>();
+        Timeout = section.GetValue<TimeSpan?>("timeout");
+
+        //// --------------------------------------- ////
+
+        RetryCount = section.GetValue<int?>("retry count");
+        RetryInterval = section.GetValue<TimeSpan?>("retry interval");
+        MaximumFailsInRow = section.GetValue<int?>("maximum fails in row");
+    }
+
+    public string? Name { get; set; }
+    public string Url { get; private set; }
+    public IEnumerable<int>? SuccessStatusCodes { get; set; }
+    public TimeSpan? Timeout { get; set; }
+
+    public string Key => Url;
 }

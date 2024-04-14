@@ -1,20 +1,35 @@
 namespace Common;
 
-using FolderCheck;
-using Microsoft.Extensions.Primitives;
 using Planar.Job;
+using System.Collections.Concurrent;
 
 public abstract class BaseCheckJob : BaseJob
 {
-    protected static void ValidateBase(BaseDefault folder, string section)
+    private readonly ConcurrentQueue<CheckException> _exceptions = new();
+
+    protected static void ValidateBase(BaseDefault @default, string section)
     {
-        ValidateRequired(folder.RetryInterval, "retry interval", section);
-        ValidateGreaterThen(folder.RetryInterval?.TotalSeconds, 1, "retry interval", section);
-        ValidateLessThen(folder.RetryInterval?.TotalMinutes, 1, "retry interval", section);
-        ValidateGreaterThenOrEquals(folder.RetryCount, 0, "retry count", section);
-        ValidateLessThenOrEquals(folder.RetryCount, 10, "retry count", section);
-        ValidateGreaterThenOrEquals(folder.MaximumFailsInRow, 1, "maximum fails in row", section);
-        ValidateLessThenOrEquals(folder.MaximumFailsInRow, 1000, "maximum fails in row", section);
+        ValidateRequired(@default.RetryInterval, "retry interval", section);
+        ValidateGreaterThen(@default.RetryInterval?.TotalSeconds, 1, "retry interval", section);
+        ValidateLessThen(@default.RetryInterval?.TotalMinutes, 1, "retry interval", section);
+        ValidateGreaterThenOrEquals(@default.RetryCount, 0, "retry count", section);
+        ValidateLessThenOrEquals(@default.RetryCount, 10, "retry count", section);
+        ValidateGreaterThenOrEquals(@default.MaximumFailsInRow, 1, "maximum fails in row", section);
+        ValidateLessThenOrEquals(@default.MaximumFailsInRow, 1000, "maximum fails in row", section);
+    }
+
+    protected void HandleCheckExceptions(string entity)
+    {
+        if (!_exceptions.IsEmpty)
+        {
+            var message = $"{entity} check failed for {entity}(s): {string.Join(", ", _exceptions.Select(x => x.Key).Distinct())}";
+            throw new AggregateException(message, _exceptions);
+        }
+    }
+
+    protected void AddCheckException(CheckException exception)
+    {
+        _exceptions.Enqueue(exception);
     }
 
     protected static void ValidateRequired(object? value, string fieldName, string section)

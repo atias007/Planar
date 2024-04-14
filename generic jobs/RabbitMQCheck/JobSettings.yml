@@ -4,19 +4,25 @@ defaults:                                       # default values for all streams
   maximum fails in row: 5                       # the maximum number of fails in row before the job is considered as failed
 
 # rabbitmq:                                        # the rabbitmq server parameters to be use. usualy this section defined in specific environment job settings
-#   api url: http://localhost:15672                # the rabbitmq api url
+#   api urls: [http://localhost:15672]             # the rabbitmq api urls
 #   username: guest
 #   password: guest
+
+health check:                                   # the health check parameters
+  cluster alarm: true                           # if true, the job will fail if the cluster alarm is raised
+  local alarm: true                             # if true, the job will fail if the local alarm is raised
+  node mirror sync: true                        # if true, the job will fail if the node mirror sync is not ok
+  node quorum critical: true                    # if true, the job will fail if the node quorum critical is not ok
+
+nodes:
+  memory alarm: true                            # if true, the job will fail if the memory alarm is raised
+  disk free alarm: true                         # if true, the job will fail if the disk free alarm is raised
+  #name
+  #running
 
 queues:
   - name: demo                                  # the name of the queue
     messages: 1000                              # the number of messages in the queue
-    messages ready: null                        # the number of messages ready to be consumed  
-    messages dlx: null                          # the number of messages in the dead letter exchange
     consumers: null                             # the number of consumers of the queue
-    messages unacknowledged: null               # the number of unacknowledged messages
-    messages rate: null                         # the rate of messages per second
-    messages ready rate: null                   # the rate of messages ready to be consumed per second
-    messages unacknowledged rate: null          # the rate of unacknowledged messages per second
-    reductions: null                            # the number of reductions
-    reductions rate: null                       # the rate of reductions per second
+    memory: null                                # the memory used by the queue
+    #status

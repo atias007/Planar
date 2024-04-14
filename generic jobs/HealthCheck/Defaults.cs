@@ -1,12 +1,20 @@
-﻿namespace HealthCheck;
+﻿using Common;
 
-internal class Defaults : IEndpoint
+namespace HealthCheck;
+
+internal class Defaults : BaseDefault, IEndpoint
 {
+    public Defaults()
+    {
+        RetryCount = 3;
+        RetryInterval = TimeSpan.FromSeconds(10);
+        MaximumFailsInRow = 5;
+    }
+
     public IEnumerable<int>? SuccessStatusCodes { get; set; } = new List<int> { 200, 201, 202, 204 };
-    public int? RetryCount { get; set; } = 3;
     public TimeSpan? Timeout { get; set; } = TimeSpan.FromSeconds(5);
-    public TimeSpan? RetryInterval { get; set; } = TimeSpan.FromSeconds(5);
-    public int? MaximumFailsInRow { get; set; } = 5;
+
+    //// --------------------------------------- ////
 
     public static Defaults Empty => new();
 }
