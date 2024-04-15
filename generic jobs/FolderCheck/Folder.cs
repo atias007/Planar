@@ -3,45 +3,31 @@ using Microsoft.Extensions.Configuration;
 
 namespace FolderCheck;
 
-internal class Folder : BaseDefault, IFolder, ICheckElemnt
+internal class Folder(IConfigurationSection section, string path) : BaseDefault(section), IFolder, ICheckElemnt
 {
-    public Folder(IConfigurationSection section, string path)
-    {
-        Name = section.GetValue<string?>("name");
-        Path = path;
-        FilesPattern = section.GetValue<string?>("files pattern")?.Split(',').ToList();
-        IncludeSubdirectories = section.GetValue<bool>("include subdirectories");
-        TotalSize = section.GetValue<string?>("total size");
-        FileSize = section.GetValue<string?>("file size");
-        FileCount = section.GetValue<int?>("file count");
-        CreatedAge = section.GetValue<string?>("created age");
-        ModifiedAge = section.GetValue<string?>("modified age");
-
-        //// --------------------------------------- ////
-
-        RetryCount = section.GetValue<int?>("retry count");
-        RetryInterval = section.GetValue<TimeSpan?>("retry interval");
-        MaximumFailsInRow = section.GetValue<int?>("maximum fails in row");
-    }
-
-    public string? Name { get; set; }
-    public string Path { get; private set; }
-    public IEnumerable<string>? FilesPattern { get; set; }
-    public bool IncludeSubdirectories { get; set; }
-    public string? TotalSize { get; set; }
-    public string? FileSize { get; set; }
-    public int? FileCount { get; set; }
-    public string? CreatedAge { get; set; }
-    public string? ModifiedAge { get; set; }
+    public string Name { get; set; } = section.GetValue<string>("name") ?? string.Empty;
+    public string Path { get; private set; } = path;
+    public IEnumerable<string>? FilesPattern { get; private set; } = section.GetValue<string?>("files pattern")?.Split(',').ToList();
+    public bool IncludeSubdirectories { get; private set; } = section.GetValue<bool>("include subdirectories");
+    public string? TotalSize { get; private set; } = section.GetValue<string?>("total size");
+    public string? FileSize { get; private set; } = section.GetValue<string?>("file size");
+    public int? FileCount { get; private set; } = section.GetValue<int?>("file count");
+    public string? CreatedAge { get; private set; } = section.GetValue<string?>("created age");
+    public string? ModifiedAge { get; private set; } = section.GetValue<string?>("modified age");
 
     //// --------------------------------------- ////
 
-    public long? TotalSizeNumber { get; set; }
+    public long? TotalSizeNumber { get; private set; }
 
-    public long? FileSizeNumber { get; set; }
-    public DateTime? CreatedAgeDate { get; set; }
-    public DateTime? ModifiedAgeDate { get; set; }
+    public long? FileSizeNumber { get; private set; }
+    public DateTime? CreatedAgeDate { get; private set; }
+    public DateTime? ModifiedAgeDate { get; private set; }
     public string Key => Path;
+
+    public void SetDefaultFilePattern()
+    {
+        FilesPattern = new List<string> { "*.*" };
+    }
 
     public bool IsValid()
     {

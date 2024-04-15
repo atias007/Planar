@@ -59,9 +59,9 @@ internal class Job : BaseCheckJob
     private static IEnumerable<FileInfo> GetFiles(Folder folder)
     {
         var fi = new DirectoryInfo(folder.Path);
-        if (folder.FilesPattern == null || !folder.FilesPattern.Any()) { folder.FilesPattern = new List<string> { "*.*" }; }
+        if (folder.FilesPattern == null || !folder.FilesPattern.Any()) { folder.SetDefaultFilePattern(); }
         var option = folder.IncludeSubdirectories ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-        foreach (var pattern in folder.FilesPattern)
+        foreach (var pattern in folder.FilesPattern!)
         {
             var files = fi.GetFiles(pattern, option);
             foreach (var file in files)

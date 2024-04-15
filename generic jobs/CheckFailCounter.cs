@@ -23,8 +23,5 @@ internal class CheckFailCounter(IBaseJob baseJob)
         baseJob.RemoveJobData(key);
     }
 
-    private static string GetKey(ICheckElemnt element)
-    {
-        return $"fail.count_{element.Key}";
-    }
+    private static string GetKey(ICheckElemnt element) => $"fail.count.{element.Key}";
 }

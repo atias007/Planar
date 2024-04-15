@@ -12,8 +12,8 @@ folders:
     path: \\{{host}}\vaults\CustomerX           # the path of the folder 
     files pattern: "*.txt,*.dll"                # the pattern of the files to be monitored. this value is optional
     include subdirectories: true                # a flag to indicate if the subdirectories should be included in the monitoring or not. the defualt is false
-    total size: 1gb                             # the total size of the folder (in bytes, kb, mb, gb, tb, pb)
-    file size: 10mb                             # the size of the file (in bytes, kb, mb, gb, tb, pb)
-    file count: 100                             # the number of files in the folder
-    created age: 1day                           # the age of the file (in seconds, minutes, hours, days, weeks, months, years)
-    modified age: 1day                          # the age of the file (in seconds, minutes, hours, days, weeks, months, years)
+    total size: 1gb                             # the maximum total size of the folder (in bytes, kb, mb, gb, tb, pb)
+    file size: 10mb                             # the maximum size of single file (in bytes, kb, mb, gb, tb, pb)
+    file count: 100                             # the maximum number of files in the folder
+    created age: 1day                           # the maximum age of the file (in seconds, minutes, hours, days, weeks, months, years)
+    modified age: 1day                          # the maximum age of the file (in seconds, minutes, hours, days, weeks, months, years)

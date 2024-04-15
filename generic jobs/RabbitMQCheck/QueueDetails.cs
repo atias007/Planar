@@ -1,8 +1,6 @@
-﻿using Common;
+﻿namespace RabbitMQCheck;
 
-namespace RabbitMQCheck;
-
-public class QueueDetails : BaseDefault, ICheckElemnt
+public class QueueDetails
 {
     public string Name { get; set; } = null!;
     public int Messages { get; set; }
@@ -10,7 +8,6 @@ public class QueueDetails : BaseDefault, ICheckElemnt
     public int Consumers { get; set; }
     public int Reductions { get; set; }
     public string State { get; set; } = null!;
-    public string Key => Name;
 
     ////[JsonProperty("messages_ready")]
     ////public int MessagesReady { get; set; }
