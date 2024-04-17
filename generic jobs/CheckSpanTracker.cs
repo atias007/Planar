@@ -17,7 +17,7 @@ internal class CheckSpanTracker(IBaseJob baseJob)
             span = DateTimeOffset.UtcNow.Subtract(date);
         }
 
-        baseJob.PutJobData(key, DateTimeOffset.UtcNow);
+        baseJob.PutJobData(key, DateTimeOffset.UtcNow.ToString(CultureInfo.CurrentCulture));
         return span;
     }
 

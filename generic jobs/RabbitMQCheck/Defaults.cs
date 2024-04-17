@@ -10,8 +10,4 @@ internal class Defaults : BaseDefault, IRabbitMQ
         RetryInterval = TimeSpan.FromSeconds(10);
         MaximumFailsInRow = 5;
     }
-
-    //// --------------------------------------- ////
-
-    public static Defaults Empty => new();
 }

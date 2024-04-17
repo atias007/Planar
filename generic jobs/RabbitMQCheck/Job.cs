@@ -49,6 +49,7 @@ public class Job : BaseCheckJob
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
+        services.AddSingleton<Defaults>();
         services.AddSingleton<CheckFailCounter>();
         services.AddSingleton<CheckSpanTracker>();
     }
@@ -110,24 +111,21 @@ public class Job : BaseCheckJob
 
     private Defaults GetDefaults(IConfiguration configuration)
     {
-        var empty = Defaults.Empty;
-        var defaults = configuration.GetSection("defaults");
-        if (defaults == null)
+        var def = ServiceProvider.GetRequiredService<Defaults>();
+        var section = configuration.GetSection("defaults");
+        if (section == null)
         {
             Logger.LogWarning("no defaults section found on settings file. set job factory defaults");
-            return empty;
+            return def;
         }
 
-        var result = new Defaults
-        {
-            RetryCount = defaults.GetValue<int?>("retry count") ?? empty.RetryCount,
-            RetryInterval = defaults.GetValue<TimeSpan?>("retry interval") ?? empty.RetryInterval,
-            MaximumFailsInRow = defaults.GetValue<int?>("maximum fails in row") ?? empty.MaximumFailsInRow,
-        };
+        def.RetryCount = section.GetValue<int?>("retry count") ?? def.RetryCount;
+        def.RetryInterval = section.GetValue<TimeSpan?>("retry interval") ?? def.RetryInterval;
+        def.MaximumFailsInRow = section.GetValue<int?>("maximum fails in row") ?? def.MaximumFailsInRow;
 
-        ValidateBase(result, "defaults");
+        ValidateBase(def, "defaults");
 
-        return result;
+        return def;
     }
 
     private async Task InvokeHealthCheckInner(HealthCheck healthCheck, Server server, string host)
@@ -279,7 +277,6 @@ public class Job : BaseCheckJob
         var host = server.DefaultHost;
         var proxy = RabbitMqProxy.GetProxy(host, server, Logger);
         var details = await proxy.GetQueueDetails();
-        ////var counter = ServiceProvider.GetRequiredService<CheckFailCounter>();
 
         foreach (var queue in container.Queues)
         {
@@ -296,15 +293,29 @@ public class Job : BaseCheckJob
 
     private void HandleQueueCheckExceptions(string message, Queue queue, string stage)
     {
-        bool IsSpanValid(CheckSpanTracker spanner) =>
-            queue.Span == null ||
-            queue.Span == TimeSpan.Zero ||
+        bool IsSpanValid(CheckSpanTracker spanner)
+        {
+            return queue.Span != null &&
+            queue.Span != TimeSpan.Zero &&
             queue.Span > spanner.LastFailSpan(queue, stage);
+        }
 
         var spanner = ServiceProvider.GetRequiredService<CheckSpanTracker>();
         if (IsSpanValid(spanner))
         {
             var logMessage = $"{message} --> but error span is valid";
+#pragma warning disable CA2254 // Template should be a static expression
+            Logger.LogWarning(logMessage);
+#pragma warning restore CA2254 // Template should be a static expression
+            return;
+        }
+
+        var counter = ServiceProvider.GetRequiredService<CheckFailCounter>();
+        var defaults = ServiceProvider.GetRequiredService<Defaults>();
+        var value = counter.IncrementFailCount(queue, stage);
+        if (value > defaults.MaximumFailsInRow)
+        {
+            var logMessage = $"{message} --> but maximum fails in row reached";
 #pragma warning disable CA2254 // Template should be a static expression
             Logger.LogWarning(logMessage);
 #pragma warning restore CA2254 // Template should be a static expression
@@ -317,54 +328,62 @@ public class Job : BaseCheckJob
 
     private void CheckMemory(string host, Queue queue, QueueDetails detail)
     {
+        const string stage = "memory";
         // Memory
         if (queue.MemoryNumber.HasValue)
         {
             if (queue.MemoryNumber.GetValueOrDefault() > detail.Memory)
             {
                 Logger.LogInformation("queue check (memory), name '{Name}' on host {Host} succeeded. value is {Memory:N0}", detail.Name, host, detail.Memory);
+                ResetFail(queue, stage);
             }
             else
             {
-                HandleQueueCheckExceptions($"queue check (memory), name '{detail.Name}' on host {host} failed. value is '{detail.Memory:N0}'", queue, "memory");
+                HandleQueueCheckExceptions($"queue check (memory), name '{detail.Name}' on host {host} failed. value is '{detail.Memory:N0}'", queue, stage);
             }
         }
     }
 
     private void CheckMessages(string host, Queue queue, QueueDetails detail)
     {
+        const string stage = "messages";
         // Messages
         if (queue.Messages.HasValue)
         {
             if (queue.Messages.GetValueOrDefault() >= detail.Messages)
             {
                 Logger.LogInformation("queue check (messages), name '{Name}' on host {Host} succeeded. value is {Messages:N0}", detail.Name, host, detail.Messages);
+                ResetFail(queue, stage);
             }
             else
             {
-                HandleQueueCheckExceptions($"queue check (messages), name '{detail.Name}' on host {host} failed. value is '{detail.Messages:N0}'", queue, "messages");
+                HandleQueueCheckExceptions($"queue check (messages), name '{detail.Name}' on host {host} failed. value is '{detail.Messages:N0}'", queue, stage);
             }
         }
     }
 
     private void CheckConsumers(string host, Queue queue, QueueDetails detail)
     {
+        const string stage = "consumers";
+
         // Consumers
         if (queue.Consumers.HasValue)
         {
             if (queue.Consumers.GetValueOrDefault() <= detail.Consumers)
             {
                 Logger.LogInformation("queue check (consumers), name '{Name}' on host {Host} succeeded. value is {Consumers:N0}", detail.Name, host, detail.Consumers);
+                ResetFail(queue, stage);
             }
             else
             {
-                HandleQueueCheckExceptions($"queue check (consumers), name '{detail.Name}' on host {host} failed. value is '{detail.Consumers:N0}'", queue, "consumers");
+                HandleQueueCheckExceptions($"queue check (consumers), name '{detail.Name}' on host {host} failed. value is '{detail.Consumers:N0}'", queue, stage);
             }
         }
     }
 
     private void CheckState(string host, Queue queue, QueueDetails detail)
     {
+        const string stage = "state";
         // Check State
         if (queue.CheckState.GetValueOrDefault())
         {
@@ -372,12 +391,22 @@ public class Job : BaseCheckJob
             if (ok)
             {
                 Logger.LogInformation("queue check (state), name '{Name}' on host {Host} succeeded", detail.Name, host);
+                ResetFail(queue, stage);
             }
             else
             {
-                HandleQueueCheckExceptions($"queue check (state), name '{detail.Name}' on host {host} failed. queue '{queue.Name}' is in state '{detail.State}'", queue, "state");
+                HandleQueueCheckExceptions($"queue check (state), name '{detail.Name}' on host {host} failed. queue '{queue.Name}' is in state '{detail.State}'", queue, stage);
             }
         }
+    }
+
+    private void ResetFail(Queue queue, string stage)
+    {
+        var counter = ServiceProvider.GetRequiredService<CheckFailCounter>();
+        counter.ResetFailCount(queue, stage);
+
+        var spanner = ServiceProvider.GetRequiredService<CheckSpanTracker>();
+        spanner.ResetFailSpan(queue, stage);
     }
 
     private async Task SafeInvokeQueueCheck(QueuesContainer container, Server server, Defaults defaults)

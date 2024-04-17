@@ -1,8 +1,6 @@
 namespace Common;
 
-using Microsoft.Extensions.Logging;
 using Planar.Job;
-using RabbitMQCheck;
 using System.Collections.Concurrent;
 
 public abstract class BaseCheckJob : BaseJob
