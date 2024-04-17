@@ -44,19 +44,10 @@ internal sealed class Job : BaseCheckJob
 
     private static void FillDefaults(Endpoint endpoint, Defaults defaults)
     {
-        // Fill Defaults
-        endpoint.Name ??= string.Empty;
-        endpoint.Name = endpoint.Name.Trim();
-        if (string.IsNullOrWhiteSpace(endpoint.Name))
-        {
-            endpoint.Name = "[no name]";
-        }
-
-        endpoint.SuccessStatusCodes ??= defaults.SuccessStatusCodes;
-        endpoint.Timeout ??= defaults.Timeout;
-        endpoint.RetryCount ??= defaults.RetryCount;
-        endpoint.MaximumFailsInRow ??= defaults.MaximumFailsInRow;
-        endpoint.RetryInterval ??= defaults.RetryInterval;
+        SetDefaultName(endpoint, () => endpoint.Name);
+        SetDefault(defaults, endpoint, () => endpoint.SuccessStatusCodes);
+        SetDefault(defaults, endpoint, () => endpoint.Timeout);
+        FillBase(endpoint, defaults);
     }
 
     private static IEnumerable<Endpoint> GetEndpoints(IConfiguration configuration, IEnumerable<string> hosts)
@@ -209,7 +200,7 @@ internal sealed class Job : BaseCheckJob
 
             if (value > endpoint.MaximumFailsInRow)
             {
-                Logger.LogWarning("health check fail but maximum fails in row reached for endpoint name '{EndpointName}' with url '{EndpointUrl}'. reason: {Message}",
+                Logger.LogWarning("health check fail for endpoint name '{EndpointName}' with url '{EndpointUrl}' but maximum fails in row reached. reason: {Message}",
                     endpoint.Name, endpoint.Url, ex.Message);
             }
             else

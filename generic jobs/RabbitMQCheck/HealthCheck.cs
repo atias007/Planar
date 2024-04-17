@@ -10,4 +10,10 @@ internal class HealthCheck(IConfigurationSection section) : BaseDefault(section)
     public bool? NodeMirrorSync { get; private set; } = section.GetValue<bool?>("node mirror sync");
     public bool? NodeQuorumCritical { get; private set; } = section.GetValue<bool?>("node quorum critical");
     public string Key => "health check";
+
+    public bool IsValid =>
+        ClusterAlarm.GetValueOrDefault() ||
+        LocalAlarm.GetValueOrDefault() ||
+        NodeMirrorSync.GetValueOrDefault() ||
+        NodeQuorumCritical.GetValueOrDefault();
 }

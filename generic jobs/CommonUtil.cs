@@ -148,15 +148,20 @@ internal static class CommonUtil
 
     public static void ValidateItems(IEnumerable<ICheckElemnt> item, string sectionName, string keyName)
     {
-        if (item == null || !item.Any())
-        {
-            throw new InvalidDataException($"'{sectionName}' section is null or empty");
-        }
+        ValidateItems(item, sectionName);
 
         var duplicates1 = item.GroupBy(x => x.Key).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
         if (duplicates1.Count != 0)
         {
             throw new InvalidDataException($"duplicated fount at '{sectionName}' section. duplicate '{keyName}' found: {string.Join(", ", duplicates1)}");
+        }
+    }
+
+    public static void ValidateItems<T>(IEnumerable<T> item, string sectionName)
+    {
+        if (item == null || !item.Any())
+        {
+            throw new InvalidDataException($"'{sectionName}' section/field is null or empty");
         }
     }
 }

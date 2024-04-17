@@ -1,4 +1,4 @@
-rabbitmq:                                        # the rabbitmq server parameters to be use. usualy this section defined in specific environment job settings
-  api url: http://rabbitmq-server:15672          # the rabbitmq api url
-  username: some-user
-  password: strong-password
+servers:                                      # the servers parameters to be use. usualy this section defined in specific environment job settings
+  hosts: http://rabbitmq-server-1:15672       # the rabbitmq host
+  username: some-username
+  password: some-password

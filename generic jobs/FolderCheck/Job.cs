@@ -43,17 +43,8 @@ internal class Job : BaseCheckJob
 
     private static void FillDefaults(Folder folder, Defaults defaults)
     {
-        // Fill Defaults
-        folder.Name ??= string.Empty;
-        folder.Name = folder.Name.Trim();
-        if (string.IsNullOrWhiteSpace(folder.Name))
-        {
-            folder.Name = "[no name]";
-        }
-
-        folder.RetryCount ??= defaults.RetryCount;
-        folder.MaximumFailsInRow ??= defaults.MaximumFailsInRow;
-        folder.RetryInterval ??= defaults.RetryInterval;
+        SetDefaultName(folder, () => folder.Name);
+        FillBase(folder, defaults);
     }
 
     private static IEnumerable<FileInfo> GetFiles(Folder folder)
@@ -233,7 +224,7 @@ internal class Job : BaseCheckJob
 
             if (value > folder.MaximumFailsInRow)
             {
-                Logger.LogWarning("folder check fail but maximum fails in row reached for folder name '{FolderName}' with path '{FolderPath}'. reason: {Message}",
+                Logger.LogWarning("folder check fail for folder name '{FolderName}' with path '{FolderPath}' but maximum fails in row reached. reason: {Message}",
                     folder.Name, folder.Path, ex.Message);
             }
             else

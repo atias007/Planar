@@ -1,6 +1,16 @@
 ﻿namespace Common;
 
-public sealed class CheckException(string message, string? key) : Exception(message)
+public sealed class CheckException : Exception
 {
-    public string? Key { get; } = key;
+    public CheckException(string message, string? key) : base(message)
+    {
+        Key = key;
+    }
+
+    public CheckException(string message, Exception? innerException, string? key) : base(message, innerException)
+    {
+        Key = key;
+    }
+
+    public string? Key { get; }
 }
