@@ -8,17 +8,17 @@ internal class CheckSpanTracker(IBaseJob baseJob)
     public TimeSpan LastFailSpan(ICheckElemnt element, string? additionalKey = null)
     {
         var key = GetKey(element, additionalKey);
-        var span = TimeSpan.Zero;
         if (baseJob.Context.MergedJobDataMap.TryGet(key, out var value)
             && value != null
             && DateTimeOffset.TryParse(value, CultureInfo.CurrentCulture, out var date)
             )
         {
-            span = DateTimeOffset.UtcNow.Subtract(date);
+            var span = DateTimeOffset.UtcNow.Subtract(date);
+            return span;
         }
 
         baseJob.PutJobData(key, DateTimeOffset.UtcNow.ToString(CultureInfo.CurrentCulture));
-        return span;
+        return TimeSpan.Zero;
     }
 
     public void ResetFailSpan(ICheckElemnt element, string? additionalKey = null)

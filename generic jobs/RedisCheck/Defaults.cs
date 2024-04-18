@@ -1,10 +1,10 @@
-﻿namespace RedisStreamCheck;
+﻿using Common;
+using RedisCheck;
 
-internal class Defaults : IRedisKey
+namespace RedisStreamCheck;
+
+internal class Defaults : BaseDefault, IRedisDefaults
 {
-    public int? RetryCount { get; set; } = 1;
-    public TimeSpan? RetryInterval { get; set; } = TimeSpan.FromSeconds(10);
-    public int? MaximumFailsInRow { get; set; } = 5;
     public int? Database { get; set; } = 0;
 
     //// --------------------------------------- ////

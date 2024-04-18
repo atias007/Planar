@@ -2,7 +2,7 @@
 
 namespace RabbitMQCheck;
 
-internal class Defaults : BaseDefault, IRabbitMQ
+internal class Defaults : BaseDefault
 {
     public Defaults()
     {

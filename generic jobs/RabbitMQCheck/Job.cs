@@ -44,7 +44,7 @@ public class Job : BaseCheckJob
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
-        HandleCheckExceptions("RabbitMQ", "element");
+        HandleCheckExceptions();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

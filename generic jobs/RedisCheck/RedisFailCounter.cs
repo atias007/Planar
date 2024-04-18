@@ -4,7 +4,7 @@ namespace RedisStreamCheck;
 
 internal class RedisFailCounter(IBaseJob baseJob)
 {
-    public int IncrementFailCount(RedisKeyCheck stream)
+    public int IncrementFailCount(CheckKey stream)
     {
         var key = GetKey(stream);
         int count = 1;
@@ -17,13 +17,13 @@ internal class RedisFailCounter(IBaseJob baseJob)
         return count;
     }
 
-    public void ResetFailCount(RedisKeyCheck stream)
+    public void ResetFailCount(CheckKey stream)
     {
         var key = GetKey(stream);
         baseJob.RemoveJobData(key);
     }
 
-    private static string GetKey(RedisKeyCheck stream)
+    private static string GetKey(CheckKey stream)
     {
         return $"fail.count_{stream.Key}";
     }

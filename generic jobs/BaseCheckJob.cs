@@ -2,6 +2,7 @@ namespace Common;
 
 using Planar.Job;
 using System.Collections.Concurrent;
+using System.Text;
 
 public abstract class BaseCheckJob : BaseJob
 {
@@ -53,21 +54,18 @@ public abstract class BaseCheckJob : BaseJob
         baseDefaultTarget.MaximumFailsInRow ??= baseDefaultSorce.MaximumFailsInRow;
     }
 
-    protected virtual void HandleCheckExceptions(string entity)
+    protected virtual void HandleCheckExceptions(string entity = "element")
     {
         if (!_exceptions.IsEmpty)
         {
-            var message = $"{entity} check failed for {entity}(s): {string.Join(", ", _exceptions.Select(x => x.Key).Distinct())}";
-            throw new AggregateException(message, _exceptions);
-        }
-    }
+            var sb = new StringBuilder(_exceptions.Count + 1);
+            sb.AppendLine($"check fail for {entity}(s): {string.Join(", ", _exceptions.Select(x => x.Key).Distinct())}");
+            foreach (var ex in _exceptions)
+            {
+                sb.AppendLine($" - {ex.Message}");
+            }
 
-    protected virtual void HandleCheckExceptions(string check, string elements)
-    {
-        if (!_exceptions.IsEmpty)
-        {
-            var message = $"{check} check failed for {elements}(s): {string.Join(", ", _exceptions.Select(x => x.Key).Distinct())}";
-            throw new AggregateException(message, _exceptions);
+            throw new CheckException(sb.ToString(), entity);
         }
     }
 

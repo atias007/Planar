@@ -1,19 +1,16 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Common;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
 using Polly;
+using RedisCheck;
 using RedisStream;
-using StackExchange.Redis;
-using System.Collections.Concurrent;
-using System.Net;
 
 namespace RedisStreamCheck;
 
-internal class Job : BaseJob
+internal class Job : BaseCheckJob
 {
-    private readonly ConcurrentQueue<RedisCheckException> _exceptions = new();
-
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
     }
@@ -25,7 +22,7 @@ internal class Job : BaseJob
         var tasks = new List<Task>();
         var defaults = GetDefaults(Configuration);
         var keys = GetKeys(Configuration);
-        await ValidateKeys(keys);
+        ValidateKeys(keys);
         CheckAggragateException();
 
         foreach (var f in keys)
@@ -39,142 +36,51 @@ internal class Job : BaseJob
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
-        CheckFolderCheckExceptions();
+        HandleCheckExceptions();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
         services.AddSingleton<RedisFailCounter>();
+        services.AddSingleton<CheckSpanTracker>();
     }
 
-    private static void FillDefaults(RedisKeyCheck redisKey, Defaults defaults)
+    private static void FillDefaults(CheckKey redisKey, Defaults defaults)
     {
         // Fill Defaults
         redisKey.Key ??= string.Empty;
         redisKey.Key = redisKey.Key.Trim();
-        redisKey.RetryCount ??= defaults.RetryCount;
         redisKey.Database ??= defaults.Database;
-        redisKey.MaximumFailsInRow ??= defaults.MaximumFailsInRow;
-        redisKey.RetryInterval ??= defaults.RetryInterval;
+        FillBase(redisKey, defaults);
     }
 
-    private static IEnumerable<RedisKeyCheck> GetKeys(IConfiguration configuration)
+    private static IEnumerable<CheckKey> GetKeys(IConfiguration configuration)
     {
         var keys = configuration.GetRequiredSection("keys");
         foreach (var item in keys.GetChildren())
         {
-            var folder = new RedisKeyCheck(item);
+            var folder = new CheckKey(item);
             yield return folder;
         }
     }
 
-    private static void Validate(IRedisKey redisKey, string section)
+    private static void Validate(IRedisDefaults redisKey, string section)
     {
-        if ((redisKey.RetryInterval?.TotalSeconds ?? 0) < 1)
-        {
-            throw new InvalidDataException($"'retry interval' on {section} section is null or less then 1 second");
-        }
-
-        if ((redisKey.RetryInterval?.TotalMinutes ?? 0) > 1)
-        {
-            throw new InvalidDataException($"'retry interval' on {section} section is greater then 1 minutes");
-        }
-
-        if (redisKey.RetryCount < 0)
-        {
-            throw new InvalidDataException($"'retry count' on {section} section is null or less then 0");
-        }
-
-        if (redisKey.RetryCount > 10)
-        {
-            throw new InvalidDataException($"'retry count' on {section} section is greater then 0");
-        }
-
-        if (redisKey.MaximumFailsInRow < 1)
-        {
-            throw new InvalidDataException($"'maximum fails in row' on {section} section must be greater then 0");
-        }
-
-        if (redisKey.MaximumFailsInRow > 1000)
-        {
-            throw new InvalidDataException($"'maximum fails in row' on {section} section must be less then 1000");
-        }
-
-        if (redisKey.Database < 0)
-        {
-            throw new InvalidDataException($"'database' on {section} section must be greater then 0");
-        }
-
-        if (redisKey.Database > 16)
-        {
-            throw new InvalidDataException($"'database' on {section} section must be less then 16");
-        }
+        ValidateGreaterThenOrEquals(redisKey.Database, 0, "database", section);
+        ValidateLessThenOrEquals(redisKey.Database, 16, "database", section);
     }
 
-    private static void ValidateKey(RedisKeyCheck redisKey)
+    private static void ValidateKey(CheckKey redisKey)
     {
-        if (string.IsNullOrWhiteSpace(redisKey.Key))
-        {
-            throw new InvalidDataException("key on keys section is null or empty");
-        }
-
-        if (redisKey.Key?.Length > 1024)
-        {
-            throw new InvalidDataException($"'key' length ({redisKey.Key[0..20]}...) must be less then 1024");
-        }
+        ValidateRequired(redisKey.Key, "key", "keys");
+        ValidateMaxLength(redisKey.Key, 1024, "key", "keys");
     }
 
-    private static void ValidateLength(RedisKeyCheck redisKey)
-    {
-        if (redisKey.MaxLength <= 0)
-        {
-            throw new InvalidDataException($"'max length' on key '{redisKey.Key}' must be greater then 0");
-        }
-
-        if (redisKey.MinLength <= 0)
-        {
-            throw new InvalidDataException($"'min length' on key '{redisKey.Key}' must be greater then 0");
-        }
-
-        if (redisKey.MaxLength <= redisKey.MinLength)
-        {
-            throw new InvalidDataException($"'max length' on key '{redisKey.Key}' must be greater then 'min length'");
-        }
-    }
-
-    private static void ValidateMemoryUsage(RedisKeyCheck redisKey)
-    {
-        redisKey.SetSize();
-        if (redisKey.MaxMemoryUsageNumber <= 0)
-        {
-            throw new InvalidDataException($"'max memory usage' on key '{redisKey.Key}' must be greater then 0");
-        }
-
-        if (redisKey.MinMemoryUsageNumber <= 0)
-        {
-            throw new InvalidDataException($"'max memory usage' on key '{redisKey.Key}' must be greater then 0");
-        }
-
-        if (redisKey.MaxMemoryUsageNumber <= redisKey.MinMemoryUsageNumber)
-        {
-            throw new InvalidDataException($"'max memory usage' on key '{redisKey.Key}' must be greater then 'min memory usage'");
-        }
-    }
-
-    private static void ValidateNoArguments(RedisKeyCheck redisKey)
+    private static void ValidateNoArguments(CheckKey redisKey)
     {
         if (!redisKey.IsValid)
         {
             throw new InvalidDataException($"key '{redisKey.Key}' has no arguments to check");
-        }
-    }
-
-    private void CheckFolderCheckExceptions()
-    {
-        if (!_exceptions.IsEmpty)
-        {
-            var message = $"redis check failed for keys: {string.Join(", ", _exceptions.Select(x => x.Key).Distinct())}";
-            throw new AggregateException(message, _exceptions);
         }
     }
 
@@ -196,57 +102,48 @@ internal class Job : BaseJob
             Database = defaults.GetValue<int?>("database") ?? empty.Database
         };
 
+        ValidateBase(result, "defaults");
         Validate(result, "defaults");
 
         return result;
     }
 
-    private async Task InvokeFolderInner(RedisKeyCheck key)
+    private async Task InvokeFolderInner(CheckKey key)
     {
         await RedisFactory.Exists(key);
 
         long length = 0;
         long size = 0;
-        if (key.MaxLength > 0 || key.MinLength > 0)
+        if (key.Length > 0)
         {
             length = await RedisFactory.GetLength(key);
             Logger.LogInformation("key '{Key}' length is {Length:N0}", key.Key, length);
         }
 
-        if (key.MaxMemoryUsageNumber > 0 || key.MinMemoryUsageNumber > 0)
+        if (key.MemoryUsageNumber > 0)
         {
             size = await RedisFactory.GetMemoryUsage(key);
             Logger.LogInformation("key '{Key}' size is {Size:N0} byte(s)", key.Key, size);
         }
 
-        if (key.MaxLength > 0 && length > key.MaxLength)
+        if (key.Length > 0 && length > key.Length)
         {
-            throw new RedisCheckException($"key '{key.Key}' length is greater then {key.MaxLength:N0}", key.Key);
+            throw new CheckException($"key '{key.Key}' length is greater then {key.Length:N0}", key.Key);
         }
 
-        if (key.MinLength > 0 && length < key.MinLength)
+        if (key.MemoryUsageNumber > 0 && size > key.MemoryUsageNumber)
         {
-            throw new RedisCheckException($"key '{key.Key}' length is less then {key.MinLength:N0}", key.Key);
-        }
-
-        if (key.MaxMemoryUsageNumber > 0 && size > key.MaxMemoryUsageNumber)
-        {
-            throw new RedisCheckException($"key '{key.Key}' size is greater then {key.MaxMemoryUsage:N0}", key.Key);
-        }
-
-        if (key.MinMemoryUsageNumber > 0 && size < key.MinMemoryUsageNumber)
-        {
-            throw new RedisCheckException($"key '{key.Key}' size is less then {key.MinMemoryUsage:N0}", key.Key);
+            throw new CheckException($"key '{key.Key}' size is greater then {key.MemoryUsage:N0}", key.Key);
         }
 
         Logger.LogInformation("redis check success for key '{Key}'", key.Key);
     }
 
-    private void SafeHandleException(RedisKeyCheck redisKey, Exception ex, RedisFailCounter counter)
+    private void SafeHandleException(CheckKey redisKey, Exception ex, RedisFailCounter counter)
     {
         try
         {
-            var exception = ex is RedisCheckException ? null : ex;
+            var exception = ex is CheckException ? null : ex;
 
             if (exception == null)
             {
@@ -268,11 +165,11 @@ internal class Job : BaseJob
             }
             else
             {
-                var hcException = new RedisCheckException(
+                var hcException = new CheckException(
                     $"redis check fail for key '{redisKey.Key}'. reason: {ex.Message}",
                     redisKey.Key);
 
-                _exceptions.Enqueue(hcException);
+                AddCheckException(hcException);
             }
         }
         catch (Exception innerEx)
@@ -281,7 +178,7 @@ internal class Job : BaseJob
         }
     }
 
-    private async Task SafeInvokeKeyCheck(RedisKeyCheck key)
+    private async Task SafeInvokeKeyCheck(CheckKey key)
     {
         var counter = ServiceProvider.GetRequiredService<RedisFailCounter>();
 
@@ -299,7 +196,7 @@ internal class Job : BaseJob
                         sleepDurationProvider: _ => key.RetryInterval.GetValueOrDefault(),
                          onRetry: (ex, _) =>
                          {
-                             var exception = ex is RedisCheckException ? null : ex;
+                             var exception = ex is CheckException ? null : ex;
                              Logger.LogWarning(exception, "retry for redis key '{Key}'. Reason: {Message}",
                                                                      key.Key, ex.Message);
                          })
@@ -316,22 +213,11 @@ internal class Job : BaseJob
         }
     }
 
-    private async Task ValidateKeys(IEnumerable<RedisKeyCheck> keys)
+    private void ValidateKeys(IEnumerable<CheckKey> keys)
     {
         try
         {
-            if (keys == null || !keys.Any())
-            {
-                throw new InvalidDataException("keys section is null or empty");
-            }
-
-            var duplicates1 = keys.GroupBy(x => x.Key).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
-            if (duplicates1.Count != 0)
-            {
-                throw new InvalidDataException($"duplicated keys found: {string.Join(", ", duplicates1)}");
-            }
-
-            await RedisFactory.Ping();
+            ValidateRequired(keys, "keys", "root");
         }
         catch (Exception ex)
         {
@@ -339,14 +225,16 @@ internal class Job : BaseJob
         }
     }
 
-    private bool ValidateRedisKey(RedisKeyCheck redisKey)
+    private bool ValidateRedisKey(CheckKey redisKey)
     {
         try
         {
+            ValidateBase(redisKey, $"key ({redisKey.Key})");
             Validate(redisKey, $"key ({redisKey.Key})");
             ValidateKey(redisKey);
-            ValidateMemoryUsage(redisKey);
-            ValidateLength(redisKey);
+            redisKey.SetSize();
+            ValidateGreaterThen(redisKey.MemoryUsageNumber, 0, "max memory usage", "keys");
+            ValidateGreaterThen(redisKey.Length, 0, "max length", "keys");
             ValidateNoArguments(redisKey);
         }
         catch (Exception ex)

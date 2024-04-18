@@ -1,31 +1,27 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Common;
+using Microsoft.Extensions.Configuration;
+using RedisCheck;
 
 namespace RedisStreamCheck;
 
-internal class RedisKeyCheck(IConfigurationSection section) : IRedisKey
+internal class CheckKey(IConfigurationSection section) : BaseDefault(section), ICheckElemnt, IRedisDefaults
 {
     public string Key { get; set; } = section.GetValue<string>("key") ?? string.Empty;
-    public string? MaxMemoryUsage { get; set; } = section.GetValue<string>("max memory usage");
-    public string? MinMemoryUsage { get; set; } = section.GetValue<string>("min memory usage");
-    public int? MaxLength { get; set; } = section.GetValue<int?>("max length");
-    public int? MinLength { get; set; } = section.GetValue<int?>("min length");
+    public string? MemoryUsage { get; set; } = section.GetValue<string>("memory usage");
+    public int? Length { get; set; } = section.GetValue<int?>("length");
     public int? Database { get; set; } = section.GetValue<int?>("database");
-    public int? RetryCount { get; set; } = section.GetValue<int?>("retry count");
-    public int? MaximumFailsInRow { get; set; } = section.GetValue<int?>("retry interval");
-    public TimeSpan? RetryInterval { get; set; } = section.GetValue<TimeSpan?>("maximum fails in row");
+    public bool? Exists { get; set; } = section.GetValue<bool?>("exists");
 
     //// --------------------------------------- ////
 
-    public int? MaxMemoryUsageNumber { get; set; }
-    public int? MinMemoryUsageNumber { get; set; }
-    public bool IsValid => MaxMemoryUsageNumber > 0 || MinMemoryUsageNumber > 0 || MaxLength > 0 || MinLength > 0;
+    public int? MemoryUsageNumber { get; set; }
+    public bool IsValid => MemoryUsageNumber > 0 || Length > 0;
 
     //// --------------------------------------- ////
 
     public void SetSize()
     {
-        MaxMemoryUsageNumber = GetSize(MaxMemoryUsage, "max memory usage");
-        MinMemoryUsageNumber = GetSize(MinMemoryUsage, "min memory usage");
+        MemoryUsageNumber = GetSize(MemoryUsage, "max memory usage");
     }
 
     private int? GetSize(string? source, string fieldName)

@@ -32,7 +32,7 @@ internal static class RedisFactory
         await Connection.GetDatabase().PingAsync();
     }
 
-    public static async Task<long> GetMemoryUsage(RedisKeyCheck redisKey)
+    public static async Task<long> GetMemoryUsage(CheckKey redisKey)
     {
         var result = await GetDatabase(redisKey).ExecuteAsync("MEMORY", "USAGE", redisKey.Key);
         if (long.TryParse(result.ToString(), out var value))
@@ -43,12 +43,12 @@ internal static class RedisFactory
         return 0;
     }
 
-    public static async Task<bool> Exists(RedisKeyCheck redisKey)
+    public static async Task<bool> Exists(CheckKey redisKey)
     {
         return await GetDatabase(redisKey).KeyExistsAsync(redisKey.Key);
     }
 
-    public static async Task<long> GetLength(RedisKeyCheck redisKey)
+    public static async Task<long> GetLength(CheckKey redisKey)
     {
         var keyType = await Connection.GetDatabase().KeyTypeAsync(redisKey.Key);
         return keyType switch
@@ -63,7 +63,7 @@ internal static class RedisFactory
         };
     }
 
-    private static IDatabase GetDatabase(RedisKeyCheck redisKey)
+    private static IDatabase GetDatabase(CheckKey redisKey)
     {
         var database = redisKey.Database.GetValueOrDefault();
         if (_databases.TryGetValue(database, out var db)) { return db; }
