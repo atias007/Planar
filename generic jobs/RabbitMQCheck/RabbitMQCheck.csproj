@@ -15,6 +15,7 @@
     <Compile Include="..\CheckSpanTracker.cs" Link="Common\CheckSpanTracker.cs" />
     <Compile Include="..\CommonUtil.cs" Link="Common\CommonUtil.cs" />
     <Compile Include="..\ICheckElemnt.cs" Link="Common\ICheckElemnt.cs" />
+    <Compile Include="..\ServicesCollectionExtentions.cs" Link="Common\ServicesCollectionExtentions.cs" />
   </ItemGroup>
 
   <ItemGroup>

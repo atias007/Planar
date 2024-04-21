@@ -2,11 +2,11 @@ namespace Common;
 
 using Planar.Job;
 
-internal class CheckFailCounter(IBaseJob baseJob)
+public class CheckFailCounter(IBaseJob baseJob)
 {
-    public int IncrementFailCount(ICheckElemnt element, string? additionalKey = null)
+    public int IncrementFailCount(ICheckElemnt element)
     {
-        var key = GetKey(element, additionalKey);
+        var key = GetKey(element);
         int count = 1;
         if (baseJob.Context.MergedJobDataMap.TryGet<int>(key, out var value))
         {
@@ -17,11 +17,11 @@ internal class CheckFailCounter(IBaseJob baseJob)
         return count;
     }
 
-    public void ResetFailCount(ICheckElemnt element, string? additionalKey = null)
+    public void ResetFailCount(ICheckElemnt element)
     {
-        var key = GetKey(element, additionalKey);
+        var key = GetKey(element);
         baseJob.RemoveJobData(key);
     }
 
-    private static string GetKey(ICheckElemnt element, string? additionalKey) => $"fail.count.{element.Key}.{additionalKey}";
+    private static string GetKey(ICheckElemnt element) => $"fail.count.{element.Key}";
 }

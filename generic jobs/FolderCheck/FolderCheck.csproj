@@ -12,8 +12,10 @@
     <Compile Include="..\BaseDefault.cs" Link="Common\BaseDefault.cs" />
     <Compile Include="..\CheckException.cs" Link="Common\CheckException.cs" />
     <Compile Include="..\CheckFailCounter.cs" Link="Common\CheckFailCounter.cs" />
+    <Compile Include="..\CheckSpanTracker.cs" Link="Common\CheckSpanTracker.cs" />
     <Compile Include="..\CommonUtil.cs" Link="Common\CommonUtil.cs" />
     <Compile Include="..\ICheckElemnt.cs" Link="Common\ICheckElemnt.cs" />
+    <Compile Include="..\ServicesCollectionExtentions.cs" Link="Common\ServicesCollectionExtentions.cs" />
   </ItemGroup>
 
   <ItemGroup>

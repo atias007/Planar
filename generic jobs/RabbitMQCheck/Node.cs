@@ -10,5 +10,5 @@ internal class Node(IConfigurationSection section) : BaseDefault(section), IChec
 
     public bool IsValid => MemoryAlarm.GetValueOrDefault() || DiskFreeAlarm.GetValueOrDefault();
 
-    public string Key => "nodes";
+    public string Key => "[nodes]";
 }

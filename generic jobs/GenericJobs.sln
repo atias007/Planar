@@ -20,6 +20,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{AA2C2A
 		CommonUtil.cs = CommonUtil.cs
 		CheckSpanTracker.cs = CheckSpanTracker.cs
 		ICheckElemnt.cs = ICheckElemnt.cs
+		ServicesCollectionExtentions.cs = ServicesCollectionExtentions.cs
 	EndProjectSection
 EndProject
 Global

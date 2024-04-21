@@ -34,7 +34,7 @@ internal sealed class Job : BaseCheckJob
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
-        HandleCheckExceptions("endpoint");
+        HandleCheckExceptions();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -45,8 +45,8 @@ internal sealed class Job : BaseCheckJob
     private static void FillDefaults(Endpoint endpoint, Defaults defaults)
     {
         SetDefaultName(endpoint, () => endpoint.Name);
-        SetDefault(defaults, endpoint, () => endpoint.SuccessStatusCodes);
-        SetDefault(defaults, endpoint, () => endpoint.Timeout);
+        SetDefault(endpoint, () => defaults.SuccessStatusCodes);
+        SetDefault(endpoint, () => defaults.Timeout);
         FillBase(endpoint, defaults);
     }
 
@@ -174,9 +174,7 @@ internal sealed class Job : BaseCheckJob
             return;
         }
 
-        throw new CheckException(
-            $"Status code {response.StatusCode} ({(int)response.StatusCode}) is not in success status codes list",
-            endpoint.Name);
+        throw new CheckException($"Status code {response.StatusCode} ({(int)response.StatusCode}) is not in success status codes list");
     }
 
     private void SafeHandleException(Endpoint endpoint, Exception ex, CheckFailCounter counter)
@@ -205,9 +203,7 @@ internal sealed class Job : BaseCheckJob
             }
             else
             {
-                var hcException = new CheckException(
-                    $"health check fail for endpoint name '{endpoint.Name}' with url '{endpoint.Url}. reason: {ex.Message}",
-                    endpoint.Name);
+                var hcException = new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{endpoint.Url}. reason: {ex.Message}");
 
                 AddCheckException(hcException);
             }

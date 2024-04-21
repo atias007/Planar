@@ -3,7 +3,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
-using Polly;
 using RedisCheck;
 using RedisStream;
 
@@ -17,32 +16,31 @@ internal class Job : BaseCheckJob
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
+        Initialize(ServiceProvider);
         RedisFactory.Initialize(Configuration);
 
-        var tasks = new List<Task>();
         var defaults = GetDefaults(Configuration);
         var keys = GetKeys(Configuration);
         ValidateKeys(keys);
         CheckAggragateException();
-
-        foreach (var f in keys)
-        {
-            FillDefaults(f, defaults);
-            if (!ValidateRedisKey(f)) { continue; }
-            var task = Task.Run(() => SafeInvokeKeyCheck(f));
-            tasks.Add(task);
-        }
-
+        FillDefaults(keys, defaults);
+        var tasks = SafeInvokeCheck(keys, InvokeKeyCheckInner);
         await Task.WhenAll(tasks);
-
         CheckAggragateException();
         HandleCheckExceptions();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
-        services.AddSingleton<RedisFailCounter>();
-        services.AddSingleton<CheckSpanTracker>();
+        services.RegisterBaseCheck();
+    }
+
+    private static void FillDefaults(IEnumerable<CheckKey> redisKeys, Defaults defaults)
+    {
+        foreach (var f in redisKeys)
+        {
+            FillDefaults(f, defaults);
+        }
     }
 
     private static void FillDefaults(CheckKey redisKey, Defaults defaults)
@@ -108,8 +106,10 @@ internal class Job : BaseCheckJob
         return result;
     }
 
-    private async Task InvokeFolderInner(CheckKey key)
+    private async Task InvokeKeyCheckInner(CheckKey key)
     {
+        if (!ValidateRedisKey(key)) { return; }
+
         await RedisFactory.Exists(key);
 
         long length = 0;
@@ -128,89 +128,15 @@ internal class Job : BaseCheckJob
 
         if (key.Length > 0 && length > key.Length)
         {
-            throw new CheckException($"key '{key.Key}' length is greater then {key.Length:N0}", key.Key);
+            throw new CheckException($"key '{key.Key}' length is greater then {key.Length:N0}");
         }
 
         if (key.MemoryUsageNumber > 0 && size > key.MemoryUsageNumber)
         {
-            throw new CheckException($"key '{key.Key}' size is greater then {key.MemoryUsage:N0}", key.Key);
+            throw new CheckException($"key '{key.Key}' size is greater then {key.MemoryUsage:N0}");
         }
 
         Logger.LogInformation("redis check success for key '{Key}'", key.Key);
-    }
-
-    private void SafeHandleException(CheckKey redisKey, Exception ex, RedisFailCounter counter)
-    {
-        try
-        {
-            var exception = ex is CheckException ? null : ex;
-
-            if (exception == null)
-            {
-                Logger.LogError("redis check fail for key '{Key}'. reason: {Message}",
-                  redisKey.Key, ex.Message);
-            }
-            else
-            {
-                Logger.LogError(exception, "redis check fail for key '{Key}'. reason: {Message}",
-                    redisKey.Key, ex.Message);
-            }
-
-            var value = counter.IncrementFailCount(redisKey);
-
-            if (value > redisKey.MaximumFailsInRow)
-            {
-                Logger.LogWarning("redis check fail but maximum fails in row reached for key '{Key}'. reason: {Message}",
-                    redisKey.Key, ex.Message);
-            }
-            else
-            {
-                var hcException = new CheckException(
-                    $"redis check fail for key '{redisKey.Key}'. reason: {ex.Message}",
-                    redisKey.Key);
-
-                AddCheckException(hcException);
-            }
-        }
-        catch (Exception innerEx)
-        {
-            AddAggregateException(innerEx);
-        }
-    }
-
-    private async Task SafeInvokeKeyCheck(CheckKey key)
-    {
-        var counter = ServiceProvider.GetRequiredService<RedisFailCounter>();
-
-        try
-        {
-            if (key.RetryCount == 0)
-            {
-                await InvokeFolderInner(key);
-                return;
-            }
-
-            await Policy.Handle<Exception>()
-                    .WaitAndRetryAsync(
-                        retryCount: key.RetryCount.GetValueOrDefault(),
-                        sleepDurationProvider: _ => key.RetryInterval.GetValueOrDefault(),
-                         onRetry: (ex, _) =>
-                         {
-                             var exception = ex is CheckException ? null : ex;
-                             Logger.LogWarning(exception, "retry for redis key '{Key}'. Reason: {Message}",
-                                                                     key.Key, ex.Message);
-                         })
-                    .ExecuteAsync(async () =>
-                    {
-                        await InvokeFolderInner(key);
-                    });
-
-            counter.ResetFailCount(key);
-        }
-        catch (Exception ex)
-        {
-            SafeHandleException(key, ex, counter);
-        }
     }
 
     private void ValidateKeys(IEnumerable<CheckKey> keys)

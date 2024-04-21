@@ -61,7 +61,7 @@ internal class RabbitMqProxy
         var response = await _restClient.ExecuteAsync<IEnumerable<NodeDetails>>(request);
         if (!response.IsSuccessful)
         {
-            throw new CheckException($"node check on host {_restClient.Options.BaseUrl} failed. status code {response.StatusCode}. content: {response.Content}", response.ErrorException, "nodes");
+            throw new CheckException($"node check on host {_restClient.Options.BaseUrl} failed. status code {response.StatusCode}. content: {response.Content}", response.ErrorException);
         }
 
         return response.Data ?? [];
@@ -74,7 +74,7 @@ internal class RabbitMqProxy
         var response = await _restClient.ExecuteAsync<IEnumerable<QueueDetails>>(request);
         if (!response.IsSuccessful)
         {
-            throw new CheckException($"queue check on host {_restClient.Options.BaseUrl} failed. status code {response.StatusCode}. content: {response.Content}", response.ErrorException, "nodes");
+            throw new CheckException($"queue check on host {_restClient.Options.BaseUrl} failed. status code {response.StatusCode}. content: {response.Content}", response.ErrorException);
         }
 
         return response.Data ?? [];
@@ -87,7 +87,7 @@ internal class RabbitMqProxy
         var response = await _restClient.ExecuteAsync(request);
         if (!response.IsSuccessful)
         {
-            throw new CheckException($"{name} check on host {_restClient.Options.BaseUrl} failed. status code {response.StatusCode}. content: {response.Content}", response.ErrorException, name);
+            throw new CheckException($"{name} check on host {_restClient.Options.BaseUrl} failed. status code {response.StatusCode}. content: {response.Content}", response.ErrorException);
         }
 
         logger.LogInformation("health-check '{Name}' on host {Host} succeeded", name, _restClient.BuildUri(request));
