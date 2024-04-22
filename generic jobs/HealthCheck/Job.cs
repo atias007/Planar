@@ -140,20 +140,13 @@ internal sealed class Job : BaseCheckJob
     private Defaults GetDefaults(IConfiguration configuration)
     {
         var empty = Defaults.Empty;
-        var defaults = configuration.GetSection("defaults");
-        if (defaults == null)
-        {
-            Logger.LogWarning("no defaults section found on settings file. set job factory defaults");
-            return empty;
-        }
+        var section = GetDefaultSection(configuration, Logger);
+        if (section == null) { return empty; }
 
-        var result = new Defaults
+        var result = new Defaults(section)
         {
-            SuccessStatusCodes = defaults.GetRequiredSection("success status codes").Get<int[]?>(),
-            Timeout = defaults.GetValue<TimeSpan?>("timeout") ?? empty.Timeout,
-            RetryCount = defaults.GetValue<int?>("retry count") ?? empty.RetryCount,
-            RetryInterval = defaults.GetValue<TimeSpan?>("retry interval") ?? empty.RetryInterval,
-            MaximumFailsInRow = defaults.GetValue<int?>("maximum fails in row") ?? empty.MaximumFailsInRow,
+            SuccessStatusCodes = section.GetSection("success status codes").Get<int[]?>() ?? empty.SuccessStatusCodes,
+            Timeout = section.GetValue<TimeSpan?>("timeout") ?? empty.Timeout
         };
 
         Validate(result, "defaults");
