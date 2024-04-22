@@ -1,6 +1,6 @@
 defaults:                                       # default values for all keys. each key can override these values
   retry count: 1                                # the number of retry attemp in case of failure
-  retry interval: 00:00:10                      # the interval between retry attemps
+  retry interval: 00:00:01                      # the interval between retry attemps
   maximum fails in row: 5                       # the maximum number of fails in row before the job is considered as failed
   database: 0                                   # defualt redis database number to be used
 

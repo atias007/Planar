@@ -48,8 +48,8 @@ internal class Job : BaseCheckJob
         // Fill Defaults
         redisKey.Key ??= string.Empty;
         redisKey.Key = redisKey.Key.Trim();
-        redisKey.Database ??= defaults.Database;
         FillBase(redisKey, defaults);
+        SetDefault(redisKey, () => defaults.Database);
     }
 
     private static IEnumerable<CheckKey> GetKeys(IConfiguration configuration)
@@ -84,25 +84,15 @@ internal class Job : BaseCheckJob
 
     private Defaults GetDefaults(IConfiguration configuration)
     {
-        var empty = Defaults.Empty;
-        var defaults = configuration.GetSection("defaults");
-        if (defaults == null)
+        var section = GetDefaultSection(configuration, Logger);
+        if (section == null)
         {
-            Logger.LogWarning("no defaults section found on settings file. set job factory defaults");
-            return empty;
+            return Defaults.Empty;
         }
 
-        var result = new Defaults
-        {
-            RetryCount = defaults.GetValue<int?>("retry count") ?? empty.RetryCount,
-            RetryInterval = defaults.GetValue<TimeSpan?>("retry interval") ?? empty.RetryInterval,
-            MaximumFailsInRow = defaults.GetValue<int?>("maximum fails in row") ?? empty.MaximumFailsInRow,
-            Database = defaults.GetValue<int?>("database") ?? empty.Database
-        };
-
+        var result = new Defaults(section);
         ValidateBase(result, "defaults");
         Validate(result, "defaults");
-
         return result;
     }
 
@@ -168,6 +158,7 @@ internal class Job : BaseCheckJob
             AddAggregateException(ex);
             return false;
         }
+
         return true;
     }
 }
