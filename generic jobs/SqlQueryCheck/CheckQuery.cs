@@ -20,4 +20,8 @@ internal class CheckQuery(IConfigurationSection section) : BaseDefault(section),
     public string Key => Name;
 
     public bool Active { get; private set; } = section.GetValue<bool?>("active") ?? true;
+
+    // =================== //
+
+    public string? ConnectionString { get; set; }
 }

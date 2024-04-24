@@ -124,7 +124,7 @@ internal class Job : BaseCheckJob
 
         if (!healthCheck.Active)
         {
-            Logger.LogInformation("Skipping inactive health check");
+            Logger.LogInformation("skipping inactive health check");
             return;
         }
 
@@ -188,7 +188,7 @@ internal class Job : BaseCheckJob
     {
         if (!key.Active)
         {
-            Logger.LogInformation("Skipping inactive key '{Key}'", key.Key);
+            Logger.LogInformation("skipping inactive key '{Key}'", key.Key);
             return;
         }
 

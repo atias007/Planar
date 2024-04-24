@@ -140,7 +140,7 @@ internal class Job : BaseCheckJob
     {
         if (!folder.Active)
         {
-            Logger.LogInformation("Skipping inactive folder '{Name}'", folder.Name);
+            Logger.LogInformation("skipping inactive folder '{Name}'", folder.Name);
             return;
         }
 
@@ -199,78 +199,6 @@ internal class Job : BaseCheckJob
 
         Logger.LogInformation("folder check success, folder '{FolderName}', path '{FolderPath}'",
                         folder.Name, folder.Path);
-    }
-
-    private void SafeHandleException(Folder folder, Exception ex, CheckFailCounter counter)
-    {
-        try
-        {
-            var exception = ex is CheckException ? null : ex;
-
-            if (exception == null)
-            {
-                Logger.LogError("folder check fail for folder name '{FolderName}' with path '{FolderPath}'. reason: {Message}",
-                  folder.Name, folder.Path, ex.Message);
-            }
-            else
-            {
-                Logger.LogError(exception, "folder check fail for folder name '{FolderName}' with path '{FolderPath}'. reason: {Message}",
-                    folder.Name, folder.Path, ex.Message);
-            }
-
-            var value = counter.IncrementFailCount(folder);
-
-            if (value > folder.MaximumFailsInRow)
-            {
-                Logger.LogWarning("folder check fail for folder name '{FolderName}' with path '{FolderPath}' but maximum fails in row reached. reason: {Message}",
-                    folder.Name, folder.Path, ex.Message);
-            }
-            else
-            {
-                var hcException = new CheckException($"folder check fail for folder name '{folder.Name}' with path '{folder.Path}'. reason: {ex.Message}");
-
-                AddCheckException(hcException);
-            }
-        }
-        catch (Exception innerEx)
-        {
-            AddAggregateException(innerEx);
-        }
-    }
-
-    private void SafeInvokeFolder(Folder folder)
-    {
-        var counter = ServiceProvider.GetRequiredService<CheckFailCounter>();
-
-        try
-        {
-            if (folder.RetryCount == 0)
-            {
-                InvokeFolderInner(folder);
-                return;
-            }
-
-            Policy.Handle<Exception>()
-                    .WaitAndRetry(
-                        retryCount: folder.RetryCount.GetValueOrDefault(),
-                        sleepDurationProvider: _ => folder.RetryInterval.GetValueOrDefault(),
-                         onRetry: (ex, _) =>
-                         {
-                             var exception = ex is CheckException ? null : ex;
-                             Logger.LogWarning(exception, "retry for folder name '{FolderName}' with path '{FolderPath}'. Reason: {Message}",
-                                                                     folder.Name, folder.Path, ex.Message);
-                         })
-                    .Execute(() =>
-                    {
-                        InvokeFolderInner(folder);
-                    });
-
-            counter.ResetFailCount(folder);
-        }
-        catch (Exception ex)
-        {
-            SafeHandleException(folder, ex, counter);
-        }
     }
 
     private bool ValidateFolder(Folder folder)

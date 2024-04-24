@@ -133,7 +133,7 @@ internal sealed class Job : BaseCheckJob
     {
         if (!endpoint.Active)
         {
-            Logger.LogInformation("Skipping inactive endpoint '{Name}'", endpoint.Name);
+            Logger.LogInformation("skipping inactive endpoint '{Name}'", endpoint.Name);
             return;
         }
 

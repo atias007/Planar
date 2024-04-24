@@ -18,12 +18,12 @@ internal class Job : BaseCheckJob
     {
         Initialize(ServiceProvider);
         var defaults = GetDefaults(Configuration);
-        var queries = GetQueries(Configuration, defaults);
         var connStrings = GetConnectionStrings(Configuration);
+        var queries = GetQueries(Configuration, defaults, connStrings);
         ValidateRequired(queries, "queries");
         ValidateDuplicateNames(queries, "queries");
 
-        var tasks = SafeInvokeCheck(queries, q => InvokeQueryCheckInner(q, connStrings));
+        var tasks = SafeInvokeCheck(queries, InvokeQueryCheckInner);
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
@@ -36,15 +36,15 @@ internal class Job : BaseCheckJob
         services.AddSingleton<CheckIntervalTracker>();
     }
 
-    private async Task InvokeQueryCheckInner(CheckQuery checkQuery, Dictionary<string, string> connStrings)
+    private async Task InvokeQueryCheckInner(CheckQuery checkQuery)
     {
         if (!checkQuery.Active)
         {
-            Logger.LogInformation("Skipping inactive query '{Name}'", checkQuery.Name);
+            Logger.LogInformation("skipping inactive query '{Name}'", checkQuery.Name);
             return;
         }
 
-        if (!ValidateCheckQuery(checkQuery, connStrings)) { return; }
+        if (!ValidateCheckQuery(checkQuery)) { return; }
 
         if (checkQuery.Interval.HasValue)
         {
@@ -52,22 +52,24 @@ internal class Job : BaseCheckJob
             var lastSpan = tracker.LastRunningSpan(checkQuery);
             if (lastSpan > TimeSpan.Zero && lastSpan < checkQuery.Interval)
             {
-                Logger.LogInformation("Skipping query '{Name}' due to its interval", checkQuery.Name);
+                Logger.LogInformation("skipping query '{Name}' due to its interval", checkQuery.Name);
                 return;
             }
         }
 
         var timeout = checkQuery.Timeout ?? TimeSpan.FromSeconds(30);
-        using var connection = new SqlConnection(connStrings[checkQuery.ConnectionStringName]);
+        using var connection = new SqlConnection(checkQuery.ConnectionString);
         using var cmd = new SqlCommand(checkQuery.Query, connection)
         {
             CommandTimeout = (int)timeout.TotalMilliseconds
         };
+
         await connection.OpenAsync();
-        using var reader = await cmd.ExecuteReaderAsync(System.Data.CommandBehavior.CloseConnection);
+        using var reader = await cmd.ExecuteReaderAsync();
         object? result = null;
         int count = 0;
-        while (reader.Read())
+
+        while (await reader.ReadAsync())
         {
             result ??= reader[0];
             count++;
@@ -92,7 +94,7 @@ internal class Job : BaseCheckJob
         }
     }
 
-    private bool ValidateCheckQuery(CheckQuery checkQuery, Dictionary<string, string> connStrings)
+    private bool ValidateCheckQuery(CheckQuery checkQuery)
     {
         try
         {
@@ -103,7 +105,7 @@ internal class Job : BaseCheckJob
             ValidateGreaterThen(checkQuery.Timeout, TimeSpan.FromSeconds(1), "timeout", "queries");
             ValidateGreaterThen(checkQuery.Interval, TimeSpan.FromMinutes(1), "interval", "queries");
 
-            if (!connStrings.ContainsKey(checkQuery.ConnectionStringName))
+            if (string.IsNullOrWhiteSpace(checkQuery.ConnectionString))
             {
                 throw new InvalidDataException($"connection string with name '{checkQuery.ConnectionStringName}' not found");
             }
@@ -117,13 +119,14 @@ internal class Job : BaseCheckJob
         return true;
     }
 
-    private static IEnumerable<CheckQuery> GetQueries(IConfiguration configuration, Defaults defaults)
+    private static IEnumerable<CheckQuery> GetQueries(IConfiguration configuration, Defaults defaults, Dictionary<string, string> connectionStrings)
     {
         var section = configuration.GetRequiredSection("queries");
         foreach (var item in section.GetChildren())
         {
             var key = new CheckQuery(item);
             FillBase(key, defaults);
+            key.ConnectionString = connectionStrings.GetValueOrDefault(key.ConnectionStringName);
             yield return key;
         }
     }

@@ -166,7 +166,7 @@ public class Job : BaseCheckJob
     {
         if (!node.Active)
         {
-            Logger.LogInformation("Skipping inactive nodes");
+            Logger.LogInformation("skipping inactive nodes");
             return;
         }
 
@@ -215,7 +215,7 @@ public class Job : BaseCheckJob
     {
         if (!queue.Active)
         {
-            Logger.LogInformation("Skipping inactive queue '{Name}'", queue.Name);
+            Logger.LogInformation("skipping inactive queue '{Name}'", queue.Name);
             return;
         }
 
