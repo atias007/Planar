@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Planar.Job;
 using RedisCheck;
 using RedisStream;
+using YamlDotNet.Core.Tokens;
 
 namespace RedisStreamCheck;
 
@@ -20,12 +21,17 @@ internal class Job : BaseCheckJob
         RedisFactory.Initialize(Configuration);
 
         var defaults = GetDefaults(Configuration);
-        var keys = GetKeys(Configuration);
+        var keys = GetKeys(Configuration, defaults);
+        var healthCheck = GetHealthCheck(Configuration, defaults);
         ValidateKeys(keys);
+        ValidateHealthCheck(healthCheck);
         CheckAggragateException();
-        FillDefaults(keys, defaults);
+
+        var hcTask = SafeInvokeCheck(healthCheck, InvokeHealthCheckInner);
         var tasks = SafeInvokeCheck(keys, InvokeKeyCheckInner);
         await Task.WhenAll(tasks);
+        await hcTask;
+
         CheckAggragateException();
         HandleCheckExceptions();
     }
@@ -35,30 +41,47 @@ internal class Job : BaseCheckJob
         services.RegisterBaseCheck();
     }
 
-    private static void FillDefaults(IEnumerable<CheckKey> redisKeys, Defaults defaults)
-    {
-        foreach (var f in redisKeys)
-        {
-            FillDefaults(f, defaults);
-        }
-    }
-
     private static void FillDefaults(CheckKey redisKey, Defaults defaults)
     {
         // Fill Defaults
         redisKey.Key ??= string.Empty;
         redisKey.Key = redisKey.Key.Trim();
         FillBase(redisKey, defaults);
-        SetDefault(redisKey, () => defaults.Database);
+        redisKey.Database ??= defaults.Database;
     }
 
-    private static IEnumerable<CheckKey> GetKeys(IConfiguration configuration)
+    private static HealthCheck GetHealthCheck(IConfiguration configuration, Defaults defaults)
+    {
+        HealthCheck result;
+        var hc = configuration.GetSection("health check");
+        if (hc == null)
+        {
+            result = HealthCheck.Empty;
+        }
+        else
+        {
+            result = new HealthCheck(hc)
+            {
+                Ping = hc.GetValue<bool?>("ping"),
+                ConnectedClients = hc.GetValue<int?>("connected clients"),
+                Latency = hc.GetValue<int?>("latency"),
+                UsedMemory = hc.GetValue<string>("used memory")
+            };
+        }
+
+        FillBase(result, defaults);
+
+        return result;
+    }
+
+    private static IEnumerable<CheckKey> GetKeys(IConfiguration configuration, Defaults defaults)
     {
         var keys = configuration.GetRequiredSection("keys");
         foreach (var item in keys.GetChildren())
         {
-            var folder = new CheckKey(item);
-            yield return folder;
+            var key = new CheckKey(item);
+            FillDefaults(key, defaults);
+            yield return key;
         }
     }
 
@@ -91,9 +114,73 @@ internal class Job : BaseCheckJob
         }
 
         var result = new Defaults(section);
-        ValidateBase(result, "defaults");
         Validate(result, "defaults");
+        ValidateBase(result, "defaults");
         return result;
+    }
+
+    private async Task InvokeHealthCheckInner(HealthCheck healthCheck)
+    {
+        string? GetLineValue(IEnumerable<string> lines, string name)
+        {
+            if (lines == null) { return null; }
+            var line = lines.FirstOrDefault(l => l.StartsWith($"{name}:"));
+            if (string.IsNullOrWhiteSpace(line)) { return null; }
+            return line[(name.Length + 1)..];
+        }
+
+        if (healthCheck.Ping.HasValue || healthCheck.Latency.HasValue)
+        {
+            TimeSpan span;
+            try
+            {
+                span = await RedisFactory.Ping();
+                Logger.LogInformation("ping/latency health check ok. latency {Latency:N2}ms", span.TotalMilliseconds);
+            }
+            catch (Exception ex)
+            {
+                throw new CheckException($"ping/latency health check fail. reason: {ex.Message}");
+            }
+
+            if (healthCheck.Latency.HasValue && span.TotalMilliseconds > healthCheck.Latency.Value)
+            {
+                throw new CheckException($"latency of {span.TotalMilliseconds:N2} ms is greater then {healthCheck.Latency.Value:N0} ms");
+            }
+        }
+
+        if (healthCheck.ConnectedClients.HasValue)
+        {
+            var info = await RedisFactory.Info("Clients");
+            var ccString = GetLineValue(info, "connected_clients");
+            var maxString = GetLineValue(info, "maxclients");
+
+            if (int.TryParse(ccString, out var cc) && int.TryParse(maxString, out var max))
+            {
+                Logger.LogInformation("connected clients is {Clients:N0}. maximum clients is {MaxClients:N0}", cc, max);
+
+                if (cc > healthCheck.ConnectedClients)
+                {
+                    throw new CheckException($"connected clients ({cc:N0}) is greater then {healthCheck.ConnectedClients:N0}");
+                }
+            }
+        }
+
+        if (healthCheck.UsedMemoryNumber > 0)
+        {
+            var info = await RedisFactory.Info("Memory");
+            var memString = GetLineValue(info, "used_memory");
+            var maxString = GetLineValue(info, "maxmemory");
+
+            if (int.TryParse(memString, out var memory) && int.TryParse(maxString, out var max))
+            {
+                Logger.LogInformation("used memory is {Memory:N0} bytes. maximum memory is {MaxMemory:N0} bytes", memory, max);
+            }
+
+            if (memory > healthCheck.UsedMemoryNumber)
+            {
+                throw new CheckException($"used memory ({memory:N0}) bytes is greater then {healthCheck.UsedMemoryNumber:N0} bytes");
+            }
+        }
     }
 
     private async Task InvokeKeyCheckInner(CheckKey key)
@@ -134,6 +221,19 @@ internal class Job : BaseCheckJob
         try
         {
             ValidateRequired(keys, "keys", "root");
+        }
+        catch (Exception ex)
+        {
+            AddAggregateException(ex);
+        }
+    }
+
+    private void ValidateHealthCheck(HealthCheck healthCheck)
+    {
+        try
+        {
+            ValidateGreaterThen(healthCheck.ConnectedClients, 0, "connected clients", "health check");
+            ValidateGreaterThen(healthCheck.UsedMemoryNumber, 0, "used memory", "health check");
         }
         catch (Exception ex)
         {

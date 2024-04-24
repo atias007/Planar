@@ -27,9 +27,9 @@ internal static class RedisFactory
         Endpoints = section.GetValue<string>("endpoints")?.Split(',').ToList() ?? [];
     }
 
-    public async static Task Ping()
+    public async static Task<TimeSpan> Ping()
     {
-        await Connection.GetDatabase().PingAsync();
+        return await Connection.GetDatabase().PingAsync();
     }
 
     public static async Task<long> GetMemoryUsage(CheckKey redisKey)
@@ -46,6 +46,13 @@ internal static class RedisFactory
     public static async Task<bool> Exists(CheckKey redisKey)
     {
         return await GetDatabase(redisKey).KeyExistsAsync(redisKey.Key);
+    }
+
+    public static async Task<IEnumerable<string>> Info(string section)
+    {
+        var db = Connection.GetDatabase();
+        var value = await db.ExecuteAsync("INFO", section);
+        return value.ToString().Split();
     }
 
     public static async Task<long> GetLength(CheckKey redisKey)
@@ -66,6 +73,11 @@ internal static class RedisFactory
     private static IDatabase GetDatabase(CheckKey redisKey)
     {
         var database = redisKey.Database.GetValueOrDefault();
+        return GetDatabase(database);
+    }
+
+    private static IDatabase GetDatabase(int database)
+    {
         if (_databases.TryGetValue(database, out var db)) { return db; }
         lock (Locker)
         {

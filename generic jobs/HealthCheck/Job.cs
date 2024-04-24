@@ -3,7 +3,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
-using Polly;
 
 namespace HealthCheck;
 
@@ -15,7 +14,8 @@ internal sealed class Job : BaseCheckJob
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
-        var tasks = new List<Task>();
+        Initialize(ServiceProvider);
+
         var defaults = GetDefaults(Configuration);
         var hosts = GetHosts(Configuration);
         var endpoints = GetEndpoints(Configuration, hosts);
@@ -23,14 +23,7 @@ internal sealed class Job : BaseCheckJob
         CheckAggragateException();
 
         using var client = new HttpClient();
-        foreach (var ep in endpoints)
-        {
-            FillDefaults(ep, defaults);
-            if (!ValidateEndpoint(ep)) { continue; }
-            var task = SafeInvokeEndpoint(ep, client);
-            tasks.Add(task);
-        }
-
+        var tasks = SafeInvokeCheck(endpoints, ep => InvokeEndpointInner(ep, defaults, client));
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
@@ -39,14 +32,14 @@ internal sealed class Job : BaseCheckJob
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
-        services.AddSingleton<CheckFailCounter>();
+        services.RegisterBaseCheck();
     }
 
     private static void FillDefaults(Endpoint endpoint, Defaults defaults)
     {
         SetDefaultName(endpoint, () => endpoint.Name);
-        SetDefault(endpoint, () => defaults.SuccessStatusCodes);
-        SetDefault(endpoint, () => defaults.Timeout);
+        endpoint.SuccessStatusCodes ??= defaults.SuccessStatusCodes;
+        endpoint.Timeout ??= defaults.Timeout;
         FillBase(endpoint, defaults);
     }
 
@@ -99,16 +92,6 @@ internal sealed class Job : BaseCheckJob
         {
             throw new InvalidDataException($"'timeout' on {section} section is greater then 20 minutes");
         }
-
-        if ((endpoint.RetryInterval?.TotalSeconds ?? 0) < 1)
-        {
-            throw new InvalidDataException($"'retry interval' on {section} section is null or less then 1 second");
-        }
-
-        if ((endpoint.RetryInterval?.TotalMinutes ?? 0) > 1)
-        {
-            throw new InvalidDataException($"'retry interval' on {section} section is greater then 1 minutes");
-        }
     }
 
     private static void ValidateName(Endpoint endpoint)
@@ -121,20 +104,9 @@ internal sealed class Job : BaseCheckJob
 
     private static void ValidateUrl(Endpoint endpoint)
     {
-        if (string.IsNullOrWhiteSpace(endpoint.Url))
-        {
-            throw new InvalidDataException($"'url' on endpoint name '{endpoint.Name}' is null or empty");
-        }
-
-        if (endpoint.Url.Length > 1000)
-        {
-            throw new InvalidDataException($"'url' on endpoint name '{endpoint.Name}' must be less then 1000");
-        }
-
-        if (!Uri.TryCreate(endpoint.Url, UriKind.Absolute, out _))
-        {
-            throw new InvalidDataException($"'url' on endpoint name '{endpoint.Name}' with value '{endpoint.Url}' is not valid uri");
-        }
+        ValidateRequired(endpoint.Url, "url", endpoint.Name);
+        ValidateMaxLength(endpoint.Url, 1000, "url", endpoint.Name);
+        ValidateUri(endpoint.Url, "url", endpoint.Name);
     }
 
     private Defaults GetDefaults(IConfiguration configuration)
@@ -151,13 +123,25 @@ internal sealed class Job : BaseCheckJob
 
         Validate(result, "defaults");
         ValidateBase(result, "defaults");
-
         return result;
     }
 
-    private async Task InvokeEndpointInner(Endpoint endpoint, HttpClient client)
+    private async Task InvokeEndpointInner(Endpoint endpoint, Defaults defaults, HttpClient client)
     {
-        var response = await client.GetAsync(endpoint.Url);
+        FillDefaults(endpoint, defaults);
+        if (!ValidateEndpoint(endpoint)) { return; }
+
+        HttpResponseMessage response;
+        try
+        {
+            using var source = new CancellationTokenSource(endpoint.Timeout.GetValueOrDefault());
+            response = await client.GetAsync(endpoint.Url, source.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{endpoint.Url}'. timeout expire");
+        }
+
         endpoint.SuccessStatusCodes ??= new List<int> { 200 };
 
         if (endpoint.SuccessStatusCodes.Any(s => s == (int)response.StatusCode))
@@ -167,79 +151,7 @@ internal sealed class Job : BaseCheckJob
             return;
         }
 
-        throw new CheckException($"Status code {response.StatusCode} ({(int)response.StatusCode}) is not in success status codes list");
-    }
-
-    private void SafeHandleException(Endpoint endpoint, Exception ex, CheckFailCounter counter)
-    {
-        try
-        {
-            var exception = ex is CheckException ? null : ex;
-
-            if (exception == null)
-            {
-                Logger.LogError("health check fail for endpoint name '{EndpointName}' with url '{EndpointUrl}'. reason: {Message}",
-                  endpoint.Name, endpoint.Url, ex.Message);
-            }
-            else
-            {
-                Logger.LogError(exception, "health check fail for endpoint name '{EndpointName}' with url '{EndpointUrl}'. reason: {Message}",
-                    endpoint.Name, endpoint.Url, ex.Message);
-            }
-
-            var value = counter.IncrementFailCount(endpoint);
-
-            if (value > endpoint.MaximumFailsInRow)
-            {
-                Logger.LogWarning("health check fail for endpoint name '{EndpointName}' with url '{EndpointUrl}' but maximum fails in row reached. reason: {Message}",
-                    endpoint.Name, endpoint.Url, ex.Message);
-            }
-            else
-            {
-                var hcException = new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{endpoint.Url}. reason: {ex.Message}");
-
-                AddCheckException(hcException);
-            }
-        }
-        catch (Exception innerEx)
-        {
-            AddAggregateException(innerEx);
-        }
-    }
-
-    private async Task SafeInvokeEndpoint(Endpoint endpoint, HttpClient client)
-    {
-        var counter = ServiceProvider.GetRequiredService<CheckFailCounter>();
-
-        try
-        {
-            if (endpoint.RetryCount == 0)
-            {
-                await InvokeEndpointInner(endpoint, client);
-                return;
-            }
-
-            await Policy.Handle<Exception>()
-                    .WaitAndRetryAsync(
-                        retryCount: endpoint.RetryCount.GetValueOrDefault(),
-                        sleepDurationProvider: _ => endpoint.RetryInterval.GetValueOrDefault(),
-                         onRetry: (ex, _) =>
-                         {
-                             var exception = ex is CheckException ? null : ex;
-                             Logger.LogWarning(exception, "retry for endpoint name '{EndpointName}' with url '{EndpointUrl}'. Reason: {Message}",
-                                                                     endpoint.Name, endpoint.Url, ex.Message);
-                         })
-                    .ExecuteAsync(async () =>
-                    {
-                        await InvokeEndpointInner(endpoint, client);
-                    });
-
-            counter.ResetFailCount(endpoint);
-        }
-        catch (Exception ex)
-        {
-            SafeHandleException(endpoint, ex, counter);
-        }
+        throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{endpoint.Url}' status code {response.StatusCode} ({(int)response.StatusCode}) is not in success status codes list");
     }
 
     private bool ValidateEndpoint(Endpoint endpoint)
@@ -264,10 +176,7 @@ internal sealed class Job : BaseCheckJob
     {
         try
         {
-            if (endpoints == null || !endpoints.Any())
-            {
-                throw new InvalidDataException("endpoints section is null or empty");
-            }
+            ValidateRequired(endpoints, "endpoints", "root");
 
             var duplicates1 = endpoints.GroupBy(x => x.Url).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
             if (duplicates1.Count != 0)

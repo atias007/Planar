@@ -12,6 +12,7 @@ defaults:                                       # default values for all keys. e
 
 health check: 
   ping: true                                    # the job will fail if the ping is not ok
+  latency: 1000                                 # the maximum ping latency in ms
   connected clients: 9000                       # the maximum number of connected clients (the default redis server maximum connected clients is 10,000)
   used memory: 10mb                             # the maximum memory usage
 

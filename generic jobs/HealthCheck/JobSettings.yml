@@ -23,6 +23,6 @@ endpoints:
   - name: Local IIS
     url: http://{{host}}
     success status codes: [400]
-    timeout: 00:01:00
-    retry count: 5
+    timeout: 00:00:01
+    retry count: 3
     retry interval: 00:00:01

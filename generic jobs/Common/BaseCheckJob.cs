@@ -42,17 +42,6 @@ public abstract class BaseCheckJob : BaseJob
         return defaults;
     }
 
-    protected static void SetDefault<TTarget, TProperty>(TTarget target, Func<TProperty?> func)
-    {
-        var propertyName = func.Method.Name[4..]; // Remove "get_" prefix
-        var sourceValue = func();
-        if (Equals(sourceValue, default(TProperty?)))
-        {
-            var targetPropertyInfo = typeof(TTarget).GetProperty(propertyName);
-            targetPropertyInfo?.SetValue(target, sourceValue);
-        }
-    }
-
     protected static void SetDefaultName<T>(T entity, Func<string> func)
     {
         const string noname = "[no name]";
@@ -73,7 +62,7 @@ public abstract class BaseCheckJob : BaseJob
     protected static void ValidateBase(BaseDefault @default, string section)
     {
         ValidateRequired(@default.RetryInterval, "retry interval", section);
-        ValidateGreaterThen(@default.RetryInterval?.TotalSeconds, 1, "retry interval", section);
+        ValidateGreaterThenOrEquals(@default.RetryInterval?.TotalSeconds, 1, "retry interval", section);
         ValidateLessThen(@default.RetryInterval?.TotalMinutes, 1, "retry interval", section);
         ValidateGreaterThenOrEquals(@default.RetryCount, 0, "retry count", section);
         ValidateLessThenOrEquals(@default.RetryCount, 10, "retry count", section);
@@ -221,7 +210,7 @@ public abstract class BaseCheckJob : BaseJob
                 return;
             }
 
-            if (IsCounterValid())
+            if (!IsCounterValid())
             {
                 Logger.LogWarning("check failed but maximum fails in row reached for key '{Key}'. reason: {Message}",
                     entity.Key, ex.Message);
