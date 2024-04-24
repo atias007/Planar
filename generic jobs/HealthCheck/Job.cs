@@ -20,7 +20,6 @@ internal sealed class Job : BaseCheckJob
         var hosts = GetHosts(Configuration);
         var endpoints = GetEndpoints(Configuration, hosts);
         ValidateEndpoints(endpoints);
-        CheckAggragateException();
 
         using var client = new HttpClient();
         var tasks = SafeInvokeCheck(endpoints, ep => InvokeEndpointInner(ep, defaults, client));
@@ -172,21 +171,14 @@ internal sealed class Job : BaseCheckJob
         return true;
     }
 
-    private void ValidateEndpoints(IEnumerable<Endpoint> endpoints)
+    private static void ValidateEndpoints(IEnumerable<Endpoint> endpoints)
     {
-        try
-        {
-            ValidateRequired(endpoints, "endpoints", "root");
+        ValidateRequired(endpoints, "endpoints", "root");
 
-            var duplicates1 = endpoints.GroupBy(x => x.Url).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
-            if (duplicates1.Count != 0)
-            {
-                throw new InvalidDataException($"duplicated endpoint urls found: {string.Join(", ", duplicates1)}");
-            }
-        }
-        catch (Exception ex)
+        var duplicates1 = endpoints.GroupBy(x => x.Url).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
+        if (duplicates1.Count != 0)
         {
-            AddAggregateException(ex);
+            throw new InvalidDataException($"duplicated endpoint urls found: {string.Join(", ", duplicates1)}");
         }
     }
 }

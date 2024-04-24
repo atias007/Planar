@@ -23,8 +23,7 @@ public class Job : BaseCheckJob
         var node = GetNode(Configuration);
         var queues = GetQueue(Configuration);
 
-        ValidateHosts(server.Hosts);
-        CheckAggragateException();
+        CommonUtil.ValidateItems(server.Hosts, "servers --> hosts");
 
         // health check
         FillBase(healthCheck, defaults);
@@ -301,18 +300,6 @@ public class Job : BaseCheckJob
         foreach (var host in server.Hosts)
         {
             await SafeInvokeCheck(node, n => InvokeNodeCheckInner(n, server, host));
-        }
-    }
-
-    private void ValidateHosts(IEnumerable<string> hosts)
-    {
-        try
-        {
-            CommonUtil.ValidateItems(hosts, "servers --> hosts");
-        }
-        catch (Exception ex)
-        {
-            AddAggregateException(ex);
         }
     }
 }

@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using Planar.Job;
 using RedisCheck;
 using RedisStream;
-using YamlDotNet.Core.Tokens;
 
 namespace RedisStreamCheck;
 
@@ -23,9 +22,8 @@ internal class Job : BaseCheckJob
         var defaults = GetDefaults(Configuration);
         var keys = GetKeys(Configuration, defaults);
         var healthCheck = GetHealthCheck(Configuration, defaults);
-        ValidateKeys(keys);
+        ValidateRequired(keys, "keys", "root");
         ValidateHealthCheck(healthCheck);
-        CheckAggragateException();
 
         var hcTask = SafeInvokeCheck(healthCheck, InvokeHealthCheckInner);
         var tasks = SafeInvokeCheck(keys, InvokeKeyCheckInner);
@@ -216,29 +214,10 @@ internal class Job : BaseCheckJob
         Logger.LogInformation("redis check success for key '{Key}'", key.Key);
     }
 
-    private void ValidateKeys(IEnumerable<CheckKey> keys)
+    private static void ValidateHealthCheck(HealthCheck healthCheck)
     {
-        try
-        {
-            ValidateRequired(keys, "keys", "root");
-        }
-        catch (Exception ex)
-        {
-            AddAggregateException(ex);
-        }
-    }
-
-    private void ValidateHealthCheck(HealthCheck healthCheck)
-    {
-        try
-        {
-            ValidateGreaterThen(healthCheck.ConnectedClients, 0, "connected clients", "health check");
-            ValidateGreaterThen(healthCheck.UsedMemoryNumber, 0, "used memory", "health check");
-        }
-        catch (Exception ex)
-        {
-            AddAggregateException(ex);
-        }
+        ValidateGreaterThen(healthCheck.ConnectedClients, 0, "connected clients", "health check");
+        ValidateGreaterThen(healthCheck.UsedMemoryNumber, 0, "used memory", "health check");
     }
 
     private bool ValidateRedisKey(CheckKey redisKey)

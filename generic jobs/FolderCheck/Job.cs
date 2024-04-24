@@ -15,21 +15,12 @@ internal class Job : BaseCheckJob
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
-        var tasks = new List<Task>();
         var defaults = GetDefaults(Configuration);
         var hosts = GetHosts(Configuration);
-        var folders = GetFolders(Configuration, hosts);
-        ValidateFolders(folders);
-        CheckAggragateException();
+        var folders = GetFolders(Configuration, hosts, defaults);
+        CommonUtil.ValidateItems(folders, "folders", "path");
 
-        foreach (var f in folders)
-        {
-            FillDefaults(f, defaults);
-            if (!ValidateFolder(f)) { continue; }
-            var task = Task.Run(() => SafeInvokeFolder(f));
-            tasks.Add(task);
-        }
-
+        var tasks = SafeInvokeCheck(folders, InvokeFolderInnerAsync);
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
@@ -39,12 +30,6 @@ internal class Job : BaseCheckJob
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
         services.RegisterBaseCheck();
-    }
-
-    private static void FillDefaults(Folder folder, Defaults defaults)
-    {
-        SetDefaultName(folder, () => folder.Name);
-        FillBase(folder, defaults);
     }
 
     private static IEnumerable<FileInfo> GetFiles(Folder folder)
@@ -62,7 +47,7 @@ internal class Job : BaseCheckJob
         }
     }
 
-    private static IEnumerable<Folder> GetFolders(IConfiguration configuration, IEnumerable<string> hosts)
+    private static IEnumerable<Folder> GetFolders(IConfiguration configuration, IEnumerable<string> hosts, Defaults defaults)
     {
         const string hostPlaceholder = "{{host}}";
 
@@ -76,12 +61,18 @@ internal class Job : BaseCheckJob
                 {
                     var path2 = path.Replace(hostPlaceholder, host);
                     var folder = new Folder(item, path2);
+                    FillBase(folder, defaults);
+                    SetDefaultName(folder, () => folder.Name);
+                    folder.SetMonitorArguments();
                     yield return folder;
                 }
             }
             else
             {
                 var folder = new Folder(item, path);
+                FillBase(folder, defaults);
+                SetDefaultName(folder, () => folder.Name);
+                folder.SetMonitorArguments();
                 yield return folder;
             }
         }
@@ -134,20 +125,21 @@ internal class Job : BaseCheckJob
             return empty;
         }
 
-        var result = new Defaults
-        {
-            RetryCount = defaults.GetValue<int?>("retry count") ?? empty.RetryCount,
-            RetryInterval = defaults.GetValue<TimeSpan?>("retry interval") ?? empty.RetryInterval,
-            MaximumFailsInRow = defaults.GetValue<int?>("maximum fails in row") ?? empty.MaximumFailsInRow,
-        };
-
+        var result = new Defaults(defaults);
         ValidateBase(result, "defaults");
 
         return result;
     }
 
+    private async Task InvokeFolderInnerAsync(Folder folder)
+    {
+        await Task.Run(() => InvokeFolderInner(folder));
+    }
+
     private void InvokeFolderInner(Folder folder)
     {
+        if (!ValidateFolder(folder)) { return; }
+
         var files = GetFiles(folder);
         if (folder.TotalSizeNumber != null)
         {
@@ -287,7 +279,6 @@ internal class Job : BaseCheckJob
             ValidateMaxLength(folder.Path, 1000, "path", "folders");
             ValidatePathExists(folder);
 
-            folder.SetMonitorArguments();
             ValidateGreaterThen(folder.TotalSizeNumber, 0, "total size", section);
             ValidateGreaterThen(folder.FileSizeNumber, 0, "file size", section);
             ValidateGreaterThen(folder.FileCount, 0, "file count", section);
@@ -305,17 +296,5 @@ internal class Job : BaseCheckJob
         }
 
         return true;
-    }
-
-    private void ValidateFolders(IEnumerable<Folder> folders)
-    {
-        try
-        {
-            CommonUtil.ValidateItems(folders, "folders", "path");
-        }
-        catch (Exception ex)
-        {
-            AddAggregateException(ex);
-        }
     }
 }

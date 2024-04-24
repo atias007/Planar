@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace FolderCheck;
 
-internal class Folder(IConfigurationSection section, string path) : BaseDefault(section), IFolder, ICheckElemnt
+internal class Folder(IConfigurationSection section, string path) : BaseDefault(section), ICheckElemnt
 {
     public string Name { get; set; } = section.GetValue<string>("name") ?? string.Empty;
     public string Path { get; private set; } = path;

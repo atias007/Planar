@@ -14,6 +14,5 @@ simple triggers:                      # List of simple triggers
   - name: every-10minute-trigger      # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
     interval: 00:10:00                # Interval
     misfire behaviour: FireNow        # [ FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount ]
-    calendar: null                    # Calendar name
     timeout: 00:05:00                 # Execution timeout. If timout span passed then cancel command is executed
     
