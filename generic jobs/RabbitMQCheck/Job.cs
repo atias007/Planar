@@ -2,7 +2,10 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Planar.Job;
+using System.Net;
+using System.Xml.Linq;
 
 namespace RabbitMQCheck;
 
@@ -23,7 +26,8 @@ public class Job : BaseCheckJob
         var node = GetNode(Configuration);
         var queues = GetQueue(Configuration);
 
-        CommonUtil.ValidateItems(server.Hosts, "servers --> hosts");
+        ValidateRequired(server.Hosts, "hosts", "server");
+        ValidateDuplicateNames(queues, "queues");
 
         // health check
         FillBase(healthCheck, defaults);
@@ -128,6 +132,12 @@ public class Job : BaseCheckJob
 
     private async Task InvokeHealthCheckInner(HealthCheck healthCheck, Server server, string host)
     {
+        if (!healthCheck.Active)
+        {
+            Logger.LogInformation("Skipping inactive health check");
+            return;
+        }
+
         if (!healthCheck.IsValid) { return; }
 
         var proxy = RabbitMqProxy.GetProxy(host, server, Logger);
@@ -154,6 +164,12 @@ public class Job : BaseCheckJob
 
     private async Task InvokeNodeCheckInner(Node node, Server server, string host)
     {
+        if (!node.Active)
+        {
+            Logger.LogInformation("Skipping inactive nodes");
+            return;
+        }
+
         if (!node.IsValid) { return; }
 
         var proxy = RabbitMqProxy.GetProxy(host, server, Logger);
@@ -197,6 +213,12 @@ public class Job : BaseCheckJob
 
     private async Task InvokeQueueCheckInner(Queue queue, Server server, IEnumerable<QueueDetails> details)
     {
+        if (!queue.Active)
+        {
+            Logger.LogInformation("Skipping inactive queue '{Name}'", queue.Name);
+            return;
+        }
+
         if (!queue.IsValid) { return; }
         var host = server.DefaultHost;
 

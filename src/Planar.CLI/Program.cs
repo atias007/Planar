@@ -390,7 +390,7 @@ namespace Planar.CLI
                 AnsiConsole.WriteLine();
                 AnsiConsole.WriteLine(AsciiChart.Sharp.AsciiChart.Plot(response.Plot.Series, options));
             }
-            else if (response.Tables != null && response.Tables.Any())
+            else if (response.Tables != null && response.Tables.Count != 0)
             {
                 PrintTables(console, response);
             }
@@ -787,7 +787,14 @@ namespace Planar.CLI
             if (message == "[]") { message = null; }
             if (string.IsNullOrEmpty(message)) { return; }
 
-            console.WriteLine(message);
+            if (response.FormattedMessage.GetValueOrDefault())
+            {
+                console.MarkupLine(message);
+            }
+            else
+            {
+                console.WriteLine(message);
+            }
         }
 
         private static void MarkupCliLine(string message)

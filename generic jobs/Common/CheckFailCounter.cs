@@ -4,7 +4,7 @@ using Planar.Job;
 
 public class CheckFailCounter(IBaseJob baseJob)
 {
-    public int IncrementFailCount(ICheckElemnt element)
+    public int IncrementFailCount(ICheckElement element)
     {
         var key = GetKey(element);
         int count = 1;
@@ -17,11 +17,11 @@ public class CheckFailCounter(IBaseJob baseJob)
         return count;
     }
 
-    public void ResetFailCount(ICheckElemnt element)
+    public void ResetFailCount(ICheckElement element)
     {
         var key = GetKey(element);
         baseJob.RemoveJobData(key);
     }
 
-    private static string GetKey(ICheckElemnt element) => $"fail.count.{element.Key}";
+    private static string GetKey(ICheckElement element) => $"fail.count.{element.Key}";
 }

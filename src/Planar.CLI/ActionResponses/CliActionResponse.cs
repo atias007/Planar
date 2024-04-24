@@ -17,10 +17,11 @@ namespace Planar.CLI
             Response = response;
         }
 
-        public CliActionResponse(RestResponse? response, string? message)
+        public CliActionResponse(RestResponse? response, string? message, bool? formattedMessage = false)
             : this(response)
         {
             Message = message;
+            FormattedMessage = formattedMessage;
         }
 
         public CliActionResponse(RestResponse? response, CliTable table)
@@ -77,6 +78,7 @@ namespace Planar.CLI
         public RestResponse Response { get; private set; }
 
         public string? Message { get; private set; }
+        public bool? FormattedMessage { get; private set; }
 
         public List<CliDumpObject>? DumpObjects { get; private set; }
 

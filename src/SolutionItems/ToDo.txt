@@ -303,3 +303,6 @@ V1.7.2
 - Add Clear to planar nuget datamap
 - HealthCheck MonitorJob
 - FolderCheck MonitorJob
+- RedisCheck MonitorJob
+- RabbitMQCheck MonitorJob
+- add markup to cli in log display

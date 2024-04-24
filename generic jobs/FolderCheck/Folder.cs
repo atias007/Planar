@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace FolderCheck;
 
-internal class Folder(IConfigurationSection section, string path) : BaseDefault(section), ICheckElemnt
+internal class Folder(IConfigurationSection section, string path) : BaseDefault(section), INamedCheckElement
 {
     public string Name { get; set; } = section.GetValue<string>("name") ?? string.Empty;
     public string Path { get; private set; } = path;
@@ -14,6 +14,7 @@ internal class Folder(IConfigurationSection section, string path) : BaseDefault(
     public int? FileCount { get; private set; } = section.GetValue<int?>("file count");
     public string? CreatedAge { get; private set; } = section.GetValue<string?>("created age");
     public string? ModifiedAge { get; private set; } = section.GetValue<string?>("modified age");
+    public bool Active { get; private set; } = section.GetValue<bool?>("active") ?? true;
 
     //// --------------------------------------- ////
 
@@ -22,7 +23,7 @@ internal class Folder(IConfigurationSection section, string path) : BaseDefault(
     public long? FileSizeNumber { get; private set; }
     public DateTime? CreatedAgeDate { get; private set; }
     public DateTime? ModifiedAgeDate { get; private set; }
-    public string Key => Path;
+    public string Key => Name;
 
     public void SetDefaultFilePattern()
     {

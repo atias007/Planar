@@ -22,8 +22,8 @@ internal class Job : BaseCheckJob
         var defaults = GetDefaults(Configuration);
         var keys = GetKeys(Configuration, defaults);
         var healthCheck = GetHealthCheck(Configuration, defaults);
-        ValidateRequired(keys, "keys", "root");
-        ValidateHealthCheck(healthCheck);
+        ValidateRequired(keys, "keys");
+        ValidateDuplicateKeys(keys, "keys");
 
         var hcTask = SafeInvokeCheck(healthCheck, InvokeHealthCheckInner);
         var tasks = SafeInvokeCheck(keys, InvokeKeyCheckInner);
@@ -39,7 +39,7 @@ internal class Job : BaseCheckJob
         services.RegisterBaseCheck();
     }
 
-    private static void FillDefaults(CheckKey redisKey, Defaults defaults)
+    private static void FillDefaults(RedisKey redisKey, Defaults defaults)
     {
         // Fill Defaults
         redisKey.Key ??= string.Empty;
@@ -58,13 +58,7 @@ internal class Job : BaseCheckJob
         }
         else
         {
-            result = new HealthCheck(hc)
-            {
-                Ping = hc.GetValue<bool?>("ping"),
-                ConnectedClients = hc.GetValue<int?>("connected clients"),
-                Latency = hc.GetValue<int?>("latency"),
-                UsedMemory = hc.GetValue<string>("used memory")
-            };
+            result = new HealthCheck(hc);
         }
 
         FillBase(result, defaults);
@@ -72,13 +66,14 @@ internal class Job : BaseCheckJob
         return result;
     }
 
-    private static IEnumerable<CheckKey> GetKeys(IConfiguration configuration, Defaults defaults)
+    private static IEnumerable<RedisKey> GetKeys(IConfiguration configuration, Defaults defaults)
     {
         var keys = configuration.GetRequiredSection("keys");
         foreach (var item in keys.GetChildren())
         {
-            var key = new CheckKey(item);
+            var key = new RedisKey(item);
             FillDefaults(key, defaults);
+            key.SetSize();
             yield return key;
         }
     }
@@ -89,13 +84,13 @@ internal class Job : BaseCheckJob
         ValidateLessThenOrEquals(redisKey.Database, 16, "database", section);
     }
 
-    private static void ValidateKey(CheckKey redisKey)
+    private static void ValidateKey(RedisKey redisKey)
     {
         ValidateRequired(redisKey.Key, "key", "keys");
         ValidateMaxLength(redisKey.Key, 1024, "key", "keys");
     }
 
-    private static void ValidateNoArguments(CheckKey redisKey)
+    private static void ValidateNoArguments(RedisKey redisKey)
     {
         if (!redisKey.IsValid)
         {
@@ -126,6 +121,14 @@ internal class Job : BaseCheckJob
             if (string.IsNullOrWhiteSpace(line)) { return null; }
             return line[(name.Length + 1)..];
         }
+
+        if (!healthCheck.Active)
+        {
+            Logger.LogInformation("Skipping inactive health check");
+            return;
+        }
+
+        if (!ValidateHealthCheck(healthCheck)) { return; }
 
         if (healthCheck.Ping.HasValue || healthCheck.Latency.HasValue)
         {
@@ -181,8 +184,14 @@ internal class Job : BaseCheckJob
         }
     }
 
-    private async Task InvokeKeyCheckInner(CheckKey key)
+    private async Task InvokeKeyCheckInner(RedisKey key)
     {
+        if (!key.Active)
+        {
+            Logger.LogInformation("Skipping inactive key '{Key}'", key.Key);
+            return;
+        }
+
         if (!ValidateRedisKey(key)) { return; }
 
         await RedisFactory.Exists(key);
@@ -214,20 +223,28 @@ internal class Job : BaseCheckJob
         Logger.LogInformation("redis check success for key '{Key}'", key.Key);
     }
 
-    private static void ValidateHealthCheck(HealthCheck healthCheck)
+    private bool ValidateHealthCheck(HealthCheck healthCheck)
     {
-        ValidateGreaterThen(healthCheck.ConnectedClients, 0, "connected clients", "health check");
-        ValidateGreaterThen(healthCheck.UsedMemoryNumber, 0, "used memory", "health check");
+        try
+        {
+            ValidateGreaterThen(healthCheck.ConnectedClients, 0, "connected clients", "health check");
+            ValidateGreaterThen(healthCheck.UsedMemoryNumber, 0, "used memory", "health check");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            AddAggregateException(ex);
+            return false;
+        }
     }
 
-    private bool ValidateRedisKey(CheckKey redisKey)
+    private bool ValidateRedisKey(RedisKey redisKey)
     {
         try
         {
             ValidateBase(redisKey, $"key ({redisKey.Key})");
             Validate(redisKey, $"key ({redisKey.Key})");
             ValidateKey(redisKey);
-            redisKey.SetSize();
             ValidateGreaterThen(redisKey.MemoryUsageNumber, 0, "max memory usage", "keys");
             ValidateGreaterThen(redisKey.Length, 0, "max length", "keys");
             ValidateNoArguments(redisKey);

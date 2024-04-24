@@ -1,7 +1,8 @@
 namespace Common;
 
-public interface ICheckElemnt
+public interface ICheckElement
 {
     string Key { get; }
+    bool Active { get; }
     TimeSpan? Span { get; }
 }

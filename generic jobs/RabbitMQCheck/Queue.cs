@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace RabbitMQCheck;
 
-internal class Queue(IConfigurationSection section) : BaseDefault(section), ICheckElemnt
+internal class Queue(IConfigurationSection section) : BaseDefault(section), INamedCheckElement
 {
     public string Name { get; private set; } = section.GetValue<string>("name") ?? string.Empty;
     public int? Messages { get; private set; } = section.GetValue<int?>("messages");
@@ -12,7 +12,7 @@ internal class Queue(IConfigurationSection section) : BaseDefault(section), IChe
     public bool? CheckState { get; private set; } = section.GetValue<bool?>("check state");
     public long? MemoryNumber { get; private set; }
     public string Key => Name;
-
+    public bool Active { get; private set; } = section.GetValue<bool?>("active") ?? true;
     public bool IsValid => Messages.HasValue || Consumers.HasValue || CheckState.HasValue || MemoryNumber.HasValue;
 
     public void SetSize()

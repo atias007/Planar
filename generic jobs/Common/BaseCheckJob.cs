@@ -80,6 +80,16 @@ public abstract class BaseCheckJob : BaseJob
         }
     }
 
+    protected static void ValidateGreaterThen(TimeSpan? value, TimeSpan limit, string fieldName, string section)
+    {
+        if (value == null) { return; }
+
+        if (value <= limit)
+        {
+            throw new InvalidDataException($"'{fieldName}' field with value {FormatTimeSpan(value.Value)} at '{section}' section must be greater then {FormatTimeSpan(limit)}");
+        }
+    }
+
     protected static void ValidateGreaterThenOrEquals(double? value, double limit, string fieldName, string section)
     {
         if (value == null) { return; }
@@ -129,7 +139,7 @@ public abstract class BaseCheckJob : BaseJob
         }
     }
 
-    protected static void ValidateRequired<T>(IEnumerable<T>? value, string fieldName, string section)
+    protected static void ValidateRequired<T>(IEnumerable<T>? value, string fieldName, string section = "root")
     {
         if (value == null || !value.Any())
         {
@@ -142,6 +152,38 @@ public abstract class BaseCheckJob : BaseJob
         if (!Uri.TryCreate(value, UriKind.Absolute, out _))
         {
             throw new InvalidDataException($"'{fieldName}' field with value '{value}' at '{section}' section is not valid uri");
+        }
+    }
+
+    public static void ValidateDuplicateKeys<T>(IEnumerable<T> items, string sectionName)
+        where T : ICheckElement
+    {
+        var duplicates1 = items
+            .Where(x => !string.IsNullOrEmpty(x.Key))
+            .GroupBy(x => x.Key)
+            .Where(g => g.Count() > 1)
+            .Select(y => y.Key)
+            .ToList();
+
+        if (duplicates1.Count != 0)
+        {
+            throw new InvalidDataException($"duplicated fount at '{sectionName}' section. duplicate keys found: {string.Join(", ", duplicates1)}");
+        }
+    }
+
+    public static void ValidateDuplicateNames<T>(IEnumerable<T> items, string sectionName)
+        where T : INamedCheckElement
+    {
+        var duplicates1 = items
+            .Where(x => !string.IsNullOrEmpty(x.Name))
+            .GroupBy(x => x.Name)
+            .Where(g => g.Count() > 1)
+            .Select(y => y.Key)
+            .ToList();
+
+        if (duplicates1.Count != 0)
+        {
+            throw new InvalidDataException($"duplicated fount at '{sectionName}' section. duplicate names found: {string.Join(", ", duplicates1)}");
         }
     }
 
@@ -177,7 +219,7 @@ public abstract class BaseCheckJob : BaseJob
     }
 
     protected void SafeHandleException<T>(T entity, Exception ex)
-      where T : BaseDefault, ICheckElemnt
+      where T : BaseDefault, ICheckElement
     {
         bool IsSpanValid()
         {
@@ -226,7 +268,7 @@ public abstract class BaseCheckJob : BaseJob
     }
 
     protected IEnumerable<Task> SafeInvokeCheck<T>(IEnumerable<T> entities, Func<T, Task> checkFunc)
-            where T : BaseDefault, ICheckElemnt
+            where T : BaseDefault, ICheckElement
     {
         foreach (var item in entities)
         {
@@ -235,7 +277,7 @@ public abstract class BaseCheckJob : BaseJob
     }
 
     protected async Task SafeInvokeCheck<T>(T entity, Func<T, Task> checkFunc)
-        where T : BaseDefault, ICheckElemnt
+        where T : BaseDefault, ICheckElement
     {
         try
         {
@@ -298,5 +340,15 @@ public abstract class BaseCheckJob : BaseJob
         }
 
         return default;
+    }
+
+    private static string FormatTimeSpan(TimeSpan timeSpan)
+    {
+        if (timeSpan.TotalDays >= 1)
+        {
+            return $"{timeSpan:\\(d\\)\\ hh\\:mm\\:ss}";
+        }
+
+        return $"{timeSpan:hh\\:mm\\:ss}";
     }
 }

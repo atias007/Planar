@@ -18,11 +18,13 @@ internal sealed class Job : BaseCheckJob
 
         var defaults = GetDefaults(Configuration);
         var hosts = GetHosts(Configuration);
-        var endpoints = GetEndpoints(Configuration, hosts);
-        ValidateEndpoints(endpoints);
+        var endpoints = GetEndpoints(Configuration, hosts, defaults);
+        ValidateRequired(endpoints, "folders");
+        ValidateDuplicateKeys(endpoints, "folders");
+        ValidateDuplicateNames(endpoints, "folders");
 
         using var client = new HttpClient();
-        var tasks = SafeInvokeCheck(endpoints, ep => InvokeEndpointInner(ep, defaults, client));
+        var tasks = SafeInvokeCheck(endpoints, ep => InvokeEndpointInner(ep, client));
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
@@ -42,7 +44,7 @@ internal sealed class Job : BaseCheckJob
         FillBase(endpoint, defaults);
     }
 
-    private static IEnumerable<Endpoint> GetEndpoints(IConfiguration configuration, IEnumerable<string> hosts)
+    private static IEnumerable<Endpoint> GetEndpoints(IConfiguration configuration, IEnumerable<string> hosts, Defaults defaults)
     {
         const string hostPlaceholder = "{{host}}";
 
@@ -56,12 +58,14 @@ internal sealed class Job : BaseCheckJob
                 {
                     var url2 = url.Replace(hostPlaceholder, host);
                     var endpoint = new Endpoint(item, url2);
+                    FillDefaults(endpoint, defaults);
                     yield return endpoint;
                 }
             }
             else
             {
                 var endpoint = new Endpoint(item, url);
+                FillDefaults(endpoint, defaults);
                 yield return endpoint;
             }
         }
@@ -125,9 +129,14 @@ internal sealed class Job : BaseCheckJob
         return result;
     }
 
-    private async Task InvokeEndpointInner(Endpoint endpoint, Defaults defaults, HttpClient client)
+    private async Task InvokeEndpointInner(Endpoint endpoint, HttpClient client)
     {
-        FillDefaults(endpoint, defaults);
+        if (!endpoint.Active)
+        {
+            Logger.LogInformation("Skipping inactive endpoint '{Name}'", endpoint.Name);
+            return;
+        }
+
         if (!ValidateEndpoint(endpoint)) { return; }
 
         HttpResponseMessage response;
@@ -169,16 +178,5 @@ internal sealed class Job : BaseCheckJob
         }
 
         return true;
-    }
-
-    private static void ValidateEndpoints(IEnumerable<Endpoint> endpoints)
-    {
-        ValidateRequired(endpoints, "endpoints", "root");
-
-        var duplicates1 = endpoints.GroupBy(x => x.Url).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
-        if (duplicates1.Count != 0)
-        {
-            throw new InvalidDataException($"duplicated endpoint urls found: {string.Join(", ", duplicates1)}");
-        }
     }
 }

@@ -1,11 +1,11 @@
-namespace Common;
+﻿namespace Common;
 
 using Planar.Job;
 using System.Globalization;
 
-public class CheckSpanTracker(IBaseJob baseJob)
+public class CheckIntervalTracker(IBaseJob baseJob)
 {
-    public TimeSpan LastFailSpan(ICheckElement element)
+    public TimeSpan LastRunningSpan(ICheckElement element)
     {
         var key = GetKey(element);
         if (baseJob.Context.MergedJobDataMap.TryGet(key, out var value)
@@ -21,11 +21,11 @@ public class CheckSpanTracker(IBaseJob baseJob)
         return TimeSpan.Zero;
     }
 
-    public void ResetFailSpan(ICheckElement element)
+    public void SetLastRunning(ICheckElement element)
     {
         var key = GetKey(element);
-        baseJob.RemoveJobData(key);
+        baseJob.PutJobData(key, DateTimeOffset.UtcNow.ToString(CultureInfo.CurrentCulture));
     }
 
-    private static string GetKey(ICheckElement element) => $"last.fail.{element.Key}";
+    private static string GetKey(ICheckElement element) => $"last.running.{element.Key}";
 }

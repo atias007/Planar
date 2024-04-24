@@ -1,0 +1,2 @@
+connection strings:                                        # the sql server connection strings to use. usualy this section defined in specific environment job settings
+  default: Data Source=.;Initial Catalog=aig;Password=CustomsDev123!;Persist Security Info=True;User ID=sa;Encrypt=False

@@ -8,7 +8,7 @@ defaults:                                       # default values for all folders
 #  - 127.0.0.1
  
 folders:
-  - name: Customer X vault                      # the display name of the folder
+  - name: Customer X vault                      # the display name of the folder. required
     path: \\{{host}}\vaults\CustomerX           # the path of the folder 
     files pattern: "*.txt,*.dll"                # the pattern of the files to be monitored. this value is optional
     include subdirectories: true                # a flag to indicate if the subdirectories should be included in the monitoring or not. the defualt is false

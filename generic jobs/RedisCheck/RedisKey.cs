@@ -4,13 +4,14 @@ using RedisCheck;
 
 namespace RedisStreamCheck;
 
-internal class CheckKey(IConfigurationSection section) : BaseDefault(section), ICheckElemnt, IRedisDefaults
+internal class RedisKey(IConfigurationSection section) : BaseDefault(section), ICheckElement, IRedisDefaults
 {
     public string Key { get; set; } = section.GetValue<string>("key") ?? string.Empty;
     public string? MemoryUsage { get; set; } = section.GetValue<string>("memory usage");
     public int? Length { get; set; } = section.GetValue<int?>("length");
     public int? Database { get; set; } = section.GetValue<int?>("database");
     public bool? Exists { get; set; } = section.GetValue<bool?>("exists");
+    public bool Active { get; private set; } = section.GetValue<bool?>("active") ?? true;
 
     //// --------------------------------------- ////
 

@@ -18,7 +18,9 @@ internal class Job : BaseCheckJob
         var defaults = GetDefaults(Configuration);
         var hosts = GetHosts(Configuration);
         var folders = GetFolders(Configuration, hosts, defaults);
-        CommonUtil.ValidateItems(folders, "folders", "path");
+        ValidateRequired(folders, "folders");
+        ValidateDuplicateKeys(folders, "folders");
+        ValidateDuplicateNames(folders, "folders");
 
         var tasks = SafeInvokeCheck(folders, InvokeFolderInnerAsync);
         await Task.WhenAll(tasks);
@@ -62,7 +64,6 @@ internal class Job : BaseCheckJob
                     var path2 = path.Replace(hostPlaceholder, host);
                     var folder = new Folder(item, path2);
                     FillBase(folder, defaults);
-                    SetDefaultName(folder, () => folder.Name);
                     folder.SetMonitorArguments();
                     yield return folder;
                 }
@@ -71,7 +72,6 @@ internal class Job : BaseCheckJob
             {
                 var folder = new Folder(item, path);
                 FillBase(folder, defaults);
-                SetDefaultName(folder, () => folder.Name);
                 folder.SetMonitorArguments();
                 yield return folder;
             }
@@ -138,6 +138,12 @@ internal class Job : BaseCheckJob
 
     private void InvokeFolderInner(Folder folder)
     {
+        if (!folder.Active)
+        {
+            Logger.LogInformation("Skipping inactive folder '{Name}'", folder.Name);
+            return;
+        }
+
         if (!ValidateFolder(folder)) { return; }
 
         var files = GetFiles(folder);

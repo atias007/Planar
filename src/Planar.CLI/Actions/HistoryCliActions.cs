@@ -1,11 +1,14 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
+using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
 using System;
+using System.Linq;
 using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -129,7 +132,8 @@ namespace Planar.CLI.Actions
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
-            return new CliActionResponse(result, message: result.Data);
+            var message = CliFormat.GetLogMarkup(result.Data);
+            return new CliActionResponse(result, message: message, formattedMessage: true);
         }
 
         [Action("summary")]

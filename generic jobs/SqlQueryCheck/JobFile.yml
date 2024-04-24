@@ -1,18 +1,18 @@
 job type: PlanarJob                   # Fixed! don't change it
-name: RedisCheck                      # Name of job [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+name: SqlQueryCheck                   # Name of job [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
 group: Monitoring                     # Group of job [only alphanumeric, dashes & underscore, 1 to 50 characters]
 author: israel israeli (sales)        # The author/responsible person of the job [up to 100 characters]
-description: Check health check, server metrics and keys length & size      # Description of job [only alphanumeric, dashes & underscore, up to 200 characters]
+description: Run sql query and check that there is no result from query      # Description of job [only alphanumeric, dashes & underscore, up to 200 characters]
 durable: true                         # Boolean [true/false]. Non durable job will be delete from system if no future triggers defined
 concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
 log retention days: 3                 # How many days the running logs will retain. [1 to 1000, null for system default]
 
 properties:                           # Properties for job with 'PlanarJob' type
-  filename: RedisCheck.exe            # Name of assembly file [mandatory, up to 500 characters]
+  filename: SqlQueryCheck.exe         # Name of assembly file [mandatory, up to 500 characters]
 
 simple triggers:                      # List of simple triggers
-  - name: every-minute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
-    interval: 00:01:00                # Interval
+  - name: every-15minute-trigger      # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+    interval: 00:15:00                # Interval
     misfire behaviour: FireNow        # [ FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount ]
-    timeout: 00:01:00                 # Execution timeout. If timout span passed then cancel command is executed
+    timeout: 00:15:00                 # Execution timeout. If timout span passed then cancel command is executed
     
