@@ -18,17 +18,20 @@ internal sealed class Job : BaseCheckJob
 
         var defaults = GetDefaults(Configuration);
         var hosts = GetHosts(Configuration);
-        var endpoints = GetEndpoints(Configuration, hosts, defaults);
-        ValidateRequired(endpoints, "folders");
-        ValidateDuplicateKeys(endpoints, "folders");
-        ValidateDuplicateNames(endpoints, "folders");
+        var endpoints = GetEndpoints(Configuration, defaults);
 
         using var client = new HttpClient();
-        var tasks = SafeInvokeCheck(endpoints, ep => InvokeEndpointInner(ep, client));
+        var tasks = SafeInvokeCheck(endpoints, ep => InvokeEndpointsInner(ep, hosts, client));
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
         HandleCheckExceptions();
+    }
+
+    private static void ValidateEndpoints(IEnumerable<Endpoint> endpoints)
+    {
+        ValidateRequired(endpoints, "endpoints");
+        ValidateDuplicateNames(endpoints, "endpoints");
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -44,39 +47,29 @@ internal sealed class Job : BaseCheckJob
         FillBase(endpoint, defaults);
     }
 
-    private static IEnumerable<Endpoint> GetEndpoints(IConfiguration configuration, IEnumerable<string> hosts, Defaults defaults)
+    private static List<Endpoint> GetEndpoints(IConfiguration configuration, Defaults defaults)
     {
-        const string hostPlaceholder = "{{host}}";
-
         var endpoints = configuration.GetRequiredSection("endpoints");
+        var result = new List<Endpoint>();
         foreach (var item in endpoints.GetChildren())
         {
-            var url = item.GetValue<string>("url") ?? string.Empty;
-            if (url.Contains(hostPlaceholder))
-            {
-                foreach (var host in hosts)
-                {
-                    var url2 = url.Replace(hostPlaceholder, host);
-                    var endpoint = new Endpoint(item, url2);
-                    FillDefaults(endpoint, defaults);
-                    yield return endpoint;
-                }
-            }
-            else
-            {
-                var endpoint = new Endpoint(item, url);
-                FillDefaults(endpoint, defaults);
-                yield return endpoint;
-            }
+            var endpoint = new Endpoint(item);
+            FillDefaults(endpoint, defaults);
+            ValidateEndpoint(endpoint);
+            result.Add(endpoint);
         }
+
+        ValidateEndpoints(result);
+        return result;
     }
 
-    private static IEnumerable<string> GetHosts(IConfiguration configuration)
+    private static IEnumerable<Uri> GetHosts(IConfiguration configuration)
     {
         var hosts = configuration.GetSection("hosts");
         if (hosts == null) { return []; }
         var result = hosts.Get<string[]>() ?? [];
-        return result.Distinct();
+        result.ToList().ForEach(h => ValidateUri(h, "host", "hosts"));
+        return result.Distinct().Select(r => new Uri(r));
     }
 
     private static void Validate(IEndpoint endpoint, string section)
@@ -97,21 +90,6 @@ internal sealed class Job : BaseCheckJob
         }
     }
 
-    private static void ValidateName(Endpoint endpoint)
-    {
-        if (endpoint.Name?.Length > 50)
-        {
-            throw new InvalidDataException($"'name' on endpoint name '{endpoint.Name}' must be less then 50");
-        }
-    }
-
-    private static void ValidateUrl(Endpoint endpoint)
-    {
-        ValidateRequired(endpoint.Url, "url", endpoint.Name);
-        ValidateMaxLength(endpoint.Url, 1000, "url", endpoint.Name);
-        ValidateUri(endpoint.Url, "url", endpoint.Name);
-    }
-
     private Defaults GetDefaults(IConfiguration configuration)
     {
         var empty = Defaults.Empty;
@@ -129,7 +107,48 @@ internal sealed class Job : BaseCheckJob
         return result;
     }
 
-    private async Task InvokeEndpointInner(Endpoint endpoint, HttpClient client)
+    private static Uri? IsAbsoluteUrl(string url)
+    {
+        if (Uri.TryCreate(url, UriKind.Absolute, out var result)) { return result; }
+        return null;
+    }
+
+    private static Uri BuildUri(Uri? baseUri, Endpoint endpoint)
+    {
+        var endpointUri = IsAbsoluteUrl(endpoint.Url);
+        if (endpointUri != null) { return endpointUri; }
+
+        if (baseUri == null)
+        {
+            throw new InvalidDataException($"endpoint url '{endpoint.Url}' is relative url but not host(s) is defined");
+        }
+
+        var builder = new UriBuilder(baseUri)
+        {
+            Path = endpoint.Url
+        };
+
+        if (endpoint.Port.HasValue)
+        {
+            builder.Port = endpoint.Port.Value;
+        }
+
+        return builder.Uri;
+    }
+
+    private async Task InvokeEndpointsInner(Endpoint endpoint, IEnumerable<Uri> hosts, HttpClient client)
+    {
+        if (hosts.Any())
+        {
+            await Parallel.ForEachAsync(hosts, (host, ct) => InvokeEndpointInner(endpoint, host, client));
+        }
+        else
+        {
+            await InvokeEndpointInner(endpoint, null, client);
+        }
+    }
+
+    private async ValueTask InvokeEndpointInner(Endpoint endpoint, Uri? host, HttpClient client)
     {
         if (!endpoint.Active)
         {
@@ -137,13 +156,13 @@ internal sealed class Job : BaseCheckJob
             return;
         }
 
-        if (!ValidateEndpoint(endpoint)) { return; }
+        var uri = BuildUri(host, endpoint);
 
         HttpResponseMessage response;
         try
         {
             using var source = new CancellationTokenSource(endpoint.Timeout.GetValueOrDefault());
-            response = await client.GetAsync(endpoint.Url, source.Token);
+            response = await client.GetAsync(uri, source.Token);
         }
         catch (TaskCanceledException)
         {
@@ -155,28 +174,20 @@ internal sealed class Job : BaseCheckJob
         if (endpoint.SuccessStatusCodes.Any(s => s == (int)response.StatusCode))
         {
             Logger.LogInformation("health check success for endpoint name '{EndpointName}' with url '{EndpointUrl}'",
-                endpoint.Name, endpoint.Url);
+                endpoint.Name, uri);
             return;
         }
 
         throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{endpoint.Url}' status code {response.StatusCode} ({(int)response.StatusCode}) is not in success status codes list");
     }
 
-    private bool ValidateEndpoint(Endpoint endpoint)
+    private static void ValidateEndpoint(Endpoint endpoint)
     {
-        try
-        {
-            Validate(endpoint, $"endpoints ({endpoint.Name})");
-            ValidateBase(endpoint, $"endpoints ({endpoint.Name})");
-            ValidateName(endpoint);
-            ValidateUrl(endpoint);
-        }
-        catch (Exception ex)
-        {
-            AddAggregateException(ex);
-            return false;
-        }
-
-        return true;
+        var section = $"endpoints ({endpoint.Name})";
+        Validate(endpoint, section);
+        ValidateBase(endpoint, section);
+        ValidateMaxLength(endpoint.Name, 50, "name", section);
+        ValidateRequired(endpoint.Url, "url", section);
+        ValidateRequired(endpoint.Name, "name", section);
     }
 }

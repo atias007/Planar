@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Planar.Job;
 using Polly;
 using System.Collections.Concurrent;
+using System.Net;
 using System.Text;
 
 public abstract class BaseCheckJob : BaseJob
@@ -149,6 +150,8 @@ public abstract class BaseCheckJob : BaseJob
 
     protected static void ValidateUri(string value, string fieldName, string section)
     {
+        ValidateMaxLength(value, 1000, fieldName, section);
+
         if (!Uri.TryCreate(value, UriKind.Absolute, out _))
         {
             throw new InvalidDataException($"'{fieldName}' field with value '{value}' at '{section}' section is not valid uri");
