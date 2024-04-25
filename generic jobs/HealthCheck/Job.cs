@@ -20,6 +20,11 @@ internal sealed class Job : BaseCheckJob
         var hosts = GetHosts(Configuration);
         var endpoints = GetEndpoints(Configuration, defaults);
 
+        if (!hosts.Any() && endpoints.Exists(e => e.AbsoluteUrl == null))
+        {
+            throw new InvalidDataException("no hosts defined and at least one endpoint is not absolute url");
+        }
+
         using var client = new HttpClient();
         var tasks = SafeInvokeCheck(endpoints, ep => InvokeEndpointsInner(ep, hosts, client));
         await Task.WhenAll(tasks);
@@ -107,16 +112,9 @@ internal sealed class Job : BaseCheckJob
         return result;
     }
 
-    private static Uri? IsAbsoluteUrl(string url)
-    {
-        if (Uri.TryCreate(url, UriKind.Absolute, out var result)) { return result; }
-        return null;
-    }
-
     private static Uri BuildUri(Uri? baseUri, Endpoint endpoint)
     {
-        var endpointUri = IsAbsoluteUrl(endpoint.Url);
-        if (endpointUri != null) { return endpointUri; }
+        if (endpoint.AbsoluteUrl != null) { return endpoint.AbsoluteUrl; }
 
         if (baseUri == null)
         {
@@ -138,7 +136,7 @@ internal sealed class Job : BaseCheckJob
 
     private async Task InvokeEndpointsInner(Endpoint endpoint, IEnumerable<Uri> hosts, HttpClient client)
     {
-        if (hosts.Any())
+        if (endpoint.AbsoluteUrl == null)
         {
             await Parallel.ForEachAsync(hosts, (host, ct) => InvokeEndpointInner(endpoint, host, client));
         }

@@ -2,9 +2,9 @@
 
 internal interface IEndpoint
 {
-    IEnumerable<int>? SuccessStatusCodes { get; set; }
-    int? RetryCount { get; set; }
-    int? MaximumFailsInRow { get; set; }
-    TimeSpan? Timeout { get; set; }
-    TimeSpan? RetryInterval { get; set; }
+    IEnumerable<int>? SuccessStatusCodes { get; }
+    int? RetryCount { get; }
+    int? MaximumFailsInRow { get; }
+    TimeSpan? Timeout { get; }
+    TimeSpan? RetryInterval { get; }
 }

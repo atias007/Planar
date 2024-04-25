@@ -3,14 +3,32 @@ using Microsoft.Extensions.Configuration;
 
 namespace HealthCheck;
 
-internal class Endpoint(IConfigurationSection section) : BaseDefault(section), IEndpoint, INamedCheckElement
+internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement
 {
-    private readonly IConfigurationSection section = section;
-    public string Name { get; set; } = section.GetValue<string?>("name") ?? string.Empty;
-    public string Url { get; private set; } = section.GetValue<string?>("url") ?? string.Empty;
-    public IEnumerable<int>? SuccessStatusCodes { get; set; } = section.GetSection("success status codes").Get<int[]?>();
-    public TimeSpan? Timeout { get; set; } = section.GetValue<TimeSpan?>("timeout");
-    public int? Port => section.GetValue<int?>("port");
-    public bool Active { get; private set; } = section.GetValue<bool?>("active") ?? true;
+    public Endpoint(IConfigurationSection section) : base(section)
+    {
+        Name = section.GetValue<string?>("name") ?? string.Empty;
+        Url = section.GetValue<string?>("url") ?? string.Empty;
+        SuccessStatusCodes = section.GetSection("success status codes").Get<int[]?>();
+        Timeout = section.GetValue<TimeSpan?>("timeout");
+        Port = section.GetValue<int?>("port");
+        Active = section.GetValue<bool?>("active") ?? true;
+        AbsoluteUrl = SetAbsoluteUrl(Url);
+    }
+
+    public string Name { get; }
+    public string Url { get; }
+    public IEnumerable<int>? SuccessStatusCodes { get; set; }
+    public TimeSpan? Timeout { get; set; }
+    public int? Port { get; }
+    public bool Active { get; }
     public string Key => Url;
+
+    public Uri? AbsoluteUrl { get; }
+
+    private static Uri? SetAbsoluteUrl(string url)
+    {
+        if (Uri.TryCreate(url, UriKind.Absolute, out var result)) { return result; }
+        return null;
+    }
 }
