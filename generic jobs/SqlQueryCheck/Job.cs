@@ -4,11 +4,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
+using System.Data;
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace SqlQueryCheck;
 
-internal class Job : BaseCheckJob
+internal partial class Job : BaseCheckJob
 {
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
@@ -44,8 +46,6 @@ internal class Job : BaseCheckJob
             return;
         }
 
-        if (!ValidateCheckQuery(checkQuery)) { return; }
-
         if (checkQuery.Interval.HasValue)
         {
             var tracker = ServiceProvider.GetRequiredService<CheckIntervalTracker>();
@@ -65,26 +65,15 @@ internal class Job : BaseCheckJob
         };
 
         await connection.OpenAsync();
-        using var reader = await cmd.ExecuteReaderAsync();
-        object? result = null;
-        int count = 0;
+        using var reader = await cmd.ExecuteReaderAsync(System.Data.CommandBehavior.SingleRow);
 
-        while (await reader.ReadAsync())
-        {
-            result ??= reader[0];
-            count++;
-        }
-
-        if (count > 0)
+        var hasData = await reader.ReadAsync();
+        if (hasData)
         {
             var message =
                 string.IsNullOrWhiteSpace(checkQuery.Message) ?
-                $"'{checkQuery.Name}' query failed with total {count} row(s)" :
-                checkQuery.Message;
-
-            message = message
-                .Replace("{{count}}", count.ToString(CultureInfo.CurrentCulture))
-                .Replace("{{result}}", result?.ToString());
+                $"{checkQuery.Name} query failed" :
+                Replace(checkQuery.Message, reader);
 
             AddCheckException(new CheckException(message));
         }
@@ -94,29 +83,66 @@ internal class Job : BaseCheckJob
         }
     }
 
-    private bool ValidateCheckQuery(CheckQuery checkQuery)
+    private static string Replace(string message, IDataReader reader)
     {
-        try
-        {
-            ValidateBase(checkQuery, $"key ({checkQuery.Key})");
-            ValidateRequired(checkQuery.Name, "name", "queries");
-            ValidateRequired(checkQuery.ConnectionStringName, "connection string name", "queries");
-            ValidateRequired(checkQuery.Query, "query", "queries");
-            ValidateGreaterThen(checkQuery.Timeout, TimeSpan.FromSeconds(1), "timeout", "queries");
-            ValidateGreaterThen(checkQuery.Interval, TimeSpan.FromMinutes(1), "interval", "queries");
+        var regex = Placeholder();
+        var matches = regex.Matches(message);
+        if (matches.Count == 0) { return message; }
 
-            if (string.IsNullOrWhiteSpace(checkQuery.ConnectionString))
+        foreach (Match item in matches.Cast<Match>())
+        {
+            if (item.Groups.Count == 0) { continue; }
+            var ph = item.Groups[0].Value;
+            var phInner = ph[2..^2];
+            var intPhInner = IsInt(phInner);
+            if (intPhInner == null)
             {
-                throw new InvalidDataException($"connection string with name '{checkQuery.ConnectionStringName}' not found");
+                try
+                {
+                    var value = Convert.ToString(reader[phInner]);
+                    message = message.Replace(ph, value);
+                }
+                catch (Exception)
+                {
+                    // *** DO NOTHING *** //
+                }
+            }
+            else
+            {
+                if (reader.FieldCount >= intPhInner) { continue; }
+                var value = Convert.ToString(reader[intPhInner.GetValueOrDefault()]);
+                message = message.Replace(ph, value);
             }
         }
-        catch (Exception ex)
+
+        return message;
+    }
+
+    public static int? IsInt(string value)
+    {
+        if (string.IsNullOrEmpty(value))
         {
-            AddAggregateException(ex);
-            return false;
+            return null;
         }
 
-        return true;
+        if (!int.TryParse(value, out var result)) { return null; }
+        if (result < 0) { return null; }
+        return result;
+    }
+
+    private static void ValidateCheckQuery(CheckQuery checkQuery)
+    {
+        ValidateBase(checkQuery, $"key ({checkQuery.Key})");
+        ValidateRequired(checkQuery.Name, "name", "queries");
+        ValidateRequired(checkQuery.ConnectionStringName, "connection string name", "queries");
+        ValidateRequired(checkQuery.Query, "query", "queries");
+        ValidateGreaterThen(checkQuery.Timeout, TimeSpan.FromSeconds(1), "timeout", "queries");
+        ValidateGreaterThen(checkQuery.Interval, TimeSpan.FromMinutes(1), "interval", "queries");
+
+        if (string.IsNullOrWhiteSpace(checkQuery.ConnectionString))
+        {
+            throw new InvalidDataException($"connection string with name '{checkQuery.ConnectionStringName}' not found");
+        }
     }
 
     private static IEnumerable<CheckQuery> GetQueries(IConfiguration configuration, Defaults defaults, Dictionary<string, string> connectionStrings)
@@ -127,6 +153,7 @@ internal class Job : BaseCheckJob
             var key = new CheckQuery(item);
             FillBase(key, defaults);
             key.ConnectionString = connectionStrings.GetValueOrDefault(key.ConnectionStringName);
+            ValidateCheckQuery(key);
             yield return key;
         }
     }
@@ -165,4 +192,7 @@ internal class Job : BaseCheckJob
         ValidateBase(result, "defaults");
         return result;
     }
+
+    [GeneratedRegex("{{[0-9]+}}|{{\\w+}}")]
+    private static partial Regex Placeholder();
 }

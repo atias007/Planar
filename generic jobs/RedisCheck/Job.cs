@@ -62,7 +62,7 @@ internal class Job : BaseCheckJob
         }
 
         FillBase(result, defaults);
-
+        ValidateHealthCheck(result);
         return result;
     }
 
@@ -74,6 +74,7 @@ internal class Job : BaseCheckJob
             var key = new RedisKey(item);
             FillDefaults(key, defaults);
             key.SetSize();
+            ValidateRedisKey(key);
             yield return key;
         }
     }
@@ -127,8 +128,6 @@ internal class Job : BaseCheckJob
             Logger.LogInformation("skipping inactive health check");
             return;
         }
-
-        if (!ValidateHealthCheck(healthCheck)) { return; }
 
         if (healthCheck.Ping.HasValue || healthCheck.Latency.HasValue)
         {
@@ -192,8 +191,6 @@ internal class Job : BaseCheckJob
             return;
         }
 
-        if (!ValidateRedisKey(key)) { return; }
-
         await RedisFactory.Exists(key);
 
         long length = 0;
@@ -223,38 +220,19 @@ internal class Job : BaseCheckJob
         Logger.LogInformation("redis check success for key '{Key}'", key.Key);
     }
 
-    private bool ValidateHealthCheck(HealthCheck healthCheck)
+    private static void ValidateHealthCheck(HealthCheck healthCheck)
     {
-        try
-        {
-            ValidateGreaterThen(healthCheck.ConnectedClients, 0, "connected clients", "health check");
-            ValidateGreaterThen(healthCheck.UsedMemoryNumber, 0, "used memory", "health check");
-            return true;
-        }
-        catch (Exception ex)
-        {
-            AddAggregateException(ex);
-            return false;
-        }
+        ValidateGreaterThen(healthCheck.ConnectedClients, 0, "connected clients", "health check");
+        ValidateGreaterThen(healthCheck.UsedMemoryNumber, 0, "used memory", "health check");
     }
 
-    private bool ValidateRedisKey(RedisKey redisKey)
+    private static void ValidateRedisKey(RedisKey redisKey)
     {
-        try
-        {
-            ValidateBase(redisKey, $"key ({redisKey.Key})");
-            Validate(redisKey, $"key ({redisKey.Key})");
-            ValidateKey(redisKey);
-            ValidateGreaterThen(redisKey.MemoryUsageNumber, 0, "max memory usage", "keys");
-            ValidateGreaterThen(redisKey.Length, 0, "max length", "keys");
-            ValidateNoArguments(redisKey);
-        }
-        catch (Exception ex)
-        {
-            AddAggregateException(ex);
-            return false;
-        }
-
-        return true;
+        ValidateBase(redisKey, $"key ({redisKey.Key})");
+        Validate(redisKey, $"key ({redisKey.Key})");
+        ValidateKey(redisKey);
+        ValidateGreaterThen(redisKey.MemoryUsageNumber, 0, "max memory usage", "keys");
+        ValidateGreaterThen(redisKey.Length, 0, "max length", "keys");
+        ValidateNoArguments(redisKey);
     }
 }

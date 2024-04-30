@@ -2,10 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Planar.Job;
-using System.Net;
-using System.Xml.Linq;
 
 namespace RabbitMQCheck;
 
@@ -22,25 +19,19 @@ public class Job : BaseCheckJob
         var tasks = new List<Task>();
         var defaults = GetDefaults(Configuration);
         var server = GetServer(Configuration);
-        var healthCheck = GetHealthCheck(Configuration);
-        var node = GetNode(Configuration);
-        var queues = GetQueue(Configuration);
-
-        ValidateRequired(server.Hosts, "hosts", "server");
-        ValidateDuplicateNames(queues, "queues");
+        var healthCheck = GetHealthCheck(Configuration, defaults);
+        var node = GetNode(Configuration, defaults);
+        var queues = GetQueue(Configuration, defaults);
 
         // health check
-        FillBase(healthCheck, defaults);
         var healthCheckTask = InvokeHealthCheck(healthCheck, server);
         tasks.Add(healthCheckTask);
 
         // nodes
-        FillBase(node, defaults);
         var nodeCheckTask = SafeInvokeNodeCheck(node, server);
         tasks.Add(nodeCheckTask);
 
         // queues
-        FillBase(queues, defaults);
         var queueTask = SafeInvokeQueueCheck(queues, server, defaults);
         tasks.Add(queueTask);
 
@@ -56,21 +47,23 @@ public class Job : BaseCheckJob
         services.RegisterBaseCheck();
     }
 
-    private static HealthCheck GetHealthCheck(IConfiguration configuration)
+    private static HealthCheck GetHealthCheck(IConfiguration configuration, Defaults defaults)
     {
         var section = configuration.GetSection("health check");
         var healthCheck = new HealthCheck(section);
+        FillBase(healthCheck, defaults);
         return healthCheck;
     }
 
-    private static Node GetNode(IConfiguration configuration)
+    private static Node GetNode(IConfiguration configuration, Defaults defaults)
     {
         var section = configuration.GetSection("nodes");
         var node = new Node(section);
+        FillBase(node, defaults);
         return node;
     }
 
-    private static IEnumerable<Queue> GetQueue(IConfiguration configuration)
+    private static IEnumerable<Queue> GetQueue(IConfiguration configuration, Defaults defaults)
     {
         var sections = configuration.GetSection("queues").GetChildren();
 
@@ -78,6 +71,7 @@ public class Job : BaseCheckJob
         {
             var queue = new Queue(section);
             queue.SetSize();
+            FillBase(queue, defaults);
 
             ValidateRequired(queue.Name, "name", "queues");
             ValidateGreaterThen(queue.Messages, 0, "messages", "queues");
@@ -107,6 +101,8 @@ public class Job : BaseCheckJob
         {
             ValidateUri(item, "hosts", "servers");
         }
+
+        ValidateRequired(server.Hosts, "hosts", "server");
 
         return server;
     }

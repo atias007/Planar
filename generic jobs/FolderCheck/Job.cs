@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
-using Polly;
+using System.IO;
 
 namespace FolderCheck;
 
@@ -17,12 +17,16 @@ internal class Job : BaseCheckJob
     {
         var defaults = GetDefaults(Configuration);
         var hosts = GetHosts(Configuration);
-        var folders = GetFolders(Configuration, hosts, defaults);
-        ValidateRequired(folders, "folders");
-        ValidateDuplicateKeys(folders, "folders");
-        ValidateDuplicateNames(folders, "folders");
+        var folders = GetFolders(Configuration, defaults);
 
-        var tasks = SafeInvokeCheck(folders, InvokeFolderInnerAsync);
+        if (!hosts.Any() && folders.Exists(e => !e.IsAbsolutePath))
+        {
+            throw new InvalidDataException("no hosts defined and at least one folder path is relative");
+        }
+
+        folders.ForEach(f => ValidateFolderExists(f, hosts));
+
+        var tasks = SafeInvokeCheck(folders, f => InvokeFolderInnerAsync(f, hosts));
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
@@ -34,9 +38,9 @@ internal class Job : BaseCheckJob
         services.RegisterBaseCheck();
     }
 
-    private static IEnumerable<FileInfo> GetFiles(Folder folder)
+    private static IEnumerable<FileInfo> GetFiles(string path, Folder folder)
     {
-        var fi = new DirectoryInfo(folder.Path);
+        var fi = new DirectoryInfo(path);
         if (folder.FilesPattern == null || !folder.FilesPattern.Any()) { folder.SetDefaultFilePattern(); }
         var option = folder.IncludeSubdirectories ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
         foreach (var pattern in folder.FilesPattern!)
@@ -49,33 +53,24 @@ internal class Job : BaseCheckJob
         }
     }
 
-    private static IEnumerable<Folder> GetFolders(IConfiguration configuration, IEnumerable<string> hosts, Defaults defaults)
+    private static List<Folder> GetFolders(IConfiguration configuration, Defaults defaults)
     {
-        const string hostPlaceholder = "{{host}}";
-
+        var result = new List<Folder>();
         var folders = configuration.GetRequiredSection("folders");
         foreach (var item in folders.GetChildren())
         {
-            var path = item.GetValue<string>("path") ?? string.Empty;
-            if (path.Contains(hostPlaceholder))
-            {
-                foreach (var host in hosts)
-                {
-                    var path2 = path.Replace(hostPlaceholder, host);
-                    var folder = new Folder(item, path2);
-                    FillBase(folder, defaults);
-                    folder.SetMonitorArguments();
-                    yield return folder;
-                }
-            }
-            else
-            {
-                var folder = new Folder(item, path);
-                FillBase(folder, defaults);
-                folder.SetMonitorArguments();
-                yield return folder;
-            }
+            var folder = new Folder(item);
+            FillBase(folder, defaults);
+            folder.SetMonitorArguments();
+            folder.IsAbsolutePath = Path.IsPathFullyQualified(folder.Path);
+            ValidateFolder(folder);
+            result.Add(folder);
         }
+
+        ValidateRequired(result, "folders");
+        ValidateDuplicateNames(result, "folders");
+
+        return result;
     }
 
     private static IEnumerable<string> GetHosts(IConfiguration configuration)
@@ -99,19 +94,19 @@ internal class Job : BaseCheckJob
         }
     }
 
-    private static void ValidatePathExists(Folder folder)
+    private static void ValidatePathExists(string path)
     {
         try
         {
-            var directory = new DirectoryInfo(folder.Path);
+            var directory = new DirectoryInfo(path);
             if (!directory.Exists)
             {
-                throw new InvalidDataException($"directory '{folder.Path}' not found");
+                throw new InvalidDataException($"directory '{path}' not found");
             }
         }
         catch (Exception ex)
         {
-            throw new InvalidDataException($"directory '{folder.Path}' is invalid ({ex.Message})");
+            throw new InvalidDataException($"directory '{path}' is invalid ({ex.Message})");
         }
     }
 
@@ -131,12 +126,24 @@ internal class Job : BaseCheckJob
         return result;
     }
 
-    private async Task InvokeFolderInnerAsync(Folder folder)
+    private async Task InvokeFolderInnerAsync(Folder folder, IEnumerable<string> hosts)
     {
-        await Task.Run(() => InvokeFolderInner(folder));
+        await Task.Run(() => InvokeFoldersInner(folder, hosts));
     }
 
-    private void InvokeFolderInner(Folder folder)
+    private void InvokeFoldersInner(Folder folder, IEnumerable<string> hosts)
+    {
+        if (folder.IsAbsolutePath)
+        {
+            InvokeFolderInner(folder, null);
+        }
+        else
+        {
+            Parallel.ForEach(hosts, host => InvokeFolderInner(folder, host));
+        }
+    }
+
+    private void InvokeFolderInner(Folder folder, string? host)
     {
         if (!folder.Active)
         {
@@ -144,91 +151,89 @@ internal class Job : BaseCheckJob
             return;
         }
 
-        if (!ValidateFolder(folder)) { return; }
-
-        var files = GetFiles(folder);
+        var path = folder.GetFullPath(host);
+        var files = GetFiles(path, folder);
         if (folder.TotalSizeNumber != null)
         {
             var size = files.Sum(f => f.Length);
-            Logger.LogInformation("path {Path} size is {Size:N0} byte(s)", folder.Path, size);
+            Logger.LogInformation("folder '{Path}' size is {Size:N0} byte(s)", path, size);
             if (size > folder.FileSizeNumber)
             {
-                throw new CheckException($"folder '{folder.Path}' size is greater then {folder.TotalSizeNumber:N0}");
+                throw new CheckException($"folder '{path}' size is greater then {folder.TotalSizeNumber:N0}");
             }
         }
 
         if (folder.FileSizeNumber != null)
         {
             var max = files.Max(f => f.Length);
-            Logger.LogInformation("path {Path} max file size is {Size:N0} byte(s)", folder.Path, max);
+            Logger.LogInformation("folder '{Path}' max file size is {Size:N0} byte(s)", path, max);
             if (max > folder.FileSizeNumber)
             {
-                throw new CheckException($"folder '{folder.Path}' has file size that is greater then {folder.FileSizeNumber:N0}");
+                throw new CheckException($"folder '{path}' has file size that is greater then {folder.FileSizeNumber:N0}");
             }
         }
 
         if (folder.FileCount != null)
         {
             var count = files.Count();
-            Logger.LogInformation("path {Path} contains {Count:N0} file(s)", folder.Path, count);
+            Logger.LogInformation("folder '{Path}' contains {Count:N0} file(s)", path, count);
             if (count > folder.FileCount)
             {
-                throw new CheckException($"folder '{folder.Path}' contains more then {folder.FileCount:N0} files");
+                throw new CheckException($"folder '{path}' contains more then {folder.FileCount:N0} files");
             }
         }
 
         if (folder.CreatedAgeDate != null)
         {
             var created = files.Min(f => f.CreationTimeUtc);
-            Logger.LogInformation("path {Path} most old created file is {Created}", folder.Path, created);
+            Logger.LogInformation("folder '{Path}' most old created file is {Created}", path, created);
             if (created < folder.CreatedAgeDate)
             {
-                throw new CheckException($"folder '{folder.Path}' contains files that are created older then {folder.CreatedAge}");
+                throw new CheckException($"folder '{path}' contains files that are created older then {folder.CreatedAge}");
             }
         }
 
         if (folder.ModifiedAgeDate != null)
         {
             var modified = files.Min(f => f.LastWriteTimeUtc);
-            Logger.LogInformation("path {Path} most old modified file is {Created}", folder.Path, modified);
+            Logger.LogInformation("folder '{Path}' most old modified file is {Created}", path, modified);
             if (modified < folder.ModifiedAgeDate)
             {
-                throw new CheckException($"folder '{folder.Path}' contains files that are modified older then {folder.ModifiedAgeDate}");
+                throw new CheckException($"folder '{path}' contains files that are modified older then {folder.ModifiedAgeDate}");
             }
         }
 
         Logger.LogInformation("folder check success, folder '{FolderName}', path '{FolderPath}'",
-                        folder.Name, folder.Path);
+                        folder.Name, path);
     }
 
-    private bool ValidateFolder(Folder folder)
+    private static void ValidateFolderExists(Folder folder, IEnumerable<string> hosts)
     {
-        try
+        foreach (var host in hosts)
         {
-            ValidateMaxLength(folder.Name, 50, "name", "folders");
-
-            var section = $"folders ({folder.Name})";
-            ValidateBase(folder, section);
-            ValidateRequired(folder.Path, "path", "folders");
-            ValidateMaxLength(folder.Path, 1000, "path", "folders");
-            ValidatePathExists(folder);
-
-            ValidateGreaterThen(folder.TotalSizeNumber, 0, "total size", section);
-            ValidateGreaterThen(folder.FileSizeNumber, 0, "file size", section);
-            ValidateGreaterThen(folder.FileCount, 0, "file count", section);
-            ValidateFilesPattern(folder);
-
-            if (!folder.IsValid())
-            {
-                throw new InvalidDataException($"folder '{folder.Name}' has no arguments to check");
-            }
+            var path = folder.GetFullPath(host);
+            ValidatePathExists(path);
         }
-        catch (Exception ex)
+    }
+
+    private static void ValidateFolder(Folder folder)
+    {
+        ValidateRequired(folder.Name, "name", "folders");
+        ValidateMaxLength(folder.Name, 50, "name", "folders");
+
+        var section = $"folders ({folder.Name})";
+        ValidateRequired(folder.Path, "path", "folders");
+        ValidateMaxLength(folder.Path, 1000, "path", "folders");
+
+        ValidateBase(folder, section);
+        ValidateGreaterThen(folder.TotalSizeNumber, 0, "total size", section);
+        ValidateGreaterThen(folder.FileSizeNumber, 0, "file size", section);
+        ValidateGreaterThen(folder.FileCount, 0, "file count", section);
+        ValidateFilesPattern(folder);
+
+        if (!folder.IsValid())
         {
-            AddAggregateException(ex);
-            return false;
+            throw new InvalidDataException($"folder '{folder.Name}' has no arguments to check");
         }
-
-        return true;
     }
 }
