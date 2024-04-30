@@ -122,10 +122,21 @@ namespace Planar.CLI.CliGeneral
             var timeSpanTypes = new Type[] { typeof(TimeSpan), typeof(TimeSpan?) };
 
             var vt = propertyInfo.PropertyType;
-            if (vt == typeof(string)) { return $"{value.ToString().EscapeMarkup()}"; }
+            var attr = propertyInfo.GetCustomAttribute<DisplayFormatAttribute>();
+            if (vt == typeof(string))
+            {
+                const string log = "log";
+                if (
+                    attr != null &&
+                    string.Equals(attr.Format, log, StringComparison.OrdinalIgnoreCase))
+                {
+                    return CliFormat.GetLogMarkup(value.ToString()) ?? string.Empty;
+                }
+
+                return $"{value.ToString().EscapeMarkup()}";
+            }
 
             // check for DisplayFormatAttribute
-            var attr = propertyInfo.GetCustomAttribute<DisplayFormatAttribute>();
             if (
                 attr != null &&
                 !string.IsNullOrWhiteSpace(attr.Format) &&

@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
 using System.Data;
-using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace SqlQueryCheck;

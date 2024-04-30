@@ -40,6 +40,7 @@ namespace Planar.API.Common.Entities
 
         public string? Data { get; set; }
 
+        [DisplayFormat("log")]
         public string? Log { get; set; }
 
         public string? Exception { get; set; }
