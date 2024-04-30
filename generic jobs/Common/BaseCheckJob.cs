@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using Planar.Job;
 using Polly;
 using System.Collections.Concurrent;
-using System.Net;
 using System.Text;
 
 public abstract class BaseCheckJob : BaseJob
@@ -108,6 +107,16 @@ public abstract class BaseCheckJob : BaseJob
         if (value > limit)
         {
             throw new InvalidDataException($"'{fieldName}' field with value {value} at '{section}' section must be less then {limit:N0}");
+        }
+    }
+
+    protected static void ValidateLessThen(TimeSpan? value, TimeSpan limit, string fieldName, string section)
+    {
+        if (value == null) { return; }
+
+        if (value >= limit)
+        {
+            throw new InvalidDataException($"'{fieldName}' field with value {FormatTimeSpan(value.Value)} at '{section}' section must be less then {FormatTimeSpan(limit)}");
         }
     }
 

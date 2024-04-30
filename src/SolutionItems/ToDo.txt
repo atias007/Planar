@@ -305,4 +305,5 @@ V1.7.2
 - FolderCheck MonitorJob
 - RedisCheck MonitorJob
 - RabbitMQCheck MonitorJob
+- SqlQueryCheck MonitorJob
 - add markup to cli in log display

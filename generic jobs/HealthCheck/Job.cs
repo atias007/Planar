@@ -79,20 +79,9 @@ internal sealed class Job : BaseCheckJob
 
     private static void Validate(IEndpoint endpoint, string section)
     {
-        if (!endpoint.SuccessStatusCodes?.Any() ?? true)
-        {
-            throw new InvalidDataException($"'success status codes' on {section} section is null or empty");
-        }
-
-        if ((endpoint.Timeout?.TotalSeconds ?? 0) < 1)
-        {
-            throw new InvalidDataException($"'timeout' on {section} section is null or less then 1 second");
-        }
-
-        if ((endpoint.Timeout?.TotalMinutes ?? 0) > 20)
-        {
-            throw new InvalidDataException($"'timeout' on {section} section is greater then 20 minutes");
-        }
+        ValidateRequired(endpoint.SuccessStatusCodes, "success status codes", section);
+        ValidateGreaterThen(endpoint.Timeout, TimeSpan.FromSeconds(1), "timeout", section);
+        ValidateLessThen(endpoint.Timeout, TimeSpan.FromMinutes(20), "timeout", section);
     }
 
     private Defaults GetDefaults(IConfiguration configuration)
