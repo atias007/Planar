@@ -271,6 +271,7 @@ public abstract class BaseCheckJob : BaseJob
                 return;
             }
 
+            Logger.LogError("check failed for key '{Key}'. reason: {Message}", entity.Key, ex.Message);
             AddCheckException(checkException);
         }
         catch (Exception innerEx)
