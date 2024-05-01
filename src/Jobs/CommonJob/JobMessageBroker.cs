@@ -296,6 +296,10 @@ namespace CommonJob
                 if ((int)logEntity.Level >= (int)LogLevel)
                 {
                     Metadata.Log.AppendLine(logEntity.ToString());
+                    if (logEntity.Level == LogLevel.Warning)
+                    {
+                        Metadata.HasWarnings = true;
+                    }
                 }
             }
         }

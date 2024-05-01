@@ -13,16 +13,9 @@ PLAN FOR V 1.7.1
 	https://chartscss.org/charts/bar/
 
 - Security & Audit report
-
------- JOBS ------
-RabbitMQMonitorJob (max items, time)
-RedisStream MonitorJob
-------
-MalamCloudLatencyJob
-
 -------------------
 
-SQL Query Job (https://codepen.io/FluidOfInsanity/pen/yaLRjd)
+SqlTableReport Job (https://codepen.io/FluidOfInsanity/pen/yaLRjd)
 
 
 - BACKLOG ----------------------------------------------------------------------------
@@ -307,3 +300,4 @@ V1.7.2
 - RabbitMQCheck MonitorJob
 - SqlQueryCheck MonitorJob
 - add markup to cli in log display
+- Add ExecutionSuccessWithWarnings monitor event

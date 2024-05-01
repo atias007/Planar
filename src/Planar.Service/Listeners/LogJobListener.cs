@@ -297,13 +297,20 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
         var success = exception == null;
         if (success)
         {
+            // Execution Success
             SafeScan(MonitorEvents.ExecutionSuccess, context, exception);
 
-            // Execution sucsses with no effected rows
+            // Execution Sucsses With No Effected Rows
             var effectedRows = ServiceUtil.GetEffectedRows(context);
             if (effectedRows == 0)
             {
                 SafeScan(MonitorEvents.ExecutionSuccessWithNoEffectedRows, context, exception);
+            }
+
+            var hasWarnings = ServiceUtil.HasWarnings(context);
+            if (hasWarnings)
+            {
+                SafeScan(MonitorEvents.ExecutionSuccessWithWarnings, context, exception);
             }
         }
         else

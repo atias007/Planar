@@ -14,6 +14,7 @@ namespace Planar.Common
         [Description("Execution Success With No Effected Rows")] ExecutionSuccessWithNoEffectedRows = 107,
         [Description("Execution Progress Changed")] ExecutionProgressChanged = 108,
         [Description("Execution Timeout")] ExecutionTimeout = 109,
+        [Description("Execution Success With Warnings")] ExecutionSuccessWithWarnings = 110,
 
         //// - Events with argument --------------------------------
         [Description("Execution Fail {x} Times In Row")] ExecutionFailxTimesInRow = 200,

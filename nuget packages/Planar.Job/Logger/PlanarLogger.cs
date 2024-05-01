@@ -36,7 +36,7 @@ namespace Planar.Job.Logger
             lock (_locker)
             {
                 SetLogLineColor(message);
-                Console.Out.WriteLineAsync(message);
+                Console.WriteLine(message);
                 Console.ResetColor();
 
                 _logBuilder.AppendLine(message);

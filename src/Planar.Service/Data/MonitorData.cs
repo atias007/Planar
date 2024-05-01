@@ -151,6 +151,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
     public async Task<IEnumerable<MonitorAction>> GetMonitorActions()
     {
         return await _context.MonitorActions
+            .Include(m => m.Group)
             .AsNoTracking()
             .ToListAsync();
     }

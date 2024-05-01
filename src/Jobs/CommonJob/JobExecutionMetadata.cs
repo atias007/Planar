@@ -17,6 +17,8 @@ namespace CommonJob
 
         public byte Progress { get; set; }
 
+        public bool HasWarnings { get; set; }
+
         private static readonly object Locker = new();
 
         public string GetLog()

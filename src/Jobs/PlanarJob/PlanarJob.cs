@@ -280,11 +280,24 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
         {
             lock (ConsoleLocker)
             {
-                Console.ForegroundColor = ConsoleColor.DarkCyan;
-                Console.Out.WriteLine($" - {logEntity.Message}");
+                SetLogLineColor(logEntity);
+                Console.WriteLine($" » {logEntity.Message}");
                 Console.ResetColor();
             }
         }
+    }
+
+    private static void SetLogLineColor(LogEntity logEntity)
+    {
+        Console.ForegroundColor = logEntity.Level switch
+        {
+            LogLevel.Warning => ConsoleColor.DarkYellow,
+            LogLevel.Error => ConsoleColor.Red,
+            LogLevel.Debug => ConsoleColor.DarkCyan,
+            LogLevel.Trace => ConsoleColor.DarkGreen,
+            LogLevel.Critical => ConsoleColor.Magenta,
+            _ => ConsoleColor.White,
+        };
     }
 
     private void InterceptingPublishAsyncInner(CloudEventArgs e)
