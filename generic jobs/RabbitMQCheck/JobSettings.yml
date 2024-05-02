@@ -1,0 +1,27 @@
+defaults:                                       # default values for all RabbitMq checks. health check and nodes can ovveride these values BUT not queues
+  retry count: 1                                # the number of retry attemp in case of failure
+  retry interval: 00:00:05                      # the interval between retry attemps
+  maximum fails in row: 5                       # the maximum number of fails in row before the job is considered as failed
+
+# servers:                                      # the servers parameters to be use. usualy this section defined in specific environment job settings
+#   hosts: [http://localhost:15672]             # the rabbitmq host
+#   username: guest
+#   password: guest
+
+health check:                                   # the health check parameters
+  cluster alarm: true                           # if true, the job will fail if the cluster alarm is raised
+  local alarm: true                             # if true, the job will fail if the local alarm is raised
+  node mirror sync: true                        # if true, the job will fail if the node mirror sync is not ok
+  node quorum critical: true                    # if true, the job will fail if the node quorum critical is not ok
+
+nodes:
+  memory alarm: true                            # if true, the job will fail if the memory alarm is raised
+  disk free alarm: true                         # if true, the job will fail if the disk free alarm is raised
+
+queues:
+  - name: demo                                  # the name of the queue
+    messages: 10                                # the maximum number of messages in the queue
+    consumers: null                             # the minimum number of consumers of the queue
+    memory: 2mb                                 # the maximum memory used by the queue (in bytes, kb, mb, gb, tb, pb)
+    check state: true                           # if true, the job will fail if the queue state is not ok
+    span: 00:00:10                              # the time span which violation on the queue limit will be considered ok

@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
 		<Nullable>enable</Nullable>
-		<Version>1.7.1.1</Version>
+		<Version>1.7.2</Version>
 		<RepositoryType>git</RepositoryType>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
@@ -31,6 +31,7 @@
 		<Compile Include="..\..\src\Jobs\CommonJob\JobExecutionContext\TriggerDetail.cs" Link="JobExecutionContext\TriggerDetail.cs" />
 		<Compile Include="..\..\src\Jobs\PlanarJob\MessageBrokerChannels.cs" Link="MessageBrokerChannels.cs" />
 		<Compile Include="..\..\src\Jobs\PlanarJob\PlanarJobExecutionExceptionDto.cs" Link="PlanarJobExecutionExceptionDto.cs" />
+		<Compile Include="..\..\src\Planar.CLI\CliGeneral\CliFormatPartial.cs" Link="Logger\CliFormatPartial.cs" />
 		<Compile Include="..\..\src\Planar.Common\Consts.cs" Link="Consts.cs" />
 		<Compile Include="..\Planar.Common\ExecuteHelper\ExecuteJobProperties.cs" Link="ExecuteHelper\ExecuteJobProperties.cs" />
 		<Compile Include="..\Planar.Common\ExecuteHelper\ExecuteJobPropertiesBuilder.cs" Link="ExecuteHelper\ExecuteJobPropertiesBuilder.cs" />

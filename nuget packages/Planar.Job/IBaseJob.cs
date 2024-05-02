@@ -22,6 +22,14 @@ namespace Planar.Job
 
         void PutTriggerData(string key, object value);
 
+        void RemoveJobData(string key);
+
+        void RemoveTriggerData(string key);
+
+        void ClearJobData();
+
+        void ClearTriggerData();
+
         void UpdateProgress(byte value);
 
         void UpdateProgress(int current, int total);

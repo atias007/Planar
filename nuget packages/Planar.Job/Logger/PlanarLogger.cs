@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Planar.CLI.CliGeneral;
 using System;
 using System.Text;
 
@@ -32,14 +33,29 @@ namespace Planar.Job.Logger
 
         protected void LogToConsole(string message)
         {
-            Console.ForegroundColor = ConsoleColor.DarkCyan;
-            Console.Out.WriteLineAsync(message);
-            Console.ForegroundColor = ConsoleColor.White;
-
             lock (_locker)
             {
+                SetLogLineColor(message);
+                Console.WriteLine(message);
+                Console.ResetColor();
+
                 _logBuilder.AppendLine(message);
             }
+        }
+
+        private static void SetLogLineColor(string message)
+        {
+            var color = CliFormat.GetLogLineColor(message);
+
+            Console.ForegroundColor = color switch
+            {
+                "red" => ConsoleColor.Red,
+                "wheat1" => ConsoleColor.DarkYellow,
+                "deepskyblue1" => ConsoleColor.DarkCyan,
+                "magenta1" => ConsoleColor.Magenta,
+                "lightsalmon1" => ConsoleColor.DarkGreen,
+                _ => ConsoleColor.White,
+            };
         }
     }
 

@@ -280,11 +280,24 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
         {
             lock (ConsoleLocker)
             {
-                Console.ForegroundColor = ConsoleColor.DarkCyan;
-                Console.Out.WriteLine($" - {logEntity.Message}");
+                SetLogLineColor(logEntity);
+                Console.WriteLine($" » {logEntity.Message}");
                 Console.ResetColor();
             }
         }
+    }
+
+    private static void SetLogLineColor(LogEntity logEntity)
+    {
+        Console.ForegroundColor = logEntity.Level switch
+        {
+            LogLevel.Warning => ConsoleColor.DarkYellow,
+            LogLevel.Error => ConsoleColor.Red,
+            LogLevel.Debug => ConsoleColor.DarkCyan,
+            LogLevel.Trace => ConsoleColor.DarkGreen,
+            LogLevel.Critical => ConsoleColor.Magenta,
+            _ => ConsoleColor.White,
+        };
     }
 
     private void InterceptingPublishAsyncInner(CloudEventArgs e)
@@ -325,9 +338,27 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
                 MessageBroker.PutJobDataAction(kv);
                 break;
 
+            case MessageBrokerChannels.RemoveJobData:
+                kv = GetCloudEventEntityValue<KeyValueObject>(e.CloudEvent);
+                MessageBroker.RemoveJobDataAction(kv);
+                break;
+
             case MessageBrokerChannels.PutTriggerData:
                 kv = GetCloudEventEntityValue<KeyValueObject>(e.CloudEvent);
-                MessageBroker.PutTriggerData(kv);
+                MessageBroker.PutTriggerDataAction(kv);
+                break;
+
+            case MessageBrokerChannels.RemoveTriggerData:
+                kv = GetCloudEventEntityValue<KeyValueObject>(e.CloudEvent);
+                MessageBroker.RemoveTriggerDataAction(kv);
+                break;
+
+            case MessageBrokerChannels.ClearTriggerData:
+                MessageBroker.ClearTriggerDataAction();
+                break;
+
+            case MessageBrokerChannels.ClearJobData:
+                MessageBroker.ClearJobDataAction();
                 break;
 
             case MessageBrokerChannels.UpdateProgress:

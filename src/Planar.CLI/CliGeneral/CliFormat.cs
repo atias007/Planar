@@ -1,8 +1,10 @@
 ﻿using Spectre.Console;
+using System.Linq;
+using System.Text;
 
 namespace Planar.CLI.CliGeneral
 {
-    internal static class CliFormat
+    internal static partial class CliFormat
     {
         internal const string WarningColor = "khaki3";
         internal const string OkColor = "green";
@@ -40,6 +42,37 @@ namespace Planar.CLI.CliGeneral
         {
             message ??= string.Empty;
             return $"[black on {ErrorColor}]conflict error:[/] [{ErrorColor}]{message.EscapeMarkup()}[/]";
+        }
+
+        public static string? GetLogMarkup(string? log)
+        {
+            if (string.IsNullOrWhiteSpace(log)) { return null; }
+            var sb = new StringBuilder();
+            var lines = log.Split('\n').Select(l => l?.Trim() ?? string.Empty);
+            string? lastColor = null;
+            foreach (var item in lines)
+            {
+                var matches = _regex.Matches(item);
+                if (matches.Count > 0)
+                {
+                    var level = matches[0].Groups[1].Value;
+                    lastColor = GetColor(level);
+                    sb.AppendLine($"[{lastColor}]{item.EscapeMarkup()}[/]");
+                }
+                else
+                {
+                    if (lastColor != null)
+                    {
+                        sb.AppendLine($"[{lastColor}]{item.EscapeMarkup()}[/]");
+                    }
+                    else
+                    {
+                        sb.AppendLine(item.EscapeMarkup());
+                    }
+                }
+            }
+
+            return sb.ToString();
         }
     }
 }

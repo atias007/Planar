@@ -1,68 +1,67 @@
 ﻿using System;
 
-namespace Planar.CLI.Attributes
+namespace Planar.CLI.Attributes;
+
+[AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
+public class ActionPropertyAttribute : Attribute
 {
-    [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
-    public class ActionPropertyAttribute : Attribute
+    public ActionPropertyAttribute()
     {
-        public ActionPropertyAttribute()
+        ShortName = string.Empty;
+        LongName = string.Empty;
+    }
+
+    public ActionPropertyAttribute(string shortName, string longName)
+    {
+        ShortName = shortName;
+        LongName = longName;
+    }
+
+    public string? Name { get; set; }
+
+    public string LongName { get; set; }
+
+    public string ShortName { get; set; }
+
+    public bool Default { get; set; }
+
+    private int _defaultOrder;
+
+    public int DefaultOrder
+    {
+        get { return _defaultOrder; }
+        set
         {
-            ShortName = string.Empty;
-            LongName = string.Empty;
+            _defaultOrder = value;
+            Default = true;
         }
+    }
 
-        public ActionPropertyAttribute(string shortName, string longName)
+    public string DisplayName
+    {
+        get
         {
-            ShortName = shortName;
-            LongName = longName;
-        }
-
-        public string? Name { get; set; }
-
-        public string LongName { get; set; }
-
-        public string ShortName { get; set; }
-
-        public bool Default { get; set; }
-
-        private int _defaultOrder;
-
-        public int DefaultOrder
-        {
-            get { return _defaultOrder; }
-            set
+            if (!string.IsNullOrEmpty(Name))
             {
-                _defaultOrder = value;
-                Default = true;
+                return Name;
             }
-        }
 
-        public string DisplayName
-        {
-            get
+            if (string.IsNullOrEmpty(LongName) && string.IsNullOrEmpty(ShortName))
             {
-                if (!string.IsNullOrEmpty(Name))
-                {
-                    return Name;
-                }
-
-                if (string.IsNullOrEmpty(LongName) && string.IsNullOrEmpty(ShortName))
-                {
-                    return string.Empty;
-                }
-
-                if (string.IsNullOrEmpty(LongName))
-                {
-                    return $"-{ShortName}";
-                }
-
-                if (string.IsNullOrEmpty(ShortName))
-                {
-                    return $"--{LongName}";
-                }
-
-                return $"-{ShortName}|--{LongName}";
+                return string.Empty;
             }
+
+            if (string.IsNullOrEmpty(LongName))
+            {
+                return $"-{ShortName}";
+            }
+
+            if (string.IsNullOrEmpty(ShortName))
+            {
+                return $"--{LongName}";
+            }
+
+            return $"-{ShortName}|--{LongName}";
         }
     }
 }

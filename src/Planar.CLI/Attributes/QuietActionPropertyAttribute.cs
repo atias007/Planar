@@ -1,14 +1,13 @@
 ﻿using System;
 
-namespace Planar.CLI.Attributes
+namespace Planar.CLI.Attributes;
+
+[AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
+public class QuietActionPropertyAttribute : ActionPropertyAttribute
 {
-    [AttributeUsage(AttributeTargets.Property, Inherited = false, AllowMultiple = false)]
-    public class QuietActionPropertyAttribute : ActionPropertyAttribute
+    public QuietActionPropertyAttribute()
     {
-        public QuietActionPropertyAttribute()
-        {
-            LongName = "quiet";
-            ShortName = "q";
-        }
+        LongName = "quiet";
+        ShortName = "q";
     }
 }

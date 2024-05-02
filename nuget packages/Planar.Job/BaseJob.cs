@@ -97,7 +97,8 @@ namespace Planar.Job
                 _timer.Elapsed += TimerElapsed;
                 _timer.Start();
 
-                ExecuteJob(_context).Wait();
+                var task = ExecuteJob(_context);
+                Task.WhenAll(task).Wait();
                 _timer?.Stop();
                 var mapperBack = new JobBackMapper(_logger, _baseJobFactory);
                 mapperBack.MapJobInstancePropertiesBack(_context, this);
@@ -115,6 +116,12 @@ namespace Planar.Job
 
         private void HandleException(Exception ex)
         {
+            if (ex is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
+            {
+                HandleException(aggregateException.InnerExceptions[0]);
+                return;
+            }
+
             var text = _baseJobFactory.ReportException(ex);
             if (PlanarJob.Mode == RunningMode.Debug)
             {

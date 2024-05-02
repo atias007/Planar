@@ -1,0 +1,3 @@
+hosts:
+  - stage.server.1
+  - stage.server.2

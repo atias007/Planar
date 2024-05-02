@@ -1,0 +1,4 @@
+servers:                                      # the servers parameters to be use. usualy this section defined in specific environment job settings
+  hosts: http://rabbitmq-server-1:15672       # the rabbitmq host
+  username: some-username
+  password: some-password

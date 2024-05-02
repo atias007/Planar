@@ -1,0 +1,31 @@
+defaults:                                       # default values for all endpoints. each endpoint can override these values
+  success status codes: [200]                   # success status codes
+  retry count: 3                                # the number of retry attemp in case of failure
+  retry interval: 00:00:05                      # the interval between retry attemps
+  timeout: 00:00:05                             # the timeout for each request
+  maximum fails in row: 5                       # the maximum number of fails in row before the job is considered as failed
+
+#hosts:                                         # the hosts to be used in the endpoints with relative url. usualy this section defined in specific environment job settings
+#  - http://localhost
+#  - http://127.0.0.1
+ 
+endpoints:
+  - name: Test internet access                 # the display name of the endpoint
+    url: https://www.google.com                # the url of the endpoint
+  - name: GitHub
+    url: https://github.com
+  - name: Consul
+    url: /
+    port: 8500                                 # the port of the endpoint. the default is 80 for http and 443 for https
+  - name: "Seq"
+    url: /
+    port: 9099
+  - name: RabbitMQ
+    url: /api
+    port: 15672
+  - name: Local IIS
+    url: /
+    success status codes: [200]
+    timeout: 00:00:05
+    retry count: 3
+    retry interval: 00:00:01

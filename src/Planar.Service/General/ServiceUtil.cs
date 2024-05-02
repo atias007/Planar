@@ -165,6 +165,14 @@ namespace Planar.Service.General
             return result;
         }
 
+        public static bool HasWarnings(IJobExecutionContext? context)
+        {
+            if (context == null) { return false; }
+            var metadata = context.Result as JobExecutionMetadata;
+            var result = metadata?.HasWarnings ?? false;
+            return result;
+        }
+
         public static void AddDisposeWarningToLog(ILogger logger)
         {
             lock (_locker)

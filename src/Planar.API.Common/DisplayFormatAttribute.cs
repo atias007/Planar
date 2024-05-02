@@ -1,15 +1,9 @@
 ﻿using System;
 
-namespace Planar.API.Common
-{
-    [AttributeUsage(AttributeTargets.Property)]
-    public class DisplayFormatAttribute : Attribute
-    {
-        public DisplayFormatAttribute(string format)
-        {
-            Format = format;
-        }
+namespace Planar.API.Common;
 
-        public string Format { get; }
-    }
+[AttributeUsage(AttributeTargets.Property)]
+public class DisplayFormatAttribute(string format) : Attribute
+{
+    public string Format { get; } = format;
 }

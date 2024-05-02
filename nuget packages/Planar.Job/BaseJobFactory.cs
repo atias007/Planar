@@ -124,6 +124,30 @@ namespace Planar.Job
             MqttClient.Publish(MessageBrokerChannels.PutTriggerData, message).Wait();
         }
 
+        public void RemoveJobData(string key)
+        {
+            var message = new { Key = key };
+            MqttClient.Publish(MessageBrokerChannels.RemoveJobData, message).Wait();
+        }
+
+        public void RemoveTriggerData(string key)
+        {
+            var message = new { Key = key };
+            MqttClient.Publish(MessageBrokerChannels.RemoveTriggerData, message).Wait();
+        }
+
+        public void ClearJobData()
+        {
+            var message = new { };
+            MqttClient.Publish(MessageBrokerChannels.ClearJobData, message).Wait();
+        }
+
+        public void ClearTriggerData()
+        {
+            var message = new { };
+            MqttClient.Publish(MessageBrokerChannels.ClearTriggerData, message).Wait();
+        }
+
         #endregion Data
 
         #region EffectedRows
