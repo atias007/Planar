@@ -44,7 +44,15 @@ dotnet publish --output "C:\Planar\nuget packages\publish"
 dotnet pack --output "C:\Planar\nuget packages\publish"
 cd..
 
-cd publish
+cd..
+cd src\Planar.CLI
+dotnet build -c Release
+dotnet pack --output "C:\Planar\nuget packages\publish"
+cd..
+cd..
+
+
+cd nuget packages\publish
 
 @echo -- > Press any key to continue...
 pause
@@ -55,3 +63,4 @@ dotnet nuget push Planar.Hook.%version%.nupkg --api-key %apikey% --source https:
 dotnet nuget push Planar.Job.%version%.nupkg --api-key %apikey% --source https://api.nuget.org/v3/index.json
 dotnet nuget push Planar.Hook.Test.%version%.nupkg --api-key %apikey% --source https://api.nuget.org/v3/index.json
 dotnet nuget push Planar.Job.Test.%version%.nupkg --api-key %apikey% --source https://api.nuget.org/v3/index.json
+dotnet nuget push planar-cli.%version%.nupkg --api-key %apikey% --source https://api.nuget.org/v3/index.json

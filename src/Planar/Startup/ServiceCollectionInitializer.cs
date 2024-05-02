@@ -63,7 +63,7 @@ namespace Planar.Startup
                 options.AddConcurrencyLimiter("concurrency", config =>
                 {
                     config.PermitLimit = AppSettings.General.ConcurrencyRateLimiting;
-                    config.QueueLimit = AppSettings.General.ConcurrencyRateLimiting / 2;
+                    config.QueueLimit = AppSettings.General.ConcurrencyRateLimiting;
                     config.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                 });
             });
@@ -99,13 +99,11 @@ namespace Planar.Startup
             }
 
             // ATTENTION: Always set this policies event when no Authontication
-            services.AddAuthorization(option =>
-            {
-                option.AddPolicy(Roles.Administrator.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Administrator)));
-                option.AddPolicy(Roles.Editor.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Editor)));
-                option.AddPolicy(Roles.Tester.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Tester)));
-                option.AddPolicy(Roles.Viewer.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Viewer)));
-            });
+            services.AddAuthorizationBuilder()
+                .AddPolicy(Roles.Administrator.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Administrator)))
+                .AddPolicy(Roles.Editor.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Editor)))
+                .AddPolicy(Roles.Tester.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Tester)))
+                .AddPolicy(Roles.Viewer.ToString(), policy => policy.Requirements.Add(new MinimumRoleRequirement(Roles.Viewer)));
 
             services.AddSingleton<IAuthorizationHandler, MinimumRoleHandler>();
         }

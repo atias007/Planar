@@ -1,5 +1,5 @@
 @echo off 
-set version=1.7.1
+set version=1.7.2
 
 echo run docker build script for version: %version%
 echo ******** CLEAR OLD ********

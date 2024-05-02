@@ -15,7 +15,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Common", "Common", "{AA2C2A
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Common", "Common\Common.csproj", "{B366F8CB-A422-4A61-A75D-BFBDA80BE6D4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlQueryCheck", "SqlQueryCheck\SqlQueryCheck.csproj", "{440E26AD-8E33-4217-B148-EA5EB9E8C612}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SqlQueryCheck", "SqlQueryCheck\SqlQueryCheck.csproj", "{440E26AD-8E33-4217-B148-EA5EB9E8C612}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionItems", "{7D3E62E5-61BB-45F1-982A-F328BE568AC7}"
+	ProjectSection(SolutionItems) = preProject
+		publish.bat = publish.bat
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

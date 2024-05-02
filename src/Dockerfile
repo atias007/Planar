@@ -9,23 +9,25 @@ EXPOSE 443
 # ---------------------------- Build Image -------------------------------------------
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
+COPY ["DatabaseMigrations/DatabaseMigrations.csproj", "DatabaseMigrations/"]
+COPY ["DatabaseMigrations.Factory/DatabaseMigrations.Factory.csproj", "DatabaseMigrations.Factory/"]
+COPY ["DbUp/dbup-core/dbup-core.csproj", "DbUp/dbup-core/"]
+COPY ["DbUp/dbup-mysql/dbup-mysql.csproj", "DbUp/dbup-mysql/"]
+COPY ["DbUp/dbup-postgresql/dbup-postgresql.csproj", "DbUp/dbup-postgresql/"]
+COPY ["DbUp/dbup-sqlserver/dbup-sqlserver.csproj", "DbUp/dbup-sqlserver/"]
+COPY ["Hooks/Planar.Hooks.csproj", "Hooks/"]
 COPY ["Jobs/CommonJob/CommonJob.csproj", "Jobs/CommonJob/"]
 COPY ["Jobs/PlanarJob/PlanarJob.csproj", "Jobs/PlanarJob/"]
 COPY ["Jobs/ProcessJob/ProcessJob.csproj", "Jobs/ProcessJob/"]
 COPY ["Jobs/SqlJob/SqlJob.csproj", "Jobs/SqlJob/"]
 COPY ["Jobs/RestJob/RestJob.csproj", "Jobs/RestJob/"]
 COPY ["Jobs/PowerShellJob/PowerShellJob.csproj", "Jobs/PowerShellJob/"]
-COPY ["DatabaseMigrations/DatabaseMigrations.csproj", "DatabaseMigrations/"]
-COPY ["DatabaseMigrations.Factory/DatabaseMigrations.Factory.csproj", "DatabaseMigrations.Factory/"]
-COPY ["DbUp/dbup-core/dbup-core.csproj", "DbUp/dbup-core/"]
-COPY ["DbUp/dbup-sqlserver/dbup-sqlserver.csproj", "DbUp/dbup-sqlserver/"]
-COPY ["DbUp/dbup-mysql/dbup-mysql.csproj", "DbUp/dbup-mysql/"]
+COPY ["Nager.Date/Nager.Date.csproj", "Nager.Date/"]
 COPY ["Planar/Planar.csproj", "Planar/"]
 COPY ["Planar.API.Common/Planar.API.Common.csproj", "Planar.API.Common/"]
 COPY ["Planar.CLI/Planar.CLI.csproj", "Planar.CLI/"]
 COPY ["Planar.Common/Planar.Common.csproj", "Planar.Common/"]
 COPY ["Planar.Service/Planar.Service.csproj", "Planar.Service/"]
-COPY ["Hooks/Planar.Hooks.csproj", "Hooks/"]
 
 RUN dotnet restore "Planar/Planar.csproj"
 RUN dotnet restore "Planar.CLI/Planar.CLI.csproj"
