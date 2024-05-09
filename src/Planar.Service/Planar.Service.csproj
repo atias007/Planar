@@ -89,10 +89,10 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<TreatAsUsed>true</TreatAsUsed>
 		</PackageReference>
-		<PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.8.1" />
-		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.8.1" />
-		<PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.8.1" />
-		<PackageReference Include="Quartz.Serialization.Json" Version="3.8.1" />
+		<PackageReference Include="Quartz.Extensions.DependencyInjection" Version="3.9.0" />
+		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.9.0" />
+		<PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.9.0" />
+		<PackageReference Include="Quartz.Serialization.Json" Version="3.9.0" />
 		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.24.0.89429">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
