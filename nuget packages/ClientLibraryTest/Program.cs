@@ -1,8 +1,11 @@
-﻿using Planar.Client;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Planar.Client;
 using Planar.Client.Entities;
 
-var client = new PlanarClient();
-var login = await client.ConnectAsync("http://localhost:2306");
+var services = new ServiceCollection();
+services.AddPlanarClient(c => c.Host = "http://localhost:2306");
+var provider = services.BuildServiceProvider();
+var client = provider.GetRequiredService<IPlanarClient>();
 var list = await client.History.ListAsync(new ListHistoryFilter { PageSize = 5, PageNumber = 1, JobId = "Demo.TestEnvironmentExit" });
 var details = await client.Job.GetAsync("Demo.TestEnvironmentExit");
 
@@ -22,7 +25,7 @@ var res2 = await client.History.GetAsync("NON_CLUSTERED638306436561775750");
 var res3 = await client.History.LastAsync();
 
 return;
-Console.WriteLine($"[x] Login as {login.Role}");
+// Console.WriteLine($"[x] Login as {login.Role}");
 var result1 = await client.Job.GetJobTypesAsync();
 Console.WriteLine($"[x] Job Types:");
 foreach (var jobType in result1)

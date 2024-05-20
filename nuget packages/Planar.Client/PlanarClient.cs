@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Client
 {
-    public class PlanarClient
+    public class PlanarClient : IPlanarClient
     {
         private const string Anonymous = "anonymous";
 
@@ -62,7 +62,7 @@ namespace Planar.Client
         {
             if (!Uri.TryCreate(options.Host, UriKind.Absolute, out var uri))
             {
-                throw new PlanarException($"Invalid address {options.Host}");
+                throw new PlanarException($"Invalid uri address '{options.Host}'");
             }
 
             var loginData = new LoginData

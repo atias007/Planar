@@ -187,7 +187,7 @@ public abstract class BaseCommonJob<TProperties> : BaseCommonJob, IJob
 
         context.CancellationToken.Register(() =>
         {
-            MessageBroker.AppendLog(Microsoft.Extensions.Logging.LogLevel.Warning, "Service get a request for cancel job");
+            MessageBroker.AppendLog(LogLevel.Warning, "Service get a request for cancel job");
         });
     }
 
