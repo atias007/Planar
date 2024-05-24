@@ -16,4 +16,14 @@ public static class CustomValidatorsExtensions
         var validator = new EnumValidatorForInteger<T, TProperty>(enumType);
         return ruleBuilder.SetValidator(validator);
     }
+
+    public static IRuleBuilderOptions<T, string> CronExpression<T>(this IRuleBuilder<T, string> ruleBuilder)
+    {
+        return ruleBuilder.Must(Quartz.CronExpression.IsValidExpression).WithMessage("invalid cron expression");
+    }
+
+    public static IRuleBuilderOptions<T, TimeSpan> NotZero<T>(this IRuleBuilder<T, TimeSpan> ruleBuilder)
+    {
+        return ruleBuilder.Must(b => b != TimeSpan.Zero).WithMessage("time span must be greater then zero");
+    }
 }

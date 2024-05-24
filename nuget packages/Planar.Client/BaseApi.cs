@@ -27,6 +27,14 @@ namespace Planar.Client
             }
         }
 
+        protected void ValidateMandatory(TimeSpan value, string name)
+        {
+            if (value == TimeSpan.Zero)
+            {
+                throw new ArgumentException($"'{name}' cannot be zero", name);
+            }
+        }
+
         protected void ValidateMandatory(DateTime? date, string name)
         {
             if (date == null || date == DateTime.MinValue)

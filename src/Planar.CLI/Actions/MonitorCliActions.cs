@@ -255,7 +255,7 @@ namespace Planar.CLI.Actions
             var restRequest = new RestRequest("monitor/hook", Method.Post)
                 .AddBody(new { request.Filename });
 
-            restRequest.Timeout = 25_000;
+            restRequest.Timeout = TimeSpan.FromMilliseconds(25_000);
             AnsiConsole.MarkupLine($"[grey62]  > (please wait... this action may take up to 20 seconds)[/]");
 
             var result = await RestProxy.Invoke<MonitorHookDetails>(restRequest, cancellationToken);
@@ -448,7 +448,7 @@ namespace Planar.CLI.Actions
             var eventsName = events.Select(e => $"{e.EventTitle} {CliConsts.GroupDisplayFormat}({e.EventType})[/]");
             var selectedEvent = PromptSelection(eventsName, "monitor event");
             if (selectedEvent == null) { return string.Empty; }
-            selectedEvent = selectedEvent[0..(selectedEvent.IndexOf(CliConsts.GroupDisplayFormat)-1)];
+            selectedEvent = selectedEvent[0..(selectedEvent.IndexOf(CliConsts.GroupDisplayFormat) - 1)];
             AnsiConsole.MarkupLine($"[turquoise2]  > event:[/] {selectedEvent}");
             var result = events.FirstOrDefault(e => e.EventTitle == selectedEvent)?.EventName;
             return result ?? string.Empty;

@@ -63,7 +63,7 @@ public class RestJob(
     {
         if (Properties.BasicAuthentication != null)
         {
-            var authenticator = new HttpBasicAuthenticator(Properties.BasicAuthentication.Username, Properties.BasicAuthentication.Password);
+            var authenticator = new HttpBasicAuth(Properties.BasicAuthentication.Username, Properties.BasicAuthentication.Password);
             options.Authenticator = authenticator;
         }
 
@@ -190,7 +190,7 @@ public class RestJob(
     {
         return new RestClientOptions
         {
-            MaxTimeout = Convert.ToInt32(timeout.TotalMilliseconds),
+            Timeout = timeout,
             RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
             {
                 return Properties.IgnoreSslErrors;

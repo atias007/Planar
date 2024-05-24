@@ -5,6 +5,9 @@ using System.Net;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using RestSharp.Serializers.NewtonsoftJson;
+using Newtonsoft.Json;
+using Core.JsonConvertor;
 
 namespace Planar.Client
 {
@@ -41,10 +44,16 @@ namespace Planar.Client
                         var options = new RestClientOptions
                         {
                             BaseUrl = BaseUri,
-                            MaxTimeout = Convert.ToInt32(Timeout.TotalMilliseconds)
+                            Timeout = TimeSpan.FromMilliseconds(Convert.ToInt32(Timeout.TotalMilliseconds))
                         };
 
-                        _client = new RestClient(options);
+                        var serOprions = new JsonSerializerSettings();
+                        serOprions.Converters.Add(new NewtonsoftTimeSpanConverter());
+
+                        _client = new RestClient(
+                            options: options,
+                            configureSerialization: s => s.UseNewtonsoftJson(serOprions)
+                        );
 
                         if (!string.IsNullOrEmpty(Token))
                         {
@@ -99,7 +108,7 @@ namespace Planar.Client
                 {
                     try
                     {
-                        var errors = JsonSerializer.Deserialize<PlanarValidationErrors>(response.Content);
+                        var errors = System.Text.Json.JsonSerializer.Deserialize<PlanarValidationErrors>(response.Content);
                         if (errors != null)
                         {
                             throw new PlanarValidationException("Planar service return validation errors. For more detais see errors property", errors);
@@ -193,7 +202,7 @@ namespace Planar.Client
             var options = new RestClientOptions
             {
                 BaseUrl = new UriBuilder(schema, login.Host, login.Port).Uri,
-                MaxTimeout = Convert.ToInt32(Timeout.TotalMilliseconds),
+                Timeout = TimeSpan.FromMilliseconds(Convert.ToInt32(Timeout.TotalMilliseconds)),
             };
 
             var client = new RestClient(options);

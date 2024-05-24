@@ -58,8 +58,9 @@ namespace Planar.CLI
         public static CliTable GetTable(AddUserResponse? response)
         {
             var table = new CliTable();
-            if (response == null) { return table; }
             table.Table.AddColumns("Password");
+
+            if (response == null) { return table; }
             table.Table.AddRow(SafeCliString(response.Password));
             table.Table.AddEmptyRow();
             table.Table.AddRow(CliFormat.GetWarningMarkup("make sure you copy the above password now."));
@@ -82,8 +83,9 @@ namespace Planar.CLI
         public static CliTable GetTable(WorkingHoursModel? response)
         {
             var table = new CliTable();
-            if (response == null) { return table; }
             table.Table.AddColumns("Day Of Week", "Time Scope(s)");
+            if (response == null) { return table; }
+
             foreach (var item in response.Days)
             {
                 var text = CliTableFormat.GetTimeScopeString(item.Scopes);
@@ -101,8 +103,9 @@ namespace Planar.CLI
         public static CliTable GetTable(JobMetrics? response)
         {
             var table = new CliTable();
-            if (response == null) { return table; }
             table.Table.AddColumns("Key", "Value");
+            if (response == null) { return table; }
+
             table.Table.AddRow("Average Duration", CliTableFormat.FormatTimeSpan(response.AvgDuration));
             table.Table.AddRow("Standard Deviation Duration", CliTableFormat.FormatTimeSpan(response.StdevDuration));
             table.Table.AddRow("Average Effected Rows", response.AvgEffectedRows.ToString("N2"));
@@ -117,7 +120,6 @@ namespace Planar.CLI
         public static CliTable GetTable(PagingResponse<JobAuditDto>? response, bool withJobId = false)
         {
             var table = new CliTable(paging: response, "audit");
-            if (response == null || response.Data == null) { return table; }
 
             if (withJobId)
             {
@@ -127,6 +129,8 @@ namespace Planar.CLI
             {
                 table.Table.AddColumns("Id", "Date Created", "Username", "User Title", "Description");
             }
+
+            if (response == null || response.Data == null) { return table; }
 
             foreach (var item in response.Data)
             {
@@ -147,8 +151,9 @@ namespace Planar.CLI
         public static CliTable GetTable(IEnumerable<ReportsStatus>? response)
         {
             var table = new CliTable();
-            if (response == null) { return table; }
             table.Table.AddColumns("Period", "Enable", "Group", "Next Running");
+            if (response == null) { return table; }
+
             foreach (var item in response)
             {
                 if (item == null) { continue; }
@@ -179,8 +184,9 @@ namespace Planar.CLI
         public static CliTable GetTable(IEnumerable<MuteItem>? response)
         {
             var table = new CliTable(showCount: true);
-            if (response == null) { return table; }
             table.Table.AddColumns("Job Id", "Job Key", "Monitor Id", "Monitor Title", "Due Date");
+            if (response == null) { return table; }
+
             foreach (var item in response)
             {
                 if (item == null) { continue; }
@@ -195,8 +201,9 @@ namespace Planar.CLI
         public static CliTable GetTable(IEnumerable<HookInfo>? response)
         {
             var table = new CliTable(showCount: true);
-            if (response == null) { return table; }
             table.Table.AddColumns("Name", "Type", "Description");
+            if (response == null) { return table; }
+
             foreach (var item in response)
             {
                 if (item == null) { continue; }
@@ -219,8 +226,9 @@ namespace Planar.CLI
         public static CliTable GetTable(IEnumerable<LovItem>? response, string entityName)
         {
             var table = new CliTable(showCount: true, entityName);
-            if (response == null) { return table; }
             table.Table.AddColumns("Id", "Name");
+            if (response == null) { return table; }
+
             foreach (LovItem item in response)
             {
                 table.Table.AddRow(item.Id.ToString(), LimitValue(item.Name));
@@ -232,8 +240,9 @@ namespace Planar.CLI
         public static CliTable GetTable(List<MonitorEventModel>? response)
         {
             var table = new CliTable(showCount: true, entityName: "event");
-            if (response == null) { return table; }
             table.Table.AddColumns("Event Title", "Event Type");
+
+            if (response == null) { return table; }
             response.ForEach(r => table.Table.AddRow(r.EventTitle, r.EventType));
             return table;
         }
@@ -241,8 +250,8 @@ namespace Planar.CLI
         public static CliTable GetTable(PagingResponse<JobBasicDetails>? response)
         {
             var table = new CliTable(paging: response, entityName: "job");
-            if (response == null || response.Data == null) { return table; }
             table.Table.AddColumns("Job Id", "Job Key", "Job Type", "Description");
+            if (response == null || response.Data == null) { return table; }
             response.Data.ForEach(r => table.Table.AddRow(r.Id, CliTableFormat.FormatJobKey(r.Group, r.Name), r.JobType.EscapeMarkup(), LimitValue(r.Description)));
             return table;
         }
@@ -250,8 +259,9 @@ namespace Planar.CLI
         public static CliTable GetTable(List<RunningJobDetails>? response)
         {
             var table = new CliTable(showCount: true, "job");
-            if (response == null) { return table; }
             table.Table.AddColumns("Fire Instance Id", "Job Id", "Job Key", "Progress", "Effected Rows", "Ex. Count", "Run Time", "End Time");
+            if (response == null) { return table; }
+
             response.ForEach(r => table.Table.AddRow(
                 CliTableFormat.GetFireInstanceIdMarkup(r.FireInstanceId),
                 $"{r.Id}",
@@ -267,11 +277,12 @@ namespace Planar.CLI
         public static CliTable GetTable(PagingResponse<JobInstanceLogRow>? response, bool singleJob = false)
         {
             var table = new CliTable(paging: response);
-            if (response == null || response.Data == null) { return table; }
 
             if (singleJob)
             {
                 table.Table.AddColumns("Id", "Trigger Id", "Status", "Start Date", "Duration", "Effected Rows");
+                if (response == null || response.Data == null) { return table; }
+
                 response.Data.ForEach(r => table.Table.AddRow(
                     $"{r.Id}",
                     CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty),
@@ -283,6 +294,8 @@ namespace Planar.CLI
             else
             {
                 table.Table.AddColumns("Id", "Job Id", "Job Key", "Job Type", "Trigger Id", "Status", "Start Date", "Duration", "Effected Rows");
+                if (response == null || response.Data == null) { return table; }
+
                 response.Data.ForEach(r => table.Table.AddRow(
                     $"{r.Id}",
                     r.JobId ?? string.Empty,
@@ -301,8 +314,9 @@ namespace Planar.CLI
         public static CliTable GetTable(PagingResponse<JobLastRun>? response)
         {
             var table = new CliTable(paging: response);
-            if (response == null || response.Data == null) { return table; }
             table.Table.AddColumns("Id", "Job Id", "Job Key", "Job Type", "Trigger Id", "Status", "Start Date", "Duration", "Effected Rows");
+            if (response == null || response.Data == null) { return table; }
+
             response.Data.ForEach(r => table.Table.AddRow(
                 $"{r.Id}",
                 r.JobId ?? string.Empty,
@@ -320,8 +334,9 @@ namespace Planar.CLI
         public static CliTable GetTable(PagingResponse<HistorySummary>? response)
         {
             var table = new CliTable(paging: response);
-            if (response == null || response.Data == null) { return table; }
             table.Table.AddColumns("Job Id", "Job Key", "Total", "Success", "Fail", "Running", "Retries", "Effected Rows");
+            if (response == null || response.Data == null) { return table; }
+
             response.Data.ForEach(r => table.Table.AddRow(
                 r.JobId ?? string.Empty,
                 CliTableFormat.FormatJobKey(r.JobGroup, r.JobName),
@@ -338,8 +353,9 @@ namespace Planar.CLI
         public static CliTable GetTable(PagingResponse<ConcurrentExecutionModel>? response)
         {
             var table = new CliTable(paging: response);
-            if (response == null || response.Data == null) { return table; }
             table.Table.AddColumns("Record Date", "Server", "InstanceId", "Max Concurrent");
+            if (response == null || response.Data == null) { return table; }
+
             response.Data.ForEach(r => table.Table.AddRow(
                 CliTableFormat.FormatDateTime(r.RecordDate),
                 r.Server.EscapeMarkup(),
@@ -352,8 +368,9 @@ namespace Planar.CLI
         public static CliTable GetTable(PagingResponse<SecurityAuditModel>? response)
         {
             var table = new CliTable(paging: response);
-            if (response == null || response.Data == null) { return table; }
             table.Table.AddColumns("Title", "Username", "User Title", "Date Created", "Is Warning");
+            if (response == null || response.Data == null) { return table; }
+
             response.Data.ForEach(r => table.Table.AddRow(
                 SafeCliString(r.Title),
                 SafeCliString(r.Username),
@@ -367,8 +384,9 @@ namespace Planar.CLI
         public static CliTable GetTable(PagingResponse<LogDetails>? response)
         {
             var table = new CliTable(paging: response);
-            if (response == null || response.Data == null) { return table; }
             table.Table.AddColumns("Id", "Message", "Level", "Time Stamp");
+            if (response == null || response.Data == null) { return table; }
+
             response.Data.ForEach(r => table.Table.AddRow(
                 $"{r.Id}",
                 SafeCliString(r.Message),
@@ -381,8 +399,9 @@ namespace Planar.CLI
         public static CliTable GetTable(TriggerRowDetails? response)
         {
             var table = new CliTable(showCount: true, entityName: "trigger");
-            if (response == null) { return table; }
             table.Table.AddColumns("Trigger Id", "Trigger Name", "State", "Next Fire Time", "Interval/Cron");
+            if (response == null) { return table; }
+
             response.SimpleTriggers.ForEach(r => table.Table.AddRow(
                 $"{r.Id}",
                 r.TriggerName.EscapeMarkup(),
@@ -403,12 +422,13 @@ namespace Planar.CLI
         public static List<CliTable> GetTable(JobDetails? response)
         {
             var table = new CliTable();
+
+            table.Table.AddColumns("Property Name", "Value");
             if (response == null)
             {
                 return [table, table];
             }
 
-            table.Table.AddColumns("Property Name", "Value");
             table.Table.AddRow(nameof(response.Id), response.Id.EscapeMarkup());
             table.Table.AddRow(nameof(response.Group), response.Group.EscapeMarkup());
             table.Table.AddRow(nameof(response.Name), response.Name.EscapeMarkup());
@@ -439,8 +459,9 @@ namespace Planar.CLI
         public static CliTable GetTable(List<CliClusterNode>? response)
         {
             var table = new CliTable(showCount: true, entityName: "node");
-            if (response == null) { return table; }
             table.Table.AddColumns("Server", "Port", "Instance Id", "Cluster Port", "Join Date", "Health Check");
+            if (response == null) { return table; }
+
             response.ForEach(r =>
             {
                 var hcTitle = CliTableFormat.FormatClusterHealthCheck(r.HealthCheckGap, r.HealthCheckGapDeviation);
@@ -458,9 +479,10 @@ namespace Planar.CLI
         public static CliTable GetTable(PagingResponse<MonitorItem>? response)
         {
             var table = new CliTable(paging: response, entityName: "monitor");
-            if (response == null || response.Data == null) { return table; }
 
             table.Table.AddColumns("Id", "Title", "Event", "Job Group", "Job Name", "Event Argument", "Dist. Group", "Hook", "Active");
+            if (response == null || response.Data == null) { return table; }
+
             response.Data.ForEach(r => table.Table.AddRow(
                 r.Id.ToString(),
                 r.Title.EscapeMarkup(),
@@ -478,9 +500,10 @@ namespace Planar.CLI
         public static CliTable GetTable(PagingResponse<MonitorAlertRowModel>? response)
         {
             var table = new CliTable(paging: response, entityName: "alert");
-            if (response == null || response.Data == null) { return table; }
 
             table.Table.AddColumns("Id", "Monitor Title", "Event Title", "Event Arguments", "Alert Date", "JobId", "Job Key", "Dist. Group", "Hook", "Has Error");
+            if (response == null || response.Data == null) { return table; }
+
             response.Data.ForEach(r => table.Table.AddRow(
                 r.Id.ToString(),
                 SafeCliString(r.MonitorTitle),
@@ -499,8 +522,9 @@ namespace Planar.CLI
         public static CliTable GetTable(PagingResponse<GroupInfo>? response)
         {
             var table = new CliTable(paging: response, entityName: "group");
-            if (response == null || response.Data == null) { return table; }
             table.Table.AddColumns("Name", "Role", "User Count");
+            if (response == null || response.Data == null) { return table; }
+
             response.Data.ForEach(r => table.Table.AddRow(r.Name.EscapeMarkup(), r.Role.EscapeMarkup(), $"{r.UsersCount}"));
             return table;
         }
@@ -508,8 +532,9 @@ namespace Planar.CLI
         public static CliTable GetTable(PagingResponse<UserRowModel>? data)
         {
             var table = new CliTable(paging: data, entityName: "user");
-            if (data == null || data.Data == null) { return table; }
             table.Table.AddColumns("Username", "First Name", "Last Name", "Email Address 1", "Phone Number 1");
+            if (data == null || data.Data == null) { return table; }
+
             data.Data.ForEach(r => table.Table.AddRow(r.Username.EscapeMarkup(), r.FirstName.EscapeMarkup(), r.LastName.EscapeMarkup(), r.EmailAddress1.EscapeMarkup(), r.PhoneNumber1.EscapeMarkup()));
             return table;
         }
@@ -517,8 +542,9 @@ namespace Planar.CLI
         public static CliTable GetTable(List<PausedTriggerDetails>? response)
         {
             var table = new CliTable(showCount: true, entityName: "trigger");
-            if (response == null) { return table; }
             table.Table.AddColumns("Trigger Id", "Trigger Name", "Job Id", "Job Key");
+            if (response == null) { return table; }
+
             response.ForEach(r => table.Table.AddRow(r.Id.EscapeMarkup(), r.TriggerName.EscapeMarkup(), r.JobId.EscapeMarkup(), CliTableFormat.FormatJobKey(r.JobGroup, r.JobName)));
             return table;
         }
@@ -526,8 +552,9 @@ namespace Planar.CLI
         internal static CliTable GetTable(List<CliGlobalConfig>? response)
         {
             var table = new CliTable(showCount: true);
-            if (response == null) { return table; }
             table.Table.AddColumns("Key", "Value", "Type");
+
+            if (response == null) { return table; }
             response.ForEach(r => table.Table.AddRow(r.Key.EscapeMarkup(), LimitValue(r.Value), r.Type.EscapeMarkup()));
             return table;
         }

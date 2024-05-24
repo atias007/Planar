@@ -68,12 +68,12 @@ namespace Planar.CLI.Actions
                 return response;
             }
 
-            if (result.Data.SimpleTriggers.Any())
+            if (result.Data.SimpleTriggers.Count != 0)
             {
                 return new CliActionResponse(result, dumpObject: result.Data.SimpleTriggers[0]);
             }
 
-            if (result.Data.CronTriggers.Any())
+            if (result.Data.CronTriggers.Count != 0)
             {
                 return new CliActionResponse(result, dumpObject: result.Data.CronTriggers);
             }
@@ -106,6 +106,24 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> ResumeTrigger(CliTriggerKey request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("trigger/resume", Method.Post)
+                .AddBody(request);
+
+            return await Execute(restRequest, cancellationToken);
+        }
+
+        [Action("set-cronexpr")]
+        public static async Task<CliActionResponse> UpdateCron(CliUpdateCronRequest request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("trigger/cron-expression", Method.Patch)
+                .AddBody(request);
+
+            return await Execute(restRequest, cancellationToken);
+        }
+
+        [Action("set-interval")]
+        public static async Task<CliActionResponse> UpdateInterval(CliUpdateIntervalRequest request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("trigger/interval", Method.Patch)
                 .AddBody(request);
 
             return await Execute(restRequest, cancellationToken);

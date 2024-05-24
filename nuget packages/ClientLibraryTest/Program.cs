@@ -6,6 +6,10 @@ var services = new ServiceCollection();
 services.AddPlanarClient(c => c.Host = "http://localhost:2306");
 var provider = services.BuildServiceProvider();
 var client = provider.GetRequiredService<IPlanarClient>();
+
+await client.Trigger.UpdateCronExpressionAsync("g2otp1mody4", "0 0 0 1 1 ? 2022"); // 0 0 16 ? 1/1 7#1 *
+await client.Trigger.UpdateIntervalAsync("jh4eums0jly", TimeSpan.FromMinutes(55));
+
 var list = await client.History.ListAsync(new ListHistoryFilter { PageSize = 5, PageNumber = 1, JobId = "Demo.TestEnvironmentExit" });
 var details = await client.Job.GetAsync("Demo.TestEnvironmentExit");
 

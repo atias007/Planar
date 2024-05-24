@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using Core.JsonConvertors;
+using FluentValidation;
 using FluentValidation.AspNetCore;
 using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -39,7 +40,9 @@ namespace Planar.Startup
             services.AddFluentValidationAutoValidation();
             services.AddValidatorsFromAssemblies(new[] { typeof(Program).Assembly, typeof(MainService).Assembly });
 
-            var mvcBuilder = services.AddControllers();
+            var mvcBuilder = services.AddControllers()
+                .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new SystemTextTimeSpanConverter()));
+
             ODataInitializer.RegisterOData(mvcBuilder);
 
             if (AppSettings.General.SwaggerUI)

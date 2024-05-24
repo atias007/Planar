@@ -157,6 +157,7 @@ namespace Planar.CLI.Actions
         }
 
         protected static async Task<CliActionResponse> ExecuteTable<T>(RestRequest request, Func<T, CliTable> tableFunc, CancellationToken cancellationToken)
+            where T : class
         {
             var result = await RestProxy.Invoke<T>(request, cancellationToken);
             if (result.IsSuccessful && result.Data != null)
@@ -418,7 +419,7 @@ namespace Planar.CLI.Actions
 
                 if (!string.IsNullOrEmpty(moduleAttribute?.Synonyms))
                 {
-                    item.ModuleSynonyms = moduleAttribute.Synonyms.Split(',').ToList();
+                    item.ModuleSynonyms = [.. moduleAttribute.Synonyms.Split(',')];
                 }
 
                 if (!string.IsNullOrEmpty(item.Module))

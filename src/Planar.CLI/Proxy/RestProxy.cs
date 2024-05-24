@@ -1,5 +1,8 @@
-﻿using Planar.CLI.DataProtect;
+﻿using Core.JsonConvertor;
+using Newtonsoft.Json;
+using Planar.CLI.DataProtect;
 using RestSharp;
+using RestSharp.Serializers.NewtonsoftJson;
 using System;
 using System.Net;
 using System.Threading;
@@ -35,10 +38,16 @@ namespace Planar.CLI.Proxy
                     var options = new RestClientOptions
                     {
                         BaseUrl = BaseUri,
-                        MaxTimeout = 60_000,
+                        Timeout = TimeSpan.FromMilliseconds(60_000),
                     };
 
-                    _client = new RestClient(options);
+                    var serOprions = new JsonSerializerSettings();
+                    serOprions.Converters.Add(new NewtonsoftTimeSpanConverter());
+
+                    _client = new RestClient(
+                        options: options,
+                        configureSerialization: s => s.UseNewtonsoftJson(serOprions)
+                        );
 
                     if (!string.IsNullOrEmpty(LoginProxy.Token))
                     {
@@ -70,9 +79,9 @@ namespace Planar.CLI.Proxy
 
         private static void SetDefaultRequestTimeout(RestRequest request)
         {
-            if (request.Timeout == 0)
+            if (request.Timeout == TimeSpan.Zero)
             {
-                request.Timeout = 10_000;
+                request.Timeout = TimeSpan.FromMilliseconds(10_000);
             }
         }
 
