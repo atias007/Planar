@@ -29,6 +29,7 @@ internal class TriggerDetailsProfile : Profile
             .Include<ISimpleTrigger, SimpleTriggerDetails>()
             .Include<ICronTrigger, CronTriggerDetails>()
             .ForMember(t => t.Id, map => map.MapFrom(s => GetTriggerId(s)))
+            .ForMember(t => t.TriggerName, map => map.MapFrom(s => s.Key.Name))
             .ForMember(t => t.RetrySpan, map => map.MapFrom(s => TriggerHelper.GetRetrySpan(s)))
             .ForMember(t => t.MaxRetries, map => map.MapFrom(s => TriggerHelper.GetMaxRetries(s)))
             .ForMember(t => t.Timeout, map => map.MapFrom(s => TriggerHelper.GetTimeout(s)))

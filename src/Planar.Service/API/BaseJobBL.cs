@@ -8,6 +8,7 @@ using Planar.Service.Exceptions;
 using Quartz;
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Transactions;
 
@@ -141,7 +142,10 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
     {
         if (ex is not SchedulerException) { return; }
         var message = ex.Message;
-        if (message.Contains("the given trigger") && message.Contains("will never fire"))
+        const string pattern = "(the given trigger).*(will never fire)";
+        var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+
+        if (regex.IsMatch(ex.Message))
         {
             triggerId ??= GetTriggerIdFromErrorMessage(message);
             if (string.IsNullOrWhiteSpace(triggerId))

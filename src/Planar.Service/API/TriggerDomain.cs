@@ -14,6 +14,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static Planar.Service.API.JobDomain;
+using static Quartz.MisfireInstruction;
 
 namespace Planar.Service.API;
 
@@ -167,7 +168,6 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
     {
         var trigger = await GetTriggerById(request.Id);
         ValidateSystemTrigger(trigger);
-        //// await ValidateTriggerPaused(trigger);
         var cronTrigger = ValidateCronTrigger(trigger, request);
         if (cronTrigger.CronExpressionString == request.CronExpression) { return; }
 
@@ -178,14 +178,10 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         {
             await Scheduler.RescheduleJob(trigger.Key, cronTrigger);
         }
-        catch (SchedulerException ex)
+        catch (Exception ex)
         {
-            const string pattern = "(the given trigger).*(will never fire)";
-            var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
-            if (regex.IsMatch(ex.Message))
-            {
-                throw new RestValidationException("id", $"the given trigger '{request.Id}' will never fire");
-            }
+            ValidateTriggerNeverFire(ex, request.Id);
+            throw;
         }
 
         // Audit
@@ -197,14 +193,22 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
     {
         var trigger = await GetTriggerById(request.Id);
         ValidateSystemTrigger(trigger);
-        //// await ValidateTriggerPaused(trigger);
         var simpleTrigger = ValidateSimpleTrigger(trigger, request);
         ValidateIntervalForTrigger(simpleTrigger, request.Interval);
         if (simpleTrigger.RepeatInterval == request.Interval) { return; }
 
         var sourceInterval = simpleTrigger.RepeatInterval;
         simpleTrigger.RepeatInterval = request.Interval;
-        await Scheduler.RescheduleJob(trigger.Key, simpleTrigger);
+
+        try
+        {
+            await Scheduler.RescheduleJob(trigger.Key, simpleTrigger);
+        }
+        catch (Exception ex)
+        {
+            ValidateTriggerNeverFire(ex, request.Id);
+            throw;
+        }
 
         // Audit
         var obj = new { From = FormatTimeSpan(sourceInterval), To = FormatTimeSpan(request.Interval), TriggerKey = simpleTrigger.Key };
@@ -365,18 +369,12 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         }
     }
 
-    private async Task<ITrigger> GetTriggerById(string triggerId)
+    private async Task<ITrigger> GetTriggerById(string? triggerId)
     {
         TriggerKey? key = null;
-        if (triggerId == null)
+        if (string.IsNullOrWhiteSpace(triggerId))
         {
             throw new RestValidationException("triggerId", "triggerId is required");
-        }
-
-        var index = triggerId.IndexOf('.');
-        if (index > 0)
-        {
-            key = new TriggerKey(triggerId[..index], triggerId[(index + 1)..]);
         }
 
         var keys = await Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
