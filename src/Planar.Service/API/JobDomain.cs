@@ -24,13 +24,9 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API
 {
-    public partial class JobDomain : BaseJobBL<JobDomain, JobData>
+    public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<JobDomain, JobData>(serviceProvider)
     {
         private static TimeSpan _longPullingSpan = TimeSpan.FromMinutes(5);
-
-        public JobDomain(IServiceProvider serviceProvider) : base(serviceProvider)
-        {
-        }
 
         #region Data
 
@@ -651,8 +647,16 @@ namespace Planar.Service.API
                 }
             }
 
-            // schedule trigger
-            await Scheduler.ScheduleJob(newTrigger.Build());
+            try
+            {
+                // Schedule Job
+                await Scheduler.ScheduleJob(newTrigger.Build());
+            }
+            catch (Exception ex)
+            {
+                ValidateTriggerNeverFire(ex);
+                throw;
+            }
 
             AuditJobSafe(jobKey, "job queue invoked", request);
 
@@ -749,12 +753,23 @@ namespace Planar.Service.API
             var oldAuthor = JobHelper.GetJobAuthor(info);
             request.Author = request.Author?.Trim() ?? string.Empty;
             info.JobDataMap.Put(Consts.Author, request.Author);
-            AuditJobSafe(jobKey, $"set job author from '{oldAuthor}' to '{request.Author}'");
 
             // Reschedule job
             var triggers = await Scheduler.GetTriggersOfJob(jobKey);
             MonitorUtil.Lock(jobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
-            await Scheduler.ScheduleJob(info, triggers, true);
+
+            try
+            {
+                // Schedule Job
+                await Scheduler.ScheduleJob(info, triggers, true);
+            }
+            catch (Exception ex)
+            {
+                ValidateTriggerNeverFire(ex);
+                throw;
+            }
+
+            AuditJobSafe(jobKey, $"set job author from '{oldAuthor}' to '{request.Author}'");
 
             // Pause job
             await Scheduler.PauseJob(jobKey);

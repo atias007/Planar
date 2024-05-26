@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
@@ -12,9 +11,9 @@ using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static Planar.Service.API.JobDomain;
-using static Quartz.MisfireInstruction;
 
 namespace Planar.Service.API;
 
@@ -174,7 +173,20 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
 
         var sourceCron = cronTrigger.CronExpressionString;
         cronTrigger.CronExpressionString = request.CronExpression;
-        await Scheduler.RescheduleJob(trigger.Key, cronTrigger);
+
+        try
+        {
+            await Scheduler.RescheduleJob(trigger.Key, cronTrigger);
+        }
+        catch (SchedulerException ex)
+        {
+            const string pattern = "(the given trigger).*(will never fire)";
+            var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+            if (regex.IsMatch(ex.Message))
+            {
+                throw new RestValidationException("id", $"the given trigger '{request.Id}' will never fire");
+            }
+        }
 
         // Audit
         var obj = new { From = sourceCron, To = request.CronExpression, TriggerKey = cronTrigger.Key };

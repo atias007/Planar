@@ -1,13 +1,13 @@
-﻿using Planar.Client.Exceptions;
+﻿using Core.JsonConvertor;
+using Newtonsoft.Json;
+using Planar.Client.Exceptions;
 using RestSharp;
+using RestSharp.Serializers.NewtonsoftJson;
 using System;
+using System.Linq;
 using System.Net;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using RestSharp.Serializers.NewtonsoftJson;
-using Newtonsoft.Json;
-using Core.JsonConvertor;
 
 namespace Planar.Client
 {
@@ -106,17 +106,24 @@ namespace Planar.Client
             {
                 if (!string.IsNullOrWhiteSpace(response.Content))
                 {
+                    PlanarValidationErrors? errorResponse = null;
                     try
                     {
-                        var errors = System.Text.Json.JsonSerializer.Deserialize<PlanarValidationErrors>(response.Content);
-                        if (errors != null)
-                        {
-                            throw new PlanarValidationException("Planar service return validation errors. For more detais see errors property", errors);
-                        }
+                        errorResponse = System.Text.Json.JsonSerializer.Deserialize<PlanarValidationErrors>(response.Content);
                     }
                     catch
                     {
                         // *** DO NOTHING ***
+                    }
+
+                    if (errorResponse?.Errors.Any() ?? false)
+                    {
+                        throw new PlanarValidationException("Planar service return multiple validation errors. For more detais see errors property", errorResponse);
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(errorResponse?.Detail))
+                    {
+                        throw new PlanarValidationException(errorResponse.Detail);
                     }
                 }
 

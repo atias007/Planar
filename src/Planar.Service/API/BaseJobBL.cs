@@ -136,4 +136,35 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
             throw new RestValidationException($"{title}", $"job with key '{title}' is currently running");
         }
     }
+
+    protected static void ValidateTriggerNeverFire(Exception ex, string? triggerId = null)
+    {
+        if (ex is not SchedulerException) { return; }
+        var message = ex.Message;
+        if (message.Contains("the given trigger") && message.Contains("will never fire"))
+        {
+            triggerId ??= GetTriggerIdFromErrorMessage(message);
+            if (string.IsNullOrWhiteSpace(triggerId))
+            {
+                throw new RestValidationException("trigger", "trigger will never fire. check trigger start/end times, cron expression, calendar and working hours configuration");
+            }
+            else
+            {
+                throw new RestValidationException("trigger", $"trigger with id '{triggerId}' will never fire. check trigger start/end times, cron expression, calendar and working hours configuration");
+            }
+        }
+    }
+
+    private static string? GetTriggerIdFromErrorMessage(string message)
+    {
+        var parts = message.Split('\'');
+        if (parts.Length != 3) { return null; }
+        var triggerId = parts[1];
+        if (triggerId.Contains('.'))
+        {
+            triggerId = triggerId.Split('.')[1];
+        }
+
+        return triggerId;
+    }
 }
