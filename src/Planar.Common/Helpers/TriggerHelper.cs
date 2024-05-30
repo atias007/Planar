@@ -1,7 +1,7 @@
-﻿using Polly;
-using Quartz;
+﻿using Quartz;
 using System;
 using System.Globalization;
+using YamlDotNet.Core.Tokens;
 
 namespace Planar.Common.Helpers
 {
@@ -47,6 +47,18 @@ namespace Planar.Common.Helpers
             if (!long.TryParse(strTicks, out var lngTicks)) { return null; }
             var ts = TimeSpan.FromTicks(lngTicks);
             return ts;
+        }
+
+        public static void SetTimeout(ITrigger trigger, TimeSpan? span)
+        {
+            if (span == null)
+            {
+                trigger.JobDataMap.Remove(Consts.TriggerTimeout);
+            }
+            else
+            {
+                trigger.JobDataMap.Put(Consts.TriggerTimeout, $"{span.Value:\\d\\.\\ hh\\:mm\\:ss}");
+            }
         }
 
         public static string? GetTriggerId(ITrigger? trigger)

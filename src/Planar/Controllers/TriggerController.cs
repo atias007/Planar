@@ -51,7 +51,7 @@ namespace Planar.Controllers
 
         [HttpPatch("cron-expression")]
         [EditorAuthorize]
-        [SwaggerOperation(OperationId = "update_trigger_cron_expression", Description = "Update trigger cron expression", Summary = "Update Trigger Cron Expression")]
+        [SwaggerOperation(OperationId = "update_trigger_cron_expression", Description = "Update cron trigger expression", Summary = "Update Cron Trigger Expression")]
         [NotFoundResponse]
         [BadRequestResponse]
         [NoContentResponse]
@@ -63,13 +63,25 @@ namespace Planar.Controllers
 
         [HttpPatch("interval")]
         [EditorAuthorize]
-        [SwaggerOperation(OperationId = "update_trigger_interval", Description = "Update trigger interval", Summary = "Update Trigger Cron Interval")]
+        [SwaggerOperation(OperationId = "update_trigger_interval", Description = "Update simple trigger interval", Summary = "Update Simple Trigger Interval")]
         [NotFoundResponse]
         [BadRequestResponse]
         [NoContentResponse]
         public async Task<ActionResult> UpdateInterval([FromBody] UpdateIntervalRequest request)
         {
             await BusinesLayer.UpdateInterval(request);
+            return NoContent();
+        }
+
+        [HttpPatch("timeout")]
+        [EditorAuthorize]
+        [SwaggerOperation(OperationId = "update_trigger_timeout", Description = "Update trigger timeout", Summary = "Update Trigger Timeout")]
+        [NotFoundResponse]
+        [BadRequestResponse]
+        [NoContentResponse]
+        public async Task<ActionResult> UpdateTimeout([FromBody] UpdateTimeoutRequest request)
+        {
+            await BusinesLayer.UpdateTimeout(request);
             return NoContent();
         }
 

@@ -129,6 +129,24 @@ namespace Planar.CLI.Actions
             return await Execute(restRequest, cancellationToken);
         }
 
+        [Action("set-timeout")]
+        public static async Task<CliActionResponse> UpdateTimeout(CliUpdateTimeoutRequest request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("trigger/timeout", Method.Patch)
+                .AddBody(request);
+
+            return await Execute(restRequest, cancellationToken);
+        }
+
+        [Action("clear-timeout")]
+        public static async Task<CliActionResponse> ClearTimeout(CliTriggerKey request, CancellationToken cancellationToken = default)
+        {
+            var restRequest = new RestRequest("trigger/timeout", Method.Patch)
+                .AddBody(request);
+
+            return await Execute(restRequest, cancellationToken);
+        }
+
         [Action("cronexpr")]
         public static async Task<CliActionResponse> GetCronExpression(CliCronExpression request, CancellationToken cancellationToken = default)
         {

@@ -8,7 +8,7 @@ namespace Planar.Service.Validation
         public UpdateIntervalRequestValidator()
         {
             Include(new JobOrTriggerKeyValidator());
-            RuleFor(x => x.Interval).NotEmpty().NotZero();
+            RuleFor(x => x.Interval).NotEmpty();
         }
     }
 }

@@ -215,6 +215,29 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         AuditJobSafe(trigger.JobKey, $"update trigger {request.Id} interval", obj);
     }
 
+    public async Task UpdateTimeout(UpdateTimeoutRequest request)
+    {
+        var trigger = await GetTriggerById(request.Id);
+        ValidateSystemTrigger(trigger);
+        var timeout = TriggerHelper.GetTimeout(trigger);
+        if (timeout == request.Timeout) { return; }
+        TriggerHelper.SetTimeout(trigger, request.Timeout);
+
+        try
+        {
+            await Scheduler.RescheduleJob(trigger.Key, trigger);
+        }
+        catch (Exception ex)
+        {
+            ValidateTriggerNeverFire(ex, request.Id);
+            throw;
+        }
+
+        // Audit
+        var obj = new { From = FormatTimeSpan(timeout), To = FormatTimeSpan(request.Timeout), TriggerKey = trigger.Key };
+        AuditJobSafe(trigger.JobKey, $"update trigger {request.Id} timeout", obj);
+    }
+
     public async Task Pause(JobOrTriggerKey request)
     {
         var trigger = await GetTriggerById(request.Id);

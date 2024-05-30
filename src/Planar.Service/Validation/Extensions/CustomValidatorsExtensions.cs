@@ -22,8 +22,8 @@ public static class CustomValidatorsExtensions
         return ruleBuilder.Must(Quartz.CronExpression.IsValidExpression).WithMessage("invalid cron expression");
     }
 
-    public static IRuleBuilderOptions<T, TimeSpan> NotZero<T>(this IRuleBuilder<T, TimeSpan> ruleBuilder)
+    public static IRuleBuilderOptions<T, TimeSpan?> NotZero<T>(this IRuleBuilder<T, TimeSpan?> ruleBuilder)
     {
-        return ruleBuilder.Must(b => b != TimeSpan.Zero).WithMessage("time span must be greater then zero");
+        return ruleBuilder.Must(b => b != null && b != TimeSpan.Zero).WithMessage("time span must be greater then zero");
     }
 }
