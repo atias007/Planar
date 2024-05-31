@@ -63,7 +63,7 @@ public class RestJob(
     {
         if (Properties.BasicAuthentication != null)
         {
-            var authenticator = new HttpBasicAuth(Properties.BasicAuthentication.Username, Properties.BasicAuthentication.Password);
+            var authenticator = new HttpBasicAuthenticator(Properties.BasicAuthentication.Username, Properties.BasicAuthentication.Password);
             options.Authenticator = authenticator;
         }
 

@@ -161,11 +161,11 @@ namespace Planar.CLI
             Swap(ref list);
 
             // special case: enable to list jobs only by type ls or list
-            if (list[0].ToLower() == "ls") { list.Insert(0, "job"); }
-            if (list[0].ToLower() == "list") { list.Insert(0, "job"); }
+            if (list[0].Equals("ls", StringComparison.CurrentCultureIgnoreCase)) { list.Insert(0, "job"); }
+            if (list[0].Equals("list", StringComparison.CurrentCultureIgnoreCase)) { list.Insert(0, "job"); }
 
             // module not found
-            if (!actionsMetadata.Any(a => a.Module.ToLower() == list[0].ToLower()))
+            if (!actionsMetadata.Any(a => a.Module.Equals(list[0], StringComparison.CurrentCultureIgnoreCase)))
             {
                 var modules = GetModuleByCommand(list[0], actionsMetadata);
                 if (!modules.Any())
@@ -191,7 +191,7 @@ namespace Planar.CLI
             }
 
             // command not found
-            if (!actionsMetadata.Any(a => a.Commands.Exists(c => c?.ToLower() == list[1].ToLower())))
+            if (!actionsMetadata.Any(a => a.Commands.Exists(c => string.Equals(c, list[1], StringComparison.OrdinalIgnoreCase)))) //// c?.ToLower() == list[1].ToLower())))
             {
                 // help command
                 if (IsHelpCommand(list[1]))
@@ -363,14 +363,14 @@ namespace Planar.CLI
 
         private static CliActionMetadata? FindMatch(List<string> args, IEnumerable<CliActionMetadata> actionsMetadata)
         {
-            var moduleExists = actionsMetadata.Any(a => a.Module == args[0].ToLower());
+            var moduleExists = actionsMetadata.Any(a => a.Module.Equals(args[0], StringComparison.CurrentCultureIgnoreCase));
             if (args.Count == 1 && moduleExists)
             {
                 args.Add("--help");
                 return null;
             }
 
-            var moduleSynonymExists = actionsMetadata.Any(a => a.ModuleSynonyms.Exists(s => s == args[0].ToLower()) && a.Commands.Contains("list"));
+            var moduleSynonymExists = actionsMetadata.Any(a => a.ModuleSynonyms.Exists(s => s.Equals(args[0], StringComparison.CurrentCultureIgnoreCase)) && a.Commands.Contains("list"));
             if (args.Count == 1 && moduleSynonymExists)
             {
                 args.Add("list");
@@ -379,8 +379,8 @@ namespace Planar.CLI
             if (args.Count < 2) { return null; }
 
             var action = actionsMetadata.FirstOrDefault(a =>
-                a.ModuleSynonyms.Exists(s => s == args[0].ToLower()) &&
-                a.Commands.Exists(c => c?.ToLower() == args[1].ToLower()));
+                a.ModuleSynonyms.Exists(s => s.Equals(args[0], StringComparison.CurrentCultureIgnoreCase)) &&
+                a.Commands.Exists(c => c.Equals(args[1], StringComparison.CurrentCultureIgnoreCase)));
 
             return action;
         }
@@ -388,7 +388,7 @@ namespace Planar.CLI
         private static IEnumerable<string> GetModuleByCommand(string subArgument, IEnumerable<CliActionMetadata> cliActionsMetadata)
         {
             var metadata = cliActionsMetadata
-                .Where(m => m.Commands.Exists(c => c?.ToLower() == subArgument.ToLower()))
+                .Where(m => m.Commands.Exists(c => c.Equals(subArgument, StringComparison.CurrentCultureIgnoreCase)))
                 .Select(m => m.Module);
 
             return metadata;

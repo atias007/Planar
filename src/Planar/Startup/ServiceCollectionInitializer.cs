@@ -41,7 +41,11 @@ namespace Planar.Startup
             services.AddValidatorsFromAssemblies(new[] { typeof(Program).Assembly, typeof(MainService).Assembly });
 
             var mvcBuilder = services.AddControllers()
-                .AddJsonOptions(o => o.JsonSerializerOptions.Converters.Add(new SystemTextTimeSpanConverter()));
+                .AddJsonOptions(o =>
+                {
+                    o.JsonSerializerOptions.Converters.Add(new SystemTextTimeSpanConverter());
+                    o.JsonSerializerOptions.Converters.Add(new SystemTextNullableTimeSpanConverter());
+                });
 
             ODataInitializer.RegisterOData(mvcBuilder);
 

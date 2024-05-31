@@ -680,7 +680,7 @@ namespace Planar.Service.API
         {
             foreach (var t in pool.Triggers)
             {
-                if (t.Priority < 0 || t.Priority > 100) { throw new RestValidationException("priority", $"priority has invalid value ({t.Priority}). valid scope of values is 0-100"); }
+                if (t.Priority < 0 || t.Priority > 100) { throw new RestValidationException("priority", $"priority has invalid value. priority must be between 0 to 100"); }
             }
         }
 
@@ -688,7 +688,7 @@ namespace Planar.Service.API
         {
             container.SimpleTriggers?.ForEach(t =>
             {
-                if (t.RepeatCount < 0) { throw new RestValidationException("repeat count", $"repeat count has invalid value. repeat count must be greater to 1"); }
+                if (t.RepeatCount < 0) { throw new RestValidationException("repeat count", "repeat count has invalid value. repeat count must be greater to 1"); }
             });
         }
 
@@ -696,7 +696,11 @@ namespace Planar.Service.API
         {
             foreach (var t in pool.Triggers)
             {
+                if (t.MaxRetries < 1 || t.MaxRetries > 100) { throw new RestValidationException("max retries", $"max retries has invalid value. max retries must be between 1 to 100"); }
+
                 if ((t.RetrySpan == null || t.RetrySpan == TimeSpan.Zero) && t.MaxRetries > 0) { throw new RestValidationException("retry span", $"retry span has invalid value. retry span must have value when max retries has value"); }
+                if (t.RetrySpan.HasValue && t.RetrySpan.Value.TotalSeconds < 1) { throw new RestValidationException("retry span", $"retry span has invalid value. retry span must be greater or equals to 1 seconds"); }
+                if (t.RetrySpan.HasValue && t.RetrySpan.Value.TotalDays > 1) { throw new RestValidationException("retry span", $"retry span has invalid value. retry span must be less then or equals to 1 day"); }
             }
         }
 
@@ -733,7 +737,8 @@ namespace Planar.Service.API
         {
             foreach (var t in pool.Triggers)
             {
-                if (t.Timeout.HasValue && t.Timeout.Value.TotalSeconds < 1) { throw new RestValidationException("timeout", $"timeout has invalid value. timeout must be greater or equals to 1 second"); }
+                if (t.Timeout.HasValue && t.Timeout.Value.TotalMinutes < 1) { throw new RestValidationException("timeout", $"timeout has invalid value. timeout must be greater or equals to 1 minute"); }
+                if (t.Timeout.HasValue && t.Timeout.Value.TotalDays > 1) { throw new RestValidationException("timeout", $"timeout has invalid value. timeout must be less then or equals to 1 day"); }
             }
         }
 

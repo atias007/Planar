@@ -11,7 +11,7 @@ namespace Planar.Common.Helpers
         {
             if (key1 == null && key2 == null) { return true; }
             if (key1 == null || key2 == null) { return false; }
-            return key1.Group.Equals(key2.Group) && key1.Name.Equals(key2);
+            return key1.Group.Equals(key2.Group) && key1.Name.Equals(key2.Name);
         }
 
         public static int GetMaxRetriesWithDefault(ITrigger? trigger)
@@ -57,7 +57,7 @@ namespace Planar.Common.Helpers
             }
             else
             {
-                trigger.JobDataMap.Put(Consts.TriggerTimeout, $"{span.Value:\\d\\.\\ hh\\:mm\\:ss}");
+                trigger.JobDataMap.Put(Consts.TriggerTimeout, span.Value.Ticks.ToString());
             }
         }
 

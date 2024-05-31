@@ -1,4 +1,5 @@
-﻿using Planar.API.Common.Entities;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
@@ -11,10 +12,8 @@ using Quartz.Impl.Matchers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using static Planar.Service.API.JobDomain;
-using static Quartz.MisfireInstruction;
 
 namespace Planar.Service.API;
 
@@ -30,7 +29,7 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         ValidateDataKeyExists(info.Trigger, key, id);
         var auditValue = PlanarConvert.ToString(info.Trigger.JobDataMap[key]);
         info.Trigger.JobDataMap.Remove(key);
-        var triggers = await BuildTriggers(info);
+        var triggers = await BuildTriggers(info.Trigger);
         await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
         await Scheduler.PauseJob(info.JobKey);
 
@@ -68,7 +67,7 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
             AuditTriggerSafe(info.TriggerKey, GetTriggerAuditDescription("add", request.DataKey), new { value = request.DataValue?.Trim() });
         }
 
-        var triggers = await BuildTriggers(info);
+        var triggers = await BuildTriggers(info.Trigger);
         await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
         await Scheduler.PauseJob(info.JobKey);
     }
@@ -78,11 +77,11 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         return $"{operation} trigger data with key '{key}' ({{{{TriggerId}}}})";
     }
 
-    private async Task<List<ITrigger>> BuildTriggers(DataCommandDto info)
+    private async Task<List<ITrigger>> BuildTriggers(ITrigger trigger)
     {
-        var triggers = (await Scheduler.GetTriggersOfJob(info.JobKey)).ToList();
-        triggers.RemoveAll(t => TriggerHelper.Equals(t.Key, info.TriggerKey));
-        triggers.Add(info.Trigger);
+        var triggers = (await Scheduler.GetTriggersOfJob(trigger.JobKey)).ToList();
+        triggers.RemoveAll(t => TriggerHelper.Equals(t.Key, trigger.Key));
+        triggers.Add(trigger);
         return triggers;
     }
 
@@ -217,21 +216,24 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
 
     public async Task UpdateTimeout(UpdateTimeoutRequest request)
     {
+        // Get Trigger & Job
         var trigger = await GetTriggerById(request.Id);
+        var jobDetails = await Scheduler.GetJobDetail(trigger.JobKey);
+
+        // Validations
+        if (jobDetails == null) { return; }
         ValidateSystemTrigger(trigger);
+        ValidateSystemJob(trigger.JobKey);
+        await ValidateJobPaused(trigger.JobKey);
+        await ValidateJobNotRunning(trigger.JobKey);
+
         var timeout = TriggerHelper.GetTimeout(trigger);
         if (timeout == request.Timeout) { return; }
         TriggerHelper.SetTimeout(trigger, request.Timeout);
 
-        try
-        {
-            await Scheduler.RescheduleJob(trigger.Key, trigger);
-        }
-        catch (Exception ex)
-        {
-            ValidateTriggerNeverFire(ex, request.Id);
-            throw;
-        }
+        var triggers = await BuildTriggers(trigger);
+        await Scheduler.ScheduleJob(jobDetails, triggers, true);
+        await Scheduler.PauseJob(trigger.JobKey);
 
         // Audit
         var obj = new { From = FormatTimeSpan(timeout), To = FormatTimeSpan(request.Timeout), TriggerKey = trigger.Key };
@@ -285,6 +287,7 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         var tasks = new List<Task<ITrigger?>>();
         foreach (var k in pausedKeys)
         {
+            if (TriggerHelper.IsSystemTriggerKey(k)) { continue; }
             tasks.Add(Scheduler.GetTrigger(k));
         }
 

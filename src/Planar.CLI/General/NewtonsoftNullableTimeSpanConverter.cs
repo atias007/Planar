@@ -3,20 +3,25 @@ using System;
 
 namespace Core.JsonConvertor
 {
-    internal class NewtonsoftTimeSpanConverter : JsonConverter<TimeSpan>
+    internal class NewtonsoftNullableTimeSpanConverter : JsonConverter<TimeSpan?>
     {
         private const string PathElement = "ticks";
 
-        public override void WriteJson(JsonWriter writer, TimeSpan value, JsonSerializer serializer)
+        public override void WriteJson(JsonWriter writer, TimeSpan? value, JsonSerializer serializer)
         {
             writer.WriteStartObject();
             writer.WritePropertyName(PathElement);
-            writer.WriteValue(value.Ticks);
+            writer.WriteValue(value?.Ticks);
             writer.WriteEndObject();
         }
 
-        public override TimeSpan ReadJson(JsonReader reader, Type objectType, TimeSpan existingValue, bool hasExistingValue, JsonSerializer serializer)
+        public override TimeSpan? ReadJson(JsonReader reader, Type objectType, TimeSpan? existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
+            if (reader.TokenType == JsonToken.Null)
+            {
+                return null;
+            }
+
             if (reader.TokenType == JsonToken.StartObject)
             {
                 return FromObject(reader, serializer);
@@ -30,16 +35,17 @@ namespace Core.JsonConvertor
             throw new JsonSerializationException($"Fail to deselrialize TimeSpan. Token type '{reader.TokenType}' is not expected");
         }
 
-        private static TimeSpan FromString(JsonReader reader, JsonSerializer serializer)
+        private static TimeSpan? FromString(JsonReader reader, JsonSerializer serializer)
         {
             var value = reader.Value;
             var ts = Convert.ToString(value, serializer.Culture);
-            if (ts == null) { return default; }
+            if (ts == null) { return null; }
+
             var result = TimeSpan.Parse(ts, serializer.Culture);
             return result;
         }
 
-        private static TimeSpan FromObject(JsonReader reader, JsonSerializer serializer)
+        private static TimeSpan? FromObject(JsonReader reader, JsonSerializer serializer)
         {
             reader.Read();
             var jsonpath = Convert.ToString(reader.Value, serializer.Culture);
@@ -52,6 +58,7 @@ namespace Core.JsonConvertor
             try
             {
                 var value = reader.Value;
+                if (value == null) { return null; }
                 var ticks = Convert.ToInt64(value, serializer.Culture);
                 var result = TimeSpan.FromTicks(ticks);
                 return result;
