@@ -301,3 +301,11 @@ V1.7.2
 - SqlQueryCheck MonitorJob
 - add markup to cli in log display
 - Add ExecutionSuccessWithWarnings monitor event
+
+V1.7.2
+------
+- Add database indexes (performance)
+- Add trigger update cron expression api/cli/client-library
+- Add trigger update interval api/cli/client-library
+- Add trigger set timeout api/cli/client-library
+- Add trigger clear timeout api/cli/client-library

@@ -134,5 +134,26 @@ namespace Planar.Client
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
+
+        public async Task UpdateTimeoutAsync(string id, TimeSpan timeout, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(id, nameof(id));
+            ValidateMandatory(timeout, nameof(timeout));
+
+            var restRequest = new RestRequest("trigger/timeout", Method.Patch)
+              .AddBody(new { id, timeout });
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
+        public async Task ClearTimeoutAsync(string id, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(id, nameof(id));
+
+            var restRequest = new RestRequest("trigger/timeout", Method.Patch)
+              .AddBody(new { id });
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
     }
 }

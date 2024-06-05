@@ -49,6 +49,7 @@ namespace Planar.Client
 
                         var serOprions = new JsonSerializerSettings();
                         serOprions.Converters.Add(new NewtonsoftTimeSpanConverter());
+                        serOprions.Converters.Add(new NewtonsoftNullableTimeSpanConverter());
 
                         _client = new RestClient(
                             options: options,

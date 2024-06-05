@@ -32,5 +32,9 @@ namespace Planar.Client
         Task<string> GetCronDescriptionAsync(string expression, CancellationToken cancellationToken = default);
 
         Task<IEnumerable<PausedTrigger>> GetPausedAsync(CancellationToken cancellationToken = default);
+
+        Task UpdateTimeoutAsync(string id, TimeSpan timeout, CancellationToken cancellationToken = default);
+
+        Task ClearTimeoutAsync(string id, CancellationToken cancellationToken = default);
     }
 }
