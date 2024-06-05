@@ -43,7 +43,8 @@ internal class TriggerDetailsProfile : Profile
             .ForMember(t => t.State, map => map.MapFrom(s => GetTriggerState(s.Key, scheduler)));
 
         CreateMap<ISimpleTrigger, SimpleTriggerDetails>()
-            .ForMember(t => t.MisfireBehaviour, map => map.MapFrom(s => GetMisfireInstructionNameForSimpleTrigger(s.MisfireInstruction)));
+            .ForMember(t => t.MisfireBehaviour, map => map.MapFrom(s => GetMisfireInstructionNameForSimpleTrigger(s.MisfireInstruction)))
+            .ForMember(t => t.RepeatCount, map => map.MapFrom(s => s.RepeatCount < 0 ? (int?)null : s.RepeatCount));
 
         CreateMap<ICronTrigger, CronTriggerDetails>()
             .ForMember(t => t.CronExpression, map => map.MapFrom(s => s.CronExpressionString))
