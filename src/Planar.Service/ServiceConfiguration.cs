@@ -91,9 +91,6 @@ namespace Planar.Service
             var assemply = Assembly.Load($"{nameof(Planar)}.{nameof(Service)}");
             services.AddAutoMapperProfiles(new[] { assemply });
 
-            // Utils
-            services.AddHttpContextAccessor();
-
             return services;
         }
 

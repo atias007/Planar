@@ -2,12 +2,14 @@
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Common.Helpers;
+using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Quartz;
 using System;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -118,8 +120,28 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
 
         if (notPaused.Count != 0)
         {
-            var message = string.Join(',', notPaused);
-            throw new RestValidationException("triggers", $"the following job triggers are not in pause state: {message}. pause the job before make any update");
+            ////var context = Resolve<IHttpContextAccessor>().HttpContext;
+            ////context?.Response.Headers.Append("planar-cli-message", "hi");
+
+            var details = await Scheduler.GetJobDetail(jobKey);
+            var id = JobHelper.GetJobId(details);
+            var sb = new StringBuilder();
+            sb.AppendLine("the following job triggers are not in pause state:");
+            foreach (var item in notPaused)
+            {
+                sb.AppendLine($" > {item}");
+            }
+            sb.AppendLine("pause the job before make any update");
+            sb.AppendLine();
+            sb.AppendLine("--------------------------------------------------------");
+            sb.AppendLine(" suggestion:");
+            sb.AppendLine(" use the following command to pause the job");
+            sb.AppendLine($" planar job pasue {id}");
+            sb.AppendLine("--------------------------------------------------------");
+
+            var message = $"the following job triggers are not in pause state: {string.Join(',', notPaused)} pause the job before make any update";
+
+            throw new RestValidationException("triggers", message, sb.ToString());
         }
     }
 
