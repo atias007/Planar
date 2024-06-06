@@ -120,9 +120,6 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
 
         if (notPaused.Count != 0)
         {
-            ////var context = Resolve<IHttpContextAccessor>().HttpContext;
-            ////context?.Response.Headers.Append("planar-cli-message", "hi");
-
             // build CLI message
             var details = await Scheduler.GetJobDetail(jobKey);
             var id = JobHelper.GetJobId(details);
