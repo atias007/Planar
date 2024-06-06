@@ -472,7 +472,7 @@ namespace Planar.Client
                 .AddQueryParameter("effectedRows", data?.EffectedRows ?? 0)
                 .AddQueryParameter("exceptionsCount", data?.ExceptionsCount ?? 0);
 
-            restRequest.Timeout = 360_000; // 6 min
+            restRequest.Timeout = TimeSpan.FromMilliseconds(360_000); // 6 min
             var counter = 1;
             while (counter <= 3)
             {
@@ -583,7 +583,7 @@ namespace Planar.Client
                 .AddParameter("id", id, ParameterType.UrlSegment)
                 .AddParameter("invokeDate", dateParameter, ParameterType.QueryString);
 
-            restRequest.Timeout = 40_000; // 40 sec
+            restRequest.Timeout = TimeSpan.FromMilliseconds(40_000); // 40 sec
 
             try
             {

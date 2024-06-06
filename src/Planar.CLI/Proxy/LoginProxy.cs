@@ -50,7 +50,7 @@ namespace Planar.CLI.Proxy
             var options = new RestClientOptions
             {
                 BaseUrl = new UriBuilder(schema, login.Host, login.Port).Uri,
-                MaxTimeout = 10000,
+                Timeout = TimeSpan.FromMilliseconds(10_000),
             };
 
             var client = new RestClient(options);

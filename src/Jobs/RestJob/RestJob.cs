@@ -190,7 +190,7 @@ public class RestJob(
     {
         return new RestClientOptions
         {
-            MaxTimeout = Convert.ToInt32(timeout.TotalMilliseconds),
+            Timeout = timeout,
             RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) =>
             {
                 return Properties.IgnoreSslErrors;

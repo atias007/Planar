@@ -6,6 +6,7 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
+using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
@@ -189,7 +190,16 @@ namespace Planar.Service.API
             await UpdateTriggers(request, metadata);
 
             // ScheduleJob
-            await Scheduler.ScheduleJob(metadata.JobDetails, metadata.Triggers, true);
+            try
+            {
+                await Scheduler.ScheduleJob(metadata.JobDetails, metadata.Triggers, true);
+            }
+            catch (Exception ex)
+            {
+                ValidateTriggerNeverFire(ex);
+                throw;
+            }
+
             await Scheduler.PauseJob(metadata.JobKey);
 
             // Update Properties

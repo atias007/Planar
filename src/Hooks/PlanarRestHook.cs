@@ -1,5 +1,6 @@
 ﻿using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.SystemTextJson;
+using Core.JsonConvertors;
 using Planar.Common;
 using Planar.Hook;
 using Planar.Hooks.Enities;
@@ -32,7 +33,8 @@ To use different url per group, you can set one of the 'AdditionalField' of moni
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         Converters =
         {
-            new SystemTextTimeSpanConverter()
+            new SystemTextTimeSpanConverter(),
+            new SystemTextNullableTimeSpanConverter()
         }
     };
 

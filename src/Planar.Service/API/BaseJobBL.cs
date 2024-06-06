@@ -2,12 +2,15 @@
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Common.Helpers;
+using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Quartz;
 using System;
 using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Transactions;
 
@@ -117,8 +120,32 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
 
         if (notPaused.Count != 0)
         {
-            var message = string.Join(',', notPaused);
-            throw new RestValidationException("triggers", $"the following job triggers are not in pause state: {message}. pause the job before make any update");
+            ////var context = Resolve<IHttpContextAccessor>().HttpContext;
+            ////context?.Response.Headers.Append("planar-cli-message", "hi");
+
+            // build CLI message
+            var details = await Scheduler.GetJobDetail(jobKey);
+            var id = JobHelper.GetJobId(details);
+            var sb = new StringBuilder();
+            sb.AppendLine($"could not pause job {details?.Key} ({id})");
+            sb.AppendLine();
+            sb.AppendLine("the following triggers are not in pause state:");
+            foreach (var item in notPaused)
+            {
+                sb.AppendLine($" * {item}");
+            }
+            sb.AppendLine();
+            sb.AppendLine("pause the job before make any update");
+
+            var suggestion = new StringBuilder();
+            suggestion.AppendLine("use the following command to pause the job");
+            suggestion.AppendLine($"planar job pasue {id}");
+
+            var cliMessage = sb.ToString();
+            var suggestionMessage = suggestion.ToString();
+            var message = $"the following job triggers are not in pause state: {string.Join(',', notPaused)} pause the job before make any update";
+
+            throw new RestValidationException("triggers", message, cliMessage, suggestionMessage);
         }
     }
 
@@ -135,5 +162,39 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
             var title = KeyHelper.GetKeyTitle(jobKey);
             throw new RestValidationException($"{title}", $"job with key '{title}' is currently running");
         }
+    }
+
+    protected static void ValidateTriggerNeverFire(Exception ex, string? triggerId = null)
+    {
+        if (ex is not SchedulerException) { return; }
+        var message = ex.Message;
+        const string pattern = "(the given trigger).*(will never fire)";
+        var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+
+        if (regex.IsMatch(ex.Message))
+        {
+            triggerId ??= GetTriggerIdFromErrorMessage(message);
+            if (string.IsNullOrWhiteSpace(triggerId))
+            {
+                throw new RestValidationException("trigger", "trigger will never fire. check trigger start/end times, cron expression, calendar and working hours configuration");
+            }
+            else
+            {
+                throw new RestValidationException("trigger", $"trigger with id '{triggerId}' will never fire. check trigger start/end times, cron expression, calendar and working hours configuration");
+            }
+        }
+    }
+
+    private static string? GetTriggerIdFromErrorMessage(string message)
+    {
+        var parts = message.Split('\'');
+        if (parts.Length != 3) { return null; }
+        var triggerId = parts[1];
+        if (triggerId.Contains('.'))
+        {
+            triggerId = triggerId.Split('.')[1];
+        }
+
+        return triggerId;
     }
 }

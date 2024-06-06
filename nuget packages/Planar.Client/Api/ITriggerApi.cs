@@ -1,4 +1,5 @@
 ﻿using Planar.Client.Entities;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +17,10 @@ namespace Planar.Client
 
         Task DeleteAsync(string id, CancellationToken cancellationToken = default);
 
+        Task UpdateCronExpressionAsync(string id, string cronExpression, CancellationToken cancellationToken = default);
+
+        Task UpdateIntervalAsync(string id, TimeSpan interval, CancellationToken cancellationToken = default);
+
         Task PauseAsync(string id, CancellationToken cancellationToken = default);
 
         Task ResumeAsync(string id, CancellationToken cancellationToken = default);
@@ -27,5 +32,9 @@ namespace Planar.Client
         Task<string> GetCronDescriptionAsync(string expression, CancellationToken cancellationToken = default);
 
         Task<IEnumerable<PausedTrigger>> GetPausedAsync(CancellationToken cancellationToken = default);
+
+        Task UpdateTimeoutAsync(string id, TimeSpan timeout, CancellationToken cancellationToken = default);
+
+        Task ClearTimeoutAsync(string id, CancellationToken cancellationToken = default);
     }
 }

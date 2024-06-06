@@ -63,7 +63,7 @@ namespace Planar.Job
             try
             {
                 var result = Convert.ChangeType(tempValue, typeof(T));
-                value = tempValue == null ? default : (T)result;
+                value = tempValue == null ? default : (T?)result;
                 return true;
             }
             catch

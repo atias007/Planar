@@ -1,8 +1,8 @@
 ﻿using CloudNative.CloudEvents;
 using CloudNative.CloudEvents.SystemTextJson;
+using Core.JsonConvertors;
 using Planar.Common;
 using Planar.Hook;
-using Planar.Hooks.Enities;
 using StackExchange.Redis;
 using System.Net.Mime;
 using System.Text;
@@ -31,7 +31,8 @@ To use different channel name, you can set one of the 'AdditionalField' of monit
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         Converters =
         {
-            new SystemTextTimeSpanConverter()
+            new SystemTextTimeSpanConverter(),
+            new SystemTextNullableTimeSpanConverter(),
         }
     };
 

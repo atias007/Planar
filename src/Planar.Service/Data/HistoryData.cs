@@ -39,7 +39,9 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
 
     public async Task CreateJobInstanceLog(JobInstanceLog log)
     {
+#pragma warning disable S6966 // Awaitable method should be used
         _context.JobInstanceLogs.Add(log);
+#pragma warning restore S6966 // Awaitable method should be used
         await _context.SaveChangesAsync();
     }
 

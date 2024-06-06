@@ -29,6 +29,7 @@ internal class TriggerDetailsProfile : Profile
             .Include<ISimpleTrigger, SimpleTriggerDetails>()
             .Include<ICronTrigger, CronTriggerDetails>()
             .ForMember(t => t.Id, map => map.MapFrom(s => GetTriggerId(s)))
+            .ForMember(t => t.TriggerName, map => map.MapFrom(s => s.Key.Name))
             .ForMember(t => t.RetrySpan, map => map.MapFrom(s => TriggerHelper.GetRetrySpan(s)))
             .ForMember(t => t.MaxRetries, map => map.MapFrom(s => TriggerHelper.GetMaxRetries(s)))
             .ForMember(t => t.Timeout, map => map.MapFrom(s => TriggerHelper.GetTimeout(s)))
@@ -42,7 +43,8 @@ internal class TriggerDetailsProfile : Profile
             .ForMember(t => t.State, map => map.MapFrom(s => GetTriggerState(s.Key, scheduler)));
 
         CreateMap<ISimpleTrigger, SimpleTriggerDetails>()
-            .ForMember(t => t.MisfireBehaviour, map => map.MapFrom(s => GetMisfireInstructionNameForSimpleTrigger(s.MisfireInstruction)));
+            .ForMember(t => t.MisfireBehaviour, map => map.MapFrom(s => GetMisfireInstructionNameForSimpleTrigger(s.MisfireInstruction)))
+            .ForMember(t => t.RepeatCount, map => map.MapFrom(s => s.RepeatCount < 0 ? (int?)null : s.RepeatCount));
 
         CreateMap<ICronTrigger, CronTriggerDetails>()
             .ForMember(t => t.CronExpression, map => map.MapFrom(s => s.CronExpressionString))

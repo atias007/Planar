@@ -135,9 +135,9 @@ namespace Planar.Service.API
             return entity;
         }
 
-        protected async Task ValidateExistingTrigger(TriggerKey entity, string triggerId)
+        protected async Task<ITrigger> ValidateExistingTrigger(TriggerKey entity, string triggerId)
         {
-            _ = await Scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id '{triggerId}' could not be found");
+            return await Scheduler.GetTrigger(entity) ?? throw new RestNotFoundException($"trigger with id '{triggerId}' could not be found");
         }
 
         protected void AuditSecuritySafe(string title, bool isWarning = false)

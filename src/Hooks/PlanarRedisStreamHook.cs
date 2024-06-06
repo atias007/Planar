@@ -1,4 +1,5 @@
-﻿using Planar.Common;
+﻿using Core.JsonConvertors;
+using Planar.Common;
 using Planar.Hook;
 using Planar.Hooks.Enities;
 using StackExchange.Redis;
@@ -27,7 +28,8 @@ To use different stream name per group, you can set one of the 'AdditionalField'
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         Converters =
         {
-            new SystemTextTimeSpanConverter()
+            new SystemTextTimeSpanConverter(),
+            new SystemTextNullableTimeSpanConverter(),
         }
     };
 

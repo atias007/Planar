@@ -12,12 +12,8 @@ namespace Planar.Controllers
 {
     [ApiController]
     [Route("trigger")]
-    public class TriggerController : BaseController<TriggerDomain>
+    public class TriggerController(TriggerDomain bl) : BaseController<TriggerDomain>(bl)
     {
-        public TriggerController(TriggerDomain bl) : base(bl)
-        {
-        }
-
         [HttpGet("{triggerId}")]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_trigger_triggerid", Description = "Get trigger by id", Summary = "Get Trigger")]
@@ -50,6 +46,42 @@ namespace Planar.Controllers
         public async Task<ActionResult> Delete([FromRoute][Required] string triggerId)
         {
             await BusinesLayer.Delete(triggerId);
+            return NoContent();
+        }
+
+        [HttpPatch("cron-expression")]
+        [EditorAuthorize]
+        [SwaggerOperation(OperationId = "update_trigger_cron_expression", Description = "Update cron trigger expression", Summary = "Update Cron Trigger Expression")]
+        [NotFoundResponse]
+        [BadRequestResponse]
+        [NoContentResponse]
+        public async Task<ActionResult> UpdateCron([FromBody] UpdateCronRequest request)
+        {
+            await BusinesLayer.UpdateCron(request);
+            return NoContent();
+        }
+
+        [HttpPatch("interval")]
+        [EditorAuthorize]
+        [SwaggerOperation(OperationId = "update_trigger_interval", Description = "Update simple trigger interval", Summary = "Update Simple Trigger Interval")]
+        [NotFoundResponse]
+        [BadRequestResponse]
+        [NoContentResponse]
+        public async Task<ActionResult> UpdateInterval([FromBody] UpdateIntervalRequest request)
+        {
+            await BusinesLayer.UpdateInterval(request);
+            return NoContent();
+        }
+
+        [HttpPatch("timeout")]
+        [EditorAuthorize]
+        [SwaggerOperation(OperationId = "update_trigger_timeout", Description = "Update trigger timeout", Summary = "Update Trigger Timeout")]
+        [NotFoundResponse]
+        [BadRequestResponse]
+        [NoContentResponse]
+        public async Task<ActionResult> UpdateTimeout([FromBody] UpdateTimeoutRequest request)
+        {
+            await BusinesLayer.UpdateTimeout(request);
             return NoContent();
         }
 

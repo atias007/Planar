@@ -20,7 +20,6 @@ SqlTableReport Job (https://codepen.io/FluidOfInsanity/pen/yaLRjd)
 
 - BACKLOG ----------------------------------------------------------------------------
 
-- show warning on CLI halt command
 - show better message when CLI command is belog to more then 1 module
 
 - add WorkflowJob
@@ -301,3 +300,12 @@ V1.7.2
 - SqlQueryCheck MonitorJob
 - add markup to cli in log display
 - Add ExecutionSuccessWithWarnings monitor event
+
+V1.7.2
+------
+- Add database indexes (performance)
+- Add trigger update cron expression api/cli/client-library
+- Add trigger update interval api/cli/client-library
+- Add trigger set timeout api/cli/client-library
+- Add trigger clear timeout api/cli/client-library
+- show warning on CLI halt command

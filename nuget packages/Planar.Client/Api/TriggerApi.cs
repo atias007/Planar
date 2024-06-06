@@ -1,6 +1,7 @@
 ﻿using Planar.Client.Entities;
 using Planar.Client.Exceptions;
 using RestSharp;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -108,6 +109,49 @@ namespace Planar.Client
             ValidateMandatory(id, nameof(id));
             var restRequest = new RestRequest("trigger/resume", Method.Post)
                .AddBody(new { id });
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
+        public async Task UpdateCronExpressionAsync(string id, string cronExpression, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(id, nameof(id));
+            ValidateMandatory(cronExpression, nameof(cronExpression));
+
+            var restRequest = new RestRequest("trigger/cron-expression", Method.Patch)
+               .AddBody(new { id, cronExpression });
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
+        public async Task UpdateIntervalAsync(string id, TimeSpan interval, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(id, nameof(id));
+            ValidateMandatory(interval, nameof(interval));
+
+            var restRequest = new RestRequest("trigger/interval", Method.Patch)
+              .AddBody(new { id, interval });
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
+        public async Task UpdateTimeoutAsync(string id, TimeSpan timeout, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(id, nameof(id));
+            ValidateMandatory(timeout, nameof(timeout));
+
+            var restRequest = new RestRequest("trigger/timeout", Method.Patch)
+              .AddBody(new { id, timeout });
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
+        public async Task ClearTimeoutAsync(string id, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(id, nameof(id));
+
+            var restRequest = new RestRequest("trigger/timeout", Method.Patch)
+              .AddBody(new { id });
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }

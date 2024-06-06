@@ -6,6 +6,20 @@ var services = new ServiceCollection();
 services.AddPlanarClient(c => c.Host = "http://localhost:2306");
 var provider = services.BuildServiceProvider();
 var client = provider.GetRequiredService<IPlanarClient>();
+
+//await client.Trigger.UpdateIntervalAsync("g2otp1mody4", TimeSpan.FromMinutes(55));
+//await client.Trigger.UpdateCronExpressionAsync("jh4eums0jly", "0 0 18 ? 1/1 7#1 *"); // 0 0 16 ? 1/1 7#1 *
+
+var trigger = await client.Trigger.GetAsync("g2otp1mody4");
+Console.WriteLine(trigger.SimpleTriggers[0].Timeout);
+await client.Trigger.UpdateTimeoutAsync("g2otp1mody4", TimeSpan.FromMinutes(115));
+trigger = await client.Trigger.GetAsync("g2otp1mody4");
+Console.WriteLine(trigger.SimpleTriggers[0].Timeout);
+
+await client.Trigger.ClearTimeoutAsync("g2otp1mody4");
+trigger = await client.Trigger.GetAsync("g2otp1mody4");
+Console.WriteLine(trigger.SimpleTriggers[0].Timeout);
+
 var list = await client.History.ListAsync(new ListHistoryFilter { PageSize = 5, PageNumber = 1, JobId = "Demo.TestEnvironmentExit" });
 var details = await client.Job.GetAsync("Demo.TestEnvironmentExit");
 

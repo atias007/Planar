@@ -6,7 +6,7 @@ namespace Planar.API.Common.Entities
     public class SimpleTriggerDetails : TriggerDetails
     {
         [YamlMember(Order = 40)]
-        public int RepeatCount { get; set; }
+        public int? RepeatCount { get; set; }
 
         [YamlMember(Order = 41)]
         public TimeSpan RepeatInterval { get; set; }

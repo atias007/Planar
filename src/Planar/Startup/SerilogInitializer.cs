@@ -1,13 +1,9 @@
 ﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Planar.Common;
-using Planar.Service.Calendars;
 using Planar.Startup.Logging;
-using Quartz;
-using Quartz.Impl.Calendar;
 using Serilog;
 using Serilog.Debugging;
 using Serilog.Sinks.MSSqlServer;
@@ -15,7 +11,6 @@ using System;
 using System.Diagnostics;
 using System.Dynamic;
 using System.IO;
-using System.Threading.Tasks;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 

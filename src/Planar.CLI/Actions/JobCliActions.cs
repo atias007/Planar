@@ -708,7 +708,7 @@ namespace Planar.CLI.Actions
                 .AddParameter("id", id, ParameterType.UrlSegment)
                 .AddParameter("invokeDate", dateParameter, ParameterType.QueryString);
 
-            restRequest.Timeout = 35_000; // 35 sec
+            restRequest.Timeout = TimeSpan.FromMilliseconds(35_000); // 35 sec
 
             var result = await RestProxy.Invoke<LastInstanceId>(restRequest, cancellationToken);
             return result;
@@ -765,7 +765,7 @@ namespace Planar.CLI.Actions
                 .AddQueryParameter("effectedRows", data?.EffectedRows ?? 0)
                 .AddQueryParameter("exceptionsCount", data?.ExceptionsCount ?? 0);
 
-            restRequest.Timeout = 360_000; // 6 min
+            restRequest.Timeout = TimeSpan.FromMilliseconds(360_000); // 6 min
             var counter = 1;
             while (counter <= 3)
             {
