@@ -9,6 +9,9 @@ namespace Planar.CLI.CliGeneral
         internal const string WarningColor = "khaki3";
         internal const string OkColor = "green";
         internal const string ErrorColor = "Red";
+        //internal const string Suggestion = "turquoise2";
+
+        internal static readonly string Seperator = string.Empty.PadLeft(50, '-');
 
         public static string GetWarningMarkup(string? message)
         {
@@ -20,6 +23,20 @@ namespace Planar.CLI.CliGeneral
         {
             message ??= string.Empty;
             return $"[black on {ErrorColor}]error:[/] [{ErrorColor}]{message.EscapeMarkup()}[/]";
+        }
+
+        public static string GetSuggestionMarkup(string? message)
+        {
+            if (string.IsNullOrWhiteSpace(message)) { return string.Empty; }
+            var sb = new StringBuilder();
+            //sb.Append($"[{Suggestion}]");
+            sb.AppendLine(Seperator);
+            sb.AppendLine("suggestion:");
+            sb.AppendLine();
+            sb.AppendLine(message.EscapeMarkup().Trim());
+            sb.Append(Seperator);
+            //sb.AppendLine("[/]");
+            return sb.ToString();
         }
 
         public static string GetValidationErrorMarkup(string? message)

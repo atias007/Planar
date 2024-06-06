@@ -123,25 +123,29 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
             ////var context = Resolve<IHttpContextAccessor>().HttpContext;
             ////context?.Response.Headers.Append("planar-cli-message", "hi");
 
+            // build CLI message
             var details = await Scheduler.GetJobDetail(jobKey);
             var id = JobHelper.GetJobId(details);
             var sb = new StringBuilder();
-            sb.AppendLine("the following job triggers are not in pause state:");
+            sb.AppendLine($"could not pause job {details?.Key} ({id})");
+            sb.AppendLine();
+            sb.AppendLine("the following triggers are not in pause state:");
             foreach (var item in notPaused)
             {
-                sb.AppendLine($" > {item}");
+                sb.AppendLine($" * {item}");
             }
-            sb.AppendLine("pause the job before make any update");
             sb.AppendLine();
-            sb.AppendLine("--------------------------------------------------------");
-            sb.AppendLine(" suggestion:");
-            sb.AppendLine(" use the following command to pause the job");
-            sb.AppendLine($" planar job pasue {id}");
-            sb.AppendLine("--------------------------------------------------------");
+            sb.AppendLine("pause the job before make any update");
 
+            var suggestion = new StringBuilder();
+            suggestion.AppendLine("use the following command to pause the job");
+            suggestion.AppendLine($"planar job pasue {id}");
+
+            var cliMessage = sb.ToString();
+            var suggestionMessage = suggestion.ToString();
             var message = $"the following job triggers are not in pause state: {string.Join(',', notPaused)} pause the job before make any update";
 
-            throw new RestValidationException("triggers", message, sb.ToString());
+            throw new RestValidationException("triggers", message, cliMessage, suggestionMessage);
         }
     }
 

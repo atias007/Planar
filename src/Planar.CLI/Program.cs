@@ -110,9 +110,47 @@ internal static class Program
         }
     }
 
+    private static string? GetCliMessage(RestResponse response)
+    {
+        var cliHeader = response.Headers?.FirstOrDefault(h => h.Name == Consts.CliMessageHeaderName);
+        var result = Convert.ToString(cliHeader?.Value);
+        if (!string.IsNullOrWhiteSpace(result))
+        {
+            result = WebUtility.UrlDecode(result);
+        }
+
+        return result;
+    }
+
+    private static string? GetCliSuggestion(RestResponse response)
+    {
+        var cliHeader = response.Headers?.FirstOrDefault(h => h.Name == Consts.CliSuggestionHeaderName);
+        var result = Convert.ToString(cliHeader?.Value);
+        if (!string.IsNullOrWhiteSpace(result))
+        {
+            result = WebUtility.UrlDecode(result);
+        }
+
+        return result;
+    }
+
+    private static bool HandleHeaderMessage(RestResponse response)
+    {
+        var cliHeaderMessage = GetCliMessage(response);
+        if (string.IsNullOrWhiteSpace(cliHeaderMessage)) { return false; }
+        MarkupCliLine(CliFormat.GetValidationErrorMarkup(cliHeaderMessage));
+
+        var cliHeaderSuggestion = GetCliSuggestion(response);
+        if (string.IsNullOrWhiteSpace(cliHeaderSuggestion)) { return false; }
+        MarkupCliLine(CliFormat.GetSuggestionMarkup(cliHeaderSuggestion));
+
+        return true;
+    }
+
     private static bool HandleBadRequestResponse(RestResponse response)
     {
         if (response.StatusCode != HttpStatusCode.BadRequest) { return false; }
+        if (HandleHeaderMessage(response)) { return true; }
         if (response.Content == null) { return false; }
 
         var entity = JsonConvert.DeserializeObject<BadRequestEntity>(response.Content);

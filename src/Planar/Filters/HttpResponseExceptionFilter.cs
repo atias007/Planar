@@ -5,6 +5,7 @@ using Planar.Service.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 
 namespace Planar.Filters
 {
@@ -64,6 +65,17 @@ namespace Planar.Filters
             }
 
             context.Result = new BadRequestObjectResult(problem);
+
+            if (!string.IsNullOrWhiteSpace(exception.ClientMessage))
+            {
+                context.HttpContext.Response.Headers.Append(Consts.CliMessageHeaderName, WebUtility.UrlEncode(exception.ClientMessage));
+            }
+
+            if (!string.IsNullOrWhiteSpace(exception.Suggestion))
+            {
+                context.HttpContext.Response.Headers.Append(Consts.CliSuggestionHeaderName, WebUtility.UrlEncode(exception.Suggestion));
+            }
+
             context.ExceptionHandled = true;
         }
 

@@ -59,6 +59,9 @@ namespace Planar
 
         public const string HookNewLineLogText = "~~~<newline>~~~";
 
+        public const string CliMessageHeaderName = "planar-cli-message";
+        public const string CliSuggestionHeaderName = "planar-cli-suggestion";
+
         public static bool IsDataKeyValid(string key)
         {
             return !Array.Exists(AllDataKeys, k => string.Equals(k, key, StringComparison.OrdinalIgnoreCase));

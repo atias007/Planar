@@ -21,10 +21,13 @@ namespace Planar.Service.Exceptions
             Errors.Add(new RestProblem(fieldName, errorDetails, errorCode));
         }
 
-        public RestValidationException(string fieldName, string errorDetails, string clientMessage)
+        public RestValidationException(string fieldName, string errorDetails, string clientMessage, string? suggestion = null)
+
         {
             Errors.Add(new RestProblem(fieldName, errorDetails));
+
             ClientMessage = clientMessage;
+            Suggestion = suggestion;
         }
 
         public RestValidationException(HashSet<RestProblem> errors)
@@ -40,6 +43,7 @@ namespace Planar.Service.Exceptions
         public HashSet<RestProblem> Errors { get; private set; } = [];
 
         public string? ClientMessage { get; private set; }
+        public string? Suggestion { get; private set; }
 
         public int TotalErrors
         {
