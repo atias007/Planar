@@ -1,10 +1,9 @@
 ﻿using Common;
 using Microsoft.Extensions.Configuration;
-using RedisCheck;
 
-namespace RedisStreamCheck;
+namespace RedisCheck;
 
-internal class RedisKey(IConfigurationSection section) : BaseDefault(section), ICheckElement, IRedisDefaults
+internal class RedisKey(IConfigurationSection section) : BaseDefault(section), ICheckElement, IRedisDefaults, IRedisKey
 {
     public string Key { get; set; } = section.GetValue<string>("key") ?? string.Empty;
     public string? MemoryUsage { get; set; } = section.GetValue<string>("memory usage");

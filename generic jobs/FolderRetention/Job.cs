@@ -4,12 +4,18 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
 using Polly;
+using Polly.Retry;
 using System.IO;
 
 namespace FolderRetention;
 
 internal class Job : BaseCheckJob
 {
+    private static readonly RetryPolicy _policy = Policy.Handle<Exception>()
+                    .WaitAndRetry(
+                        retryCount: 3,
+                        sleepDurationProvider: _ => TimeSpan.FromSeconds(3));
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
     }
@@ -157,22 +163,23 @@ internal class Job : BaseCheckJob
         }
 
         DeleteFiles(filesToDelete, path, folder.MaxFiles);
+
+        if (folder.DeleteEmptyDirectories)
+        {
+            DeleteEmptySubdirectories(path);
+        }
     }
 
     private void DeleteFiles(Dictionary<FileInfo, string> filesToDelete, string path, int maxFails)
     {
         var fails = 0;
         var success = 0;
-        var policy = Policy.Handle<Exception>()
-                    .WaitAndRetry(
-                        retryCount: 3,
-                        sleepDurationProvider: _ => TimeSpan.FromSeconds(3));
 
         foreach (var (file, reason) in filesToDelete)
         {
             try
             {
-                policy.Execute(() =>
+                _policy.Execute(() =>
                 {
                     file.Delete();
                     Logger.LogInformation("file '{FileName}' deleted from folder '{Path}', reason: {Reason}", file.FullName, path, reason);
@@ -182,13 +189,67 @@ internal class Job : BaseCheckJob
             catch (Exception ex)
             {
                 fails++;
-                Logger.LogError(ex, "error deleting file '{FileName}' from folder '{Path}', reason: {Reason}", file.FullName, path, reason);
+#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+                Logger.LogWarning("error deleting file '{FileName}' from folder '{Path}', reason: {Reason}", file.FullName, path, ex.Message);
+#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
 
                 if (fails >= maxFails)
                 {
                     throw new CheckException($"error deleting files from folder '{path}'", ex);
                 }
             }
+        }
+
+        if (success == 0)
+        {
+            Logger.LogInformation("[x] no files deleted from folder '{Path}'", path);
+        }
+        else
+        {
+            Logger.LogInformation("[x] total {Count} file(s) deleted from folder '{Path}'. {Fails} fails", success, path, fails == 0 ? "no" : fails);
+        }
+    }
+
+    private void DeleteFolder(string folder, string parent)
+    {
+        try
+        {
+            _policy.Execute(() =>
+            {
+                Directory.Delete(folder);
+                Logger.LogInformation("empty directory '{Directory}' deleted from folder '{Path}'", folder, parent);
+            });
+        }
+        catch (Exception ex)
+        {
+#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+            Logger.LogWarning("error deleting folder '{Directory}' from folder '{Path}', reason: {Reason}", folder, folder, ex.Message);
+#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+        }
+    }
+
+    private void DeleteEmptySubdirectories(string path)
+    {
+        if (Directory.Exists(path))
+        {
+            // Enumerate all subdirectories
+            foreach (string subdirectory in Directory.EnumerateDirectories(path))
+            {
+                // Check if the subdirectory is empty
+                if (!Directory.EnumerateFileSystemEntries(subdirectory).Any())
+                {
+                    DeleteFolder(subdirectory, path);
+                }
+                else
+                {
+                    // Recursively call for subdirectories (optional)
+                    DeleteEmptySubdirectories(subdirectory);
+                }
+            }
+        }
+        else
+        {
+            Console.WriteLine($"Directory not found: {path}");
         }
     }
 
@@ -210,7 +271,7 @@ internal class Job : BaseCheckJob
         ValidateRequired(folder.Path, "path", "folders");
         ValidateMaxLength(folder.Path, 1_000, "path", "folders");
 
-        ValidateGreaterThen(folder.MaxFiles, 0, "max files", section);
+        ValidateGreaterThenOrEquals(folder.MaxFiles, 0, "max files", section);
 
         ValidateGreaterThen(folder.FileSizeNumber, 0, "file size", section);
         ValidateFilesPattern(folder);

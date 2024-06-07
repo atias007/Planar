@@ -12,7 +12,7 @@ defaults:                                       # default values for all endpoin
 endpoints:
   - name: Test internet access                 # the display name of the endpoint
     url: https://www.google.com                # the url of the endpoint
-    active: true                                # check active or not. the default is true
+    active: true                               # the default is true
   - name: GitHub
     url: https://github.com
   - name: Consul
@@ -30,4 +30,4 @@ endpoints:
     timeout: 00:00:05
     retry count: 3
     retry interval: 00:00:01
-    active: true                                # check active or not. the default is true
+    active: true                               # the default is true

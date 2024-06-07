@@ -3,10 +3,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
-using RedisCheck;
-using RedisStream;
 
-namespace RedisStreamCheck;
+namespace RedisCheck;
 
 internal class Job : BaseCheckJob
 {
@@ -191,7 +189,10 @@ internal class Job : BaseCheckJob
             return;
         }
 
-        await RedisFactory.Exists(key);
+        if (!await RedisFactory.Exists(key))
+        {
+            throw new CheckException($"key '{key.Key}' is not exists");
+        }
 
         long length = 0;
         long size = 0;

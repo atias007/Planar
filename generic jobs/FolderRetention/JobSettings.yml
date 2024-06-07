@@ -12,4 +12,4 @@ folders:
     created age: 1day                           # the maximum age of the file (in seconds, minutes, hours, days, weeks, months, years)
     modified age: 1day                          # the maximum age of the file (in seconds, minutes, hours, days, weeks, months, years)
     max fails: 0                                # the maximum number of fails before fail the job. the default is 0 (no fails allow)
-    active: true                                # check active or not. the default is true
+    active: true                                # the default is true

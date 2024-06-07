@@ -13,12 +13,12 @@ health check:                                   # the health check parameters
   local alarm: true                             # if true, the job will fail if the local alarm is raised
   node mirror sync: true                        # if true, the job will fail if the node mirror sync is not ok
   node quorum critical: true                    # if true, the job will fail if the node quorum critical is not ok
-  active: true                                # check active or not. the default is true
+  active: true                                  # the default is true
 
 nodes:
   memory alarm: true                            # if true, the job will fail if the memory alarm is raised
   disk free alarm: true                         # if true, the job will fail if the disk free alarm is raised
-  active: true                                # check active or not. the default is true
+  active: true                                  # the default is true
 
 queues:
   - name: demo                                  # the name of the queue
@@ -27,4 +27,4 @@ queues:
     memory: 2mb                                 # the maximum memory used by the queue (in bytes, kb, mb, gb, tb, pb)
     check state: true                           # if true, the job will fail if the queue state is not ok
     span: 00:00:10                              # the time span which violation on the queue limit will be considered ok
-    active: true                                # check active or not. the default is true
+    active: true                                # the default is true

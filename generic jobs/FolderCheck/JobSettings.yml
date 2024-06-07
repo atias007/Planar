@@ -17,4 +17,4 @@ folders:
     file count: 100                             # the maximum number of files in the folder
     created age: 1day                           # the maximum age of the file (in seconds, minutes, hours, days, weeks, months, years)
     modified age: 1day                          # the maximum age of the file (in seconds, minutes, hours, days, weeks, months, years)
-    active: true                                # check active or not. the default is true
+    active: true                                # the default is true

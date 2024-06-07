@@ -9,4 +9,4 @@ tables:
     condition: DATEDIFF(DAY, CreateDate, GETDATE()) > 30 # the condition to be used in the query. the default is empty (TRUNCATE command will be used)
     batch size: 10000                           # the batch size to be used in the query. the default is 5,000. value between 1,000 and 50,000
     timeout: 00:10:00                           # the query execution timeout. the default is 10 minutes
-    active: true                                # check active or not. the default is true
+    active: true                                # the default is true

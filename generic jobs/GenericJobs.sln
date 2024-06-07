@@ -30,6 +30,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SqlTableRetention", "SqlTab
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FolderRetention", "FolderRetention\FolderRetention.csproj", "{F210A737-9AEA-4A63-8A49-6FB81ECAC0CD}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedisOperations", "RedisOperations\RedisOperations.csproj", "{2350267A-0073-47C8-8D26-E0BEC51AC172}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -68,6 +70,10 @@ Global
 		{F210A737-9AEA-4A63-8A49-6FB81ECAC0CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F210A737-9AEA-4A63-8A49-6FB81ECAC0CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F210A737-9AEA-4A63-8A49-6FB81ECAC0CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2350267A-0073-47C8-8D26-E0BEC51AC172}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2350267A-0073-47C8-8D26-E0BEC51AC172}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2350267A-0073-47C8-8D26-E0BEC51AC172}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2350267A-0073-47C8-8D26-E0BEC51AC172}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -81,6 +87,7 @@ Global
 		{440E26AD-8E33-4217-B148-EA5EB9E8C612} = {5C3DA4F3-BAFB-4BAA-A2A3-CD790FC45261}
 		{CE17A5F6-876F-437F-8DCA-52679B836426} = {ED00B110-F470-4421-A991-7441DB42DD00}
 		{F210A737-9AEA-4A63-8A49-6FB81ECAC0CD} = {ED00B110-F470-4421-A991-7441DB42DD00}
+		{2350267A-0073-47C8-8D26-E0BEC51AC172} = {ED00B110-F470-4421-A991-7441DB42DD00}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {50C161EB-78A8-4B28-BAA4-8C426C2165BE}

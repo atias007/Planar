@@ -1,8 +1,7 @@
 ﻿using Common;
 using Microsoft.Extensions.Configuration;
-using RedisCheck;
 
-namespace RedisStreamCheck;
+namespace RedisCheck;
 
 internal class Defaults : BaseDefault, IRedisDefaults
 {
