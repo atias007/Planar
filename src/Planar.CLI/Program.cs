@@ -110,13 +110,26 @@ internal static class Program
         }
     }
 
+    private static string? SafeFromBase64ToiString(string base64)
+    {
+        try
+        {
+            var bytes = Convert.FromBase64String(base64);
+            return Encoding.UTF8.GetString(bytes);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private static string? GetCliMessage(RestResponse response)
     {
         var cliHeader = response.Headers?.FirstOrDefault(h => h.Name == Consts.CliMessageHeaderName);
         var result = Convert.ToString(cliHeader?.Value);
         if (!string.IsNullOrWhiteSpace(result))
         {
-            result = WebUtility.UrlDecode(result);
+            result = SafeFromBase64ToiString(result);
         }
 
         return result;
@@ -128,7 +141,7 @@ internal static class Program
         var result = Convert.ToString(cliHeader?.Value);
         if (!string.IsNullOrWhiteSpace(result))
         {
-            result = WebUtility.UrlDecode(result);
+            result = SafeFromBase64ToiString(result);
         }
 
         return result;
@@ -618,7 +631,7 @@ internal static class Program
         if (response.StatusCode == HttpStatusCode.ServiceUnavailable &&
             response.Request != null &&
             response.Content != null &&
-            response.Request.Resource.ToLower().Contains("service/health-check"))
+            response.Request.Resource.Contains("service/health-check", StringComparison.CurrentCultureIgnoreCase))
         {
             var s = JsonConvert.DeserializeObject<string>(response.Content) ?? string.Empty;
             var lines = s.Split("\r", StringSplitOptions.TrimEntries);

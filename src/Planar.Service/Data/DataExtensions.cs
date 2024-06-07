@@ -47,10 +47,10 @@ public static class DataExtensions
         var page = pagingRequest.PageNumber.GetValueOrDefault();
         var size = pagingRequest.PageSize.GetValueOrDefault();
         var count = await source.CountAsync();
-        var data = source
+        var data = await source
             .Skip((page - 1) * size)
             .Take(size)
-            .ToList();
+            .ToListAsync();
 
         return new PagingResponse<TSource>(pagingRequest, data, count);
     }

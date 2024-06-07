@@ -17,10 +17,10 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context)
 
     public async Task AddUserToGroup(int userId, int groupId)
     {
-        var user = _context.Users.FirstOrDefault(x => x.Id == userId);
+        var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
         if (user == null) { return; }
 
-        var group = _context.Groups.FirstOrDefault(x => x.Id == groupId);
+        var group = await _context.Groups.FirstOrDefaultAsync(x => x.Id == groupId);
         if (group == null) { return; }
 
         group.Users.Add(user);
@@ -125,10 +125,10 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context)
 
     public async Task RemoveUserFromGroup(int userId, int groupId)
     {
-        var user = _context.Users.FirstOrDefault(x => x.Id == userId);
+        var user = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId);
         if (user == null) { return; }
 
-        var group = _context.Groups.Include(g => g.Users).FirstOrDefault(x => x.Id == groupId);
+        var group = await _context.Groups.Include(g => g.Users).FirstOrDefaultAsync(x => x.Id == groupId);
         if (group == null) { return; }
 
         group.Users.Remove(user);

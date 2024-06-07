@@ -344,6 +344,32 @@ namespace Planar.Service.General
             return false;
         }
 
+        public async Task<bool> IsTriggerRunning(TriggerKey triggerKey)
+        {
+            var rcpJobKey = new RpcJobKey { Group = triggerKey.Group, Name = triggerKey.Name };
+
+            var nodes = await GetAllNodes();
+            foreach (var node in nodes)
+            {
+                if (node.IsCurrentNode) { continue; }
+
+                try
+                {
+                    var result = await Policy.Handle<RpcException>()
+                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                        .ExecuteAsync(() => CallIsTriggerRunningService(rcpJobKey, node));
+
+                    if (result) { return result; }
+                }
+                catch (RpcException ex)
+                {
+                    _logger.LogError(ex, "fail to check if trigger is running at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                }
+            }
+
+            return false;
+        }
+
         public async Task<RunningJobDetails?> GetRunningJob(string instanceId)
         {
             var nodes = await GetAllNodes();
@@ -565,6 +591,13 @@ namespace Planar.Service.General
         {
             var client = GetClient(node);
             var result = await client.IsJobRunningAsync(jobKey, deadline: GrpcDeadLine);
+            return result.IsRunning;
+        }
+
+        private static async Task<bool> CallIsTriggerRunningService(RpcJobKey jobKey, ClusterNode node)
+        {
+            var client = GetClient(node);
+            var result = await client.IsTriggerRunningAsync(jobKey, deadline: GrpcDeadLine);
             return result.IsRunning;
         }
 

@@ -54,7 +54,7 @@ internal class ClusterService(IServiceScopeFactory serviceScopeFactory) : Planar
     }
 
     // OK
-    public override async Task<IsJobRunningReply> IsJobRunning(RpcJobKey request, ServerCallContext context)
+    public override async Task<IsRunningReply> IsJobRunning(RpcJobKey request, ServerCallContext context)
     {
         ValidateRequest(request);
 
@@ -62,7 +62,19 @@ internal class ClusterService(IServiceScopeFactory serviceScopeFactory) : Planar
         using var scope = _serviceScopeFactory.CreateScope();
         var schedulerUtil = scope.ServiceProvider.GetService<SchedulerUtil>();
         var result = await schedulerUtil.IsJobRunning(jobKey, context.CancellationToken);
-        return new IsJobRunningReply { IsRunning = result };
+        return new IsRunningReply { IsRunning = result };
+    }
+
+    // OK
+    public override async Task<IsRunningReply> IsTriggerRunning(RpcJobKey request, ServerCallContext context)
+    {
+        ValidateRequest(request);
+
+        var triggerKey = new TriggerKey(request.Name, request.Group);
+        using var scope = _serviceScopeFactory.CreateScope();
+        var schedulerUtil = scope.ServiceProvider.GetService<SchedulerUtil>();
+        var result = await schedulerUtil.IsTriggerRunning(triggerKey, context.CancellationToken);
+        return new IsRunningReply { IsRunning = result };
     }
 
     // OK

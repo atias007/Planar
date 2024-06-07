@@ -112,9 +112,9 @@ public abstract class SqlJob : BaseCommonJob<SqlJobProperties>
         }
         finally
         {
-            try { transaction?.Dispose(); } catch { DoNothingMethod(); }
-            try { defaultConnection?.Close(); } catch { DoNothingMethod(); }
-            try { defaultConnection?.Dispose(); } catch { DoNothingMethod(); }
+            try { if (transaction != null) { await transaction.DisposeAsync(); } } catch { DoNothingMethod(); }
+            try { if (defaultConnection != null) { await defaultConnection.CloseAsync(); } } catch { DoNothingMethod(); }
+            try { if (defaultConnection != null) { await defaultConnection.DisposeAsync(); } } catch { DoNothingMethod(); }
         }
     }
 
@@ -162,8 +162,8 @@ public abstract class SqlJob : BaseCommonJob<SqlJobProperties>
         {
             if (finalizeConnection)
             {
-                try { connection?.Close(); } catch { DoNothingMethod(); }
-                try { connection?.Dispose(); } catch { DoNothingMethod(); }
+                try { if (connection != null) { await connection.CloseAsync(); } } catch { DoNothingMethod(); }
+                try { if (connection != null) { await connection.DisposeAsync(); } } catch { DoNothingMethod(); }
             }
         }
     }
@@ -191,7 +191,7 @@ public abstract class SqlJob : BaseCommonJob<SqlJobProperties>
         }
         catch (Exception)
         {
-            try { connection?.Dispose(); } catch { DoNothingMethod(); }
+            try { if (connection != null) { await connection.DisposeAsync(); } } catch { DoNothingMethod(); }
             throw;
         }
     }

@@ -19,7 +19,7 @@ queries:
 
   - name: foo2                                   # the name of the query. required
     connection string name: default             # the connection string name to be used. required
-    query: SELECT top 1 rate FROM [AIG].[Infrastructure].[ExchangeRating] where rate > 5                   # the query to be executed. required
+    query: SELECT top 1 rate FROM [Infrastructure].[ExchangeRating] where rate > 5                   # the query to be executed. required
     message: null
     timeout: 00:00:10                           # the query execution timeout. the default is 30 seconds
     span: 00:05:00                              # the time span which violation on the key limit will be considered ok

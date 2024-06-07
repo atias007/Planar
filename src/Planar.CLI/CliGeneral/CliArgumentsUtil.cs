@@ -141,11 +141,17 @@ namespace Planar.CLI
         {
             var list = args.ToList();
 
-            // special case: enable get history only by type history id
+            // SPECIAL CASE: enable get history only by type history id
             if (_historyRegex.IsMatch(list[0]))
             {
                 list.Insert(0, "history");
                 list.Insert(1, "get");
+            }
+
+            // SPECIAL CASE: accept command with planar keyword
+            if (string.Equals(list[0], "planar", StringComparison.OrdinalIgnoreCase))
+            {
+                list.RemoveAt(0);
             }
 
             // find match
@@ -175,8 +181,8 @@ namespace Planar.CLI
 
                 if (modules.Count() > 1)
                 {
-                    var commands = string.Join(',', modules);
-                    throw new CliValidationException($"module '{list[0]}' is not supported\r\nthe following modules has command '{list[0].Trim()}':\r\n{commands}");
+                    var commands = string.Join("\r\n * ", modules);
+                    throw new CliValidationException($"module '{list[0]}' is not supported\r\nthe following modules has command '{list[0].Trim()}':\r\n * {commands}");
                 }
 
                 list.Insert(0, modules.First());

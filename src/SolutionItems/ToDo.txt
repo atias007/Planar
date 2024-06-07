@@ -199,7 +199,7 @@ V 1.4.0
 - add monitor event: cluster health check fail
 - add paging to api & cli
 - add monitor audit
-- BUG: when you update job with [only job] the job immidiatly run! (even it is in pause state)
+- BUG: when you update job with [only job] the job immidiatly run! (even it is in Paused state)
 ---------------------------
 
 V1.5.0
@@ -309,3 +309,4 @@ V1.7.2
 - Add trigger set timeout api/cli/client-library
 - Add trigger clear timeout api/cli/client-library
 - show warning on CLI halt command
+- more detailed CLI error messages with suggestions

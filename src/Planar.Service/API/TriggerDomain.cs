@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
@@ -109,7 +108,7 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
             await ValidateJobPaused(result.JobKey);
         }
 
-        await ValidateJobNotRunning(result.JobKey);
+        await ValidateTriggerNotRunning(trigger.Key);
 
         return result;
     }
@@ -310,15 +309,6 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
             throw new RestValidationException("interval", $"interval has invalid value. interval must be greater or equals to 1 minute");
         }
     }
-
-    ////private async Task ValidateTriggerPaused(ITrigger trigger)
-    ////{
-    ////    var state = await Scheduler.GetTriggerState(trigger.Key);
-    ////    if (state != TriggerState.Paused)
-    ////    {
-    ////        throw new RestValidationException("triggerId", "trigger should be paused before update cron expression");
-    ////    }
-    ////}
 
     private static ICronTrigger ValidateCronTrigger(ITrigger trigger, UpdateCronRequest request)
     {

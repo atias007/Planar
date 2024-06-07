@@ -78,6 +78,13 @@ namespace Planar.Service.General
             return result;
         }
 
+        public async Task<bool> IsTriggerRunning(TriggerKey triggerKey, CancellationToken cancellationToken = default)
+        {
+            var allRunning = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
+            var result = allRunning.AsQueryable().Any(c => c.Trigger.Key.Equals(triggerKey));
+            return result;
+        }
+
         public async Task<RunningJobDetails?> GetRunningJob(string instanceId, CancellationToken cancellationToken = default)
         {
             var jobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);

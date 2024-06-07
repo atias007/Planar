@@ -36,7 +36,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
             await _context.MonitorMutes.Where(m => m.JobId == request.JobId && m.MonitorId == request.MonitorId).ExecuteDeleteAsync();
             _context.MonitorMutes.Add(request);
             await _context.SaveChangesAsync();
-            tran.Commit();
+            await tran.CommitAsync();
         });
     }
 
@@ -467,7 +467,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
             using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
             await _context.MonitorMutes.Where(m => m.JobId == jobId && m.MonitorId == monitorId).ExecuteDeleteAsync();
             await _context.MonitorCounters.Where(m => m.JobId == jobId && m.MonitorId == monitorId).ExecuteDeleteAsync();
-            tran.Commit();
+            await tran.CommitAsync();
         });
     }
 
@@ -479,7 +479,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
             using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
             await _context.MonitorMutes.Where(m => m.JobId == jobId).ExecuteDeleteAsync();
             await _context.MonitorCounters.Where(m => m.JobId == jobId).ExecuteDeleteAsync();
-            tran.Commit();
+            await tran.CommitAsync();
         });
     }
 
@@ -491,7 +491,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
             using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
             await _context.MonitorMutes.Where(m => m.MonitorId == monitorId).ExecuteDeleteAsync();
             await _context.MonitorCounters.Where(m => m.MonitorId == monitorId).ExecuteDeleteAsync();
-            tran.Commit();
+            await tran.CommitAsync();
         });
     }
 
@@ -503,7 +503,7 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
             using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
             await _context.MonitorMutes.ExecuteDeleteAsync();
             await _context.MonitorCounters.ExecuteDeleteAsync();
-            tran.Commit();
+            await tran.CommitAsync();
         });
     }
 

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 
 namespace Planar.Filters
 {
@@ -68,12 +69,14 @@ namespace Planar.Filters
 
             if (!string.IsNullOrWhiteSpace(exception.ClientMessage))
             {
-                context.HttpContext.Response.Headers.Append(Consts.CliMessageHeaderName, WebUtility.UrlEncode(exception.ClientMessage));
+                var base64ClientMessage = Convert.ToBase64String(Encoding.UTF8.GetBytes(exception.ClientMessage));
+                context.HttpContext.Response.Headers.Append(Consts.CliMessageHeaderName, base64ClientMessage);
             }
 
             if (!string.IsNullOrWhiteSpace(exception.Suggestion))
             {
-                context.HttpContext.Response.Headers.Append(Consts.CliSuggestionHeaderName, WebUtility.UrlEncode(exception.Suggestion));
+                var base64Suggestion = Convert.ToBase64String(Encoding.UTF8.GetBytes(exception.Suggestion));
+                context.HttpContext.Response.Headers.Append(Consts.CliSuggestionHeaderName, base64Suggestion);
             }
 
             context.ExceptionHandled = true;

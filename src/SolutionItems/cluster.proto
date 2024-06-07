@@ -18,7 +18,8 @@ service PlanarCluster {
   rpc StartScheduler (google.protobuf.Empty) returns (google.protobuf.Empty);
   rpc GetRunningJobs (google.protobuf.Empty) returns (GetRunningJobsReply);
   rpc GetRunningJob (GetRunningJobRequest) returns (RunningJobReply);
-  rpc IsJobRunning (RpcJobKey) returns (IsJobRunningReply);
+  rpc IsJobRunning (RpcJobKey) returns (IsRunningReply);
+  rpc IsTriggerRunning (RpcJobKey) returns (IsRunningReply);
   rpc GetRunningData (GetRunningJobRequest) returns (RunningDataReply);
   rpc IsRunningInstanceExist (GetRunningJobRequest) returns (IsRunningInstanceExistReply);
   rpc CancelRunningJob (GetRunningJobRequest) returns (CancelRunningJobReply);
@@ -42,7 +43,7 @@ message RpcJobKey{
 	string name = 2;
 }
 
-message IsJobRunningReply{
+message IsRunningReply{
 	bool isRunning = 1;
 }
 

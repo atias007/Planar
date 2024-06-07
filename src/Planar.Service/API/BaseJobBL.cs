@@ -110,6 +110,30 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         }
     }
 
+    protected async Task ValidateTriggerPausedOrNormal(ITrigger trigger)
+    {
+        var state = await Scheduler.GetTriggerState(trigger.Key);
+        if (state != TriggerState.Paused && state != TriggerState.Normal)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine($"fail to execute operation");
+            sb.AppendLine();
+            sb.AppendLine("trigger is not in Paused or Normal state");
+            sb.AppendLine($"currently state is: {state}");
+            sb.AppendLine("pause the trigger or the job or wait for Normal state before make this operation");
+
+            var suggestion = new StringBuilder();
+            var id = TriggerHelper.GetTriggerId(trigger);
+            suggestion.AppendLine("use the following command to pause the trigger");
+            suggestion.AppendLine($"planar trigger pause {id}");
+            throw new RestValidationException(
+                fieldName: "triggerId",
+                errorDetails: $"trigger is not in Paused or Normal state. currently state is: {state}. pause the trigger or the job or wait for Normal state before make this operation",
+                clientMessage: sb.ToString(),
+                suggestion: suggestion.ToString());
+        }
+    }
+
     protected async Task ValidateJobPaused(JobKey jobKey)
     {
         var triggers = await Scheduler.GetTriggersOfJob(jobKey);
@@ -124,9 +148,9 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
             var details = await Scheduler.GetJobDetail(jobKey);
             var id = JobHelper.GetJobId(details);
             var sb = new StringBuilder();
-            sb.AppendLine($"could not pause job {details?.Key} ({id})");
+            sb.AppendLine($"fail to execute operation");
             sb.AppendLine();
-            sb.AppendLine("the following triggers are not in pause state:");
+            sb.AppendLine("the following triggers are not in Paused state:");
             foreach (var item in notPaused)
             {
                 sb.AppendLine($" * {item}");
@@ -136,11 +160,11 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
 
             var suggestion = new StringBuilder();
             suggestion.AppendLine("use the following command to pause the job");
-            suggestion.AppendLine($"planar job pasue {id}");
+            suggestion.AppendLine($"planar job pause {id}");
 
             var cliMessage = sb.ToString();
             var suggestionMessage = suggestion.ToString();
-            var message = $"the following job triggers are not in pause state: {string.Join(',', notPaused)} pause the job before make any update";
+            var message = $"the following job triggers are not in Paused state: {string.Join(',', notPaused)} pause the job before make this operation";
 
             throw new RestValidationException("triggers", message, cliMessage, suggestionMessage);
         }
@@ -158,6 +182,20 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         {
             var title = KeyHelper.GetKeyTitle(jobKey);
             throw new RestValidationException($"{title}", $"job with key '{title}' is currently running");
+        }
+    }
+
+    protected async Task ValidateTriggerNotRunning(TriggerKey triggerKey)
+    {
+        var isRunning = await SchedulerUtil.IsTriggerRunning(triggerKey);
+        if (AppSettings.Cluster.Clustering)
+        {
+            isRunning = isRunning && await ClusterUtil.IsTriggerRunning(triggerKey);
+        }
+
+        if (isRunning)
+        {
+            throw new RestValidationException($"{triggerKey.Name}", $"trigger with key '{triggerKey.Name}' is currently running");
         }
     }
 

@@ -797,7 +797,7 @@ namespace Planar.Service.API
             var filename = GetJobFileFullName(request);
             try
             {
-                yml = File.ReadAllText(filename);
+                yml = await File.ReadAllTextAsync(filename);
             }
             catch (Exception ex)
             {
