@@ -26,7 +26,7 @@ internal class RabbitMqProxy
         var options = new RestClientOptions
         {
             BaseUrl = new Uri(uri),
-            MaxTimeout = 10_000,
+            Timeout = TimeSpan.FromSeconds(10),
             Authenticator = new HttpBasicAuthenticator(server.Username, server.Password)
         };
 

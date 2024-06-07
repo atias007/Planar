@@ -3,9 +3,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
+using Polly;
 using System.IO;
 
-namespace FolderCheck;
+namespace FolderRetention;
 
 internal class Job : BaseCheckJob
 {
@@ -15,9 +16,8 @@ internal class Job : BaseCheckJob
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
-        var defaults = GetDefaults(Configuration);
         var hosts = GetHosts(Configuration);
-        var folders = GetFolders(Configuration, defaults);
+        var folders = GetFolders(Configuration);
 
         if (!hosts.Any() && folders.Exists(e => !e.IsAbsolutePath))
         {
@@ -26,7 +26,7 @@ internal class Job : BaseCheckJob
 
         folders.ForEach(f => ValidateFolderExists(f, hosts));
 
-        var tasks = SafeInvokeCheck(folders, f => InvokeFolderInnerAsync(f, hosts));
+        var tasks = SafeInvokeOperation(folders, f => InvokeFolderInnerAsync(f, hosts));
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
@@ -53,14 +53,13 @@ internal class Job : BaseCheckJob
         }
     }
 
-    private static List<Folder> GetFolders(IConfiguration configuration, Defaults defaults)
+    private static List<Folder> GetFolders(IConfiguration configuration)
     {
         var result = new List<Folder>();
         var folders = configuration.GetRequiredSection("folders");
         foreach (var item in folders.GetChildren())
         {
             var folder = new Folder(item);
-            FillBase(folder, defaults);
             folder.SetFolderArguments();
             folder.IsAbsolutePath = Path.IsPathFullyQualified(folder.Path);
             ValidateFolder(folder);
@@ -110,22 +109,6 @@ internal class Job : BaseCheckJob
         }
     }
 
-    private Defaults GetDefaults(IConfiguration configuration)
-    {
-        var empty = Defaults.Empty;
-        var defaults = configuration.GetSection("defaults");
-        if (defaults == null)
-        {
-            Logger.LogWarning("no defaults section found on settings file. set job factory defaults");
-            return empty;
-        }
-
-        var result = new Defaults(defaults);
-        ValidateBase(result, "defaults");
-
-        return result;
-    }
-
     private async Task InvokeFolderInnerAsync(Folder folder, IEnumerable<string> hosts)
     {
         await Task.Run(() => InvokeFoldersInner(folder, hosts));
@@ -153,58 +136,60 @@ internal class Job : BaseCheckJob
 
         var path = folder.GetFullPath(host);
         var files = GetFiles(path, folder);
-        if (folder.TotalSizeNumber != null)
-        {
-            var size = files.Sum(f => f.Length);
-            Logger.LogInformation("folder '{Path}' size is {Size:N0} byte(s)", path, size);
-            if (size > folder.FileSizeNumber)
-            {
-                throw new CheckException($"folder '{path}' size is greater then {folder.TotalSizeNumber:N0}");
-            }
-        }
+        var filesToDelete = new Dictionary<FileInfo, string>();
 
         if (folder.FileSizeNumber != null)
         {
-            var max = files.Max(f => f.Length);
-            Logger.LogInformation("folder '{Path}' max file size is {Size:N0} byte(s)", path, max);
-            if (max > folder.FileSizeNumber)
-            {
-                throw new CheckException($"folder '{path}' has file size that is greater then {folder.FileSizeNumber:N0}");
-            }
-        }
-
-        if (folder.FileCount != null)
-        {
-            var count = files.Count();
-            Logger.LogInformation("folder '{Path}' contains {Count:N0} file(s)", path, count);
-            if (count > folder.FileCount)
-            {
-                throw new CheckException($"folder '{path}' contains more then {folder.FileCount:N0} files");
-            }
+            var toBeDelete = files.Where(f => f.Length > folder.FileSizeNumber).ToList();
+            toBeDelete.ForEach(f => filesToDelete.Add(f, $"size {f.Length:N0} above {folder.FileSizeNumber:N0}"));
         }
 
         if (folder.CreatedAgeDate != null)
         {
-            var created = files.Min(f => f.CreationTime);
-            Logger.LogInformation("folder '{Path}' most old created file is {Created}", path, created);
-            if (created < folder.CreatedAgeDate)
-            {
-                throw new CheckException($"folder '{path}' contains files that are created older then {folder.CreatedAge}");
-            }
+            var toBeDelete = files.Where(f => f.CreationTime < folder.CreatedAgeDate).ToList();
+            toBeDelete.ForEach(f => filesToDelete.Add(f, $"creation date {f.CreationTime} before {folder.CreatedAgeDate}"));
         }
 
         if (folder.ModifiedAgeDate != null)
         {
-            var modified = files.Min(f => f.LastWriteTime);
-            Logger.LogInformation("folder '{Path}' most old modified file is {Created}", path, modified);
-            if (modified < folder.ModifiedAgeDate)
-            {
-                throw new CheckException($"folder '{path}' contains files that are modified older then {folder.ModifiedAgeDate}");
-            }
+            var toBeDelete = files.Where(f => f.LastWriteTime < folder.ModifiedAgeDate).ToList();
+            toBeDelete.ForEach(f => filesToDelete.Add(f, $"modified date {f.LastWriteTime} before {folder.ModifiedAgeDate}"));
         }
 
-        Logger.LogInformation("folder check success, folder '{FolderName}', path '{FolderPath}'",
-                        folder.Name, path);
+        DeleteFiles(filesToDelete, path, folder.MaxFiles);
+    }
+
+    private void DeleteFiles(Dictionary<FileInfo, string> filesToDelete, string path, int maxFails)
+    {
+        var fails = 0;
+        var success = 0;
+        var policy = Policy.Handle<Exception>()
+                    .WaitAndRetry(
+                        retryCount: 3,
+                        sleepDurationProvider: _ => TimeSpan.FromSeconds(3));
+
+        foreach (var (file, reason) in filesToDelete)
+        {
+            try
+            {
+                policy.Execute(() =>
+                {
+                    file.Delete();
+                    Logger.LogInformation("file '{FileName}' deleted from folder '{Path}', reason: {Reason}", file.FullName, path, reason);
+                });
+                success++;
+            }
+            catch (Exception ex)
+            {
+                fails++;
+                Logger.LogError(ex, "error deleting file '{FileName}' from folder '{Path}', reason: {Reason}", file.FullName, path, reason);
+
+                if (fails >= maxFails)
+                {
+                    throw new CheckException($"error deleting files from folder '{path}'", ex);
+                }
+            }
+        }
     }
 
     private static void ValidateFolderExists(Folder folder, IEnumerable<string> hosts)
@@ -223,12 +208,11 @@ internal class Job : BaseCheckJob
 
         var section = $"folders ({folder.Name})";
         ValidateRequired(folder.Path, "path", "folders");
-        ValidateMaxLength(folder.Path, 1000, "path", "folders");
+        ValidateMaxLength(folder.Path, 1_000, "path", "folders");
 
-        ValidateBase(folder, section);
-        ValidateGreaterThen(folder.TotalSizeNumber, 0, "total size", section);
+        ValidateGreaterThen(folder.MaxFiles, 0, "max files", section);
+
         ValidateGreaterThen(folder.FileSizeNumber, 0, "file size", section);
-        ValidateGreaterThen(folder.FileCount, 0, "file count", section);
         ValidateFilesPattern(folder);
 
         if (!folder.IsValid())

@@ -1,6 +1,5 @@
 ﻿using Common;
 using Microsoft.Extensions.Configuration;
-using static System.Collections.Specialized.BitVector32;
 
 namespace RedisCheck;
 
