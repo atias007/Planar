@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using RedisOperations;
 using StackExchange.Redis;
 using System.Collections.Concurrent;
 
@@ -48,9 +49,24 @@ internal static class RedisFactory
         return 0;
     }
 
+    public static async Task<bool> SetExpire(IRedisKey redisKey, DateTime dateTime)
+    {
+        return await GetDatabase(redisKey).KeyExpireAsync(redisKey.Key, dateTime, ExpireWhen.HasNoExpiry);
+    }
+
     public static async Task<bool> Exists(IRedisKey redisKey)
     {
         return await GetDatabase(redisKey).KeyExistsAsync(redisKey.Key);
+    }
+
+    public static async Task<string> Invoke(IRedisKey redisKey, string command, IEnumerable<string>? args = null)
+    {
+        var result =
+            args == null ?
+            await GetDatabase(redisKey).ExecuteAsync(command) :
+            await GetDatabase(redisKey).ExecuteAsync(command, args.ToArray());
+
+        return result.ToString();
     }
 
     public static async Task<IEnumerable<string>> Info(string section)
@@ -93,7 +109,7 @@ internal static class RedisFactory
         }
     }
 
-    public static IConnectionMultiplexer Connection
+    private static IConnectionMultiplexer Connection
     {
         get
         {

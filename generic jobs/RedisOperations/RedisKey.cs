@@ -11,6 +11,7 @@ internal class RedisKey(IConfigurationSection section) : ICheckElement, IRedisKe
     public string? ExpireCron { get; set; } = section.GetValue<string>("expire cron");
     public string? DefaultCommand { get; set; } = section.GetValue<string>("default command");
     public int? Database { get; set; } = section.GetValue<int>("database");
+    public bool Mandatory { get; set; } = section.GetValue<bool?>("mandatory") ?? true;
     public bool Active { get; private set; } = section.GetValue<bool?>("active") ?? true;
     public bool IsValid => !string.IsNullOrWhiteSpace(ExpireCron) || !string.IsNullOrWhiteSpace(DefaultCommand);
     public TimeSpan? Span => null;

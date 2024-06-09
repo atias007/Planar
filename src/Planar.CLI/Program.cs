@@ -737,7 +737,7 @@ internal static class Program
                 break;
             }
 
-            var args = SplitCommandLine(command).ToArray();
+            var args = CommandSplitter.SplitCommandLine(command).ToArray();
             HandleCliCommand(args, cliActions);
         }
     }
@@ -766,34 +766,6 @@ internal static class Program
         }
 
         return response;
-    }
-
-    private static IEnumerable<string> SplitCommandLine(string? commandLine)
-    {
-        if (string.IsNullOrEmpty(commandLine))
-        {
-            return new List<string>();
-        }
-
-        bool inQuotes = false;
-
-        var split = commandLine.Split(c =>
-        {
-            if (c == '\"') { inQuotes = !inQuotes; }
-            return !inQuotes && c == ' ';
-        });
-
-        var final = split
-            .Where(arg => !string.IsNullOrEmpty(arg))
-            .Select(arg =>
-            {
-                return
-                arg == null ?
-                string.Empty :
-                arg.Trim().TrimMatchingQuotes('\"');
-            });
-
-        return final;
     }
 
     private static void Start(string[] args)

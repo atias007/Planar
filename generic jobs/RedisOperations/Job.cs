@@ -3,6 +3,7 @@ using Cronos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Planar.CLI.General;
 using Planar.Job;
 using RedisCheck;
 
@@ -64,34 +65,39 @@ internal class Job : BaseCheckJob
 
         if (!await RedisFactory.Exists(key))
         {
-            // TODO: do default command
+            if (!string.IsNullOrWhiteSpace(key.DefaultCommand))
+            {
+                var commands = CommandSplitter.SplitCommandLine(key.DefaultCommand).ToList();
+                if (commands.Count > 0)
+                {
+                    var result =
+                        commands.Count == 1 ?
+                        RedisFactory.Invoke(key, commands[0]) :
+                        RedisFactory.Invoke(key, commands[0], commands[1..]);
+
+                    Logger.LogInformation("execute default command '{Command}' for key '{Key}'. result: {Result}", key.DefaultCommand, key.Key, result);
+                }
+            }
+
+            if (key.Mandatory)
+            {
+                throw new CheckException($"key '{key.Key}' is mandatory and it is not exists");
+            }
+
+            return;
         }
 
-        long length = 0;
-        long size = 0;
-        if (key.Length > 0)
+        if (key.CronExpression != null && key.NextExpireCronDate != null)
         {
-            length = await RedisFactory.GetLength(key);
-            Logger.LogInformation("key '{Key}' length is {Length:N0}", key.Key, length);
+            var setexpire = await RedisFactory.SetExpire(key, key.NextExpireCronDate.Value);
+            if (setexpire)
+            {
+                Logger.LogInformation("set expire date {Date} for key '{Key}'", key.NextExpireCronDate, key.Key);
+            }
+            return;
         }
 
-        if (key.MemoryUsageNumber > 0)
-        {
-            size = await RedisFactory.GetMemoryUsage(key);
-            Logger.LogInformation("key '{Key}' size is {Size:N0} byte(s)", key.Key, size);
-        }
-
-        if (key.Length > 0 && length > key.Length)
-        {
-            throw new CheckException($"key '{key.Key}' length is greater then {key.Length:N0}");
-        }
-
-        if (key.MemoryUsageNumber > 0 && size > key.MemoryUsageNumber)
-        {
-            throw new CheckException($"key '{key.Key}' size is greater then {key.MemoryUsage:N0}");
-        }
-
-        Logger.LogInformation("redis check success for key '{Key}'", key.Key);
+        Logger.LogInformation("no action for key '{Key}'", key.Key);
     }
 
     private static void ValidateRedisKey(RedisKey redisKey)

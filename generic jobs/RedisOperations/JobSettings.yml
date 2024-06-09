@@ -6,7 +6,8 @@
 
 keys:
   - key: foo                                    # the key to be used in redis
-    database: 0                                 # the redis database number to be used. the default is 0
+    database: null                              # the redis database number to be used. the default is 0
     expire cron: null                           # set expire by cron expression for the key
     default command: SET foo some_value         # command to run if key not exists
+    mandatory: true                             # is the existence of the key mandatory or not. the default is true
     active: true                                # the default is true
