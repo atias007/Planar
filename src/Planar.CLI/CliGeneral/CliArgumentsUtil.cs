@@ -149,7 +149,7 @@ namespace Planar.CLI
             }
 
             // SPECIAL CASE: accept command with planar keyword
-            if (string.Equals(list[0], "planar", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(list[0], "planar-cli", StringComparison.OrdinalIgnoreCase))
             {
                 list.RemoveAt(0);
             }

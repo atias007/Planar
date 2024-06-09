@@ -125,7 +125,7 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
             var suggestion = new StringBuilder();
             var id = TriggerHelper.GetTriggerId(trigger);
             suggestion.AppendLine("use the following command to pause the trigger");
-            suggestion.AppendLine($"planar trigger pause {id}");
+            suggestion.AppendLine($"planar-cli trigger pause {id}");
             throw new RestValidationException(
                 fieldName: "triggerId",
                 errorDetails: $"trigger is not in Paused or Normal state. currently state is: {state}. pause the trigger or the job or wait for Normal state before make this operation",
@@ -160,7 +160,7 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
 
             var suggestion = new StringBuilder();
             suggestion.AppendLine("use the following command to pause the job");
-            suggestion.AppendLine($"planar job pause {id}");
+            suggestion.AppendLine($"planar-cli job pause {id}");
 
             var cliMessage = sb.ToString();
             var suggestionMessage = suggestion.ToString();
