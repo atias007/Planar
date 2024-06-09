@@ -57,47 +57,53 @@ internal class Job : BaseCheckJob
 
     private async Task InvokeKeyCheckInner(RedisKey key)
     {
+        var done = false;
         if (!key.Active)
         {
             Logger.LogInformation("skipping inactive key '{Key}'", key.Key);
             return;
         }
 
-        if (!await RedisFactory.Exists(key))
+        var exists = await RedisFactory.Exists(key);
+
+        if (!exists && !string.IsNullOrWhiteSpace(key.DefaultCommand))
         {
-            if (!string.IsNullOrWhiteSpace(key.DefaultCommand))
+            var commands = CommandSplitter.SplitCommandLine(key.DefaultCommand).ToList();
+            if (commands.Count > 0)
             {
-                var commands = CommandSplitter.SplitCommandLine(key.DefaultCommand).ToList();
-                if (commands.Count > 0)
-                {
-                    var result =
-                        commands.Count == 1 ?
-                        RedisFactory.Invoke(key, commands[0]) :
-                        RedisFactory.Invoke(key, commands[0], commands[1..]);
+                var result =
+                    commands.Count == 1 ?
+                    await RedisFactory.Invoke(key, commands[0]) :
+                    await RedisFactory.Invoke(key, commands[0], commands[1..]);
 
-                    Logger.LogInformation("execute default command '{Command}' for key '{Key}'. result: {Result}", key.DefaultCommand, key.Key, result);
-                }
+                done = true;
+                Logger.LogInformation("execute default command '{Command}' for key '{Key}'. result: {Result}", key.DefaultCommand, key.Key, result);
+                exists = await RedisFactory.Exists(key);
             }
+        }
 
+        if (!exists)
+        {
             if (key.Mandatory)
             {
                 throw new CheckException($"key '{key.Key}' is mandatory and it is not exists");
             }
 
+            if (!done) { Logger.LogInformation("no action for key '{Key}'", key.Key); }
             return;
         }
 
         if (key.CronExpression != null && key.NextExpireCronDate != null)
         {
-            var setexpire = await RedisFactory.SetExpire(key, key.NextExpireCronDate.Value);
+            var setexpire = await RedisFactory.SetExpire(key, key.NextExpireCronDate.Value.ToUniversalTime());
             if (setexpire)
             {
+                done = true;
                 Logger.LogInformation("set expire date {Date} for key '{Key}'", key.NextExpireCronDate, key.Key);
             }
-            return;
         }
 
-        Logger.LogInformation("no action for key '{Key}'", key.Key);
+        if (!done) { Logger.LogInformation("no action for key '{Key}'", key.Key); }
     }
 
     private static void ValidateRedisKey(RedisKey redisKey)
@@ -116,15 +122,16 @@ internal class Job : BaseCheckJob
     {
         if (redisKey.ExpireCron == null) { return; }
 
-        if (!CronExpression.TryParse(redisKey.ExpireCron, out var cron))
+        if (!CronExpression.TryParse(redisKey.ExpireCron, CronFormat.IncludeSeconds, out var cron))
         {
-            throw new InvalidDataException($"'expire cron' field on 'keys' section is not valid cron expression");
+            throw new InvalidDataException($"'expire cron' field on 'keys' section with value '{redisKey.ExpireCron}' is not valid cron expression");
         }
 
         redisKey.CronExpression = cron;
-        var next = cron.GetNextOccurrence(DateTime.Now) ??
+
+        var next = cron.GetNextOccurrence(DateTimeOffset.UtcNow, TimeZoneInfo.Local) ??
             throw new InvalidDataException($"'expire cron' field on 'keys' has no future date");
 
-        redisKey.NextExpireCronDate = next;
+        redisKey.NextExpireCronDate = next.Date;
     }
 }
