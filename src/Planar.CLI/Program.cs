@@ -9,7 +9,6 @@ using Planar.CLI.Entities;
 using Planar.CLI.Exceptions;
 using Planar.CLI.General;
 using Planar.CLI.Proxy;
-using Planar.Common;
 using RestSharp;
 using Spectre.Console;
 using System;
