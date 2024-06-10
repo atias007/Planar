@@ -7,10 +7,10 @@ namespace Planar
     {
         public const string CryptographyKeyVariableKey = "PLANAR_CRYPTOGRAPHY_KEY";
 
-        public static readonly string[] PreserveGroupNames = new string[] { RetryTriggerGroup, PlanarSystemGroup };
+        public static readonly string[] PreserveGroupNames = [RetryTriggerGroup, PlanarSystemGroup];
 
-        public static readonly string[] AllDataKeys = new[]
-        {
+        public static readonly string[] AllDataKeys =
+        [
             RetryCounter,
             RetrySpan,
             MaxRetries,
@@ -24,7 +24,7 @@ namespace Planar
             NowOverrideValue,
             Author,
             LogRetentionDays
-        };
+        ];
 
         public const int MaximumJobDataItems = 1000;
         public const string Undefined = "undefined";
@@ -63,10 +63,10 @@ namespace Planar
         public const string CliMessageHeaderName = "planar-cli-message";
         public const string CliSuggestionHeaderName = "planar-cli-suggestion";
 
-        public static readonly Regex EmailRegex = new(
-            pattern: @"\A(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9]{2,8}(?:[a-z0-9-]*[a-z0-9])?)\Z",
-            options: RegexOptions.IgnoreCase,
-            matchTimeout: TimeSpan.FromSeconds(3));
+        public static readonly Regex EmailRegex = new Regex(
+            @"\A(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9]{2,8}(?:[a-z0-9-]*[a-z0-9])?)\Z",
+            RegexOptions.IgnoreCase,
+            TimeSpan.FromSeconds(3));
 
         public static bool IsDataKeyValid(string key)
         {
