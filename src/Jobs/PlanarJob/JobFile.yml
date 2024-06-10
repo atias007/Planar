@@ -12,7 +12,7 @@ job data:                             # Key/Value pairs used by job code
   key2: value2                        # [1 to 100 characters]
   key3: value3                        # [up to 1000 characters]
 
-properties:                           # Properties for job with 'PlanarJob' type
+properties:                           # Job Properties
   filename: HelloWorld.exe            # Name of assembly file [mandatory, up to 500 characters]
 
 simple triggers:                      # List of simple triggers

@@ -16,7 +16,23 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="Resources\EmptyTable.html" />
+	  <None Remove="Resources\footer.html" />
+	  <None Remove="Resources\head.html" />
+	  <None Remove="Resources\header.html" />
+	  <None Remove="Resources\style.html" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <Compile Include="..\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Include="Resources\EmptyTable.html" />
+	  <EmbeddedResource Include="Resources\Footer.html" />
+	  <EmbeddedResource Include="Resources\Head.html" />
+	  <EmbeddedResource Include="Resources\Header.html" />
+	  <EmbeddedResource Include="Resources\Style.html" />
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Dapper" Version="2.1.35" />

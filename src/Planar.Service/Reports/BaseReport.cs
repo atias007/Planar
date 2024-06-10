@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using MimeKit.Text;
 using Planar.Common;
+using Planar.Common.Resources;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -16,7 +17,7 @@ namespace Planar.Service.Reports
             _serviceScope = serviceScope;
         }
 
-        public static string EmptyTableHtml => GetResource(null, "empty_table");
+        public static string EmptyTableHtml => ResourceManager.GetResource(ResourceMembers.EmptyTable);
 
         public IServiceScopeFactory ServiceScope => _serviceScope;
 
@@ -59,10 +60,10 @@ namespace Planar.Service.Reports
         protected string GetMainTemplate()
         {
             var main = GetResource("main");
-            var header = GetResource(null, "header");
-            var footer = GetResource(null, "footer");
-            var style = GetResource(null, "style");
-            var head = GetResource(null, "head");
+            var header = ResourceManager.GetResource(ResourceMembers.Header);
+            var footer = ResourceManager.GetResource(ResourceMembers.Footer);
+            var style = ResourceManager.GetResource(ResourceMembers.Style);
+            var head = ResourceManager.GetResource(ResourceMembers.Head);
 
             head = ReplacePlaceHolder(head, "Title", ReportName);
             header = HtmlUtil.SetLogo(header);

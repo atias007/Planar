@@ -7,7 +7,7 @@ durable: true                         # Boolean [true/false]. Non durable job wi
 concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
 log retention days: null              # How many days the running logs will retain. [1 to 1000, null for system default]
 
-properties:                           # Properties for job with 'PlanarJob' type
+properties:                           # Job Properties
   filename: HelloWorld.exe            # Name process executable file [mandatory, up to 500 characters]
   arguments: --port 20                # Process arguments
   output encoding: utf8               # Process output encoding name (see list here https://learn.microsoft.com/en-us/dotnet/api/system.text.encoding.getencodings?view=net-7.0)

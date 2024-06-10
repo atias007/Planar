@@ -111,6 +111,7 @@ namespace Planar.Service
             services.AddTransientWithLazy<ReportData>();
             services.AddTransientWithLazy<JobData>();
             services.AddTransient<IJobPropertyDataLayer, JobData>();
+            services.AddTransient<IGroupDataLayer, GroupData>();
             services.AddTransient<IMonitorDurationDataLayer, MonitorData>();
 
             return services;

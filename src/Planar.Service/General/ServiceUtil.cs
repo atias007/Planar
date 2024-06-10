@@ -24,7 +24,8 @@ namespace Planar.Service.General
             nameof(PlanarJob),
             nameof(ProcessJob),
             nameof(SqlJob),
-            nameof(RestJob)
+            nameof(RestJob),
+            nameof(SqlTableReportJob),
         };
 
         internal static string GenerateId()

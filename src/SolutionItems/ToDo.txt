@@ -301,7 +301,7 @@ V1.7.2
 - add markup to cli in log display
 - Add ExecutionSuccessWithWarnings monitor event
 
-V1.7.2
+V1.7.3
 ------
 - Add database indexes (performance)
 - Add trigger update cron expression api/cli/client-library

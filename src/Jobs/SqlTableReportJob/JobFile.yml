@@ -1,4 +1,4 @@
-﻿job type: RestJob                     # Fixed! don't change it
+﻿job type: SqlTableReportJob           # Fixed! don't change it
 name: some job name                   # Name of job [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
 group: null or group name             # Group of job [only alphanumeric, dashes & underscore, 1 to 50 characters]
 description: some job description     # Description of job [only alphanumeric, dashes & underscore, up to 200 characters]
@@ -13,36 +13,11 @@ job data:                             # Key/Value pairs used by job code
   key3: value3                        # [up to 1000 characters]
 
 properties:                           # Job Properties
-  url: http://google.com              # The url address to make rest call [mandatory, up to 1000 characters]
-  method: GET                         # The http method: POST, GET, PUT, DELETE, PATCH, HEAD [mandatory]
-  body file: body.json                # The body text file for the request (only for POST, PUT, PATCH methods)
-  ignore ssl errors: false            # Ignore certificate error
-  user agent: my.agent                # Initialize the user agent header [up to 100 characters]
-  follow redirects: false             # Allow client redirection 
-  max redirects: 100                  # The maximum redirections when follow redirects enabled
-  expect 100 continue: true           # Create excpect : 100-continue header and receive a 100 Continue status code in response before sending the body
-  log response content: false         # Log the content payload of the response
-  proxy: 
-    address: http://proxy.example.com    # proxy address [up to 100 characters]
-    bypass on local: false               # by pass proxy for local addresses
-    use default credentials: true
-    credentials:
-      domain: some.domain
-      username: some.user
-      password: some.password
-  basic authentication:
-    username: admin
-    password: strong.pass
-  jwt authentication:
-    token: some.token
-  form data:                          # Key/Value pairs of http form data list
-    data_key_1: value a               # --------------------------------------
-    data_key_2: value b               # key --> [mandatory, up to 100 characters]
-    data_key_3: value c               # value --> [up to 1000 characters]
-  headers:                            # Key/Value pairs of http request headers
-    header1: some value x             # ---------------------------------------
-    header2: some value y             # key --> [mandatory, up to 100 characters]
-    header3: some value z             # value --> [up to 1000  characters]
+  connection name: <name>             # Connection string to sql server database [mandatory]
+  filename: fetch_sales.sql           # Script filename [mandatory, 1 to 100 characters]
+  timeout: 00:00:30                   # Timeout span for step. The default is 30 seconds
+  title: Daily Sales                  # The report title
+  group: admins                       # The distribution group [mandatory, 1 to 50 characters]
 
 simple triggers:                      # List of simple triggers
   - name: every-minute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]

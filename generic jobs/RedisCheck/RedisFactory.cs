@@ -20,7 +20,7 @@ internal static class RedisFactory
     private static bool Ssl { get; set; }
     private static string? User { get; set; }
     private static string? Password { get; set; }
-    private static List<string> Endpoints { get; set; } = [];
+    private static IEnumerable<string> Endpoints { get; set; } = [];
 
     public static void Initialize(IConfiguration configuration)
     {
@@ -29,7 +29,7 @@ internal static class RedisFactory
         Ssl = section.GetValue<bool>("ssl");
         User = section.GetValue<string?>("user");
         Password = section.GetValue<string?>("password");
-        Endpoints = section.GetValue<string>("endpoints")?.Split(',').ToList() ?? [];
+        Endpoints = section.GetSection("endpoints").Get<string[]>() ?? [];
     }
 
     public async static Task<TimeSpan> Ping()
@@ -136,7 +136,7 @@ internal static class RedisFactory
                     options.Password = Password;
                 }
 
-                Endpoints.ForEach(options.EndPoints.Add);
+                Endpoints.ToList().ForEach(options.EndPoints.Add);
                 _connection = ConnectionMultiplexer.Connect(options);
                 return _connection;
             }
