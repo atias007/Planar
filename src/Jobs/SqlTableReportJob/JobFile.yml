@@ -15,7 +15,7 @@ job data:                             # Key/Value pairs used by job code
 properties:                           # Job Properties
   connection name: <name>             # Connection string to sql server database [mandatory]
   filename: fetch_sales.sql           # Script filename [mandatory, 1 to 100 characters]
-  timeout: 00:00:30                   # Timeout span for step. The default is 30 seconds
+  timeout: 00:00:30                   # Timeout span for sql query. The default is 30 seconds
   title: Daily Sales                  # The report title
   group: admins                       # The distribution group [mandatory, 1 to 50 characters]
 

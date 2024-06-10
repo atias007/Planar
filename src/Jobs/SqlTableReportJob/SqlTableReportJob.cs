@@ -61,7 +61,8 @@ public abstract class SqlTableReportJob : BaseCommonJob<SqlTableReportJobPropert
             var attendees = await GetUsers(Properties.Group);
             var table = await ExecuteSql(context, Properties, connection);
             var html = GenerateHtml(Properties, table);
-            ////await SendReport(html, attendees);
+            html = HtmlUtil.MinifyHtml(html);
+            await SendReport(html, attendees);
         }
         finally
         {
@@ -287,7 +288,7 @@ public abstract class SqlTableReportJob : BaseCommonJob<SqlTableReportJobPropert
         }
     }
 
-    private static DataTable ConvertDataReaderToDataTable(DbDataReader reader)
+    private DataTable ConvertDataReaderToDataTable(DbDataReader reader)
     {
         var dataTable = new DataTable();
 
@@ -297,6 +298,7 @@ public abstract class SqlTableReportJob : BaseCommonJob<SqlTableReportJobPropert
             dataTable.Columns.Add(reader.GetName(i), reader.GetFieldType(i));
         }
 
+        var counter = 0;
         // Read the data from the reader and populate the DataTable
         while (reader.Read())
         {
@@ -308,6 +310,12 @@ public abstract class SqlTableReportJob : BaseCommonJob<SqlTableReportJobPropert
             }
 
             dataTable.Rows.Add(dataRow);
+            counter++;
+
+            if (counter >= 1000)
+            {
+                _logger.LogWarning("max rows limit ({Counter}) reached", counter);
+            }
         }
 
         return dataTable;

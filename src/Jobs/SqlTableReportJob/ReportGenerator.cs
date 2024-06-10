@@ -24,6 +24,7 @@ namespace SqlTableReportJob
             main = ReplacePlaceHolder(main, "Header", header);
             main = ReplacePlaceHolder(main, "Footer", footer);
             main = ReplacePlaceHolder(main, "Table", htmlTable);
+            main = ReplacePlaceHolder(main, "ReportTitle", title);
             return main;
         }
 

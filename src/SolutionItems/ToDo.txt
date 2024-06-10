@@ -15,12 +15,8 @@ PLAN FOR V 1.7.1
 - Security & Audit report
 -------------------
 
-SqlTableReport Job (https://codepen.io/FluidOfInsanity/pen/yaLRjd)
-
 
 - BACKLOG ----------------------------------------------------------------------------
-
-- show better message when CLI command is belog to more then 1 module
 
 - add WorkflowJob
 - add SSIS job
@@ -266,7 +262,7 @@ V1.7.0
 ------
 - client Libraries
 - add cli ? argument with filter
-- add ExecutionDurationGreaterThan {x} minutes monitor event    ///// ********* /////
+- add ExecutionDurationGreaterThan {x} minutes monitor event  
 - add ExecutionTimeout moniotr event
 - add total effected rows to summary
 - Telegram Hook
@@ -310,3 +306,5 @@ V1.7.3
 - Add trigger clear timeout api/cli/client-library
 - show warning on CLI halt command
 - more detailed CLI error messages with suggestions
+- SqlTableReport Job (https://codepen.io/FluidOfInsanity/pen/yaLRjd)
+- show better message when CLI command is belog to more then 1 module
