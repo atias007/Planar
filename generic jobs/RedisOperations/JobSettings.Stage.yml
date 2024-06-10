@@ -1,5 +1,8 @@
 redis:
-  endpoints: redis-server-1:6379,redis-server-2:6379
+  endpoints: 
+    - redis-server-1:6379
+    - redis-server-2:6379
+    - redis-server-3:6379
   ssl: false
-  user: null
-  password: null
+  user: some_username
+  password: strong_password

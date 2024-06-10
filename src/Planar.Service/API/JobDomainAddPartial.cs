@@ -888,6 +888,10 @@ namespace Planar.Service.API
                     await ValidateJobProperties<RestJobProperties>(yml);
                     break;
 
+                case nameof(SqlTableReportJob):
+                    await ValidateJobProperties<SqlTableReportJobProperties>(yml);
+                    break;
+
                 default:
                     break;
             }

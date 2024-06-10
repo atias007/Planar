@@ -75,7 +75,7 @@
 	<ItemGroup>
 		<PackageReference Include="AutoMapper" Version="13.0.1" />
 		<PackageReference Include="CronExpressionDescriptor" Version="2.33.0" />
-		<PackageReference Include="FluentValidation" Version="11.9.1" />
+		<PackageReference Include="FluentValidation" Version="11.9.2" />
 		<PackageReference Include="Google.Protobuf" Version="3.27.1" />
 		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.63.0" />
 		<PackageReference Include="Grpc.Tools" Version="2.64.0">
@@ -105,6 +105,7 @@
 		<ProjectReference Include="..\Jobs\ProcessJob\ProcessJob.csproj" />
 		<ProjectReference Include="..\Jobs\RestJob\RestJob.csproj" />
 		<ProjectReference Include="..\Jobs\SqlJob\SqlJob.csproj" />
+		<ProjectReference Include="..\Jobs\SqlTableReportJob\SqlTableReportJob.csproj" />
 		<ProjectReference Include="..\Nager.Date\Nager.Date.csproj" />
 		<ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
 	</ItemGroup>

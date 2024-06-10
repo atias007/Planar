@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+		<NoWarn>1701;1702;NU1803</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<NoWarn>1701;1702;NU1803</NoWarn>
+	</PropertyGroup>
+  <ItemGroup>
+    <None Remove="JobFile.yml" />
+    <None Remove="report_table.html" />
+    <None Remove="report_template.html" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Planar.Common\Consts.cs" Link="Consts.cs" />
+    <Compile Include="..\..\Planar.Service\General\SmtpUtil.cs" Link="SmtpUtil.cs" />
+    <Compile Include="..\..\Planar\FolderConsts.cs" Link="FolderConsts.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="report_table.html" />
+    <EmbeddedResource Include="JobFile.yml">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="report_template.html" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MailKit" Version="4.6.0" />
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="9.26.0.92422">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CommonJob\CommonJob.csproj" />
+  </ItemGroup>
+
+</Project>

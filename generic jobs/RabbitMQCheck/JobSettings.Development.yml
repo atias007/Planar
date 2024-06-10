@@ -1,4 +1,6 @@
-servers:                                      # the servers parameters to be use. usualy this section defined in specific environment job settings
-  hosts: http://localhost:15672               # the rabbitmq host
+server:                                      # the server parameters to be use. usualy this section defined in specific environment job settings
+  hosts: 
+    -  http://localhost:15672               # the rabbitmq host
+    -  http://localhost:15672               # the rabbitmq host
   username: guest
   password: guest

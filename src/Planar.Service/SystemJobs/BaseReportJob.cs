@@ -312,7 +312,7 @@ public abstract class BaseReportJob<TJob> : BaseReportJob
             }
 
             var main = await report.Generate(dateScope);
-            main = MinifyHtml(main);
+            main = HtmlUtil.MinifyHtml(main);
             await SendReport(main, await emailsTask, reportName, context.Trigger.Key.Name);
             _logger.LogInformation("{Name} report send via smtp", reportName.ToString().ToLower());
             SafeSetLastRun(context, _logger);
@@ -322,21 +322,6 @@ public abstract class BaseReportJob<TJob> : BaseReportJob
         {
             _logger.LogError(ex, "fail to send {Report} report: {Message}", reportName.ToString().ToLower(), ex.Message);
             return false;
-        }
-    }
-
-    private static string MinifyHtml(string html)
-    {
-        try
-        {
-            var htmlMinifier = new HtmlMinifier();
-            var result = htmlMinifier.Minify(html, generateStatistics: false);
-            if (result.Errors.Count == 0) { return result.MinifiedContent; }
-            return html;
-        }
-        catch
-        {
-            return html;
         }
     }
 }

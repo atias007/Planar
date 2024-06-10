@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using WebMarkupMin.Core;
 
 namespace Planar.Common
 {
@@ -43,6 +40,21 @@ namespace Planar.Common
         private static string Replace(string html, string key, string? value)
         {
             return html.Replace($"{{{{{key}}}}}", value);
+        }
+
+        public static string MinifyHtml(string html)
+        {
+            try
+            {
+                var htmlMinifier = new HtmlMinifier();
+                var result = htmlMinifier.Minify(html, generateStatistics: false);
+                if (result.Errors.Count == 0) { return result.MinifiedContent; }
+                return html;
+            }
+            catch
+            {
+                return html;
+            }
         }
     }
 }

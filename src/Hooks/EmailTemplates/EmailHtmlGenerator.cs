@@ -27,7 +27,7 @@ public static class EmailHtmlGenerator
             html = Replace(html, "Exception Details", details.Exception);
         }
 
-        html = MinifyHtml(html);
+        html = HtmlUtil.MinifyHtml(html);
         return html;
     }
 
@@ -46,7 +46,7 @@ public static class EmailHtmlGenerator
         }
 
         html = html.Replace("<!-- {{Parameters}} -->", sb.ToString());
-        html = MinifyHtml(html);
+        html = HtmlUtil.MinifyHtml(html);
         return html;
     }
 
@@ -79,20 +79,5 @@ public static class EmailHtmlGenerator
         using StreamReader reader = new(stream);
         var result = reader.ReadToEnd();
         return result;
-    }
-
-    private static string MinifyHtml(string html)
-    {
-        try
-        {
-            var htmlMinifier = new HtmlMinifier();
-            var result = htmlMinifier.Minify(html, generateStatistics: false);
-            if (result.Errors.Count == 0) { return result.MinifiedContent; }
-            return html;
-        }
-        catch
-        {
-            return html;
-        }
     }
 }

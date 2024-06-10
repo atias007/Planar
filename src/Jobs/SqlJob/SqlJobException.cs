@@ -1,16 +1,14 @@
 ﻿using Planar.Common.Exceptions;
-using System.Runtime.Serialization;
 
-namespace Planar
+namespace Planar;
+
+public sealed class SqlJobException : PlanarException
 {
-    public sealed class SqlJobException : PlanarException
+    public SqlJobException(string message) : base(message)
     {
-        public SqlJobException(string message) : base(message)
-        {
-        }
+    }
 
-        public SqlJobException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
+    public SqlJobException(string message, Exception innerException) : base(message, innerException)
+    {
     }
 }

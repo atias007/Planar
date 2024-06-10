@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.RegularExpressions;
 
 namespace Planar
 {
@@ -61,6 +62,11 @@ namespace Planar
 
         public const string CliMessageHeaderName = "planar-cli-message";
         public const string CliSuggestionHeaderName = "planar-cli-suggestion";
+
+        public static readonly Regex EmailRegex = new Regex(
+            @"\A(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9]{2,8}(?:[a-z0-9-]*[a-z0-9])?)\Z",
+            RegexOptions.IgnoreCase,
+            TimeSpan.FromSeconds(3));
 
         public static bool IsDataKeyValid(string key)
         {

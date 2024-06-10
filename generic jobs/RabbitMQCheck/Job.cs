@@ -90,16 +90,16 @@ public class Job : BaseCheckJob
 
     private static Server GetServer(IConfiguration configuration)
     {
-        var section = configuration.GetSection("servers");
+        var section = configuration.GetSection("server");
         var server = new Server(section);
 
-        ValidateRequired(server.Hosts, "hosts", "servers");
-        ValidateRequired(server.Username, "username", "servers");
-        ValidateRequired(server.Password, "password", "servers");
+        ValidateRequired(server.Hosts, "hosts", "server");
+        ValidateRequired(server.Username, "username", "server");
+        ValidateRequired(server.Password, "password", "server");
 
         foreach (var item in server.Hosts)
         {
-            ValidateUri(item, "hosts", "servers");
+            ValidateUri(item, "hosts", "server");
         }
 
         ValidateRequired(server.Hosts, "hosts", "server");

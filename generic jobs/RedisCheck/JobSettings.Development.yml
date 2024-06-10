@@ -1,5 +1,6 @@
 redis:
-  endpoints: localhost:6379
+  endpoints: 
+    - localhost:6379
   ssl: false
   user: null
   password: null

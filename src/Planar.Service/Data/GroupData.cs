@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
+using Planar.Common;
+using Planar.Common.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,7 +9,7 @@ using Group = Planar.Service.Model.Group;
 
 namespace Planar.Service.Data;
 
-public class GroupData(PlanarContext context) : BaseDataLayer(context)
+public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDataLayer
 {
     public async Task AddGroup(Group group)
     {
@@ -146,6 +148,23 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context)
     {
         _context.Groups.Update(group);
         await _context.SaveChangesAsync();
+    }
+
+    public async Task<IEnumerable<UserForReport>> GetGroupUsers(string name)
+    {
+        var result = await _context.Users
+            .Where(u => u.Groups.Any(g => g.Name == name))
+            .Select(u => new UserForReport
+            {
+                FirstName = u.FirstName,
+                LastName = u.LastName,
+                EmailAddress1 = u.EmailAddress1,
+                EmailAddress2 = u.EmailAddress2,
+                EmailAddress3 = u.EmailAddress3
+            })
+            .ToListAsync();
+
+        return result;
     }
 
     internal async Task<List<EntityTitle>> GetUsersInGroup(int id)
