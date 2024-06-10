@@ -7,10 +7,10 @@ namespace Planar
     {
         public const string CryptographyKeyVariableKey = "PLANAR_CRYPTOGRAPHY_KEY";
 
-        public static readonly string[] PreserveGroupNames = [RetryTriggerGroup, PlanarSystemGroup];
+        public static readonly string[] PreserveGroupNames = new string[] { RetryTriggerGroup, PlanarSystemGroup };
 
-        public static readonly string[] AllDataKeys =
-        [
+        public static readonly string[] AllDataKeys = new[]
+        {
             RetryCounter,
             RetrySpan,
             MaxRetries,
@@ -24,7 +24,7 @@ namespace Planar
             NowOverrideValue,
             Author,
             LogRetentionDays
-        ];
+        };
 
         public const int MaximumJobDataItems = 1000;
         public const string Undefined = "undefined";
