@@ -8,10 +8,10 @@ concurrent: false                     # Boolean [true/false]. Concurrent job can
 log retention days: 3                 # How many days the running logs will retain. [1 to 1000, null for system default]
 
 properties:                           # Properties for job with 'PlanarJob' type
-  filename: RedisOperations.exe            # Name of assembly file [mandatory, up to 500 characters]
+  filename: RedisOperations.exe       # Name of assembly file [mandatory, up to 500 characters]
 
 simple triggers:                      # List of simple triggers
-  - name: every-15minute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+  - name: every-15minute-trigger      # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
     interval: 00:15:00                # Interval
     misfire behaviour: FireNow        # [ FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount ]
     timeout: 00:05:00                 # Execution timeout. If timout span passed then cancel command is executed

@@ -37,51 +37,6 @@ namespace Planar.Service.API
 
         private static readonly DateTimeOffset DelayStartTriggerDateTime = new(DateTime.Now.AddSeconds(3));
 
-        public static IEnumerable<ITrigger> BuildTriggerWithCronSchedule(List<JobCronTriggerMetadata> triggers, string jobId)
-        {
-            if (triggers.IsNullOrEmpty()) { return new List<ITrigger>(); }
-
-            var result = triggers.Select(t =>
-            {
-                var trigger = GetBaseTriggerBuilder(t, jobId)
-                    .WithCronSchedule(t.CronExpression, c => BuidCronSchedule(c, t));
-
-                return trigger.Build();
-            });
-
-            return result;
-        }
-
-        public static IEnumerable<ITrigger> BuildTriggerWithSimpleSchedule(List<JobSimpleTriggerMetadata> triggers, string jobId)
-        {
-            if (triggers.IsNullOrEmpty()) { return new List<ITrigger>(); }
-
-            var result = triggers.Select(t =>
-            {
-                var trigger = GetBaseTriggerBuilder(t, jobId);
-
-                if (t.Start == null)
-                {
-                    trigger = trigger.StartAt(DelayStartTriggerDateTime);
-                }
-                else
-                {
-                    trigger = trigger.StartAt(new DateTimeOffset(t.Start.Value));
-                }
-
-                if (t.End != null)
-                {
-                    trigger = trigger.EndAt(new DateTimeOffset(t.End.Value));
-                }
-
-                trigger = trigger.WithSimpleSchedule(s => BuidSimpleSchedule(s, t));
-
-                return trigger.Build();
-            });
-
-            return result;
-        }
-
         public async Task<PlanarIdResponse> AddByPath(SetJobPathRequest request)
         {
             await ValidateAddPath(request);
@@ -216,6 +171,51 @@ namespace Planar.Service.API
             if (quartzTriggers1 != null) { allTriggers.AddRange(quartzTriggers1); }
             if (quartzTriggers2 != null) { allTriggers.AddRange(quartzTriggers2); }
             return allTriggers;
+        }
+
+        private static IEnumerable<ITrigger> BuildTriggerWithCronSchedule(List<JobCronTriggerMetadata> triggers, string jobId)
+        {
+            if (triggers.IsNullOrEmpty()) { return new List<ITrigger>(); }
+
+            var result = triggers.Select(t =>
+            {
+                var trigger = GetBaseTriggerBuilder(t, jobId)
+                    .WithCronSchedule(t.CronExpression, c => BuidCronSchedule(c, t));
+
+                return trigger.Build();
+            });
+
+            return result;
+        }
+
+        private static IEnumerable<ITrigger> BuildTriggerWithSimpleSchedule(List<JobSimpleTriggerMetadata> triggers, string jobId)
+        {
+            if (triggers.IsNullOrEmpty()) { return new List<ITrigger>(); }
+
+            var result = triggers.Select(t =>
+            {
+                var trigger = GetBaseTriggerBuilder(t, jobId);
+
+                if (t.Start == null)
+                {
+                    trigger = trigger.StartAt(DelayStartTriggerDateTime);
+                }
+                else
+                {
+                    trigger = trigger.StartAt(new DateTimeOffset(t.Start.Value));
+                }
+
+                if (t.End != null)
+                {
+                    trigger = trigger.EndAt(new DateTimeOffset(t.End.Value));
+                }
+
+                trigger = trigger.WithSimpleSchedule(s => BuidSimpleSchedule(s, t));
+
+                return trigger.Build();
+            });
+
+            return result;
         }
 
         private static string CreateJobId(IJobDetail job)
