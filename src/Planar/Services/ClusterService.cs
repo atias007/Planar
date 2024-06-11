@@ -187,7 +187,7 @@ internal class ClusterService(IServiceScopeFactory serviceScopeFactory) : Planar
         var result = new IsJobAssestsExistReply
         {
             Exists = ServiceUtil.IsJobFileExists(request.Folder, request.Filename),
-            Path = ServiceUtil.GetJobFolder(request.Folder)
+            Path = string.IsNullOrWhiteSpace(request.Folder) ? string.Empty : ServiceUtil.GetJobFolder(request.Folder)
         };
 
         return await Task.FromResult(result);

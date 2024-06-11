@@ -308,3 +308,4 @@ V1.7.3
 - more detailed CLI error messages with suggestions
 - SqlTableReport Job (https://codepen.io/FluidOfInsanity/pen/yaLRjd)
 - show better message when CLI command is belog to more then 1 module
+- work with multiple jobfiles in one folder

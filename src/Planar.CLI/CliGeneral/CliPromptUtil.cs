@@ -1,4 +1,5 @@
 ﻿using Planar.API.Common.Entities;
+using Planar.CLI.Actions;
 using Planar.CLI.General;
 using Planar.CLI.Proxy;
 using RestSharp;
@@ -15,16 +16,22 @@ namespace Planar.CLI.CliGeneral
 {
     internal static class CliPromptUtil
     {
-        internal const string CancelOption = "<cancel>";
-
         internal static string? PromptSelection(IEnumerable<string>? items, string title, bool addCancelOption = true)
         {
             if (items == null) { return null; }
-            IEnumerable<string> finalItems;
+
+            var finalItems = items.Select(i => new CliSelectItem<string> { DisplayName = i, Value = i });
+            return PromptSelection(finalItems, title, addCancelOption)?.Value;
+        }
+
+        internal static CliSelectItem<T>? PromptSelection<T>(IEnumerable<CliSelectItem<T>>? items, string title, bool addCancelOption = true)
+        {
+            if (items == null) { return null; }
+            IEnumerable<CliSelectItem<T>> finalItems;
             if (addCancelOption)
             {
                 var temp = items.ToList();
-                temp.Add(CancelOption);
+                temp.Add(CliSelectItem<T>.CancelItem);
                 finalItems = temp;
             }
             else
@@ -34,7 +41,7 @@ namespace Planar.CLI.CliGeneral
 
             using var _ = new TokenBlockerScope();
             var selectedItem = AnsiConsole.Prompt(
-                 new SelectionPrompt<string>()
+                 new SelectionPrompt<CliSelectItem<T>>()
                      .Title($"[underline][gray]select [/][white]{title?.EscapeMarkup()}[/][gray] from the following list (press [/][blue]enter[/][gray] to select):[/][/]")
                      .PageSize(20)
                      .MoreChoicesText($"[grey](Move [/][blue]up[/][grey] and [/][blue]down[/] [grey]to reveal more [/][white]{title?.EscapeMarkup()}s[/])")
@@ -339,17 +346,10 @@ namespace Planar.CLI.CliGeneral
             return new CliPromptWrapper<Roles>(enumSelect);
         }
 
-        internal static void CheckForCancelOption(string? value)
+        internal static void CheckForCancelOption(CliSelectItem? value)
         {
-            if (value == CancelOption)
-            {
-                throw new CliWarningException("operation was canceled");
-            }
-        }
-
-        internal static void CheckForCancelOption(IEnumerable<string> values)
-        {
-            if (values.Any(v => v == CancelOption))
+            if (value == null) { return; }
+            if (value.IsCancelItem)
             {
                 throw new CliWarningException("operation was canceled");
             }

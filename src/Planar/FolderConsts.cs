@@ -23,6 +23,7 @@ namespace Planar
         private static string BasePath => AppDomain.CurrentDomain.BaseDirectory;
 
         public const string JobFileName = "JobFile.yml";
+        public const string JobFileExtPattern = "*.yml";
 
         public static string GetAbsoluteSpecialFilePath(PlanarSpecialFolder planarFolder, params string[] paths)
         {

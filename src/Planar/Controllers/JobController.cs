@@ -17,40 +17,40 @@ namespace Planar.Controllers;
 [Route("job")]
 public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 {
-    [HttpPost("folder")]
+    [HttpPost]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "post_job_folder", Description = "Add job by yml job file", Summary = "Add Job By Yml")]
+    [SwaggerOperation(OperationId = "post_job", Description = "Add job by yml file", Summary = "Add Job By Yml File")]
     [JsonConsumes]
     [CreatedResponse(typeof(PlanarIdResponse))]
     [BadRequestResponse]
     [ConflictResponse]
-    public async Task<ActionResult<PlanarIdResponse>> AddByPath([FromBody] SetJobPathRequest request)
+    public async Task<ActionResult<PlanarIdResponse>> Add([FromBody] SetJobPathRequest request)
     {
-        var result = await BusinesLayer.AddByPath(request);
+        var result = await BusinesLayer.Add(request);
         return CreatedAtAction(nameof(Get), result, result);
     }
 
     [HttpPut]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "put_job_id", Description = "Update job by id", Summary = "Update Job By Id")]
+    [SwaggerOperation(OperationId = "put_job_id", Description = "Update job", Summary = "Update Job")]
     [JsonConsumes]
     [CreatedResponse(typeof(PlanarIdResponse))]
     [BadRequestResponse]
     [NotFoundResponse]
-    public async Task<ActionResult<PlanarIdResponse>> UpdateById(UpdateJobRequest request)
+    public async Task<ActionResult<PlanarIdResponse>> Update(UpdateJobRequest request)
     {
-        var result = await BusinesLayer.UpdateById(request);
+        var result = await BusinesLayer.Update(request);
         return CreatedAtAction(nameof(Get), result, result);
     }
 
     [ApiExplorerSettings(IgnoreApi = true)]
     [HttpGet("available-jobs")]
     [EditorAuthorize]
-    [SwaggerOperation(OperationId = "get_job_available_jobs", Description = "", Summary = "")]
-    [OkJsonResponse(typeof(List<AvailableJobToAdd>))]
-    public async Task<ActionResult<List<AvailableJobToAdd>>> GetAvailableJobsToAdd()
+    [SwaggerOperation(OperationId = "get_job_available_jobs_mode", Description = "", Summary = "")]
+    [OkJsonResponse(typeof(List<AvailableJob>))]
+    public async Task<ActionResult<List<AvailableJob>>> GetAvailableJobs([FromQuery] bool update)
     {
-        var result = await BusinesLayer.GetAvailableJobsToAdd();
+        var result = await BusinesLayer.GetAvailableJobs(update);
         return Ok(result);
     }
 

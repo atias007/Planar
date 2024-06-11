@@ -1,9 +1,7 @@
 ﻿namespace Planar.API.Common.Entities
 {
-    public class SetJobPathRequest
+    public class SetJobPathRequest : IJobFileRequest
     {
-        public string? Folder { get; set; }
-
-        public string? JobFileName { get; set; }
+        public required string JobFilePath { get; set; }
     }
 }

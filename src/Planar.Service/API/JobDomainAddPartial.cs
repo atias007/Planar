@@ -37,15 +37,25 @@ namespace Planar.Service.API
 
         private static readonly DateTimeOffset DelayStartTriggerDateTime = new(DateTime.Now.AddSeconds(3));
 
-        public async Task<PlanarIdResponse> AddByPath(SetJobPathRequest request)
+        public async Task<PlanarIdResponse> Add(SetJobPathRequest request)
         {
             await ValidateAddPath(request);
             var yml = await GetJobFileContent(request);
             var dynamicRequest = GetJobDynamicRequest(yml);
             dynamic properties = dynamicRequest.Properties ?? new ExpandoObject();
-            properties["path"] = request.Folder;
+            var path = ConvertRelativeJobFileToRelativeJobPath(request);
+            properties["path"] = path;
             var response = await Add(dynamicRequest);
             return response;
+        }
+
+        private static string ConvertRelativeJobFileToRelativeJobPath(IJobFileRequest request)
+        {
+            var jobsPath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
+            var fullname = Path.Combine(jobsPath, request.JobFilePath);
+            var jobDir = new FileInfo(fullname).Directory?.FullName;
+            var path = ServiceUtil.GetJobRelativePath(jobDir);
+            return path;
         }
 
         private static void AddAuthor(SetJobRequest metadata, IJobDetail job)
@@ -299,10 +309,10 @@ namespace Planar.Service.API
             return dynamicRequest;
         }
 
-        private static string GetJobFileFullName(SetJobPathRequest request)
+        private static string GetJobFileFullName(IJobFileRequest request)
         {
-            if (request.JobFileName == null) { return string.Empty; }
-            var filename = ServiceUtil.GetJobFilename(request.Folder, request.JobFileName);
+            if (request.JobFilePath == null) { return string.Empty; }
+            var filename = ServiceUtil.GetJobFilename(null, request.JobFilePath);
             return filename;
         }
 
@@ -790,7 +800,7 @@ namespace Planar.Service.API
             return new PlanarIdResponse { Id = id };
         }
 
-        private async Task<string> GetJobFileContent(SetJobPathRequest request)
+        private async Task<string> GetJobFileContent(IJobFileRequest request)
         {
             await ValidateAddPath(request);
             string yml;
@@ -807,27 +817,26 @@ namespace Planar.Service.API
             return yml;
         }
 
-        private async Task ValidateAddPath(SetJobPathRequest request)
+        private async Task ValidateAddPath(IJobFileRequest request)
         {
             ValidateRequestNoNull(request);
-            if (string.IsNullOrEmpty(request.JobFileName)) { request.JobFileName = FolderConsts.JobFileName; }
+
+            ////try
+            ////{
+            ////    ServiceUtil.ValidateJobFolderExists(request.JobFileInfo.Directory.FullName);
+            ////    var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+            ////    await util.ValidateJobFolderExists(request.Folder);
+            ////}
+            ////catch (PlanarException ex)
+            ////{
+            ////    throw new RestValidationException("folder", ex.Message);
+            ////}
 
             try
             {
-                ServiceUtil.ValidateJobFolderExists(request.Folder);
+                ServiceUtil.ValidateJobFileExists(request.JobFilePath);
                 var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-                await util.ValidateJobFolderExists(request.Folder);
-            }
-            catch (PlanarException ex)
-            {
-                throw new RestValidationException("folder", ex.Message);
-            }
-
-            try
-            {
-                ServiceUtil.ValidateJobFileExists(request.Folder, request.JobFileName);
-                var util = _serviceProvider.GetRequiredService<ClusterUtil>();
-                await util.ValidateJobFileExists(request.Folder, request.JobFileName);
+                await util.ValidateJobFileExists(null, request.JobFilePath);
             }
             catch (PlanarException ex)
             {

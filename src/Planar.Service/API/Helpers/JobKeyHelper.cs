@@ -10,14 +10,9 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API.Helpers
 {
-    public class JobKeyHelper
+    public class JobKeyHelper(IScheduler scheduler)
     {
-        private readonly IScheduler _scheduler;
-
-        public JobKeyHelper(IScheduler scheduler)
-        {
-            _scheduler = scheduler;
-        }
+        private readonly IScheduler _scheduler = scheduler;
 
         public static string? GetJobId(IJobDetail? job)
         {
@@ -115,7 +110,7 @@ namespace Planar.Service.API.Helpers
             JobKey? result = null;
             if (key != null)
             {
-                var index = key.IndexOf(".");
+                var index = key.IndexOf('.');
                 if (index == -1)
                 {
                     result = new JobKey(key);

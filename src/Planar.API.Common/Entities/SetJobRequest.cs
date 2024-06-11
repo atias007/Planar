@@ -24,12 +24,12 @@ namespace Planar.API.Common.Entities
         public int? LogRetentionDays { get; set; }
 
         [YamlMember(Alias = "job data")]
-        public Dictionary<string, string?> JobData { get; set; } = new();
+        public Dictionary<string, string?> JobData { get; set; } = [];
 
         [YamlMember(Alias = "simple triggers")]
-        public List<JobSimpleTriggerMetadata> SimpleTriggers { get; set; } = new();
+        public List<JobSimpleTriggerMetadata> SimpleTriggers { get; set; } = [];
 
         [YamlMember(Alias = "cron triggers")]
-        public List<JobCronTriggerMetadata> CronTriggers { get; set; } = new();
+        public List<JobCronTriggerMetadata> CronTriggers { get; set; } = [];
     }
 }

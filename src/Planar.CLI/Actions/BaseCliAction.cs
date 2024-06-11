@@ -294,6 +294,11 @@ namespace Planar.CLI.Actions
             return CliPromptUtil.PromptSelection(items, title, addCancelOption);
         }
 
+        protected static CliSelectItem<T>? PromptSelection<T>(IEnumerable<CliSelectItem<T>>? items, string title, bool addCancelOption = true)
+        {
+            return CliPromptUtil.PromptSelection<T>(items, title, addCancelOption);
+        }
+
         protected static TEnum PromptSelection<TEnum>(string title, bool addCancelOption = true)
             where TEnum : struct, Enum
         {

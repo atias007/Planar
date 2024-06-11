@@ -119,9 +119,21 @@ namespace Planar.Service.General
             return path;
         }
 
+        public static string GetJobRelativePath(string? fullPath)
+        {
+            if (string.IsNullOrWhiteSpace(fullPath)) { return string.Empty; }
+            var baseDir = GetJobsFolder();
+            var relativePath = fullPath[(baseDir.Length + 1)..];
+            return relativePath;
+        }
+
         public static string GetJobFilename(string? folder, string filename)
         {
-            var path = GetJobFolder(folder);
+            var path =
+                string.IsNullOrWhiteSpace(folder) ?
+                    FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs) :
+                    FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, folder);
+
             var fullname = Path.Combine(path, filename);
             return fullname;
         }
@@ -135,7 +147,16 @@ namespace Planar.Service.General
 
         public static bool IsJobFileExists(string? folder, string filename)
         {
+            if (string.IsNullOrWhiteSpace(folder)) { return IsJobFileExists(filename); }
             var fullname = GetJobFilename(folder, filename);
+            var result = File.Exists(fullname);
+            return result;
+        }
+
+        private static bool IsJobFileExists(string filename)
+        {
+            var jobsPath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
+            var fullname = Path.Combine(jobsPath, filename);
             var result = File.Exists(fullname);
             return result;
         }
@@ -155,6 +176,14 @@ namespace Planar.Service.General
             {
                 var path = GetJobFolder(folder);
                 throw new PlanarException($"folder '{path}' does not have '{filename}' filename. (node {Environment.MachineName})");
+            }
+        }
+
+        public static void ValidateJobFileExists(string filename)
+        {
+            if (!IsJobFileExists(filename))
+            {
+                throw new PlanarException($"filename '{filename}' does not exists in jobs folder on server. (node {Environment.MachineName})");
             }
         }
 
