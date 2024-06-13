@@ -6,10 +6,17 @@ using Planar.Job;
 
 namespace HealthCheck;
 
-internal sealed class Job : BaseCheckJob
+internal sealed partial class Job : BaseCheckJob
 {
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
+    }
+
+    private partial void FilterHosts(ref IEnumerable<Uri> hosts);
+
+    private partial void FilterHosts(ref IEnumerable<Uri> hosts)
+    {
+        // *** BY DEFAULT DO NOTHING ***
     }
 
     public async override Task ExecuteJob(IJobExecutionContext context)
@@ -18,6 +25,7 @@ internal sealed class Job : BaseCheckJob
 
         var defaults = GetDefaults(Configuration);
         var hosts = GetHosts(Configuration);
+        FilterHosts(ref hosts);
         var endpoints = GetEndpoints(Configuration, defaults);
 
         if (!hosts.Any() && endpoints.Exists(e => e.AbsoluteUrl == null))

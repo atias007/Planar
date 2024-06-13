@@ -90,6 +90,6 @@ internal class RabbitMqProxy
             throw new CheckException($"{name} check on host {_restClient.Options.BaseUrl} failed. status code {response.StatusCode}. content: {response.Content}", response.ErrorException);
         }
 
-        logger.LogInformation("health-check '{Name}' on host {Host} succeeded", name, _restClient.BuildUri(request));
+        logger.LogInformation("health-check ({Name}) on host {Host} succeeded", name, _restClient.BuildUri(request));
     }
 }

@@ -219,7 +219,7 @@ public class Job : BaseCheckJob
         var host = server.DefaultHost;
 
         var detail = details.FirstOrDefault(x => string.Equals(x.Name, queue.Name, StringComparison.OrdinalIgnoreCase))
-            ?? throw new CheckException($"queue check on host {host} failed. queue '{queue.Name}' does not exists");
+            ?? throw new CheckException($"queue check (exists) on host {host} failed. queue '{queue.Name}' does not exists");
 
         CheckState(host, queue, detail);
         CheckConsumers(host, queue, detail);

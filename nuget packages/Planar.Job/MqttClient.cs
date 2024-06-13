@@ -111,7 +111,7 @@ namespace Planar
 
         private static async Task ConnectedAsync(MqttClientConnectedEventArgs arg)
         {
-            var log = new LogEntity { Level = LogLevel.Error, Message = "Successfully connected" };
+            var log = new LogEntity { Level = LogLevel.Debug, Message = "Successfully connected" };
             await Console.Out.WriteLineAsync(log.ToString());
         }
     }
