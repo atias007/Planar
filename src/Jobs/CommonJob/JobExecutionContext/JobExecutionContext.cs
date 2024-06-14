@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
-using System.Threading;
 
 namespace Planar.Job
 {
@@ -25,13 +23,12 @@ namespace Planar.Job
 
         public int RefireCount { get; set; }
 
+        public int JobPort { get; set; }
+
         public IJobDetail JobDetails { get; set; } = new JobDetail();
 
         public ITriggerDetail TriggerDetails { get; set; } = new TriggerDetail();
 
         public string Environment { get; set; } = string.Empty;
-
-        [JsonIgnore]
-        public CancellationToken CancellationToken { get; set; }
     }
 }

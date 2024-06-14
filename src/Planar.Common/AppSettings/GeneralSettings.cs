@@ -10,8 +10,9 @@ namespace Planar.Common
         public string InstanceId { get; set; } = string.Empty;
         public TimeSpan JobAutoStopSpan { get; set; }
         public TimeSpan PersistRunningJobsSpan { get; set; }
-        public short HttpPort { get; set; }
-        public short HttpsPort { get; set; }
+        public int HttpPort { get; set; }
+        public int HttpsPort { get; set; }
+        public int JobPort { get; set; }
         public bool UseHttpsRedirect { get; set; }
         public bool UseHttps { get; set; }
         public string Environment { get; set; } = string.Empty;

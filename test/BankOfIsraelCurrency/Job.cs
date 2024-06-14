@@ -8,19 +8,20 @@ using System.Threading.Tasks;
 
 namespace BankOfIsraelCurrency
 {
-    public class CurrencyLoader : BaseJob
+    public class Job : BaseJob
     {
         #region Planar Methods
 
         public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
         {
+            Version = new Version("1.0.0");
+
             //// Do Nothig ////
         }
 
         public override async Task ExecuteJob(IJobExecutionContext context)
         {
-            //// Execute Job ////
-            await SaveCurrency(context);
+            await SaveCurrency();
         }
 
         public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -30,9 +31,10 @@ namespace BankOfIsraelCurrency
 
         #endregion Planar Methods
 
-        private async Task SaveCurrency(IJobExecutionContext context)
+        private async Task SaveCurrency()
         {
-            var client = new RestClient("https://www.boi.org.il");
+            const string url = "https://www.boi.org.il";
+            var client = new RestClient(url);
             var request = new RestRequest("PublicApi/GetExchangeRates", Method.Get);
 
             Logger.LogInformation("Call bank of israel at: {Uri}", client.BuildUri(request));
@@ -53,7 +55,7 @@ namespace BankOfIsraelCurrency
             }
             else
             {
-                throw new ApplicationException($"Requst to bank of israel return error. StatusCode: {response.StatusCode}");
+                throw new InvalidOperationException($"Requst to bank of israel return error. StatusCode: {response.StatusCode}");
             }
         }
     }

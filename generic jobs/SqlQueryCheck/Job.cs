@@ -23,12 +23,18 @@ internal partial class Job : BaseCheckJob
         var queries = GetQueries(Configuration, defaults, connStrings);
         ValidateRequired(queries, "queries");
         ValidateDuplicateNames(queries, "queries");
-
+        InitializeVariables(queries);
         var tasks = SafeInvokeCheck(queries, InvokeQueryCheckInner);
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
         HandleCheckExceptions();
+    }
+
+    private void InitializeVariables(IEnumerable<CheckQuery> queries)
+    {
+        _total = queries.Count(q => q.Active);
+        EffectedRows = 0;
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -52,6 +58,7 @@ internal partial class Job : BaseCheckJob
             if (lastSpan > TimeSpan.Zero && lastSpan < checkQuery.Interval)
             {
                 Logger.LogInformation("skipping query '{Name}' due to its interval", checkQuery.Name);
+                UpdateProgress();
                 return;
             }
         }
@@ -64,7 +71,8 @@ internal partial class Job : BaseCheckJob
         };
 
         await connection.OpenAsync();
-        using var reader = await cmd.ExecuteReaderAsync(System.Data.CommandBehavior.SingleRow);
+        using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow);
+        UpdateProgress();
 
         var hasData = await reader.ReadAsync();
         if (hasData)
@@ -79,6 +87,7 @@ internal partial class Job : BaseCheckJob
         else
         {
             Logger.LogInformation("query '{Name}' executed successfully", checkQuery.Name);
+            IncreaseEffectedRows();
         }
     }
 

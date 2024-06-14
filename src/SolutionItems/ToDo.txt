@@ -1,7 +1,9 @@
 ﻿--------------------------------------------------------
 
-PLAN FOR V 1.7.1
+PLAN FOR V 1.7.4
 ----------------
+
+- MQTT port --> settings file and pass it to planar job in parameters
 
 - postman: test queue-invoke with data and validate the creation of data
 - 'service info hooks'
@@ -299,6 +301,9 @@ V1.7.2
 
 V1.7.3
 ------
+- Add Folder Retention Operation Job
+- Add Redis Operation Job
+- Add SQL Table Operation Job
 - Add database indexes (performance)
 - Add trigger update cron expression api/cli/client-library
 - Add trigger update interval api/cli/client-library
@@ -309,3 +314,4 @@ V1.7.3
 - SqlTableReport Job (https://codepen.io/FluidOfInsanity/pen/yaLRjd)
 - show better message when CLI command is belog to more then 1 module
 - work with multiple jobfiles in one folder
+- add Version to planar job

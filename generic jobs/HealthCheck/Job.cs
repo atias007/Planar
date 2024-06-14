@@ -28,17 +28,25 @@ internal sealed partial class Job : BaseCheckJob
         FilterHosts(ref hosts);
         var endpoints = GetEndpoints(Configuration, defaults);
 
-        if (!hosts.Any() && endpoints.Exists(e => e.AbsoluteUrl == null))
+        if (!hosts.Any() && endpoints.Exists(e => e.IsRelativeUrl))
         {
-            throw new InvalidDataException("no hosts defined and at least one endpoint is not absolute url");
+            throw new InvalidDataException("no hosts defined and at least one endpoint is relative url");
         }
 
+        InitializeVariables(hosts, endpoints);
         using var client = new HttpClient();
         var tasks = SafeInvokeCheck(endpoints, ep => InvokeEndpointsInner(ep, hosts, client));
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
         HandleCheckExceptions();
+    }
+
+    private void InitializeVariables(IEnumerable<Uri> hosts, IEnumerable<Endpoint> endpoints)
+    {
+        var hostsCount = hosts.Count();
+        _total = endpoints.Where(f => f.Active).Select(f => f.IsAbsoluteUrl ? 1 : hostsCount).Sum();
+        EffectedRows = 0;
     }
 
     private static void ValidateEndpoints(IEnumerable<Endpoint> endpoints)
@@ -161,6 +169,7 @@ internal sealed partial class Job : BaseCheckJob
         }
         catch (TaskCanceledException)
         {
+            UpdateProgress();
             throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{endpoint.Url}'. timeout expire");
         }
 
@@ -170,9 +179,13 @@ internal sealed partial class Job : BaseCheckJob
         {
             Logger.LogInformation("health check success for endpoint name '{EndpointName}' with url '{EndpointUrl}'",
                 endpoint.Name, uri);
+
+            IncreaseEffectedRows();
+            UpdateProgress();
             return;
         }
 
+        UpdateProgress();
         throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{endpoint.Url}' status code {response.StatusCode} ({(int)response.StatusCode}) is not in success status codes list");
     }
 

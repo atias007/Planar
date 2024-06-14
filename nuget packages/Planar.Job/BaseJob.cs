@@ -18,6 +18,8 @@ namespace Planar.Job
     {
         private BaseJobFactory _baseJobFactory = null!;
         private IConfiguration _configuration = null!;
+        private Version? _version;
+        private bool _inConfiguration;
         private JobExecutionContext _context = new JobExecutionContext();
         private Timer? _timer;
 
@@ -52,6 +54,20 @@ namespace Planar.Job
 
         protected IServiceProvider ServiceProvider => _provider;
 
+        protected Version? Version
+        {
+            get { return _version; }
+            set
+            {
+                if (!_inConfiguration)
+                {
+                    throw new PlanarJobException("Version can be set only in Configure method");
+                }
+
+                _version = value;
+            }
+        }
+
         public abstract void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
         public abstract Task ExecuteJob(IJobExecutionContext context);
@@ -71,7 +87,7 @@ namespace Planar.Job
 
             if (PlanarJob.Mode == RunningMode.Release)
             {
-                MqttClient.Start(_context.FireInstanceId).Wait();
+                MqttClient.Start(_context.FireInstanceId, _context.JobPort).Wait();
                 SpinWait.SpinUntil(() => MqttClient.IsConnected, TimeSpan.FromSeconds(5));
                 if (MqttClient.IsConnected)
                 {
@@ -86,6 +102,7 @@ namespace Planar.Job
 
             var mapper = new JobMapper(_logger);
             mapper.MapJobInstanceProperties(_context, this);
+            LogVersion();
 
             try
             {
@@ -112,6 +129,12 @@ namespace Planar.Job
                 MqttClient.Stop().Wait();
                 _timer?.Dispose();
             }
+        }
+
+        private void LogVersion()
+        {
+            if (Version == null) { return; }
+            Logger.LogInformation("job version: {Version}", Version);
         }
 
         private void HandleException(Exception ex)
@@ -167,7 +190,7 @@ namespace Planar.Job
             InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction);
 
             Logger = ServiceProvider.GetRequiredService<ILogger>();
-
+            LogVersion();
             ExecuteJob(_context).Wait();
 
             var result = new UnitTestResult
@@ -293,10 +316,12 @@ namespace Planar.Job
 
         private void InitializeConfiguration(JobExecutionContext context, Action<IConfigurationBuilder, IJobExecutionContext> configureAction)
         {
+            _inConfiguration = true;
             var builder = new ConfigurationBuilder();
             builder.AddInMemoryCollection(context.JobSettings);
             configureAction.Invoke(builder, context);
             Configuration = builder.Build();
+            _inConfiguration = false;
         }
 
         private void InitializeDepedencyInjection(JobExecutionContext context, BaseJobFactory baseJobFactory, Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction)

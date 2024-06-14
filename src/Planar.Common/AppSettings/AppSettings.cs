@@ -71,6 +71,8 @@ public static class AppSettings
         General.SchedulerStartupDelay = GetSettings(configuration, EC.SchedulerStartupDelayVariableKey, "general", "scheduler startup delay", TimeSpan.FromSeconds(30));
         General.ConcurrencyRateLimiting = GetSettings(configuration, EC.ConcurrencyRateLimitingVariableKey, "general", "concurrency rate limiting", 10);
         General.EncryptAllSettings = GetSettings(configuration, EC.EncryptAllSettingsVariableKey, "general", "encrypt all settings", false);
+        General.UseHttpsRedirect = GetSettings(configuration, EC.UseHttpsRedirectVariableKey, "general", "use https redirect", true);
+        General.UseHttps = GetSettings(configuration, EC.UseHttpsVariableKey, "general", "use https", false);
 
         // Cluster
         Cluster.Clustering = GetSettings(configuration, EC.ClusteringVariableKey, "cluster", "clustering", false);
@@ -372,8 +374,17 @@ public static class AppSettings
     {
         General.HttpPort = GetSettings<short>(configuration, EC.HttpPortVariableKey, "general", "http port", 2306);
         General.HttpsPort = GetSettings<short>(configuration, EC.HttpsPortVariableKey, "general", "https port", 2610);
-        General.UseHttps = GetSettings(configuration, EC.UseHttpsVariableKey, "general", "use https", false);
-        General.UseHttpsRedirect = GetSettings(configuration, EC.UseHttpsRedirectVariableKey, "general", "use https redirect", true);
+        General.JobPort = GetSettings<short>(configuration, EC.JobPortVariableKey, "general", "job port", 206);
+
+        ValidatePort(General.HttpPort, "http port");
+        ValidatePort(General.HttpsPort, "https port");
+        ValidatePort(General.JobPort, "job port");
+    }
+
+    private static void ValidatePort(int port, string name)
+    {
+        if (port > 0 && port < 65535) { return; }
+        throw new AppSettingsException($"'{name}' with value {port} is not valid port number. value must between 0 to 65535");
     }
 
     private static void InitializeLogLevel(IConfiguration configuration)

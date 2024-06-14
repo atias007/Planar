@@ -23,6 +23,8 @@ public class Job : BaseCheckJob
         var node = GetNode(Configuration, defaults);
         var queues = GetQueue(Configuration, defaults);
 
+        InitializeVariables(server, healthCheck, node, queues);
+
         // health check
         var healthCheckTask = InvokeHealthCheck(healthCheck, server);
         tasks.Add(healthCheckTask);
@@ -39,6 +41,15 @@ public class Job : BaseCheckJob
 
         CheckAggragateException();
         HandleCheckExceptions();
+    }
+
+    private void InitializeVariables(Server server, HealthCheck healthCheck, Node node, IEnumerable<Queue> queues)
+    {
+        var hostsCount = server.Hosts.Count();
+        _total = healthCheck.Active ? hostsCount : 0;
+        _total += node.Active ? hostsCount : 0;
+        _total += queues.Count(q => q.Active && q.IsValid);
+        EffectedRows = 0;
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -137,6 +148,8 @@ public class Job : BaseCheckJob
         if (!healthCheck.IsValid) { return; }
 
         var proxy = RabbitMqProxy.GetProxy(host, server, Logger);
+
+        UpdateProgress();
         if (healthCheck.ClusterAlarm.GetValueOrDefault())
         {
             await proxy.ClusterAlarm();
@@ -156,6 +169,8 @@ public class Job : BaseCheckJob
         {
             await proxy.NodeQuorumCritical();
         }
+
+        IncreaseEffectedRows();
     }
 
     private async Task InvokeNodeCheckInner(Node node, Server server, string host)
@@ -170,9 +185,9 @@ public class Job : BaseCheckJob
 
         var proxy = RabbitMqProxy.GetProxy(host, server, Logger);
         var details = await proxy.GetNodeDetails();
-
         foreach (var item in details)
         {
+            UpdateProgress();
             if (node.DiskFreeAlarm.GetValueOrDefault())
             {
                 if (item.DiskFreeAlarm)
@@ -196,6 +211,8 @@ public class Job : BaseCheckJob
                     Logger.LogInformation("node check (memory alarm) on host {Host} succeeded", host);
                 }
             }
+
+            IncreaseEffectedRows();
         }
     }
 
@@ -217,7 +234,7 @@ public class Job : BaseCheckJob
 
         if (!queue.IsValid) { return; }
         var host = server.DefaultHost;
-
+        UpdateProgress();
         var detail = details.FirstOrDefault(x => string.Equals(x.Name, queue.Name, StringComparison.OrdinalIgnoreCase))
             ?? throw new CheckException($"queue check (exists) on host {host} failed. queue '{queue.Name}' does not exists");
 
@@ -225,7 +242,7 @@ public class Job : BaseCheckJob
         CheckConsumers(host, queue, detail);
         CheckMessages(host, queue, detail);
         CheckMemory(host, queue, detail);
-
+        IncreaseEffectedRows();
         await Task.CompletedTask;
     }
 
