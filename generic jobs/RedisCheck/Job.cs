@@ -21,7 +21,7 @@ internal class Job : BaseCheckJob
         var keys = GetKeys(Configuration, defaults);
         var healthCheck = GetHealthCheck(Configuration, defaults);
         ValidateRequired(keys, "keys");
-        ValidateDuplicateKeys(keys, "keys");
+        //// ValidateDuplicateKeys(keys, "keys");
         InitializeVariables(healthCheck, keys);
         var hcTask = SafeInvokeCheck(healthCheck, InvokeHealthCheckInner);
         var tasks = SafeInvokeCheck(keys, InvokeKeyCheckInner);

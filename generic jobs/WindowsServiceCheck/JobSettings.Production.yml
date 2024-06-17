@@ -1,0 +1,3 @@
+hosts:
+  - http://prod.server.1
+  - http://prod.server.2

@@ -79,7 +79,7 @@ public static class AppSettings
         Cluster.CheckinInterval = GetSettings(configuration, EC.ClusteringCheckinIntervalVariableKey, "cluster", "checkin interval", TimeSpan.FromSeconds(5));
         Cluster.CheckinMisfireThreshold = GetSettings(configuration, EC.ClusteringCheckinMisfireThresholdVariableKey, "cluster", "checkin misfire threshold", TimeSpan.FromSeconds(5));
         Cluster.HealthCheckInterval = GetSettings(configuration, EC.ClusterHealthCheckIntervalVariableKey, "cluster", "health check interval", TimeSpan.FromMinutes(1));
-        Cluster.Port = GetSettings<short>(configuration, EC.ClusterPortVariableKey, "cluster", "port", 12306);
+        Cluster.Port = GetSettings(configuration, EC.ClusterPortVariableKey, "cluster", "port", 12306);
 
         // Retention
         Retention.TraceRetentionDays = GetSettings(configuration, EC.TraceRetentionDaysVariableKey, "retention", "trace retention days", 365);
@@ -372,9 +372,9 @@ public static class AppSettings
 
     private static void InitializePorts(IConfiguration configuration)
     {
-        General.HttpPort = GetSettings<short>(configuration, EC.HttpPortVariableKey, "general", "http port", 2306);
-        General.HttpsPort = GetSettings<short>(configuration, EC.HttpsPortVariableKey, "general", "https port", 2610);
-        General.JobPort = GetSettings<short>(configuration, EC.JobPortVariableKey, "general", "job port", 206);
+        General.HttpPort = GetSettings(configuration, EC.HttpPortVariableKey, "general", "http port", 2306);
+        General.HttpsPort = GetSettings(configuration, EC.HttpsPortVariableKey, "general", "https port", 2610);
+        General.JobPort = GetSettings(configuration, EC.JobPortVariableKey, "general", "job port", 206);
 
         ValidatePort(General.HttpPort, "http port");
         ValidatePort(General.HttpsPort, "https port");

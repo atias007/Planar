@@ -7,7 +7,11 @@ using Microsoft.EntityFrameworkCore;
 namespace Planar.Service.Model;
 
 [Table("JobInstanceLog")]
-[Index("InstanceId", Name = "IX_JobInstanceLog")]
+[Index("InstanceId", "StartDate", Name = "IX_JobInstanceLog_InstanceId")]
+[Index("JobGroup", "StartDate", Name = "IX_JobInstanceLog_JobGroup")]
+[Index("JobId", "StartDate", Name = "IX_JobInstanceLog_JobId")]
+[Index("JobType", "StartDate", Name = "IX_JobInstanceLog_JobType")]
+[Index("Status", "StartDate", Name = "IX_JobInstanceLog_Status")]
 public partial class JobInstanceLog
 {
     [Key]

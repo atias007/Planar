@@ -15,12 +15,12 @@ public partial class ClusterNode
     public string Server { get; set; } = null!;
 
     [Key]
-    public short Port { get; set; }
+    public int Port { get; set; }
 
     [StringLength(100)]
     public string InstanceId { get; set; } = null!;
 
-    public short ClusterPort { get; set; }
+    public int ClusterPort { get; set; }
 
     [Column(TypeName = "datetime")]
     public DateTime JoinDate { get; set; }

@@ -63,6 +63,8 @@
     <None Remove="Scripts\Planar_0049 - fix_statistics.sql" />
     <None Remove="Scripts\Planar_0050 - monitorhooks_table.sql" />
     <None Remove="Scripts\Planar_0051 - add_index.sql" />
+    <None Remove="Scripts\Planar_0052 - fix_port.sql" />
+    <None Remove="Scripts\Planar_0053 - fix_clusterport.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -116,6 +118,8 @@
     <EmbeddedResource Include="Scripts\Planar_0049 - fix_statistics.sql" />
     <EmbeddedResource Include="Scripts\Planar_0050 - monitorhooks_table.sql" />
     <EmbeddedResource Include="Scripts\Planar_0051 - add_index.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0052 - fix_port.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0053 - fix_clusterport.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DbUp\dbup-sqlserver\dbup-sqlserver.csproj" />

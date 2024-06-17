@@ -101,19 +101,19 @@ public class Job : BaseCheckJob
 
     private static Server GetServer(IConfiguration configuration)
     {
-        var section = configuration.GetSection("server");
+        var section = configuration.GetSection("rabbitmq");
         var server = new Server(section);
 
-        ValidateRequired(server.Hosts, "hosts", "server");
-        ValidateRequired(server.Username, "username", "server");
-        ValidateRequired(server.Password, "password", "server");
+        ValidateRequired(server.Hosts, "hosts", "rabbitmq");
+        ValidateRequired(server.Username, "username", "rabbitmq");
+        ValidateRequired(server.Password, "password", "rabbitmq");
 
         foreach (var item in server.Hosts)
         {
-            ValidateUri(item, "hosts", "server");
+            ValidateUri(item, "hosts", "rabbitmq");
         }
 
-        ValidateRequired(server.Hosts, "hosts", "server");
+        ValidateRequired(server.Hosts, "hosts", "rabbitmq");
 
         return server;
     }
