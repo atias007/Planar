@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Planar.Job;
 using Polly;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 public abstract class BaseCheckJob : BaseJob
@@ -259,7 +260,7 @@ public abstract class BaseCheckJob : BaseJob
                         sleepDurationProvider: _ => entity.RetryInterval.GetValueOrDefault(),
                          onRetry: (ex, _) =>
                          {
-                             var exception = ex is CheckException ? null : ex;
+                             var exception = IsExceptionIsCheckException(ex, out var _) ? null : ex;
                              Logger.LogWarning(exception, "retry for '{Key}'. Reason: {Message}", entity.Key, ex.Message);
                          })
                     .ExecuteAsync(async () =>
@@ -372,7 +373,7 @@ public abstract class BaseCheckJob : BaseJob
 
         try
         {
-            if (ex is not CheckException checkException)
+            if (!IsExceptionIsCheckException(ex, out var checkException))
             {
                 Logger.LogError(ex, "check failed for '{Key}'. reason: {Message}", entity.Key, ex.Message);
                 AddAggregateException(ex);
@@ -399,6 +400,36 @@ public abstract class BaseCheckJob : BaseJob
         {
             AddAggregateException(innerEx);
         }
+    }
+
+    private static bool IsExceptionIsCheckException(Exception ex, [NotNullWhen(true)] out CheckException? checkException)
+    {
+        if (ex is CheckException checkException1)
+        {
+            checkException = checkException1;
+            return true;
+        }
+
+        if (ex.InnerException is CheckException checkException2)
+        {
+            checkException = checkException2;
+            return true;
+        }
+
+        if (ex is AggregateException aggregateException)
+        {
+            foreach (var innerEx in aggregateException.InnerExceptions)
+            {
+                if (innerEx is not CheckException)
+                {
+                    checkException = null;
+                    return false;
+                }
+            }
+        }
+
+        checkException = null;
+        return false;
     }
 
     private void SafeHandleOperationException<T>(T entity, Exception ex)

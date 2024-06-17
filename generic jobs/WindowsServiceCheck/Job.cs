@@ -96,7 +96,8 @@ internal sealed partial class Job : BaseCheckJob
 
     private async Task InvokeServicesInner(Service service)
     {
-        await Task.Run(() => Parallel.ForEach(service.Hosts, host => InvokeServiceInner(service, host)));
+        Parallel.ForEach(service.Hosts, host => InvokeServiceInner(service, host));
+        await Task.CompletedTask;
     }
 
 #pragma warning disable CA1416 // Validate platform compatibility
@@ -118,6 +119,11 @@ internal sealed partial class Job : BaseCheckJob
         {
             Logger.LogInformation("skipping disabled service '{Name}' on host '{Host}'", service.Name, host);
             return;
+        }
+
+        if (disabled)
+        {
+            throw new CheckException($"service '{service.Name}' on host '{host}' is in {status} start type");
         }
 
         if (startType == ServiceStartMode.Manual && service.AutomaticStart)
