@@ -555,7 +555,7 @@ namespace Planar.CLI
             table.Table.AddColumns("Key", "Value", "Type");
 
             if (response == null) { return table; }
-            response.ForEach(r => table.Table.AddRow(r.Key.EscapeMarkup(), LimitValue(r.Value), r.Type.EscapeMarkup()));
+            response.ForEach(r => table.Table.AddRow(r.Key.EscapeMarkup(), SafeCliString(LimitValue(r.Value)), r.Type.EscapeMarkup()));
             return table;
         }
 
@@ -585,8 +585,10 @@ namespace Planar.CLI
 
         private static string SafeCliString(string? value, bool displayNull = false)
         {
+            const string tab = "    ";
             if (displayNull && value == null) { return "[null]".EscapeMarkup(); }
             if (string.IsNullOrWhiteSpace(value)) { return string.Empty; }
+            value = value.Replace("\t", tab);
             return value.Trim().EscapeMarkup();
         }
     }
