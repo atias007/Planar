@@ -196,7 +196,7 @@ public abstract class BaseCommonJob<TProperties> : BaseCommonJob, IJob
     {
         try
         {
-            if (string.IsNullOrEmpty(path)) return new Dictionary<string, string?>();
+            if (string.IsNullOrEmpty(path)) { return new Dictionary<string, string?>(); }
             var jobSettings = JobSettingsLoader.LoadJobSettings(path, Global.GlobalConfig);
             return jobSettings;
         }

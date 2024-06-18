@@ -416,16 +416,13 @@ public abstract class BaseCheckJob : BaseJob
             return true;
         }
 
-        if (ex is AggregateException aggregateException)
+        if (
+            ex is AggregateException aggregateException &&
+            aggregateException.InnerExceptions.Count == 1 &&
+            aggregateException.InnerExceptions[0] is CheckException checkException3)
         {
-            foreach (var innerEx in aggregateException.InnerExceptions)
-            {
-                if (innerEx is not CheckException)
-                {
-                    checkException = null;
-                    return false;
-                }
-            }
+            checkException = checkException3;
+            return true;
         }
 
         checkException = null;
