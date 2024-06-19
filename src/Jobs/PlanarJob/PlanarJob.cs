@@ -216,14 +216,45 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
 
     protected override ProcessStartInfo GetProcessStartInfo()
     {
-        var bytes = Encoding.UTF8.GetBytes(MessageBroker.Details);
-        var base64String = Convert.ToBase64String(bytes);
         var startInfo = base.GetProcessStartInfo();
+        var base64String = GetContextArgument(MessageBroker.Details).Result;
+
         startInfo.Arguments = $"--planar-service-mode --context {base64String}";
         startInfo.StandardErrorEncoding = Encoding.UTF8;
         startInfo.StandardOutputEncoding = Encoding.UTF8;
         SetProcessToLinuxOs(startInfo);
         return startInfo;
+    }
+
+    private async Task<string> GetContextArgument(string details)
+    {
+        const string contextFolder = "context";
+        const int lengthLimit = 30_000;
+
+        var bytes = Encoding.UTF8.GetBytes(details);
+        var base64String = Convert.ToBase64String(bytes);
+        if (base64String.Length <= lengthLimit) { return base64String; }
+
+        try
+        {
+            var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, FileProperties.Path, contextFolder);
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            var identifier = Guid.NewGuid().ToString("N");
+            var filename = Path.Combine(path, $"{identifier}.ctx");
+            await File.WriteAllTextAsync(filename, base64String);
+            var result = $"[{identifier}]";
+            bytes = Encoding.UTF8.GetBytes(result);
+            base64String = Convert.ToBase64String(bytes);
+            return base64String;
+        }
+        catch (Exception ex)
+        {
+            throw new PlanarJobException("fail to create temporary argiment context file", ex);
+        }
     }
 
     private static void SetProcessToLinuxOs(ProcessStartInfo startInfo)
