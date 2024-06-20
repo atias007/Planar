@@ -21,7 +21,6 @@ namespace Planar.CLI.Actions
     {
         [Action("add")]
         [NullRequest]
-        [ActionWizard]
         public static async Task<CliActionResponse> AddMonitorAction(CliAddMonitorRequest request, CancellationToken cancellationToken = default)
         {
             if (request == null)
@@ -165,7 +164,6 @@ namespace Planar.CLI.Actions
         }
 
         [Action("try")]
-        [ActionWizard]
         [NullRequest]
         public static async Task<CliActionResponse> TryMonitor(CliMonitorTestRequest request, CancellationToken cancellationToken = default)
         {

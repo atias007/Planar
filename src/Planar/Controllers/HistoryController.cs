@@ -14,12 +14,8 @@ namespace Planar.Controllers
 {
     [ApiController]
     [Route("history")]
-    public class HistoryController : BaseController<HistoryDomain>
+    public class HistoryController(HistoryDomain bl) : BaseController<HistoryDomain>(bl)
     {
-        public HistoryController(HistoryDomain bl) : base(bl)
-        {
-        }
-
         [HttpGet]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_history", Description = "Get history data by filter", Summary = "Get History")]

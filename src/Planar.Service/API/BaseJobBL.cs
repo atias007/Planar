@@ -106,7 +106,19 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
     {
         if (key.StartsWith(Consts.ConstPrefix))
         {
-            throw new RestValidationException("key", "forbidden: this is system data key and it should not be modified");
+            throw new RestValidationException("key", $"forbidden: '{key}' is system data key and it should not be modified");
+        }
+
+        if (!Consts.IsDataKeyValid(key))
+        {
+            throw new RestValidationException("key", $"forbidden: '{key}' is invalid data key");
+        }
+
+        ValidateRange(key, 1, 100, "key", string.Empty);
+
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            throw new RestValidationException("key", "key is required");
         }
     }
 
@@ -232,4 +244,52 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
 
         return triggerId;
     }
+
+    #region Validation
+
+    protected static void ValidateMaxLength(string? value, int length, string name, string parent)
+    {
+        if (value != null && value.Length > length)
+        {
+            throw new RestValidationException(name, $"{parent} {name} length is invalid. maximum length is {length}".Trim());
+        }
+    }
+
+    protected static void ValidateMaxValue(int? value, int to, string name, string parent)
+    {
+        if (value != null && value > to)
+        {
+            throw new RestValidationException(name, $"{parent} {name} value is invalid. maximum value is {to}".Trim());
+        }
+    }
+
+    protected static void ValidateMinLength(string? value, int length, string name, string parent)
+    {
+        if (value != null && value.Length < length)
+        {
+            throw new RestValidationException(name, $"{parent} {name} length is invalid. minimum length is {length}".Trim());
+        }
+    }
+
+    protected static void ValidateMinValue(int? value, int from, string name, string parent)
+    {
+        if (value != null && value < from)
+        {
+            throw new RestValidationException(name, $"{parent} {name} value is invalid. minimum value is {from}".Trim());
+        }
+    }
+
+    protected static void ValidateRange(string? value, int from, int to, string name, string parent)
+    {
+        ValidateMinLength(value, from, name, parent);
+        ValidateMaxLength(value, to, name, parent);
+    }
+
+    protected static void ValidateRangeValue(int? value, int from, int to, string name, string parent)
+    {
+        ValidateMinValue(value, from, name, parent);
+        ValidateMaxValue(value, to, name, parent);
+    }
+
+    #endregion Validation
 }

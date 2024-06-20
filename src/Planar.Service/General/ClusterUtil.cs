@@ -87,11 +87,6 @@ namespace Planar.Service.General
 
         public async Task ValidateJobFileExists(string? folder, string filename)
         {
-            if (folder == null)
-            {
-                throw new PlanarException("job folder has invalid value of null");
-            }
-
             var nodes = await GetAllNodes();
             foreach (var node in nodes)
             {
@@ -101,11 +96,11 @@ namespace Planar.Service.General
                 {
                     var result = await Policy.Handle<RpcException>()
                         .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => CallIsJobFileExistsService(node, folder, filename));
+                        .ExecuteAsync(() => CallIsJobFileExistsService(node, folder ?? string.Empty, filename));
 
                     if (!result.Exists)
                     {
-                        throw new PlanarException($"folder {result.Path} does not have {filename} filename. (node {Environment.MachineName})");
+                        throw new PlanarException($"filename {filename} does not exists. (node {Environment.MachineName})");
                     }
                 }
                 catch (RpcException ex)

@@ -6,6 +6,7 @@ using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -105,6 +106,12 @@ namespace Planar.CLI.Actions
                 .AddBody(data);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);
+            if (result.StatusCode == HttpStatusCode.NotFound)
+            {
+                restRequest.Method = Method.Post;
+                result = await RestProxy.Invoke(restRequest, cancellationToken);
+            }
+
             return new CliActionResponse(result);
         }
     }

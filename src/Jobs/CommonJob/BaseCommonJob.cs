@@ -53,15 +53,16 @@ public abstract class BaseCommonJob
     protected async Task WaitForJobTask(IJobExecutionContext context, Task task)
     {
         var timeout = TriggerHelper.GetTimeoutWithDefault(context.Trigger);
-        var finish = task.Wait(timeout);
-        if (!finish)
+        try
+        {
+            await task.WaitAsync(timeout);
+        }
+        catch (TaskCanceledException)
         {
             SafeScan(MonitorEvents.ExecutionTimeout, context);
             MessageBroker.AppendLog(LogLevel.Warning, $"Timeout occur, sent cancel requst to job (timeout value: {FormatTimeSpan(timeout)})");
             await context.Scheduler.Interrupt(context.JobDetail.Key);
         }
-
-        task.Wait();
     }
 
     protected void StartMonitorDuration(IJobExecutionContext context)
@@ -195,7 +196,7 @@ public abstract class BaseCommonJob<TProperties> : BaseCommonJob, IJob
     {
         try
         {
-            if (string.IsNullOrEmpty(path)) return new Dictionary<string, string?>();
+            if (string.IsNullOrEmpty(path)) { return new Dictionary<string, string?>(); }
             var jobSettings = JobSettingsLoader.LoadJobSettings(path, Global.GlobalConfig);
             return jobSettings;
         }

@@ -294,6 +294,11 @@ namespace Planar.CLI.Actions
             return CliPromptUtil.PromptSelection(items, title, addCancelOption);
         }
 
+        protected static CliSelectItem<T>? PromptSelection<T>(IEnumerable<CliSelectItem<T>>? items, string title, bool addCancelOption = true)
+        {
+            return CliPromptUtil.PromptSelection<T>(items, title, addCancelOption);
+        }
+
         protected static TEnum PromptSelection<TEnum>(string title, bool addCancelOption = true)
             where TEnum : struct, Enum
         {
@@ -398,7 +403,6 @@ namespace Planar.CLI.Actions
                 var actionAttributes = act.GetCustomAttributes<ActionAttribute>();
                 var nullRequestAttribute = act.GetCustomAttribute<NullRequestAttribute>();
                 var ignoreHelpAttribute = act.GetCustomAttribute<IgnoreHelpAttribute>();
-                var hasWizard = act.GetCustomAttribute<ActionWizardAttribute>();
 
                 if (actionAttributes == null || !actionAttributes.Any()) { continue; }
 
@@ -414,7 +418,6 @@ namespace Planar.CLI.Actions
                     Arguments = GetArguments(requestType),
                     CommandDisplayName = string.Join('|', comnmands.OrderBy(c => c.Length)),
                     IgnoreHelp = ignoreHelpAttribute != null,
-                    HasWizard = hasWizard != null
                 };
 
                 if (!string.IsNullOrEmpty(moduleAttribute?.Synonyms))

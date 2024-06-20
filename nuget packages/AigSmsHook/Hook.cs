@@ -114,3 +114,11 @@ public partial class Hook : BaseHook
     [GeneratedRegex("^05\\d{8}$")]
     private static partial Regex CellPhoneRegex();
 }
+
+internal class SmsMessage
+{
+    public required string MessageText { get; set; }
+    public required string ToPhone { get; set; }
+    public required string SourceSystem { get; set; }
+    public bool OverrideWorkingHours { get; set; }
+}

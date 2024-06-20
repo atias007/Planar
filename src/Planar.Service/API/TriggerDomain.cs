@@ -38,6 +38,7 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
     public async Task PutData(JobOrTriggerDataRequest request, PutMode mode, bool skipSystemCheck = false)
     {
         var info = await GetTriggerDetailsForDataCommands(request.Id, request.DataKey, skipSystemCheck);
+        ValidateMaxLength(request.DataValue, 1000, "value", string.Empty);
         if (info.Trigger == null || info.JobDetails == null) { return; }
 
         if (IsDataKeyExists(info.Trigger, request.DataKey))
@@ -45,11 +46,6 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
             if (mode == PutMode.Add)
             {
                 throw new RestConflictException($"data with key '{request.DataKey}' already exists");
-            }
-
-            if (info.Trigger.JobDataMap.Count >= Consts.MaximumJobDataItems)
-            {
-                throw new RestValidationException("trigger data", $"trigger data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
             }
 
             info.Trigger.JobDataMap.Put(request.DataKey, request.DataValue);
@@ -60,6 +56,11 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
             if (mode == PutMode.Update)
             {
                 throw new RestNotFoundException($"data with key '{request.DataKey}' not found");
+            }
+
+            if (info.Trigger.JobDataMap.Count >= Consts.MaximumJobDataItems)
+            {
+                throw new RestValidationException("trigger data", $"trigger data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
             }
 
             info.Trigger.JobDataMap.Put(request.DataKey, request.DataValue);

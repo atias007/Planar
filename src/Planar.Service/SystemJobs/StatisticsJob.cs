@@ -117,7 +117,7 @@ public sealed class StatisticsJob : SystemJob, IJob
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"fail to save job duration statistics cache while running system job: {nameof(StatisticsJob)}");
+            _logger.LogError(ex, "fail to save job duration statistics cache while running system job: {Name}", nameof(StatisticsJob));
         }
 
         return statistics;
@@ -137,7 +137,7 @@ public sealed class StatisticsJob : SystemJob, IJob
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"fail to save job duration statistics cache while running system job: {nameof(StatisticsJob)}");
+            _logger.LogError(ex, "fail to save job duration statistics cache while running system job: {Name}", nameof(StatisticsJob));
         }
 
         return statistics;

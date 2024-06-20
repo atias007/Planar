@@ -47,7 +47,7 @@ where TProperties : class, new()
         }
     }
 
-    private IFileJobProperties FileProperties =>
+    protected IFileJobProperties FileProperties =>
         Properties as IFileJobProperties ??
         throw new PlanarException($"Job type '{Properties.GetType()}' does not implement '{nameof(IFileJobProperties)}'");
 

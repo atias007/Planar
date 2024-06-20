@@ -14,7 +14,6 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -40,8 +39,8 @@ namespace Planar.CLI.Actions
                 request = wrapper.Request;
             }
 
-            var body = new SetJobPathRequest { Folder = request.Folder };
-            var restRequest = new RestRequest("job/folder", Method.Post)
+            var body = new SetJobPathRequest { JobFilePath = request.Filename };
+            var restRequest = new RestRequest("job", Method.Post)
                 .AddBody(body);
             var result = await RestProxy.Invoke<PlanarIdResponse>(restRequest, cancellationToken);
 
@@ -529,19 +528,28 @@ namespace Planar.CLI.Actions
         }
 
         [Action("update")]
-        [ActionWizard]
         [NullRequest]
         public static async Task<CliActionResponse> UpdateJob(CliUpdateJobRequest request, CancellationToken cancellationToken = default)
         {
-            var body = new UpdateJobRequest();
             request ??= new CliUpdateJobRequest();
-            if (string.IsNullOrWhiteSpace(request.Id))
+            var body = new UpdateJobRequest { JobFilePath = request.Filename };
+
+            if (string.IsNullOrWhiteSpace(request.Filename))
             {
-                body.Id = await ChooseJob(null, cancellationToken);
+                var jobsRequest = new RestRequest("job/available-jobs", Method.Get)
+                    .AddQueryParameter("update", "true");
+                var jobsResult = await RestProxy.Invoke<List<AvailableJob>>(jobsRequest, cancellationToken);
+                if (!jobsResult.IsSuccessful)
+                {
+                    return new CliActionResponse(jobsResult);
+                }
+
+                var filename = SelectJobFilename(jobsResult.Data);
+                body.JobFilePath = filename;
             }
             else
             {
-                body.Id = request.Id;
+                body.JobFilePath = request.Filename;
             }
 
             if (request.Options == null)
@@ -656,14 +664,14 @@ namespace Planar.CLI.Actions
         private static async Task<RequestBuilderWrapper<CliAddJobRequest>> GetCliAddJobRequest(CancellationToken cancellationToken)
         {
             var restRequest = new RestRequest("job/available-jobs", Method.Get);
-            var result = await RestProxy.Invoke<List<AvailableJobToAdd>>(restRequest, cancellationToken);
+            var result = await RestProxy.Invoke<List<AvailableJob>>(restRequest, cancellationToken);
             if (!result.IsSuccessful)
             {
                 return new RequestBuilderWrapper<CliAddJobRequest> { FailResponse = result };
             }
 
-            var folder = SelectJobFolder(result.Data);
-            var request = new CliAddJobRequest { Folder = folder };
+            var folder = SelectJobFilename(result.Data);
+            var request = new CliAddJobRequest { Filename = folder };
             return new RequestBuilderWrapper<CliAddJobRequest> { Request = request };
         }
 
@@ -787,10 +795,17 @@ namespace Planar.CLI.Actions
         private static UpdateJobOptions MapUpdateJobOptions()
         {
             using var _ = new TokenBlockerScope();
-            var options = new[] { "without data (default)", "with job data", "with triggers data", "all data" };
+            var options = new List<CliSelectItem<JobUpdateOptions>>
+            {
+                new() { DisplayName = "without data (default)", Value = JobUpdateOptions.NoData },
+                new() { DisplayName = "with job data", Value =  JobUpdateOptions.JobData },
+                new() { DisplayName = "with triggers data", Value =  JobUpdateOptions.TriggersData },
+                new() { DisplayName = "all data", Value =  JobUpdateOptions.All },
+            };
+
             var selected = CliPromptUtil.PromptSelection(options, "select update options");
             CliPromptUtil.CheckForCancelOption(selected);
-            var result = MapUpdateJobOptions(selected);
+            var result = MapUpdateJobOptions(selected?.Value ?? JobUpdateOptions.NoData);
             return result;
         }
 
@@ -824,57 +839,22 @@ namespace Planar.CLI.Actions
             return result;
         }
 
-        private static UpdateJobOptions MapUpdateJobOptions(string? selected)
-        {
-            var result = UpdateJobOptions.Default;
-            if (string.IsNullOrWhiteSpace(selected)) { return result; }
-
-            switch (selected.ToLower())
-            {
-                case "without data (default)":
-                    return result;
-
-                case "with job data":
-                    result.UpdateJobData = true;
-                    result.UpdateTriggersData = false;
-                    break;
-
-                case "with triggers data":
-                    result.UpdateJobData = false;
-                    result.UpdateTriggersData = true;
-                    break;
-
-                case "all data":
-                    result.UpdateJobData = true;
-                    result.UpdateTriggersData = true;
-                    return result;
-
-                default:
-                    throw new CliValidationException($"option {selected} is invalid. use one or more from the following options: no-data, job-data, triggers-data, all");
-            }
-
-            return result;
-        }
-
-        private static string SelectJobFolder(IEnumerable<AvailableJobToAdd>? data)
+        private static string SelectJobFilename(IEnumerable<AvailableJob>? data)
         {
             if (data == null || !data.Any())
             {
                 throw new CliWarningException("no available jobs found on server");
             }
 
-            var folders = data.Select(e =>
-                e.Name == e.RelativeFolder ?
-                e.Name ?? string.Empty :
-                $"{e.Name} ({e.RelativeFolder})");
+            var items = data.Select(e =>
+                new CliSelectItem<string>
+                {
+                    DisplayName = $"{e.Name.EscapeMarkup()} {CliConsts.GroupDisplayFormat}({e.JobFile.EscapeMarkup()})[/]",
+                    Value = e.JobFile
+                });
 
-            var selectedItem = PromptSelection(folders, "job folder") ?? string.Empty;
-            const string template = @"\(([^)]+)\)";
-            var regex = new Regex(template, RegexOptions.None, TimeSpan.FromMilliseconds(500));
-            var matches = regex.Matches(selectedItem);
-
-            var selectedFolder = matches.LastOrDefault();
-            return selectedFolder == null ? selectedItem : selectedFolder.Value[1..^1];
+            var selectedItem = PromptSelection(items, "job");
+            return selectedItem?.Value ?? string.Empty;
         }
 
         private static string? ShowGroupsMenu(IEnumerable<JobBasicDetails> data)

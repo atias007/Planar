@@ -7,8 +7,7 @@ namespace Planar.Service.Validation
     {
         public AddJobFoldeRequestValidator()
         {
-            RuleFor(r => r.Folder).NotEmpty().Length(2, 500).Path();
-            RuleFor(r => r.JobFileName).MaximumLength(500);
+            RuleFor(r => r.JobFilePath).NotEmpty().Length(2, 500).Path();
         }
     }
 }

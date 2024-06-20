@@ -7,7 +7,7 @@ namespace Planar.Service.Validation
     {
         public UpdateJobRequestValidator()
         {
-            Include(new JobOrTriggerKeyValidator());
+            RuleFor(r => r.JobFilePath).NotEmpty().Length(2, 500).Path();
         }
     }
 }

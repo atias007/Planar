@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
 		<Nullable>enable</Nullable>
-		<Version>1.7.2</Version>
+		<Version>1.7.3</Version>
 		<RepositoryType>git</RepositoryType>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
@@ -59,7 +59,7 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
 		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.6.1152" />
 		<PackageReference Include="System.Text.Json" Version="8.0.3" />
-		<PackageReference Include="YamlDotNet" Version="15.1.6" />
+		<PackageReference Include="YamlDotNet" Version="15.3.0" />
 	</ItemGroup>
 
 	<ItemGroup>

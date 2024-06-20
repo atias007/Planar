@@ -12,15 +12,15 @@ namespace Planar.CLI
     {
         public string Module { get; set; } = string.Empty;
 
-        public List<string> ModuleSynonyms { get; set; } = new();
+        public List<string> ModuleSynonyms { get; set; } = [];
 
-        public List<string> Commands { get; set; } = new();
+        public List<string> Commands { get; set; } = [];
 
         public MethodInfo? Method { get; set; }
 
         public bool AllowNullRequest { get; set; }
 
-        public List<CliArgumentMetadata> Arguments { get; set; } = new();
+        public List<CliArgumentMetadata> Arguments { get; set; } = [];
 
         public Type? RequestType { get; set; }
 
@@ -28,11 +28,9 @@ namespace Planar.CLI
 
         public string ArgumentsDisplayName { get; private set; } = string.Empty;
 
-        public List<string> ArgumentsDisplayNameItems { get; private set; } = new List<string>();
+        public List<string> ArgumentsDisplayNameItems { get; private set; } = [];
 
         public bool IgnoreHelp { get; set; }
-
-        public bool HasWizard { get; set; }
 
         public string CommandsTitle => string.Join('|', Commands);
 
@@ -134,10 +132,7 @@ namespace Planar.CLI
 
         public static string ToMinusCase(string text)
         {
-            if (text == null)
-            {
-                throw new ArgumentNullException(nameof(text));
-            }
+            ArgumentNullException.ThrowIfNull(text);
 
             if (text.Length < 2)
             {

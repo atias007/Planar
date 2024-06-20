@@ -24,15 +24,15 @@ namespace Planar
         private const int _keepAlivePeriod = 1;
         private const int _autoReconnectDelay = 1;
 
-        public static async Task Start(string id)
+        public static async Task Start(string id, int port)
         {
             _id = id;
-
+            var mqttPort = port == 0 ? _port : port;
             var clientOptions = new MqttClientOptionsBuilder()
                 .WithTimeout(TimeSpan.FromSeconds(_timeout))
                 .WithClientId(id)
                 .WithKeepAlivePeriod(TimeSpan.FromSeconds(_keepAlivePeriod))
-                .WithTcpServer(_host, _port)
+                .WithTcpServer(_host, mqttPort)
                 .Build();
 
             var options = new ManagedMqttClientOptionsBuilder()
@@ -51,7 +51,7 @@ namespace Planar
         {
             if (_mqttClient == null) { return; }
 
-            SpinWait.SpinUntil(() => _mqttClient.PendingApplicationMessagesCount == 0, 10000);
+            SpinWait.SpinUntil(() => _mqttClient.PendingApplicationMessagesCount == 0, TimeSpan.FromSeconds(10));
 
             _mqttClient.ConnectedAsync -= ConnectedAsync;
             _mqttClient.DisconnectedAsync -= DisconnectedAsync;
@@ -111,7 +111,7 @@ namespace Planar
 
         private static async Task ConnectedAsync(MqttClientConnectedEventArgs arg)
         {
-            var log = new LogEntity { Level = LogLevel.Error, Message = "Successfully connected" };
+            var log = new LogEntity { Level = LogLevel.Debug, Message = "Successfully connected" };
             await Console.Out.WriteLineAsync(log.ToString());
         }
     }

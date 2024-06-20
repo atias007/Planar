@@ -24,16 +24,15 @@ internal class Folder(IConfigurationSection section) : BaseDefault(section), INa
     public DateTime? ModifiedAgeDate { get; private set; }
     public string Key => Name;
     public bool IsAbsolutePath { get; set; }
+    public bool IsRelativePath => !IsAbsolutePath;
 
     public void SetDefaultFilePattern()
     {
         FilesPattern = new List<string> { "*.*" };
     }
 
-    public bool IsValid()
-    {
-        return TotalSizeNumber != null || FileSizeNumber != null || FileCount != null || CreatedAgeDate != null || ModifiedAgeDate != null;
-    }
+    public bool IsValid =>
+        TotalSizeNumber != null || FileSizeNumber != null || FileCount != null || CreatedAgeDate != null || ModifiedAgeDate != null;
 
     public string GetFullPath(string? host)
     {

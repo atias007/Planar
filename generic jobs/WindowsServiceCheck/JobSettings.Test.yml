@@ -1,0 +1,3 @@
+hosts:
+  - http://test.server.1
+  - http://test.server.2

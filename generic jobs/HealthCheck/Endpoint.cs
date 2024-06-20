@@ -26,6 +26,9 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement
 
     public Uri? AbsoluteUrl { get; }
 
+    public bool IsAbsoluteUrl => !IsRelativeUrl;
+    public bool IsRelativeUrl => AbsoluteUrl == null;
+
     private static Uri? SetAbsoluteUrl(string url)
     {
         if (Uri.TryCreate(url, UriKind.Absolute, out var result)) { return result; }

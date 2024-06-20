@@ -21,6 +21,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Planar.Service.API
 {
@@ -51,6 +52,7 @@ namespace Planar.Service.API
         public async Task PutData(JobOrTriggerDataRequest request, PutMode mode)
         {
             var info = await GetJobDetailsForDataCommands(request.Id, request.DataKey);
+            ValidateMaxLength(request.DataValue, 1000, "value", string.Empty);
             if (info.JobDetails == null) { return; }
 
             if (info.JobDetails.JobDataMap.ContainsKey(request.DataKey))
@@ -58,11 +60,6 @@ namespace Planar.Service.API
                 if (mode == PutMode.Add)
                 {
                     throw new RestConflictException($"data with key '{request.DataKey}' already exists");
-                }
-
-                if (info.JobDetails.JobDataMap.Count >= Consts.MaximumJobDataItems)
-                {
-                    throw new RestValidationException("job data", $"job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
                 }
 
                 info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
@@ -73,6 +70,11 @@ namespace Planar.Service.API
                 if (mode == PutMode.Update)
                 {
                     throw new RestNotFoundException($"data with key '{request.DataKey}' not found");
+                }
+
+                if (info.JobDetails.JobDataMap.Count >= Consts.MaximumJobDataItems)
+                {
+                    throw new RestValidationException("job data", $"job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
                 }
 
                 info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
@@ -204,38 +206,48 @@ namespace Planar.Service.API
             return new PagingResponse<JobBasicDetails>(request, result, jobs.Count);
         }
 
-        public async Task<IEnumerable<AvailableJobToAdd>> GetAvailableJobsToAdd()
+        public async Task<IEnumerable<AvailableJob>> GetAvailableJobs(bool update)
         {
-            var result = new List<AvailableJobToAdd>();
+            var result = new List<AvailableJob>();
             var folder = ServiceUtil.GetJobsFolder();
-            var files = Directory.GetFiles(folder, FolderConsts.JobFileName, SearchOption.AllDirectories);
+            var files = Directory.GetFiles(folder, FolderConsts.JobFileExtPattern, SearchOption.AllDirectories);
             foreach (var f in files)
             {
-                var job = await GetAvailableJobToAdd(f, folder);
+                var job = await GetAvailableJob(f, folder, update);
                 if (job != null) { result.Add(job); }
             }
 
-            return result;
+            return result.OrderBy(a => a.Name);
         }
 
-        private async Task<AvailableJobToAdd?> GetAvailableJobToAdd(string filename, string jobsFolder)
+        private async Task<AvailableJob?> GetAvailableJob(string filename, string jobsFolder, bool update)
         {
             try
             {
                 var request = GetJobDynamicRequestFromFilename(filename);
                 if (request == null) { return null; }
+                if (string.IsNullOrWhiteSpace(request.JobType)) { return null; }
+                if (string.IsNullOrWhiteSpace(request.Name)) { return null; }
+                if (!ServiceUtil.JobTypes.Any(j => string.Equals(j, request.JobType, StringComparison.OrdinalIgnoreCase))) { return null; }
 
                 var key = JobKeyHelper.GetJobKey(request);
                 if (key == null) { return null; }
+
                 var details = await Scheduler.GetJobDetail(key);
-                if (details == null)
+                if (details == null && update) { return null; }
+                if (details != null && !update) { return null; }
+
+                var fileInfo = new FileInfo(filename);
+                var fullFolder = fileInfo.Directory;
+                if (fullFolder == null) { return null; }
+                var relativeFolder = fullFolder.FullName[(jobsFolder.Length + 1)..];
+                var result = new AvailableJob
                 {
-                    var fullFolder = new FileInfo(filename).Directory;
-                    if (fullFolder == null) { return null; }
-                    var relativeFolder = fullFolder.FullName[(jobsFolder.Length + 1)..];
-                    var result = new AvailableJobToAdd(relativeFolder, fullFolder.Name);
-                    return result;
-                }
+                    Name = key.ToString(),
+                    JobFile = Path.Combine(relativeFolder, fileInfo.Name)
+                };
+
+                return result;
             }
             catch (Exception ex)
             {

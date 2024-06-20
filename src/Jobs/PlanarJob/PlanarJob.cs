@@ -11,6 +11,7 @@ using Quartz;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -22,6 +23,7 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
     private readonly object ConsoleLocker = new();
     private readonly bool _isDevelopment;
     private bool _isHealthCheck;
+    private string? _contextFilename;
 
     private PlanarJobExecutionException? _executionException;
 
@@ -67,6 +69,63 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
             FinalizeJob(context);
             FinalizeProcess();
             UnregisterMqttBrokerService();
+            SafeDeleteContextFile();
+        }
+    }
+
+    private void SafeDeleteContextFile()
+    {
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(_contextFilename) && File.Exists(_contextFilename))
+            {
+                SafeDeleteFile(_contextFilename);
+            }
+        }
+        catch
+        {
+            // *** DO NOTHING ***
+        }
+
+        try
+        {
+            var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, FileProperties.Path, Consts.PlanarJobArgumentContextFolder);
+            var files = Directory.GetFiles(path, "*.ctx").Select(f => new FileInfo(f));
+            foreach (var file in files)
+            {
+                if (file.LastWriteTime < DateTimeOffset.Now.AddDays(-1))
+                {
+                    SafeDeleteFile(file);
+                }
+            }
+        }
+        catch
+        {
+            // *** DO NOTHING ***
+        }
+    }
+
+    private static void SafeDeleteFile(string filename)
+    {
+        try
+        {
+            File.Delete(filename);
+        }
+        catch
+        {
+            // *** DO NOTHING ***
+        }
+    }
+
+    private static void SafeDeleteFile(FileInfo file)
+    {
+        try
+        {
+            file.Delete();
+        }
+        catch
+        {
+            // *** DO NOTHING ***
         }
     }
 
@@ -78,19 +137,11 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
 
     private void ValidateExeFile()
     {
-        try
+        if (!FileExtentionIsExe(Filename))
         {
-            if (!FileExtentionIsExe(Filename))
-            {
-                throw new PlanarException($"process filename '{Filename}' must have 'exe' extention");
-            }
-        }
-        catch (Exception ex)
-        {
-            var source = nameof(ValidateExeFile);
-            _logger.LogError(ex, "fail at {Source}. Message: {Message}", source, ex.Message);
-            MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
-            throw;
+            _logger.LogError("process filename '{Filename}' must have 'exe' extention", Filename);
+            MessageBroker.AppendLog(LogLevel.Error, $"process filename '{Filename}' must have 'exe' extention");
+            throw new PlanarException($"process filename '{Filename}' must have 'exe' extention");
         }
     }
 
@@ -216,14 +267,44 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
 
     protected override ProcessStartInfo GetProcessStartInfo()
     {
-        var bytes = Encoding.UTF8.GetBytes(MessageBroker.Details);
-        var base64String = Convert.ToBase64String(bytes);
         var startInfo = base.GetProcessStartInfo();
+        var base64String = GetContextArgument(MessageBroker.Details);
         startInfo.Arguments = $"--planar-service-mode --context {base64String}";
         startInfo.StandardErrorEncoding = Encoding.UTF8;
         startInfo.StandardOutputEncoding = Encoding.UTF8;
         SetProcessToLinuxOs(startInfo);
         return startInfo;
+    }
+
+    private string GetContextArgument(string details)
+    {
+        const int lengthLimit = 30_000;
+
+        var bytes = Encoding.UTF8.GetBytes(details);
+        var base64String = Convert.ToBase64String(bytes);
+        if (base64String.Length <= lengthLimit) { return base64String; }
+
+        try
+        {
+            var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, FileProperties.Path, Consts.PlanarJobArgumentContextFolder);
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+
+            var identifier = Guid.NewGuid().ToString("N");
+            var filename = Path.Combine(path, $"{identifier}.ctx");
+            File.WriteAllText(filename, base64String);
+            _contextFilename = filename;
+            var result = $"[{identifier}]";
+            bytes = Encoding.UTF8.GetBytes(result);
+            base64String = Convert.ToBase64String(bytes);
+            return base64String;
+        }
+        catch (Exception ex)
+        {
+            throw new PlanarJobException("fail to create temporary argument context file", ex);
+        }
     }
 
     private static void SetProcessToLinuxOs(ProcessStartInfo startInfo)

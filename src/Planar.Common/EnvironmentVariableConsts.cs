@@ -36,6 +36,7 @@ namespace Planar.Common
 
         public const string HttpPortVariableKey = "PLANAR_HTTP_PORT";
         public const string HttpsPortVariableKey = "PLANAR_HTTPS_PORT";
+        public const string JobPortVariableKey = "PLANAR_JOB_PORT";
         public const string UseHttpsRedirectVariableKey = "PLANAR_HTTPS_REDIRECT";
         public const string UseHttpsVariableKey = "PLANAR_HTTPS";
 

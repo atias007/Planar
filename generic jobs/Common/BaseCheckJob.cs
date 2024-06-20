@@ -6,15 +6,19 @@ using Microsoft.Extensions.Logging;
 using Planar.Job;
 using Polly;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 public abstract class BaseCheckJob : BaseJob
 {
     private readonly ConcurrentQueue<CheckException> _exceptions = new();
-    private CheckFailCounter _counter = null!;
-    private CheckSpanTracker _spanner = null!;
+    private CheckFailCounter _failCounter = null!;
+    private CheckSpanTracker _spanTracker = null!;
 
-    public static void ValidateDuplicateKeys<T>(IEnumerable<T> items, string sectionName)
+    protected int _counter;
+    protected int _total;
+
+    protected static void ValidateDuplicateKeys<T>(IEnumerable<T> items, string sectionName)
         where T : ICheckElement
     {
         var duplicates1 = items
@@ -30,7 +34,7 @@ public abstract class BaseCheckJob : BaseJob
         }
     }
 
-    public static void ValidateDuplicateNames<T>(IEnumerable<T> items, string sectionName)
+    protected static void ValidateDuplicateNames<T>(IEnumerable<T> items, string sectionName)
         where T : INamedCheckElement
     {
         var duplicates1 = items
@@ -226,8 +230,8 @@ public abstract class BaseCheckJob : BaseJob
 
     protected void Initialize(IServiceProvider serviceProvider)
     {
-        _spanner = serviceProvider.GetRequiredService<CheckSpanTracker>();
-        _counter = serviceProvider.GetRequiredService<CheckFailCounter>();
+        _spanTracker = serviceProvider.GetRequiredService<CheckSpanTracker>();
+        _failCounter = serviceProvider.GetRequiredService<CheckFailCounter>();
     }
 
     protected IEnumerable<Task> SafeInvokeCheck<T>(IEnumerable<T> entities, Func<T, Task> checkFunc)
@@ -256,7 +260,7 @@ public abstract class BaseCheckJob : BaseJob
                         sleepDurationProvider: _ => entity.RetryInterval.GetValueOrDefault(),
                          onRetry: (ex, _) =>
                          {
-                             var exception = ex is CheckException ? null : ex;
+                             var exception = IsExceptionIsCheckException(ex, out var _) ? null : ex;
                              Logger.LogWarning(exception, "retry for '{Key}'. Reason: {Message}", entity.Key, ex.Message);
                          })
                     .ExecuteAsync(async () =>
@@ -264,8 +268,8 @@ public abstract class BaseCheckJob : BaseJob
                         await checkFunc(entity);
                     });
 
-            _counter.ResetFailCount(entity);
-            _spanner.ResetFailSpan(entity);
+            _failCounter.ResetFailCount(entity);
+            _spanTracker.ResetFailSpan(entity);
         }
         catch (Exception ex)
         {
@@ -327,6 +331,17 @@ public abstract class BaseCheckJob : BaseJob
         }
     }
 
+    protected void UpdateProgress()
+    {
+        var current = Interlocked.Increment(ref _counter);
+        UpdateProgress(current, _total);
+    }
+
+    protected void IncreaseEffectedRows()
+    {
+        EffectedRows = EffectedRows.GetValueOrDefault() + 1;
+    }
+
     private static string FormatTimeSpan(TimeSpan timeSpan)
     {
         if (timeSpan.TotalDays >= 1)
@@ -345,12 +360,12 @@ public abstract class BaseCheckJob : BaseJob
             return
                 entity.Span != null &&
                 entity.Span != TimeSpan.Zero &&
-                entity.Span > _spanner.LastFailSpan(entity);
+                entity.Span > _spanTracker.LastFailSpan(entity);
         }
 
         bool IsCounterValid()
         {
-            var failCount = _counter.IncrementFailCount(entity);
+            var failCount = _failCounter.IncrementFailCount(entity);
             return
                 entity.MaximumFailsInRow.HasValue &&
                 failCount <= entity.MaximumFailsInRow;
@@ -358,7 +373,7 @@ public abstract class BaseCheckJob : BaseJob
 
         try
         {
-            if (ex is not CheckException checkException)
+            if (!IsExceptionIsCheckException(ex, out var checkException))
             {
                 Logger.LogError(ex, "check failed for '{Key}'. reason: {Message}", entity.Key, ex.Message);
                 AddAggregateException(ex);
@@ -385,6 +400,33 @@ public abstract class BaseCheckJob : BaseJob
         {
             AddAggregateException(innerEx);
         }
+    }
+
+    private static bool IsExceptionIsCheckException(Exception ex, [NotNullWhen(true)] out CheckException? checkException)
+    {
+        if (ex is CheckException checkException1)
+        {
+            checkException = checkException1;
+            return true;
+        }
+
+        if (ex.InnerException is CheckException checkException2)
+        {
+            checkException = checkException2;
+            return true;
+        }
+
+        if (
+            ex is AggregateException aggregateException &&
+            aggregateException.InnerExceptions.Count == 1 &&
+            aggregateException.InnerExceptions[0] is CheckException checkException3)
+        {
+            checkException = checkException3;
+            return true;
+        }
+
+        checkException = null;
+        return false;
     }
 
     private void SafeHandleOperationException<T>(T entity, Exception ex)

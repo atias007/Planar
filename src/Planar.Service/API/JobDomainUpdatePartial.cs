@@ -6,6 +6,7 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
+using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
@@ -16,23 +17,13 @@ namespace Planar.Service.API;
 
 public partial class JobDomain
 {
-    public async Task<PlanarIdResponse> UpdateById(UpdateJobRequest request)
+    public async Task<PlanarIdResponse> Update(UpdateJobRequest request)
     {
-        var jobKey = await JobKeyHelper.GetJobKey(request);
-        ValidateSystemJob(jobKey);
-
-        var jobId = await JobKeyHelper.GetJobId(jobKey) ?? string.Empty;
-
-        var yml =
-            await DataLayer.GetJobProperty(jobId) ??
-            throw new PlanarJobException($"properties for job with id '{jobId}' could not be found");
-
-        var dynamic = YmlUtil.Deserialize<dynamic>(yml);
-        var path = dynamic["path"];
-
-        yml = await GetJobFileContent(new SetJobPathRequest { Folder = path });
+        await ValidateAddPath(request);
+        var yml = await GetJobFileContent(request);
         var dynamicRequest = GetJobDynamicRequest(yml);
         dynamic properties = dynamicRequest.Properties ?? new ExpandoObject();
+        var path = ConvertRelativeJobFileToRelativeJobPath(request);
         properties["path"] = path;
         var response = await Update(dynamicRequest, request.Options);
         return response;
@@ -81,6 +72,11 @@ public partial class JobDomain
             {
                 updateTrigger.TriggerData.Put<string?>(data.Key, PlanarConvert.ToString(data.Value));
             }
+
+            if (updateTrigger.TriggerData.Count > Consts.MaximumJobDataItems)
+            {
+                throw new RestValidationException("trigger data", $"trigger data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
+            }
         }
     }
 
@@ -110,6 +106,11 @@ public partial class JobDomain
         }
 
         BuildJobData(request, metadata.JobDetails);
+
+        if (request.JobData.Count > Consts.MaximumJobDataItems)
+        {
+            throw new RestValidationException("job data", $"job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
+        }
 
         await Task.CompletedTask;
     }
@@ -257,6 +258,7 @@ public partial class JobDomain
         ValidateUpdateJobOptions(options);
         await ValidateRequestProperties(request);
         metadata.JobKey = ValidateJobMetadata(request, Scheduler);
+        ValidateSystemJob(metadata.JobKey);
         await JobKeyHelper.ValidateJobExists(metadata.JobKey);
         ValidateSystemJob(metadata.JobKey);
         metadata.JobId =

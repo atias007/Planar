@@ -12,7 +12,7 @@ namespace Planar.Attributes
         public OkJsonResponseAttribute(Type type) : base(200)
         {
             Type = type;
-            ContentTypes = new[] { "application/json" };
+            ContentTypes = ["application/json"];
         }
     }
 }

@@ -10,7 +10,7 @@ namespace Planar.Common
 
         public TimeSpan HealthCheckInterval { get; set; }
 
-        public short Port { get; set; }
+        public int Port { get; set; }
 
         public bool Clustering { get; set; }
     }
