@@ -549,38 +549,6 @@ namespace Planar.Service.API
             }
         }
 
-        private static void ValidateMaxLength(string? value, int length, string name, string parent)
-        {
-            if (value != null && value.Length > length)
-            {
-                throw new RestValidationException(name, $"{parent} {name} length is invalid. maximum length is {length}");
-            }
-        }
-
-        private static void ValidateMaxValue(int? value, int to, string name, string parent)
-        {
-            if (value != null && value > to)
-            {
-                throw new RestValidationException(name, $"{parent} {name} value is invalid. maximum value is {to}");
-            }
-        }
-
-        private static void ValidateMinLength(string? value, int length, string name, string parent)
-        {
-            if (value != null && value.Length < length)
-            {
-                throw new RestValidationException(name, $"{parent} {name} length is invalid. minimum length is {length}");
-            }
-        }
-
-        private static void ValidateMinValue(int? value, int from, string name, string parent)
-        {
-            if (value != null && value < from)
-            {
-                throw new RestValidationException(name, $"{parent} {name} value is invalid. minimum value is {from}");
-            }
-        }
-
         private static void ValidatePreserveWordsTriggerProperties(TriggerPool pool)
         {
             foreach (var t in pool.Triggers)
@@ -590,18 +558,6 @@ namespace Planar.Service.API
                 if (t.Name != null && t.Name.StartsWith(Consts.RetryTriggerNamePrefix)) { throw new RestValidationException("name", $"simple trigger name '{t.Name}' has invalid prefix"); }
                 ValidateDataMap(t.TriggerData, "trigger");
             }
-        }
-
-        private static void ValidateRange(string? value, int from, int to, string name, string parent)
-        {
-            ValidateMinLength(value, from, name, parent);
-            ValidateMaxLength(value, to, name, parent);
-        }
-
-        private static void ValidateRangeValue(int? value, int from, int to, string name, string parent)
-        {
-            ValidateMinValue(value, from, name, parent);
-            ValidateMaxValue(value, to, name, parent);
         }
 
         private static void ValidateRequestNoNull(object request)

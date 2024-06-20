@@ -18,13 +18,12 @@ namespace Planar.Job
     {
         private BaseJobFactory _baseJobFactory = null!;
         private IConfiguration _configuration = null!;
-        private Version? _version;
-        private bool _inConfiguration;
         private JobExecutionContext _context = new JobExecutionContext();
-        private Timer? _timer;
-
+        private bool _inConfiguration;
         private ILogger _logger = null!;
         private IServiceProvider _provider = null!;
+        private Timer? _timer;
+        private Version? _version;
 
         protected IConfiguration Configuration
         {
@@ -38,6 +37,13 @@ namespace Planar.Job
             }
         }
 
+        protected int? EffectedRows
+        {
+            get { return _baseJobFactory.EffectedRows; }
+            set { _baseJobFactory.EffectedRows = value; }
+        }
+
+        protected int ExceptionCount => _baseJobFactory.ExceptionCount;
         protected TimeSpan JobRunTime => _baseJobFactory.JobRunTime;
 
         protected ILogger Logger
@@ -131,54 +137,6 @@ namespace Planar.Job
             }
         }
 
-        private void LogVersion()
-        {
-            if (Version == null) { return; }
-            Logger.LogInformation("job version: {Version}", Version);
-        }
-
-        private void HandleException(Exception ex)
-        {
-            if (ex is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
-            {
-                HandleException(aggregateException.InnerExceptions[0]);
-                return;
-            }
-
-            var text = _baseJobFactory.ReportException(ex);
-            if (PlanarJob.Mode == RunningMode.Debug)
-            {
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.Error.WriteLine(text);
-                Console.ResetColor();
-            }
-        }
-
-        private void TimerElapsed(object sender, ElapsedEventArgs e)
-        {
-            try
-            {
-                var ex = new PlanarJobException("Execution timeout. Terminate application");
-                HandleException(ex);
-            }
-            catch
-            {
-                // *** DO NOTHING ***
-            }
-
-            try
-            {
-                MqttClient.Stop().Wait();
-                _timer?.Dispose();
-            }
-            catch
-            {
-                // *** DO NOTHING ***
-            }
-
-            Environment.Exit(-1);
-        }
-
         internal UnitTestResult ExecuteUnitTest(
             string json,
             Action<IConfigurationBuilder, IJobExecutionContext> configureAction,
@@ -202,6 +160,14 @@ namespace Planar.Job
             return result;
         }
 
+        protected static void ValidateMaxLength(string? value, int length, string name)
+        {
+            if (value != null && value.Length > length)
+            {
+                throw new PlanarJobException($"{name} length is invalid. maximum length is {length}".Trim());
+            }
+        }
+
         protected void AddAggregateException(Exception ex, int maxItems = 25)
         {
             _baseJobFactory.AddAggregateException(ex, maxItems);
@@ -212,14 +178,6 @@ namespace Planar.Job
             _baseJobFactory.CheckAggragateException();
         }
 
-        protected int ExceptionCount => _baseJobFactory.ExceptionCount;
-
-        protected int? EffectedRows
-        {
-            get { return _baseJobFactory.EffectedRows; }
-            set { _baseJobFactory.EffectedRows = value; }
-        }
-
         protected DateTime Now()
         {
             return _baseJobFactory.Now();
@@ -227,6 +185,9 @@ namespace Planar.Job
 
         protected void PutJobData(string key, object? value)
         {
+            ValidateSystemDataKey(key);
+            ValidateMaxLength(Convert.ToString(value), 1000, "value");
+
             var data = _context.JobDetails.JobDataMap;
             if (data.Count >= Consts.MaximumJobDataItems && !ContainsKey(key, data))
             {
@@ -238,6 +199,9 @@ namespace Planar.Job
 
         protected void PutTriggerData(string key, object? value)
         {
+            ValidateSystemDataKey(key);
+            ValidateMaxLength(Convert.ToString(value), 1000, "value");
+
             var data = _context.TriggerDetails.TriggerDataMap;
             if (data.Count >= Consts.MaximumJobDataItems && !ContainsKey(key, data))
             {
@@ -245,11 +209,6 @@ namespace Planar.Job
             }
 
             _baseJobFactory.PutTriggerData(key, value);
-        }
-
-        private bool ContainsKey(string key, IDataMap data)
-        {
-            return data.Any(k => string.Equals(k.Key, key, StringComparison.OrdinalIgnoreCase));
         }
 
         protected void UpdateProgress(byte value)
@@ -272,6 +231,62 @@ namespace Planar.Job
             foreach (var key in toRemove)
             {
                 ((DataMap)dictionary).Remove(key);
+            }
+        }
+
+        private static void ValidateMinLength(string? value, int length, string name)
+        {
+            if (value != null && value.Length < length)
+            {
+                throw new PlanarJobException($"{name} length is invalid. minimum length is {length}".Trim());
+            }
+        }
+
+        private static void ValidateRange(string? value, int from, int to, string name)
+        {
+            ValidateMinLength(value, from, name);
+            ValidateMaxLength(value, to, name);
+        }
+
+        private static void ValidateSystemDataKey(string key)
+        {
+            if (key.StartsWith(Consts.ConstPrefix))
+            {
+                throw new PlanarJobException($"date '{key}' is system data key and it should not be modified");
+            }
+
+            if (!Consts.IsDataKeyValid(key))
+            {
+                throw new PlanarJobException($"date '{key}' is invalid data key");
+            }
+
+            ValidateRange(key, 1, 100, "key");
+
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                throw new PlanarJobException("key is required");
+            }
+        }
+
+        private bool ContainsKey(string key, IDataMap data)
+        {
+            return data.Any(k => string.Equals(k.Key, key, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private void HandleException(Exception ex)
+        {
+            if (ex is AggregateException aggregateException && aggregateException.InnerExceptions.Count > 0)
+            {
+                HandleException(aggregateException.InnerExceptions[0]);
+                return;
+            }
+
+            var text = _baseJobFactory.ReportException(ex);
+            if (PlanarJob.Mode == RunningMode.Debug)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.Error.WriteLine(text);
+                Console.ResetColor();
             }
         }
 
@@ -334,6 +349,37 @@ namespace Planar.Job
             services.AddSingleton(typeof(ILogger<>), typeof(PlanarLogger<>));
             registerServicesAction.Invoke(Configuration, services, context);
             _provider = services.BuildServiceProvider();
+        }
+
+        private void LogVersion()
+        {
+            if (Version == null) { return; }
+            Logger.LogInformation("job version: {Version}", Version);
+        }
+
+        private void TimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            try
+            {
+                var ex = new PlanarJobException("Execution timeout. Terminate application");
+                HandleException(ex);
+            }
+            catch
+            {
+                // *** DO NOTHING ***
+            }
+
+            try
+            {
+                MqttClient.Stop().Wait();
+                _timer?.Dispose();
+            }
+            catch
+            {
+                // *** DO NOTHING ***
+            }
+
+            Environment.Exit(-1);
         }
     }
 }

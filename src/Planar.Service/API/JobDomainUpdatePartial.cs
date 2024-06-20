@@ -72,6 +72,11 @@ public partial class JobDomain
             {
                 updateTrigger.TriggerData.Put<string?>(data.Key, PlanarConvert.ToString(data.Value));
             }
+
+            if (updateTrigger.TriggerData.Count > Consts.MaximumJobDataItems)
+            {
+                throw new RestValidationException("trigger data", $"trigger data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
+            }
         }
     }
 
@@ -101,6 +106,11 @@ public partial class JobDomain
         }
 
         BuildJobData(request, metadata.JobDetails);
+
+        if (request.JobData.Count > Consts.MaximumJobDataItems)
+        {
+            throw new RestValidationException("job data", $"job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
+        }
 
         await Task.CompletedTask;
     }

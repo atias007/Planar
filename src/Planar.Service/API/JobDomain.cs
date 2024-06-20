@@ -21,6 +21,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Planar.Service.API
 {
@@ -51,6 +52,7 @@ namespace Planar.Service.API
         public async Task PutData(JobOrTriggerDataRequest request, PutMode mode)
         {
             var info = await GetJobDetailsForDataCommands(request.Id, request.DataKey);
+            ValidateMaxLength(request.DataValue, 1000, "value", string.Empty);
             if (info.JobDetails == null) { return; }
 
             if (info.JobDetails.JobDataMap.ContainsKey(request.DataKey))
@@ -58,11 +60,6 @@ namespace Planar.Service.API
                 if (mode == PutMode.Add)
                 {
                     throw new RestConflictException($"data with key '{request.DataKey}' already exists");
-                }
-
-                if (info.JobDetails.JobDataMap.Count >= Consts.MaximumJobDataItems)
-                {
-                    throw new RestValidationException("job data", $"job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
                 }
 
                 info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
@@ -73,6 +70,11 @@ namespace Planar.Service.API
                 if (mode == PutMode.Update)
                 {
                     throw new RestNotFoundException($"data with key '{request.DataKey}' not found");
+                }
+
+                if (info.JobDetails.JobDataMap.Count >= Consts.MaximumJobDataItems)
+                {
+                    throw new RestValidationException("job data", $"job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
                 }
 
                 info.JobDetails.JobDataMap.Put(request.DataKey, request.DataValue);
