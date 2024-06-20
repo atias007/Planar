@@ -1,13 +1,12 @@
 ﻿using Swashbuckle.AspNetCore.Annotations;
 
-namespace Planar.Attributes
+namespace Planar.Attributes;
+
+public class OkYmlResponseAttribute : SwaggerResponseAttribute
 {
-    public class OkYmlResponseAttribute : SwaggerResponseAttribute
+    public OkYmlResponseAttribute() : base(200)
     {
-        public OkYmlResponseAttribute() : base(200)
-        {
-            Type = typeof(string);
-            ContentTypes = new[] { "text/yaml" };
-        }
+        Type = typeof(string);
+        ContentTypes = ["text/yaml"];
     }
 }

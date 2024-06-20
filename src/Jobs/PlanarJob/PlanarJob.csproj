@@ -28,7 +28,7 @@
 	  <PackageReference Include="CloudNative.CloudEvents.NewtonsoftJson" Version="2.7.1" />
 	  <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
 	  <PackageReference Include="MQTTnet" Version="4.3.6.1152" />
-	  <PackageReference Include="SonarAnalyzer.CSharp" Version="9.26.0.92422">
+	  <PackageReference Include="SonarAnalyzer.CSharp" Version="9.27.0.93347">
 	    <PrivateAssets>all</PrivateAssets>
 	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 	  </PackageReference>

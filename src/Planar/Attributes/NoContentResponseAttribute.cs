@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace Planar.Attributes
+namespace Planar.Attributes;
+
+public class NoContentResponseAttribute : ProducesResponseTypeAttribute
 {
-    public class NoContentResponseAttribute : ProducesResponseTypeAttribute
+    public NoContentResponseAttribute() : base(204)
     {
-        public NoContentResponseAttribute() : base(204)
-        {
-        }
     }
 }

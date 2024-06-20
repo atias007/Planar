@@ -1,11 +1,10 @@
 ﻿using Swashbuckle.AspNetCore.Annotations;
 
-namespace Planar.Attributes
+namespace Planar.Attributes;
+
+public class ServiceUnavailableResponseAttribute : SwaggerResponseAttribute
 {
-    public class ServiceUnavailableResponseAttribute : SwaggerResponseAttribute
+    public ServiceUnavailableResponseAttribute() : base(503)
     {
-        public ServiceUnavailableResponseAttribute() : base(503)
-        {
-        }
     }
 }

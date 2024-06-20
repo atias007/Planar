@@ -1,13 +1,12 @@
 ﻿using Swashbuckle.AspNetCore.Annotations;
 
-namespace Planar.Attributes
+namespace Planar.Attributes;
+
+public class NotFoundResponseAttribute : SwaggerResponseAttribute
 {
-    public class NotFoundResponseAttribute : SwaggerResponseAttribute
+    public NotFoundResponseAttribute() : base(404)
     {
-        public NotFoundResponseAttribute() : base(404)
-        {
-            Type = typeof(string);
-            ContentTypes = ["plain/text"];
-        }
+        Type = typeof(string);
+        ContentTypes = ["plain/text"];
     }
 }
