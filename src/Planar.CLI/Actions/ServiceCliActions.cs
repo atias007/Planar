@@ -110,7 +110,6 @@ namespace Planar.CLI.Actions
         }
 
         [Action("login")]
-        [ActionWizard]
         public static async Task<CliActionResponse> Login(CliLoginRequest request, CancellationToken cancellationToken = default)
         {
             var notnullRequest = FillLoginRequest(request);
@@ -240,7 +239,7 @@ namespace Planar.CLI.Actions
         {
             cancellationToken.ThrowIfCancellationRequested();
             var filename = request.Filename ?? string.Empty;
-            var text = File.ReadAllText(filename);
+            var text = await File.ReadAllTextAsync(filename, cancellationToken);
             if (text.StartsWith(encryptKey))
             {
                 throw new CliException("file already encrypted");
@@ -249,7 +248,7 @@ namespace Planar.CLI.Actions
             var key = Cryptographic(request);
             var aes = new Aes256Cipher(key);
             var encrypted = $"{encryptKey}{aes.Encrypt(text)}";
-            File.WriteAllText(filename, encrypted);
+            await File.WriteAllTextAsync(filename, encrypted, cancellationToken);
             var response = CliActionResponse.GetGenericSuccessRestResponse();
             return await Task.FromResult(new CliActionResponse(response));
         }
@@ -259,7 +258,7 @@ namespace Planar.CLI.Actions
         {
             cancellationToken.ThrowIfCancellationRequested();
             var filename = request.Filename ?? string.Empty;
-            var text = File.ReadAllText(filename);
+            var text = await File.ReadAllTextAsync(filename, cancellationToken);
             if (!text.StartsWith(encryptKey))
             {
                 throw new CliException("file is not encrypted");
@@ -269,7 +268,7 @@ namespace Planar.CLI.Actions
             text = text[encryptKey.Length..];
             var aes = new Aes256Cipher(key);
             var decrypted = aes.Decrypt(text);
-            File.WriteAllText(filename, decrypted);
+            await File.WriteAllTextAsync(filename, decrypted, cancellationToken);
             var response = CliActionResponse.GetGenericSuccessRestResponse();
             return await Task.FromResult(new CliActionResponse(response));
         }

@@ -84,10 +84,7 @@ namespace Planar.CLI.CliGeneral
 
             foreach (var ac in actions)
             {
-                const string wizardText = "[leave empty to open wizard...]";
-                var mu = ac.HasWizard ?
-                    new Markup($"{ac.ArgumentsDisplayName.EscapeMarkup()}\r\n[black on lightskyblue1]{wizardText.EscapeMarkup()}[/]") :
-                    new Markup($"{ac.ArgumentsDisplayName.EscapeMarkup()}");
+                var mu = new Markup($"{ac.ArgumentsDisplayName.EscapeMarkup()}");
 
                 grid.AddRow(
                     new Markup($"{space}"),
@@ -126,7 +123,7 @@ namespace Planar.CLI.CliGeneral
                 var command = HttpUtility.HtmlEncode(ac.CommandDisplayName);
                 sb.AppendLine("\t<tr>");
                 sb.AppendLine($"\t\t<td width=\"200px\"><code>{command}</code></td>");
-                if (ac.ArgumentsDisplayNameItems.Any())
+                if (ac.ArgumentsDisplayNameItems.Count != 0)
                 {
                     var items = ac.ArgumentsDisplayNameItems.Select(i => $"<code>{HttpUtility.HtmlEncode(i)}</code>");
                     var itemsTitle = string.Join(' ', items);

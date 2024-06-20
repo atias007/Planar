@@ -6,6 +6,7 @@ namespace Planar
     internal static class Consts
     {
         public const string CryptographyKeyVariableKey = "PLANAR_CRYPTOGRAPHY_KEY";
+        public const string PlanarJobArgumentContextFolder = "context";
 
         public static readonly string[] PreserveGroupNames = new string[] { RetryTriggerGroup, PlanarSystemGroup };
 
@@ -63,7 +64,7 @@ namespace Planar
         public const string CliMessageHeaderName = "planar-cli-message";
         public const string CliSuggestionHeaderName = "planar-cli-suggestion";
 
-        public static readonly Regex EmailRegex = new Regex(
+        public static readonly Regex EmailRegex = new(
             @"\A(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9]{2,8}(?:[a-z0-9-]*[a-z0-9])?)\Z",
             RegexOptions.IgnoreCase,
             TimeSpan.FromSeconds(3));

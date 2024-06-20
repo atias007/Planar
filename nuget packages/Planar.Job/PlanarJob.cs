@@ -3,10 +3,12 @@ using Planar.Common;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Timers;
 using Timer = System.Timers.Timer;
 
@@ -53,7 +55,7 @@ namespace Planar.Job
             }
             catch (Exception ex)
             {
-                throw new PlanarJobException("Fail to convert Base64 job arg to string", ex);
+                throw new PlanarJobException("Fail to convert Base64 job context argument to string", ex);
             }
         }
 
@@ -140,7 +142,38 @@ namespace Planar.Job
         {
             if (string.IsNullOrWhiteSpace(ContextBase64)) { throw new PlanarJobException("Job was executed with empty context"); }
             var json = DecodeBase64ToString(ContextBase64);
+
+            if (json.StartsWith('[') && json.EndsWith(']'))
+            {
+                json = GetContextFromTemporaryFile(json);
+            }
+
             return json;
+        }
+
+        private static string GetContextFromTemporaryFile(string value)
+        {
+            const string contextFolder = "context";
+            var filename = value[1..^1];
+            filename = Path.Combine(contextFolder, $"{filename}.ctx");
+            if (!File.Exists(filename)) { throw new PlanarJobException($"Temporary file '{filename}' not found"); }
+            var content = File.ReadAllText(filename);
+            SafeDeleteFile(filename);
+            if (string.IsNullOrWhiteSpace(content)) { throw new PlanarJobException($"Job was executed with empty context file '{filename}'"); }
+            var json = DecodeBase64ToString(content);
+            return json;
+        }
+
+        private static void SafeDeleteFile(string filename)
+        {
+            try
+            {
+                File.Delete(filename);
+            }
+            catch
+            {
+                // *** Do nothing ***
+            }
         }
 
         private static int? GetMenuItem(bool quiet)

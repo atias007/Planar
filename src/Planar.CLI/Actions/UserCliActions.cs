@@ -15,7 +15,6 @@ namespace Planar.CLI.Actions
     {
         [Action("add")]
         [NullRequest]
-        [ActionWizard]
         public static async Task<CliActionResponse> AddUser(CliAddUserRequest request, CancellationToken cancellationToken = default)
         {
             request ??= GetCliAddUserRequest();

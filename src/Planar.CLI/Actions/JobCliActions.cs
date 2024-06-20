@@ -528,7 +528,6 @@ namespace Planar.CLI.Actions
         }
 
         [Action("update")]
-        [ActionWizard]
         [NullRequest]
         public static async Task<CliActionResponse> UpdateJob(CliUpdateJobRequest request, CancellationToken cancellationToken = default)
         {
