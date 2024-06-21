@@ -22,6 +22,8 @@ PLAN FOR V 1.7.4
 - add SSIS job
 - add SSRS job
 
+- add username, domain, password to ProcessJob + PlanarJob
+
 - api security headers
 - circuit breaker (option to pause job after {x} fails in row)
 - cli trigger describe

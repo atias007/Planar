@@ -11,6 +11,7 @@ using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
+using Planar.Service.Reports;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -21,6 +22,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Planar.Service.API
@@ -355,6 +357,13 @@ namespace Planar.Service.API
         {
             var query = DataLayer.GetAudits();
             var result = await query.ProjectToWithPagingAsyc<JobAudit, JobAuditDto>(Mapper, request);
+            return result;
+        }
+
+        public async Task<IEnumerable<JobAuditDto>> GetAuditsForReport(DateScope dateScope)
+        {
+            var query = DataLayer.GetAuditsForReport(dateScope);
+            var result = await Mapper.ProjectTo<JobAuditDto>(query).ToListAsync();
             return result;
         }
 
