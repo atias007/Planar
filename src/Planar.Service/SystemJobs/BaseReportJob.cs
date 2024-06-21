@@ -313,7 +313,7 @@ public abstract class BaseReportJob<TJob> : BaseReportJob
 
             var main = await report.Generate(dateScope);
             main = HtmlUtil.MinifyHtml(main);
-            await SendReport(main, await emailsTask, reportName, context.Trigger.Key.Name);
+            await SendReport(main, await emailsTask, reportName, dateScope.Period);
             _logger.LogInformation("{Name} report send via smtp", reportName.ToString().ToLower());
             SafeSetLastRun(context, _logger);
             return true;
