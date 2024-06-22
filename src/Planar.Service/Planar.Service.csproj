@@ -30,6 +30,9 @@
 	  <None Remove="HtmlTemplates\AlertsReport\alerts_row.html" />
 	  <None Remove="HtmlTemplates\AlertsReport\alerts_table.html" />
 	  <None Remove="HtmlTemplates\AlertsReport\main.html" />
+	  <None Remove="HtmlTemplates\AuditsReport\audits_row.html" />
+	  <None Remove="HtmlTemplates\AuditsReport\audits_table.html" />
+	  <None Remove="HtmlTemplates\AuditsReport\main.html" />
 	  <None Remove="HtmlTemplates\empty_table.html" />
 	  <None Remove="HtmlTemplates\footer.html" />
 	  <None Remove="HtmlTemplates\head.html" />
@@ -56,6 +59,9 @@
 	  <EmbeddedResource Include="HtmlTemplates\AlertsReport\main.html" />
 	  <EmbeddedResource Include="HtmlTemplates\AlertsReport\alerts_table.html" />
 	  <EmbeddedResource Include="HtmlTemplates\AlertsReport\alerts_row.html" />
+	  <EmbeddedResource Include="HtmlTemplates\AuditsReport\audits_row.html" />
+	  <EmbeddedResource Include="HtmlTemplates\AuditsReport\audits_table.html" />
+	  <EmbeddedResource Include="HtmlTemplates\AuditsReport\main.html" />
 	  <EmbeddedResource Include="HtmlTemplates\empty_table.html" />
 	  <EmbeddedResource Include="HtmlTemplates\head.html" />
 	  <EmbeddedResource Include="HtmlTemplates\style.html" />

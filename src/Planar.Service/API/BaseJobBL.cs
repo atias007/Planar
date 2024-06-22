@@ -8,6 +8,7 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Quartz;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -102,23 +103,28 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         return transaction;
     }
 
+    protected static int CountUserJobDataItems(JobDataMap dataMap)
+    {
+        return dataMap.Count(d => Consts.IsDataKeyValid(d.Key));
+    }
+
+    protected static int CountUserJobDataItems(Dictionary<string, string?> dataMap)
+    {
+        return dataMap.Count(d => Consts.IsDataKeyValid(d.Key));
+    }
+
     protected static void ValidateSystemDataKey(string key)
     {
-        if (key.StartsWith(Consts.ConstPrefix))
+        if (string.IsNullOrWhiteSpace(key))
         {
-            throw new RestValidationException("key", $"forbidden: '{key}' is system data key and it should not be modified");
-        }
-
-        if (!Consts.IsDataKeyValid(key))
-        {
-            throw new RestValidationException("key", $"forbidden: '{key}' is invalid data key");
+            throw new RestValidationException("key", "key is required");
         }
 
         ValidateRange(key, 1, 100, "key", string.Empty);
 
-        if (string.IsNullOrWhiteSpace(key))
+        if (!Consts.IsDataKeyValid(key))
         {
-            throw new RestValidationException("key", "key is required");
+            throw new RestValidationException("key", $"forbidden: '{key}' is system data key and it should not be modified");
         }
     }
 

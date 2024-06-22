@@ -33,24 +33,6 @@ namespace Planar.Service.API
 
         #region Data
 
-        public async Task RemoveData(string id, string key)
-        {
-            var info = await GetJobDetailsForDataCommands(id, key);
-            if (info.JobDetails == null) { return; }
-
-            ValidateDataKeyExists(info.JobDetails, key, id);
-            var auditValue = PlanarConvert.ToString(info.JobDetails.JobDataMap[key]);
-            info.JobDetails.JobDataMap.Remove(key);
-            var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
-
-            // Reschedule job
-            MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
-            await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
-            await Scheduler.PauseJob(info.JobKey);
-
-            AuditJobSafe(info.JobKey, $"remove job data with key '{key}'", new { value = auditValue?.Trim() });
-        }
-
         public async Task PutData(JobOrTriggerDataRequest request, PutMode mode)
         {
             var info = await GetJobDetailsForDataCommands(request.Id, request.DataKey);
@@ -74,7 +56,8 @@ namespace Planar.Service.API
                     throw new RestNotFoundException($"data with key '{request.DataKey}' not found");
                 }
 
-                if (info.JobDetails.JobDataMap.Count >= Consts.MaximumJobDataItems)
+                var dataCount = CountUserJobDataItems(info.JobDetails.JobDataMap);
+                if (dataCount >= Consts.MaximumJobDataItems)
                 {
                     throw new RestValidationException("job data", $"job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
                 }
@@ -91,6 +74,24 @@ namespace Planar.Service.API
 
             // Pause job
             await Scheduler.PauseJob(info.JobKey);
+        }
+
+        public async Task RemoveData(string id, string key)
+        {
+            var info = await GetJobDetailsForDataCommands(id, key);
+            if (info.JobDetails == null) { return; }
+
+            ValidateDataKeyExists(info.JobDetails, key, id);
+            var auditValue = PlanarConvert.ToString(info.JobDetails.JobDataMap[key]);
+            info.JobDetails.JobDataMap.Remove(key);
+            var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
+
+            // Reschedule job
+            MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
+            await Scheduler.PauseJob(info.JobKey);
+
+            AuditJobSafe(info.JobKey, $"remove job data with key '{key}'", new { value = auditValue?.Trim() });
         }
 
         private async Task<DataCommandDto> GetJobDetailsForDataCommands(string jobId, string key)
@@ -118,28 +119,25 @@ namespace Planar.Service.API
             Update
         }
 
-        public async Task<JobDescription> GetDescription(string id)
+        public static IEnumerable<string> GetJobTypes()
         {
-            var monitorDomain = _serviceProvider.GetRequiredService<MonitorDomain>();
-            var historyDomain = _serviceProvider.GetRequiredService<HistoryDomain>();
-            var statisticsDomain = _serviceProvider.GetRequiredService<MetricsDomain>();
+            return ServiceUtil.JobTypes;
+        }
 
-            var historyRequest = new GetHistoryRequest { JobId = id, PageSize = 10 };
-            var details = await Get(id);
-            var monitorsTask = monitorDomain.GetByJob(id);
-            var audit = await GetJobAudits(id, new PagingRequest(1, 10));
-            var historyTask = historyDomain.GetHistory(historyRequest);
-            var statisticsTask = statisticsDomain.GetJobMetrics(id);
-            var result = new JobDescription
+        public async Task<bool> Cancel(FireInstanceIdRequest request)
+        {
+            var stop = await SchedulerUtil.StopRunningJob(request.FireInstanceId);
+            if (AppSettings.Cluster.Clustering && !stop)
             {
-                Details = details,
-                Audits = audit,
-                History = await historyTask,
-                Monitors = new PagingResponse<MonitorItem>(await monitorsTask),
-                Metrics = await statisticsTask
-            };
+                stop = await ClusterUtil.StopRunningJob(request.FireInstanceId);
+            }
 
-            return result;
+            if (!stop && !await SchedulerUtil.IsRunningInstanceExistOnLocal(request.FireInstanceId))
+            {
+                throw new RestNotFoundException($"instance id '{request.FireInstanceId}' is not running");
+            }
+
+            return stop;
         }
 
         public async Task<JobDetails> Get(string id)
@@ -208,6 +206,20 @@ namespace Planar.Service.API
             return new PagingResponse<JobBasicDetails>(request, result, jobs.Count);
         }
 
+        public async Task<PagingResponse<JobAuditDto>> GetAudits(PagingRequest request)
+        {
+            var query = DataLayer.GetAudits();
+            var result = await query.ProjectToWithPagingAsyc<JobAudit, JobAuditDto>(Mapper, request);
+            return result;
+        }
+
+        public async Task<IEnumerable<JobAuditDto>> GetAuditsForReport(DateScope dateScope)
+        {
+            var query = DataLayer.GetAuditsForReport(dateScope);
+            var result = await Mapper.ProjectTo<JobAuditDto>(query).ToListAsync();
+            return result;
+        }
+
         public async Task<IEnumerable<AvailableJob>> GetAvailableJobs(bool update)
         {
             var result = new List<AvailableJob>();
@@ -222,60 +234,45 @@ namespace Planar.Service.API
             return result.OrderBy(a => a.Name);
         }
 
-        private async Task<AvailableJob?> GetAvailableJob(string filename, string jobsFolder, bool update)
+        public async Task<JobDescription> GetDescription(string id)
         {
-            try
+            var monitorDomain = _serviceProvider.GetRequiredService<MonitorDomain>();
+            var historyDomain = _serviceProvider.GetRequiredService<HistoryDomain>();
+            var statisticsDomain = _serviceProvider.GetRequiredService<MetricsDomain>();
+
+            var historyRequest = new GetHistoryRequest { JobId = id, PageSize = 10 };
+            var details = await Get(id);
+            var monitorsTask = monitorDomain.GetByJob(id);
+            var audit = await GetJobAudits(id, new PagingRequest(1, 10));
+            var historyTask = historyDomain.GetHistory(historyRequest);
+            var statisticsTask = statisticsDomain.GetJobMetrics(id);
+            var result = new JobDescription
             {
-                var request = GetJobDynamicRequestFromFilename(filename);
-                if (request == null) { return null; }
-                if (string.IsNullOrWhiteSpace(request.JobType)) { return null; }
-                if (string.IsNullOrWhiteSpace(request.Name)) { return null; }
-                if (!ServiceUtil.JobTypes.Any(j => string.Equals(j, request.JobType, StringComparison.OrdinalIgnoreCase))) { return null; }
+                Details = details,
+                Audits = audit,
+                History = await historyTask,
+                Monitors = new PagingResponse<MonitorItem>(await monitorsTask),
+                Metrics = await statisticsTask
+            };
 
-                var key = JobKeyHelper.GetJobKey(request);
-                if (key == null) { return null; }
-
-                var details = await Scheduler.GetJobDetail(key);
-                if (details == null && update) { return null; }
-                if (details != null && !update) { return null; }
-
-                var fileInfo = new FileInfo(filename);
-                var fullFolder = fileInfo.Directory;
-                if (fullFolder == null) { return null; }
-                var relativeFolder = fullFolder.FullName[(jobsFolder.Length + 1)..];
-                var result = new AvailableJob
-                {
-                    Name = key.ToString(),
-                    JobFile = Path.Combine(relativeFolder, fileInfo.Name)
-                };
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogDebug(ex, "Fail to get avaliable job folder info");
-            }
-
-            return null;
+            return result;
         }
 
-        private static SetJobDynamicRequest? GetJobDynamicRequestFromFilename(string filename)
+        public async Task<JobAuditDto> GetJobAudit(int id)
         {
-            try
-            {
-                var yml = File.ReadAllText(filename);
-                var request = YmlUtil.Deserialize<SetJobDynamicRequest>(yml);
-                return request;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidDataException($"fail to read yml file: {filename}", ex);
-            }
+            var query = DataLayer.GetJobAudit(id);
+            var entity = await Mapper.ProjectTo<JobAuditWithInfoDto>(query).FirstOrDefaultAsync();
+            var result = ValidateExistingEntity(entity, "job audit");
+            return result;
         }
 
-        public static IEnumerable<string> GetJobTypes()
+        public async Task<PagingResponse<JobAuditDto>> GetJobAudits(string id, PagingRequest paging)
         {
-            return ServiceUtil.JobTypes;
+            var jobKey = await JobKeyHelper.GetJobKey(id);
+            var jobId = await JobKeyHelper.GetJobId(jobKey) ?? string.Empty;
+            var query = DataLayer.GetJobAudits(jobId);
+            var result = await query.ProjectToWithPagingAsyc<JobAudit, JobAuditDto>(Mapper, paging);
+            return result;
         }
 
         public string GetJobFileTemplate(string typeName)
@@ -344,37 +341,6 @@ namespace Planar.Service.API
             return null;
         }
 
-        public async Task<PagingResponse<JobAuditDto>> GetJobAudits(string id, PagingRequest paging)
-        {
-            var jobKey = await JobKeyHelper.GetJobKey(id);
-            var jobId = await JobKeyHelper.GetJobId(jobKey) ?? string.Empty;
-            var query = DataLayer.GetJobAudits(jobId);
-            var result = await query.ProjectToWithPagingAsyc<JobAudit, JobAuditDto>(Mapper, paging);
-            return result;
-        }
-
-        public async Task<PagingResponse<JobAuditDto>> GetAudits(PagingRequest request)
-        {
-            var query = DataLayer.GetAudits();
-            var result = await query.ProjectToWithPagingAsyc<JobAudit, JobAuditDto>(Mapper, request);
-            return result;
-        }
-
-        public async Task<IEnumerable<JobAuditDto>> GetAuditsForReport(DateScope dateScope)
-        {
-            var query = DataLayer.GetAuditsForReport(dateScope);
-            var result = await Mapper.ProjectTo<JobAuditDto>(query).ToListAsync();
-            return result;
-        }
-
-        public async Task<JobAuditDto> GetJobAudit(int id)
-        {
-            var query = DataLayer.GetJobAudit(id);
-            var entity = await Mapper.ProjectTo<JobAuditWithInfoDto>(query).FirstOrDefaultAsync();
-            var result = ValidateExistingEntity(entity, "job audit");
-            return result;
-        }
-
         public async Task<DateTime?> GetNextRunning(string id)
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
@@ -429,6 +395,64 @@ namespace Planar.Service.API
             return result;
         }
 
+        public async Task<List<RunningJobDetails>> GetRunning()
+        {
+            var result = await SchedulerUtil.GetRunningJobs();
+            if (AppSettings.Cluster.Clustering)
+            {
+                var clusterResult = await ClusterUtil.GetRunningJobs();
+                result ??= [];
+
+                if (clusterResult != null)
+                {
+                    result.AddRange(clusterResult);
+                }
+            }
+
+            FillEstimatedEndTime(result);
+
+            return result;
+        }
+
+        public async Task<RunningJobDetails> GetRunning(string instanceId)
+        {
+            var result = await SchedulerUtil.GetRunningJob(instanceId);
+            if (result == null && AppSettings.Cluster.Clustering)
+            {
+                result = await ClusterUtil.GetRunningJob(instanceId);
+            }
+
+            if (result == null)
+            {
+                throw new RestNotFoundException();
+            }
+
+            FillEstimatedEndTime(result);
+
+            return result;
+        }
+
+        public async Task<RunningJobData> GetRunningData(string instanceId)
+        {
+            var result = await SchedulerUtil.GetRunningData(instanceId);
+            if (result != null)
+            {
+                return result;
+            }
+
+            if (AppSettings.Cluster.Clustering)
+            {
+                result = await ClusterUtil.GetRunningData(instanceId);
+            }
+
+            if (result == null)
+            {
+                throw new RestNotFoundException($"instanceId {instanceId} was not found");
+            }
+
+            return result;
+        }
+
         public async Task<RunningJobDetails> GetRunningInstanceLongPolling(
            string instanceId,
            int? progress,
@@ -446,6 +470,35 @@ namespace Planar.Service.API
             {
                 return await GetRunningInstanceLongPollingV1(instanceId, hash, cancellationToken);
             }
+        }
+
+        public async Task<RunningJobDetails> GetRunningInstanceLongPollingV1(
+            string instanceId,
+            string hash,
+            CancellationToken cancellationToken)
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(_longPullingSpan);
+            while (!cts.IsCancellationRequested)
+            {
+                var data = await GetRunning(instanceId);
+                var currentHash = $"{data.Progress}.{data.EffectedRows}.{data.ExceptionsCount}";
+                if (currentHash != hash)
+                {
+                    return data;
+                }
+
+                try
+                {
+                    await Task.Delay(500, cancellationToken);
+                }
+                catch (TaskCanceledException)
+                {
+                    return data;
+                }
+            }
+
+            throw new RestNotFoundException();
         }
 
         public async Task<RunningJobDetails> GetRunningInstanceLongPollingV2(
@@ -484,93 +537,6 @@ namespace Planar.Service.API
             }
 
             throw new RestRequestTimeoutException();
-        }
-
-        public async Task<RunningJobDetails> GetRunningInstanceLongPollingV1(
-            string instanceId,
-            string hash,
-            CancellationToken cancellationToken)
-        {
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            cts.CancelAfter(_longPullingSpan);
-            while (!cts.IsCancellationRequested)
-            {
-                var data = await GetRunning(instanceId);
-                var currentHash = $"{data.Progress}.{data.EffectedRows}.{data.ExceptionsCount}";
-                if (currentHash != hash)
-                {
-                    return data;
-                }
-
-                try
-                {
-                    await Task.Delay(500, cancellationToken);
-                }
-                catch (TaskCanceledException)
-                {
-                    return data;
-                }
-            }
-
-            throw new RestNotFoundException();
-        }
-
-        public async Task<RunningJobData> GetRunningData(string instanceId)
-        {
-            var result = await SchedulerUtil.GetRunningData(instanceId);
-            if (result != null)
-            {
-                return result;
-            }
-
-            if (AppSettings.Cluster.Clustering)
-            {
-                result = await ClusterUtil.GetRunningData(instanceId);
-            }
-
-            if (result == null)
-            {
-                throw new RestNotFoundException($"instanceId {instanceId} was not found");
-            }
-
-            return result;
-        }
-
-        public async Task<List<RunningJobDetails>> GetRunning()
-        {
-            var result = await SchedulerUtil.GetRunningJobs();
-            if (AppSettings.Cluster.Clustering)
-            {
-                var clusterResult = await ClusterUtil.GetRunningJobs();
-                result ??= [];
-
-                if (clusterResult != null)
-                {
-                    result.AddRange(clusterResult);
-                }
-            }
-
-            FillEstimatedEndTime(result);
-
-            return result;
-        }
-
-        public async Task<RunningJobDetails> GetRunning(string instanceId)
-        {
-            var result = await SchedulerUtil.GetRunningJob(instanceId);
-            if (result == null && AppSettings.Cluster.Clustering)
-            {
-                result = await ClusterUtil.GetRunningJob(instanceId);
-            }
-
-            if (result == null)
-            {
-                throw new RestNotFoundException();
-            }
-
-            FillEstimatedEndTime(result);
-
-            return result;
         }
 
         public async Task<IEnumerable<KeyValueItem>> GetSettings(string id)
@@ -623,6 +589,15 @@ namespace Planar.Service.API
             }
 
             AuditJobSafe(jobKey, "job manually invoked", request);
+        }
+
+        public async Task Pause(JobOrTriggerKey request)
+        {
+            var jobKey = await JobKeyHelper.GetJobKey(request);
+            ValidateSystemJob(jobKey);
+            await Scheduler.PauseJob(jobKey);
+
+            AuditJobSafe(jobKey, "job paused");
         }
 
         public async Task<PlanarIdResponse> QueueInvoke(QueueInvokeJobRequest request)
@@ -684,15 +659,6 @@ namespace Planar.Service.API
             return new PlanarIdResponse { Id = triggerId };
         }
 
-        public async Task Pause(JobOrTriggerKey request)
-        {
-            var jobKey = await JobKeyHelper.GetJobKey(request);
-            ValidateSystemJob(jobKey);
-            await Scheduler.PauseJob(jobKey);
-
-            AuditJobSafe(jobKey, "job paused");
-        }
-
         public async Task Remove(string id)
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
@@ -746,22 +712,6 @@ namespace Planar.Service.API
             AuditJobSafe(jobKey, "job resumed");
         }
 
-        public async Task<bool> Cancel(FireInstanceIdRequest request)
-        {
-            var stop = await SchedulerUtil.StopRunningJob(request.FireInstanceId);
-            if (AppSettings.Cluster.Clustering && !stop)
-            {
-                stop = await ClusterUtil.StopRunningJob(request.FireInstanceId);
-            }
-
-            if (!stop && !await SchedulerUtil.IsRunningInstanceExistOnLocal(request.FireInstanceId))
-            {
-                throw new RestNotFoundException($"instance id '{request.FireInstanceId}' is not running");
-            }
-
-            return stop;
-        }
-
         public async Task SetAuthor(SetJobAuthorRequest request)
         {
             var jobKey = await JobKeyHelper.GetJobKey(request);
@@ -796,22 +746,34 @@ namespace Planar.Service.API
             await Scheduler.PauseJob(jobKey);
         }
 
-        private async Task<bool> IsActiveJob(JobKey jobKey)
+        private static void FillEstimatedEndTime(List<RunningJobDetails> runningJobs)
         {
-            var triggers = await Scheduler.GetTriggersOfJob(jobKey);
-            if (triggers == null) { return false; }
-
-            foreach (var t in triggers)
+            foreach (var item in runningJobs)
             {
-                if (t.Key.Group == Consts.RecoveringJobsGroup) { continue; }
-                var state = await Scheduler.GetTriggerState(t.Key);
-                if (IaActiveTriggerState(state))
-                {
-                    return true;
-                }
+                FillEstimatedEndTime(item);
             }
+        }
 
-            return false;
+        private static void FillEstimatedEndTime(RunningJobDetails runningJob)
+        {
+            if (runningJob.Progress < 1) { return; }
+            var factor = 100 - runningJob.Progress;
+            var ms = (runningJob.RunTime.TotalMilliseconds / runningJob.Progress) * factor;
+            runningJob.EstimatedEndTime = TimeSpan.FromMilliseconds(ms);
+        }
+
+        private static SetJobDynamicRequest? GetJobDynamicRequestFromFilename(string filename)
+        {
+            try
+            {
+                var yml = File.ReadAllText(filename);
+                var request = YmlUtil.Deserialize<SetJobDynamicRequest>(yml);
+                return request;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidDataException($"fail to read yml file: {filename}", ex);
+            }
         }
 
         private static bool IaActiveTriggerState(TriggerState state)
@@ -827,6 +789,15 @@ namespace Planar.Service.API
             }
         }
 
+        private async Task DeleteJobStatistics(string jobId)
+        {
+            var dal = Resolve<MetricsData>();
+            var s1 = new JobDurationStatistic { JobId = jobId };
+            await dal.DeleteJobStatistic(s1);
+            var s2 = new JobEffectedRowsStatistic { JobId = jobId };
+            await dal.DeleteJobStatistic(s2);
+        }
+
         private async Task DeleteMonitorOfJob(JobKey jobKey)
         {
             var dal = Resolve<MonitorData>();
@@ -837,13 +808,41 @@ namespace Planar.Service.API
             }
         }
 
-        private async Task DeleteJobStatistics(string jobId)
+        private async Task<AvailableJob?> GetAvailableJob(string filename, string jobsFolder, bool update)
         {
-            var dal = Resolve<MetricsData>();
-            var s1 = new JobDurationStatistic { JobId = jobId };
-            await dal.DeleteJobStatistic(s1);
-            var s2 = new JobEffectedRowsStatistic { JobId = jobId };
-            await dal.DeleteJobStatistic(s2);
+            try
+            {
+                var request = GetJobDynamicRequestFromFilename(filename);
+                if (request == null) { return null; }
+                if (string.IsNullOrWhiteSpace(request.JobType)) { return null; }
+                if (string.IsNullOrWhiteSpace(request.Name)) { return null; }
+                if (!ServiceUtil.JobTypes.Any(j => string.Equals(j, request.JobType, StringComparison.OrdinalIgnoreCase))) { return null; }
+
+                var key = JobKeyHelper.GetJobKey(request);
+                if (key == null) { return null; }
+
+                var details = await Scheduler.GetJobDetail(key);
+                if (details == null && update) { return null; }
+                if (details != null && !update) { return null; }
+
+                var fileInfo = new FileInfo(filename);
+                var fullFolder = fileInfo.Directory;
+                if (fullFolder == null) { return null; }
+                var relativeFolder = fullFolder.FullName[(jobsFolder.Length + 1)..];
+                var result = new AvailableJob
+                {
+                    Name = key.ToString(),
+                    JobFile = Path.Combine(relativeFolder, fileInfo.Name)
+                };
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogDebug(ex, "Fail to get avaliable job folder info");
+            }
+
+            return null;
         }
 
         private async Task<IReadOnlyCollection<JobKey>> GetJobKeys(GetAllJobsRequest request)
@@ -894,6 +893,24 @@ namespace Planar.Service.API
             return result;
         }
 
+        private async Task<bool> IsActiveJob(JobKey jobKey)
+        {
+            var triggers = await Scheduler.GetTriggersOfJob(jobKey);
+            if (triggers == null) { return false; }
+
+            foreach (var t in triggers)
+            {
+                if (t.Key.Group == Consts.RecoveringJobsGroup) { continue; }
+                var state = await Scheduler.GetTriggerState(t.Key);
+                if (IaActiveTriggerState(state))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private async Task<bool> JobGroupExists(string jobGroup)
         {
             var allGroups = await Scheduler.GetJobGroupNames();
@@ -912,22 +929,6 @@ namespace Planar.Service.API
             target.RequestsRecovery = source.RequestsRecovery;
             target.DataMap = Global.ConvertDataMapToDictionary(dataMap);
             target.Properties = await DataLayer.GetJobProperty(target.Id) ?? string.Empty;
-        }
-
-        private static void FillEstimatedEndTime(List<RunningJobDetails> runningJobs)
-        {
-            foreach (var item in runningJobs)
-            {
-                FillEstimatedEndTime(item);
-            }
-        }
-
-        private static void FillEstimatedEndTime(RunningJobDetails runningJob)
-        {
-            if (runningJob.Progress < 1) { return; }
-            var factor = 100 - runningJob.Progress;
-            var ms = (runningJob.RunTime.TotalMilliseconds / runningJob.Progress) * factor;
-            runningJob.EstimatedEndTime = TimeSpan.FromMilliseconds(ms);
         }
     }
 }

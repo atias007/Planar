@@ -64,6 +64,7 @@ public class JobData(PlanarContext context) : BaseDataLayer(context), IJobProper
         return _context.JobAudits
             .AsNoTracking()
             .Where(a => a.JobId == id || a.JobId == string.Empty)
+            .Where(a => !a.JobKey.StartsWith(Consts.PlanarSystemGroup))
             .OrderByDescending(a => a.DateCreated)
             .ThenByDescending(a => a.Id);
     }
@@ -72,6 +73,7 @@ public class JobData(PlanarContext context) : BaseDataLayer(context), IJobProper
     {
         return _context.JobAudits
             .AsNoTracking()
+            .Where(a => !a.JobKey.StartsWith(Consts.PlanarSystemGroup))
             .OrderByDescending(a => a.DateCreated)
             .ThenByDescending(a => a.Id);
     }
@@ -81,6 +83,7 @@ public class JobData(PlanarContext context) : BaseDataLayer(context), IJobProper
         return _context.JobAudits
             .AsNoTracking()
             .Where(a => a.DateCreated >= dateScope.From && a.DateCreated < dateScope.To)
+            .Where(a => !a.JobKey.StartsWith(Consts.PlanarSystemGroup))
             .Take(1000)
             .OrderByDescending(a => a.DateCreated)
             .ThenByDescending(a => a.Id);
@@ -90,6 +93,7 @@ public class JobData(PlanarContext context) : BaseDataLayer(context), IJobProper
     {
         return _context.JobAudits
             .AsNoTracking()
+            .Where(a => !a.JobKey.StartsWith(Consts.PlanarSystemGroup))
             .Where(a => a.Id == id);
     }
 }

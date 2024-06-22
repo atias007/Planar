@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Planar.Service.API;
 
@@ -73,22 +74,12 @@ public partial class JobDomain
                 updateTrigger.TriggerData.Put<string?>(data.Key, PlanarConvert.ToString(data.Value));
             }
 
-            if (updateTrigger.TriggerData.Count > Consts.MaximumJobDataItems)
+            var dataCount = CountUserJobDataItems(updateTrigger.TriggerData);
+            if (dataCount > Consts.MaximumJobDataItems)
             {
                 throw new RestValidationException("trigger data", $"trigger data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
             }
         }
-    }
-
-    private static async Task UpdateJobExtendedProperties(SetJobDynamicRequest request, JobUpdateMetadata metadata)
-    {
-        metadata.JobDetails.JobDataMap.Put(Consts.Author, request.Author);
-        if (request.LogRetentionDays.HasValue)
-        {
-            metadata.JobDetails.JobDataMap.Put(Consts.LogRetentionDays, request.LogRetentionDays.Value.ToString());
-        }
-
-        await Task.CompletedTask;
     }
 
     private static async Task UpdateJobData(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
@@ -107,9 +98,21 @@ public partial class JobDomain
 
         BuildJobData(request, metadata.JobDetails);
 
-        if (request.JobData.Count > Consts.MaximumJobDataItems)
+        var dataCount = CountUserJobDataItems(request.JobData);
+        if (dataCount > Consts.MaximumJobDataItems)
         {
             throw new RestValidationException("job data", $"job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
+        }
+
+        await Task.CompletedTask;
+    }
+
+    private static async Task UpdateJobExtendedProperties(SetJobDynamicRequest request, JobUpdateMetadata metadata)
+    {
+        metadata.JobDetails.JobDataMap.Put(Consts.Author, request.Author);
+        if (request.LogRetentionDays.HasValue)
+        {
+            metadata.JobDetails.JobDataMap.Put(Consts.LogRetentionDays, request.LogRetentionDays.Value.ToString());
         }
 
         await Task.CompletedTask;
