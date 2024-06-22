@@ -25,6 +25,7 @@ namespace Planar.Service.Reports
             var traceTable = GetTraceTable(await traceTask);
 
             var main = GetMainTemplate();
+            main = ReplaceEnvironmentPlaceHolder(main);
             main = FillCubes(main, await countersTask);
             main = ReplacePlaceHolder(main, "ReportPeriod", dateScope.Period);
             main = ReplacePlaceHolder(main, "ReportDate.From", dateScope.From.ToShortDateString());

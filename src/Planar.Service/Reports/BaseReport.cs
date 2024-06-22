@@ -74,6 +74,11 @@ namespace Planar.Service.Reports
             return main;
         }
 
+        protected static string ReplaceEnvironmentPlaceHolder(string template)
+        {
+            return ReplacePlaceHolder(template, "Environment", AppSettings.General.Environment);
+        }
+
         protected static string ReplacePlaceHolder(string template, string placeHolder, string? value, bool encode = false)
         {
             var find = $"<!-- {{{{{placeHolder}}}}} -->";

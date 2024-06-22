@@ -20,11 +20,10 @@ namespace Planar.Service.Reports
             var auditsTable = GetAuditsTable(await auditsTask);
 
             var main = GetMainTemplate();
-
+            main = ReplaceEnvironmentPlaceHolder(main);
             main = ReplacePlaceHolder(main, "ReportPeriod", dateScope.Period);
             main = ReplacePlaceHolder(main, "ReportDate.From", dateScope.From.ToShortDateString());
             main = ReplacePlaceHolder(main, "ReportDate.To", dateScope.To.ToShortDateString());
-            main = ReplacePlaceHolder(main, "Environment", AppSettings.General.Environment);
             main = ReplacePlaceHolder(main, "AuditsTable", auditsTable);
 
             return main;

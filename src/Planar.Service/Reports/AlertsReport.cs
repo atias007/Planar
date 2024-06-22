@@ -19,7 +19,7 @@ namespace Planar.Service.Reports
             var alertsTable = GetAlertsTable(await alertsTask);
 
             var main = GetMainTemplate();
-
+            main = ReplaceEnvironmentPlaceHolder(main);
             main = ReplacePlaceHolder(main, "ReportPeriod", dateScope.Period);
             main = ReplacePlaceHolder(main, "ReportDate.From", dateScope.From.ToShortDateString());
             main = ReplacePlaceHolder(main, "ReportDate.To", dateScope.To.ToShortDateString());
