@@ -3,6 +3,9 @@
 PLAN FOR V 1.7.4
 ----------------
 
+- add username, domain, password to ProcessJob + PlanarJob
+- Security report
+
 - postman: test queue-invoke with data and validate the creation of data
 - 'service info hooks'
 
@@ -12,7 +15,7 @@ PLAN FOR V 1.7.4
 	https://codepen.io/MarkBoots/pen/YzvPRKr
 	https://chartscss.org/charts/bar/
 
-- Security report
+
 -------------------
 
 
@@ -22,7 +25,7 @@ PLAN FOR V 1.7.4
 - add SSIS job
 - add SSRS job
 
-- add username, domain, password to ProcessJob + PlanarJob
+
 
 - api security headers
 - circuit breaker (option to pause job after {x} fails in row)
