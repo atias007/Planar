@@ -24,7 +24,7 @@ internal static class RedisFactory
 
     public static void Initialize(IConfiguration configuration)
     {
-        var section = configuration.GetRequiredSection("redis");
+        var section = configuration.GetRequiredSection("server");
         Database = section.GetValue<int?>("database") ?? 0;
         Ssl = section.GetValue<bool>("ssl");
         User = section.GetValue<string?>("user");

@@ -76,9 +76,6 @@ internal partial class Job : BaseCheckJob
             BEGIN
               DELETE TOP (@batchSize) FROM {tableName}
               WHERE {table.Condition};
-
-              -- Optional: Checkpoint to minimize transaction log growth (for large batches)
-              CHECKPOINT;
             END
             """;
         }
@@ -140,23 +137,49 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private static Dictionary<string, string> GetConnectionStrings(IConfiguration configuration)
+    private Dictionary<string, string> GetConnectionStrings(IConfiguration configuration)
     {
-        var section = configuration.GetRequiredSection("connection strings");
         var result = new Dictionary<string, string>();
-        foreach (var item in section.GetChildren())
+
+        var section = configuration.GetSection("connection strings");
+        if (section.Exists())
         {
-            if (string.IsNullOrWhiteSpace(item.Key))
+            foreach (var item in section.GetChildren())
             {
-                throw new InvalidDataException("connection string has invalid null or empty key");
-            }
+                if (string.IsNullOrWhiteSpace(item.Key))
+                {
+                    throw new InvalidDataException("connection string has invalid null or empty key");
+                }
 
-            if (string.IsNullOrWhiteSpace(item.Value))
+                if (string.IsNullOrWhiteSpace(item.Value))
+                {
+                    throw new InvalidDataException($"connection string with key '{item.Key}' has no value");
+                }
+
+                result.TryAdd(item.Key, item.Value);
+            }
+        }
+
+        section = Configuration.GetSection("connection strings");
+        if (section.Exists())
+        {
+            foreach (var item in section.GetChildren())
             {
-                throw new InvalidDataException($"connection string with key '{item.Key}' has no value");
+                if (string.IsNullOrWhiteSpace(item.Key)) { continue; }
+                if (string.IsNullOrWhiteSpace(item.Value)) { continue; }
+                result.TryAdd(item.Key, item.Value);
             }
+        }
 
-            result.TryAdd(item.Key, item.Value);
+        section = Configuration.GetSection("ConnectionStrings");
+        if (section.Exists())
+        {
+            foreach (var item in section.GetChildren())
+            {
+                if (string.IsNullOrWhiteSpace(item.Key)) { continue; }
+                if (string.IsNullOrWhiteSpace(item.Value)) { continue; }
+                result.TryAdd(item.Key, item.Value);
+            }
         }
 
         return result;

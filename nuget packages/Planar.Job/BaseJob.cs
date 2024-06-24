@@ -318,6 +318,7 @@ namespace Planar.Job
                 if (PlanarJob.Mode == RunningMode.Debug)
                 {
                     var settings = JobSettingsLoader.LoadJobSettings(null, ctx.JobSettings);
+                    ctx.JobSettings = ctx.JobSettings.Merge(settings);
                     ctx.JobSettings = new Dictionary<string, string?>(settings);
                 }
 

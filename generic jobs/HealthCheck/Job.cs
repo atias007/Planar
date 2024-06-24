@@ -160,6 +160,7 @@ internal sealed partial class Job : BaseCheckJob
         }
 
         var uri = BuildUri(host, endpoint);
+        endpoint.Key = uri.ToString();
         UpdateProgress();
 
         HttpResponseMessage response;

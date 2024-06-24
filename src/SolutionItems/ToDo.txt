@@ -325,3 +325,5 @@ V1.7.4
 ------
 - Audit report
 - more job & trigger data validation
+- add environment to all hooks
+- FIX: hook cache issue

@@ -100,6 +100,7 @@ To send to multiple channels, you can set the following value (in appsettings.ym
                     Text = details.MostInnerExceptionMessage ?? string.Empty,
                     Facts =
                     [
+                        new Fact("Environment:", details.Environment),
                         new Fact("Fire time:", $"{details.FireTime:g}"),
                         new Fact("Run Time:", runtime),
                         new Fact("Job id:", details.JobId),
@@ -117,23 +118,26 @@ To send to multiple channels, you can set the following value (in appsettings.ym
     {
         var icon = GetIcon(details);
         var image = string.Format(ImageSource, icon);
+        var facts = details.MessagesParameters
+                        .Select(i => new Fact($"{i.Key}:", i.Value))
+                        .ToList();
+
+        facts.Insert(0, new Fact("Environment:", details.Environment));
 
         var card = new TeamsMessageCard
         {
             Title = $"Planar Event: {details.EventTitle}",
             Sections =
-            [
-                new Section
-                {
-                    ActivityTitle = $"System event occur at:",
-                    ActivitySubtitle = DateTime.Now.ToString("dd/MM/yyyy HH:mm"),
-                    ActivityImage = image,
-                    Text = details.Message,
-                    Facts = details.MessagesParameters
-                        .Select(i => new Fact($"{i.Key}:", i.Value))
-                        .ToList()
-                }
-            ]
+                [
+                    new Section
+                    {
+                        ActivityTitle = $"System event occur at:",
+                        ActivitySubtitle = DateTime.Now.ToString("dd/MM/yyyy HH:mm"),
+                        ActivityImage = image,
+                        Text = details.Message,
+                        Facts = facts
+                    }
+                ]
         };
 
         var json = JsonSerializer.Serialize(card, _serializerOptions);

@@ -12,6 +12,7 @@ public static class EmailHtmlGenerator
         var html = GetResource("AlertTemplate1");
         html = Replace(html, "Event Title", details.EventTitle);
         html = Replace(html, "Title", details.MonitorTitle);
+        html = Replace(html, "Environment", details.Environment);
         html = Replace(html, "Job Key", $"{details.JobGroup}.{details.JobName}");
         html = Replace(html, "Job Description", details.JobDescription);
         html = Replace(html, "Author", details.Author);
@@ -35,6 +36,7 @@ public static class EmailHtmlGenerator
     {
         var html = GetResource("AlertTemplate2");
         html = Replace(html, "Event Title", details.EventTitle);
+        html = Replace(html, "Environment", details.Environment);
         html = Replace(html, "Message", details.Message);
 
         var sb = new StringBuilder();
