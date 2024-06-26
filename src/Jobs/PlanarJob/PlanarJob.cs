@@ -241,7 +241,9 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
 
             if (_output.Length > 0)
             {
-                MessageBroker.AppendLogRaw(_output.ToString());
+                var outputText = _output.ToString();
+                MessageBroker.AppendLogRaw(outputText);
+                if (outputText.Contains(nameof(PlanarJobException))) { return; }
             }
 
             var log = new LogEntity

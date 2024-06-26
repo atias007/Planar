@@ -1,0 +1,16 @@
+defaults:                                       # default values for all services. each service can override these values
+  retry count: 3                                # the number of retry attemp in case of failure
+  retry interval: 00:00:10                      # the interval between retry attemps
+  maximum fails in row: 5                       # the maximum number of fails in row before the job is considered as failed
+
+#hosts:                                         # the hosts of the services. usualy this section defined in specific environment job settings
+#  - localhost
+#  - 127.0.0.1
+ 
+services:
+  - name: MyServiceName                        # the name of the service
+    hosts:                                     # the hosts of the services. if not defined, the hosts from the root hosts section will be used
+      - localhost
+    ignore disabled: true                      # ignore service which has start type: disabled. the default is true
+    timeout: 00:01:00                          # the timeout for restart the service. the default is 1 minute
+    active: true                               # the default is true

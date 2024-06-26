@@ -3,10 +3,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
-using System;
 using System.ServiceProcess;
 
-namespace WindowsServiceCheck;
+namespace WindowsServiceRestart;
 
 internal sealed partial class Job : BaseCheckJob
 {
@@ -126,45 +125,34 @@ internal sealed partial class Job : BaseCheckJob
             throw new CheckException($"service '{service.Name}' on host '{host}' is in {status} start type");
         }
 
-        if (startType == ServiceStartMode.Manual && service.AutomaticStart)
+        if (status == ServiceControllerStatus.StartPending || status == ServiceControllerStatus.ContinuePending)
         {
-            throw new CheckException($"service '{service.Name}' start type is {nameof(ServiceStartMode.Manual)}");
+            Logger.LogWarning("service '{Name}' on host '{Host}' is in {Status} status. no need to restart", service.Name, host, status);
+            return;
         }
 
         if (status == ServiceControllerStatus.Running)
         {
-            Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, host);
-            IncreaseEffectedRows();
-            return;
-        }
-
-        if (status == ServiceControllerStatus.StartPending || status == ServiceControllerStatus.ContinuePending)
-        {
-            Logger.LogWarning("service '{Name}' on host '{Host}' is in {Status} status. waiting for running status...", service.Name, host, status);
-            controller.WaitForStatus(ServiceControllerStatus.Running, service.StartServiceTimeout);
+            Logger.LogWarning("service '{Name}' on host '{Host}' is in running status. stop the service", service.Name, host);
+            controller.Stop();
+            controller.WaitForStatus(ServiceControllerStatus.Stopped, service.Timeout);
             controller.Refresh();
             status = controller.Status;
-            if (status == ServiceControllerStatus.Running)
-            {
-                Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, host);
-                IncreaseEffectedRows();
-                return;
-            }
         }
 
-        if ((status == ServiceControllerStatus.StopPending) && service.StartService)
+        if (status == ServiceControllerStatus.StopPending)
         {
             Logger.LogWarning("service '{Name}' on host '{Host}' is in {Status} status. waiting for stopped status...", service.Name, host, status);
-            controller.WaitForStatus(ServiceControllerStatus.StopPending, TimeSpan.FromSeconds(30));
+            controller.WaitForStatus(ServiceControllerStatus.StopPending, service.Timeout);
             controller.Refresh();
             status = controller.Status;
         }
 
-        if (status == ServiceControllerStatus.Stopped && service.StartService)
+        if (status == ServiceControllerStatus.Stopped)
         {
             Logger.LogWarning("service '{Name}' on host '{Host}' is in stopped status. starting service", service.Name, host);
             controller.Start();
-            controller.WaitForStatus(ServiceControllerStatus.Running, service.StartServiceTimeout);
+            controller.WaitForStatus(ServiceControllerStatus.Running, service.Timeout);
             controller.Refresh();
             status = controller.Status;
             if (status == ServiceControllerStatus.Running)
@@ -175,11 +163,11 @@ internal sealed partial class Job : BaseCheckJob
             }
         }
 
-        if (status == ServiceControllerStatus.Paused && service.StartService)
+        if (status == ServiceControllerStatus.Paused)
         {
             Logger.LogWarning("service '{Name}' on host '{Host}' is in paused status. continue service", service.Name, host);
             controller.Continue();
-            controller.WaitForStatus(ServiceControllerStatus.Running, service.StartServiceTimeout);
+            controller.WaitForStatus(ServiceControllerStatus.Running, service.Timeout);
             controller.Refresh();
             status = controller.Status;
             if (status == ServiceControllerStatus.Running)
@@ -204,8 +192,8 @@ internal sealed partial class Job : BaseCheckJob
         ValidateBase(service, section);
         ValidateMaxLength(service.Name, 255, "name", section);
         ValidateRequired(service.Name, "name", section);
-        ValidateGreaterThen(service.StartServiceTimeout, TimeSpan.FromSeconds(5), "start service timeout", section);
-        ValidateLessThen(service.StartServiceTimeout, TimeSpan.FromMinutes(5), "start service timeout", section);
+        ValidateGreaterThen(service.Timeout, TimeSpan.FromSeconds(5), "timeout", section);
+        ValidateLessThen(service.Timeout, TimeSpan.FromMinutes(5), "timeout", section);
         ValidateRequired(service.Hosts, "hosts", section);
     }
 }
