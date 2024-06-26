@@ -50,17 +50,12 @@ internal partial class Job : BaseCheckJob
             Logger.LogInformation("skipping inactive query '{Name}'", checkQuery.Name);
             return;
         }
+        UpdateProgress();
 
-        if (checkQuery.Interval.HasValue)
+        if (!IsIntervalElapsed(checkQuery, checkQuery.Interval))
         {
-            var tracker = ServiceProvider.GetRequiredService<CheckIntervalTracker>();
-            var lastSpan = tracker.LastRunningSpan(checkQuery);
-            if (lastSpan > TimeSpan.Zero && lastSpan < checkQuery.Interval)
-            {
-                Logger.LogInformation("skipping query '{Name}' due to its interval", checkQuery.Name);
-                UpdateProgress();
-                return;
-            }
+            Logger.LogInformation("skipping query '{Name}' due to its interval", checkQuery.Name);
+            return;
         }
 
         var timeout = checkQuery.Timeout ?? TimeSpan.FromSeconds(30);
@@ -72,7 +67,6 @@ internal partial class Job : BaseCheckJob
 
         await connection.OpenAsync();
         using var reader = await cmd.ExecuteReaderAsync(CommandBehavior.SingleRow);
-        UpdateProgress();
 
         var hasData = await reader.ReadAsync();
         if (hasData)

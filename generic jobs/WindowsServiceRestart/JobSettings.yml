@@ -12,5 +12,6 @@ services:
     hosts:                                     # the hosts of the services. if not defined, the hosts from the root hosts section will be used
       - localhost
     ignore disabled: true                      # ignore service which has start type: disabled. the default is true
+    interval: 00:15:00                         # Interval
     timeout: 00:01:00                          # the timeout for restart the service. the default is 1 minute
     active: true                               # the default is true

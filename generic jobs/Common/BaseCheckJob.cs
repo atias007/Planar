@@ -260,8 +260,7 @@ public abstract class BaseCheckJob : BaseJob
                         sleepDurationProvider: _ => entity.RetryInterval.GetValueOrDefault(),
                          onRetry: (ex, _) =>
                          {
-                             var exception = IsExceptionIsCheckException(ex, out var _) ? null : ex;
-                             Logger.LogWarning(exception, "retry for '{Key}'. Reason: {Message}", entity.Key, ex.Message);
+                             Logger.LogWarning("retry for '{Key}'. Reason: {Message}", entity.Key, ex.Message);
                          })
                     .ExecuteAsync(async () =>
                     {
@@ -340,6 +339,19 @@ public abstract class BaseCheckJob : BaseJob
     protected void IncreaseEffectedRows()
     {
         EffectedRows = EffectedRows.GetValueOrDefault() + 1;
+    }
+
+    protected bool IsIntervalElapsed(ICheckElement element, TimeSpan? interval)
+    {
+        if (interval == null) { return true; }
+        var tracker = ServiceProvider.GetRequiredService<CheckIntervalTracker>();
+        var lastSpan = tracker.LastRunningSpan(element);
+        if (lastSpan > TimeSpan.Zero && lastSpan < interval.Value)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     private static string FormatTimeSpan(TimeSpan timeSpan)
