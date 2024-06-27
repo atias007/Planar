@@ -54,7 +54,7 @@ Author: {monitorDetails.Author}
         return template;
     }
 
-    private string GetSmsMessage(IMonitorSystemDetails monitorDetails)
+    private static string GetSmsMessage(IMonitorSystemDetails monitorDetails)
     {
         var template =
 $"""
