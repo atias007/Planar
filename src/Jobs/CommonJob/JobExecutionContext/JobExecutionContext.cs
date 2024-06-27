@@ -5,7 +5,7 @@ namespace Planar.Job
 {
     internal class JobExecutionContext : IJobExecutionContext
     {
-        public Dictionary<string, string?> JobSettings { get; set; } = [];
+        public Dictionary<string, string?> JobSettings { get; set; } = new Dictionary<string, string?>(); // *** DONT USE C# 12 STYLE ** //
 
         public IDataMap MergedJobDataMap { get; set; } = new DataMap();
 
