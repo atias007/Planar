@@ -12,6 +12,6 @@ namespace Planar.API.Common.Entities
         public string? AdditionalField5 { get; set; }
         public string? Role { get; set; }
 
-        public List<EntityTitle> Users { get; set; } = new();
+        public List<EntityTitle> Users { get; set; } = [];
     }
 }

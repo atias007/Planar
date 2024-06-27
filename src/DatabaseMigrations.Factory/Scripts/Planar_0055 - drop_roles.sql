@@ -1,0 +1,3 @@
+ALTER TABLE [dbo].[Groups] DROP CONSTRAINT [FK_Groups_Roles]
+GO
+DROP TABLE Roles

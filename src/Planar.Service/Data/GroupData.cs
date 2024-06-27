@@ -62,12 +62,11 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
     {
         var result = await _context.Groups
             .Include(g => g.Users)
-            .Include(g => g.Role)
             .Select(g => new GroupInfo
             {
                 Name = g.Name,
                 UsersCount = g.Users.Count,
-                Role = g.Role.Name
+                Role = g.Role
             })
             .OrderBy(g => g.Name)
             .ToPagingListAsync(request);

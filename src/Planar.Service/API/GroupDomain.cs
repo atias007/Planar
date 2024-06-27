@@ -117,7 +117,6 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         ValidateExistingEntity(group, "group");
         var updateGroup = Mapper.Map<UpdateGroupRequest>(group);
         updateGroup.CurrentName = request.Name;
-        updateGroup.Role = null;
         var validator = Resolve<IValidator<UpdateGroupRequest>>();
         await SetEntityProperties(updateGroup, request, validator);
         await Update(updateGroup);
@@ -181,6 +180,12 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         }
 
         var group = Mapper.Map<Group>(request);
+        group.Id = id;
+        if (Enum.TryParse<Roles>(request.Role, ignoreCase: true, out var role))
+        {
+            group.RoleId = (int)role;
+        }
+
         await DataLayer.UpdateGroup(group);
     }
 

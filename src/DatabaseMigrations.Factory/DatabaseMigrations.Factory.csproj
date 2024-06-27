@@ -66,6 +66,7 @@
     <None Remove="Scripts\Planar_0052 - fix_port.sql" />
     <None Remove="Scripts\Planar_0053 - fix_clusterport.sql" />
     <None Remove="Scripts\Planar_0054 - fix_factoryreset.sql" />
+    <None Remove="Scripts\Planar_0055 - drop_roles.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -122,6 +123,7 @@
     <EmbeddedResource Include="Scripts\Planar_0052 - fix_port.sql" />
     <EmbeddedResource Include="Scripts\Planar_0053 - fix_clusterport.sql" />
     <EmbeddedResource Include="Scripts\Planar_0054 - fix_factoryreset.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0055 - drop_roles.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DbUp\dbup-sqlserver\dbup-sqlserver.csproj" />

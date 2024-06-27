@@ -81,7 +81,6 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
 
     public async Task PartialUpdate(UpdateEntityRequestByName request)
     {
-        ForbbidenPartialUpdateProperties(request, null, nameof(UpdateUserRequest.CurrentUsername), nameof(UpdateUserRequest.RoleId));
         ForbbidenPartialUpdateProperties(request, "to join user to group use: 'user join'", nameof(UserDetails.Groups));
         ForbbidenPartialUpdateProperties(request, "to update user password use: 'user set-password'", nameof(User.Password));
         ForbbidenPartialUpdateProperties(request, "to update user role use: 'user join' to join the user to group which has an appropriate role", nameof(UserDetails.Role));

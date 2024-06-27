@@ -9,8 +9,7 @@ internal class GroupProfile : Profile
 {
     public GroupProfile()
     {
-        CreateMap<Group, GroupDetails>()
-            .ForMember(t => t.Role, map => map.MapFrom(s => s.Role.Name));
+        CreateMap<Group, GroupDetails>();
 
         CreateMap<AddGroupRequest, Group>()
             .ForMember(r => r.RoleId, map => map.MapFrom(s => (int)Enum.Parse<Roles>(s.Role ?? string.Empty, true)));
