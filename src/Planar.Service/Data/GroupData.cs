@@ -32,7 +32,6 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
     public async Task<Group?> GetGroup(string name)
     {
         var result = await _context.Groups
-            .Include(g => g.Role)
             .AsNoTracking()
             .FirstOrDefaultAsync(g => g.Name == name);
 

@@ -44,8 +44,6 @@ public partial class PlanarContext : DbContext
 
     public virtual DbSet<MonitorMute> MonitorMutes { get; set; }
 
-    public virtual DbSet<Role> Roles { get; set; }
-
     public virtual DbSet<SecurityAudit> SecurityAudits { get; set; }
 
     public virtual DbSet<Trace> Traces { get; set; }
@@ -64,13 +62,6 @@ public partial class PlanarContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK_ConcurentQueue");
         });
 
-        modelBuilder.Entity<Group>(entity =>
-        {
-            entity.HasOne(d => d.Role).WithMany(p => p.Groups)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Groups_Roles");
-        });
-
         modelBuilder.Entity<MonitorAction>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK_Monitor");
@@ -85,11 +76,6 @@ public partial class PlanarContext : DbContext
         modelBuilder.Entity<MonitorCounter>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK_MonitorCounter");
-        });
-
-        modelBuilder.Entity<Role>(entity =>
-        {
-            entity.Property(e => e.Id).ValueGeneratedNever();
         });
 
         modelBuilder.Entity<Trace>(entity =>
