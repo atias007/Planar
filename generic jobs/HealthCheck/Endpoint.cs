@@ -14,6 +14,7 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement
         Port = section.GetValue<int?>("port");
         Active = section.GetValue<bool?>("active") ?? true;
         AbsoluteUrl = SetAbsoluteUrl(Url);
+        Key = Url;
     }
 
     public string Name { get; }
@@ -22,10 +23,8 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement
     public TimeSpan? Timeout { get; set; }
     public int? Port { get; }
     public bool Active { get; }
-    public string Key => Url;
-
+    public string Key { get; set; }
     public Uri? AbsoluteUrl { get; }
-
     public bool IsAbsoluteUrl => !IsRelativeUrl;
     public bool IsRelativeUrl => AbsoluteUrl == null;
 

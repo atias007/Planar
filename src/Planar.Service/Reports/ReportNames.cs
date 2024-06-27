@@ -13,6 +13,9 @@ namespace Planar.Service.Reports
         [Description("Alerts")]
         Alerts,
 
+        [Description("Audits")]
+        Audits,
+
         [Description("Trace")]
         Trace
     }

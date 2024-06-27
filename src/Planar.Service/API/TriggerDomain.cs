@@ -20,21 +20,6 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
 {
     #region Data
 
-    public async Task RemoveData(string id, string key)
-    {
-        var info = await GetTriggerDetailsForDataCommands(id, key);
-        if (info.Trigger == null || info.JobDetails == null) { return; }
-
-        ValidateDataKeyExists(info.Trigger, key, id);
-        var auditValue = PlanarConvert.ToString(info.Trigger.JobDataMap[key]);
-        info.Trigger.JobDataMap.Remove(key);
-        var triggers = await BuildTriggers(info.Trigger);
-        await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
-        await Scheduler.PauseJob(info.JobKey);
-
-        AuditTriggerSafe(info.TriggerKey, GetTriggerAuditDescription("remove", key), new { value = auditValue?.Trim() }, addTriggerInfo: true);
-    }
-
     public async Task PutData(JobOrTriggerDataRequest request, PutMode mode, bool skipSystemCheck = false)
     {
         var info = await GetTriggerDetailsForDataCommands(request.Id, request.DataKey, skipSystemCheck);
@@ -58,7 +43,8 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
                 throw new RestNotFoundException($"data with key '{request.DataKey}' not found");
             }
 
-            if (info.Trigger.JobDataMap.Count >= Consts.MaximumJobDataItems)
+            var dataCount = CountUserJobDataItems(info.Trigger.JobDataMap);
+            if (dataCount >= Consts.MaximumJobDataItems)
             {
                 throw new RestValidationException("trigger data", $"trigger data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
             }
@@ -72,9 +58,39 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         await Scheduler.PauseJob(info.JobKey);
     }
 
+    public async Task RemoveData(string id, string key)
+    {
+        var info = await GetTriggerDetailsForDataCommands(id, key);
+        if (info.Trigger == null || info.JobDetails == null) { return; }
+
+        ValidateDataKeyExists(info.Trigger, key, id);
+        var auditValue = PlanarConvert.ToString(info.Trigger.JobDataMap[key]);
+        info.Trigger.JobDataMap.Remove(key);
+        var triggers = await BuildTriggers(info.Trigger);
+        await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
+        await Scheduler.PauseJob(info.JobKey);
+
+        AuditTriggerSafe(info.TriggerKey, GetTriggerAuditDescription("remove", key), new { value = auditValue?.Trim() }, addTriggerInfo: true);
+    }
+
     private static string GetTriggerAuditDescription(string operation, string key)
     {
         return $"{operation} trigger data with key '{key}' ({{{{TriggerId}}}})";
+    }
+
+    private static bool IsDataKeyExists(ITrigger trigger, string key)
+    {
+        if (trigger == null) { return false; }
+        var result = trigger.JobDataMap.Any(k => string.Equals(key, k.Key, StringComparison.OrdinalIgnoreCase));
+        return result;
+    }
+
+    private static void ValidateDataKeyExists(ITrigger trigger, string key, string triggerId)
+    {
+        if (!IsDataKeyExists(trigger, key))
+        {
+            throw new RestValidationException($"{key}", $"data with Key '{key}' could not found in trigger '{triggerId}' (name '{trigger?.Key.Name}')");
+        }
     }
 
     private async Task<List<ITrigger>> BuildTriggers(ITrigger trigger)
@@ -114,36 +130,7 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         return result;
     }
 
-    private static void ValidateDataKeyExists(ITrigger trigger, string key, string triggerId)
-    {
-        if (!IsDataKeyExists(trigger, key))
-        {
-            throw new RestValidationException($"{key}", $"data with Key '{key}' could not found in trigger '{triggerId}' (name '{trigger?.Key.Name}')");
-        }
-    }
-
-    private static bool IsDataKeyExists(ITrigger trigger, string key)
-    {
-        if (trigger == null) { return false; }
-        var result = trigger.JobDataMap.Any(k => string.Equals(key, k.Key, StringComparison.OrdinalIgnoreCase));
-        return result;
-    }
-
     #endregion Data
-
-    public async Task<TriggerRowDetails> Get(string triggerId)
-    {
-        var trigger = await GetTriggerById(triggerId);
-        var result = GetTriggerDetails(trigger);
-        return result;
-    }
-
-    public async Task<TriggerRowDetails> GetByJob(string id)
-    {
-        var jobKey = await JobKeyHelper.GetJobKey(id);
-        var result = await GetTriggersDetails(jobKey);
-        return result;
-    }
 
     public async Task Delete(string triggerId)
     {
@@ -161,6 +148,77 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         // Audit
         object? obj = details.SimpleTriggers.Count != 0 ? details.SimpleTriggers[0] : details.CronTriggers.FirstOrDefault();
         AuditJobSafe(trigger.JobKey, $"trigger {triggerIdentifier} removed", obj);
+    }
+
+    public async Task<TriggerRowDetails> Get(string triggerId)
+    {
+        var trigger = await GetTriggerById(triggerId);
+        var result = GetTriggerDetails(trigger);
+        return result;
+    }
+
+    public async Task<TriggerRowDetails> GetByJob(string id)
+    {
+        var jobKey = await JobKeyHelper.GetJobKey(id);
+        var result = await GetTriggersDetails(jobKey);
+        return result;
+    }
+
+    public string GetCronDescription(string expression)
+    {
+        try
+        {
+            return TriggerDetailsProfile.GetCronDescription(expression);
+        }
+        catch (FormatException ex)
+        {
+            const string errorString = "Error: ";
+            const string doubleSpace = "  ";
+            const string singleSpace = " ";
+            var error = ex.Message?
+                .Replace(errorString, string.Empty)
+                .Replace(doubleSpace, singleSpace)
+                .ToLowerInvariant();
+
+            throw new RestValidationException(nameof(expression), error ?? "general error");
+        }
+    }
+
+    public async Task<IEnumerable<PausedTriggerDetails>> GetPausedTriggers()
+    {
+        var triggers = await Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
+        var pausedKeys = triggers.Where(t => t.Group != Consts.PlanarSystemGroup && Scheduler.GetTriggerState(t).Result == TriggerState.Paused);
+        var tasks = new List<Task<ITrigger?>>();
+        foreach (var k in pausedKeys)
+        {
+            if (TriggerHelper.IsSystemTriggerKey(k)) { continue; }
+            tasks.Add(Scheduler.GetTrigger(k));
+        }
+
+        await Task.WhenAll(tasks);
+        var pausedTriggers = tasks.Select(t => t.Result);
+        var result = Mapper.Map<List<PausedTriggerDetails>>(pausedTriggers);
+        return result;
+    }
+
+    public async Task Pause(JobOrTriggerKey request)
+    {
+        var trigger = await GetTriggerById(request.Id);
+        await Scheduler.PauseTrigger(trigger.Key);
+
+        // audit
+        var id = GetTriggerId(trigger);
+        AuditJobSafe(trigger.JobKey, $"trigger {id} paused", new { TriggerKey = trigger.Key });
+    }
+
+    public async Task Resume(JobOrTriggerKey request)
+    {
+        var trigger = await GetTriggerById(request.Id);
+        await Scheduler.ResumeTrigger(trigger.Key);
+
+        // audit
+        var id = GetTriggerId(trigger);
+        AuditJobSafe(trigger.JobKey, $"trigger {id} resume", new { TriggerKey = trigger.Key });
     }
 
     public async Task UpdateCron(UpdateCronRequest request)
@@ -240,75 +298,20 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         AuditJobSafe(trigger.JobKey, $"update trigger {request.Id} timeout", obj);
     }
 
-    public async Task Pause(JobOrTriggerKey request)
-    {
-        var trigger = await GetTriggerById(request.Id);
-        await Scheduler.PauseTrigger(trigger.Key);
-
-        // audit
-        var id = GetTriggerId(trigger);
-        AuditJobSafe(trigger.JobKey, $"trigger {id} paused", new { TriggerKey = trigger.Key });
-    }
-
-    public async Task Resume(JobOrTriggerKey request)
-    {
-        var trigger = await GetTriggerById(request.Id);
-        await Scheduler.ResumeTrigger(trigger.Key);
-
-        // audit
-        var id = GetTriggerId(trigger);
-        AuditJobSafe(trigger.JobKey, $"trigger {id} resume", new { TriggerKey = trigger.Key });
-    }
-
-    public string GetCronDescription(string expression)
-    {
-        try
-        {
-            return TriggerDetailsProfile.GetCronDescription(expression);
-        }
-        catch (FormatException ex)
-        {
-            const string errorString = "Error: ";
-            const string doubleSpace = "  ";
-            const string singleSpace = " ";
-            var error = ex.Message?
-                .Replace(errorString, string.Empty)
-                .Replace(doubleSpace, singleSpace)
-                .ToLowerInvariant();
-
-            throw new RestValidationException(nameof(expression), error ?? "general error");
-        }
-    }
-
-    public async Task<IEnumerable<PausedTriggerDetails>> GetPausedTriggers()
-    {
-        var triggers = await Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
-        var pausedKeys = triggers.Where(t => t.Group != Consts.PlanarSystemGroup && Scheduler.GetTriggerState(t).Result == TriggerState.Paused);
-        var tasks = new List<Task<ITrigger?>>();
-        foreach (var k in pausedKeys)
-        {
-            if (TriggerHelper.IsSystemTriggerKey(k)) { continue; }
-            tasks.Add(Scheduler.GetTrigger(k));
-        }
-
-        await Task.WhenAll(tasks);
-        var pausedTriggers = tasks.Select(t => t.Result);
-        var result = Mapper.Map<List<PausedTriggerDetails>>(pausedTriggers);
-        return result;
-    }
-
     private static string FormatTimeSpan(TimeSpan? value)
     {
         if (value == null) { return string.Empty; }
         return $"{value:\\(d\\)\\ hh\\:mm\\:ss}";
     }
 
-    private static void ValidateIntervalForTrigger(ISimpleTrigger trigger, TimeSpan interval)
+    private static string? GetTriggerId(ITrigger? trigger)
     {
-        if (trigger.RepeatCount >= 0 && interval.TotalSeconds < 60)
+        if (trigger == null)
         {
-            throw new RestValidationException("interval", $"interval has invalid value. interval must be greater or equals to 1 minute");
+            throw new PlanarJobException("trigger is null at TriggerHelper.GetTriggerId(ITrigger)");
         }
+
+        return TriggerHelper.GetTriggerId(trigger);
     }
 
     private static ICronTrigger ValidateCronTrigger(ITrigger trigger, UpdateCronRequest request)
@@ -321,6 +324,14 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         return cronTrigger;
     }
 
+    private static void ValidateIntervalForTrigger(ISimpleTrigger trigger, TimeSpan interval)
+    {
+        if (trigger.RepeatCount >= 0 && interval.TotalSeconds < 60)
+        {
+            throw new RestValidationException("interval", $"interval has invalid value. interval must be greater or equals to 1 minute");
+        }
+    }
+
     private static ISimpleTrigger ValidateSimpleTrigger(ITrigger trigger, UpdateIntervalRequest request)
     {
         if (trigger is not ISimpleTrigger simpleTrigger)
@@ -329,6 +340,44 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         }
 
         return simpleTrigger;
+    }
+
+    private static void ValidateSystemTrigger(ITrigger trigger)
+    {
+        if (TriggerHelper.IsSystemTriggerKey(trigger.Key))
+        {
+            throw new RestValidationException("triggerId", "forbidden: this is system trigger and it should not be modified or deleted");
+        }
+    }
+
+    private async Task<ITrigger> GetTriggerById(string? triggerId)
+    {
+        TriggerKey? key = null;
+        if (string.IsNullOrWhiteSpace(triggerId))
+        {
+            throw new RestValidationException("triggerId", "triggerId is required");
+        }
+
+        var keys = await Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
+        foreach (var k in keys)
+        {
+            var triggerDetails = await Scheduler.GetTrigger(k);
+            var id = GetTriggerId(triggerDetails);
+            if (id == triggerId)
+            {
+                key = k;
+                break;
+            }
+        }
+
+        if (key == null)
+        {
+            throw new RestNotFoundException($"trigger with id '{triggerId}' does not exist");
+        }
+
+        var result = await Scheduler.GetTrigger(key);
+
+        return result ?? throw new RestNotFoundException($"trigger with id '{triggerId}' does not exist");
     }
 
     private TriggerRowDetails GetTriggerDetails(ITrigger trigger)
@@ -376,53 +425,5 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         }
 
         return result;
-    }
-
-    private static void ValidateSystemTrigger(ITrigger trigger)
-    {
-        if (TriggerHelper.IsSystemTriggerKey(trigger.Key))
-        {
-            throw new RestValidationException("triggerId", "forbidden: this is system trigger and it should not be modified or deleted");
-        }
-    }
-
-    private async Task<ITrigger> GetTriggerById(string? triggerId)
-    {
-        TriggerKey? key = null;
-        if (string.IsNullOrWhiteSpace(triggerId))
-        {
-            throw new RestValidationException("triggerId", "triggerId is required");
-        }
-
-        var keys = await Scheduler.GetTriggerKeys(GroupMatcher<TriggerKey>.AnyGroup());
-        foreach (var k in keys)
-        {
-            var triggerDetails = await Scheduler.GetTrigger(k);
-            var id = GetTriggerId(triggerDetails);
-            if (id == triggerId)
-            {
-                key = k;
-                break;
-            }
-        }
-
-        if (key == null)
-        {
-            throw new RestNotFoundException($"trigger with id '{triggerId}' does not exist");
-        }
-
-        var result = await Scheduler.GetTrigger(key);
-
-        return result ?? throw new RestNotFoundException($"trigger with id '{triggerId}' does not exist");
-    }
-
-    private static string? GetTriggerId(ITrigger? trigger)
-    {
-        if (trigger == null)
-        {
-            throw new PlanarJobException("trigger is null at TriggerHelper.GetTriggerId(ITrigger)");
-        }
-
-        return TriggerHelper.GetTriggerId(trigger);
     }
 }

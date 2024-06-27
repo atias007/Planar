@@ -1,5 +1,7 @@
 ﻿using Planar.Common;
 using Planar.Hook;
+using System.Globalization;
+using System.Threading;
 using Twilio;
 using Twilio.Rest.Api.V2010.Account;
 
@@ -30,14 +32,44 @@ Hook will send the message to all valid phone numbers of the user.
         await SendSms(message, monitorDetails);
     }
 
-    private string GetSmsMessage(IMonitorDetails monitorDetails)
+    private static string GetSmsMessage(IMonitorDetails monitorDetails)
     {
-        throw new NotImplementedException();
+        var template =
+        $"""
+Planar Monitor Alert
+Event: {monitorDetails.EventTitle}
+Environment: {monitorDetails.Environment}
+Job: {monitorDetails.JobGroup}.{monitorDetails.JobName}
+Fire Time: {monitorDetails.FireTime.ToShortDateString()} at {monitorDetails.FireTime.ToShortTimeString()}
+Job Run Time: {monitorDetails.JobRunTime.ToString("hh\\:mm\\:ss", CultureInfo.CurrentCulture)}
+Fire Instance Id: {monitorDetails.FireInstanceId}
+Author: {monitorDetails.Author}
+""";
+
+        if (!string.IsNullOrWhiteSpace(monitorDetails.MostInnerExceptionMessage))
+        {
+            template += $"Error Message: {monitorDetails.MostInnerExceptionMessage}";
+        }
+
+        return template;
     }
 
-    private string GetSmsMessage(IMonitorSystemDetails monitorDetails)
+    private static string GetSmsMessage(IMonitorSystemDetails monitorDetails)
     {
-        throw new NotImplementedException();
+        var template =
+$"""
+Planar Monitor Alert
+Event: {monitorDetails.EventTitle}
+Environment: {monitorDetails.Environment}
+Message: {monitorDetails.Message}
+""";
+
+        if (!string.IsNullOrWhiteSpace(monitorDetails.MostInnerExceptionMessage))
+        {
+            template += $"Error Message: {monitorDetails.MostInnerExceptionMessage}";
+        }
+
+        return template;
     }
 
     private async Task SendSms(string message, IMonitor monitor)

@@ -152,7 +152,7 @@ internal sealed partial class Job : BaseCheckJob
             }
         }
 
-        if ((status == ServiceControllerStatus.StopPending || status == ServiceControllerStatus.PausePending) && service.StartService)
+        if ((status == ServiceControllerStatus.StopPending) && service.StartService)
         {
             Logger.LogWarning("service '{Name}' on host '{Host}' is in {Status} status. waiting for stopped status...", service.Name, host, status);
             controller.WaitForStatus(ServiceControllerStatus.StopPending, TimeSpan.FromSeconds(30));
@@ -162,7 +162,7 @@ internal sealed partial class Job : BaseCheckJob
 
         if (status == ServiceControllerStatus.Stopped && service.StartService)
         {
-            Logger.LogWarning("service '{Name}' on host '{Host}' is in stopped status. starting service...", service.Name, host);
+            Logger.LogWarning("service '{Name}' on host '{Host}' is in stopped status. starting service", service.Name, host);
             controller.Start();
             controller.WaitForStatus(ServiceControllerStatus.Running, service.StartServiceTimeout);
             controller.Refresh();
@@ -177,7 +177,7 @@ internal sealed partial class Job : BaseCheckJob
 
         if (status == ServiceControllerStatus.Paused && service.StartService)
         {
-            Logger.LogWarning("service '{Name}' on host '{Host}' is in paused status. continue service...", service.Name, host);
+            Logger.LogWarning("service '{Name}' on host '{Host}' is in paused status. continue service", service.Name, host);
             controller.Continue();
             controller.WaitForStatus(ServiceControllerStatus.Running, service.StartServiceTimeout);
             controller.Refresh();

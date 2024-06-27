@@ -1,14 +1,13 @@
 ﻿using Planar.Filters;
 using Swashbuckle.AspNetCore.Annotations;
 
-namespace Planar.Attributes
+namespace Planar.Attributes;
+
+public class BadRequestResponseAttribute : SwaggerResponseAttribute
 {
-    public class BadRequestResponseAttribute : SwaggerResponseAttribute
+    public BadRequestResponseAttribute() : base(400)
     {
-        public BadRequestResponseAttribute() : base(400)
-        {
-            Type = typeof(RestBadRequestResult);
-            ContentTypes = new[] { "application/json" };
-        }
+        Type = typeof(RestBadRequestResult);
+        ContentTypes = ["application/json"];
     }
 }

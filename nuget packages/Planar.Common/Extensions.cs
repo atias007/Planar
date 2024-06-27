@@ -31,6 +31,13 @@ namespace Planar.Common
             return result;
         }
 
+        public static Dictionary<string, string?> Merge(this Dictionary<string, string?> dictionary, IDictionary<string, string?> source)
+        {
+            var merge = MergeInner(dictionary, source);
+            var result = new Dictionary<string, string?>(merge);
+            return result;
+        }
+
         public static SortedDictionary<string, string?> Merge(this SortedDictionary<string, string?> dictionary, SortedDictionary<string, string?> source)
         {
             var merge = MergeInner(dictionary, source);

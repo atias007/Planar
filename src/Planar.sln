@@ -28,7 +28,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		SolutionItems\Scaffold-DbContext.txt = SolutionItems\Scaffold-DbContext.txt
 		SolutionItems\SqlDataCompare.dcmp = SolutionItems\SqlDataCompare.dcmp
 		SolutionItems\SqlSchemaCompare.scmp = SolutionItems\SqlSchemaCompare.scmp
-		SolutionItems\template-_v1.3.5.html = SolutionItems\template-_v1.3.5.html
 		SolutionItems\ToDo.txt = SolutionItems\ToDo.txt
 		VersionCheckList.txt = VersionCheckList.txt
 	EndProjectSection

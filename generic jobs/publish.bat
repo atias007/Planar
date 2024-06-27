@@ -20,6 +20,10 @@ cd SqlQueryCheck
 dotnet publish -c Release -o C:\temp\Planar\publish\GenericJobs\Monitoring\SqlQueryCheck
 cd..
 
+cd WindowsServiceCheck
+dotnet publish -c Release -o C:\temp\Planar\publish\GenericJobs\Monitoring\WindowsServiceCheck
+cd..
+
 cd FolderRetention
 dotnet publish -c Release -o C:\temp\Planar\publish\GenericJobs\Operation\FolderRetention
 cd..
@@ -30,4 +34,8 @@ cd..
 
 cd SqlTableRetention
 dotnet publish -c Release -o C:\temp\Planar\publish\GenericJobs\Operation\SqlTableRetention
+cd..
+
+cd WindowsServiceRestart
+dotnet publish -c Release -o C:\temp\Planar\publish\GenericJobs\Operation\WindowsServiceRestart
 cd..

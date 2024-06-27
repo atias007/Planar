@@ -49,15 +49,6 @@ namespace Planar.Service.API
             return response;
         }
 
-        private static string ConvertRelativeJobFileToRelativeJobPath(IJobFileRequest request)
-        {
-            var jobsPath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
-            var fullname = Path.Combine(jobsPath, request.JobFilePath);
-            var jobDir = new FileInfo(fullname).Directory?.FullName;
-            var path = ServiceUtil.GetJobRelativePath(jobDir);
-            return path;
-        }
-
         private static void AddAuthor(SetJobRequest metadata, IJobDetail job)
         {
             if (string.IsNullOrEmpty(metadata.Author)) { return; }
@@ -226,6 +217,15 @@ namespace Planar.Service.API
             });
 
             return result;
+        }
+
+        private static string ConvertRelativeJobFileToRelativeJobPath(IJobFileRequest request)
+        {
+            var jobsPath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
+            var fullname = Path.Combine(jobsPath, request.JobFilePath);
+            var jobDir = new FileInfo(fullname).Directory?.FullName;
+            var path = ServiceUtil.GetJobRelativePath(jobDir);
+            return path;
         }
 
         private static string CreateJobId(IJobDetail job)
@@ -397,7 +397,8 @@ namespace Planar.Service.API
         {
             if (data == null) { return; }
 
-            if (data.Count > Consts.MaximumJobDataItems)
+            var dataCount = CountUserJobDataItems(data);
+            if (dataCount > Consts.MaximumJobDataItems)
             {
                 throw new RestValidationException("key", $"{title} data has more then {Consts.MaximumJobDataItems} items ({data.Count})");
             }

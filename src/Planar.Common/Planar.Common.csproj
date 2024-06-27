@@ -4,7 +4,7 @@
 		<TargetFramework>net8.0</TargetFramework>
 		<AssemblyName>Planar.Common</AssemblyName>
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-		<Version>1.7.3</Version>
+		<Version>1.7.4</Version>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -39,14 +39,14 @@
 		<PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.1" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="8.0.1" />
-		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.6.0" />
+		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.6.2" />
 		<PackageReference Include="Polly" Version="8.4.0" />
-		<PackageReference Include="Quartz" Version="3.9.0" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.26.0.92422">
+		<PackageReference Include="Quartz" Version="3.10.0" />
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.28.0.94264">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="WebMarkupMin.Core" Version="2.16.0" />
+		<PackageReference Include="WebMarkupMin.Core" Version="2.16.2" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\Planar.API.Common\Planar.API.Common.csproj" />

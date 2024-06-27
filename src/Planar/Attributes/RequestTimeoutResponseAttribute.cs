@@ -1,13 +1,12 @@
 ﻿using Swashbuckle.AspNetCore.Annotations;
 
-namespace Planar.Attributes
+namespace Planar.Attributes;
+
+public class RequestTimeoutResponseAttribute : SwaggerResponseAttribute
 {
-    public class RequestTimeoutResponseAttribute : SwaggerResponseAttribute
+    public RequestTimeoutResponseAttribute() : base(408)
     {
-        public RequestTimeoutResponseAttribute() : base(408)
-        {
-            Type = typeof(string);
-            ContentTypes = ["plain/text"];
-        }
+        Type = typeof(string);
+        ContentTypes = ["plain/text"];
     }
 }

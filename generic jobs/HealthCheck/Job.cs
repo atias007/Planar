@@ -160,6 +160,8 @@ internal sealed partial class Job : BaseCheckJob
         }
 
         var uri = BuildUri(host, endpoint);
+        endpoint.Key = uri.ToString();
+        UpdateProgress();
 
         HttpResponseMessage response;
         try
@@ -169,8 +171,11 @@ internal sealed partial class Job : BaseCheckJob
         }
         catch (TaskCanceledException)
         {
-            UpdateProgress();
             throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{endpoint.Url}'. timeout expire");
+        }
+        catch (Exception ex)
+        {
+            throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{endpoint.Url}'. message: {ex.Message}");
         }
 
         endpoint.SuccessStatusCodes ??= new List<int> { 200 };
@@ -181,11 +186,9 @@ internal sealed partial class Job : BaseCheckJob
                 endpoint.Name, uri);
 
             IncreaseEffectedRows();
-            UpdateProgress();
             return;
         }
 
-        UpdateProgress();
         throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{endpoint.Url}' status code {response.StatusCode} ({(int)response.StatusCode}) is not in success status codes list");
     }
 

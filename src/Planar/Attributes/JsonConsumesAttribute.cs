@@ -1,11 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace Planar.Attributes
+namespace Planar.Attributes;
+
+public class JsonConsumesAttribute : ConsumesAttribute
 {
-    public class JsonConsumesAttribute : ConsumesAttribute
+    public JsonConsumesAttribute() : base("application/json")
     {
-        public JsonConsumesAttribute() : base("application/json")
-        {
-        }
     }
 }

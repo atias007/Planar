@@ -128,6 +128,7 @@ $"""
 `Planar Monitor Alert`
 
 *Event:* {monitor.EventTitle}
+*Environment:* {monitor.Environment}
 *Job:* {monitor.JobGroup}.{monitor.JobName}
 *Fire Time:* {monitor.FireTime.ToShortDateString()} at {monitor.FireTime.ToShortTimeString()}
 *Job Run Time:* {monitor.JobRunTime.ToString("hh\\:mm\\:ss", CultureInfo.CurrentCulture)}
@@ -154,6 +155,7 @@ $"""
 **`Planar Monitor Alert`**
 
 *Event:* {monitor.EventTitle}
+*Environment:* {monitor.Environment}
 *Message:* {monitor.Message}
 """;
 

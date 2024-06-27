@@ -47,18 +47,15 @@ namespace Planar
             Validation.CheckCloudEventArgument(cloudEvent, nameof(cloudEvent));
             Validation.CheckNotNull(formatter, nameof(formatter));
 
-            switch (contentMode)
+            return contentMode switch
             {
-                case ContentMode.Structured:
-                    return new MqttApplicationMessage
-                    {
-                        Topic = topic,
-                        PayloadSegment = BinaryDataUtilities.AsArray(formatter.EncodeStructuredModeMessage(cloudEvent, out _))
-                    };
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(contentMode), $"Unsupported content mode: {contentMode}");
-            }
+                ContentMode.Structured => new MqttApplicationMessage
+                {
+                    Topic = topic,
+                    PayloadSegment = BinaryDataUtilities.AsArray(formatter.EncodeStructuredModeMessage(cloudEvent, out _))
+                },
+                _ => throw new ArgumentOutOfRangeException(nameof(contentMode), $"Unsupported content mode: {contentMode}"),
+            };
         }
     }
 }

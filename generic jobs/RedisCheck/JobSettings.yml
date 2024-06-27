@@ -4,7 +4,7 @@ defaults:                                       # default values for all keys. e
   maximum fails in row: 5                       # the maximum number of fails in row before the job is considered as failed
   database: 0                                   # defualt redis database number to be used
 
-# redis:                                        # the redis server parameters to be use. usualy this section defined in specific environment job settings
+# server:                                        # the redis server parameters to be use. usualy this section defined in specific environment job settings
 #   endpoints: 
 #     - redis-server-1:6379
 #     - redis-server-2:6379

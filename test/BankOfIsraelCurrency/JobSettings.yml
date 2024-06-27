@@ -1,1 +1,5 @@
 ﻿Log Level: Information
+RabbitMq:
+  Hosts:
+    - localhost1
+    - localhost2

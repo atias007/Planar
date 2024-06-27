@@ -118,6 +118,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             throw new RestNotFoundException($"monitor hook name '{name}' could not be found");
         }
 
+        await Task.Delay(500);
         await Reload(clusterReload: true);
         AuditSecuritySafe($"monitor hook name '{name}' was deleted by user", true);
     }
@@ -149,7 +150,9 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         details.Path = path;
         var entity = Mapper.Map<MonitorHook>(details);
         await DataLayer.AddMonitorHook(entity);
-        _ = Reload(clusterReload: true);
+
+        await Task.Delay(500);
+        await Reload(clusterReload: true);
         return details;
     }
 
