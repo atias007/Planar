@@ -162,13 +162,15 @@ namespace Planar.Service.Services
 
         private async Task JoinToCluster(CancellationToken stoppingToken)
         {
+            using var scope = _serviceProvider.CreateScope();
+            var util = scope.ServiceProvider.GetRequiredService<ClusterUtil>();
+            await util.StartupHealthCheck();
+
             if (!AppSettings.Cluster.Clustering)
             {
                 try
                 {
                     _logger.LogInformation("Initialize: {Operation}", "Register Current Node");
-                    using var scope = _serviceProvider.CreateScope();
-                    var util = scope.ServiceProvider.GetRequiredService<ClusterUtil>();
                     await util.Join();
                     return;
                 }
@@ -185,8 +187,6 @@ namespace Planar.Service.Services
             {
                 _logger.LogInformation("Initialize: {Operation}", nameof(JoinToCluster));
 
-                using var scope = _serviceProvider.CreateScope();
-                var util = scope.ServiceProvider.GetRequiredService<ClusterUtil>();
                 var nodes = await util.GetAllNodes();
                 ClusterUtil.ValidateClusterConflict(nodes);
 
@@ -201,7 +201,7 @@ namespace Planar.Service.Services
 
                     // Monitoring
                     var info = new MonitorSystemInfo("Cluster node join to {{MachineName}}");
-                    info.MessagesParameters.Add("Port", AppSettings.General.HttpPort.ToString());
+                    info.MessagesParameters.Add("Port", AppSettings.General.ApiPort.ToString());
                     info.MessagesParameters.Add("InstanceId", _schedulerUtil.SchedulerInstanceId);
                     info.AddMachineName();
                     SafeSystemScan(MonitorEvents.ClusterNodeJoin, info, cancellationToken: stoppingToken);
@@ -277,7 +277,7 @@ namespace Planar.Service.Services
             var cluster = new ClusterNode
             {
                 Server = Environment.MachineName,
-                Port = AppSettings.General.HttpPort,
+                Port = AppSettings.General.ApiPort,
                 InstanceId = _schedulerUtil.SchedulerInstanceId
             };
 
@@ -292,7 +292,7 @@ namespace Planar.Service.Services
 
             // Monotoring
             var info = new MonitorSystemInfo("Cluster node removed from {{MachineName}}");
-            info.MessagesParameters.Add("Port", AppSettings.General.HttpPort.ToString());
+            info.MessagesParameters.Add("Port", AppSettings.General.ApiPort.ToString());
             info.MessagesParameters.Add("InstanceId", _schedulerUtil.SchedulerInstanceId);
             info.AddMachineName();
             SafeSystemScan(MonitorEvents.ClusterNodeRemoved, info);

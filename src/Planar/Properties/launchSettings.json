@@ -12,7 +12,7 @@
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "PLANAR_DB_CONNECTION_STRING": "Password=CustomsDev123!;Persist Security Info=True;User ID=sa;Initial Catalog=Planar;Data Source=localhost;Encrypt=False",
+        "PLANAR_DB_CONNECTION_STRING": "Password=CustomsDev123!;Persist Security Info=True;User ID=sa;Initial Catalog=Planar_Test1;Data Source=localhost;Encrypt=False",
         "PLANAR_AUTHENTICATION_TOKEN_EXPIRE": "00:02:00",
         "PLANAR_SMTP_HOST": "smtp.gmail.com",
         "PLANAR_SMTP_PORT": "587",

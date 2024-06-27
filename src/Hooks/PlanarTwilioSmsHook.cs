@@ -1,7 +1,6 @@
 ﻿using Planar.Common;
 using Planar.Hook;
 using System.Globalization;
-using System.Threading;
 using Twilio;
 using Twilio.Rest.Api.V2010.Account;
 

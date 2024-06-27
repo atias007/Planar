@@ -1,0 +1,38 @@
+ALTER PROCEDURE [Admin].[FactoryReset]
+AS
+DELETE FROM  [dbo].[QRTZ_BLOB_TRIGGERS]
+DELETE FROM  [dbo].[QRTZ_CALENDARS]
+DELETE FROM [dbo].[QRTZ_CRON_TRIGGERS]
+DELETE FROM [dbo].[QRTZ_FIRED_TRIGGERS]
+DELETE FROM [dbo].[QRTZ_LOCKS]
+DELETE FROM [dbo].[QRTZ_PAUSED_TRIGGER_GRPS]
+DELETE FROM [dbo].[QRTZ_SCHEDULER_STATE]
+DELETE FROM [dbo].[QRTZ_SIMPLE_TRIGGERS]
+DELETE FROM [dbo].[QRTZ_SIMPROP_TRIGGERS]
+DELETE FROM [dbo].[QRTZ_TRIGGERS]
+DELETE FROM [dbo].[QRTZ_JOB_DETAILS]
+
+TRUNCATE TABLE [dbo].[ClusterNodes]
+TRUNCATE TABLE [dbo].[GlobalConfig]
+
+TRUNCATE TABLE [dbo].[JobInstanceLog]
+TRUNCATE TABLE [dbo].[JobProperties]
+TRUNCATE TABLE [dbo].[MonitorActions]
+TRUNCATE TABLE [dbo].[Trace]
+TRUNCATE TABLE [dbo].[UsersToGroups]
+
+TRUNCATE TABLE [dbo].[JobAudit]
+TRUNCATE TABLE [dbo].[MonitorAlerts]
+TRUNCATE TABLE [dbo].[MonitorCounters]
+TRUNCATE TABLE [dbo].[MonitorHooks]
+TRUNCATE TABLE [dbo].[MonitorMute]
+TRUNCATE TABLE [dbo].[SecurityAudits]
+
+TRUNCATE TABLE [Statistics].[ConcurrentExecution]
+TRUNCATE TABLE [Statistics].[ConcurrentQueue]
+TRUNCATE TABLE [Statistics].[JobCounters]
+TRUNCATE TABLE [Statistics].[JobDurationStatistics]
+TRUNCATE TABLE [Statistics].[JobEffectedRowsStatistics]
+
+DELETE FROM [dbo].[Groups]
+DELETE FROM [dbo].[Users]

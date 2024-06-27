@@ -28,7 +28,7 @@ namespace Planar.Service.General
             var cluster = new ClusterNode
             {
                 Server = Environment.MachineName,
-                Port = AppSettings.General.HttpPort,
+                Port = AppSettings.General.ApiPort,
             };
 
             return cluster;
@@ -106,6 +106,27 @@ namespace Planar.Service.General
                 catch (RpcException ex)
                 {
                     _logger.LogError(ex, "fail to validate job folder exists at remote cluster node {Server}:{Port}", node.Server, node.ClusterPort);
+                }
+            }
+        }
+
+        public async Task StartupHealthCheck()
+        {
+            var nodes = await GetAllNodes();
+            foreach (var node in nodes)
+            {
+                try
+                {
+                    await Policy.Handle<RpcException>()
+                      .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
+                      .ExecuteAsync(() => CallHealthCheckService(node));
+                }
+                catch (RpcException)
+                {
+                    if (!node.LiveNode)
+                    {
+                        await _dal.RemoveClusterNode(node);
+                    }
                 }
             }
         }
@@ -204,12 +225,11 @@ namespace Planar.Service.General
             }
             else
             {
-                item.ClusterPort = AppSettings.Cluster.Port;
                 item.JoinDate = DateTime.Now;
                 item.HealthCheckDate = DateTime.Now;
                 item.InstanceId = _schedulerUtil.SchedulerInstanceId;
                 item.MaxConcurrency = AppSettings.General.MaxConcurrency;
-                await _dal.SaveChangesAsync();
+                await _dal.UpdateClusterNode(item);
             }
         }
 
@@ -729,6 +749,8 @@ namespace Planar.Service.General
             {
                 var currentNode = new ClusterNode
                 {
+                    Server = Environment.MachineName,
+                    Port = AppSettings.General.ApiPort,
                     ClusterPort = AppSettings.Cluster.Port,
                     JoinDate = DateTime.Now,
                     InstanceId = _schedulerUtil.SchedulerInstanceId,
