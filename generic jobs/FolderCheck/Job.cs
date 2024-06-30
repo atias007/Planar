@@ -25,19 +25,13 @@ internal class Job : BaseCheckJob
 
         folders.ForEach(f => ValidateFolderExists(f, hosts));
 
-        InitializeVariables(hosts, folders);
+        EffectedRows = 0;
+
         var tasks = SafeInvokeCheck(folders, f => InvokeFolderInnerAsync(f, hosts));
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
         HandleCheckExceptions();
-    }
-
-    private void InitializeVariables(IEnumerable<string> hosts, IEnumerable<Folder> folders)
-    {
-        var hostsCount = hosts.Count();
-        _total = folders.Where(f => f.Active && f.IsValid).Select(f => f.IsAbsolutePath ? 1 : hostsCount).Sum();
-        EffectedRows = 0;
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -166,7 +160,6 @@ internal class Job : BaseCheckJob
             Logger.LogInformation("folder '{Path}' size is {Size:N0} byte(s)", path, size);
             if (size > folder.FileSizeNumber)
             {
-                UpdateProgress();
                 throw new CheckException($"folder '{path}' size is greater then {folder.TotalSizeNumber:N0}");
             }
         }
@@ -177,7 +170,6 @@ internal class Job : BaseCheckJob
             Logger.LogInformation("folder '{Path}' max file size is {Size:N0} byte(s)", path, max);
             if (max > folder.FileSizeNumber)
             {
-                UpdateProgress();
                 throw new CheckException($"folder '{path}' has file size that is greater then {folder.FileSizeNumber:N0}");
             }
         }
@@ -188,7 +180,6 @@ internal class Job : BaseCheckJob
             Logger.LogInformation("folder '{Path}' contains {Count:N0} file(s)", path, count);
             if (count > folder.FileCount)
             {
-                UpdateProgress();
                 throw new CheckException($"folder '{path}' contains more then {folder.FileCount:N0} files");
             }
         }
@@ -199,7 +190,6 @@ internal class Job : BaseCheckJob
             Logger.LogInformation("folder '{Path}' most old created file is {Created}", path, created);
             if (created < folder.CreatedAgeDate)
             {
-                UpdateProgress();
                 throw new CheckException($"folder '{path}' contains files that are created older then {folder.CreatedAge}");
             }
         }
@@ -210,7 +200,6 @@ internal class Job : BaseCheckJob
             Logger.LogInformation("folder '{Path}' most old modified file is {Created}", path, modified);
             if (modified < folder.ModifiedAgeDate)
             {
-                UpdateProgress();
                 throw new CheckException($"folder '{path}' contains files that are modified older then {folder.ModifiedAgeDate}");
             }
         }
@@ -218,7 +207,6 @@ internal class Job : BaseCheckJob
         Logger.LogInformation("folder check success, folder '{FolderName}', path '{FolderPath}'",
                         folder.Name, path);
 
-        UpdateProgress();
         IncreaseEffectedRows();
     }
 

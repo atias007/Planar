@@ -22,19 +22,14 @@ internal sealed partial class Job : BaseCheckJob
         var hosts = GetHosts(Configuration);
         var services = GetServices(Configuration, defaults, hosts);
 
-        InitializeVariables(services);
+        EffectedRows = 0;
+
         using var client = new HttpClient();
         var tasks = SafeInvokeCheck(services, InvokeServicesInner);
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
         HandleCheckExceptions();
-    }
-
-    private void InitializeVariables(IEnumerable<Service> services)
-    {
-        _total = services.Where(f => f.Active).Select(f => f.Hosts.Count()).Sum();
-        EffectedRows = 0;
     }
 
     private static void ValidateServices(IEnumerable<Service> services)
@@ -110,7 +105,6 @@ internal sealed partial class Job : BaseCheckJob
             return;
         }
 
-        UpdateProgress();
         using var controller = new ServiceController(service.Name, host);
         var status = controller.Status;
         var startType = controller.StartType;

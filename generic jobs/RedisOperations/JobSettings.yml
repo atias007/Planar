@@ -1,4 +1,4 @@
-# redis:                                        # the redis server parameters to be use. usualy this section defined in specific environment job settings
+# server:                                      # the redis server parameters to be use. usualy this section defined in specific environment job settings
 #   endpoints: 
 #     - redis-server-1:6379
 #     - redis-server-2:6379

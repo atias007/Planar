@@ -59,22 +59,22 @@ public class UserData(PlanarContext context) : BaseDataLayer(context)
         return result;
     }
 
-    public async Task<int> GetUserRole(int id)
+    public async Task<string?> GetUserRole(int id)
     {
         var result = await _context.Groups
             .Where(g => g.Users.Any(u => u.Id == id))
-            .Select(g => g.RoleId)
+            .Select(g => g.Role.ToLower())
             .OrderByDescending(g => g)
             .FirstOrDefaultAsync();
 
         return result;
     }
 
-    public async Task<int> GetUserRole(string username)
+    public async Task<string?> GetUserRole(string username)
     {
         var result = await _context.Groups
             .Where(g => g.Users.Any(u => u.Username == username))
-            .Select(g => g.RoleId)
+            .Select(g => g.Role)
             .OrderByDescending(g => g)
             .FirstOrDefaultAsync();
 

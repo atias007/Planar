@@ -6,17 +6,12 @@ using Planar.Job;
 
 namespace HealthCheck;
 
+internal record HttpUtility(string Url, HttpClient Client);
+
 internal sealed partial class Job : BaseCheckJob
 {
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
-    }
-
-    private partial void FilterHosts(ref IEnumerable<Uri> hosts);
-
-    private partial void FilterHosts(ref IEnumerable<Uri> hosts)
-    {
-        // *** BY DEFAULT DO NOTHING ***
     }
 
     public async override Task ExecuteJob(IJobExecutionContext context)
@@ -25,7 +20,6 @@ internal sealed partial class Job : BaseCheckJob
 
         var defaults = GetDefaults(Configuration);
         var hosts = GetHosts(Configuration);
-        FilterHosts(ref hosts);
         var endpoints = GetEndpoints(Configuration, defaults);
 
         if (!hosts.Any() && endpoints.Exists(e => e.IsRelativeUrl))
@@ -33,20 +27,12 @@ internal sealed partial class Job : BaseCheckJob
             throw new InvalidDataException("no hosts defined and at least one endpoint is relative url");
         }
 
-        InitializeVariables(hosts, endpoints);
-        using var client = new HttpClient();
-        var tasks = SafeInvokeCheck(endpoints, ep => InvokeEndpointsInner(ep, hosts, client));
+        EffectedRows = 0;
+        var tasks = SafeInvokeCheck(endpoints, ep => InvokeEndpointsInner(ep, hosts));
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
         HandleCheckExceptions();
-    }
-
-    private void InitializeVariables(IEnumerable<Uri> hosts, IEnumerable<Endpoint> endpoints)
-    {
-        var hostsCount = hosts.Count();
-        _total = endpoints.Where(f => f.Active).Select(f => f.IsAbsoluteUrl ? 1 : hostsCount).Sum();
-        EffectedRows = 0;
     }
 
     private static void ValidateEndpoints(IEnumerable<Endpoint> endpoints)
@@ -139,19 +125,19 @@ internal sealed partial class Job : BaseCheckJob
         return builder.Uri;
     }
 
-    private async Task InvokeEndpointsInner(Endpoint endpoint, IEnumerable<Uri> hosts, HttpClient client)
+    private async Task InvokeEndpointsInner(Endpoint endpoint, IEnumerable<Uri> hosts)
     {
-        if (endpoint.AbsoluteUrl == null)
+        if (endpoint.IsRelativeUrl)
         {
-            await Parallel.ForEachAsync(hosts, (host, ct) => InvokeEndpointInner(endpoint, host, client));
+            await Parallel.ForEachAsync(hosts, (host, ct) => InvokeEndpointInner(endpoint, host));
         }
         else
         {
-            await InvokeEndpointInner(endpoint, null, client);
+            await InvokeEndpointInner(endpoint, null);
         }
     }
 
-    private async ValueTask InvokeEndpointInner(Endpoint endpoint, Uri? host, HttpClient client)
+    private async ValueTask InvokeEndpointInner(Endpoint endpoint, Uri? host)
     {
         if (!endpoint.Active)
         {
@@ -161,13 +147,16 @@ internal sealed partial class Job : BaseCheckJob
 
         var uri = BuildUri(host, endpoint);
         endpoint.Key = uri.ToString();
-        UpdateProgress();
 
         HttpResponseMessage response;
         try
         {
-            using var source = new CancellationTokenSource(endpoint.Timeout.GetValueOrDefault());
-            response = await client.GetAsync(uri, source.Token);
+            using var client = new HttpClient
+            {
+                Timeout = endpoint.Timeout.GetValueOrDefault()
+            };
+
+            response = await client.GetAsync(uri);
         }
         catch (TaskCanceledException)
         {

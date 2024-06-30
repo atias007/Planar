@@ -38,12 +38,12 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
         return result;
     }
 
-    public async Task<int> GetGroupRole(string name)
+    public async Task<string?> GetGroupRole(string name)
     {
         var result = await _context.Groups
             .AsNoTracking()
             .Where(g => g.Name == name)
-            .Select(g => g.RoleId)
+            .Select(g => g.Role)
             .FirstOrDefaultAsync();
 
         return result;
@@ -135,11 +135,10 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
         await _context.SaveChangesAsync();
     }
 
-    public async Task SetRoleToGroup(int groupId, int roleId)
+    public async Task SetRoleToGroup(int groupId, string role)
     {
-        var group = new Model.Group { Id = groupId, RoleId = roleId };
-        _context.Entry(group).Property(g => g.RoleId).IsModified = true;
-        await _context.SaveChangesAsync();
+        var cleanRole = role?.Trim().ToLower() ?? nameof(Roles.Anonymous).ToLower();
+        await _context.Groups.Where(g => g.Id == groupId).ExecuteUpdateAsync(u => u.SetProperty(g => g.Role, cleanRole));
     }
 
     public async Task UpdateGroup(Group group)

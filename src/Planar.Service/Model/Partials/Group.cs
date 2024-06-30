@@ -1,23 +1,15 @@
 ﻿using Planar.API.Common.Entities;
-using System;
+using Planar.Service.API.Helpers;
 
 namespace Planar.Service.Model;
 
 public partial class Group
 {
-    public string Role
+    public Roles RoleEnum
     {
         get
         {
-            try
-            {
-                var en = (Roles)Enum.ToObject(typeof(Roles), RoleId);
-                return en.ToString().ToLower();
-            }
-            catch
-            {
-                return Roles.Anonymous.ToString().ToLower();
-            }
+            return RoleHelper.GetRoleEnum(Role) ?? Roles.Anonymous;
         }
     }
 }
