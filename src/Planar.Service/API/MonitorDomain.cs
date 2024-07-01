@@ -119,7 +119,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         }
 
         await Task.Delay(500);
-        await Reload(clusterReload: true);
+        await ReloadHooks(clusterReload: true);
         AuditSecuritySafe($"monitor hook name '{name}' was deleted by user", true);
     }
 
@@ -152,7 +152,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         await DataLayer.AddMonitorHook(entity);
 
         await Task.Delay(500);
-        await Reload(clusterReload: true);
+        await ReloadHooks(clusterReload: true);
         return details;
     }
 
@@ -343,7 +343,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         await Update(updateMonitor);
     }
 
-    public async Task<string> Reload(bool clusterReload)
+    public async Task<string> ReloadHooks(bool clusterReload)
     {
         var hooks = await DataLayer.GetAllMonitorHooks();
         var hooksDetails = Mapper.Map<IEnumerable<MonitorHookDetails>>(hooks);
@@ -463,7 +463,9 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
 
     public async Task SetMonitorActionsCache(bool clusterReload)
     {
-        var data = await DataLayer.GetMonitorActions();
+        using var scope = ServiceProvider.CreateScope();
+        var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
+        var data = await dal.GetMonitorActions();
         MonitorServiceCache.SetCache(data);
 
         if (clusterReload && AppSettings.Cluster.Clustering)

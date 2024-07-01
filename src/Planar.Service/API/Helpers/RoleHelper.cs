@@ -25,6 +25,8 @@ public static class RoleHelper
         return role.Trim().ToLower();
     }
 
+    public static string DefaultRole => Roles.Anonymous.ToString().ToLower();
+
     public static Roles? GetRoleEnum(string? role)
     {
         if (Enum.TryParse<Roles>(role, ignoreCase: true, out var result))
@@ -33,10 +35,5 @@ public static class RoleHelper
         }
 
         return null;
-    }
-
-    public static string GetTitle(int roleId)
-    {
-        return ((Roles)roleId).ToString().ToLower();
     }
 }

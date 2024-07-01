@@ -6,18 +6,15 @@ using Planar.Service.API;
 using Planar.Service.Model;
 using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
 {
     [ApiController]
     [Route("user")]
-    public class UserController : BaseController<UserDomain>
+    public class UserController(UserDomain bl) : BaseController<UserDomain>(bl)
     {
-        public UserController(UserDomain bl) : base(bl)
-        {
-        }
-
         [HttpPost]
         [EditorAuthorize]
         [JsonConsumes]
@@ -53,6 +50,7 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public async Task<ActionResult<UserDetails>> Get([FromRoute][Name] string username)
         {
+            username = WebUtility.UrlDecode(username);
             var result = await BusinesLayer.Get(username);
             return Ok(result);
         }
@@ -65,6 +63,7 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public async Task<ActionResult<string>> GetRole([FromRoute][Name] string username)
         {
+            username = WebUtility.UrlDecode(username);
             var result = await BusinesLayer.GetRole(username);
             return Ok(result);
         }
@@ -87,6 +86,7 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public async Task<ActionResult> Delete([FromRoute][Name] string username)
         {
+            username = WebUtility.UrlDecode(username);
             await BusinesLayer.Delete(username);
             return NoContent();
         }
@@ -113,6 +113,7 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public async Task<ActionResult<string>> ResetPassword([FromRoute][Name] string username)
         {
+            username = WebUtility.UrlDecode(username);
             var result = await BusinesLayer.ResetPassword(username);
             return Ok(result);
         }
@@ -125,6 +126,7 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public async Task<IActionResult> SetPassword([FromRoute][Name] string username, [FromBody] SetPasswordRequest request)
         {
+            username = WebUtility.UrlDecode(username);
             await BusinesLayer.SetPassword(username, request);
             return NoContent();
         }

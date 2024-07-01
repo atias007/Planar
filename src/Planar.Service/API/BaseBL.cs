@@ -83,6 +83,8 @@ namespace Planar.Service.API
             _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
         }
 
+        protected IServiceProvider ServiceProvider => _serviceProvider;
+
         protected ClusterUtil ClusterUtil
         {
             get

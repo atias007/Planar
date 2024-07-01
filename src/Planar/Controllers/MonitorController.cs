@@ -7,6 +7,7 @@ using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -43,6 +44,7 @@ namespace Planar.Controllers
         [BadRequestResponse]
         public async Task<ActionResult<List<MonitorItem>>> GetByGroup([FromRoute][Required] string group)
         {
+            group = WebUtility.UrlDecode(group);
             var result = await BusinesLayer.GetMonitorActionsByGroup(group);
             return Ok(result);
         }
@@ -174,6 +176,7 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public async Task<ActionResult> DeleteHook([FromRoute][Required] string name)
         {
+            name = WebUtility.UrlDecode(name);
             await BusinesLayer.DeleteHook(name);
             return NoContent();
         }

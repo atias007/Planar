@@ -29,8 +29,8 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         }
 
         var group = Mapper.Map<Group>(request);
-        var groupRoleId = RoleHelper.GetRoleValue(group.Role);
-        if (AppSettings.Authentication.HasAuthontication && (int)UserRole < groupRoleId)
+        var groupRoleValue = RoleHelper.GetRoleValue(group.Role);
+        if (AppSettings.Authentication.HasAuthontication && (int)UserRole < groupRoleValue)
         {
             AuditSecuritySafe($"creating a group with name '{group.Name}' and role '{request.Role}' blocked because the current user role is '{UserRole}'", isWarning: true);
             throw new RestForbiddenException();
@@ -57,22 +57,21 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
 
         var currentUserRole = await Resolve<UserData>().GetUserRole(userId);
         var targetUserRole = await DataLayer.GetGroupRole(name);
-        var targetUserRoleId = RoleHelper.GetRoleValue(targetUserRole);
+        var targetUserRoleValue = RoleHelper.GetRoleValue(targetUserRole);
+        var currentUserRoleValue = RoleHelper.GetRoleValue(currentUserRole);
 
-        if (AppSettings.Authentication.HasAuthontication && targetUserRoleId > (int)UserRole)
+        if (AppSettings.Authentication.HasAuthontication && targetUserRoleValue > (int)UserRole)
         {
-            AuditSecuritySafe($"adding user '{username}' to group '{name}' with role '{(Roles)targetUserRoleId}' blocked because the current user role is '{UserRole}'", isWarning: true);
+            AuditSecuritySafe($"adding user '{username}' to group '{name}' with role '{(Roles)targetUserRoleValue}' blocked because the current user role is '{UserRole}'", isWarning: true);
             throw new RestForbiddenException();
         }
 
         await DataLayer.AddUserToGroup(userId, groupId);
 
         AuditSecuritySafe($"user '{username}' was joined to group '{name}'");
-        if (targetUserRoleId > currentUserRole)
+        if (targetUserRoleValue > currentUserRoleValue)
         {
-            var currentUserRoleTitle = ((Roles)currentUserRole).ToString().ToLower();
-            var targetUserRoleTitle = ((Roles)targetUserRoleId).ToString().ToLower();
-            AuditSecuritySafe($"the user '{username}' elevate its role from '{currentUserRoleTitle}' to '{targetUserRoleTitle}' by joining group '{name}'", isWarning: true);
+            AuditSecuritySafe($"the user '{username}' elevate its role from '{currentUserRole}' to '{targetUserRole}' by joining group '{name}'", isWarning: true);
         }
     }
 
@@ -148,17 +147,20 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
     {
         var entity = await DataLayer.GetGroup(name);
         var group = ValidateExistingEntity(entity, "group");
-        var targetRoleId = RoleHelper.GetRoleValue(role) ?? throw new RestNotFoundException($"role '{role?.ToLower()}' could not be found");
-        var groupRoleId = RoleHelper.GetRoleValue(group.Role) ?? 99;
 
-        if (groupRoleId == targetRoleId)
+        var clearGroupRole = RoleHelper.CleanRole(group.Role);
+        var cleanTargetRole = RoleHelper.CleanRole(role);
+
+        if (clearGroupRole == cleanTargetRole)
         {
-            throw new RestNotFoundException($"group '{name}' already has role '{role.ToLower()}'");
+            throw new RestNotFoundException($"group '{name}' already has role '{cleanTargetRole}'");
         }
 
-        await DataLayer.SetRoleToGroup(group.Id, targetRoleId);
+        await DataLayer.SetRoleToGroup(group.Id, cleanTargetRole);
 
-        var isWarning = targetRoleId > groupRoleId;
+        var targetRoleValue = RoleHelper.GetRoleValue(cleanTargetRole);
+        var groupRoleValue = RoleHelper.GetRoleValue(clearGroupRole);
+        var isWarning = targetRoleValue > groupRoleValue;
         if (isWarning)
         {
             AuditSecuritySafe($"the group '{name}' elevate its role from '{group.Role}' to '{role}'", isWarning: true);

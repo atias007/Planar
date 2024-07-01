@@ -408,7 +408,7 @@ namespace Nager.Date
         {
             var items = GetPublicHolidays(date.Year, countryCode);
             publicHolidays = items.Where(GetPublicHolidayFilter(date)).ToArray();
-            return publicHolidays.Any();
+            return publicHolidays.Length != 0;
         }
 
         /// <summary>

@@ -40,11 +40,11 @@ namespace Planar.Service.General.Hash
         {
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Role.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Surname, user.Surename),
-                new Claim(ClaimTypes.GivenName, user.GivenName ?? string.Empty),
+                new (ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new (ClaimTypes.Role, user.Role.ToString()),
+                new (ClaimTypes.Name, user.Username),
+                new (ClaimTypes.Surname, user.Surename),
+                new (ClaimTypes.GivenName, user.GivenName ?? string.Empty),
             };
 
             var tokenDescriptor = new SecurityTokenDescriptor

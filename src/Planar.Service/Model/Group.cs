@@ -30,6 +30,8 @@ public partial class Group
     [StringLength(500)]
     public string? AdditionalField5 { get; set; }
 
+    [StringLength(20)]
+    [Unicode(false)]
     public string Role { get; set; } = null!;
 
     [InverseProperty("Group")]

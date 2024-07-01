@@ -14,6 +14,8 @@ namespace Planar
 {
     internal static class MqttClient
     {
+        public static event EventHandler? Connected;
+
         private static IManagedMqttClient _mqttClient = null!;
         private static readonly JsonEventFormatter _formatter = new JsonEventFormatter();
         private static string _id = "none";
@@ -111,8 +113,14 @@ namespace Planar
 
         private static async Task ConnectedAsync(MqttClientConnectedEventArgs arg)
         {
+            _ = OnConnected();
             var log = new LogEntity { Level = LogLevel.Debug, Message = "Successfully connected" };
             await Console.Out.WriteLineAsync(log.ToString());
+        }
+
+        private static Task OnConnected()
+        {
+            return Task.Run(() => Connected?.Invoke(null, EventArgs.Empty));
         }
     }
 }

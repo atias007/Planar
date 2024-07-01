@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
+using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
 using Planar.Service.Data;
 using Planar.Service.Model;
@@ -73,8 +74,8 @@ namespace Planar.Service.Services
                 DateCreated = DateTime.Now,
                 Title = message.Title.Trim(),
                 IsWarning = message.IsWarning,
-                Username = usernameClaim ?? Roles.Anonymous.ToString().ToLower(),
-                UserTitle = title ?? Roles.Anonymous.ToString().ToLower(),
+                Username = usernameClaim ?? RoleHelper.DefaultRole,
+                UserTitle = title ?? RoleHelper.DefaultRole,
             };
 
             if (audit.Title.Length > 500) { audit.Title = audit.Title[0..500]; }

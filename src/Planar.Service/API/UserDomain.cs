@@ -1,5 +1,6 @@
 ﻿using FluentValidation;
 using Planar.API.Common.Entities;
+using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
@@ -55,8 +56,8 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
         var groups = await DataLayer.GetGroupsForUser(user!.Id);
         var result = Mapper.Map<UserDetails>(user);
         groups.ForEach(g => result.Groups.Add(g.ToString()));
-        var roleId = await DataLayer.GetUserRole(username);
-        result.Role = RoleHelper.GetTitle(roleId);
+        var role = await DataLayer.GetUserRole(username);
+        result.Role = role ?? RoleHelper.DefaultRole;
         return result;
     }
 
@@ -74,9 +75,9 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
             throw new RestNotFoundException($"user with username '{username}' could not be found");
         }
 
-        var roleId = await DataLayer.GetUserRole(username);
-        var result = RoleHelper.GetTitle(roleId);
-        return result;
+        var role = await DataLayer.GetUserRole(username);
+        ArgumentException.ThrowIfNullOrWhiteSpace(role);
+        return role;
     }
 
     public async Task PartialUpdate(UpdateEntityRequestByName request)

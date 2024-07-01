@@ -137,8 +137,7 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
 
     public async Task SetRoleToGroup(int groupId, string role)
     {
-        var cleanRole = role?.Trim().ToLower() ?? nameof(Roles.Anonymous).ToLower();
-        await _context.Groups.Where(g => g.Id == groupId).ExecuteUpdateAsync(u => u.SetProperty(g => g.Role, cleanRole));
+        await _context.Groups.Where(g => g.Id == groupId).ExecuteUpdateAsync(u => u.SetProperty(g => g.Role, role));
     }
 
     public async Task UpdateGroup(Group group)

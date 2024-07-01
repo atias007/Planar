@@ -7,6 +7,7 @@ using Planar.Service.API;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -111,6 +112,7 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public ActionResult<WorkingHoursModel> GetWorkingHours([FromRoute][Required][MaxLength(20)] string calendar)
         {
+            calendar = WebUtility.UrlDecode(calendar);
             var result = BusinesLayer.GetWorkingHours(calendar);
             return Ok(result);
         }

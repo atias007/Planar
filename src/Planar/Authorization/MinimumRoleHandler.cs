@@ -14,14 +14,9 @@ using System.Threading.Tasks;
 
 namespace Planar.Authorization
 {
-    public class MinimumRoleHandler : AuthorizationHandler<MinimumRoleRequirement>
+    public class MinimumRoleHandler(IServiceProvider serviceProvider) : AuthorizationHandler<MinimumRoleRequirement>
     {
-        private readonly IServiceProvider _serviceProvider;
-
-        public MinimumRoleHandler(IServiceProvider serviceProvider)
-        {
-            _serviceProvider = serviceProvider;
-        }
+        private readonly IServiceProvider _serviceProvider = serviceProvider;
 
         protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, MinimumRoleRequirement requirement)
         {

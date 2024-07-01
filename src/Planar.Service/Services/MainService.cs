@@ -243,7 +243,7 @@ namespace Planar.Service.Services
 
                 using var scope = _serviceProvider.CreateScope();
                 var monitorDomain = scope.ServiceProvider.GetRequiredService<MonitorDomain>();
-                await monitorDomain.Reload(clusterReload: false);
+                await monitorDomain.ReloadHooks(clusterReload: false);
             }
             catch (Exception ex)
             {

@@ -29,7 +29,7 @@ namespace CommonJob
         public string GetExceptionsText()
         {
             var exceptions = Exceptions;
-            if (exceptions == null || !exceptions.Any())
+            if (exceptions == null || exceptions.Count == 0)
             {
                 return string.Empty;
             }

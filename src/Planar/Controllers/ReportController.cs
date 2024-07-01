@@ -6,6 +6,7 @@ using Planar.Service.API;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -27,6 +28,7 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public async Task<IActionResult> Update([FromRoute][Required] string name, [FromBody] UpdateReportRequest request)
         {
+            name = WebUtility.UrlDecode(name);
             await BusinesLayer.Update(name, request);
             return NoContent();
         }
@@ -39,6 +41,7 @@ namespace Planar.Controllers
         [OkJsonResponse(typeof(IEnumerable<ReportsStatus>))]
         public async Task<ActionResult<IEnumerable<ReportsStatus>>> Get([FromRoute][Required] string name)
         {
+            name = WebUtility.UrlDecode(name);
             var result = await BusinesLayer.GetReport(name);
             return Ok(result);
         }
@@ -52,6 +55,7 @@ namespace Planar.Controllers
         [AcceptedContentResponse]
         public async Task<IActionResult> Run([FromRoute][Required] string name, [FromBody] RunReportRequest request)
         {
+            name = WebUtility.UrlDecode(name);
             await BusinesLayer.Run(name, request);
             return Accepted();
         }

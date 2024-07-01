@@ -22,6 +22,8 @@ public partial class User
     [MaxLength(128)]
     public byte[] Salt { get; set; } = null!;
 
+    public int RoleId { get; set; }
+
     [StringLength(50)]
     public string FirstName { get; set; } = null!;
 
