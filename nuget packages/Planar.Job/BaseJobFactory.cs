@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace Planar.Job
@@ -199,13 +200,41 @@ namespace Planar.Job
 
         private static string GetExceptionText(Exception ex)
         {
-            var lines = ex.ToString().Split('\n');
+            var hide = HideStackTrace(ex);
+            if (hide) { return ex.Message; }
+
+            const char nl = '\n';
+            var lines = ex.ToString().Split(nl);
             var filterLines = lines
                 .Where(l => !l.Contains($"{nameof(Planar)}.{nameof(Job)}\\{nameof(BaseJob)}.cs"))
                 .Select(l => l?.TrimEnd());
 
             var text = string.Join(Environment.NewLine, filterLines);
             return text.Trim();
+        }
+
+        public static bool HideStackTrace(Exception ex)
+        {
+            try
+            {
+                const string propertyName = "HideStackTraceFromPlanar";
+                var props = ex.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
+                if (props != null)
+                {
+                    var value = props.GetValue(ex);
+                    if (value is bool v)
+                    {
+                        return v;
+                    }
+                }
+
+                return false;
+            }
+            catch
+            {
+                return false;
+                throw;
+            }
         }
 
         #endregion Inner

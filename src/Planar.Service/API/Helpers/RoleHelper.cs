@@ -15,6 +15,11 @@ public static class RoleHelper
         return null;
     }
 
+    public static int GetRoleValue(Roles role)
+    {
+        return (int)role;
+    }
+
     public static string CleanRole(string role)
     {
         if (string.IsNullOrEmpty(role))

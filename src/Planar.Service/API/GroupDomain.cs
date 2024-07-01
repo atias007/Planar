@@ -111,8 +111,8 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
 
     public async Task PartialUpdateGroup(UpdateEntityRequestByName request)
     {
-        ForbbidenPartialUpdateProperties(request, "to update role use 'group set-role' command", nameof(UpdateGroupRequest.Role));
-        ForbbidenPartialUpdateProperties(request, "to join user to group use 'group join'", nameof(GroupDetails.Users));
+        ForbbidenPartialUpdateProperties(request, "to update role use 'planar-cli group set-role' command", nameof(UpdateGroupRequest.Role));
+        ForbbidenPartialUpdateProperties(request, "to join user to group use 'planar-cli group join'", nameof(GroupDetails.Users));
         ForbbidenPartialUpdateProperties(request, null, nameof(GroupDetails.Users));
 
         var group = await DataLayer.GetGroup(request.Name);
@@ -156,9 +156,17 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
             throw new RestNotFoundException($"group '{name}' already has role '{cleanTargetRole}'");
         }
 
+        var currentUserRoleValue = RoleHelper.GetRoleValue(UserRole);
+        var targetRoleValue = RoleHelper.GetRoleValue(cleanTargetRole);
+
+        if (AppSettings.Authentication.HasAuthontication && targetRoleValue > currentUserRoleValue)
+        {
+            AuditSecuritySafe($"setting role '{role}' to group '{name}' blocked because the current user role is '{UserRole}'", isWarning: true);
+            throw new RestForbiddenException();
+        }
+
         await DataLayer.SetRoleToGroup(group.Id, cleanTargetRole);
 
-        var targetRoleValue = RoleHelper.GetRoleValue(cleanTargetRole);
         var groupRoleValue = RoleHelper.GetRoleValue(clearGroupRole);
         var isWarning = targetRoleValue > groupRoleValue;
         if (isWarning)

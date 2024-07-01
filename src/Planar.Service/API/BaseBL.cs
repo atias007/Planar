@@ -175,12 +175,12 @@ namespace Planar.Service.API
             if (any)
             {
                 var errorMessage = $"property '{request.PropertyName}' can not be updated";
-                if (!string.IsNullOrEmpty(message))
+                if (string.IsNullOrEmpty(message))
                 {
-                    errorMessage += $". {message}";
+                    throw new RestValidationException("property name", errorMessage);
                 }
 
-                throw new RestValidationException("property name", errorMessage);
+                throw new RestValidationException("property name", errorMessage, errorMessage, suggestion: message);
             }
         }
 

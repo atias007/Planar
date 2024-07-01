@@ -22,6 +22,7 @@ namespace Planar.Controllers
         [CreatedResponse]
         [JsonConsumes]
         [ConflictResponse]
+        [ForbiddenResponse]
         public async Task<ActionResult<string>> AddGroup([FromBody] AddGroupRequest request)
         {
             await BusinesLayer.AddGroup(request);
@@ -107,6 +108,7 @@ namespace Planar.Controllers
         [NoContentResponse]
         [BadRequestResponse]
         [NotFoundResponse]
+        [ForbiddenResponse]
         public async Task<IActionResult> AddUserToGroup([FromRoute][Name] string name, [FromRoute][Name] string username)
         {
             name = WebUtility.UrlDecode(name);
@@ -120,6 +122,7 @@ namespace Planar.Controllers
         [NoContentResponse]
         [BadRequestResponse]
         [NotFoundResponse]
+        [ForbiddenResponse]
         public async Task<IActionResult> SetRoleToGroup([FromRoute][Name] string name, [FromRoute][Required][MaxLength(20)] string role)
         {
             name = WebUtility.UrlDecode(name);
