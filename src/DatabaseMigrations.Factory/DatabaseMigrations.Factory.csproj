@@ -68,6 +68,7 @@
     <None Remove="Scripts\Planar_0054 - fix_factoryreset.sql" />
     <None Remove="Scripts\Planar_0055 - drop_roles.sql" />
     <None Remove="Scripts\Planar_0056 - remove_roleid.sql" />
+    <None Remove="Scripts\Planar_0057 - delete_user.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -126,6 +127,7 @@
     <EmbeddedResource Include="Scripts\Planar_0054 - fix_factoryreset.sql" />
     <EmbeddedResource Include="Scripts\Planar_0055 - drop_roles.sql" />
     <EmbeddedResource Include="Scripts\Planar_0056 - remove_roleid.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0057 - delete_user.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DbUp\dbup-sqlserver\dbup-sqlserver.csproj" />

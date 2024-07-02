@@ -31,6 +31,10 @@ namespace Planar.Client.Entities
             {
                 group.Role = role;
             }
+            else
+            {
+                group.Role = Roles.Anonymous;
+            }
 
             Users?.ForEach(u =>
             {

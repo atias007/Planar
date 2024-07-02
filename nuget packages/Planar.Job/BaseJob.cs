@@ -75,6 +75,8 @@ namespace Planar.Job
             }
         }
 
+        public IJobExecutionContext Context => _context;
+
         public abstract void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
         public abstract Task ExecuteJob(IJobExecutionContext context);
@@ -205,6 +207,11 @@ namespace Planar.Job
             _baseJobFactory.AddAggregateException(ex, maxItems);
         }
 
+        protected async Task AddAggregateExceptionAsync(Exception ex, int maxItems = 25)
+        {
+            await _baseJobFactory.AddAggregateExceptionAsync(ex, maxItems);
+        }
+
         protected void CheckAggragateException()
         {
             _baseJobFactory.CheckAggragateException();
@@ -217,6 +224,11 @@ namespace Planar.Job
 
         protected void PutJobData(string key, object? value)
         {
+            PutJobDataAsync(key, value).Wait();
+        }
+
+        protected async Task PutJobDataAsync(string key, object? value)
+        {
             ValidateSystemDataKey(key);
             ValidateMaxLength(Convert.ToString(value), 1000, "value");
 
@@ -226,10 +238,55 @@ namespace Planar.Job
                 throw new PlanarJobException($"Job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
             }
 
-            _baseJobFactory.PutJobData(key, value);
+            await _baseJobFactory.PutJobDataAsync(key, value);
         }
 
         protected void PutTriggerData(string key, object? value)
+        {
+            PutTriggerDataAsync(key, value).Wait();
+        }
+
+        protected void RemoveJobData(string key)
+        {
+            _baseJobFactory.RemoveJobData(key);
+        }
+
+        protected async Task RemoveJobDataAsync(string key)
+        {
+            await _baseJobFactory.RemoveJobDataAsync(key);
+        }
+
+        protected void RemoveTriggerData(string key)
+        {
+            _baseJobFactory.RemoveTriggerData(key);
+        }
+
+        protected async Task RemoveTriggerDataAsync(string key)
+        {
+            await _baseJobFactory.RemoveTriggerDataAsync(key);
+        }
+
+        protected void ClearJobData()
+        {
+            _baseJobFactory.ClearJobData();
+        }
+
+        protected async Task ClearJobDataAsync()
+        {
+            await _baseJobFactory.ClearJobDataAsync();
+        }
+
+        protected void ClearTriggerData()
+        {
+            _baseJobFactory.ClearTriggerData();
+        }
+
+        protected async Task ClearTriggerDataAsync()
+        {
+            await _baseJobFactory.ClearTriggerDataAsync();
+        }
+
+        protected async Task PutTriggerDataAsync(string key, object? value)
         {
             ValidateSystemDataKey(key);
             ValidateMaxLength(Convert.ToString(value), 1000, "value");
@@ -240,7 +297,7 @@ namespace Planar.Job
                 throw new PlanarJobException($"Trigger data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
             }
 
-            _baseJobFactory.PutTriggerData(key, value);
+            await _baseJobFactory.PutTriggerDataAsync(key, value);
         }
 
         protected void UpdateProgress(byte value)
@@ -248,9 +305,19 @@ namespace Planar.Job
             _baseJobFactory.UpdateProgress(value);
         }
 
-        protected void UpdateProgress(int current, int total)
+        protected void UpdateProgress(long current, long total)
         {
             _baseJobFactory.UpdateProgress(current, total);
+        }
+
+        protected async Task UpdateProgressAsync(byte value)
+        {
+            await _baseJobFactory.UpdateProgressAsync(value);
+        }
+
+        protected async Task UpdateProgressAsync(long current, long total)
+        {
+            await _baseJobFactory.UpdateProgressAsync(current, total);
         }
 
         private static void FilterJobData(IDataMap dictionary)

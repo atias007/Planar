@@ -1,8 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Dapper;
+using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -111,8 +113,13 @@ public class UserData(PlanarContext context) : BaseDataLayer(context)
 
     public async Task<int> RemoveUser(string username)
     {
-        var result = await _context.Users.Where(u => u.Username == username).ExecuteDeleteAsync();
-        return result;
+        var parameters = new { Username = username };
+        var cmd = new CommandDefinition(
+            commandText: "dbo.DeleteUser",
+            commandType: CommandType.StoredProcedure,
+            parameters: parameters);
+
+        return await DbConnection.ExecuteAsync(cmd);
     }
 
     public async Task<bool> IsUserExists(int userId)

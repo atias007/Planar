@@ -111,9 +111,8 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
 
     public async Task PartialUpdateGroup(UpdateEntityRequestByName request)
     {
-        ForbbidenPartialUpdateProperties(request, "to update role use 'planar-cli group set-role' command", nameof(UpdateGroupRequest.Role));
-        ForbbidenPartialUpdateProperties(request, "to join user to group use 'planar-cli group join'", nameof(GroupDetails.Users));
-        ForbbidenPartialUpdateProperties(request, null, nameof(GroupDetails.Users));
+        ForbbidenPartialUpdateProperties(request, $"to update role use: planar-cli group set-role command {request.Name} {request.PropertyValue}", nameof(UpdateGroupRequest.Role));
+        ForbbidenPartialUpdateProperties(request, $"to join user to group use: planar-cli group join {request.Name} {request.PropertyValue}", nameof(GroupDetails.Users));
 
         var group = await DataLayer.GetGroup(request.Name);
         ValidateExistingEntity(group, "group");

@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Microsoft.Identity.Client;
 using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
@@ -75,16 +76,15 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
             throw new RestNotFoundException($"user with username '{username}' could not be found");
         }
 
-        var role = await DataLayer.GetUserRole(username);
-        ArgumentException.ThrowIfNullOrWhiteSpace(role);
+        var role = await DataLayer.GetUserRole(username) ?? RoleHelper.DefaultRole;
         return role;
     }
 
     public async Task PartialUpdate(UpdateEntityRequestByName request)
     {
-        ForbbidenPartialUpdateProperties(request, "to join user to group use: 'user join'", nameof(UserDetails.Groups));
-        ForbbidenPartialUpdateProperties(request, "to update user password use: 'user set-password'", nameof(User.Password));
-        ForbbidenPartialUpdateProperties(request, "to update user role use: 'user join' to join the user to group which has an appropriate role", nameof(UserDetails.Role));
+        ForbbidenPartialUpdateProperties(request, $"to join user to group use: planar-cli user join {request.Name} {request.PropertyValue}", nameof(UserDetails.Groups));
+        ForbbidenPartialUpdateProperties(request, $"to update user password use: planar-cli user set-password  {request.Name} {request.PropertyValue}", nameof(User.Password));
+        ForbbidenPartialUpdateProperties(request, "to update user role join the user to group which has an appropriate role", nameof(UserDetails.Role));
 
         var user = await DataLayer.GetUser(request.Name);
         ValidateExistingEntity(user, "user");
@@ -125,8 +125,8 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
 
     public async Task Update(UpdateUserRequest request)
     {
-        var exists = await DataLayer.IsUsernameExists(request.CurrentUsername);
-        if (!exists)
+        var current = await DataLayer.GetUser(request.CurrentUsername, withTracking: true);
+        if (current == null)
         {
             throw new RestNotFoundException($"user with username '{request.CurrentUsername}' is not exists");
         }
@@ -136,8 +136,8 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
             throw new RestConflictException($"user with username '{request.Username}' already exists");
         }
 
-        var user = Mapper.Map<User>(request);
-        await DataLayer.UpdateUser(user);
+        Mapper.Map(request, current);
+        await DataLayer.SaveChangesAsync();
     }
 
     private static HashEntity GeneratePassword()

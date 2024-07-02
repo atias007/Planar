@@ -24,15 +24,5 @@ public abstract class BaseDataLayer
         return await _context.SaveChangesAsync(acceptAllChangesOnSuccess);
     }
 
-    public IExecutionStrategy CreateExecutionStrategy()
-    {
-        return _context.Database.CreateExecutionStrategy();
-    }
-
-    public async Task<IDbContextTransaction> BeginTransactionAsync()
-    {
-        return await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
-    }
-
     public IDbConnection DbConnection => _context.Database.GetDbConnection();
 }
