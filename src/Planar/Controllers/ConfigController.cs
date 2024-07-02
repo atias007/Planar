@@ -7,6 +7,7 @@ using Planar.Service.Model;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -43,6 +44,7 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public async Task<ActionResult<GlobalConfig>> Get([FromRoute][Required] string key)
         {
+            key = WebUtility.UrlDecode(key);
             var result = await BusinesLayer.Get(key);
             return Ok(result);
         }
@@ -80,6 +82,7 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public async Task<ActionResult> Delete([FromRoute] string key)
         {
+            key = WebUtility.UrlDecode(key);
             await BusinesLayer.Delete(key);
             return NoContent();
         }

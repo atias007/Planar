@@ -7,6 +7,7 @@ using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -21,6 +22,7 @@ namespace Planar.Controllers
         [CreatedResponse]
         [JsonConsumes]
         [ConflictResponse]
+        [ForbiddenResponse]
         public async Task<ActionResult<string>> AddGroup([FromBody] AddGroupRequest request)
         {
             await BusinesLayer.AddGroup(request);
@@ -34,6 +36,7 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public async Task<ActionResult<GroupDetails>> GetGroup([FromRoute][Name] string name)
         {
+            name = WebUtility.UrlDecode(name);
             var result = await BusinesLayer.GetGroupByName(name);
             return Ok(result);
         }
@@ -66,6 +69,7 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public async Task<IActionResult> DeleteGroup([FromRoute][Name] string name)
         {
+            name = WebUtility.UrlDecode(name);
             await BusinesLayer.DeleteGroup(name);
             return NoContent();
         }
@@ -104,8 +108,10 @@ namespace Planar.Controllers
         [NoContentResponse]
         [BadRequestResponse]
         [NotFoundResponse]
+        [ForbiddenResponse]
         public async Task<IActionResult> AddUserToGroup([FromRoute][Name] string name, [FromRoute][Name] string username)
         {
+            name = WebUtility.UrlDecode(name);
             await BusinesLayer.AddUserToGroup(name, username);
             return NoContent();
         }
@@ -116,8 +122,10 @@ namespace Planar.Controllers
         [NoContentResponse]
         [BadRequestResponse]
         [NotFoundResponse]
+        [ForbiddenResponse]
         public async Task<IActionResult> SetRoleToGroup([FromRoute][Name] string name, [FromRoute][Required][MaxLength(20)] string role)
         {
+            name = WebUtility.UrlDecode(name);
             await BusinesLayer.SetRoleToGroup(name, role);
             return NoContent();
         }
@@ -130,6 +138,8 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public async Task<IActionResult> RemoveUserFromGroup([FromRoute][Name] string name, [FromRoute][Name] string username)
         {
+            name = WebUtility.UrlDecode(name);
+            username = WebUtility.UrlDecode(username);
             await BusinesLayer.RemoveUserFromGroup(name, username);
             return NoContent();
         }

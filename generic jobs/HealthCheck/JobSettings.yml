@@ -20,7 +20,7 @@ endpoints:
     port: 8500                                 # the port of the endpoint. the default is 80 for http and 443 for https
   - name: "Seq"
     url: /
-    port: 9099
+    port: 5341
   - name: RabbitMQ
     url: /api
     port: 15672

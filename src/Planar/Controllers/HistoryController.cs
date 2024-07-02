@@ -8,6 +8,7 @@ using Planar.Service.Model;
 using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -56,6 +57,7 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public async Task<ActionResult<JobInstanceLog>> GetHistoryByInstanceId([FromRoute][Required] string instanceid)
         {
+            instanceid = WebUtility.UrlDecode(instanceid);
             var result = await BusinesLayer.GetHistoryByInstanceId(instanceid);
             return Ok(result);
         }

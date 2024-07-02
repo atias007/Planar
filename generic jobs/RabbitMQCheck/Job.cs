@@ -23,7 +23,7 @@ public class Job : BaseCheckJob
         var node = GetNode(Configuration, defaults);
         var queues = GetQueue(Configuration, defaults);
 
-        InitializeVariables(server, healthCheck, node, queues);
+        EffectedRows = 0;
 
         // health check
         var healthCheckTask = InvokeHealthCheck(healthCheck, server);
@@ -41,15 +41,6 @@ public class Job : BaseCheckJob
 
         CheckAggragateException();
         HandleCheckExceptions();
-    }
-
-    private void InitializeVariables(Server server, HealthCheck healthCheck, Node node, IEnumerable<Queue> queues)
-    {
-        var hostsCount = server.Hosts.Count();
-        _total = healthCheck.Active ? hostsCount : 0;
-        _total += node.Active ? hostsCount : 0;
-        _total += queues.Count(q => q.Active && q.IsValid);
-        EffectedRows = 0;
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -101,19 +92,20 @@ public class Job : BaseCheckJob
 
     private static Server GetServer(IConfiguration configuration)
     {
-        var section = configuration.GetSection("rabbitmq");
+        const string serverSectionName = "server";
+        var section = configuration.GetSection(serverSectionName);
         var server = new Server(section);
 
-        ValidateRequired(server.Hosts, "hosts", "rabbitmq");
-        ValidateRequired(server.Username, "username", "rabbitmq");
-        ValidateRequired(server.Password, "password", "rabbitmq");
+        ValidateRequired(server.Hosts, "hosts", serverSectionName);
+        ValidateRequired(server.Username, "username", serverSectionName);
+        ValidateRequired(server.Password, "password", serverSectionName);
 
         foreach (var item in server.Hosts)
         {
-            ValidateUri(item, "hosts", "rabbitmq");
+            ValidateUri(item, "hosts", serverSectionName);
         }
 
-        ValidateRequired(server.Hosts, "hosts", "rabbitmq");
+        ValidateRequired(server.Hosts, "hosts", serverSectionName);
 
         return server;
     }
@@ -149,7 +141,6 @@ public class Job : BaseCheckJob
 
         var proxy = RabbitMqProxy.GetProxy(host, server, Logger);
 
-        UpdateProgress();
         if (healthCheck.ClusterAlarm.GetValueOrDefault())
         {
             await proxy.ClusterAlarm();
@@ -187,7 +178,6 @@ public class Job : BaseCheckJob
         var details = await proxy.GetNodeDetails();
         foreach (var item in details)
         {
-            UpdateProgress();
             if (node.DiskFreeAlarm.GetValueOrDefault())
             {
                 if (item.DiskFreeAlarm)
@@ -234,7 +224,6 @@ public class Job : BaseCheckJob
 
         if (!queue.IsValid) { return; }
         var host = server.DefaultHost;
-        UpdateProgress();
         var detail = details.FirstOrDefault(x => string.Equals(x.Name, queue.Name, StringComparison.OrdinalIgnoreCase))
             ?? throw new CheckException($"queue check (exists) on host {host} failed. queue '{queue.Name}' does not exists");
 

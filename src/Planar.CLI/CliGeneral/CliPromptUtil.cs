@@ -128,7 +128,7 @@ namespace Planar.CLI.CliGeneral
             }
 
             var items = userResult.Data?.Groups;
-            if (items == null || !items.Any())
+            if (items == null || items.Count == 0)
             {
                 throw new CliWarningException("no available groups to perform the opertaion");
             }
@@ -149,7 +149,7 @@ namespace Planar.CLI.CliGeneral
             }
 
             var data = result.Data?.Data;
-            if (data == null || !data.Any())
+            if (data == null || data.Count == 0)
             {
                 throw new CliWarningException("no available groups to perform the opertaion");
             }
@@ -188,7 +188,7 @@ namespace Planar.CLI.CliGeneral
             }
 
             var data = result.Data?.Data;
-            if (data == null || !data.Any())
+            if (data == null || data.Count == 0)
             {
                 throw new CliWarningException("no available users to perform the opertaion");
             }
@@ -230,7 +230,7 @@ namespace Planar.CLI.CliGeneral
             }
 
             var data = result.Data?.Data;
-            if (data == null || !data.Any())
+            if (data == null || data.Count == 0)
             {
                 throw new CliWarningException("no available users to perform the opertaion");
             }
@@ -269,7 +269,7 @@ namespace Planar.CLI.CliGeneral
             }
 
             var data = result.Data;
-            if (data == null || !data.Any())
+            if (data == null || data.Count == 0)
             {
                 throw new CliWarningException("no available reports to perform the opertaion");
             }
@@ -289,7 +289,7 @@ namespace Planar.CLI.CliGeneral
             }
 
             var data = result.Data?.Data;
-            if (data == null || !data.Any())
+            if (data == null || data.Count == 0)
             {
                 throw new CliWarningException("no available monitors to perform the opertaion");
             }
@@ -312,7 +312,7 @@ namespace Planar.CLI.CliGeneral
             }
 
             var data = result.Data;
-            if (data == null || !data.Any())
+            if (data == null || data.Count == 0)
             {
                 throw new CliWarningException("no available periods to perform the opertaion");
             }
@@ -330,7 +330,7 @@ namespace Planar.CLI.CliGeneral
                 return new CliPromptWrapper<Roles>(result);
             }
 
-            if (result.Data == null || !result.Data.Any())
+            if (result.Data == null || result.Data.Count == 0)
             {
                 throw new CliWarningException("no available roles to perform the opertaion");
             }

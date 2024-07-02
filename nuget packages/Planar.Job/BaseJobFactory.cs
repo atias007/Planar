@@ -3,7 +3,10 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Planar.Job
 {
@@ -60,13 +63,16 @@ namespace Planar.Job
 
         #region AggregateException
 
-        public void AddAggregateException(Exception ex, int maxItems = 25)
+        private readonly SemaphoreSlim _semaphoreSlim = new SemaphoreSlim(1, 1);
+
+        public async Task AddAggregateExceptionAsync(Exception ex, int maxItems = 25)
         {
-            lock (Locker)
+            await _semaphoreSlim.WaitAsync();
+            try
             {
                 var message = new ExceptionDto(ex);
                 _exceptions.Add(ex);
-                MqttClient.Publish(MessageBrokerChannels.AddAggregateException, message).Wait();
+                await MqttClient.Publish(MessageBrokerChannels.AddAggregateException, message);
 
                 if (_exceptions.Count >= maxItems)
                 {
@@ -75,6 +81,15 @@ namespace Planar.Job
                     CheckAggragateException();
                 }
             }
+            finally
+            {
+                _semaphoreSlim.Release();
+            }
+        }
+
+        public void AddAggregateException(Exception ex, int maxItems = 25)
+        {
+            AddAggregateExceptionAsync(ex, maxItems).Wait();
         }
 
         public void CheckAggragateException()
@@ -114,38 +129,68 @@ namespace Planar.Job
 
         public void PutJobData(string key, object? value)
         {
+            PutJobDataAsync(key, value).Wait();
+        }
+
+        public async Task PutJobDataAsync(string key, object? value)
+        {
             var message = new { Key = key, Value = value };
-            MqttClient.Publish(MessageBrokerChannels.PutJobData, message).Wait();
+            await MqttClient.Publish(MessageBrokerChannels.PutJobData, message);
         }
 
         public void PutTriggerData(string key, object? value)
         {
+            PutTriggerDataAsync(key, value).Wait();
+        }
+
+        public async Task PutTriggerDataAsync(string key, object? value)
+        {
             var message = new { Key = key, Value = value };
-            MqttClient.Publish(MessageBrokerChannels.PutTriggerData, message).Wait();
+            await MqttClient.Publish(MessageBrokerChannels.PutTriggerData, message);
         }
 
         public void RemoveJobData(string key)
         {
+            RemoveJobDataAsync(key).Wait();
+        }
+
+        public async Task RemoveJobDataAsync(string key)
+        {
             var message = new { Key = key };
-            MqttClient.Publish(MessageBrokerChannels.RemoveJobData, message).Wait();
+            await MqttClient.Publish(MessageBrokerChannels.RemoveJobData, message);
         }
 
         public void RemoveTriggerData(string key)
         {
+            RemoveTriggerDataAsync(key).Wait();
+        }
+
+        public async Task RemoveTriggerDataAsync(string key)
+        {
             var message = new { Key = key };
-            MqttClient.Publish(MessageBrokerChannels.RemoveTriggerData, message).Wait();
+            await MqttClient.Publish(MessageBrokerChannels.RemoveTriggerData, message);
         }
 
         public void ClearJobData()
         {
+            ClearJobDataAsync().Wait();
+        }
+
+        public async Task ClearJobDataAsync()
+        {
             var message = new { };
-            MqttClient.Publish(MessageBrokerChannels.ClearJobData, message).Wait();
+            await MqttClient.Publish(MessageBrokerChannels.ClearJobData, message);
         }
 
         public void ClearTriggerData()
         {
+            ClearTriggerDataAsync().Wait();
+        }
+
+        public async Task ClearTriggerDataAsync()
+        {
             var message = new { };
-            MqttClient.Publish(MessageBrokerChannels.ClearTriggerData, message).Wait();
+            await MqttClient.Publish(MessageBrokerChannels.ClearTriggerData, message);
         }
 
         #endregion Data
@@ -199,7 +244,11 @@ namespace Planar.Job
 
         private static string GetExceptionText(Exception ex)
         {
-            var lines = ex.ToString().Split('\n');
+            var hide = HideStackTrace(ex);
+            if (hide) { return ex.Message; }
+
+            const char nl = '\n';
+            var lines = ex.ToString().Split(nl);
             var filterLines = lines
                 .Where(l => !l.Contains($"{nameof(Planar)}.{nameof(Job)}\\{nameof(BaseJob)}.cs"))
                 .Select(l => l?.TrimEnd());
@@ -208,22 +257,62 @@ namespace Planar.Job
             return text.Trim();
         }
 
+        public static bool HideStackTrace(Exception ex)
+        {
+            try
+            {
+                const string propertyName = "HideStackTraceFromPlanar";
+                var props = ex.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
+                if (props != null)
+                {
+                    var value = props.GetValue(ex);
+                    if (value is bool v)
+                    {
+                        return v;
+                    }
+                }
+
+                return false;
+            }
+            catch
+            {
+                return false;
+                throw;
+            }
+        }
+
         #endregion Inner
 
         #region Progress
 
         public void UpdateProgress(byte value)
         {
-            MqttClient.Publish(MessageBrokerChannels.UpdateProgress, value).Wait();
+            UpdateProgressAsync(value).Wait();
         }
 
-        public void UpdateProgress(int current, int total)
+        public void UpdateProgress(long current, long total)
         {
-            var percentage = (1.0 * current / total) * 100;
+            UpdateProgressAsync(current, total).Wait();
+        }
+
+        public async Task UpdateProgressAsync(byte value)
+        {
+            await MqttClient.Publish(MessageBrokerChannels.UpdateProgress, value);
+        }
+
+        public async Task UpdateProgressAsync(long current, long total)
+        {
+            var value = CalcProgress(current, total);
+            await UpdateProgressAsync(value);
+        }
+
+        private static byte CalcProgress(long current, long total)
+        {
+            var percentage = 1.0 * current / total * 100;
             if (percentage > byte.MaxValue) { percentage = byte.MaxValue; }
             if (percentage < byte.MinValue) { percentage = byte.MinValue; }
-            var value = Convert.ToByte(percentage);
-            UpdateProgress(value);
+            var result = Convert.ToByte(percentage);
+            return result;
         }
 
         #endregion Progress

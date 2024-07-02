@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
 using System;
 using System.Collections.Generic;
@@ -13,14 +14,9 @@ using System.Threading.Tasks;
 
 namespace Planar.Authorization
 {
-    public class MinimumRoleHandler : AuthorizationHandler<MinimumRoleRequirement>
+    public class MinimumRoleHandler(IServiceProvider serviceProvider) : AuthorizationHandler<MinimumRoleRequirement>
     {
-        private readonly IServiceProvider _serviceProvider;
-
-        public MinimumRoleHandler(IServiceProvider serviceProvider)
-        {
-            _serviceProvider = serviceProvider;
-        }
+        private readonly IServiceProvider _serviceProvider = serviceProvider;
 
         protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, MinimumRoleRequirement requirement)
         {
@@ -54,34 +50,28 @@ namespace Planar.Authorization
                 return Task.CompletedTask;
             }
 
-            if (!int.TryParse(strValue, out var roleId))
+            var roleEnum = RoleHelper.GetRoleEnum(strValue);
+            if (roleEnum == null)
             {
                 AuditWarningSecuritySafe(context.User.Claims, "claim(s) with bad value supplied with the request while authorization mode activated");
                 return Task.CompletedTask;
             }
 
-            if (!Enum.IsDefined(typeof(Roles), roleId))
-            {
-                AuditWarningSecuritySafe(context.User.Claims, "claim(s) with bad value supplied with the request while authorization mode activated");
-                return Task.CompletedTask;
-            }
-
-            var role = (Roles)roleId;
-            if (role == Roles.Anonymous)
+            if (roleEnum == Roles.Anonymous)
             {
                 var action = GetCurrentAction();
                 AuditWarningSecuritySafe(context.User.Claims, $"user role is not authorize to perform action: {action}. action rule is: {requirement.Role.ToString().ToLower()} while user rule is: anonymous");
                 return Task.CompletedTask;
             }
 
-            if (role >= requirement.Role)
+            if (roleEnum >= requirement.Role)
             {
                 context.Succeed(requirement);
             }
             else
             {
                 var action = GetCurrentAction();
-                AuditWarningSecuritySafe(context.User.Claims, $"user role is not authorize to perform action: {action}. action rule is: {requirement.Role.ToString().ToLower()} while user rule is: {role.ToString().ToLower()}");
+                AuditWarningSecuritySafe(context.User.Claims, $"user role is not authorize to perform action: {action}. action rule is: {requirement.Role.ToString().ToLower()} while user rule is: {roleEnum.ToString().ToLower()}");
             }
 
             return Task.CompletedTask;

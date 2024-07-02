@@ -14,6 +14,9 @@ internal class UserProfile : Profile
 
         CreateMap<AddUserRequest, User>();
 
-        CreateMap<UpdateUserRequest, User>().ReverseMap();
+        CreateMap<UpdateUserRequest, User>()
+            .ForMember(t =>t.Id, map => map.Ignore());
+
+        CreateMap<User, UpdateUserRequest>();
     }
 }

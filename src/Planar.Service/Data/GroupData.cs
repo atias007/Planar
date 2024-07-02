@@ -32,19 +32,18 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
     public async Task<Group?> GetGroup(string name)
     {
         var result = await _context.Groups
-            .Include(g => g.Role)
             .AsNoTracking()
             .FirstOrDefaultAsync(g => g.Name == name);
 
         return result;
     }
 
-    public async Task<int> GetGroupRole(string name)
+    public async Task<string?> GetGroupRole(string name)
     {
         var result = await _context.Groups
             .AsNoTracking()
             .Where(g => g.Name == name)
-            .Select(g => g.RoleId)
+            .Select(g => g.Role)
             .FirstOrDefaultAsync();
 
         return result;
@@ -63,12 +62,11 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
     {
         var result = await _context.Groups
             .Include(g => g.Users)
-            .Include(g => g.Role)
             .Select(g => new GroupInfo
             {
                 Name = g.Name,
                 UsersCount = g.Users.Count,
-                Role = g.Role.Name
+                Role = g.Role
             })
             .OrderBy(g => g.Name)
             .ToPagingListAsync(request);
@@ -137,11 +135,9 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
         await _context.SaveChangesAsync();
     }
 
-    public async Task SetRoleToGroup(int groupId, int roleId)
+    public async Task SetRoleToGroup(int groupId, string role)
     {
-        var group = new Model.Group { Id = groupId, RoleId = roleId };
-        _context.Entry(group).Property(g => g.RoleId).IsModified = true;
-        await _context.SaveChangesAsync();
+        await _context.Groups.Where(g => g.Id == groupId).ExecuteUpdateAsync(u => u.SetProperty(g => g.Role, role));
     }
 
     public async Task UpdateGroup(Group group)

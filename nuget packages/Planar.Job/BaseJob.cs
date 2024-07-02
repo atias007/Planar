@@ -24,6 +24,7 @@ namespace Planar.Job
         private IServiceProvider _provider = null!;
         private Timer? _timer;
         private Version? _version;
+        private AutoResetEvent _executeResetEvent = new AutoResetEvent(false);
 
         protected IConfiguration Configuration
         {
@@ -74,6 +75,8 @@ namespace Planar.Job
             }
         }
 
+        public IJobExecutionContext Context => _context;
+
         public abstract void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
         public abstract Task ExecuteJob(IJobExecutionContext context);
@@ -93,23 +96,29 @@ namespace Planar.Job
 
             if (PlanarJob.Mode == RunningMode.Release)
             {
+                var connectTimeout = TimeSpan.FromSeconds(10);
+                MqttClient.Connected += MqttClient_Connected;
                 MqttClient.Start(_context.FireInstanceId, _context.JobPort).Wait();
-                SpinWait.SpinUntil(() => MqttClient.IsConnected, TimeSpan.FromSeconds(10));
 
-                if (!MqttClient.IsConnected)
+                var isConnect = _executeResetEvent.WaitOne(connectTimeout);
+
+                if (!isConnect)
                 {
                     MqttClient.Stop().Wait();
+                    Task.Delay(1000).Wait();
                     MqttClient.Start(_context.FireInstanceId, _context.JobPort).Wait();
+                    _executeResetEvent = new AutoResetEvent(false);
+                    isConnect = _executeResetEvent.WaitOne(connectTimeout);
                 }
 
-                if (MqttClient.IsConnected)
+                if (isConnect)
                 {
                     MqttClient.Ping().Wait();
                     MqttClient.Publish(MessageBrokerChannels.HealthCheck).Wait();
                 }
                 else
                 {
-                    throw new PlanarJobException("Fail to initialize message broker");
+                    throw new PlanarJobException("Fail to initialize message broker. Communication to planar fail");
                 }
             }
 
@@ -139,8 +148,26 @@ namespace Planar.Job
             }
             finally
             {
-                MqttClient.Stop().Wait();
-                _timer?.Dispose();
+                SafeHandle(() => MqttClient.Connected -= MqttClient_Connected);
+                SafeHandle(() => MqttClient.Stop().Wait());
+                SafeHandle(() => _timer?.Dispose());
+            }
+        }
+
+        private void MqttClient_Connected(object sender, EventArgs e)
+        {
+            _executeResetEvent.Set();
+        }
+
+        private void SafeHandle(Action action)
+        {
+            try
+            {
+                action.Invoke();
+            }
+            catch
+            {
+                // *** DO NOTHING *** //
             }
         }
 
@@ -180,6 +207,11 @@ namespace Planar.Job
             _baseJobFactory.AddAggregateException(ex, maxItems);
         }
 
+        protected async Task AddAggregateExceptionAsync(Exception ex, int maxItems = 25)
+        {
+            await _baseJobFactory.AddAggregateExceptionAsync(ex, maxItems);
+        }
+
         protected void CheckAggragateException()
         {
             _baseJobFactory.CheckAggragateException();
@@ -192,6 +224,11 @@ namespace Planar.Job
 
         protected void PutJobData(string key, object? value)
         {
+            PutJobDataAsync(key, value).Wait();
+        }
+
+        protected async Task PutJobDataAsync(string key, object? value)
+        {
             ValidateSystemDataKey(key);
             ValidateMaxLength(Convert.ToString(value), 1000, "value");
 
@@ -201,10 +238,55 @@ namespace Planar.Job
                 throw new PlanarJobException($"Job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
             }
 
-            _baseJobFactory.PutJobData(key, value);
+            await _baseJobFactory.PutJobDataAsync(key, value);
         }
 
         protected void PutTriggerData(string key, object? value)
+        {
+            PutTriggerDataAsync(key, value).Wait();
+        }
+
+        protected void RemoveJobData(string key)
+        {
+            _baseJobFactory.RemoveJobData(key);
+        }
+
+        protected async Task RemoveJobDataAsync(string key)
+        {
+            await _baseJobFactory.RemoveJobDataAsync(key);
+        }
+
+        protected void RemoveTriggerData(string key)
+        {
+            _baseJobFactory.RemoveTriggerData(key);
+        }
+
+        protected async Task RemoveTriggerDataAsync(string key)
+        {
+            await _baseJobFactory.RemoveTriggerDataAsync(key);
+        }
+
+        protected void ClearJobData()
+        {
+            _baseJobFactory.ClearJobData();
+        }
+
+        protected async Task ClearJobDataAsync()
+        {
+            await _baseJobFactory.ClearJobDataAsync();
+        }
+
+        protected void ClearTriggerData()
+        {
+            _baseJobFactory.ClearTriggerData();
+        }
+
+        protected async Task ClearTriggerDataAsync()
+        {
+            await _baseJobFactory.ClearTriggerDataAsync();
+        }
+
+        protected async Task PutTriggerDataAsync(string key, object? value)
         {
             ValidateSystemDataKey(key);
             ValidateMaxLength(Convert.ToString(value), 1000, "value");
@@ -215,7 +297,7 @@ namespace Planar.Job
                 throw new PlanarJobException($"Trigger data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
             }
 
-            _baseJobFactory.PutTriggerData(key, value);
+            await _baseJobFactory.PutTriggerDataAsync(key, value);
         }
 
         protected void UpdateProgress(byte value)
@@ -223,9 +305,19 @@ namespace Planar.Job
             _baseJobFactory.UpdateProgress(value);
         }
 
-        protected void UpdateProgress(int current, int total)
+        protected void UpdateProgress(long current, long total)
         {
             _baseJobFactory.UpdateProgress(current, total);
+        }
+
+        protected async Task UpdateProgressAsync(byte value)
+        {
+            await _baseJobFactory.UpdateProgressAsync(value);
+        }
+
+        protected async Task UpdateProgressAsync(long current, long total)
+        {
+            await _baseJobFactory.UpdateProgressAsync(current, total);
         }
 
         private static void FilterJobData(IDataMap dictionary)

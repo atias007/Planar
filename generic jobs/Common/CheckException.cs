@@ -2,6 +2,8 @@
 
 public sealed class CheckException : Exception
 {
+    public bool HideStackTraceFromPlanar => true;
+
     public CheckException(string message) : base(message)
     {
     }

@@ -75,7 +75,7 @@ namespace Planar.Service.Calendars
     public enum HebrewMonth
     {
 #pragma warning disable CA1707 // Identifiers should not contain underscores
-        תשרי, חשוון, כסלו, טבת, שבט, אדר_ב, אדר_א, אדר, ניסן, אייר, סיון, תמוז, אב, אלול
+        תשרי, חשוון, כסלו, טבת, שבט, אדר_ב, אדר_א, אדר, ניסן, אייר, סיוון, תמוז, אב, אלול
 #pragma warning restore CA1707 // Identifiers should not contain underscores
     }
 
@@ -1154,16 +1154,30 @@ namespace Planar.Service.Calendars
         /// <param name="date">The date.</param>
         public HebrewDate(DateTime date)
         {
-            _ci.DateTimeFormat.Calendar = new System.Globalization.HebrewCalendar();
+            _ci.DateTimeFormat.Calendar = new HebrewCalendar();
 
-            var dayString = date.ToString("dd", _ci).Replace("'", string.Empty).Replace("\"", string.Empty);
-            var monthString = date.ToString("MMM", _ci)
-                .Replace(" ", "_")
-                .Replace("׳", string.Empty);
+            const string from1 = " ";
+            const string from2 = "׳";
+            const string from3 = "סיון";
+
+            const string to1 = "_";
+            const string to3 = "סיוון";
+
+            const string slash = "\"";
+            const string ch1 = "'";
+            const string dd = "dd";
+            const string mmm = "MMM";
+            const string yyyy = "yyyy";
+
+            var dayString = date.ToString(dd, _ci).Replace(ch1, string.Empty).Replace(slash, string.Empty);
+            var monthString = date.ToString(mmm, _ci)
+                .Replace(from1, to1)
+                .Replace(from2, string.Empty)
+                .Replace(from3, to3);
 
             Day = (HebrewDay)Enum.Parse(typeof(HebrewDay), dayString);
             Month = (HebrewMonth)Enum.Parse(typeof(HebrewMonth), monthString);
-            _year = DateTime.Now.ToString("yyyy", _ci);
+            _year = DateTime.Now.ToString(yyyy, _ci);
         }
 
         /// <summary>

@@ -15,9 +15,6 @@ public abstract class BaseCheckJob : BaseJob
     private CheckFailCounter _failCounter = null!;
     private CheckSpanTracker _spanTracker = null!;
 
-    protected int _counter;
-    protected int _total;
-
     protected static void ValidateDuplicateKeys<T>(IEnumerable<T> items, string sectionName)
         where T : ICheckElement
     {
@@ -328,12 +325,6 @@ public abstract class BaseCheckJob : BaseJob
         {
             SafeHandleOperationException(entity, ex);
         }
-    }
-
-    protected void UpdateProgress()
-    {
-        var current = Interlocked.Increment(ref _counter);
-        UpdateProgress(current, _total);
     }
 
     protected void IncreaseEffectedRows()

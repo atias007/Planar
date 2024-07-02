@@ -22,6 +22,10 @@ namespace Planar.Client.Entities
             {
                 result.Role = role;
             }
+            else
+            {
+                result.Role = Roles.Anonymous;
+            }
 
             return result;
         }

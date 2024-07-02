@@ -6,6 +6,8 @@ using Planar.Service.API;
 using Swashbuckle.AspNetCore.Annotations;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Planar.Controllers
@@ -145,6 +147,7 @@ namespace Planar.Controllers
         [NotFoundResponse]
         public async Task<IActionResult> RemoveData([FromRoute][Required] string id, [FromRoute][Required] string key)
         {
+            key = WebUtility.UrlDecode(key);
             await BusinesLayer.RemoveData(id, key);
             return NoContent();
         }

@@ -197,7 +197,7 @@ internal class ClusterService(IServiceScopeFactory serviceScopeFactory) : Planar
     {
         using var scope = _serviceScopeFactory.CreateScope();
         var monitorDomain = scope.ServiceProvider.GetService<MonitorDomain>();
-        await monitorDomain.Reload(clusterReload: false);
+        await monitorDomain.ReloadHooks(clusterReload: false);
         return new Empty();
     }
 

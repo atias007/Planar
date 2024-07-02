@@ -2,6 +2,7 @@
 using FluentValidation;
 using Planar.API.Common.Entities;
 using Planar.Common;
+using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
@@ -28,7 +29,8 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         }
 
         var group = Mapper.Map<Group>(request);
-        if (AppSettings.Authentication.HasAuthontication && (int)UserRole < group.RoleId)
+        var groupRoleValue = RoleHelper.GetRoleValue(group.Role);
+        if (AppSettings.Authentication.HasAuthontication && (int)UserRole < groupRoleValue)
         {
             AuditSecuritySafe($"creating a group with name '{group.Name}' and role '{request.Role}' blocked because the current user role is '{UserRole}'", isWarning: true);
             throw new RestForbiddenException();
@@ -55,21 +57,21 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
 
         var currentUserRole = await Resolve<UserData>().GetUserRole(userId);
         var targetUserRole = await DataLayer.GetGroupRole(name);
+        var targetUserRoleValue = RoleHelper.GetRoleValue(targetUserRole);
+        var currentUserRoleValue = RoleHelper.GetRoleValue(currentUserRole);
 
-        if (AppSettings.Authentication.HasAuthontication && targetUserRole > (int)UserRole)
+        if (AppSettings.Authentication.HasAuthontication && targetUserRoleValue > (int)UserRole)
         {
-            AuditSecuritySafe($"adding user '{username}' to group '{name}' with role '{(Roles)targetUserRole}' blocked because the current user role is '{UserRole}'", isWarning: true);
+            AuditSecuritySafe($"adding user '{username}' to group '{name}' with role '{(Roles)targetUserRoleValue}' blocked because the current user role is '{UserRole}'", isWarning: true);
             throw new RestForbiddenException();
         }
 
         await DataLayer.AddUserToGroup(userId, groupId);
 
         AuditSecuritySafe($"user '{username}' was joined to group '{name}'");
-        if (targetUserRole > currentUserRole)
+        if (targetUserRoleValue > currentUserRoleValue)
         {
-            var currentUserRoleTitle = ((Roles)currentUserRole).ToString().ToLower();
-            var targetUserRoleTitle = ((Roles)targetUserRole).ToString().ToLower();
-            AuditSecuritySafe($"the user '{username}' elevate its role from '{currentUserRoleTitle}' to '{targetUserRoleTitle}' by joining group '{name}'", isWarning: true);
+            AuditSecuritySafe($"the user '{username}' elevate its role from '{currentUserRole}' to '{targetUserRole}' by joining group '{name}'", isWarning: true);
         }
     }
 
@@ -109,15 +111,13 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
 
     public async Task PartialUpdateGroup(UpdateEntityRequestByName request)
     {
-        ForbbidenPartialUpdateProperties(request, "to update role use 'group set-role' command", nameof(UpdateGroupRequest.Role), nameof(UpdateGroupRequest.RoleId));
-        ForbbidenPartialUpdateProperties(request, "to join user to group use 'group join'", nameof(GroupDetails.Users));
-        ForbbidenPartialUpdateProperties(request, null, nameof(GroupDetails.Users));
+        ForbbidenPartialUpdateProperties(request, $"to update role use: planar-cli group set-role command {request.Name} {request.PropertyValue}", nameof(UpdateGroupRequest.Role));
+        ForbbidenPartialUpdateProperties(request, $"to join user to group use: planar-cli group join {request.Name} {request.PropertyValue}", nameof(GroupDetails.Users));
 
         var group = await DataLayer.GetGroup(request.Name);
         ValidateExistingEntity(group, "group");
         var updateGroup = Mapper.Map<UpdateGroupRequest>(group);
         updateGroup.CurrentName = request.Name;
-        updateGroup.Role = null;
         var validator = Resolve<IValidator<UpdateGroupRequest>>();
         await SetEntityProperties(updateGroup, request, validator);
         await Update(updateGroup);
@@ -147,26 +147,34 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         var entity = await DataLayer.GetGroup(name);
         var group = ValidateExistingEntity(entity, "group");
 
-        if (!Enum.TryParse<Roles>(role, ignoreCase: true, out var roleEnum))
+        var clearGroupRole = RoleHelper.CleanRole(group.Role);
+        var cleanTargetRole = RoleHelper.CleanRole(role);
+
+        if (clearGroupRole == cleanTargetRole)
         {
-            throw new RestNotFoundException($"role '{role?.ToLower()}' could not be found");
+            throw new RestNotFoundException($"group '{name}' already has role '{cleanTargetRole}'");
         }
 
-        if ((int)roleEnum == group.RoleId)
+        var currentUserRoleValue = RoleHelper.GetRoleValue(UserRole);
+        var targetRoleValue = RoleHelper.GetRoleValue(cleanTargetRole);
+
+        if (AppSettings.Authentication.HasAuthontication && targetRoleValue > currentUserRoleValue)
         {
-            throw new RestNotFoundException($"group '{name}' already has role '{role.ToLower()}'");
+            AuditSecuritySafe($"setting role '{role}' to group '{name}' blocked because the current user role is '{UserRole}'", isWarning: true);
+            throw new RestForbiddenException();
         }
 
-        await DataLayer.SetRoleToGroup(group.Id, (int)roleEnum);
+        await DataLayer.SetRoleToGroup(group.Id, cleanTargetRole);
 
-        var isWarning = (int)roleEnum > group.RoleId;
+        var groupRoleValue = RoleHelper.GetRoleValue(clearGroupRole);
+        var isWarning = targetRoleValue > groupRoleValue;
         if (isWarning)
         {
-            AuditSecuritySafe($"the group '{name}' elevate its role from '{roleEnum}' to '{role}'", isWarning: true);
+            AuditSecuritySafe($"the group '{name}' elevate its role from '{group.Role}' to '{role}'", isWarning: true);
         }
         else
         {
-            AuditSecuritySafe($"the group '{name}' bring down its role from '{roleEnum}' to '{role}'", isWarning: false);
+            AuditSecuritySafe($"the group '{name}' bring down its role from '{group.Role}' to '{role}'", isWarning: false);
         }
     }
 
@@ -181,6 +189,7 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         }
 
         var group = Mapper.Map<Group>(request);
+        group.Id = id;
         await DataLayer.UpdateGroup(group);
     }
 

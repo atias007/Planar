@@ -1,6 +1,7 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Grpc.Net.Client;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
@@ -17,9 +18,8 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.General
 {
-    public class ClusterUtil(ClusterData dal, ILogger<ClusterUtil> logger, SchedulerUtil schedulerUtil)
+    public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil> logger, SchedulerUtil schedulerUtil)
     {
-        private readonly ClusterData _dal = dal;
         private readonly ILogger<ClusterUtil> _logger = logger;
         private readonly SchedulerUtil _schedulerUtil = schedulerUtil;
 
@@ -44,8 +44,10 @@ namespace Planar.Service.General
 
         public async Task<IEnumerable<ClusterNode>> GetAllNodes()
         {
+            using var scope = serviceScope.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
             var tempNode = GetCurrentClusterNode();
-            var result = await _dal.GetClusterNodes();
+            var result = await dal.GetClusterNodes();
             var currentNode = result.Find(n => string.Equals(n.Server, tempNode.Server, StringComparison.CurrentCultureIgnoreCase) && n.Port == tempNode.Port);
             if (currentNode != null)
             {
@@ -125,7 +127,9 @@ namespace Planar.Service.General
                 {
                     if (!node.LiveNode)
                     {
-                        await _dal.RemoveClusterNode(node);
+                        using var scope = serviceScope.CreateScope();
+                        var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
+                        await dal.RemoveClusterNode(node);
                     }
                 }
             }
@@ -157,7 +161,9 @@ namespace Planar.Service.General
                     if (!node.LiveNode)
                     {
                         _logger.LogError("remove node {Server}:{Port} from cluster due to health check failure", node.Server, node.ClusterPort);
-                        await _dal.RemoveClusterNode(node);
+                        using var scope = serviceScope.CreateScope();
+                        var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
+                        await dal.RemoveClusterNode(node);
                     }
                 }
             }
@@ -212,8 +218,9 @@ namespace Planar.Service.General
         public async Task Join()
         {
             var currentNode = GetCurrentClusterNode();
-
-            var item = await _dal.GetClusterNode(currentNode);
+            using var scope = serviceScope.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
+            var item = await dal.GetClusterNode(currentNode);
             if (item == null)
             {
                 currentNode.ClusterPort = AppSettings.Cluster.Port;
@@ -221,7 +228,7 @@ namespace Planar.Service.General
                 currentNode.HealthCheckDate = DateTime.Now;
                 currentNode.InstanceId = _schedulerUtil.SchedulerInstanceId;
                 currentNode.MaxConcurrency = AppSettings.General.MaxConcurrency;
-                await _dal.AddClusterNode(currentNode);
+                await dal.AddClusterNode(currentNode);
             }
             else
             {
@@ -229,7 +236,7 @@ namespace Planar.Service.General
                 item.HealthCheckDate = DateTime.Now;
                 item.InstanceId = _schedulerUtil.SchedulerInstanceId;
                 item.MaxConcurrency = AppSettings.General.MaxConcurrency;
-                await _dal.UpdateClusterNode(item);
+                await dal.UpdateClusterNode(item);
             }
         }
 
@@ -553,7 +560,9 @@ namespace Planar.Service.General
             await client.HealthCheckAsync(new Empty(), deadline: GrpcDeadLine);
 
             node.HealthCheckDate = DateTime.Now;
-            await _dal.SaveChangesAsync();
+            using var scope = serviceScope.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
+            await dal.SaveChangesAsync();
         }
 
         private static async Task CallLoadMonitorHooksService(ClusterNode node)
@@ -757,7 +766,9 @@ namespace Planar.Service.General
                     HealthCheckDate = DateTime.Now,
                 };
 
-                await _dal.AddClusterNode(currentNode);
+                using var scope = serviceScope.CreateScope();
+                var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
+                await dal.AddClusterNode(currentNode);
             }
         }
 
@@ -776,7 +787,9 @@ namespace Planar.Service.General
 
             node.HealthCheckDate = DateTime.Now;
 
-            await _dal.SaveChangesAsync();
+            using var scope = serviceScope.CreateScope();
+            var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
+            await dal.SaveChangesAsync();
         }
     }
 }

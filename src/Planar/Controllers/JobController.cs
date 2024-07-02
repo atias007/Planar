@@ -3,11 +3,13 @@ using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
+using Planar.Service.Model;
 using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -158,6 +160,7 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [NotFoundResponse]
     public async Task<IActionResult> RemoveData([FromRoute][Required] string id, [FromRoute][Required] string key)
     {
+        key = WebUtility.UrlDecode(key);
         await BusinesLayer.RemoveData(id, key);
         return NoContent();
     }
@@ -246,6 +249,7 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [BadRequestResponse]
     public async Task<ActionResult<RunningJobDetails>> GetRunningInstance([FromRoute][Required] string instanceId)
     {
+        instanceId = WebUtility.UrlDecode(instanceId);
         var result = await BusinesLayer.GetRunning(instanceId);
         return Ok(result);
     }
@@ -262,6 +266,7 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
         [FromQuery] int? exceptionsCount,
         CancellationToken cancellationToken)
     {
+        instanceId = WebUtility.UrlDecode(instanceId);
         var result = await BusinesLayer.GetRunningInstanceLongPolling(instanceId, progress, effectedRows, exceptionsCount, cancellationToken);
         return Ok(result);
     }
@@ -296,6 +301,7 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [NotFoundResponse]
     public async Task<ActionResult<RunningJobData>> GetRunningData([FromRoute][Required] string instanceId)
     {
+        instanceId = WebUtility.UrlDecode(instanceId);
         var result = await BusinesLayer.GetRunningData(instanceId);
         return Ok(result);
     }
@@ -308,6 +314,7 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [NotFoundResponse]
     public ActionResult<string> GetJobFileTemplate([Required][FromRoute] string name)
     {
+        name = WebUtility.UrlDecode(name);
         var result = BusinesLayer.GetJobFileTemplate(name);
         return Ok(result);
     }

@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<OutputType>Library</OutputType>
 		<TargetFramework>net8.0</TargetFramework>
-		<Version>1.7.4</Version>
+		<Version>1.7.3</Version>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 	<ItemGroup>
@@ -27,12 +27,13 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Remove="Model\Role.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <None Remove="HtmlTemplates\AlertsReport\alerts_row.html" />
 	  <None Remove="HtmlTemplates\AlertsReport\alerts_table.html" />
 	  <None Remove="HtmlTemplates\AlertsReport\main.html" />
-	  <None Remove="HtmlTemplates\AuditsReport\audits_row.html" />
-	  <None Remove="HtmlTemplates\AuditsReport\audits_table.html" />
-	  <None Remove="HtmlTemplates\AuditsReport\main.html" />
 	  <None Remove="HtmlTemplates\empty_table.html" />
 	  <None Remove="HtmlTemplates\footer.html" />
 	  <None Remove="HtmlTemplates\head.html" />
@@ -59,9 +60,6 @@
 	  <EmbeddedResource Include="HtmlTemplates\AlertsReport\main.html" />
 	  <EmbeddedResource Include="HtmlTemplates\AlertsReport\alerts_table.html" />
 	  <EmbeddedResource Include="HtmlTemplates\AlertsReport\alerts_row.html" />
-	  <EmbeddedResource Include="HtmlTemplates\AuditsReport\audits_row.html" />
-	  <EmbeddedResource Include="HtmlTemplates\AuditsReport\audits_table.html" />
-	  <EmbeddedResource Include="HtmlTemplates\AuditsReport\main.html" />
 	  <EmbeddedResource Include="HtmlTemplates\empty_table.html" />
 	  <EmbeddedResource Include="HtmlTemplates\head.html" />
 	  <EmbeddedResource Include="HtmlTemplates\style.html" />
@@ -76,6 +74,10 @@
 	  <EmbeddedResource Include="HtmlTemplates\TraceReport\main.html" />
 	  <EmbeddedResource Include="HtmlTemplates\TraceReport\trace_table.html" />
 	  <EmbeddedResource Include="HtmlTemplates\TraceReport\trace_row.html" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="Model\Role.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

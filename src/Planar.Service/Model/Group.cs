@@ -30,14 +30,12 @@ public partial class Group
     [StringLength(500)]
     public string? AdditionalField5 { get; set; }
 
-    public int RoleId { get; set; }
+    [StringLength(20)]
+    [Unicode(false)]
+    public string Role { get; set; } = null!;
 
     [InverseProperty("Group")]
     public virtual ICollection<MonitorAction> MonitorActions { get; set; } = new List<MonitorAction>();
-
-    [ForeignKey("RoleId")]
-    [InverseProperty("Groups")]
-    public virtual Role Role { get; set; } = null!;
 
     [ForeignKey("GroupId")]
     [InverseProperty("Groups")]

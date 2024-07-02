@@ -83,6 +83,8 @@ namespace Planar.Service.API
             _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
         }
 
+        protected IServiceProvider ServiceProvider => _serviceProvider;
+
         protected ClusterUtil ClusterUtil
         {
             get
@@ -173,12 +175,12 @@ namespace Planar.Service.API
             if (any)
             {
                 var errorMessage = $"property '{request.PropertyName}' can not be updated";
-                if (!string.IsNullOrEmpty(message))
+                if (string.IsNullOrEmpty(message))
                 {
-                    errorMessage += $". {message}";
+                    throw new RestValidationException("property name", errorMessage);
                 }
 
-                throw new RestValidationException("property name", errorMessage);
+                throw new RestValidationException("property name", errorMessage, errorMessage, suggestion: message);
             }
         }
 

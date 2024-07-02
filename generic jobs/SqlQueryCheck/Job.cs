@@ -23,18 +23,12 @@ internal partial class Job : BaseCheckJob
         var queries = GetQueries(Configuration, defaults, connStrings);
         ValidateRequired(queries, "queries");
         ValidateDuplicateNames(queries, "queries");
-        InitializeVariables(queries);
+        EffectedRows = 0;
         var tasks = SafeInvokeCheck(queries, InvokeQueryCheckInner);
         await Task.WhenAll(tasks);
 
         CheckAggragateException();
         HandleCheckExceptions();
-    }
-
-    private void InitializeVariables(IEnumerable<CheckQuery> queries)
-    {
-        _total = queries.Count(q => q.Active);
-        EffectedRows = 0;
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -50,7 +44,6 @@ internal partial class Job : BaseCheckJob
             Logger.LogInformation("skipping inactive query '{Name}'", checkQuery.Name);
             return;
         }
-        UpdateProgress();
 
         if (!IsIntervalElapsed(checkQuery, checkQuery.Interval))
         {

@@ -21,8 +21,9 @@ internal class Job : BaseCheckJob
         var keys = GetKeys(Configuration, defaults);
         var healthCheck = GetHealthCheck(Configuration, defaults);
         ValidateRequired(keys, "keys");
-        //// ValidateDuplicateKeys(keys, "keys");
-        InitializeVariables(healthCheck, keys);
+
+        EffectedRows = 0;
+
         var hcTask = SafeInvokeCheck(healthCheck, InvokeHealthCheckInner);
         var tasks = SafeInvokeCheck(keys, InvokeKeyCheckInner);
         await Task.WhenAll(tasks);
@@ -30,12 +31,6 @@ internal class Job : BaseCheckJob
 
         CheckAggragateException();
         HandleCheckExceptions();
-    }
-
-    private void InitializeVariables(HealthCheck healthCheck, IEnumerable<RedisKey> keys)
-    {
-        _total = keys.Count(f => f.Active && f.IsValid) + (healthCheck.Active ? 1 : 0);
-        EffectedRows = 0;
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -143,13 +138,11 @@ internal class Job : BaseCheckJob
             }
             catch (Exception ex)
             {
-                UpdateProgress();
                 throw new CheckException($"ping/latency health check fail. reason: {ex.Message}");
             }
 
             if (healthCheck.Latency.HasValue && span.TotalMilliseconds > healthCheck.Latency.Value)
             {
-                UpdateProgress();
                 throw new CheckException($"latency of {span.TotalMilliseconds:N2} ms is greater then {healthCheck.Latency.Value:N0} ms");
             }
         }
@@ -166,7 +159,6 @@ internal class Job : BaseCheckJob
 
                 if (cc > healthCheck.ConnectedClients)
                 {
-                    UpdateProgress();
                     throw new CheckException($"connected clients ({cc:N0}) is greater then {healthCheck.ConnectedClients:N0}");
                 }
             }
@@ -180,12 +172,18 @@ internal class Job : BaseCheckJob
 
             if (int.TryParse(memString, out var memory) && int.TryParse(maxString, out var max))
             {
-                Logger.LogInformation("used memory is {Memory:N0} bytes. maximum memory is {MaxMemory:N0} bytes", memory, max);
+                if (max > 0)
+                {
+                    Logger.LogInformation("used memory is {Memory:N0} bytes. maximum memory is {MaxMemory:N0} bytes", memory, max);
+                }
+                else
+                {
+                    Logger.LogInformation("used memory is {Memory:N0} bytes", memory);
+                }
             }
 
             if (memory > healthCheck.UsedMemoryNumber)
             {
-                UpdateProgress();
                 throw new CheckException($"used memory ({memory:N0}) bytes is greater then {healthCheck.UsedMemoryNumber:N0} bytes");
             }
         }
@@ -200,8 +198,6 @@ internal class Job : BaseCheckJob
             Logger.LogInformation("skipping inactive key '{Key}'", key.Key);
             return;
         }
-
-        UpdateProgress();
 
         if (!await RedisFactory.Exists(key))
         {

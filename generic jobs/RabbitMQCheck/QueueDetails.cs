@@ -6,7 +6,6 @@ public class QueueDetails
     public int Messages { get; set; }
     public int Memory { get; set; }
     public int Consumers { get; set; }
-    public int Reductions { get; set; }
     public string State { get; set; } = null!;
 
     ////[JsonProperty("messages_ready")]

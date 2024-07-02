@@ -10,13 +10,9 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Reports
 {
-    public sealed class TraceReport : BaseReport
+    public sealed class TraceReport(IServiceScopeFactory serviceScope) : BaseReport(serviceScope)
     {
         public override string ReportName => "Trace";
-
-        public TraceReport(IServiceScopeFactory serviceScope) : base(serviceScope)
-        {
-        }
 
         public override async Task<string> Generate(DateScope dateScope)
         {
@@ -108,7 +104,7 @@ namespace Planar.Service.Reports
             };
 
             var response = await traceData.GetTraceForReport(request);
-            return response.Data ?? new List<LogDetails>();
+            return response.Data ?? [];
         }
     }
 }
