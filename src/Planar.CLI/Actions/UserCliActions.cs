@@ -112,10 +112,18 @@ namespace Planar.CLI.Actions
             return await ExecuteTable<PagingResponse<UserRowModel>>(restRequest, CliTableExtensions.GetTable, cancellationToken);
         }
 
+        [NullRequest]
         [Action("remove")]
         [Action("delete")]
         public static async Task<CliActionResponse> RemoveUserById(CliGetByNameRequest request, CancellationToken cancellationToken = default)
         {
+            request ??= new CliGetByNameRequest();
+            var wrapper = await FillGetRequest(request, cancellationToken);
+            if (!wrapper.IsSuccessful)
+            {
+                return new CliActionResponse(wrapper.FailResponse);
+            }
+
             if (!ConfirmAction($"remove user {request.Name}")) { return CliActionResponse.Empty; }
 
             var restRequest = new RestRequest("user/{username}", Method.Delete)

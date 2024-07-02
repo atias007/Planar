@@ -1,19 +1,17 @@
-﻿using Planar.API.Common.Entities;
-
-namespace Planar.Service.Model.DataObjects
+﻿namespace Planar.Service.Model.DataObjects
 {
     public class UserIdentity
     {
-        public int Id { get; set; }
-        public string Username { get; set; } = null!;
-        public Roles Role { get; set; }
+        public required int Id { get; set; }
+        public required string Username { get; set; }
+        public string Role { get; set; } = null!;
 
-        public string Surename { get; set; } = null!;
-        public string? GivenName { get; set; } = null!;
+        public required string Surename { get; set; } = null!;
+        public required string? GivenName { get; set; } = null!;
 
-        public byte[] Password { get; set; } = null!;
+        public required byte[] Password { get; set; } = null!;
 
-        public byte[] Salt { get; set; } = null!;
+        public required byte[] Salt { get; set; } = null!;
 
         public string Fullname => $"{Surename} {GivenName}".Trim();
     }

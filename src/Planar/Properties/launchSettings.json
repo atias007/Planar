@@ -20,7 +20,7 @@
         "PLANAR_SMTP_FROM_NAME": "Planar [DO NOT REPLY]",
         "PLANAR_SMTP_USERNAME": "tsahiatias@gmail.com",
         "PLANAR_SMTP_PASSWORD": "abbconwfeacvwklo",
-        "PLANAR_AUTHENTICATION_MODE": "all anonymous",
+        "PLANAR_AUTHENTICATION_MODE": "authenticate",
         "Serilog:MinimumLevel:Override:Quartz": "Warning",
         "PLANAR_SMTP_USE_DEFAULT_CREDENTIALS": "False",
         "PLANAR_HOOKS_REDIS_ENDPOINTS": "127.0.0.1:6379",

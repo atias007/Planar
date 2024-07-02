@@ -41,7 +41,7 @@ namespace Planar.Service.General.Hash
             var claims = new List<Claim>
             {
                 new (ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new (ClaimTypes.Role, user.Role.ToString()),
+                new (ClaimTypes.Role, user.Role),
                 new (ClaimTypes.Name, user.Username),
                 new (ClaimTypes.Surname, user.Surename),
                 new (ClaimTypes.GivenName, user.GivenName ?? string.Empty),

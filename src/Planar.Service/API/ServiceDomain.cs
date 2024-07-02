@@ -157,8 +157,8 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
             throw new RestValidationException("username", $"user with username '{request.Username}' not exists", 100);
         }
 
-        var role = (await userData.GetUserRole(user.Id)) ?? nameof(Roles.Anonymous);
-        user.Role = RoleHelper.GetRoleEnum(role) ?? Roles.Anonymous;
+        var role = (await userData.GetUserRole(user.Id)) ?? RoleHelper.DefaultRole;
+        user.Role = role;
 
         var verify = HashUtil.VerifyHash(request.Password!, user.Password, user.Salt);
         if (!verify)
