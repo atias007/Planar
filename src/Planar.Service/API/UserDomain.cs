@@ -125,11 +125,8 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
 
     public async Task Update(UpdateUserRequest request)
     {
-        var current = await DataLayer.GetUser(request.CurrentUsername, withTracking: true);
-        if (current == null)
-        {
-            throw new RestNotFoundException($"user with username '{request.CurrentUsername}' is not exists");
-        }
+        var current = await DataLayer.GetUser(request.CurrentUsername, withTracking: true)
+            ?? throw new RestNotFoundException($"user with username '{request.CurrentUsername}' is not exists");
 
         if (await DataLayer.IsUsernameExists(request.Username, request.CurrentUsername))
         {

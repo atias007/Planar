@@ -36,6 +36,8 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
             throw new RestForbiddenException();
         }
 
+        group.Role = group.Role.ToLower();
+
         await DataLayer.AddGroup(group);
         AuditSecuritySafe($"group '{group.Name}' was created with role '{request.Role?.ToLower()}'");
         return new EntityIdResponse(group.Id);

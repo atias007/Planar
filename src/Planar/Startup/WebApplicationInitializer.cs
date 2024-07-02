@@ -95,8 +95,6 @@ namespace Planar.Startup
 
             app.UseSerilogRequestLogging();
 
-            app.UseRouting();
-
             // Capture metrics about all received HTTP requests.
             app.UseHttpMetrics();
 
@@ -114,6 +112,13 @@ namespace Planar.Startup
                 app.MapGrpcService<ClusterService>();
             }
 
+            // ****************************************************************
+            // ATTENTION: dont change the order of the following middlewares
+            // ****************************************************************
+
+            app.UseRouting();
+            app.MapMetrics();
+
             // Authorization
             // ATTENTION: Always UseAuthentication should be before UseAuthorization
             if (AppSettings.Authentication.HasAuthontication)
@@ -125,7 +130,9 @@ namespace Planar.Startup
             app.UseAuthorization();
             app.MapControllers();
 
-            app.MapMetrics();
+            // ****************************************************************
+            // ATTENTION: dont add middlewares after --> app.MapControllers()
+            // ****************************************************************
         }
     }
 }

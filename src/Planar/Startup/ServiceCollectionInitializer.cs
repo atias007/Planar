@@ -5,6 +5,7 @@ using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -84,12 +85,7 @@ namespace Planar.Startup
         {
             if (AppSettings.Authentication.HasAuthontication)
             {
-                services.AddAuthentication(options =>
-                {
-                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-                })
+                services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
                     options.RequireHttpsMetadata = false;
@@ -97,11 +93,40 @@ namespace Planar.Startup
                     {
                         ValidateIssuer = true,
                         ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
                         ValidAudience = AuthenticationSettings.AuthenticationAudience,
                         ValidIssuer = AuthenticationSettings.AuthenticationIssuer,
                         ClockSkew = TimeSpan.Zero,
                         IssuerSigningKey = AppSettings.Authentication.Key
                     };
+                    ////options.Events = new JwtBearerEvents
+                    ////{
+                    ////    OnAuthenticationFailed = context =>
+                    ////    {
+                    ////        if (context.Exception.GetType() == typeof(SecurityTokenExpiredException))
+                    ////        {
+                    ////            context.Response.Headers.Append("Token-Expired", "true");
+                    ////        }
+                    ////        return System.Threading.Tasks.Task.CompletedTask;
+                    ////    },
+                    ////    OnTokenValidated = context =>
+                    ////    {
+                    ////        return System.Threading.Tasks.Task.CompletedTask;
+                    ////    },
+                    ////    OnChallenge = context =>
+                    ////    {
+                    ////        return System.Threading.Tasks.Task.CompletedTask;
+                    ////    },
+                    ////    OnMessageReceived = context =>
+                    ////    {
+                    ////        return System.Threading.Tasks.Task.CompletedTask;
+                    ////    },
+                    ////    OnForbidden = context =>
+                    ////    {
+                    ////        return System.Threading.Tasks.Task.CompletedTask;
+                    ////    },
+                    ////};
                 });
             }
 

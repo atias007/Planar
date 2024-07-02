@@ -727,7 +727,8 @@ internal static class Program
         while (string.Compare(command, exit, true) != 0)
         {
             var color = ConnectUtil.Current.GetCliMarkupColor();
-            AnsiConsole.Markup($"[{color}]{RestProxy.Host.EscapeMarkup()}:{RestProxy.Port}[/]> ");
+            var username = string.IsNullOrWhiteSpace(LoginProxy.Username) ? null : $"@{LoginProxy.Username}";
+            AnsiConsole.Markup($"[{color}]{RestProxy.Host.EscapeMarkup()}:{RestProxy.Port}{username}[/]> ");
             command = Console.ReadLine();
             ResetTimer();
 

@@ -47,12 +47,14 @@ namespace Planar.Service.General.Hash
                 new (ClaimTypes.GivenName, user.GivenName ?? string.Empty),
             };
 
+            var signingCredentials = new SigningCredentials(AppSettings.Authentication.Key, SecurityAlgorithms.HmacSha256);
+            var expire = DateTime.UtcNow.Add(AppSettings.Authentication.TokenExpire);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Issuer = AuthenticationSettings.AuthenticationIssuer,
                 Audience = AuthenticationSettings.AuthenticationAudience,
-                Expires = DateTime.UtcNow.Add(AppSettings.Authentication.TokenExpire),
-                SigningCredentials = new SigningCredentials(AppSettings.Authentication.Key, SecurityAlgorithms.HmacSha256),
+                Expires = expire,
+                SigningCredentials = signingCredentials,
                 Subject = new ClaimsIdentity(claims),
             };
 

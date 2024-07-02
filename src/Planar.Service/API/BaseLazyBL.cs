@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
+using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using System;
 using System.Linq;
@@ -52,7 +53,7 @@ public abstract class BaseLazyBL<TBusinesLayer, TDataLayer> : BaseBL<TBusinesLay
         if (claim == null) { return null; }
         var strValue = claim.Value;
         if (string.IsNullOrEmpty(strValue)) { return null; }
-        if (!int.TryParse(strValue, out int value)) { return null; }
+        var value = RoleHelper.GetRoleValue(strValue);
         return value;
     }
 
