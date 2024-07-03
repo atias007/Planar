@@ -45,6 +45,8 @@ namespace Planar.CLI.Actions
         [Action("delete")]
         public static async Task<CliActionResponse> DeleteMonitor(CliGetByIdRequest request, CancellationToken cancellationToken = default)
         {
+            FillRequiredInt(request, nameof(request.Id));
+
             if (!ConfirmAction($"remove monitor id {request.Id}")) { return CliActionResponse.Empty; }
 
             var restRequest = new RestRequest("monitor/{id}", Method.Delete)
@@ -56,6 +58,8 @@ namespace Planar.CLI.Actions
         [Action("get")]
         public static async Task<CliActionResponse> GetMonitoActions(CliGetByIdRequest request, CancellationToken cancellationToken = default)
         {
+            FillRequiredInt(request, nameof(request.Id));
+
             var restRequest = new RestRequest("monitor/{id}", Method.Get)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
@@ -136,6 +140,10 @@ namespace Planar.CLI.Actions
         [Action("update")]
         public static async Task<CliActionResponse> UpdateMonitor(CliUpdateEntityByIdRequest request, CancellationToken cancellationToken = default)
         {
+            FillRequiredInt(request, nameof(request.Id));
+            FillRequiredString(request, nameof(request.PropertyName));
+            FillOptionalString(request, nameof(request.PropertyValue));
+
             var restRequest = new RestRequest("monitor", Method.Patch)
                 .AddBody(request);
 
@@ -145,6 +153,8 @@ namespace Planar.CLI.Actions
         [Action("get-alert")]
         public static async Task<CliActionResponse> GetAlert(CliGetByIdRequest request, CancellationToken cancellationToken = default)
         {
+            FillRequiredInt(request, nameof(request.Id));
+
             var restRequest = new RestRequest("monitor/alert/{id}", Method.Get)
                 .AddUrlSegment("id", request.Id);
 

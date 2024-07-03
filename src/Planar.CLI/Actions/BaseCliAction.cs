@@ -56,7 +56,7 @@ namespace Planar.CLI.Actions
             if (string.IsNullOrWhiteSpace(request.DataKey))
             {
                 request.DataKey = CollectCliValue(
-                    field: "data key",
+                    field: "key",
                     required: true,
                     minLength: 1,
                     maxLength: 100) ?? string.Empty;
@@ -65,11 +65,148 @@ namespace Planar.CLI.Actions
             if (string.IsNullOrWhiteSpace(request.DataValue) && request.Action == DataActions.Put)
             {
                 request.DataValue = CollectCliValue(
-                    field: "data value",
+                    field: "value",
                     required: false,
                     minLength: 0,
                     maxLength: 1000);
             }
+        }
+
+        protected static void FillOptionalString<T>(T entity, string propertyName, string? defaultValue = null, bool secret = false)
+            where T : class
+        {
+            var tuple = CollectText(entity, propertyName, false, -1, defaultValue, secret);
+            if (tuple.Item1)
+            {
+                tuple.Item3.SetValue(entity, tuple.Item2);
+            }
+        }
+
+        protected static void FillRequiredString<T>(T entity, string propertyName, string? defaultValue = null, bool secret = false)
+            where T : class
+        {
+            var tuple = CollectText(entity, propertyName, true, 1, defaultValue, secret);
+            if (tuple.Item1)
+            {
+                tuple.Item3.SetValue(entity, tuple.Item2);
+            }
+        }
+
+        protected static void FillRequiredInt<T>(T entity, string propertyName, string? defaultValue = null, bool secret = false)
+            where T : class
+        {
+            var tuple = CollectText(entity, propertyName, true, 1, defaultValue, secret,
+                v =>
+                {
+                    if (!int.TryParse(v, out _))
+                    {
+                        return GetValidationResultError("invalid number");
+                    }
+
+                    return ValidationResult.Success();
+                }
+            );
+
+            if (tuple.Item1 && int.TryParse(tuple.Item2, out var intValue))
+            {
+                tuple.Item3.SetValue(entity, intValue);
+            }
+        }
+
+        protected static void FillRequiredLong<T>(T entity, string propertyName, string? defaultValue = null, bool secret = false)
+            where T : class
+        {
+            var tuple = CollectText(entity, propertyName, true, 1, defaultValue, secret,
+                v =>
+                {
+                    if (!long.TryParse(v, out _))
+                    {
+                        return GetValidationResultError("invalid number");
+                    }
+
+                    return ValidationResult.Success();
+                }
+            );
+
+            if (tuple.Item1 && long.TryParse(tuple.Item2, out var intValue))
+            {
+                tuple.Item3.SetValue(entity, intValue);
+            }
+        }
+
+        protected static void FillRequiredTimeSpan<T>(T entity, string propertyName, string? defaultValue = null, bool secret = false)
+            where T : class
+        {
+            var tuple = CollectText(entity, propertyName, true, 1, defaultValue, secret,
+                v =>
+                {
+                    if (!TimeSpan.TryParse(v, CultureInfo.CurrentCulture, out _))
+                    {
+                        return GetValidationResultError("invalid time span value");
+                    }
+
+                    return ValidationResult.Success();
+                }
+            );
+
+            if (tuple.Item1 && TimeSpan.TryParse(tuple.Item2, CultureInfo.CurrentCulture, out var tsValue))
+            {
+                tuple.Item3.SetValue(entity, tsValue);
+            }
+        }
+
+        private static (bool, string?, PropertyInfo) CollectText<T>(T entity, string propertyName, bool required, int minLength, string? defaultValue, bool secret, Func<string, ValidationResult>? validation = null)
+        where T : class
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(propertyName);
+            var info = ReflectionHelper.GetPropertyInfo<T>(propertyName);
+            var value = info.GetValue(entity)?.ToString();
+            var attribute = ReflectionHelper.GetActionPropertyAttribute<T>(propertyName);
+            var displayName = attribute.DisplayName ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(displayName)) { displayName = propertyName; }
+
+            if (IsEmpty(value, info.PropertyType)) { value = string.Empty; }
+
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                value = CollectCliValue(
+                     field: displayName.ToLower(),
+                     required: required,
+                     minLength: minLength,
+                     maxLength: int.MaxValue,
+                     defaultValue: defaultValue,
+                     secret: secret,
+                     validation: validation) ?? string.Empty;
+
+                return (true, value, info);
+            }
+
+            return (false, null, info);
+        }
+
+        private static bool IsEmpty(string? value, Type type)
+        {
+            const string zero = "0";
+
+            var isNumeric = type.IsPrimitive &&
+                 (type == typeof(int) || type == typeof(double) ||
+                  type == typeof(float) || type == typeof(byte) ||
+                  type == typeof(sbyte) || type == typeof(short) ||
+                  type == typeof(ushort) || type == typeof(long) ||
+                  type == typeof(ulong));
+
+            if(isNumeric)
+            {
+                return value == zero;
+            }
+
+            if(type == typeof(TimeSpan) && TimeSpan.TryParse(value, CultureInfo.CurrentCulture, out var ts))
+            {
+                return ts == TimeSpan.Zero;
+
+            }
+
+            return string.IsNullOrWhiteSpace(value);
         }
 
         protected static int? CollectNumericCliValue(string field, bool required, int minValue, int maxValue, int? defaultValue = null)
@@ -106,7 +243,7 @@ namespace Planar.CLI.Actions
             return int.Parse(result);
         }
 
-        protected static string? CollectCliValue(string field, bool required, int minLength, int maxLength, string? regex = null, string? regexErrorMessage = null, string? defaultValue = null, bool secret = false)
+        protected static string? CollectCliValue(string field, bool required, int minLength, int? maxLength, string? regex = null, string? regexErrorMessage = null, string? defaultValue = null, bool secret = false, Func<string, ValidationResult>? validation = null)
         {
             var prompt = new TextPrompt<string>($"[turquoise2]  > {field.EscapeMarkup()?.Trim()}:[/]")
                 .Validate(value =>
@@ -119,7 +256,7 @@ namespace Planar.CLI.Actions
                         return ValidationResult.Success();
                     }
 
-                    if (value.Length > maxLength) { return GetValidationResultError($"{field} limited to {maxLength} chars maximum"); }
+                    if (maxLength.HasValue && value.Length > maxLength) { return GetValidationResultError($"{field} limited to {maxLength} chars maximum"); }
                     if (value.Length < minLength) { return GetValidationResultError($"{field} must have at least {minLength} chars"); }
                     if (!string.IsNullOrEmpty(regex))
                     {
@@ -127,6 +264,15 @@ namespace Planar.CLI.Actions
                         if (!rx.IsMatch(value))
                         {
                             return GetValidationResultError($"{field} {regexErrorMessage}");
+                        }
+                    }
+
+                    if (validation != null)
+                    {
+                        var customValidation = validation.Invoke(value);
+                        if (!customValidation.Successful)
+                        {
+                            return customValidation;
                         }
                     }
 

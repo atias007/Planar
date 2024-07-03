@@ -169,6 +169,24 @@ namespace Planar.Service.API
             producer.Publish(audit);
         }
 
+        protected static void TrimPropertyName(UpdateEntityRequestByName requestByName)
+        {
+            const char space = ' ';
+            while (requestByName.PropertyName.Contains(space))
+            {
+                requestByName.PropertyName = requestByName.PropertyName.Replace(space.ToString(), string.Empty);
+            }
+        }
+
+        protected static void TrimPropertyName(UpdateEntityRequestById requestByName)
+        {
+            const char space = ' ';
+            while (requestByName.PropertyName.Contains(space))
+            {
+                requestByName.PropertyName = requestByName.PropertyName.Replace(space.ToString(), string.Empty);
+            }
+        }
+
         protected static void ForbbidenPartialUpdateProperties(UpdateEntityRequest request, string? message, params string[] properties)
         {
             var any = Array.Exists(properties, p => string.Equals(request.PropertyName, p, StringComparison.OrdinalIgnoreCase));

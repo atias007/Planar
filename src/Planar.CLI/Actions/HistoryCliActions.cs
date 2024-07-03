@@ -70,6 +70,7 @@ namespace Planar.CLI.Actions
         [Action("get")]
         public static async Task<CliActionResponse> GetHistoryById(CliGetBySomeIdRequest request, CancellationToken cancellationToken = default)
         {
+            FillRequiredString(request, nameof(request.Id));
             if (IsOnlyDigits(request.Id.ToString()))
             {
                 return await GetHistoryById(request.Id, cancellationToken);
@@ -108,6 +109,8 @@ namespace Planar.CLI.Actions
         [Action("data")]
         public static async Task<CliActionResponse> GetHistoryDataById(CliGetByLongIdRequest request, CancellationToken cancellationToken = default)
         {
+            FillRequiredLong(request, nameof(request.Id));
+
             var restRequest = new RestRequest("history/{id}/data", Method.Get)
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
@@ -118,6 +121,8 @@ namespace Planar.CLI.Actions
         [Action("ex")]
         public static async Task<CliActionResponse> GetHistoryExceptionById(CliGetByLongIdRequestWithOutput request, CancellationToken cancellationToken = default)
         {
+            FillRequiredLong(request, nameof(request.Id));
+
             var restRequest = new RestRequest("history/{id}/exception", Method.Get)
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
@@ -128,6 +133,8 @@ namespace Planar.CLI.Actions
         [Action("log")]
         public static async Task<CliActionResponse> GetHistoryLogById(CliGetByLongIdRequestWithOutput request, CancellationToken cancellationToken = default)
         {
+            FillRequiredLong(request, nameof(request.Id));
+
             var restRequest = new RestRequest("history/{id}/log", Method.Get)
                .AddParameter("id", request.Id, ParameterType.UrlSegment);
 

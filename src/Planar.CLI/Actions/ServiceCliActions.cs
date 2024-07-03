@@ -237,6 +237,7 @@ namespace Planar.CLI.Actions
         [Action("encrypt-settings")]
         public static async Task<CliActionResponse> EncryptSettings(CliEncryptAppsettingsRequest request, CancellationToken cancellationToken = default)
         {
+            FillRequiredString(request, nameof(request.Filename));
             cancellationToken.ThrowIfCancellationRequested();
             var filename = request.Filename ?? string.Empty;
             var text = await File.ReadAllTextAsync(filename, cancellationToken);
@@ -256,6 +257,7 @@ namespace Planar.CLI.Actions
         [Action("decrypt-settings")]
         public static async Task<CliActionResponse> DecryptSettings(CliEncryptAppsettingsRequest request, CancellationToken cancellationToken = default)
         {
+            FillRequiredString(request, nameof(request.Filename));
             cancellationToken.ThrowIfCancellationRequested();
             var filename = request.Filename ?? string.Empty;
             var text = await File.ReadAllTextAsync(filename, cancellationToken);

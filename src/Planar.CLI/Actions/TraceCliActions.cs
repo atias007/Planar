@@ -45,6 +45,7 @@ namespace Planar.CLI.Actions
         [Action("exception")]
         public static async Task<CliActionResponse> GetTraceException(CliGetByIdRequestWithOutput request, CancellationToken cancellationToken = default)
         {
+            FillRequiredInt(request, nameof(request.Id));
             var restRequest = new RestRequest("trace/{id}/exception", Method.Get)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
             return await ExecuteEntity<string>(restRequest, cancellationToken);
@@ -53,6 +54,7 @@ namespace Planar.CLI.Actions
         [Action("prop")]
         public static async Task<CliActionResponse> GetTraceProperties(CliGetByIdRequestWithOutput request, CancellationToken cancellationToken = default)
         {
+            FillRequiredInt(request, nameof(request.Id));
             var restRequest = new RestRequest("trace/{id}/properties", Method.Get)
                 .AddParameter("id", request.Id, ParameterType.UrlSegment);
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
