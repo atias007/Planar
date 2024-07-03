@@ -2,6 +2,6 @@
 {
     public interface ICliGetByNameRequest
     {
-        string Name { get; set; }
+        string? Name { get; set; }
     }
 }
