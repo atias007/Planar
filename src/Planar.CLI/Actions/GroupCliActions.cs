@@ -31,10 +31,8 @@ namespace Planar.CLI.Actions
         }
 
         [Action("get")]
-        [NullRequest]
         public static async Task<CliActionResponse> GetByName(CliGetByNameRequest request, CancellationToken cancellationToken = default)
         {
-            request ??= new CliGetByNameRequest();
             var wrapper = await FillGetRequest(request, cancellationToken);
             if (!wrapper.IsSuccessful)
             {
@@ -75,10 +73,8 @@ namespace Planar.CLI.Actions
 
         [Action("remove")]
         [Action("delete")]
-        [NullRequest]
         public static async Task<CliActionResponse> RemoveById(CliGetByNameRequest request, CancellationToken cancellationToken = default)
         {
-            request ??= new CliGetByNameRequest();
             var wrapper = await FillGetRequest(request, cancellationToken);
             if (!wrapper.IsSuccessful)
             {
@@ -95,10 +91,8 @@ namespace Planar.CLI.Actions
         }
 
         [Action("update")]
-        [NullRequest]
         public static async Task<CliActionResponse> Update(CliUpdateEntityByNameRequest request, CancellationToken cancellationToken = default)
         {
-            request ??= new CliUpdateEntityByNameRequest();
             var wrapper = await FillGetRequest(request, cancellationToken);
             if (!wrapper.IsSuccessful)
             {

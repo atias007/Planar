@@ -311,5 +311,21 @@ namespace Planar.CLI
                 return triggerId.EscapeMarkup();
             }
         }
+
+        public static string FormatVersion(string version)
+        {
+            if (string.IsNullOrWhiteSpace(version))
+            {
+                return string.Empty;
+            }
+
+            var parts = version.Split('.');
+            if (parts.Length > 3)
+            {
+                return $"{parts[0]}.{parts[1]}.{parts[2]}{CliConsts.GroupDisplayFormat}.{parts[3]}[/]";
+            }
+
+            return version;
+        }
     }
 }

@@ -6,6 +6,6 @@ namespace Planar.CLI.Entities
     {
         [Required("period argument is required")]
         [ActionProperty(DefaultOrder = 1)]
-        public ReportPeriods Period { get; set; }
+        public ReportPeriods? Period { get; set; }
     }
 }

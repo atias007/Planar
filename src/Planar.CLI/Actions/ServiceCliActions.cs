@@ -68,8 +68,14 @@ namespace Planar.CLI.Actions
 
             if (result.IsSuccessful && result.Data != null)
             {
-                var versionData = new { ServiceVersion = result.Data, CliVersion = Program.Version };
-                return new CliActionResponse(result, versionData);
+                var versionData = new CliVersionData
+                {
+                    ServiceVersion = result.Data,
+                    CliVersion = Program.Version
+                };
+
+                var table = CliTableExtensions.GetTable(versionData);
+                return new CliActionResponse(result, table);
             }
 
             return new CliActionResponse(result);
