@@ -13,12 +13,8 @@ namespace Planar.Controllers
 {
     [ApiController]
     [Route("report")]
-    public class ReportController : BaseController<ReportDomain>
+    public class ReportController(ReportDomain businesLayer) : BaseController<ReportDomain>(businesLayer)
     {
-        public ReportController(ReportDomain businesLayer) : base(businesLayer)
-        {
-        }
-
         [HttpPatch("{name}")]
         [EditorAuthorize]
         [JsonConsumes]

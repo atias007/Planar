@@ -68,6 +68,14 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetTable(CliVersionData cliVersionData)
+        {
+            var table = new CliTable();
+            table.Table.AddColumns("Service Version", CliTableFormat.FormatVersion(cliVersionData.ServiceVersion));
+            table.Table.AddRow("CLI Version", CliTableFormat.FormatVersion(cliVersionData.CliVersion));
+            return table;
+        }
+
         public static CliTable GetTable(string key)
         {
             var table = new CliTable();

@@ -332,6 +332,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
 
     public async Task PartialUpdateMonitor(UpdateEntityRequestById request)
     {
+        TrimPropertyName(request);
         var dbMonitor = await DataLayer.GetMonitorAction(request.Id);
         var monitor = ValidateExistingEntity(dbMonitor, "monitor");
         ForbbidenPartialUpdateProperties(request, "EventId", "GroupId");

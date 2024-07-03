@@ -31,10 +31,8 @@ namespace Planar.CLI.Actions
         }
 
         [Action("get")]
-        [NullRequest]
         public static async Task<CliActionResponse> GetByName(CliGetByNameRequest request, CancellationToken cancellationToken = default)
         {
-            request ??= new CliGetByNameRequest();
             var wrapper = await FillGetRequest(request, cancellationToken);
             if (!wrapper.IsSuccessful)
             {
@@ -75,10 +73,8 @@ namespace Planar.CLI.Actions
 
         [Action("remove")]
         [Action("delete")]
-        [NullRequest]
         public static async Task<CliActionResponse> RemoveById(CliGetByNameRequest request, CancellationToken cancellationToken = default)
         {
-            request ??= new CliGetByNameRequest();
             var wrapper = await FillGetRequest(request, cancellationToken);
             if (!wrapper.IsSuccessful)
             {
@@ -97,6 +93,15 @@ namespace Planar.CLI.Actions
         [Action("update")]
         public static async Task<CliActionResponse> Update(CliUpdateEntityByNameRequest request, CancellationToken cancellationToken = default)
         {
+            var wrapper = await FillGetRequest(request, cancellationToken);
+            if (!wrapper.IsSuccessful)
+            {
+                return new CliActionResponse(wrapper.FailResponse);
+            }
+
+            FillRequiredString(request, nameof(request.PropertyName));
+            FillOptionalString(request, nameof(request.PropertyValue));
+
             var restRequest = new RestRequest("group", Method.Patch)
                .AddBody(request);
 
@@ -176,7 +181,7 @@ namespace Planar.CLI.Actions
             return CliPromptWrapper.Success;
         }
 
-        private static async Task<CliPromptWrapper> FillGetRequest(CliGetByNameRequest request, CancellationToken cancellationToken)
+        private static async Task<CliPromptWrapper> FillGetRequest(ICliGetByNameRequest request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(request.Name))
             {

@@ -25,7 +25,7 @@ namespace Planar.CLI.CliGeneral
                     .LeftJustified()
                     .Color(Color.SteelBlue));
 
-            var panel = new Panel($" [steelblue]planar cli v{Program.Version}[/]")
+            var panel = new Panel($" [steelblue]planar cli v{CliTableFormat.FormatVersion(Program.Version)}[/]")
             {
                 Border = BoxBorder.Ascii
             };

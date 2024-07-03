@@ -82,6 +82,7 @@ public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomai
 
     public async Task PartialUpdate(UpdateEntityRequestByName request)
     {
+        TrimPropertyName(request);
         ForbbidenPartialUpdateProperties(request, $"to join user to group use: planar-cli user join {request.Name} {request.PropertyValue}", nameof(UserDetails.Groups));
         ForbbidenPartialUpdateProperties(request, $"to update user password use: planar-cli user set-password  {request.Name} {request.PropertyValue}", nameof(User.Password));
         ForbbidenPartialUpdateProperties(request, "to update user role join the user to group which has an appropriate role", nameof(UserDetails.Role));

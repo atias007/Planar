@@ -68,8 +68,14 @@ namespace Planar.CLI.Actions
 
             if (result.IsSuccessful && result.Data != null)
             {
-                var versionData = new { ServiceVersion = result.Data, CliVersion = Program.Version };
-                return new CliActionResponse(result, versionData);
+                var versionData = new CliVersionData
+                {
+                    ServiceVersion = result.Data,
+                    CliVersion = Program.Version
+                };
+
+                var table = CliTableExtensions.GetTable(versionData);
+                return new CliActionResponse(result, table);
             }
 
             return new CliActionResponse(result);
@@ -237,6 +243,7 @@ namespace Planar.CLI.Actions
         [Action("encrypt-settings")]
         public static async Task<CliActionResponse> EncryptSettings(CliEncryptAppsettingsRequest request, CancellationToken cancellationToken = default)
         {
+            FillRequiredString(request, nameof(request.Filename));
             cancellationToken.ThrowIfCancellationRequested();
             var filename = request.Filename ?? string.Empty;
             var text = await File.ReadAllTextAsync(filename, cancellationToken);
@@ -256,6 +263,7 @@ namespace Planar.CLI.Actions
         [Action("decrypt-settings")]
         public static async Task<CliActionResponse> DecryptSettings(CliEncryptAppsettingsRequest request, CancellationToken cancellationToken = default)
         {
+            FillRequiredString(request, nameof(request.Filename));
             cancellationToken.ThrowIfCancellationRequested();
             var filename = request.Filename ?? string.Empty;
             var text = await File.ReadAllTextAsync(filename, cancellationToken);
