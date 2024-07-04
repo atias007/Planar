@@ -40,7 +40,7 @@ namespace Planar.CLI.Actions
             }
 
             var restRequest = new RestRequest("group/{name}", Method.Get)
-                .AddParameter("name", request.Name, ParameterType.UrlSegment);
+                .AddParameter("name", request.Name ?? string.Empty, ParameterType.UrlSegment);
 
             return await ExecuteEntity<GroupDetails>(restRequest, cancellationToken);
         }
@@ -84,7 +84,7 @@ namespace Planar.CLI.Actions
             if (!ConfirmAction($"remove group name {request.Name}")) { return CliActionResponse.Empty; }
 
             var restRequest = new RestRequest("group/{name}", Method.Delete)
-                .AddParameter("name", request.Name, ParameterType.UrlSegment);
+                .AddParameter("name", request.Name ?? string.Empty, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);
             return new CliActionResponse(result);

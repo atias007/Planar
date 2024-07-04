@@ -37,7 +37,7 @@ namespace Planar.CLI.Actions
             }
 
             var restRequest = new RestRequest("user/{username}", Method.Get)
-                .AddParameter("username", request.Name, ParameterType.UrlSegment);
+                .AddParameter("username", request.Name ?? string.Empty, ParameterType.UrlSegment);
 
             return await ExecuteEntity<UserDetails>(restRequest, cancellationToken);
         }
@@ -54,7 +54,7 @@ namespace Planar.CLI.Actions
             }
 
             var restRequest = new RestRequest("user/{username}/role", Method.Get)
-                .AddParameter("username", request.Name, ParameterType.UrlSegment);
+                .AddParameter("username", request.Name ?? string.Empty, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
             return new CliActionResponse(result, message: result.Data);
@@ -72,7 +72,7 @@ namespace Planar.CLI.Actions
             }
 
             var restRequest = new RestRequest("user/{username}/reset-password", Method.Patch)
-                .AddParameter("username", request.Name, ParameterType.UrlSegment);
+                .AddParameter("username", request.Name ?? string.Empty, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
             if (result.IsSuccessful)
@@ -95,7 +95,7 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> SetUserPassword(CliSetUserPasswordRequest request, CancellationToken cancellationToken = default)
         {
             var restRequest = new RestRequest("user/{username}/password", Method.Patch)
-                .AddParameter("username", request.Name, ParameterType.UrlSegment)
+                .AddParameter("username", request.Name ?? string.Empty, ParameterType.UrlSegment)
                 .AddBody(request);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);
@@ -127,7 +127,7 @@ namespace Planar.CLI.Actions
             if (!ConfirmAction($"remove user {request.Name}")) { return CliActionResponse.Empty; }
 
             var restRequest = new RestRequest("user/{username}", Method.Delete)
-                .AddParameter("username", request.Name, ParameterType.UrlSegment);
+                .AddParameter("username", request.Name ?? string.Empty, ParameterType.UrlSegment);
 
             return await Execute(restRequest, cancellationToken);
         }
@@ -152,7 +152,7 @@ namespace Planar.CLI.Actions
 
             var restRequest = new RestRequest("group/{name}/user/{username}", Method.Patch)
                .AddParameter("name", request.GroupName, ParameterType.UrlSegment)
-               .AddParameter("username", request.Name, ParameterType.UrlSegment);
+               .AddParameter("username", request.Name ?? string.Empty, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);
             return new CliActionResponse(result);
@@ -169,7 +169,7 @@ namespace Planar.CLI.Actions
 
             var restRequest = new RestRequest("group/{name}/user/{username}", Method.Delete)
                .AddParameter("name", request.GroupName, ParameterType.UrlSegment)
-               .AddParameter("username", request.Name, ParameterType.UrlSegment);
+               .AddParameter("username", request.Name ?? string.Empty, ParameterType.UrlSegment);
 
             var result = await RestProxy.Invoke(restRequest, cancellationToken);
             return new CliActionResponse(result);

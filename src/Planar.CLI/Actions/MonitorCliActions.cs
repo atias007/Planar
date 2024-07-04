@@ -272,7 +272,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         }
 
         var restRequest = new RestRequest("monitor/hook/{name}", Method.Delete)
-            .AddParameter("name", request.Name, ParameterType.UrlSegment);
+            .AddParameter("name", request.Name ?? string.Empty, ParameterType.UrlSegment);
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         return new CliActionResponse(result);

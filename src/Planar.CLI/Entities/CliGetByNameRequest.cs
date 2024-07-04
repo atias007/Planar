@@ -6,6 +6,6 @@ namespace Planar.CLI.Entities
     {
         [ActionProperty(DefaultOrder = 0)]
         [Required("name argument is required")]
-        public string Name { get; set; } = null!;
+        public string? Name { get; set; } = null!;
     }
 }

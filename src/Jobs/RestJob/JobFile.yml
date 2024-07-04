@@ -3,7 +3,7 @@ name: some job name                   # Name of job [mandatory, only alphanumeri
 group: null or group name             # Group of job [only alphanumeric, dashes & underscore, 1 to 50 characters]
 description: some job description     # Description of job [only alphanumeric, dashes & underscore, up to 200 characters]
 author: israel israeli (sales)        # The author/responsible person of the job [up to 100 characters]
-durable: true                         # Boolean [true/false]. Non durable job will be delete from system if no future triggers defined
+durable: true                         # Boolean [true/false]. The nondurable job will be deleted from the system if there are no future triggers are defined
 concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
 log retention days: null              # How many days the running logs will retain. [1 to 1000, null for system default]
 
@@ -53,7 +53,7 @@ simple triggers:                      # List of simple triggers
     misfire behaviour: FireNow        # [ FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount ]
     priority: 1                       # Priority [value between 0 to 100]
     calendar: null                    # Calendar name
-    timeout: 00:30:00                 # Execution timeout. If timeout span passed then cancel command is executed [value between 00:01:00 to 1.00:00:00]
+    timeout: 00:30:00                 # Execution timeout. if the timeout span passed then the cancel command is executed  [value between 00:01:00 to 1.00:00:00]
     retry span: 01:00:00              # The time span between retries [value between 00:00:01 to 1.00:00:00]
     max retries: 3                    # The maximum amount of retries. Default is 3 [1 to 100]
     trigger data:                     # Key/Value pairs used by job code (merged with job data)
@@ -67,7 +67,7 @@ cron triggers:                               # List of cron triggers
     misfire behaviour: DoNothing             # [ DoNothing | FireAndProceed | IgnoreMisfires ]
     priority: 1                              # Priority [value between 0 to 100]
     calendar: null                           # Calendar name
-    timeout: 00:30:00                        # Execution timeout. If timeout span passed then cancel command is executed [value between 00:01:00 to 1.00:00:00]
+    timeout: 00:30:00                        # Execution timeout. if the timeout span passed then the cancel command is executed  [value between 00:01:00 to 1.00:00:00]
     retry span: 01:00:00                     # The time span between retries [value between 00:00:01 to 1.00:00:00]
     max retries: 3                           # The maximum amount of retries. Default is 3 [1 to 100]
     trigger data:                            # Key/Value pairs used by job code (merged with job data)
