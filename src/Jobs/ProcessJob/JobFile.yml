@@ -9,6 +9,9 @@ log retention days: null              # How many days the running logs will reta
 
 properties:                           # Job Properties
   filename: HelloWorld.exe            # Name process executable file [mandatory, up to 500 characters]
+  domain: null                        # The active directory domain name (only on windows OS) [up to 100 characters]
+  username: null                      # local or network username (any OS) [up to 100 characters]
+  password: null                      # The active directory password (only on windows OS) [up to 100 characters]
   arguments: --port 20                # Process arguments
   output encoding: utf8               # Process output encoding name (see list here https://learn.microsoft.com/en-us/dotnet/api/system.text.encoding.getencodings?view=net-7.0)
   success exit codes:                 # List of codes to define success run (the default is 0)
@@ -25,7 +28,7 @@ simple triggers:                      # List of simple triggers
   - name: every-minute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
     start: 2021-09-19 00:00:00        # Start date
     end: 2021-09-19 23:59:00          # End date
-    interval: 00:01:00                # Interval
+    interval: 00:01:00                # Interval in [days.]hours:minutes:seconds format
     repeat count: 100                 # Repeat count
     misfire behaviour: FireNow        # [ FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount ]
     priority: 1                       # Priority [value between 0 to 100]

@@ -2,11 +2,12 @@
 using Planar;
 using Planar.Common;
 using Planar.Common.Exceptions;
-using Polly;
 using Quartz;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Security;
 using System.Text;
 using System.Timers;
 
@@ -88,6 +89,7 @@ where TProperties : class, new()
             CreateNoWindow = true,
             ErrorDialog = false,
             FileName = Filename,
+            UserName = FileProperties.UserName,
             UseShellExecute = false,
             WindowStyle = ProcessWindowStyle.Hidden,
             WorkingDirectory = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, FileProperties.Path),
@@ -95,7 +97,36 @@ where TProperties : class, new()
             RedirectStandardOutput = true
         };
 
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            startInfo.Domain = FileProperties.Domain;
+            startInfo.Password = ToSecureString(FileProperties.Password);
+        }
+
         return startInfo;
+    }
+
+    private static SecureString? ToSecureString(string? plainText)
+    {
+        if (string.IsNullOrWhiteSpace(plainText))
+        {
+            return null;
+        }
+
+        var secureString = new SecureString();
+        try
+        {
+            foreach (char c in plainText)
+            {
+                secureString.AppendChar(c);
+            }
+            secureString.MakeReadOnly(); // Make the string read-only for security
+            return secureString;
+        }
+        finally
+        {
+            secureString.Dispose();
+        }
     }
 
     protected void LogProcessInformation()
