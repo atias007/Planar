@@ -1,3 +1,7 @@
+general:
+  max degree of parallelism: 10                 # the maximum number of parallel threads to be used in the job. the default is 10. value between 2 and 100
+  sequential processing: false                  # a flag to indicate if the services should be processed sequentially or in parallel. the default is false
+
 defaults:                                       # default values for all services. each service can override these values
   retry count: 1                                # the number of retry attemp in case of failure
   retry interval: 00:00:01                      # the interval between retry attemps

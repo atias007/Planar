@@ -28,11 +28,9 @@ internal sealed partial class Job : BaseCheckJob
         }
 
         EffectedRows = 0;
-        var tasks = SafeInvokeCheck(endpoints, ep => InvokeEndpointsInner(ep, hosts));
-        await Task.WhenAll(tasks);
+        await SafeInvokeCheck(endpoints, ep => InvokeEndpointsInner(ep, hosts));
 
-        CheckAggragateException();
-        HandleCheckExceptions();
+        Finilayze();
     }
 
     private static void ValidateEndpoints(IEnumerable<Endpoint> endpoints)

@@ -15,38 +15,6 @@ public abstract class BaseCheckJob : BaseJob
     private CheckFailCounter _failCounter = null!;
     private CheckSpanTracker _spanTracker = null!;
 
-    protected static void ValidateDuplicateKeys<T>(IEnumerable<T> items, string sectionName)
-        where T : ICheckElement
-    {
-        var duplicates1 = items
-            .Where(x => !string.IsNullOrEmpty(x.Key))
-            .GroupBy(x => x.Key)
-            .Where(g => g.Count() > 1)
-            .Select(y => y.Key)
-            .ToList();
-
-        if (duplicates1.Count != 0)
-        {
-            throw new InvalidDataException($"duplicated fount at '{sectionName}' section. duplicate keys found: {string.Join(", ", duplicates1)}");
-        }
-    }
-
-    protected static void ValidateDuplicateNames<T>(IEnumerable<T> items, string sectionName)
-        where T : INamedCheckElement
-    {
-        var duplicates1 = items
-            .Where(x => !string.IsNullOrEmpty(x.Name))
-            .GroupBy(x => x.Name)
-            .Where(g => g.Count() > 1)
-            .Select(y => y.Key)
-            .ToList();
-
-        if (duplicates1.Count != 0)
-        {
-            throw new InvalidDataException($"duplicated fount at '{sectionName}' section. duplicate names found: {string.Join(", ", duplicates1)}");
-        }
-    }
-
     protected static void FillBase(BaseDefault baseDefaultTarget, BaseDefault baseDefaultSorce)
     {
         baseDefaultTarget.RetryInterval ??= baseDefaultSorce.RetryInterval;
@@ -101,6 +69,38 @@ public abstract class BaseCheckJob : BaseJob
         ValidateLessThenOrEquals(@default.RetryCount, 10, "retry count", section);
         ValidateGreaterThenOrEquals(@default.MaximumFailsInRow, 1, "maximum fails in row", section);
         ValidateLessThenOrEquals(@default.MaximumFailsInRow, 1000, "maximum fails in row", section);
+    }
+
+    protected static void ValidateDuplicateKeys<T>(IEnumerable<T> items, string sectionName)
+                            where T : ICheckElement
+    {
+        var duplicates1 = items
+            .Where(x => !string.IsNullOrEmpty(x.Key))
+            .GroupBy(x => x.Key)
+            .Where(g => g.Count() > 1)
+            .Select(y => y.Key)
+            .ToList();
+
+        if (duplicates1.Count != 0)
+        {
+            throw new InvalidDataException($"duplicated found at '{sectionName}' section. duplicate keys found: {string.Join(", ", duplicates1)}");
+        }
+    }
+
+    protected static void ValidateDuplicateNames<T>(IEnumerable<T> items, string sectionName)
+        where T : INamedCheckElement
+    {
+        var duplicates1 = items
+            .Where(x => !string.IsNullOrEmpty(x.Name))
+            .GroupBy(x => x.Name)
+            .Where(g => g.Count() > 1)
+            .Select(y => y.Key)
+            .ToList();
+
+        if (duplicates1.Count != 0)
+        {
+            throw new InvalidDataException($"duplicated found at '{sectionName}' section. duplicate names found: {string.Join(", ", duplicates1)}");
+        }
     }
 
     protected static void ValidateGreaterThen(double? value, double limit, string fieldName, string section)
@@ -205,7 +205,13 @@ public abstract class BaseCheckJob : BaseJob
         _exceptions.Enqueue(exception);
     }
 
-    protected virtual void HandleCheckExceptions()
+    protected void Finilayze()
+    {
+        CheckAggragateException();
+        HandleCheckExceptions();
+    }
+
+    private void HandleCheckExceptions()
     {
         if (!_exceptions.IsEmpty)
         {
@@ -225,19 +231,44 @@ public abstract class BaseCheckJob : BaseJob
         }
     }
 
+    protected void IncreaseEffectedRows()
+    {
+        EffectedRows = EffectedRows.GetValueOrDefault() + 1;
+    }
+
     protected void Initialize(IServiceProvider serviceProvider)
     {
         _spanTracker = serviceProvider.GetRequiredService<CheckSpanTracker>();
         _failCounter = serviceProvider.GetRequiredService<CheckFailCounter>();
     }
 
-    protected IEnumerable<Task> SafeInvokeCheck<T>(IEnumerable<T> entities, Func<T, Task> checkFunc)
-            where T : BaseDefault, ICheckElement
+    protected bool IsIntervalElapsed(ICheckElement element, TimeSpan? interval)
     {
-        foreach (var item in entities)
+        if (interval == null) { return true; }
+        var tracker = ServiceProvider.GetRequiredService<CheckIntervalTracker>();
+        var lastSpan = tracker.LastRunningSpan(element);
+        if (lastSpan > TimeSpan.Zero && lastSpan < interval.Value)
         {
-            yield return SafeInvokeCheck(item, checkFunc);
+            return false;
         }
+
+        return true;
+    }
+
+    protected async Task SafeInvokeCheck<T>(IEnumerable<T> entities, Func<T, Task> checkFunc)
+                where T : BaseDefault, ICheckElement
+    {
+        var chunks = entities.Chunk(100);
+        foreach (var chunk in chunks)
+        {
+            var tasks = SafeInvokeCheckInner(chunk, checkFunc);
+            await Task.WhenAll(tasks);
+        }
+
+        Parallel.ForEach(entities, entity =>
+        {
+            _spanTracker.UpdateRunningSpan(entity);
+        }, new ParallelOptions { MaxDegreeOfParallelism });
     }
 
     protected async Task SafeInvokeCheck<T>(T entity, Func<T, Task> checkFunc)
@@ -273,6 +304,15 @@ public abstract class BaseCheckJob : BaseJob
         }
     }
 
+    protected IEnumerable<Task> SafeInvokeCheckInner<T>(IEnumerable<T> entities, Func<T, Task> checkFunc)
+                where T : BaseDefault, ICheckElement
+    {
+        foreach (var item in entities)
+        {
+            yield return SafeInvokeCheck(item, checkFunc);
+        }
+    }
+
     protected async Task<T?> SafeInvokeFunction<T>(Func<Task<T>> func, BaseDefault baseDefault)
     {
         try
@@ -299,7 +339,7 @@ public abstract class BaseCheckJob : BaseJob
         catch (Exception ex)
         {
             Logger.LogError(ex, "unhandled exception. reason: {Message}", ex.Message);
-            AddAggregateException(ex);
+            await AddAggregateExceptionAsync(ex);
         }
 
         return default;
@@ -327,24 +367,6 @@ public abstract class BaseCheckJob : BaseJob
         }
     }
 
-    protected void IncreaseEffectedRows()
-    {
-        EffectedRows = EffectedRows.GetValueOrDefault() + 1;
-    }
-
-    protected bool IsIntervalElapsed(ICheckElement element, TimeSpan? interval)
-    {
-        if (interval == null) { return true; }
-        var tracker = ServiceProvider.GetRequiredService<CheckIntervalTracker>();
-        var lastSpan = tracker.LastRunningSpan(element);
-        if (lastSpan > TimeSpan.Zero && lastSpan < interval.Value)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
     private static string FormatTimeSpan(TimeSpan timeSpan)
     {
         if (timeSpan.TotalDays >= 1)
@@ -355,8 +377,35 @@ public abstract class BaseCheckJob : BaseJob
         return $"{timeSpan:hh\\:mm\\:ss}";
     }
 
+    private static bool IsExceptionIsCheckException(Exception ex, [NotNullWhen(true)] out CheckException? checkException)
+    {
+        if (ex is CheckException checkException1)
+        {
+            checkException = checkException1;
+            return true;
+        }
+
+        if (ex.InnerException is CheckException checkException2)
+        {
+            checkException = checkException2;
+            return true;
+        }
+
+        if (
+            ex is AggregateException aggregateException &&
+            aggregateException.InnerExceptions.Count == 1 &&
+            aggregateException.InnerExceptions[0] is CheckException checkException3)
+        {
+            checkException = checkException3;
+            return true;
+        }
+
+        checkException = null;
+        return false;
+    }
+
     private void SafeHandleCheckException<T>(T entity, Exception ex)
-      where T : BaseDefault, ICheckElement
+          where T : BaseDefault, ICheckElement
     {
         bool IsSpanValid()
         {
@@ -403,33 +452,6 @@ public abstract class BaseCheckJob : BaseJob
         {
             AddAggregateException(innerEx);
         }
-    }
-
-    private static bool IsExceptionIsCheckException(Exception ex, [NotNullWhen(true)] out CheckException? checkException)
-    {
-        if (ex is CheckException checkException1)
-        {
-            checkException = checkException1;
-            return true;
-        }
-
-        if (ex.InnerException is CheckException checkException2)
-        {
-            checkException = checkException2;
-            return true;
-        }
-
-        if (
-            ex is AggregateException aggregateException &&
-            aggregateException.InnerExceptions.Count == 1 &&
-            aggregateException.InnerExceptions[0] is CheckException checkException3)
-        {
-            checkException = checkException3;
-            return true;
-        }
-
-        checkException = null;
-        return false;
     }
 
     private void SafeHandleOperationException<T>(T entity, Exception ex)

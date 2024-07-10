@@ -39,8 +39,7 @@ public class Job : BaseCheckJob
 
         await Task.WhenAll(tasks);
 
-        CheckAggragateException();
-        HandleCheckExceptions();
+        Finilayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -315,8 +314,7 @@ public class Job : BaseCheckJob
 
         if (details == null) { return; }
 
-        var tasks = SafeInvokeCheck(queues, q => InvokeQueueCheckInner(q, server, details));
-        await Task.WhenAll(tasks);
+        await SafeInvokeCheck(queues, q => InvokeQueueCheckInner(q, server, details));
     }
 
     private async Task SafeInvokeNodeCheck(Node node, Server server)

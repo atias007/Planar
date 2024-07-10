@@ -26,8 +26,7 @@ internal partial class Job : BaseCheckJob
         var tasks = SafeInvokeOperation(tables, InvokeTableRerentionInner);
         await Task.WhenAll(tasks);
 
-        CheckAggragateException();
-        HandleCheckExceptions();
+        Finilayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

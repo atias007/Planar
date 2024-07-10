@@ -25,11 +25,9 @@ internal sealed partial class Job : BaseCheckJob
         EffectedRows = 0;
 
         using var client = new HttpClient();
-        var tasks = SafeInvokeCheck(services, InvokeServicesInner);
-        await Task.WhenAll(tasks);
+        await SafeInvokeCheck(services, InvokeServicesInner);
 
-        CheckAggragateException();
-        HandleCheckExceptions();
+        Finilayze();
     }
 
     private static void ValidateServices(IEnumerable<Service> services)

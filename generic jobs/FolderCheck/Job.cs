@@ -27,11 +27,9 @@ internal class Job : BaseCheckJob
 
         EffectedRows = 0;
 
-        var tasks = SafeInvokeCheck(folders, f => InvokeFolderInnerAsync(f, hosts));
-        await Task.WhenAll(tasks);
+        await SafeInvokeCheck(folders, f => InvokeFolderInnerAsync(f, hosts));
 
-        CheckAggragateException();
-        HandleCheckExceptions();
+        Finilayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

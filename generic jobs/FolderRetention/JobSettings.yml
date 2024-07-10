@@ -1,3 +1,7 @@
+general:
+  max degree of parallelism: 10                 # the maximum number of parallel threads to be used in the job. the default is 10. value between 2 and 100
+  sequential processing: false                  # a flag to indicate if the folders should be processed sequentially or in parallel. the default is false
+
 #hosts:                                         # the hosts to be used in folders with relative path. usualy this section defined in specific environment job settings
 #  - localhost
 #  - 127.0.0.1

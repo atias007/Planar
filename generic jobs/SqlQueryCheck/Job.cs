@@ -24,11 +24,9 @@ internal partial class Job : BaseCheckJob
         ValidateRequired(queries, "queries");
         ValidateDuplicateNames(queries, "queries");
         EffectedRows = 0;
-        var tasks = SafeInvokeCheck(queries, InvokeQueryCheckInner);
-        await Task.WhenAll(tasks);
+        await SafeInvokeCheck(queries, InvokeQueryCheckInner);
 
-        CheckAggragateException();
-        HandleCheckExceptions();
+        Finilayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

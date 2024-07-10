@@ -1,4 +1,8 @@
-# connection strings:                                        # the sql server connection strings to use. usualy this section defined in specific environment job settings
+general:
+  max degree of parallelism: 10                 # the maximum number of parallel threads to be used in the job. the default is 10. value between 2 and 100
+  sequential processing: false                  # a flag to indicate if the tables should be processed sequentially or in parallel. the default is false
+
+# connection strings:                           # the sql server connection strings to use. usualy this section defined in specific environment job settings
 #   default: Data Source=.;Initial Catalog=master;Integrated Security=True
 
 tables:
