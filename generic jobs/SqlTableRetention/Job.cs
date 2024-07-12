@@ -16,8 +16,9 @@ internal partial class Job : BaseCheckJob
 
     public override async Task ExecuteJob(IJobExecutionContext context)
     {
-        EffectedRows = 0;
         Initialize(ServiceProvider);
+
+        EffectedRows = 0;
         var connStrings = GetConnectionStrings(Configuration);
         var tables = GetTables(Configuration, connStrings);
         ValidateRequired(tables, "tables");

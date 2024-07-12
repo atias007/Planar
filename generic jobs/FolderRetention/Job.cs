@@ -22,6 +22,8 @@ internal class Job : BaseCheckJob
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
+        Initialize(ServiceProvider);
+
         var hosts = GetHosts(Configuration);
         var folders = GetFolders(Configuration);
 
@@ -35,8 +37,7 @@ internal class Job : BaseCheckJob
         var tasks = SafeInvokeOperation(folders, f => InvokeFolderInnerAsync(f, hosts));
         await Task.WhenAll(tasks);
 
-        CheckAggragateException();
-        HandleCheckExceptions();
+        Finilayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

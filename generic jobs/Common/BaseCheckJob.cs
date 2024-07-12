@@ -14,6 +14,7 @@ public abstract class BaseCheckJob : BaseJob
     private readonly ConcurrentQueue<CheckException> _exceptions = new();
     private CheckFailCounter _failCounter = null!;
     private CheckSpanTracker _spanTracker = null!;
+    private General _general = null!;
 
     protected static void FillBase(BaseDefault baseDefaultTarget, BaseDefault baseDefaultSorce)
     {
@@ -240,6 +241,13 @@ public abstract class BaseCheckJob : BaseJob
     {
         _spanTracker = serviceProvider.GetRequiredService<CheckSpanTracker>();
         _failCounter = serviceProvider.GetRequiredService<CheckFailCounter>();
+
+        var config = ServiceProvider.GetRequiredService<IConfiguration>();
+        var logger = ServiceProvider.GetRequiredService<ILogger<General>>();
+        _general = new(config);
+        ValidateGreaterThenOrEquals(_general.MaxDegreeOfParallelism, 2, "max degree of parallelism", "general");
+        ValidateLessThenOrEquals(_general.MaxDegreeOfParallelism, 100, "max degree of parallelism", "general");
+        logger.LogInformation(_general.ToString());
     }
 
     protected bool IsIntervalElapsed(ICheckElement element, TimeSpan? interval)
@@ -258,17 +266,22 @@ public abstract class BaseCheckJob : BaseJob
     protected async Task SafeInvokeCheck<T>(IEnumerable<T> entities, Func<T, Task> checkFunc)
                 where T : BaseDefault, ICheckElement
     {
-        var chunks = entities.Chunk(100);
-        foreach (var chunk in chunks)
+        if (_general.SequentialProcessing)
         {
-            var tasks = SafeInvokeCheckInner(chunk, checkFunc);
-            await Task.WhenAll(tasks);
+            foreach (var entity in entities)
+            {
+                await SafeInvokeCheck(entity, checkFunc);
+            }
         }
-
-        Parallel.ForEach(entities, entity =>
+        else
         {
-            _spanTracker.UpdateRunningSpan(entity);
-        }, new ParallelOptions { MaxDegreeOfParallelism });
+            var chunks = entities.Chunk(_general.MaxDegreeOfParallelism);
+            foreach (var chunk in chunks)
+            {
+                var tasks = SafeInvokeCheckInner(chunk, checkFunc);
+                await Task.WhenAll(tasks);
+            }
+        }
     }
 
     protected async Task SafeInvokeCheck<T>(T entity, Func<T, Task> checkFunc)

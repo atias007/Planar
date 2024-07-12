@@ -18,6 +18,7 @@ internal partial class Job : BaseCheckJob
     public override async Task ExecuteJob(IJobExecutionContext context)
     {
         Initialize(ServiceProvider);
+
         var defaults = GetDefaults(Configuration);
         var connStrings = GetConnectionStrings(Configuration);
         var queries = GetQueries(Configuration, defaults, connStrings);

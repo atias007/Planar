@@ -27,8 +27,7 @@ internal class Job : BaseCheckJob
         var tasks = SafeInvokeOperation(keys, InvokeKeyCheckInner);
         await Task.WhenAll(tasks);
 
-        CheckAggragateException();
-        HandleCheckExceptions();
+        Finilayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

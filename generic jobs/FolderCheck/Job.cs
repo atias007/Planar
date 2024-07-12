@@ -14,6 +14,8 @@ internal class Job : BaseCheckJob
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
+        Initialize(ServiceProvider);
+
         var defaults = GetDefaults(Configuration);
         var hosts = GetHosts(Configuration);
         var folders = GetFolders(Configuration, defaults);
