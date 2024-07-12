@@ -247,7 +247,9 @@ public abstract class BaseCheckJob : BaseJob
         _general = new(config);
         ValidateGreaterThenOrEquals(_general.MaxDegreeOfParallelism, 2, "max degree of parallelism", "general");
         ValidateLessThenOrEquals(_general.MaxDegreeOfParallelism, 100, "max degree of parallelism", "general");
+#pragma warning disable CA2254 // Template should be a static expression
         logger.LogInformation(_general.ToString());
+#pragma warning restore CA2254 // Template should be a static expression
     }
 
     protected bool IsIntervalElapsed(ICheckElement element, TimeSpan? interval)

@@ -227,8 +227,8 @@ public class Job : BaseCheckJob
             ?? throw new CheckException($"queue check (exists) on host {host} failed. queue '{queue.Name}' does not exists");
 
         CheckState(host, queue, detail);
-        CheckConsumers(host, queue, detail);
-        CheckMessages(host, queue, detail);
+        CheckConsumers(queue, detail);
+        CheckMessages(queue, detail);
         CheckMemory(host, queue, detail);
         IncreaseEffectedRows();
         await Task.CompletedTask;
@@ -245,39 +245,39 @@ public class Job : BaseCheckJob
             }
             else
             {
-                throw new CheckException($"queue check (memory), name '{detail.Name}' on host {host} failed. value is '{detail.Memory:N0}'");
+                throw new CheckException($"queue check (memory), name '{detail.Name}' on host {host} failed. value is {detail.Memory:N0}");
             }
         }
     }
 
-    private void CheckMessages(string host, Queue queue, QueueDetails detail)
+    private void CheckMessages(Queue queue, QueueDetails detail)
     {
         // Messages
         if (queue.Messages.HasValue)
         {
             if (queue.Messages.GetValueOrDefault() >= detail.Messages)
             {
-                Logger.LogInformation("queue check (messages), name '{Name}' on host {Host} succeeded. value is {Messages:N0}", detail.Name, host, detail.Messages);
+                Logger.LogInformation("queue check (messages), name '{Name}' succeeded. value is {Messages:N0}", detail.Name, detail.Messages);
             }
             else
             {
-                throw new CheckException($"queue check (messages), name '{detail.Name}' on host {host} failed. value is '{detail.Messages:N0}'");
+                throw new CheckException($"queue check (messages), name '{detail.Name}' failed. value is {detail.Messages:N0}");
             }
         }
     }
 
-    private void CheckConsumers(string host, Queue queue, QueueDetails detail)
+    private void CheckConsumers(Queue queue, QueueDetails detail)
     {
         // Consumers
         if (queue.Consumers.HasValue)
         {
             if (queue.Consumers.GetValueOrDefault() <= detail.Consumers)
             {
-                Logger.LogInformation("queue check (consumers), name '{Name}' on host {Host} succeeded. value is {Consumers:N0}", detail.Name, host, detail.Consumers);
+                Logger.LogInformation("queue check (consumers), name '{Name}' succeeded. value is {Consumers:N0}", detail.Name, detail.Consumers);
             }
             else
             {
-                throw new CheckException($"queue check (consumers), name '{detail.Name}' on host {host} failed. value is '{detail.Consumers:N0}'");
+                throw new CheckException($"queue check (consumers), name '{detail.Name}' failed. value is {detail.Consumers:N0}");
             }
         }
     }
