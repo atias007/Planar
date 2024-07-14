@@ -9,15 +9,21 @@ public sealed class General
         var section = configuration.GetSection("general");
         MaxDegreeOfParallelism = section.GetValue<int?>("max degree of parallelism") ?? 10;
         SequentialProcessing = section.GetValue<bool?>("sequential processing") ?? false;
+        StopRunningOnFail = section.GetValue<bool?>("stop running on fail") ?? false;
     }
 
     public int MaxDegreeOfParallelism { get; private set; }
     public bool SequentialProcessing { get; private set; }
 
+    public bool StopRunningOnFail { get; private set; }
+
     override public string ToString()
     {
         return SequentialProcessing ?
             "processing mode: sequential" :
-            $"processing mode: parallel with max degree of {MaxDegreeOfParallelism}";
+            $"""
+            processing mode: parallel with max degree of {MaxDegreeOfParallelism}
+            stop running on fail: {StopRunningOnFail}
+            """;
     }
 }

@@ -272,21 +272,24 @@ public abstract class BaseCheckJob : BaseJob
         {
             foreach (var entity in entities)
             {
-                await SafeInvokeCheck(entity, checkFunc);
+                var status = await SafeInvokeCheck(entity, checkFunc);
+                var notValidStatus = status != SafeHandleStatus.Success && status != SafeHandleStatus.CheckWarning;
+                if (_general.StopRunningOnFail && notValidStatus)
+                {
+                    var ex = new InvalidOperationException("stop running on fail is enabled. job will stop running");
+                    await AddAggregateExceptionAsync(ex);
+                    break;
+                }
             }
         }
         else
         {
-            var chunks = entities.Chunk(_general.MaxDegreeOfParallelism);
-            foreach (var chunk in chunks)
-            {
-                var tasks = SafeInvokeCheckInner(chunk, checkFunc);
-                await Task.WhenAll(tasks);
-            }
+            var tasks = entities.Select(x => new Func<Task>(() => SafeInvokeCheck(x, checkFunc)));
+            await TaskQueue.RunAsync(tasks, _general.MaxDegreeOfParallelism);
         }
     }
 
-    protected async Task SafeInvokeCheck<T>(T entity, Func<T, Task> checkFunc)
+    protected async Task<SafeHandleStatus> SafeInvokeCheck<T>(T entity, Func<T, Task> checkFunc)
         where T : BaseDefault, ICheckElement
     {
         try
@@ -294,7 +297,7 @@ public abstract class BaseCheckJob : BaseJob
             if (entity.RetryCount == 0)
             {
                 await checkFunc(entity);
-                return;
+                return SafeHandleStatus.Success;
             }
 
             await Policy.Handle<Exception>()
@@ -312,10 +315,13 @@ public abstract class BaseCheckJob : BaseJob
 
             _failCounter.ResetFailCount(entity);
             _spanTracker.ResetFailSpan(entity);
+
+            return SafeHandleStatus.Success;
         }
         catch (Exception ex)
         {
-            SafeHandleCheckException(entity, ex);
+            var status = SafeHandleCheckException(entity, ex);
+            return status;
         }
     }
 
@@ -419,7 +425,7 @@ public abstract class BaseCheckJob : BaseJob
         return false;
     }
 
-    private void SafeHandleCheckException<T>(T entity, Exception ex)
+    private SafeHandleStatus SafeHandleCheckException<T>(T entity, Exception ex)
           where T : BaseDefault, ICheckElement
     {
         bool IsSpanValid()
@@ -442,30 +448,36 @@ public abstract class BaseCheckJob : BaseJob
         {
             if (!IsExceptionIsCheckException(ex, out var checkException))
             {
-                Logger.LogError(ex, "check failed for '{Key}'. reason: {Message}", entity.Key, ex.Message);
+                Logger.LogError(ex, "check failed for '{Key}'. reason: {Message}",
+                    entity.Key, ex.Message);
                 AddAggregateException(ex);
-                return;
+                return SafeHandleStatus.Exception;
             }
 
             if (IsSpanValid())
             {
-                Logger.LogWarning("check failed but error span is valid for '{Key}'. reason: {Message}", entity.Key, ex.Message);
-                return;
+                Logger.LogWarning("check failed but error span is valid for '{Key}'. reason: {Message}",
+                    entity.Key, ex.Message);
+                return SafeHandleStatus.CheckWarning;
             }
 
             if (!IsCounterValid())
             {
                 Logger.LogWarning("check failed but maximum fails in row reached for '{Key}'. reason: {Message}",
                     entity.Key, ex.Message);
-                return;
+                return SafeHandleStatus.CheckWarning;
             }
 
-            Logger.LogError("check failed for '{Key}'. reason: {Message}", entity.Key, ex.Message);
+            Logger.LogError("check failed for '{Key}'. reason: {Message}",
+                entity.Key, ex.Message);
             AddCheckException(checkException);
+
+            return SafeHandleStatus.CheckError;
         }
         catch (Exception innerEx)
         {
             AddAggregateException(innerEx);
+            return SafeHandleStatus.Exception;
         }
     }
 
