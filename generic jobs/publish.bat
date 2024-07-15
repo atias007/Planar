@@ -39,3 +39,7 @@ cd..
 cd WindowsServiceRestart
 dotnet publish -c Release -o C:\temp\Planar\publish\GenericJobs\Operation\WindowsServiceRestart
 cd..
+
+cd InfluxDBCheck
+dotnet publish -c Release -o C:\temp\Planar\publish\GenericJobs\Operation\InfluxDBCheck
+cd..

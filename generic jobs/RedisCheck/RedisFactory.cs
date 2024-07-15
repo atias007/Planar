@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Common;
+using Microsoft.Extensions.Configuration;
 using StackExchange.Redis;
 using System.Collections.Concurrent;
 
@@ -24,7 +25,7 @@ internal static class RedisFactory
 
     public static void Initialize(IConfiguration configuration)
     {
-        var section = configuration.GetRequiredSection("server");
+        var section = configuration.GetRequiredSection(Consts.RedisConfigSection);
         Database = section.GetValue<int?>("database") ?? 0;
         Ssl = section.GetValue<bool>("ssl");
         User = section.GetValue<string?>("user");

@@ -8,6 +8,7 @@ using Polly;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using YamlDotNet.Core.Tokens;
 
 public abstract class BaseCheckJob : BaseJob
 {
@@ -172,6 +173,18 @@ public abstract class BaseCheckJob : BaseJob
         {
             throw new InvalidDataException($"'{fieldName}' field on '{section}' section must be less then or equals {limit:N0}");
         }
+    }
+
+    protected static void ValidateAtLeastOneRequired<T>(IEnumerable<T> values, IEnumerable<string> fieldNames, string section)
+    {
+        foreach (var value in values)
+        {
+            var stringValue = Convert.ToString(value);
+            if (!string.IsNullOrWhiteSpace(stringValue)) { return; }
+        }
+
+        var fields = string.Join(", ", fieldNames);
+        throw new InvalidDataException($"on of fields: {fields} at '{section}' section is required");
     }
 
     protected static void ValidateRequired(object? value, string fieldName, string section)

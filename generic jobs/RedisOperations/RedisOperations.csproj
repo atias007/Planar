@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <Compile Include="..\..\src\Planar.CLI\General\CommandSplitter.cs" Link="CommandSplitter.cs" />
+    <Compile Include="..\Common\Consts.cs" Link="Consts.cs" />
     <Compile Include="..\RedisCheck\RedisFactory.cs" Link="RedisFactory.cs" />
   </ItemGroup>
 

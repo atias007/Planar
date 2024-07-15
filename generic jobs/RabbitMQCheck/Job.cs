@@ -91,20 +91,18 @@ public class Job : BaseCheckJob
 
     private static Server GetServer(IConfiguration configuration)
     {
-        const string serverSectionName = "server";
-        var section = configuration.GetSection(serverSectionName);
-        var server = new Server(section);
+        var server = new Server(configuration);
 
-        ValidateRequired(server.Hosts, "hosts", serverSectionName);
-        ValidateRequired(server.Username, "username", serverSectionName);
-        ValidateRequired(server.Password, "password", serverSectionName);
+        ValidateRequired(server.Hosts, "hosts", Consts.RabbitMQConfigSection);
+        ValidateRequired(server.Username, "username", Consts.RabbitMQConfigSection);
+        ValidateRequired(server.Password, "password", Consts.RabbitMQConfigSection);
 
         foreach (var item in server.Hosts)
         {
-            ValidateUri(item, "hosts", serverSectionName);
+            ValidateUri(item, "hosts", Consts.RabbitMQConfigSection);
         }
 
-        ValidateRequired(server.Hosts, "hosts", serverSectionName);
+        ValidateRequired(server.Hosts, "hosts", Consts.RabbitMQConfigSection);
 
         return server;
     }
