@@ -12,8 +12,8 @@ internal class Job : BaseCheckJob
 {
     private const string template1 = "^(eq|ne|gt|ge|lt|le)\\s[-+]?\\d+(\\.\\d+)?$";
     private const string template2 = "^(be|bi)\\s[-+]?\\d+(\\.\\d+)?\\sand\\s[-+]?\\d+(\\.\\d+)?$";
-    private static readonly Regex _regex1 = new Regex(template1, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500));
-    private static readonly Regex _regex2 = new Regex(template2, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500));
+    private static readonly Regex _regex1 = new(template1, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500));
+    private static readonly Regex _regex2 = new(template2, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500));
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
