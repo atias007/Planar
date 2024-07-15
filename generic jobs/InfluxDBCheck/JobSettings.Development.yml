@@ -1,6 +1,4 @@
-server:
-  endpoints: 
-    - localhost:6379
-  ssl: false
-  user: null
-  password: null
+  server:                                        # the redis server parameters to be use. usualy this section defined in specific environment job settings
+    url: http://localhost:8086
+    token: null
+    organization: null
