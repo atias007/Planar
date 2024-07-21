@@ -1,6 +1,6 @@
 ﻿--------------------------------------------------------
 
-PLAN FOR V 1.7.4
+PLAN FOR V 1.7.6
 ----------------
 
 - add username, domain, password to ProcessJob + PlanarJob
@@ -329,3 +329,7 @@ V1.7.4
 - FIX: hook cache issue
 - FIX: reload monitor hooks
 - FIX: empty hook users 
+
+V1.7.6
+------
+- Add jobid, jobgroup & jobtype parameters to last history api

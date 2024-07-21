@@ -1,6 +1,6 @@
-﻿namespace Planar.API.Common.Entities
+﻿namespace Planar.Client.Entities
 {
-    public class GetLastHistoryCallForJobRequest : PagingRequest
+    public class LastHistoryFilter : Paging
     {
         public string? JobId { get; set; }
 

@@ -6,9 +6,6 @@ using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
 using System;
-using System.Linq;
-using System.Net;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -172,6 +169,21 @@ namespace Planar.CLI.Actions
             if (request.LastDays > 0)
             {
                 restRequest.AddQueryParameter("lastDays", request.LastDays);
+            }
+
+            if (!string.IsNullOrEmpty(request.JobType))
+            {
+                restRequest.AddQueryParameter("jobType", request.JobType);
+            }
+
+            if (!string.IsNullOrEmpty(request.JobId))
+            {
+                restRequest.AddQueryParameter("jobId", request.JobId);
+            }
+
+            if (!string.IsNullOrEmpty(request.JobGroup))
+            {
+                restRequest.AddQueryParameter("jobGroup", request.JobGroup);
             }
 
             restRequest.AddQueryPagingParameter(request);
