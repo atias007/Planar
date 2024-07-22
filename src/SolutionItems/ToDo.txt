@@ -333,3 +333,4 @@ V1.7.4
 V1.7.6
 ------
 - Add jobid, jobgroup & jobtype parameters to last history api
+- Add JobInstance table indexes

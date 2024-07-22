@@ -53,7 +53,7 @@ namespace Planar.Client
         /// <returns></returns>
         Task<string> GetExceptionAsync(long id, CancellationToken cancellationToken = default);
 
-        Task<PagingResponse<LastRunDetails>> LastAsync(LastHistoryFilter? filter, CancellationToken cancellationToken = default);
+        Task<PagingResponse<LastRunDetails>> LastAsync(LastHistoryFilter? filter = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         ///

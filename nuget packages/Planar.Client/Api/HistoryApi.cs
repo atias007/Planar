@@ -65,7 +65,7 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<PagingResponse<LastRunDetails>> LastAsync(LastHistoryFilter? filter, CancellationToken cancellationToken = default)
+        public async Task<PagingResponse<LastRunDetails>> LastAsync(LastHistoryFilter? filter = null, CancellationToken cancellationToken = default)
         {
             filter ??= new LastHistoryFilter();
             var restRequest = new RestRequest("history/last", Method.Get);
