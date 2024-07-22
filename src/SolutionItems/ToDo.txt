@@ -3,7 +3,6 @@
 PLAN FOR V 1.7.6
 ----------------
 
-- add username, domain, password to ProcessJob + PlanarJob
 - validate on startup that instance id not exists in nodes table
 - Security report
 
@@ -328,7 +327,8 @@ V1.7.4
 - add environment to all hooks
 - FIX: hook cache issue
 - FIX: reload monitor hooks
-- FIX: empty hook users 
+- FIX: empty hook users
+- add username, domain, password to ProcessJob + PlanarJob
 
 V1.7.6
 ------
