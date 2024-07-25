@@ -24,7 +24,7 @@ namespace Planar.Job
         private IServiceProvider _provider = null!;
         private Timer? _timer;
         private Version? _version;
-        private AutoResetEvent _executeResetEvent = new AutoResetEvent(false);
+        private readonly AutoResetEvent _executeResetEvent = new AutoResetEvent(false);
 
         protected IConfiguration Configuration
         {
@@ -83,7 +83,7 @@ namespace Planar.Job
 
         public abstract void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context);
 
-        internal void Execute(string json)
+        internal async Task Execute(string json)
         {
             Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
             Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
@@ -94,33 +94,7 @@ namespace Planar.Job
 
             Logger = ServiceProvider.GetRequiredService<ILogger>();
 
-            if (PlanarJob.Mode == RunningMode.Release)
-            {
-                var connectTimeout = TimeSpan.FromSeconds(10);
-                MqttClient.Connected += MqttClient_Connected;
-                MqttClient.Start(_context.FireInstanceId, _context.JobPort).Wait();
-
-                var isConnect = _executeResetEvent.WaitOne(connectTimeout);
-
-                if (!isConnect)
-                {
-                    MqttClient.Stop().Wait();
-                    Task.Delay(1000).Wait();
-                    MqttClient.Start(_context.FireInstanceId, _context.JobPort).Wait();
-                    _executeResetEvent = new AutoResetEvent(false);
-                    isConnect = _executeResetEvent.WaitOne(connectTimeout);
-                }
-
-                if (isConnect)
-                {
-                    MqttClient.Ping().Wait();
-                    MqttClient.Publish(MessageBrokerChannels.HealthCheck).Wait();
-                }
-                else
-                {
-                    throw new PlanarJobException("Fail to initialize message broker. Communication to planar fail");
-                }
-            }
+            await OpenMqttConnection();
 
             var mapper = new JobMapper(_logger);
             mapper.MapJobInstanceProperties(_context, this);
@@ -131,13 +105,12 @@ namespace Planar.Job
                 var timeout = _context.TriggerDetails.Timeout;
                 if (timeout == null || timeout.Value.TotalSeconds < 1) { timeout = TimeSpan.FromHours(2); }
                 var timeoutms = timeout.Value.Add(TimeSpan.FromMinutes(3)).TotalMilliseconds;
-
                 _timer = new Timer(timeoutms);
                 _timer.Elapsed += TimerElapsed;
                 _timer.Start();
 
                 var task = ExecuteJob(_context);
-                Task.WhenAll(task).Wait();
+                await Task.WhenAll(task);
                 _timer?.Stop();
                 var mapperBack = new JobBackMapper(_logger, _baseJobFactory);
                 mapperBack.MapJobInstancePropertiesBack(_context, this);
@@ -148,9 +121,59 @@ namespace Planar.Job
             }
             finally
             {
-                SafeHandle(() => MqttClient.Connected -= MqttClient_Connected);
-                SafeHandle(() => MqttClient.Stop().Wait());
                 SafeHandle(() => _timer?.Dispose());
+                SafeHandle(() => MqttClient.Connected -= MqttClient_Connected);
+                await SafeHandleAsync(() => MqttClient.StopAsync());
+            }
+        }
+
+        private async Task OpenMqttConnection()
+        {
+            if (PlanarJob.Mode == RunningMode.Release)
+            {
+                var connectTimeout = TimeSpan.FromSeconds(2);
+                MqttClient.Connected += MqttClient_Connected;
+
+                for (int i = 0; i < 5; i++)
+                {
+                    if (await SafeStartMqttClient(connectTimeout)) { return; }
+                }
+
+                throw new PlanarJobException("Fail to initialize message broker. Communication to planar fail");
+            }
+        }
+
+        private async Task<bool> SafeStartMqttClient(TimeSpan connectTimeout)
+        {
+            bool isConnect;
+
+            try
+            {
+                await MqttClient.StartAsync(_context.FireInstanceId, _context.JobPort);
+                isConnect = _executeResetEvent.WaitOne(connectTimeout);
+
+                if (isConnect)
+                {
+                    await MqttClient.PingAsync();
+                    await MqttClient.PublishAsync(MessageBrokerChannels.HealthCheck);
+                }
+                else
+                {
+                    await Console.Out.WriteLineAsync("xxx");
+                    await MqttClient.StopAsync();
+                    await Task.Delay(500);
+                    ////_executeResetEvent = new AutoResetEvent(false);
+                }
+
+                return isConnect;
+            }
+            catch
+            {
+                await Console.Out.WriteLineAsync("xxx");
+
+                await MqttClient.StopAsync();
+                await Task.Delay(500);
+                return false;
             }
         }
 
@@ -164,6 +187,18 @@ namespace Planar.Job
             try
             {
                 action.Invoke();
+            }
+            catch
+            {
+                // *** DO NOTHING *** //
+            }
+        }
+
+        private async Task SafeHandleAsync(Func<Task> action)
+        {
+            try
+            {
+                await action.Invoke();
             }
             catch
             {
@@ -471,7 +506,7 @@ namespace Planar.Job
 
             try
             {
-                MqttClient.Stop().Wait();
+                MqttClient.StopAsync().Wait();
                 _timer?.Dispose();
             }
             catch

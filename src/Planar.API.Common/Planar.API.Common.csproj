@@ -15,10 +15,10 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.28.0.94264">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.29.0.95321">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="YamlDotNet" Version="15.3.0" />
+		<PackageReference Include="YamlDotNet" Version="16.0.0" />
 	</ItemGroup>
 </Project>

@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Timers;
 using Timer = System.Timers.Timer;
 
@@ -25,18 +26,24 @@ namespace Planar.Job
         public static void Start<TJob>()
             where TJob : BaseJob, new()
         {
+            StartAsync<TJob>().Wait();
+        }
+
+        public static async Task StartAsync<TJob>()
+            where TJob : BaseJob, new()
+        {
             Stopwatch.Start();
             FillProperties();
             try
             {
-                Execute<TJob>();
+                await Execute<TJob>();
             }
             catch (Exception ex)
             {
                 var log = new LogEntity { Level = LogLevel.Critical, Message = $"Fail to execute {typeof(TJob).Name}" };
-                Console.Error.WriteLine(log.ToString());
+                await Console.Error.WriteLineAsync(log.ToString());
                 log.Message = ex.ToString();
-                Console.Error.WriteLine(log.ToString());
+                await Console.Error.WriteLineAsync(log.ToString());
             }
         }
 
@@ -58,7 +65,7 @@ namespace Planar.Job
             }
         }
 
-        private static void Execute<TJob>()
+        private static async Task Execute<TJob>()
                      where TJob : BaseJob, new()
         {
             string json;
@@ -82,7 +89,7 @@ namespace Planar.Job
             }
 
             var instance = Activator.CreateInstance<TJob>();
-            instance.Execute(json);
+            await instance.Execute(json);
 
             if (Mode == RunningMode.Debug)
             {

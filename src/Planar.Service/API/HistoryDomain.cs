@@ -115,7 +115,15 @@ namespace Planar.Service.API
         {
             request.SetPagingDefaults();
             request.LastDays ??= 365;
-            var parameters1 = new { request.LastDays, request.PageNumber, request.PageSize };
+            var parameters1 = new
+            {
+                request.LastDays,
+                request.JobId,
+                request.JobGroup,
+                request.JobType,
+                request.PageNumber,
+                request.PageSize
+            };
             var data = await DataLayer.GetLastHistoryCallForJob(parameters1);
             var result = new PagingResponse<JobLastRun>(data);
             result.SetPagingData(request, data.TotalRows);

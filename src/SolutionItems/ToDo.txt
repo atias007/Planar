@@ -1,13 +1,11 @@
 ﻿--------------------------------------------------------
 
-PLAN FOR V 1.7.4
+PLAN FOR V 1.7.6
 ----------------
 
-- add username, domain, password to ProcessJob + PlanarJob
 - validate on startup that instance id not exists in nodes table
 - Security report
 
-- postman: test queue-invoke with data and validate the creation of data
 - 'service info hooks'
 
 - add anomaly monitor events
@@ -328,4 +326,10 @@ V1.7.4
 - add environment to all hooks
 - FIX: hook cache issue
 - FIX: reload monitor hooks
-- FIX: empty hook users 
+- FIX: empty hook users
+
+V1.7.6
+------
+- Add jobid, jobgroup & jobtype parameters to last history api
+- Add JobInstance table indexes
+- add username, domain, password to ProcessJob + PlanarJob

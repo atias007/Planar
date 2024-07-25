@@ -72,7 +72,7 @@ namespace Planar.Job
             {
                 var message = new ExceptionDto(ex);
                 _exceptions.Add(ex);
-                await MqttClient.Publish(MessageBrokerChannels.AddAggregateException, message);
+                await MqttClient.PublishAsync(MessageBrokerChannels.AddAggregateException, message);
 
                 if (_exceptions.Count >= maxItems)
                 {
@@ -135,7 +135,7 @@ namespace Planar.Job
         public async Task PutJobDataAsync(string key, object? value)
         {
             var message = new { Key = key, Value = value };
-            await MqttClient.Publish(MessageBrokerChannels.PutJobData, message);
+            await MqttClient.PublishAsync(MessageBrokerChannels.PutJobData, message);
         }
 
         public void PutTriggerData(string key, object? value)
@@ -146,7 +146,7 @@ namespace Planar.Job
         public async Task PutTriggerDataAsync(string key, object? value)
         {
             var message = new { Key = key, Value = value };
-            await MqttClient.Publish(MessageBrokerChannels.PutTriggerData, message);
+            await MqttClient.PublishAsync(MessageBrokerChannels.PutTriggerData, message);
         }
 
         public void RemoveJobData(string key)
@@ -157,7 +157,7 @@ namespace Planar.Job
         public async Task RemoveJobDataAsync(string key)
         {
             var message = new { Key = key };
-            await MqttClient.Publish(MessageBrokerChannels.RemoveJobData, message);
+            await MqttClient.PublishAsync(MessageBrokerChannels.RemoveJobData, message);
         }
 
         public void RemoveTriggerData(string key)
@@ -168,7 +168,7 @@ namespace Planar.Job
         public async Task RemoveTriggerDataAsync(string key)
         {
             var message = new { Key = key };
-            await MqttClient.Publish(MessageBrokerChannels.RemoveTriggerData, message);
+            await MqttClient.PublishAsync(MessageBrokerChannels.RemoveTriggerData, message);
         }
 
         public void ClearJobData()
@@ -179,7 +179,7 @@ namespace Planar.Job
         public async Task ClearJobDataAsync()
         {
             var message = new { };
-            await MqttClient.Publish(MessageBrokerChannels.ClearJobData, message);
+            await MqttClient.PublishAsync(MessageBrokerChannels.ClearJobData, message);
         }
 
         public void ClearTriggerData()
@@ -190,7 +190,7 @@ namespace Planar.Job
         public async Task ClearTriggerDataAsync()
         {
             var message = new { };
-            await MqttClient.Publish(MessageBrokerChannels.ClearTriggerData, message);
+            await MqttClient.PublishAsync(MessageBrokerChannels.ClearTriggerData, message);
         }
 
         #endregion Data
@@ -205,7 +205,7 @@ namespace Planar.Job
                 lock (Locker)
                 {
                     _effectedRows = value;
-                    MqttClient.Publish(MessageBrokerChannels.SetEffectedRows, value).Wait();
+                    MqttClient.PublishAsync(MessageBrokerChannels.SetEffectedRows, value).Wait();
                 }
             }
         }
@@ -226,7 +226,7 @@ namespace Planar.Job
                 MostInnerMessage = innerEx.Message,
             };
 
-            MqttClient.Publish(MessageBrokerChannels.ReportExceptionV2, dto).Wait();
+            MqttClient.PublishAsync(MessageBrokerChannels.ReportExceptionV2, dto).Wait();
 
             return text;
         }
@@ -297,7 +297,7 @@ namespace Planar.Job
 
         public async Task UpdateProgressAsync(byte value)
         {
-            await MqttClient.Publish(MessageBrokerChannels.UpdateProgress, value);
+            await MqttClient.PublishAsync(MessageBrokerChannels.UpdateProgress, value);
         }
 
         public async Task UpdateProgressAsync(long current, long total)
