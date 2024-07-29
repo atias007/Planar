@@ -812,6 +812,7 @@ namespace Planar.Service.API
         }
 
         private async Task ValidateJobProperties<TProperties>(string? yml)
+            where TProperties : class
         {
             if (yml == null)
             {

@@ -271,7 +271,7 @@ public abstract class SqlJob : BaseCommonJob<SqlJobProperties>
             var source = nameof(ValidateSqlJob);
             _logger.LogError(ex, "fail at {Source}", source);
             MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
-            throw;
+            throw new SqlJobException($"fail at {source}", ex);
         }
     }
 
@@ -298,7 +298,7 @@ public abstract class SqlJob : BaseCommonJob<SqlJobProperties>
             var source = nameof(ValidateSqlStep);
             _logger.LogError(ex, "fail at {Source}", source);
             MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
-            throw;
+            throw new SqlJobException($"fail at {source}", ex);
         }
     }
 }

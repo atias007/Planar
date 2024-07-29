@@ -1,11 +1,7 @@
 ﻿using System;
 
-namespace CommonJob
+namespace CommonJob;
+
+public sealed class JobMonitorException(string message, Exception innerException) : Exception(message, innerException)
 {
-    public sealed class JobMonitorException : Exception
-    {
-        public JobMonitorException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
-    }
 }

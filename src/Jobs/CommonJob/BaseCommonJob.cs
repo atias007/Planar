@@ -204,7 +204,7 @@ public abstract class BaseCommonJob<TProperties> : BaseCommonJob, IJob
         {
             var source = nameof(LoadJobSettings);
             _logger.LogError(ex, "fail at {Source}", source);
-            throw;
+            throw new CommonJobException($"fail at {source}", ex);
         }
     }
 
