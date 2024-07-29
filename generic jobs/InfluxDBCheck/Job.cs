@@ -80,6 +80,19 @@ internal class Job : BaseCheckJob
         return result;
     }
 
+    private static CheckException GetCheckException(InfluxQuery query, string type, double value)
+    {
+        if (string.IsNullOrEmpty(query.Message))
+        {
+            return new CheckException($"{type} condition failed for query '{query.Name}', value: {value}, condition: {query.ValueCondition?.ToLower()}");
+        }
+        else
+        {
+            var message = query.Message.Replace("{{value}}", value.ToString("N2"));
+            return new CheckException(message);
+        }
+    }
+
     private async Task InvokeQueryCheckInner(InfluxQuery query, InfluxProxy proxy)
     {
         if (!query.Active)
@@ -95,7 +108,7 @@ internal class Job : BaseCheckJob
             var ok = query.InternalValueCondition.Evaluate(value);
             if (!ok)
             {
-                throw new CheckException($"value condition failed for query name '{query.Name}', value: {value}, condition: {query.ValueCondition?.ToLower()}");
+                throw GetCheckException(query, "value", value);
             }
         }
 
@@ -105,7 +118,7 @@ internal class Job : BaseCheckJob
             var ok = query.InternalRecordsCondition.Evaluate(value);
             if (!ok)
             {
-                throw new CheckException($"records condition failed for query name '{query.Name}', value: {value}, condition: {query.RecordsCondition?.ToLower()}");
+                throw GetCheckException(query, "records", value);
             }
         }
 
@@ -146,7 +159,6 @@ internal class Job : BaseCheckJob
         ValidateBase(query, root);
         ValidateName(query);
         ValidateRequired(query.Query, $"query (name: {query.Name})", root);
-        ValidateRequired(query.Message, $"message (name: {query.Name})", root);
         ValidateGreaterThen(query.Timeout, TimeSpan.FromSeconds(1), $"timeout (name: {query.Name})", root);
         ValidateGreaterThen(query.Interval, TimeSpan.FromMinutes(1), $"interval (name: {query.Name})", root);
 

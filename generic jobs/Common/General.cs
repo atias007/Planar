@@ -20,10 +20,7 @@ public sealed class General
     override public string ToString()
     {
         return SequentialProcessing ?
-            "processing mode: sequential" :
-            $"""
-            processing mode: parallel with max degree of {MaxDegreeOfParallelism}
-            stop running on fail: {StopRunningOnFail}
-            """;
+            $"processing mode: sequential, stop running on fail: {StopRunningOnFail}" :
+            $"processing mode: parallel with max degree of {MaxDegreeOfParallelism}";
     }
 }
