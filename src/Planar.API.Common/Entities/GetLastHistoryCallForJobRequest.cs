@@ -2,6 +2,12 @@
 {
     public class GetLastHistoryCallForJobRequest : PagingRequest
     {
-        public int? LastDays { get; set; }
+        public string? JobId { get; set; }
+
+        public string? JobGroup { get; set; }
+
+        public string? JobType { get; set; }
+
+        public long? LastDays { get; set; }
     }
 }

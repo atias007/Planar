@@ -27,12 +27,32 @@ internal sealed partial class Job : BaseCheckJob
             throw new InvalidDataException("no hosts defined and at least one endpoint is relative url");
         }
 
+        endpoints = GetEndpointsWithHost(endpoints, hosts);
         EffectedRows = 0;
-        var tasks = SafeInvokeCheck(endpoints, ep => InvokeEndpointsInner(ep, hosts));
-        await Task.WhenAll(tasks);
+        await SafeInvokeCheck(endpoints, InvokeEndpointInner);
 
-        CheckAggragateException();
-        HandleCheckExceptions();
+        Finilayze();
+    }
+
+    private static List<Endpoint> GetEndpointsWithHost(List<Endpoint> endpoints, IEnumerable<Uri> hosts)
+    {
+        var absolute = endpoints.Where(e => e.IsAbsoluteUrl);
+        var relative = endpoints.Where(e => e.IsRelativeUrl);
+        var result = new List<Endpoint>(absolute);
+        if (relative.Any() && hosts.Any())
+        {
+            foreach (var rel in relative)
+            {
+                foreach (var host in hosts)
+                {
+                    var clone = rel.Clone();
+                    clone.Host = host;
+                    result.Add(clone);
+                }
+            }
+        }
+
+        return result;
     }
 
     private static void ValidateEndpoints(IEnumerable<Endpoint> endpoints)
@@ -103,16 +123,16 @@ internal sealed partial class Job : BaseCheckJob
         return result;
     }
 
-    private static Uri BuildUri(Uri? baseUri, Endpoint endpoint)
+    private static Uri BuildUri(Endpoint endpoint)
     {
         if (endpoint.AbsoluteUrl != null) { return endpoint.AbsoluteUrl; }
 
-        if (baseUri == null)
+        if (endpoint.Host == null)
         {
             throw new InvalidDataException($"endpoint url '{endpoint.Url}' is relative url but not host(s) is defined");
         }
 
-        var builder = new UriBuilder(baseUri)
+        var builder = new UriBuilder(endpoint.Host)
         {
             Path = endpoint.Url
         };
@@ -125,19 +145,7 @@ internal sealed partial class Job : BaseCheckJob
         return builder.Uri;
     }
 
-    private async Task InvokeEndpointsInner(Endpoint endpoint, IEnumerable<Uri> hosts)
-    {
-        if (endpoint.IsRelativeUrl)
-        {
-            await Parallel.ForEachAsync(hosts, (host, ct) => InvokeEndpointInner(endpoint, host));
-        }
-        else
-        {
-            await InvokeEndpointInner(endpoint, null);
-        }
-    }
-
-    private async ValueTask InvokeEndpointInner(Endpoint endpoint, Uri? host)
+    private async Task InvokeEndpointInner(Endpoint endpoint)
     {
         if (!endpoint.Active)
         {
@@ -145,7 +153,7 @@ internal sealed partial class Job : BaseCheckJob
             return;
         }
 
-        var uri = BuildUri(host, endpoint);
+        var uri = BuildUri(endpoint);
         endpoint.Key = uri.ToString();
 
         HttpResponseMessage response;

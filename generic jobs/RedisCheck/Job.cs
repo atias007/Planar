@@ -24,13 +24,10 @@ internal class Job : BaseCheckJob
 
         EffectedRows = 0;
 
-        var hcTask = SafeInvokeCheck(healthCheck, InvokeHealthCheckInner);
-        var tasks = SafeInvokeCheck(keys, InvokeKeyCheckInner);
-        await Task.WhenAll(tasks);
-        await hcTask;
+        await SafeInvokeCheck(healthCheck, InvokeHealthCheckInner);
+        await SafeInvokeCheck(keys, InvokeKeyCheckInner);
 
-        CheckAggragateException();
-        HandleCheckExceptions();
+        Finilayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

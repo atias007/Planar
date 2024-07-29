@@ -14,7 +14,7 @@ namespace BankOfIsraelCurrency
 
         public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
         {
-            Version = new Version("2.0.0");
+            Version = new Version("3.0.0");
 
             //// Do Nothig ////
         }
@@ -46,7 +46,7 @@ namespace BankOfIsraelCurrency
                 var data = response.Data.ExchangeRates;
                 foreach (var item in data)
                 {
-                    UpdateProgress(counter, data.Length);
+                    await UpdateProgressAsync(counter, data.Length);
                     Logger.LogInformation(" [x] Handle currency {Currency} with value {Value}", item.Key, item.CurrentExchangeRate);
                     EffectedRows++;
                     await Task.Delay(3000);

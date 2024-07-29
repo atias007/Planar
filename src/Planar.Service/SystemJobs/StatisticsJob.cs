@@ -8,7 +8,6 @@ using Planar.Service.General;
 using Planar.Service.MapperProfiles;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
-using Polly;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -18,16 +17,11 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs;
 
-public sealed class StatisticsJob : SystemJob, IJob
+public sealed class StatisticsJob(IServiceScopeFactory serviceScope, ILogger<StatisticsJob> logger) :
+    SystemJob, IJob
 {
-    private readonly ILogger<StatisticsJob> _logger;
-    private readonly IServiceScopeFactory _serviceScope;
-
-    public StatisticsJob(IServiceScopeFactory serviceScope, ILogger<StatisticsJob> logger)
-    {
-        _logger = logger;
-        _serviceScope = serviceScope;
-    }
+    private readonly ILogger<StatisticsJob> _logger = logger;
+    private readonly IServiceScopeFactory _serviceScope = serviceScope;
 
     public async Task Execute(IJobExecutionContext context)
     {

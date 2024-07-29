@@ -17,6 +17,23 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement
         Key = Url;
     }
 
+    private Endpoint(Endpoint endpoint)
+    {
+        Name = endpoint.Name;
+        Url = endpoint.Url;
+        SuccessStatusCodes = endpoint.SuccessStatusCodes;
+        Timeout = endpoint.Timeout;
+        Port = endpoint.Port;
+        Active = endpoint.Active;
+        AbsoluteUrl = endpoint.AbsoluteUrl;
+        Key = endpoint.Key;
+    }
+
+    public Endpoint Clone()
+    {
+        return new(this);
+    }
+
     public string Name { get; }
     public string Url { get; }
     public IEnumerable<int>? SuccessStatusCodes { get; set; }
@@ -27,6 +44,9 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement
     public Uri? AbsoluteUrl { get; }
     public bool IsAbsoluteUrl => !IsRelativeUrl;
     public bool IsRelativeUrl => AbsoluteUrl == null;
+
+    // internal use for relative urls
+    public Uri? Host { get; set; }
 
     private static Uri? SetAbsoluteUrl(string url)
     {

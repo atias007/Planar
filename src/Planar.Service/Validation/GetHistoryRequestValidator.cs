@@ -20,6 +20,9 @@ namespace Planar.Service.Validation
             RuleFor(r => r.JobGroup).Null()
                 .When((req, r) => !string.IsNullOrEmpty(req.JobId))
                 .WithMessage("{PropertyName} must be null when 'JobId' property is provided");
+
+            RuleFor(r => r.JobId).MaximumLength(11);
+            RuleFor(r => r.JobGroup).MaximumLength(50);
         }
     }
 }

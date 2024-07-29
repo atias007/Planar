@@ -27,7 +27,7 @@ namespace Planar.Job.Logger
         protected void Log(LogLevel logLevel, string message)
         {
             var entity = new LogEntity { Message = message, Level = logLevel };
-            MqttClient.Publish(MessageBrokerChannels.AppendLog, entity).Wait();
+            MqttClient.PublishAsync(MessageBrokerChannels.AppendLog, entity).Wait();
             LogToConsole(entity.ToString());
         }
 

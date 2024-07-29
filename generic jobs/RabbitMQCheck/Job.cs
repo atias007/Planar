@@ -39,8 +39,7 @@ public class Job : BaseCheckJob
 
         await Task.WhenAll(tasks);
 
-        CheckAggragateException();
-        HandleCheckExceptions();
+        Finilayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -92,20 +91,18 @@ public class Job : BaseCheckJob
 
     private static Server GetServer(IConfiguration configuration)
     {
-        const string serverSectionName = "server";
-        var section = configuration.GetSection(serverSectionName);
-        var server = new Server(section);
+        var server = new Server(configuration);
 
-        ValidateRequired(server.Hosts, "hosts", serverSectionName);
-        ValidateRequired(server.Username, "username", serverSectionName);
-        ValidateRequired(server.Password, "password", serverSectionName);
+        ValidateRequired(server.Hosts, "hosts", Consts.RabbitMQConfigSection);
+        ValidateRequired(server.Username, "username", Consts.RabbitMQConfigSection);
+        ValidateRequired(server.Password, "password", Consts.RabbitMQConfigSection);
 
         foreach (var item in server.Hosts)
         {
-            ValidateUri(item, "hosts", serverSectionName);
+            ValidateUri(item, "hosts", Consts.RabbitMQConfigSection);
         }
 
-        ValidateRequired(server.Hosts, "hosts", serverSectionName);
+        ValidateRequired(server.Hosts, "hosts", Consts.RabbitMQConfigSection);
 
         return server;
     }
@@ -214,7 +211,7 @@ public class Job : BaseCheckJob
         }
     }
 
-    private async Task InvokeQueueCheckInner(Queue queue, Server server, IEnumerable<QueueDetails> details)
+    private async Task InvokeQueueCheckInner(Queue queue, IEnumerable<QueueDetails> details)
     {
         if (!queue.Active)
         {
@@ -223,67 +220,66 @@ public class Job : BaseCheckJob
         }
 
         if (!queue.IsValid) { return; }
-        var host = server.DefaultHost;
         var detail = details.FirstOrDefault(x => string.Equals(x.Name, queue.Name, StringComparison.OrdinalIgnoreCase))
-            ?? throw new CheckException($"queue check (exists) on host {host} failed. queue '{queue.Name}' does not exists");
+            ?? throw new CheckException($"queue '{queue.Name}' does not exists");
 
-        CheckState(host, queue, detail);
-        CheckConsumers(host, queue, detail);
-        CheckMessages(host, queue, detail);
-        CheckMemory(host, queue, detail);
+        CheckState(queue, detail);
+        CheckConsumers(queue, detail);
+        CheckMessages(queue, detail);
+        CheckMemory(queue, detail);
         IncreaseEffectedRows();
         await Task.CompletedTask;
     }
 
-    private void CheckMemory(string host, Queue queue, QueueDetails detail)
+    private void CheckMemory(Queue queue, QueueDetails detail)
     {
         // Memory
         if (queue.MemoryNumber.HasValue)
         {
             if (queue.MemoryNumber.GetValueOrDefault() > detail.Memory)
             {
-                Logger.LogInformation("queue check (memory), name '{Name}' on host {Host} succeeded. value is {Memory:N0}", detail.Name, host, detail.Memory);
+                Logger.LogInformation("queue '{Name}' memory is ok. {Memory:N0}", detail.Name, detail.Memory);
             }
             else
             {
-                throw new CheckException($"queue check (memory), name '{detail.Name}' on host {host} failed. value is '{detail.Memory:N0}'");
+                throw new CheckException($"queue '{detail.Name}' memory check failed. {detail.Memory:N0} is greater then {queue.MemoryNumber:N0} bytes");
             }
         }
     }
 
-    private void CheckMessages(string host, Queue queue, QueueDetails detail)
+    private void CheckMessages(Queue queue, QueueDetails detail)
     {
         // Messages
         if (queue.Messages.HasValue)
         {
             if (queue.Messages.GetValueOrDefault() >= detail.Messages)
             {
-                Logger.LogInformation("queue check (messages), name '{Name}' on host {Host} succeeded. value is {Messages:N0}", detail.Name, host, detail.Messages);
+                Logger.LogInformation("queue '{Name}' messages is ok. {Messages:N0} messages", detail.Name, detail.Messages);
             }
             else
             {
-                throw new CheckException($"queue check (messages), name '{detail.Name}' on host {host} failed. value is '{detail.Messages:N0}'");
+                throw new CheckException($"queue '{detail.Name}' messages check failed. {detail.Messages:N0} messages are greater then {queue.Messages.GetValueOrDefault():N0}");
             }
         }
     }
 
-    private void CheckConsumers(string host, Queue queue, QueueDetails detail)
+    private void CheckConsumers(Queue queue, QueueDetails detail)
     {
         // Consumers
         if (queue.Consumers.HasValue)
         {
             if (queue.Consumers.GetValueOrDefault() <= detail.Consumers)
             {
-                Logger.LogInformation("queue check (consumers), name '{Name}' on host {Host} succeeded. value is {Consumers:N0}", detail.Name, host, detail.Consumers);
+                Logger.LogInformation("queue '{Name}' consumers is ok. {Consumers:N0} consumers", detail.Name, detail.Consumers);
             }
             else
             {
-                throw new CheckException($"queue check (consumers), name '{detail.Name}' on host {host} failed. value is '{detail.Consumers:N0}'");
+                throw new CheckException($"queue '{detail.Name}' consumers check failed. {detail.Consumers:N0} consumers less are then {queue.Consumers.GetValueOrDefault():N0}");
             }
         }
     }
 
-    private void CheckState(string host, Queue queue, QueueDetails detail)
+    private void CheckState(Queue queue, QueueDetails detail)
     {
         // Check State
         if (queue.CheckState.GetValueOrDefault())
@@ -291,11 +287,11 @@ public class Job : BaseCheckJob
             var ok = string.Equals(detail.State, "running", StringComparison.OrdinalIgnoreCase) || string.Equals(detail.State, "idle", StringComparison.OrdinalIgnoreCase);
             if (ok)
             {
-                Logger.LogInformation("queue check (state), name '{Name}' on host {Host} succeeded", detail.Name, host);
+                Logger.LogInformation("queue '{Name}' state is ok", detail.Name);
             }
             else
             {
-                throw new CheckException($"queue check (state), name '{detail.Name}' on host {host} failed. queue '{queue.Name}' is in state '{detail.State}'");
+                throw new CheckException($"queue '{detail.Name}' state check failed. state is '{detail.State}'");
             }
         }
     }
@@ -315,8 +311,7 @@ public class Job : BaseCheckJob
 
         if (details == null) { return; }
 
-        var tasks = SafeInvokeCheck(queues, q => InvokeQueueCheckInner(q, server, details));
-        await Task.WhenAll(tasks);
+        await SafeInvokeCheck(queues, q => InvokeQueueCheckInner(q, details));
     }
 
     private async Task SafeInvokeNodeCheck(Node node, Server server)

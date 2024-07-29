@@ -208,7 +208,7 @@ where TProperties : class, new()
             var source = nameof(ValidateProcessJob);
             _logger.LogError(ex, "fail at {Source}. Message: {Message}", source, ex.Message);
             MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
-            throw;
+            throw new CommonJobException($"fail at {source}", ex);
         }
     }
 

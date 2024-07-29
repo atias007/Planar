@@ -1,0 +1,4 @@
+  server:                                        # the redis server parameters to be use. usualy this section defined in specific environment job settings
+    url: http://stage-server:8086
+    token: null
+    organization: null

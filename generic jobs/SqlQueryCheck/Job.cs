@@ -18,17 +18,16 @@ internal partial class Job : BaseCheckJob
     public override async Task ExecuteJob(IJobExecutionContext context)
     {
         Initialize(ServiceProvider);
+
         var defaults = GetDefaults(Configuration);
         var connStrings = GetConnectionStrings(Configuration);
         var queries = GetQueries(Configuration, defaults, connStrings);
         ValidateRequired(queries, "queries");
         ValidateDuplicateNames(queries, "queries");
         EffectedRows = 0;
-        var tasks = SafeInvokeCheck(queries, InvokeQueryCheckInner);
-        await Task.WhenAll(tasks);
+        await SafeInvokeCheck(queries, InvokeQueryCheckInner);
 
-        CheckAggragateException();
-        HandleCheckExceptions();
+        Finilayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

@@ -16,8 +16,9 @@ internal partial class Job : BaseCheckJob
 
     public override async Task ExecuteJob(IJobExecutionContext context)
     {
-        EffectedRows = 0;
         Initialize(ServiceProvider);
+
+        EffectedRows = 0;
         var connStrings = GetConnectionStrings(Configuration);
         var tables = GetTables(Configuration, connStrings);
         ValidateRequired(tables, "tables");
@@ -26,8 +27,7 @@ internal partial class Job : BaseCheckJob
         var tasks = SafeInvokeOperation(tables, InvokeTableRerentionInner);
         await Task.WhenAll(tasks);
 
-        CheckAggragateException();
-        HandleCheckExceptions();
+        Finilayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

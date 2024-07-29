@@ -9,17 +9,11 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs;
 
-internal class MonitorJob : SystemJob, IJob
+internal class MonitorJob(IServiceScopeFactory scopeFactory, ILogger<MonitorJob> logger) : SystemJob, IJob
 {
-    private readonly ILogger<MonitorJob> _logger;
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<MonitorJob> _logger = logger;
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
     private static readonly int _periodMinutes = Convert.ToInt32(AppSettings.Monitor.MaxAlertsPeriod.TotalMinutes);
-
-    public MonitorJob(IServiceScopeFactory scopeFactory, ILogger<MonitorJob> logger)
-    {
-        _logger = logger;
-        _scopeFactory = scopeFactory;
-    }
 
     public async Task Execute(IJobExecutionContext context)
     {

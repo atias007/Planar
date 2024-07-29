@@ -1,26 +1,18 @@
 ﻿using System;
-using System.Runtime.Serialization;
 
-namespace Planar.Hook
+namespace Planar.Hook;
+
+public sealed class PlanarHookException : Exception
 {
-    [Serializable]
-    public class PlanarHookException : Exception
+    public PlanarHookException()
     {
-        public PlanarHookException()
-        {
-        }
+    }
 
-        public PlanarHookException(string message) : base(message)
-        {
-        }
+    public PlanarHookException(string message) : base(message)
+    {
+    }
 
-        public PlanarHookException(string message, Exception innerException) : base(message, innerException)
-        {
-        }
-
-        protected PlanarHookException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-            // ...
-        }
+    public PlanarHookException(string message, Exception innerException) : base(message, innerException)
+    {
     }
 }
