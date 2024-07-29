@@ -140,7 +140,18 @@ where TProperties : class, new()
         MessageBroker.AppendLog(LogLevel.Information, $"Exit Code: {_process.ExitCode}");
         MessageBroker.AppendLog(LogLevel.Information, $"Peak Working Set Memory: {FormatBytes(_peakWorkingSet64)}");
         MessageBroker.AppendLog(LogLevel.Information, $"Peak Virtual Memory: {FormatBytes(_peakVirtualMemorySize64)}");
+
+        var username = string.IsNullOrWhiteSpace(FileProperties.UserName) ?
+            GetUsername(Environment.UserDomainName, Environment.UserName) :
+            GetUsername(FileProperties.Domain, FileProperties.UserName);
+
+        MessageBroker.AppendLog(LogLevel.Information, $"Username: {username}");
         MessageBroker.AppendLog(LogLevel.Information, _seperator);
+    }
+
+    private static string GetUsername(string? domain, string username)
+    {
+        return string.IsNullOrWhiteSpace(domain) ? username : $"{domain}\\{username}";
     }
 
     protected void OnCancel()

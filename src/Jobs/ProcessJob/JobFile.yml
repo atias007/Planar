@@ -22,7 +22,6 @@ properties:                           # Job Properties
     - -2
   success output regex: "[Ss]uccess"  # Regular expression to define success run
   fail output regex: "[Ee]rror"       # Regular expression to define fail run
-  log process information: true       # Log some data of process (memory usage, exit code, etc.)
 
 simple triggers:                      # List of simple triggers
   - name: every-minute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]

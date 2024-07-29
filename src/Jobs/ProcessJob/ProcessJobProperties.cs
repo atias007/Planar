@@ -26,7 +26,4 @@ public class ProcessJobProperties : BaseProcessJobProperties, IFileJobProperties
 
     [YamlMember(Alias = "fail output regex")]
     public string? FailOutputRegex { get; set; }
-
-    [YamlMember(Alias = "log process information")]
-    public bool LogProcessInformation { get; set; } = true;
 }
