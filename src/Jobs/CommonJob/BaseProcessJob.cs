@@ -2,11 +2,12 @@
 using Planar;
 using Planar.Common;
 using Planar.Common.Exceptions;
-using Polly;
 using Quartz;
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
+using System.Security;
 using System.Text;
 using System.Timers;
 
@@ -88,6 +89,7 @@ where TProperties : class, new()
             CreateNoWindow = true,
             ErrorDialog = false,
             FileName = Filename,
+            UserName = FileProperties.UserName,
             UseShellExecute = false,
             WindowStyle = ProcessWindowStyle.Hidden,
             WorkingDirectory = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, FileProperties.Path),
@@ -95,7 +97,36 @@ where TProperties : class, new()
             RedirectStandardOutput = true
         };
 
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            startInfo.Domain = FileProperties.Domain;
+            startInfo.Password = ToSecureString(FileProperties.Password);
+        }
+
         return startInfo;
+    }
+
+    private static SecureString? ToSecureString(string? plainText)
+    {
+        if (string.IsNullOrWhiteSpace(plainText))
+        {
+            return null;
+        }
+
+        var secureString = new SecureString();
+        try
+        {
+            foreach (char c in plainText)
+            {
+                secureString.AppendChar(c);
+            }
+            secureString.MakeReadOnly(); // Make the string read-only for security
+            return secureString;
+        }
+        finally
+        {
+            secureString.Dispose();
+        }
     }
 
     protected void LogProcessInformation()
@@ -109,7 +140,18 @@ where TProperties : class, new()
         MessageBroker.AppendLog(LogLevel.Information, $"Exit Code: {_process.ExitCode}");
         MessageBroker.AppendLog(LogLevel.Information, $"Peak Working Set Memory: {FormatBytes(_peakWorkingSet64)}");
         MessageBroker.AppendLog(LogLevel.Information, $"Peak Virtual Memory: {FormatBytes(_peakVirtualMemorySize64)}");
+
+        var username = string.IsNullOrWhiteSpace(FileProperties.UserName) ?
+            GetUsername(Environment.UserDomainName, Environment.UserName) :
+            GetUsername(FileProperties.Domain, FileProperties.UserName);
+
+        MessageBroker.AppendLog(LogLevel.Information, $"Username: {username}");
         MessageBroker.AppendLog(LogLevel.Information, _seperator);
+    }
+
+    private static string GetUsername(string? domain, string username)
+    {
+        return string.IsNullOrWhiteSpace(domain) ? username : $"{domain}\\{username}";
     }
 
     protected void OnCancel()

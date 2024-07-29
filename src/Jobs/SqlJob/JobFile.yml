@@ -31,7 +31,7 @@ simple triggers:                      # List of simple triggers
   - name: every-minute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
     start: 2021-09-19 00:00:00        # Start date
     end: 2021-09-19 23:59:00          # End date
-    interval: 00:01:00                # Interval
+    interval: 00:01:00                # Interval in [days.]hours:minutes:seconds format
     repeat count: 100                 # Repeat count
     misfire behaviour: FireNow        # [ FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount ]
     priority: 1                       # Priority [value between 0 to 100]

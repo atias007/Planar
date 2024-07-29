@@ -1,10 +1,11 @@
 ﻿using System;
 
-namespace Planar;
-
-public sealed class DataMapException : Exception
+namespace Planar
 {
-    public DataMapException(string message) : base(message)
+    public sealed class DataMapException : Exception
     {
+        public DataMapException(string message) : base(message)
+        {
+        }
     }
 }

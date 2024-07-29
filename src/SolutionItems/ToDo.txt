@@ -319,7 +319,7 @@ V1.7.3
 - BUG FIX: run planar job process with more the 32K argument data
 - MQTT port --> settings file and pass it to planar job in parameters
 
-V1.7.4
+V1.7.5
 ------
 - Audit report
 - more job & trigger data validation
