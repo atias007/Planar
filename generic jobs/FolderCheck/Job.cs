@@ -60,10 +60,7 @@ internal class Job : BaseCheckJob
         var folders = configuration.GetRequiredSection("folders");
         foreach (var item in folders.GetChildren())
         {
-            var folder = new Folder(item);
-            FillBase(folder, defaults);
-            folder.SetFolderArguments();
-            folder.IsAbsolutePath = Path.IsPathFullyQualified(folder.Path);
+            var folder = new Folder(item, defaults);
             ValidateFolder(folder);
             result.Add(folder);
         }

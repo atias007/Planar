@@ -41,21 +41,12 @@ internal class Job : BaseCheckJob
         services.RegisterBaseCheck();
     }
 
-    private static void FillDefaults(InfluxQuery redisKey, Defaults defaults)
-    {
-        // Fill Defaults
-        redisKey.Name ??= string.Empty;
-        redisKey.Name = redisKey.Name.Trim();
-        FillBase(redisKey, defaults);
-    }
-
     private static IEnumerable<InfluxQuery> GetQueries(IConfiguration configuration, Defaults defaults)
     {
         var keys = configuration.GetRequiredSection("queries");
         foreach (var item in keys.GetChildren())
         {
-            var key = new InfluxQuery(item);
-            FillDefaults(key, defaults);
+            var key = new InfluxQuery(item, defaults);
             ValidateInfluxQuery(key);
             yield return key;
         }

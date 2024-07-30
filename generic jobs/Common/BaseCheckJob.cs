@@ -8,7 +8,6 @@ using Polly;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using YamlDotNet.Core.Tokens;
 
 public abstract class BaseCheckJob : BaseJob
 {
@@ -17,21 +16,25 @@ public abstract class BaseCheckJob : BaseJob
     private CheckSpanTracker _spanTracker = null!;
     private General _general = null!;
 
-    protected static void FillBase(BaseDefault baseDefaultTarget, BaseDefault baseDefaultSorce)
-    {
-        baseDefaultTarget.RetryInterval ??= baseDefaultSorce.RetryInterval;
-        baseDefaultTarget.RetryCount ??= baseDefaultSorce.RetryCount;
-        baseDefaultTarget.MaximumFailsInRow ??= baseDefaultSorce.MaximumFailsInRow;
-        baseDefaultTarget.Span ??= baseDefaultSorce.Span;
-    }
+    ////protected static void FillBase(IEnumerable<BaseDefault> baseDefaultTargets, BaseDefault baseDefaultSorce)
+    ////{
+    ////    foreach (var item in baseDefaultTargets)
+    ////    {
+    ////        FillBase(item, baseDefaultSorce);
+    ////    }
+    ////}
 
-    protected static void FillBase(IEnumerable<BaseDefault> baseDefaultTargets, BaseDefault baseDefaultSorce)
-    {
-        foreach (var item in baseDefaultTargets)
-        {
-            FillBase(item, baseDefaultSorce);
-        }
-    }
+    ////protected static IConfigurationSection? GetDefaultSection(IConfiguration configuration, ILogger logger)
+    ////{
+    ////    var defaults = configuration.GetSection("defaults");
+    ////    if (defaults == null)
+    ////    {
+    ////        logger.LogWarning("no defaults section found on settings file. set job factory defaults");
+    ////        return null;
+    ////    }
+
+    ////    return defaults;
+    ////}
 
     protected static IConfigurationSection? GetDefaultSection(IConfiguration configuration, ILogger logger)
     {
@@ -43,23 +46,6 @@ public abstract class BaseCheckJob : BaseJob
         }
 
         return defaults;
-    }
-
-    protected static void SetDefaultName<T>(T entity, Func<string> func)
-    {
-        const string noname = "[no name]";
-        var value = func();
-        var stringValue = value?.Trim();
-        var propertyName = func.Method.Name[4..]; // Remove "get_" prefix
-        var propertyInfo = typeof(T).GetProperty(propertyName);
-        if (string.IsNullOrWhiteSpace(stringValue))
-        {
-            propertyInfo?.SetValue(entity, noname);
-        }
-        else
-        {
-            propertyInfo?.SetValue(entity, stringValue);
-        }
     }
 
     protected static void ValidateBase(BaseDefault @default, string section)
@@ -449,12 +435,10 @@ public abstract class BaseCheckJob : BaseJob
                 entity.Span > _spanTracker.LastFailSpan(entity);
         }
 
-        bool IsCounterValid()
+        bool IsCounterInScope()
         {
             var failCount = _failCounter.IncrementFailCount(entity);
-            return
-                entity.MaximumFailsInRow.HasValue &&
-                failCount <= entity.MaximumFailsInRow;
+            return entity.MaximumFailsInRow.HasValue && failCount <= entity.MaximumFailsInRow;
         }
 
         try
@@ -474,7 +458,7 @@ public abstract class BaseCheckJob : BaseJob
                 return SafeHandleStatus.CheckWarning;
             }
 
-            if (!IsCounterValid())
+            if (IsCounterInScope())
             {
                 Logger.LogWarning("check failed but maximum fails in row reached for '{Key}'. reason: {Message}",
                     entity.Key, ex.Message);
@@ -483,6 +467,7 @@ public abstract class BaseCheckJob : BaseJob
 
             Logger.LogError("check failed for '{Key}'. reason: {Message}",
                 entity.Key, ex.Message);
+
             AddCheckException(checkException);
 
             return SafeHandleStatus.CheckError;

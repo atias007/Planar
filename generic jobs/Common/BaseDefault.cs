@@ -8,12 +8,12 @@ public abstract class BaseDefault
     {
     }
 
-    protected BaseDefault(IConfigurationSection section)
+    protected BaseDefault(IConfigurationSection section, BaseDefault baseDefault)
     {
-        RetryCount = section.GetValue<int?>("retry count");
-        RetryInterval = section.GetValue<TimeSpan?>("retry interval");
-        MaximumFailsInRow = section.GetValue<int?>("maximum fails in row");
-        Span = section.GetValue<TimeSpan?>("span");
+        RetryCount = section.GetValue<int?>("retry count") ?? baseDefault.RetryCount;
+        RetryInterval = section.GetValue<TimeSpan?>("retry interval") ?? baseDefault.RetryInterval;
+        MaximumFailsInRow = section.GetValue<int?>("maximum fails in row") ?? baseDefault.MaximumFailsInRow;
+        Span = section.GetValue<TimeSpan?>("span") ?? baseDefault.Span;
     }
 
     public int? RetryCount { get; set; }

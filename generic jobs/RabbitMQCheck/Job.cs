@@ -51,16 +51,14 @@ public class Job : BaseCheckJob
     private static HealthCheck GetHealthCheck(IConfiguration configuration, Defaults defaults)
     {
         var section = configuration.GetSection("health check");
-        var healthCheck = new HealthCheck(section);
-        FillBase(healthCheck, defaults);
+        var healthCheck = new HealthCheck(section, defaults);
         return healthCheck;
     }
 
     private static Node GetNode(IConfiguration configuration, Defaults defaults)
     {
         var section = configuration.GetSection("nodes");
-        var node = new Node(section);
-        FillBase(node, defaults);
+        var node = new Node(section, defaults);
         return node;
     }
 
@@ -70,9 +68,7 @@ public class Job : BaseCheckJob
 
         foreach (var section in sections)
         {
-            var queue = new Queue(section);
-            queue.SetSize();
-            FillBase(queue, defaults);
+            var queue = new Queue(section, defaults);
 
             ValidateRequired(queue.Name, "name", "queues");
             ValidateGreaterThen(queue.Messages, 0, "messages", "queues");

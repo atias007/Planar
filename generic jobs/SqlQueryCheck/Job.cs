@@ -50,11 +50,10 @@ internal partial class Job : BaseCheckJob
             return;
         }
 
-        var timeout = checkQuery.Timeout ?? TimeSpan.FromSeconds(30);
         using var connection = new SqlConnection(checkQuery.ConnectionString);
         using var cmd = new SqlCommand(checkQuery.Query, connection)
         {
-            CommandTimeout = (int)timeout.TotalMilliseconds
+            CommandTimeout = (int)checkQuery.Timeout.TotalMilliseconds
         };
 
         await connection.OpenAsync();
@@ -144,8 +143,7 @@ internal partial class Job : BaseCheckJob
         var section = configuration.GetRequiredSection("queries");
         foreach (var item in section.GetChildren())
         {
-            var key = new CheckQuery(item);
-            FillBase(key, defaults);
+            var key = new CheckQuery(item, defaults);
             key.ConnectionString = connectionStrings.GetValueOrDefault(key.ConnectionStringName);
             ValidateCheckQuery(key);
             yield return key;

@@ -5,7 +5,7 @@ namespace SqlQueryCheck;
 
 internal class Defaults : BaseDefault
 {
-    public Defaults(IConfigurationSection section) : base(section)
+    public Defaults(IConfigurationSection section) : base(section, Empty)
     {
     }
 

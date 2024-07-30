@@ -7,7 +7,7 @@ internal class HealthCheck : BaseDefault, ICheckElement
 {
     private string? _usedMemory;
 
-    public HealthCheck(IConfigurationSection section) : base(section)
+    public HealthCheck(IConfigurationSection section, Defaults defaults) : base(section, defaults)
     {
         Ping = section.GetValue<bool?>("ping");
         ConnectedClients = section.GetValue<int?>("connected clients");

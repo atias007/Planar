@@ -35,15 +35,6 @@ internal class Job : BaseCheckJob
         services.RegisterBaseCheck();
     }
 
-    private static void FillDefaults(RedisKey redisKey, Defaults defaults)
-    {
-        // Fill Defaults
-        redisKey.Key ??= string.Empty;
-        redisKey.Key = redisKey.Key.Trim();
-        FillBase(redisKey, defaults);
-        redisKey.Database ??= defaults.Database;
-    }
-
     private static HealthCheck GetHealthCheck(IConfiguration configuration, Defaults defaults)
     {
         HealthCheck result;
@@ -54,10 +45,9 @@ internal class Job : BaseCheckJob
         }
         else
         {
-            result = new HealthCheck(hc);
+            result = new HealthCheck(hc, defaults);
         }
 
-        FillBase(result, defaults);
         ValidateHealthCheck(result);
         return result;
     }
@@ -67,9 +57,7 @@ internal class Job : BaseCheckJob
         var keys = configuration.GetRequiredSection("keys");
         foreach (var item in keys.GetChildren())
         {
-            var key = new RedisKey(item);
-            FillDefaults(key, defaults);
-            key.SetSize();
+            var key = new RedisKey(item, defaults);
             ValidateRedisKey(key);
             yield return key;
         }

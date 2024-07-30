@@ -3,28 +3,23 @@ using Microsoft.Extensions.Configuration;
 
 namespace RedisCheck;
 
-internal class RedisKey(IConfigurationSection section) : BaseDefault(section), ICheckElement, IRedisDefaults, IRedisKey
+internal class RedisKey(IConfigurationSection section, Defaults defaults) : BaseDefault(section, defaults), ICheckElement, IRedisDefaults, IRedisKey
 {
-    public string Key { get; set; } = section.GetValue<string>("key") ?? string.Empty;
-    public string? MemoryUsage { get; set; } = section.GetValue<string>("memory usage");
-    public int? Length { get; set; } = section.GetValue<int?>("length");
-    public int? Database { get; set; } = section.GetValue<int?>("database");
-    public bool? Exists { get; set; } = section.GetValue<bool?>("exists");
-    public bool Active { get; private set; } = section.GetValue<bool?>("active") ?? true;
+    public string Key { get; } = section.GetValue<string>("key") ?? string.Empty;
+    public string? MemoryUsage { get; } = section.GetValue<string>("memory usage");
+    public int? Length { get; } = section.GetValue<int?>("length");
+    public int? Database { get; } = section.GetValue<int?>("database");
+    public bool? Exists { get; } = section.GetValue<bool?>("exists");
+    public bool Active { get; } = section.GetValue<bool?>("active") ?? true;
 
     //// --------------------------------------- ////
 
-    public int? MemoryUsageNumber { get; set; }
+    public int? MemoryUsageNumber { get; } = GetSize(section.GetValue<string>("memory usage"), "max memory usage");
     public bool IsValid => MemoryUsageNumber > 0 || Length > 0;
 
     //// --------------------------------------- ////
 
-    public void SetSize()
-    {
-        MemoryUsageNumber = GetSize(MemoryUsage, "max memory usage");
-    }
-
-    private int? GetSize(string? source, string fieldName)
+    private static int? GetSize(string? source, string fieldName)
     {
         var factor = 0;
         if (string.IsNullOrWhiteSpace(source)) { return null; }
@@ -64,7 +59,7 @@ internal class RedisKey(IConfigurationSection section) : BaseDefault(section), I
 
         if (!int.TryParse(cleansource, out var number))
         {
-            throw new InvalidDataException($"{fieldName} for key '{Key}' is not a number");
+            throw new InvalidDataException($"value {source} at '{fieldName}' is not a number");
         }
 
         var result = number * (int)Math.Pow(1024, factor);

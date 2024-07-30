@@ -3,27 +3,47 @@ using Microsoft.Extensions.Configuration;
 
 namespace FolderCheck;
 
-internal class Folder(IConfigurationSection section) : BaseDefault(section), INamedCheckElement
+internal class Folder : BaseDefault, INamedCheckElement
 {
-    public string Name { get; set; } = section.GetValue<string>("name") ?? string.Empty;
-    public string Path { get; private set; } = section.GetValue<string>("path") ?? string.Empty;
-    public IEnumerable<string>? FilesPattern { get; private set; } = section.GetValue<string?>("files pattern")?.Split(',').ToList();
-    public bool IncludeSubdirectories { get; private set; } = section.GetValue<bool>("include subdirectories");
-    public string? TotalSize { get; private set; } = section.GetValue<string?>("total size");
-    public string? FileSize { get; private set; } = section.GetValue<string?>("file size");
-    public int? FileCount { get; private set; } = section.GetValue<int?>("file count");
-    public string? CreatedAge { get; private set; } = section.GetValue<string?>("created age");
-    public string? ModifiedAge { get; private set; } = section.GetValue<string?>("modified age");
-    public bool Active { get; private set; } = section.GetValue<bool?>("active") ?? true;
+    public Folder(IConfigurationSection section, Defaults defaults) : base(section, defaults)
+    {
+        Name = section.GetValue<string>("name") ?? string.Empty;
+        Path = section.GetValue<string>("path") ?? string.Empty;
+        FilesPattern = section.GetValue<string?>("files pattern")?.Split(',').ToList();
+        IncludeSubdirectories = section.GetValue<bool>("include subdirectories");
+        TotalSize = section.GetValue<string?>("total size");
+        FileSize = section.GetValue<string?>("file size");
+        FileCount = section.GetValue<int?>("file count");
+        CreatedAge = section.GetValue<string?>("created age");
+        ModifiedAge = section.GetValue<string?>("modified age");
+        Active = section.GetValue<bool?>("active") ?? true;
+
+        TotalSizeNumber = CommonUtil.GetSize(TotalSize, "total size");
+        FileSizeNumber = CommonUtil.GetSize(FileSize, "file size");
+        CreatedAgeDate = CommonUtil.GetDateFromSpan(CreatedAge, "created age");
+        ModifiedAgeDate = CommonUtil.GetDateFromSpan(ModifiedAge, "modified age");
+        IsAbsolutePath = System.IO.Path.IsPathFullyQualified(Path);
+    }
+
+    public string Name { get; private set; }
+    public string Path { get; private set; }
+    public IEnumerable<string>? FilesPattern { get; private set; }
+    public bool IncludeSubdirectories { get; private set; }
+    public string? TotalSize { get; private set; }
+    public string? FileSize { get; private set; }
+    public int? FileCount { get; private set; }
+    public string? CreatedAge { get; private set; }
+    public string? ModifiedAge { get; private set; }
+    public bool Active { get; private set; }
 
     //// --------------------------------------- ////
 
-    public long? TotalSizeNumber { get; private set; }
-    public long? FileSizeNumber { get; private set; }
-    public DateTime? CreatedAgeDate { get; private set; }
-    public DateTime? ModifiedAgeDate { get; private set; }
+    public long? TotalSizeNumber { get; }
+    public long? FileSizeNumber { get; }
+    public DateTime? CreatedAgeDate { get; }
+    public DateTime? ModifiedAgeDate { get; }
     public string Key => Name;
-    public bool IsAbsolutePath { get; set; }
+    public bool IsAbsolutePath { get; }
     public bool IsRelativePath => !IsAbsolutePath;
 
     public void SetDefaultFilePattern()
@@ -40,13 +60,6 @@ internal class Folder(IConfigurationSection section) : BaseDefault(section), INa
     }
 
     //// --------------------------------------- ////
-    public void SetFolderArguments()
-    {
-        TotalSizeNumber = CommonUtil.GetSize(TotalSize, "total size");
-        FileSizeNumber = CommonUtil.GetSize(FileSize, "file size");
-        CreatedAgeDate = CommonUtil.GetDateFromSpan(CreatedAge, "created age");
-        ModifiedAgeDate = CommonUtil.GetDateFromSpan(ModifiedAge, "modified age");
-    }
 
     private static string PathCombine(string part1, string part2)
     {

@@ -27,6 +27,8 @@ internal sealed partial class Job : BaseCheckJob
             throw new InvalidDataException("no hosts defined and at least one endpoint is relative url");
         }
 
+        ValidateDuplicateKeys(endpoints, "endpoints");
+
         endpoints = GetEndpointsWithHost(endpoints, hosts);
         EffectedRows = 0;
         await SafeInvokeCheck(endpoints, InvokeEndpointInner);
@@ -66,22 +68,13 @@ internal sealed partial class Job : BaseCheckJob
         services.RegisterBaseCheck();
     }
 
-    private static void FillDefaults(Endpoint endpoint, Defaults defaults)
-    {
-        SetDefaultName(endpoint, () => endpoint.Name);
-        endpoint.SuccessStatusCodes ??= defaults.SuccessStatusCodes;
-        endpoint.Timeout ??= defaults.Timeout;
-        FillBase(endpoint, defaults);
-    }
-
     private static List<Endpoint> GetEndpoints(IConfiguration configuration, Defaults defaults)
     {
         var endpoints = configuration.GetRequiredSection("endpoints");
         var result = new List<Endpoint>();
         foreach (var item in endpoints.GetChildren())
         {
-            var endpoint = new Endpoint(item);
-            FillDefaults(endpoint, defaults);
+            var endpoint = new Endpoint(item, defaults);
             ValidateEndpoint(endpoint);
             result.Add(endpoint);
         }
@@ -101,7 +94,6 @@ internal sealed partial class Job : BaseCheckJob
 
     private static void Validate(IEndpoint endpoint, string section)
     {
-        ValidateRequired(endpoint.SuccessStatusCodes, "success status codes", section);
         ValidateGreaterThen(endpoint.Timeout, TimeSpan.FromSeconds(1), "timeout", section);
         ValidateLessThen(endpoint.Timeout, TimeSpan.FromMinutes(20), "timeout", section);
     }
@@ -112,12 +104,7 @@ internal sealed partial class Job : BaseCheckJob
         var section = GetDefaultSection(configuration, Logger);
         if (section == null) { return empty; }
 
-        var result = new Defaults(section)
-        {
-            SuccessStatusCodes = section.GetSection("success status codes").Get<int[]?>() ?? empty.SuccessStatusCodes,
-            Timeout = section.GetValue<TimeSpan?>("timeout") ?? empty.Timeout
-        };
-
+        var result = new Defaults(section);
         Validate(result, "defaults");
         ValidateBase(result, "defaults");
         return result;
@@ -154,28 +141,25 @@ internal sealed partial class Job : BaseCheckJob
         }
 
         var uri = BuildUri(endpoint);
-        endpoint.Key = uri.ToString();
 
         HttpResponseMessage response;
         try
         {
             using var client = new HttpClient
             {
-                Timeout = endpoint.Timeout.GetValueOrDefault()
+                Timeout = endpoint.Timeout
             };
 
             response = await client.GetAsync(uri);
         }
         catch (TaskCanceledException)
         {
-            throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{endpoint.Url}'. timeout expire");
+            throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{uri}'. timeout expire");
         }
         catch (Exception ex)
         {
-            throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{endpoint.Url}'. message: {ex.Message}");
+            throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{uri}'. message: {ex.Message}");
         }
-
-        endpoint.SuccessStatusCodes ??= new List<int> { 200 };
 
         if (endpoint.SuccessStatusCodes.Any(s => s == (int)response.StatusCode))
         {
@@ -193,6 +177,7 @@ internal sealed partial class Job : BaseCheckJob
     {
         var section = $"endpoints ({endpoint.Name})";
         Validate(endpoint, section);
+        ValidateRequired(endpoint.SuccessStatusCodes, "success status codes", section);
         ValidateBase(endpoint, section);
         ValidateMaxLength(endpoint.Name, 50, "name", section);
         ValidateRequired(endpoint.Url, "url", section);

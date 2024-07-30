@@ -5,7 +5,7 @@ namespace RedisCheck;
 
 internal class Defaults : BaseDefault, IRedisDefaults
 {
-    public Defaults(IConfigurationSection section) : base(section)
+    public Defaults(IConfigurationSection section) : base(section, Empty)
     {
     }
 
@@ -14,9 +14,10 @@ internal class Defaults : BaseDefault, IRedisDefaults
         RetryCount = 1;
         RetryInterval = TimeSpan.FromSeconds(1);
         MaximumFailsInRow = 5;
+        Database = 0;
     }
 
-    public int? Database { get; set; } = 0;
+    public int? Database { get; }
 
     //// --------------------------------------- ////
 

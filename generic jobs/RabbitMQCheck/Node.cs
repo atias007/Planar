@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace RabbitMQCheck;
 
-internal class Node(IConfigurationSection section) : BaseDefault(section), ICheckElement
+internal class Node(IConfigurationSection section, Defaults defaults) : BaseDefault(section, defaults), ICheckElement
 {
     public bool? MemoryAlarm { get; private set; } = section.GetValue<bool?>("memory alarm");
     public bool? DiskFreeAlarm { get; private set; } = section.GetValue<bool?>("disk free alarm");

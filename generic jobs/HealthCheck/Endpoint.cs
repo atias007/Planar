@@ -5,16 +5,15 @@ namespace HealthCheck;
 
 internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement
 {
-    public Endpoint(IConfigurationSection section) : base(section)
+    public Endpoint(IConfigurationSection section, Defaults defaults) : base(section, defaults)
     {
         Name = section.GetValue<string?>("name") ?? string.Empty;
         Url = section.GetValue<string?>("url") ?? string.Empty;
-        SuccessStatusCodes = section.GetSection("success status codes").Get<int[]?>();
-        Timeout = section.GetValue<TimeSpan?>("timeout");
+        SuccessStatusCodes = section.GetSection("success status codes").Get<int[]?>() ?? defaults.SuccessStatusCodes;
+        Timeout = section.GetValue<TimeSpan?>("timeout") ?? defaults.Timeout;
         Port = section.GetValue<int?>("port");
         Active = section.GetValue<bool?>("active") ?? true;
         AbsoluteUrl = SetAbsoluteUrl(Url);
-        Key = Url;
     }
 
     private Endpoint(Endpoint endpoint)
@@ -26,7 +25,10 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement
         Port = endpoint.Port;
         Active = endpoint.Active;
         AbsoluteUrl = endpoint.AbsoluteUrl;
-        Key = endpoint.Key;
+        RetryCount = endpoint.RetryCount;
+        RetryInterval = endpoint.RetryInterval;
+        MaximumFailsInRow = endpoint.MaximumFailsInRow;
+        Span = endpoint.Span;
     }
 
     public Endpoint Clone()
@@ -36,11 +38,11 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement
 
     public string Name { get; }
     public string Url { get; }
-    public IEnumerable<int>? SuccessStatusCodes { get; set; }
-    public TimeSpan? Timeout { get; set; }
+    public IEnumerable<int> SuccessStatusCodes { get; }
+    public TimeSpan Timeout { get; }
     public int? Port { get; }
     public bool Active { get; }
-    public string Key { get; set; }
+    public string Key => Name;
     public Uri? AbsoluteUrl { get; }
     public bool IsAbsoluteUrl => !IsRelativeUrl;
     public bool IsRelativeUrl => AbsoluteUrl == null;
