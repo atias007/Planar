@@ -11,6 +11,7 @@ using System.Text;
 
 public abstract class BaseCheckJob : BaseJob
 {
+    private static readonly object _locker = new();
     private readonly ConcurrentQueue<CheckException> _exceptions = new();
     private CheckFailCounter _failCounter = null!;
     private CheckSpanTracker _spanTracker = null!;
@@ -233,7 +234,10 @@ public abstract class BaseCheckJob : BaseJob
 
     protected void IncreaseEffectedRows()
     {
-        EffectedRows = EffectedRows.GetValueOrDefault() + 1;
+        lock (_locker)
+        {
+            EffectedRows = EffectedRows.GetValueOrDefault() + 1;
+        }
     }
 
     protected void Initialize(IServiceProvider serviceProvider)

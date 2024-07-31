@@ -44,7 +44,6 @@ public class Job : BaseCheckJob
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
-        services.AddSingleton<Defaults>();
         services.RegisterBaseCheck();
     }
 
@@ -105,21 +104,13 @@ public class Job : BaseCheckJob
 
     private Defaults GetDefaults(IConfiguration configuration)
     {
-        var def = ServiceProvider.GetRequiredService<Defaults>();
-        var section = configuration.GetSection("defaults");
-        if (section == null)
-        {
-            Logger.LogWarning("no defaults section found on settings file. set job factory defaults");
-            return def;
-        }
+        var section = GetDefaultSection(configuration, Logger);
+        if (section == null) { return Defaults.Empty; }
 
-        def.RetryCount = section.GetValue<int?>("retry count") ?? def.RetryCount;
-        def.RetryInterval = section.GetValue<TimeSpan?>("retry interval") ?? def.RetryInterval;
-        def.MaximumFailsInRow = section.GetValue<int?>("maximum fails in row") ?? def.MaximumFailsInRow;
+        var result = new Defaults(section);
+        ValidateBase(result, "defaults");
 
-        ValidateBase(def, "defaults");
-
-        return def;
+        return result;
     }
 
     private async Task InvokeHealthCheckInner(HealthCheck healthCheck, Server server, string host)
