@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace WindowsServiceRestart;
 
-internal class Service(IConfigurationSection section) : BaseDefault(section), IService, INamedCheckElement
+internal class Service(IConfigurationSection section, Defaults defaults) : BaseDefault(section, defaults), IService, INamedCheckElement
 {
     public string Name { get; } = section.GetValue<string?>("name") ?? string.Empty;
     public bool Active { get; } = section.GetValue<bool?>("active") ?? true;

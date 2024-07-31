@@ -12,7 +12,7 @@ internal class Defaults : BaseDefault, IService
         MaximumFailsInRow = 5;
     }
 
-    public Defaults(IConfigurationSection section) : base(section)
+    public Defaults(IConfigurationSection section) : base(section, Empty)
     {
     }
 

@@ -41,20 +41,13 @@ internal sealed partial class Job : BaseCheckJob
         services.AddSingleton<CheckIntervalTracker>();
     }
 
-    private static void FillDefaults(Service service, Defaults defaults)
-    {
-        SetDefaultName(service, () => service.Name);
-        FillBase(service, defaults);
-    }
-
     private static List<Service> GetServices(IConfiguration configuration, Defaults defaults, IEnumerable<string> hosts)
     {
         var services = configuration.GetRequiredSection("services");
         var result = new List<Service>();
         foreach (var item in services.GetChildren())
         {
-            var service = new Service(item);
-            FillDefaults(service, defaults);
+            var service = new Service(item, defaults);
             if (service.Hosts == null || !service.Hosts.Any())
             {
                 service.SetHosts(hosts);
