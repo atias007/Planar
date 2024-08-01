@@ -68,7 +68,31 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     [IgnoreHelp]
     public static string? ChooseGroup(IEnumerable<JobBasicDetails> data)
     {
-        return ShowGroupsMenu(data);
+        var groups = data.Select(d => d.Group);
+        return ShowGroupsMenu(groups);
+    }
+
+    [IgnoreHelp]
+    public static async Task<string?> ChooseGroup(CancellationToken cancellationToken)
+    {
+        var restRequest = new RestRequest("job/groups", Method.Get);
+        var result = await RestProxy.Invoke<IEnumerable<string>>(restRequest, cancellationToken);
+        if (!result.IsSuccessful)
+        {
+            var message = "fail to fetch list of job groups";
+            if (!string.IsNullOrEmpty(result.ErrorMessage))
+            {
+                message += $". error message: {result.ErrorMessage}";
+            }
+            throw new CliException(message, result);
+        }
+
+        if (result.Data == null || !result.Data.Any())
+        {
+            throw new CliWarningException("there are no job groups");
+        }
+
+        return ShowGroupsMenu(result.Data);
     }
 
     [IgnoreHelp]
@@ -105,7 +129,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
             return ShowJobsMenu(data);
         }
 
-        var group = ShowGroupsMenu(data);
+        var group = ShowGroupsMenu(data.Select(d => d.Group));
         return ShowJobsMenu(data, group);
     }
 
@@ -409,7 +433,27 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     [Action("pause-group")]
     public static async Task<CliActionResponse> PauseJobGroup(CliByNameRequest request, CancellationToken cancellationToken = default)
     {
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            request.Name = await ChooseGroup(cancellationToken);
+        }
+
         var restRequest = new RestRequest("job/pause-group", Method.Post)
+            .AddBody(request);
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
+    }
+
+    [Action("resume-group")]
+    public static async Task<CliActionResponse> ResumeJobGroup(CliByNameRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            request.Name = await ChooseGroup(cancellationToken);
+        }
+
+        var restRequest = new RestRequest("job/resume-group", Method.Post)
             .AddBody(request);
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
@@ -494,16 +538,6 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     {
         var restRequest = new RestRequest("job/resume", Method.Post)
             .AddBody(jobKey);
-
-        var result = await RestProxy.Invoke(restRequest, cancellationToken);
-        return new CliActionResponse(result);
-    }
-
-    [Action("resume-group")]
-    public static async Task<CliActionResponse> ResumeJobGroup(CliByNameRequest request, CancellationToken cancellationToken = default)
-    {
-        var restRequest = new RestRequest("job/resume-group", Method.Post)
-            .AddBody(request);
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         return new CliActionResponse(result);
@@ -889,11 +923,10 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         return selectedItem?.Value ?? string.Empty;
     }
 
-    private static string? ShowGroupsMenu(IEnumerable<JobBasicDetails> data)
+    private static string? ShowGroupsMenu(IEnumerable<string> data)
     {
         var groups = data
-            .OrderBy(d => d.Group)
-            .Select(d => $"{d.Group}")
+            .OrderBy(d => d)
             .Distinct()
             .ToList();
 
