@@ -66,6 +66,16 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
         return Ok(result);
     }
 
+    [HttpGet("groups")]
+    [ViewerAuthorize]
+    [SwaggerOperation(OperationId = "get_groups", Description = "Get job groups", Summary = "Get Job Groups")]
+    [OkJsonResponse(typeof(IEnumerable<string>))]
+    public async Task<ActionResult<IEnumerable<string>>> GetGroupNames()
+    {
+        var result = await BusinesLayer.GetJobGroupNames();
+        return Ok(result);
+    }
+
     [HttpDelete("{id}")]
     [EditorAuthorize]
     [SwaggerOperation(OperationId = "delete_job_id", Description = "Delete job", Summary = "Delete Job")]
@@ -204,6 +214,19 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
         return Accepted();
     }
 
+    [HttpPost("pause-group")]
+    [EditorAuthorize]
+    [SwaggerOperation(OperationId = "post_job_pause_group", Description = "Pause job group", Summary = "Pause Job Group")]
+    [JsonConsumes]
+    [AcceptedContentResponse]
+    [BadRequestResponse]
+    [NotFoundResponse]
+    public async Task<IActionResult> PauseGroup([FromBody] PauseResumeGroupRequest request)
+    {
+        await BusinesLayer.PauseGroup(request);
+        return Accepted();
+    }
+
     [HttpPost("resume")]
     [EditorAuthorize]
     [SwaggerOperation(OperationId = "post_job_resume", Description = "Resume job", Summary = "Resume Job")]
@@ -214,6 +237,19 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     public async Task<IActionResult> Resume([FromBody] JobOrTriggerKey request)
     {
         await BusinesLayer.Resume(request);
+        return Accepted();
+    }
+
+    [HttpPost("resume-group")]
+    [EditorAuthorize]
+    [SwaggerOperation(OperationId = "post_job_resume_group", Description = "Resume job group", Summary = "Resume Job Group")]
+    [JsonConsumes]
+    [AcceptedContentResponse]
+    [BadRequestResponse]
+    [NotFoundResponse]
+    public async Task<IActionResult> ResumeGroup([FromBody] PauseResumeGroupRequest request)
+    {
+        await BusinesLayer.ResumeGroup(request);
         return Accepted();
     }
 

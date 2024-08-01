@@ -155,6 +155,13 @@ namespace Planar.Service.API
             return result;
         }
 
+        public async Task<IEnumerable<string>> GetJobGroupNames()
+        {
+            var result = (await Scheduler.GetJobGroupNames())
+                .Where(g => !string.Equals(g, Consts.PlanarSystemGroup, StringComparison.OrdinalIgnoreCase));
+            return result;
+        }
+
         public async Task<PagingResponse<JobBasicDetails>> GetAll(GetAllJobsRequest request)
         {
             var jobs = new List<IJobDetail>();
@@ -596,6 +603,55 @@ namespace Planar.Service.API
             await Scheduler.PauseJob(jobKey);
 
             AuditJobSafe(jobKey, "job paused");
+        }
+
+        public async Task PauseGroup(PauseResumeGroupRequest request)
+        {
+            ValidateSystemGroup(request.Name);
+            var keys = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(request.Name));
+            if (keys.Count == 0)
+            {
+                throw new RestNotFoundException($"group '{request.Name}' was not found");
+            }
+            await Scheduler.PauseJobs(GroupMatcher<JobKey>.GroupEquals(request.Name));
+
+            try
+            {
+                AuditJobsSafe($"pause job group '{request.Name}'");
+                foreach (var key in keys)
+                {
+                    AuditJobSafe(key, $"job paused while pause job group '{request.Name}'");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "fail to audit jobs while pause job group '{Name}'", request.Name);
+            }
+        }
+
+        public async Task ResumeGroup(PauseResumeGroupRequest request)
+        {
+            ValidateSystemGroup(request.Name);
+            var keys = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(request.Name));
+            if (keys.Count == 0)
+            {
+                throw new RestNotFoundException($"group '{request.Name}' was not found");
+            }
+
+            await Scheduler.ResumeJobs(GroupMatcher<JobKey>.GroupEquals(request.Name));
+
+            try
+            {
+                AuditJobsSafe($"resume job group '{request.Name}'");
+                foreach (var key in keys)
+                {
+                    AuditJobSafe(key, $"job resume while resume job group '{request.Name}'");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "fail to audit jobs while resume group '{Name}'", request.Name);
+            }
         }
 
         public async Task<PlanarIdResponse> QueueInvoke(QueueInvokeJobRequest request)

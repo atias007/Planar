@@ -2,7 +2,7 @@
 
 namespace Planar.CLI.Entities
 {
-    public class CliGetByNameRequest : ICliGetByNameRequest
+    public class CliByNameRequest : ICliByNameRequest
     {
         [ActionProperty(DefaultOrder = 0)]
         [Required("name argument is required")]

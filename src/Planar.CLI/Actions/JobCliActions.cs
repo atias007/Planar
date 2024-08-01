@@ -406,6 +406,16 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         return new CliActionResponse(result);
     }
 
+    [Action("pause-group")]
+    public static async Task<CliActionResponse> PauseJobGroup(CliByNameRequest request, CancellationToken cancellationToken = default)
+    {
+        var restRequest = new RestRequest("job/pause-group", Method.Post)
+            .AddBody(request);
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
+    }
+
     [Action("data")]
     public static async Task<CliActionResponse> PutJobData(CliJobDataRequest request, CancellationToken cancellationToken = default)
     {
@@ -484,6 +494,16 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     {
         var restRequest = new RestRequest("job/resume", Method.Post)
             .AddBody(jobKey);
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
+    }
+
+    [Action("resume-group")]
+    public static async Task<CliActionResponse> ResumeJobGroup(CliByNameRequest request, CancellationToken cancellationToken = default)
+    {
+        var restRequest = new RestRequest("job/resume-group", Method.Post)
+            .AddBody(request);
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         return new CliActionResponse(result);

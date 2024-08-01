@@ -2,7 +2,6 @@
 
 PLAN FOR V 1.7.6
 ----------------
-- cli: do not ask "are you sure" when not in interactive mode
 - allow to clear job data
 - allow to pause/resume group
 
