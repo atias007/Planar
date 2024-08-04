@@ -31,7 +31,7 @@ nodes:
 queues:
   - name: demo                                  # the name of the queue
     messages: 10                                # the maximum number of messages in the queue
-    consumers: 2                                # the minimum number of consumers of the queue
+    consumers: null                             # the minimum number of consumers of the queue
     memory: 2mb                                 # the maximum memory used by the queue (in bytes, kb, mb, gb, tb, pb)
     check state: true                           # if true, the job will fail if the queue state is not ok
     span: 00:00:10                              # the time span which violation on the queue limit will be considered ok

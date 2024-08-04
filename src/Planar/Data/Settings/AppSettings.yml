@@ -44,7 +44,7 @@ authentication:
 
 monitor:
   max alerts per monitor: 10           # the maximum alert per monitor item and per job per period. default is 10. minimum value 1
-  max alerts period: 08:00:00          # the period for maximum monitor alerts. default is 8 hours. minimum value 1 hour
+  max alerts period: 06:00:00          # the period for 'max alerts per monitor' parameter. default is 6 hours. minimum value 1 hour
   manual mute max period: 1.00:00:00   # the maximum period for manual mute. default is 1 day. minimum value 1 hour
 
 protection:
