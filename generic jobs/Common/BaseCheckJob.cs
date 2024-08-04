@@ -439,10 +439,10 @@ public abstract class BaseCheckJob : BaseJob
                 entity.Span > _spanTracker.LastFailSpan(entity);
         }
 
-        bool IsCounterInScope()
+        bool IsFailCounterOverMax()
         {
             var failCount = _failCounter.IncrementFailCount(entity);
-            return entity.MaximumFailsInRow.HasValue && failCount <= entity.MaximumFailsInRow;
+            return entity.MaximumFailsInRow.HasValue && failCount > entity.MaximumFailsInRow;
         }
 
         try
@@ -462,7 +462,7 @@ public abstract class BaseCheckJob : BaseJob
                 return SafeHandleStatus.CheckWarning;
             }
 
-            if (IsCounterInScope())
+            if (IsFailCounterOverMax())
             {
                 Logger.LogWarning("check failed but maximum fails in row reached for '{Key}'. reason: {Message}",
                     entity.Key, ex.Message);
