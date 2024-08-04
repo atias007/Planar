@@ -401,9 +401,9 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
         await DbConnection.ExecuteAsync(cmd);
     }
 
-    public async Task<bool> IsMonitorCounterExists(string jobId)
+    public async Task<bool> IsMonitorCounterExists(string jobId, int monitorId)
     {
-        return await _context.MonitorCounters.AnyAsync(m => m.JobId == jobId);
+        return await _context.MonitorCounters.AnyAsync(m => m.JobId == jobId && m.MonitorId == monitorId);
     }
 
     public async Task<bool> IsMonitorExists(MonitorAction monitor)
