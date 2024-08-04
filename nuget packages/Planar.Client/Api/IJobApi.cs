@@ -173,6 +173,22 @@ namespace Planar.Client
         Task PauseAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Pause Group Of Job
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task PauseGroupAsync(string name, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Resume Group Of Job
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task ResumeGroupAsync(string name, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Queue Invokation Of Job Queue invokation of job
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>

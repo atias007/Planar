@@ -368,6 +368,24 @@ namespace Planar.Client
             await CheckLog(callback, logId, cancellationToken);
         }
 
+        public async Task PauseGroupAsync(string name, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(name, nameof(name));
+            var restRequest = new RestRequest("job/pause-group", Method.Post)
+               .AddBody(new { name });
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
+        public async Task ResumeGroupAsync(string name, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(name, nameof(name));
+            var restRequest = new RestRequest("job/resume-group", Method.Post)
+               .AddBody(new { name });
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
         private async Task CheckLog(Func<RunningJobDetails, Task> callback, long logId, CancellationToken cancellationToken)
         {
             var restTestRequest = new RestRequest("history/{id}", Method.Get)

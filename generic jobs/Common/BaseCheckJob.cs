@@ -439,10 +439,10 @@ public abstract class BaseCheckJob : BaseJob
                 entity.Span > _spanTracker.LastFailSpan(entity);
         }
 
-        bool IsFailCounterOverMax()
+        bool IsFailCounterInScope()
         {
             var failCount = _failCounter.IncrementFailCount(entity);
-            return entity.MaximumFailsInRow.HasValue && failCount > entity.MaximumFailsInRow;
+            return entity.MaximumFailsInRow.HasValue && failCount <= entity.MaximumFailsInRow;
         }
 
         try
@@ -457,14 +457,14 @@ public abstract class BaseCheckJob : BaseJob
 
             if (IsSpanValid())
             {
-                Logger.LogWarning("check failed but error span is valid for '{Key}'. reason: {Message}",
+                Logger.LogWarning("check failed for '{Key}' but error span is valid. reason: {Message}",
                     entity.Key, ex.Message);
                 return SafeHandleStatus.CheckWarning;
             }
 
-            if (IsFailCounterOverMax())
+            if (IsFailCounterInScope())
             {
-                Logger.LogWarning("check failed but maximum fails in row reached for '{Key}'. reason: {Message}",
+                Logger.LogWarning("check failed for '{Key}' but maximum fails in row not reached yet. reason: {Message}",
                     entity.Key, ex.Message);
                 return SafeHandleStatus.CheckWarning;
             }
