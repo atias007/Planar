@@ -31,35 +31,21 @@ namespace Planar.Client
             return result.Id;
         }
 
-        public async Task PutDataAsync(string id, string key, string? value, CancellationToken cancellationToken = default)
-        {
-            ValidateMandatory(id, nameof(id));
-            ValidateMandatory(key, nameof(key));
-            var prm = new
-            {
-                Id = id,
-                DataKey = key,
-                DataValue = value
-            };
-
-            var restRequest = new RestRequest("job/data", Method.Post).AddBody(prm);
-            try
-            {
-                await _proxy.InvokeAsync(restRequest, cancellationToken);
-            }
-            catch (PlanarConflictException)
-            {
-                restRequest = new RestRequest("job/data", Method.Put).AddBody(prm);
-                await _proxy.InvokeAsync(restRequest, cancellationToken);
-            }
-        }
-
         public async Task CancelRunningAsync(string fireInstanceId, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(fireInstanceId, nameof(fireInstanceId));
             var restRequest = new RestRequest("job/cancel", Method.Post)
                 .AddBody(new { fireInstanceId });
             await _proxy.InvokeAsync<JobDescription>(restRequest, cancellationToken);
+        }
+
+        public async Task ClearDataAsync(string id, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(id, nameof(id));
+            var restRequest = new RestRequest("job/{id}/data", Method.Delete)
+                       .AddParameter("id", id, ParameterType.UrlSegment);
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
         public async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
@@ -101,17 +87,13 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<IPagingResponse<JobAudit>> ListAllAuditsAsync(
-            int? pageNumber = null,
-            int? pageSize = null,
-            CancellationToken cancellationToken = default)
+        public async Task<JobDetails> GetAsync(string id, CancellationToken cancellationToken = default)
         {
-            var paging = new Paging(pageNumber, pageSize);
-            paging.SetPagingDefaults();
-            var restRequest = new RestRequest("job/audits", Method.Get)
-                .AddQueryPagingParameter(paging);
+            ValidateMandatory(id, nameof(id));
+            var restRequest = new RestRequest("job/{id}", Method.Get)
+                .AddParameter("id", id, ParameterType.UrlSegment);
 
-            var result = await _proxy.InvokeAsync<PagingResponse<JobAudit>>(restRequest, cancellationToken);
+            var result = await _proxy.InvokeAsync<JobDetails>(restRequest, cancellationToken);
             return result;
         }
 
@@ -120,32 +102,6 @@ namespace Planar.Client
             var restRequest = new RestRequest("job/audit/{auditId}", Method.Get)
                 .AddParameter("auditId", auditId, ParameterType.UrlSegment);
             var result = await _proxy.InvokeAsync<JobAuditWithInformation>(restRequest, cancellationToken);
-            return result;
-        }
-
-        public async Task<IPagingResponse<JobAudit>> ListAuditsAsync(
-            string id,
-            int? pageNumber = null,
-            int? pageSize = null,
-            CancellationToken cancellationToken = default)
-        {
-            ValidateMandatory(id, nameof(id));
-            var paging = new Paging(pageNumber, pageSize);
-            var restRequest = new RestRequest("job/{id}/audit", Method.Get)
-                .AddParameter("id", id, ParameterType.UrlSegment)
-                .AddQueryPagingParameter(paging);
-
-            var result = await _proxy.InvokeAsync<PagingResponse<JobAudit>>(restRequest, cancellationToken);
-            return result;
-        }
-
-        public async Task<JobDetails> GetAsync(string id, CancellationToken cancellationToken = default)
-        {
-            ValidateMandatory(id, nameof(id));
-            var restRequest = new RestRequest("job/{id}", Method.Get)
-                .AddParameter("id", id, ParameterType.UrlSegment);
-
-            var result = await _proxy.InvokeAsync<JobDetails>(restRequest, cancellationToken);
             return result;
         }
 
@@ -227,6 +183,20 @@ namespace Planar.Client
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
+        public async Task<IPagingResponse<JobAudit>> ListAllAuditsAsync(
+            int? pageNumber = null,
+            int? pageSize = null,
+            CancellationToken cancellationToken = default)
+        {
+            var paging = new Paging(pageNumber, pageSize);
+            paging.SetPagingDefaults();
+            var restRequest = new RestRequest("job/audits", Method.Get)
+                .AddQueryPagingParameter(paging);
+
+            var result = await _proxy.InvokeAsync<PagingResponse<JobAudit>>(restRequest, cancellationToken);
+            return result;
+        }
+
         public async Task<IPagingResponse<JobBasicDetails>> ListAsync(ListJobsFilter? filter = null, CancellationToken cancellationToken = default)
         {
             var f = filter ?? ListJobsFilter.Empty;
@@ -266,6 +236,22 @@ namespace Planar.Client
             return result;
         }
 
+        public async Task<IPagingResponse<JobAudit>> ListAuditsAsync(
+            string id,
+            int? pageNumber = null,
+            int? pageSize = null,
+            CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(id, nameof(id));
+            var paging = new Paging(pageNumber, pageSize);
+            var restRequest = new RestRequest("job/{id}/audit", Method.Get)
+                .AddParameter("id", id, ParameterType.UrlSegment)
+                .AddQueryPagingParameter(paging);
+
+            var result = await _proxy.InvokeAsync<PagingResponse<JobAudit>>(restRequest, cancellationToken);
+            return result;
+        }
+
         public async Task PauseAsync(string id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
@@ -273,6 +259,38 @@ namespace Planar.Client
                 .AddBody(new { id });
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
+        public async Task PauseGroupAsync(string name, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(name, nameof(name));
+            var restRequest = new RestRequest("job/pause-group", Method.Post)
+               .AddBody(new { name });
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
+        public async Task PutDataAsync(string id, string key, string? value, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(id, nameof(id));
+            ValidateMandatory(key, nameof(key));
+            var prm = new
+            {
+                Id = id,
+                DataKey = key,
+                DataValue = value
+            };
+
+            var restRequest = new RestRequest("job/data", Method.Post).AddBody(prm);
+            try
+            {
+                await _proxy.InvokeAsync(restRequest, cancellationToken);
+            }
+            catch (PlanarConflictException)
+            {
+                restRequest = new RestRequest("job/data", Method.Put).AddBody(prm);
+                await _proxy.InvokeAsync(restRequest, cancellationToken);
+            }
         }
 
         public async Task<string> QueueInvokeAsync(
@@ -308,24 +326,13 @@ namespace Planar.Client
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
-        public async Task<string> UpdateAsync(string id, bool updateJobData = false, bool updateTriggersData = false, CancellationToken cancellationToken = default)
+        public async Task ResumeGroupAsync(string name, CancellationToken cancellationToken = default)
         {
-            ValidateMandatory(id, nameof(id));
-            var body = new
-            {
-                id,
-                options = new
-                {
-                    updateJobData,
-                    updateTriggersData
-                }
-            };
+            ValidateMandatory(name, nameof(name));
+            var restRequest = new RestRequest("job/resume-group", Method.Post)
+               .AddBody(new { name });
 
-            var restRequest = new RestRequest("job", Method.Put)
-                .AddBody(body);
-
-            var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
-            return result.Id;
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
         public async Task SetAuthor(string id, string author, CancellationToken cancellationToken = default)
@@ -368,22 +375,41 @@ namespace Planar.Client
             await CheckLog(callback, logId, cancellationToken);
         }
 
-        public async Task PauseGroupAsync(string name, CancellationToken cancellationToken = default)
+        public async Task<string> UpdateAsync(string id, bool updateJobData = false, bool updateTriggersData = false, CancellationToken cancellationToken = default)
         {
-            ValidateMandatory(name, nameof(name));
-            var restRequest = new RestRequest("job/pause-group", Method.Post)
-               .AddBody(new { name });
+            ValidateMandatory(id, nameof(id));
+            var body = new
+            {
+                id,
+                options = new
+                {
+                    updateJobData,
+                    updateTriggersData
+                }
+            };
 
-            await _proxy.InvokeAsync(restRequest, cancellationToken);
+            var restRequest = new RestRequest("job", Method.Put)
+                .AddBody(body);
+
+            var result = await _proxy.InvokeAsync<PlanarStringIdResponse>(restRequest, cancellationToken);
+            return result.Id;
         }
 
-        public async Task ResumeGroupAsync(string name, CancellationToken cancellationToken = default)
+        private static DateTime? GetEstimatedEndTime(RunningJobDetails? data)
         {
-            ValidateMandatory(name, nameof(name));
-            var restRequest = new RestRequest("job/resume-group", Method.Post)
-               .AddBody(new { name });
+            if (data == null) { return null; }
+            if (data.EstimatedEndTime == null) { return null; }
+            var estimateEnd = DateTime.Now.Add(data.EstimatedEndTime.Value);
+            return estimateEnd;
+        }
 
-            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        private async Task CheckAlreadyRunningJobInner(string id, CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("job/running", Method.Get);
+            var result = await _proxy.InvokeAsync<List<RunningJobDetails>>(restRequest, cancellationToken);
+
+            var exists = result.Exists(d => d.Id == id || string.Equals($"{d.Group}.{d.Name}", id, StringComparison.OrdinalIgnoreCase));
+            if (exists) { throw new PlanarException($"job id {id} already running. test can not be invoked until job done"); }
         }
 
         private async Task CheckLog(Func<RunningJobDetails, Task> callback, long logId, CancellationToken cancellationToken)
@@ -421,20 +447,27 @@ namespace Planar.Client
             _ = callback(details);
         }
 
-        // bug fix: test finish while job still running
-        private async Task<bool> IsHistoryStatusRunning(long logId, CancellationToken cancellationToken)
+        private async Task<LastInstanceId> GetLastInstanceId(string id, DateTime invokeDate, CancellationToken cancellationToken)
         {
-            var restRequest = new RestRequest("history/{id}/status", Method.Get)
-                .AddParameter("id", logId, ParameterType.UrlSegment);
+            // UTC
+            var dateParameter = invokeDate.ToString("s", CultureInfo.InvariantCulture);
+
+            var restRequest = new RestRequest("job/{id}/last-instance-id/long-polling", Method.Get)
+                .AddParameter("id", id, ParameterType.UrlSegment)
+                .AddParameter("invokeDate", dateParameter, ParameterType.QueryString);
+
+            restRequest.Timeout = TimeSpan.FromMilliseconds(40_000); // 40 sec
 
             try
             {
-                var result = await _proxy.InvokeAsync<int>(restRequest, cancellationToken);
-                return result == -1;
+                var result = await _proxy.InvokeAsync<LastInstanceId?>(restRequest, cancellationToken)
+                    ?? throw new PlanarException("could not found running instance id. check whether job is paused or maybe another instance already running");
+
+                return result;
             }
-            catch
+            catch (PlanarConflictException)
             {
-                return false;
+                throw new PlanarConflictException($"job id {id} already running. test can not be invoked until job done");
             }
         }
 
@@ -474,6 +507,74 @@ namespace Planar.Client
                     var isRunning = await IsHistoryStatusRunning(logId, cancellationToken);
                     if (!isRunning) { break; }
                 }
+            }
+        }
+
+        private async Task<(bool, RunningJobDetails?)> InitGetRunningData(string instanceId, CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("job/running-instance/{instanceId}", Method.Get)
+                .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
+
+            RunningJobDetails? runResult;
+
+            try
+            {
+                try
+                {
+                    runResult = await _proxy.InvokeAsync<RunningJobDetails>(restRequest, cancellationToken);
+                }
+                catch (PlanarNotFoundException)
+                {
+                    await Task.Delay(1000);
+                    runResult = await _proxy.InvokeAsync<RunningJobDetails>(restRequest, cancellationToken);
+                }
+            }
+            catch (PlanarNotFoundException)
+            {
+                return (true, null);
+            }
+
+            return (false, runResult);
+        }
+
+        private void InvokeCallback(Func<RunningJobDetails, Task> callback, RunningJobDetails? data, DateTime invokeDate, DateTime? estimateEnd)
+        {
+            if (data == null) { return; }
+
+            var span = DateTimeOffset.Now.Subtract(invokeDate);
+            var endSpan = estimateEnd == null ? data.EstimatedEndTime : estimateEnd.Value.Subtract(DateTime.Now);
+            data.RunTime = span;
+            data.EstimatedEndTime = endSpan;
+            _ = callback(data);
+        }
+
+        private async Task InvokeJobInner(string id, DateTime? nowOverrideValue, Dictionary<string, string>? data, CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("job/invoke", Method.Post)
+                .AddBody(new
+                {
+                    id,
+                    nowOverrideValue,
+                    data
+                });
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
+        // bug fix: test finish while job still running
+        private async Task<bool> IsHistoryStatusRunning(long logId, CancellationToken cancellationToken)
+        {
+            var restRequest = new RestRequest("history/{id}/status", Method.Get)
+                .AddParameter("id", logId, ParameterType.UrlSegment);
+
+            try
+            {
+                var result = await _proxy.InvokeAsync<int>(restRequest, cancellationToken);
+                return result == -1;
+            }
+            catch
+            {
+                return false;
             }
         }
 
@@ -522,98 +623,6 @@ namespace Planar.Client
             InvokeCallback(callback, data, invokeDate, estimateEnd);
 
             return (data, estimateEnd);
-        }
-
-        private static DateTime? GetEstimatedEndTime(RunningJobDetails? data)
-        {
-            if (data == null) { return null; }
-            if (data.EstimatedEndTime == null) { return null; }
-            var estimateEnd = DateTime.Now.Add(data.EstimatedEndTime.Value);
-            return estimateEnd;
-        }
-
-        private void InvokeCallback(Func<RunningJobDetails, Task> callback, RunningJobDetails? data, DateTime invokeDate, DateTime? estimateEnd)
-        {
-            if (data == null) { return; }
-
-            var span = DateTimeOffset.Now.Subtract(invokeDate);
-            var endSpan = estimateEnd == null ? data.EstimatedEndTime : estimateEnd.Value.Subtract(DateTime.Now);
-            data.RunTime = span;
-            data.EstimatedEndTime = endSpan;
-            _ = callback(data);
-        }
-
-        private async Task<(bool, RunningJobDetails?)> InitGetRunningData(string instanceId, CancellationToken cancellationToken)
-        {
-            var restRequest = new RestRequest("job/running-instance/{instanceId}", Method.Get)
-                .AddParameter("instanceId", instanceId, ParameterType.UrlSegment);
-
-            RunningJobDetails? runResult;
-
-            try
-            {
-                try
-                {
-                    runResult = await _proxy.InvokeAsync<RunningJobDetails>(restRequest, cancellationToken);
-                }
-                catch (PlanarNotFoundException)
-                {
-                    await Task.Delay(1000);
-                    runResult = await _proxy.InvokeAsync<RunningJobDetails>(restRequest, cancellationToken);
-                }
-            }
-            catch (PlanarNotFoundException)
-            {
-                return (true, null);
-            }
-
-            return (false, runResult);
-        }
-
-        private async Task CheckAlreadyRunningJobInner(string id, CancellationToken cancellationToken)
-        {
-            var restRequest = new RestRequest("job/running", Method.Get);
-            var result = await _proxy.InvokeAsync<List<RunningJobDetails>>(restRequest, cancellationToken);
-
-            var exists = result.Exists(d => d.Id == id || string.Equals($"{d.Group}.{d.Name}", id, StringComparison.OrdinalIgnoreCase));
-            if (exists) { throw new PlanarException($"job id {id} already running. test can not be invoked until job done"); }
-        }
-
-        private async Task InvokeJobInner(string id, DateTime? nowOverrideValue, Dictionary<string, string>? data, CancellationToken cancellationToken)
-        {
-            var restRequest = new RestRequest("job/invoke", Method.Post)
-                .AddBody(new
-                {
-                    id,
-                    nowOverrideValue,
-                    data
-                });
-
-            await _proxy.InvokeAsync(restRequest, cancellationToken);
-        }
-
-        private async Task<LastInstanceId> GetLastInstanceId(string id, DateTime invokeDate, CancellationToken cancellationToken)
-        {
-            // UTC
-            var dateParameter = invokeDate.ToString("s", CultureInfo.InvariantCulture);
-
-            var restRequest = new RestRequest("job/{id}/last-instance-id/long-polling", Method.Get)
-                .AddParameter("id", id, ParameterType.UrlSegment)
-                .AddParameter("invokeDate", dateParameter, ParameterType.QueryString);
-
-            restRequest.Timeout = TimeSpan.FromMilliseconds(40_000); // 40 sec
-
-            try
-            {
-                var result = await _proxy.InvokeAsync<LastInstanceId?>(restRequest, cancellationToken)
-                    ?? throw new PlanarException("could not found running instance id. check whether job is paused or maybe another instance already running");
-
-                return result;
-            }
-            catch (PlanarConflictException)
-            {
-                throw new PlanarConflictException($"job id {id} already running. test can not be invoked until job done");
-            }
         }
     }
 }

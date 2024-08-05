@@ -8,6 +8,9 @@ namespace Planar.CLI.Entities
         Put,
 
         [ActionEnumOption("remove")]
-        Remove
+        Remove,
+
+        [ActionEnumOption("clear")]
+        Clear
     }
 }

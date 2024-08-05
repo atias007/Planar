@@ -461,7 +461,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     }
 
     [Action("data")]
-    public static async Task<CliActionResponse> PutJobData(CliJobDataRequest request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> JobData(CliJobDataRequest request, CancellationToken cancellationToken = default)
     {
         FillMissingDataProperties(request);
         RestResponse result;
@@ -497,6 +497,15 @@ public class JobCliActions : BaseCliAction<JobCliActions>
                     .AddParameter("key", request.DataKey, ParameterType.UrlSegment);
 
                 result = await RestProxy.Invoke(restRequest2, cancellationToken);
+                break;
+
+            case DataActions.Clear:
+                if (!ConfirmAction($"clear all data from job {request.Id}")) { return CliActionResponse.Empty; }
+
+                var restRequest3 = new RestRequest("job/{id}/data", Method.Delete)
+                    .AddParameter("id", request.Id, ParameterType.UrlSegment);
+
+                result = await RestProxy.Invoke(restRequest3, cancellationToken);
                 break;
 
             default:

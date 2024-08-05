@@ -175,6 +175,18 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
         return NoContent();
     }
 
+    [HttpDelete("{id}/data")]
+    [EditorAuthorize]
+    [SwaggerOperation(OperationId = "delete_job_id_data", Description = "Delete all job data", Summary = "Delete All Job Data")]
+    [NoContentResponse]
+    [BadRequestResponse]
+    [NotFoundResponse]
+    public async Task<IActionResult> ClearData([FromRoute][Required] string id)
+    {
+        await BusinesLayer.ClearData(id);
+        return NoContent();
+    }
+
     [HttpPost("invoke")]
     [TesterAuthorize]
     [SwaggerOperation(OperationId = "post_job_invoke", Description = "Invoke job", Summary = "Invoke Job")]

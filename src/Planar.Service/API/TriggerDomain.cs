@@ -73,6 +73,25 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         AuditTriggerSafe(info.TriggerKey, GetTriggerAuditDescription("remove", key), new { value = auditValue?.Trim() }, addTriggerInfo: true);
     }
 
+    public async Task ClearData(string id)
+    {
+        var info = await GetTriggerDetailsForDataCommands(id);
+        if (info.Trigger == null || info.JobDetails == null) { return; }
+
+        var validKeys = info.Trigger.JobDataMap.Keys.Where(Consts.IsDataKeyValid);
+        var keyCount = validKeys.Count();
+        foreach (var key in validKeys)
+        {
+            info.JobDetails.JobDataMap.Remove(key);
+        }
+
+        var triggers = await BuildTriggers(info.Trigger);
+        await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
+        await Scheduler.PauseJob(info.JobKey);
+
+        AuditTriggerSafe(info.TriggerKey, $"clear trigger data. {keyCount} key(s)");
+    }
+
     private static string GetTriggerAuditDescription(string operation, string key)
     {
         return $"{operation} trigger data with key '{key}' ({{{{TriggerId}}}})";
@@ -101,7 +120,7 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         return triggers;
     }
 
-    private async Task<DataCommandDto> GetTriggerDetailsForDataCommands(string triggerId, string key, bool skipSystemCheck = false)
+    private async Task<DataCommandDto> GetTriggerDetailsForDataCommands(string triggerId, string? key = null, bool skipSystemCheck = false)
     {
         var result = new DataCommandDto();
 
@@ -116,7 +135,10 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         if (result.JobDetails == null) { return result; }
 
         // Validation
-        ValidateSystemDataKey(key);
+        if (key != null)
+        {
+            ValidateSystemDataKey(key);
+        }
 
         if (!skipSystemCheck)
         {

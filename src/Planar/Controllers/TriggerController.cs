@@ -152,6 +152,18 @@ namespace Planar.Controllers
             return NoContent();
         }
 
+        [HttpDelete("{id}/data")]
+        [EditorAuthorize]
+        [SwaggerOperation(OperationId = "delete_trigger_id_data", Description = "Delete all trigger data", Summary = "Delete All Trigger Data")]
+        [NoContentResponse]
+        [BadRequestResponse]
+        [NotFoundResponse]
+        public async Task<IActionResult> ClearData([FromRoute][Required] string id)
+        {
+            await BusinesLayer.ClearData(id);
+            return NoContent();
+        }
+
         [HttpGet("cron")]
         [ViewerAuthorize]
         [SwaggerOperation(OperationId = "get_trigger_cron_expression", Description = "Get description of cron expression", Summary = "Get Cron Description")]

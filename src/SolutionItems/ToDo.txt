@@ -3,6 +3,7 @@
 PLAN FOR V 1.7.6
 ----------------
 - allow to clear job data
+- allow to clear trigger data
 
 - validate on startup that instance id not exists in nodes table
 - Security report

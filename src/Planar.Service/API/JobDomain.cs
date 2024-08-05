@@ -74,6 +74,28 @@ namespace Planar.Service.API
             await Scheduler.PauseJob(info.JobKey);
         }
 
+        public async Task ClearData(string id)
+        {
+            var info = await GetJobDetailsForDataCommands(id);
+            if (info.JobDetails == null) { return; }
+
+            var validKeys = info.JobDetails.JobDataMap.Keys.Where(Consts.IsDataKeyValid);
+            var keyCount = validKeys.Count();
+            foreach (var key in validKeys)
+            {
+                info.JobDetails.JobDataMap.Remove(key);
+            }
+
+            var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
+
+            // Reschedule job
+            MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
+            await Scheduler.PauseJob(info.JobKey);
+
+            AuditJobSafe(info.JobKey, $"clear job data. {keyCount} key(s)");
+        }
+
         public async Task RemoveData(string id, string key)
         {
             var info = await GetJobDetailsForDataCommands(id, key);
@@ -92,7 +114,7 @@ namespace Planar.Service.API
             AuditJobSafe(info.JobKey, $"remove job data with key '{key}'", new { value = auditValue?.Trim() });
         }
 
-        private async Task<DataCommandDto> GetJobDetailsForDataCommands(string jobId, string key)
+        private async Task<DataCommandDto> GetJobDetailsForDataCommands(string jobId, string? key = null)
         {
             // Get Job
             var jobKey = await JobKeyHelper.GetJobKey(jobId);
@@ -103,7 +125,10 @@ namespace Planar.Service.API
             };
 
             ValidateSystemJob(jobKey);
-            ValidateSystemDataKey(key);
+            if (key != null)
+            {
+                ValidateSystemDataKey(key);
+            }
             await ValidateJobPaused(jobKey);
             await ValidateJobNotRunning(jobKey);
             return result;

@@ -27,6 +27,13 @@ namespace Planar.Client
         Task DeleteDataAsync(string id, string key, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Clear All Job Data
+        /// </summary>
+        /// <param name="id">Job id or job key (Group.Name)</param>
+        /// <returns></returns>
+        Task ClearDataAsync(string id, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Get Job Settings
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>

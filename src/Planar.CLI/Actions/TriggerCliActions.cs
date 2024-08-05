@@ -216,6 +216,14 @@ public class TriggerCliActions : BaseCliAction<TriggerCliActions>
                 result = await RestProxy.Invoke(restRequest2, cancellationToken);
                 break;
 
+            case DataActions.Clear:
+                if (!ConfirmAction($"clear all data from trigger {request.Id}")) { return CliActionResponse.Empty; }
+                var restRequest3 = new RestRequest("trigger/{id}/data", Method.Delete)
+                    .AddParameter("id", request.Id, ParameterType.UrlSegment);
+
+                result = await RestProxy.Invoke(restRequest3, cancellationToken);
+                break;
+
             default:
                 throw new CliValidationException($"action {request.Action} is not supported for this command");
         }
