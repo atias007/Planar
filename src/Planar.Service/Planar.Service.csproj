@@ -101,7 +101,7 @@
 		<PackageReference Include="Quartz.Extensions.Hosting" Version="3.11.0" />
 		<PackageReference Include="Quartz.Plugins.TimeZoneConverter" Version="3.11.0" />
 		<PackageReference Include="Quartz.Serialization.Json" Version="3.11.0" />
-		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.29.0.95321">
+		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.32.0.97167">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
