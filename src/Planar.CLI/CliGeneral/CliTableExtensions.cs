@@ -294,7 +294,7 @@ namespace Planar.CLI
                 response.Data.ForEach(r => table.Table.AddRow(
                     $"{r.Id}",
                     CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty),
-                    CliTableFormat.GetStatusMarkup(r.Status),
+                    CliTableFormat.GetStatusMarkup(r.Status, r.HasWarnings),
                     CliTableFormat.FormatDateTime(r.StartDate),
                     CliTableFormat.FromatDuration(r.Duration),
                     CliTableFormat.FormatNumber(r.EffectedRows)));
@@ -310,7 +310,7 @@ namespace Planar.CLI
                     CliTableFormat.FormatJobKey(r.JobGroup, r.JobName),
                     r.JobType.EscapeMarkup(),
                     CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty),
-                    CliTableFormat.GetStatusMarkup(r.Status),
+                    CliTableFormat.GetStatusMarkup(r.Status, r.HasWarnings),
                     CliTableFormat.FormatDateTime(r.StartDate),
                     CliTableFormat.FromatDuration(r.Duration),
                     CliTableFormat.FormatNumber(r.EffectedRows)));
@@ -331,7 +331,7 @@ namespace Planar.CLI
                 CliTableFormat.FormatJobKey(r.JobGroup, r.JobName),
                 r.JobType.EscapeMarkup(),
                 CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty),
-                CliTableFormat.GetStatusMarkup(r.Status),
+                CliTableFormat.GetStatusMarkup(r.Status, r.HasWarnings),
                 CliTableFormat.FormatDateTime(r.StartDate),
                 CliTableFormat.FromatDuration(r.Duration),
                 CliTableFormat.FormatNumber(r.EffectedRows)));

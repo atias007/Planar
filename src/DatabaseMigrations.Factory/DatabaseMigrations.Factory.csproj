@@ -72,6 +72,9 @@
     <None Remove="Scripts\Planar_0057 - delete_user.sql" />
     <None Remove="Scripts\Planar_0058 - fix_last_history_sp.sql" />
     <None Remove="Scripts\Planar_0059 - add_index_ins_log.sql" />
+    <None Remove="Scripts\Planar_0060 - add_has_warnings.sql" />
+    <None Remove="Scripts\Planar_0061 - update_history_sp.sql" />
+    <None Remove="Scripts\Planar_0062 - update_last_sp.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Scripts\Planar_0001 - startup_v1_1_0.sql" />
@@ -133,6 +136,9 @@
     <EmbeddedResource Include="Scripts\Planar_0057 - delete_user.sql" />
     <EmbeddedResource Include="Scripts\Planar_0058 - fix_last_history_sp.sql" />
     <EmbeddedResource Include="Scripts\Planar_0059 - add_index_ins_log.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0060 - add_has_warnings.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0061 - update_history_sp.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0062 - update_last_sp.sql" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DbUp\dbup-sqlserver\dbup-sqlserver.csproj" />

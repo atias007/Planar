@@ -275,6 +275,17 @@ namespace Planar.CLI
             return $"[gold3_1]{progress}%[/]";
         }
 
+        public static string GetStatusMarkup(int status, bool hasWarning)
+        {
+            var result = GetStatusMarkup(status);
+            if (hasWarning)
+            {
+                result = $"{result}[{CliFormat.WarningColor}]•[/]";
+            }
+
+            return result;
+        }
+
         public static string GetStatusMarkup(int status)
         {
             var statusEnum = (StatusMembers)status;

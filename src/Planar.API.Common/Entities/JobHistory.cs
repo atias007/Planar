@@ -51,6 +51,8 @@ namespace Planar.API.Common.Entities
 
         public bool IsCanceled { get; set; }
 
+        public bool HasWarnings { get; set; }
+
         public byte? Anomaly { get; set; }
 
         public bool? IsOutlier => Anomaly == null ? null : Anomaly > 0;

@@ -297,7 +297,8 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
             log.Log,
             log.Exception,
             log.ExceptionCount,
-            log.IsCanceled
+            log.IsCanceled,
+            log.HasWarnings
         };
 
         var cmd = new CommandDefinition(

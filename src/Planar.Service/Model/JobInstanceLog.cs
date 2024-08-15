@@ -11,6 +11,10 @@ namespace Planar.Service.Model;
 [Index("JobGroup", "StartDate", Name = "IX_JobInstanceLog_JobGroup")]
 [Index("JobId", "StartDate", Name = "IX_JobInstanceLog_JobId")]
 [Index("JobType", "StartDate", Name = "IX_JobInstanceLog_JobType")]
+[Index("StartDate", Name = "IX_JobInstanceLog_StartDate")]
+[Index("StartDate", "JobGroup", Name = "IX_JobInstanceLog_StartGroup")]
+[Index("StartDate", "JobGroup", "JobType", Name = "IX_JobInstanceLog_StartGroupType")]
+[Index("StartDate", "JobType", Name = "IX_JobInstanceLog_StartType")]
 [Index("Status", "StartDate", Name = "IX_JobInstanceLog_Status")]
 public partial class JobInstanceLog
 {
@@ -82,4 +86,6 @@ public partial class JobInstanceLog
     public bool IsCanceled { get; set; }
 
     public byte? Anomaly { get; set; }
+
+    public bool HasWarnings { get; set; }
 }
