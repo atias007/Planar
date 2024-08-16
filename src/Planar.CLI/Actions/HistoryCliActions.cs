@@ -1,4 +1,6 @@
-﻿using Planar.API.Common.Entities;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
@@ -6,6 +8,9 @@ using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
 using System;
+using System.Data;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -118,6 +123,70 @@ public class HistoryCliActions : BaseCliAction<HistoryCliActions>
 
         var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
         return new CliActionResponse(result, message: result.Data);
+    }
+
+    [Action("odata")]
+    public static async Task<CliActionResponse> GetHistoryOData(CliHistoryODataRequest request, CancellationToken cancellationToken = default)
+    {
+        var restRequest = new RestRequest("odata/historydata", Method.Get);
+        if (!string.IsNullOrEmpty(request.Filter))
+        {
+            restRequest.AddQueryParameter("$filter", request.Filter);
+        }
+
+        if (!string.IsNullOrEmpty(request.OrderBy))
+        {
+            restRequest.AddQueryParameter("$orderby", request.OrderBy);
+        }
+
+        if (!string.IsNullOrEmpty(request.Select))
+        {
+            restRequest.AddQueryParameter("$select", request.Select);
+        }
+
+        if (request.Top > 0)
+        {
+            restRequest.AddQueryParameter("$top", request.Top.GetValueOrDefault());
+        }
+
+        if (request.Skip > 0)
+        {
+            restRequest.AddQueryParameter("$skip", request.Skip.GetValueOrDefault());
+        }
+
+        if (request.Count.HasValue)
+        {
+            restRequest.AddQueryParameter("$count", request.Count.GetValueOrDefault().ToString().ToLower());
+        }
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        if (!result.IsSuccessStatusCode || string.IsNullOrWhiteSpace(result.Content))
+        {
+            return new CliActionResponse(result);
+        }
+
+        var token = JToken.Parse(result.Content).SelectToken("$.value")?.ToString();
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            return new CliActionResponse(result);
+        }
+
+        dynamic? jsonObject = JsonConvert.DeserializeObject(token);
+        if (jsonObject == null)
+        {
+            return new CliActionResponse(result);
+        }
+
+        try
+        {
+            DataTable dt = JsonConvert.DeserializeObject<DataTable>(Convert.ToString(jsonObject));
+            var table = CliTableExtensions.GetTable(dt);
+            return new CliActionResponse(result, table);
+        }
+        catch
+        {
+            return new CliActionResponse(result);
+        }
     }
 
     [Action("ex")]

@@ -5,6 +5,7 @@ using Planar.Common;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using YamlDotNet.Serialization;
 
@@ -279,6 +280,27 @@ namespace Planar.CLI
                 CliTableFormat.FormatExceptionCount(r.ExceptionsCount),
                 CliTableFormat.FormatTimeSpan(r.RunTime),
                 $"[grey]{CliTableFormat.FormatTimeSpan(r.EstimatedEndTime)}[/]"));
+            return table;
+        }
+
+        public static CliTable GetTable(DataTable? dataTable)
+        {
+            var table = new CliTable(showCount: true);
+            if (dataTable == null) { return table; }
+            dataTable.Columns.Cast<DataColumn>().ToList().ForEach(c => table.Table.AddColumns(c.ColumnName));
+
+            for (var i = 0; i < dataTable.Rows.Count; i++)
+            {
+                var values = new List<string>();
+                for (var j = 0; dataTable.Columns.Count > j; j++)
+                {
+                    var value = SafeCliString(dataTable.Rows[i][j].ToString(), displayNull: true);
+                    values.Add(value);
+                }
+
+                table.Table.AddRow(values.ToArray());
+            }
+
             return table;
         }
 

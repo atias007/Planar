@@ -4,7 +4,13 @@ PLAN FOR V 1.7.6
 ----------------
 - validate on startup that instance id not exists in nodes table
 - Security report
-- add cli command to filter history / trace with odata filter
+- add cli command to filter history with odata filter
+  * handle common format (like duration, datetime, etc)
+  * handle odata errors
+  * forbidden display of some fields (log, exception, etc)
+  * limit the amount of columns
+  * check option to show only count
+- add cli command to filter trace with odata filter
 - circuit breaker (option to pause job after {x} fails in row)
 
 - 'service info hooks'
