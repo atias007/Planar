@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Planar.API.Common.Entities;
+﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
@@ -8,9 +6,6 @@ using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
 using System;
-using System.Data;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -160,33 +155,8 @@ public class HistoryCliActions : BaseCliAction<HistoryCliActions>
         }
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
-        if (!result.IsSuccessStatusCode || string.IsNullOrWhiteSpace(result.Content))
-        {
-            return new CliActionResponse(result);
-        }
-
-        var token = JToken.Parse(result.Content).SelectToken("$.value")?.ToString();
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            return new CliActionResponse(result);
-        }
-
-        dynamic? jsonObject = JsonConvert.DeserializeObject(token);
-        if (jsonObject == null)
-        {
-            return new CliActionResponse(result);
-        }
-
-        try
-        {
-            DataTable dt = JsonConvert.DeserializeObject<DataTable>(Convert.ToString(jsonObject));
-            var table = CliTableExtensions.GetTable(dt);
-            return new CliActionResponse(result, table);
-        }
-        catch
-        {
-            return new CliActionResponse(result);
-        }
+        var table = CliTableExtensions.GetTable(result);
+        return new CliActionResponse(result, table);
     }
 
     [Action("ex")]
