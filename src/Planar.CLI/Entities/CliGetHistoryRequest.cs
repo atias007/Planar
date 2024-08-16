@@ -29,5 +29,8 @@ namespace Planar.CLI.Entities
 
         [ActionProperty("o", "outlier")]
         public bool? Outlier { get; set; }
+
+        [ActionProperty("hw", "has-warnings")]
+        public bool? HasWarnings { get; set; }
     }
 }

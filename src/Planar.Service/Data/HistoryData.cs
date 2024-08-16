@@ -115,6 +115,11 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
             query = query.Where(l => l.Anomaly == 0);
         }
 
+        if (request.HasWarnings.HasValue)
+        {
+            query = query.Where(l => l.HasWarnings == request.HasWarnings.Value);
+        }
+
         if (request.Ascending)
         {
             query = query.OrderBy(l => l.StartDate);

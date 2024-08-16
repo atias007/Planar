@@ -337,3 +337,4 @@ V1.7.6
 - add username, domain, password to ProcessJob + PlanarJob
 - allow to pause/resume group
 - BUG: fix multiple monitors for job auto mute only first monitor
+- add HasWarnings to history and to filter

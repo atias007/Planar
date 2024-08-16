@@ -18,6 +18,8 @@ namespace Planar.Client.Entities
 
         public bool? Outlier { get; set; }
 
+        public bool? HasWarnings { get; set; }
+
         public HistoryStatusMembers? Status { get; set; }
     }
 }

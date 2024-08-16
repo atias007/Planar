@@ -160,6 +160,11 @@ namespace Planar.Client
                 restRequest.AddQueryParameter("outlier", filter.Outlier.Value);
             }
 
+            if (filter.HasWarnings.HasValue)
+            {
+                restRequest.AddQueryParameter("haswarnings", filter.HasWarnings.Value);
+            }
+
             restRequest.AddQueryParameter("ascending", filter.Ascending);
             restRequest.AddQueryPagingParameter(filter);
 
