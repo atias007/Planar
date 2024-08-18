@@ -207,12 +207,6 @@ namespace Planar.Service.API
                     .ToList();
             }
 
-            // filter by active
-            if (request.Active.HasValue)
-            {
-                jobs = jobs.Where(r => IsActiveJob(r.Key).Result == request.Active.Value).ToList();
-            }
-
             // filter by search
             if (!string.IsNullOrWhiteSpace(request.Filter))
             {
@@ -225,9 +219,22 @@ namespace Planar.Service.API
                     .ToList();
             }
 
+            // fill IsActive property
+            var jobList = jobs.Select(j => (j.Key, SchedulerUtil.MapJobRowDetails(j))).ToList();
+            foreach (var job in jobList)
+            {
+                job.Item2.IsActive = await IsActiveJob(job.Key);
+            }
+
+            // filter by active
+            if (request.Active.HasValue)
+            {
+                jobList = jobList.Where(r => r.Item2.IsActive == request.Active.Value).ToList();
+            }
+
             // paging & order by
-            var result = jobs
-                .Select(SchedulerUtil.MapJobRowDetails)
+            var result = jobList
+                .Select(j => j.Item2)
                 .SetPaging(request)
                 .OrderBy(j => j.Group)
                 .ThenBy(j => j.Name)
