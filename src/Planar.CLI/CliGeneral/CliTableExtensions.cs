@@ -65,6 +65,21 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetMetadataTable<T>() where T : class
+        {
+            var table = new CliTable();
+            table.Table.AddColumns("Property Name", "Type");
+            var properties = typeof(T).GetProperties();
+            foreach (var p in properties)
+            {
+                var type = p.PropertyType.IsGenericType ? p.PropertyType.GenericTypeArguments[0].Name : p.PropertyType.Name;
+                if (type == nameof(DateTime)) { type = nameof(DateTimeOffset); }
+                table.Table.AddRow(p.Name, type);
+            }
+
+            return table;
+        }
+
         public static CliTable GetTable(AddUserResponse? response)
         {
             var table = new CliTable();
@@ -322,11 +337,7 @@ namespace Planar.CLI
                 .ToArray();
 
             ValidateDataTableColumns(columns);
-            var displayColumns = columns
-                .Select(c => c.Replace(nameof(JobHistory.StatusTitle), nameof(JobHistory.Status)))
-                .ToArray();
-
-            table.Table.AddColumns(displayColumns);
+            table.Table.AddColumns(columns);
 
             // build rows
             for (var i = 0; i < dataTable.Rows.Count; i++)

@@ -16,9 +16,9 @@ public class CliHistoryODataRequest
     [ActionProperty("k", "skip")]
     public int? Skip { get; set; }
 
-    [ActionProperty("c", "count")]
-    public bool? Count { get; set; }
-
     [ActionProperty("s", "select")]
     public string? Select { get; set; }
+
+    [ActionProperty("m", "metadata")]
+    public bool? Metadata { get; set; }
 }

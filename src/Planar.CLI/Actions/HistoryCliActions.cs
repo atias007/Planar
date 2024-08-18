@@ -6,9 +6,11 @@ using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
 using System;
+using System.Reflection.Metadata.Ecma335;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Planar.CLI.Actions;
 
@@ -123,7 +125,14 @@ public class HistoryCliActions : BaseCliAction<HistoryCliActions>
     [Action("odata")]
     public static async Task<CliActionResponse> GetHistoryOData(CliHistoryODataRequest request, CancellationToken cancellationToken = default)
     {
+        if (request.Metadata.GetValueOrDefault())
+        {
+            var mtable = CliTableExtensions.GetMetadataTable<JobHistory>();
+            return new CliActionResponse(null, mtable);
+        }
+
         var restRequest = new RestRequest("odata/historydata", Method.Get);
+
         if (!string.IsNullOrEmpty(request.Filter))
         {
             restRequest.AddQueryParameter("$filter", request.Filter);
@@ -134,24 +143,23 @@ public class HistoryCliActions : BaseCliAction<HistoryCliActions>
             restRequest.AddQueryParameter("$orderby", request.OrderBy);
         }
 
-        if (!string.IsNullOrEmpty(request.Select))
+        if (string.IsNullOrWhiteSpace(request.Select))
         {
-            restRequest.AddQueryParameter("$select", request.Select);
+            var defaultSelect = $"{nameof(JobHistory.Id)},{nameof(JobHistory.JobId)},{nameof(JobHistory.JobName)},{nameof(JobHistory.JobGroup)},{nameof(JobHistory.JobType)},{nameof(JobHistory.TriggerId)},{nameof(JobHistory.StatusTitle)},{nameof(JobHistory.StartDate)},{nameof(JobHistory.Duration)},{nameof(JobHistory.EffectedRows)}";
+            request.Select = defaultSelect;
+        }
+        restRequest.AddQueryParameter("$select", request.Select);
+
+        if (!request.Top.HasValue)
+        {
+            request.Top = Consts.CliDefaultPageSize;
         }
 
-        if (request.Top > 0)
-        {
-            restRequest.AddQueryParameter("$top", request.Top.GetValueOrDefault());
-        }
+        restRequest.AddQueryParameter("$top", request.Top.GetValueOrDefault());
 
         if (request.Skip > 0)
         {
             restRequest.AddQueryParameter("$skip", request.Skip.GetValueOrDefault());
-        }
-
-        if (request.Count.HasValue)
-        {
-            restRequest.AddQueryParameter("$count", request.Count.GetValueOrDefault().ToString().ToLower());
         }
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
