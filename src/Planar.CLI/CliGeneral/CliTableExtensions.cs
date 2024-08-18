@@ -285,7 +285,7 @@ namespace Planar.CLI
             var table = new CliTable(paging: response, entityName: "job");
             table.Table.AddColumns("Job Id", "Job Key", "Job Type", "Description");
             if (response == null || response.Data == null) { return table; }
-            response.Data.ForEach(r => table.Table.AddRow(CliTableFormat.FormatJobId(r.Id, r.IsActive), CliTableFormat.FormatJobKey(r.Group, r.Name), r.JobType.EscapeMarkup(), LimitValue(r.Description)));
+            response.Data.ForEach(r => table.Table.AddRow(CliTableFormat.FormatJobId(r.Id, r.Active), CliTableFormat.FormatJobKey(r.Group, r.Name), r.JobType.EscapeMarkup(), LimitValue(r.Description)));
             return table;
         }
 
@@ -667,6 +667,16 @@ namespace Planar.CLI
             if (columnName.Equals(nameof(JobHistory.ExceptionCount), StringComparison.OrdinalIgnoreCase))
             {
                 return CliTableFormat.FormatExceptionCount(Convert.ToInt32(value));
+            }
+
+            if (columnName.Equals(nameof(JobHistory.StatusTitle), StringComparison.OrdinalIgnoreCase))
+            {
+                return CliTableFormat.GetStatusMarkup(Convert.ToString(value));
+            }
+
+            if (columnName.Equals(nameof(JobHistory.TriggerId), StringComparison.OrdinalIgnoreCase))
+            {
+                return CliTableFormat.GetTriggerIdMarkup(Convert.ToString(value));
             }
 
             return SafeCliString(value.ToString(), displayNull: true);

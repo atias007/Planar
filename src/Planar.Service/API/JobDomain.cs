@@ -223,13 +223,20 @@ namespace Planar.Service.API
             var jobList = jobs.Select(j => (j.Key, SchedulerUtil.MapJobRowDetails(j))).ToList();
             foreach (var job in jobList)
             {
-                job.Item2.IsActive = await IsActiveJob(job.Key);
+                job.Item2.Active = await GetJobActiveMode(job.Key);
             }
 
             // filter by active
             if (request.Active.HasValue)
             {
-                jobList = jobList.Where(r => r.Item2.IsActive == request.Active.Value).ToList();
+                if (request.Active.Value)
+                {
+                    jobList = jobList.Where(r => r.Item2.Active != JobActiveMembers.Inactive).ToList();
+                }
+                else
+                {
+                    jobList = jobList.Where(r => r.Item2.Active == JobActiveMembers.Inactive).ToList();
+                }
             }
 
             // paging & order by
@@ -979,22 +986,34 @@ namespace Planar.Service.API
             return result;
         }
 
-        private async Task<bool> IsActiveJob(JobKey jobKey)
+        private async Task<JobActiveMembers> GetJobActiveMode(JobKey jobKey)
         {
             var triggers = await Scheduler.GetTriggersOfJob(jobKey);
-            if (triggers == null) { return false; }
+            if (triggers == null) { return JobActiveMembers.Inactive; }
 
+            var hasActive = false;
+            var hasInactive = false;
             foreach (var t in triggers)
             {
                 if (t.Key.Group == Consts.RecoveringJobsGroup) { continue; }
                 var state = await Scheduler.GetTriggerState(t.Key);
                 if (IaActiveTriggerState(state))
                 {
-                    return true;
+                    hasActive = true;
                 }
+                else
+                {
+                    hasInactive = true;
+                }
+
+                if (hasActive && hasInactive) { break; }
             }
 
-            return false;
+            if (hasActive && hasInactive) { return JobActiveMembers.PartiallyActive; }
+            if (hasActive) { return JobActiveMembers.Active; }
+            if (hasInactive) { return JobActiveMembers.Inactive; }
+
+            return JobActiveMembers.Active;
         }
 
         private async Task<bool> JobGroupExists(string jobGroup)

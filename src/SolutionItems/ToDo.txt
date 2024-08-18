@@ -332,8 +332,9 @@ V1.7.6
 - add username, domain, password to ProcessJob + PlanarJob
 - allow to pause/resume group
 - BUG: fix multiple monitors for job auto mute only first monitor
-- add HasWarnings to history and to filter
+- add HasWarnings to history data and to ls filter
+- add HasWarnings indicator to history data
 - allow to clear job data
 - allow to clear trigger data
 - add cli command to filter history with odata filter
-- add IsActive to job list (cli indication)
+- add IsActive field to job (cli indication)

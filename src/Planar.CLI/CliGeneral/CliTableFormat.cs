@@ -104,9 +104,13 @@ public static class CliTableFormat
         return $"[red]{count:N0}[/]";
     }
 
-    public static string FormatJobId(string jobId, bool active)
+    public static string FormatJobId(string jobId, JobActiveMembers active)
     {
-        return active ? jobId : $"{jobId}[{CliFormat.ErrorColor}]•[/]";
+        if (active == JobActiveMembers.Active) { return jobId; }
+        if (active == JobActiveMembers.PartiallyActive) { return $"{jobId}[{CliFormat.WarningColor}]•[/]"; }
+        if (active == JobActiveMembers.Inactive) { return $"{jobId}[{CliFormat.ErrorColor}]•[/]"; }
+
+        return jobId;
     }
 
     public static string FormatJobKey(string? group, string? name)
@@ -293,6 +297,21 @@ public static class CliTableFormat
         return result;
     }
 
+    public static string GetStatusMarkup(string? title)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            return GetStatusMarkup(-1);
+        }
+
+        if (Enum.TryParse<StatusMembers>(title, out var status))
+        {
+            return GetStatusMarkup((int)status);
+        }
+
+        return GetStatusMarkup(-1);
+    }
+
     public static string GetStatusMarkup(int status)
     {
         var statusEnum = (StatusMembers)status;
@@ -318,8 +337,13 @@ public static class CliTableFormat
         return sb.ToString().Trim();
     }
 
-    public static string GetTriggerIdMarkup(string triggerId)
+    public static string GetTriggerIdMarkup(string? triggerId)
     {
+        if (string.IsNullOrWhiteSpace(triggerId))
+        {
+            return string.Empty;
+        }
+
         if (triggerId == Consts.ManualTriggerId)
         {
             return $"[invert]{triggerId.EscapeMarkup()}[/]";

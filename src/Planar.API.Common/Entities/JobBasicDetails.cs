@@ -1,5 +1,12 @@
 ﻿namespace Planar.API.Common.Entities;
 
+public enum JobActiveMembers
+{
+    Active,
+    PartiallyActive,
+    Inactive
+}
+
 public class JobBasicDetails
 {
     public string Id { get; set; } = string.Empty;
@@ -12,5 +19,5 @@ public class JobBasicDetails
 
     public string? Description { get; set; }
 
-    public bool IsActive { get; set; }
+    public JobActiveMembers Active { get; set; }
 }
