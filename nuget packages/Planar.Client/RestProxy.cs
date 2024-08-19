@@ -1,5 +1,6 @@
 ﻿using Core.JsonConvertor;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Planar.Client.Entities;
 using Planar.Client.Exceptions;
 using Planar.Client.Serialize;
@@ -132,6 +133,7 @@ namespace Planar.Client
                     }
                 }
 
+                HandleODataErrorResponse(response);
                 throw new PlanarValidationException("Planar service return validation errors");
             }
 
@@ -154,6 +156,33 @@ namespace Planar.Client
             throw new PlanarException(response);
         }
 
+        private static void HandleODataErrorResponse(RestResponse response)
+        {
+            static string ClearMessage(string message)
+            {
+                var index = message.IndexOf("on type '");
+                if (index < 0) { return message; }
+                return message[0..index].ToLower();
+            }
+
+            if (response.StatusCode != HttpStatusCode.BadRequest) { return; }
+            if (string.IsNullOrWhiteSpace(response.Content)) { return; }
+            var token = JToken.Parse(response.Content);
+            var message = token["error"]?["innererror"]?["message"]?.ToString();
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                message = ClearMessage(message);
+                throw new PlanarValidationException(message);
+            }
+
+            message = token["error"]?["message"]?.ToString();
+            if (!string.IsNullOrWhiteSpace(message))
+            {
+                message = ClearMessage(message);
+                throw new PlanarValidationException(message);
+            }
+        }
+
         public async Task<TResponse> InvokeAsync<TResponse>(RestRequest request, CancellationToken cancellationToken)
         {
             var response = await Proxy.ExecuteAsync<TResponse>(request, cancellationToken);
@@ -167,7 +196,7 @@ namespace Planar.Client
             return response.Data!;
         }
 
-        public async Task InvokeAsync(RestRequest request, CancellationToken cancellationToken)
+        public async Task<string?> InvokeAsync(RestRequest request, CancellationToken cancellationToken)
         {
             var response = await Proxy.ExecuteAsync(request, cancellationToken);
             if (await RefreshToken(response, cancellationToken))
@@ -176,6 +205,7 @@ namespace Planar.Client
             }
 
             ValidateResponse(response);
+            return response.Content;
         }
 
         private async Task<RestResponse> Relogin(CancellationToken cancellationToken)

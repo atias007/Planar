@@ -7,6 +7,8 @@ services.AddPlanarClient(c => c.Host = "http://localhost:2306");
 var provider = services.BuildServiceProvider();
 var client = provider.GetRequiredService<IPlanarClient>();
 
+var odata = await client.History.ODataAsync(new ODataFilter { Filter = "triggerid eq 'manual'", Select = "xx,jobid" });
+
 var details = await client.Job.GetAsync("Demo.HelloWorld");
 Console.WriteLine(details.Active);
 details = await client.Job.GetAsync("Infrastructure.BankOfIsraelCurrency");

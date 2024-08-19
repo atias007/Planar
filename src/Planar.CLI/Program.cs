@@ -681,7 +681,7 @@ internal static class Program
 
     private static bool HandleODataErrorResponse(RestResponse response)
     {
-        string ClearMessage(string message)
+        static string ClearMessage(string message)
         {
             var index = message.IndexOf("on type '");
             if (index < 0) { return message; }

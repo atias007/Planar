@@ -172,5 +172,39 @@ namespace Planar.Client
 
             return result;
         }
+
+        public async Task<string> ODataAsync(ODataFilter? filter = null, CancellationToken cancellationToken = default)
+        {
+            filter ??= new ODataFilter();
+            var restRequest = new RestRequest("odata/historydata", Method.Get);
+
+            if (!string.IsNullOrWhiteSpace(filter.Filter))
+            {
+                restRequest.AddQueryParameter("$filter", filter.Filter);
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.Select))
+            {
+                restRequest.AddQueryParameter("$select", filter.Select);
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.OrderBy))
+            {
+                restRequest.AddQueryParameter("$orderby", filter.OrderBy);
+            }
+
+            if (filter.Top.HasValue)
+            {
+                restRequest.AddQueryParameter("$top", filter.Top.Value);
+            }
+
+            if (filter.Skip.HasValue)
+            {
+                restRequest.AddQueryParameter("$skip", filter.Skip.Value);
+            }
+
+            var result = await _proxy.InvokeAsync(restRequest, cancellationToken);
+            return result ?? string.Empty;
+        }
     }
 }
