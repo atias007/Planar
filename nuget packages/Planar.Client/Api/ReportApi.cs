@@ -1,7 +1,6 @@
 ﻿using Planar.Client.Entities;
 using RestSharp;
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,17 +18,8 @@ namespace Planar.Client.Api
             var restRequest = new RestRequest("report/{name}", Method.Get)
                 .AddUrlSegment("name", report);
 
-            var result = await _proxy.InvokeAsync<IEnumerable<ReportsStatusInner>>(restRequest, cancellationToken);
-
-            var final = result.Select(r => new ReportsStatus
-            {
-                Enabled = r.Enabled,
-                Group = r.Group,
-                NextRunning = r.NextRunning,
-                Period = Enum.Parse<ReportPeriods>(r.Period, ignoreCase: true),
-            });
-
-            return final;
+            var result = await _proxy.InvokeAsync<IEnumerable<ReportsStatus>>(restRequest, cancellationToken);
+            return result;
         }
 
         public async Task RunAsync(ReportNames report, ReportPeriods? period, string? group, CancellationToken cancellationToken = default)

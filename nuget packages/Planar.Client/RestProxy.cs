@@ -1,6 +1,8 @@
 ﻿using Core.JsonConvertor;
 using Newtonsoft.Json;
+using Planar.Client.Entities;
 using Planar.Client.Exceptions;
+using Planar.Client.Serialize;
 using RestSharp;
 using RestSharp.Serializers.NewtonsoftJson;
 using System;
@@ -50,7 +52,9 @@ namespace Planar.Client
                         var serOprions = new JsonSerializerSettings();
                         serOprions.Converters.Add(new NewtonsoftTimeSpanConverter());
                         serOprions.Converters.Add(new NewtonsoftNullableTimeSpanConverter());
-
+                        serOprions.Converters.Add(new GenericEnumConverter<JobActiveMembers>());
+                        serOprions.Converters.Add(new GenericEnumConverter<Roles>());
+                        serOprions.Converters.Add(new GenericEnumConverter<ReportPeriods>());
                         _client = new RestClient(
                             options: options,
                             configureSerialization: s => s.UseNewtonsoftJson(serOprions)

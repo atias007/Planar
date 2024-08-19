@@ -7,7 +7,16 @@ services.AddPlanarClient(c => c.Host = "http://localhost:2306");
 var provider = services.BuildServiceProvider();
 var client = provider.GetRequiredService<IPlanarClient>();
 
-var result = await client.History.ListAsync(new ListHistoryFilter { HasWarnings = true });
+var details = await client.Job.GetAsync("Demo.HelloWorld");
+Console.WriteLine(details.Active);
+details = await client.Job.GetAsync("Infrastructure.BankOfIsraelCurrency");
+Console.WriteLine(details.Active);
+details = await client.Job.GetAsync("Monitoring.HealthCheck");
+Console.WriteLine(details.Active);
+
+var group = await client.Group.GetAsync("Admins");
+var report = await client.Report.GetAsync(ReportNames.Summary);
+//var result = await client.History.ListAsync(new ListHistoryFilter { HasWarnings = true });
 //await client.Trigger.UpdateIntervalAsync("g2otp1mody4", TimeSpan.FromMinutes(55));
 //await client.Trigger.UpdateCronExpressionAsync("jh4eums0jly", "0 0 18 ? 1/1 7#1 *"); // 0 0 16 ? 1/1 7#1 *
 
@@ -22,7 +31,6 @@ trigger = await client.Trigger.GetAsync("g2otp1mody4");
 Console.WriteLine(trigger.SimpleTriggers[0].Timeout);
 
 var list = await client.History.ListAsync(new ListHistoryFilter { PageSize = 5, PageNumber = 1, JobId = "Demo.TestEnvironmentExit" });
-var details = await client.Job.GetAsync("Demo.TestEnvironmentExit");
 
 //await TestGroup(client);
 

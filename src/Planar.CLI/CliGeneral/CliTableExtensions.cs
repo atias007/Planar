@@ -520,6 +520,7 @@ namespace Planar.CLI
             table.Table.AddRow(nameof(response.Durable), response.Durable.ToString());
             table.Table.AddRow(nameof(response.RequestsRecovery).SplitWords(), response.RequestsRecovery.ToString());
             table.Table.AddRow(nameof(response.Concurrent), response.Concurrent.ToString());
+            table.Table.AddRow(nameof(response.Active), CliTableFormat.FormatActive(response.Active));
 
             var dataMap = SerializeJobDetailsData(response);
 

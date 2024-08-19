@@ -7,7 +7,7 @@ PLAN FOR V 1.7.6
 - check option to odata search (https://devblogs.microsoft.com/odata/compute-and-search-in-asp-net-core-odata-8/)
 - circuit breaker (option to pause job after {x} fails in row)
 
-- IsActive on job get/describe,client library
+- IsActive on job client library
 - odata to client library
 
 - 'service info hooks'

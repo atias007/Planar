@@ -1,6 +1,7 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.General;
+using Planar.Common;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
@@ -107,8 +108,8 @@ public static class CliTableFormat
     public static string FormatJobId(string jobId, JobActiveMembers active)
     {
         if (active == JobActiveMembers.Active) { return jobId; }
-        if (active == JobActiveMembers.PartiallyActive) { return $"{jobId}[{CliFormat.WarningColor}]•[/]"; }
-        if (active == JobActiveMembers.Inactive) { return $"{jobId}[{CliFormat.ErrorColor}]•[/]"; }
+        if (active == JobActiveMembers.PartiallyActive) { return $"{jobId} [{CliFormat.WarningColor}]•[/]"; }
+        if (active == JobActiveMembers.Inactive) { return $"{jobId} [{CliFormat.ErrorColor}]•[/]"; }
 
         return jobId;
     }
@@ -352,6 +353,18 @@ public static class CliTableFormat
         {
             return triggerId.EscapeMarkup();
         }
+    }
+
+    public static string FormatActive(JobActiveMembers active)
+    {
+        var text = active.ToString().SplitWords();
+        return active switch
+        {
+            JobActiveMembers.Active => $"[{CliFormat.OkColor}]{text}[/]",
+            JobActiveMembers.PartiallyActive => $"[{CliFormat.WarningColor}]{text}[/]",
+            JobActiveMembers.Inactive => $"[{CliFormat.ErrorColor}]{text}[/]",
+            _ => text,
+        };
     }
 
     public static string FormatVersion(string version)

@@ -22,6 +22,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using static Quartz.Logging.OperationName;
 
 namespace Planar.Service.API
 {
@@ -170,8 +171,7 @@ namespace Planar.Service.API
                 await Scheduler.GetJobDetail(jobKey) ??
                 throw new RestNotFoundException($"job with key '{KeyHelper.GetKeyTitle(jobKey)}' does not exist");
 
-            var result = new JobDetails();
-            await MapJobDetails(info, result);
+            var result = await MapJobDetails(info);
 
             var triggers = await GetTriggersDetails(jobKey);
             result.SimpleTriggers = triggers.SimpleTriggers;
@@ -220,28 +220,24 @@ namespace Planar.Service.API
             }
 
             // fill IsActive property
-            var jobList = jobs.Select(j => (j.Key, SchedulerUtil.MapJobRowDetails(j))).ToList();
-            foreach (var job in jobList)
-            {
-                job.Item2.Active = await GetJobActiveMode(job.Key);
-            }
+            var jobList = jobs.Select(j => MapJobDetailsSlim(j).Result).ToList();
 
             // filter by active
             if (request.Active.HasValue)
             {
                 if (request.Active.Value)
                 {
-                    jobList = jobList.Where(r => r.Item2.Active != JobActiveMembers.Inactive).ToList();
+                    jobList = jobList.Where(r => r.Active != JobActiveMembers.Inactive).ToList();
                 }
                 else
                 {
-                    jobList = jobList.Where(r => r.Item2.Active == JobActiveMembers.Inactive).ToList();
+                    jobList = jobList.Where(r => r.Active == JobActiveMembers.Inactive).ToList();
                 }
             }
 
             // paging & order by
             var result = jobList
-                .Select(j => j.Item2)
+                .Select(j => j)
                 .SetPaging(request)
                 .OrderBy(j => j.Group)
                 .ThenBy(j => j.Name)
@@ -989,7 +985,7 @@ namespace Planar.Service.API
         private async Task<JobActiveMembers> GetJobActiveMode(JobKey jobKey)
         {
             var triggers = await Scheduler.GetTriggersOfJob(jobKey);
-            if (triggers == null) { return JobActiveMembers.Inactive; }
+            if (triggers == null || triggers.Count == 0) { return JobActiveMembers.Inactive; }
 
             var hasActive = false;
             var hasInactive = false;
@@ -1022,11 +1018,21 @@ namespace Planar.Service.API
             return allGroups.Contains(jobGroup);
         }
 
-        private async Task MapJobDetails(IJobDetail source, JobDetails target, JobDataMap? dataMap = null)
+        private async Task<JobBasicDetails> MapJobDetailsSlim(IJobDetail source)
         {
-            dataMap ??= source.JobDataMap;
-
+            var target = new JobBasicDetails();
             SchedulerUtil.MapJobRowDetails(source, target);
+            target.Active = await GetJobActiveMode(source.Key);
+            return target;
+        }
+
+        private async Task<JobDetails> MapJobDetails(IJobDetail source, JobDataMap? dataMap = null)
+        {
+            var target = new JobDetails();
+            SchedulerUtil.MapJobRowDetails(source, target);
+            target.Active = await GetJobActiveMode(source.Key);
+
+            dataMap ??= source.JobDataMap;
             target.Concurrent = !source.ConcurrentExecutionDisallowed;
             target.Author = JobHelper.GetJobAuthor(source);
             target.LogRetentionDays = JobHelper.GetLogRetentionDays(source);
@@ -1034,6 +1040,8 @@ namespace Planar.Service.API
             target.RequestsRecovery = source.RequestsRecovery;
             target.DataMap = Global.ConvertDataMapToDictionary(dataMap);
             target.Properties = await DataLayer.GetJobProperty(target.Id) ?? string.Empty;
+
+            return target;
         }
     }
 }
