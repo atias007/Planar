@@ -107,9 +107,9 @@ public static class CliTableFormat
 
     public static string FormatJobId(string jobId, JobActiveMembers active)
     {
-        if (active == JobActiveMembers.Active) { return jobId; }
-        if (active == JobActiveMembers.PartiallyActive) { return $"{jobId} [{CliFormat.WarningColor}]•[/]"; }
-        if (active == JobActiveMembers.Inactive) { return $"{jobId} [{CliFormat.ErrorColor}]•[/]"; }
+        if (active == JobActiveMembers.Active) { return $"  {jobId}"; }
+        if (active == JobActiveMembers.PartiallyActive) { return $"[{CliFormat.WarningColor}]{bullet}[/] {jobId}"; }
+        if (active == JobActiveMembers.Inactive) { return $"[{CliFormat.ErrorColor}]{bullet}[/] {jobId}"; }
 
         return jobId;
     }
