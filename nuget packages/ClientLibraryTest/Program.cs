@@ -8,7 +8,7 @@ var provider = services.BuildServiceProvider();
 var client = provider.GetRequiredService<IPlanarClient>();
 
 var odata = await client.History.ODataAsync(new ODataFilter { Filter = "triggerid eq 'manual'", Select = "xx,jobid" });
-
+Console.WriteLine(odata);
 var details = await client.Job.GetAsync("Demo.HelloWorld");
 Console.WriteLine(details.Active);
 details = await client.Job.GetAsync("Infrastructure.BankOfIsraelCurrency");
@@ -40,8 +40,7 @@ var list = await client.History.ListAsync(new ListHistoryFilter { PageSize = 5, 
 
 //await client.Jobs.TestAsync("Infrastructure.BankOfIsraelCurrency", DoIt);
 
-//var metrics = await client.Metrics.ListMetricsAsync();
-
+////var metrics = await client.Metrics.ListMetricsAsync();
 var summ = await client.Report.GetAsync(ReportNames.Summary);
 
 var res0 = await client.Monitor.ListAsync();
@@ -49,7 +48,6 @@ var res1 = await client.Trigger.ListAsync("Infrastructure.BankOfIsraelCurrency")
 var res2 = await client.History.GetAsync("NON_CLUSTERED638306436561775750");
 var res3 = await client.History.LastAsync();
 
-return;
 // Console.WriteLine($"[x] Login as {login.Role}");
 var result1 = await client.Job.GetJobTypesAsync();
 Console.WriteLine($"[x] Job Types:");
@@ -82,20 +80,20 @@ await client.Job.PauseAsync("5c1sgknnaj5");
 
 Console.ReadLine();
 
-static async Task DoIt(RunningJobDetails data)
-{
-    await Console.Out.WriteLineAsync(data.Progress.ToString());
-}
+////static async Task DoIt(RunningJobDetails data)
+////{
+////    await Console.Out.WriteLineAsync(data.Progress.ToString());
+////}
 
-static async Task TestGroup(PlanarClient client)
-{
-    await client.Group.AddAsync(new Group { Name = "ClientTest", AdditionalField1 = "Test1", Role = Roles.Editor });
-    var group = await client.Group.GetAsync("ClientTest");
-    await Console.Out.WriteLineAsync(group.AdditionalField1);
-    var all = await client.Group.ListAsync();
-}
+////static async Task TestGroup(PlanarClient client)
+////{
+////    await client.Group.AddAsync(new Group { Name = "ClientTest", AdditionalField1 = "Test1", Role = Roles.Editor });
+////    var group = await client.Group.GetAsync("ClientTest");
+////    await Console.Out.WriteLineAsync(group.AdditionalField1);
+////    var all = await client.Group.ListAsync();
+////}
 
-static async Task TestUsers(PlanarClient client)
-{
-    var users = await client.User.ListAsync();
-}
+////static async Task TestUsers(PlanarClient client)
+////{
+////    var users = await client.User.ListAsync();
+////}

@@ -186,7 +186,7 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         return result;
     }
 
-    public string GetCronDescription(string expression)
+    public static string GetCronDescription(string expression)
     {
         try
         {

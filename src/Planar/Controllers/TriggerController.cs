@@ -171,7 +171,7 @@ namespace Planar.Controllers
         [BadRequestResponse]
         public ActionResult<string> GetCronDescription([FromQuery][Required] string expression)
         {
-            var result = BusinesLayer.GetCronDescription(expression);
+            var result = TriggerDomain.GetCronDescription(expression);
             return Ok(result);
         }
 

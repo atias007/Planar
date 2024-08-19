@@ -88,7 +88,7 @@ namespace Planar.Client
             return reloginResponse.IsSuccessful;
         }
 
-        private void ValidateResponse(RestResponse response)
+        private static void ValidateResponse(RestResponse response)
         {
             if (response.IsSuccessful) { return; }
 

@@ -537,7 +537,7 @@ namespace Planar.Client
             return (false, runResult);
         }
 
-        private void InvokeCallback(Func<RunningJobDetails, Task> callback, RunningJobDetails? data, DateTime invokeDate, DateTime? estimateEnd)
+        private static void InvokeCallback(Func<RunningJobDetails, Task> callback, RunningJobDetails? data, DateTime invokeDate, DateTime? estimateEnd)
         {
             if (data == null) { return; }
 

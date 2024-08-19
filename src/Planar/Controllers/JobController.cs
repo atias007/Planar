@@ -363,7 +363,7 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     public ActionResult<string> GetJobFileTemplate([Required][FromRoute] string name)
     {
         name = WebUtility.UrlDecode(name);
-        var result = BusinesLayer.GetJobFileTemplate(name);
+        var result = JobDomain.GetJobFileTemplate(name);
         return Ok(result);
     }
 
