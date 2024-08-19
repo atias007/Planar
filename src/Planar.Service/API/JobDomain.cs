@@ -315,7 +315,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        public string GetJobFileTemplate(string typeName)
+        public static string GetJobFileTemplate(string typeName)
         {
             var notFoundException = new Lazy<RestNotFoundException>(() => new RestNotFoundException($"type '{typeName}' could not be found"));
 
