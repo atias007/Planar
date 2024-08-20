@@ -1,6 +1,6 @@
 ﻿namespace Planar.CLI.Entities
 {
-    public interface ICliGetByNameRequest
+    public interface ICliByNameRequest
     {
         string? Name { get; set; }
     }

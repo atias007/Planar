@@ -15,6 +15,9 @@ public class ProcessJobProperties : BaseProcessJobProperties, IFileJobProperties
     [YamlMember(Alias = "output encoding")]
     public string? OutputEncoding { get; set; }
 
+    [YamlMember(Alias = "log output")]
+    public bool LogOutput { get; set; } = true;
+
     [YamlMember(Alias = "success exit codes")]
     public IEnumerable<int> SuccessExitCodes { get; set; } = new List<int>();
 

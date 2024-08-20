@@ -4,12 +4,6 @@ namespace Planar.Client.Entities
 {
     public class GroupDetails : Group
     {
-        private readonly List<UserMostBasicDetails> _users = new List<UserMostBasicDetails>();
-        public IEnumerable<UserMostBasicDetails> Users => _users;
-
-        internal void AddUser(UserMostBasicDetails user)
-        {
-            _users.Add(user);
-        }
+        public IEnumerable<UserMostBasicDetails> Users { get; internal set; } = new List<UserBasicDetails>();
     }
 }

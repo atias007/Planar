@@ -2,12 +2,10 @@
 
 PLAN FOR V 1.7.6
 ----------------
-- cli: do not ask "are you sure" when not in interactive mode
-- allow to clear job data
-- allow to pause/resume group
-
 - validate on startup that instance id not exists in nodes table
 - Security report
+- check option to odata search (https://devblogs.microsoft.com/odata/compute-and-search-in-asp-net-core-odata-8/)
+- circuit breaker (option to pause job after {x} fails in row)
 
 - 'service info hooks'
 
@@ -18,23 +16,16 @@ PLAN FOR V 1.7.6
 	https://chartscss.org/charts/bar/
 
 
-
-
 - BACKLOG ----------------------------------------------------------------------------
 
 - add WorkflowJob
 - add SSIS job
 - add SSRS job
 
-
-
 - api security headers
-- circuit breaker (option to pause job after {x} fails in row)
 - cli trigger describe
 - cli: job apply (do add or update)
 - search in history by free text from log
-
-- add cli command to filter history / trace with odata filter
 - security monitoring
 - authorize on odata metadata
 - add validation to JobRunnerBuilder in test nuget package
@@ -334,5 +325,15 @@ V1.7.5
 V1.7.6
 ------
 - Add jobid, jobgroup & jobtype parameters to last history api
-- Add JobInstance table indexes
+- Add indexes to sql table JobInstanceLog
 - add username, domain, password to ProcessJob + PlanarJob
+- allow to pause/resume group
+- BUG: fix multiple monitors for job auto mute only first monitor
+- add HasWarnings to history data and to ls filter
+- add HasWarnings indicator to history data
+- allow to clear job data
+- allow to clear trigger data
+- add cli command to filter history with odata filter
+- add Active field to job (cli indication)
+- BUG: fix process job to collect output
+- add 'log output' property to process job

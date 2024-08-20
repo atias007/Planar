@@ -60,8 +60,8 @@ namespace Planar.Client.Api
             var restRequest = new RestRequest("group/{name}", Method.Get)
                 .AddParameter("name", name, ParameterType.UrlSegment);
 
-            var result = await _proxy.InvokeAsync<GroupInner>(restRequest, cancellationToken);
-            return result.GetGroupDetails();
+            var result = await _proxy.InvokeAsync<GroupDetails>(restRequest, cancellationToken);
+            return result;
         }
 
         public async Task JoinUserAsync(string name, string username, CancellationToken cancellationToken = default)
@@ -83,25 +83,8 @@ namespace Planar.Client.Api
             var restRequest = new RestRequest("group", Method.Get)
                 .AddQueryPagingParameter(paging);
 
-            var result = await _proxy.InvokeAsync<PagingResponse<GroupBasicDetailsInner>>(restRequest, cancellationToken);
-
-            var data = new List<GroupBasicDetails>();
-            if (result.Data != null)
-            {
-                data = result.Data.Select(d => d.GetGroupBasicDetails()).ToList();
-            }
-
-            var final = new PagingResponse<GroupBasicDetails>
-            {
-                Count = result.Count,
-                Data = data,
-                PageNumber = result.PageNumber,
-                PageSize = result.PageSize,
-                TotalPages = result.TotalPages,
-                TotalRows = result.TotalRows
-            };
-
-            return final;
+            var result = await _proxy.InvokeAsync<PagingResponse<GroupBasicDetails>>(restRequest, cancellationToken);
+            return result;
         }
 
         public async Task<IEnumerable<string>> ListRolesAsync(CancellationToken cancellationToken = default)

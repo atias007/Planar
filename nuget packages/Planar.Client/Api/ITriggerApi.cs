@@ -17,6 +17,8 @@ namespace Planar.Client
 
         Task DeleteAsync(string id, CancellationToken cancellationToken = default);
 
+        Task ClearDataAsync(string id, CancellationToken cancellationToken = default);
+
         Task UpdateCronExpressionAsync(string id, string cronExpression, CancellationToken cancellationToken = default);
 
         Task UpdateIntervalAsync(string id, TimeSpan interval, CancellationToken cancellationToken = default);

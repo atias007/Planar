@@ -1,10 +1,14 @@
-﻿using Planar.API.Common.Entities;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Planar.API.Common.Entities;
 using Planar.CLI.CliGeneral;
 using Planar.CLI.Entities;
 using Planar.Common;
+using RestSharp;
 using Spectre.Console;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using YamlDotNet.Serialization;
 
@@ -12,6 +16,12 @@ namespace Planar.CLI
 {
     internal static class CliTableExtensions
     {
+        private static readonly string[] _forbiddenDataTableColumns = [
+            nameof(JobHistory.Data),
+            nameof(JobHistory.Log),
+            nameof(JobHistory.Exception)
+            ];
+
         public static CliTable GetCalendarsTable(IEnumerable<string>? items)
         {
             var table = new CliTable();
@@ -50,6 +60,21 @@ namespace Planar.CLI
                 }
 
                 table.Table.AddRow(rowItems);
+            }
+
+            return table;
+        }
+
+        public static CliTable GetMetadataTable<T>() where T : class
+        {
+            var table = new CliTable();
+            table.Table.AddColumns("Property Name", "Type");
+            var properties = typeof(T).GetProperties();
+            foreach (var p in properties)
+            {
+                var type = p.PropertyType.IsGenericType ? p.PropertyType.GenericTypeArguments[0].Name : p.PropertyType.Name;
+                if (type == nameof(DateTime)) { type = nameof(DateTimeOffset); }
+                table.Table.AddRow(p.Name, type);
             }
 
             return table;
@@ -260,7 +285,7 @@ namespace Planar.CLI
             var table = new CliTable(paging: response, entityName: "job");
             table.Table.AddColumns("Job Id", "Job Key", "Job Type", "Description");
             if (response == null || response.Data == null) { return table; }
-            response.Data.ForEach(r => table.Table.AddRow(r.Id, CliTableFormat.FormatJobKey(r.Group, r.Name), r.JobType.EscapeMarkup(), LimitValue(r.Description)));
+            response.Data.ForEach(r => table.Table.AddRow(CliTableFormat.FormatJobId(r.Id, r.Active), CliTableFormat.FormatJobKey(r.Group, r.Name), r.JobType.EscapeMarkup(), LimitValue(r.Description)));
             return table;
         }
 
@@ -282,6 +307,54 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetTable(RestResponse? response)
+        {
+            var table = new CliTable(showCount: true);
+            if (response == null) { return table; }
+            if (!response.IsSuccessStatusCode) { return table; }
+            if (string.IsNullOrWhiteSpace(response.Content)) { return table; }
+            var token = JToken.Parse(response.Content).SelectToken("$.value")?.ToString();
+            if (string.IsNullOrWhiteSpace(token)) { return table; }
+            dynamic? jsonObject = JsonConvert.DeserializeObject(token);
+            if (jsonObject == null) { return table; }
+
+            DataTable dataTable;
+            try
+            {
+                dataTable = JsonConvert.DeserializeObject<DataTable>(Convert.ToString(jsonObject));
+            }
+            catch
+            {
+                return table;
+            }
+
+            if (dataTable == null) { return table; }
+
+            // build columns
+            var columns = dataTable.Columns.Cast<DataColumn>()
+                .Select(c => c.ColumnName)
+                .Distinct()
+                .ToArray();
+
+            ValidateDataTableColumns(columns);
+            table.Table.AddColumns(columns);
+
+            // build rows
+            for (var i = 0; i < dataTable.Rows.Count; i++)
+            {
+                var values = new List<string>();
+                for (var j = 0; dataTable.Columns.Count > j; j++)
+                {
+                    var value = GetValueForDataTable(dataTable.Rows[i][j], dataTable.Columns[j].ColumnName);
+                    values.Add(value);
+                }
+
+                table.Table.AddRow(values.ToArray());
+            }
+
+            return table;
+        }
+
         public static CliTable GetTable(PagingResponse<JobInstanceLogRow>? response, bool singleJob = false)
         {
             var table = new CliTable(paging: response);
@@ -294,7 +367,7 @@ namespace Planar.CLI
                 response.Data.ForEach(r => table.Table.AddRow(
                     $"{r.Id}",
                     CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty),
-                    CliTableFormat.GetStatusMarkup(r.Status),
+                    CliTableFormat.GetStatusMarkup(r.Status, r.HasWarnings),
                     CliTableFormat.FormatDateTime(r.StartDate),
                     CliTableFormat.FromatDuration(r.Duration),
                     CliTableFormat.FormatNumber(r.EffectedRows)));
@@ -310,7 +383,7 @@ namespace Planar.CLI
                     CliTableFormat.FormatJobKey(r.JobGroup, r.JobName),
                     r.JobType.EscapeMarkup(),
                     CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty),
-                    CliTableFormat.GetStatusMarkup(r.Status),
+                    CliTableFormat.GetStatusMarkup(r.Status, r.HasWarnings),
                     CliTableFormat.FormatDateTime(r.StartDate),
                     CliTableFormat.FromatDuration(r.Duration),
                     CliTableFormat.FormatNumber(r.EffectedRows)));
@@ -331,7 +404,7 @@ namespace Planar.CLI
                 CliTableFormat.FormatJobKey(r.JobGroup, r.JobName),
                 r.JobType.EscapeMarkup(),
                 CliTableFormat.GetTriggerIdMarkup(r.TriggerId ?? string.Empty),
-                CliTableFormat.GetStatusMarkup(r.Status),
+                CliTableFormat.GetStatusMarkup(r.Status, r.HasWarnings),
                 CliTableFormat.FormatDateTime(r.StartDate),
                 CliTableFormat.FromatDuration(r.Duration),
                 CliTableFormat.FormatNumber(r.EffectedRows)));
@@ -447,6 +520,7 @@ namespace Planar.CLI
             table.Table.AddRow(nameof(response.Durable), response.Durable.ToString());
             table.Table.AddRow(nameof(response.RequestsRecovery).SplitWords(), response.RequestsRecovery.ToString());
             table.Table.AddRow(nameof(response.Concurrent), response.Concurrent.ToString());
+            table.Table.AddRow(nameof(response.Active), CliTableFormat.FormatActive(response.Active));
 
             var dataMap = SerializeJobDetailsData(response);
 
@@ -567,6 +641,48 @@ namespace Planar.CLI
             return table;
         }
 
+        private static string GetValueForDataTable(object? value, string columnName)
+        {
+            if (value == null) { return string.Empty; }
+            if (value.Equals(DBNull.Value)) { return string.Empty; }
+            if (columnName.Equals(nameof(JobHistory.StartDate), StringComparison.OrdinalIgnoreCase))
+            {
+                return CliTableFormat.FormatDateTime(Convert.ToDateTime(value));
+            }
+
+            if (columnName.Equals(nameof(JobHistory.EndDate), StringComparison.OrdinalIgnoreCase))
+            {
+                return CliTableFormat.FormatDateTime(Convert.ToDateTime(value));
+            }
+
+            if (columnName.Equals(nameof(JobHistory.Duration), StringComparison.OrdinalIgnoreCase))
+            {
+                return CliTableFormat.FromatDuration(Convert.ToInt32(value));
+            }
+
+            if (columnName.Equals(nameof(JobHistory.EffectedRows), StringComparison.OrdinalIgnoreCase))
+            {
+                return CliTableFormat.FormatNumber(Convert.ToInt32(value));
+            }
+
+            if (columnName.Equals(nameof(JobHistory.ExceptionCount), StringComparison.OrdinalIgnoreCase))
+            {
+                return CliTableFormat.FormatExceptionCount(Convert.ToInt32(value));
+            }
+
+            if (columnName.Equals(nameof(JobHistory.StatusTitle), StringComparison.OrdinalIgnoreCase))
+            {
+                return CliTableFormat.GetStatusMarkup(Convert.ToString(value));
+            }
+
+            if (columnName.Equals(nameof(JobHistory.TriggerId), StringComparison.OrdinalIgnoreCase))
+            {
+                return CliTableFormat.GetTriggerIdMarkup(Convert.ToString(value));
+            }
+
+            return SafeCliString(value.ToString(), displayNull: true);
+        }
+
         private static string LimitValue(string? value, int limit = 100)
         {
             if (value == null) { return "[null]".EscapeMarkup(); }
@@ -576,6 +692,15 @@ namespace Planar.CLI
             if (value.Length <= limit) { return value; }
             var chunk = value[0..(limit - 1)].Trim();
             return $"{chunk}\u2026";
+        }
+
+        private static string SafeCliString(string? value, bool displayNull = false)
+        {
+            const string tab = "    ";
+            if (displayNull && value == null) { return "[null]".EscapeMarkup(); }
+            if (string.IsNullOrWhiteSpace(value)) { return string.Empty; }
+            value = value.Replace("\t", tab);
+            return value.Trim().EscapeMarkup();
         }
 
         private static string SerializeJobDetailsData(JobDetails? jobDetails)
@@ -591,13 +716,29 @@ namespace Planar.CLI
             return result.Trim();
         }
 
-        private static string SafeCliString(string? value, bool displayNull = false)
+        private static void ValidateDataTableColumns(IEnumerable<string> columns)
         {
-            const string tab = "    ";
-            if (displayNull && value == null) { return "[null]".EscapeMarkup(); }
-            if (string.IsNullOrWhiteSpace(value)) { return string.Empty; }
-            value = value.Replace("\t", tab);
-            return value.Trim().EscapeMarkup();
+            // columns count
+            const int maxColumns = 10;
+            if (columns.Count() > maxColumns)
+            {
+                throw new CliWarningException($"there are more then maximum allowed columns ({maxColumns}) to display in CLI");
+            }
+
+            // forbidden columns
+            if (columns.Any(c => _forbiddenDataTableColumns.Contains(c)))
+            {
+                var forbiddenColumns = columns
+                    .Where(c => _forbiddenDataTableColumns.Contains(c))
+                    .Select(c => c.ToLower())
+                    .ToArray();
+
+                var message = forbiddenColumns.Length == 1 ?
+                    $"column {string.Join(", ", forbiddenColumns)} is not allowed to be display in CLI" :
+                    $"columns {string.Join(", ", forbiddenColumns)} are not allowed to be display in CLI";
+
+                throw new CliWarningException(message);
+            }
         }
     }
 }

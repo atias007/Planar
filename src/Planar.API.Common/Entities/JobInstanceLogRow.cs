@@ -15,5 +15,6 @@ namespace Planar.API.Common.Entities
         public DateTime StartDate { get; set; }
         public int? Duration { get; set; }
         public int? EffectedRows { get; set; }
+        public bool HasWarnings { get; set; }
     }
 }

@@ -1,15 +1,23 @@
-﻿namespace Planar.API.Common.Entities
+﻿namespace Planar.API.Common.Entities;
+
+public enum JobActiveMembers
 {
-    public class JobBasicDetails
-    {
-        public string Id { get; set; } = string.Empty;
+    Active,
+    PartiallyActive,
+    Inactive
+}
 
-        public string Group { get; set; } = string.Empty;
+public class JobBasicDetails
+{
+    public string Id { get; set; } = string.Empty;
 
-        public string Name { get; set; } = string.Empty;
+    public string Group { get; set; } = string.Empty;
 
-        public string JobType { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
 
-        public string? Description { get; set; }
-    }
+    public string JobType { get; set; } = string.Empty;
+
+    public string? Description { get; set; }
+
+    public JobActiveMembers Active { get; set; }
 }

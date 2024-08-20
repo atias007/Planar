@@ -112,7 +112,7 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
             var status = executionException == null ? StatusMembers.Success : StatusMembers.Fail;
 
             var metadata = context.Result as JobExecutionMetadata;
-
+            var hasWarnings = ServiceUtil.HasWarnings(context);
             var log = new DbJobInstanceLog
             {
                 JobId = JobKeyHelper.GetJobId(context.JobDetail) ?? string.Empty, // for function: SafeFillAnomaly(log)
@@ -125,7 +125,8 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
                 Log = metadata?.Log.ToString(),
                 Status = (int)status,
                 StatusTitle = status.ToString(),
-                IsCanceled = context.CancellationToken.IsCancellationRequested
+                IsCanceled = context.CancellationToken.IsCancellationRequested,
+                HasWarnings = hasWarnings
             };
 
             log.Log?.Trim();
@@ -190,7 +191,7 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
         var items = Global.ConvertDataMapToDictionary(data);
         if (items?.Count == 0) { return null; }
 
-        var yml = YmlUtil.Serialize(items);
+        var yml = YmlUtil.Serialize(items!);
         return yml?.Trim();
     }
 

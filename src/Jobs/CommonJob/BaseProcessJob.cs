@@ -16,16 +16,17 @@ namespace CommonJob;
 public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
 where TProperties : class, new()
 {
-    protected readonly StringBuilder _output = new();
     protected Process? _process;
     protected bool _processKilled;
+    protected readonly StringBuilder _output = new();
+    protected readonly string Seperator = string.Empty.PadLeft(40, '-');
     private readonly Timer _processMetricsTimer = new(1000);
-    private readonly string _seperator = string.Empty.PadLeft(40, '-');
     private readonly object Locker = new();
     private string? _filename;
     private bool _listenOutput = true;
     private long _peakWorkingSet64;
     private long _peakVirtualMemorySize64;
+    private string? _outputText;
 
     protected BaseProcessJob(
         ILogger logger,
@@ -35,6 +36,15 @@ where TProperties : class, new()
         if (Properties is not IFileJobProperties)
         {
             throw new PlanarException($"Job type '{Properties.GetType()}' does not implement '{nameof(IFileJobProperties)}'");
+        }
+    }
+
+    protected string FinalOutputText
+    {
+        get
+        {
+            _outputText ??= _output.ToString();
+            return _outputText ?? string.Empty;
         }
     }
 
@@ -134,9 +144,9 @@ where TProperties : class, new()
         if (_process == null) { return; }
         if (!_process.HasExited) { return; }
 
-        MessageBroker.AppendLog(LogLevel.Information, _seperator);
+        MessageBroker.AppendLog(LogLevel.Information, Seperator);
         MessageBroker.AppendLog(LogLevel.Information, " Process information:");
-        MessageBroker.AppendLog(LogLevel.Information, _seperator);
+        MessageBroker.AppendLog(LogLevel.Information, Seperator);
         MessageBroker.AppendLog(LogLevel.Information, $"Exit Code: {_process.ExitCode}");
         MessageBroker.AppendLog(LogLevel.Information, $"Peak Working Set Memory: {FormatBytes(_peakWorkingSet64)}");
         MessageBroker.AppendLog(LogLevel.Information, $"Peak Virtual Memory: {FormatBytes(_peakVirtualMemorySize64)}");
@@ -146,7 +156,7 @@ where TProperties : class, new()
             GetUsername(FileProperties.Domain, FileProperties.UserName);
 
         MessageBroker.AppendLog(LogLevel.Information, $"Username: {username}");
-        MessageBroker.AppendLog(LogLevel.Information, _seperator);
+        MessageBroker.AppendLog(LogLevel.Information, Seperator);
     }
 
     private static string GetUsername(string? domain, string username)

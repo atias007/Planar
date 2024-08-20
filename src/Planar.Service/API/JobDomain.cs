@@ -22,6 +22,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using static Quartz.Logging.OperationName;
 
 namespace Planar.Service.API
 {
@@ -74,6 +75,28 @@ namespace Planar.Service.API
             await Scheduler.PauseJob(info.JobKey);
         }
 
+        public async Task ClearData(string id)
+        {
+            var info = await GetJobDetailsForDataCommands(id);
+            if (info.JobDetails == null) { return; }
+
+            var validKeys = info.JobDetails.JobDataMap.Keys.Where(Consts.IsDataKeyValid);
+            var keyCount = validKeys.Count();
+            foreach (var key in validKeys)
+            {
+                info.JobDetails.JobDataMap.Remove(key);
+            }
+
+            var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
+
+            // Reschedule job
+            MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+            await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
+            await Scheduler.PauseJob(info.JobKey);
+
+            AuditJobSafe(info.JobKey, $"clear job data. {keyCount} key(s)");
+        }
+
         public async Task RemoveData(string id, string key)
         {
             var info = await GetJobDetailsForDataCommands(id, key);
@@ -92,7 +115,7 @@ namespace Planar.Service.API
             AuditJobSafe(info.JobKey, $"remove job data with key '{key}'", new { value = auditValue?.Trim() });
         }
 
-        private async Task<DataCommandDto> GetJobDetailsForDataCommands(string jobId, string key)
+        private async Task<DataCommandDto> GetJobDetailsForDataCommands(string jobId, string? key = null)
         {
             // Get Job
             var jobKey = await JobKeyHelper.GetJobKey(jobId);
@@ -103,7 +126,10 @@ namespace Planar.Service.API
             };
 
             ValidateSystemJob(jobKey);
-            ValidateSystemDataKey(key);
+            if (key != null)
+            {
+                ValidateSystemDataKey(key);
+            }
             await ValidateJobPaused(jobKey);
             await ValidateJobNotRunning(jobKey);
             return result;
@@ -145,13 +171,19 @@ namespace Planar.Service.API
                 await Scheduler.GetJobDetail(jobKey) ??
                 throw new RestNotFoundException($"job with key '{KeyHelper.GetKeyTitle(jobKey)}' does not exist");
 
-            var result = new JobDetails();
-            await MapJobDetails(info, result);
+            var result = await MapJobDetails(info);
 
             var triggers = await GetTriggersDetails(jobKey);
             result.SimpleTriggers = triggers.SimpleTriggers;
             result.CronTriggers = triggers.CronTriggers;
 
+            return result;
+        }
+
+        public async Task<IEnumerable<string>> GetJobGroupNames()
+        {
+            var result = (await Scheduler.GetJobGroupNames())
+                .Where(g => !string.Equals(g, Consts.PlanarSystemGroup, StringComparison.OrdinalIgnoreCase));
             return result;
         }
 
@@ -175,12 +207,6 @@ namespace Planar.Service.API
                     .ToList();
             }
 
-            // filter by active
-            if (request.Active.HasValue)
-            {
-                jobs = jobs.Where(r => IsActiveJob(r.Key).Result == request.Active.Value).ToList();
-            }
-
             // filter by search
             if (!string.IsNullOrWhiteSpace(request.Filter))
             {
@@ -193,9 +219,25 @@ namespace Planar.Service.API
                     .ToList();
             }
 
+            // fill IsActive property
+            var jobList = jobs.Select(j => MapJobDetailsSlim(j).Result).ToList();
+
+            // filter by active
+            if (request.Active.HasValue)
+            {
+                if (request.Active.Value)
+                {
+                    jobList = jobList.Where(r => r.Active != JobActiveMembers.Inactive).ToList();
+                }
+                else
+                {
+                    jobList = jobList.Where(r => r.Active == JobActiveMembers.Inactive).ToList();
+                }
+            }
+
             // paging & order by
-            var result = jobs
-                .Select(SchedulerUtil.MapJobRowDetails)
+            var result = jobList
+                .Select(j => j)
                 .SetPaging(request)
                 .OrderBy(j => j.Group)
                 .ThenBy(j => j.Name)
@@ -273,7 +315,7 @@ namespace Planar.Service.API
             return result;
         }
 
-        public string GetJobFileTemplate(string typeName)
+        public static string GetJobFileTemplate(string typeName)
         {
             var notFoundException = new Lazy<RestNotFoundException>(() => new RestNotFoundException($"type '{typeName}' could not be found"));
 
@@ -598,6 +640,55 @@ namespace Planar.Service.API
             AuditJobSafe(jobKey, "job paused");
         }
 
+        public async Task PauseGroup(PauseResumeGroupRequest request)
+        {
+            ValidateSystemGroup(request.Name);
+            var keys = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(request.Name));
+            if (keys.Count == 0)
+            {
+                throw new RestNotFoundException($"group '{request.Name}' was not found");
+            }
+            await Scheduler.PauseJobs(GroupMatcher<JobKey>.GroupEquals(request.Name));
+
+            try
+            {
+                AuditJobsSafe($"pause job group '{request.Name}'");
+                foreach (var key in keys)
+                {
+                    AuditJobSafe(key, $"job paused while pause job group '{request.Name}'");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "fail to audit jobs while pause job group '{Name}'", request.Name);
+            }
+        }
+
+        public async Task ResumeGroup(PauseResumeGroupRequest request)
+        {
+            ValidateSystemGroup(request.Name);
+            var keys = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(request.Name));
+            if (keys.Count == 0)
+            {
+                throw new RestNotFoundException($"group '{request.Name}' was not found");
+            }
+
+            await Scheduler.ResumeJobs(GroupMatcher<JobKey>.GroupEquals(request.Name));
+
+            try
+            {
+                AuditJobsSafe($"resume job group '{request.Name}'");
+                foreach (var key in keys)
+                {
+                    AuditJobSafe(key, $"job resume while resume job group '{request.Name}'");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "fail to audit jobs while resume group '{Name}'", request.Name);
+            }
+        }
+
         public async Task<PlanarIdResponse> QueueInvoke(QueueInvokeJobRequest request)
         {
             // build new job
@@ -891,22 +982,34 @@ namespace Planar.Service.API
             return result;
         }
 
-        private async Task<bool> IsActiveJob(JobKey jobKey)
+        private async Task<JobActiveMembers> GetJobActiveMode(JobKey jobKey)
         {
             var triggers = await Scheduler.GetTriggersOfJob(jobKey);
-            if (triggers == null) { return false; }
+            if (triggers == null || triggers.Count == 0) { return JobActiveMembers.Inactive; }
 
+            var hasActive = false;
+            var hasInactive = false;
             foreach (var t in triggers)
             {
                 if (t.Key.Group == Consts.RecoveringJobsGroup) { continue; }
                 var state = await Scheduler.GetTriggerState(t.Key);
                 if (IaActiveTriggerState(state))
                 {
-                    return true;
+                    hasActive = true;
                 }
+                else
+                {
+                    hasInactive = true;
+                }
+
+                if (hasActive && hasInactive) { break; }
             }
 
-            return false;
+            if (hasActive && hasInactive) { return JobActiveMembers.PartiallyActive; }
+            if (hasActive) { return JobActiveMembers.Active; }
+            if (hasInactive) { return JobActiveMembers.Inactive; }
+
+            return JobActiveMembers.Active;
         }
 
         private async Task<bool> JobGroupExists(string jobGroup)
@@ -915,11 +1018,21 @@ namespace Planar.Service.API
             return allGroups.Contains(jobGroup);
         }
 
-        private async Task MapJobDetails(IJobDetail source, JobDetails target, JobDataMap? dataMap = null)
+        private async Task<JobBasicDetails> MapJobDetailsSlim(IJobDetail source)
         {
-            dataMap ??= source.JobDataMap;
-
+            var target = new JobBasicDetails();
             SchedulerUtil.MapJobRowDetails(source, target);
+            target.Active = await GetJobActiveMode(source.Key);
+            return target;
+        }
+
+        private async Task<JobDetails> MapJobDetails(IJobDetail source, JobDataMap? dataMap = null)
+        {
+            var target = new JobDetails();
+            SchedulerUtil.MapJobRowDetails(source, target);
+            target.Active = await GetJobActiveMode(source.Key);
+
+            dataMap ??= source.JobDataMap;
             target.Concurrent = !source.ConcurrentExecutionDisallowed;
             target.Author = JobHelper.GetJobAuthor(source);
             target.LogRetentionDays = JobHelper.GetLogRetentionDays(source);
@@ -927,6 +1040,8 @@ namespace Planar.Service.API
             target.RequestsRecovery = source.RequestsRecovery;
             target.DataMap = Global.ConvertDataMapToDictionary(dataMap);
             target.Properties = await DataLayer.GetJobProperty(target.Id) ?? string.Empty;
+
+            return target;
         }
     }
 }

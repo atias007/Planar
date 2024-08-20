@@ -85,9 +85,17 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
 
     protected static void ValidateSystemJob(JobKey jobKey)
     {
-        if (Helpers.JobKeyHelper.IsSystemJobKey(jobKey))
+        if (JobKeyHelper.IsSystemJobKey(jobKey))
         {
             throw new RestValidationException("key", "forbidden: this is system job and it should not be modified");
+        }
+    }
+
+    protected static void ValidateSystemGroup(string group)
+    {
+        if (JobKeyHelper.IsSystemJobGroup(group))
+        {
+            throw new RestValidationException("group", "forbidden: this is system group and it should not be modified");
         }
     }
 

@@ -262,9 +262,9 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     }
 
     [Action("remove-hook")]
-    public static async Task<CliActionResponse> RemoveHook(CliGetByNameRequest request, CancellationToken cancellationToken)
+    public static async Task<CliActionResponse> RemoveHook(CliByNameRequest request, CancellationToken cancellationToken)
     {
-        request ??= new CliGetByNameRequest();
+        request ??= new CliByNameRequest();
         var wrapper = await FillRemoveHookRequest(request, cancellationToken);
         if (!wrapper.IsSuccessful)
         {
@@ -290,7 +290,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         return CliPromptWrapper.Success;
     }
 
-    private static async Task<CliPromptWrapper> FillRemoveHookRequest(CliGetByNameRequest request, CancellationToken cancellationToken)
+    private static async Task<CliPromptWrapper> FillRemoveHookRequest(CliByNameRequest request, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(request.Name))
         {

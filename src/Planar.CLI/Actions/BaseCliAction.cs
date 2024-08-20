@@ -53,6 +53,8 @@ namespace Planar.CLI.Actions
                 request.Action = Enum.Parse<DataActions>(action, true);
             }
 
+            if (request.Action == DataActions.Clear) { return; }
+
             if (string.IsNullOrWhiteSpace(request.DataKey))
             {
                 request.DataKey = CollectCliValue(
@@ -61,6 +63,8 @@ namespace Planar.CLI.Actions
                     minLength: 1,
                     maxLength: 100) ?? string.Empty;
             }
+
+            if (request.Action == DataActions.Remove) { return; }
 
             if (string.IsNullOrWhiteSpace(request.DataValue) && request.Action == DataActions.Put)
             {
@@ -195,15 +199,14 @@ namespace Planar.CLI.Actions
                   type == typeof(ushort) || type == typeof(long) ||
                   type == typeof(ulong));
 
-            if(isNumeric)
+            if (isNumeric)
             {
                 return value == zero;
             }
 
-            if(type == typeof(TimeSpan) && TimeSpan.TryParse(value, CultureInfo.CurrentCulture, out var ts))
+            if (type == typeof(TimeSpan) && TimeSpan.TryParse(value, CultureInfo.CurrentCulture, out var ts))
             {
                 return ts == TimeSpan.Zero;
-
             }
 
             return string.IsNullOrWhiteSpace(value);

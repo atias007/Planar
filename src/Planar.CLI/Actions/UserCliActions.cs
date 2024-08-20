@@ -27,9 +27,9 @@ namespace Planar.CLI.Actions
 
         [Action("get")]
         [NullRequest]
-        public static async Task<CliActionResponse> GetUserByUsername(CliGetByNameRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> GetUserByUsername(CliByNameRequest request, CancellationToken cancellationToken = default)
         {
-            request ??= new CliGetByNameRequest();
+            request ??= new CliByNameRequest();
             var wrapper = await FillGetRequest(request, cancellationToken);
             if (!wrapper.IsSuccessful)
             {
@@ -44,9 +44,9 @@ namespace Planar.CLI.Actions
 
         [Action("get-role")]
         [NullRequest]
-        public static async Task<CliActionResponse> GetUserRoleById(CliGetByNameRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> GetUserRoleById(CliByNameRequest request, CancellationToken cancellationToken = default)
         {
-            request ??= new CliGetByNameRequest();
+            request ??= new CliByNameRequest();
             var wrapper = await FillGetRequest(request, cancellationToken);
             if (!wrapper.IsSuccessful)
             {
@@ -62,9 +62,9 @@ namespace Planar.CLI.Actions
 
         [Action("reset-password")]
         [NullRequest]
-        public static async Task<CliActionResponse> ResetUserPassword(CliGetByNameRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> ResetUserPassword(CliByNameRequest request, CancellationToken cancellationToken = default)
         {
-            request ??= new CliGetByNameRequest();
+            request ??= new CliByNameRequest();
             var wrapper = await FillGetRequest(request, cancellationToken);
             if (!wrapper.IsSuccessful)
             {
@@ -115,9 +115,9 @@ namespace Planar.CLI.Actions
         [NullRequest]
         [Action("remove")]
         [Action("delete")]
-        public static async Task<CliActionResponse> RemoveUserById(CliGetByNameRequest request, CancellationToken cancellationToken = default)
+        public static async Task<CliActionResponse> RemoveUserById(CliByNameRequest request, CancellationToken cancellationToken = default)
         {
-            request ??= new CliGetByNameRequest();
+            request ??= new CliByNameRequest();
             var wrapper = await FillGetRequest(request, cancellationToken);
             if (!wrapper.IsSuccessful)
             {
@@ -192,7 +192,7 @@ namespace Planar.CLI.Actions
             return result;
         }
 
-        private static async Task<CliPromptWrapper> FillGetRequest(CliGetByNameRequest request, CancellationToken cancellationToken)
+        private static async Task<CliPromptWrapper> FillGetRequest(CliByNameRequest request, CancellationToken cancellationToken)
         {
             if (string.IsNullOrEmpty(request.Name))
             {

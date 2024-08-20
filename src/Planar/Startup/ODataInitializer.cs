@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
+using Planar.Service.Model;
 
 namespace Planar.Startup
 {
@@ -21,13 +22,20 @@ namespace Planar.Startup
         public static IEdmModel GetEdmModel()
         {
             var modelBuilder = new ODataConventionModelBuilder();
-            var customers = modelBuilder.EntitySet<Service.Model.Trace>("TraceData");
+            var customers = modelBuilder.EntitySet<Trace>("TraceData");
             customers.EntityType.Page(50, 50);
-            customers.EntityType.OrderBy("Id", "TimeStamp");
+            customers.EntityType.OrderBy(
+                nameof(Trace.Id),
+                nameof(Trace.TimeStamp));
 
-            var history = modelBuilder.EntitySet<Service.Model.JobInstanceLog>("HistoryData");
+            var history = modelBuilder.EntitySet<JobInstanceLog>("HistoryData");
             history.EntityType.Page(50, 50);
-            history.EntityType.OrderBy("Id", "StartDate", "EndDate", "Duration", "EffectedRows");
+            history.EntityType.OrderBy(
+                nameof(JobInstanceLog.Id),
+                nameof(JobInstanceLog.StartDate),
+                nameof(JobInstanceLog.EndDate),
+                nameof(JobInstanceLog.Duration),
+                nameof(JobInstanceLog.EffectedRows));
 
             return modelBuilder.GetEdmModel();
         }
