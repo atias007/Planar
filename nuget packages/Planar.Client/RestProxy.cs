@@ -92,50 +92,8 @@ namespace Planar.Client
         {
             if (response.IsSuccessful) { return; }
 
-            if (response.IsSuccessStatusCode)
-            {
-                var message = "Planar service return success status code but the response content is invalid";
-                if (!string.IsNullOrWhiteSpace(response.ErrorMessage))
-                {
-                    message += $". Inner error message: {response.ErrorMessage}";
-                }
-
-                if (response.ErrorException == null)
-                {
-                    throw new PlanarException(message);
-                }
-
-                throw new PlanarException(message, response.ErrorException);
-            }
-
-            if (response.StatusCode == HttpStatusCode.BadRequest)
-            {
-                if (!string.IsNullOrWhiteSpace(response.Content))
-                {
-                    PlanarValidationErrors? errorResponse = null;
-                    try
-                    {
-                        errorResponse = System.Text.Json.JsonSerializer.Deserialize<PlanarValidationErrors>(response.Content);
-                    }
-                    catch
-                    {
-                        // *** DO NOTHING ***
-                    }
-
-                    if (errorResponse?.Errors.Any() ?? false)
-                    {
-                        throw new PlanarValidationException("Planar service return multiple validation errors. For more detais see errors property", errorResponse);
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(errorResponse?.Detail))
-                    {
-                        throw new PlanarValidationException(errorResponse.Detail);
-                    }
-                }
-
-                HandleODataErrorResponse(response);
-                throw new PlanarValidationException("Planar service return validation errors");
-            }
+            HandleSuccessStatusCode(response);
+            HandleBadResponse(response);
 
             if (response.StatusCode == HttpStatusCode.Conflict) { throw new PlanarConflictException(response); }
             if (response.StatusCode == HttpStatusCode.Forbidden) { throw new PlanarForbiddenException(response); }
@@ -143,17 +101,69 @@ namespace Planar.Client
             if (response.StatusCode == HttpStatusCode.ServiceUnavailable) { throw new PlanarServiceUnavailableException(response); }
             if (response.StatusCode == HttpStatusCode.Unauthorized) { throw new PlanarUnauthorizedException(response); }
             if (response.StatusCode == HttpStatusCode.TooManyRequests) { throw new PlanarTooManyRequestsException(response); }
-            if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                if (string.IsNullOrWhiteSpace(response.Content))
-                {
-                    throw new PlanarNotFoundException(response);
-                }
 
-                throw new PlanarNotFoundException(response.Content);
-            }
+            HandleNotFoundResponse(response);
 
             throw new PlanarException(response);
+        }
+
+        private static void HandleSuccessStatusCode(RestResponse response)
+        {
+            if (!response.IsSuccessStatusCode) { return; }
+
+            var message = "Planar service return success status code but the response content is invalid";
+            if (!string.IsNullOrWhiteSpace(response.ErrorMessage))
+            {
+                message += $". Inner error message: {response.ErrorMessage}";
+            }
+
+            if (response.ErrorException == null)
+            {
+                throw new PlanarException(message);
+            }
+
+            throw new PlanarException(message, response.ErrorException);
+        }
+
+        private static void HandleNotFoundResponse(RestResponse response)
+        {
+            if (response.StatusCode != HttpStatusCode.NotFound) { return; }
+            if (string.IsNullOrWhiteSpace(response.Content))
+            {
+                throw new PlanarNotFoundException(response);
+            }
+
+            throw new PlanarNotFoundException(response.Content);
+        }
+
+        private static void HandleBadResponse(RestResponse response)
+        {
+            if (response.StatusCode != HttpStatusCode.BadRequest) { return; }
+            if (!string.IsNullOrWhiteSpace(response.Content))
+            {
+                PlanarValidationErrors? errorResponse = null;
+                try
+                {
+                    errorResponse = System.Text.Json.JsonSerializer.Deserialize<PlanarValidationErrors>(response.Content);
+                }
+                catch
+                {
+                    // *** DO NOTHING ***
+                }
+
+                if (errorResponse?.Errors.Any() ?? false)
+                {
+                    throw new PlanarValidationException("Planar service return multiple validation errors. For more detais see errors property", errorResponse);
+                }
+
+                if (!string.IsNullOrWhiteSpace(errorResponse?.Detail))
+                {
+                    throw new PlanarValidationException(errorResponse.Detail);
+                }
+            }
+
+            HandleODataErrorResponse(response);
+            throw new PlanarValidationException("Planar service return validation errors");
         }
 
         private static void HandleODataErrorResponse(RestResponse response)

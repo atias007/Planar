@@ -17,7 +17,9 @@ details = await client.Job.GetAsync("Monitoring.HealthCheck");
 Console.WriteLine(details.Active);
 
 var group = await client.Group.GetAsync("Admins");
+Console.WriteLine(group.Name);
 var report = await client.Report.GetAsync(ReportNames.Summary);
+Console.WriteLine(report.Count());
 //var result = await client.History.ListAsync(new ListHistoryFilter { HasWarnings = true });
 //await client.Trigger.UpdateIntervalAsync("g2otp1mody4", TimeSpan.FromMinutes(55));
 //await client.Trigger.UpdateCronExpressionAsync("jh4eums0jly", "0 0 18 ? 1/1 7#1 *"); // 0 0 16 ? 1/1 7#1 *
@@ -48,7 +50,11 @@ var res1 = await client.Trigger.ListAsync("Infrastructure.BankOfIsraelCurrency")
 var res2 = await client.History.GetAsync("NON_CLUSTERED638306436561775750");
 var res3 = await client.History.LastAsync();
 
-// Console.WriteLine($"[x] Login as {login.Role}");
+Console.WriteLine(res0);
+Console.WriteLine(res1);
+Console.WriteLine(res2);
+Console.WriteLine(res3);
+
 var result1 = await client.Job.GetJobTypesAsync();
 Console.WriteLine($"[x] Job Types:");
 foreach (var jobType in result1)
@@ -72,12 +78,16 @@ Console.WriteLine($"    - {result3.Description}");
 Console.WriteLine($"[x] Get Job File:");
 var result4 = await client.Job.GetJobFileAsync(result1.First());
 var result5 = await client.Job.DescribeJobAsync("Infrastructure.BankOfIsraelCurrency");
+Console.WriteLine(result4);
+Console.WriteLine(result5);
+
 await client.Job.ResumeAsync("5c1sgknnaj5");
 Thread.Sleep(2000);
 var result6 = await client.Job.GetNextRunningAsync("Infrastructure.BankOfIsraelCurrency");
 var result7 = await client.Job.GetPreviousRunningAsync("5c1sgknnaj5");
 await client.Job.PauseAsync("5c1sgknnaj5");
-
+Console.WriteLine(result6);
+Console.WriteLine(result7);
 Console.ReadLine();
 
 ////static async Task DoIt(RunningJobDetails data)
