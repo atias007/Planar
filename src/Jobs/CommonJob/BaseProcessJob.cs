@@ -16,9 +16,9 @@ namespace CommonJob;
 public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
 where TProperties : class, new()
 {
-    protected readonly StringBuilder _output = new();
     protected Process? _process;
     protected bool _processKilled;
+    protected readonly StringBuilder _output = new();
     private readonly Timer _processMetricsTimer = new(1000);
     private readonly string _seperator = string.Empty.PadLeft(40, '-');
     private readonly object Locker = new();
@@ -26,6 +26,7 @@ where TProperties : class, new()
     private bool _listenOutput = true;
     private long _peakWorkingSet64;
     private long _peakVirtualMemorySize64;
+    private string? _outputText;
 
     protected BaseProcessJob(
         ILogger logger,
@@ -35,6 +36,15 @@ where TProperties : class, new()
         if (Properties is not IFileJobProperties)
         {
             throw new PlanarException($"Job type '{Properties.GetType()}' does not implement '{nameof(IFileJobProperties)}'");
+        }
+    }
+
+    protected string FinalOutputText
+    {
+        get
+        {
+            _outputText ??= _output.ToString();
+            return _outputText ?? string.Empty;
         }
     }
 
@@ -127,6 +137,14 @@ where TProperties : class, new()
         {
             secureString.Dispose();
         }
+    }
+
+    protected void LogProcessOutput()
+    {
+        MessageBroker.AppendLog(LogLevel.Information, _seperator);
+        MessageBroker.AppendLog(LogLevel.Information, " Process output:");
+        MessageBroker.AppendLog(LogLevel.Information, _seperator);
+        MessageBroker.AppendLogRaw(FinalOutputText);
     }
 
     protected void LogProcessInformation()

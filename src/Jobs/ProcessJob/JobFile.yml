@@ -13,7 +13,7 @@ properties:                           # Job Properties
   username: null                      # local or network username (any OS) [up to 100 characters]
   password: null                      # The active directory password (only on windows OS) [up to 100 characters]
   arguments: --port 20                # Process arguments
-  output encoding: utf8               # Process output encoding name (see list here https://learn.microsoft.com/en-us/dotnet/api/system.text.encoding.getencodings?view=net-7.0)
+  output encoding: Utf8               # Process output encoding name (see list here https://learn.microsoft.com/en-us/dotnet/api/system.text.encoding.getencodings?view=net-7.0)
   success exit codes:                 # List of codes to define success run (the default is 0)
     - 0
     - 99

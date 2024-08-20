@@ -38,6 +38,7 @@ public abstract class ProcessJob : BaseProcessJob<ProcessJobProperties>
                 OnTimeout(context);
             }
 
+            LogProcessOutput();
             LogProcessInformation();
             CheckProcessExitCode();
         }
@@ -85,9 +86,8 @@ public abstract class ProcessJob : BaseProcessJob<ProcessJobProperties>
 
         if (!string.IsNullOrEmpty(Properties.FailOutputRegex))
         {
-            var output = _output.ToString();
             var regex = new Regex(Properties.FailOutputRegex, RegexOptions.None, TimeSpan.FromSeconds(5));
-            if (regex.IsMatch(output))
+            if (regex.IsMatch(FinalOutputText))
             {
                 throw new ProcessJobException($"process '{Filename}' ended with an output that matched the fail output message '{Properties.FailOutputRegex}'");
             }
@@ -97,9 +97,8 @@ public abstract class ProcessJob : BaseProcessJob<ProcessJobProperties>
 
         if (!string.IsNullOrEmpty(Properties.SuccessOutputRegex))
         {
-            var output = _output.ToString();
             var regex = new Regex(Properties.SuccessOutputRegex, RegexOptions.None, TimeSpan.FromSeconds(5));
-            if (!regex.IsMatch(output))
+            if (!regex.IsMatch(FinalOutputText))
             {
                 throw new ProcessJobException($"process '{Filename}' ended with an output that not matched the success output message '{Properties.SuccessOutputRegex}'");
             }
