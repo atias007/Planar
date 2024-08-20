@@ -19,8 +19,8 @@ where TProperties : class, new()
     protected Process? _process;
     protected bool _processKilled;
     protected readonly StringBuilder _output = new();
+    protected readonly string Seperator = string.Empty.PadLeft(40, '-');
     private readonly Timer _processMetricsTimer = new(1000);
-    private readonly string _seperator = string.Empty.PadLeft(40, '-');
     private readonly object Locker = new();
     private string? _filename;
     private bool _listenOutput = true;
@@ -139,22 +139,14 @@ where TProperties : class, new()
         }
     }
 
-    protected void LogProcessOutput()
-    {
-        MessageBroker.AppendLog(LogLevel.Information, _seperator);
-        MessageBroker.AppendLog(LogLevel.Information, " Process output:");
-        MessageBroker.AppendLog(LogLevel.Information, _seperator);
-        MessageBroker.AppendLogRaw(FinalOutputText);
-    }
-
     protected void LogProcessInformation()
     {
         if (_process == null) { return; }
         if (!_process.HasExited) { return; }
 
-        MessageBroker.AppendLog(LogLevel.Information, _seperator);
+        MessageBroker.AppendLog(LogLevel.Information, Seperator);
         MessageBroker.AppendLog(LogLevel.Information, " Process information:");
-        MessageBroker.AppendLog(LogLevel.Information, _seperator);
+        MessageBroker.AppendLog(LogLevel.Information, Seperator);
         MessageBroker.AppendLog(LogLevel.Information, $"Exit Code: {_process.ExitCode}");
         MessageBroker.AppendLog(LogLevel.Information, $"Peak Working Set Memory: {FormatBytes(_peakWorkingSet64)}");
         MessageBroker.AppendLog(LogLevel.Information, $"Peak Virtual Memory: {FormatBytes(_peakVirtualMemorySize64)}");
@@ -164,7 +156,7 @@ where TProperties : class, new()
             GetUsername(FileProperties.Domain, FileProperties.UserName);
 
         MessageBroker.AppendLog(LogLevel.Information, $"Username: {username}");
-        MessageBroker.AppendLog(LogLevel.Information, _seperator);
+        MessageBroker.AppendLog(LogLevel.Information, Seperator);
     }
 
     private static string GetUsername(string? domain, string username)

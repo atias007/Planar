@@ -53,6 +53,21 @@ public abstract class ProcessJob : BaseProcessJob<ProcessJobProperties>
         }
     }
 
+    protected void LogProcessOutput()
+    {
+        MessageBroker.AppendLog(LogLevel.Information, Seperator);
+        MessageBroker.AppendLog(LogLevel.Information, " Process output:");
+        MessageBroker.AppendLog(LogLevel.Information, Seperator);
+        if (Properties.LogOutput)
+        {
+            MessageBroker.AppendLogRaw(FinalOutputText);
+        }
+        else
+        {
+            MessageBroker.AppendLog(LogLevel.Information, "process output logging is disabled");
+        }
+    }
+
     private void CheckProcessExitCode()
     {
         if (_processKilled)
