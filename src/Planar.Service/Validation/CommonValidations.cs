@@ -3,8 +3,6 @@ using FluentValidation;
 using Planar.Common.Exceptions;
 using Planar.Service.General;
 using System;
-using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 

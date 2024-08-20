@@ -504,7 +504,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             MonitorId = action.Id
         };
 
-        var exists = await DataLayer.IsMonitorCounterExists(counter.JobId);
+        var exists = await DataLayer.IsMonitorCounterExists(counter.JobId, counter.MonitorId);
         if (exists)
         {
             await DataLayer.IncreaseMonitorCounter(counter.JobId, counter.MonitorId);

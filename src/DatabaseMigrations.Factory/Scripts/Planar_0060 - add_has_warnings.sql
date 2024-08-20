@@ -1,0 +1,1 @@
+ALTER TABLE [dbo].[JobInstanceLog] ADD [HasWarnings] bit NOT NULL DEFAULT 0

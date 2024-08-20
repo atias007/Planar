@@ -27,6 +27,13 @@ namespace Planar.Client
         Task DeleteDataAsync(string id, string key, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Clear All Job Data
+        /// </summary>
+        /// <param name="id">Job id or job key (Group.Name)</param>
+        /// <returns></returns>
+        Task ClearDataAsync(string id, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Get Job Settings
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
@@ -171,6 +178,22 @@ namespace Planar.Client
         /// <param name="id">Job id or job key (Group.Name)</param>
         /// <returns></returns>
         Task PauseAsync(string id, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Pause Group Of Job
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task PauseGroupAsync(string name, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Resume Group Of Job
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task ResumeGroupAsync(string name, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Queue Invokation Of Job Queue invokation of job

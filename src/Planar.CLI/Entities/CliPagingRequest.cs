@@ -1,23 +1,22 @@
 ﻿using Planar.API.Common.Entities;
 using Planar.CLI.Attributes;
 
-namespace Planar.CLI.Entities
+namespace Planar.CLI.Entities;
+
+public class CliPagingRequest(int pageSize) : IPagingRequest
 {
-    public class CliPagingRequest(int pageSize) : IPagingRequest
+    public CliPagingRequest() : this(Consts.CliDefaultPageSize)
     {
-        public CliPagingRequest() : this(25)
-        {
-        }
+    }
 
-        [ActionProperty("pn", "page-number")]
-        public int? PageNumber { get; set; }
+    [ActionProperty("pn", "page-number")]
+    public int? PageNumber { get; set; }
 
-        [ActionProperty("ps", "page-size")]
-        public int? PageSize { get; set; } = pageSize;
+    [ActionProperty("ps", "page-size")]
+    public int? PageSize { get; set; } = pageSize;
 
-        public void SetPagingDefaults()
-        {
-            PageNumber ??= 1;
-        }
+    public void SetPagingDefaults()
+    {
+        PageNumber ??= 1;
     }
 }

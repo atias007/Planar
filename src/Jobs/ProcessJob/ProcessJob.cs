@@ -38,6 +38,7 @@ public abstract class ProcessJob : BaseProcessJob<ProcessJobProperties>
                 OnTimeout(context);
             }
 
+            LogProcessOutput();
             LogProcessInformation();
             CheckProcessExitCode();
         }
@@ -49,6 +50,21 @@ public abstract class ProcessJob : BaseProcessJob<ProcessJobProperties>
         {
             FinalizeJob(context);
             FinalizeProcess();
+        }
+    }
+
+    protected void LogProcessOutput()
+    {
+        MessageBroker.AppendLog(LogLevel.Information, Seperator);
+        MessageBroker.AppendLog(LogLevel.Information, " Process output:");
+        MessageBroker.AppendLog(LogLevel.Information, Seperator);
+        if (Properties.LogOutput)
+        {
+            MessageBroker.AppendLogRaw(FinalOutputText);
+        }
+        else
+        {
+            MessageBroker.AppendLog(LogLevel.Information, "process output logging is disabled");
         }
     }
 
@@ -85,9 +101,8 @@ public abstract class ProcessJob : BaseProcessJob<ProcessJobProperties>
 
         if (!string.IsNullOrEmpty(Properties.FailOutputRegex))
         {
-            var output = _output.ToString();
             var regex = new Regex(Properties.FailOutputRegex, RegexOptions.None, TimeSpan.FromSeconds(5));
-            if (regex.IsMatch(output))
+            if (regex.IsMatch(FinalOutputText))
             {
                 throw new ProcessJobException($"process '{Filename}' ended with an output that matched the fail output message '{Properties.FailOutputRegex}'");
             }
@@ -97,9 +112,8 @@ public abstract class ProcessJob : BaseProcessJob<ProcessJobProperties>
 
         if (!string.IsNullOrEmpty(Properties.SuccessOutputRegex))
         {
-            var output = _output.ToString();
             var regex = new Regex(Properties.SuccessOutputRegex, RegexOptions.None, TimeSpan.FromSeconds(5));
-            if (!regex.IsMatch(output))
+            if (!regex.IsMatch(FinalOutputText))
             {
                 throw new ProcessJobException($"process '{Filename}' ended with an output that not matched the success output message '{Properties.SuccessOutputRegex}'");
             }

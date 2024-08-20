@@ -21,6 +21,7 @@ namespace BankOfIsraelCurrency
 
         public override async Task ExecuteJob(IJobExecutionContext context)
         {
+            Logger.LogWarning("Sample Warning Log");
             await SaveCurrency();
         }
 

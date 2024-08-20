@@ -52,6 +52,8 @@ namespace Planar.Client.Entities
 
         public bool? IsOutlier => Anomaly == null ? (bool?)null : Anomaly > 0;
 
+        public bool HasWarnings { get; set; }
+
         public string AnomalyTitle
         {
             get

@@ -102,7 +102,12 @@ namespace Planar.Service.API.Helpers
 
         public static bool IsSystemJobKey(JobKey jobKey)
         {
-            return jobKey.Group == Consts.PlanarSystemGroup;
+            return IsSystemJobGroup(jobKey.Group);
+        }
+
+        public static bool IsSystemJobGroup(string group)
+        {
+            return string.Equals(group, Consts.PlanarSystemGroup, StringComparison.OrdinalIgnoreCase);
         }
 
         private static JobKey? GetJobKeyByKey(string key)

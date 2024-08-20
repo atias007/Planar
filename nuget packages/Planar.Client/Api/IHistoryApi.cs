@@ -20,6 +20,14 @@ namespace Planar.Client
         /// <summary>
         ///
         /// </summary>
+        /// <param name="filter"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task<string> ODataAsync(ODataFilter? filter = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        ///
+        /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
         Task<HistoryDetails> GetAsync(long id, CancellationToken cancellationToken = default);

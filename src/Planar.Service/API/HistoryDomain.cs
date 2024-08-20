@@ -114,7 +114,7 @@ namespace Planar.Service.API
         public async Task<PagingResponse<JobLastRun>> GetLastHistoryCallForJob(GetLastHistoryCallForJobRequest request)
         {
             request.SetPagingDefaults();
-            request.LastDays ??= 365;
+            request.LastDays ??= 30;
             var parameters1 = new
             {
                 request.LastDays,

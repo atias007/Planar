@@ -27,6 +27,8 @@ namespace Planar
             LogRetentionDays
         };
 
+        public const int CliDefaultPageSize = 25;
+
         public const int MaximumJobDataItems = 1000;
         public const string Undefined = "undefined";
         public const string Unauthorized = "unauthorized";

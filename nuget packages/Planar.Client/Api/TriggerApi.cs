@@ -14,6 +14,25 @@ namespace Planar.Client
         {
         }
 
+        public async Task ClearDataAsync(string id, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(id, nameof(id));
+            var restRequest = new RestRequest("trigger/{id}/data", Method.Delete)
+                        .AddParameter("id", id, ParameterType.UrlSegment);
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
+        public async Task ClearTimeoutAsync(string id, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(id, nameof(id));
+
+            var restRequest = new RestRequest("trigger/timeout", Method.Patch)
+              .AddBody(new { id });
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
         public async Task DeleteAsync(string id, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
@@ -43,17 +62,6 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task<TriggerBasicDetails> ListAsync(string jobId, CancellationToken cancellationToken = default)
-        {
-            ValidateMandatory(jobId, nameof(jobId));
-
-            var restRequest = new RestRequest("trigger/{jobId}/by-job", Method.Get)
-                .AddParameter("jobId", jobId, ParameterType.UrlSegment);
-
-            var result = await _proxy.InvokeAsync<TriggerBasicDetails>(restRequest, cancellationToken);
-            return result;
-        }
-
         public async Task<string> GetCronDescriptionAsync(string expression, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(expression, nameof(expression));
@@ -68,6 +76,17 @@ namespace Planar.Client
         {
             var restRequest = new RestRequest("trigger/paused", Method.Get);
             var result = await _proxy.InvokeAsync<List<PausedTrigger>>(restRequest, cancellationToken);
+            return result;
+        }
+
+        public async Task<TriggerBasicDetails> ListAsync(string jobId, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(jobId, nameof(jobId));
+
+            var restRequest = new RestRequest("trigger/{jobId}/by-job", Method.Get)
+                .AddParameter("jobId", jobId, ParameterType.UrlSegment);
+
+            var result = await _proxy.InvokeAsync<TriggerBasicDetails>(restRequest, cancellationToken);
             return result;
         }
 
@@ -142,16 +161,6 @@ namespace Planar.Client
 
             var restRequest = new RestRequest("trigger/timeout", Method.Patch)
               .AddBody(new { id, timeout });
-
-            await _proxy.InvokeAsync(restRequest, cancellationToken);
-        }
-
-        public async Task ClearTimeoutAsync(string id, CancellationToken cancellationToken = default)
-        {
-            ValidateMandatory(id, nameof(id));
-
-            var restRequest = new RestRequest("trigger/timeout", Method.Patch)
-              .AddBody(new { id });
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }

@@ -8,7 +8,7 @@ namespace Planar.Service.SystemJobs;
 
 public sealed class TraceReportJob : BaseReportJob<TraceReportJob>, IJob
 {
-    public static ReportNames ReportName => ReportNames.Alerts;
+    public static ReportNames ReportName => ReportNames.Trace;
 
     public TraceReportJob(IServiceScopeFactory serviceScope, ILogger<TraceReportJob> logger)
         : base(serviceScope, logger)

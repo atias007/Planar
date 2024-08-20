@@ -674,8 +674,40 @@ internal static class Program
         if (HandleHealthCheckResponse(response)) { return; }
         if (HandleHttpConflictResponse(response)) { return; }
         if (HandleHttpUnauthorizedResponse(response)) { return; }
+        if (HandleODataErrorResponse(response)) { return; }
 
         HandleGeneralError(response);
+    }
+
+    private static bool HandleODataErrorResponse(RestResponse response)
+    {
+        static string ClearMessage(string message)
+        {
+            var index = message.IndexOf("on type '");
+            if (index < 0) { return message; }
+            return message[0..index].ToLower();
+        }
+
+        if (response.StatusCode != HttpStatusCode.BadRequest) { return false; }
+        if (string.IsNullOrWhiteSpace(response.Content)) { return false; }
+        var token = JToken.Parse(response.Content);
+        var message = token["error"]?["innererror"]?["message"]?.ToString();
+        if (!string.IsNullOrWhiteSpace(message))
+        {
+            message = ClearMessage(message);
+            MarkupCliLine(CliFormat.GetValidationErrorMarkup(message));
+            return true;
+        }
+
+        message = token["error"]?["message"]?.ToString();
+        if (!string.IsNullOrWhiteSpace(message))
+        {
+            message = ClearMessage(message);
+            MarkupCliLine(CliFormat.GetValidationErrorMarkup(message));
+            return true;
+        }
+
+        return false;
     }
 
     private static bool HandleHttpUnauthorizedResponse(RestResponse response)
