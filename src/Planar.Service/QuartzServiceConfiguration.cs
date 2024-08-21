@@ -43,11 +43,6 @@ namespace Planar.Service
 
                 // convert time zones using converter that can handle Windows/Linux differences
                 q.UseTimeZoneConverter();
-                q.UseJobAutoInterrupt(options =>
-                {
-                    options.DefaultMaxRunTime = AppSettings.General.JobAutoStopSpan;
-                });
-
                 q.AddJobListener<LogJobListener>();
                 q.AddTriggerListener<RetryTriggerListener>();
                 q.AddSchedulerListener<SchedulerListener>();

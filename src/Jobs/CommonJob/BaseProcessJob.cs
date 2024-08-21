@@ -18,8 +18,8 @@ where TProperties : class, new()
 {
     protected Process? _process;
     protected bool _processKilled;
-    protected readonly StringBuilder _output = new();
     protected readonly string Seperator = string.Empty.PadLeft(40, '-');
+    private readonly StringBuilder _output = new();
     private readonly Timer _processMetricsTimer = new(1000);
     private readonly object Locker = new();
     private string? _filename;

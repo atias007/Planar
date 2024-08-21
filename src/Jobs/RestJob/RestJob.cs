@@ -38,7 +38,7 @@ public class RestJob(
 
     private async Task ExecuteRest(IJobExecutionContext context)
     {
-        var timeout = TriggerHelper.GetTimeout(context.Trigger) ?? TimeSpan.FromMinutes(30);
+        var timeout = TriggerHelper.GetTimeout(context.Trigger) ?? AppSettings.General.JobAutoStopSpan;
 
         var options = InitializeOptions(timeout);
         SetProxy(options);

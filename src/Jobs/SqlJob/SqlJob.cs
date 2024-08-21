@@ -44,6 +44,10 @@ public abstract class SqlJob : BaseCommonJob<SqlJobProperties>
 
     private async Task ExecuteSql(IJobExecutionContext context)
     {
+        using var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken);
+        linkedSource.CancelAfter(AppSettings.General.JobAutoStopSpan);
+        var cancellationToken = linkedSource.Token;
+
         if (Properties.Steps == null)
         {
             Properties.Steps = [];
@@ -64,11 +68,11 @@ public abstract class SqlJob : BaseCommonJob<SqlJobProperties>
             {
                 defaultConnection = new SqlConnection(Properties.DefaultConnectionString);
                 MessageBroker.AppendLog(LogLevel.Information, $"Open default sql connection with connection name: {Properties.DefaultConnectionName}");
-                await defaultConnection.OpenAsync(context.CancellationToken);
+                await defaultConnection.OpenAsync(cancellationToken);
                 if (Properties.Transaction)
                 {
                     var isolation = Properties.TransactionIsolationLevel ?? IsolationLevel.Unspecified;
-                    transaction = await defaultConnection.BeginTransactionAsync(isolation, context.CancellationToken);
+                    transaction = await defaultConnection.BeginTransactionAsync(isolation, cancellationToken);
                     MessageBroker.AppendLog(LogLevel.Information, $"Begin transaction with isolation level {isolation}");
                 }
             }
@@ -76,7 +80,7 @@ public abstract class SqlJob : BaseCommonJob<SqlJobProperties>
 
             foreach (var step in Properties.Steps)
             {
-                await ExecuteSqlStep(context, step, defaultConnection, transaction);
+                await ExecuteSqlStep(context, step, defaultConnection, transaction, cancellationToken);
                 counter++;
                 var progress = Convert.ToByte(counter * 100.0 / total);
 
@@ -97,7 +101,7 @@ public abstract class SqlJob : BaseCommonJob<SqlJobProperties>
 
             if (transaction != null)
             {
-                await transaction.CommitAsync();
+                await transaction.CommitAsync(cancellationToken);
                 MessageBroker.AppendLog(LogLevel.Information, "Commit transaction");
             }
         }
@@ -118,9 +122,9 @@ public abstract class SqlJob : BaseCommonJob<SqlJobProperties>
         }
     }
 
-    private async Task ExecuteSqlStep(IJobExecutionContext context, SqlStep step, DbConnection? defaultConnection, DbTransaction? transaction)
+    private async Task ExecuteSqlStep(IJobExecutionContext context, SqlStep step, DbConnection? defaultConnection, DbTransaction? transaction, CancellationToken cancellationToken)
     {
-        var tuple = await GetDbConnection(context, step, defaultConnection);
+        var tuple = await GetDbConnection(step, defaultConnection, cancellationToken);
         DbConnection connection = tuple.Item1;
         var finalizeConnection = tuple.Item2;
 
@@ -144,7 +148,7 @@ public abstract class SqlJob : BaseCommonJob<SqlJobProperties>
 
             var timer = new Stopwatch();
             timer.Start();
-            var rows = await cmd.ExecuteNonQueryAsync(context.CancellationToken);
+            var rows = await cmd.ExecuteNonQueryAsync(cancellationToken);
             timer.Stop();
             var elapsedTitle =
                 timer.ElapsedMilliseconds < 60000 ?
@@ -168,7 +172,7 @@ public abstract class SqlJob : BaseCommonJob<SqlJobProperties>
         }
     }
 
-    private async Task<Tuple<DbConnection, bool>> GetDbConnection(IJobExecutionContext context, SqlStep step, DbConnection? defaultConnection)
+    private async Task<Tuple<DbConnection, bool>> GetDbConnection(SqlStep step, DbConnection? defaultConnection, CancellationToken cancellationToken)
     {
         DbConnection? connection = null;
         var finalizeConnection = false;
@@ -184,7 +188,7 @@ public abstract class SqlJob : BaseCommonJob<SqlJobProperties>
                 finalizeConnection = true;
                 connection = new SqlConnection(step.ConnectionString);
                 MessageBroker.AppendLog(LogLevel.Information, $"Open sql connection with connection name: {step.ConnectionName}");
-                await connection.OpenAsync(context.CancellationToken);
+                await connection.OpenAsync(cancellationToken);
             }
 
             return new Tuple<DbConnection, bool>(connection, finalizeConnection);

@@ -225,9 +225,9 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
         if (!_process.HasExited) { return; }
         if (_process.ExitCode == 0) { return; }
 
-        if (_output.Length > 0)
+        if (FinalOutputText.Length > 0)
         {
-            MessageBroker.AppendLogRaw(_output.ToString());
+            MessageBroker.AppendLogRaw(FinalOutputText.ToString());
         }
 
         throw new PlanarJobException($"WARNING! Abnormal process exit code {_process.ExitCode}. this may cause by unwaited tasks\\threads");
@@ -239,11 +239,11 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
         {
             if (_isHealthCheck) { return; }
 
-            if (_output.Length > 0)
+            if (FinalOutputText.Length > 0)
             {
-                var outputText = _output.ToString();
+                var outputText = FinalOutputText.ToString();
                 MessageBroker.AppendLogRaw(outputText);
-                if (outputText.Contains(nameof(PlanarJobException))) 
+                if (outputText.Contains(nameof(PlanarJobException)))
                 {
                     throw new PlanarJobException("fail to execute job");
                 }
