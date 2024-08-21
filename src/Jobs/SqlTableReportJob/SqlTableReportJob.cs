@@ -83,6 +83,10 @@ public abstract class SqlTableReportJob : BaseCommonJob<SqlTableReportJobPropert
             {
                 cmd.CommandTimeout = Convert.ToInt32(Math.Floor(properties.Timeout.Value.TotalSeconds));
             }
+            else
+            {
+                cmd.CommandTimeout = Convert.ToInt32(AppSettings.General.JobAutoStopSpan.TotalSeconds);
+            }
 
             var timer = new Stopwatch();
             timer.Start();

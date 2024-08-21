@@ -49,5 +49,5 @@ cron triggers:                               # List of cron triggers
 
 
 ##############################################################################################################################
-# if you want to update the effected rows you should write to stdout the following format: <<planar.effectedrows: 0>>
+# if you want to update the effected rows you should write to stdout the following format: <<planar.effectedrows:100>>
 ##############################################################################################################################

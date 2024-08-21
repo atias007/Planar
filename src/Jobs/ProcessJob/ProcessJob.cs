@@ -38,6 +38,7 @@ public abstract class ProcessJob : BaseProcessJob<ProcessJobProperties>
                 OnTimeout(context);
             }
 
+            ExtractOutputData();
             LogProcessOutput();
             LogProcessInformation();
             CheckProcessExitCode();
@@ -65,6 +66,21 @@ public abstract class ProcessJob : BaseProcessJob<ProcessJobProperties>
         else
         {
             MessageBroker.AppendLog(LogLevel.Information, "process output logging is disabled");
+        }
+    }
+
+    private void ExtractOutputData()
+    {
+        var extractor = new OutputExtractor(FinalOutputText, _logger);
+        SetProcessEffectedRows(extractor);
+    }
+
+    private void SetProcessEffectedRows(OutputExtractor extractor)
+    {
+        var rows = extractor.GetEffectedRows();
+        if (rows.HasValue)
+        {
+            MessageBroker.SetEffectedRows(rows.Value);
         }
     }
 
