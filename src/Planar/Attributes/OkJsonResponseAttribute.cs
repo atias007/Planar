@@ -3,6 +3,7 @@ using Swashbuckle.AspNetCore.Annotations;
 
 namespace Planar.Attributes;
 
+[AttributeUsage(AttributeTargets.Method)]
 public class OkJsonResponseAttribute : SwaggerResponseAttribute
 {
     public OkJsonResponseAttribute() : base(200)

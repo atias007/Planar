@@ -139,7 +139,6 @@ namespace Planar.Controllers
         [JsonConsumes]
         [BadRequestResponse]
         [NoContentResponse]
-        [BadRequestResponse]
         [ConflictResponse]
         [NotFoundResponse]
         public async Task<ActionResult> UpdatePartial([FromBody] UpdateEntityRequestById request)
