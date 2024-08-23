@@ -14,13 +14,25 @@ namespace Planar.CLI.DataProtect
     public static class ConnectUtil
     {
         public const string DefaultHost = "localhost";
-        public const int DefaultPort = 2306;
-        public const int DefaultSecurePort = 2610;
+        private const int DefaultPort = 2306;
+        private const int DefaultSecurePort = 2610;
 
         static ConnectUtil()
         {
             InitializeMetadataFolder();
             Load();
+        }
+
+        public static int GetDefaultPort()
+        {
+            if (Current.SecureProtocol)
+            {
+                return DefaultSecurePort;
+            }
+            else
+            {
+                return DefaultPort;
+            }
         }
 
         public static CliLoginRequest Current { get; private set; } = new CliLoginRequest();
@@ -29,13 +41,13 @@ namespace Planar.CLI.DataProtect
 
         private static string MetadataFilename { get; set; } = string.Empty;
 
-        public static CliLoginRequest? GetLastLoginRequestWithCredentials()
+        public static CliLoginRequest? GetLastLoginRequestWithRemember()
         {
             try
             {
                 LogoutOldItems();
                 var last = Data.Logins
-                    .Where(l => l.HasCredentials)
+                    .Where(l => l.Remember)
                     .OrderByDescending(l => l.ConnectDate)
                     .FirstOrDefault();
 
@@ -151,7 +163,7 @@ namespace Planar.CLI.DataProtect
         private static void LogoutOldItems()
         {
             var old = Data.Logins.Where(l => l.Deprecated).ToList();
-            old.ForEach(o => Logout(o));
+            old.ForEach(Logout);
             Save();
         }
 
@@ -217,7 +229,7 @@ namespace Planar.CLI.DataProtect
                 var protector = GetProtector();
                 text = protector.Unprotect(text);
                 Data = JsonConvert.DeserializeObject<UserMetadata>(text) ?? new UserMetadata();
-                if (Data.Logins == null) { Data.Logins = new List<LoginData>(); }
+                if (Data.Logins == null) { Data.Logins = []; }
                 LogoutOldItems();
             }
             catch (Exception ex)

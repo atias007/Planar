@@ -14,7 +14,7 @@ namespace Planar.CLI.Proxy
     {
         public static bool SecureProtocol { get; set; }
         public static string Host { get; set; } = ConnectUtil.DefaultHost;
-        public static int Port { get; set; } = ConnectUtil.DefaultPort;
+        public static int Port { get; set; } = ConnectUtil.GetDefaultPort();
 
         private static RestClient? _client;
         private static readonly object _lock = new();
