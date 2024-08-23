@@ -359,7 +359,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             const string opt1 = "all monitors";
             const string opt2 = "specific monitor";
 
-            var opt = CliPromptUtil.PromptSelection(new[] { opt2, opt1 }, "monitor/s to mute");
+            var opt = CliPromptUtil.PromptSelection(new[] { opt2, opt1 }, "monitor/s to mute", addCancelOption: true, addSearch: false);
             if (opt == opt1)
             {
                 AnsiConsole.MarkupLine($"[turquoise2]  > {opt1}[/]");
@@ -388,7 +388,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
                 return CliPromptWrapper.Success;
             }
 
-            var opt = CliPromptUtil.PromptSelection(new[] { opt2, opt1 }, "job/s to mute");
+            var opt = CliPromptUtil.PromptSelection(new[] { opt2, opt1 }, "job/s to mute", addCancelOption: true, addSearch: false);
             if (opt == opt1)
             {
                 AnsiConsole.MarkupLine($"[turquoise2]  > {opt1}[/]");

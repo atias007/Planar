@@ -49,7 +49,7 @@ namespace Planar.CLI.Actions
                     .Select(n => n.ToLower())
                     .OrderBy(n => n);
 
-                var action = CliPromptUtil.PromptSelection(items, "action") ?? string.Empty;
+                var action = CliPromptUtil.PromptSelection(items, "action", addCancelOption: true, addSearch: false) ?? string.Empty;
                 request.Action = Enum.Parse<DataActions>(action, true);
             }
 
