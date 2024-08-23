@@ -1,6 +1,6 @@
 ﻿--------------------------------------------------------
 
-PLAN FOR V 1.7.6
+PLAN FOR V 1.7.7
 ----------------
 - validate on startup that instance id not exists in nodes table
 - Security report
@@ -8,6 +8,8 @@ PLAN FOR V 1.7.6
 - circuit breaker (option to pause job after {x} fails in row)
 
 - 'service info hooks'
+- health check minor changes + cli color
+- add free search on cli jobs menu / monitor event menu
 
 - add anomaly monitor events
 - add charts to report
