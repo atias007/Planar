@@ -15,28 +15,20 @@ namespace Planar.CLI.CliGeneral
 {
     internal static class CliPromptUtil
     {
-        internal static string? PromptSelection(IEnumerable<string>? items, string title, bool addCancelOption = true, bool addSearch = false)
+        internal static string? PromptSelection(IEnumerable<string>? items, string title)
         {
             if (items == null) { return null; }
 
             var finalItems = items.Select(i => new CliSelectItem<string> { DisplayName = i, Value = i });
-            return PromptSelection(finalItems, title, addCancelOption, addSearch)?.Value;
+            return PromptSelection(finalItems, title)?.Value;
         }
 
-        internal static CliSelectItem<T>? PromptSelection<T>(IEnumerable<CliSelectItem<T>>? items, string title, bool addCancelOption = true, bool addSearch = false)
+        internal static CliSelectItem<T>? PromptSelection<T>(IEnumerable<CliSelectItem<T>>? items, string title)
         {
             if (items == null) { return null; }
-            IEnumerable<CliSelectItem<T>> finalItems;
-            if (addCancelOption)
-            {
-                var temp = items.ToList();
-                temp.Add(CliSelectItem<T>.CancelItem);
-                finalItems = temp;
-            }
-            else
-            {
-                finalItems = items;
-            }
+            var finalItems = items.ToList();
+            var addSearch = finalItems.Count > 5;
+            finalItems.Add(CliSelectItem<T>.CancelItem);
 
             using var _ = new TokenBlockerScope();
             var prompt = new SelectionPrompt<CliSelectItem<T>>()
@@ -68,7 +60,7 @@ namespace Planar.CLI.CliGeneral
             }
 
             var items = data.Select(g => g ?? string.Empty);
-            var select = PromptSelection(items, "new hook", addCancelOption: true, addSearch: true);
+            var select = PromptSelection(items, "new hook");
             return new CliPromptWrapper<string>(select);
         }
 
@@ -91,7 +83,7 @@ namespace Planar.CLI.CliGeneral
                 .Where(h => string.Equals(h.HookType, "external", StringComparison.OrdinalIgnoreCase))
                 .Select(g => g.Name ?? string.Empty);
 
-            var select = PromptSelection(items, "hook", addCancelOption: true, addSearch: true);
+            var select = PromptSelection(items, "hook");
             return new CliPromptWrapper<string>(select);
         }
 
@@ -113,7 +105,7 @@ namespace Planar.CLI.CliGeneral
             }
 
             var items = data.Select(g => g.Name ?? string.Empty);
-            var select = PromptSelection(items, "group", addCancelOption: true, addSearch: true);
+            var select = PromptSelection(items, "group");
             return new CliPromptWrapper<string>(select);
         }
 
@@ -133,7 +125,7 @@ namespace Planar.CLI.CliGeneral
                 throw new CliWarningException("no available groups to perform the opertaion");
             }
 
-            var select = PromptSelection(items, "group", addCancelOption: true, addSearch: true);
+            var select = PromptSelection(items, "group");
             return new CliPromptWrapper<string>(select);
         }
 
@@ -173,7 +165,7 @@ namespace Planar.CLI.CliGeneral
                 throw new CliWarningException("no available groups to perform the opertaion");
             }
 
-            var select = PromptSelection(items, "group", addCancelOption: true, addSearch: true);
+            var select = PromptSelection(items, "group");
             return new CliPromptWrapper<string>(select);
         }
 
@@ -194,7 +186,7 @@ namespace Planar.CLI.CliGeneral
             }
 
             var items = data.Select(g => g.Username ?? string.Empty);
-            var select = PromptSelection(items, "user", addCancelOption: true, addSearch: true);
+            var select = PromptSelection(items, "user");
             return new CliPromptWrapper<string>(select);
         }
 
@@ -215,7 +207,7 @@ namespace Planar.CLI.CliGeneral
                 throw new CliWarningException("no available users to perform the opertaion");
             }
 
-            var select = PromptSelection(items, "user", addCancelOption: true, addSearch: true);
+            var select = PromptSelection(items, "user");
             return new CliPromptWrapper<string>(select);
         }
 
@@ -255,7 +247,7 @@ namespace Planar.CLI.CliGeneral
                 throw new CliWarningException("no available users to perform the opertaion");
             }
 
-            var select = PromptSelection(items, "user", addCancelOption: true, addSearch: true);
+            var select = PromptSelection(items, "user");
             return new CliPromptWrapper<string>(select);
         }
 
@@ -274,7 +266,7 @@ namespace Planar.CLI.CliGeneral
                 throw new CliWarningException("no available reports to perform the opertaion");
             }
 
-            var select = PromptSelection(data, "report", addCancelOption: true, addSearch: false);
+            var select = PromptSelection(data, "report");
             return new CliPromptWrapper<string>(select);
         }
 
@@ -295,7 +287,7 @@ namespace Planar.CLI.CliGeneral
             }
 
             var prompt = data.Select(data => $"{data.Id} - {data.Title}");
-            var select = PromptSelection(prompt, "monitor", addCancelOption: true, addSearch: true);
+            var select = PromptSelection(prompt, "monitor");
             var id = select?.Split('-').FirstOrDefault()?.Trim();
             _ = int.TryParse(id, out var monitorId);
             var item = data.First(data => data.Id == monitorId);
@@ -317,7 +309,7 @@ namespace Planar.CLI.CliGeneral
                 throw new CliWarningException("no available periods to perform the opertaion");
             }
 
-            var select = PromptSelection(data, "period", addCancelOption: true, addSearch: false);
+            var select = PromptSelection(data, "period");
             return new CliPromptWrapper<string>(select);
         }
 
@@ -336,7 +328,7 @@ namespace Planar.CLI.CliGeneral
             }
 
             var items = result.Data.Select(g => g ?? string.Empty);
-            var select = PromptSelection(items, "role", addCancelOption: true, addSearch: false);
+            var select = PromptSelection(items, "role");
 
             if (!Enum.TryParse<Roles>(select, ignoreCase: true, out var enumSelect))
             {

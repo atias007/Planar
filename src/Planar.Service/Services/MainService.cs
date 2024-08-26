@@ -70,18 +70,7 @@ namespace Planar.Service.Services
                 return;
             }
 
-            _ = Run(stoppingToken)
-                .ContinueWith(t =>
-                {
-                    if (t.Exception != null)
-                    {
-                        _logger.LogError(t.Exception, "unhandled exception: {Message}", t.Exception.Message);
-                    }
-                }, stoppingToken);
-
-            var waiter = new CancellationTokenAwaiter(stoppingToken);
-
-            waiter.OnCompleted(() =>
+            _lifetime.ApplicationStopping.Register(() =>
             {
                 _logger.LogInformation("IsCancellationRequested = {Value}", stoppingToken.IsCancellationRequested);
                 try
@@ -102,6 +91,39 @@ namespace Planar.Service.Services
                     // *** ignore exceptions *** //
                 }
             });
+
+            _ = Run(stoppingToken)
+                .ContinueWith(t =>
+                {
+                    if (t.Exception != null)
+                    {
+                        _logger.LogError(t.Exception, "unhandled exception: {Message}", t.Exception.Message);
+                    }
+                }, stoppingToken);
+
+            ////var waiter = new CancellationTokenAwaiter(stoppingToken);
+
+            ////waiter.OnCompleted(() =>
+            ////{
+            ////    _logger.LogInformation("IsCancellationRequested = {Value}", stoppingToken.IsCancellationRequested);
+            ////    try
+            ////    {
+            ////        RemoveSchedulerCluster().Wait();
+            ////    }
+            ////    catch (Exception ex)
+            ////    {
+            ////        _logger.LogWarning(ex, "fail to {Operation}", nameof(RemoveSchedulerCluster));
+            ////    }
+
+            ////    try
+            ////    {
+            ////        _schedulerUtil.Shutdown(stoppingToken).Wait();
+            ////    }
+            ////    catch
+            ////    {
+            ////        // *** ignore exceptions *** //
+            ////    }
+            ////});
 
             await Task.CompletedTask;
         }

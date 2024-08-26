@@ -292,7 +292,7 @@ public static class CliTableFormat
         var result = GetStatusMarkup(status);
         if (hasWarning)
         {
-            result = $"{result}[{CliFormat.WarningColor}]{bullet}[/]";
+            result = $"{result} [{CliFormat.WarningColor}]{bullet}[/]";
         }
 
         return result;

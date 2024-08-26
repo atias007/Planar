@@ -168,7 +168,7 @@ namespace Planar.CLI.Actions
             {
                 var colorType = typeof(CliColors);
                 var options = CliActionMetadata.GetEnumOptions(colorType);
-                var colorText = PromptSelection(options, "color", true);
+                var colorText = PromptSelection(options, "color");
                 var parse = CliArgumentsUtil.ParseEnum(colorType, colorText);
                 if (parse != null)
                 {
@@ -218,7 +218,7 @@ namespace Planar.CLI.Actions
 
                 if (result.Data.Count() > 1)
                 {
-                    var calendar = PromptSelection(result.Data.Select(r => r.CalendarName), "calendar", addCancelOption: true);
+                    var calendar = PromptSelection(result.Data.Select(r => r.CalendarName), "calendar");
                     data = result.Data.FirstOrDefault(r => r.CalendarName == calendar);
                 }
                 else
