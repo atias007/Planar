@@ -36,7 +36,11 @@ namespace Planar.CLI.CliGeneral
                      .PageSize(20)
                      .MoreChoicesText($"[grey](Move [/][blue]up[/][grey] and [/][blue]down[/] [grey]to reveal more [/][white]{title?.EscapeMarkup()}s[/])")
                      .AddChoices(finalItems);
-            if (addSearch) { prompt.EnableSearch(); }
+            if (addSearch)
+            {
+                prompt.EnableSearch();
+                prompt.SearchHighlightStyle = new Style(foreground: Color.White, background: Color.DeepSkyBlue4_2);
+            }
             var selectedItem = AnsiConsole.Prompt(prompt);
 
             CheckForCancelOption(selectedItem);

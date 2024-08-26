@@ -469,7 +469,6 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
     private static string? GetEventArguments(string eventName)
     {
         var result = MonitorEventsExtensions.IsMonitorEventHasArguments(eventName) ?
-            //AnsiConsole.Prompt(new TextPrompt<string>("[turquoise2]  > event argument:[/]").AllowEmpty()) :
             PickEventArgument(eventName) :
             null;
 

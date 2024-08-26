@@ -339,3 +339,7 @@ V1.7.6
 - add Active field to job (cli indication)
 - BUG: fix process job to collect output
 - add 'log output' property to process job
+
+V1.7.6.2
+--------
+- CLI search
