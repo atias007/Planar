@@ -6,6 +6,7 @@ using Planar.CLI.Entities;
 using Planar.CLI.General;
 using Planar.CLI.Proxy;
 using RestSharp;
+using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -85,8 +86,17 @@ namespace Planar.CLI.Actions
         [Action("health-check")]
         public static async Task<CliActionResponse> HealthCheck(CancellationToken cancellationToken = default)
         {
+            const string seperator = "-------------------";
             var restRequest = new RestRequest("service/health-check", Method.Get);
             var result = await RestProxy.Invoke<string>(restRequest, cancellationToken);
+            if (result.IsSuccessful)
+            {
+                AnsiConsole.MarkupLine($"{seperator}\r\n[green]planar is healthy[/]\r\n{seperator}");
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"{seperator}\r\n[red]planar is unhealthy[/]\r\n{seperator}");
+            }
             return new CliActionResponse(result, result.Data);
         }
 
@@ -119,6 +129,7 @@ namespace Planar.CLI.Actions
         public static async Task<CliActionResponse> Login(CliLoginRequest request, CancellationToken cancellationToken = default)
         {
             var notnullRequest = FillLoginRequest(request);
+            if (request.Port == 0) { request.Port = ConnectUtil.GetDefaultPort(); }
             var response = await InnerLogin(notnullRequest, cancellationToken);
             if (response.Response.IsSuccessful)
             {
@@ -157,7 +168,7 @@ namespace Planar.CLI.Actions
             {
                 var colorType = typeof(CliColors);
                 var options = CliActionMetadata.GetEnumOptions(colorType);
-                var colorText = PromptSelection(options, "color", true);
+                var colorText = PromptSelection(options, "color");
                 var parse = CliArgumentsUtil.ParseEnum(colorType, colorText);
                 if (parse != null)
                 {
@@ -207,7 +218,7 @@ namespace Planar.CLI.Actions
 
                 if (result.Data.Count() > 1)
                 {
-                    var calendar = PromptSelection(result.Data.Select(r => r.CalendarName), "calendar", addCancelOption: true);
+                    var calendar = PromptSelection(result.Data.Select(r => r.CalendarName), "calendar");
                     data = result.Data.FirstOrDefault(r => r.CalendarName == calendar);
                 }
                 else
@@ -311,7 +322,7 @@ namespace Planar.CLI.Actions
 
         public static async Task InitializeLogin()
         {
-            var request = ConnectUtil.GetLastLoginRequestWithCredentials();
+            var request = ConnectUtil.GetLastLoginRequestWithRemember();
             if (request == null)
             {
                 SetDefaultAnonymousLogin();
@@ -319,7 +330,14 @@ namespace Planar.CLI.Actions
             }
             else
             {
-                await InnerLogin(request);
+                var response = await InnerLogin(request);
+                if (!response.Response.IsSuccessful && response.Response.StatusCode != HttpStatusCode.Conflict)
+                {
+                    RestProxy.Host = request.Host;
+                    RestProxy.Port = request.Port;
+                    RestProxy.SecureProtocol = request.SecureProtocol;
+                    RestProxy.Flush();
+                }
             }
         }
 
@@ -368,7 +386,7 @@ namespace Planar.CLI.Actions
 
             if (request.Port == 0)
             {
-                request.Port = int.Parse(CollectCliValue("port", true, 1, 5, regexTepmplate, "invalid port", ConnectUtil.DefaultPort.ToString()) ?? ConnectUtil.DefaultPort.ToString());
+                request.Port = int.Parse(CollectCliValue("port", true, 1, 5, regexTepmplate, "invalid port", ConnectUtil.GetDefaultPort().ToString()) ?? ConnectUtil.GetDefaultPort().ToString());
             }
 
             if (string.IsNullOrEmpty(request.Username))

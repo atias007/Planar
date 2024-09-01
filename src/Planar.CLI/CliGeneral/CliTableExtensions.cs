@@ -285,7 +285,8 @@ namespace Planar.CLI
             var table = new CliTable(paging: response, entityName: "job");
             table.Table.AddColumns("Job Id", "Job Key", "Job Type", "Description");
             if (response == null || response.Data == null) { return table; }
-            response.Data.ForEach(r => table.Table.AddRow(CliTableFormat.FormatJobId(r.Id, r.Active), CliTableFormat.FormatJobKey(r.Group, r.Name), r.JobType.EscapeMarkup(), LimitValue(r.Description)));
+            var hasInactive = response.Data.Exists(d => d.Active != JobActiveMembers.Active);
+            response.Data.ForEach(r => table.Table.AddRow(hasInactive ? CliTableFormat.FormatJobId(r.Id, r.Active) : r.Id, CliTableFormat.FormatJobKey(r.Group, r.Name), r.JobType.EscapeMarkup(), LimitValue(r.Description)));
             return table;
         }
 

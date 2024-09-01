@@ -438,21 +438,21 @@ namespace Planar.CLI.Actions
             }
         }
 
-        protected static string? PromptSelection(IEnumerable<string>? items, string title, bool addCancelOption = true)
+        protected static string? PromptSelection(IEnumerable<string>? items, string title)
         {
-            return CliPromptUtil.PromptSelection(items, title, addCancelOption);
+            return CliPromptUtil.PromptSelection(items, title);
         }
 
-        protected static CliSelectItem<T>? PromptSelection<T>(IEnumerable<CliSelectItem<T>>? items, string title, bool addCancelOption = true)
+        protected static CliSelectItem<T>? PromptSelection<T>(IEnumerable<CliSelectItem<T>>? items, string title)
         {
-            return CliPromptUtil.PromptSelection<T>(items, title, addCancelOption);
+            return CliPromptUtil.PromptSelection(items, title);
         }
 
-        protected static TEnum PromptSelection<TEnum>(string title, bool addCancelOption = true)
+        protected static TEnum PromptSelection<TEnum>(string title)
             where TEnum : struct, Enum
         {
             var items = Enum.GetNames<TEnum>().Select(e => e.ToLower());
-            var result = CliPromptUtil.PromptSelection(items, title, addCancelOption);
+            var result = CliPromptUtil.PromptSelection(items, title);
             return Enum.Parse<TEnum>(result!, true);
         }
 
@@ -465,7 +465,7 @@ namespace Planar.CLI.Actions
         protected static int GetCounterHours()
         {
             var items = new[] { "1 hour", "2 hours", "8 hours", "1 day", "2 days", "3 days", "7 days" };
-            var select = PromptSelection(items, "select time period", true);
+            var select = PromptSelection(items, "select time period");
             if (string.IsNullOrEmpty(select)) { return 0; }
             var parts = select.Split(' ');
             if (parts.Length != 2) { return 0; }
@@ -489,7 +489,7 @@ namespace Planar.CLI.Actions
         private static (DateTime?, DateTime?) GetDateScope()
         {
             var items = new[] { "today", "yesterday", "this week", "last week", "this month", "last month", "this year", "last year", "since forever", "custom..." };
-            var select = PromptSelection(items, "select date period", true);
+            var select = PromptSelection(items, "select date period");
 
             if (string.Equals(select, "custom...", StringComparison.OrdinalIgnoreCase))
             {
