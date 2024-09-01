@@ -1,61 +1,79 @@
-﻿using Planar.Common;
+﻿using Planar.API.Common.Entities;
+using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
 using Quartz;
 
-namespace Planar.Service.API.Helpers
+namespace Planar.Service.API.Helpers;
+
+public static class JobHelper
 {
-    public static class JobHelper
+    public static string? GetJobAuthor(IJobDetail job)
     {
-        public static string? GetJobAuthor(IJobDetail job)
+        if (job == null)
         {
-            if (job == null)
-            {
-                throw new PlanarException("job is null at JobHelper.GetJobAuthor(IJobDetail)");
-            }
+            throw new PlanarException("job is null at JobHelper.GetJobAuthor(IJobDetail)");
+        }
 
-            if (job.JobDataMap.TryGetValue(Consts.Author, out var id))
-            {
-                return PlanarConvert.ToString(id);
-            }
+        if (job.JobDataMap.TryGetValue(Consts.Author, out var id))
+        {
+            return PlanarConvert.ToString(id);
+        }
 
+        return null;
+    }
+
+    public static JobCircuitBreakerMetadata? GetJobCircuitBreaker(IJobDetail job)
+    {
+        if (job == null)
+        {
+            throw new PlanarException("job is null at JobHelper.GetJobCircuitBreaker(IJobDetail)");
+        }
+
+        if (!job.JobDataMap.TryGetValue(Consts.CircuitBreaker, out var circuitBreakerObj))
+        {
             return null;
         }
 
-        public static int? GetLogRetentionDays(IJobDetail job)
+        var circuitBreakerText = PlanarConvert.ToString(circuitBreakerObj);
+        if (string.IsNullOrWhiteSpace(circuitBreakerText)) { return null; }
+        var cb = JobCircuitBreakerMetadata.Parse(circuitBreakerText);
+        return cb;
+    }
+
+    public static int? GetLogRetentionDays(IJobDetail job)
+    {
+        if (job == null)
         {
-            if (job == null)
-            {
-                throw new PlanarException("job is null at JobHelper.GetLogRetentionDays(IJobDetail)");
-            }
-
-            if (job.JobDataMap.TryGetValue(Consts.LogRetentionDays, out var id) && int.TryParse(PlanarConvert.ToString(id), out var result))
-            {
-                return result;
-            }
-
-            return null;
+            throw new PlanarException("job is null at JobHelper.GetLogRetentionDays(IJobDetail)");
         }
 
-        public static string? GetJobId(IJobDetail? job)
+        if (job.JobDataMap.TryGetValue(Consts.LogRetentionDays, out var id) && int.TryParse(PlanarConvert.ToString(id), out var result))
         {
-            if (job == null)
-            {
-                throw new PlanarException("job is null at JobKeyHelper.GetJobId(IJobDetail)");
-            }
-
-            if (job.JobDataMap.TryGetValue(Consts.JobId, out var id))
-            {
-                return PlanarConvert.ToString(id);
-            }
-
-            return null;
+            return result;
         }
 
-        public static string GetKeyTitle(IJobDetail jobDetail)
+        return null;
+    }
+
+    public static string? GetJobId(IJobDetail? job)
+    {
+        if (job == null)
         {
-            var title = KeyHelper.GetKeyTitle(jobDetail.Key);
-            return title;
+            throw new PlanarException("job is null at JobKeyHelper.GetJobId(IJobDetail)");
         }
+
+        if (job.JobDataMap.TryGetValue(Consts.JobId, out var id))
+        {
+            return PlanarConvert.ToString(id);
+        }
+
+        return null;
+    }
+
+    public static string GetKeyTitle(IJobDetail jobDetail)
+    {
+        var title = KeyHelper.GetKeyTitle(jobDetail.Key);
+        return title;
     }
 }

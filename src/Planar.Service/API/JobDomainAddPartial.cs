@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Pipelines.Sockets.Unofficial.Arenas;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Exceptions;
@@ -53,6 +54,12 @@ namespace Planar.Service.API
         {
             if (string.IsNullOrEmpty(metadata.Author)) { return; }
             job.JobDataMap.Put(Consts.Author, metadata.Author);
+        }
+
+        private static void AddCircuitBreaker(SetJobRequest metadata, IJobDetail job)
+        {
+            if (!metadata.CircuitBreaker.Enabled) { return; }
+            job.JobDataMap.Put(Consts.CircuitBreaker, metadata.CircuitBreaker.ToString());
         }
 
         private static void AddLogRetentionDays(SetJobRequest metadata, IJobDetail job)
@@ -500,6 +507,26 @@ namespace Planar.Service.API
 
             #endregion JobData
 
+            #region circuit breaker
+
+            ValidateRangeValue(metadata.CircuitBreaker.FailureThreshold, 2, 100, "failure threshold", "circuit breaker");
+            ValidateRangeValue(metadata.CircuitBreaker.SuccessThreshold, 1, 100, "success threshold", "circuit breaker");
+            if (metadata.CircuitBreaker.PauseSpan.HasValue && metadata.CircuitBreaker.PauseSpan.Value.TotalMinutes < 5)
+            {
+                throw new RestValidationException(
+                    nameof(metadata.CircuitBreaker.PauseSpan).ToLower(),
+                    $"circuit breaker pause span value is invalid. minimum value is 5 minutes");
+            }
+
+            if (metadata.CircuitBreaker.SuccessThreshold >= metadata.CircuitBreaker.FailureThreshold)
+            {
+                throw new RestValidationException(
+                    nameof(metadata.CircuitBreaker.SuccessThreshold).ToLower(),
+                    $"circuit breaker success threshold value is invalid. success threshold must be less than failure threshold");
+            }
+
+            #endregion circuit breaker
+
             var triggersCount = metadata.CronTriggers?.Count + metadata.SimpleTriggers?.Count;
             if (triggersCount == 0 && metadata.Durable == false)
             {
@@ -722,6 +749,7 @@ namespace Planar.Service.API
 
             // Add Author, RetentionDays
             AddAuthor(request, job);
+            AddCircuitBreaker(request, job);
             AddLogRetentionDays(request, job);
 
             // Build Data

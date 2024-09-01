@@ -23,7 +23,8 @@ using DbJobInstanceLog = Planar.Service.Model.JobInstanceLog;
 
 namespace Planar.Service.Listeners;
 
-public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<LogJobListener> logger) : BaseListener<LogJobListener>(serviceScopeFactory, logger), IJobListener
+public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<LogJobListener> logger)
+    : BaseListener<LogJobListener>(serviceScopeFactory, logger), IJobListener
 {
     public string Name => nameof(LogJobListener);
 
