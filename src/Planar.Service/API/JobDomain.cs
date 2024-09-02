@@ -864,11 +864,6 @@ namespace Planar.Service.API
             }
         }
 
-        private static bool IaActiveTriggerState(TriggerState state)
-        {
-            return state != TriggerState.None && state != TriggerState.Paused;
-        }
-
         private static void ValidateDataKeyExists(IJobDetail details, string key, string jobId)
         {
             if (details == null || !details.JobDataMap.ContainsKey(key))
@@ -991,8 +986,8 @@ namespace Planar.Service.API
             foreach (var t in triggers)
             {
                 if (t.Key.Group == Consts.RecoveringJobsGroup) { continue; }
-                var state = await Scheduler.GetTriggerState(t.Key);
-                if (IaActiveTriggerState(state))
+                var active = await IsTriggerActive(t);
+                if (active)
                 {
                     hasActive = true;
                 }
@@ -1009,6 +1004,12 @@ namespace Planar.Service.API
             if (hasInactive) { return JobActiveMembers.Inactive; }
 
             return JobActiveMembers.Active;
+        }
+
+        public async Task<bool> IsTriggerActive(ITrigger trigger)
+        {
+            var state = await Scheduler.GetTriggerState(trigger.Key);
+            return TriggerHelper.IsActiveState(state);
         }
 
         private async Task<bool> JobGroupExists(string jobGroup)

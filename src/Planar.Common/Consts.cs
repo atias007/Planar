@@ -48,13 +48,16 @@ namespace Planar
 
         public const string JobId = "__Job_Id";
         public const string Author = "__Author";
-        public const string CircuitBreaker = "__CircuitBreaker";
         public const string LogRetentionDays = "__LogRetentionDays";
         public const string TriggerId = "__Trigger_Id";
         public const string TriggerTimeout = "__Trigger_Timeout";
         public const string NowOverrideValue = "__Now_Override_Value";
 
+        public const string CircuitBreaker = "__CircuitBreaker";
         public const string CircuitBreakerJobName = "CircuitBreakerResume";
+        public const string CircuitBreakerTriggerGroup = "__CircuitBreakerResume";
+        public const string CircuitBreakerJobDataKey = "__CircuitBreakerActiveTriggers";
+
         public const string ManualTriggerId = "Manual";
         public const string LogLevelSettingsKey1 = "Log Level";
         public const string LogLevelSettingsKey2 = "LogLevel";

@@ -15,6 +15,8 @@ namespace Planar.Common
         [Description("Execution Progress Changed")] ExecutionProgressChanged = 108,
         [Description("Execution Timeout")] ExecutionTimeout = 109,
         [Description("Execution Success With Warnings")] ExecutionSuccessWithWarnings = 110,
+        [Description("Circuit Breaker Activated")] CircuitBreakerActivated = 111,
+        [Description("Circuit Breaker Reset")] CircuitBreakerReset = 112,
 
         //// - Events with argument --------------------------------
         [Description("Execution Fail {x} Times In Row")] ExecutionFailxTimesInRow = 200,
