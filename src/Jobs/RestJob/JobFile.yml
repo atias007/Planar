@@ -44,6 +44,12 @@ properties:                           # Job Properties
     header2: some value y             # key --> [mandatory, up to 100 characters]
     header3: some value z             # value --> [up to 1000  characters]
 
+circuit breaker:
+  enabled: true                       # Boolean [true/false]. Enable/Disable the circuit breaker
+  failure threshold: 5                # The number of failures that will trip the circuit breaker [2 to 100]
+  success threshold: 1                # The number of successes that will reset the circuit breaker [1 to 100]
+  pause span: 01:00:00                # The time span which the circuit breaker will pause the job execution. set null value for permanent pause. minimum value is 5 minutes
+
 simple triggers:                      # List of simple triggers
   - name: every-minute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
     start: 2021-09-19 00:00:00        # Start date

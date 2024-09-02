@@ -10,8 +10,8 @@ namespace Planar
 
         public static readonly string[] PreserveGroupNames = new string[] { RetryTriggerGroup, PlanarSystemGroup };
 
-        public static readonly string[] AllDataKeys =
-        [
+        public static readonly string[] AllDataKeys = new[]
+        {
             RetryCounter,
             RetrySpan,
             MaxRetries,
@@ -26,7 +26,7 @@ namespace Planar
             Author,
             CircuitBreaker,
             LogRetentionDays
-        ];
+        };
 
         public const int CliDefaultPageSize = 25;
 
@@ -54,7 +54,6 @@ namespace Planar
         public const string NowOverrideValue = "__Now_Override_Value";
 
         public const string CircuitBreaker = "__CircuitBreaker";
-        public const string CircuitBreakerJobName = "CircuitBreakerResume";
         public const string CircuitBreakerTriggerGroup = "__CircuitBreakerResume";
         public const string CircuitBreakerJobDataKey = "__CircuitBreakerActiveTriggers";
 

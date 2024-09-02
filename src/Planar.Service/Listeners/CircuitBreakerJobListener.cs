@@ -8,6 +8,7 @@ using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
 using Planar.Service.General;
 using Planar.Service.Listeners.Base;
+using Planar.Service.SystemJobs;
 using Quartz;
 using System;
 using System.Linq;
@@ -112,7 +113,7 @@ internal class CircuitBreakerJobListener(IServiceScopeFactory serviceScopeFactor
     {
         if (cb.PauseSpan == null) { return; }
 
-        var jobKey = new JobKey(Consts.CircuitBreakerJobName, Consts.PlanarSystemGroup);
+        var jobKey = new JobKey(typeof(CircuitBreakerJob).Name, Consts.PlanarSystemGroup);
         var job = await context.Scheduler.GetJobDetail(jobKey);
         if (job == null)
         {
@@ -123,14 +124,16 @@ internal class CircuitBreakerJobListener(IServiceScopeFactory serviceScopeFactor
         var triggers = await context.Scheduler.GetTriggersOfJob(context.JobDetail.Key);
         var triggersStates = triggers.Select(async t => new { t.Key, State = await context.Scheduler.GetTriggerState(t.Key) });
         var activeTriggers = triggersStates.Where(t => TriggerHelper.IsActiveState(t.Result.State)).Select(t => t.Result.Key.ToString());
-        var activeTriggerValue = string.Join(",", activeTriggers);
+        var activeTriggerValue = string.Join(',', activeTriggers);
 
         var triggerKey = new TriggerKey($"Resume.{context.JobDetail.Key}", Consts.CircuitBreakerTriggerGroup);
         var triggerId = ServiceUtil.GenerateId();
+        var key = context.JobDetail.Key.ToString();
         var dueDate = DateTime.Now.Add(cb.PauseSpan.Value);
         var newTrigger = TriggerBuilder.Create()
              .WithIdentity(triggerKey)
              .UsingJobData(Consts.TriggerId, triggerId)
+             .UsingJobData("JobKey", key)
              .UsingJobData(Consts.CircuitBreakerJobDataKey, activeTriggerValue)
              .StartAt(dueDate)
              .WithSimpleSchedule(b =>

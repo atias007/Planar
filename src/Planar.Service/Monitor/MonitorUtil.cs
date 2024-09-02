@@ -55,7 +55,7 @@ public class MonitorUtil(IServiceScopeFactory serviceScopeFactory, MonitorScanPr
         catch (Exception ex)
         {
             var source = nameof(SafeSystemScan);
-            logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
+            logger.LogCritical(ex, "Error handle {Source}: {Message}", source, ex.Message);
         }
     }
 
@@ -76,7 +76,7 @@ public class MonitorUtil(IServiceScopeFactory serviceScopeFactory, MonitorScanPr
         catch (Exception ex)
         {
             var source = nameof(SafeSystemScan);
-            logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
+            logger.LogCritical(ex, "Error handle {Source}: {Message}", source, ex.Message);
         }
     }
 

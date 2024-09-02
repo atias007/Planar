@@ -309,7 +309,8 @@ namespace Planar.Service.API
         {
             var jobKey = await JobKeyHelper.GetJobKey(id);
             var jobId = await JobKeyHelper.GetJobId(jobKey) ?? string.Empty;
-            var query = DataLayer.GetJobAudits(jobId);
+            var firstId = await DataLayer.GetJobFirstAudit(jobId) ?? 0;
+            var query = DataLayer.GetJobAudits(jobId, firstId);
             var result = await query.ProjectToWithPagingAsyc<JobAudit, JobAuditDto>(Mapper, paging);
             return result;
         }

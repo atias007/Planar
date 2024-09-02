@@ -5,7 +5,7 @@ PLAN FOR V 1.7.7
 - validate on startup that instance id not exists in nodes table
 - Security report
 - check option to odata search (https://devblogs.microsoft.com/odata/compute-and-search-in-asp-net-core-odata-8/)
-- circuit breaker (option to pause job after {x} fails in row)
+
 
 - 'service info hooks'
 - health check minor changes + cli color
@@ -340,6 +340,9 @@ V1.7.6
 - BUG: fix process job to collect output
 - add 'log output' property to process job
 
-V1.7.6.2
+V1.7.7
 --------
 - CLI search
+- circuit breaker
+- BUG: fix auto save job/trigger data when job has exception
+- BUG: show audit for general group actions - only from the time after job created

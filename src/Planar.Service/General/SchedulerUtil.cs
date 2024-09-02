@@ -223,7 +223,18 @@ namespace Planar.Service.General
             target.Name = source.Key.Name;
             target.Group = source.Key.Group;
             target.Description = source.Description;
-            target.JobType = GetJobTypeName(source.JobType);
+            target.JobType = GetJobTypeName(source);
+        }
+
+        public static string GetJobTypeName(IJobDetail source)
+        {
+            const string system = "SystemJob";
+            if (JobKeyHelper.IsSystemJobKey(source.Key))
+            {
+                return system;
+            }
+
+            return GetJobTypeName(source.JobType);
         }
 
         public static string GetJobTypeName(Type type)

@@ -168,6 +168,7 @@ namespace Planar.Service.Services
                 await ClearHistoryJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
                 await StatisticsJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
                 await MonitorJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
+                await CircuitBreakerJob.Schedule(_schedulerUtil.Scheduler, stoppingToken);
 
                 await SummaryReportJob.Schedule(_schedulerUtil.Scheduler, SummaryReportJob.ReportName, stoppingToken);
                 await PausedReportJob.Schedule(_schedulerUtil.Scheduler, PausedReportJob.ReportName, stoppingToken);

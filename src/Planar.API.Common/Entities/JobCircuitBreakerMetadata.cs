@@ -29,7 +29,7 @@ public class JobCircuitBreakerMetadata
     public override string ToString()
     {
         var pauseSpan = PauseSpan.HasValue ? PauseSpan.Value.ToString() : NullValue;
-        return $"FC:{FailCounter},SC:{SuccessCounter},FT:{FailureThreshold},ST:{SuccessThreshold},PS:{pauseSpan}";
+        return $"FC.{FailCounter},SC.{SuccessCounter},FT.{FailureThreshold},ST.{SuccessThreshold},PS.{pauseSpan}";
     }
 
     public void Reset()
@@ -46,7 +46,7 @@ public class JobCircuitBreakerMetadata
         var result = new JobCircuitBreakerMetadata();
         foreach (var part in parts)
         {
-            var keyValue = part.Split(':');
+            var keyValue = part.Split('.');
             if (keyValue.Length != 2) { throw new ArgumentException($"Invalid format: {value}"); }
             switch (keyValue[0].Trim())
             {

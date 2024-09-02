@@ -30,7 +30,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
     private readonly Channel<MonitorScanMessage> _channel = serviceProvider.GetRequiredService<Channel<MonitorScanMessage>>();
     private readonly ILogger<MonitorService> _logger = serviceProvider.GetRequiredService<ILogger<MonitorService>>();
     private const string nullText = "[null]";
-    private static int _instanceCount;
+    //// private static int _instanceCount;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -542,7 +542,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
 
             using var scope = serviceScopeFactory.CreateScope();
             var dbcontext = scope.ServiceProvider.GetRequiredService<PlanarContext>();
-            Console.WriteLine("SafeSaveMonitorAlert: " + Interlocked.Increment(ref _instanceCount));
+            //// Console.WriteLine("SafeSaveMonitorAlert: " + Interlocked.Increment(ref _instanceCount));
             dbcontext.MonitorAlerts.Add(alert);
             await dbcontext.SaveChangesAsync();
         }
@@ -568,7 +568,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
 
             using var scope = serviceScopeFactory.CreateScope();
             var dbcontext = scope.ServiceProvider.GetRequiredService<PlanarContext>();
-            Console.WriteLine("SafeSaveMonitorAlert: " + Interlocked.Increment(ref _instanceCount));
+            //// Console.WriteLine("SafeSaveMonitorAlert: " + Interlocked.Increment(ref _instanceCount));
             dbcontext.MonitorAlerts.Add(alert);
             await dbcontext.SaveChangesAsync();
         }
