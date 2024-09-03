@@ -55,7 +55,6 @@ namespace Planar
 
         public const string CircuitBreaker = "__CircuitBreaker";
         public const string CircuitBreakerTriggerGroup = "__CircuitBreakerResume";
-        public const string CircuitBreakerJobDataKey = "__CircuitBreakerActiveTriggers";
 
         public const string ManualTriggerId = "Manual";
         public const string LogLevelSettingsKey1 = "Log Level";

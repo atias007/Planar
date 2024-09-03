@@ -8,6 +8,7 @@ using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.Model.DataObjects;
+using Polly;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -51,6 +52,12 @@ namespace Planar.Service.General
         public async Task Stop(CancellationToken cancellationToken = default)
         {
             await _scheduler.Standby(cancellationToken);
+        }
+
+        public async Task<ITrigger?> GetCircuitBreakerTrigger(JobKey jobKey)
+        {
+            var trigger = await _scheduler.GetTrigger(new TriggerKey($"Resume.{jobKey}", Consts.CircuitBreakerTriggerGroup));
+            return trigger;
         }
 
         public void HealthCheck(ILogger? logger = null)

@@ -40,10 +40,11 @@ public class JobCircuitBreakerMetadata
 
     public static JobCircuitBreakerMetadata Parse(string value)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(value);
         var parts = value.Split(',');
         if (parts.Length != 5) { throw new ArgumentException($"Invalid format: {value}"); }
 
-        var result = new JobCircuitBreakerMetadata();
+        var result = new JobCircuitBreakerMetadata { Enabled = true };
         foreach (var part in parts)
         {
             var keyValue = part.Split('.');

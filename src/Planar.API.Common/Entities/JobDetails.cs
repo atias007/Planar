@@ -16,10 +16,12 @@ namespace Planar.API.Common.Entities
 
         public string Properties { get; set; } = string.Empty;
 
-        public SortedDictionary<string, string?> DataMap { get; set; } = new();
+        public SortedDictionary<string, string?> DataMap { get; set; } = [];
 
-        public List<SimpleTriggerDetails> SimpleTriggers { get; set; } = new();
+        public List<SimpleTriggerDetails> SimpleTriggers { get; set; } = [];
 
-        public List<CronTriggerDetails> CronTriggers { get; set; } = new();
+        public List<CronTriggerDetails> CronTriggers { get; set; } = [];
+
+        public JobCircuitBreaker? CircuitBreaker { get; set; }
     }
 }

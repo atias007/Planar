@@ -12,6 +12,7 @@ using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.Reports;
+using Polly;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -1041,6 +1042,20 @@ namespace Planar.Service.API
             target.RequestsRecovery = source.RequestsRecovery;
             target.DataMap = Global.ConvertDataMapToDictionary(dataMap);
             target.Properties = await DataLayer.GetJobProperty(target.Id) ?? string.Empty;
+
+            var cbm = JobHelper.GetJobCircuitBreaker(source);
+            if (cbm == null) { return target; }
+
+            target.CircuitBreaker = Mapper.Map<JobCircuitBreaker>(cbm);
+            var trigger = await SchedulerUtil.GetCircuitBreakerTrigger(source.Key);
+            if (trigger != null)
+            {
+                target.CircuitBreaker.WillBeResetAt = trigger.GetNextFireTimeUtc()?.LocalDateTime;
+                if (trigger.JobDataMap.TryGetDateTimeValueFromString("Created", out var created))
+                {
+                    target.CircuitBreaker.ActivatedAt = created;
+                }
+            }
 
             return target;
         }

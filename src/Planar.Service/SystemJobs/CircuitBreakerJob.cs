@@ -5,7 +5,6 @@ using Planar.Service.Audit;
 using Planar.Service.General;
 using Planar.Service.Monitor;
 using Quartz;
-using Quartz.Util;
 using System;
 using System.Linq;
 using System.Threading;
@@ -36,16 +35,6 @@ internal class CircuitBreakerJob(ILogger<CircuitBreakerJob> logger, IScheduler s
         }
     }
 
-    private static T? Parse<T>(string value) where T : Key<T>
-    {
-        var index = value.IndexOf('.');
-        if (index < 0) { return null; }
-        var group = value[..index];
-        var name = value[(index + 1)..];
-        var result = Activator.CreateInstance(typeof(T), name, group) as T;
-        return result;
-    }
-
     private void AuditJobSafe(JobKey jobKey, string description, object? additionalInfo = null)
     {
         var audit = new AuditMessage
@@ -67,28 +56,32 @@ internal class CircuitBreakerJob(ILogger<CircuitBreakerJob> logger, IScheduler s
 
     private async Task<bool> DoWork(IJobExecutionContext context)
     {
-        var jobKeyText = context.Trigger.JobDataMap.GetString("JobKey");
-        if (string.IsNullOrWhiteSpace(jobKeyText)) { return false; }
-        var jobKey = Parse<JobKey>(jobKeyText);
-        if (jobKey == null) { return false; }
+        // Get destination job key
+        var jobKeyName = context.Trigger.JobDataMap.GetString("JobKey.Name");
+        var jobKeyGroup = context.Trigger.JobDataMap.GetString("JobKey.Group");
+        if (string.IsNullOrWhiteSpace(jobKeyName)) { return false; }
+        if (string.IsNullOrWhiteSpace(jobKeyGroup)) { return false; }
+        var jobKey = new JobKey(jobKeyName, jobKeyGroup);
 
-        var triggerData = context.Trigger.JobDataMap.GetString(Consts.CircuitBreakerJobDataKey);
-        if (string.IsNullOrWhiteSpace(triggerData)) { return false; }
+        // Get destination trigger names
+        var triggerGroup = context.Trigger.JobDataMap.GetString("Trigger.Group");
+        var triggerNamesText = context.Trigger.JobDataMap.GetString("Trigger.Names");
+        if (string.IsNullOrWhiteSpace(triggerGroup)) { return false; }
+        if (string.IsNullOrWhiteSpace(triggerNamesText)) { return false; }
+        var triggerNames = triggerNamesText.Split(',');
+        if (triggerNames.Length == 0) { return false; }
 
-        var keys = triggerData.Split(',');
-        if (keys.Length == 0) { return false; }
-
+        // Get current job triggers
         var triggers = await scheduler.GetTriggersOfJob(jobKey, context.CancellationToken);
         var result = false;
 
-        foreach (var item in keys)
+        // Resume all triggers
+        foreach (var name in triggerNames)
         {
-            var triggerKey = Parse<TriggerKey>(item);
-            if (triggerKey == null) { continue; }
-
-            var trigger = triggers.FirstOrDefault(t => t.Key.Name == triggerKey.Name && t.Key.Group == triggerKey.Group);
+            var trigger = triggers.FirstOrDefault(t => t.Key.Name == name && t.Key.Group == triggerGroup);
             if (trigger == null) { continue; }
 
+            var triggerKey = new TriggerKey(name, triggerGroup);
             var state = await scheduler.GetTriggerState(triggerKey, context.CancellationToken);
             if (TriggerHelper.IsActiveState(state)) { continue; }
 

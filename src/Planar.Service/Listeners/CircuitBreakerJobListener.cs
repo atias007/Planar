@@ -8,7 +8,9 @@ using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
 using Planar.Service.General;
 using Planar.Service.Listeners.Base;
+using Planar.Service.Monitor;
 using Planar.Service.SystemJobs;
+using Polly;
 using Quartz;
 using System;
 using System.Linq;
@@ -63,7 +65,7 @@ internal class CircuitBreakerJobListener(IServiceScopeFactory serviceScopeFactor
                     await QueueResumeJob(context, cb);
                     await PauseJob(context);
                     AuditJobSafe(context.JobDetail.Key, "system paused job due to circuit breaker", new { cb.FailureThreshold, cb.PauseSpan });
-                    SafeScan(MonitorEvents.CircuitBreakerActivated, context);
+                    RaiseAlert(context);
                     cb.Reset();
                 }
 
@@ -74,6 +76,20 @@ internal class CircuitBreakerJobListener(IServiceScopeFactory serviceScopeFactor
         {
             LogCritical(nameof(JobToBeExecuted), ex);
         }
+    }
+
+    public void RaiseAlert(IJobExecutionContext context)
+    {
+        var info = new MonitorSystemInfo
+        (
+               "Circuit breaker was activated for job {{JobGroup}}.{{JobName}} with description {{Description}}"
+        );
+
+        info.MessagesParameters.Add("JobGroup", context.JobDetail.Key.Group);
+        info.MessagesParameters.Add("JobName", context.JobDetail.Key.Name);
+        info.MessagesParameters.Add("Description", context.JobDetail.Description);
+        info.AddMachineName();
+        SafeSystemScan(MonitorEvents.CircuitBreakerActivated, info);
     }
 
     private static void SaveCircuitBreaker(IJobExecutionContext context, JobCircuitBreakerMetadata circuitBreaker)
@@ -123,18 +139,23 @@ internal class CircuitBreakerJobListener(IServiceScopeFactory serviceScopeFactor
 
         var triggers = await context.Scheduler.GetTriggersOfJob(context.JobDetail.Key);
         var triggersStates = triggers.Select(async t => new { t.Key, State = await context.Scheduler.GetTriggerState(t.Key) });
-        var activeTriggers = triggersStates.Where(t => TriggerHelper.IsActiveState(t.Result.State)).Select(t => t.Result.Key.ToString());
-        var activeTriggerValue = string.Join(',', activeTriggers);
+        var activeTriggers = triggersStates.Where(t => TriggerHelper.IsActiveState(t.Result.State)).Select(t => t.Result.Key);
+        if (!activeTriggers.Any()) { return; }
+        var triggerGroup = activeTriggers.First().Group;
+        var triggerNames = activeTriggers.Select(t => t.Name);
 
         var triggerKey = new TriggerKey($"Resume.{context.JobDetail.Key}", Consts.CircuitBreakerTriggerGroup);
         var triggerId = ServiceUtil.GenerateId();
-        var key = context.JobDetail.Key.ToString();
+        var key = context.JobDetail.Key;
         var dueDate = DateTime.Now.Add(cb.PauseSpan.Value);
         var newTrigger = TriggerBuilder.Create()
              .WithIdentity(triggerKey)
              .UsingJobData(Consts.TriggerId, triggerId)
-             .UsingJobData("JobKey", key)
-             .UsingJobData(Consts.CircuitBreakerJobDataKey, activeTriggerValue)
+             .UsingJobData("JobKey.Name", key.Name)
+             .UsingJobData("JobKey.Group", key.Group)
+             .UsingJobData("Trigger.Group", triggerGroup)
+             .UsingJobData("Trigger.Names", string.Join(',', triggerNames))
+             .UsingJobData("Created", DateTime.Now.ToString())
              .StartAt(dueDate)
              .WithSimpleSchedule(b =>
              {
