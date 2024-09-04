@@ -747,7 +747,7 @@ namespace Planar.Service.API
             // Create Job (JobType+Concurrent, JobGroup, JobName, Description, Durable)
             var job = BuildJobDetails(request, jobKey);
 
-            // Add Author, RetentionDays
+            // Add: Author, CircuitBreaker, RetentionDays
             AddAuthor(request, job);
             AddCircuitBreaker(request, job);
             AddLogRetentionDays(request, job);

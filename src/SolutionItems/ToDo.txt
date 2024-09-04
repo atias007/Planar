@@ -2,6 +2,9 @@
 
 PLAN FOR V 1.7.7
 ----------------
+- Show running with filter of group
+- Add service for cli called WaitFor with Server Send Events (wait running for end) - filter by group or id
+
 - validate on startup that instance id not exists in nodes table
 - Security report
 - check option to odata search (https://devblogs.microsoft.com/odata/compute-and-search-in-asp-net-core-odata-8/)

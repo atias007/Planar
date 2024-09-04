@@ -252,14 +252,13 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     }
 
     [Action("get")]
-    [Action("inspect")]
-    public static async Task<CliActionResponse> GetJobDetails(CliJobKey jobKey, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> GetJobDetails(GetJobDetailsRequest request, CancellationToken cancellationToken = default)
     {
         var restRequest = new RestRequest("job/{id}", Method.Get)
-            .AddParameter("id", jobKey.Id, ParameterType.UrlSegment);
+            .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
         var result = await RestProxy.Invoke<JobDetails>(restRequest, cancellationToken);
-        var tables = CliTableExtensions.GetTable(result.Data);
+        var tables = CliTableExtensions.GetTable(result.Data, request.CircuitBreaker);
         return new CliActionResponse(result, tables);
     }
 

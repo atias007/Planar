@@ -478,6 +478,27 @@ namespace Planar.CLI
             return table;
         }
 
+        public static CliTable GetTable(JobCircuitBreaker? circuitBreaker)
+        {
+            var table = new CliTable();
+            table.Table.AddColumns("Circuit Breaker", string.Empty);
+            if (circuitBreaker == null) { return table; }
+
+            table.Table.AddRow(nameof(circuitBreaker.FailureThreshold).SplitWords(), CliTableFormat.FormatNumber(circuitBreaker.FailureThreshold));
+            table.Table.AddRow(nameof(circuitBreaker.FailCounter).SplitWords(), CliTableFormat.FormatNumber(circuitBreaker.FailCounter));
+            table.Table.AddRow(nameof(circuitBreaker.SuccessThreshold).SplitWords(), CliTableFormat.FormatNumber(circuitBreaker.SuccessThreshold));
+            table.Table.AddRow(nameof(circuitBreaker.SuccessCounter).SplitWords(), CliTableFormat.FormatNumber(circuitBreaker.SuccessCounter));
+            table.Table.AddRow(nameof(circuitBreaker.PauseSpan).SplitWords(), CliTableFormat.FormatTimeSpan(circuitBreaker.PauseSpan));
+
+            var activated = circuitBreaker.Activated ? $"[{CliFormat.ErrorColor}]Yes[/]" : $"[{CliFormat.OkColor}]No[/]";
+            table.Table.AddRow(nameof(circuitBreaker.Activated), activated);
+
+            table.Table.AddRow(nameof(circuitBreaker.ActivatedAt).SplitWords(), CliTableFormat.FormatDateTime(circuitBreaker.ActivatedAt));
+            table.Table.AddRow(nameof(circuitBreaker.WillBeResetAt).SplitWords(), CliTableFormat.FormatDateTime(circuitBreaker.WillBeResetAt));
+
+            return table;
+        }
+
         public static CliTable GetTable(TriggerRowDetails? response)
         {
             var table = new CliTable(showCount: true, entityName: "trigger");
@@ -501,7 +522,17 @@ namespace Planar.CLI
             return table;
         }
 
-        public static List<CliTable> GetTable(JobDetails? response)
+        private static string GetCircuitBreakerStatusLabel(JobDetails response)
+        {
+            if (response.CircuitBreaker == null)
+            {
+                return "Disabled";
+            }
+
+            return response.CircuitBreaker.Activated ? $"[{CliFormat.ErrorColor}]Activated[/]" : "Enabled";
+        }
+
+        public static List<CliTable> GetTable(JobDetails? response, bool circuitBreaker = false)
         {
             var table = new CliTable();
 
@@ -521,6 +552,7 @@ namespace Planar.CLI
             table.Table.AddRow(nameof(response.Durable), response.Durable.ToString());
             table.Table.AddRow(nameof(response.RequestsRecovery).SplitWords(), response.RequestsRecovery.ToString());
             table.Table.AddRow(nameof(response.Concurrent), response.Concurrent.ToString());
+            table.Table.AddRow(nameof(response.CircuitBreaker).SplitWords(), GetCircuitBreakerStatusLabel(response));
             table.Table.AddRow(nameof(response.Active), CliTableFormat.FormatActive(response.Active));
 
             var dataMap = SerializeJobDetailsData(response);
@@ -535,6 +567,12 @@ namespace Planar.CLI
             };
 
             var table2 = GetTable(response2);
+
+            if (circuitBreaker && response.CircuitBreaker != null)
+            {
+                var tableCb = GetTable(response.CircuitBreaker);
+                return [table, tableCb, table2];
+            }
 
             return [table, table2];
         }
