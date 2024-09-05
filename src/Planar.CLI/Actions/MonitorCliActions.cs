@@ -395,7 +395,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             }
             else
             {
-                request.JobId = await JobCliActions.ChooseJob(null, cancellationToken);
+                request.JobId = await JobCliActions.ChooseJob(null, false, cancellationToken);
                 AnsiConsole.MarkupLine($"[turquoise2]  > job id :[/] {request.JobId}");
             }
         }
@@ -527,7 +527,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
         return selectedHook ?? string.Empty;
     }
 
-    private static AddMonitorJobData GetJob(IEnumerable<JobBasicDetails> jobs, string eventName)
+    private static AddMonitorJobData GetJob(List<JobBasicDetails> jobs, string eventName)
     {
         if (MonitorEventsExtensions.IsSystemMonitorEvent(eventName))
         {
@@ -555,7 +555,7 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             return new AddMonitorJobData { JobGroup = group };
         }
 
-        var job = JobCliActions.ChooseJob(jobs);
+        var job = JobCliActions.ChooseJob(jobs, false);
         AnsiConsole.MarkupLine($"[turquoise2]  > monitor for:[/] single job '{job}'");
         var key = JobKey.Parse(job);
         return new AddMonitorJobData { JobName = key.Name, JobGroup = key.Group };

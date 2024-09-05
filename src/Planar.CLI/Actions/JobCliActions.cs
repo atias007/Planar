@@ -96,7 +96,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     }
 
     [IgnoreHelp]
-    public static async Task<string> ChooseJob(string? filter, CancellationToken cancellationToken)
+    public static async Task<string> ChooseJob(string? filter, bool groupMenu, CancellationToken cancellationToken)
     {
         var restRequest = new RestRequest("job", Method.Get);
         var p = AllJobsMembers.AllUserJobs;
@@ -116,15 +116,15 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         }
 
         var filterData = FilterJobs(result.Data?.Data, filter);
-        return ChooseJob(filterData);
+        return ChooseJob(filterData, groupMenu);
     }
 
     [IgnoreHelp]
-    public static string ChooseJob(IEnumerable<JobBasicDetails>? data)
+    public static string ChooseJob(List<JobBasicDetails>? data, bool groupMenu)
     {
         if (data == null) { return string.Empty; }
 
-        if (data.Count() <= 20)
+        if (data.Count <= 1000 && !groupMenu)
         {
             return ShowJobsMenu(data);
         }
@@ -136,7 +136,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     [IgnoreHelp]
     public static async Task<string> ChooseTrigger(string? filter, CancellationToken cancellationToken = default)
     {
-        var jobId = await ChooseJob(filter, cancellationToken);
+        var jobId = await ChooseJob(filter, false, cancellationToken);
         var restRequest = new RestRequest("trigger/{jobId}/by-job", Method.Get);
         restRequest.AddUrlSegment("jobId", jobId);
         var result = await RestProxy.Invoke<TriggerRowDetails>(restRequest, cancellationToken);
@@ -252,14 +252,31 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     }
 
     [Action("get")]
-    public static async Task<CliActionResponse> GetJobDetails(GetJobDetailsRequest request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> GetJobDetails(CliJobKey request, CancellationToken cancellationToken = default)
     {
         var restRequest = new RestRequest("job/{id}", Method.Get)
             .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
         var result = await RestProxy.Invoke<JobDetails>(restRequest, cancellationToken);
-        var tables = CliTableExtensions.GetTable(result.Data, request.CircuitBreaker);
+        var tables = CliTableExtensions.GetTable(result.Data);
         return new CliActionResponse(result, tables);
+    }
+
+    [Action("cb")]
+    [Action("circuit-breaker")]
+    public static async Task<CliActionResponse> GetCircuitBreaker(CliJobKey request, CancellationToken cancellationToken = default)
+    {
+        var restRequest = new RestRequest("job/{id}", Method.Get)
+            .AddParameter("id", request.Id, ParameterType.UrlSegment);
+
+        var result = await RestProxy.Invoke<JobDetails>(restRequest, cancellationToken);
+        if (result.Data?.CircuitBreaker == null)
+        {
+            throw new CliWarningException($"circuit breaker is disabled for job {request.Id}");
+        }
+
+        var table = CliTableExtensions.GetTable(result.Data?.CircuitBreaker);
+        return new CliActionResponse(result, table);
     }
 
     [Action("jobfile")]
@@ -557,7 +574,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     {
         request ??= new CliSetAuthorOfJob
         {
-            Id = await ChooseJob(null, cancellationToken)
+            Id = await ChooseJob(null, false, cancellationToken)
         };
 
         FillRequiredString(request, nameof(request.Author));
