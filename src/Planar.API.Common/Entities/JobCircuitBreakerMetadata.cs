@@ -47,41 +47,46 @@ public class JobCircuitBreakerMetadata
         var result = new JobCircuitBreakerMetadata { Enabled = true };
         foreach (var part in parts)
         {
-            var keyValue = part.Split('.');
-            if (keyValue.Length != 2) { throw new ArgumentException($"Invalid format: {value}"); }
-            switch (keyValue[0].Trim())
-            {
-                case "FC":
-                    if (!int.TryParse(keyValue[1], out var failCounter)) { throw new ArgumentException($"Invalid format: {value}. Invalid FailCounter"); }
-                    result.FailCounter = failCounter;
-                    break;
-
-                case "SC":
-                    if (!int.TryParse(keyValue[1], out var successCounter)) { throw new ArgumentException($"Invalid format: {value}. Invalid SuccessCounter"); }
-                    result.SuccessCounter = successCounter;
-                    break;
-
-                case "FT":
-                    if (!int.TryParse(keyValue[1], out var failureThreshold)) { throw new ArgumentException($"Invalid format: {value}. Invalid FailureThreshold"); }
-                    result.FailureThreshold = failureThreshold;
-                    break;
-
-                case "ST":
-                    if (!int.TryParse(keyValue[1], out var successThreshold)) { throw new ArgumentException($"Invalid format: {value}. Invalid SuccessThreshold"); }
-                    result.SuccessThreshold = successThreshold;
-                    break;
-
-                case "PS":
-                    if (keyValue[1] == NullValue) { break; }
-                    if (!TimeSpan.TryParse(keyValue[1], CultureInfo.InvariantCulture, out var pauseSpan)) { throw new ArgumentException($"Invalid format: {value}. Invalid PauseSpan"); }
-                    result.PauseSpan = pauseSpan;
-                    break;
-
-                default:
-                    throw new ArgumentException($"Invalid format: {value}");
-            }
+            FillResultPart(part, result, value);
         }
 
         return result;
+    }
+
+    private static void FillResultPart(string part, JobCircuitBreakerMetadata result, string sourceValue)
+    {
+        var keyValue = part.Split('.');
+        if (keyValue.Length != 2) { throw new ArgumentException($"Invalid format: {sourceValue}"); }
+        switch (keyValue[0].Trim())
+        {
+            case "FC":
+                if (!int.TryParse(keyValue[1], out var failCounter)) { throw new ArgumentException($"Invalid format: {sourceValue}. Invalid FailCounter"); }
+                result.FailCounter = failCounter;
+                break;
+
+            case "SC":
+                if (!int.TryParse(keyValue[1], out var successCounter)) { throw new ArgumentException($"Invalid format: {sourceValue}. Invalid SuccessCounter"); }
+                result.SuccessCounter = successCounter;
+                break;
+
+            case "FT":
+                if (!int.TryParse(keyValue[1], out var failureThreshold)) { throw new ArgumentException($"Invalid format: {sourceValue}. Invalid FailureThreshold"); }
+                result.FailureThreshold = failureThreshold;
+                break;
+
+            case "ST":
+                if (!int.TryParse(keyValue[1], out var successThreshold)) { throw new ArgumentException($"Invalid format: {sourceValue}. Invalid SuccessThreshold"); }
+                result.SuccessThreshold = successThreshold;
+                break;
+
+            case "PS":
+                if (keyValue[1] == NullValue) { break; }
+                if (!TimeSpan.TryParse(keyValue[1], CultureInfo.InvariantCulture, out var pauseSpan)) { throw new ArgumentException($"Invalid format: {sourceValue}. Invalid PauseSpan"); }
+                result.PauseSpan = pauseSpan;
+                break;
+
+            default:
+                throw new ArgumentException($"Invalid format: {sourceValue}");
+        }
     }
 }
