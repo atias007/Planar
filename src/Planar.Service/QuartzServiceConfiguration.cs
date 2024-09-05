@@ -44,6 +44,7 @@ public static class QuartzServiceConfiguration
             // convert time zones using converter that can handle Windows/Linux differences
             q.UseTimeZoneConverter();
             q.AddJobListener<LogJobListener>();
+            q.AddJobListener<CircuitBreakerJobListener>();
             q.AddTriggerListener<RetryTriggerListener>();
             q.AddSchedulerListener<SchedulerListener>();
 

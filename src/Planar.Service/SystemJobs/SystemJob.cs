@@ -2,6 +2,7 @@
 using Planar.Service.General;
 using Quartz;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -47,8 +48,21 @@ public abstract class SystemJob
         return jobKey;
     }
 
-    protected static async Task<JobKey> Schedule<T>(IScheduler scheduler, string description, TimeSpan span, DateTime? startDate = null, CancellationToken stoppingToken = default)
+    protected static async Task<JobKey> Schedule<T>(IScheduler scheduler, string description, CancellationToken stoppingToken = default)
                         where T : IJob
+    {
+        var jobKey = CreateJobKey<T>();
+        var job = await scheduler.GetJobDetail(jobKey, stoppingToken);
+        if (job != null) { return jobKey; }
+        job = CreateJob<T>(jobKey, description);
+        var triggers = new List<ITrigger>();
+        await scheduler.ScheduleJob(job, triggers, true, stoppingToken);
+
+        return jobKey;
+    }
+
+    protected static async Task<JobKey> Schedule<T>(IScheduler scheduler, string description, TimeSpan span, DateTime? startDate = null, CancellationToken stoppingToken = default)
+                    where T : IJob
     {
         var jobKey = CreateJobKey<T>();
         var job = await scheduler.GetJobDetail(jobKey, stoppingToken);

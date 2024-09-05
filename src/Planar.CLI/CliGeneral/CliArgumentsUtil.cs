@@ -312,8 +312,11 @@ namespace Planar.CLI
         {
             if (metadata.JobKey && arg.Value.HasValue() && arg.Value.StartsWith('?'))
             {
-                var filter = arg.Value.Length == 1 ? null : arg.Value[1..].Trim();
-                var jobId = await JobCliActions.ChooseJob(filter, cancellationToken);
+                var value = arg.Value;
+                var withGroup = value.StartsWith("??");
+                value = withGroup ? value[2..] : value[1..];
+                var filter = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+                var jobId = await JobCliActions.ChooseJob(filter, withGroup, cancellationToken);
                 arg.Value = jobId;
                 if (arg.Key == "?")
                 {

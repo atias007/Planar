@@ -59,11 +59,23 @@ public class JobData(PlanarContext context) : BaseDataLayer(context), IJobProper
         await _context.JobAudits.Where(j => j.JobId == jobId).ExecuteDeleteAsync();
     }
 
-    public IQueryable<JobAudit> GetJobAudits(string id)
+    public async Task<int?> GetJobFirstAudit(string id)
+    {
+        var result = await _context.JobAudits
+            .AsNoTracking()
+            .Where(a => a.JobId == id)
+            .Select(a => a.Id)
+            .OrderBy(a => a)
+            .FirstOrDefaultAsync();
+
+        return result;
+    }
+
+    public IQueryable<JobAudit> GetJobAudits(string id, int firstId)
     {
         return _context.JobAudits
             .AsNoTracking()
-            .Where(a => a.JobId == id || a.JobId == string.Empty)
+            .Where(a => a.JobId == id || (a.JobId == string.Empty && a.Id >= firstId))
             .Where(a => !a.JobKey.StartsWith(Consts.PlanarSystemGroup))
             .OrderByDescending(a => a.DateCreated)
             .ThenByDescending(a => a.Id);

@@ -6,13 +6,11 @@ using Planar.Service.Data;
 using Planar.Service.Exceptions;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
-using Quartz;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Planar.Service.API;
 
@@ -82,7 +80,7 @@ public partial class JobDomain
         }
     }
 
-    private static async Task UpdateJobData(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
+    private static void UpdateJobData(SetJobDynamicRequest request, UpdateJobOptions options, JobUpdateMetadata metadata)
     {
         if (options.UpdateJobData)
         {
@@ -103,19 +101,14 @@ public partial class JobDomain
         {
             throw new RestValidationException("job data", $"job data items exceeded maximum limit of {Consts.MaximumJobDataItems}");
         }
-
-        await Task.CompletedTask;
     }
 
-    private static async Task UpdateJobExtendedProperties(SetJobDynamicRequest request, JobUpdateMetadata metadata)
+    private static void UpdateJobExtendedProperties(SetJobDynamicRequest request, JobUpdateMetadata metadata)
     {
-        metadata.JobDetails.JobDataMap.Put(Consts.Author, request.Author);
-        if (request.LogRetentionDays.HasValue)
-        {
-            metadata.JobDetails.JobDataMap.Put(Consts.LogRetentionDays, request.LogRetentionDays.Value.ToString());
-        }
-
-        await Task.CompletedTask;
+        // Add: Author, CircuitBreaker, RetentionDays
+        AddAuthor(request, metadata.JobDetails);
+        AddCircuitBreaker(request, metadata.JobDetails);
+        AddLogRetentionDays(request, metadata.JobDetails);
     }
 
     private static void ValidateUpdateJobOptions(UpdateJobOptions options)
@@ -185,10 +178,10 @@ public partial class JobDomain
         await UpdateJobDetails(request, metadata);
 
         // Sync Job Data
-        await UpdateJobData(request, options, metadata);
+        UpdateJobData(request, options, metadata);
 
         // Update the author
-        await UpdateJobExtendedProperties(request, metadata);
+        UpdateJobExtendedProperties(request, metadata);
 
         // Update Triggers
         await UpdateTriggers(request, metadata);

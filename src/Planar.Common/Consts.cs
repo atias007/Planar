@@ -24,6 +24,7 @@ namespace Planar
             TriggerTimeout,
             NowOverrideValue,
             Author,
+            CircuitBreaker,
             LogRetentionDays
         };
 
@@ -51,6 +52,9 @@ namespace Planar
         public const string TriggerId = "__Trigger_Id";
         public const string TriggerTimeout = "__Trigger_Timeout";
         public const string NowOverrideValue = "__Now_Override_Value";
+
+        public const string CircuitBreaker = "__CircuitBreaker";
+        public const string CircuitBreakerTriggerGroup = "__CircuitBreakerResume";
 
         public const string ManualTriggerId = "Manual";
         public const string LogLevelSettingsKey1 = "Log Level";

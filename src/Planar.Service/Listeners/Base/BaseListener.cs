@@ -50,7 +50,7 @@ public abstract class BaseListener<T>
         catch (Exception ex)
         {
             var source = nameof(SafeScan);
-            _logger.LogCritical(ex, "Error handle {Source}: {Message} ", source, ex.Message);
+            _logger.LogCritical(ex, "Error handle {Source}: {Message}", source, ex.Message);
         }
     }
 

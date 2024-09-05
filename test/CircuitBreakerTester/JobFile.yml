@@ -1,0 +1,21 @@
+﻿job type: PlanarJob                   # Fixed! don't change it
+name: CircuitBreakerTester                   # Name of job [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+group: CircuitBreaker             # Group of job [only alphanumeric, dashes & underscore, 1 to 50 characters]
+author: israel israeli (sales)        # The author/responsible person of the job [up to 100 characters]
+description: Circuit Breaker Tester    # Description of job [only alphanumeric, dashes & underscore, up to 200 characters]
+durable: true                         # Boolean [true/false]. The nondurable job will be deleted from the system if there are no future triggers are defined
+concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
+log retention days: 30              # How many days the running logs will retain. [1 to 1000, null for system default]
+
+properties:                           # Job Properties
+  filename: CircuitBreakerTester.exe            # Name of assembly file [mandatory, up to 500 characters]
+
+circuit breaker:
+  enabled: true                       # Boolean [true/false]. Enable/Disable the circuit breaker
+  failure threshold: 5                # The number of failures that will trip the circuit breaker [2 to 100]
+  success threshold: 1                # The number of successes that will reset the circuit breaker [1 to 100]
+  pause span: 00:05:00                # The time span which the circuit breaker will pause the job execution. set null value for permanent pause. minimum value is 5 minutes
+
+simple triggers:                      # List of simple triggers
+  - name: every-halfminute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+    interval: 00:00:30                # Interval in [days.]hours:minutes:seconds format

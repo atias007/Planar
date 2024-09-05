@@ -112,8 +112,6 @@ namespace Planar.Job
                 var task = ExecuteJob(_context);
                 await Task.WhenAll(task);
                 _timer?.Stop();
-                var mapperBack = new JobBackMapper(_logger, _baseJobFactory);
-                mapperBack.MapJobInstancePropertiesBack(_context, this);
             }
             catch (Exception ex)
             {
@@ -121,6 +119,12 @@ namespace Planar.Job
             }
             finally
             {
+                SafeHandle(() =>
+                {
+                    var mapperBack = new JobBackMapper(_logger, _baseJobFactory);
+                    mapperBack.MapJobInstancePropertiesBack(_context, this);
+                });
+
                 SafeHandle(() => _timer?.Dispose());
                 SafeHandle(() => MqttClient.Connected -= MqttClient_Connected);
                 await SafeHandleAsync(() => MqttClient.StopAsync());

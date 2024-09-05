@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 
 namespace Planar.API.Common.Entities
@@ -31,5 +32,8 @@ namespace Planar.API.Common.Entities
 
         [YamlMember(Alias = "cron triggers")]
         public List<JobCronTriggerMetadata> CronTriggers { get; set; } = [];
+
+        [YamlMember(Alias = "circuit breaker")]
+        public JobCircuitBreakerMetadata CircuitBreaker { get; set; } = new();
     }
 }

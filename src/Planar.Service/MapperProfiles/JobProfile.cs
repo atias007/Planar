@@ -10,5 +10,6 @@ internal class JobProfile : Profile
     {
         CreateMap<JobAudit, JobAuditWithInfoDto>();
         CreateMap<JobAudit, JobAuditDto>();
+        CreateMap<JobCircuitBreakerMetadata, JobCircuitBreaker>();
     }
 }
