@@ -427,7 +427,15 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
         return Ok(result);
     }
 
-    //// ------------- new code -------------
+    [HttpGet("wait")]
+    [ViewerAuthorize]
+    [SwaggerOperation(OperationId = "get_job_wait_for", Description = "Wait for jobs to finish running", Summary = "Wait For Jobs To Finish Running")]
+    [OkTextResponse]
+    [BadRequestResponse]
+    public async Task Wait([FromQuery] JobWaitRequest request, CancellationToken cancellationToken)
+    {
+        await BusinesLayer.Wait(request, cancellationToken);
+    }
 
     [HttpPatch("author")]
     [EditorAuthorize]
