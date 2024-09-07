@@ -57,7 +57,7 @@
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
-		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.6.1152" />
+		<PackageReference Include="MQTTnet.Extensions.ManagedClient" Version="4.3.7.1207" />
 		<PackageReference Include="System.Text.Json" Version="8.0.4" />
 		<PackageReference Include="YamlDotNet" Version="16.1.0" />
 	</ItemGroup>
