@@ -3,7 +3,7 @@ using Planar.API.Common.Entities;
 
 namespace Planar.Service.Validation;
 
-internal class JobWaitRequestValidator : AbstractValidator<JobWaitRequest>
+public class JobWaitRequestValidator : AbstractValidator<JobWaitRequest>
 {
     public JobWaitRequestValidator()
     {
@@ -12,12 +12,12 @@ internal class JobWaitRequestValidator : AbstractValidator<JobWaitRequest>
 
         RuleFor(x => x.Id)
             .Empty()
-            .When(x => string.IsNullOrWhiteSpace(x.Group))
-            .WithMessage("{PropertyName} must be empty when 'JobGroup' has value");
+            .When(x => !string.IsNullOrWhiteSpace(x.Group))
+            .WithMessage("{PropertyName} must be empty when 'Group' has value");
 
         RuleFor(x => x.Group)
             .Empty()
-            .When(x => string.IsNullOrWhiteSpace(x.Id))
-            .WithMessage("{PropertyName} must be empty when 'JobId' has value");
+            .When(x => !string.IsNullOrWhiteSpace(x.Id))
+            .WithMessage("{PropertyName} must be empty when 'Id' has value");
     }
 }

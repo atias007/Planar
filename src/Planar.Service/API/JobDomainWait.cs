@@ -48,9 +48,17 @@ public partial class JobDomain
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(maxWaitTime);
         var key = string.Empty;
+        bool first = true;
         while (!cts.IsCancellationRequested)
         {
             var items = await GetRunningInner(request);
+            if(first && items.Count == 0)
+            {
+                await Task.Delay(2000, cancellationToken);
+                items = await GetRunningInner(request);
+            }
+
+            first = false;
             if (items.Count == 0) { return; }
             var newKey = GetRunningHashKey(items);
             if (key == newKey) { continue; }
@@ -104,8 +112,12 @@ public partial class JobDomain
         await context.Response.Body.FlushAsync(cancellationToken);
     }
 
-    private static string GetRunningHashKey(IEnumerable<RunningJobDetails> items) =>
-        string.Join(',', items.Select(x => $"{x.Id}_{x.EstimatedEndTime:hh\\:mm\\:ss}"));
+    private static string GetRunningHashKey(IEnumerable<RunningJobDetails> items)
+    {
+        var est = GetEstimatedEndTime(items);
+        var cnt = items.Count();
+        return $"{cnt}_{est:hh\\:mm\\:ss}";
+    }
 
     private static TimeSpan? GetEstimatedEndTime(IEnumerable<RunningJobDetails> items)
     {

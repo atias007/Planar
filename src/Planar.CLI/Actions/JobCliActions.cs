@@ -10,8 +10,10 @@ using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -584,6 +586,58 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         return new CliActionResponse(result);
+    }
+
+    [Action("wait")]
+    public static async Task<CliActionResponse> Wait(CancellationToken cancellationToken = default)
+    {
+        using var client = new HttpClient();
+        var builder = new UriBuilder(RestProxy.BaseUri)
+        {
+            Path = "job/wait",
+            //Query = "id=vvhh6655rre1&group=Legacy"
+        };
+        var uri = builder.Uri;
+
+        client.Timeout = TimeSpan.FromMilliseconds(Timeout.Infinite);
+        var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            var restResponse = await CliActionResponse.Convert(response);
+            return new CliActionResponse(restResponse);
+        }
+
+        using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var reader = new StreamReader(body);
+        ServerSendEvent<WaitEventData> data = new();
+
+        var table = new Table().Border(TableBorder.Rounded).HideHeaders();
+        table.AddColumns("Caption", "Value");
+        table.AddRow("Estimated End Time", string.Empty);
+        table.AddRow("Running Instances", string.Empty);
+
+        await AnsiConsole.Live(table)
+            .AutoClear(true)
+            .StartAsync(async context =>
+            {
+                await Task.Yield();
+                while (!reader.EndOfStream)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var value = reader.ReadLine();
+                    if (string.IsNullOrWhiteSpace(value)) { continue; }
+                    if (data.Parse(value))
+                    {
+                        table.UpdateCell(0, 1, CliTableFormat.FormatTimeSpan(data.Data?.EstimatedEndTime));
+                        table.UpdateCell(1, 1, CliTableFormat.FormatNumber(data.Data?.TotalRunningInstances));
+                        context.Refresh();
+                        data = new();
+                    }
+                }
+            });
+
+        return CliActionResponse.Empty;
     }
 
     [Action("test")]
