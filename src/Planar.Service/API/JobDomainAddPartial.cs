@@ -508,20 +508,18 @@ public partial class JobDomain
 
         #region circuit breaker
 
-        ValidateRangeValue(metadata.CircuitBreaker.FailureThreshold, 2, 100, "failure threshold", "circuit breaker");
-        ValidateRangeValue(metadata.CircuitBreaker.SuccessThreshold, 1, 100, "success threshold", "circuit breaker");
-        if (metadata.CircuitBreaker.PauseSpan.HasValue && metadata.CircuitBreaker.PauseSpan.Value.TotalMinutes < 5)
+        if (metadata.CircuitBreaker.Enabled)
         {
-            throw new RestValidationException(
-                nameof(metadata.CircuitBreaker.PauseSpan).ToLower(),
-                $"circuit breaker pause span value is invalid. minimum value is 5 minutes");
-        }
+            ValidateRangeValue(metadata.CircuitBreaker.FailureThreshold, 2, 100, "failure threshold", "circuit breaker");
+            ValidateRangeValue(metadata.CircuitBreaker.SuccessThreshold, 1, 100, "success threshold", "circuit breaker");
+            ValidateMinMinutes(metadata.CircuitBreaker.PauseSpan, 5, "span value", "circuit breaker");
 
-        if (metadata.CircuitBreaker.SuccessThreshold >= metadata.CircuitBreaker.FailureThreshold)
-        {
-            throw new RestValidationException(
-                nameof(metadata.CircuitBreaker.SuccessThreshold).ToLower(),
-                $"circuit breaker success threshold value is invalid. success threshold must be less than failure threshold");
+            if (metadata.CircuitBreaker.SuccessThreshold >= metadata.CircuitBreaker.FailureThreshold)
+            {
+                throw new RestValidationException(
+                    nameof(metadata.CircuitBreaker.SuccessThreshold).ToLower(),
+                    $"circuit breaker success threshold value is invalid. success threshold must be less than failure threshold");
+            }
         }
 
         #endregion circuit breaker

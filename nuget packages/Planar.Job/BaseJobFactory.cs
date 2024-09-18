@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -67,6 +66,8 @@ namespace Planar.Job
 
         public async Task AddAggregateExceptionAsync(Exception ex, int maxItems = 25)
         {
+            if (ex == null) { return; }
+
             await _semaphoreSlim.WaitAsync();
             try
             {
@@ -107,8 +108,8 @@ namespace Planar.Job
                 }
 
                 ////var seperator = string.Empty.PadLeft(80, '-');
-                var sb = new StringBuilder();
-                sb.AppendLine($"There is {_exceptions.Count} aggregate exception");
+                ////var sb = new StringBuilder();
+                ////sb.AppendLine($"There is {_exceptions.Count} aggregate exception");
                 ////_exceptions.ForEach(e => sb.AppendLine($"  - {e.Message}"));
                 ////sb.AppendLine(seperator);
                 ////_exceptions.ForEach(e =>
@@ -117,7 +118,7 @@ namespace Planar.Job
                 ////    sb.AppendLine(seperator);
                 ////});
 
-                throw new PlanarJobAggragateException(sb.ToString(), _exceptions);
+                throw new PlanarJobAggragateException($"There is {_exceptions.Count} aggregate exception", _exceptions);
             }
         }
 

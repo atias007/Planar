@@ -8,6 +8,14 @@ public abstract class BaseDefault
     {
     }
 
+    protected BaseDefault(BaseDefault baseDefault)
+    {
+        RetryCount = baseDefault.RetryCount;
+        RetryInterval = baseDefault.RetryInterval;
+        MaximumFailsInRow = baseDefault.MaximumFailsInRow;
+        Span = baseDefault.Span;
+    }
+
     protected BaseDefault(IConfigurationSection section, BaseDefault baseDefault)
     {
         RetryCount = section.GetValue<int?>("retry count") ?? baseDefault.RetryCount;

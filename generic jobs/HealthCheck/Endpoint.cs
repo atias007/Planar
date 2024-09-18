@@ -5,6 +5,17 @@ namespace HealthCheck;
 
 internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement
 {
+    public Endpoint(Endpoint source) : base(source)
+    {
+        Name = source.Name;
+        Url = source.Url;
+        SuccessStatusCodes = source.SuccessStatusCodes;
+        Timeout = source.Timeout;
+        Port = source.Port;
+        Active = source.Active;
+        AbsoluteUrl = source.AbsoluteUrl;
+    }
+
     public Endpoint(IConfigurationSection section, Defaults defaults) : base(section, defaults)
     {
         Name = section.GetValue<string?>("name") ?? string.Empty;
@@ -14,26 +25,6 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement
         Port = section.GetValue<int?>("port");
         Active = section.GetValue<bool?>("active") ?? true;
         AbsoluteUrl = SetAbsoluteUrl(Url);
-    }
-
-    private Endpoint(Endpoint endpoint)
-    {
-        Name = endpoint.Name;
-        Url = endpoint.Url;
-        SuccessStatusCodes = endpoint.SuccessStatusCodes;
-        Timeout = endpoint.Timeout;
-        Port = endpoint.Port;
-        Active = endpoint.Active;
-        AbsoluteUrl = endpoint.AbsoluteUrl;
-        RetryCount = endpoint.RetryCount;
-        RetryInterval = endpoint.RetryInterval;
-        MaximumFailsInRow = endpoint.MaximumFailsInRow;
-        Span = endpoint.Span;
-    }
-
-    public Endpoint Clone()
-    {
-        return new(this);
     }
 
     public string Name { get; }

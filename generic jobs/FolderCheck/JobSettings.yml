@@ -8,12 +8,15 @@ defaults:                                       # default values for all folders
   retry interval: 00:00:10                      # the interval between retry attemps
   maximum fails in row: 5                       # the maximum number of fails in row before the job is considered as failed
 
-#hosts:                                         # the hosts to be used in folders with relative path. usualy this section defined in specific environment job settings
-#  - localhost
-#  - 127.0.0.1
+#hosts:
+#  - group name: default
+#    hosts:
+#      - \\localhost\d$
+#      - \\127.0.0.1\c$
  
 folders:
   - name: Customer X vault                      # the display name of the folder. required
+    host group name: default                    # when using relative folder path, host group name must be supplied to a valid group name in hosts section
     path: \vaults\CustomerX                     # the path of the folder. relative or absolute path. required
     files pattern: "*.txt,*.dll"                # the pattern of the files to be monitored. this value is optional
     include subdirectories: true                # a flag to indicate if the subdirectories should be included in the monitoring or not. the defualt is false

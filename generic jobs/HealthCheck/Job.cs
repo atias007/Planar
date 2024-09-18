@@ -47,8 +47,11 @@ internal sealed partial class Job : BaseCheckJob
             {
                 foreach (var host in hosts)
                 {
-                    var clone = rel.Clone();
-                    clone.Host = host;
+                    var clone = new Endpoint(rel)
+                    {
+                        Host = host
+                    };
+
                     result.Add(clone);
                 }
             }

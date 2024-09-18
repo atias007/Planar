@@ -589,19 +589,14 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     }
 
     [Action("wait")]
-    public static async Task<CliActionResponse> Wait(CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> Wait(CliJobWaitRequest request, CancellationToken cancellationToken = default)
     {
         using var client = new HttpClient();
-        var builder = new UriBuilder(RestProxy.BaseUri)
-        {
-            Path = "job/wait",
-            //Query = "id=vvhh6655rre1&group=Legacy"
-        };
-        var uri = builder.Uri;
+        var uri = request.GetQueryParam("job/wait");
 
         client.Timeout = TimeSpan.FromMilliseconds(Timeout.Infinite);
-        var request = new HttpRequestMessage(HttpMethod.Get, uri);
-        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        var httpRequest = new HttpRequestMessage(HttpMethod.Get, uri);
+        using var response = await client.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
             var restResponse = await CliActionResponse.Convert(response);

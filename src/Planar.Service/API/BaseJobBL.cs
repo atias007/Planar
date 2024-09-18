@@ -277,6 +277,22 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         }
     }
 
+    protected static void ValidateMaxMinutes(TimeSpan? timeSpan, int to, string name, string parent)
+    {
+        if (timeSpan != null && timeSpan.Value.TotalMinutes > to)
+        {
+            throw new RestValidationException(name, $"{parent} {name} value is invalid. maximum value is {to} minutes".Trim());
+        }
+    }
+
+    protected static void ValidateMinMinutes(TimeSpan? timeSpan, int from, string name, string parent)
+    {
+        if (timeSpan != null && timeSpan.Value.TotalMinutes < from)
+        {
+            throw new RestValidationException(name, $"{parent} {name} value is invalid. minimum value is {from} minutes".Trim());
+        }
+    }
+
     protected static void ValidateMinLength(string? value, int length, string name, string parent)
     {
         if (value != null && value.Length < length)

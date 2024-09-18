@@ -34,7 +34,7 @@ public partial class JobDomain
 
     private async Task WaitInner(JobWaitRequest request, CancellationToken cancellationToken)
     {
-        const int refreshRate = 2000; // # 2 seconds
+        const int refreshRate = 1000; // # 2 seconds
         const int maxWaitTime = 30 * 60 * 1000; // # 30 minutes
 
         // Get http context
@@ -52,9 +52,9 @@ public partial class JobDomain
         while (!cts.IsCancellationRequested)
         {
             var items = await GetRunningInner(request);
-            if(first && items.Count == 0)
+            if (first && items.Count == 0)
             {
-                await Task.Delay(2000, cancellationToken);
+                await Task.Delay(1000, cancellationToken);
                 items = await GetRunningInner(request);
             }
 

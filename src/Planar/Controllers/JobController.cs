@@ -429,7 +429,7 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet("wait")]
     [ViewerAuthorize]
-    [SwaggerOperation(OperationId = "get_job_wait_for", Description = "Wait for jobs to finish running", Summary = "Wait For Jobs To Finish Running")]
+    [SwaggerOperation(OperationId = "get_job_wait", Description = "Wait to finish running", Summary = "Wait To Finish Running")]
     [OkTextResponse]
     [BadRequestResponse]
     public async Task Wait([FromQuery] JobWaitRequest request, CancellationToken cancellationToken)

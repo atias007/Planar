@@ -20,16 +20,16 @@ internal class Job : BaseCheckJob
         var hosts = GetHosts(Configuration);
         var folders = GetFolders(Configuration, defaults);
 
-        if (!hosts.Any() && folders.Exists(e => e.IsRelativePath))
+        if (hosts.Count == 0 && folders.Exists(e => e.IsRelativePath))
         {
             throw new InvalidDataException("no hosts defined and at least one folder path is relative");
         }
 
-        folders.ForEach(f => ValidateFolderExists(f, hosts));
+        folders = GetFoldersWithHost(folders, hosts);
 
         EffectedRows = 0;
 
-        await SafeInvokeCheck(folders, f => InvokeFolderInnerAsync(f, hosts));
+        await SafeInvokeCheck(folders, InvokeFolderInnerAsync);
 
         Finilayze();
     }
@@ -37,6 +37,30 @@ internal class Job : BaseCheckJob
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
         services.RegisterBaseCheck();
+    }
+
+    private static List<Folder> GetFoldersWithHost(List<Folder> folders, IReadOnlyDictionary<string, Host> hosts)
+    {
+        var absolute = folders.Where(e => e.IsAbsolutePath);
+        var relative = folders.Where(e => e.IsRelativePath);
+        var result = new List<Folder>(absolute);
+        if (relative.Any() && hosts.Count != 0)
+        {
+            foreach (var rel in relative)
+            {
+                if (!hosts.TryGetValue(rel.HostGroupName ?? string.Empty, out var hostGroup)) { continue; }
+                foreach (var host in hostGroup.Hosts)
+                {
+                    var clone = new Folder(rel)
+                    {
+                        Host = host
+                    };
+                    result.Add(clone);
+                }
+            }
+        }
+
+        return result;
     }
 
     private static IEnumerable<FileInfo> GetFiles(string path, Folder folder)
@@ -71,12 +95,27 @@ internal class Job : BaseCheckJob
         return result;
     }
 
-    private static IEnumerable<string> GetHosts(IConfiguration configuration)
+    private static Dictionary<string, Host> GetHosts(IConfiguration configuration)
     {
+        var dic = new Dictionary<string, Host>();
         var hosts = configuration.GetSection("hosts");
-        if (hosts == null) { return []; }
-        var result = hosts.Get<string[]>() ?? [];
-        return result.Distinct();
+        if (hosts == null) { return dic; }
+        foreach (var host in hosts.GetChildren())
+        {
+            var result = new Host(host);
+
+            if (result.Hosts == null || !result.Hosts.Any())
+            {
+                throw new InvalidDataException($"fail to read 'hosts' of group name '{result.GroupName}' under 'hosts' main section. list is null or empty");
+            }
+
+            if (!dic.TryAdd(result.GroupName, result))
+            {
+                throw new InvalidDataException($"fail to read 'group name' under 'hosts' section with duplicate value '{result.GroupName}'");
+            }
+        }
+
+        return dic;
     }
 
     private static void ValidateFilesPattern(Folder folder)
@@ -99,12 +138,12 @@ internal class Job : BaseCheckJob
             var directory = new DirectoryInfo(path);
             if (!directory.Exists)
             {
-                throw new InvalidDataException($"directory '{path}' not found");
+                throw new CheckException($"directory '{path}' not found");
             }
         }
         catch (Exception ex)
         {
-            throw new InvalidDataException($"directory '{path}' is invalid ({ex.Message})");
+            throw new CheckException($"directory '{path}' is invalid ({ex.Message})");
         }
     }
 
@@ -124,24 +163,12 @@ internal class Job : BaseCheckJob
         return result;
     }
 
-    private async Task InvokeFolderInnerAsync(Folder folder, IEnumerable<string> hosts)
+    private async Task InvokeFolderInnerAsync(Folder folder)
     {
-        await Task.Run(() => InvokeFoldersInner(folder, hosts));
+        await Task.Run(() => InvokeFolderInner(folder));
     }
 
-    private void InvokeFoldersInner(Folder folder, IEnumerable<string> hosts)
-    {
-        if (folder.IsAbsolutePath)
-        {
-            InvokeFolderInner(folder, null);
-        }
-        else
-        {
-            Parallel.ForEach(hosts, host => InvokeFolderInner(folder, host));
-        }
-    }
-
-    private void InvokeFolderInner(Folder folder, string? host)
+    private void InvokeFolderInner(Folder folder)
     {
         if (!folder.Active)
         {
@@ -149,7 +176,9 @@ internal class Job : BaseCheckJob
             return;
         }
 
-        var path = folder.GetFullPath(host);
+        var path = folder.GetFullPath();
+        ValidatePathExists(path);
+
         var files = GetFiles(path, folder);
         if (folder.TotalSizeNumber != null)
         {
@@ -205,15 +234,6 @@ internal class Job : BaseCheckJob
                         folder.Name, path);
 
         IncreaseEffectedRows();
-    }
-
-    private static void ValidateFolderExists(Folder folder, IEnumerable<string> hosts)
-    {
-        foreach (var host in hosts)
-        {
-            var path = folder.GetFullPath(host);
-            ValidatePathExists(path);
-        }
     }
 
     private static void ValidateFolder(Folder folder)
