@@ -1,5 +1,5 @@
-general:
-  max degree of parallelism: 4
 hosts:
-  - http://localhost
-  - http://127.0.0.1
+  - group name: default
+    hosts:
+      - http://localhost
+      - http://127.0.0.1

@@ -116,7 +116,9 @@ internal static class RedisFactory
             if (_connection != null) { return _connection; }
             lock (Locker)
             {
+#pragma warning disable CA1508 // Avoid dead conditional code
                 if (_connection != null) { return _connection; }
+#pragma warning restore CA1508 // Avoid dead conditional code
                 var options = new ConfigurationOptions
                 {
                     ClientName = "Planar.Redis.StreamCheck",

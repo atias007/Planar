@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using Planar.Job;
 using Polly;
 using Polly.Retry;
-using System.IO;
 
 namespace FolderRetention;
 
@@ -27,14 +26,14 @@ internal class Job : BaseCheckJob
         var hosts = GetHosts(Configuration);
         var folders = GetFolders(Configuration);
 
-        if (!hosts.Any() && folders.Exists(e => !e.IsAbsolutePath))
+        if (folders.Exists(e => e.IsRelativePath))
         {
-            throw new InvalidDataException("no hosts defined and at least one folder path is relative");
+            ValidateRequired(hosts, "hosts");
         }
 
-        folders.ForEach(f => ValidateFolderExists(f, hosts));
+        folders = GetFoldersWithHost(folders, hosts);
 
-        var tasks = SafeInvokeOperation(folders, f => InvokeFolderInnerAsync(f, hosts));
+        var tasks = SafeInvokeOperation(folders, InvokeFolderInnerAsync);
         await Task.WhenAll(tasks);
 
         Finilayze();
@@ -45,10 +44,34 @@ internal class Job : BaseCheckJob
         services.RegisterBaseCheck();
     }
 
+    private static List<Folder> GetFoldersWithHost(List<Folder> folders, IReadOnlyDictionary<string, Host> hosts)
+    {
+        var absolute = folders.Where(e => e.IsAbsolutePath);
+        var relative = folders.Where(e => e.IsRelativePath);
+        var result = new List<Folder>(absolute);
+        if (relative.Any() && hosts.Count != 0)
+        {
+            foreach (var rel in relative)
+            {
+                if (!hosts.TryGetValue(rel.HostGroupName ?? string.Empty, out var hostGroup)) { continue; }
+                foreach (var host in hostGroup.Hosts)
+                {
+                    var clone = new Folder(rel)
+                    {
+                        Host = host
+                    };
+                    result.Add(clone);
+                }
+            }
+        }
+
+        return result;
+    }
+
     private static IEnumerable<FileInfo> GetFiles(string path, Folder folder)
     {
         var fi = new DirectoryInfo(path);
-        if (folder.FilesPattern == null || !folder.FilesPattern.Any()) { folder.SetDefaultFilePattern(); }
+
         var option = folder.IncludeSubdirectories ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
         foreach (var pattern in folder.FilesPattern!)
         {
@@ -67,8 +90,6 @@ internal class Job : BaseCheckJob
         foreach (var item in folders.GetChildren())
         {
             var folder = new Folder(item);
-            folder.SetFolderArguments();
-            folder.IsAbsolutePath = Path.IsPathFullyQualified(folder.Path);
             ValidateFolder(folder);
             result.Add(folder);
         }
@@ -77,14 +98,6 @@ internal class Job : BaseCheckJob
         ValidateDuplicateNames(result, "folders");
 
         return result;
-    }
-
-    private static IEnumerable<string> GetHosts(IConfiguration configuration)
-    {
-        var hosts = configuration.GetSection("hosts");
-        if (hosts == null) { return []; }
-        var result = hosts.Get<string[]>() ?? [];
-        return result.Distinct();
     }
 
     private static void ValidateFilesPattern(Folder folder)
@@ -100,40 +113,12 @@ internal class Job : BaseCheckJob
         }
     }
 
-    private static void ValidatePathExists(string path)
+    private async Task InvokeFolderInnerAsync(Folder folder)
     {
-        try
-        {
-            var directory = new DirectoryInfo(path);
-            if (!directory.Exists)
-            {
-                throw new InvalidDataException($"directory '{path}' not found");
-            }
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidDataException($"directory '{path}' is invalid ({ex.Message})");
-        }
+        await Task.Run(() => InvokeFoldersInner(folder));
     }
 
-    private async Task InvokeFolderInnerAsync(Folder folder, IEnumerable<string> hosts)
-    {
-        await Task.Run(() => InvokeFoldersInner(folder, hosts));
-    }
-
-    private void InvokeFoldersInner(Folder folder, IEnumerable<string> hosts)
-    {
-        if (folder.IsAbsolutePath)
-        {
-            InvokeFolderInner(folder, null);
-        }
-        else
-        {
-            Parallel.ForEach(hosts, host => InvokeFolderInner(folder, host));
-        }
-    }
-
-    private void InvokeFolderInner(Folder folder, string? host)
+    private void InvokeFoldersInner(Folder folder)
     {
         if (!folder.Active)
         {
@@ -141,7 +126,9 @@ internal class Job : BaseCheckJob
             return;
         }
 
-        var path = folder.GetFullPath(host);
+        var path = folder.GetFullPath();
+        ValidatePathExists(path);
+
         var files = GetFiles(path, folder);
         var filesToDelete = new Dictionary<FileInfo, string>();
 
@@ -190,9 +177,7 @@ internal class Job : BaseCheckJob
             catch (Exception ex)
             {
                 fails++;
-#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
                 Logger.LogWarning("error deleting file '{FileName}' from folder '{Path}', reason: {Reason}", file.FullName, path, ex.Message);
-#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
 
                 if (fails >= maxFails)
                 {
@@ -223,9 +208,7 @@ internal class Job : BaseCheckJob
         }
         catch (Exception ex)
         {
-#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
             Logger.LogWarning("error deleting folder '{Directory}' from folder '{Path}', reason: {Reason}", folder, folder, ex.Message);
-#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
         }
     }
 
@@ -251,15 +234,6 @@ internal class Job : BaseCheckJob
         else
         {
             Console.WriteLine($"Directory not found: {path}");
-        }
-    }
-
-    private static void ValidateFolderExists(Folder folder, IEnumerable<string> hosts)
-    {
-        foreach (var host in hosts)
-        {
-            var path = folder.GetFullPath(host);
-            ValidatePathExists(path);
         }
     }
 

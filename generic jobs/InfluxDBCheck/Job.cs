@@ -4,16 +4,17 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace InfluxDBCheck;
 
 internal class Job : BaseCheckJob
 {
-    private const string template1 = "^(eq|ne|gt|ge|lt|le)\\s[-+]?\\d+(\\.\\d+)?$";
-    private const string template2 = "^(be|bi)\\s[-+]?\\d+(\\.\\d+)?\\sand\\s[-+]?\\d+(\\.\\d+)?$";
-    private static readonly Regex _regex1 = new(template1, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500));
-    private static readonly Regex _regex2 = new(template2, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500));
+    private const string Template1 = "^(eq|ne|gt|ge|lt|le)\\s[-+]?\\d+(\\.\\d+)?$";
+    private const string Template2 = "^(be|bi)\\s[-+]?\\d+(\\.\\d+)?\\sand\\s[-+]?\\d+(\\.\\d+)?$";
+    private static readonly Regex _regex1 = new(Template1, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500));
+    private static readonly Regex _regex2 = new(Template2, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500));
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
@@ -79,7 +80,7 @@ internal class Job : BaseCheckJob
         }
         else
         {
-            var message = query.Message.Replace("{{value}}", value.ToString("N2"));
+            var message = query.Message.Replace("{{value}}", value.ToString("N2", CultureInfo.CurrentCulture));
             return new CheckException(message);
         }
     }

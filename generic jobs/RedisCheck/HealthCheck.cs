@@ -27,7 +27,10 @@ internal class HealthCheck : BaseDefault, ICheckElement
 
     public string? UsedMemory
     {
-        get { return _usedMemory; }
+        get
+        {
+            return _usedMemory;
+        }
         set
         {
             _usedMemory = value;

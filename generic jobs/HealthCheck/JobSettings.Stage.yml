@@ -1,3 +1,5 @@
 hosts:
-  - http://stage.server.1
-  - http://stage.server.2
+  - group name: default
+    hosts:
+      - http://stage.server.1
+      - http://stage.server.2

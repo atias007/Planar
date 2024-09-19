@@ -8,4 +8,4 @@ PlanarJob.Debugger.AddProfile("test3", b => b
     .WithJobData("fail.count.demo.consumers", 10)
     .WithJobData("last.fail.demo.consumers", DateTimeOffset.UtcNow.AddSeconds(-13).ToString(CultureInfo.CurrentCulture)));
 
-PlanarJob.Start<Job>();
+await PlanarJob.StartAsync<Job>();

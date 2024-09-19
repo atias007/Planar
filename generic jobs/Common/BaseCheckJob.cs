@@ -17,25 +17,28 @@ public abstract class BaseCheckJob : BaseJob
     private CheckSpanTracker _spanTracker = null!;
     private General _general = null!;
 
-    ////protected static void FillBase(IEnumerable<BaseDefault> baseDefaultTargets, BaseDefault baseDefaultSorce)
-    ////{
-    ////    foreach (var item in baseDefaultTargets)
-    ////    {
-    ////        FillBase(item, baseDefaultSorce);
-    ////    }
-    ////}
+    protected static IReadOnlyDictionary<string, Host> GetHosts(IConfiguration configuration)
+    {
+        var dic = new Dictionary<string, Host>();
+        var hosts = configuration.GetSection("hosts");
+        if (hosts == null) { return dic; }
+        foreach (var host in hosts.GetChildren())
+        {
+            var result = new Host(host);
 
-    ////protected static IConfigurationSection? GetDefaultSection(IConfiguration configuration, ILogger logger)
-    ////{
-    ////    var defaults = configuration.GetSection("defaults");
-    ////    if (defaults == null)
-    ////    {
-    ////        logger.LogWarning("no defaults section found on settings file. set job factory defaults");
-    ////        return null;
-    ////    }
+            if (result.Hosts == null || !result.Hosts.Any())
+            {
+                throw new InvalidDataException($"fail to read 'hosts' of group name '{result.GroupName}' under 'hosts' main section. list is null or empty");
+            }
 
-    ////    return defaults;
-    ////}
+            if (!dic.TryAdd(result.GroupName, result))
+            {
+                throw new InvalidDataException($"fail to read 'group name' under 'hosts' section with duplicate value '{result.GroupName}'");
+            }
+        }
+
+        return dic;
+    }
 
     protected static IConfigurationSection? GetDefaultSection(IConfiguration configuration, ILogger logger)
     {
@@ -47,6 +50,22 @@ public abstract class BaseCheckJob : BaseJob
         }
 
         return defaults;
+    }
+
+    protected static void ValidatePathExists(string path)
+    {
+        try
+        {
+            var directory = new DirectoryInfo(path);
+            if (!directory.Exists)
+            {
+                throw new CheckException($"directory '{path}' not found");
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new CheckException($"directory '{path}' is invalid ({ex.Message})");
+        }
     }
 
     protected static void ValidateBase(BaseDefault @default, string section)

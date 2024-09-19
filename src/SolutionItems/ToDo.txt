@@ -349,3 +349,4 @@ V1.7.7
 - BUG: fix auto save job/trigger data when job has exception
 - BUG: show audit for general group actions - only from the time after job created
 - Add service & cli & client library called Wait with Server Send Events (wait running for end)
+- Add Host Group to generic jobs

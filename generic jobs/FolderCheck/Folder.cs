@@ -24,6 +24,11 @@ internal class Folder : BaseDefault, INamedCheckElement
         CreatedAgeDate = source.CreatedAgeDate;
         ModifiedAgeDate = source.ModifiedAgeDate;
         IsAbsolutePath = source.IsAbsolutePath;
+
+        if (FilesPattern == null || !FilesPattern.Any())
+        {
+            FilesPattern = new List<string> { "*.*" };
+        }
     }
 
     public Folder(IConfigurationSection section, Defaults defaults) : base(section, defaults)
@@ -68,11 +73,6 @@ internal class Folder : BaseDefault, INamedCheckElement
     public string Key => Name;
     public bool IsAbsolutePath { get; }
     public bool IsRelativePath => !IsAbsolutePath;
-
-    public void SetDefaultFilePattern()
-    {
-        FilesPattern = new List<string> { "*.*" };
-    }
 
     // internal use for relative urls
     public string? Host { get; set; }

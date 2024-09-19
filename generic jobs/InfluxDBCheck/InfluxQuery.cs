@@ -16,7 +16,7 @@ internal class InfluxQuery(IConfigurationSection section, Defaults defaults) : B
     public TimeSpan? Interval { get; } = section.GetValue<TimeSpan?>("interval");
     public bool Active { get; } = section.GetValue<bool?>("active") ?? true;
 
-    // -------------------------- //
+    //// -------------------------- //
 
     public Condition? InternalRecordsCondition { get; set; }
     public Condition? InternalValueCondition { get; set; }

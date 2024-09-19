@@ -20,9 +20,9 @@ internal class Job : BaseCheckJob
         var hosts = GetHosts(Configuration);
         var folders = GetFolders(Configuration, defaults);
 
-        if (hosts.Count == 0 && folders.Exists(e => e.IsRelativePath))
+        if (folders.Exists(e => e.IsRelativePath))
         {
-            throw new InvalidDataException("no hosts defined and at least one folder path is relative");
+            ValidateRequired(hosts, "hosts");
         }
 
         folders = GetFoldersWithHost(folders, hosts);
@@ -55,6 +55,7 @@ internal class Job : BaseCheckJob
                     {
                         Host = host
                     };
+
                     result.Add(clone);
                 }
             }
@@ -66,7 +67,6 @@ internal class Job : BaseCheckJob
     private static IEnumerable<FileInfo> GetFiles(string path, Folder folder)
     {
         var fi = new DirectoryInfo(path);
-        if (folder.FilesPattern == null || !folder.FilesPattern.Any()) { folder.SetDefaultFilePattern(); }
         var option = folder.IncludeSubdirectories ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
         foreach (var pattern in folder.FilesPattern!)
         {
@@ -95,29 +95,6 @@ internal class Job : BaseCheckJob
         return result;
     }
 
-    private static Dictionary<string, Host> GetHosts(IConfiguration configuration)
-    {
-        var dic = new Dictionary<string, Host>();
-        var hosts = configuration.GetSection("hosts");
-        if (hosts == null) { return dic; }
-        foreach (var host in hosts.GetChildren())
-        {
-            var result = new Host(host);
-
-            if (result.Hosts == null || !result.Hosts.Any())
-            {
-                throw new InvalidDataException($"fail to read 'hosts' of group name '{result.GroupName}' under 'hosts' main section. list is null or empty");
-            }
-
-            if (!dic.TryAdd(result.GroupName, result))
-            {
-                throw new InvalidDataException($"fail to read 'group name' under 'hosts' section with duplicate value '{result.GroupName}'");
-            }
-        }
-
-        return dic;
-    }
-
     private static void ValidateFilesPattern(Folder folder)
     {
         if (folder.FilesPattern?.Any(p => p.Length > 100) ?? false)
@@ -128,22 +105,6 @@ internal class Job : BaseCheckJob
         if (folder.FilesPattern?.Any(string.IsNullOrWhiteSpace) ?? false)
         {
             throw new InvalidDataException($"'monitor' on folder name '{folder.Name}' has empty file pattern");
-        }
-    }
-
-    private static void ValidatePathExists(string path)
-    {
-        try
-        {
-            var directory = new DirectoryInfo(path);
-            if (!directory.Exists)
-            {
-                throw new CheckException($"directory '{path}' not found");
-            }
-        }
-        catch (Exception ex)
-        {
-            throw new CheckException($"directory '{path}' is invalid ({ex.Message})");
         }
     }
 

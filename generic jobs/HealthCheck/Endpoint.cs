@@ -8,6 +8,7 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement
     public Endpoint(Endpoint source) : base(source)
     {
         Name = source.Name;
+        HostGroupName = source.HostGroupName;
         Url = source.Url;
         SuccessStatusCodes = source.SuccessStatusCodes;
         Timeout = source.Timeout;
@@ -19,6 +20,7 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement
     public Endpoint(IConfigurationSection section, Defaults defaults) : base(section, defaults)
     {
         Name = section.GetValue<string?>("name") ?? string.Empty;
+        HostGroupName = section.GetValue<string?>("host group name");
         Url = section.GetValue<string?>("url") ?? string.Empty;
         SuccessStatusCodes = section.GetSection("success status codes").Get<int[]?>() ?? defaults.SuccessStatusCodes;
         Timeout = section.GetValue<TimeSpan?>("timeout") ?? defaults.Timeout;
@@ -28,6 +30,7 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement
     }
 
     public string Name { get; }
+    public string? HostGroupName { get; private set; }
     public string Url { get; }
     public IEnumerable<int> SuccessStatusCodes { get; }
     public TimeSpan Timeout { get; }

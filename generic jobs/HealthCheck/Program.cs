@@ -9,4 +9,4 @@ PlanarJob.Debugger.AddProfile("With Fail Count", job =>
         .WithJobData("fail.count.http://localhost:5341/", "7");
 });
 
-PlanarJob.Start<Job>();
+await PlanarJob.StartAsync<Job>();

@@ -25,7 +25,7 @@ internal class Table(IConfigurationSection section) : INamedCheckElement
 
     public TimeSpan? Span => null;
 
-    // =================== //
+    //// =================== //
 
     public string? ConnectionString { get; set; }
 }
