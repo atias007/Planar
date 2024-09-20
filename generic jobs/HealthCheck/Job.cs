@@ -29,7 +29,7 @@ internal sealed partial class Job : BaseCheckJob
             ValidateRequired(hosts, "hosts");
         }
 
-        ValidateDuplicateKeys(endpoints, "endpoints");
+        ValidateDuplicateNames(endpoints, "endpoints");
 
         endpoints = GetEndpointsWithHost(endpoints, hosts);
         EffectedRows = 0;

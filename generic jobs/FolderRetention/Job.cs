@@ -177,7 +177,9 @@ internal class Job : BaseCheckJob
             catch (Exception ex)
             {
                 fails++;
+#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
                 Logger.LogWarning("error deleting file '{FileName}' from folder '{Path}', reason: {Reason}", file.FullName, path, ex.Message);
+#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
 
                 if (fails >= maxFails)
                 {
@@ -208,7 +210,9 @@ internal class Job : BaseCheckJob
         }
         catch (Exception ex)
         {
+#pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
             Logger.LogWarning("error deleting folder '{Directory}' from folder '{Path}', reason: {Reason}", folder, folder, ex.Message);
+#pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
         }
     }
 

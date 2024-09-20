@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
+using System.Net;
 using System.ServiceProcess;
 
 namespace WindowsServiceRestart;
@@ -22,7 +23,7 @@ internal sealed partial class Job : BaseCheckJob
         var services = GetServices(Configuration, defaults);
 
         ValidateRequired(hosts, "hosts");
-        ValidateServices(services);
+        ValidateRequired(services, "services");
 
         services = GetServicesWithHost(services, hosts);
 
@@ -34,12 +35,6 @@ internal sealed partial class Job : BaseCheckJob
         Finilayze();
     }
 
-    private static void ValidateServices(IEnumerable<Service> services)
-    {
-        ValidateRequired(services, "services");
-        ValidateDuplicateNames(services, "services");
-    }
-
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
         services.RegisterBaseCheck();
@@ -49,7 +44,7 @@ internal sealed partial class Job : BaseCheckJob
     private static List<Service> GetServicesWithHost(List<Service> services, IReadOnlyDictionary<string, Host> hosts)
     {
         var result = new List<Service>();
-        if (result.Count != 0 && hosts.Count != 0)
+        if (hosts.Count != 0)
         {
             foreach (var rel in services)
             {

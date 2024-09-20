@@ -7,6 +7,7 @@ using Planar.Job;
 using Polly;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text;
 
 public abstract class BaseCheckJob : BaseJob
@@ -185,7 +186,7 @@ public abstract class BaseCheckJob : BaseJob
     {
         foreach (var value in values)
         {
-            var stringValue = Convert.ToString(value);
+            var stringValue = Convert.ToString(value, CultureInfo.CurrentCulture);
             if (!string.IsNullOrWhiteSpace(stringValue)) { return; }
         }
 
@@ -195,7 +196,7 @@ public abstract class BaseCheckJob : BaseJob
 
     protected static void ValidateRequired(object? value, string fieldName, string section)
     {
-        var stringValue = Convert.ToString(value);
+        var stringValue = Convert.ToString(value, CultureInfo.CurrentCulture);
         if (string.IsNullOrWhiteSpace(stringValue))
         {
             throw new InvalidDataException($"'{fieldName}' field at '{section}' section is missing");
@@ -241,10 +242,10 @@ public abstract class BaseCheckJob : BaseJob
             }
 
             var sb = new StringBuilder(_exceptions.Count + 1);
-            sb.AppendLine($"there is {_exceptions.Count} check fails. see details below:");
+            sb.AppendLine(CultureInfo.CurrentCulture, $"there is {_exceptions.Count} check fails. see details below:");
             foreach (var ex in _exceptions)
             {
-                sb.AppendLine($" - {ex.Message}");
+                sb.AppendLine(CultureInfo.CurrentCulture, $" - {ex.Message}");
             }
 
             throw new CheckException(sb.ToString());

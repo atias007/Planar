@@ -22,7 +22,7 @@ internal sealed partial class Job : BaseCheckJob
         var services = GetServices(Configuration, defaults);
 
         ValidateRequired(hosts, "hosts");
-        ValidateServices(services);
+        ValidateRequired(services, "services");
 
         services = GetServicesWithHost(services, hosts);
 
@@ -204,11 +204,5 @@ internal sealed partial class Job : BaseCheckJob
         ValidateGreaterThen(service.StartServiceTimeout, TimeSpan.FromSeconds(5), "start service timeout", section);
         ValidateLessThen(service.StartServiceTimeout, TimeSpan.FromMinutes(5), "start service timeout", section);
         ValidateRequired(service.Host, "host", section);
-    }
-
-    private static void ValidateServices(IEnumerable<Service> services)
-    {
-        ValidateRequired(services, "services");
-        ValidateDuplicateNames(services, "services");
     }
 }
