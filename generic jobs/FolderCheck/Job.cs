@@ -145,7 +145,7 @@ internal class Job : BaseCheckJob
         {
             var size = files.Sum(f => f.Length);
             Logger.LogInformation("folder '{Path}' size is {Size:N0} byte(s)", path, size);
-            if (size > folder.FileSizeNumber)
+            if (size > folder.TotalSizeNumber)
             {
                 throw new CheckException($"folder '{path}' size is greater then {folder.TotalSizeNumber:N0}");
             }
