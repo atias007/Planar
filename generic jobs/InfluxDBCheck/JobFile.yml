@@ -1,5 +1,5 @@
 job type: PlanarJob                   # Fixed! don't change it
-name: RedisCheck                      # Name of job [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+name: InfluxDBCheck                      # Name of job [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
 group: Monitoring                     # Group of job [only alphanumeric, dashes & underscore, 1 to 50 characters]
 author: israel israeli (sales)        # The author/responsible person of the job [up to 100 characters]
 description: Monitor Redis health check, server metrics and keys length & size      # Description of job [only alphanumeric, dashes & underscore, up to 200 characters]
@@ -8,7 +8,7 @@ concurrent: false                     # Boolean [true/false]. Concurrent job can
 log retention days: 3                 # How many days the running logs will retain. [1 to 1000, null for system default]
 
 properties:                           # Properties for job with 'PlanarJob' type
-  filename: RedisCheck.exe            # Name of assembly file [mandatory, up to 500 characters]
+  filename: InfluxDBCheck.exe            # Name of assembly file [mandatory, up to 500 characters]
 
 simple triggers:                      # List of simple triggers
   - name: every-minute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]

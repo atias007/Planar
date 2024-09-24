@@ -1,8 +1,13 @@
 ﻿namespace Common;
 
+//// ********************* CUSTOMS *********************
+
 internal static class Consts
 {
-    public const string RabbitMQConfigSection = "server";
-    public const string RedisConfigSection = "server";
-    public const string InfluxDBConfigSection = "server";
+    public const string RabbitMQConfigSection = "RabbitMq";
+
+    public const string RedisConfigSection = "Redis";
+    public const string InfluxDBConfigSection = "InfluxDB";
 }
+
+//// ***************************************************

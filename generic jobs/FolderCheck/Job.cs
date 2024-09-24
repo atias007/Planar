@@ -141,7 +141,8 @@ internal class Job : BaseCheckJob
         ValidatePathExists(path);
 
         var files = GetFiles(path, folder);
-        if (folder.TotalSizeNumber != null)
+        var filesCount = files.Count();
+        if (folder.TotalSizeNumber != null && filesCount > 0)
         {
             var size = files.Sum(f => f.Length);
             Logger.LogInformation("folder '{Path}' size is {Size:N0} byte(s)", path, size);
@@ -151,7 +152,7 @@ internal class Job : BaseCheckJob
             }
         }
 
-        if (folder.FileSizeNumber != null)
+        if (folder.FileSizeNumber != null && filesCount > 0)
         {
             var max = files.Max(f => f.Length);
             Logger.LogInformation("folder '{Path}' max file size is {Size:N0} byte(s)", path, max);
@@ -163,15 +164,14 @@ internal class Job : BaseCheckJob
 
         if (folder.FileCount != null)
         {
-            var count = files.Count();
-            Logger.LogInformation("folder '{Path}' contains {Count:N0} file(s)", path, count);
-            if (count > folder.FileCount)
+            Logger.LogInformation("folder '{Path}' contains {Count:N0} file(s)", path, filesCount);
+            if (filesCount > folder.FileCount)
             {
                 throw new CheckException($"folder '{path}' contains more then {folder.FileCount:N0} files");
             }
         }
 
-        if (folder.CreatedAgeDate != null)
+        if (folder.CreatedAgeDate != null && filesCount > 0)
         {
             var created = files.Min(f => f.CreationTime);
             Logger.LogInformation("folder '{Path}' most old created file is {Created}", path, created);
@@ -181,7 +181,7 @@ internal class Job : BaseCheckJob
             }
         }
 
-        if (folder.ModifiedAgeDate != null)
+        if (folder.ModifiedAgeDate != null && filesCount > 0)
         {
             var modified = files.Min(f => f.LastWriteTime);
             Logger.LogInformation("folder '{Path}' most old modified file is {Created}", path, modified);

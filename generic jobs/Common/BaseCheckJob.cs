@@ -279,13 +279,8 @@ public abstract class BaseCheckJob : BaseJob
     {
         if (interval == null) { return true; }
         var tracker = ServiceProvider.GetRequiredService<CheckIntervalTracker>();
-        var lastSpan = tracker.LastRunningSpan(element);
-        if (lastSpan > TimeSpan.Zero && lastSpan < interval.Value)
-        {
-            return false;
-        }
-
-        return true;
+        var result = tracker.ShouldRun(element, interval.Value);
+        return result;
     }
 
     protected async Task SafeInvokeCheck<T>(IEnumerable<T> entities, Func<T, Task> checkFunc)

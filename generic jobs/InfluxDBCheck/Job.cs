@@ -40,6 +40,7 @@ internal class Job : BaseCheckJob
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
         services.RegisterBaseCheck();
+        services.AddSingleton<CheckIntervalTracker>();
     }
 
     private static IEnumerable<InfluxQuery> GetQueries(IConfiguration configuration, Defaults defaults)
@@ -93,15 +94,23 @@ internal class Job : BaseCheckJob
             return;
         }
 
+        if (!IsIntervalElapsed(query, query.Interval))
+        {
+            Logger.LogInformation("skipping query '{Name}' due to its interval", query.Name);
+            return;
+        }
+
         var result = await proxy.QueryAsync(query);
         if (query.InternalValueCondition != null)
         {
-            var value = GetValue(result, query.Name);
+            var value = GetValue(result, query.Name) ?? 0;
             var ok = query.InternalValueCondition.Evaluate(value);
             if (!ok)
             {
                 throw GetCheckException(query, "value", value);
             }
+
+            Logger.LogInformation("internal value condition '{Value} {Condition}' for check '{Name}' success", value, query.InternalValueCondition.Text, query.Name);
         }
 
         if (query.InternalRecordsCondition != null)
@@ -112,6 +121,8 @@ internal class Job : BaseCheckJob
             {
                 throw GetCheckException(query, "records", value);
             }
+
+            Logger.LogInformation("internal records condition '{Value} {Condition}' for check '{Name}' success", value, query.InternalRecordsCondition.Text, query.Name);
         }
 
         Logger.LogInformation("query check success for name '{Name}'", query.Name);
@@ -125,24 +136,30 @@ internal class Job : BaseCheckJob
         return table.Records.Count;
     }
 
-    private static double GetValue(List<FluxTable> tables, string name)
+    private static double? GetValue(List<FluxTable> tables, string name)
     {
         if (tables.Count == 0)
         {
-            throw new CheckException($"could not get value from query name '{name}' (no influx tables");
+            return null;
         }
 
         var table = tables[0];
         if (table.Records.Count == 0)
         {
-            throw new CheckException($"could not get value from query name '{name}' (no influx records");
+            throw new CheckException($"could not get value from query name '{name}' (no influx records)");
         }
 
         var objValue = table.Records[0].GetValue();
-        var value = objValue as double? ??
-            throw new CheckException($"could not get value from query name '{name}' (value '{objValue}' is not numeric)");
 
-        return value;
+        try
+        {
+            var value = Convert.ToDouble(objValue, CultureInfo.InvariantCulture);
+            return value;
+        }
+        catch
+        {
+            throw new CheckException($"could not get value from query name '{name}' (value '{objValue ?? "null"}' is not numeric)");
+        }
     }
 
     private static void ValidateInfluxQuery(InfluxQuery query)

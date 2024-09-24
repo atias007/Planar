@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace InfluxDBCheck
 {
@@ -14,47 +15,43 @@ namespace InfluxDBCheck
         Bi
     }
 
-    internal sealed class Condition
+    internal sealed partial class Condition
     {
         public Operator Operator { get; set; }
         public double Value1 { get; set; }
         public double? Value2 { get; set; }
+        public string Text { get; set; }
 
         public Condition(Match match)
         {
-            var group = match.Groups[0];
-            var op = group.Captures[0].Value;
+            Text = match.Groups[0].Value;
+            var op = match.Groups[1].Value;
             if (!Enum.TryParse<Operator>(op, ignoreCase: true, out var @operator))
             {
                 throw new ArgumentException($"Invalid operator: {op}");
             }
 
+            Operator = @operator;
             if (@operator == Operator.Be || @operator == Operator.Bi)
             {
-                var value1Text = group.Captures[1].Value;
-                if (!double.TryParse(value1Text, out var tmpValue1))
+                var values = ExtractNumbers(Text);
+                if (values.Count != 2)
                 {
-                    throw new ArgumentException($"Invalid value: {value1Text}");
+                    throw new ArgumentException($"Invalid value: {Text}");
                 }
 
-                var value2Text = group.Captures[3].Value;
-                if (!double.TryParse(value2Text, out var tmpValue2))
-                {
-                    throw new ArgumentException($"Invalid value: {value2Text}");
-                }
-
-                Value1 = tmpValue1;
-                Value2 = tmpValue2;
+                Value1 = values[0];
+                Value2 = values[1];
             }
             else
             {
-                var valueText = group.Captures[1].Value;
-                if (!double.TryParse(valueText, out var tmpValue1))
+                var values = ExtractNumbers(Text);
+                if (values.Count != 1)
                 {
-                    throw new ArgumentException($"Invalid value: {valueText}");
+                    throw new ArgumentException($"Invalid value: {Text}");
                 }
 
-                Value1 = tmpValue1;
+                Value1 = values[0];
             }
         }
 
@@ -79,5 +76,15 @@ namespace InfluxDBCheck
             const double epsilon = 0.0001;
             return Math.Abs(a - b) < epsilon;
         }
+
+        private static List<double> ExtractNumbers(string input)
+        {
+            var regex = NumerigRegex();
+            var matches = regex.Matches(input);
+            return matches.Cast<Match>().Select(m => double.Parse(m.Value, CultureInfo.CurrentCulture)).ToList();
+        }
+
+        [GeneratedRegex(@"[-+]?\d+(\.\d+)?")]
+        private static partial Regex NumerigRegex();
     }
 }

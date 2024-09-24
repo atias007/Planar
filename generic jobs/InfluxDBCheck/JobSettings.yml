@@ -20,7 +20,7 @@ queries:
       |> filter(fn: (r) => r._measurement == "cpu" and r._field == "usage_system" and r.cpu == "cpu-total")
       |> last()'
     records condition: gt 10                    # condition for the number of records to be returned. you can use: eq <value>, ne <value>, gt <value>, ge <value>, lt <value>, le <value>, bi <value1> and <value2> (for between inclusive), be <value1> and <value2> (for between exclusive)
-    value condition: be -1.5 and 2.8            # the maximum value of the first field of the first record to be returned. you can use: eq <value>, ne <value>, gt <value>, ge <value>, lt <value>, le <value>, bi <value1> and <value2> (for between inclusive), be <value1> and <value2> (for between exclusive)
+    value condition: be -1.5 and 2.8            # condition on value of the first field and the first record to be returned. you can use: eq <value>, ne <value>, gt <value>, ge <value>, lt <value>, le <value>, bi <value1> and <value2> (for between inclusive), be <value1> and <value2> (for between exclusive)
     message: Latency of foo is too high         # the message to be logged in case of failure. you can use {{value}} to show value of query
     timeout: 00:00:10                           # the query execution timeout. the default is 30 seconds
     span: 00:05:00                              # the time span which violation on the key limit will be considered ok
