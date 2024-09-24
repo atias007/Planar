@@ -130,21 +130,22 @@ internal class Job : BaseCheckJob
         ValidatePathExists(path);
 
         var files = GetFiles(path, folder);
+        var count = files.Count();
         var filesToDelete = new Dictionary<FileInfo, string>();
 
-        if (folder.FileSizeNumber != null)
+        if (folder.FileSizeNumber != null && count > 0)
         {
             var toBeDelete = files.Where(f => f.Length > folder.FileSizeNumber).ToList();
             toBeDelete.ForEach(f => filesToDelete.Add(f, $"size {f.Length:N0} above {folder.FileSizeNumber:N0}"));
         }
 
-        if (folder.CreatedAgeDate != null)
+        if (folder.CreatedAgeDate != null && count > 0)
         {
             var toBeDelete = files.Where(f => f.CreationTime < folder.CreatedAgeDate).ToList();
             toBeDelete.ForEach(f => filesToDelete.Add(f, $"creation date {f.CreationTime} before {folder.CreatedAgeDate}"));
         }
 
-        if (folder.ModifiedAgeDate != null)
+        if (folder.ModifiedAgeDate != null && count > 0)
         {
             var toBeDelete = files.Where(f => f.LastWriteTime < folder.ModifiedAgeDate).ToList();
             toBeDelete.ForEach(f => filesToDelete.Add(f, $"modified date {f.LastWriteTime} before {folder.ModifiedAgeDate}"));
