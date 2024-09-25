@@ -44,6 +44,7 @@ internal partial class Job : BaseCheckJob
     {
         Initialize(ServiceProvider);
         RedisFactory.Initialize(Configuration);
+        ValidateRedis();
 
         var defaults = GetDefaults(Configuration);
         var keys = GetKeys(Configuration, defaults);
@@ -61,6 +62,13 @@ internal partial class Job : BaseCheckJob
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
         services.RegisterBaseCheck();
+    }
+
+    protected static void ValidateRedis()
+    {
+        ValidateRequired(RedisFactory.Endpoints, "endpoints", "server");
+        ValidateGreaterThenOrEquals(RedisFactory.Database, 0, "database", "server");
+        ValidateLessThenOrEquals(RedisFactory.Database, 16, "database", "server");
     }
 
     private static HealthCheck GetHealthCheck(IConfiguration configuration, Defaults defaults)

@@ -8,10 +8,7 @@ PLAN FOR V 1.7.7
 - Security report
 - check option to odata search (https://devblogs.microsoft.com/odata/compute-and-search-in-asp-net-core-odata-8/)
 
-
 - 'service info hooks'
-- health check minor changes + cli color
-- add free search on cli jobs menu / monitor event menu
 
 - add anomaly monitor events
 - add charts to report
@@ -350,3 +347,6 @@ V1.7.7
 - BUG: show audit for general group actions - only from the time after job created
 - Add service & cli & client library called Wait with Server Send Events (wait running for end)
 - Add Host Group to generic jobs
+- Add veto & custom configure to generic jobs
+- health check minor changes + cli color
+- add free search on cli jobs menu / monitor event menu

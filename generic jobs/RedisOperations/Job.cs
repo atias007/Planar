@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar.Job;
 using Redis;
-using RedisCheck;
 using System.Text;
 
 namespace RedisOperations;
@@ -46,6 +45,7 @@ internal partial class Job : BaseCheckJob
     {
         Initialize(ServiceProvider);
         RedisFactory.Initialize(Configuration);
+        ValidateRedis();
 
         var keys = GetKeys(Configuration);
         ValidateRequired(keys, "keys");
@@ -60,6 +60,13 @@ internal partial class Job : BaseCheckJob
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
         services.RegisterBaseCheck();
+    }
+
+    protected static void ValidateRedis()
+    {
+        ValidateRequired(RedisFactory.Endpoints, "endpoints", "server");
+        ValidateGreaterThenOrEquals(RedisFactory.Database, 0, "database", "server");
+        ValidateLessThenOrEquals(RedisFactory.Database, 16, "database", "server");
     }
 
     private IEnumerable<RedisKey> GetKeys(IConfiguration configuration)

@@ -52,7 +52,7 @@ internal partial class Job : BaseCheckJob
         Initialize(ServiceProvider);
 
         var defaults = GetDefaults(Configuration);
-        var server = new Server(Configuration);
+        var server = GetServer(Configuration);
         var queries = GetQueries(Configuration, defaults);
 
         EffectedRows = 0;
@@ -68,6 +68,19 @@ internal partial class Job : BaseCheckJob
     {
         services.RegisterBaseCheck();
         services.AddSingleton<CheckIntervalTracker>();
+    }
+
+    private static Server GetServer(IConfiguration configuration)
+    {
+        var server = new Server(configuration);
+
+        ValidateRequired(server.Token, "token", "server");
+        ValidateRequired(server.Url, "url", "server");
+        ValidateRequired(server.Organization, "organization", "server");
+
+        ValidateUri(server.Url, "url", "server");
+
+        return server;
     }
 
     private IEnumerable<InfluxQuery> GetQueries(IConfiguration configuration, Defaults defaults)
