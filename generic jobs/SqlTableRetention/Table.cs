@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace SqlTableRetention;
 
-internal class Table(IConfigurationSection section) : INamedCheckElement
+internal class Table(IConfigurationSection section) : INamedCheckElement, IVetoEntity
 {
     public string Name { get; private set; } = section.GetValue<string>("name") ?? string.Empty;
 
@@ -28,4 +28,8 @@ internal class Table(IConfigurationSection section) : INamedCheckElement
     //// =================== //
 
     public string? ConnectionString { get; set; }
+
+    public bool Veto { get; set; }
+
+    public string? VetoReason { get; set; }
 }

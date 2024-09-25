@@ -8,13 +8,13 @@ defaults:                                       # default values for all keys. e
   retry interval: 00:00:03                      # the interval between retry attemps
   maximum fails in row: 5                       # the maximum number of fails in row before the job is considered as failed
 
-# server:                                        # the redis server parameters to be use. usualy this section defined in specific environment job settings
+# server:                                        # the influx server parameters to be use. usualy this section defined in specific environment job settings
 #   url: http://localhost:8086
 #   token: null
 #   organization: null
 
 queries:
-  - name: foo                                   # the key to be used in redis
+  - name: foo                                   # the name of query
     query: 'from(bucket: "example-bucket")
       |> range(start: -15m)
       |> filter(fn: (r) => r._measurement == "cpu" and r._field == "usage_system" and r.cpu == "cpu-total")

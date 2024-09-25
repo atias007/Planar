@@ -8,7 +8,7 @@ defaults:                                       # default values for all RabbitM
   retry interval: 00:00:05                      # the interval between retry attemps
   maximum fails in row: 5                       # the maximum number of fails in row before the job is considered as failed
 
-# rabbitmq:                                     # the servers parameters to be use. usualy this section defined in specific environment job settings
+# server:                                     # the servers parameters to be use. usualy this section defined in specific environment job settings
 #   hosts: 
 #       - http://rabbitmq-server-1:15672                # the rabbitmq hosts
 #       - http://rabbitmq-server-2:15672

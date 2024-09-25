@@ -1,11 +1,11 @@
 ﻿using Common;
 using Cronos;
 using Microsoft.Extensions.Configuration;
-using RedisCheck;
+using Redis;
 
 namespace RedisOperations;
 
-internal class RedisKey(IConfigurationSection section) : ICheckElement, IRedisKey
+internal class RedisKey(IConfigurationSection section) : ICheckElement, IRedisKey, IVetoEntity
 {
     public string Key { get; set; } = section.GetValue<string>("key") ?? string.Empty;
     public string? ExpireCron { get; set; } = section.GetValue<string>("expire cron");
@@ -18,4 +18,8 @@ internal class RedisKey(IConfigurationSection section) : ICheckElement, IRedisKe
 
     public CronExpression? CronExpression { get; set; }
     public DateTime? NextExpireCronDate { get; set; }
+
+    public bool Veto { get; set; }
+
+    public string? VetoReason { get; set; }
 }

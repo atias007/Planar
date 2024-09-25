@@ -1,9 +1,17 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿namespace Common;
 
-namespace Common;
-
-public class Host(IConfigurationSection section)
+public class Host : IVetoEntity
 {
-    public string GroupName { get; private set; } = section.GetValue<string>("group name") ?? string.Empty;
-    public IEnumerable<string> Hosts { get; private set; } = section.GetRequiredSection("hosts").Get<string[]>()?.ToList()?.Distinct() ?? [];
+    public Host(string name)
+    {
+        Name = name;
+    }
+
+    public string Name { get; }
+
+    public string Key => Name;
+
+    public bool Veto { get; set; }
+
+    public string? VetoReason { get; set; }
 }

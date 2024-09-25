@@ -8,12 +8,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\Common\Consts.cs" Link="Consts.cs" />
+    <Compile Include="..\RedisCheck\IRedisKey.cs" Link="IRedisKey.cs" />
     <Compile Include="..\RedisCheck\RedisFactory.cs" Link="RedisFactory.cs" />
+    <Compile Include="..\RedisCheck\RedisServer.cs" Link="RedisServer.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Cronos" Version="0.8.4" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0-rc.1.24431.7" />
     <PackageReference Include="SonarAnalyzer.CSharp" Version="9.32.0.97167">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

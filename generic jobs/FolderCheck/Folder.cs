@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace FolderCheck;
 
-internal class Folder : BaseDefault, INamedCheckElement
+internal class Folder : BaseDefault, INamedCheckElement, IVetoEntity
 {
     public Folder(Folder source) : base(source)
     {
@@ -76,6 +76,11 @@ internal class Folder : BaseDefault, INamedCheckElement
 
     // internal use for relative urls
     public string? Host { get; set; }
+
+    //// -------------------------- ////
+    public bool Veto { get; set; }
+
+    public string? VetoReason { get; set; }
 
     public bool IsValid =>
         TotalSizeNumber != null || FileSizeNumber != null || FileCount != null || CreatedAgeDate != null || ModifiedAgeDate != null;

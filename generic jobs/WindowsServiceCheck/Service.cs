@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace WindowsServiceCheck;
 
-internal class Service : BaseDefault, IService, INamedCheckElement
+internal class Service : BaseDefault, IService, INamedCheckElement, IVetoEntity
 {
     public Service(IConfigurationSection section, Defaults defaults) : base(section, defaults)
     {
@@ -39,4 +39,8 @@ internal class Service : BaseDefault, IService, INamedCheckElement
     //// --------------------------------------- ////
 
     public string? Host { get; set; }
+
+    public bool Veto { get; set; }
+
+    public string? VetoReason { get; set; }
 }

@@ -1,15 +1,10 @@
 ﻿using Common;
 using Microsoft.Extensions.Configuration;
+using Redis;
 using StackExchange.Redis;
 using System.Collections.Concurrent;
 
 namespace RedisCheck;
-
-internal interface IRedisKey
-{
-    int? Database { get; }
-    string Key { get; }
-}
 
 internal static class RedisFactory
 {
@@ -25,7 +20,7 @@ internal static class RedisFactory
 
     public static void Initialize(IConfiguration configuration)
     {
-        var section = configuration.GetRequiredSection(Consts.RedisConfigSection);
+        var section = configuration.GetRequiredSection("server");
         Database = section.GetValue<int?>("database") ?? 0;
         Ssl = section.GetValue<bool>("ssl");
         User = section.GetValue<string?>("user");

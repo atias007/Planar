@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace SqlQueryCheck;
 
-internal class CheckQuery(IConfigurationSection section, Defaults defaults) : BaseDefault(section, defaults), INamedCheckElement
+internal class CheckQuery(IConfigurationSection section, Defaults defaults) : BaseDefault(section, defaults), INamedCheckElement, IVetoEntity
 {
     public string Name { get; } = section.GetValue<string>("name") ?? string.Empty;
 
@@ -24,4 +24,8 @@ internal class CheckQuery(IConfigurationSection section, Defaults defaults) : Ba
     //// =================== //
 
     public string? ConnectionString { get; set; }
+
+    public bool Veto { get; set; }
+
+    public string? VetoReason { get; set; }
 }

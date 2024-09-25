@@ -7,18 +7,27 @@ using System.ServiceProcess;
 
 namespace WindowsServiceCheck;
 
-internal sealed partial class Job : BaseCheckJob
+internal partial class Job : BaseCheckJob
 {
+#pragma warning disable S3251 // Implementations should be provided for "partial" methods
+
+    partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+
+    static partial void VetoService(Service service);
+
+    partial void VetoHost(ref Host host);
+
+#pragma warning restore S3251 // Implementations should be provided for "partial" methods
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
-    {
-    }
+        => CustomConfigure(configurationBuilder, context);
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
         Initialize(ServiceProvider);
 
         var defaults = GetDefaults(Configuration);
-        var hosts = GetHosts(Configuration);
+        var hosts = GetHosts(Configuration, h => VetoHost(ref h));
         var services = GetServices(Configuration, defaults);
 
         ValidateRequired(hosts, "hosts");
@@ -38,7 +47,7 @@ internal sealed partial class Job : BaseCheckJob
         services.RegisterBaseCheck();
     }
 
-    private static List<Service> GetServicesWithHost(List<Service> services, IReadOnlyDictionary<string, Host> hosts)
+    private static List<Service> GetServicesWithHost(List<Service> services, IReadOnlyDictionary<string, HostsConfig> hosts)
     {
         var result = new List<Service>();
         if (hosts.Count != 0)
@@ -60,7 +69,7 @@ internal sealed partial class Job : BaseCheckJob
         return result;
     }
 
-    private static List<Service> GetServices(IConfiguration configuration, Defaults defaults)
+    private List<Service> GetServices(IConfiguration configuration, Defaults defaults)
     {
         var result = new List<Service>();
         var services = configuration.GetRequiredSection("services");
@@ -68,6 +77,8 @@ internal sealed partial class Job : BaseCheckJob
         foreach (var item in services.GetChildren())
         {
             var service = new Service(item, defaults);
+            VetoService(service);
+            if (CheckVeto(service, "service")) { continue; }
             ValidateService(service);
             result.Add(service);
         }

@@ -2,15 +2,43 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Planar.Job;
+using Redis;
+using System.Text;
 
 namespace RedisCheck;
 
-internal class Job : BaseCheckJob
+internal partial class Job : BaseCheckJob
 {
+#pragma warning disable S3251 // Implementations should be provided for "partial" methods
+
+    partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+
+    partial void CustomConfigure(ref RedisServer redisServer);
+
+    static partial void VetoKey(ref RedisKey key);
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
+        CustomConfigure(configurationBuilder, context);
+
+        var redisServer = new RedisServer();
+        CustomConfigure(ref redisServer);
+
+        if (!redisServer.IsEmpty)
+        {
+            var json = JsonConvert.SerializeObject(new { server = redisServer });
+
+            // Create a JSON stream as a MemoryStream or directly from a file
+            var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+
+            // Add the JSON stream to the configuration builder
+            configurationBuilder.AddJsonStream(stream);
+        }
     }
+
+#pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
@@ -52,12 +80,16 @@ internal class Job : BaseCheckJob
         return result;
     }
 
-    private static IEnumerable<RedisKey> GetKeys(IConfiguration configuration, Defaults defaults)
+    private IEnumerable<RedisKey> GetKeys(IConfiguration configuration, Defaults defaults)
     {
         var keys = configuration.GetRequiredSection("keys");
         foreach (var item in keys.GetChildren())
         {
             var key = new RedisKey(item, defaults);
+
+            VetoKey(ref key);
+            if (CheckVeto(key, "key")) { continue; }
+
             ValidateRedisKey(key);
             yield return key;
         }

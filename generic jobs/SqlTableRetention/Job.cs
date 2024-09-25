@@ -3,16 +3,45 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Planar.Job;
+using Sql;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace SqlTableRetention;
 
 internal partial class Job : BaseCheckJob
 {
+#pragma warning disable S3251 // Implementations should be provided for "partial" methods
+
+    partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+
+    partial void CustomConfigure(ref List<SqlConnectionString> connectionStrings);
+
+    static partial void VetoTable(ref Table table);
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
+        CustomConfigure(configurationBuilder, context);
+
+        var connectionStrings = new List<SqlConnectionString>();
+        CustomConfigure(ref connectionStrings);
+
+        if (connectionStrings.Count > 0)
+        {
+            var dic = connectionStrings.ToDictionary(k => k.Name, e => e.ConnectionString);
+            var json = JsonConvert.SerializeObject(new { connectionStrings = dic });
+
+            // Create a JSON stream as a MemoryStream or directly from a file
+            var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+
+            // Add the JSON stream to the configuration builder
+            configurationBuilder.AddJsonStream(stream);
+        }
     }
+
+#pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
     public override async Task ExecuteJob(IJobExecutionContext context)
     {
@@ -125,64 +154,20 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private static IEnumerable<Table> GetTables(IConfiguration configuration, Dictionary<string, string> connectionStrings)
+    private IEnumerable<Table> GetTables(IConfiguration configuration, Dictionary<string, string> connectionStrings)
     {
         var section = configuration.GetRequiredSection("tables");
         foreach (var item in section.GetChildren())
         {
             var key = new Table(item);
+
+            VetoTable(ref key);
+            if (CheckVeto(key, "table")) { continue; }
+
             key.ConnectionString = connectionStrings.GetValueOrDefault(key.ConnectionStringName);
             ValidateTable(key);
             yield return key;
         }
-    }
-
-    private Dictionary<string, string> GetConnectionStrings(IConfiguration configuration)
-    {
-        var result = new Dictionary<string, string>();
-
-        var section = configuration.GetSection("connection strings");
-        if (section.Exists())
-        {
-            foreach (var item in section.GetChildren())
-            {
-                if (string.IsNullOrWhiteSpace(item.Key))
-                {
-                    throw new InvalidDataException("connection string has invalid null or empty key");
-                }
-
-                if (string.IsNullOrWhiteSpace(item.Value))
-                {
-                    throw new InvalidDataException($"connection string with key '{item.Key}' has no value");
-                }
-
-                result.TryAdd(item.Key, item.Value);
-            }
-        }
-
-        section = Configuration.GetSection("connection strings");
-        if (section.Exists())
-        {
-            foreach (var item in section.GetChildren())
-            {
-                if (string.IsNullOrWhiteSpace(item.Key)) { continue; }
-                if (string.IsNullOrWhiteSpace(item.Value)) { continue; }
-                result.TryAdd(item.Key, item.Value);
-            }
-        }
-
-        section = Configuration.GetSection("ConnectionStrings");
-        if (section.Exists())
-        {
-            foreach (var item in section.GetChildren())
-            {
-                if (string.IsNullOrWhiteSpace(item.Key)) { continue; }
-                if (string.IsNullOrWhiteSpace(item.Value)) { continue; }
-                result.TryAdd(item.Key, item.Value);
-            }
-        }
-
-        return result;
     }
 
     [GeneratedRegex("{{[0-9]+}}|{{\\w+}}")]

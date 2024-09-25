@@ -1,6 +1,7 @@
 namespace Common;
 
 using Planar.Job;
+using System.Globalization;
 
 public class CheckFailCounter(IBaseJob baseJob)
 {
@@ -13,7 +14,7 @@ public class CheckFailCounter(IBaseJob baseJob)
             count = value.GetValueOrDefault() + 1;
         }
 
-        baseJob.PutJobData(key, Convert.ToString(count));
+        baseJob.PutJobData(key, Convert.ToString(count, CultureInfo.InvariantCulture));
         return count;
     }
 

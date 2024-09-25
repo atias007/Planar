@@ -3,22 +3,49 @@ using InfluxDB.Client.Core.Flux.Domain;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Planar.Job;
 using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace InfluxDBCheck;
 
-internal class Job : BaseCheckJob
+internal partial class Job : BaseCheckJob
 {
+#pragma warning disable S3251 // Implementations should be provided for "partial" methods
+
+    partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+
+    partial void CustomConfigure(ref InfluxDBServer influxServer);
+
+    static partial void VetoQuery(ref InfluxQuery query);
+
+    public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
+    {
+        CustomConfigure(configurationBuilder, context);
+
+        var influxServer = new InfluxDBServer();
+        CustomConfigure(ref influxServer);
+
+        if (!influxServer.IsEmpty)
+        {
+            var json = JsonConvert.SerializeObject(new { server = influxServer });
+
+            // Create a JSON stream as a MemoryStream or directly from a file
+            var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+
+            // Add the JSON stream to the configuration builder
+            configurationBuilder.AddJsonStream(stream);
+        }
+    }
+
+#pragma warning restore S3251 // Implementations should be provided for "partial" methods
+
     private const string Template1 = "^(eq|ne|gt|ge|lt|le)\\s[-+]?\\d+(\\.\\d+)?$";
     private const string Template2 = "^(be|bi)\\s[-+]?\\d+(\\.\\d+)?\\sand\\s[-+]?\\d+(\\.\\d+)?$";
     private static readonly Regex _regex1 = new(Template1, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500));
     private static readonly Regex _regex2 = new(Template2, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500));
-
-    public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
-    {
-    }
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
@@ -27,9 +54,9 @@ internal class Job : BaseCheckJob
         var defaults = GetDefaults(Configuration);
         var server = new Server(Configuration);
         var queries = GetQueries(Configuration, defaults);
-        ValidateRequired(queries, "queries");
 
         EffectedRows = 0;
+        if (!CheckRequired(queries, "queries")) { return; }
 
         var proxy = new InfluxProxy(server);
         await SafeInvokeCheck(queries, q => InvokeQueryCheckInner(q, proxy));
@@ -43,12 +70,15 @@ internal class Job : BaseCheckJob
         services.AddSingleton<CheckIntervalTracker>();
     }
 
-    private static IEnumerable<InfluxQuery> GetQueries(IConfiguration configuration, Defaults defaults)
+    private IEnumerable<InfluxQuery> GetQueries(IConfiguration configuration, Defaults defaults)
     {
         var keys = configuration.GetRequiredSection("queries");
         foreach (var item in keys.GetChildren())
         {
             var key = new InfluxQuery(item, defaults);
+            VetoQuery(ref key);
+            if (CheckVeto(key, "query")) { continue; }
+
             ValidateInfluxQuery(key);
             yield return key;
         }

@@ -7,8 +7,8 @@ internal class Server
 {
     public Server(IConfiguration configuration)
     {
-        var section = configuration.GetRequiredSection(Consts.InfluxDBConfigSection);
-        Url = section.GetValue<string>("host") ?? string.Empty;
+        var section = configuration.GetRequiredSection("server");
+        Url = section.GetValue<string>("url") ?? string.Empty;
         Token = section.GetValue<string>("token") ?? string.Empty;
         Organization = section.GetValue<string>("organization") ?? string.Empty;
     }

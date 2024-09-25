@@ -2,15 +2,43 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Planar.Job;
+using System.Text;
+using YamlDotNet.Core.Tokens;
 
 namespace RabbitMQCheck;
 
-public class Job : BaseCheckJob
+internal partial class Job : BaseCheckJob
 {
+#pragma warning disable S3251 // Implementations should be provided for "partial" methods
+
+    partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+
+    partial void CustomConfigure(ref RabbitMqServer rabbitMqServer);
+
+    static partial void VetoQueue(Queue queue);
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
+        CustomConfigure(configurationBuilder, context);
+
+        var rabbitmqServer = new RabbitMqServer();
+        CustomConfigure(ref rabbitmqServer);
+
+        if (!rabbitmqServer.IsEmpty)
+        {
+            var json = JsonConvert.SerializeObject(new { server = rabbitmqServer });
+
+            // Create a JSON stream as a MemoryStream or directly from a file
+            var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+
+            // Add the JSON stream to the configuration builder
+            configurationBuilder.AddJsonStream(stream);
+        }
     }
+
+#pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
@@ -61,13 +89,16 @@ public class Job : BaseCheckJob
         return node;
     }
 
-    private static IEnumerable<Queue> GetQueue(IConfiguration configuration, Defaults defaults)
+    private IEnumerable<Queue> GetQueue(IConfiguration configuration, Defaults defaults)
     {
         var sections = configuration.GetSection("queues").GetChildren();
 
         foreach (var section in sections)
         {
             var queue = new Queue(section, defaults);
+
+            VetoQueue(queue);
+            if (CheckVeto(queue, "queue")) { continue; }
 
             ValidateRequired(queue.Name, "name", "queues");
             ValidateGreaterThen(queue.Messages, 0, "messages", "queues");
@@ -88,16 +119,16 @@ public class Job : BaseCheckJob
     {
         var server = new Server(configuration);
 
-        ValidateRequired(server.Hosts, "hosts", Consts.RabbitMQConfigSection);
-        ValidateRequired(server.Username, "username", Consts.RabbitMQConfigSection);
-        ValidateRequired(server.Password, "password", Consts.RabbitMQConfigSection);
+        ValidateRequired(server.Hosts, "hosts", "server");
+        ValidateRequired(server.Username, "username", "server");
+        ValidateRequired(server.Password, "password", "server");
 
         foreach (var item in server.Hosts)
         {
-            ValidateUri(item, "hosts", Consts.RabbitMQConfigSection);
+            ValidateUri(item, "hosts", "server");
         }
 
-        ValidateRequired(server.Hosts, "hosts", Consts.RabbitMQConfigSection);
+        ValidateRequired(server.Hosts, "hosts", "server");
 
         return server;
     }

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace HealthCheck;
 
-internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement
+internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement, IVetoEntity
 {
     public Endpoint(Endpoint source) : base(source)
     {
@@ -43,6 +43,11 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement
 
     // internal use for relative urls
     public Uri? Host { get; set; }
+
+    //// -------------------------- ////
+    public bool Veto { get; set; }
+
+    public string? VetoReason { get; set; }
 
     private static Uri? SetAbsoluteUrl(string url)
     {

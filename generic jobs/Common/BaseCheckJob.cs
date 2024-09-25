@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
 using Polly;
+using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -15,30 +16,44 @@ public abstract class BaseCheckJob : BaseJob
     private static readonly object _locker = new();
     private readonly ConcurrentQueue<CheckException> _exceptions = new();
     private CheckFailCounter _failCounter = null!;
-    private CheckSpanTracker _spanTracker = null!;
     private General _general = null!;
+    private CheckSpanTracker _spanTracker = null!;
 
-    protected static IReadOnlyDictionary<string, Host> GetHosts(IConfiguration configuration)
+    protected static Dictionary<string, string> GetConnectionStrings(IConfiguration configuration)
     {
-        var dic = new Dictionary<string, Host>();
-        var hosts = configuration.GetSection("hosts");
-        if (hosts == null) { return dic; }
-        foreach (var host in hosts.GetChildren())
+        var section = configuration.GetSection("connection strings");
+        if (!section.Exists())
         {
-            var result = new Host(host);
-
-            if (result.Hosts == null || !result.Hosts.Any())
-            {
-                throw new InvalidDataException($"fail to read 'hosts' of group name '{result.GroupName}' under 'hosts' main section. list is null or empty");
-            }
-
-            if (!dic.TryAdd(result.GroupName, result))
-            {
-                throw new InvalidDataException($"fail to read 'group name' under 'hosts' section with duplicate value '{result.GroupName}'");
-            }
+            section = configuration.GetSection("ConnectionStrings");
         }
 
-        return dic;
+        if (!section.Exists())
+        {
+            section = configuration.GetSection("connectionStrings");
+        }
+
+        if (!section.Exists())
+        {
+            throw new InvalidDataException("coud not found any connection string in configuration");
+        }
+
+        var result = new Dictionary<string, string>();
+        foreach (var item in section.GetChildren())
+        {
+            if (string.IsNullOrWhiteSpace(item.Key))
+            {
+                throw new InvalidDataException("connection string has invalid null or empty key");
+            }
+
+            if (string.IsNullOrWhiteSpace(item.Value))
+            {
+                throw new InvalidDataException($"connection string with key '{item.Key}' has no value");
+            }
+
+            result.TryAdd(item.Key, item.Value);
+        }
+
+        return result;
     }
 
     protected static IConfigurationSection? GetDefaultSection(IConfiguration configuration, ILogger logger)
@@ -53,20 +68,16 @@ public abstract class BaseCheckJob : BaseJob
         return defaults;
     }
 
-    protected static void ValidatePathExists(string path)
+    protected static void ValidateAtLeastOneRequired<T>(IEnumerable<T> values, IEnumerable<string> fieldNames, string section)
     {
-        try
+        foreach (var value in values)
         {
-            var directory = new DirectoryInfo(path);
-            if (!directory.Exists)
-            {
-                throw new CheckException($"directory '{path}' not found");
-            }
+            var stringValue = Convert.ToString(value, CultureInfo.CurrentCulture);
+            if (!string.IsNullOrWhiteSpace(stringValue)) { return; }
         }
-        catch (Exception ex)
-        {
-            throw new CheckException($"directory '{path}' is invalid ({ex.Message})");
-        }
+
+        var fields = string.Join(", ", fieldNames);
+        throw new InvalidDataException($"on of fields: {fields} at '{section}' section is required");
     }
 
     protected static void ValidateBase(BaseDefault @default, string section)
@@ -182,16 +193,20 @@ public abstract class BaseCheckJob : BaseJob
         }
     }
 
-    protected static void ValidateAtLeastOneRequired<T>(IEnumerable<T> values, IEnumerable<string> fieldNames, string section)
+    protected static void ValidatePathExists(string path)
     {
-        foreach (var value in values)
+        try
         {
-            var stringValue = Convert.ToString(value, CultureInfo.CurrentCulture);
-            if (!string.IsNullOrWhiteSpace(stringValue)) { return; }
+            var directory = new DirectoryInfo(path);
+            if (!directory.Exists)
+            {
+                throw new CheckException($"directory '{path}' not found");
+            }
         }
-
-        var fields = string.Join(", ", fieldNames);
-        throw new InvalidDataException($"on of fields: {fields} at '{section}' section is required");
+        catch (Exception ex)
+        {
+            throw new CheckException($"directory '{path}' is invalid ({ex.Message})");
+        }
     }
 
     protected static void ValidateRequired(object? value, string fieldName, string section)
@@ -226,30 +241,62 @@ public abstract class BaseCheckJob : BaseJob
         _exceptions.Enqueue(exception);
     }
 
+    protected bool CheckRequired<T>(IEnumerable<T>? value, string name)
+    {
+        if (value == null || !value.Any())
+        {
+            Logger.LogWarning("no {Name} to run", name);
+            return false;
+        }
+
+        return true;
+    }
+
+    protected bool CheckVeto(IVetoEntity entity, string entityName)
+    {
+        if (entity.Veto && string.IsNullOrWhiteSpace(entity.VetoReason))
+        {
+            Logger.LogInformation("{Name} '{Key}' has veto", entityName, entity.Key);
+        }
+
+        if (entity.Veto)
+        {
+            Logger.LogInformation("{Name} '{Key}' has veto. reason: {Reason}", entityName, entity.Key, entity.VetoReason);
+        }
+
+        return entity.Veto;
+    }
+
     protected void Finilayze()
     {
         CheckAggragateException();
         HandleCheckExceptions();
     }
 
-    private void HandleCheckExceptions()
+    protected IReadOnlyDictionary<string, HostsConfig> GetHosts(IConfiguration configuration, Action<Host> veto)
     {
-        if (!_exceptions.IsEmpty)
+        var dic = new Dictionary<string, HostsConfig>();
+        var hosts = configuration.GetSection("hosts");
+        if (hosts == null) { return dic; }
+        foreach (var host in hosts.GetChildren())
         {
-            if (_exceptions.Count == 1 && _exceptions.TryDequeue(out var exception))
+            var result = new HostsConfig(host);
+
+            if (result.Hosts == null || !result.Hosts.Any())
             {
-                throw exception;
+                throw new InvalidDataException($"fail to read 'hosts' of group name '{result.GroupName}' under 'hosts' main section. list is null or empty");
             }
 
-            var sb = new StringBuilder(_exceptions.Count + 1);
-            sb.AppendLine(CultureInfo.CurrentCulture, $"there is {_exceptions.Count} check fails. see details below:");
-            foreach (var ex in _exceptions)
+            if (!dic.TryAdd(result.GroupName, result))
             {
-                sb.AppendLine(CultureInfo.CurrentCulture, $" - {ex.Message}");
+                throw new InvalidDataException($"fail to read 'group name' under 'hosts' section with duplicate value '{result.GroupName}'");
             }
 
-            throw new CheckException(sb.ToString());
+            var vetoHosts = result.VetoHosts(veto);
+            LogVetoHost(vetoHosts);
         }
+
+        return dic;
     }
 
     protected void IncreaseEffectedRows()
@@ -260,6 +307,7 @@ public abstract class BaseCheckJob : BaseJob
         }
     }
 
+    [SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "Infrastructure")]
     protected void Initialize(IServiceProvider serviceProvider)
     {
         _spanTracker = serviceProvider.GetRequiredService<CheckSpanTracker>();
@@ -270,9 +318,7 @@ public abstract class BaseCheckJob : BaseJob
         _general = new(config);
         ValidateGreaterThenOrEquals(_general.MaxDegreeOfParallelism, 2, "max degree of parallelism", "general");
         ValidateLessThenOrEquals(_general.MaxDegreeOfParallelism, 100, "max degree of parallelism", "general");
-#pragma warning disable CA2254 // Template should be a static expression
         logger.LogInformation(_general.ToString());
-#pragma warning restore CA2254 // Template should be a static expression
     }
 
     protected bool IsIntervalElapsed(ICheckElement element, TimeSpan? interval)
@@ -441,6 +487,41 @@ public abstract class BaseCheckJob : BaseJob
 
         checkException = null;
         return false;
+    }
+
+    private void HandleCheckExceptions()
+    {
+        if (!_exceptions.IsEmpty)
+        {
+            if (_exceptions.Count == 1 && _exceptions.TryDequeue(out var exception))
+            {
+                throw exception;
+            }
+
+            var sb = new StringBuilder(_exceptions.Count + 1);
+            sb.AppendLine(CultureInfo.CurrentCulture, $"there is {_exceptions.Count} check fails. see details below:");
+            foreach (var ex in _exceptions)
+            {
+                sb.AppendLine(CultureInfo.CurrentCulture, $" - {ex.Message}");
+            }
+
+            throw new CheckException(sb.ToString());
+        }
+    }
+
+    private void LogVetoHost(IEnumerable<Host> hosts)
+    {
+        foreach (var item in hosts)
+        {
+            if (string.IsNullOrEmpty(item.VetoReason))
+            {
+                Logger.LogInformation("host {Host} veto", item.Name);
+            }
+            else
+            {
+                Logger.LogInformation("host {Host} veto. reason: {Reason}", item.Name, item.VetoReason);
+            }
+        }
     }
 
     private SafeHandleStatus SafeHandleCheckException<T>(T entity, Exception ex)

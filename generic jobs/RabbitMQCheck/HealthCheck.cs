@@ -19,7 +19,4 @@ internal class HealthCheck(IConfigurationSection section, Defaults defaults) : B
         NodeQuorumCritical.GetValueOrDefault();
 }
 
-#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
 internal record HealthCheckExtended(Server Server, string Host);
-
-#pragma warning restore SA1313 // Parameter names should begin with lower-case letter

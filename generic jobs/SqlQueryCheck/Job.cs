@@ -3,17 +3,47 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Planar.Job;
+using Sql;
 using System.Data;
+using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace SqlQueryCheck;
 
 internal partial class Job : BaseCheckJob
 {
+#pragma warning disable S3251 // Implementations should be provided for "partial" methods
+
+    partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+
+    partial void CustomConfigure(ref List<SqlConnectionString> connectionStrings);
+
+    static partial void VetoQuery(ref CheckQuery query);
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
+        CustomConfigure(configurationBuilder, context);
+
+        var connectionStrings = new List<SqlConnectionString>();
+        CustomConfigure(ref connectionStrings);
+
+        if (connectionStrings.Count > 0)
+        {
+            var dic = connectionStrings.ToDictionary(k => k.Name, e => e.ConnectionString);
+            var json = JsonConvert.SerializeObject(new { connectionStrings = dic });
+
+            // Create a JSON stream as a MemoryStream or directly from a file
+            var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+
+            // Add the JSON stream to the configuration builder
+            configurationBuilder.AddJsonStream(stream);
+        }
     }
+
+#pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
     public override async Task ExecuteJob(IJobExecutionContext context)
     {
@@ -92,7 +122,7 @@ internal partial class Job : BaseCheckJob
             {
                 try
                 {
-                    var value = Convert.ToString(reader[phInner]);
+                    var value = Convert.ToString(reader[phInner], CultureInfo.InvariantCulture);
                     message = message.Replace(ph, value);
                 }
                 catch (Exception)
@@ -103,7 +133,7 @@ internal partial class Job : BaseCheckJob
             else
             {
                 if (reader.FieldCount >= intPhInner) { continue; }
-                var value = Convert.ToString(reader[intPhInner.GetValueOrDefault()]);
+                var value = Convert.ToString(reader[intPhInner.GetValueOrDefault()], CultureInfo.InvariantCulture);
                 message = message.Replace(ph, value);
             }
         }
@@ -138,38 +168,18 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private static IEnumerable<CheckQuery> GetQueries(IConfiguration configuration, Defaults defaults, Dictionary<string, string> connectionStrings)
+    private IEnumerable<CheckQuery> GetQueries(IConfiguration configuration, Defaults defaults, Dictionary<string, string> connectionStrings)
     {
         var section = configuration.GetRequiredSection("queries");
         foreach (var item in section.GetChildren())
         {
             var key = new CheckQuery(item, defaults);
+            VetoQuery(ref key);
+            if (CheckVeto(key, "query")) { continue; }
             key.ConnectionString = connectionStrings.GetValueOrDefault(key.ConnectionStringName);
             ValidateCheckQuery(key);
             yield return key;
         }
-    }
-
-    private static Dictionary<string, string> GetConnectionStrings(IConfiguration configuration)
-    {
-        var section = configuration.GetRequiredSection("connection strings");
-        var result = new Dictionary<string, string>();
-        foreach (var item in section.GetChildren())
-        {
-            if (string.IsNullOrWhiteSpace(item.Key))
-            {
-                throw new InvalidDataException("connection string has invalid null or empty key");
-            }
-
-            if (string.IsNullOrWhiteSpace(item.Value))
-            {
-                throw new InvalidDataException($"connection string with key '{item.Key}' has no value");
-            }
-
-            result.TryAdd(item.Key, item.Value);
-        }
-
-        return result;
     }
 
     private Defaults GetDefaults(IConfiguration configuration)

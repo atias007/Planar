@@ -10,18 +10,27 @@ namespace HealthCheck;
 internal record HttpUtility(string Url, HttpClient Client);
 #pragma warning restore SA1313 // Parameter names should begin with lower-case letter
 
-internal sealed partial class Job : BaseCheckJob
+internal partial class Job : BaseCheckJob
 {
+#pragma warning disable S3251 // Implementations should be provided for "partial" methods
+
+    partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+
+    static partial void VetoEndpoint(ref Endpoint endpoint);
+
+    partial void VetoHost(ref Host host);
+
+#pragma warning restore S3251 // Implementations should be provided for "partial" methods
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
-    {
-    }
+        => CustomConfigure(configurationBuilder, context);
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
         Initialize(ServiceProvider);
 
         var defaults = GetDefaults(Configuration);
-        var hosts = GetHosts(Configuration);
+        var hosts = GetHosts(Configuration, h => VetoHost(ref h));
         var endpoints = GetEndpoints(Configuration, defaults);
 
         if (endpoints.Exists(e => e.IsRelativeUrl))
@@ -38,7 +47,7 @@ internal sealed partial class Job : BaseCheckJob
         Finilayze();
     }
 
-    private static List<Endpoint> GetEndpointsWithHost(List<Endpoint> endpoints, IReadOnlyDictionary<string, Host> hosts)
+    private static List<Endpoint> GetEndpointsWithHost(List<Endpoint> endpoints, IReadOnlyDictionary<string, HostsConfig> hosts)
     {
         var absolute = endpoints.Where(e => e.IsAbsoluteUrl);
         var relative = endpoints.Where(e => e.IsRelativeUrl);
@@ -67,13 +76,16 @@ internal sealed partial class Job : BaseCheckJob
         services.RegisterBaseCheck();
     }
 
-    private static List<Endpoint> GetEndpoints(IConfiguration configuration, Defaults defaults)
+    private List<Endpoint> GetEndpoints(IConfiguration configuration, Defaults defaults)
     {
         var endpoints = configuration.GetRequiredSection("endpoints");
         var result = new List<Endpoint>();
         foreach (var item in endpoints.GetChildren())
         {
             var endpoint = new Endpoint(item, defaults);
+            VetoEndpoint(ref endpoint);
+            if (CheckVeto(endpoint, "endpoint")) { continue; }
+
             ValidateEndpoint(endpoint);
             result.Add(endpoint);
         }

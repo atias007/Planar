@@ -3,21 +3,32 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
+using System.Net;
+using YamlDotNet.Core.Tokens;
 
 namespace FolderCheck;
 
-internal class Job : BaseCheckJob
+internal partial class Job : BaseCheckJob
 {
+#pragma warning disable S3251 // Implementations should be provided for "partial" methods
+
+    partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+
+    static partial void VetoFolder(ref Folder folder);
+
+    partial void VetoHost(ref Host host);
+
+#pragma warning restore S3251 // Implementations should be provided for "partial" methods
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
-    {
-    }
+        => CustomConfigure(configurationBuilder, context);
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
         Initialize(ServiceProvider);
 
         var defaults = GetDefaults(Configuration);
-        var hosts = GetHosts(Configuration);
+        var hosts = GetHosts(Configuration, h => VetoHost(ref h));
         var folders = GetFolders(Configuration, defaults);
 
         if (folders.Exists(e => e.IsRelativePath))
@@ -39,7 +50,7 @@ internal class Job : BaseCheckJob
         services.RegisterBaseCheck();
     }
 
-    private static List<Folder> GetFoldersWithHost(List<Folder> folders, IReadOnlyDictionary<string, Host> hosts)
+    private static List<Folder> GetFoldersWithHost(List<Folder> folders, IReadOnlyDictionary<string, HostsConfig> hosts)
     {
         var absolute = folders.Where(e => e.IsAbsolutePath);
         var relative = folders.Where(e => e.IsRelativePath);
@@ -78,13 +89,17 @@ internal class Job : BaseCheckJob
         }
     }
 
-    private static List<Folder> GetFolders(IConfiguration configuration, Defaults defaults)
+    private List<Folder> GetFolders(IConfiguration configuration, Defaults defaults)
     {
         var result = new List<Folder>();
         var folders = configuration.GetRequiredSection("folders");
         foreach (var item in folders.GetChildren())
         {
             var folder = new Folder(item, defaults);
+
+            VetoFolder(ref folder);
+            if (CheckVeto(folder, "folder")) { continue; }
+
             ValidateFolder(folder);
             result.Add(folder);
         }
