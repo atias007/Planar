@@ -12,11 +12,13 @@ internal partial class Job : BaseCheckJob
 {
 #pragma warning disable S3251 // Implementations should be provided for "partial" methods
 
-    partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+    static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
     static partial void VetoFolder(ref Folder folder);
 
-    partial void VetoHost(ref Host host);
+    static partial void VetoHost(ref Host host);
+
+    static partial void Finilayze(IEnumerable<Folder> folders);
 
 #pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
@@ -42,7 +44,8 @@ internal partial class Job : BaseCheckJob
 
         await SafeInvokeCheck(folders, InvokeFolderInnerAsync);
 
-        Finilayze();
+        Finilayze(folders);
+        Finalayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

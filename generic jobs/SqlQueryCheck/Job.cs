@@ -17,18 +17,20 @@ internal partial class Job : BaseCheckJob
 {
 #pragma warning disable S3251 // Implementations should be provided for "partial" methods
 
-    partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+    static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-    partial void CustomConfigure(ref List<SqlConnectionString> connectionStrings);
+    static partial void CustomConfigure(ref List<SqlConnectionString> connectionStrings, IConfiguration configuration);
 
     static partial void VetoQuery(ref CheckQuery query);
+
+    static partial void Finalayze(IEnumerable<CheckQuery> queries);
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
         CustomConfigure(configurationBuilder, context);
 
         var connectionStrings = new List<SqlConnectionString>();
-        CustomConfigure(ref connectionStrings);
+        CustomConfigure(ref connectionStrings, configurationBuilder.Build());
 
         if (connectionStrings.Count > 0)
         {
@@ -57,7 +59,8 @@ internal partial class Job : BaseCheckJob
         EffectedRows = 0;
         await SafeInvokeCheck(queries, InvokeQueryCheckInner);
 
-        Finilayze();
+        Finalayze(queries);
+        Finalayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

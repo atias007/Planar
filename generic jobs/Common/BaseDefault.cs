@@ -25,4 +25,6 @@ public abstract class BaseDefault
     public int? RetryCount { get; set; }
     public TimeSpan? RetryInterval { get; set; }
     public TimeSpan? Span { get; set; }
+
+    public CheckStatus CheckStatus { get; set; }
 }

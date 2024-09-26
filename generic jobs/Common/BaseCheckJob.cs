@@ -264,7 +264,7 @@ public abstract class BaseCheckJob : BaseJob
         return entity.Veto;
     }
 
-    protected void Finilayze()
+    protected void Finalayze()
     {
         CheckAggragateException();
         HandleCheckExceptions();
@@ -332,8 +332,9 @@ public abstract class BaseCheckJob : BaseJob
         {
             foreach (var entity in entities)
             {
-                var status = await SafeInvokeCheck(entity, checkFunc);
-                var notValidStatus = status != SafeHandleStatus.Success && status != SafeHandleStatus.CheckWarning;
+                await SafeInvokeCheck(entity, checkFunc);
+                var status = entity.CheckStatus;
+                var notValidStatus = status != CheckStatus.Success && status != CheckStatus.CheckWarning;
                 if (_general.StopRunningOnFail && notValidStatus)
                 {
                     var ex = new InvalidOperationException("stop running on fail is enabled. job will stop running");
@@ -349,7 +350,7 @@ public abstract class BaseCheckJob : BaseJob
         }
     }
 
-    protected async Task<SafeHandleStatus> SafeInvokeCheck<T>(T entity, Func<T, Task> checkFunc)
+    protected async Task SafeInvokeCheck<T>(T entity, Func<T, Task> checkFunc)
         where T : BaseDefault, ICheckElement
     {
         try
@@ -357,7 +358,7 @@ public abstract class BaseCheckJob : BaseJob
             if (entity.RetryCount == 0)
             {
                 await checkFunc(entity);
-                return SafeHandleStatus.Success;
+                entity.CheckStatus = CheckStatus.Success;
             }
 
             await Policy.Handle<Exception>()
@@ -375,12 +376,11 @@ public abstract class BaseCheckJob : BaseJob
 
             _spanTracker.ResetFailSpan(entity);
 
-            return SafeHandleStatus.Success;
+            entity.CheckStatus = CheckStatus.Success;
         }
         catch (Exception ex)
         {
-            var status = SafeHandleCheckException(entity, ex);
-            return status;
+            entity.CheckStatus = SafeHandleCheckException(entity, ex);
         }
     }
 
@@ -519,7 +519,7 @@ public abstract class BaseCheckJob : BaseJob
         }
     }
 
-    private SafeHandleStatus SafeHandleCheckException<T>(T entity, Exception ex)
+    private CheckStatus SafeHandleCheckException<T>(T entity, Exception ex)
           where T : BaseDefault, ICheckElement
     {
         try
@@ -529,14 +529,15 @@ public abstract class BaseCheckJob : BaseJob
                 Logger.LogError(ex, "check failed for '{Key}'. reason: {Message}",
                     entity.Key, ex.Message);
                 AddAggregateException(ex);
-                return SafeHandleStatus.Exception;
+                return CheckStatus.Exception;
             }
 
             if (_spanTracker.IsSpanValid(entity))
             {
                 Logger.LogWarning("check failed for '{Key}' but error span is valid. reason: {Message}",
                     entity.Key, ex.Message);
-                return SafeHandleStatus.CheckWarning;
+
+                return CheckStatus.CheckWarning;
             }
 
             Logger.LogError("check failed for '{Key}'. reason: {Message}",
@@ -544,12 +545,12 @@ public abstract class BaseCheckJob : BaseJob
 
             AddCheckException(checkException);
 
-            return SafeHandleStatus.CheckError;
+            return CheckStatus.CheckError;
         }
         catch (Exception innerEx)
         {
             AddAggregateException(innerEx);
-            return SafeHandleStatus.Exception;
+            return CheckStatus.Exception;
         }
     }
 

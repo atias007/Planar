@@ -14,11 +14,13 @@ internal partial class Job : BaseCheckJob
 {
 #pragma warning disable S3251 // Implementations should be provided for "partial" methods
 
-    partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+    static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
     static partial void VetoEndpoint(ref Endpoint endpoint);
 
     partial void VetoHost(ref Host host);
+
+    static partial void Finilayze(IEnumerable<Endpoint> endpoints);
 
 #pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
@@ -44,7 +46,8 @@ internal partial class Job : BaseCheckJob
         EffectedRows = 0;
         await SafeInvokeCheck(endpoints, InvokeEndpointInner);
 
-        Finilayze();
+        Finilayze(endpoints);
+        Finalayze();
     }
 
     private static List<Endpoint> GetEndpointsWithHost(List<Endpoint> endpoints, IReadOnlyDictionary<string, HostsConfig> hosts)

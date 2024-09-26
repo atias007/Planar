@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar.Job;
 using System.Globalization;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -15,18 +16,20 @@ internal partial class Job : BaseCheckJob
 {
 #pragma warning disable S3251 // Implementations should be provided for "partial" methods
 
-    partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+    static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-    partial void CustomConfigure(ref InfluxDBServer influxServer);
+    static partial void CustomConfigure(ref InfluxDBServer influxServer, IConfiguration configuration);
 
     static partial void VetoQuery(ref InfluxQuery query);
+
+    static partial void Finalayze(IEnumerable<InfluxQuery> endpoints);
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
         CustomConfigure(configurationBuilder, context);
 
         var influxServer = new InfluxDBServer();
-        CustomConfigure(ref influxServer);
+        CustomConfigure(ref influxServer, configurationBuilder.Build());
 
         if (!influxServer.IsEmpty)
         {
@@ -61,7 +64,8 @@ internal partial class Job : BaseCheckJob
         var proxy = new InfluxProxy(server);
         await SafeInvokeCheck(queries, q => InvokeQueryCheckInner(q, proxy));
 
-        Finilayze();
+        Finalayze(queries);
+        Finalayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)

@@ -1,6 +1,6 @@
 ﻿namespace Common;
 
-public enum SafeHandleStatus
+public enum CheckStatus
 {
     Success,
     CheckWarning,

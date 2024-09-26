@@ -12,11 +12,11 @@ internal partial class Job : BaseCheckJob
 {
 #pragma warning disable S3251 // Implementations should be provided for "partial" methods
 
-    partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+    static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-    static partial void VetoService(Service service);
+    static partial void VetoService(ref Service service);
 
-    partial void VetoHost(ref Host host);
+    static partial void VetoHost(ref Host host);
 
 #pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
@@ -41,7 +41,7 @@ internal partial class Job : BaseCheckJob
         using var client = new HttpClient();
         await SafeInvokeCheck(services, InvokeServicesInner);
 
-        Finilayze();
+        Finalayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -80,7 +80,7 @@ internal partial class Job : BaseCheckJob
         foreach (var item in services.GetChildren())
         {
             var service = new Service(item, defaults);
-            VetoService(service);
+            VetoService(ref service);
             if (CheckVeto(service, "service")) { continue; }
             ValidateService(service);
             result.Add(service);

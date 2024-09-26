@@ -14,9 +14,9 @@ internal partial class Job : BaseCheckJob
 {
 #pragma warning disable S3251 // Implementations should be provided for "partial" methods
 
-    partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+    static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-    partial void CustomConfigure(ref RedisServer redisServer);
+    static partial void CustomConfigure(ref RedisServer redisServer, IConfiguration configuration);
 
     static partial void VetoKey(ref RedisKey key);
 
@@ -25,7 +25,7 @@ internal partial class Job : BaseCheckJob
         CustomConfigure(configurationBuilder, context);
 
         var redisServer = new RedisServer();
-        CustomConfigure(ref redisServer);
+        CustomConfigure(ref redisServer, configurationBuilder.Build());
 
         if (!redisServer.IsEmpty)
         {
@@ -54,7 +54,7 @@ internal partial class Job : BaseCheckJob
         var tasks = SafeInvokeOperation(keys, InvokeKeyCheckInner);
         await Task.WhenAll(tasks);
 
-        Finilayze();
+        Finalayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
