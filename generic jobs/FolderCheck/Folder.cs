@@ -17,7 +17,6 @@ internal class Folder : BaseDefault, INamedCheckElement, IVetoEntity
         FileCount = source.FileCount;
         CreatedAge = source.CreatedAge;
         ModifiedAge = source.ModifiedAge;
-        Active = source.Active;
 
         TotalSizeNumber = source.TotalSizeNumber;
         FileSizeNumber = source.FileSizeNumber;
@@ -43,7 +42,6 @@ internal class Folder : BaseDefault, INamedCheckElement, IVetoEntity
         FileCount = section.GetValue<int?>("file count");
         CreatedAge = section.GetValue<string?>("created age");
         ModifiedAge = section.GetValue<string?>("modified age");
-        Active = section.GetValue<bool?>("active") ?? true;
 
         TotalSizeNumber = CommonUtil.GetSize(TotalSize, "total size");
         FileSizeNumber = CommonUtil.GetSize(FileSize, "file size");
@@ -62,7 +60,6 @@ internal class Folder : BaseDefault, INamedCheckElement, IVetoEntity
     public int? FileCount { get; private set; }
     public string? CreatedAge { get; private set; }
     public string? ModifiedAge { get; private set; }
-    public bool Active { get; private set; }
 
     //// --------------------------------------- ////
 

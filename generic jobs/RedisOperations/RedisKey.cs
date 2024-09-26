@@ -14,7 +14,7 @@ internal class RedisKey(IConfigurationSection section) : ICheckElement, IRedisKe
     public bool Mandatory { get; set; } = section.GetValue<bool?>("mandatory") ?? true;
     public bool Active { get; private set; } = section.GetValue<bool?>("active") ?? true;
     public bool IsValid => !string.IsNullOrWhiteSpace(ExpireCron) || !string.IsNullOrWhiteSpace(DefaultCommand);
-    public TimeSpan? Span => null;
+    public TimeSpan? AllowedFailSpan => null;
 
     public CronExpression? CronExpression { get; set; }
     public DateTime? NextExpireCronDate { get; set; }

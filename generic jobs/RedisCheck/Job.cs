@@ -150,12 +150,6 @@ internal partial class Job : BaseCheckJob
             return line[(name.Length + 1)..];
         }
 
-        if (!healthCheck.Active)
-        {
-            Logger.LogInformation("skipping inactive health check");
-            return;
-        }
-
         if (healthCheck.Ping.HasValue || healthCheck.Latency.HasValue)
         {
             TimeSpan span;
@@ -221,12 +215,6 @@ internal partial class Job : BaseCheckJob
 
     private async Task InvokeKeyCheckInner(RedisKey key)
     {
-        if (!key.Active)
-        {
-            Logger.LogInformation("skipping inactive key '{Key}'", key.Key);
-            return;
-        }
-
         if (!await RedisFactory.Exists(key))
         {
             throw new CheckException($"key '{key.Key}' is not exists");

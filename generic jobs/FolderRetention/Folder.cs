@@ -72,7 +72,7 @@ internal class Folder : INamedCheckElement, IVetoEntity
     public string Key => Name;
     public bool IsRelativePath => !IsAbsolutePath;
 
-    public TimeSpan? Span => null;
+    public TimeSpan? AllowedFailSpan => null;
 
     // internal use for relative urls
     public string? Host { get; set; }

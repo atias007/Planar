@@ -111,12 +111,6 @@ internal partial class Job : BaseCheckJob
 
     private void InvokeServiceInner(Service service)
     {
-        if (!service.Active)
-        {
-            Logger.LogInformation("skipping inactive service '{Name}'", service.Name);
-            return;
-        }
-
         if (string.IsNullOrWhiteSpace(service.Host))
         {
             throw new CheckException($"service '{service.Name}' has no host name (null or empty)");

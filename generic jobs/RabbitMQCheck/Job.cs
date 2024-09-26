@@ -109,7 +109,7 @@ internal partial class Job : BaseCheckJob
             ValidateGreaterThen(queue.Consumers, 0, "consumers", "queues");
             ValidateRequired(queue.CheckState, "check state", "queues");
 
-            if (queue.Span.HasValue && queue.Span.Value.TotalSeconds < 1)
+            if (queue.AllowedFailSpan.HasValue && queue.AllowedFailSpan.Value.TotalSeconds < 1)
             {
                 throw new InvalidDataException($"'span' on queues section is less then 1 second");
             }
@@ -149,12 +149,6 @@ internal partial class Job : BaseCheckJob
 
     private async Task InvokeHealthCheckInner(HealthCheck healthCheck, Server server, string host)
     {
-        if (!healthCheck.Active)
-        {
-            Logger.LogInformation("Skipping inactive health check");
-            return;
-        }
-
         if (!healthCheck.IsValid) { return; }
 
         var proxy = RabbitMqProxy.GetProxy(host, server, Logger);
@@ -184,12 +178,6 @@ internal partial class Job : BaseCheckJob
 
     private async Task InvokeNodeCheckInner(Node node, Server server, string host)
     {
-        if (!node.Active)
-        {
-            Logger.LogInformation("skipping inactive nodes");
-            return;
-        }
-
         if (!node.IsValid) { return; }
 
         var proxy = RabbitMqProxy.GetProxy(host, server, Logger);
@@ -234,12 +222,6 @@ internal partial class Job : BaseCheckJob
 
     private async Task InvokeQueueCheckInner(Queue queue, IEnumerable<QueueDetails> details)
     {
-        if (!queue.Active)
-        {
-            Logger.LogInformation("skipping inactive queue '{Name}'", queue.Name);
-            return;
-        }
-
         if (!queue.IsValid) { return; }
         var detail = details.FirstOrDefault(x => string.Equals(x.Name, queue.Name, StringComparison.OrdinalIgnoreCase))
             ?? throw new CheckException($"queue '{queue.Name}' does not exists");

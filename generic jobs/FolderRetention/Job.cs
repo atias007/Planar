@@ -133,12 +133,6 @@ internal partial class Job : BaseCheckJob
 
     private void InvokeFoldersInner(Folder folder)
     {
-        if (!folder.Active)
-        {
-            Logger.LogInformation("skipping inactive folder '{Name}'", folder.Name);
-            return;
-        }
-
         var path = folder.GetFullPath();
         ValidatePathExists(path);
 

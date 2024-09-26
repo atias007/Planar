@@ -14,7 +14,6 @@ internal class InfluxQuery(IConfigurationSection section, Defaults defaults) : B
     public string Message { get; } = section.GetValue<string>("message") ?? string.Empty;
     public TimeSpan Timeout { get; } = section.GetValue<TimeSpan?>("timeout") ?? TimeSpan.FromSeconds(30);
     public TimeSpan? Interval { get; } = section.GetValue<TimeSpan?>("interval");
-    public bool Active { get; } = section.GetValue<bool?>("active") ?? true;
 
     //// -------------------------- ////
 

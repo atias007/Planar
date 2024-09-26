@@ -2,6 +2,7 @@
 
 public enum CheckStatus
 {
+    Skip,
     Success,
     CheckWarning,
     CheckError,

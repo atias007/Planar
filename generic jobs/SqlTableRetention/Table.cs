@@ -23,7 +23,7 @@ internal class Table(IConfigurationSection section) : INamedCheckElement, IVetoE
 
     public string Key => Name;
 
-    public TimeSpan? Span => null;
+    public TimeSpan? AllowedFailSpan => null;
 
     //// =================== //
 

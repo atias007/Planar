@@ -19,8 +19,6 @@ internal class CheckQuery(IConfigurationSection section, Defaults defaults) : Ba
 
     public string Key => Name;
 
-    public bool Active { get; } = section.GetValue<bool?>("active") ?? true;
-
     //// =================== //
 
     public string? ConnectionString { get; set; }

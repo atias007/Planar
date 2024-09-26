@@ -11,7 +11,6 @@ internal class RedisKey(IConfigurationSection section, Defaults defaults) : Base
     public int? Length { get; } = section.GetValue<int?>("length");
     public int? Database { get; } = section.GetValue<int?>("database");
     public bool? Exists { get; } = section.GetValue<bool?>("exists");
-    public bool Active { get; } = section.GetValue<bool?>("active") ?? true;
 
     //// --------------------------------------- ////
 

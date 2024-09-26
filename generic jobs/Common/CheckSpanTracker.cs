@@ -9,9 +9,9 @@ public class CheckSpanTracker(IBaseJob baseJob)
         where T : BaseDefault, ICheckElement
     {
         return
-            entity.Span != null &&
-            entity.Span != TimeSpan.Zero &&
-            entity.Span > LastFailSpan(entity);
+            entity.AllowedFailSpan != null &&
+            entity.AllowedFailSpan != TimeSpan.Zero &&
+            entity.AllowedFailSpan > LastFailSpan(entity);
     }
 
     private TimeSpan LastFailSpan(ICheckElement element)

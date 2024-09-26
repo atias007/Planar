@@ -355,27 +355,34 @@ public abstract class BaseCheckJob : BaseJob
     {
         try
         {
+            if (!entity.Active)
+            {
+                Logger.LogInformation("skipping inactive check: '{Name}'", entity.Key);
+                entity.CheckStatus = CheckStatus.Skip;
+                return;
+            }
+
             if (entity.RetryCount == 0)
             {
                 await checkFunc(entity);
-                entity.CheckStatus = CheckStatus.Success;
+            }
+            else
+            {
+                await Policy.Handle<Exception>()
+                        .WaitAndRetryAsync(
+                            retryCount: entity.RetryCount.GetValueOrDefault(),
+                            sleepDurationProvider: _ => entity.RetryInterval.GetValueOrDefault(),
+                             onRetry: (ex, _) =>
+                             {
+                                 Logger.LogWarning("retry for '{Key}'. Reason: {Message}", entity.Key, ex.Message);
+                             })
+                        .ExecuteAsync(async () =>
+                        {
+                            await checkFunc(entity);
+                        });
             }
 
-            await Policy.Handle<Exception>()
-                    .WaitAndRetryAsync(
-                        retryCount: entity.RetryCount.GetValueOrDefault(),
-                        sleepDurationProvider: _ => entity.RetryInterval.GetValueOrDefault(),
-                         onRetry: (ex, _) =>
-                         {
-                             Logger.LogWarning("retry for '{Key}'. Reason: {Message}", entity.Key, ex.Message);
-                         })
-                    .ExecuteAsync(async () =>
-                    {
-                        await checkFunc(entity);
-                    });
-
             _spanTracker.ResetFailSpan(entity);
-
             entity.CheckStatus = CheckStatus.Success;
         }
         catch (Exception ex)
@@ -439,6 +446,12 @@ public abstract class BaseCheckJob : BaseJob
     {
         try
         {
+            if (!entity.Active)
+            {
+                Logger.LogInformation("skipping inactive operation: '{Name}'", entity.Key);
+                return;
+            }
+
             await operationFunc(entity);
         }
         catch (Exception ex)

@@ -71,12 +71,6 @@ internal partial class Job : BaseCheckJob
 
     private async Task InvokeQueryCheckInner(CheckQuery checkQuery)
     {
-        if (!checkQuery.Active)
-        {
-            Logger.LogInformation("skipping inactive query '{Name}'", checkQuery.Name);
-            return;
-        }
-
         if (!IsIntervalElapsed(checkQuery, checkQuery.Interval))
         {
             Logger.LogInformation("skipping query '{Name}' due to its interval", checkQuery.Name);

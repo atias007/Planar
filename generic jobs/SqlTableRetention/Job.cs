@@ -67,12 +67,6 @@ internal partial class Job : BaseCheckJob
 
     private async Task InvokeTableRerentionInner(Table table)
     {
-        if (!table.Active)
-        {
-            Logger.LogInformation("skipping inactive table '{Name}'", table.Name);
-            return;
-        }
-
         var timeout = table.Timeout;
         var query = GetQuery(table);
         Logger.LogDebug("retention '{Name}' executed with query: {Query}", table.Name, query);

@@ -4,5 +4,5 @@ public interface ICheckElement
 {
     string Key { get; }
     bool Active { get; }
-    TimeSpan? Span { get; }
+    TimeSpan? AllowedFailSpan { get; }
 }

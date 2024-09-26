@@ -13,7 +13,6 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement, IVetoEntit
         SuccessStatusCodes = source.SuccessStatusCodes;
         Timeout = source.Timeout;
         Port = source.Port;
-        Active = source.Active;
         AbsoluteUrl = source.AbsoluteUrl;
     }
 
@@ -25,7 +24,6 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement, IVetoEntit
         SuccessStatusCodes = section.GetSection("success status codes").Get<int[]?>() ?? defaults.SuccessStatusCodes;
         Timeout = section.GetValue<TimeSpan?>("timeout") ?? defaults.Timeout;
         Port = section.GetValue<int?>("port");
-        Active = section.GetValue<bool?>("active") ?? true;
         AbsoluteUrl = SetAbsoluteUrl(Url);
     }
 
@@ -35,7 +33,6 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement, IVetoEntit
     public IEnumerable<int> SuccessStatusCodes { get; }
     public TimeSpan Timeout { get; }
     public int? Port { get; }
-    public bool Active { get; }
     public string Key => Name;
     public Uri? AbsoluteUrl { get; }
     public bool IsAbsoluteUrl => !IsRelativeUrl;

@@ -9,7 +9,6 @@ internal class Service : BaseDefault, IService, INamedCheckElement, IVetoEntity
     {
         Name = section.GetValue<string?>("name") ?? string.Empty;
         HostGroupName = section.GetValue<string?>("host group name");
-        Active = section.GetValue<bool?>("active") ?? true;
         IgnoreDisabled = section.GetValue<bool?>("ignore disabled") ?? true;
         StartService = section.GetValue<bool?>("start service") ?? true;
         AutomaticStart = section.GetValue<bool?>("automatic start") ?? true;
@@ -20,7 +19,6 @@ internal class Service : BaseDefault, IService, INamedCheckElement, IVetoEntity
     {
         Name = service.Name;
         HostGroupName = service.HostGroupName;
-        Active = service.Active;
         IgnoreDisabled = service.IgnoreDisabled;
         StartService = service.StartService;
         AutomaticStart = service.AutomaticStart;
@@ -29,7 +27,6 @@ internal class Service : BaseDefault, IService, INamedCheckElement, IVetoEntity
 
     public string Name { get; }
     public string? HostGroupName { get; }
-    public bool Active { get; }
     public bool IgnoreDisabled { get; }
     public bool StartService { get; }
     public bool AutomaticStart { get; }

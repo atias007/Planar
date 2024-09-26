@@ -51,6 +51,7 @@ internal partial class Job : BaseCheckJob
         ValidateRequired(keys, "keys");
         ValidateDuplicateKeys(keys, "keys");
 
+        EffectedRows = 0;
         var tasks = SafeInvokeOperation(keys, InvokeKeyCheckInner);
         await Task.WhenAll(tasks);
 
@@ -95,11 +96,6 @@ internal partial class Job : BaseCheckJob
     private async Task InvokeKeyCheckInner(RedisKey key)
     {
         var done = false;
-        if (!key.Active)
-        {
-            Logger.LogInformation("skipping inactive key '{Key}'", key.Key);
-            return;
-        }
 
         var exists = await RedisFactory.Exists(key);
 
@@ -114,6 +110,7 @@ internal partial class Job : BaseCheckJob
                     await RedisFactory.Invoke(key, commands[0], commands[1..]);
 
                 done = true;
+                IncreaseEffectedRows();
                 Logger.LogInformation("execute default command '{Command}' for key '{Key}'. result: {Result}", key.DefaultCommand, key.Key, result);
                 exists = await RedisFactory.Exists(key);
             }
@@ -136,6 +133,7 @@ internal partial class Job : BaseCheckJob
             if (setexpire)
             {
                 done = true;
+                IncreaseEffectedRows();
                 Logger.LogInformation("set expire date {Date} for key '{Key}'", key.NextExpireCronDate, key.Key);
             }
         }

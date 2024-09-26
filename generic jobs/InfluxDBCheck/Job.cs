@@ -78,8 +78,8 @@ internal partial class Job : BaseCheckJob
     {
         var server = new Server(configuration);
 
-        ValidateRequired(server.Token, "token", "server");
         ValidateRequired(server.Url, "url", "server");
+        ValidateRequired(server.Token, "token", "server");
         ValidateRequired(server.Organization, "organization", "server");
 
         ValidateUri(server.Url, "url", "server");
@@ -135,12 +135,6 @@ internal partial class Job : BaseCheckJob
 
     private async Task InvokeQueryCheckInner(InfluxQuery query, InfluxProxy proxy)
     {
-        if (!query.Active)
-        {
-            Logger.LogInformation("skipping inactive query '{Query}'", query.Query);
-            return;
-        }
-
         if (!IsIntervalElapsed(query, query.Interval))
         {
             Logger.LogInformation("skipping query '{Name}' due to its interval", query.Name);

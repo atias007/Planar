@@ -141,12 +141,6 @@ internal partial class Job : BaseCheckJob
 
     private async Task InvokeEndpointInner(Endpoint endpoint)
     {
-        if (!endpoint.Active)
-        {
-            Logger.LogInformation("skipping inactive endpoint '{Name}'", endpoint.Name);
-            return;
-        }
-
         var uri = BuildUri(endpoint);
 
         HttpResponseMessage response;

@@ -2,29 +2,31 @@
 
 namespace Common;
 
-public abstract class BaseDefault
+public abstract class BaseDefault : BaseActiveElement
 {
     protected BaseDefault()
     {
     }
 
-    protected BaseDefault(BaseDefault baseDefault)
+    protected BaseDefault(BaseDefault baseDefault) : base(baseDefault)
     {
         RetryCount = baseDefault.RetryCount;
         RetryInterval = baseDefault.RetryInterval;
-        Span = baseDefault.Span;
+        AllowedFailSpan = baseDefault.AllowedFailSpan;
     }
 
-    protected BaseDefault(IConfigurationSection section, BaseDefault baseDefault)
+    protected BaseDefault(IConfigurationSection section, BaseDefault baseDefault) : base(section)
     {
         RetryCount = section.GetValue<int?>("retry count") ?? baseDefault.RetryCount;
         RetryInterval = section.GetValue<TimeSpan?>("retry interval") ?? baseDefault.RetryInterval;
-        Span = section.GetValue<TimeSpan?>("allowed fail span") ?? baseDefault.Span;
+        AllowedFailSpan = section.GetValue<TimeSpan?>("allowed fail span") ?? baseDefault.AllowedFailSpan;
     }
 
     public int? RetryCount { get; set; }
     public TimeSpan? RetryInterval { get; set; }
-    public TimeSpan? Span { get; set; }
+    public TimeSpan? AllowedFailSpan { get; set; }
+
+    //// --------------------------------------------------------------- ////
 
     public CheckStatus CheckStatus { get; set; }
 }
