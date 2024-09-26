@@ -6,7 +6,6 @@ general:
 defaults:                                       # default values for all folders. each folder can override these values
   retry count: 1                                # the number of retry attemp in case of failure
   retry interval: 00:00:10                      # the interval between retry attemps
-  maximum fails in row: 5                       # the maximum number of fails in row before the job is considered as failed
 
 #hosts:                                         # the hosts to be used in folders with relative path. usualy this section defined in specific environment job settings
 #  - group name: default
@@ -25,4 +24,5 @@ folders:
     file count: 100                             # the maximum number of files in the folder
     created age: 1day                           # the maximum age of the file (in seconds, minutes, hours, days, weeks, months, years)
     modified age: 1day                          # the maximum age of the file (in seconds, minutes, hours, days, weeks, months, years)
+    allowed fail span: 00:05:00                 # the time span which violation of the folder will be considered ok
     active: true                                # the default is true

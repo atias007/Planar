@@ -5,7 +5,16 @@ using System.Globalization;
 
 public class CheckSpanTracker(IBaseJob baseJob)
 {
-    public TimeSpan LastFailSpan(ICheckElement element)
+    public bool IsSpanValid<T>(T entity)
+        where T : BaseDefault, ICheckElement
+    {
+        return
+            entity.Span != null &&
+            entity.Span != TimeSpan.Zero &&
+            entity.Span > LastFailSpan(entity);
+    }
+
+    private TimeSpan LastFailSpan(ICheckElement element)
     {
         var key = GetKey(element);
         if (baseJob.Context.MergedJobDataMap.TryGet(key, out var value)

@@ -8,7 +8,6 @@ defaults:                                       # default values for all endpoin
   retry count: 3                                # the number of retry attemp in case of failure
   retry interval: 00:00:05                      # the interval between retry attemps
   timeout: 00:00:02                             # the timeout for each request
-  maximum fails in row: 2                       # the maximum number of fails in row before the job is considered as failed
 
 #hosts:                                         # the hosts to be used in the endpoints with relative url. usualy this section defined in specific environment job settings
 #  - group name: default
@@ -19,7 +18,8 @@ defaults:                                       # default values for all endpoin
 endpoints:
   - name: Test internet access                 # the display name of the endpoint
     url: https://www.google.com                # the url of the endpoint
-    active: false                               # the default is true
+    allowed fail span: 00:01:00                # the time span which violation of the endpoint will be considered ok
+    active: false                              # the default is true
 
   - name: GitHub
     url: https://github.com

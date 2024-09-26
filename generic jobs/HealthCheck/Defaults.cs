@@ -9,7 +9,6 @@ internal class Defaults : BaseDefault, IEndpoint
     {
         RetryCount = 3;
         RetryInterval = TimeSpan.FromSeconds(10);
-        MaximumFailsInRow = 5;
         SuccessStatusCodes = new List<int> { 200, 201, 202, 204 };
         Timeout = TimeSpan.FromSeconds(5);
     }

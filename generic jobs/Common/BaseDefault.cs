@@ -12,7 +12,6 @@ public abstract class BaseDefault
     {
         RetryCount = baseDefault.RetryCount;
         RetryInterval = baseDefault.RetryInterval;
-        MaximumFailsInRow = baseDefault.MaximumFailsInRow;
         Span = baseDefault.Span;
     }
 
@@ -20,12 +19,10 @@ public abstract class BaseDefault
     {
         RetryCount = section.GetValue<int?>("retry count") ?? baseDefault.RetryCount;
         RetryInterval = section.GetValue<TimeSpan?>("retry interval") ?? baseDefault.RetryInterval;
-        MaximumFailsInRow = section.GetValue<int?>("maximum fails in row") ?? baseDefault.MaximumFailsInRow;
-        Span = section.GetValue<TimeSpan?>("span") ?? baseDefault.Span;
+        Span = section.GetValue<TimeSpan?>("allowed fail span") ?? baseDefault.Span;
     }
 
     public int? RetryCount { get; set; }
     public TimeSpan? RetryInterval { get; set; }
-    public int? MaximumFailsInRow { get; set; }
     public TimeSpan? Span { get; set; }
 }

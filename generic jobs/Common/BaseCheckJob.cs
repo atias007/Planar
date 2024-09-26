@@ -15,7 +15,6 @@ public abstract class BaseCheckJob : BaseJob
 {
     private static readonly object _locker = new();
     private readonly ConcurrentQueue<CheckException> _exceptions = new();
-    private CheckFailCounter _failCounter = null!;
     private General _general = null!;
     private CheckSpanTracker _spanTracker = null!;
 
@@ -87,8 +86,6 @@ public abstract class BaseCheckJob : BaseJob
         ValidateLessThen(@default.RetryInterval?.TotalMinutes, 1, "retry interval", section);
         ValidateGreaterThenOrEquals(@default.RetryCount, 0, "retry count", section);
         ValidateLessThenOrEquals(@default.RetryCount, 10, "retry count", section);
-        ValidateGreaterThenOrEquals(@default.MaximumFailsInRow, 1, "maximum fails in row", section);
-        ValidateLessThenOrEquals(@default.MaximumFailsInRow, 1000, "maximum fails in row", section);
     }
 
     protected static void ValidateDuplicateKeys<T>(IEnumerable<T> items, string sectionName)
@@ -311,7 +308,6 @@ public abstract class BaseCheckJob : BaseJob
     protected void Initialize(IServiceProvider serviceProvider)
     {
         _spanTracker = serviceProvider.GetRequiredService<CheckSpanTracker>();
-        _failCounter = serviceProvider.GetRequiredService<CheckFailCounter>();
 
         var config = ServiceProvider.GetRequiredService<IConfiguration>();
         var logger = ServiceProvider.GetRequiredService<ILogger<General>>();
@@ -323,7 +319,7 @@ public abstract class BaseCheckJob : BaseJob
 
     protected bool IsIntervalElapsed(ICheckElement element, TimeSpan? interval)
     {
-        if (interval == null) { return true; }
+        if (interval == null || interval.Value == TimeSpan.Zero) { return true; }
         var tracker = ServiceProvider.GetRequiredService<CheckIntervalTracker>();
         var result = tracker.ShouldRun(element, interval.Value);
         return result;
@@ -377,7 +373,6 @@ public abstract class BaseCheckJob : BaseJob
                         await checkFunc(entity);
                     });
 
-            _failCounter.ResetFailCount(entity);
             _spanTracker.ResetFailSpan(entity);
 
             return SafeHandleStatus.Success;
@@ -527,20 +522,6 @@ public abstract class BaseCheckJob : BaseJob
     private SafeHandleStatus SafeHandleCheckException<T>(T entity, Exception ex)
           where T : BaseDefault, ICheckElement
     {
-        bool IsSpanValid()
-        {
-            return
-                entity.Span != null &&
-                entity.Span != TimeSpan.Zero &&
-                entity.Span > _spanTracker.LastFailSpan(entity);
-        }
-
-        bool IsFailCounterInScope()
-        {
-            var failCount = _failCounter.IncrementFailCount(entity);
-            return entity.MaximumFailsInRow.HasValue && failCount <= entity.MaximumFailsInRow;
-        }
-
         try
         {
             if (!IsExceptionIsCheckException(ex, out var checkException))
@@ -551,16 +532,9 @@ public abstract class BaseCheckJob : BaseJob
                 return SafeHandleStatus.Exception;
             }
 
-            if (IsSpanValid())
+            if (_spanTracker.IsSpanValid(entity))
             {
                 Logger.LogWarning("check failed for '{Key}' but error span is valid. reason: {Message}",
-                    entity.Key, ex.Message);
-                return SafeHandleStatus.CheckWarning;
-            }
-
-            if (IsFailCounterInScope())
-            {
-                Logger.LogWarning("check failed for '{Key}' but maximum fails in row not reached yet. reason: {Message}",
                     entity.Key, ex.Message);
                 return SafeHandleStatus.CheckWarning;
             }
