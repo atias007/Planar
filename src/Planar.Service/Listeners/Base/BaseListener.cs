@@ -190,12 +190,12 @@ public abstract class BaseListener<T>
         return TriggerHelper.IsSystemTriggerKey(triggerKey);
     }
 
-    protected bool IsSystemJob(IJobDetail job)
+    protected static bool IsSystemJob(IJobDetail job)
     {
         return JobKeyHelper.IsSystemJobKey(job.Key);
     }
 
-    protected bool IsSystemTrigger(ITrigger trigger)
+    protected static bool IsSystemTrigger(ITrigger trigger)
     {
         return TriggerHelper.IsSystemTriggerKey(trigger.Key);
     }

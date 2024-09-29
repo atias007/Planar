@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Planar.Validation.Attributes
 {
+    [AttributeUsage(AttributeTargets.Parameter)]
     public class UIntAttribute : ValidationAttribute
     {
         protected override ValidationResult IsValid(object value, ValidationContext validationContext)

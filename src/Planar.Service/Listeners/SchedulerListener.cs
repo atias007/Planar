@@ -17,7 +17,7 @@ internal class SchedulerListener(IServiceScopeFactory serviceScopeFactory, ILogg
 {
     private const string _cacheKey = "{0}_{1}";
 
-    public string Name => nameof(SchedulerListener);
+    public static string Name => nameof(SchedulerListener);
 
     public Task JobAdded(IJobDetail jobDetail, CancellationToken cancellationToken = default)
     {

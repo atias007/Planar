@@ -5,6 +5,7 @@ using System.Globalization;
 
 namespace Planar.Validation.Attributes
 {
+    [AttributeUsage(AttributeTargets.Parameter)]
     public class SqlDateTimeAttribute : ValidationAttribute
     {
         protected override ValidationResult IsValid(object value, ValidationContext validationContext)

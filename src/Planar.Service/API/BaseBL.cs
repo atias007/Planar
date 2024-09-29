@@ -100,7 +100,10 @@ namespace Planar.Service.API
 
         protected JobKeyHelper JobKeyHelper => _serviceProvider.GetRequiredService<JobKeyHelper>();
 
+#pragma warning disable S2325 // Methods and properties that don't access instance data should be static
+
         protected string? ServiceVersion
+#pragma warning restore S2325 // Methods and properties that don't access instance data should be static
         {
             get
             {

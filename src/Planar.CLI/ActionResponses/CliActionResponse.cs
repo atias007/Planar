@@ -29,7 +29,7 @@ namespace Planar.CLI
         public CliActionResponse(RestResponse? response, CliTable table)
             : this(response)
         {
-            Tables = new List<CliTable> { table };
+            Tables = [table];
         }
 
         public CliActionResponse(RestResponse? response, List<CliTable> tables)
@@ -47,7 +47,7 @@ namespace Planar.CLI
         public CliActionResponse(RestResponse? response, object? dumpObject)
             : this(response)
         {
-            DumpObjects = new List<CliDumpObject> { new CliDumpObject(dumpObject) };
+            DumpObjects = [new(dumpObject)];
 
             if (dumpObject != null)
             {
@@ -58,7 +58,7 @@ namespace Planar.CLI
         public CliActionResponse(RestResponse? response, CliDumpObject dumpObject)
             : this(response)
         {
-            DumpObjects = new List<CliDumpObject> { dumpObject };
+            DumpObjects = [dumpObject];
 
             if (dumpObject != null)
             {
