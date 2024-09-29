@@ -1,5 +1,4 @@
-﻿using Common;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 
 namespace RabbitMQCheck;
 
@@ -7,7 +6,7 @@ internal class Server
 {
     public Server(IConfiguration configuration)
     {
-        var section = configuration.GetRequiredSection(Consts.RabbitMQConfigSection);
+        var section = configuration.GetRequiredSection("server");
         Hosts = section.GetSection("hosts").Get<string[]>() ?? [];
         Username = section.GetValue<string>("username") ?? string.Empty;
         Password = section.GetValue<string>("password") ?? string.Empty;

@@ -3,11 +3,37 @@ using Microsoft.Extensions.Configuration;
 
 namespace FolderCheck;
 
-internal class Folder : BaseDefault, INamedCheckElement
+internal class Folder : BaseDefault, INamedCheckElement, IVetoEntity
 {
+    public Folder(Folder source) : base(source)
+    {
+        Name = source.Name;
+        HostGroupName = source.HostGroupName;
+        Path = source.Path;
+        FilesPattern = source.FilesPattern;
+        IncludeSubdirectories = source.IncludeSubdirectories;
+        TotalSize = source.TotalSize;
+        FileSize = source.FileSize;
+        FileCount = source.FileCount;
+        CreatedAge = source.CreatedAge;
+        ModifiedAge = source.ModifiedAge;
+
+        TotalSizeNumber = source.TotalSizeNumber;
+        FileSizeNumber = source.FileSizeNumber;
+        CreatedAgeDate = source.CreatedAgeDate;
+        ModifiedAgeDate = source.ModifiedAgeDate;
+        IsAbsolutePath = source.IsAbsolutePath;
+
+        if (FilesPattern == null || !FilesPattern.Any())
+        {
+            FilesPattern = new List<string> { "*.*" };
+        }
+    }
+
     public Folder(IConfigurationSection section, Defaults defaults) : base(section, defaults)
     {
         Name = section.GetValue<string>("name") ?? string.Empty;
+        HostGroupName = section.GetValue<string?>("host group name");
         Path = section.GetValue<string>("path") ?? string.Empty;
         FilesPattern = section.GetValue<string?>("files pattern")?.Split(',').ToList();
         IncludeSubdirectories = section.GetValue<bool>("include subdirectories");
@@ -16,7 +42,6 @@ internal class Folder : BaseDefault, INamedCheckElement
         FileCount = section.GetValue<int?>("file count");
         CreatedAge = section.GetValue<string?>("created age");
         ModifiedAge = section.GetValue<string?>("modified age");
-        Active = section.GetValue<bool?>("active") ?? true;
 
         TotalSizeNumber = CommonUtil.GetSize(TotalSize, "total size");
         FileSizeNumber = CommonUtil.GetSize(FileSize, "file size");
@@ -26,6 +51,7 @@ internal class Folder : BaseDefault, INamedCheckElement
     }
 
     public string Name { get; private set; }
+    public string? HostGroupName { get; private set; }
     public string Path { get; private set; }
     public IEnumerable<string>? FilesPattern { get; private set; }
     public bool IncludeSubdirectories { get; private set; }
@@ -34,7 +60,6 @@ internal class Folder : BaseDefault, INamedCheckElement
     public int? FileCount { get; private set; }
     public string? CreatedAge { get; private set; }
     public string? ModifiedAge { get; private set; }
-    public bool Active { get; private set; }
 
     //// --------------------------------------- ////
 
@@ -46,17 +71,25 @@ internal class Folder : BaseDefault, INamedCheckElement
     public bool IsAbsolutePath { get; }
     public bool IsRelativePath => !IsAbsolutePath;
 
-    public void SetDefaultFilePattern()
-    {
-        FilesPattern = new List<string> { "*.*" };
-    }
+    // internal use for relative urls
+    public string? Host { get; set; }
+
+    //// -------------------------- ////
+    public bool Veto { get; set; }
+
+    public string? VetoReason { get; set; }
 
     public bool IsValid =>
         TotalSizeNumber != null || FileSizeNumber != null || FileCount != null || CreatedAgeDate != null || ModifiedAgeDate != null;
 
-    public string GetFullPath(string? host)
+    public string GetFullPath()
     {
-        return IsAbsolutePath || string.IsNullOrWhiteSpace(host) ? Path : PathCombine(host, Path);
+        if (IsRelativePath && string.IsNullOrWhiteSpace(Host))
+        {
+            throw new CheckException($"could not find host for relative path '{Path}' of folder name '{Key}'. check if host group name exists");
+        }
+
+        return IsAbsolutePath || string.IsNullOrWhiteSpace(Host) ? Path : PathCombine(Host, Path);
     }
 
     //// --------------------------------------- ////

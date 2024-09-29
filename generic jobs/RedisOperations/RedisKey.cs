@@ -1,11 +1,11 @@
 ﻿using Common;
 using Cronos;
 using Microsoft.Extensions.Configuration;
-using RedisCheck;
+using Redis;
 
 namespace RedisOperations;
 
-internal class RedisKey(IConfigurationSection section) : ICheckElement, IRedisKey
+internal class RedisKey(IConfigurationSection section) : ICheckElement, IRedisKey, IVetoEntity
 {
     public string Key { get; set; } = section.GetValue<string>("key") ?? string.Empty;
     public string? ExpireCron { get; set; } = section.GetValue<string>("expire cron");
@@ -14,8 +14,12 @@ internal class RedisKey(IConfigurationSection section) : ICheckElement, IRedisKe
     public bool Mandatory { get; set; } = section.GetValue<bool?>("mandatory") ?? true;
     public bool Active { get; private set; } = section.GetValue<bool?>("active") ?? true;
     public bool IsValid => !string.IsNullOrWhiteSpace(ExpireCron) || !string.IsNullOrWhiteSpace(DefaultCommand);
-    public TimeSpan? Span => null;
+    public TimeSpan? AllowedFailSpan => null;
 
     public CronExpression? CronExpression { get; set; }
     public DateTime? NextExpireCronDate { get; set; }
+
+    public bool Veto { get; set; }
+
+    public string? VetoReason { get; set; }
 }

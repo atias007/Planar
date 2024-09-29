@@ -6,8 +6,6 @@ general:
 defaults:                                       # default values for all keys. each key can override these values
   retry count: 3                                # the number of retry attemp in case of failure
   retry interval: 00:00:05                      # the interval between retry attemps
-  maximum fails in row: 5                       # the maximum number of fails in row before the job is considered as failed
-  span: null                                    # the time span which violation on the query limit will be considered ok
 
 # connection strings:                                        # the sql server connection strings to use. usualy this section defined in specific environment job settings
 #   default: Data Source=.;Initial Catalog=master;Integrated Security=True
@@ -18,8 +16,8 @@ queries:
     query: SELECT top 1 Title FROM [AIG].[Infrastructure].[CurrencyCode] where id > 5000                   # the query to be executed. required
     message: "foo1 query failed with title {{Title}}" # the message to be logged in case of failure. you can use {{i}} to show value from field number i of the query or you can use {{field_name}} to show value from field name of query
     timeout: 00:00:10                           # the query execution timeout. the default is 30 seconds
-    span: 00:05:00                              # the time span which violation on the key limit will be considered ok
     interval: 00:10:00                          # the interval between query executions. the default is null (run on any trigger execution)
+    allowed fail span: 00:05:00                # the time span which violation of the query will be considered ok
     active: true                                # the default is true
 
   - name: foo2                                  # the name of the query. required
@@ -27,6 +25,6 @@ queries:
     query: SELECT top 1 rate FROM [Infrastructure].[ExchangeRating] where rate > 5                   # the query to be executed. required
     message: null
     timeout: 00:00:10                           # the query execution timeout. the default is 30 seconds
-    span: 00:05:00                              # the time span which violation on the key limit will be considered ok
     interval: 00:10:00                          # the interval between query executions. the default is null (run on any trigger execution)
+    allowed fail span: 00:05:00                 # the time span which violation of the query will be considered ok
     active: true                                # the default is true

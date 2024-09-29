@@ -1,21 +1,25 @@
 ﻿using Common;
 using Microsoft.Extensions.Configuration;
+using Redis;
 
 namespace RedisCheck;
 
-internal class RedisKey(IConfigurationSection section, Defaults defaults) : BaseDefault(section, defaults), ICheckElement, IRedisDefaults, IRedisKey
+internal class RedisKey(IConfigurationSection section, Defaults defaults) : BaseDefault(section, defaults), ICheckElement, IRedisDefaults, IRedisKey, IVetoEntity
 {
     public string Key { get; } = section.GetValue<string>("key") ?? string.Empty;
     public string? MemoryUsage { get; } = section.GetValue<string>("memory usage");
     public int? Length { get; } = section.GetValue<int?>("length");
     public int? Database { get; } = section.GetValue<int?>("database");
     public bool? Exists { get; } = section.GetValue<bool?>("exists");
-    public bool Active { get; } = section.GetValue<bool?>("active") ?? true;
 
     //// --------------------------------------- ////
 
     public int? MemoryUsageNumber { get; } = GetSize(section.GetValue<string>("memory usage"), "max memory usage");
     public bool IsValid => MemoryUsageNumber > 0 || Length > 0;
+
+    public bool Veto { get; set; }
+
+    public string? VetoReason { get; set; }
 
     //// --------------------------------------- ////
 

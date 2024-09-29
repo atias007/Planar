@@ -3,31 +3,59 @@ using Cronos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Planar.CLI.General;
+using Newtonsoft.Json;
 using Planar.Job;
-using RedisCheck;
+using Redis;
+using System.Text;
 
 namespace RedisOperations;
 
-internal class Job : BaseCheckJob
+internal partial class Job : BaseCheckJob
 {
+#pragma warning disable S3251 // Implementations should be provided for "partial" methods
+
+    static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+
+    static partial void CustomConfigure(ref RedisServer redisServer, IConfiguration configuration);
+
+    static partial void VetoKey(ref RedisKey key);
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
+        CustomConfigure(configurationBuilder, context);
+
+        var redisServer = new RedisServer();
+        CustomConfigure(ref redisServer, configurationBuilder.Build());
+
+        if (!redisServer.IsEmpty)
+        {
+            var json = JsonConvert.SerializeObject(new { server = redisServer });
+
+            // Create a JSON stream as a MemoryStream or directly from a file
+            var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+
+            // Add the JSON stream to the configuration builder
+            configurationBuilder.AddJsonStream(stream);
+        }
     }
+
+#pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
         Initialize(ServiceProvider);
         RedisFactory.Initialize(Configuration);
+        ValidateRedis();
 
         var keys = GetKeys(Configuration);
         ValidateRequired(keys, "keys");
         ValidateDuplicateKeys(keys, "keys");
 
+        EffectedRows = 0;
         var tasks = SafeInvokeOperation(keys, InvokeKeyCheckInner);
         await Task.WhenAll(tasks);
 
-        Finilayze();
+        Finalayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -35,12 +63,23 @@ internal class Job : BaseCheckJob
         services.RegisterBaseCheck();
     }
 
-    private static IEnumerable<RedisKey> GetKeys(IConfiguration configuration)
+    protected static void ValidateRedis()
+    {
+        ValidateRequired(RedisFactory.Endpoints, "endpoints", "server");
+        ValidateGreaterThenOrEquals(RedisFactory.Database, 0, "database", "server");
+        ValidateLessThenOrEquals(RedisFactory.Database, 16, "database", "server");
+    }
+
+    private IEnumerable<RedisKey> GetKeys(IConfiguration configuration)
     {
         var keys = configuration.GetRequiredSection("keys");
         foreach (var item in keys.GetChildren())
         {
             var key = new RedisKey(item);
+
+            VetoKey(ref key);
+            if (CheckVeto(key, "key")) { continue; }
+
             ValidateRedisKey(key);
             yield return key;
         }
@@ -57,11 +96,6 @@ internal class Job : BaseCheckJob
     private async Task InvokeKeyCheckInner(RedisKey key)
     {
         var done = false;
-        if (!key.Active)
-        {
-            Logger.LogInformation("skipping inactive key '{Key}'", key.Key);
-            return;
-        }
 
         var exists = await RedisFactory.Exists(key);
 
@@ -76,6 +110,7 @@ internal class Job : BaseCheckJob
                     await RedisFactory.Invoke(key, commands[0], commands[1..]);
 
                 done = true;
+                IncreaseEffectedRows();
                 Logger.LogInformation("execute default command '{Command}' for key '{Key}'. result: {Result}", key.DefaultCommand, key.Key, result);
                 exists = await RedisFactory.Exists(key);
             }
@@ -98,6 +133,7 @@ internal class Job : BaseCheckJob
             if (setexpire)
             {
                 done = true;
+                IncreaseEffectedRows();
                 Logger.LogInformation("set expire date {Date} for key '{Key}'", key.NextExpireCronDate, key.Key);
             }
         }

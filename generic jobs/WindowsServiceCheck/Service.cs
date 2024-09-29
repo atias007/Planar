@@ -3,24 +3,41 @@ using Microsoft.Extensions.Configuration;
 
 namespace WindowsServiceCheck;
 
-internal class Service(IConfigurationSection section, Defaults defaults) : BaseDefault(section, defaults), IService, INamedCheckElement
+internal class Service : BaseDefault, IService, INamedCheckElement, IVetoEntity
 {
-    public string Name { get; } = section.GetValue<string?>("name") ?? string.Empty;
-    public bool Active { get; } = section.GetValue<bool?>("active") ?? true;
-    public bool IgnoreDisabled { get; } = section.GetValue<bool?>("ignore disabled") ?? true;
-    public bool StartService { get; } = section.GetValue<bool?>("start service") ?? true;
-    public bool AutomaticStart { get; } = section.GetValue<bool?>("automatic start") ?? true;
-    public IEnumerable<string> Hosts { get; private set; } = section.GetSection("hosts").Get<string[]>() ?? [];
-    public TimeSpan StartServiceTimeout { get; } = section.GetValue<TimeSpan?>("start service timeout") ?? TimeSpan.FromSeconds(30);
+    public Service(IConfigurationSection section, Defaults defaults) : base(section, defaults)
+    {
+        Name = section.GetValue<string?>("name") ?? string.Empty;
+        HostGroupName = section.GetValue<string?>("host group name");
+        IgnoreDisabled = section.GetValue<bool?>("ignore disabled") ?? true;
+        StartService = section.GetValue<bool?>("start service") ?? true;
+        AutomaticStart = section.GetValue<bool?>("automatic start") ?? true;
+        StartServiceTimeout = section.GetValue<TimeSpan?>("start service timeout") ?? TimeSpan.FromSeconds(30);
+    }
+
+    public Service(Service service) : base(service)
+    {
+        Name = service.Name;
+        HostGroupName = service.HostGroupName;
+        IgnoreDisabled = service.IgnoreDisabled;
+        StartService = service.StartService;
+        AutomaticStart = service.AutomaticStart;
+        StartServiceTimeout = service.StartServiceTimeout;
+    }
+
+    public string Name { get; }
+    public string? HostGroupName { get; }
+    public bool IgnoreDisabled { get; }
+    public bool StartService { get; }
+    public bool AutomaticStart { get; }
+    public TimeSpan StartServiceTimeout { get; }
     public string Key => Name;
 
-    public void SetHosts(IEnumerable<string> hosts)
-    {
-        Hosts = hosts;
-    }
+    //// --------------------------------------- ////
 
-    public void ClearInvalidHosts()
-    {
-        Hosts = Hosts.Where(f => !string.IsNullOrWhiteSpace(f));
-    }
+    public string? Host { get; set; }
+
+    public bool Veto { get; set; }
+
+    public string? VetoReason { get; set; }
 }

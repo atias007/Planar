@@ -311,6 +311,8 @@ internal static class CliTableExtensions
     public static CliTable GetTable(RestResponse? response)
     {
         var table = new CliTable(showCount: true);
+        table.Table.AddColumn("no result from odata");
+
         if (response == null) { return table; }
         if (!response.IsSuccessStatusCode) { return table; }
         if (string.IsNullOrWhiteSpace(response.Content)) { return table; }
@@ -338,7 +340,11 @@ internal static class CliTableExtensions
             .ToArray();
 
         ValidateDataTableColumns(columns);
-        table.Table.AddColumns(columns);
+        if (columns.Length > 0)
+        {
+            table = new CliTable(showCount: true);
+            table.Table.AddColumns(columns);
+        }
 
         // build rows
         for (var i = 0; i < dataTable.Rows.Count; i++)
@@ -427,7 +433,7 @@ internal static class CliTableExtensions
             CliTableFormat.FormatSummaryNumber(r.Fail, CliFormat.ErrorColor),
             CliTableFormat.FormatSummaryNumber(r.Running, CliFormat.WarningColor),
             CliTableFormat.FormatSummaryNumber(r.Retries, "turquoise2"),
-            CliTableFormat.FormatSummaryNumber(r.TotalEffectedRows)));
+            CliTableFormat.FormatNumber(r.TotalEffectedRows)));
 
         return table;
     }

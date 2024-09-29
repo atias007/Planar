@@ -6,50 +6,67 @@ using Planar.Job;
 
 namespace HealthCheck;
 
+#pragma warning disable SA1313 // Parameter names should begin with lower-case letter
 internal record HttpUtility(string Url, HttpClient Client);
+#pragma warning restore SA1313 // Parameter names should begin with lower-case letter
 
-internal sealed partial class Job : BaseCheckJob
+internal partial class Job : BaseCheckJob
 {
+#pragma warning disable S3251 // Implementations should be provided for "partial" methods
+
+    static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+
+    static partial void VetoEndpoint(ref Endpoint endpoint);
+
+    partial void VetoHost(ref Host host);
+
+    static partial void Finilayze(IEnumerable<Endpoint> endpoints);
+
+#pragma warning restore S3251 // Implementations should be provided for "partial" methods
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
-    {
-    }
+        => CustomConfigure(configurationBuilder, context);
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
         Initialize(ServiceProvider);
 
         var defaults = GetDefaults(Configuration);
-        var hosts = GetHosts(Configuration);
+        var hosts = GetHosts(Configuration, h => VetoHost(ref h));
         var endpoints = GetEndpoints(Configuration, defaults);
 
-        if (!hosts.Any() && endpoints.Exists(e => e.IsRelativeUrl))
+        if (endpoints.Exists(e => e.IsRelativeUrl))
         {
-            throw new InvalidDataException("no hosts defined and at least one endpoint is relative url");
+            ValidateRequired(hosts, "hosts");
         }
 
-        ValidateDuplicateKeys(endpoints, "endpoints");
+        ValidateDuplicateNames(endpoints, "endpoints");
 
         endpoints = GetEndpointsWithHost(endpoints, hosts);
         EffectedRows = 0;
         await SafeInvokeCheck(endpoints, InvokeEndpointInner);
 
-        Finilayze();
+        Finilayze(endpoints);
+        Finalayze();
     }
 
-    private static List<Endpoint> GetEndpointsWithHost(List<Endpoint> endpoints, IEnumerable<Uri> hosts)
+    private static List<Endpoint> GetEndpointsWithHost(List<Endpoint> endpoints, IReadOnlyDictionary<string, HostsConfig> hosts)
     {
         var absolute = endpoints.Where(e => e.IsAbsoluteUrl);
         var relative = endpoints.Where(e => e.IsRelativeUrl);
         var result = new List<Endpoint>(absolute);
-        if (relative.Any() && hosts.Any())
+        if (relative.Any() && hosts.Count != 0)
         {
             foreach (var rel in relative)
             {
-                foreach (var host in hosts)
+                if (!hosts.TryGetValue(rel.HostGroupName ?? string.Empty, out var hostGroup))
                 {
-                    var clone = rel.Clone();
-                    clone.Host = host;
-                    result.Add(clone);
+                    result.Add(rel);
+                }
+                else
+                {
+                    var clones = hostGroup.Hosts.Select(h => new Endpoint(rel) { Host = new Uri(h) });
+                    result.AddRange(clones);
                 }
             }
         }
@@ -57,39 +74,29 @@ internal sealed partial class Job : BaseCheckJob
         return result;
     }
 
-    private static void ValidateEndpoints(IEnumerable<Endpoint> endpoints)
-    {
-        ValidateRequired(endpoints, "endpoints");
-        ValidateDuplicateNames(endpoints, "endpoints");
-    }
-
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
         services.RegisterBaseCheck();
     }
 
-    private static List<Endpoint> GetEndpoints(IConfiguration configuration, Defaults defaults)
+    private List<Endpoint> GetEndpoints(IConfiguration configuration, Defaults defaults)
     {
         var endpoints = configuration.GetRequiredSection("endpoints");
         var result = new List<Endpoint>();
         foreach (var item in endpoints.GetChildren())
         {
             var endpoint = new Endpoint(item, defaults);
+            VetoEndpoint(ref endpoint);
+            if (CheckVeto(endpoint, "endpoint")) { continue; }
+
             ValidateEndpoint(endpoint);
             result.Add(endpoint);
         }
 
-        ValidateEndpoints(result);
-        return result;
-    }
+        ValidateRequired(result, "endpoints");
+        ValidateDuplicateNames(result, "endpoints");
 
-    private static IEnumerable<Uri> GetHosts(IConfiguration configuration)
-    {
-        var hosts = configuration.GetSection("hosts");
-        if (hosts == null) { return []; }
-        var result = hosts.Get<string[]>() ?? [];
-        result.ToList().ForEach(h => ValidateUri(h, "host", "hosts"));
-        return result.Distinct().Select(r => new Uri(r));
+        return result;
     }
 
     private static void Validate(IEndpoint endpoint, string section)
@@ -134,12 +141,6 @@ internal sealed partial class Job : BaseCheckJob
 
     private async Task InvokeEndpointInner(Endpoint endpoint)
     {
-        if (!endpoint.Active)
-        {
-            Logger.LogInformation("skipping inactive endpoint '{Name}'", endpoint.Name);
-            return;
-        }
-
         var uri = BuildUri(endpoint);
 
         HttpResponseMessage response;

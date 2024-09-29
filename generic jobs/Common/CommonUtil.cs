@@ -59,6 +59,7 @@ public static class CommonUtil
             cleanValue = GetCleanValue(value, "seconds");
             return DateTime.Now.AddSeconds(-cleanValue);
         }
+
         if (value.EndsWith("second"))
         {
             cleanValue = GetCleanValue(value, "second");

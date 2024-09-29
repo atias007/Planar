@@ -12,20 +12,12 @@ namespace Planar.CLI.Proxy;
 
 internal static class RestProxy
 {
-    public static bool SecureProtocol { get; set; }
+    private static readonly object _lock = new();
+    private static RestClient? _client;
     public static string Host { get; set; } = ConnectUtil.DefaultHost;
     public static int Port { get; set; } = ConnectUtil.GetDefaultPort();
-
-    private static RestClient? _client;
-    private static readonly object _lock = new();
-
-    public static void Flush()
-    {
-        lock (_lock)
-        {
-            _client = null;
-        }
-    }
+    public static bool SecureProtocol { get; set; }
+    internal static Uri BaseUri => new UriBuilder(Schema, Host, Port).Uri;
 
     private static RestClient Proxy
     {
@@ -60,29 +52,13 @@ internal static class RestProxy
         }
     }
 
-    private static Uri BaseUri => new UriBuilder(Schema, Host, Port).Uri;
-
     private static string Schema => GetSchema(SecureProtocol);
 
-    private static async Task<bool> RefreshToken(RestResponse response, CancellationToken cancellationToken)
+    public static void Flush()
     {
-        if (!LoginProxy.IsAuthorized) { return false; }
-        if (response.StatusCode != HttpStatusCode.Unauthorized) { return false; }
-
-        var reloginResponse = await LoginProxy.Relogin(cancellationToken);
-        return reloginResponse.IsSuccessful;
-    }
-
-    internal static string GetSchema(bool secureProtocol)
-    {
-        return secureProtocol ? "https" : "http";
-    }
-
-    private static void SetDefaultRequestTimeout(RestRequest request)
-    {
-        if (request.Timeout == TimeSpan.Zero)
+        lock (_lock)
         {
-            request.Timeout = TimeSpan.FromMilliseconds(10_000);
+            _client = null;
         }
     }
 
@@ -108,5 +84,27 @@ internal static class RestProxy
         }
 
         return response;
+    }
+
+    internal static string GetSchema(bool secureProtocol)
+    {
+        return secureProtocol ? "https" : "http";
+    }
+
+    private static async Task<bool> RefreshToken(RestResponse response, CancellationToken cancellationToken)
+    {
+        if (!LoginProxy.IsAuthorized) { return false; }
+        if (response.StatusCode != HttpStatusCode.Unauthorized) { return false; }
+
+        var reloginResponse = await LoginProxy.Relogin(cancellationToken);
+        return reloginResponse.IsSuccessful;
+    }
+
+    private static void SetDefaultRequestTimeout(RestRequest request)
+    {
+        if (request.Timeout == TimeSpan.Zero)
+        {
+            request.Timeout = TimeSpan.FromMilliseconds(10_000);
+        }
     }
 }

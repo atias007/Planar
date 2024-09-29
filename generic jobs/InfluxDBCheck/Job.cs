@@ -3,50 +3,99 @@ using InfluxDB.Client.Core.Flux.Domain;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Planar.Job;
+using System.Globalization;
+using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace InfluxDBCheck;
 
-internal class Job : BaseCheckJob
+internal partial class Job : BaseCheckJob
 {
-    private const string template1 = "^(eq|ne|gt|ge|lt|le)\\s[-+]?\\d+(\\.\\d+)?$";
-    private const string template2 = "^(be|bi)\\s[-+]?\\d+(\\.\\d+)?\\sand\\s[-+]?\\d+(\\.\\d+)?$";
-    private static readonly Regex _regex1 = new(template1, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500));
-    private static readonly Regex _regex2 = new(template2, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500));
+#pragma warning disable S3251 // Implementations should be provided for "partial" methods
+
+    static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+
+    static partial void CustomConfigure(ref InfluxDBServer influxServer, IConfiguration configuration);
+
+    static partial void VetoQuery(ref InfluxQuery query);
+
+    static partial void Finalayze(IEnumerable<InfluxQuery> endpoints);
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
+        CustomConfigure(configurationBuilder, context);
+
+        var influxServer = new InfluxDBServer();
+        CustomConfigure(ref influxServer, configurationBuilder.Build());
+
+        if (!influxServer.IsEmpty)
+        {
+            var json = JsonConvert.SerializeObject(new { server = influxServer });
+
+            // Create a JSON stream as a MemoryStream or directly from a file
+            var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+
+            // Add the JSON stream to the configuration builder
+            configurationBuilder.AddJsonStream(stream);
+        }
     }
+
+#pragma warning restore S3251 // Implementations should be provided for "partial" methods
+
+    private const string Template1 = "^(eq|ne|gt|ge|lt|le)\\s[-+]?\\d+(\\.\\d+)?$";
+    private const string Template2 = "^(be|bi)\\s[-+]?\\d+(\\.\\d+)?\\sand\\s[-+]?\\d+(\\.\\d+)?$";
+    private static readonly Regex _regex1 = new(Template1, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500));
+    private static readonly Regex _regex2 = new(Template2, RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(500));
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
         Initialize(ServiceProvider);
 
         var defaults = GetDefaults(Configuration);
-        var server = new Server(Configuration);
+        var server = GetServer(Configuration);
         var queries = GetQueries(Configuration, defaults);
-        ValidateRequired(queries, "queries");
 
         EffectedRows = 0;
+        if (!CheckRequired(queries, "queries")) { return; }
 
         var proxy = new InfluxProxy(server);
         await SafeInvokeCheck(queries, q => InvokeQueryCheckInner(q, proxy));
 
-        Finilayze();
+        Finalayze(queries);
+        Finalayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
         services.RegisterBaseCheck();
+        services.AddSingleton<CheckIntervalTracker>();
     }
 
-    private static IEnumerable<InfluxQuery> GetQueries(IConfiguration configuration, Defaults defaults)
+    private static Server GetServer(IConfiguration configuration)
+    {
+        var server = new Server(configuration);
+
+        ValidateRequired(server.Url, "url", "server");
+        ValidateRequired(server.Token, "token", "server");
+        ValidateRequired(server.Organization, "organization", "server");
+
+        ValidateUri(server.Url, "url", "server");
+
+        return server;
+    }
+
+    private IEnumerable<InfluxQuery> GetQueries(IConfiguration configuration, Defaults defaults)
     {
         var keys = configuration.GetRequiredSection("queries");
         foreach (var item in keys.GetChildren())
         {
             var key = new InfluxQuery(item, defaults);
+            VetoQuery(ref key);
+            if (CheckVeto(key, "query")) { continue; }
+
             ValidateInfluxQuery(key);
             yield return key;
         }
@@ -79,28 +128,30 @@ internal class Job : BaseCheckJob
         }
         else
         {
-            var message = query.Message.Replace("{{value}}", value.ToString("N2"));
+            var message = query.Message.Replace("{{value}}", value.ToString("N2", CultureInfo.CurrentCulture));
             return new CheckException(message);
         }
     }
 
     private async Task InvokeQueryCheckInner(InfluxQuery query, InfluxProxy proxy)
     {
-        if (!query.Active)
+        if (!IsIntervalElapsed(query, query.Interval))
         {
-            Logger.LogInformation("skipping inactive query '{Query}'", query.Query);
+            Logger.LogInformation("skipping query '{Name}' due to its interval", query.Name);
             return;
         }
 
         var result = await proxy.QueryAsync(query);
         if (query.InternalValueCondition != null)
         {
-            var value = GetValue(result, query.Name);
+            var value = GetValue(result, query.Name) ?? 0;
             var ok = query.InternalValueCondition.Evaluate(value);
             if (!ok)
             {
                 throw GetCheckException(query, "value", value);
             }
+
+            Logger.LogInformation("internal value condition '{Value} {Condition}' for check '{Name}' success", value, query.InternalValueCondition.Text, query.Name);
         }
 
         if (query.InternalRecordsCondition != null)
@@ -111,6 +162,8 @@ internal class Job : BaseCheckJob
             {
                 throw GetCheckException(query, "records", value);
             }
+
+            Logger.LogInformation("internal records condition '{Value} {Condition}' for check '{Name}' success", value, query.InternalRecordsCondition.Text, query.Name);
         }
 
         Logger.LogInformation("query check success for name '{Name}'", query.Name);
@@ -124,24 +177,30 @@ internal class Job : BaseCheckJob
         return table.Records.Count;
     }
 
-    private static double GetValue(List<FluxTable> tables, string name)
+    private static double? GetValue(List<FluxTable> tables, string name)
     {
         if (tables.Count == 0)
         {
-            throw new CheckException($"could not get value from query name '{name}' (no influx tables");
+            return null;
         }
 
         var table = tables[0];
         if (table.Records.Count == 0)
         {
-            throw new CheckException($"could not get value from query name '{name}' (no influx records");
+            throw new CheckException($"could not get value from query name '{name}' (no influx records)");
         }
 
         var objValue = table.Records[0].GetValue();
-        var value = objValue as double? ??
-            throw new CheckException($"could not get value from query name '{name}' (value '{objValue}' is not numeric)");
 
-        return value;
+        try
+        {
+            var value = Convert.ToDouble(objValue, CultureInfo.InvariantCulture);
+            return value;
+        }
+        catch
+        {
+            throw new CheckException($"could not get value from query name '{name}' (value '{objValue ?? "null"}' is not numeric)");
+        }
     }
 
     private static void ValidateInfluxQuery(InfluxQuery query)

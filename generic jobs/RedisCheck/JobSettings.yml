@@ -6,7 +6,6 @@ general:
 defaults:                                       # default values for all keys. each key can override these values
   retry count: 3                                # the number of retry attemp in case of failure
   retry interval: 00:00:03                      # the interval between retry attemps
-  maximum fails in row: 5                       # the maximum number of fails in row before the job is considered as failed
   database: 0                                   # defualt redis database number to be used
 
 # server:                                        # the redis server parameters to be use. usualy this section defined in specific environment job settings
@@ -28,6 +27,6 @@ keys:
   - key: foo                                    # the key to be used in redis
     memory usage: 10mb                          # the maximum memory usage for the key
     length: 5                                   # the maximum length of the key
-    span: 00:05:00                              # the time span which violation on the key limit will be considered ok
+    allowed fail span: 00:05:00                 # the time span which violation of the key will be considered ok
     exists: true                                # the job will fail if the key does not exist
     active: true                                # the default is true

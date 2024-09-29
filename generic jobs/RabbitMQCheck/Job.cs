@@ -2,15 +2,45 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Planar.Job;
+using System.Text;
+using YamlDotNet.Core.Tokens;
 
 namespace RabbitMQCheck;
 
-public class Job : BaseCheckJob
+internal partial class Job : BaseCheckJob
 {
+#pragma warning disable S3251 // Implementations should be provided for "partial" methods
+
+    static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+
+    static partial void CustomConfigure(ref RabbitMqServer rabbitMqServer, IConfiguration configuration);
+
+    static partial void VetoQueue(ref Queue queue);
+
+    static partial void Finalayze(IEnumerable<Queue> queues);
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
+        CustomConfigure(configurationBuilder, context);
+
+        var rabbitmqServer = new RabbitMqServer();
+        CustomConfigure(ref rabbitmqServer, configurationBuilder.Build());
+
+        if (!rabbitmqServer.IsEmpty)
+        {
+            var json = JsonConvert.SerializeObject(new { server = rabbitmqServer });
+
+            // Create a JSON stream as a MemoryStream or directly from a file
+            var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+
+            // Add the JSON stream to the configuration builder
+            configurationBuilder.AddJsonStream(stream);
+        }
     }
+
+#pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
@@ -39,7 +69,8 @@ public class Job : BaseCheckJob
 
         await Task.WhenAll(tasks);
 
-        Finilayze();
+        Finalayze(queues);
+        Finalayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -61,7 +92,7 @@ public class Job : BaseCheckJob
         return node;
     }
 
-    private static IEnumerable<Queue> GetQueue(IConfiguration configuration, Defaults defaults)
+    private IEnumerable<Queue> GetQueue(IConfiguration configuration, Defaults defaults)
     {
         var sections = configuration.GetSection("queues").GetChildren();
 
@@ -69,13 +100,16 @@ public class Job : BaseCheckJob
         {
             var queue = new Queue(section, defaults);
 
+            VetoQueue(ref queue);
+            if (CheckVeto(queue, "queue")) { continue; }
+
             ValidateRequired(queue.Name, "name", "queues");
             ValidateGreaterThen(queue.Messages, 0, "messages", "queues");
             ValidateGreaterThen(queue.MemoryNumber, 0, "memory", "queues");
             ValidateGreaterThen(queue.Consumers, 0, "consumers", "queues");
             ValidateRequired(queue.CheckState, "check state", "queues");
 
-            if (queue.Span.HasValue && queue.Span.Value.TotalSeconds < 1)
+            if (queue.AllowedFailSpan.HasValue && queue.AllowedFailSpan.Value.TotalSeconds < 1)
             {
                 throw new InvalidDataException($"'span' on queues section is less then 1 second");
             }
@@ -88,16 +122,16 @@ public class Job : BaseCheckJob
     {
         var server = new Server(configuration);
 
-        ValidateRequired(server.Hosts, "hosts", Consts.RabbitMQConfigSection);
-        ValidateRequired(server.Username, "username", Consts.RabbitMQConfigSection);
-        ValidateRequired(server.Password, "password", Consts.RabbitMQConfigSection);
+        ValidateRequired(server.Hosts, "hosts", "server");
+        ValidateRequired(server.Username, "username", "server");
+        ValidateRequired(server.Password, "password", "server");
 
         foreach (var item in server.Hosts)
         {
-            ValidateUri(item, "hosts", Consts.RabbitMQConfigSection);
+            ValidateUri(item, "hosts", "server");
         }
 
-        ValidateRequired(server.Hosts, "hosts", Consts.RabbitMQConfigSection);
+        ValidateRequired(server.Hosts, "hosts", "server");
 
         return server;
     }
@@ -115,12 +149,6 @@ public class Job : BaseCheckJob
 
     private async Task InvokeHealthCheckInner(HealthCheck healthCheck, Server server, string host)
     {
-        if (!healthCheck.Active)
-        {
-            Logger.LogInformation("Skipping inactive health check");
-            return;
-        }
-
         if (!healthCheck.IsValid) { return; }
 
         var proxy = RabbitMqProxy.GetProxy(host, server, Logger);
@@ -150,12 +178,6 @@ public class Job : BaseCheckJob
 
     private async Task InvokeNodeCheckInner(Node node, Server server, string host)
     {
-        if (!node.Active)
-        {
-            Logger.LogInformation("skipping inactive nodes");
-            return;
-        }
-
         if (!node.IsValid) { return; }
 
         var proxy = RabbitMqProxy.GetProxy(host, server, Logger);
@@ -200,12 +222,6 @@ public class Job : BaseCheckJob
 
     private async Task InvokeQueueCheckInner(Queue queue, IEnumerable<QueueDetails> details)
     {
-        if (!queue.Active)
-        {
-            Logger.LogInformation("skipping inactive queue '{Name}'", queue.Name);
-            return;
-        }
-
         if (!queue.IsValid) { return; }
         var detail = details.FirstOrDefault(x => string.Equals(x.Name, queue.Name, StringComparison.OrdinalIgnoreCase))
             ?? throw new CheckException($"queue '{queue.Name}' does not exists");

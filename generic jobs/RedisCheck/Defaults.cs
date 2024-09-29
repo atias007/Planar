@@ -13,7 +13,6 @@ internal class Defaults : BaseDefault, IRedisDefaults
     {
         RetryCount = 1;
         RetryInterval = TimeSpan.FromSeconds(1);
-        MaximumFailsInRow = 5;
         Database = 0;
     }
 

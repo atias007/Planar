@@ -1,4 +1,4 @@
 ﻿using Planar.Job;
 using SqlQueryCheck;
 
-PlanarJob.Start<Job>();
+await PlanarJob.StartAsync<Job>();

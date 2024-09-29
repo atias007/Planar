@@ -2,20 +2,51 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Planar.Job;
+using Redis;
+using System.Text;
 
 namespace RedisCheck;
 
-internal class Job : BaseCheckJob
+internal partial class Job : BaseCheckJob
 {
+#pragma warning disable S3251 // Implementations should be provided for "partial" methods
+
+    static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+
+    static partial void CustomConfigure(ref RedisServer redisServer, IConfiguration configuration);
+
+    static partial void VetoKey(ref RedisKey key);
+
+    static partial void Finalayze(IEnumerable<RedisKey> keys);
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
+        CustomConfigure(configurationBuilder, context);
+
+        var redisServer = new RedisServer();
+        CustomConfigure(ref redisServer, configurationBuilder.Build());
+
+        if (!redisServer.IsEmpty)
+        {
+            var json = JsonConvert.SerializeObject(new { server = redisServer });
+
+            // Create a JSON stream as a MemoryStream or directly from a file
+            var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
+
+            // Add the JSON stream to the configuration builder
+            configurationBuilder.AddJsonStream(stream);
+        }
     }
+
+#pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
         Initialize(ServiceProvider);
         RedisFactory.Initialize(Configuration);
+        ValidateRedis();
 
         var defaults = GetDefaults(Configuration);
         var keys = GetKeys(Configuration, defaults);
@@ -27,12 +58,20 @@ internal class Job : BaseCheckJob
         await SafeInvokeCheck(healthCheck, InvokeHealthCheckInner);
         await SafeInvokeCheck(keys, InvokeKeyCheckInner);
 
-        Finilayze();
+        Finalayze(keys);
+        Finalayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
         services.RegisterBaseCheck();
+    }
+
+    protected static void ValidateRedis()
+    {
+        ValidateRequired(RedisFactory.Endpoints, "endpoints", "server");
+        ValidateGreaterThenOrEquals(RedisFactory.Database, 0, "database", "server");
+        ValidateLessThenOrEquals(RedisFactory.Database, 16, "database", "server");
     }
 
     private static HealthCheck GetHealthCheck(IConfiguration configuration, Defaults defaults)
@@ -52,12 +91,16 @@ internal class Job : BaseCheckJob
         return result;
     }
 
-    private static IEnumerable<RedisKey> GetKeys(IConfiguration configuration, Defaults defaults)
+    private IEnumerable<RedisKey> GetKeys(IConfiguration configuration, Defaults defaults)
     {
         var keys = configuration.GetRequiredSection("keys");
         foreach (var item in keys.GetChildren())
         {
             var key = new RedisKey(item, defaults);
+
+            VetoKey(ref key);
+            if (CheckVeto(key, "key")) { continue; }
+
             ValidateRedisKey(key);
             yield return key;
         }
@@ -105,12 +148,6 @@ internal class Job : BaseCheckJob
             var line = lines.FirstOrDefault(l => l.StartsWith($"{name}:"));
             if (string.IsNullOrWhiteSpace(line)) { return null; }
             return line[(name.Length + 1)..];
-        }
-
-        if (!healthCheck.Active)
-        {
-            Logger.LogInformation("skipping inactive health check");
-            return;
         }
 
         if (healthCheck.Ping.HasValue || healthCheck.Latency.HasValue)
@@ -178,12 +215,6 @@ internal class Job : BaseCheckJob
 
     private async Task InvokeKeyCheckInner(RedisKey key)
     {
-        if (!key.Active)
-        {
-            Logger.LogInformation("skipping inactive key '{Key}'", key.Key);
-            return;
-        }
-
         if (!await RedisFactory.Exists(key))
         {
             throw new CheckException($"key '{key.Key}' is not exists");

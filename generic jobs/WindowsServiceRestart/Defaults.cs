@@ -9,7 +9,12 @@ internal class Defaults : BaseDefault, IService
     {
         RetryCount = 3;
         RetryInterval = TimeSpan.FromSeconds(10);
-        MaximumFailsInRow = 5;
+    }
+
+    public Defaults(Defaults defaults) : base(defaults)
+    {
+        RetryCount = defaults.RetryCount;
+        RetryInterval = defaults.RetryInterval;
     }
 
     public Defaults(IConfigurationSection section) : base(section, Empty)

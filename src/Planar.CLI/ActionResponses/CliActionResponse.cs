@@ -5,6 +5,8 @@ using Planar.Common;
 using RestSharp;
 using System.Collections.Generic;
 using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace Planar.CLI
 {
@@ -76,14 +78,10 @@ namespace Planar.CLI
         }
 
         public RestResponse Response { get; private set; }
-
         public string? Message { get; private set; }
         public bool? FormattedMessage { get; private set; }
-
         public List<CliDumpObject>? DumpObjects { get; private set; }
-
         public List<CliTable>? Tables { get; private set; }
-
         public CliPlot? Plot { get; private set; }
 
         public static CliActionResponse Empty
@@ -113,6 +111,20 @@ namespace Planar.CLI
         {
             var response = new RestResponse { StatusCode = HttpStatusCode.OK, ResponseStatus = ResponseStatus.Completed, IsSuccessStatusCode = true };
             return response;
+        }
+
+        internal async static Task<RestResponse> Convert(HttpResponseMessage response)
+        {
+            var result = new RestResponse
+            {
+                StatusCode = response.StatusCode,
+                ResponseStatus = ResponseStatus.Completed,
+                IsSuccessStatusCode = response.IsSuccessStatusCode,
+                Content = await response.Content.ReadAsStringAsync(),
+                RawBytes = await response.Content.ReadAsByteArrayAsync(),
+            };
+
+            return result;
         }
 
         private static string? SerializeResponse(object response)

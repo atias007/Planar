@@ -9,7 +9,6 @@ internal class Defaults : BaseDefault, IService
     {
         RetryCount = 1;
         RetryInterval = TimeSpan.FromSeconds(1);
-        MaximumFailsInRow = 5;
     }
 
     public Defaults(IConfigurationSection section) : base(section, Empty)

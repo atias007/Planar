@@ -1,4 +1,4 @@
 ﻿using WindowsServiceCheck;
 using Planar.Job;
 
-PlanarJob.Start<Job>();
+await PlanarJob.StartAsync<Job>();

@@ -3,13 +3,7 @@ using Microsoft.Extensions.Configuration;
 using StackExchange.Redis;
 using System.Collections.Concurrent;
 
-namespace RedisCheck;
-
-internal interface IRedisKey
-{
-    int? Database { get; }
-    string Key { get; }
-}
+namespace Redis;
 
 internal static class RedisFactory
 {
@@ -17,15 +11,15 @@ internal static class RedisFactory
     private static IConnectionMultiplexer _connection = null!;
     private static readonly ConcurrentDictionary<int, IDatabase> _databases = new();
 
-    private static int Database { get; set; }
-    private static bool Ssl { get; set; }
-    private static string? User { get; set; }
-    private static string? Password { get; set; }
-    private static IEnumerable<string> Endpoints { get; set; } = [];
+    internal static int Database { get; private set; }
+    internal static bool Ssl { get; private set; }
+    internal static string? User { get; private set; }
+    internal static string? Password { get; private set; }
+    internal static IEnumerable<string> Endpoints { get; private set; } = [];
 
     public static void Initialize(IConfiguration configuration)
     {
-        var section = configuration.GetRequiredSection(Consts.RedisConfigSection);
+        var section = configuration.GetRequiredSection("server");
         Database = section.GetValue<int?>("database") ?? 0;
         Ssl = section.GetValue<bool>("ssl");
         User = section.GetValue<string?>("user");
@@ -116,7 +110,9 @@ internal static class RedisFactory
             if (_connection != null) { return _connection; }
             lock (Locker)
             {
+#pragma warning disable CA1508 // Avoid dead conditional code
                 if (_connection != null) { return _connection; }
+#pragma warning restore CA1508 // Avoid dead conditional code
                 var options = new ConfigurationOptions
                 {
                     ClientName = "Planar.Redis.StreamCheck",

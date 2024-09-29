@@ -1,3 +1,5 @@
 hosts:
-  - test.server.1
-  - test.server.2
+ - group name: default
+   hosts:
+     - \\test.server.1
+     - \\test.server.2

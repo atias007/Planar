@@ -5,37 +5,55 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
 using Polly;
+using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text;
 
 public abstract class BaseCheckJob : BaseJob
 {
     private static readonly object _locker = new();
     private readonly ConcurrentQueue<CheckException> _exceptions = new();
-    private CheckFailCounter _failCounter = null!;
-    private CheckSpanTracker _spanTracker = null!;
     private General _general = null!;
+    private CheckSpanTracker _spanTracker = null!;
 
-    ////protected static void FillBase(IEnumerable<BaseDefault> baseDefaultTargets, BaseDefault baseDefaultSorce)
-    ////{
-    ////    foreach (var item in baseDefaultTargets)
-    ////    {
-    ////        FillBase(item, baseDefaultSorce);
-    ////    }
-    ////}
+    protected static Dictionary<string, string> GetConnectionStrings(IConfiguration configuration)
+    {
+        var section = configuration.GetSection("connection strings");
+        if (!section.Exists())
+        {
+            section = configuration.GetSection("ConnectionStrings");
+        }
 
-    ////protected static IConfigurationSection? GetDefaultSection(IConfiguration configuration, ILogger logger)
-    ////{
-    ////    var defaults = configuration.GetSection("defaults");
-    ////    if (defaults == null)
-    ////    {
-    ////        logger.LogWarning("no defaults section found on settings file. set job factory defaults");
-    ////        return null;
-    ////    }
+        if (!section.Exists())
+        {
+            section = configuration.GetSection("connectionStrings");
+        }
 
-    ////    return defaults;
-    ////}
+        if (!section.Exists())
+        {
+            throw new InvalidDataException("coud not found any connection string in configuration");
+        }
+
+        var result = new Dictionary<string, string>();
+        foreach (var item in section.GetChildren())
+        {
+            if (string.IsNullOrWhiteSpace(item.Key))
+            {
+                throw new InvalidDataException("connection string has invalid null or empty key");
+            }
+
+            if (string.IsNullOrWhiteSpace(item.Value))
+            {
+                throw new InvalidDataException($"connection string with key '{item.Key}' has no value");
+            }
+
+            result.TryAdd(item.Key, item.Value);
+        }
+
+        return result;
+    }
 
     protected static IConfigurationSection? GetDefaultSection(IConfiguration configuration, ILogger logger)
     {
@@ -49,6 +67,18 @@ public abstract class BaseCheckJob : BaseJob
         return defaults;
     }
 
+    protected static void ValidateAtLeastOneRequired<T>(IEnumerable<T> values, IEnumerable<string> fieldNames, string section)
+    {
+        foreach (var value in values)
+        {
+            var stringValue = Convert.ToString(value, CultureInfo.CurrentCulture);
+            if (!string.IsNullOrWhiteSpace(stringValue)) { return; }
+        }
+
+        var fields = string.Join(", ", fieldNames);
+        throw new InvalidDataException($"on of fields: {fields} at '{section}' section is required");
+    }
+
     protected static void ValidateBase(BaseDefault @default, string section)
     {
         ValidateRequired(@default.RetryInterval, "retry interval", section);
@@ -56,8 +86,6 @@ public abstract class BaseCheckJob : BaseJob
         ValidateLessThen(@default.RetryInterval?.TotalMinutes, 1, "retry interval", section);
         ValidateGreaterThenOrEquals(@default.RetryCount, 0, "retry count", section);
         ValidateLessThenOrEquals(@default.RetryCount, 10, "retry count", section);
-        ValidateGreaterThenOrEquals(@default.MaximumFailsInRow, 1, "maximum fails in row", section);
-        ValidateLessThenOrEquals(@default.MaximumFailsInRow, 1000, "maximum fails in row", section);
     }
 
     protected static void ValidateDuplicateKeys<T>(IEnumerable<T> items, string sectionName)
@@ -162,21 +190,25 @@ public abstract class BaseCheckJob : BaseJob
         }
     }
 
-    protected static void ValidateAtLeastOneRequired<T>(IEnumerable<T> values, IEnumerable<string> fieldNames, string section)
+    protected static void ValidatePathExists(string path)
     {
-        foreach (var value in values)
+        try
         {
-            var stringValue = Convert.ToString(value);
-            if (!string.IsNullOrWhiteSpace(stringValue)) { return; }
+            var directory = new DirectoryInfo(path);
+            if (!directory.Exists)
+            {
+                throw new CheckException($"directory '{path}' not found");
+            }
         }
-
-        var fields = string.Join(", ", fieldNames);
-        throw new InvalidDataException($"on of fields: {fields} at '{section}' section is required");
+        catch (Exception ex)
+        {
+            throw new CheckException($"directory '{path}' is invalid ({ex.Message})");
+        }
     }
 
     protected static void ValidateRequired(object? value, string fieldName, string section)
     {
-        var stringValue = Convert.ToString(value);
+        var stringValue = Convert.ToString(value, CultureInfo.CurrentCulture);
         if (string.IsNullOrWhiteSpace(stringValue))
         {
             throw new InvalidDataException($"'{fieldName}' field at '{section}' section is missing");
@@ -206,30 +238,62 @@ public abstract class BaseCheckJob : BaseJob
         _exceptions.Enqueue(exception);
     }
 
-    protected void Finilayze()
+    protected bool CheckRequired<T>(IEnumerable<T>? value, string name)
+    {
+        if (value == null || !value.Any())
+        {
+            Logger.LogWarning("no {Name} to run", name);
+            return false;
+        }
+
+        return true;
+    }
+
+    protected bool CheckVeto(IVetoEntity entity, string entityName)
+    {
+        if (entity.Veto && string.IsNullOrWhiteSpace(entity.VetoReason))
+        {
+            Logger.LogInformation("{Name} '{Key}' has veto", entityName, entity.Key);
+        }
+
+        if (entity.Veto)
+        {
+            Logger.LogInformation("{Name} '{Key}' has veto. reason: {Reason}", entityName, entity.Key, entity.VetoReason);
+        }
+
+        return entity.Veto;
+    }
+
+    protected void Finalayze()
     {
         CheckAggragateException();
         HandleCheckExceptions();
     }
 
-    private void HandleCheckExceptions()
+    protected IReadOnlyDictionary<string, HostsConfig> GetHosts(IConfiguration configuration, Action<Host> veto)
     {
-        if (!_exceptions.IsEmpty)
+        var dic = new Dictionary<string, HostsConfig>();
+        var hosts = configuration.GetSection("hosts");
+        if (hosts == null) { return dic; }
+        foreach (var host in hosts.GetChildren())
         {
-            if (_exceptions.Count == 1 && _exceptions.TryDequeue(out var exception))
+            var result = new HostsConfig(host);
+
+            if (result.Hosts == null || !result.Hosts.Any())
             {
-                throw exception;
+                throw new InvalidDataException($"fail to read 'hosts' of group name '{result.GroupName}' under 'hosts' main section. list is null or empty");
             }
 
-            var sb = new StringBuilder(_exceptions.Count + 1);
-            sb.AppendLine($"there is {_exceptions.Count} check fails. see details below:");
-            foreach (var ex in _exceptions)
+            if (!dic.TryAdd(result.GroupName, result))
             {
-                sb.AppendLine($" - {ex.Message}");
+                throw new InvalidDataException($"fail to read 'group name' under 'hosts' section with duplicate value '{result.GroupName}'");
             }
 
-            throw new CheckException(sb.ToString());
+            var vetoHosts = result.VetoHosts(veto);
+            LogVetoHost(vetoHosts);
         }
+
+        return dic;
     }
 
     protected void IncreaseEffectedRows()
@@ -240,32 +304,25 @@ public abstract class BaseCheckJob : BaseJob
         }
     }
 
+    [SuppressMessage("Usage", "CA2254:Template should be a static expression", Justification = "Infrastructure")]
     protected void Initialize(IServiceProvider serviceProvider)
     {
         _spanTracker = serviceProvider.GetRequiredService<CheckSpanTracker>();
-        _failCounter = serviceProvider.GetRequiredService<CheckFailCounter>();
 
         var config = ServiceProvider.GetRequiredService<IConfiguration>();
         var logger = ServiceProvider.GetRequiredService<ILogger<General>>();
         _general = new(config);
         ValidateGreaterThenOrEquals(_general.MaxDegreeOfParallelism, 2, "max degree of parallelism", "general");
         ValidateLessThenOrEquals(_general.MaxDegreeOfParallelism, 100, "max degree of parallelism", "general");
-#pragma warning disable CA2254 // Template should be a static expression
         logger.LogInformation(_general.ToString());
-#pragma warning restore CA2254 // Template should be a static expression
     }
 
     protected bool IsIntervalElapsed(ICheckElement element, TimeSpan? interval)
     {
-        if (interval == null) { return true; }
+        if (interval == null || interval.Value == TimeSpan.Zero) { return true; }
         var tracker = ServiceProvider.GetRequiredService<CheckIntervalTracker>();
-        var lastSpan = tracker.LastRunningSpan(element);
-        if (lastSpan > TimeSpan.Zero && lastSpan < interval.Value)
-        {
-            return false;
-        }
-
-        return true;
+        var result = tracker.ShouldRun(element, interval.Value);
+        return result;
     }
 
     protected async Task SafeInvokeCheck<T>(IEnumerable<T> entities, Func<T, Task> checkFunc)
@@ -275,8 +332,9 @@ public abstract class BaseCheckJob : BaseJob
         {
             foreach (var entity in entities)
             {
-                var status = await SafeInvokeCheck(entity, checkFunc);
-                var notValidStatus = status != SafeHandleStatus.Success && status != SafeHandleStatus.CheckWarning;
+                await SafeInvokeCheck(entity, checkFunc);
+                var status = entity.CheckStatus;
+                var notValidStatus = status != CheckStatus.Success && status != CheckStatus.CheckWarning;
                 if (_general.StopRunningOnFail && notValidStatus)
                 {
                     var ex = new InvalidOperationException("stop running on fail is enabled. job will stop running");
@@ -292,39 +350,44 @@ public abstract class BaseCheckJob : BaseJob
         }
     }
 
-    protected async Task<SafeHandleStatus> SafeInvokeCheck<T>(T entity, Func<T, Task> checkFunc)
+    protected async Task SafeInvokeCheck<T>(T entity, Func<T, Task> checkFunc)
         where T : BaseDefault, ICheckElement
     {
         try
         {
+            if (!entity.Active)
+            {
+                Logger.LogInformation("skipping inactive check: '{Name}'", entity.Key);
+                entity.CheckStatus = CheckStatus.Skip;
+                return;
+            }
+
             if (entity.RetryCount == 0)
             {
                 await checkFunc(entity);
-                return SafeHandleStatus.Success;
+            }
+            else
+            {
+                await Policy.Handle<Exception>()
+                        .WaitAndRetryAsync(
+                            retryCount: entity.RetryCount.GetValueOrDefault(),
+                            sleepDurationProvider: _ => entity.RetryInterval.GetValueOrDefault(),
+                             onRetry: (ex, _) =>
+                             {
+                                 Logger.LogWarning("retry for '{Key}'. Reason: {Message}", entity.Key, ex.Message);
+                             })
+                        .ExecuteAsync(async () =>
+                        {
+                            await checkFunc(entity);
+                        });
             }
 
-            await Policy.Handle<Exception>()
-                    .WaitAndRetryAsync(
-                        retryCount: entity.RetryCount.GetValueOrDefault(),
-                        sleepDurationProvider: _ => entity.RetryInterval.GetValueOrDefault(),
-                         onRetry: (ex, _) =>
-                         {
-                             Logger.LogWarning("retry for '{Key}'. Reason: {Message}", entity.Key, ex.Message);
-                         })
-                    .ExecuteAsync(async () =>
-                    {
-                        await checkFunc(entity);
-                    });
-
-            _failCounter.ResetFailCount(entity);
             _spanTracker.ResetFailSpan(entity);
-
-            return SafeHandleStatus.Success;
+            entity.CheckStatus = CheckStatus.Success;
         }
         catch (Exception ex)
         {
-            var status = SafeHandleCheckException(entity, ex);
-            return status;
+            entity.CheckStatus = SafeHandleCheckException(entity, ex);
         }
     }
 
@@ -383,6 +446,12 @@ public abstract class BaseCheckJob : BaseJob
     {
         try
         {
+            if (!entity.Active)
+            {
+                Logger.LogInformation("skipping inactive operation: '{Name}'", entity.Key);
+                return;
+            }
+
             await operationFunc(entity);
         }
         catch (Exception ex)
@@ -428,23 +497,44 @@ public abstract class BaseCheckJob : BaseJob
         return false;
     }
 
-    private SafeHandleStatus SafeHandleCheckException<T>(T entity, Exception ex)
+    private void HandleCheckExceptions()
+    {
+        if (!_exceptions.IsEmpty)
+        {
+            if (_exceptions.Count == 1 && _exceptions.TryDequeue(out var exception))
+            {
+                throw exception;
+            }
+
+            var sb = new StringBuilder(_exceptions.Count + 1);
+            sb.AppendLine(CultureInfo.CurrentCulture, $"there is {_exceptions.Count} check fails. see details below:");
+            foreach (var ex in _exceptions)
+            {
+                sb.AppendLine(CultureInfo.CurrentCulture, $" - {ex.Message}");
+            }
+
+            throw new CheckException(sb.ToString());
+        }
+    }
+
+    private void LogVetoHost(IEnumerable<Host> hosts)
+    {
+        foreach (var item in hosts)
+        {
+            if (string.IsNullOrEmpty(item.VetoReason))
+            {
+                Logger.LogInformation("host {Host} veto", item.Name);
+            }
+            else
+            {
+                Logger.LogInformation("host {Host} veto. reason: {Reason}", item.Name, item.VetoReason);
+            }
+        }
+    }
+
+    private CheckStatus SafeHandleCheckException<T>(T entity, Exception ex)
           where T : BaseDefault, ICheckElement
     {
-        bool IsSpanValid()
-        {
-            return
-                entity.Span != null &&
-                entity.Span != TimeSpan.Zero &&
-                entity.Span > _spanTracker.LastFailSpan(entity);
-        }
-
-        bool IsFailCounterInScope()
-        {
-            var failCount = _failCounter.IncrementFailCount(entity);
-            return entity.MaximumFailsInRow.HasValue && failCount <= entity.MaximumFailsInRow;
-        }
-
         try
         {
             if (!IsExceptionIsCheckException(ex, out var checkException))
@@ -452,21 +542,15 @@ public abstract class BaseCheckJob : BaseJob
                 Logger.LogError(ex, "check failed for '{Key}'. reason: {Message}",
                     entity.Key, ex.Message);
                 AddAggregateException(ex);
-                return SafeHandleStatus.Exception;
+                return CheckStatus.Exception;
             }
 
-            if (IsSpanValid())
+            if (_spanTracker.IsSpanValid(entity))
             {
                 Logger.LogWarning("check failed for '{Key}' but error span is valid. reason: {Message}",
                     entity.Key, ex.Message);
-                return SafeHandleStatus.CheckWarning;
-            }
 
-            if (IsFailCounterInScope())
-            {
-                Logger.LogWarning("check failed for '{Key}' but maximum fails in row not reached yet. reason: {Message}",
-                    entity.Key, ex.Message);
-                return SafeHandleStatus.CheckWarning;
+                return CheckStatus.CheckWarning;
             }
 
             Logger.LogError("check failed for '{Key}'. reason: {Message}",
@@ -474,12 +558,12 @@ public abstract class BaseCheckJob : BaseJob
 
             AddCheckException(checkException);
 
-            return SafeHandleStatus.CheckError;
+            return CheckStatus.CheckError;
         }
         catch (Exception innerEx)
         {
             AddAggregateException(innerEx);
-            return SafeHandleStatus.Exception;
+            return CheckStatus.Exception;
         }
     }
 

@@ -1,4 +1,6 @@
-﻿namespace Planar.API.Common.Entities;
+﻿using System;
+
+namespace Planar.API.Common.Entities;
 
 public enum JobActiveMembers
 {
@@ -20,4 +22,14 @@ public class JobBasicDetails
     public string? Description { get; set; }
 
     public JobActiveMembers Active { get; set; }
+
+    public bool EqualsId(string id)
+    {
+        if (Id == null || id == null)
+        {
+            return false;
+        }
+
+        return Id.Equals(id, StringComparison.OrdinalIgnoreCase) || $"{Group}.{Name}".Equals(id, StringComparison.OrdinalIgnoreCase);
+    }
 }

@@ -3,35 +3,49 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
+using System.Net;
+using YamlDotNet.Core.Tokens;
 
 namespace FolderCheck;
 
-internal class Job : BaseCheckJob
+internal partial class Job : BaseCheckJob
 {
+#pragma warning disable S3251 // Implementations should be provided for "partial" methods
+
+    static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+
+    static partial void VetoFolder(ref Folder folder);
+
+    static partial void VetoHost(ref Host host);
+
+    static partial void Finilayze(IEnumerable<Folder> folders);
+
+#pragma warning restore S3251 // Implementations should be provided for "partial" methods
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
-    {
-    }
+        => CustomConfigure(configurationBuilder, context);
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
         Initialize(ServiceProvider);
 
         var defaults = GetDefaults(Configuration);
-        var hosts = GetHosts(Configuration);
+        var hosts = GetHosts(Configuration, h => VetoHost(ref h));
         var folders = GetFolders(Configuration, defaults);
 
-        if (!hosts.Any() && folders.Exists(e => e.IsRelativePath))
+        if (folders.Exists(e => e.IsRelativePath))
         {
-            throw new InvalidDataException("no hosts defined and at least one folder path is relative");
+            ValidateRequired(hosts, "hosts");
         }
 
-        folders.ForEach(f => ValidateFolderExists(f, hosts));
+        folders = GetFoldersWithHost(folders, hosts);
 
         EffectedRows = 0;
 
-        await SafeInvokeCheck(folders, f => InvokeFolderInnerAsync(f, hosts));
+        await SafeInvokeCheck(folders, InvokeFolderInnerAsync);
 
-        Finilayze();
+        Finilayze(folders);
+        Finalayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -39,10 +53,34 @@ internal class Job : BaseCheckJob
         services.RegisterBaseCheck();
     }
 
+    private static List<Folder> GetFoldersWithHost(List<Folder> folders, IReadOnlyDictionary<string, HostsConfig> hosts)
+    {
+        var absolute = folders.Where(e => e.IsAbsolutePath);
+        var relative = folders.Where(e => e.IsRelativePath);
+        var result = new List<Folder>(absolute);
+        if (relative.Any() && hosts.Count != 0)
+        {
+            foreach (var rel in relative)
+            {
+                if (!hosts.TryGetValue(rel.HostGroupName ?? string.Empty, out var hostGroup)) { continue; }
+                foreach (var host in hostGroup.Hosts)
+                {
+                    var clone = new Folder(rel)
+                    {
+                        Host = host
+                    };
+
+                    result.Add(clone);
+                }
+            }
+        }
+
+        return result;
+    }
+
     private static IEnumerable<FileInfo> GetFiles(string path, Folder folder)
     {
         var fi = new DirectoryInfo(path);
-        if (folder.FilesPattern == null || !folder.FilesPattern.Any()) { folder.SetDefaultFilePattern(); }
         var option = folder.IncludeSubdirectories ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
         foreach (var pattern in folder.FilesPattern!)
         {
@@ -54,13 +92,17 @@ internal class Job : BaseCheckJob
         }
     }
 
-    private static List<Folder> GetFolders(IConfiguration configuration, Defaults defaults)
+    private List<Folder> GetFolders(IConfiguration configuration, Defaults defaults)
     {
         var result = new List<Folder>();
         var folders = configuration.GetRequiredSection("folders");
         foreach (var item in folders.GetChildren())
         {
             var folder = new Folder(item, defaults);
+
+            VetoFolder(ref folder);
+            if (CheckVeto(folder, "folder")) { continue; }
+
             ValidateFolder(folder);
             result.Add(folder);
         }
@@ -69,14 +111,6 @@ internal class Job : BaseCheckJob
         ValidateDuplicateNames(result, "folders");
 
         return result;
-    }
-
-    private static IEnumerable<string> GetHosts(IConfiguration configuration)
-    {
-        var hosts = configuration.GetSection("hosts");
-        if (hosts == null) { return []; }
-        var result = hosts.Get<string[]>() ?? [];
-        return result.Distinct();
     }
 
     private static void ValidateFilesPattern(Folder folder)
@@ -89,22 +123,6 @@ internal class Job : BaseCheckJob
         if (folder.FilesPattern?.Any(string.IsNullOrWhiteSpace) ?? false)
         {
             throw new InvalidDataException($"'monitor' on folder name '{folder.Name}' has empty file pattern");
-        }
-    }
-
-    private static void ValidatePathExists(string path)
-    {
-        try
-        {
-            var directory = new DirectoryInfo(path);
-            if (!directory.Exists)
-            {
-                throw new InvalidDataException($"directory '{path}' not found");
-            }
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidDataException($"directory '{path}' is invalid ({ex.Message})");
         }
     }
 
@@ -124,44 +142,29 @@ internal class Job : BaseCheckJob
         return result;
     }
 
-    private async Task InvokeFolderInnerAsync(Folder folder, IEnumerable<string> hosts)
+    private async Task InvokeFolderInnerAsync(Folder folder)
     {
-        await Task.Run(() => InvokeFoldersInner(folder, hosts));
+        await Task.Run(() => InvokeFolderInner(folder));
     }
 
-    private void InvokeFoldersInner(Folder folder, IEnumerable<string> hosts)
+    private void InvokeFolderInner(Folder folder)
     {
-        if (folder.IsAbsolutePath)
-        {
-            InvokeFolderInner(folder, null);
-        }
-        else
-        {
-            Parallel.ForEach(hosts, host => InvokeFolderInner(folder, host));
-        }
-    }
+        var path = folder.GetFullPath();
+        ValidatePathExists(path);
 
-    private void InvokeFolderInner(Folder folder, string? host)
-    {
-        if (!folder.Active)
-        {
-            Logger.LogInformation("skipping inactive folder '{Name}'", folder.Name);
-            return;
-        }
-
-        var path = folder.GetFullPath(host);
         var files = GetFiles(path, folder);
-        if (folder.TotalSizeNumber != null)
+        var filesCount = files.Count();
+        if (folder.TotalSizeNumber != null && filesCount > 0)
         {
             var size = files.Sum(f => f.Length);
             Logger.LogInformation("folder '{Path}' size is {Size:N0} byte(s)", path, size);
-            if (size > folder.FileSizeNumber)
+            if (size > folder.TotalSizeNumber)
             {
                 throw new CheckException($"folder '{path}' size is greater then {folder.TotalSizeNumber:N0}");
             }
         }
 
-        if (folder.FileSizeNumber != null)
+        if (folder.FileSizeNumber != null && filesCount > 0)
         {
             var max = files.Max(f => f.Length);
             Logger.LogInformation("folder '{Path}' max file size is {Size:N0} byte(s)", path, max);
@@ -173,15 +176,14 @@ internal class Job : BaseCheckJob
 
         if (folder.FileCount != null)
         {
-            var count = files.Count();
-            Logger.LogInformation("folder '{Path}' contains {Count:N0} file(s)", path, count);
-            if (count > folder.FileCount)
+            Logger.LogInformation("folder '{Path}' contains {Count:N0} file(s)", path, filesCount);
+            if (filesCount > folder.FileCount)
             {
                 throw new CheckException($"folder '{path}' contains more then {folder.FileCount:N0} files");
             }
         }
 
-        if (folder.CreatedAgeDate != null)
+        if (folder.CreatedAgeDate != null && filesCount > 0)
         {
             var created = files.Min(f => f.CreationTime);
             Logger.LogInformation("folder '{Path}' most old created file is {Created}", path, created);
@@ -191,7 +193,7 @@ internal class Job : BaseCheckJob
             }
         }
 
-        if (folder.ModifiedAgeDate != null)
+        if (folder.ModifiedAgeDate != null && filesCount > 0)
         {
             var modified = files.Min(f => f.LastWriteTime);
             Logger.LogInformation("folder '{Path}' most old modified file is {Created}", path, modified);
@@ -205,15 +207,6 @@ internal class Job : BaseCheckJob
                         folder.Name, path);
 
         IncreaseEffectedRows();
-    }
-
-    private static void ValidateFolderExists(Folder folder, IEnumerable<string> hosts)
-    {
-        foreach (var host in hosts)
-        {
-            var path = folder.GetFullPath(host);
-            ValidatePathExists(path);
-        }
     }
 
     private static void ValidateFolder(Folder folder)

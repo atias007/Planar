@@ -13,7 +13,6 @@ internal class Defaults : BaseDefault
     {
         RetryCount = 1;
         RetryInterval = TimeSpan.FromSeconds(10);
-        MaximumFailsInRow = 5;
     }
 
     //// --------------------------------------- ////

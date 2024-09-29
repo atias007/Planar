@@ -3,36 +3,45 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
+using System.Net;
 using System.ServiceProcess;
 
 namespace WindowsServiceRestart;
 
-internal sealed partial class Job : BaseCheckJob
+internal partial class Job : BaseCheckJob
 {
+#pragma warning disable S3251 // Implementations should be provided for "partial" methods
+
+    static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
+
+    static partial void VetoService(ref Service service);
+
+    static partial void VetoHost(ref Host host);
+
+#pragma warning restore S3251 // Implementations should be provided for "partial" methods
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
-    {
-    }
+        => CustomConfigure(configurationBuilder, context);
 
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
         Initialize(ServiceProvider);
 
         var defaults = GetDefaults(Configuration);
-        var hosts = GetHosts(Configuration);
-        var services = GetServices(Configuration, defaults, hosts);
+        var hosts = GetHosts(Configuration, h => VetoHost(ref h));
+        var services = GetServices(Configuration, defaults);
+
+        ValidateRequired(hosts, "hosts");
+        ValidateRequired(services, "services");
+
+        services = GetServicesWithHost(services, hosts);
 
         EffectedRows = 0;
 
         using var client = new HttpClient();
         await SafeInvokeCheck(services, InvokeServicesInner);
 
-        Finilayze();
-    }
-
-    private static void ValidateServices(IEnumerable<Service> services)
-    {
-        ValidateRequired(services, "services");
-        ValidateDuplicateNames(services, "services");
+        Finalayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
@@ -41,32 +50,45 @@ internal sealed partial class Job : BaseCheckJob
         services.AddSingleton<CheckIntervalTracker>();
     }
 
-    private static List<Service> GetServices(IConfiguration configuration, Defaults defaults, IEnumerable<string> hosts)
+    private static List<Service> GetServicesWithHost(List<Service> services, IReadOnlyDictionary<string, HostsConfig> hosts)
     {
-        var services = configuration.GetRequiredSection("services");
         var result = new List<Service>();
+        if (hosts.Count != 0)
+        {
+            foreach (var rel in services)
+            {
+                if (!hosts.TryGetValue(rel.HostGroupName ?? string.Empty, out var hostGroup)) { continue; }
+                foreach (var host in hostGroup.Hosts)
+                {
+                    var clone = new Service(rel)
+                    {
+                        Host = host
+                    };
+                    result.Add(clone);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private List<Service> GetServices(IConfiguration configuration, Defaults defaults)
+    {
+        var result = new List<Service>();
+        var services = configuration.GetRequiredSection("services");
+
         foreach (var item in services.GetChildren())
         {
             var service = new Service(item, defaults);
-            if (service.Hosts == null || !service.Hosts.Any())
-            {
-                service.SetHosts(hosts);
-            }
-
-            service.ClearInvalidHosts();
+            VetoService(ref service);
+            if (CheckVeto(service, "service")) { continue; }
             ValidateService(service);
             result.Add(service);
         }
 
-        ValidateServices(result);
-        return result;
-    }
+        ValidateRequired(result, "services");
+        ValidateDuplicateNames(result, "services");
 
-    private static string[] GetHosts(IConfiguration configuration)
-    {
-        var hosts = configuration.GetSection("hosts");
-        if (hosts == null) { return []; }
-        var result = hosts.Get<string[]>() ?? [];
         return result;
     }
 
@@ -82,18 +104,16 @@ internal sealed partial class Job : BaseCheckJob
 
     private async Task InvokeServicesInner(Service service)
     {
-        Parallel.ForEach(service.Hosts, host => InvokeServiceInner(service, host));
-        await Task.CompletedTask;
+        await Task.Run(() => InvokeServiceInner(service));
     }
 
 #pragma warning disable CA1416 // Validate platform compatibility
 
-    private void InvokeServiceInner(Service service, string host)
+    private void InvokeServiceInner(Service service)
     {
-        if (!service.Active)
+        if (string.IsNullOrWhiteSpace(service.Host))
         {
-            Logger.LogInformation("skipping inactive service '{Name}'", service.Name);
-            return;
+            throw new CheckException($"service '{service.Name}' has no host name (null or empty)");
         }
 
         if (!IsIntervalElapsed(service, service.Interval))
@@ -102,30 +122,30 @@ internal sealed partial class Job : BaseCheckJob
             return;
         }
 
-        using var controller = new ServiceController(service.Name, host);
+        using var controller = new ServiceController(service.Name, service.Host);
         var status = controller.Status;
         var startType = controller.StartType;
         var disabled = status == ServiceControllerStatus.Stopped && startType == ServiceStartMode.Disabled;
         if (disabled && service.IgnoreDisabled)
         {
-            Logger.LogInformation("skipping disabled service '{Name}' on host '{Host}'", service.Name, host);
+            Logger.LogInformation("skipping disabled service '{Name}' on host '{Host}'", service.Name, service.Host);
             return;
         }
 
         if (disabled)
         {
-            throw new CheckException($"service '{service.Name}' on host '{host}' is in {status} start type");
+            throw new CheckException($"service '{service.Name}' on host '{service.Host}' is in {status} start type");
         }
 
         if (status == ServiceControllerStatus.StartPending || status == ServiceControllerStatus.ContinuePending)
         {
-            Logger.LogInformation("service '{Name}' on host '{Host}' is in {Status} status. no need to restart", service.Name, host, status);
+            Logger.LogInformation("service '{Name}' on host '{Host}' is in {Status} status. no need to restart", service.Name, service.Host, status);
             return;
         }
 
         if (status == ServiceControllerStatus.Running)
         {
-            Logger.LogInformation("service '{Name}' on host '{Host}' is in running status. stop the service", service.Name, host);
+            Logger.LogInformation("service '{Name}' on host '{Host}' is in running status. stop the service", service.Name, service.Host);
             controller.Stop();
             controller.WaitForStatus(ServiceControllerStatus.Stopped, service.Timeout);
             controller.Refresh();
@@ -134,7 +154,7 @@ internal sealed partial class Job : BaseCheckJob
 
         if (status == ServiceControllerStatus.StopPending)
         {
-            Logger.LogInformation("service '{Name}' on host '{Host}' is in {Status} status. waiting for stopped status...", service.Name, host, status);
+            Logger.LogInformation("service '{Name}' on host '{Host}' is in {Status} status. waiting for stopped status...", service.Name, service.Host, status);
             controller.WaitForStatus(ServiceControllerStatus.StopPending, service.Timeout);
             controller.Refresh();
             status = controller.Status;
@@ -142,14 +162,14 @@ internal sealed partial class Job : BaseCheckJob
 
         if (status == ServiceControllerStatus.Stopped)
         {
-            Logger.LogInformation("service '{Name}' on host '{Host}' is in stopped status. starting service", service.Name, host);
+            Logger.LogInformation("service '{Name}' on host '{Host}' is in stopped status. starting service", service.Name, service.Host);
             controller.Start();
             controller.WaitForStatus(ServiceControllerStatus.Running, service.Timeout);
             controller.Refresh();
             status = controller.Status;
             if (status == ServiceControllerStatus.Running)
             {
-                Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, host);
+                Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);
                 IncreaseEffectedRows();
                 return;
             }
@@ -157,14 +177,14 @@ internal sealed partial class Job : BaseCheckJob
 
         if (status == ServiceControllerStatus.Paused)
         {
-            Logger.LogWarning("service '{Name}' on host '{Host}' is in paused status. continue service", service.Name, host);
+            Logger.LogWarning("service '{Name}' on host '{Host}' is in paused status. continue service", service.Name, service.Host);
             controller.Continue();
             controller.WaitForStatus(ServiceControllerStatus.Running, service.Timeout);
             controller.Refresh();
             status = controller.Status;
             if (status == ServiceControllerStatus.Running)
             {
-                Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, host);
+                Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);
                 IncreaseEffectedRows();
                 return;
             }
@@ -172,7 +192,7 @@ internal sealed partial class Job : BaseCheckJob
 
         if (status != ServiceControllerStatus.Running)
         {
-            throw new CheckException($"service '{service.Name}' on host '{host}' is in {status} status");
+            throw new CheckException($"service '{service.Name}' on host '{service.Host}' is in {status} status");
         }
     }
 
@@ -186,6 +206,6 @@ internal sealed partial class Job : BaseCheckJob
         ValidateRequired(service.Name, "name", section);
         ValidateGreaterThen(service.Timeout, TimeSpan.FromSeconds(5), "timeout", section);
         ValidateLessThen(service.Timeout, TimeSpan.FromMinutes(5), "timeout", section);
-        ValidateRequired(service.Hosts, "hosts", section);
+        ValidateRequired(service.Host, "host", section);
     }
 }
