@@ -75,7 +75,7 @@ internal partial class Job : BaseCheckJob
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
-        services.RegisterBaseCheck();
+        services.RegisterSpanCheck();
     }
 
     private static HealthCheck GetHealthCheck(IConfiguration configuration, Defaults defaults)
@@ -171,6 +171,11 @@ internal partial class Job : BaseCheckJob
         if (healthCheck.NodeQuorumCritical.GetValueOrDefault())
         {
             await proxy.NodeQuorumCritical();
+        }
+
+        if (healthCheck.VirtualHosts.GetValueOrDefault())
+        {
+            await proxy.VirtualHosts();
         }
 
         IncreaseEffectedRows();

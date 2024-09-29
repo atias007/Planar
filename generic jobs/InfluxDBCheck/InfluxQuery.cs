@@ -3,7 +3,8 @@ using Microsoft.Extensions.Configuration;
 
 namespace InfluxDBCheck;
 
-internal class InfluxQuery(IConfigurationSection section, Defaults defaults) : BaseDefault(section, defaults), INamedCheckElement, IVetoEntity
+internal class InfluxQuery(IConfigurationSection section, Defaults defaults) :
+    BaseDefault(section, defaults), INamedCheckElement, IVetoEntity, IIntervalEntity
 {
     public string Key => Name;
 

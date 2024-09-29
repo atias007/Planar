@@ -60,7 +60,7 @@ internal partial class Job : BaseCheckJob
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
-        services.RegisterBaseCheck();
+        services.RegisterSpanCheck();
     }
 
     protected static void ValidateRedis()

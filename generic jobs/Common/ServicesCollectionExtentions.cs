@@ -4,9 +4,15 @@ using Microsoft.Extensions.DependencyInjection;
 
 public static class ServicesCollectionExtentions
 {
-    public static IServiceCollection RegisterBaseCheck(this IServiceCollection services)
+    public static IServiceCollection RegisterSpanCheck(this IServiceCollection services)
     {
         services.AddSingleton<CheckSpanTracker>();
+        return services;
+    }
+
+    public static IServiceCollection RegisterIntervalCheck(this IServiceCollection services)
+    {
+        services.AddSingleton<CheckIntervalTracker>();
         return services;
     }
 }

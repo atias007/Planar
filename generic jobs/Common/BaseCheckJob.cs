@@ -317,14 +317,6 @@ public abstract class BaseCheckJob : BaseJob
         logger.LogInformation(_general.ToString());
     }
 
-    protected bool IsIntervalElapsed(ICheckElement element, TimeSpan? interval)
-    {
-        if (interval == null || interval.Value == TimeSpan.Zero) { return true; }
-        var tracker = ServiceProvider.GetRequiredService<CheckIntervalTracker>();
-        var result = tracker.ShouldRun(element, interval.Value);
-        return result;
-    }
-
     protected async Task SafeInvokeCheck<T>(IEnumerable<T> entities, Func<T, Task> checkFunc)
                 where T : BaseDefault, ICheckElement
     {
@@ -333,8 +325,7 @@ public abstract class BaseCheckJob : BaseJob
             foreach (var entity in entities)
             {
                 await SafeInvokeCheck(entity, checkFunc);
-                var status = entity.CheckStatus;
-                var notValidStatus = status != CheckStatus.Success && status != CheckStatus.CheckWarning;
+                var notValidStatus = entity.CheckStatus.IsValidStatus();
                 if (_general.StopRunningOnFail && notValidStatus)
                 {
                     var ex = new InvalidOperationException("stop running on fail is enabled. job will stop running");
@@ -358,7 +349,14 @@ public abstract class BaseCheckJob : BaseJob
             if (!entity.Active)
             {
                 Logger.LogInformation("skipping inactive check: '{Name}'", entity.Key);
-                entity.CheckStatus = CheckStatus.Skip;
+                entity.CheckStatus = CheckStatus.Inactive;
+                return;
+            }
+
+            if (entity is IIntervalEntity intervalEntity && !IsIntervalElapsed(intervalEntity))
+            {
+                Logger.LogInformation("skipping check '{Name}' due to its interval", intervalEntity.Key);
+                entity.CheckStatus = CheckStatus.Ignore;
                 return;
             }
 
@@ -432,31 +430,56 @@ public abstract class BaseCheckJob : BaseJob
         return default;
     }
 
-    protected IEnumerable<Task> SafeInvokeOperation<T>(IEnumerable<T> entities, Func<T, Task> operationFunc)
-            where T : ICheckElement
+    protected async Task SafeInvokeOperation<T>(IEnumerable<T> entities, Func<T, Task> operationFunc)
+            where T : BaseOperation, ICheckElement
     {
-        foreach (var item in entities)
+        if (_general.SequentialProcessing)
         {
-            yield return SafeInvokeOperation(item, operationFunc);
+            foreach (var entity in entities)
+            {
+                await SafeInvokeOperation(entity, operationFunc);
+                var notValidStatus = entity.OperationStatus.IsValidStatus();
+                if (_general.StopRunningOnFail && notValidStatus)
+                {
+                    var ex = new InvalidOperationException("stop running on fail is enabled. job will stop running");
+                    await AddAggregateExceptionAsync(ex);
+                    break;
+                }
+            }
+        }
+        else
+        {
+            var tasks = entities.Select(x => new Func<Task>(() => SafeInvokeOperation(x, operationFunc)));
+            await TaskQueue.RunAsync(tasks, _general.MaxDegreeOfParallelism);
         }
     }
 
-    protected async Task SafeInvokeOperation<T>(T entity, Func<T, Task> operationFunc)
-        where T : ICheckElement
+    private async Task SafeInvokeOperation<T>(T entity, Func<T, Task> operationFunc)
+        where T : BaseOperation, ICheckElement
     {
         try
         {
             if (!entity.Active)
             {
                 Logger.LogInformation("skipping inactive operation: '{Name}'", entity.Key);
+                entity.OperationStatus = OperationStatus.Inactive;
+                return;
+            }
+
+            if (entity is IIntervalEntity intervalEntity && !IsIntervalElapsed(intervalEntity))
+            {
+                Logger.LogInformation("skipping operation '{Name}' due to its interval", intervalEntity.Key);
+                entity.OperationStatus = OperationStatus.Ignore;
                 return;
             }
 
             await operationFunc(entity);
+            entity.OperationStatus = OperationStatus.Success;
         }
         catch (Exception ex)
         {
             SafeHandleOperationException(entity, ex);
+            entity.OperationStatus = OperationStatus.Exception;
         }
     }
 
@@ -515,6 +538,15 @@ public abstract class BaseCheckJob : BaseJob
 
             throw new CheckException(sb.ToString());
         }
+    }
+
+    private bool IsIntervalElapsed(IIntervalEntity element)
+    {
+        var interval = element.Interval;
+        if (interval == null || interval.Value == TimeSpan.Zero) { return true; }
+        var tracker = ServiceProvider.GetRequiredService<CheckIntervalTracker>();
+        var result = tracker.ShouldRun(element);
+        return result;
     }
 
     private void LogVetoHost(IEnumerable<Host> hosts)

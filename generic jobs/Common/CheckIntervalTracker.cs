@@ -4,13 +4,15 @@ using Planar.Job;
 using System.Diagnostics;
 using System.Globalization;
 
-public class CheckIntervalTracker(IBaseJob baseJob)
+internal class CheckIntervalTracker(IBaseJob baseJob)
 {
-    public bool ShouldRun(ICheckElement element, TimeSpan interval)
+    public bool ShouldRun(IIntervalEntity element)
     {
+        if (element.Interval == null) { return true; }
+
         var key = GetKey(element);
         var lastSpan = GetLastRunningSpan(key);
-        if (lastSpan > TimeSpan.Zero && lastSpan < interval)
+        if (lastSpan > TimeSpan.Zero && lastSpan < element.Interval.Value)
         {
             return false;
         }
@@ -55,5 +57,5 @@ public class CheckIntervalTracker(IBaseJob baseJob)
         );
     }
 
-    private static string GetKey(ICheckElement element) => $"last.running.{element.Key}";
+    private static string GetKey(IIntervalEntity element) => $"last.running.{element.Key}";
 }

@@ -65,18 +65,12 @@ internal partial class Job : BaseCheckJob
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
-        services.RegisterBaseCheck();
-        services.AddSingleton<CheckIntervalTracker>();
+        services.RegisterSpanCheck();
+        services.RegisterIntervalCheck();
     }
 
     private async Task InvokeQueryCheckInner(CheckQuery checkQuery)
     {
-        if (!IsIntervalElapsed(checkQuery, checkQuery.Interval))
-        {
-            Logger.LogInformation("skipping query '{Name}' due to its interval", checkQuery.Name);
-            return;
-        }
-
         using var connection = new SqlConnection(checkQuery.ConnectionString);
         using var cmd = new SqlCommand(checkQuery.Query, connection)
         {

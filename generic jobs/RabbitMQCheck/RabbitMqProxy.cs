@@ -54,6 +54,11 @@ internal class RabbitMqProxy
         await Alarm("node quorum critical", "node-is-quorum-critical");
     }
 
+    public async Task VirtualHosts()
+    {
+        await Alarm("virtual hosts", "virtual-hosts");
+    }
+
     public async Task<IEnumerable<NodeDetails>> GetNodeDetails()
     {
         const string resource = "api/nodes";

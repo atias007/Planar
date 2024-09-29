@@ -70,8 +70,8 @@ internal partial class Job : BaseCheckJob
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
-        services.RegisterBaseCheck();
-        services.AddSingleton<CheckIntervalTracker>();
+        services.RegisterSpanCheck();
+        services.RegisterIntervalCheck();
     }
 
     private static Server GetServer(IConfiguration configuration)
@@ -135,12 +135,6 @@ internal partial class Job : BaseCheckJob
 
     private async Task InvokeQueryCheckInner(InfluxQuery query, InfluxProxy proxy)
     {
-        if (!IsIntervalElapsed(query, query.Interval))
-        {
-            Logger.LogInformation("skipping query '{Name}' due to its interval", query.Name);
-            return;
-        }
-
         var result = await proxy.QueryAsync(query);
         if (query.InternalValueCondition != null)
         {

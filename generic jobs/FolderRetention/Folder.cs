@@ -3,9 +3,9 @@ using Microsoft.Extensions.Configuration;
 
 namespace FolderRetention;
 
-internal class Folder : INamedCheckElement, IVetoEntity
+internal class Folder : BaseOperation, INamedCheckElement, IVetoEntity
 {
-    public Folder(IConfigurationSection section)
+    public Folder(IConfigurationSection section) : base(section)
     {
         Name = section.GetValue<string>("name") ?? string.Empty;
         HostGroupName = section.GetValue<string?>("host group name");
@@ -17,7 +17,6 @@ internal class Folder : INamedCheckElement, IVetoEntity
         CreatedAge = section.GetValue<string?>("created age");
         ModifiedAge = section.GetValue<string?>("modified age");
         MaxFiles = section.GetValue<int>("max files");
-        Active = section.GetValue<bool?>("active") ?? true;
 
         FileSizeNumber = CommonUtil.GetSize(FileSize, "file size");
         CreatedAgeDate = CommonUtil.GetDateFromSpan(CreatedAge, "created age");
@@ -30,7 +29,7 @@ internal class Folder : INamedCheckElement, IVetoEntity
         }
     }
 
-    public Folder(Folder folder)
+    public Folder(Folder folder) : base(folder)
     {
         Name = folder.Name;
         HostGroupName = folder.HostGroupName;
@@ -42,7 +41,6 @@ internal class Folder : INamedCheckElement, IVetoEntity
         CreatedAge = folder.CreatedAge;
         ModifiedAge = folder.ModifiedAge;
         MaxFiles = folder.MaxFiles;
-        Active = folder.Active;
 
         FileSizeNumber = folder.FileSizeNumber;
         CreatedAgeDate = folder.CreatedAgeDate;
@@ -60,7 +58,6 @@ internal class Folder : INamedCheckElement, IVetoEntity
     public string? CreatedAge { get; private set; }
     public string? ModifiedAge { get; private set; }
     public int MaxFiles { get; private set; }
-    public bool Active { get; private set; }
 
     //// --------------------------------------- ////
 

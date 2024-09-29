@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace WindowsServiceRestart;
 
-internal class Service : BaseDefault, IService, INamedCheckElement, IVetoEntity
+internal class Service : BaseDefault, IService, INamedCheckElement, IVetoEntity, IIntervalEntity
 {
     public Service(IConfigurationSection section, Defaults defaults) : base(section, defaults)
     {

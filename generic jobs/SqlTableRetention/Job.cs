@@ -61,8 +61,8 @@ internal partial class Job : BaseCheckJob
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
-        services.RegisterBaseCheck();
-        services.AddSingleton<CheckIntervalTracker>();
+        services.RegisterSpanCheck();
+        services.RegisterIntervalCheck();
     }
 
     private async Task InvokeTableRerentionInner(Table table)

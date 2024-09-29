@@ -42,15 +42,14 @@ internal partial class Job : BaseCheckJob
 
         folders = GetFoldersWithHost(folders, hosts);
 
-        var tasks = SafeInvokeOperation(folders, InvokeFolderInnerAsync);
-        await Task.WhenAll(tasks);
+        await SafeInvokeOperation(folders, InvokeFolderInnerAsync);
 
         Finalayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
-        services.RegisterBaseCheck();
+        services.RegisterSpanCheck();
     }
 
     private static List<Folder> GetFoldersWithHost(List<Folder> folders, IReadOnlyDictionary<string, HostsConfig> hosts)

@@ -39,15 +39,15 @@ internal partial class Job : BaseCheckJob
         EffectedRows = 0;
 
         using var client = new HttpClient();
-        await SafeInvokeCheck(services, InvokeServicesInner);
+        await SafeInvokeOperation(services, InvokeServicesInner);
 
         Finalayze();
     }
 
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
-        services.RegisterBaseCheck();
-        services.AddSingleton<CheckIntervalTracker>();
+        services.RegisterSpanCheck();
+        services.RegisterIntervalCheck();
     }
 
     private static List<Service> GetServicesWithHost(List<Service> services, IReadOnlyDictionary<string, HostsConfig> hosts)
@@ -114,12 +114,6 @@ internal partial class Job : BaseCheckJob
         if (string.IsNullOrWhiteSpace(service.Host))
         {
             throw new CheckException($"service '{service.Name}' has no host name (null or empty)");
-        }
-
-        if (!IsIntervalElapsed(service, service.Interval))
-        {
-            Logger.LogInformation("skipping service '{Name}' due to its interval", service.Name);
-            return;
         }
 
         using var controller = new ServiceController(service.Name, service.Host);

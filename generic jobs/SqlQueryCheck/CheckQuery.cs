@@ -3,7 +3,8 @@ using Microsoft.Extensions.Configuration;
 
 namespace SqlQueryCheck;
 
-internal class CheckQuery(IConfigurationSection section, Defaults defaults) : BaseDefault(section, defaults), INamedCheckElement, IVetoEntity
+internal class CheckQuery(IConfigurationSection section, Defaults defaults) :
+    BaseDefault(section, defaults), INamedCheckElement, IVetoEntity, IIntervalEntity
 {
     public string Name { get; } = section.GetValue<string>("name") ?? string.Empty;
 

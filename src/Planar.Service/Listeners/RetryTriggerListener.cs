@@ -6,6 +6,7 @@ using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.General;
 using Planar.Service.Listeners.Base;
+using Polly;
 using Quartz;
 using System;
 using System.Threading;
@@ -90,10 +91,12 @@ public class RetryTriggerListener(IServiceScopeFactory serviceScopeFactory, ILog
 
             var id = TriggerHelper.GetTriggerId(trigger);
             var name = string.IsNullOrEmpty(id) ? Guid.NewGuid().ToString().Replace("-", string.Empty) : id;
+            var triggerKeyName = $"{Consts.RetryTriggerNamePrefix}.{numTries}.{name}";
+            var triggerKey = new TriggerKey(triggerKeyName, Consts.RetryTriggerGroup);
             var retryBuilder = TriggerBuilder
                     .Create()
                     .ForJob(context.JobDetail)
-                    .WithIdentity($"{Consts.RetryTriggerNamePrefix}.{numTries}.{name}", Consts.RetryTriggerGroup)
+                    .WithIdentity(triggerKey)
                     .UsingJobData(Consts.TriggerId, ServiceUtil.GenerateId())
                     .UsingJobData(Consts.RetrySpan, span.GetValueOrDefault().ToSimpleTimeString())
                     .UsingJobData(Consts.RetryCounter, numTries.ToString())
@@ -108,12 +111,32 @@ public class RetryTriggerListener(IServiceScopeFactory serviceScopeFactory, ILog
 
             var retryTrigger = retryBuilder.Build();
 
-            context.Scheduler.ScheduleJob(retryTrigger, cancellationToken).Wait(cancellationToken);
+            ScheduleJob(retryTrigger, context, cancellationToken);
             SafeScan(MonitorEvents.ExecutionRetry, context);
         }
         catch (Exception ex)
         {
             LogCritical(nameof(TriggerComplete), ex);
+        }
+    }
+
+    private static void ScheduleJob(ITrigger trigger, IJobExecutionContext context, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            context.Scheduler.ScheduleJob(trigger, cancellationToken).Wait(cancellationToken);
+        }
+        catch
+        {
+            // Check if trigger with same name already exists
+            var exists = context.Scheduler.GetTrigger(trigger.Key, cancellationToken);
+            if (exists != null)
+            {
+                // DO NOHING //
+                return;
+            }
+
+            throw;
         }
     }
 }

@@ -3,7 +3,6 @@
 PLAN FOR V 1.7.7
 ----------------
 
-- BUG: recovery running try to add same retry trigger with same key
 - validate on startup that instance id not exists in nodes table
 - Security report
 - check option to odata search (https://devblogs.microsoft.com/odata/compute-and-search-in-asp-net-core-odata-8/)
@@ -350,3 +349,5 @@ V1.7.7
 - Add veto & custom configure to generic jobs
 - health check minor changes + cli color
 - add free search on cli jobs menu / monitor event menu
+- BUG: recovery running try to add same retry trigger with same key
+

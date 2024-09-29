@@ -20,6 +20,7 @@ health check:                                   # the health check parameters
   local alarm: true                             # if true, the job will fail if the local alarm is raised
   node mirror sync: true                        # if true, the job will fail if the node mirror sync is not ok
   node quorum critical: true                    # if true, the job will fail if the node quorum critical is not ok
+  virtual hosts: true                           # if true, the job will fail if the virtual hosts are not ok
   allowed fail span: 00:00:10                   # the time span which violation of health check will be considered ok
   active: true                                  # the default is true
 

@@ -13,7 +13,6 @@ internal class HealthCheck : BaseDefault, ICheckElement
         ConnectedClients = section.GetValue<int?>("connected clients");
         Latency = section.GetValue<int?>("latency");
         UsedMemory = section.GetValue<string>("used memory");
-        Active = section.GetValue<bool?>("active") ?? true;
     }
 
     private HealthCheck()
@@ -23,7 +22,6 @@ internal class HealthCheck : BaseDefault, ICheckElement
     public bool? Ping { get; private set; }
     public int? ConnectedClients { get; private set; }
     public int? Latency { get; private set; }
-    public bool Active { get; private set; } = true;
 
     public string? UsedMemory
     {
