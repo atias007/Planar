@@ -18,15 +18,15 @@ namespace Planar.CLI.General
             var val = parts[1].Trim();
             switch (key)
             {
+                default:
+                    return false;
+
                 case "event":
                     Event = val;
                     return false;
 
                 case "data":
                     Data = JsonSerializer.Deserialize<T>(val);
-                    return false;
-
-                default:
                     return false;
 
                 case "id":

@@ -28,7 +28,9 @@ public partial class JobDomain
         {
             var context = Resolve<IHttpContextAccessor>().HttpContext;
             ArgumentNullException.ThrowIfNull(context);
+#pragma warning disable CA2016 // Forward the 'CancellationToken' parameter to methods
             await context.Response.Body.FlushAsync();
+#pragma warning restore CA2016 // Forward the 'CancellationToken' parameter to methods
         }
     }
 

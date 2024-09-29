@@ -620,7 +620,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
                 while (!reader.EndOfStream)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    var value = reader.ReadLine();
+                    var value = await reader.ReadLineAsync();
                     if (string.IsNullOrWhiteSpace(value)) { continue; }
                     if (data.Parse(value))
                     {
