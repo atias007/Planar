@@ -15,39 +15,39 @@ Cd\Planar\nuget packages
 rmdir "publish" /S /Q
 
 cd Planar.Client
-dotnet publish --output "C:\Planar\nuget packages\publish"
-dotnet pack --output "C:\Planar\nuget packages\publish"
+dotnet build Planar.Client.csproj --configuration Release
+dotnet pack Planar.Client.csproj --configuration Release --output "C:\Planar\nuget packages\publish"
 cd..
 
 cd Planar.Common
-dotnet publish --output "C:\Planar\nuget packages\publish"
-dotnet pack --output "C:\Planar\nuget packages\publish"
+dotnet build Planar.Common.csproj --configuration Release
+dotnet pack Planar.Common.csproj --configuration Release --output "C:\Planar\nuget packages\publish"
 cd..
 
 cd Planar.Hook
-dotnet publish --output "C:\Planar\nuget packages\publish"
-dotnet pack --output "C:\Planar\nuget packages\publish"
+dotnet build Planar.Hook.csproj --configuration Release
+dotnet pack Planar.Hook.csproj --configuration Release --output "C:\Planar\nuget packages\publish"
 cd..
 
 cd Planar.Hook.Test
-dotnet publish --output "C:\Planar\nuget packages\publish"
-dotnet pack --output "C:\Planar\nuget packages\publish"
+dotnet build Planar.Hook.Test.csproj --configuration Release
+dotnet pack Planar.Hook.Test.csproj --configuration Release --output "C:\Planar\nuget packages\publish"
 cd..
 
 cd Planar.Job
-dotnet publish --output "C:\Planar\nuget packages\publish"
-dotnet pack --output "C:\Planar\nuget packages\publish"
+dotnet build Planar.Job.csproj --configuration Release
+dotnet pack Planar.Job.csproj --configuration Release --output "C:\Planar\nuget packages\publish"
 cd..
 
 cd Planar.Job.Test
-dotnet publish --output "C:\Planar\nuget packages\publish"
-dotnet pack --output "C:\Planar\nuget packages\publish"
+dotnet build Planar.Job.Test.csproj --configuration Release
+dotnet pack Planar.Job.Test.csproj --configuration Release --output "C:\Planar\nuget packages\publish"
 cd..
 
 cd..
 cd src\Planar.CLI
-dotnet build -c Release
-dotnet pack --output "C:\Planar\nuget packages\publish"
+dotnet build --configuration Release
+dotnet pack --configuration Release --output "C:\Planar\nuget packages\publish"
 cd..
 cd..
 

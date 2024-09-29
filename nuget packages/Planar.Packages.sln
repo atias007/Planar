@@ -32,6 +32,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionItems", "SolutionIt
 		publish.bat = publish.bat
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NugetTest", "NugetTest\NugetTest.csproj", "{2E0044E8-8764-42B8-B423-836A1898B21D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -82,6 +84,10 @@ Global
 		{C1C29BDA-DB66-4BF9-AE06-F97A03DEDE9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C1C29BDA-DB66-4BF9-AE06-F97A03DEDE9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C1C29BDA-DB66-4BF9-AE06-F97A03DEDE9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E0044E8-8764-42B8-B423-836A1898B21D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E0044E8-8764-42B8-B423-836A1898B21D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E0044E8-8764-42B8-B423-836A1898B21D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E0044E8-8764-42B8-B423-836A1898B21D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -92,6 +98,7 @@ Global
 		{3C2064DA-DB8F-4F7A-A6CE-071801653FCA} = {CFFFF68A-BF9D-4297-9E81-FE2ACF6B60C5}
 		{BC9DD697-4F78-4F2D-9277-86DAC265BAD8} = {CFFFF68A-BF9D-4297-9E81-FE2ACF6B60C5}
 		{C1C29BDA-DB66-4BF9-AE06-F97A03DEDE9E} = {CFFFF68A-BF9D-4297-9E81-FE2ACF6B60C5}
+		{2E0044E8-8764-42B8-B423-836A1898B21D} = {CFFFF68A-BF9D-4297-9E81-FE2ACF6B60C5}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {052EE731-D23D-43DF-822D-72DA17A54D1E}
