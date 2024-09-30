@@ -5,7 +5,8 @@ general:
 
 defaults:                                       # default values for all folders. each folder can override these values
   retry count: 1                                # the number of retry attemp in case of failure
-  retry interval: 00:00:10                      # the interval between retry attemps
+  retry interval: 00:00:30                      # the interval between retry attemps
+  allowed fail span: null                       # the time span which violation of the folder will be considered ok
 
 #hosts:                                         # the hosts to be used in folders with relative path. usualy this section defined in specific environment job settings
 #  - group name: default

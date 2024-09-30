@@ -1,7 +1,7 @@
 ﻿using Common;
 using Microsoft.Extensions.Configuration;
 
-namespace FolderCheck;
+namespace RedisOperations;
 
 internal class Defaults : BaseDefault
 {
@@ -11,7 +11,7 @@ internal class Defaults : BaseDefault
 
     private Defaults()
     {
-        RetryCount = 1;
+        RetryCount = 3;
         RetryInterval = TimeSpan.FromSeconds(30);
         AllowedFailSpan = null;
     }

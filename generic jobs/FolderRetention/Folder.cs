@@ -5,7 +5,7 @@ namespace FolderRetention;
 
 internal class Folder : BaseOperation, INamedCheckElement, IVetoEntity
 {
-    public Folder(IConfigurationSection section) : base(section)
+    public Folder(IConfigurationSection section, BaseDefault @default) : base(section, @default)
     {
         Name = section.GetValue<string>("name") ?? string.Empty;
         HostGroupName = section.GetValue<string?>("host group name");
@@ -69,14 +69,8 @@ internal class Folder : BaseOperation, INamedCheckElement, IVetoEntity
     public string Key => Name;
     public bool IsRelativePath => !IsAbsolutePath;
 
-    public TimeSpan? AllowedFailSpan => null;
-
     // internal use for relative urls
     public string? Host { get; set; }
-
-    public bool Veto { get; set; }
-
-    public string? VetoReason { get; set; }
 
     public bool IsValid()
     {

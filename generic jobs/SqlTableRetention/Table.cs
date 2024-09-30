@@ -3,7 +3,8 @@ using Microsoft.Extensions.Configuration;
 
 namespace SqlTableRetention;
 
-internal class Table(IConfigurationSection section) : INamedCheckElement, IVetoEntity
+internal class Table(IConfigurationSection section, BaseDefault defaults)
+    : BaseOperation(section, defaults), INamedCheckElement, IVetoEntity
 {
     public string Name { get; private set; } = section.GetValue<string>("name") ?? string.Empty;
 
@@ -19,17 +20,9 @@ internal class Table(IConfigurationSection section) : INamedCheckElement, IVetoE
 
     public int BatchSize { get; set; } = section.GetValue<int?>("batch size") ?? 10_000;
 
-    public bool Active { get; private set; } = section.GetValue<bool?>("active") ?? true;
-
     public string Key => Name;
-
-    public TimeSpan? AllowedFailSpan => null;
 
     //// =================== //
 
     public string? ConnectionString { get; set; }
-
-    public bool Veto { get; set; }
-
-    public string? VetoReason { get; set; }
 }

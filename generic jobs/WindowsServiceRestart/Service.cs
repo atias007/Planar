@@ -3,7 +3,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace WindowsServiceRestart;
 
-internal class Service : BaseDefault, IService, INamedCheckElement, IVetoEntity, IIntervalEntity
+internal class Service : BaseOperation, IService, INamedCheckElement, IVetoEntity, IIntervalEntity
 {
     public Service(IConfigurationSection section, Defaults defaults) : base(section, defaults)
     {
@@ -34,8 +34,4 @@ internal class Service : BaseDefault, IService, INamedCheckElement, IVetoEntity,
     //// --------------------------------------- ////
 
     public string? Host { get; set; }
-
-    public bool Veto { get; set; }
-
-    public string? VetoReason { get; set; }
 }

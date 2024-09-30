@@ -2,9 +2,9 @@
 
 namespace Common;
 
-public abstract class BaseOperation : BaseActiveElement
+public abstract class BaseOperation : BaseDefault
 {
-    protected BaseOperation(IConfigurationSection section) : base(section)
+    protected BaseOperation(IConfigurationSection section, BaseDefault @default) : base(section, @default)
     {
     }
 
@@ -13,4 +13,8 @@ public abstract class BaseOperation : BaseActiveElement
     }
 
     public OperationStatus OperationStatus { get; set; }
+
+    public bool Veto { get; set; }
+
+    public string? VetoReason { get; set; }
 }

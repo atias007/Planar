@@ -47,13 +47,13 @@ internal partial class Job : BaseCheckJob
         RedisFactory.Initialize(Configuration);
         ValidateRedis();
 
-        var keys = GetKeys(Configuration);
+        var defaults = GetDefaults(Configuration);
+        var keys = GetKeys(Configuration, defaults);
         ValidateRequired(keys, "keys");
         ValidateDuplicateKeys(keys, "keys");
 
         EffectedRows = 0;
-        var tasks = SafeInvokeOperation(keys, InvokeKeyCheckInner);
-        await Task.WhenAll(tasks);
+        await SafeInvokeOperation(keys, InvokeKeyCheckInner);
 
         Finalayze();
     }
@@ -63,19 +63,35 @@ internal partial class Job : BaseCheckJob
         services.RegisterSpanCheck();
     }
 
-    protected static void ValidateRedis()
+    private Defaults GetDefaults(IConfiguration configuration)
+    {
+        var empty = Defaults.Empty;
+        var section = configuration.GetSection("defaults");
+        if (section == null)
+        {
+            Logger.LogWarning("no defaults section found on settings file. set job factory defaults");
+            return empty;
+        }
+
+        var result = new Defaults(section);
+        ValidateBase(result, "defaults");
+
+        return result;
+    }
+
+    private static void ValidateRedis()
     {
         ValidateRequired(RedisFactory.Endpoints, "endpoints", "server");
         ValidateGreaterThenOrEquals(RedisFactory.Database, 0, "database", "server");
         ValidateLessThenOrEquals(RedisFactory.Database, 16, "database", "server");
     }
 
-    private IEnumerable<RedisKey> GetKeys(IConfiguration configuration)
+    private IEnumerable<RedisKey> GetKeys(IConfiguration configuration, Defaults defaults)
     {
         var keys = configuration.GetRequiredSection("keys");
         foreach (var item in keys.GetChildren())
         {
-            var key = new RedisKey(item);
+            var key = new RedisKey(item, defaults);
 
             VetoKey(ref key);
             if (CheckVeto(key, "key")) { continue; }

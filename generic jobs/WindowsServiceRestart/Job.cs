@@ -200,6 +200,5 @@ internal partial class Job : BaseCheckJob
         ValidateRequired(service.Name, "name", section);
         ValidateGreaterThen(service.Timeout, TimeSpan.FromSeconds(5), "timeout", section);
         ValidateLessThen(service.Timeout, TimeSpan.FromMinutes(5), "timeout", section);
-        ValidateRequired(service.Host, "host", section);
     }
 }

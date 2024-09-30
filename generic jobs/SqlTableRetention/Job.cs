@@ -48,13 +48,13 @@ internal partial class Job : BaseCheckJob
         Initialize(ServiceProvider);
 
         EffectedRows = 0;
+        var defaults = GetDefaults(Configuration);
         var connStrings = GetConnectionStrings(Configuration);
-        var tables = GetTables(Configuration, connStrings);
+        var tables = GetTables(Configuration, connStrings, defaults);
         ValidateRequired(tables, "tables");
         ValidateDuplicateNames(tables, "tables");
 
-        var tasks = SafeInvokeOperation(tables, InvokeTableRerentionInner);
-        await Task.WhenAll(tasks);
+        await SafeInvokeOperation(tables, InvokeTableRerentionInner);
 
         Finalayze();
     }
@@ -63,6 +63,22 @@ internal partial class Job : BaseCheckJob
     {
         services.RegisterSpanCheck();
         services.RegisterIntervalCheck();
+    }
+
+    private Defaults GetDefaults(IConfiguration configuration)
+    {
+        var empty = Defaults.Empty;
+        var section = configuration.GetSection("defaults");
+        if (section == null)
+        {
+            Logger.LogWarning("no defaults section found on settings file. set job factory defaults");
+            return empty;
+        }
+
+        var result = new Defaults(section);
+        ValidateBase(result, "defaults");
+
+        return result;
     }
 
     private async Task InvokeTableRerentionInner(Table table)
@@ -148,12 +164,12 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private IEnumerable<Table> GetTables(IConfiguration configuration, Dictionary<string, string> connectionStrings)
+    private IEnumerable<Table> GetTables(IConfiguration configuration, Dictionary<string, string> connectionStrings, Defaults defaults)
     {
         var section = configuration.GetRequiredSection("tables");
         foreach (var item in section.GetChildren())
         {
-            var key = new Table(item);
+            var key = new Table(item, defaults);
 
             VetoTable(ref key);
             if (CheckVeto(key, "table")) { continue; }

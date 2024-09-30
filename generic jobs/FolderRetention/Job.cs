@@ -32,8 +32,9 @@ internal partial class Job : BaseCheckJob
     {
         Initialize(ServiceProvider);
 
+        var defaults = GetDefaults(Configuration);
         var hosts = GetHosts(Configuration, h => VetoHost(ref h));
-        var folders = GetFolders(Configuration);
+        var folders = GetFolders(Configuration, defaults);
 
         if (folders.Exists(e => e.IsRelativePath))
         {
@@ -50,6 +51,22 @@ internal partial class Job : BaseCheckJob
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
         services.RegisterSpanCheck();
+    }
+
+    private Defaults GetDefaults(IConfiguration configuration)
+    {
+        var empty = Defaults.Empty;
+        var section = configuration.GetSection("defaults");
+        if (section == null)
+        {
+            Logger.LogWarning("no defaults section found on settings file. set job factory defaults");
+            return empty;
+        }
+
+        var result = new Defaults(section);
+        ValidateBase(result, "defaults");
+
+        return result;
     }
 
     private static List<Folder> GetFoldersWithHost(List<Folder> folders, IReadOnlyDictionary<string, HostsConfig> hosts)
@@ -91,13 +108,13 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private List<Folder> GetFolders(IConfiguration configuration)
+    private List<Folder> GetFolders(IConfiguration configuration, Defaults defaults)
     {
         var result = new List<Folder>();
         var folders = configuration.GetRequiredSection("folders");
         foreach (var item in folders.GetChildren())
         {
-            var folder = new Folder(item);
+            var folder = new Folder(item, defaults);
 
             VetoFolder(ref folder);
             if (CheckVeto(folder, "folder")) { continue; }

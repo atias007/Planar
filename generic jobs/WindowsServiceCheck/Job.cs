@@ -211,6 +211,5 @@ internal partial class Job : BaseCheckJob
         ValidateRequired(service.Name, "name", section);
         ValidateGreaterThen(service.StartServiceTimeout, TimeSpan.FromSeconds(5), "start service timeout", section);
         ValidateLessThen(service.StartServiceTimeout, TimeSpan.FromMinutes(5), "start service timeout", section);
-        ValidateRequired(service.Host, "host", section);
     }
 }

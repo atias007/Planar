@@ -6,7 +6,6 @@ using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.General;
 using Planar.Service.Listeners.Base;
-using Polly;
 using Quartz;
 using System;
 using System.Threading;
