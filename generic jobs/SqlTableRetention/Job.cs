@@ -17,16 +17,16 @@ internal partial class Job : BaseCheckJob
 
     static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-    static partial void CustomConfigure(ref List<SqlConnectionString> connectionStrings, IConfiguration configuration);
+    static partial void CustomConfigure(List<SqlConnectionString> connectionStrings, IConfiguration configuration);
 
-    static partial void VetoTable(ref Table table);
+    static partial void VetoTable(Table table);
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
         CustomConfigure(configurationBuilder, context);
 
         var connectionStrings = new List<SqlConnectionString>();
-        CustomConfigure(ref connectionStrings, configurationBuilder.Build());
+        CustomConfigure(connectionStrings, configurationBuilder.Build());
 
         if (connectionStrings.Count > 0)
         {
@@ -171,7 +171,7 @@ internal partial class Job : BaseCheckJob
         {
             var key = new Table(item, defaults);
 
-            VetoTable(ref key);
+            VetoTable(key);
             if (CheckVeto(key, "table")) { continue; }
 
             key.ConnectionString = connectionStrings.GetValueOrDefault(key.ConnectionStringName);

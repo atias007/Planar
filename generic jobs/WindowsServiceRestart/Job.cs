@@ -14,9 +14,9 @@ internal partial class Job : BaseCheckJob
 
     static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-    static partial void VetoService(ref Service service);
+    static partial void VetoService(Service service);
 
-    static partial void VetoHost(ref Host host);
+    static partial void VetoHost(Host host);
 
 #pragma warning restore S3251 // Implementations should be provided for "partial" methods
 
@@ -28,7 +28,7 @@ internal partial class Job : BaseCheckJob
         Initialize(ServiceProvider);
 
         var defaults = GetDefaults(Configuration);
-        var hosts = GetHosts(Configuration, h => VetoHost(ref h));
+        var hosts = GetHosts(Configuration, h => VetoHost(h));
         var services = GetServices(Configuration, defaults);
 
         ValidateRequired(hosts, "hosts");
@@ -80,7 +80,7 @@ internal partial class Job : BaseCheckJob
         foreach (var item in services.GetChildren())
         {
             var service = new Service(item, defaults);
-            VetoService(ref service);
+            VetoService(service);
             if (CheckVeto(service, "service")) { continue; }
             ValidateService(service);
             result.Add(service);

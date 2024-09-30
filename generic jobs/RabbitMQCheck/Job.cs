@@ -15,9 +15,9 @@ internal partial class Job : BaseCheckJob
 
     static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-    static partial void CustomConfigure(ref RabbitMqServer rabbitMqServer, IConfiguration configuration);
+    static partial void CustomConfigure(RabbitMqServer rabbitMqServer, IConfiguration configuration);
 
-    static partial void VetoQueue(ref Queue queue);
+    static partial void VetoQueue(Queue queue);
 
     static partial void Finalayze(IEnumerable<Queue> queues);
 
@@ -26,7 +26,7 @@ internal partial class Job : BaseCheckJob
         CustomConfigure(configurationBuilder, context);
 
         var rabbitmqServer = new RabbitMqServer();
-        CustomConfigure(ref rabbitmqServer, configurationBuilder.Build());
+        CustomConfigure(rabbitmqServer, configurationBuilder.Build());
 
         if (!rabbitmqServer.IsEmpty)
         {
@@ -100,7 +100,7 @@ internal partial class Job : BaseCheckJob
         {
             var queue = new Queue(section, defaults);
 
-            VetoQueue(ref queue);
+            VetoQueue(queue);
             if (CheckVeto(queue, "queue")) { continue; }
 
             ValidateRequired(queue.Name, "name", "queues");
@@ -234,6 +234,7 @@ internal partial class Job : BaseCheckJob
         CheckState(queue, detail);
         CheckConsumers(queue, detail);
         CheckMessages(queue, detail);
+        CheckUnacked(queue, detail);
         CheckMemory(queue, detail);
         IncreaseEffectedRows();
         await Task.CompletedTask;
@@ -267,6 +268,21 @@ internal partial class Job : BaseCheckJob
             else
             {
                 throw new CheckException($"queue '{detail.Name}' messages check failed. {detail.Messages:N0} messages are greater then {queue.Messages.GetValueOrDefault():N0}");
+            }
+        }
+    }
+
+    private void CheckUnacked(Queue queue, QueueDetails detail)
+    {
+        if (queue.Unacked.HasValue)
+        {
+            if (queue.Unacked.GetValueOrDefault() < detail.MessagesUnacknowledged)
+            {
+                Logger.LogInformation("queue '{Name}' unacked is ok. {Unacked:N0} unacked", detail.Name, detail.MessagesUnacknowledged);
+            }
+            else
+            {
+                throw new CheckException($"queue '{detail.Name}' unacked check failed. {detail.MessagesUnacknowledged:N0} unacked are greater then {queue.Messages.GetValueOrDefault():N0}");
             }
         }
     }

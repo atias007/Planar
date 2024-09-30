@@ -16,16 +16,16 @@ internal partial class Job : BaseCheckJob
 
     static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-    static partial void CustomConfigure(ref RedisServer redisServer, IConfiguration configuration);
+    static partial void CustomConfigure(RedisServer redisServer, IConfiguration configuration);
 
-    static partial void VetoKey(ref RedisKey key);
+    static partial void VetoKey(RedisKey key);
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
         CustomConfigure(configurationBuilder, context);
 
         var redisServer = new RedisServer();
-        CustomConfigure(ref redisServer, configurationBuilder.Build());
+        CustomConfigure(redisServer, configurationBuilder.Build());
 
         if (!redisServer.IsEmpty)
         {
@@ -93,7 +93,7 @@ internal partial class Job : BaseCheckJob
         {
             var key = new RedisKey(item, defaults);
 
-            VetoKey(ref key);
+            VetoKey(key);
             if (CheckVeto(key, "key")) { continue; }
 
             ValidateRedisKey(key);

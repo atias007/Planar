@@ -14,9 +14,9 @@ internal partial class Job : BaseCheckJob
 
     static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-    static partial void VetoFolder(ref Folder folder);
+    static partial void VetoFolder(Folder folder);
 
-    static partial void VetoHost(ref Host host);
+    static partial void VetoHost(Host host);
 
     static partial void Finilayze(IEnumerable<Folder> folders);
 
@@ -30,7 +30,7 @@ internal partial class Job : BaseCheckJob
         Initialize(ServiceProvider);
 
         var defaults = GetDefaults(Configuration);
-        var hosts = GetHosts(Configuration, h => VetoHost(ref h));
+        var hosts = GetHosts(Configuration, h => VetoHost(h));
         var folders = GetFolders(Configuration, defaults);
 
         if (folders.Exists(e => e.IsRelativePath))
@@ -100,7 +100,7 @@ internal partial class Job : BaseCheckJob
         {
             var folder = new Folder(item, defaults);
 
-            VetoFolder(ref folder);
+            VetoFolder(folder);
             if (CheckVeto(folder, "folder")) { continue; }
 
             ValidateFolder(folder);

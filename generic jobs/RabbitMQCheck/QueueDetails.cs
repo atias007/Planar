@@ -1,4 +1,6 @@
-﻿namespace RabbitMQCheck;
+﻿using Newtonsoft.Json;
+
+namespace RabbitMQCheck;
 
 public class QueueDetails
 {
@@ -8,14 +10,14 @@ public class QueueDetails
     public int Consumers { get; set; }
     public string State { get; set; } = null!;
 
+    [JsonProperty("messages_unacknowledged")]
+    public int MessagesUnacknowledged { get; set; }
+
     ////[JsonProperty("messages_ready")]
     ////public int MessagesReady { get; set; }
 
     ////[JsonProperty("messages_dlx")]
     ////public int MessagesDlx { get; set; }
-
-    ////[JsonProperty("messages_unacknowledged")]/
-    //// /public int MessagesUnacknowledged { get; set; }
 
     //// public Arguments arguments { get; set; }
     //// public bool auto_delete { get; set; }

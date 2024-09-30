@@ -18,9 +18,9 @@ internal partial class Job : BaseCheckJob
 
     static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-    static partial void CustomConfigure(ref InfluxDBServer influxServer, IConfiguration configuration);
+    static partial void CustomConfigure(InfluxDBServer influxServer, IConfiguration configuration);
 
-    static partial void VetoQuery(ref InfluxQuery query);
+    static partial void VetoQuery(InfluxQuery query);
 
     static partial void Finalayze(IEnumerable<InfluxQuery> endpoints);
 
@@ -29,7 +29,7 @@ internal partial class Job : BaseCheckJob
         CustomConfigure(configurationBuilder, context);
 
         var influxServer = new InfluxDBServer();
-        CustomConfigure(ref influxServer, configurationBuilder.Build());
+        CustomConfigure(influxServer, configurationBuilder.Build());
 
         if (!influxServer.IsEmpty)
         {
@@ -93,7 +93,7 @@ internal partial class Job : BaseCheckJob
         foreach (var item in keys.GetChildren())
         {
             var key = new InfluxQuery(item, defaults);
-            VetoQuery(ref key);
+            VetoQuery(key);
             if (CheckVeto(key, "query")) { continue; }
 
             ValidateInfluxQuery(key);

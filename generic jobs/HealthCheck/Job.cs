@@ -16,9 +16,9 @@ internal partial class Job : BaseCheckJob
 
     static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-    static partial void VetoEndpoint(ref Endpoint endpoint);
+    static partial void VetoEndpoint(Endpoint endpoint);
 
-    partial void VetoHost(ref Host host);
+    static partial void VetoHost(Host host);
 
     static partial void Finilayze(IEnumerable<Endpoint> endpoints);
 
@@ -32,7 +32,7 @@ internal partial class Job : BaseCheckJob
         Initialize(ServiceProvider);
 
         var defaults = GetDefaults(Configuration);
-        var hosts = GetHosts(Configuration, h => VetoHost(ref h));
+        var hosts = GetHosts(Configuration, h => VetoHost(h));
         var endpoints = GetEndpoints(Configuration, defaults);
 
         if (endpoints.Exists(e => e.IsRelativeUrl))
@@ -86,7 +86,7 @@ internal partial class Job : BaseCheckJob
         foreach (var item in endpoints.GetChildren())
         {
             var endpoint = new Endpoint(item, defaults);
-            VetoEndpoint(ref endpoint);
+            VetoEndpoint(endpoint);
             if (CheckVeto(endpoint, "endpoint")) { continue; }
 
             ValidateEndpoint(endpoint);

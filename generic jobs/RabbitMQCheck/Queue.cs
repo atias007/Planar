@@ -7,6 +7,7 @@ internal class Queue(IConfigurationSection section, Defaults defaults) : BaseDef
 {
     public string Name { get; private set; } = section.GetValue<string>("name") ?? string.Empty;
     public int? Messages { get; private set; } = section.GetValue<int?>("messages");
+    public int? Unacked { get; private set; } = section.GetValue<int?>("unacked");
     public string? Memory { get; private set; } = section.GetValue<string>("memory");
     public int? Consumers { get; private set; } = section.GetValue<int?>("consumers");
     public bool? CheckState { get; private set; } = section.GetValue<bool?>("check state");
