@@ -75,9 +75,6 @@ internal class Folder : BaseDefault, INamedCheckElement, IVetoEntity
     public string? Host { get; set; }
 
     //// -------------------------- ////
-    public bool Veto { get; set; }
-
-    public string? VetoReason { get; set; }
 
     public bool IsValid =>
         TotalSizeNumber != null || FileSizeNumber != null || FileCount != null || CreatedAgeDate != null || ModifiedAgeDate != null;

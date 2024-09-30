@@ -22,7 +22,4 @@ internal class InfluxQuery(IConfigurationSection section, Defaults defaults) :
     public Condition? InternalValueCondition { get; set; }
 
     //// -------------------------- ////
-    public bool Veto { get; set; }
-
-    public string? VetoReason { get; set; }
 }

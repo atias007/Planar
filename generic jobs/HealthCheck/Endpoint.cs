@@ -42,9 +42,6 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement, IVetoEntit
     public Uri? Host { get; set; }
 
     //// -------------------------- ////
-    public bool Veto { get; set; }
-
-    public string? VetoReason { get; set; }
 
     private static Uri? SetAbsoluteUrl(string url)
     {

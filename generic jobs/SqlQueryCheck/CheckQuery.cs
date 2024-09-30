@@ -23,8 +23,4 @@ internal class CheckQuery(IConfigurationSection section, Defaults defaults) :
     //// =================== //
 
     public string? ConnectionString { get; set; }
-
-    public bool Veto { get; set; }
-
-    public string? VetoReason { get; set; }
 }

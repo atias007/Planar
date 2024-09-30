@@ -131,7 +131,7 @@ internal partial class Job : BaseCheckJob
             throw new CheckException($"service '{service.Name}' on host '{service.Host}' is in {status} start type");
         }
 
-        if (startType == ServiceStartMode.Manual && service.AutomaticStart)
+        if (startType == ServiceStartMode.Manual && service.AutoStartMode)
         {
             throw new CheckException($"service '{service.Name}' start type is {nameof(ServiceStartMode.Manual)}");
         }

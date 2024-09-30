@@ -17,10 +17,6 @@ internal class RedisKey(IConfigurationSection section, Defaults defaults) : Base
     public int? MemoryUsageNumber { get; } = GetSize(section.GetValue<string>("memory usage"), "max memory usage");
     public bool IsValid => MemoryUsageNumber > 0 || Length > 0;
 
-    public bool Veto { get; set; }
-
-    public string? VetoReason { get; set; }
-
     //// --------------------------------------- ////
 
     private static int? GetSize(string? source, string fieldName)

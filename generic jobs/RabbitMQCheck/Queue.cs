@@ -14,6 +14,4 @@ internal class Queue(IConfigurationSection section, Defaults defaults) : BaseDef
     public long? MemoryNumber { get; private set; } = CommonUtil.GetSize(section.GetValue<string>("memory"), "memory");
     public string Key => Name;
     public bool IsValid => Messages.HasValue || Consumers.HasValue || CheckState.HasValue || MemoryNumber.HasValue;
-    public bool Veto { get; set; }
-    public string? VetoReason { get; set; }
 }

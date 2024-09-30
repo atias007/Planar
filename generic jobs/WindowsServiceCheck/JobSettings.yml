@@ -18,6 +18,6 @@ services:
     ignore disabled: true                      # ignore service which has start type: disabled. the default is true
     start service: true                        # start the service if it is stopped. the default is true
     start service timeout: 00:00:30            # the timeout for starting the service. the default is 30 seconds
-    automatic start: true                      # check for automatic start mode. the default is true
+    auto start mode: true                      # check for automatic start mode. the default is true
     allowed fail span: 00:05:00                # the time span which violation of the query will be considered ok
     active: true                               # the default is true

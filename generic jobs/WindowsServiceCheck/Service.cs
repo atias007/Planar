@@ -11,7 +11,7 @@ internal class Service : BaseDefault, IService, INamedCheckElement, IVetoEntity
         HostGroupName = section.GetValue<string?>("host group name");
         IgnoreDisabled = section.GetValue<bool?>("ignore disabled") ?? true;
         StartService = section.GetValue<bool?>("start service") ?? true;
-        AutomaticStart = section.GetValue<bool?>("automatic start") ?? true;
+        AutoStartMode = section.GetValue<bool?>("auto start mode") ?? true;
         StartServiceTimeout = section.GetValue<TimeSpan?>("start service timeout") ?? TimeSpan.FromSeconds(30);
     }
 
@@ -21,7 +21,7 @@ internal class Service : BaseDefault, IService, INamedCheckElement, IVetoEntity
         HostGroupName = service.HostGroupName;
         IgnoreDisabled = service.IgnoreDisabled;
         StartService = service.StartService;
-        AutomaticStart = service.AutomaticStart;
+        AutoStartMode = service.AutoStartMode;
         StartServiceTimeout = service.StartServiceTimeout;
     }
 
@@ -29,15 +29,11 @@ internal class Service : BaseDefault, IService, INamedCheckElement, IVetoEntity
     public string? HostGroupName { get; }
     public bool IgnoreDisabled { get; }
     public bool StartService { get; }
-    public bool AutomaticStart { get; }
+    public bool AutoStartMode { get; }
     public TimeSpan StartServiceTimeout { get; }
     public string Key => Name;
 
     //// --------------------------------------- ////
 
     public string? Host { get; set; }
-
-    public bool Veto { get; set; }
-
-    public string? VetoReason { get; set; }
 }
