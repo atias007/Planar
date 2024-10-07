@@ -8,7 +8,7 @@ internal class RedisKey(IConfigurationSection section, Defaults defaults) : Base
 {
     public string Key { get; } = section.GetValue<string>("key") ?? string.Empty;
     public string? MemoryUsage { get; } = section.GetValue<string>("memory usage");
-    public int? Length { get; } = section.GetValue<int?>("length");
+    public long? Length { get; } = section.GetValue<int?>("length");
     public int? Database { get; } = section.GetValue<int?>("database");
     public bool? Exists { get; } = section.GetValue<bool?>("exists");
 
@@ -18,6 +18,8 @@ internal class RedisKey(IConfigurationSection section, Defaults defaults) : Base
     public bool IsValid => MemoryUsageNumber > 0 || Length > 0;
 
     //// --------------------------------------- ////
+
+    public RedisKeyResult Result { get; } = new();
 
     private static int? GetSize(string? source, string fieldName)
     {

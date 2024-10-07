@@ -10,4 +10,6 @@ internal class Node(IConfigurationSection section, Defaults defaults) : BaseDefa
     public bool IsValid => MemoryAlarm.GetValueOrDefault() || DiskFreeAlarm.GetValueOrDefault();
 
     public string Key => "[nodes]";
+
+    public IEnumerable<NodeResult> Result { get; set; } = [];
 }

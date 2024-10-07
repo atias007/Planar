@@ -59,11 +59,11 @@ internal class RabbitMqProxy
         await Alarm("virtual hosts", "virtual-hosts");
     }
 
-    public async Task<IEnumerable<NodeDetails>> GetNodeDetails()
+    public async Task<IEnumerable<NodeResult>> GetNodeDetails()
     {
         const string resource = "api/nodes";
         var request = new RestRequest(resource, Method.Get);
-        var response = await _restClient.ExecuteAsync<IEnumerable<NodeDetails>>(request);
+        var response = await _restClient.ExecuteAsync<IEnumerable<NodeResult>>(request);
         if (!response.IsSuccessful)
         {
             throw new CheckException($"node check on url {resource} failed. status code {response.StatusCode}", response.ErrorException);
@@ -72,11 +72,11 @@ internal class RabbitMqProxy
         return response.Data ?? [];
     }
 
-    public async Task<IEnumerable<QueueDetails>> GetQueueDetails()
+    public async Task<IEnumerable<QueueResult>> GetQueueDetails()
     {
         const string resource = "api/queues";
         var request = new RestRequest(resource, Method.Get);
-        var response = await _restClient.ExecuteAsync<IEnumerable<QueueDetails>>(request);
+        var response = await _restClient.ExecuteAsync<IEnumerable<QueueResult>>(request);
         if (!response.IsSuccessful)
         {
             throw new CheckException($"queue check on url {resource} failed. status code {response.StatusCode}", response.ErrorException);

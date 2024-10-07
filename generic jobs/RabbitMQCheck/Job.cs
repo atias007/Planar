@@ -21,6 +21,10 @@ internal partial class Job : BaseCheckJob
 
     static partial void Finalayze(IEnumerable<Queue> queues);
 
+    static partial void Finalayze(Node node);
+
+    static partial void Finalayze(HealthCheck healthCheck);
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
         CustomConfigure(configurationBuilder, context);
@@ -69,6 +73,8 @@ internal partial class Job : BaseCheckJob
 
         await Task.WhenAll(tasks);
 
+        Finalayze(healthCheck);
+        Finalayze(node);
         Finalayze(queues);
         Finalayze();
     }
@@ -187,6 +193,9 @@ internal partial class Job : BaseCheckJob
 
         var proxy = RabbitMqProxy.GetProxy(host, server, Logger);
         var details = await proxy.GetNodeDetails();
+
+        node.Result = details;
+
         foreach (var item in details)
         {
             if (node.DiskFreeAlarm.GetValueOrDefault())
@@ -225,11 +234,13 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private async Task InvokeQueueCheckInner(Queue queue, IEnumerable<QueueDetails> details)
+    private async Task InvokeQueueCheckInner(Queue queue, IEnumerable<QueueResult> details)
     {
         if (!queue.IsValid) { return; }
         var detail = details.FirstOrDefault(x => string.Equals(x.Name, queue.Name, StringComparison.OrdinalIgnoreCase))
             ?? throw new CheckException($"queue '{queue.Name}' does not exists");
+
+        queue.Result = detail;
 
         CheckState(queue, detail);
         CheckConsumers(queue, detail);
@@ -240,7 +251,7 @@ internal partial class Job : BaseCheckJob
         await Task.CompletedTask;
     }
 
-    private void CheckMemory(Queue queue, QueueDetails detail)
+    private void CheckMemory(Queue queue, QueueResult detail)
     {
         // Memory
         if (queue.MemoryNumber.HasValue)
@@ -256,7 +267,7 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private void CheckMessages(Queue queue, QueueDetails detail)
+    private void CheckMessages(Queue queue, QueueResult detail)
     {
         // Messages
         if (queue.Messages.HasValue)
@@ -272,7 +283,7 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private void CheckUnacked(Queue queue, QueueDetails detail)
+    private void CheckUnacked(Queue queue, QueueResult detail)
     {
         if (queue.Unacked.HasValue)
         {
@@ -287,7 +298,7 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private void CheckConsumers(Queue queue, QueueDetails detail)
+    private void CheckConsumers(Queue queue, QueueResult detail)
     {
         // Consumers
         if (queue.Consumers.HasValue)
@@ -303,7 +314,7 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private void CheckState(Queue queue, QueueDetails detail)
+    private void CheckState(Queue queue, QueueResult detail)
     {
         // Check State
         if (queue.CheckState.GetValueOrDefault())

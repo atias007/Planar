@@ -21,6 +21,8 @@ internal partial class Job : BaseCheckJob
 
     static partial void Finalayze(IEnumerable<RedisKey> keys);
 
+    static partial void Finalayze(HealthCheck healthCheck);
+
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
         CustomConfigure(configurationBuilder, context);
@@ -58,6 +60,7 @@ internal partial class Job : BaseCheckJob
         await SafeInvokeCheck(healthCheck, InvokeHealthCheckInner);
         await SafeInvokeCheck(keys, InvokeKeyCheckInner);
 
+        Finalayze(healthCheck);
         Finalayze(keys);
         Finalayze();
     }
@@ -215,7 +218,9 @@ internal partial class Job : BaseCheckJob
 
     private async Task InvokeKeyCheckInner(RedisKey key)
     {
-        if (!await RedisFactory.Exists(key))
+        var exists = await RedisFactory.Exists(key);
+        key.Result.Exists = exists;
+        if (key.Exists.GetValueOrDefault() && !exists)
         {
             throw new CheckException($"key '{key.Key}' is not exists");
         }
@@ -225,12 +230,14 @@ internal partial class Job : BaseCheckJob
         if (key.Length > 0)
         {
             length = await RedisFactory.GetLength(key);
+            key.Result.Length = length;
             Logger.LogInformation("key '{Key}' length is {Length:N0}", key.Key, length);
         }
 
         if (key.MemoryUsageNumber > 0)
         {
             size = await RedisFactory.GetMemoryUsage(key);
+            key.Result.MemoryUsage = size;
             Logger.LogInformation("key '{Key}' size is {Size:N0} byte(s)", key.Key, size);
         }
 

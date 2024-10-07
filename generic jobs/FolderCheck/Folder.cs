@@ -61,6 +61,8 @@ internal class Folder : BaseDefault, INamedCheckElement, IVetoEntity
     public string? CreatedAge { get; private set; }
     public string? ModifiedAge { get; private set; }
 
+    public FolderResult Result { get; } = new();
+
     //// --------------------------------------- ////
 
     public long? TotalSizeNumber { get; }

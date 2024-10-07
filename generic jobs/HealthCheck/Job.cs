@@ -162,6 +162,7 @@ internal partial class Job : BaseCheckJob
             throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{uri}'. message: {ex.Message}");
         }
 
+        endpoint.Result.HttpStatusCode = response.StatusCode;
         if (endpoint.SuccessStatusCodes.Any(s => s == (int)response.StatusCode))
         {
             Logger.LogInformation("health check success for endpoint name '{EndpointName}' with url '{EndpointUrl}'",

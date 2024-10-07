@@ -3,8 +3,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
-using System.Net;
-using YamlDotNet.Core.Tokens;
 
 namespace FolderCheck;
 
@@ -154,9 +152,12 @@ internal partial class Job : BaseCheckJob
 
         var files = GetFiles(path, folder);
         var filesCount = files.Count();
+        folder.Result.FileCount = filesCount;
+
         if (folder.TotalSizeNumber != null && filesCount > 0)
         {
             var size = files.Sum(f => f.Length);
+            folder.Result.TotalSize = size;
             Logger.LogInformation("folder '{Path}' size is {Size:N0} byte(s)", path, size);
             if (size > folder.TotalSizeNumber)
             {
@@ -167,6 +168,7 @@ internal partial class Job : BaseCheckJob
         if (folder.FileSizeNumber != null && filesCount > 0)
         {
             var max = files.Max(f => f.Length);
+            folder.Result.FileSize = max;
             Logger.LogInformation("folder '{Path}' max file size is {Size:N0} byte(s)", path, max);
             if (max > folder.FileSizeNumber)
             {
@@ -186,6 +188,7 @@ internal partial class Job : BaseCheckJob
         if (folder.CreatedAgeDate != null && filesCount > 0)
         {
             var created = files.Min(f => f.CreationTime);
+            folder.Result.CreatedAge = created;
             Logger.LogInformation("folder '{Path}' most old created file is {Created}", path, created);
             if (created < folder.CreatedAgeDate)
             {
@@ -196,6 +199,7 @@ internal partial class Job : BaseCheckJob
         if (folder.ModifiedAgeDate != null && filesCount > 0)
         {
             var modified = files.Min(f => f.LastWriteTime);
+            folder.Result.ModifiedAge = modified;
             Logger.LogInformation("folder '{Path}' most old modified file is {Created}", path, modified);
             if (modified < folder.ModifiedAgeDate)
             {

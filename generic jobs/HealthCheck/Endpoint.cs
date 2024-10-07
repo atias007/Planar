@@ -43,6 +43,8 @@ internal class Endpoint : BaseDefault, IEndpoint, INamedCheckElement, IVetoEntit
 
     //// -------------------------- ////
 
+    public EndpointResult Result { get; } = new();
+
     private static Uri? SetAbsoluteUrl(string url)
     {
         if (Uri.TryCreate(url, UriKind.Absolute, out var result)) { return result; }

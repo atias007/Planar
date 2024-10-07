@@ -22,4 +22,6 @@ internal class InfluxQuery(IConfigurationSection section, Defaults defaults) :
     public Condition? InternalValueCondition { get; set; }
 
     //// -------------------------- ////
+
+    public InfluxQueryResult Result { get; } = new();
 }

@@ -2,7 +2,7 @@
 
 namespace RabbitMQCheck;
 
-internal class NodeDetails
+internal class NodeResult
 {
     [JsonProperty("disk_free")]
     public long DiskFree { get; set; }

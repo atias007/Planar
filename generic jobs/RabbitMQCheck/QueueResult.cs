@@ -2,7 +2,7 @@
 
 namespace RabbitMQCheck;
 
-public class QueueDetails
+public class QueueResult
 {
     public string Name { get; set; } = null!;
     public int Messages { get; set; }

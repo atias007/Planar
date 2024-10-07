@@ -113,13 +113,16 @@ internal partial class Job : BaseCheckJob
     {
         if (string.IsNullOrWhiteSpace(service.Host))
         {
-            throw new CheckException($"service '{service.Name}' has no host name (null or empty)");
+            throw new CheckException($"service '{service.Name}' has no host. (missing host group name '{service.HostGroupName}'");
         }
 
         using var controller = new ServiceController(service.Name, service.Host);
         var status = controller.Status;
         var startType = controller.StartType;
         var disabled = status == ServiceControllerStatus.Stopped && startType == ServiceStartMode.Disabled;
+
+        service.Result.Disabled = disabled;
+
         if (disabled && service.IgnoreDisabled)
         {
             Logger.LogInformation("skipping disabled service '{Name}' on host '{Host}'", service.Name, service.Host);
@@ -130,6 +133,8 @@ internal partial class Job : BaseCheckJob
         {
             throw new CheckException($"service '{service.Name}' on host '{service.Host}' is in {status} start type");
         }
+
+        service.Result.AutoStartMode = startType == ServiceStartMode.Automatic;
 
         if (startType == ServiceStartMode.Manual && service.AutoStartMode)
         {
@@ -174,6 +179,7 @@ internal partial class Job : BaseCheckJob
             status = controller.Status;
             if (status == ServiceControllerStatus.Running)
             {
+                service.Result.Started = true;
                 Logger.LogInformation("service '{Name}' on host '{Host}' is in running status", service.Name, service.Host);
                 IncreaseEffectedRows();
                 return;

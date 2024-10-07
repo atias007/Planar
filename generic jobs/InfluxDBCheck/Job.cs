@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar.Job;
 using System.Globalization;
-using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -22,7 +21,7 @@ internal partial class Job : BaseCheckJob
 
     static partial void VetoQuery(InfluxQuery query);
 
-    static partial void Finalayze(IEnumerable<InfluxQuery> endpoints);
+    static partial void Finalayze(IEnumerable<InfluxQuery> queries);
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
@@ -139,6 +138,7 @@ internal partial class Job : BaseCheckJob
         if (query.InternalValueCondition != null)
         {
             var value = GetValue(result, query.Name) ?? 0;
+            query.Result.QueryValue = value;
             var ok = query.InternalValueCondition.Evaluate(value);
             if (!ok)
             {
@@ -150,7 +150,8 @@ internal partial class Job : BaseCheckJob
 
         if (query.InternalRecordsCondition != null)
         {
-            var value = GetRecords(result);
+            var value = GetRecordsCount(result);
+            query.Result.QueryRecordsCount = value;
             var ok = query.InternalRecordsCondition.Evaluate(value);
             if (!ok)
             {
@@ -164,7 +165,7 @@ internal partial class Job : BaseCheckJob
         IncreaseEffectedRows();
     }
 
-    private static double GetRecords(List<FluxTable> tables)
+    private static int GetRecordsCount(List<FluxTable> tables)
     {
         if (tables.Count == 0) { return 0; }
         var table = tables[0];
