@@ -13,17 +13,11 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Listeners.Base;
 
-public abstract class BaseListener<T>
+public abstract class BaseListener<T>(IServiceScopeFactory serviceScopeFactory, ILogger logger)
     where T : class
 {
-    protected readonly ILogger _logger;
-    private readonly IServiceScopeFactory _serviceScopeFactory;
-
-    protected BaseListener(IServiceScopeFactory serviceScopeFactory, ILogger logger)
-    {
-        _serviceScopeFactory = serviceScopeFactory;
-        _logger = logger;
-    }
+    protected readonly ILogger _logger = logger;
+    private readonly IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
 
     protected IServiceScopeFactory ServiceScopeFactory => _serviceScopeFactory;
 

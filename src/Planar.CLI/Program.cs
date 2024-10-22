@@ -782,7 +782,7 @@ internal static class Program
         try
         {
             using var scope = new TokenManagerScope();
-            var args = noParameters ? new object[] { TokenManagerScope.Token } : new[] { param, TokenManagerScope.Token };
+            var args = noParameters ? [TokenManagerScope.Token] : new[] { param, TokenManagerScope.Token };
             if (action.Method.Invoke(console, args) is Task<CliActionResponse> task)
             {
                 response = task.ConfigureAwait(false).GetAwaiter().GetResult();

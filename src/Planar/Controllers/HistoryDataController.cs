@@ -6,31 +6,25 @@ using Planar.Authorization;
 using Planar.Service.API;
 using System;
 
-namespace Planar.Controllers
+namespace Planar.Controllers;
+
+[ViewerAuthorize]
+[ApiExplorerSettings(IgnoreApi = true)]
+public class HistoryDataController(IServiceProvider serviceProvider) : ControllerBase
 {
-    [ViewerAuthorize]
-    [ApiExplorerSettings(IgnoreApi = true)]
-    public class HistoryDataController : ControllerBase
+    private readonly HistoryDomain _businessLayer = serviceProvider.GetRequiredService<HistoryDomain>();
+
+    [EnableQuery]
+    public IActionResult Get()
     {
-        private readonly HistoryDomain _businessLayer;
+        var result = _businessLayer.GetHistoryData();
+        return Ok(result);
+    }
 
-        public HistoryDataController(IServiceProvider serviceProvider)
-        {
-            _businessLayer = serviceProvider.GetRequiredService<HistoryDomain>();
-        }
-
-        [EnableQuery]
-        public IActionResult Get()
-        {
-            var result = _businessLayer.GetHistoryData();
-            return Ok(result);
-        }
-
-        [EnableQuery]
-        public IActionResult Get([FromODataUri] long key)
-        {
-            var result = _businessLayer.GetHistory(key);
-            return Ok(result);
-        }
+    [EnableQuery]
+    public IActionResult Get([FromODataUri] long key)
+    {
+        var result = _businessLayer.GetHistory(key);
+        return Ok(result);
     }
 }

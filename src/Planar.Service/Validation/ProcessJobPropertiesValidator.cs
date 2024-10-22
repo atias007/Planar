@@ -33,7 +33,7 @@ public class ProcessJobPropertiesValidator : AbstractValidator<ProcessJobPropert
             .WithMessage("{PropertyName} items count is more then maximum of 50");
     }
 
-    private bool ExitCodeValid(ProcessJobProperties properties, ProcessJobProperties properties2, ValidationContext<ProcessJobProperties> context)
+    private static bool ExitCodeValid(ProcessJobProperties properties, ProcessJobProperties properties2, ValidationContext<ProcessJobProperties> context)
     {
         var counter = 0;
         if (properties.SuccessExitCodes != null && properties.SuccessExitCodes.Any()) { counter++; }
@@ -50,7 +50,7 @@ public class ProcessJobPropertiesValidator : AbstractValidator<ProcessJobPropert
         return true;
     }
 
-    private bool EncodingExists(ProcessJobProperties properties, string? outputEncoding, ValidationContext<ProcessJobProperties> context)
+    private static bool EncodingExists(ProcessJobProperties properties, string? outputEncoding, ValidationContext<ProcessJobProperties> context)
     {
         if (outputEncoding == null) { return true; }
         return CommonValidations.EncodingExists(outputEncoding, context);

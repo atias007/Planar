@@ -14,18 +14,13 @@ namespace Planar;
 
 internal record Attendee(string FirstName, string? LastName, string Email);
 
-public abstract class SqlTableReportJob : BaseCommonJob<SqlTableReportJobProperties>
+public abstract class SqlTableReportJob(
+    ILogger logger,
+    IJobPropertyDataLayer dataLayer,
+    IGroupDataLayer groupData,
+    JobMonitorUtil jobMonitorUtil) : BaseCommonJob<SqlTableReportJobProperties>(logger, dataLayer, jobMonitorUtil)
 {
-    private readonly IGroupDataLayer _groupData;
-
-    protected SqlTableReportJob(
-        ILogger logger,
-        IJobPropertyDataLayer dataLayer,
-        IGroupDataLayer groupData,
-        JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
-    {
-        _groupData = groupData;
-    }
+    private readonly IGroupDataLayer _groupData = groupData;
 
     public override async Task Execute(IJobExecutionContext context)
     {

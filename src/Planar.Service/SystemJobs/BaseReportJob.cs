@@ -15,20 +15,13 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using WebMarkupMin.Core;
 
 namespace Planar.Service.SystemJobs;
 
-public abstract class BaseReportJob : SystemJob
+public abstract class BaseReportJob(IServiceScopeFactory serviceScope, ILogger logger) : SystemJob
 {
-    protected readonly ILogger _logger;
-    protected readonly IServiceScopeFactory _serviceScope;
-
-    protected BaseReportJob(IServiceScopeFactory serviceScope, ILogger logger)
-    {
-        _logger = logger;
-        _serviceScope = serviceScope;
-    }
+    protected readonly ILogger _logger = logger;
+    protected readonly IServiceScopeFactory _serviceScope = serviceScope;
 
     internal static string GetCronExpression(ReportPeriods period, int hour = 7)
     {
@@ -260,13 +253,9 @@ public abstract class BaseReportJob : SystemJob
     }
 }
 
-public abstract class BaseReportJob<TJob> : BaseReportJob
+public abstract class BaseReportJob<TJob>(IServiceScopeFactory serviceScope, ILogger logger) : BaseReportJob(serviceScope, logger)
     where TJob : IJob
 {
-    protected BaseReportJob(IServiceScopeFactory serviceScope, ILogger logger) : base(serviceScope, logger)
-    {
-    }
-
     public static async Task Schedule(IScheduler scheduler, ReportNames reportName, CancellationToken stoppingToken = default)
     {
         var description = $"System job for generating and send {reportName} report";

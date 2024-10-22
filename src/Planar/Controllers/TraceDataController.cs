@@ -6,31 +6,25 @@ using Planar.Authorization;
 using Planar.Service.API;
 using System;
 
-namespace Planar.Controllers
+namespace Planar.Controllers;
+
+[ViewerAuthorize]
+[ApiExplorerSettings(IgnoreApi = true)]
+public class TraceDataController(IServiceProvider serviceProvider) : ControllerBase
 {
-    [ViewerAuthorize]
-    [ApiExplorerSettings(IgnoreApi = true)]
-    public class TraceDataController : ControllerBase
+    private readonly TraceDomain _businessLayer = serviceProvider.GetRequiredService<TraceDomain>();
+
+    [EnableQuery]
+    public IActionResult Get()
     {
-        private readonly TraceDomain _businessLayer;
+        var result = _businessLayer.GetTraceData();
+        return Ok(result);
+    }
 
-        public TraceDataController(IServiceProvider serviceProvider)
-        {
-            _businessLayer = serviceProvider.GetRequiredService<TraceDomain>();
-        }
-
-        [EnableQuery]
-        public IActionResult Get()
-        {
-            var result = _businessLayer.GetTraceData();
-            return Ok(result);
-        }
-
-        [EnableQuery]
-        public IActionResult Get([FromODataUri] int key)
-        {
-            var result = _businessLayer.GetTrace(key);
-            return Ok(result);
-        }
+    [EnableQuery]
+    public IActionResult Get([FromODataUri] int key)
+    {
+        var result = _businessLayer.GetTrace(key);
+        return Ok(result);
     }
 }

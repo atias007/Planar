@@ -19,13 +19,13 @@ public class ProcessJobProperties : BaseProcessJobProperties, IFileJobProperties
     public bool LogOutput { get; set; } = true;
 
     [YamlMember(Alias = "success exit codes")]
-    public IEnumerable<int> SuccessExitCodes { get; set; } = new List<int>();
+    public IEnumerable<int> SuccessExitCodes { get; set; } = [];
 
     [YamlMember(Alias = "success output regex")]
     public string? SuccessOutputRegex { get; set; }
 
     [YamlMember(Alias = "fail exit codes")]
-    public IEnumerable<int> FailExitCodes { get; set; } = new List<int>();
+    public IEnumerable<int> FailExitCodes { get; set; } = [];
 
     [YamlMember(Alias = "fail output regex")]
     public string? FailOutputRegex { get; set; }

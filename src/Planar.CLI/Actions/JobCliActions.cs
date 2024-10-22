@@ -324,7 +324,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         tables4.Title = "Audits";
         table5.Title = "Metrics";
 
-        tables.AddRange(new CliTable[] { tables2, tables3, tables4, table5 });
+        tables.AddRange([tables2, tables3, tables4, table5]);
         return new CliActionResponse(result, tables);
     }
 

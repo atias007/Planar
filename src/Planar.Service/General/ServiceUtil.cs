@@ -19,14 +19,14 @@ namespace Planar.Service.General
         private static bool _disposeFlag;
         private static readonly object _locker = new();
 
-        public static IEnumerable<string> JobTypes => new[]
-        {
+        public static IEnumerable<string> JobTypes =>
+        [
             nameof(PlanarJob),
             nameof(ProcessJob),
             nameof(SqlJob),
             nameof(RestJob),
             nameof(SqlTableReportJob),
-        };
+        ];
 
         internal static string GenerateId()
         {

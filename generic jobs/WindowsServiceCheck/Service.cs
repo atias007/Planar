@@ -29,7 +29,7 @@ internal class Service : BaseDefault, IService, INamedCheckElement, IVetoEntity
     public string? HostGroupName { get; }
     public bool IgnoreDisabled { get; }
     public bool StartService { get; }
-    public bool AutoStartMode { get; }`
+    public bool AutoStartMode { get; }
     public TimeSpan StartServiceTimeout { get; }
     public string Key => Name;
 

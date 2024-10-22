@@ -37,7 +37,7 @@ public class PlanarJobPropertiesValidator : AbstractValidator<PlanarJobPropertie
         return await CommonValidations.FilenameExists(properties, "filename", filename, _cluster, context);
     }
 
-    private bool FileExtentionIsExe(string filename)
+    private static bool FileExtentionIsExe(string filename)
     {
         const string exe = ".exe";
         var fi = new FileInfo(filename);
