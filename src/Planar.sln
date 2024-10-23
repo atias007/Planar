@@ -68,6 +68,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dbup-postgresql", "DbUp\dbu
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SqlTableReportJob", "Jobs\SqlTableReportJob\SqlTableReportJob.csproj", "{4BBA9734-5664-4F00-A04A-62D30A089923}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "dbup-sqlite", "DbUp\dbup-sqlite\dbup-sqlite.csproj", "{70F92A8E-EF81-482B-88D6-507FF2B6B4CD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -158,6 +160,10 @@ Global
 		{4BBA9734-5664-4F00-A04A-62D30A089923}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4BBA9734-5664-4F00-A04A-62D30A089923}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4BBA9734-5664-4F00-A04A-62D30A089923}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70F92A8E-EF81-482B-88D6-507FF2B6B4CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70F92A8E-EF81-482B-88D6-507FF2B6B4CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70F92A8E-EF81-482B-88D6-507FF2B6B4CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70F92A8E-EF81-482B-88D6-507FF2B6B4CD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -177,6 +183,7 @@ Global
 		{238C8B94-03A5-40B8-9CEA-817A0F5C6562} = {C548294E-2B33-4243-BE8B-DD20687CFA1D}
 		{108369EC-A42C-4724-991B-DBBA2704586F} = {C548294E-2B33-4243-BE8B-DD20687CFA1D}
 		{4BBA9734-5664-4F00-A04A-62D30A089923} = {8877FB52-2C70-41FB-8119-13C99EF673E1}
+		{70F92A8E-EF81-482B-88D6-507FF2B6B4CD} = {C548294E-2B33-4243-BE8B-DD20687CFA1D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E379E82B-7E36-4F72-8191-C425A6FA97CD}

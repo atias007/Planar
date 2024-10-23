@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<Description>DbUp makes it easy to deploy and upgrade SQL Server databases. This package adds SQLite support.</Description>
+		<Title>DbUp SQLite Support</Title>
+		<Company>DbUp Contributors</Company>
+		<Product>DbUp</Product>
+		<Copyright>Copyright © DbUp Contributors 2015</Copyright>
+		<TargetFrameworks>net8.0</TargetFrameworks>
+		<AssemblyName>dbup-sqlite</AssemblyName>
+		<RootNamespace>DbUp.SQLite</RootNamespace>
+		<PackageId>dbup-sqlite</PackageId>
+		<RepositoryUrl>https://github.com/DbUp/dbup-sqlite.git</RepositoryUrl>
+		<PackageIcon>dbup-icon.png</PackageIcon>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="dbup-core" Version="5.0.37"/>
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="1.0.1" />
+	</ItemGroup>
+</Project>
