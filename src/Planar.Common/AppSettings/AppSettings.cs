@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -10,6 +11,7 @@ using System;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using EC = Planar.Common.EnvironmentVariableConsts;
 
 namespace Planar.Common;
@@ -58,7 +60,7 @@ public static class AppSettings
         InitializeHooks(configuration);
 
         // Database
-        Database.Provider = GetSettings(configuration, EC.DatabaseProviderVariableKey, "database", "provider", "Npgsql");
+        Database.Provider = GetSettings(configuration, EC.DatabaseProviderVariableKey, "database", "provider", "Sqlite");
         Database.RunMigration = GetSettings(configuration, EC.RunDatabaseMigrationVariableKey, "database", "run migration", true);
 
         // General
@@ -304,6 +306,9 @@ public static class AppSettings
 
     public static void TestDatabasePermission()
     {
+        var provider = Database.Provider.ToLower();
+        if (provider == "sqlite") { return; }
+
         try
         {
             using var conn = new SqlConnection(Database.ConnectionString);
@@ -347,11 +352,10 @@ public static class AppSettings
             var counter = 1;
             Policy.Handle<SqlException>()
                 .WaitAndRetryAsync(12, i => TimeSpan.FromSeconds(5))
-                .ExecuteAsync(() =>
+                .ExecuteAsync(async () =>
                 {
                     Console.WriteLine($"    - Attemp no {counter++} to connect to database");
-                    using var conn = new SqlConnection(connectionString);
-                    return conn.OpenAsync();
+                    await OpenDbConnection();
                 });
 
             Console.WriteLine($"    - Connection database success");
@@ -367,6 +371,21 @@ public static class AppSettings
             sb.AppendLine("exception message:");
             sb.AppendLine(ex.Message);
             throw new AppSettingsException(sb.ToString());
+        }
+    }
+
+    private static async Task OpenDbConnection()
+    {
+        var provider = Database.Provider.ToLower();
+        if (provider == "sqlite")
+        {
+            await using var conn = new SqliteConnection(Database.ConnectionString);
+            await conn.OpenAsync();
+        }
+        else if (provider == "sqlserver")
+        {
+            await using var conn = new SqlConnection(Database.ConnectionString);
+            await conn.OpenAsync();
         }
     }
 

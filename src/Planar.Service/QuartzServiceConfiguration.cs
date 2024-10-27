@@ -81,10 +81,14 @@ public static class QuartzServiceConfiguration
                     });
                 }
 
-                switch (AppSettings.Database.Provider)
+                switch (AppSettings.Database.Provider.ToLower())
                 {
-                    case "SqlServer":
+                    case "sqlserver":
                         x.UseSqlServer(AppSettings.Database.ConnectionString ?? string.Empty);
+                        break;
+
+                    case "sqlite":
+                        x.UseMicrosoftSQLite(AppSettings.Database.ConnectionString ?? string.Empty);
                         break;
 
                     default:

@@ -1,4 +1,5 @@
 ﻿using DatabaseMigrations;
+using DatabaseMigrations.SqlServer;
 using DbUp.Engine;
 using Microsoft.Extensions.Configuration;
 using Spectre.Console;
@@ -19,6 +20,7 @@ while (counter > 0)
 
 static void Run(string[] args)
 {
+    var executer = new Executer();
     var mode = GetRunningMode(args);
 
     if (mode == RunningMode.Validate)
@@ -43,14 +45,14 @@ static void Run(string[] args)
     var connectionString = GetConnectionString(environment);
     if (mode == RunningMode.EnsureDatabase)
     {
-        Runner.EnsureDatabaseExists(connectionString);
+        executer.EnsureDatabaseExists(connectionString);
         return;
     }
 
     if (mode == RunningMode.ListScripts)
     {
         Console.WriteLine();
-        var list = Runner.GetScripts(connectionString);
+        var list = executer.GetScripts(connectionString);
         foreach (var item in list)
         {
             WriteInfo(item);
@@ -72,7 +74,7 @@ static void Run(string[] args)
             }
 
             Current.Status = Status.Success;
-            result = Runner.DemoExecute(connectionString);
+            result = executer.DemoExecute(connectionString);
             break;
 
         case RunningMode.Execute:
@@ -82,7 +84,7 @@ static void Run(string[] args)
                 return;
             }
 
-            result = Runner.Execute(connectionString);
+            result = executer.Execute(connectionString);
             break;
 
         default:
@@ -150,7 +152,7 @@ static void ValidateAllEbbdedResource()
         .OrderBy(f => f.ResourceName)
         .ToList();
 
-    var resources = Runner.ScriptAssembly
+    var resources = Executer.ScriptAssembly
         .GetManifestResourceNames()
         .OrderBy(f => f)
         .ToList();

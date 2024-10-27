@@ -1,78 +1,79 @@
-﻿using DatabaseMigrations;
+﻿using DbUp;
 using Planar.Common;
 using Planar.Common.Exceptions;
 using System;
 using System.Linq;
 
-namespace Planar.Startup
-{
-    public static class DatabaseMigrationInitializer
-    {
-        private static void HandleError(Exception ex)
-        {
-            Console.WriteLine(string.Empty.PadLeft(80, '-'));
-            Console.WriteLine("Migration fail");
-            Console.WriteLine(string.Empty.PadLeft(80, '-'));
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(ex);
-            Console.ResetColor();
+namespace Planar.Startup;
 
-            Console.ReadLine();
-            Environment.Exit(-1);
+public static class DatabaseMigrationInitializer
+{
+    private static readonly IExecuter _executer = MigrationFactory.CreateExecuter(AppSettings.Database.Provider);
+
+    private static void HandleError(Exception ex)
+    {
+        Console.WriteLine(string.Empty.PadLeft(80, '-'));
+        Console.WriteLine("Migration fail");
+        Console.WriteLine(string.Empty.PadLeft(80, '-'));
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine(ex);
+        Console.ResetColor();
+
+        Console.ReadLine();
+        Environment.Exit(-1);
+    }
+
+    public static void RunMigration()
+    {
+        if (!AppSettings.Database.RunMigration)
+        {
+            Console.WriteLine("[x] Skip database migration");
+            var count = CountScriptsToExecute();
+            if (count > 0)
+            {
+                throw new PlanarException($"there are {count} script in database migration to run. enable database migrations in settings file or run database migrations manually");
+            }
+
+            return;
         }
 
-        public static void RunMigration()
+        try
         {
-            if (!AppSettings.Database.RunMigration)
-            {
-                Console.WriteLine("[x] Skip database migration");
-                var count = CountScriptsToExecute();
-                if (count > 0)
-                {
-                    throw new PlanarException($"there are {count} script in database migration to run. enable database migrations in settings file or run database migrations manually");
-                }
+            Console.WriteLine("[x] Run database migration");
 
+            _executer.EnsureDatabaseExists(AppSettings.Database.ConnectionString);
+
+            var count = CountScriptsToExecute();
+            Console.WriteLine($"    - Found {count} scripts to run");
+
+            if (count == 0)
+            {
                 return;
             }
 
-            try
+            Console.WriteLine(string.Empty.PadLeft(80, '-'));
+            var result = _executer.Execute(AppSettings.Database.ConnectionString);
+
+            if (result.Successful)
             {
-                Console.WriteLine("[x] Run database migration");
-
-                Runner.EnsureDatabaseExists(AppSettings.Database.ConnectionString);
-
-                var count = CountScriptsToExecute();
-                Console.WriteLine($"    - Found {count} scripts to run");
-
-                if (count == 0)
-                {
-                    return;
-                }
-
                 Console.WriteLine(string.Empty.PadLeft(80, '-'));
-                var result = Runner.Execute(AppSettings.Database.ConnectionString);
-
-                if (result.Successful)
-                {
-                    Console.WriteLine(string.Empty.PadLeft(80, '-'));
-                    Console.WriteLine("Migration success");
-                    Console.WriteLine(string.Empty.PadLeft(80, '-'));
-                }
-                else
-                {
-                    HandleError(result.Error);
-                }
+                Console.WriteLine("Migration success");
+                Console.WriteLine(string.Empty.PadLeft(80, '-'));
             }
-            catch (Exception ex)
+            else
             {
-                HandleError(ex);
+                HandleError(result.Error);
             }
         }
-
-        private static int CountScriptsToExecute()
+        catch (Exception ex)
         {
-            var list = Runner.GetScripts(AppSettings.Database.ConnectionString);
-            return list.Count();
+            HandleError(ex);
         }
+    }
+
+    private static int CountScriptsToExecute()
+    {
+        var list = _executer.GetScripts(AppSettings.Database.ConnectionString);
+        return list.Count();
     }
 }

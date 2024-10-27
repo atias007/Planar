@@ -31,6 +31,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Remove="Data\Scripts\Sqlite\PersistJobInstanceLog.sql" />
+	  <None Remove="Data\Scripts\Sqlite\UpdateJobInstanceLogAnomaly.sql" />
 	  <None Remove="HtmlTemplates\AlertsReport\alerts_row.html" />
 	  <None Remove="HtmlTemplates\AlertsReport\alerts_table.html" />
 	  <None Remove="HtmlTemplates\AlertsReport\main.html" />
@@ -54,6 +56,8 @@
 		<Compile Include="..\Jobs\CommonJob\JobSettingsLoader.cs" Link="General\JobSettingsLoader.cs" />
 		<Compile Include="..\Planar.Common\Consts.cs" Link="General\Consts.cs" />
 		<Compile Include="..\Planar\FolderConsts.cs" Link="General\FolderConsts.cs" />
+		<Compile Include="Data\Scripts\Sqlite\PersistJobInstanceLog.sql" />
+		<Compile Include="Data\Scripts\Sqlite\UpdateJobInstanceLogAnomaly.sql" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -84,13 +88,14 @@
 		<PackageReference Include="AutoMapper" Version="13.0.1" />
 		<PackageReference Include="CronExpressionDescriptor" Version="2.36.0" />
 		<PackageReference Include="FluentValidation" Version="11.10.0" />
-		<PackageReference Include="Google.Protobuf" Version="3.28.2" />
+		<PackageReference Include="Google.Protobuf" Version="3.28.3" />
 		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.66.0" />
 		<PackageReference Include="Grpc.Tools" Version="2.67.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="Microsoft.AspNetCore.Authorization" Version="8.0.10" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.10" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.10" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.10">
 			<PrivateAssets>all</PrivateAssets>

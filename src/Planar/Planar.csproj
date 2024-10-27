@@ -95,6 +95,7 @@
 		<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.9.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="8.0.2" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.1.2" />
+		<PackageReference Include="System.Text.Json" Version="8.0.5" />
 	</ItemGroup>
 	<PropertyGroup>
 		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
@@ -110,6 +111,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\DatabaseMigrations.Factory\DatabaseMigrations.Factory.csproj" />
+		<ProjectReference Include="..\DatabaseMigrations.Scripts\DatabaseMigrations.Sqlite\DatabaseMigrations.Sqlite.csproj" />
 		<ProjectReference Include="..\Planar.API.Common\Planar.API.Common.csproj" />
 		<ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
 		<ProjectReference Include="..\Planar.Service\Planar.Service.csproj" />

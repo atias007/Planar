@@ -21,7 +21,7 @@ general:
   encrypt all settings: false                        # encrypt all ymf files in settings folder. set this value to true in production environment
 
 database:
-  provider: SqlServer                                # options: SqlServer
+  provider: SqlServer                                # options: SqlServer, Sqlite, PostgreSql, MySql
   connection string: Password=PlanarSqlPassword12345@;Persist Security Info=True;User ID=sa;Initial Catalog=Planar;Data Source=planar-db,1433;Encrypt=False
   run migration: true
 

@@ -143,12 +143,23 @@ namespace Planar.Service
 
         internal static IServiceCollection AddPlanarDbContext(this IServiceCollection services)
         {
-            services.AddDbContext<PlanarContext>(o => o.UseSqlServer(
-                    AppSettings.Database.ConnectionString,
-                    options => options.EnableRetryOnFailure(12, TimeSpan.FromSeconds(5), null)),
-                contextLifetime: ServiceLifetime.Transient,
-                optionsLifetime: ServiceLifetime.Singleton
-            );
+            var provider = AppSettings.Database.Provider.ToLower();
+            if (provider == "sqlite")
+            {
+                services.AddDbContext<PlanarContext>(o => o.UseSqlite(AppSettings.Database.ConnectionString),
+                    contextLifetime: ServiceLifetime.Transient,
+                    optionsLifetime: ServiceLifetime.Singleton
+                );
+            }
+            else if (provider == "sqlserver")
+            {
+                services.AddDbContext<PlanarContext>(o => o.UseSqlServer(
+                        AppSettings.Database.ConnectionString,
+                        options => options.EnableRetryOnFailure(12, TimeSpan.FromSeconds(5), null)),
+                    contextLifetime: ServiceLifetime.Transient,
+                    optionsLifetime: ServiceLifetime.Singleton
+                );
+            }
 
             return services;
         }
