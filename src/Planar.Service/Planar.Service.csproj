@@ -31,8 +31,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <None Remove="Data\Scripts\Sqlite\PersistJobInstanceLog.sql" />
-	  <None Remove="Data\Scripts\Sqlite\UpdateJobInstanceLogAnomaly.sql" />
+	  <None Remove="Data\Scripts\Sqlite\GetHistorySummary.sql" />
+	  <None Remove="Data\Scripts\Sqlite\GetLastHistoryCallForJob.sql" />
+	  <None Remove="Data\Scripts\Sqlite\Statistics_StatusCounter.sql" />
 	  <None Remove="HtmlTemplates\AlertsReport\alerts_row.html" />
 	  <None Remove="HtmlTemplates\AlertsReport\alerts_table.html" />
 	  <None Remove="HtmlTemplates\AlertsReport\main.html" />
@@ -56,11 +57,12 @@
 		<Compile Include="..\Jobs\CommonJob\JobSettingsLoader.cs" Link="General\JobSettingsLoader.cs" />
 		<Compile Include="..\Planar.Common\Consts.cs" Link="General\Consts.cs" />
 		<Compile Include="..\Planar\FolderConsts.cs" Link="General\FolderConsts.cs" />
-		<Compile Include="Data\Scripts\Sqlite\PersistJobInstanceLog.sql" />
-		<Compile Include="Data\Scripts\Sqlite\UpdateJobInstanceLogAnomaly.sql" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <EmbeddedResource Include="Data\Scripts\Sqlite\GetHistorySummary.sql" />
+	  <EmbeddedResource Include="Data\Scripts\Sqlite\GetLastHistoryCallForJob.sql" />
+	  <EmbeddedResource Include="Data\Scripts\Sqlite\Statistics_StatusCounter.sql" />
 	  <EmbeddedResource Include="HtmlTemplates\AlertsReport\main.html" />
 	  <EmbeddedResource Include="HtmlTemplates\AlertsReport\alerts_table.html" />
 	  <EmbeddedResource Include="HtmlTemplates\AlertsReport\alerts_row.html" />

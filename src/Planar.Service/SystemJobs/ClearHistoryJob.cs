@@ -109,7 +109,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
         try
         {
             using var scope = serviceScopeFactory.CreateScope();
-            var data = scope.ServiceProvider.GetRequiredService<HistoryData>();
+            var data = scope.ServiceProvider.GetRequiredService<IHistoryData>();
             var rows = await data.ClearJobLogTable(AppSettings.Retention.JobLogRetentionDays);
             logger.LogDebug("clear job log table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.JobLogRetentionDays, rows);
         }
@@ -126,7 +126,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
             using var scope = serviceScopeFactory.CreateScope();
             var scheduler = scope.ServiceProvider.GetRequiredService<IScheduler>();
             var jobs = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
-            var data = scope.ServiceProvider.GetRequiredService<HistoryData>();
+            var data = scope.ServiceProvider.GetRequiredService<IHistoryData>();
 
             foreach (var item in jobs)
             {

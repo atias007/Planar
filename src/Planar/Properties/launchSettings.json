@@ -26,7 +26,28 @@
         "PLANAR_HOOKS_REDIS_ENDPOINTS": "127.0.0.1:6379",
         "PLANAR_ENCRYPT_ALL_SETTINGS": "False"
       },
-      "dotnetRunMessages": "true"
+      "dotnetRunMessages": true
+    },
+    "PlanarSqlite": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "PLANAR_DB_PROVIDER": "Sqlite",
+        "PLANAR_DB_CONNECTION_STRING": "Data Source=database.db;",
+        "PLANAR_AUTHENTICATION_TOKEN_EXPIRE": "00:20:00",
+        "PLANAR_SMTP_HOST": "smtp.gmail.com",
+        "PLANAR_SMTP_PORT": "587",
+        "PLANAR_SMTP_FROM_ADDRESS": "admin@planar.me",
+        "PLANAR_SMTP_FROM_NAME": "Planar [DO NOT REPLY]",
+        "PLANAR_SMTP_USERNAME": "tsahiatias@gmail.com",
+        "PLANAR_SMTP_PASSWORD": "abbconwfeacvwklo",
+        "PLANAR_AUTHENTICATION_MODE": "AllAnonymous",
+        "Serilog:MinimumLevel:Override:Quartz": "Warning",
+        "PLANAR_SMTP_USE_DEFAULT_CREDENTIALS": "False",
+        "PLANAR_HOOKS_REDIS_ENDPOINTS": "127.0.0.1:6379",
+        "PLANAR_ENCRYPT_ALL_SETTINGS": "False"
+      },
+      "dotnetRunMessages": true
     },
     "Docker": {
       "commandName": "Docker",

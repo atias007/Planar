@@ -25,4 +25,4 @@ WHERE
 	AND (@JobGroup IS NULL OR JobGroup = @JobGroup)
 	AND (@JobType IS NULL OR JobType = @JobType)
 ORDER BY StartDate DESC
-LIMIT @PageSize OFFSET ((@PageNumber -1) * @PageSize);
+  LIMIT {{limit}} OFFSET {{offset}};

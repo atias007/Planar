@@ -1,77 +1,246 @@
-IF NOT EXISTS ( SELECT  *
-                FROM    sys.schemas
-                WHERE   name = N'Admin' )
-    EXEC('CREATE SCHEMA [Admin]');
-GO
+DROP TABLE IF EXISTS QRTZ_FIRED_TRIGGERS;
+DROP TABLE IF EXISTS QRTZ_PAUSED_TRIGGER_GRPS;
+DROP TABLE IF EXISTS QRTZ_SCHEDULER_STATE;
+DROP TABLE IF EXISTS QRTZ_LOCKS;
+DROP TABLE IF EXISTS QRTZ_SIMPROP_TRIGGERS;
+DROP TABLE IF EXISTS QRTZ_SIMPLE_TRIGGERS;
+DROP TABLE IF EXISTS QRTZ_CRON_TRIGGERS;
+DROP TABLE IF EXISTS QRTZ_BLOB_TRIGGERS;
+DROP TABLE IF EXISTS QRTZ_TRIGGERS;
+DROP TABLE IF EXISTS QRTZ_JOB_DETAILS;
+DROP TABLE IF EXISTS QRTZ_CALENDARS;
 
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[ClusterNodes](
+CREATE TABLE QRTZ_JOB_DETAILS
+  (
+    SCHED_NAME NVARCHAR(120) NOT NULL,
+	JOB_NAME NVARCHAR(150) NOT NULL,
+    JOB_GROUP NVARCHAR(150) NOT NULL,
+    DESCRIPTION NVARCHAR(250) NULL,
+    JOB_CLASS_NAME   NVARCHAR(250) NOT NULL,
+    IS_DURABLE BIT NOT NULL,
+    IS_NONCONCURRENT BIT NOT NULL,
+    IS_UPDATE_DATA BIT  NOT NULL,
+	REQUESTS_RECOVERY BIT NOT NULL,
+    JOB_DATA BLOB NULL,
+    PRIMARY KEY (SCHED_NAME,JOB_NAME,JOB_GROUP)
+);
+
+CREATE TABLE QRTZ_TRIGGERS
+  (
+    SCHED_NAME NVARCHAR(120) NOT NULL,
+	TRIGGER_NAME NVARCHAR(150) NOT NULL,
+    TRIGGER_GROUP NVARCHAR(150) NOT NULL,
+    JOB_NAME NVARCHAR(150) NOT NULL,
+    JOB_GROUP NVARCHAR(150) NOT NULL,
+    DESCRIPTION NVARCHAR(250) NULL,
+    NEXT_FIRE_TIME BIGINT NULL,
+    PREV_FIRE_TIME BIGINT NULL,
+    PRIORITY INTEGER NULL,
+    TRIGGER_STATE NVARCHAR(16) NOT NULL,
+    TRIGGER_TYPE NVARCHAR(8) NOT NULL,
+    START_TIME BIGINT NOT NULL,
+    END_TIME BIGINT NULL,
+    CALENDAR_NAME NVARCHAR(200) NULL,
+    MISFIRE_INSTR INTEGER NULL,
+    JOB_DATA BLOB NULL,
+    PRIMARY KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP),
+    FOREIGN KEY (SCHED_NAME,JOB_NAME,JOB_GROUP)
+        REFERENCES QRTZ_JOB_DETAILS(SCHED_NAME,JOB_NAME,JOB_GROUP)
+);
+
+CREATE TABLE QRTZ_SIMPLE_TRIGGERS
+  (
+    SCHED_NAME NVARCHAR(120) NOT NULL,
+	TRIGGER_NAME NVARCHAR(150) NOT NULL,
+    TRIGGER_GROUP NVARCHAR(150) NOT NULL,
+    REPEAT_COUNT BIGINT NOT NULL,
+    REPEAT_INTERVAL BIGINT NOT NULL,
+    TIMES_TRIGGERED BIGINT NOT NULL,
+    PRIMARY KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP),
+    FOREIGN KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP)
+        REFERENCES QRTZ_TRIGGERS(SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP) ON DELETE CASCADE
+);
+
+CREATE TRIGGER DELETE_SIMPLE_TRIGGER DELETE ON QRTZ_TRIGGERS
+BEGIN
+	DELETE FROM QRTZ_SIMPLE_TRIGGERS WHERE SCHED_NAME=OLD.SCHED_NAME AND TRIGGER_NAME=OLD.TRIGGER_NAME AND TRIGGER_GROUP=OLD.TRIGGER_GROUP;
+END
+;
+
+CREATE TABLE QRTZ_SIMPROP_TRIGGERS 
+  (
+    SCHED_NAME NVARCHAR (120) NOT NULL ,
+    TRIGGER_NAME NVARCHAR (150) NOT NULL ,
+    TRIGGER_GROUP NVARCHAR (150) NOT NULL ,
+    STR_PROP_1 NVARCHAR (512) NULL,
+    STR_PROP_2 NVARCHAR (512) NULL,
+    STR_PROP_3 NVARCHAR (512) NULL,
+    INT_PROP_1 INT NULL,
+    INT_PROP_2 INT NULL,
+    LONG_PROP_1 BIGINT NULL,
+    LONG_PROP_2 BIGINT NULL,
+    DEC_PROP_1 NUMERIC NULL,
+    DEC_PROP_2 NUMERIC NULL,
+    BOOL_PROP_1 BIT NULL,
+    BOOL_PROP_2 BIT NULL,
+    TIME_ZONE_ID NVARCHAR(80) NULL,
+	PRIMARY KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP),
+	FOREIGN KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP)
+        REFERENCES QRTZ_TRIGGERS(SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP) ON DELETE CASCADE
+);
+
+CREATE TRIGGER DELETE_SIMPROP_TRIGGER DELETE ON QRTZ_TRIGGERS
+BEGIN
+	DELETE FROM QRTZ_SIMPROP_TRIGGERS WHERE SCHED_NAME=OLD.SCHED_NAME AND TRIGGER_NAME=OLD.TRIGGER_NAME AND TRIGGER_GROUP=OLD.TRIGGER_GROUP;
+END
+;
+
+CREATE TABLE QRTZ_CRON_TRIGGERS
+  (
+    SCHED_NAME NVARCHAR(120) NOT NULL,
+	TRIGGER_NAME NVARCHAR(150) NOT NULL,
+    TRIGGER_GROUP NVARCHAR(150) NOT NULL,
+    CRON_EXPRESSION NVARCHAR(250) NOT NULL,
+    TIME_ZONE_ID NVARCHAR(80),
+    PRIMARY KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP),
+    FOREIGN KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP)
+        REFERENCES QRTZ_TRIGGERS(SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP) ON DELETE CASCADE
+);
+
+CREATE TRIGGER DELETE_CRON_TRIGGER DELETE ON QRTZ_TRIGGERS
+BEGIN
+	DELETE FROM QRTZ_CRON_TRIGGERS WHERE SCHED_NAME=OLD.SCHED_NAME AND TRIGGER_NAME=OLD.TRIGGER_NAME AND TRIGGER_GROUP=OLD.TRIGGER_GROUP;
+END
+;
+
+CREATE TABLE QRTZ_BLOB_TRIGGERS
+  (
+    SCHED_NAME NVARCHAR(120) NOT NULL,
+	TRIGGER_NAME NVARCHAR(150) NOT NULL,
+    TRIGGER_GROUP NVARCHAR(150) NOT NULL,
+    BLOB_DATA BLOB NULL,
+    PRIMARY KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP),
+    FOREIGN KEY (SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP)
+        REFERENCES QRTZ_TRIGGERS(SCHED_NAME,TRIGGER_NAME,TRIGGER_GROUP) ON DELETE CASCADE
+);
+
+CREATE TRIGGER DELETE_BLOB_TRIGGER DELETE ON QRTZ_TRIGGERS
+BEGIN
+	DELETE FROM QRTZ_BLOB_TRIGGERS WHERE SCHED_NAME=OLD.SCHED_NAME AND TRIGGER_NAME=OLD.TRIGGER_NAME AND TRIGGER_GROUP=OLD.TRIGGER_GROUP;
+END
+;
+
+CREATE TABLE QRTZ_CALENDARS
+  (
+    SCHED_NAME NVARCHAR(120) NOT NULL,
+	CALENDAR_NAME  NVARCHAR(200) NOT NULL,
+    CALENDAR BLOB NOT NULL,
+    PRIMARY KEY (SCHED_NAME,CALENDAR_NAME)
+);
+
+CREATE TABLE QRTZ_PAUSED_TRIGGER_GRPS
+  (
+    SCHED_NAME NVARCHAR(120) NOT NULL,
+	TRIGGER_GROUP NVARCHAR(150) NOT NULL, 
+    PRIMARY KEY (SCHED_NAME,TRIGGER_GROUP)
+);
+
+CREATE TABLE QRTZ_FIRED_TRIGGERS
+  (
+    SCHED_NAME NVARCHAR(120) NOT NULL,
+	ENTRY_ID NVARCHAR(140) NOT NULL,
+    TRIGGER_NAME NVARCHAR(150) NOT NULL,
+    TRIGGER_GROUP NVARCHAR(150) NOT NULL,
+    INSTANCE_NAME NVARCHAR(200) NOT NULL,
+    FIRED_TIME BIGINT NOT NULL,
+    SCHED_TIME BIGINT NOT NULL,
+	PRIORITY INTEGER NOT NULL,
+    STATE NVARCHAR(16) NOT NULL,
+    JOB_NAME NVARCHAR(150) NULL,
+    JOB_GROUP NVARCHAR(150) NULL,
+    IS_NONCONCURRENT BIT NULL,
+    REQUESTS_RECOVERY BIT NULL,
+    PRIMARY KEY (SCHED_NAME,ENTRY_ID)
+);
+
+CREATE TABLE QRTZ_SCHEDULER_STATE
+  (
+    SCHED_NAME NVARCHAR(120) NOT NULL,
+	INSTANCE_NAME NVARCHAR(200) NOT NULL,
+    LAST_CHECKIN_TIME BIGINT NOT NULL,
+    CHECKIN_INTERVAL BIGINT NOT NULL,
+    PRIMARY KEY (SCHED_NAME,INSTANCE_NAME)
+);
+
+CREATE TABLE QRTZ_LOCKS
+  (
+    SCHED_NAME NVARCHAR(120) NOT NULL,
+	LOCK_NAME  NVARCHAR(40) NOT NULL, 
+    PRIMARY KEY (SCHED_NAME,LOCK_NAME)
+);
+
+CREATE TABLE [ClusterNodes](
 	[Server] [nvarchar](100) NOT NULL,
-	[Port] [smallint] NOT NULL,
+	[Port] [int] NOT NULL,
 	[InstanceId] [nvarchar](100) NOT NULL,
-	[ClusterPort] [smallint] NOT NULL,
+	[ClusterPort] [int] NOT NULL,
 	[JoinDate] [datetime] NOT NULL,
 	[HealthCheckDate] [datetime] NOT NULL,
- CONSTRAINT [PK_ClusterNodes] PRIMARY KEY CLUSTERED 
+	[MaxConcurrency] [int] NOT NULL,
+ CONSTRAINT [PK_ClusterNodes] PRIMARY KEY  
 (
 	[Server] ASC,
 	[Port] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
- CONSTRAINT [IX_ClusterNodes] UNIQUE NONCLUSTERED 
+),
+ CONSTRAINT [IX_ClusterNodes] UNIQUE  
 (
 	[InstanceId] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY]
-GO
--- Object:  Table [dbo].[GlobalConfig]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[GlobalConfig](
+));
+
+
+CREATE TABLE [GlobalConfig](
 	[Key] [nvarchar](50) NOT NULL,
-	[Value] [nvarchar](1000) NOT NULL,
+	[Value] [nvarchar](4000) NULL,
 	[Type] [varchar](10) NOT NULL,
- CONSTRAINT [PK_GlobalConfig] PRIMARY KEY CLUSTERED 
+ CONSTRAINT [PK_GlobalConfig] PRIMARY KEY  
 (
 	[Key] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY]
-GO
--- Object:  Table [dbo].[Groups]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[Groups](
+));
+CREATE TABLE [Groups](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[Name] [nvarchar](50) NOT NULL,
-	[Reference1] [nvarchar](500) NULL,
-	[Reference2] [nvarchar](500) NULL,
-	[Reference3] [nvarchar](500) NULL,
-	[Reference4] [nvarchar](500) NULL,
-	[Reference5] [nvarchar](500) NULL,
-	[RoleId] [int] NOT NULL,
- CONSTRAINT [PK_Groups] PRIMARY KEY CLUSTERED 
+	[AdditionalField1] [nvarchar](500) NULL,
+	[AdditionalField2] [nvarchar](500) NULL,
+	[AdditionalField3] [nvarchar](500) NULL,
+	[AdditionalField4] [nvarchar](500) NULL,
+	[AdditionalField5] [nvarchar](500) NULL,
+	[Role] [varchar](20) NOT NULL,
+ CONSTRAINT [PK_Groups] PRIMARY KEY  
 (
 	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY]
-GO
--- Object:  Table [dbo].[JobInstanceLog]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[JobInstanceLog](
+));
+
+CREATE TABLE [JobAudit](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[JobId] [varchar](20) NOT NULL,
+	[JobKey] [varchar](101) NOT NULL,
+	[DateCreated] [datetime] NOT NULL,
+	[Username] [varchar](50) NOT NULL,
+	[UserTitle] [nvarchar](101) NOT NULL,
+	[Description] [varchar](200) NOT NULL,
+	[AdditionalInfo] [nvarchar](4000) NULL,
+ CONSTRAINT [PK_JobAudit] PRIMARY KEY 
+(
+	[Id] ASC
+));
+
+CREATE TABLE [JobInstanceLog](
+	[Id] [bigint] IDENTITY(1,1) NOT NULL,
 	[InstanceId] [varchar](250) NOT NULL,
 	[JobId] [varchar](20) NOT NULL,
 	[JobName] [varchar](50) NOT NULL,
 	[JobGroup] [varchar](50) NOT NULL,
+	[JobType] [varchar](50) NOT NULL,
 	[TriggerId] [varchar](20) NOT NULL,
 	[TriggerName] [varchar](50) NOT NULL,
 	[TriggerGroup] [varchar](50) NOT NULL,
@@ -83,36 +252,27 @@ CREATE TABLE [dbo].[JobInstanceLog](
 	[Duration] [int] NULL,
 	[EffectedRows] [int] NULL,
 	[Data] [nvarchar](4000) NULL,
-	[Log] [nvarchar](max) NULL,
-	[Exception] [nvarchar](max) NULL,
+	[Log] [nvarchar] NULL,
+	[Exception] [nvarchar] NULL,
+	[ExceptionCount] [int] NOT NULL DEFAULT 0,
 	[Retry] [bit] NOT NULL,
-	[IsStopped] [bit] NOT NULL,
- CONSTRAINT [PK_AutomationTaskCalls] PRIMARY KEY CLUSTERED 
+	[IsCanceled] [bit] NOT NULL DEFAULT 0,
+	[Anomaly] [tinyint] NULL,
+	[HasWarnings] [bit] NOT NULL DEFAULT 0,
+ CONSTRAINT [PK_JobInstanceLog] PRIMARY KEY  
 (
 	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
--- Object:  Table [dbo].[JobProperties]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[JobProperties](
+));
+
+CREATE TABLE [JobProperties](
 	[JobId] [varchar](20) NOT NULL,
-	[Properties] [nvarchar](max) NULL,
- CONSTRAINT [PK_JobProperties] PRIMARY KEY CLUSTERED 
+	[Properties] [nvarchar] NULL,
+ CONSTRAINT [PK_JobProperties] PRIMARY KEY  
 (
 	[JobId] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
--- Object:  Table [dbo].[MonitorActions]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[MonitorActions](
+));
+
+CREATE TABLE [MonitorActions](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[Title] [nvarchar](50) NOT NULL,
 	[EventId] [int] NOT NULL,
@@ -121,280 +281,93 @@ CREATE TABLE [dbo].[MonitorActions](
 	[JobGroup] [varchar](50) NULL,
 	[GroupId] [int] NOT NULL,
 	[Hook] [varchar](50) NOT NULL,
-	[Active] [bit] NOT NULL,
- CONSTRAINT [PK_Monitor] PRIMARY KEY CLUSTERED 
+	[Active] [bit] NOT NULL DEFAULT 1,
+    FOREIGN KEY(GroupId) REFERENCES Groups(Id),
+ CONSTRAINT [PK_Monitor] PRIMARY KEY 
 (
 	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY]
-GO
--- Object:  Table [dbo].[QRTZ_BLOB_TRIGGERS]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[QRTZ_BLOB_TRIGGERS](
-	[SCHED_NAME] [nvarchar](120) NOT NULL,
-	[TRIGGER_NAME] [nvarchar](150) NOT NULL,
-	[TRIGGER_GROUP] [nvarchar](150) NOT NULL,
-	[BLOB_DATA] [varbinary](max) NULL,
- CONSTRAINT [PK_QRTZ_BLOB_TRIGGERS] PRIMARY KEY CLUSTERED 
-(
-	[SCHED_NAME] ASC,
-	[TRIGGER_NAME] ASC,
-	[TRIGGER_GROUP] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
--- Object:  Table [dbo].[QRTZ_CALENDARS]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[QRTZ_CALENDARS](
-	[SCHED_NAME] [nvarchar](120) NOT NULL,
-	[CALENDAR_NAME] [nvarchar](200) NOT NULL,
-	[CALENDAR] [varbinary](max) NOT NULL,
- CONSTRAINT [PK_QRTZ_CALENDARS] PRIMARY KEY CLUSTERED 
-(
-	[SCHED_NAME] ASC,
-	[CALENDAR_NAME] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
--- Object:  Table [dbo].[QRTZ_CRON_TRIGGERS]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[QRTZ_CRON_TRIGGERS](
-	[SCHED_NAME] [nvarchar](120) NOT NULL,
-	[TRIGGER_NAME] [nvarchar](150) NOT NULL,
-	[TRIGGER_GROUP] [nvarchar](150) NOT NULL,
-	[CRON_EXPRESSION] [nvarchar](120) NOT NULL,
-	[TIME_ZONE_ID] [nvarchar](80) NULL,
- CONSTRAINT [PK_QRTZ_CRON_TRIGGERS] PRIMARY KEY CLUSTERED 
-(
-	[SCHED_NAME] ASC,
-	[TRIGGER_NAME] ASC,
-	[TRIGGER_GROUP] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY]
-GO
--- Object:  Table [dbo].[QRTZ_FIRED_TRIGGERS]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[QRTZ_FIRED_TRIGGERS](
-	[SCHED_NAME] [nvarchar](120) NOT NULL,
-	[ENTRY_ID] [nvarchar](140) NOT NULL,
-	[TRIGGER_NAME] [nvarchar](150) NOT NULL,
-	[TRIGGER_GROUP] [nvarchar](150) NOT NULL,
-	[INSTANCE_NAME] [nvarchar](200) NOT NULL,
-	[FIRED_TIME] [bigint] NOT NULL,
-	[SCHED_TIME] [bigint] NOT NULL,
-	[PRIORITY] [int] NOT NULL,
-	[STATE] [nvarchar](16) NOT NULL,
-	[JOB_NAME] [nvarchar](150) NULL,
-	[JOB_GROUP] [nvarchar](150) NULL,
-	[IS_NONCONCURRENT] [bit] NULL,
-	[REQUESTS_RECOVERY] [bit] NULL,
- CONSTRAINT [PK_QRTZ_FIRED_TRIGGERS] PRIMARY KEY CLUSTERED 
-(
-	[SCHED_NAME] ASC,
-	[ENTRY_ID] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY]
-GO
--- Object:  Table [dbo].[QRTZ_JOB_DETAILS]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[QRTZ_JOB_DETAILS](
-	[SCHED_NAME] [nvarchar](120) NOT NULL,
-	[JOB_NAME] [nvarchar](150) NOT NULL,
-	[JOB_GROUP] [nvarchar](150) NOT NULL,
-	[DESCRIPTION] [nvarchar](250) NULL,
-	[JOB_CLASS_NAME] [nvarchar](250) NOT NULL,
-	[IS_DURABLE] [bit] NOT NULL,
-	[IS_NONCONCURRENT] [bit] NOT NULL,
-	[IS_UPDATE_DATA] [bit] NOT NULL,
-	[REQUESTS_RECOVERY] [bit] NOT NULL,
-	[JOB_DATA] [varbinary](max) NULL,
- CONSTRAINT [PK_QRTZ_JOB_DETAILS] PRIMARY KEY CLUSTERED 
-(
-	[SCHED_NAME] ASC,
-	[JOB_NAME] ASC,
-	[JOB_GROUP] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
--- Object:  Table [dbo].[QRTZ_LOCKS]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[QRTZ_LOCKS](
-	[SCHED_NAME] [nvarchar](120) NOT NULL,
-	[LOCK_NAME] [nvarchar](40) NOT NULL,
- CONSTRAINT [PK_QRTZ_LOCKS] PRIMARY KEY CLUSTERED 
-(
-	[SCHED_NAME] ASC,
-	[LOCK_NAME] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY]
-GO
--- Object:  Table [dbo].[QRTZ_PAUSED_TRIGGER_GRPS]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[QRTZ_PAUSED_TRIGGER_GRPS](
-	[SCHED_NAME] [nvarchar](120) NOT NULL,
-	[TRIGGER_GROUP] [nvarchar](150) NOT NULL,
- CONSTRAINT [PK_QRTZ_PAUSED_TRIGGER_GRPS] PRIMARY KEY CLUSTERED 
-(
-	[SCHED_NAME] ASC,
-	[TRIGGER_GROUP] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY]
-GO
--- Object:  Table [dbo].[QRTZ_SCHEDULER_STATE]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[QRTZ_SCHEDULER_STATE](
-	[SCHED_NAME] [nvarchar](120) NOT NULL,
-	[INSTANCE_NAME] [nvarchar](200) NOT NULL,
-	[LAST_CHECKIN_TIME] [bigint] NOT NULL,
-	[CHECKIN_INTERVAL] [bigint] NOT NULL,
- CONSTRAINT [PK_QRTZ_SCHEDULER_STATE] PRIMARY KEY CLUSTERED 
-(
-	[SCHED_NAME] ASC,
-	[INSTANCE_NAME] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY]
-GO
--- Object:  Table [dbo].[QRTZ_SIMPLE_TRIGGERS]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[QRTZ_SIMPLE_TRIGGERS](
-	[SCHED_NAME] [nvarchar](120) NOT NULL,
-	[TRIGGER_NAME] [nvarchar](150) NOT NULL,
-	[TRIGGER_GROUP] [nvarchar](150) NOT NULL,
-	[REPEAT_COUNT] [int] NOT NULL,
-	[REPEAT_INTERVAL] [bigint] NOT NULL,
-	[TIMES_TRIGGERED] [int] NOT NULL,
- CONSTRAINT [PK_QRTZ_SIMPLE_TRIGGERS] PRIMARY KEY CLUSTERED 
-(
-	[SCHED_NAME] ASC,
-	[TRIGGER_NAME] ASC,
-	[TRIGGER_GROUP] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY]
-GO
--- Object:  Table [dbo].[QRTZ_SIMPROP_TRIGGERS]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[QRTZ_SIMPROP_TRIGGERS](
-	[SCHED_NAME] [nvarchar](120) NOT NULL,
-	[TRIGGER_NAME] [nvarchar](150) NOT NULL,
-	[TRIGGER_GROUP] [nvarchar](150) NOT NULL,
-	[STR_PROP_1] [nvarchar](512) NULL,
-	[STR_PROP_2] [nvarchar](512) NULL,
-	[STR_PROP_3] [nvarchar](512) NULL,
-	[INT_PROP_1] [int] NULL,
-	[INT_PROP_2] [int] NULL,
-	[LONG_PROP_1] [bigint] NULL,
-	[LONG_PROP_2] [bigint] NULL,
-	[DEC_PROP_1] [numeric](13, 4) NULL,
-	[DEC_PROP_2] [numeric](13, 4) NULL,
-	[BOOL_PROP_1] [bit] NULL,
-	[BOOL_PROP_2] [bit] NULL,
-	[TIME_ZONE_ID] [nvarchar](80) NULL,
- CONSTRAINT [PK_QRTZ_SIMPROP_TRIGGERS] PRIMARY KEY CLUSTERED 
-(
-	[SCHED_NAME] ASC,
-	[TRIGGER_NAME] ASC,
-	[TRIGGER_GROUP] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY]
-GO
--- Object:  Table [dbo].[QRTZ_TRIGGERS]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[QRTZ_TRIGGERS](
-	[SCHED_NAME] [nvarchar](120) NOT NULL,
-	[TRIGGER_NAME] [nvarchar](150) NOT NULL,
-	[TRIGGER_GROUP] [nvarchar](150) NOT NULL,
-	[JOB_NAME] [nvarchar](150) NOT NULL,
-	[JOB_GROUP] [nvarchar](150) NOT NULL,
-	[DESCRIPTION] [nvarchar](250) NULL,
-	[NEXT_FIRE_TIME] [bigint] NULL,
-	[PREV_FIRE_TIME] [bigint] NULL,
-	[PRIORITY] [int] NULL,
-	[TRIGGER_STATE] [nvarchar](16) NOT NULL,
-	[TRIGGER_TYPE] [nvarchar](8) NOT NULL,
-	[START_TIME] [bigint] NOT NULL,
-	[END_TIME] [bigint] NULL,
-	[CALENDAR_NAME] [nvarchar](200) NULL,
-	[MISFIRE_INSTR] [int] NULL,
-	[JOB_DATA] [varbinary](max) NULL,
- CONSTRAINT [PK_QRTZ_TRIGGERS] PRIMARY KEY CLUSTERED 
-(
-	[SCHED_NAME] ASC,
-	[TRIGGER_NAME] ASC,
-	[TRIGGER_GROUP] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
--- Object:  Table [dbo].[Roles]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[Roles](
-	[Id] [int] NOT NULL,
-	[Name] [varchar](50) NOT NULL,
- CONSTRAINT [PK_Roles] PRIMARY KEY CLUSTERED 
-(
-	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY]
-GO
--- Object:  Table [dbo].[Trace]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[Trace](
+));
+
+CREATE TABLE [MonitorAlerts](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[Message] [nvarchar](max) NULL,
+	[MonitorId] [int] NOT NULL,
+	[MonitorTitle] [nvarchar](50) NOT NULL,
+	[EventId] [int] NOT NULL,
+	[EventTitle] [varchar](100) NULL,
+	[EventArgument] [varchar](50) NULL,
+	[JobName] [varchar](50) NULL,
+	[JobGroup] [varchar](50) NULL,
+	[JobId] [varchar](20) NULL,
+	[GroupId] [int] NOT NULL,
+	[GroupName] [nvarchar](50) NOT NULL,
+	[UsersCount] [int] NOT NULL,
+	[Hook] [varchar](50) NOT NULL,
+	[LogInstanceId] [varchar](250) NULL,
+	[HasError] [bit] NOT NULL,
+	[AlertDate] [datetime] NOT NULL,
+	[Exception] [nvarchar] NULL,
+	[AlertPayload] [nvarchar] NULL,
+ CONSTRAINT [PK_MonitorAlerts] PRIMARY KEY  
+(
+	[Id] ASC
+));
+
+CREATE TABLE [MonitorCounters](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[MonitorId] [int] NOT NULL,
+	[JobId] [varchar](20) NOT NULL,
+	[Counter] [int] NOT NULL,
+	[LastUpdate] [datetime] NULL,
+ CONSTRAINT [PK_MonitorCounter] PRIMARY KEY 
+(
+	[Id] ASC
+));
+
+CREATE TABLE [MonitorHooks](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Name] [nvarchar](50) NOT NULL,
+	[Description] [nvarchar](2000) NOT NULL,
+	[Path] [nvarchar](1000) NOT NULL,
+ CONSTRAINT [PK_MonitorHooks] PRIMARY KEY 
+(
+	[Id] ASC
+));
+
+CREATE TABLE [MonitorMute](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[JobId] [varchar](20) NULL,
+	[MonitorId] [int] NULL,
+	[DueDate] [datetime] NULL,
+ CONSTRAINT [PK_MonitorMute] PRIMARY KEY  
+(
+	[Id] ASC
+));
+
+CREATE TABLE [SecurityAudits](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Title] [nvarchar](500) NOT NULL,
+	[Username] [varchar](50) NOT NULL,
+	[UserTitle] [nvarchar](101) NOT NULL,
+	[DateCreated] [datetime] NOT NULL,
+	[IsWarning] [bit] NOT NULL,
+ CONSTRAINT [PK_SecurityAudits] PRIMARY KEY 
+(
+	[Id] ASC
+));
+
+CREATE TABLE [Trace](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Message] [nvarchar] NULL,
 	[Level] [nvarchar](128) NULL,
 	[TimeStamp] [datetimeoffset](7) NOT NULL,
-	[Exception] [nvarchar](max) NULL,
-	[LogEvent] [nvarchar](max) NULL,
- CONSTRAINT [PK_Log] PRIMARY KEY CLUSTERED 
+	[Exception] [nvarchar] NULL,
+	[LogEvent] [nvarchar] NULL,
+ CONSTRAINT [PK_Log] PRIMARY KEY 
 (
 	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
-GO
--- Object:  Table [dbo].[Users]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[Users](
+));
+
+CREATE TABLE [Users](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[Username] [varchar](50) NOT NULL,
 	[Password] [varbinary](128) NOT NULL,
@@ -408,334 +381,169 @@ CREATE TABLE [dbo].[Users](
 	[PhoneNumber1] [nvarchar](50) NULL,
 	[PhoneNumber2] [nvarchar](50) NULL,
 	[PhoneNumber3] [nvarchar](50) NULL,
-	[Reference1] [nvarchar](500) NULL,
-	[Reference2] [nvarchar](500) NULL,
-	[Reference3] [nvarchar](500) NULL,
-	[Reference4] [nvarchar](500) NULL,
-	[Reference5] [nvarchar](500) NULL,
- CONSTRAINT [PK_Users] PRIMARY KEY CLUSTERED 
+	[AdditionalField1] [nvarchar](500) NULL,
+	[AdditionalField2] [nvarchar](500) NULL,
+	[AdditionalField3] [nvarchar](500) NULL,
+	[AdditionalField4] [nvarchar](500) NULL,
+	[AdditionalField5] [nvarchar](500) NULL,
+ CONSTRAINT [PK_Users] PRIMARY KEY  
 (
 	[Id] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
- CONSTRAINT [IX_Users] UNIQUE NONCLUSTERED 
+),
+ CONSTRAINT [IX_Users] UNIQUE  
 (
 	[Username] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY]
-GO
--- Object:  Table [dbo].[UsersToGroups]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE TABLE [dbo].[UsersToGroups](
+));
+
+CREATE TABLE [UsersToGroups](
 	[UserId] [int] NOT NULL,
 	[GroupId] [int] NOT NULL,
- CONSTRAINT [PK_UsersToGroups] PRIMARY KEY CLUSTERED 
+    FOREIGN KEY(UserId) REFERENCES Users(Id),
+    FOREIGN KEY(GroupId) REFERENCES Groups(Id),
+ CONSTRAINT [PK_UsersToGroups] PRIMARY KEY  
 (
 	[UserId] ASC,
 	[GroupId] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-) ON [PRIMARY]
-GO
-SET ANSI_PADDING ON
-GO
--- Object:  Index [IX_Groups]    Script Date: 15/01/2023 0:44:07 ******/
-CREATE UNIQUE NONCLUSTERED INDEX [IX_Groups] ON [dbo].[Groups]
+));
+
+CREATE TABLE [Statistics_ConcurrentExecution](
+	[Id] [bigint] IDENTITY(1,1) NOT NULL,
+	[RecordDate] [datetime] NOT NULL,
+	[Server] [nvarchar](100) NOT NULL,
+	[InstanceId] [nvarchar](100) NOT NULL,
+	[MaxConcurrent] [int] NOT NULL,
+ CONSTRAINT [PK_ConcurentExecution] PRIMARY KEY  
+(
+	[Id] ASC
+));
+
+CREATE TABLE [Statistics_ConcurrentQueue](
+	[Id] [bigint] IDENTITY(1,1) NOT NULL,
+	[RecordDate] [datetime] NOT NULL,
+	[Server] [nvarchar](100) NOT NULL,
+	[InstanceId] [nvarchar](100) NOT NULL,
+	[ConcurrentValue] [int] NOT NULL,
+ CONSTRAINT [PK_ConcurentQueue] PRIMARY KEY  
+(
+	[Id] ASC
+));
+
+CREATE TABLE [Statistics_JobCounters](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[JobId] [varchar](20) NOT NULL,
+	[RunDate] [date] NOT NULL,
+	[TotalRuns] [int] NOT NULL,
+	[SuccessRetries] [int] NULL,
+	[FailRetries] [int] NULL,
+	[Recovers] [int] NULL,
+ CONSTRAINT [PK_JobCounters] PRIMARY KEY  
+(
+	[Id] ASC
+));
+
+CREATE TABLE [Statistics_JobDurationStatistics](
+	[JobId] [varchar](20) NOT NULL,
+	[AvgDuration] [numeric](18, 4) NOT NULL,
+	[StdevDuration] [numeric](18, 4) NOT NULL,
+	[Rows] [int] NOT NULL,
+ CONSTRAINT [PK_JobDurationStatistics] PRIMARY KEY  
+(
+	[JobId] ASC
+));
+
+CREATE TABLE [Statistics_JobEffectedRowsStatistics](
+	[JobId] [varchar](20) NOT NULL,
+	[AvgEffectedRows] [numeric](18, 4) NOT NULL,
+	[StdevEffectedRows] [numeric](18, 4) NOT NULL,
+	[Rows] [int] NOT NULL,
+ CONSTRAINT [PK_JobEffectedRowsStatistics] PRIMARY KEY  
+(
+	[JobId] ASC
+));
+
+CREATE UNIQUE INDEX [IX_Groups] ON [Groups]
 (
 	[Name] ASC
-)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
-GO
-ALTER TABLE [dbo].[Groups] ADD  CONSTRAINT [DF_Groups_RoleId]  DEFAULT ((0)) FOR [RoleId]
-GO
-ALTER TABLE [dbo].[JobInstanceLog] ADD  CONSTRAINT [DF_JobInstanceLog_IsStopped]  DEFAULT ((0)) FOR [IsStopped]
-GO
-ALTER TABLE [dbo].[MonitorActions] ADD  CONSTRAINT [DF_Monitor_Active]  DEFAULT ((1)) FOR [Active]
-GO
-ALTER TABLE [dbo].[Groups]  WITH CHECK ADD  CONSTRAINT [FK_Groups_Roles] FOREIGN KEY([RoleId])
-REFERENCES [dbo].[Roles] ([Id])
-GO
-ALTER TABLE [dbo].[Groups] CHECK CONSTRAINT [FK_Groups_Roles]
-GO
-ALTER TABLE [dbo].[MonitorActions]  WITH CHECK ADD  CONSTRAINT [FK_MonitorActions_Groups] FOREIGN KEY([GroupId])
-REFERENCES [dbo].[Groups] ([Id])
-GO
-ALTER TABLE [dbo].[MonitorActions] CHECK CONSTRAINT [FK_MonitorActions_Groups]
-GO
-ALTER TABLE [dbo].[QRTZ_CRON_TRIGGERS]  WITH CHECK ADD  CONSTRAINT [FK_QRTZ_CRON_TRIGGERS_QRTZ_TRIGGERS] FOREIGN KEY([SCHED_NAME], [TRIGGER_NAME], [TRIGGER_GROUP])
-REFERENCES [dbo].[QRTZ_TRIGGERS] ([SCHED_NAME], [TRIGGER_NAME], [TRIGGER_GROUP])
-ON DELETE CASCADE
-GO
-ALTER TABLE [dbo].[QRTZ_CRON_TRIGGERS] CHECK CONSTRAINT [FK_QRTZ_CRON_TRIGGERS_QRTZ_TRIGGERS]
-GO
-ALTER TABLE [dbo].[QRTZ_SIMPLE_TRIGGERS]  WITH CHECK ADD  CONSTRAINT [FK_QRTZ_SIMPLE_TRIGGERS_QRTZ_TRIGGERS] FOREIGN KEY([SCHED_NAME], [TRIGGER_NAME], [TRIGGER_GROUP])
-REFERENCES [dbo].[QRTZ_TRIGGERS] ([SCHED_NAME], [TRIGGER_NAME], [TRIGGER_GROUP])
-ON DELETE CASCADE
-GO
-ALTER TABLE [dbo].[QRTZ_SIMPLE_TRIGGERS] CHECK CONSTRAINT [FK_QRTZ_SIMPLE_TRIGGERS_QRTZ_TRIGGERS]
-GO
-ALTER TABLE [dbo].[QRTZ_SIMPROP_TRIGGERS]  WITH CHECK ADD  CONSTRAINT [FK_QRTZ_SIMPROP_TRIGGERS_QRTZ_TRIGGERS] FOREIGN KEY([SCHED_NAME], [TRIGGER_NAME], [TRIGGER_GROUP])
-REFERENCES [dbo].[QRTZ_TRIGGERS] ([SCHED_NAME], [TRIGGER_NAME], [TRIGGER_GROUP])
-ON DELETE CASCADE
-GO
-ALTER TABLE [dbo].[QRTZ_SIMPROP_TRIGGERS] CHECK CONSTRAINT [FK_QRTZ_SIMPROP_TRIGGERS_QRTZ_TRIGGERS]
-GO
-ALTER TABLE [dbo].[QRTZ_TRIGGERS]  WITH CHECK ADD  CONSTRAINT [FK_QRTZ_TRIGGERS_QRTZ_JOB_DETAILS] FOREIGN KEY([SCHED_NAME], [JOB_NAME], [JOB_GROUP])
-REFERENCES [dbo].[QRTZ_JOB_DETAILS] ([SCHED_NAME], [JOB_NAME], [JOB_GROUP])
-GO
-ALTER TABLE [dbo].[QRTZ_TRIGGERS] CHECK CONSTRAINT [FK_QRTZ_TRIGGERS_QRTZ_JOB_DETAILS]
-GO
-ALTER TABLE [dbo].[UsersToGroups]  WITH CHECK ADD  CONSTRAINT [FK_UsersToGroups_Groups] FOREIGN KEY([GroupId])
-REFERENCES [dbo].[Groups] ([Id])
-GO
-ALTER TABLE [dbo].[UsersToGroups] CHECK CONSTRAINT [FK_UsersToGroups_Groups]
-GO
-ALTER TABLE [dbo].[UsersToGroups]  WITH CHECK ADD  CONSTRAINT [FK_UsersToGroups_Users] FOREIGN KEY([UserId])
-REFERENCES [dbo].[Users] ([Id])
-GO
-ALTER TABLE [dbo].[UsersToGroups] CHECK CONSTRAINT [FK_UsersToGroups_Users]
-GO
--- Object:  StoredProcedure [Admin].[FactoryReset]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE PROCEDURE [Admin].[FactoryReset]
-AS
-DELETE FROM  [dbo].[QRTZ_BLOB_TRIGGERS]
-DELETE FROM  [dbo].[QRTZ_CALENDARS]
-DELETE FROM [dbo].[QRTZ_CRON_TRIGGERS]
-DELETE FROM [dbo].[QRTZ_FIRED_TRIGGERS]
-DELETE FROM [dbo].[QRTZ_LOCKS]
-DELETE FROM [dbo].[QRTZ_PAUSED_TRIGGER_GRPS]
-DELETE FROM [dbo].[QRTZ_SCHEDULER_STATE]
-DELETE FROM [dbo].[QRTZ_SIMPLE_TRIGGERS]
-DELETE FROM [dbo].[QRTZ_SIMPROP_TRIGGERS]
-DELETE FROM [dbo].[QRTZ_TRIGGERS]
-DELETE FROM [dbo].[QRTZ_JOB_DETAILS]
+);
 
-TRUNCATE TABLE [dbo].[ClusterNodes]
-TRUNCATE TABLE [dbo].[GlobalConfig]
+CREATE INDEX [IX_JobInstanceLog] ON [JobInstanceLog]
+(
+	[HasWarnings] ASC
+);
 
-TRUNCATE TABLE [dbo].[JobInstanceLog]
-TRUNCATE TABLE [dbo].[JobProperties]
-TRUNCATE TABLE [dbo].[MonitorActions]
-TRUNCATE TABLE [dbo].[Trace]
-TRUNCATE TABLE [dbo].[UsersToGroups]
+CREATE INDEX [IX_JobInstanceLog_InstanceId] ON [JobInstanceLog]
+(
+	[InstanceId] ASC,
+	[StartDate] ASC
+);
 
+CREATE INDEX [IX_JobInstanceLog_JobGroup] ON [JobInstanceLog]
+(
+	[JobGroup] ASC,
+	[StartDate] ASC
+);
 
-DELETE FROM [dbo].[Groups]
-DELETE FROM [dbo].[Users]
-DELETE FROM   [dbo].[Roles]
-GO
--- Object:  StoredProcedure [Admin].[TestExecPermission]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
--- =============================================
--- Author:		Tsahi Atias
--- Create date: 2022-12-02
--- Description:	Empty procedure for check permission of execute
--- =============================================
-CREATE PROCEDURE [Admin].[TestExecPermission] 
-AS
-BEGIN
-	SELECT 1
-END
-GO
--- Object:  StoredProcedure [Admin].[TestPermission]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
--- =============================================
--- Author:		Tsahi Atias
--- Create date: 2022-12-02
--- Description:	Check the permission of read/write/execute
--- =============================================
-CREATE PROCEDURE [Admin].[TestPermission] 
-AS
-BEGIN
-	SET NOCOUNT ON;
-	DECLARE @SomeValue varchar(10) = 'TestWrite'
-	BEGIN TRANSACTION
+CREATE INDEX [IX_JobInstanceLog_JobId] ON [JobInstanceLog]
+(
+	[JobId] ASC,
+	[StartDate] ASC
+);
 
-	-- TEST Read
-	SELECT TOP 1 [Key] FROM [GlobalConfig]
+CREATE INDEX [IX_JobInstanceLog_JobType] ON [JobInstanceLog]
+(
+	[JobType] ASC,
+	[StartDate] ASC
+);
 
-	-- TEST Write
-	INSERT INTO [GlobalConfig] ([Key], [Value], [Type]) VALUES (@SomeValue, @SomeValue, 'string')
+CREATE INDEX [IX_JobInstanceLog_StartDate] ON [JobInstanceLog]
+(
+	[StartDate] ASC
+);
 
-	-- TEST Delete
-	DELETE FROM [GlobalConfig] WHERE [Key] = @SomeValue
+CREATE INDEX [IX_JobInstanceLog_StartGroup] ON [JobInstanceLog]
+(
+	[StartDate] ASC,
+	[JobGroup] ASC
+);
 
-	-- TEST Exec
-	EXEC [Admin].[TestExecPermission] 
+CREATE INDEX [IX_JobInstanceLog_StartGroupType] ON [JobInstanceLog]
+(
+	[StartDate] ASC,
+	[JobGroup] ASC,
+	[JobType] ASC
+);
 
-	ROLLBACK
-END
-GO
--- Object:  StoredProcedure [dbo].[ClearTrace]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE PROCEDURE [dbo].[ClearTrace]
-@OverDays int = 365
-AS
-BEGIN
-	SET NOCOUNT ON;
+CREATE INDEX [IX_JobInstanceLog_StartType] ON [JobInstanceLog]
+(
+	[StartDate] ASC,
+	[JobType] ASC
+);
 
-    DECLARE @BatchSize INT = 5000
-	WHILE 1 = 1
-	BEGIN
-		DELETE TOP (@BatchSize)
-		FROM [dbo].[Trace]
-		WHERE DATEDIFF(DAY, [TimeStamp], GETDATE()) > @OverDays
-		IF @@ROWCOUNT < @BatchSize BREAK
-	END
-END
-GO
--- Object:  StoredProcedure [dbo].[CountFailsInHourForJob]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE PROCEDURE	[dbo].[CountFailsInHourForJob]
-	@JobId varchar(20)
-AS
-PRINT @JobId
-SELECT COUNT([Id])
-FROM 
-	[dbo].[JobInstanceLog]
-WHERE 
-	[JobId] = @JobId AND
-	[Status] = 1 AND
-	DATEDIFF(MINUTE, [EndDate], GETDATE()) <=60
-GO
--- Object:  StoredProcedure [dbo].[CountFailsInRowForJob]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE PROCEDURE	[dbo].[CountFailsInRowForJob]
-	@JobId varchar(20),
-	@Total int
-AS
-PRINT @JobId
-SELECT SUM([Status])
-FROM
-	(SELECT TOP (@Total) 
-		CASE [Status] WHEN 1 THEN 1 ELSE 0 END AS [Status]
-	FROM 
-		[dbo].[JobInstanceLog]
-	WHERE 
-		JobId=@JobId
-	ORDER BY 
-		id DESC) T
-GO
--- Object:  StoredProcedure [dbo].[GetLastHistoryCallForJob]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
---exec dbo.GetLastHistoryCallForJob 7
+CREATE INDEX [IX_JobInstanceLog_Status] ON [JobInstanceLog]
+(
+	[Status] ASC,
+	[StartDate] ASC
+);
 
-CREATE PROCEDURE [dbo].[GetLastHistoryCallForJob]
- @LastDays int 
-AS
-WITH added_row_number AS (
-  SELECT
-       [Id]
-      ,[JobId]
-      ,[JobName]
-      ,[JobGroup]
-      ,[TriggerId]
-      ,[Status]
-      ,[StartDate]
-      ,[Duration]
-      ,[EffectedRows]
-      ,ROW_NUMBER() OVER(PARTITION BY JobId ORDER BY StartDate DESC) AS row_number
-  FROM [dbo].[JobInstanceLog]
-)
-SELECT
-  *
-FROM added_row_number
-WHERE row_number = 1
-AND DATEDIFF(day, StartDate, GETDATE())<=@LastDays
-ORDER BY StartDate DESC
-GO
--- Object:  StoredProcedure [dbo].[PersistJobInstanceLog]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE PROCEDURE [dbo].[PersistJobInstanceLog]
-	@InstanceId varchar(250),
-	@Log nvarchar(max),
-	@Exception nvarchar(max),
-	@Duration int
-AS
-	UPDATE [dbo].[JobInstanceLog] SET
-	[Log] = @Log,
-	[Exception] = @Exception,
-	[Duration] = @Duration
-WHERE 
-	InstanceId = @InstanceId AND Status = -1
-GO
--- Object:  StoredProcedure [dbo].[SetJobInstanceLogStatus]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE PROCEDURE [dbo].[SetJobInstanceLogStatus]
-  @InstanceId varchar(250),
-  @Status int,
-  @StatusTitle varchar(10)
+CREATE UNIQUE INDEX [IX_MonitorCounters] ON [MonitorCounters]
+(
+	[JobId] ASC,
+	[MonitorId] ASC
+);
 
-  AS
-  UPDATE [dbo].[JobInstanceLog] SET
-	[Status] = @Status,
-	[StatusTitle] = @StatusTitle
-WHERE 
-	InstanceId = @InstanceId
-GO
--- Object:  StoredProcedure [dbo].[UpdateJobInstanceLog]    Script Date: 15/01/2023 0:44:07 ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-CREATE PROCEDURE [dbo].[UpdateJobInstanceLog]
-  @InstanceId varchar(250),
-  @Status int,
-  @StatusTitle varchar(10),
-  @EndDate datetime,
-  @Duration int,
-  @EffectedRows int,
-  @Log nvarchar(max),
-  @Exception nvarchar(max) = null,
-  @IsStopped bit
-  AS
-  UPDATE [dbo].[JobInstanceLog] SET
-	[Status] = @Status,
-	[StatusTitle] = @StatusTitle,
-	[EndDate] = @EndDate,
-	[Duration] = @Duration,
-	[EffectedRows] = @EffectedRows,
-	[Log] = @Log,
-	[Exception] = @Exception,
-	[IsStopped] = @IsStopped
-WHERE 
-	InstanceId = @InstanceId
-GO
-INSERT [dbo].[Roles] ([Id], [Name]) VALUES (0, N'anonymous')
-GO
-INSERT [dbo].[Roles] ([Id], [Name]) VALUES (1, N'viewer')
-GO
-INSERT [dbo].[Roles] ([Id], [Name]) VALUES (2, N'tester')
-GO
-INSERT [dbo].[Roles] ([Id], [Name]) VALUES (3, N'editor')
-GO
-INSERT [dbo].[Roles] ([Id], [Name]) VALUES (4, N'administrator')
-GO
+CREATE UNIQUE INDEX [IX_MonitorHooks] ON [MonitorHooks]
+(
+	[Name] ASC
+);
+
+CREATE UNIQUE INDEX [IX_MonitorMute] ON [MonitorMute]
+(
+	[JobId] ASC,
+	[MonitorId] ASC
+);
+
+CREATE UNIQUE INDEX [IX_JobCounters] ON [Statistics_JobCounters]
+(
+	[RunDate] ASC,
+	[JobId] ASC
+);

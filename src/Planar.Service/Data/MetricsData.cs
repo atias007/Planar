@@ -103,12 +103,16 @@ public class MetricsData(PlanarContext context) : BaseDataLayer(context)
 
     public async Task DeleteJobStatistic(JobDurationStatistic item)
     {
-        await _context.JobDurationStatistics.Where(i => i.JobId == item.JobId).ExecuteDeleteAsync();
+        await _context.JobDurationStatistics
+            .Where(i => i.JobId == item.JobId)
+            .ExecuteDeleteAsync();
     }
 
     public async Task DeleteJobStatistic(JobEffectedRowsStatistic item)
     {
-        await _context.JobEffectedRowsStatistics.Where(i => i.JobId == item.JobId).ExecuteDeleteAsync();
+        await _context.JobEffectedRowsStatistics
+            .Where(i => i.JobId == item.JobId)
+            .ExecuteDeleteAsync();
     }
 
     public async Task<JobCounters?> GetJobCounters(string id)

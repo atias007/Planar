@@ -1,7 +1,7 @@
 ﻿using Dapper;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
+using Planar.Service.Data.Scripts.Sqlite;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using Quartz;
@@ -13,7 +13,111 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Data;
 
-public class HistoryData(PlanarContext context) : BaseDataLayer(context)
+public interface IHistoryData
+{
+    Task<int> ClearJobLogTable(int overDays);
+
+    Task<int> ClearJobLogTable(string jobId, int overDays);
+
+    Task CreateJobInstanceLog(JobInstanceLog log);
+
+    IQueryable<JobInstanceLog> GetHistory(GetHistoryRequest request);
+
+    IQueryable<JobInstanceLog> GetHistory(long key);
+
+    Task<JobInstanceLog?> GetHistoryById(long id);
+
+    Task<JobInstanceLog?> GetHistoryByInstanceId(string instanceid);
+
+    Task<HistoryStatusDto?> GetHistoryCounter(CounterRequest counterRequest);
+
+    IQueryable<JobInstanceLog> GetHistoryData();
+
+    Task<string?> GetHistoryDataById(long id);
+
+    Task<string?> GetHistoryExceptionById(long id);
+
+    Task<string?> GetHistoryLogById(long id);
+
+    Task<int?> GetHistoryStatusById(long id);
+
+    Task<PagingResponse<HistorySummary>> GetHistorySummary(object parameters);
+
+    Task<PagingResponse<JobLastRun>> GetLastHistoryCallForJob(object parameters);
+
+    Task<LastInstanceId?> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime, CancellationToken cancellationToken);
+
+    Task<bool> IsHistoryExists(long id);
+
+    Task PersistJobInstanceData(JobInstanceLog log);
+
+    Task SetAnomaly(JobInstanceLog jobInstance);
+
+    Task SetJobInstanceLogStatus(string instanceId, StatusMembers status);
+
+    Task UpdateHistoryJobRunLog(JobInstanceLog log);
+}
+
+public class HistoryDataSqlite(PlanarContext context) : HistoryData(context), IHistoryData
+{
+    public async Task<int> ClearJobLogTable(int overDays)
+    {
+        var referenceDate = DateTime.Now.Date.AddDays(-overDays);
+        var result = await _context.JobInstanceLogs
+            .Where(l => l.StartDate < referenceDate)
+            .ExecuteDeleteAsync();
+        return result;
+    }
+
+    public async Task<int> ClearJobLogTable(string jobId, int overDays)
+    {
+        var referenceDate = DateTime.Now.Date.AddDays(-overDays);
+        var result = await _context.JobInstanceLogs
+            .Where(l => l.StartDate < referenceDate && l.JobId == jobId)
+            .ExecuteDeleteAsync();
+        return result;
+    }
+
+    public async Task<HistoryStatusDto?> GetHistoryCounter(CounterRequest counterRequest)
+    {
+        var definition = new CommandDefinition(
+            commandText: SqliteResource.GetScript("Statistics_StatusCounter"),
+            parameters: counterRequest,
+            commandType: CommandType.Text);
+
+        var result = await DbConnection.QueryFirstOrDefaultAsync<HistoryStatusDto>(definition);
+
+        return result;
+    }
+
+    public async Task<PagingResponse<HistorySummary>> GetHistorySummary(object parameters)
+    {
+        var cmd = new CommandDefinition(
+            commandText: SqliteResource.GetScript("GetHistorySummary", parameters),
+            commandType: CommandType.Text,
+            parameters: parameters);
+
+        var multi = await DbConnection.QueryMultipleAsync(cmd);
+        var data = await multi.ReadAsync<HistorySummary>();
+        var count = await multi.ReadSingleAsync<int>();
+        return new PagingResponse<HistorySummary>(data.ToList(), count);
+    }
+
+    public async Task<PagingResponse<JobLastRun>> GetLastHistoryCallForJob(object parameters)
+    {
+        var cmd = new CommandDefinition(
+            commandText: SqliteResource.GetScript("GetLastHistoryCallForJob", parameters),
+            commandType: CommandType.Text,
+            parameters: parameters);
+
+        var multi = await DbConnection.QueryMultipleAsync(cmd);
+        var data = await multi.ReadAsync<JobLastRun>();
+        var count = await multi.ReadSingleAsync<int>();
+        return new PagingResponse<JobLastRun>(data.ToList(), count);
+    }
+}
+
+public class HistoryDataSqlServer(PlanarContext context) : HistoryData(context), IHistoryData
 {
     public async Task<int> ClearJobLogTable(int overDays)
     {
@@ -37,10 +141,16 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
         return await DbConnection.ExecuteAsync(cmd);
     }
 
-    public async Task CreateJobInstanceLog(JobInstanceLog log)
+    public async Task<HistoryStatusDto?> GetHistoryCounter(CounterRequest counterRequest)
     {
-        _context.JobInstanceLogs.Add(log);
-        await _context.SaveChangesAsync();
+        var definition = new CommandDefinition(
+            commandText: "[Statistics].[StatusCounter]",
+            parameters: counterRequest,
+            commandType: CommandType.StoredProcedure);
+
+        var result = await DbConnection.QueryFirstOrDefaultAsync<HistoryStatusDto>(definition);
+
+        return result;
     }
 
     public async Task<PagingResponse<HistorySummary>> GetHistorySummary(object parameters)
@@ -54,6 +164,28 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
         var data = await multi.ReadAsync<HistorySummary>();
         var count = await multi.ReadSingleAsync<int>();
         return new PagingResponse<HistorySummary>(data.ToList(), count);
+    }
+
+    public async Task<PagingResponse<JobLastRun>> GetLastHistoryCallForJob(object parameters)
+    {
+        var cmd = new CommandDefinition(
+            commandText: "dbo.GetLastHistoryCallForJob",
+            commandType: CommandType.StoredProcedure,
+            parameters: parameters);
+
+        var multi = await DbConnection.QueryMultipleAsync(cmd);
+        var data = await multi.ReadAsync<JobLastRun>();
+        var count = await multi.ReadSingleAsync<int>();
+        return new PagingResponse<JobLastRun>(data.ToList(), count);
+    }
+}
+
+public class HistoryData(PlanarContext context) : BaseDataLayer(context)
+{
+    public async Task CreateJobInstanceLog(JobInstanceLog log)
+    {
+        _context.JobInstanceLogs.Add(log);
+        await _context.SaveChangesAsync();
     }
 
     public IQueryable<JobInstanceLog> GetHistory(long key)
@@ -142,17 +274,6 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
         return result;
     }
 
-    public async Task<int?> GetHistoryStatusById(long id)
-    {
-        var result = await _context.JobInstanceLogs
-            .AsNoTracking()
-            .Where(l => l.Id == id)
-            .Select(l => l.Status)
-            .FirstOrDefaultAsync();
-
-        return result;
-    }
-
     public async Task<JobInstanceLog?> GetHistoryByInstanceId(string instanceid)
     {
         var result = await _context.JobInstanceLogs
@@ -163,21 +284,12 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
         return result;
     }
 
-    public async Task<HistoryStatusDto?> GetHistoryCounter(CounterRequest counterRequest)
-    {
-        var definition = new CommandDefinition(
-            commandText: "[Statistics].[StatusCounter]",
-            parameters: counterRequest,
-            commandType: CommandType.StoredProcedure);
-
-        var result = await DbConnection.QueryFirstOrDefaultAsync<HistoryStatusDto>(definition);
-
-        return result;
-    }
-
     public IQueryable<JobInstanceLog> GetHistoryData()
     {
-        return _context.JobInstanceLogs.AsNoTracking().OrderByDescending(l => l.StartDate).AsQueryable();
+        return _context.JobInstanceLogs
+            .AsNoTracking()
+            .OrderByDescending(l => l.StartDate)
+            .AsQueryable();
     }
 
     public async Task<string?> GetHistoryDataById(long id)
@@ -212,17 +324,15 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
         return result;
     }
 
-    public async Task<PagingResponse<JobLastRun>> GetLastHistoryCallForJob(object parameters)
+    public async Task<int?> GetHistoryStatusById(long id)
     {
-        var cmd = new CommandDefinition(
-            commandText: "dbo.GetLastHistoryCallForJob",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
+        var result = await _context.JobInstanceLogs
+            .AsNoTracking()
+            .Where(l => l.Id == id)
+            .Select(l => l.Status)
+            .FirstOrDefaultAsync();
 
-        var multi = await DbConnection.QueryMultipleAsync(cmd);
-        var data = await multi.ReadAsync<JobLastRun>();
-        var count = await multi.ReadSingleAsync<int>();
-        return new PagingResponse<JobLastRun>(data.ToList(), count);
+        return result;
     }
 
     public async Task<LastInstanceId?> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime, CancellationToken cancellationToken)
@@ -254,63 +364,47 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
 
     public async Task PersistJobInstanceData(JobInstanceLog log)
     {
-        var parameters = new
-        {
-            log.InstanceId,
-            log.Log,
-            log.Exception,
-            log.Duration,
-        };
-
-        var cmd = new CommandDefinition(
-            commandText: "dbo.PersistJobInstanceLog",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
-
-        await DbConnection.ExecuteAsync(cmd);
+        await _context.JobInstanceLogs
+            .Where(l => l.InstanceId == log.InstanceId && l.Status == -1)
+            .ExecuteUpdateAsync(u => u
+                .SetProperty(l => l.Log, log.Log)
+                .SetProperty(l => l.Exception, log.Exception)
+                .SetProperty(l => l.Duration, log.Duration)
+                );
     }
 
-    public async Task SetAnomaly(object parameters)
+    public async Task SetAnomaly(JobInstanceLog jobInstance)
     {
-        var cmd = new CommandDefinition(
-            commandText: "dbo.UpdateJobInstanceLogAnomaly",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
-
-        await DbConnection.ExecuteAsync(cmd);
+        await _context.JobInstanceLogs
+            .Where(l => l.InstanceId == jobInstance.InstanceId)
+            .ExecuteUpdateAsync(u => u
+                .SetProperty(l => l.Anomaly, jobInstance.Anomaly));
     }
 
     public async Task SetJobInstanceLogStatus(string instanceId, StatusMembers status)
     {
-        var paramInstanceId = new SqlParameter("@InstanceId", instanceId);
-        var paramStatus = new SqlParameter("@Status", (int)status);
-        var paramTitle = new SqlParameter("@StatusTitle", status.ToString());
-
-        await _context.Database.ExecuteSqlRawAsync($"dbo.SetJobInstanceLogStatus @InstanceId,  @Status, @StatusTitle", paramInstanceId, paramStatus, paramTitle);
+        await _context.JobInstanceLogs
+            .Where(l => l.InstanceId == instanceId)
+            .ExecuteUpdateAsync(u => u
+                .SetProperty(l => l.Status, (int)status)
+                .SetProperty(l => l.StatusTitle, status.ToString()));
     }
 
     public async Task UpdateHistoryJobRunLog(JobInstanceLog log)
     {
-        var parameters = new
-        {
-            log.InstanceId,
-            log.Status,
-            log.StatusTitle,
-            log.EndDate,
-            log.Duration,
-            log.EffectedRows,
-            log.Log,
-            log.Exception,
-            log.ExceptionCount,
-            log.IsCanceled,
-            log.HasWarnings
-        };
-
-        var cmd = new CommandDefinition(
-            commandText: "dbo.UpdateJobInstanceLog",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
-
-        await DbConnection.ExecuteAsync(cmd);
+        await _context.JobInstanceLogs
+            .Where(l => l.InstanceId == log.InstanceId)
+            .ExecuteUpdateAsync(u => u
+                .SetProperty(l => l.Status, log.Status)
+                .SetProperty(l => l.StatusTitle, log.StatusTitle)
+                .SetProperty(l => l.EndDate, log.EndDate)
+                .SetProperty(l => l.Duration, log.Duration)
+                .SetProperty(l => l.EffectedRows, log.EffectedRows)
+                .SetProperty(l => l.Log, log.Log)
+                .SetProperty(l => l.Exception, log.Exception)
+                .SetProperty(l => l.ExceptionCount, log.ExceptionCount)
+                .SetProperty(l => l.IsCanceled, log.IsCanceled)
+                .SetProperty(l => l.HasWarnings, log.HasWarnings)
+            );
     }
 }

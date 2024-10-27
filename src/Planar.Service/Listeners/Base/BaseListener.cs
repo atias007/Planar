@@ -56,7 +56,7 @@ public abstract class BaseListener<T>(IServiceScopeFactory serviceScopeFactory, 
     #region Execute Data Layer
 
     protected async Task ExecuteDal<TDataLayer>(Expression<Func<TDataLayer, Task>> exp)
-        where TDataLayer : BaseDataLayer
+        where TDataLayer : notnull
     {
         try
         {
@@ -116,7 +116,7 @@ public abstract class BaseListener<T>(IServiceScopeFactory serviceScopeFactory, 
     }
 
     private async Task ExecuteDalOnObjectDisposedException<TDataLayer>(Expression<Func<TDataLayer, Task>> exp)
-        where TDataLayer : BaseDataLayer
+        where TDataLayer : notnull
     {
         try
         {

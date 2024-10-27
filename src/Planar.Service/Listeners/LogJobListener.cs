@@ -33,7 +33,7 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
         try
         {
             if (IsSystemJob(context.JobDetail)) { return; }
-            await ExecuteDal<HistoryData>(d => d.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto));
+            await ExecuteDal<IHistoryData>(d => d.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto));
         }
         catch (Exception ex)
         {
@@ -84,7 +84,7 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
             if (log.TriggerGroup.Length > 50) { log.TriggerGroup = log.TriggerGroup[0..50]; }
             if (log.ServerName.Length > 50) { log.ServerName = log.ServerName[0..50]; }
 
-            await ExecuteDal<HistoryData>(d => d.CreateJobInstanceLog(log));
+            await ExecuteDal<IHistoryData>(d => d.CreateJobInstanceLog(log));
             await statisticsTask;
         }
         catch (Exception ex)
@@ -134,7 +134,7 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
 
             if (log.StatusTitle.Length > 10) { log.StatusTitle = log.StatusTitle[0..10]; }
 
-            await ExecuteDal<HistoryData>(d => d.UpdateHistoryJobRunLog(log));
+            await ExecuteDal<IHistoryData>(d => d.UpdateHistoryJobRunLog(log));
             await SafeFillAnomaly(log);
         }
         catch (Exception ex)
@@ -217,8 +217,7 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
 
         if (item.Anomaly != null)
         {
-            var parameters = new { item.InstanceId, item.Anomaly };
-            await ExecuteDal<HistoryData>(d => d.SetAnomaly(parameters));
+            await ExecuteDal<IHistoryData>(d => d.SetAnomaly(item));
         }
     }
 

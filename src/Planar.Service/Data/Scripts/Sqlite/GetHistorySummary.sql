@@ -21,7 +21,7 @@ SELECT
   ORDER BY 
       [JobGroup],
 	  [JobName]
-LIMIT @PageSize OFFSET ((@PageNumber -1) * @PageSize);
+  LIMIT {{limit}} OFFSET {{offset}};
 
 WITH TOTALCTE AS
 (
@@ -37,4 +37,4 @@ SELECT
       ,[JobGroup]
       ,[JobType]
 )
-SELECT COUNT(*) FROM TOTALCTE
+SELECT COUNT(*) FROM TOTALCTE;

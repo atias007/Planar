@@ -358,7 +358,7 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
             throw new RestValidationException("id", "this is system job and it does not have instance id");
         }
 
-        var dal = Resolve<HistoryData>();
+        var dal = Resolve<IHistoryData>();
 
         for (int i = 0; i < 60; i++)
         {

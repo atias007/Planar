@@ -89,7 +89,7 @@ namespace Planar.Service
 
             // AutoMapper
             var assemply = Assembly.Load($"{nameof(Planar)}.{nameof(Service)}");
-            services.AddAutoMapperProfiles(new[] { assemply });
+            services.AddAutoMapperProfiles([assemply]);
 
             return services;
         }
@@ -104,7 +104,7 @@ namespace Planar.Service
             services.AddTransientWithLazy<MonitorData>();
             services.AddTransientWithLazy<ConfigData>();
             services.AddTransientWithLazy<ClusterData>();
-            services.AddTransientWithLazy<HistoryData>();
+            services.AddTransientWithLazy<IHistoryData, HistoryDataSqlServer>();
             services.AddTransientWithLazy<TraceData>();
             services.AddTransientWithLazy<ServiceData>();
             services.AddTransientWithLazy<MetricsData>();
@@ -122,6 +122,15 @@ namespace Planar.Service
         {
             services.AddTransient<T>();
             services.AddTransient(p => new Lazy<T>(() => p.GetRequiredService<T>()));
+            return services;
+        }
+
+        internal static IServiceCollection AddTransientWithLazy<TService, TImplementation>(this IServiceCollection services)
+            where TService : class
+            where TImplementation : class, TService
+        {
+            services.AddTransient<TService, TImplementation>();
+            services.AddTransient(p => new Lazy<TService>(() => p.GetRequiredService<TService>()));
             return services;
         }
 

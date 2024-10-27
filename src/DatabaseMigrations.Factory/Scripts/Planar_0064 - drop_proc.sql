@@ -1,0 +1,3 @@
+DROP PROCEDURE dbo.PersistJobInstanceLog
+DROP PROCEDURE dbo.UpdateJobInstanceLogAnomaly
+DROP PROCEDURE dbo.SetJobInstanceLogStatus

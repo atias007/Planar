@@ -5,7 +5,6 @@ using Planar.Service.Reports;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Planar.Service.Data;
 
