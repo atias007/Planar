@@ -12,8 +12,107 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Data;
 
+public interface IMonitorData : IBaseDataLayer, IMonitorDurationDataLayer
+{
+    Task AddMonitor(MonitorAction request);
+
+    Task AddMonitorCounter(MonitorCounter counter);
+
+    Task AddMonitorHook(MonitorHook monitorHook);
+
+    Task AddMonitorMute(MonitorMute request);
+
+    Task<int> CountFailsInHourForJob(string jobId, int hours);
+
+    Task<int> CountFailsInRowForJob(string jobId, int total);
+
+    Task<int> DeleteMonitor(MonitorAction request);
+
+    Task DeleteMonitorByJobGroup(string jobGroup);
+
+    Task DeleteMonitorByJobId(string group, string name);
+
+    Task DeleteMonitorCounterByJobId(string jobId);
+
+    Task DeleteMonitorCounterByMonitorId(int monitorId);
+
+    Task<int> DeleteMonitorHook(string name);
+
+    Task DeleteOldMonitorMutes();
+
+    Task<IEnumerable<MonitorHook>> GetAllMonitorHooks();
+
+    Task<MonitorAction?> GetMonitorAction(int id);
+
+    Task<IEnumerable<int>> GetMonitorActionIds();
+
+    Task<IEnumerable<MonitorAction>> GetMonitorActions();
+
+    Task<List<MonitorAction>> GetMonitorActionsByGroup(string group);
+
+    Task<List<MonitorAction>> GetMonitorActionsByJob(string group, string name);
+
+    IQueryable<MonitorAction> GetMonitorActionsQuery();
+
+    IQueryable<MonitorAlert?> GetMonitorAlert(int id);
+
+    IQueryable<MonitorAlert> GetMonitorAlerts(GetMonitorsAlertsRequest request);
+
+    Task<int> GetMonitorCount();
+
+    Task<int> GetMonitorCounter(string jobId, int monitorId, TimeSpan maxAlertsPeriod);
+
+    Task<IEnumerable<int>> GetMonitorCounterIds();
+
+    Task<IEnumerable<string>> GetMonitorCounterJobIds();
+
+    Task<IEnumerable<MonitorCounter>> GetMonitorCounters(int limit);
+
+    Task<int> GetMonitorEventId(int monitorId);
+
+    Task<IEnumerable<MonitorMute>> GetMonitorMutes();
+
+    Task<List<string>> GetMonitorUsedHooks();
+
+    Task IncreaseMonitorCounter(string jobId, int monitorId);
+
+    Task<bool> IsMonitorCounterExists(string jobId, int monitorId);
+
+    Task<bool> IsMonitorExists(int id);
+
+    Task<bool> IsMonitorExists(MonitorAction monitor);
+
+    Task<bool> IsMonitorExists(MonitorAction monitor, int currentUpdateId);
+
+    Task<bool> IsMonitorHookExists(string name);
+
+    Task<bool> IsMonitorMuted(string jobId, int monitorId);
+
+    Task ResetMonitorCounter(int delta);
+
+    Task<int> SumEffectedRowsForJob(string jobId, DateTime since);
+
+    Task UnMute();
+
+    Task UnMute(int monitorId);
+
+    Task UnMute(string jobId);
+
+    Task UnMute(string jobId, int monitorId);
+
+    Task UpdateMonitorAction(MonitorAction monitor);
+}
+
+public class MonitorDataSqlite(PlanarContext context) : MonitorData(context), IMonitorData
+{
+}
+
+public class MonitorDataSqlServer(PlanarContext context) : MonitorData(context), IMonitorData
+{
+}
+
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1862:Use the 'StringComparison' method overloads to perform case-insensitive string comparisons", Justification = "EF Core")]
-public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonitorDurationDataLayer
+public class MonitorData(PlanarContext context) : BaseDataLayer(context)
 {
     public async Task AddMonitor(MonitorAction request)
     {
@@ -24,6 +123,12 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
     public async Task AddMonitorCounter(MonitorCounter counter)
     {
         _context.MonitorCounters.Add(counter);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task AddMonitorHook(MonitorHook monitorHook)
+    {
+        _context.MonitorHooks.Add(monitorHook);
         await _context.SaveChangesAsync();
     }
 
@@ -40,37 +145,26 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
         });
     }
 
-    public async Task<int> CountFailsInHourForJob(object parameters)
+    public async Task<int> CountFailsInHourForJob(string jobId, int hours)
     {
-        var cmd = new CommandDefinition(
-            commandText: "dbo.CountFailsInHourForJob",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
+        var referenceDate = DateTime.Now.Date.AddHours(-hours);
 
-        var data = await DbConnection.QuerySingleAsync<int>(cmd);
-        return data;
-    }
-
-    public async Task<int> SumEffectedRowsForJob(string jobId, DateTime since)
-    {
         var result = await _context.JobInstanceLogs
-            .AsNoTracking()
-            .Where(l => l.JobId == jobId && l.StartDate >= since)
-            .Select(l => l.EffectedRows.GetValueOrDefault())
-            .SumAsync();
-
+            .Where(j => j.JobId == jobId && j.Status == 1 && j.EndDate > referenceDate)
+            .CountAsync();
         return result;
     }
 
-    public async Task<int> CountFailsInRowForJob(object parameters)
+    public async Task<int> CountFailsInRowForJob(string jobId, int total)
     {
-        var cmd = new CommandDefinition(
-            commandText: "dbo.CountFailsInRowForJob",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
+        var sum = await _context.JobInstanceLogs
+            .Where(l => l.JobId == jobId)
+            .OrderByDescending(l => l.Id)
+            .Select(l => new { Status = l.Status == 1 ? 1 : 0 })
+            .Take(total)
+            .SumAsync(x => x.Status);
 
-        var data = await DbConnection.QuerySingleAsync<int>(cmd);
-        return data;
+        return sum;
     }
 
     public async Task<int> DeleteMonitor(MonitorAction request)
@@ -112,11 +206,46 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
             .ExecuteDeleteAsync();
     }
 
+    public async Task<int> DeleteMonitorHook(string name)
+    {
+        var result = await _context.MonitorHooks
+            .Where(m => m.Name == name)
+            .ExecuteDeleteAsync();
+
+        return result;
+    }
+
     public async Task DeleteOldMonitorMutes()
     {
         await _context.MonitorMutes
            .Where(m => m.DueDate <= DateTime.Now)
            .ExecuteDeleteAsync();
+    }
+
+    public async Task<IEnumerable<MonitorHook>> GetAllMonitorHooks()
+    {
+        return await _context.MonitorHooks
+            .OrderBy(h => h.Name)
+            .ToListAsync();
+    }
+
+    public async Task<List<MonitorCacheItem>> GetDurationMonitorActions()
+    {
+        var result = await _context.MonitorActions
+            .AsNoTracking()
+            .Where(m =>
+                m.EventId == (int)MonitorEvents.ExecutionDurationGreaterThanxMinutes &&
+                m.Active
+            )
+            .Select(m => new MonitorCacheItem
+            {
+                EventArgument = m.EventArgument,
+                JobGroup = m.JobGroup,
+                JobName = m.JobName
+            })
+            .ToListAsync();
+
+        return result;
     }
 
     public async Task<MonitorAction?> GetMonitorAction(int id)
@@ -135,17 +264,6 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
             .ToListAsync();
 
         return count;
-    }
-
-    public IQueryable<MonitorAction> GetMonitorActionsQuery()
-    {
-        return _context.MonitorActions
-            .AsNoTracking()
-            .Include(i => i.Group)
-            .OrderByDescending(d => d.Active)
-            .ThenBy(d => d.JobGroup)
-            .ThenBy(d => d.JobName)
-            .ThenBy(d => d.Title);
     }
 
     public async Task<IEnumerable<MonitorAction>> GetMonitorActions()
@@ -190,23 +308,15 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
         return result;
     }
 
-    public async Task<List<MonitorCacheItem>> GetDurationMonitorActions()
+    public IQueryable<MonitorAction> GetMonitorActionsQuery()
     {
-        var result = await _context.MonitorActions
+        return _context.MonitorActions
             .AsNoTracking()
-            .Where(m =>
-                m.EventId == (int)MonitorEvents.ExecutionDurationGreaterThanxMinutes &&
-                m.Active
-            )
-            .Select(m => new MonitorCacheItem
-            {
-                EventArgument = m.EventArgument,
-                JobGroup = m.JobGroup,
-                JobName = m.JobName
-            })
-            .ToListAsync();
-
-        return result;
+            .Include(i => i.Group)
+            .OrderByDescending(d => d.Active)
+            .ThenBy(d => d.JobGroup)
+            .ThenBy(d => d.JobName)
+            .ThenBy(d => d.Title);
     }
 
     public IQueryable<MonitorAlert?> GetMonitorAlert(int id)
@@ -328,6 +438,30 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
         return result;
     }
 
+    public async Task<IEnumerable<MonitorCounter>> GetMonitorCounters(int limit)
+    {
+        var outer = _context.MonitorCounters
+            .AsNoTracking()
+            .Where(c => c.Counter >= limit);
+
+        var inner = _context.MonitorActions.AsNoTracking();
+
+        return await outer.Join(inner,
+                mutes => mutes.MonitorId,
+                monitor => monitor.Id,
+                (mute, monitor) => new MonitorCounter
+                {
+                    LastUpdate = mute.LastUpdate,
+                    JobId = mute.JobId,
+                    MonitorId = mute.MonitorId,
+                    MonitorTitle = monitor.Title
+                })
+
+            .OrderBy(c => c.LastUpdate)
+            .Take(1000)
+            .ToListAsync();
+    }
+
     public async Task<int> GetMonitorEventId(int monitorId)
     {
         return await _context.MonitorActions
@@ -361,30 +495,6 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<MonitorCounter>> GetMonitorCounters(int limit)
-    {
-        var outer = _context.MonitorCounters
-            .AsNoTracking()
-            .Where(c => c.Counter >= limit);
-
-        var inner = _context.MonitorActions.AsNoTracking();
-
-        return await outer.Join(inner,
-                mutes => mutes.MonitorId,
-                monitor => monitor.Id,
-                (mute, monitor) => new MonitorCounter
-                {
-                    LastUpdate = mute.LastUpdate,
-                    JobId = mute.JobId,
-                    MonitorId = mute.MonitorId,
-                    MonitorTitle = monitor.Title
-                })
-
-            .OrderBy(c => c.LastUpdate)
-            .Take(1000)
-            .ToListAsync();
-    }
-
     public async Task<List<string>> GetMonitorUsedHooks()
     {
         return await _context.MonitorActions.Select(m => m.Hook).Distinct().ToListAsync();
@@ -392,13 +502,17 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
 
     public async Task IncreaseMonitorCounter(string jobId, int monitorId)
     {
-        var parameters = new { JobId = jobId, MonitorId = monitorId };
-        var cmd = new CommandDefinition(
-            commandText: "dbo.IncreaseMonitorCounter",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
-
-        await DbConnection.ExecuteAsync(cmd);
+        var strategy = _context.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            await _context.MonitorCounters
+                .Where(m => m.JobId == jobId && m.MonitorId == monitorId)
+                .ExecuteUpdateAsync(u => u
+                    .SetProperty(p => p.Counter, p => p.Counter + 1)
+                    .SetProperty(p => p.LastUpdate, DateTime.Now));
+            await tran.CommitAsync();
+        });
     }
 
     public async Task<bool> IsMonitorCounterExists(string jobId, int monitorId)
@@ -432,6 +546,12 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
         return await _context.MonitorActions.AnyAsync(m => m.Id == id);
     }
 
+    public async Task<bool> IsMonitorHookExists(string name)
+    {
+        return await _context.MonitorHooks
+            .AnyAsync(m => m.Name == name);
+    }
+
     public async Task<bool> IsMonitorMuted(string jobId, int monitorId)
     {
         var result = await _context.MonitorMutes
@@ -452,13 +572,29 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
 
     public async Task ResetMonitorCounter(int delta)
     {
-        var parameters = new { Delta = delta };
-        var cmd = new CommandDefinition(
-            commandText: "dbo.ResetMonitorCounter",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
+        var referenceDate = DateTime.Now.AddMinutes(-delta);
+        var strategy = _context.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+            await _context.MonitorCounters
+                .Where(m => m.LastUpdate < referenceDate)
+                .ExecuteUpdateAsync(u => u
+                    .SetProperty(p => p.Counter, 0)
+                    .SetProperty(p => p.LastUpdate, DateTime.Now));
+            await tran.CommitAsync();
+        });
+    }
 
-        await DbConnection.ExecuteAsync(cmd);
+    public async Task<int> SumEffectedRowsForJob(string jobId, DateTime since)
+    {
+        var result = await _context.JobInstanceLogs
+            .AsNoTracking()
+            .Where(l => l.JobId == jobId && l.StartDate >= since)
+            .Select(l => l.EffectedRows.GetValueOrDefault())
+            .SumAsync();
+
+        return result;
     }
 
     public async Task UnMute(string jobId, int monitorId)
@@ -513,33 +649,5 @@ public class MonitorData(PlanarContext context) : BaseDataLayer(context), IMonit
     {
         _context.MonitorActions.Update(monitor);
         await _context.SaveChangesAsync();
-    }
-
-    public async Task<IEnumerable<MonitorHook>> GetAllMonitorHooks()
-    {
-        return await _context.MonitorHooks
-            .OrderBy(h => h.Name)
-            .ToListAsync();
-    }
-
-    public async Task AddMonitorHook(MonitorHook monitorHook)
-    {
-        _context.MonitorHooks.Add(monitorHook);
-        await _context.SaveChangesAsync();
-    }
-
-    public async Task<int> DeleteMonitorHook(string name)
-    {
-        var result = await _context.MonitorHooks
-            .Where(m => m.Name == name)
-            .ExecuteDeleteAsync();
-
-        return result;
-    }
-
-    public async Task<bool> IsMonitorHookExists(string name)
-    {
-        return await _context.MonitorHooks
-            .AnyAsync(m => m.Name == name);
     }
 }

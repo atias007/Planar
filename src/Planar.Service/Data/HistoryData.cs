@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Data;
 
-public interface IHistoryData
+public interface IHistoryData : IBaseDataLayer
 {
     Task<int> ClearJobLogTable(int overDays);
 
@@ -81,7 +81,7 @@ public class HistoryDataSqlite(PlanarContext context) : HistoryData(context), IH
     public async Task<HistoryStatusDto?> GetHistoryCounter(CounterRequest counterRequest)
     {
         var definition = new CommandDefinition(
-            commandText: SqliteResource.GetScript("Statistics_StatusCounter"),
+            commandText: SqliteResource.GetScript("StatusCounter"),
             parameters: counterRequest,
             commandType: CommandType.Text);
 

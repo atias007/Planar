@@ -18,7 +18,7 @@ using System.Transactions;
 namespace Planar.Service.API;
 
 public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseLazyBL<TDomain, TData>(serviceProvider)
-    where TData : BaseDataLayer
+    where TData : IBaseDataLayer
 
 {
     protected struct DataCommandDto

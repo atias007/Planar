@@ -8,7 +8,7 @@ namespace Planar.Startup;
 
 public static class DatabaseMigrationInitializer
 {
-    private static readonly IExecuter _executer = MigrationFactory.CreateExecuter(AppSettings.Database.Provider);
+    private static readonly IExecuter _executer = DbFactory.CreateDbMigrationExecuter(AppSettings.Database.ProviderName);
 
     private static void HandleError(Exception ex)
     {

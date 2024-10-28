@@ -81,7 +81,7 @@ namespace Planar.Service.Reports
         private async Task<TraceStatusDto> GetTraceCounters(DateScope dateScope)
         {
             using var scope = ServiceScope.CreateScope();
-            var traceData = scope.ServiceProvider.GetRequiredService<TraceData>();
+            var traceData = scope.ServiceProvider.GetRequiredService<ITraceData>();
             var counterRequest = new CounterRequest
             {
                 FromDate = dateScope.From,
@@ -93,7 +93,7 @@ namespace Planar.Service.Reports
         private async Task<IEnumerable<LogDetails>> GetTrace(DateScope dateScope)
         {
             using var scope = ServiceScope.CreateScope();
-            var traceData = scope.ServiceProvider.GetRequiredService<TraceData>();
+            var traceData = scope.ServiceProvider.GetRequiredService<ITraceData>();
             var request = new GetTraceRequest
             {
                 PageNumber = 1,

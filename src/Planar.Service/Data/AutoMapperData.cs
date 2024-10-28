@@ -4,6 +4,21 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Data;
 
+public interface IAutoMapperData : IBaseDataLayer
+{
+    Task<int> GetGroupId(string name);
+
+    Task<string?> GetGroupName(int id);
+}
+
+public class AutoMapperDataSqlite(PlanarContext context) : AutoMapperData(context), IAutoMapperData
+{
+}
+
+public class AutoMapperDataSqlServer(PlanarContext context) : AutoMapperData(context), IAutoMapperData
+{
+}
+
 public class AutoMapperData(PlanarContext context) : BaseDataLayer(context)
 {
     public async Task<int> GetGroupId(string name)

@@ -1,10 +1,8 @@
 ﻿using FluentValidation;
-using Microsoft.Identity.Client;
 using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
-using Planar.Service.General;
 using Planar.Service.General.Hash;
 using Planar.Service.General.Password;
 using Planar.Service.Model;
@@ -13,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API;
 
-public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomain, UserData>(serviceProvider)
+public class UserDomain(IServiceProvider serviceProvider) : BaseLazyBL<UserDomain, IUserData>(serviceProvider)
 {
     public async Task<AddUserResponse> Add(AddUserRequest request)
     {

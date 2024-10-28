@@ -24,7 +24,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API;
 
-public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<JobDomain, JobData>(serviceProvider)
+public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<JobDomain, IJobData>(serviceProvider)
 {
     private static TimeSpan _longPullingSpan = TimeSpan.FromMinutes(5);
 

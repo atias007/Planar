@@ -187,55 +187,41 @@ CREATE TABLE [ClusterNodes](
 	[JoinDate] [datetime] NOT NULL,
 	[HealthCheckDate] [datetime] NOT NULL,
 	[MaxConcurrency] [int] NOT NULL,
- CONSTRAINT [PK_ClusterNodes] PRIMARY KEY  
-(
-	[Server] ASC,
-	[Port] ASC
-),
- CONSTRAINT [IX_ClusterNodes] UNIQUE  
-(
-	[InstanceId] ASC
-));
-
+    PRIMARY KEY  ([Server],[Port]),
+    CONSTRAINT [IX_ClusterNodes] UNIQUE ([InstanceId] ASC)
+	);
 
 CREATE TABLE [GlobalConfig](
 	[Key] [nvarchar](50) NOT NULL,
 	[Value] [nvarchar](4000) NULL,
 	[Type] [varchar](10) NOT NULL,
- CONSTRAINT [PK_GlobalConfig] PRIMARY KEY  
-(
-	[Key] ASC
-));
+	PRIMARY KEY ([Key])
+	);
+
 CREATE TABLE [Groups](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Id] [INTEGER] PRIMARY KEY AUTOINCREMENT,
 	[Name] [nvarchar](50) NOT NULL,
 	[AdditionalField1] [nvarchar](500) NULL,
 	[AdditionalField2] [nvarchar](500) NULL,
 	[AdditionalField3] [nvarchar](500) NULL,
 	[AdditionalField4] [nvarchar](500) NULL,
 	[AdditionalField5] [nvarchar](500) NULL,
-	[Role] [varchar](20) NOT NULL,
- CONSTRAINT [PK_Groups] PRIMARY KEY  
-(
-	[Id] ASC
-));
+	[Role] [varchar](20) NOT NULL
+   );
 
 CREATE TABLE [JobAudit](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Id] [INTEGER] PRIMARY KEY AUTOINCREMENT,
 	[JobId] [varchar](20) NOT NULL,
 	[JobKey] [varchar](101) NOT NULL,
 	[DateCreated] [datetime] NOT NULL,
 	[Username] [varchar](50) NOT NULL,
 	[UserTitle] [nvarchar](101) NOT NULL,
 	[Description] [varchar](200) NOT NULL,
-	[AdditionalInfo] [nvarchar](4000) NULL,
- CONSTRAINT [PK_JobAudit] PRIMARY KEY 
-(
-	[Id] ASC
-));
+	[AdditionalInfo] [nvarchar](4000) NULL
+	);
 
 CREATE TABLE [JobInstanceLog](
-	[Id] [bigint] IDENTITY(1,1) NOT NULL,
+	[Id] [INTEGER] PRIMARY KEY AUTOINCREMENT,
 	[InstanceId] [varchar](250) NOT NULL,
 	[JobId] [varchar](20) NOT NULL,
 	[JobName] [varchar](50) NOT NULL,
@@ -258,22 +244,17 @@ CREATE TABLE [JobInstanceLog](
 	[Retry] [bit] NOT NULL,
 	[IsCanceled] [bit] NOT NULL DEFAULT 0,
 	[Anomaly] [tinyint] NULL,
-	[HasWarnings] [bit] NOT NULL DEFAULT 0,
- CONSTRAINT [PK_JobInstanceLog] PRIMARY KEY  
-(
-	[Id] ASC
-));
+	[HasWarnings] [bit] NOT NULL DEFAULT 0
+	);
 
 CREATE TABLE [JobProperties](
 	[JobId] [varchar](20) NOT NULL,
 	[Properties] [nvarchar] NULL,
- CONSTRAINT [PK_JobProperties] PRIMARY KEY  
-(
-	[JobId] ASC
-));
+    PRIMARY KEY ([JobId])
+ );
 
 CREATE TABLE [MonitorActions](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Id] [INTEGER] PRIMARY KEY AUTOINCREMENT,
 	[Title] [nvarchar](50) NOT NULL,
 	[EventId] [int] NOT NULL,
 	[EventArgument] [varchar](50) NULL,
@@ -282,14 +263,11 @@ CREATE TABLE [MonitorActions](
 	[GroupId] [int] NOT NULL,
 	[Hook] [varchar](50) NOT NULL,
 	[Active] [bit] NOT NULL DEFAULT 1,
-    FOREIGN KEY(GroupId) REFERENCES Groups(Id),
- CONSTRAINT [PK_Monitor] PRIMARY KEY 
-(
-	[Id] ASC
-));
+    FOREIGN KEY(GroupId) REFERENCES Groups(Id)
+	);
 
 CREATE TABLE [MonitorAlerts](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Id] [INTEGER] PRIMARY KEY AUTOINCREMENT,
 	[MonitorId] [int] NOT NULL,
 	[MonitorTitle] [nvarchar](50) NOT NULL,
 	[EventId] [int] NOT NULL,
@@ -306,69 +284,51 @@ CREATE TABLE [MonitorAlerts](
 	[HasError] [bit] NOT NULL,
 	[AlertDate] [datetime] NOT NULL,
 	[Exception] [nvarchar] NULL,
-	[AlertPayload] [nvarchar] NULL,
- CONSTRAINT [PK_MonitorAlerts] PRIMARY KEY  
-(
-	[Id] ASC
-));
+	[AlertPayload] [nvarchar] NULL
+	);
 
 CREATE TABLE [MonitorCounters](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Id] [INTEGER] PRIMARY KEY AUTOINCREMENT,
 	[MonitorId] [int] NOT NULL,
 	[JobId] [varchar](20) NOT NULL,
 	[Counter] [int] NOT NULL,
-	[LastUpdate] [datetime] NULL,
- CONSTRAINT [PK_MonitorCounter] PRIMARY KEY 
-(
-	[Id] ASC
-));
+	[LastUpdate] [datetime] NULL
+	);
 
 CREATE TABLE [MonitorHooks](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Id] [INTEGER] PRIMARY KEY AUTOINCREMENT,
 	[Name] [nvarchar](50) NOT NULL,
 	[Description] [nvarchar](2000) NOT NULL,
-	[Path] [nvarchar](1000) NOT NULL,
- CONSTRAINT [PK_MonitorHooks] PRIMARY KEY 
-(
-	[Id] ASC
-));
+	[Path] [nvarchar](1000) NOT NULL
+	);
 
 CREATE TABLE [MonitorMute](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Id] [INTEGER] PRIMARY KEY AUTOINCREMENT,
 	[JobId] [varchar](20) NULL,
 	[MonitorId] [int] NULL,
-	[DueDate] [datetime] NULL,
- CONSTRAINT [PK_MonitorMute] PRIMARY KEY  
-(
-	[Id] ASC
-));
+	[DueDate] [datetime] NULL
+	);
 
 CREATE TABLE [SecurityAudits](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Id] [INTEGER] PRIMARY KEY AUTOINCREMENT,
 	[Title] [nvarchar](500) NOT NULL,
 	[Username] [varchar](50) NOT NULL,
 	[UserTitle] [nvarchar](101) NOT NULL,
 	[DateCreated] [datetime] NOT NULL,
-	[IsWarning] [bit] NOT NULL,
- CONSTRAINT [PK_SecurityAudits] PRIMARY KEY 
-(
-	[Id] ASC
-));
+	[IsWarning] [bit] NOT NULL
+	);
 
 CREATE TABLE [Trace](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Id] [INTEGER] PRIMARY KEY AUTOINCREMENT,
 	[Message] [nvarchar] NULL,
 	[Level] [nvarchar](128) NULL,
 	[TimeStamp] [datetimeoffset](7) NOT NULL,
 	[Exception] [nvarchar] NULL,
-	[LogEvent] [nvarchar] NULL,
- CONSTRAINT [PK_Log] PRIMARY KEY 
-(
-	[Id] ASC
-));
+	[LogEvent] [nvarchar] NULL
+	);
 
 CREATE TABLE [Users](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Id] [INTEGER] PRIMARY KEY AUTOINCREMENT,
 	[Username] [varchar](50) NOT NULL,
 	[Password] [varbinary](128) NOT NULL,
 	[Salt] [varbinary](128) NOT NULL,
@@ -386,80 +346,58 @@ CREATE TABLE [Users](
 	[AdditionalField3] [nvarchar](500) NULL,
 	[AdditionalField4] [nvarchar](500) NULL,
 	[AdditionalField5] [nvarchar](500) NULL,
- CONSTRAINT [PK_Users] PRIMARY KEY  
-(
-	[Id] ASC
-),
- CONSTRAINT [IX_Users] UNIQUE  
-(
-	[Username] ASC
-));
+    CONSTRAINT [IX_Users] UNIQUE ([Username] ASC)
+	);
 
 CREATE TABLE [UsersToGroups](
 	[UserId] [int] NOT NULL,
 	[GroupId] [int] NOT NULL,
     FOREIGN KEY(UserId) REFERENCES Users(Id),
     FOREIGN KEY(GroupId) REFERENCES Groups(Id),
- CONSTRAINT [PK_UsersToGroups] PRIMARY KEY  
-(
-	[UserId] ASC,
-	[GroupId] ASC
-));
+	PRIMARY KEY ([UserId],[GroupId])
+	);
 
-CREATE TABLE [Statistics_ConcurrentExecution](
-	[Id] [bigint] IDENTITY(1,1) NOT NULL,
+CREATE TABLE [ConcurrentExecution](
+	[Id] [INTEGER] PRIMARY KEY AUTOINCREMENT,
 	[RecordDate] [datetime] NOT NULL,
 	[Server] [nvarchar](100) NOT NULL,
 	[InstanceId] [nvarchar](100) NOT NULL,
-	[MaxConcurrent] [int] NOT NULL,
- CONSTRAINT [PK_ConcurentExecution] PRIMARY KEY  
-(
-	[Id] ASC
-));
+	[MaxConcurrent] [int] NOT NULL
+	);
 
-CREATE TABLE [Statistics_ConcurrentQueue](
-	[Id] [bigint] IDENTITY(1,1) NOT NULL,
+CREATE TABLE [ConcurrentQueue](
+	[Id] [INTEGER] PRIMARY KEY AUTOINCREMENT,
 	[RecordDate] [datetime] NOT NULL,
 	[Server] [nvarchar](100) NOT NULL,
 	[InstanceId] [nvarchar](100) NOT NULL,
-	[ConcurrentValue] [int] NOT NULL,
- CONSTRAINT [PK_ConcurentQueue] PRIMARY KEY  
-(
-	[Id] ASC
-));
+	[ConcurrentValue] [int] NOT NULL
+	);
 
-CREATE TABLE [Statistics_JobCounters](
-	[Id] [int] IDENTITY(1,1) NOT NULL,
+CREATE TABLE [JobCounters](
+	[Id] [INTEGER] PRIMARY KEY AUTOINCREMENT,
 	[JobId] [varchar](20) NOT NULL,
 	[RunDate] [date] NOT NULL,
 	[TotalRuns] [int] NOT NULL,
 	[SuccessRetries] [int] NULL,
 	[FailRetries] [int] NULL,
-	[Recovers] [int] NULL,
- CONSTRAINT [PK_JobCounters] PRIMARY KEY  
-(
-	[Id] ASC
-));
+	[Recovers] [int] NULL
+	);
 
-CREATE TABLE [Statistics_JobDurationStatistics](
+CREATE TABLE [JobDurationStatistics](
 	[JobId] [varchar](20) NOT NULL,
 	[AvgDuration] [numeric](18, 4) NOT NULL,
 	[StdevDuration] [numeric](18, 4) NOT NULL,
 	[Rows] [int] NOT NULL,
- CONSTRAINT [PK_JobDurationStatistics] PRIMARY KEY  
-(
-	[JobId] ASC
-));
+    PRIMARY KEY ([JobId])
+	);
 
-CREATE TABLE [Statistics_JobEffectedRowsStatistics](
+CREATE TABLE [JobEffectedRowsStatistics](
 	[JobId] [varchar](20) NOT NULL,
 	[AvgEffectedRows] [numeric](18, 4) NOT NULL,
 	[StdevEffectedRows] [numeric](18, 4) NOT NULL,
 	[Rows] [int] NOT NULL,
- CONSTRAINT [PK_JobEffectedRowsStatistics] PRIMARY KEY  
-(
-	[JobId] ASC
-));
+    PRIMARY KEY ([JobId])
+ );
 
 CREATE UNIQUE INDEX [IX_Groups] ON [Groups]
 (
@@ -542,7 +480,7 @@ CREATE UNIQUE INDEX [IX_MonitorMute] ON [MonitorMute]
 	[MonitorId] ASC
 );
 
-CREATE UNIQUE INDEX [IX_JobCounters] ON [Statistics_JobCounters]
+CREATE UNIQUE INDEX [IX_JobCounters] ON [JobCounters]
 (
 	[RunDate] ASC,
 	[JobId] ASC

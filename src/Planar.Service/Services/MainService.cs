@@ -308,7 +308,7 @@ public class MainService : BackgroundService
         services.AddPlanarDataLayerWithContext();
         var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
-        var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
+        var dal = scope.ServiceProvider.GetRequiredService<IClusterData>();
         await dal.RemoveClusterNode(cluster);
 
         if (!AppSettings.Cluster.Clustering) { return; }

@@ -120,7 +120,7 @@ namespace Planar.Service.Reports
         private async Task<int> GetMaxConcurrentExecutionData(DateScope dateScope)
         {
             using var scope = ServiceScope.CreateScope();
-            var metricsData = scope.ServiceProvider.GetRequiredService<MetricsData>();
+            var metricsData = scope.ServiceProvider.GetRequiredService<IMetricsData>();
             var request = new MaxConcurrentExecutionRequest
             {
                 FromDate = dateScope.From,

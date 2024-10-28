@@ -16,7 +16,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API;
 
-public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigDomain, ConfigData>(serviceProvider)
+public class ConfigDomain(IServiceProvider serviceProvider) : BaseLazyBL<ConfigDomain, IConfigData>(serviceProvider)
 {
     public async Task Delete(string key)
     {

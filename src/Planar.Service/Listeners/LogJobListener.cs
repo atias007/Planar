@@ -207,7 +207,7 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
             RecordDate = DateTimeOffset.Now.DateTime
         };
 
-        await ExecuteDal<MetricsData>(d => d.AddCocurentQueueItem(item));
+        await ExecuteDal<IMetricsData>(d => d.AddCocurentQueueItem(item));
     }
 
     private async Task FillAnomaly(DbJobInstanceLog item)
@@ -237,8 +237,8 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
 
     private async Task<JobStatistics> GetJobStatisticsRaw()
     {
-        var durationStatistics = await ExecuteDal<MetricsData, IEnumerable<JobDurationStatistic>>(d => d.GetJobDurationStatistics());
-        var effectedStatistics = await ExecuteDal<MetricsData, IEnumerable<JobEffectedRowsStatistic>>(d => d.GetJobEffectedRowsStatistics());
+        var durationStatistics = await ExecuteDal<IMetricsData, IEnumerable<JobDurationStatistic>>(d => d.GetJobDurationStatistics());
+        var effectedStatistics = await ExecuteDal<IMetricsData, IEnumerable<JobEffectedRowsStatistic>>(d => d.GetJobEffectedRowsStatistics());
         return new JobStatistics
         {
             JobDurationStatistics = durationStatistics,
@@ -248,8 +248,8 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
 
     private async Task<JobStatistics> GetJobStatistics()
     {
-        var durationKey = nameof(MetricsData.GetJobDurationStatistics);
-        var effectedKey = nameof(MetricsData.GetJobEffectedRowsStatistics);
+        var durationKey = nameof(IMetricsData.GetJobDurationStatistics);
+        var effectedKey = nameof(IMetricsData.GetJobEffectedRowsStatistics);
 
         using var scope = ServiceScopeFactory.CreateScope();
         var cache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
@@ -257,14 +257,14 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
         var exists = cache.TryGetValue<IEnumerable<JobDurationStatistic>>(durationKey, out var durationStatistics);
         if (!exists || durationStatistics == null)
         {
-            durationStatistics = await ExecuteDal<MetricsData, IEnumerable<JobDurationStatistic>>(d => d.GetJobDurationStatistics());
+            durationStatistics = await ExecuteDal<IMetricsData, IEnumerable<JobDurationStatistic>>(d => d.GetJobDurationStatistics());
             cache.Set(durationKey, durationStatistics, StatisticsUtil.DefaultCacheSpan);
         }
 
         exists = cache.TryGetValue<IEnumerable<JobEffectedRowsStatistic>>(effectedKey, out var effectedStatistics);
         if (!exists || effectedStatistics == null)
         {
-            effectedStatistics = await ExecuteDal<MetricsData, IEnumerable<JobEffectedRowsStatistic>>(d => d.GetJobEffectedRowsStatistics());
+            effectedStatistics = await ExecuteDal<IMetricsData, IEnumerable<JobEffectedRowsStatistic>>(d => d.GetJobEffectedRowsStatistics());
             cache.Set(effectedKey, effectedStatistics, StatisticsUtil.DefaultCacheSpan);
         }
 

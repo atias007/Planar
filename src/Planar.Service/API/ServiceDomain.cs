@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API;
 
-public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<ServiceDomain, ServiceData>(serviceProvider)
+public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<ServiceDomain, IServiceData>(serviceProvider)
 {
     public string GetServiceVersion()
     {
@@ -149,7 +149,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
             throw new RestValidationException("password", "password is required");
         }
 
-        var userData = Resolve<UserData>();
+        var userData = Resolve<IUserData>();
         var user = await userData.GetUserIdentity(request.Username);
         if (user == null)
         {

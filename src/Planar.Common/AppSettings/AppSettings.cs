@@ -62,6 +62,7 @@ public static class AppSettings
         // Database
         Database.Provider = GetSettings(configuration, EC.DatabaseProviderVariableKey, "database", "provider", "Sqlite");
         Database.RunMigration = GetSettings(configuration, EC.RunDatabaseMigrationVariableKey, "database", "run migration", true);
+        DbFactory.SetDatabaseProvider();
 
         // General
         General.InstanceId = GetSettings(configuration, EC.InstanceIdVariableKey, "general", "instance id", "AUTO");
@@ -306,8 +307,7 @@ public static class AppSettings
 
     public static void TestDatabasePermission()
     {
-        var provider = Database.Provider.ToLower();
-        if (provider == "sqlite") { return; }
+        if (!Database.ProviderHasPermissions) { return; }
 
         try
         {
@@ -355,7 +355,7 @@ public static class AppSettings
                 .ExecuteAsync(async () =>
                 {
                     Console.WriteLine($"    - Attemp no {counter++} to connect to database");
-                    await OpenDbConnection();
+                    await DbFactory.OpenDbConnection();
                 });
 
             Console.WriteLine($"    - Connection database success");
@@ -371,21 +371,6 @@ public static class AppSettings
             sb.AppendLine("exception message:");
             sb.AppendLine(ex.Message);
             throw new AppSettingsException(sb.ToString());
-        }
-    }
-
-    private static async Task OpenDbConnection()
-    {
-        var provider = Database.Provider.ToLower();
-        if (provider == "sqlite")
-        {
-            await using var conn = new SqliteConnection(Database.ConnectionString);
-            await conn.OpenAsync();
-        }
-        else if (provider == "sqlserver")
-        {
-            await using var conn = new SqlConnection(Database.ConnectionString);
-            await conn.OpenAsync();
         }
     }
 

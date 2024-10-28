@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Planar.API.Common.Entities;
+using Planar.Service.Data.Scripts.Sqlite;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using System.Collections.Generic;
@@ -9,6 +10,43 @@ using System.Linq;
 using System.Threading.Tasks;
 
 namespace Planar.Service.Data;
+
+public interface IUserData : IBaseDataLayer
+{
+    Task<User> AddUser(User user);
+
+    Task<List<EntityTitle>> GetGroupsForUser(int id);
+
+    Task<User?> GetUser(int id, bool withTracking = false);
+
+    Task<User?> GetUser(string username, bool withTracking = false);
+
+    Task<int> GetUserId(string username);
+
+    Task<UserIdentity?> GetUserIdentity(string username);
+
+    Task<string?> GetUserRole(int id);
+
+    Task<string?> GetUserRole(string username);
+
+    IQueryable<User> GetUsers();
+
+    Task<bool> IsUserExists(int userId);
+
+    Task<bool> IsUsernameExists(string? username);
+
+    Task<bool> IsUsernameExists(string? username, string ignoreUsername);
+
+    Task<int> RemoveUser(string username);
+
+    Task UpdateUser(User user);
+}
+
+public class UserDataSqlite(PlanarContext context) : UserData(context), IUserData
+{ }
+
+public class UserDataSqlServer(PlanarContext context) : UserData(context), IUserData
+{ }
 
 public class UserData(PlanarContext context) : BaseDataLayer(context)
 {
@@ -113,13 +151,24 @@ public class UserData(PlanarContext context) : BaseDataLayer(context)
 
     public async Task<int> RemoveUser(string username)
     {
-        var parameters = new { Username = username };
-        var cmd = new CommandDefinition(
-            commandText: "dbo.DeleteUser",
-            commandType: CommandType.StoredProcedure,
-            parameters: parameters);
+        const string deleteQuery = "DELETE FROM UsersToGroups WHERE UserId = @Id";
+        var id = await GetUserId(username);
+        var result = 0;
+        var strategy = _context.Database.CreateExecutionStrategy();
+        await strategy.ExecuteAsync(async () =>
+        {
+            using var tran = await _context.Database.BeginTransactionAsync(IsolationLevel.ReadUncommitted);
+            var definition = new CommandDefinition(
+                commandText: deleteQuery,
+                parameters: new { Id = id },
+                commandType: CommandType.Text);
 
-        return await DbConnection.ExecuteAsync(cmd);
+            await DbConnection.ExecuteAsync(definition);
+            result = await _context.Users.Where(u => u.Username == username).ExecuteDeleteAsync();
+            await tran.CommitAsync();
+        });
+
+        return result;
     }
 
     public async Task<bool> IsUserExists(int userId)

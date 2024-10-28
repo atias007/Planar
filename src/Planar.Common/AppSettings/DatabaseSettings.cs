@@ -1,9 +1,18 @@
-﻿namespace Planar.Common
+﻿namespace Planar.Common;
+
+public enum DbProviders
 {
-    public class DatabaseSettings
-    {
-        public string? ConnectionString { get; set; }
-        public string Provider { get; set; } = string.Empty;
-        public bool RunMigration { get; set; }
-    }
+    Unknown,
+    SqlServer,
+    Sqlite
+}
+
+public class DatabaseSettings
+{
+    public string? ConnectionString { get; set; }
+    public string Provider { get; set; } = string.Empty;
+    public DbProviders ProviderName { get; set; }
+    public bool RunMigration { get; set; }
+
+    public bool ProviderHasPermissions { get; set; }
 }

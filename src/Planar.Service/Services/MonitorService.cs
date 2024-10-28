@@ -317,7 +317,7 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         if (context == null) { return false; } // analyze only for job execution (not for system execution)
 
         using var scope = serviceScopeFactory.CreateScope();
-        var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
+        var dal = scope.ServiceProvider.GetRequiredService<IMonitorData>();
         var args = GetAndValidateArgs(action);
         args.JobId = JobKeyHelper.GetJobId(context.JobDetail);
         if (!args.Handle || args.Args == null) { return false; }
@@ -329,12 +329,12 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
 
             case MonitorEvents.ExecutionFailxTimesInRow:
                 if (args.JobId == null) { return false; }
-                var count1 = await dal.CountFailsInRowForJob(new { args.JobId, Total = args.Args[0] });
+                var count1 = await dal.CountFailsInRowForJob(args.JobId, args.Args[0]);
                 return count1 >= args.Args[0];
 
             case MonitorEvents.ExecutionFailxTimesInyHours:
                 if (args.JobId == null) { return false; }
-                var count2 = await dal.CountFailsInHourForJob(new { args.JobId, Hours = args.Args[1] });
+                var count2 = await dal.CountFailsInHourForJob(args.JobId, args.Args[1]);
                 return count2 >= args.Args[0];
 
             case MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanx:

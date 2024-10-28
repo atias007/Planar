@@ -68,7 +68,7 @@ namespace Planar.Service.Services
             var title = $"{givenNameClaim} {surnameClaim}"?.Trim();
 
             using var scope = _serviceScopeFactory.CreateScope();
-            var data = scope.ServiceProvider.GetRequiredService<ServiceData>();
+            var data = scope.ServiceProvider.GetRequiredService<IServiceData>();
             var audit = new SecurityAudit
             {
                 DateCreated = DateTime.Now,

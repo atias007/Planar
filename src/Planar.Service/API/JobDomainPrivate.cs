@@ -62,7 +62,7 @@ public partial class JobDomain
 
     private async Task DeleteJobStatistics(string jobId)
     {
-        var dal = Resolve<MetricsData>();
+        var dal = Resolve<IMetricsData>();
         var s1 = new JobDurationStatistic { JobId = jobId };
         await dal.DeleteJobStatistic(s1);
         var s2 = new JobEffectedRowsStatistic { JobId = jobId };
@@ -71,7 +71,7 @@ public partial class JobDomain
 
     private async Task DeleteMonitorOfJob(JobKey jobKey)
     {
-        var dal = Resolve<MonitorData>();
+        var dal = Resolve<IMonitorData>();
         await dal.DeleteMonitorByJobId(jobKey.Group, jobKey.Name);
         if (!await JobGroupExists(jobKey.Group))
         {

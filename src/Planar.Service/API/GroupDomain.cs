@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API;
 
-public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDomain, GroupData>(serviceProvider)
+public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDomain, IGroupData>(serviceProvider)
 {
     public static IEnumerable<string> GetAllGroupsRoles()
     {
@@ -48,7 +48,7 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         var groupId = await DataLayer.GetGroupId(name);
         if (groupId == 0) { throw new RestNotFoundException($"group '{name}' could not be found"); }
 
-        var userData = Resolve<UserData>();
+        var userData = Resolve<IUserData>();
         var userId = await userData.GetUserId(username);
         if (userId == 0) { throw new RestNotFoundException($"user with username '{username}' could not be found"); }
 
@@ -57,7 +57,7 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
             throw new RestValidationException("username", $"username '{username}' already in group '{name}'");
         }
 
-        var currentUserRole = await Resolve<UserData>().GetUserRole(userId);
+        var currentUserRole = await Resolve<IUserData>().GetUserRole(userId);
         var targetUserRole = await DataLayer.GetGroupRole(name);
         var targetUserRoleValue = RoleHelper.GetRoleValue(targetUserRole);
         var currentUserRoleValue = RoleHelper.GetRoleValue(currentUserRole);
@@ -131,7 +131,7 @@ public class GroupDomain(IServiceProvider serviceProvider) : BaseLazyBL<GroupDom
         var groupId = await DataLayer.GetGroupId(name);
         if (groupId == 0) { throw new RestNotFoundException($"group '{name}' could not be found"); }
 
-        var userData = Resolve<UserData>();
+        var userData = Resolve<IUserData>();
         var userId = await userData.GetUserId(username);
         if (userId == 0) { throw new RestNotFoundException($"user with username '{username}' could not be found"); }
 

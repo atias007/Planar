@@ -139,7 +139,7 @@ public abstract class BaseReportJob(IServiceScopeFactory serviceScope, ILogger l
         }
 
         using var scope = _serviceScope.CreateScope();
-        var groupData = scope.ServiceProvider.GetRequiredService<GroupData>();
+        var groupData = scope.ServiceProvider.GetRequiredService<IGroupData>();
         if (string.IsNullOrEmpty(groupName))
         {
             throw new InvalidOperationException($"distribution group '{groupName}' could not found");

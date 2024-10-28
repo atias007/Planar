@@ -9,6 +9,51 @@ using Group = Planar.Service.Model.Group;
 
 namespace Planar.Service.Data;
 
+public interface IGroupData : IGroupDataLayer, IBaseDataLayer
+{
+    Task AddGroup(Group group);
+
+    Task AddUserToGroup(int userId, int groupId);
+
+    Task<Group?> GetGroup(string name);
+
+    Task<int> GetGroupId(string name);
+
+    Task<string?> GetGroupRole(string name);
+
+    Task<PagingResponse<GroupInfo>> GetGroups(IPagingRequest request);
+
+    Task<Group?> GetGroupWithUsers(int id);
+
+    Task<List<EntityTitle>> GetUsersInGroup(int id);
+
+    Task<bool> IsGroupExists(int groupId);
+
+    Task<bool> IsGroupHasMonitors(int groupId);
+
+    Task<bool> IsGroupHasUsers(int groupId);
+
+    Task<bool> IsGroupNameExists(string? name);
+
+    Task<bool> IsGroupNameExists(string? name, int id);
+
+    Task<bool> IsUserExistsInGroup(int userId, int groupId);
+
+    Task<int> RemoveGroup(int id);
+
+    Task RemoveUserFromGroup(int userId, int groupId);
+
+    Task SetRoleToGroup(int groupId, string role);
+
+    Task UpdateGroup(Group group);
+}
+
+public class GroupDataSqlite(PlanarContext context) : GroupData(context), IGroupData
+{ }
+
+public class GroupDataSqlServer(PlanarContext context) : GroupData(context), IGroupData
+{ }
+
 public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDataLayer
 {
     public async Task AddGroup(Group group)
@@ -38,6 +83,15 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
         return result;
     }
 
+    public async Task<int> GetGroupId(string name)
+    {
+        return await _context.Groups
+            .AsNoTracking()
+            .Where(g => g.Name == name)
+            .Select(g => g.Id)
+            .FirstOrDefaultAsync();
+    }
+
     public async Task<string?> GetGroupRole(string name)
     {
         var result = await _context.Groups
@@ -47,15 +101,6 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
             .FirstOrDefaultAsync();
 
         return result;
-    }
-
-    public async Task<int> GetGroupId(string name)
-    {
-        return await _context.Groups
-            .AsNoTracking()
-            .Where(g => g.Name == name)
-            .Select(g => g.Id)
-            .FirstOrDefaultAsync();
     }
 
     public async Task<PagingResponse<GroupInfo>> GetGroups(IPagingRequest request)
@@ -74,12 +119,39 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
         return result;
     }
 
+    public async Task<IEnumerable<UserForReport>> GetGroupUsers(string name)
+    {
+        var result = await _context.Users
+            .Where(u => u.Groups.Any(g => g.Name == name))
+            .Select(u => new UserForReport
+            {
+                FirstName = u.FirstName,
+                LastName = u.LastName,
+                EmailAddress1 = u.EmailAddress1,
+                EmailAddress2 = u.EmailAddress2,
+                EmailAddress3 = u.EmailAddress3
+            })
+            .ToListAsync();
+
+        return result;
+    }
+
     public async Task<Group?> GetGroupWithUsers(int id)
     {
         var result = await _context.Groups
             .Include(g => g.Users)
             .AsNoTracking()
             .FirstOrDefaultAsync(g => g.Id == id);
+
+        return result;
+    }
+
+    public async Task<List<EntityTitle>> GetUsersInGroup(int id)
+    {
+        var result = await _context.Users
+            .Where(u => u.Groups.Any(g => g.Id == id))
+            .Select(u => new EntityTitle(u.Username, u.FirstName, u.LastName))
+            .ToListAsync();
 
         return result;
     }
@@ -144,32 +216,5 @@ public class GroupData(PlanarContext context) : BaseDataLayer(context), IGroupDa
     {
         _context.Groups.Update(group);
         await _context.SaveChangesAsync();
-    }
-
-    public async Task<IEnumerable<UserForReport>> GetGroupUsers(string name)
-    {
-        var result = await _context.Users
-            .Where(u => u.Groups.Any(g => g.Name == name))
-            .Select(u => new UserForReport
-            {
-                FirstName = u.FirstName,
-                LastName = u.LastName,
-                EmailAddress1 = u.EmailAddress1,
-                EmailAddress2 = u.EmailAddress2,
-                EmailAddress3 = u.EmailAddress3
-            })
-            .ToListAsync();
-
-        return result;
-    }
-
-    internal async Task<List<EntityTitle>> GetUsersInGroup(int id)
-    {
-        var result = await _context.Users
-            .Where(u => u.Groups.Any(g => g.Id == id))
-            .Select(u => new EntityTitle(u.Username, u.FirstName, u.LastName))
-            .ToListAsync();
-
-        return result;
     }
 }
