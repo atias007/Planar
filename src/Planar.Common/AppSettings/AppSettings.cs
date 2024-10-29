@@ -1,6 +1,5 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
-using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -11,7 +10,6 @@ using System;
 using System.Data;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using EC = Planar.Common.EnvironmentVariableConsts;
 
 namespace Planar.Common;
@@ -286,16 +284,12 @@ public static class AppSettings
     {
         Database.ConnectionString = GetSettings(configuration, EC.ConnectionStringVariableKey, "database", "connection string", string.Empty);
 
-        if (string.IsNullOrEmpty(Database.ConnectionString))
-        {
-            throw new AppSettingsException($"ERROR: 'database connection' string could not be initialized\r\nMissing key 'connection string' or value is empty in AppSettings.yml file and there is no environment variable '{EC.ConnectionStringVariableKey}'");
-        }
+        if (string.IsNullOrEmpty(Database.ConnectionString)) { return; }
 
         try
         {
             var builder = new SqlConnectionStringBuilder(Database.ConnectionString);
-            if (!builder.MultipleActiveResultSets) { return; }
-
+            if (builder.MultipleActiveResultSets) { return; }
             builder.MultipleActiveResultSets = false;
             Database.ConnectionString = builder.ConnectionString;
         }

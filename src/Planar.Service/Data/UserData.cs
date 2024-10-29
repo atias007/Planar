@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Planar.API.Common.Entities;
 using Planar.Service.Data.Scripts.Sqlite;
 using Planar.Service.Model;
@@ -161,7 +162,8 @@ public class UserData(PlanarContext context) : BaseDataLayer(context)
             var definition = new CommandDefinition(
                 commandText: deleteQuery,
                 parameters: new { Id = id },
-                commandType: CommandType.Text);
+                commandType: CommandType.Text,
+                transaction: tran.GetDbTransaction());
 
             await DbConnection.ExecuteAsync(definition);
             result = await _context.Users.Where(u => u.Username == username).ExecuteDeleteAsync();

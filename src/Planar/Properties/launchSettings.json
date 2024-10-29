@@ -24,7 +24,8 @@
         "Serilog:MinimumLevel:Override:Quartz": "Warning",
         "PLANAR_SMTP_USE_DEFAULT_CREDENTIALS": "False",
         "PLANAR_HOOKS_REDIS_ENDPOINTS": "127.0.0.1:6379",
-        "PLANAR_ENCRYPT_ALL_SETTINGS": "False"
+        "PLANAR_ENCRYPT_ALL_SETTINGS": "False",
+        "PLANAR_DB_PROVIDER": "SqlServer"
       },
       "dotnetRunMessages": true
     },
@@ -32,8 +33,6 @@
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "PLANAR_DB_PROVIDER": "Sqlite",
-        "PLANAR_DB_CONNECTION_STRING": "Data Source=database.db;",
         "PLANAR_AUTHENTICATION_TOKEN_EXPIRE": "00:20:00",
         "PLANAR_SMTP_HOST": "smtp.gmail.com",
         "PLANAR_SMTP_PORT": "587",
@@ -45,7 +44,8 @@
         "Serilog:MinimumLevel:Override:Quartz": "Warning",
         "PLANAR_SMTP_USE_DEFAULT_CREDENTIALS": "False",
         "PLANAR_HOOKS_REDIS_ENDPOINTS": "127.0.0.1:6379",
-        "PLANAR_ENCRYPT_ALL_SETTINGS": "False"
+        "PLANAR_ENCRYPT_ALL_SETTINGS": "False",
+        "PLANAR_DB_PROVIDER": "Sqlite"
       },
       "dotnetRunMessages": true
     },
@@ -72,7 +72,8 @@
         "Serilog:MinimumLevel:Override:Quartz": "Warning",
         "PLANAR_SMTP_USE_DEFAULT_CREDENTIALS": "False",
         "PLANAR_HOOKS_REDIS_ENDPOINTS": "127.0.0.1:6379",
-        "PLANAR_ENCRYPT_ALL_SETTINGS": "False"
+        "PLANAR_ENCRYPT_ALL_SETTINGS": "False",
+        "PLANAR_DB_PROVIDER": "SqlServer"
       },
       "dotnetRunMessages": "true"
     }

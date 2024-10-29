@@ -36,8 +36,6 @@
 	  <None Remove="Data\Scripts\Sqlite\GetHistorySummary.sql" />
 	  <None Remove="Data\Scripts\Sqlite\GetLastHistoryCallForJob.sql" />
 	  <None Remove="Data\Scripts\Sqlite\SetMaxConcurrentExecution.sql" />
-	  <None Remove="Data\Scripts\Sqlite\StatusCounter.sql" />
-	  <None Remove="Data\Scripts\Sqlite\TraceCounter.sql" />
 	  <None Remove="HtmlTemplates\AlertsReport\alerts_row.html" />
 	  <None Remove="HtmlTemplates\AlertsReport\alerts_table.html" />
 	  <None Remove="HtmlTemplates\AlertsReport\main.html" />
@@ -69,8 +67,6 @@
 	  <EmbeddedResource Include="Data\Scripts\Sqlite\BuildJobStatistics.sql" />
 	  <EmbeddedResource Include="Data\Scripts\Sqlite\FillJobCounters.sql" />
 	  <EmbeddedResource Include="Data\Scripts\Sqlite\SetMaxConcurrentExecution.sql" />
-	  <EmbeddedResource Include="Data\Scripts\Sqlite\StatusCounter.sql" />
-	  <EmbeddedResource Include="Data\Scripts\Sqlite\TraceCounter.sql" />
 	  <EmbeddedResource Include="HtmlTemplates\AlertsReport\main.html" />
 	  <EmbeddedResource Include="HtmlTemplates\AlertsReport\alerts_table.html" />
 	  <EmbeddedResource Include="HtmlTemplates\AlertsReport\alerts_row.html" />

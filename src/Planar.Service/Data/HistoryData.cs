@@ -78,18 +78,6 @@ public class HistoryDataSqlite(PlanarContext context) : HistoryData(context), IH
         return result;
     }
 
-    public async Task<HistoryStatusDto?> GetHistoryCounter(CounterRequest counterRequest)
-    {
-        var definition = new CommandDefinition(
-            commandText: SqliteResource.GetScript("StatusCounter"),
-            parameters: counterRequest,
-            commandType: CommandType.Text);
-
-        var result = await DbConnection.QueryFirstOrDefaultAsync<HistoryStatusDto>(definition);
-
-        return result;
-    }
-
     public async Task<PagingResponse<HistorySummary>> GetHistorySummary(object parameters)
     {
         var cmd = new CommandDefinition(
@@ -139,18 +127,6 @@ public class HistoryDataSqlServer(PlanarContext context) : HistoryData(context),
             parameters: parameters);
 
         return await DbConnection.ExecuteAsync(cmd);
-    }
-
-    public async Task<HistoryStatusDto?> GetHistoryCounter(CounterRequest counterRequest)
-    {
-        var definition = new CommandDefinition(
-            commandText: "[Statistics].[StatusCounter]",
-            parameters: counterRequest,
-            commandType: CommandType.StoredProcedure);
-
-        var result = await DbConnection.QueryFirstOrDefaultAsync<HistoryStatusDto>(definition);
-
-        return result;
     }
 
     public async Task<PagingResponse<HistorySummary>> GetHistorySummary(object parameters)
@@ -406,5 +382,22 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
                 .SetProperty(l => l.IsCanceled, log.IsCanceled)
                 .SetProperty(l => l.HasWarnings, log.HasWarnings)
             );
+    }
+
+    public async Task<HistoryStatusDto?> GetHistoryCounter(CounterRequest counterRequest)
+    {
+        var query = from log in _context.JobInstanceLogs
+                    where (counterRequest.FromDate == null || log.StartDate > counterRequest.FromDate) &&
+                          (counterRequest.ToDate == null || log.StartDate <= counterRequest.ToDate)
+                    group log by 1 into g
+                    select new HistoryStatusDto
+                    {
+                        Running = g.Count(x => x.Status == -1),
+                        Success = g.Count(x => x.Status == 0),
+                        Fail = g.Count(x => x.Status == 1)
+                    };
+
+        var result = await query.FirstOrDefaultAsync();
+        return result;
     }
 }

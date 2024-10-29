@@ -1,1 +1,1 @@
-docker-compose -p planar up -d
+docker-compose -f docker-compose-sqlite.yml -p planar up -d

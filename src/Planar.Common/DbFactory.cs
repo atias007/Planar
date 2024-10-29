@@ -2,7 +2,9 @@
 using Microsoft.Data.Sqlite;
 using Planar.Common.Exceptions;
 using System;
+using System.IO;
 using System.Threading.Tasks;
+using EC = Planar.Common.EnvironmentVariableConsts;
 
 namespace Planar.Common;
 
@@ -20,10 +22,23 @@ internal static class DbFactory
         switch (name)
         {
             case DbProviders.SqlServer:
+                if (string.IsNullOrWhiteSpace(AppSettings.Database.ConnectionString))
+                {
+                    throw new AppSettingsException($"ERROR: 'database connection' string could not be initialized\r\nMissing key 'connection string' or value is empty in AppSettings.yml file and there is no environment variable '{EC.ConnectionStringVariableKey}'");
+                }
+
                 AppSettings.Database.ProviderHasPermissions = true;
                 break;
 
             case DbProviders.Sqlite:
+                if (string.IsNullOrWhiteSpace(AppSettings.Database.ConnectionString))
+                {
+                    var dataFolder = FolderConsts.GetDataFolder(fullPath: false);
+                    var filename = Path.Combine(dataFolder, "database.db");
+                    var builder = new SqliteConnectionStringBuilder { DataSource = filename };
+                    AppSettings.Database.ConnectionString = builder.ConnectionString;
+                }
+
                 AppSettings.Database.ProviderHasPermissions = false;
                 break;
         }

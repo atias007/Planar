@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
-using Planar.Service.Data.Scripts.Sqlite;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using System;
@@ -91,6 +90,37 @@ public class TraceDataSqlServer(PlanarContext context) : BaseDataLayer(context),
         return result;
     }
 
+    public async Task<TraceStatusDto?> GetTraceCounter(CounterRequest request)
+    {
+        var query = from trace in _context.Traces
+                    where (!request.FromDate.HasValue || trace.TimeStamp > request.FromDate)
+                    && (!request.ToDate.HasValue || trace.TimeStamp <= request.ToDate)
+                    group trace by 1 into g
+                    select new TraceStatusDto
+                    {
+                        Fatal = g.Count(x => x.Level == "Fatal"),
+                        Error = g.Count(x => x.Level == "Error"),
+                        Warning = g.Count(x => x.Level == "Warning"),
+                        Information = g.Count(x => x.Level == "Information"),
+                        Debug = g.Count(x => x.Level == "Debug"),
+                        Trace = g.Count(x => x.Level == "Trace")
+                    };
+
+        var result = await query.FirstOrDefaultAsync();
+        return result;
+    }
+
+    public IQueryable<Trace> GetTraceData()
+    {
+        return _context.Traces.AsNoTracking().OrderByDescending(t => t.TimeStamp).AsQueryable();
+    }
+
+    public async Task<string?> GetTraceException(int id)
+    {
+        var result = (await _context.Traces.FindAsync(id))?.Exception;
+        return result;
+    }
+
     public async Task<PagingResponse<LogDetails>> GetTraceForReport(GetTraceRequest request)
     {
         var levels = new string[] { nameof(LogLevel.Critical), nameof(LogLevel.Warning), nameof(LogLevel.Error), "Fatal" };
@@ -124,17 +154,6 @@ public class TraceDataSqlServer(PlanarContext context) : BaseDataLayer(context),
         return result;
     }
 
-    public IQueryable<Trace> GetTraceData()
-    {
-        return _context.Traces.AsNoTracking().OrderByDescending(t => t.TimeStamp).AsQueryable();
-    }
-
-    public async Task<string?> GetTraceException(int id)
-    {
-        var result = (await _context.Traces.FindAsync(id))?.Exception;
-        return result;
-    }
-
     public async Task<string?> GetTraceProperties(int id)
     {
         var result = (await _context.Traces.FindAsync(id))?.LogEvent;
@@ -144,18 +163,6 @@ public class TraceDataSqlServer(PlanarContext context) : BaseDataLayer(context),
     public async Task<bool> IsTraceExists(int id)
     {
         return await _context.Traces.AnyAsync(t => t.Id == id);
-    }
-
-    public async Task<TraceStatusDto?> GetTraceCounter(CounterRequest request)
-    {
-        var definition = new CommandDefinition(
-            commandText: "[Statistics].[TraceCounter]",
-            parameters: request,
-            commandType: CommandType.StoredProcedure);
-
-        var result = await DbConnection.QueryFirstOrDefaultAsync<TraceStatusDto>(definition);
-
-        return result;
     }
 }
 
@@ -226,6 +233,49 @@ public class TraceDataSqlite(PlanarTraceContext context) : BaseTraceDataLayer(co
         return result;
     }
 
+    public async Task<TraceStatusDto?> GetTraceCounter(CounterRequest request)
+    {
+        var query = from trace in _context.Traces
+                    where (!request.FromDate.HasValue || trace.TimeStamp > request.FromDate)
+                    && (!request.ToDate.HasValue || trace.TimeStamp <= request.ToDate)
+                    group trace by 1 into g
+                    select new TraceStatusDto
+                    {
+                        Fatal = g.Count(x => x.Level == "Fatal"),
+                        Error = g.Count(x => x.Level == "Error"),
+                        Warning = g.Count(x => x.Level == "Warning"),
+                        Information = g.Count(x => x.Level == "Information"),
+                        Debug = g.Count(x => x.Level == "Debug"),
+                        Trace = g.Count(x => x.Level == "Trace")
+                    };
+
+        var result = await query.FirstOrDefaultAsync();
+        return result;
+    }
+
+    public IQueryable<Trace> GetTraceData()
+    {
+        return _context.Traces
+                  .AsNoTracking()
+                  .Select(t => new Trace
+                  {
+                      Exception = t.Exception,
+                      Id = t.Id,
+                      Level = t.Level,
+                      LogEvent = t.LogEvent,
+                      Message = t.Message,
+                      TimeStamp = t.TimeStamp,
+                  })
+                .OrderByDescending(t => t.TimeStamp)
+                .AsQueryable();
+    }
+
+    public async Task<string?> GetTraceException(int id)
+    {
+        var result = (await _context.Traces.FindAsync(id))?.Exception;
+        return result;
+    }
+
     public async Task<PagingResponse<LogDetails>> GetTraceForReport(GetTraceRequest request)
     {
         var levels = new string[] { nameof(LogLevel.Critical), nameof(LogLevel.Warning), nameof(LogLevel.Error), "Fatal" };
@@ -259,29 +309,6 @@ public class TraceDataSqlite(PlanarTraceContext context) : BaseTraceDataLayer(co
         return result;
     }
 
-    public IQueryable<Trace> GetTraceData()
-    {
-        return _context.Traces
-                  .AsNoTracking()
-                  .Select(t => new Trace
-                  {
-                      Exception = t.Exception,
-                      Id = t.Id,
-                      Level = t.Level,
-                      LogEvent = t.LogEvent,
-                      Message = t.Message,
-                      TimeStamp = t.TimeStamp,
-                  })
-                .OrderByDescending(t => t.TimeStamp)
-                .AsQueryable();
-    }
-
-    public async Task<string?> GetTraceException(int id)
-    {
-        var result = (await _context.Traces.FindAsync(id))?.Exception;
-        return result;
-    }
-
     public async Task<string?> GetTraceProperties(int id)
     {
         var result = (await _context.Traces.FindAsync(id))?.LogEvent;
@@ -291,17 +318,5 @@ public class TraceDataSqlite(PlanarTraceContext context) : BaseTraceDataLayer(co
     public async Task<bool> IsTraceExists(int id)
     {
         return await _context.Traces.AnyAsync(t => t.Id == id);
-    }
-
-    public async Task<TraceStatusDto?> GetTraceCounter(CounterRequest request)
-    {
-        var definition = new CommandDefinition(
-            commandText: SqliteResource.GetScript("TraceCounter"),
-            parameters: request,
-            commandType: CommandType.Text);
-
-        var result = await DbConnection.QueryFirstOrDefaultAsync<TraceStatusDto>(definition);
-
-        return result;
     }
 }
