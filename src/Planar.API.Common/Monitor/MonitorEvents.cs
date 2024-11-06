@@ -4,8 +4,9 @@ namespace Planar.Common
 {
     public enum MonitorEvents
     {
-        [Description("Execution Vetoed")] ExecutionVetoed = 100,
+        //// [Description("Execution Vetoed")] ExecutionVetoed = 100,
         [Description("Execution Retry")] ExecutionRetry = 101,
+
         [Description("Execution Last Retry Fail")] ExecutionLastRetryFail = 102,
         [Description("Execution Fail")] ExecutionFail = 103,
         [Description("Execution Success")] ExecutionSuccess = 104,
