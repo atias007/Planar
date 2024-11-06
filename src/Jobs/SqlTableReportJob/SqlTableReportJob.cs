@@ -261,7 +261,6 @@ public abstract class SqlTableReportJob(
     {
         try
         {
-            ValidateMandatoryString(Properties.Path, nameof(Properties.Path));
             ValidateMandatoryString(Properties.Filename, nameof(Properties.Filename));
             ValidateMandatoryString(Properties.Group, nameof(Properties.Group));
             Properties.ConnectionString = ValidateConnectionName(Properties.ConnectionName);

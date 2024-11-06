@@ -123,7 +123,10 @@ namespace Planar.Service.General
         {
             if (string.IsNullOrWhiteSpace(fullPath)) { return string.Empty; }
             var baseDir = GetJobsFolder();
-            var relativePath = fullPath[(baseDir.Length + 1)..];
+            var relativePath =
+                fullPath.Length == baseDir.Length ?
+                string.Empty :
+                fullPath[(baseDir.Length + 1)..];
             return relativePath;
         }
 

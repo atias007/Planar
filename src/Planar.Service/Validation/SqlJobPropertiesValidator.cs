@@ -13,7 +13,9 @@ namespace Planar.Service.Validation
         {
             _cluster = cluster;
 
-            RuleFor(s => s.Path).NotEmpty().Length(1, 1000);
+            RuleFor(e => e.Path).MustAsync(PathExists)
+                .When(e => !string.IsNullOrEmpty(e.Path));
+
             RuleFor(j => j.DefaultConnectionName).Length(1, 50);
             RuleFor(j => j.DefaultConnectionName)
                 .NotEmpty()
@@ -38,6 +40,11 @@ namespace Planar.Service.Validation
                 .When(p => string.IsNullOrWhiteSpace(p.DefaultConnectionName))
                 .WithMessage("connection name property for step must have value when no default connection name");
             RuleForEach(j => j.Steps).MustAsync(FilenameExists);
+        }
+
+        private async Task<bool> PathExists(SqlJobProperties properties, string? path, ValidationContext<SqlJobProperties> context, CancellationToken cancellationToken = default)
+        {
+            return await CommonValidations.PathExists(path, _cluster, context);
         }
 
         private async Task<bool> FilenameExists(SqlJobProperties properties, SqlStep step, ValidationContext<SqlJobProperties> context, CancellationToken cancellationToken = default)

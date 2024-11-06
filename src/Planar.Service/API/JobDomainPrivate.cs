@@ -99,7 +99,10 @@ public partial class JobDomain
             var fileInfo = new FileInfo(filename);
             var fullFolder = fileInfo.Directory;
             if (fullFolder == null) { return null; }
-            var relativeFolder = fullFolder.FullName[(jobsFolder.Length + 1)..];
+            var relativeFolder =
+                fullFolder.FullName.Length == jobsFolder.Length ?
+                string.Empty :
+                fullFolder.FullName[(jobsFolder.Length + 1)..];
             var result = new AvailableJob
             {
                 Name = key.ToString(),

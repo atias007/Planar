@@ -180,7 +180,11 @@ where TProperties : class, new()
         _process = Process.Start(startInfo);
         if (_process == null)
         {
-            var filename = Path.Combine(FileProperties.Path, FileProperties.Filename);
+            var filename =
+                string.IsNullOrWhiteSpace(FileProperties.Path) ?
+                FileProperties.Filename :
+                Path.Combine(FileProperties.Path, FileProperties.Filename);
+
             throw new PlanarException($"could not start process {filename}");
         }
 
@@ -216,7 +220,6 @@ where TProperties : class, new()
     {
         try
         {
-            ValidateMandatoryString(FileProperties.Path, nameof(FileProperties.Path));
             ValidateMandatoryString(FileProperties.Filename, nameof(FileProperties.Filename));
 
             if (!File.Exists(Filename))

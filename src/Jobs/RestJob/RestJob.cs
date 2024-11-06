@@ -206,7 +206,6 @@ public class RestJob(
     {
         try
         {
-            ValidateMandatoryString(Properties.Path, nameof(Properties.Path));
             var bodyFullname = FolderConsts.GetSpecialFilePath(
                 PlanarSpecialFolder.Jobs,
                 Properties.Path ?? string.Empty,

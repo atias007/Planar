@@ -25,7 +25,7 @@ properties:                           # Job Properties
   fail output regex: "[Ee]rror"       # Regular expression to define fail run
 
 circuit breaker:
-  enabled: true                       # Boolean [true/false]. Enable/Disable the circuit breaker
+  enabled: false                      # Boolean [true/false]. Enable/Disable the circuit breaker
   failure threshold: 5                # The number of failures that will trip the circuit breaker [2 to 100]
   success threshold: 1                # The number of successes that will reset the circuit breaker [1 to 100]
   pause span: 01:00:00                # The time span which the circuit breaker will pause the job execution. set null value for permanent pause. minimum value is 5 minutes

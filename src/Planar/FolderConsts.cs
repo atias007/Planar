@@ -72,7 +72,7 @@ namespace Planar
                 return folder;
             }
 
-            var parts = paths.ToList();
+            var parts = paths.Where(p => !string.IsNullOrEmpty(p)).ToList();
             parts.Insert(0, folder);
             var notNullParts = parts.Where(p => p != null).Select(p => p ?? string.Empty).ToArray();
             var result = Path.Combine(notNullParts);

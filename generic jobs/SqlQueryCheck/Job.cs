@@ -74,7 +74,7 @@ internal partial class Job : BaseCheckJob
         using var connection = new SqlConnection(checkQuery.ConnectionString);
         using var cmd = new SqlCommand(checkQuery.Query, connection)
         {
-            CommandTimeout = (int)checkQuery.Timeout.TotalMilliseconds
+            CommandTimeout = (int)checkQuery.Timeout.Seconds
         };
 
         await connection.OpenAsync();

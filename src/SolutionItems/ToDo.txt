@@ -2,6 +2,10 @@
 
 PLAN FOR V 1.7.7
 ----------------
+- remove veto monitor event
+- BUG: test cli command exist with -1 status
+- cli job update: enable with job id
+- add global config file to planar settings
 
 - validate on startup that instance id not exists in nodes table
 - Security report
@@ -350,4 +354,5 @@ V1.7.7
 - health check minor changes + cli color
 - add free search on cli jobs menu / monitor event menu
 - BUG: recovery running try to add same retry trigger with same key
-
+- abillity to add job from Jobs root folder (without sub directory)
+- BUG: in generic jobs, sql check/retention -> timeout need to be in seconds - but was in milliseconds
