@@ -182,7 +182,7 @@ public partial class JobDomain
 
     private static IEnumerable<ITrigger> BuildTriggerWithCronSchedule(List<JobCronTriggerMetadata> triggers, string jobId)
     {
-        if (triggers.IsNullOrEmpty()) { return new List<ITrigger>(); }
+        if (triggers.IsNullOrEmpty()) { return []; }
 
         var result = triggers.Select(t =>
         {
@@ -197,7 +197,7 @@ public partial class JobDomain
 
     private static IEnumerable<ITrigger> BuildTriggerWithSimpleSchedule(List<JobSimpleTriggerMetadata> triggers, string jobId)
     {
-        if (triggers.IsNullOrEmpty()) { return new List<ITrigger>(); }
+        if (triggers.IsNullOrEmpty()) { return []; }
 
         var result = triggers.Select(t =>
         {

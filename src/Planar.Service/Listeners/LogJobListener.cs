@@ -30,19 +30,20 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
 
     public async Task JobExecutionVetoed(IJobExecutionContext context, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            if (IsSystemJob(context.JobDetail)) { return; }
-            await ExecuteDal<IHistoryData>(d => d.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto));
-        }
-        catch (Exception ex)
-        {
-            LogCritical(nameof(JobExecutionVetoed), ex);
-        }
-        finally
-        {
-            SafeScan(MonitorEvents.ExecutionVetoed, context, null);
-        }
+        await Task.CompletedTask;
+        ////try
+        ////{
+        ////    if (IsSystemJob(context.JobDetail)) { return; }
+        ////    await ExecuteDal<IHistoryData>(d => d.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto));
+        ////}
+        ////catch (Exception ex)
+        ////{
+        ////    LogCritical(nameof(JobExecutionVetoed), ex);
+        ////}
+        ////finally
+        ////{
+        ////    SafeScan(MonitorEvents.ExecutionVetoed, context, null);
+        ////}
     }
 
     public async Task JobToBeExecuted(IJobExecutionContext context, CancellationToken cancellationToken = default)

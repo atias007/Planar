@@ -919,7 +919,6 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         {
             runResult = await RestProxy.Invoke<RunningJobDetails>(restRequest, cancellationToken);
             if (runResult.IsSuccessful) { break; }
-            if (runResult.StatusCode == HttpStatusCode.RequestTimeout) { break; }
             if (runResult.StatusCode == HttpStatusCode.NotFound) { break; }
             if (runResult.StatusCode == HttpStatusCode.BadRequest) { break; }
             await Task.Delay(500 + ((counter - 1) ^ 2) * 500, cancellationToken);
@@ -1086,6 +1085,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         var restRequest = new RestRequest("history/{id}/status", Method.Get)
             .AddParameter("id", logId, ParameterType.UrlSegment);
         var result = await RestProxy.Invoke<int>(restRequest, cancellationToken);
+        if (!result.IsSuccessful) { return true; }
         return result.IsSuccessful && result.Data == -1;
     }
 
@@ -1115,6 +1115,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
                 }, cancellationToken);
             }
 
+            // wait for 1 sec then break and write running data on screen
             for (int i = 0; i < 5; i++)
             {
                 await Task.Delay(200, cancellationToken);
@@ -1169,7 +1170,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         }
         else
         {
-            AnsiConsole.Markup($"[red]Fail (status {result.Data.Status})[/]");
+            AnsiConsole.Markup($"[red]Fail[/]");
         }
 
         Console.WriteLine();

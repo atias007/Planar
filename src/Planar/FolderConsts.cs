@@ -55,7 +55,7 @@ namespace Planar
             return result;
         }
 
-        public static string GetSpecialFilePath(PlanarSpecialFolder planarFolder, params string?[] paths)
+        public static string GetSpecialFilePath(PlanarSpecialFolder planarFolder, params string[] paths)
         {
             var specialPath = planarFolder switch
             {

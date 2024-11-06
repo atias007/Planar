@@ -321,7 +321,7 @@ public static class CliTableFormat
             StatusMembers.Running => $"[{CliFormat.WarningColor}]{statusEnum}[/]",
             StatusMembers.Success => $"[{CliFormat.OkColor}]{statusEnum}[/]",
             StatusMembers.Fail => $"[{CliFormat.ErrorColor}]{statusEnum}[/]",
-            StatusMembers.Veto => $"[aqua]{statusEnum}[/]",
+            ////StatusMembers.Veto => $"[aqua]{statusEnum}[/]",
             _ => $"[silver]{statusEnum}[/]",
         };
     }
