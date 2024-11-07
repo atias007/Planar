@@ -27,7 +27,7 @@ namespace Planar.CLI
                 var counter = 0;
                 while (counter < 1000)
                 {
-                    var isAllFinish = await LoopGetRunnings(param, table.Table, ids, cancellationToken);
+                    var isAllFinish = await RefreshTable(param, table.Table, ids, cancellationToken);
                     context.Refresh();
 
                     if (isAllFinish) { break; }
@@ -46,21 +46,21 @@ namespace Planar.CLI
             });
         }
 
-        private static async Task<bool> LoopGetRunnings(CliGetRunningJobsRequest param, Table table, List<string> ids, CancellationToken cancellationToken)
+        private static async Task<bool> RefreshTable(CliGetRunningJobsRequest param, Table table, List<string> ids, CancellationToken cancellationToken)
         {
             var refreshResult = await JobCliActions.GetRunningJobsInner(param, cancellationToken);
             var refreshData = refreshResult.Item1;
 
             for (int i = 0; i < table.Rows.Count; i++)
             {
-                RefreshTable(table, ids, refreshData, i);
+                RefreshTableRow(table, ids, refreshData, i);
             }
 
             var isAllFinish = refreshData?.TrueForAll(r => r.Progress == 100);
             return isAllFinish.GetValueOrDefault();
         }
 
-        private static void RefreshTable(Table table, List<string> ids, List<API.Common.Entities.RunningJobDetails>? refreshData, int i)
+        private static void RefreshTableRow(Table table, List<string> ids, List<API.Common.Entities.RunningJobDetails>? refreshData, int i)
         {
             if (refreshData == null) { return; }
             var id = ids[i];
@@ -75,14 +75,11 @@ namespace Planar.CLI
             }
             else
             {
-                var runtime = CliTableFormat.FormatTimeSpan(item.RunTime);
-                var estimated = CliTableFormat.FormatTimeSpan(item.EstimatedEndTime);
-
-                table.UpdateCell(i, 3, $"[gold3_1]{item.Progress}%[/]");
-                table.UpdateCell(i, 4, item.EffectedRows.GetValueOrDefault().ToString());
-                table.UpdateCell(i, 5, item.ExceptionsCount.ToString());
-                table.UpdateCell(i, 6, runtime);
-                table.UpdateCell(i, 7, $"[grey]{estimated}[/]");
+                table.UpdateCell(i, 3, CliTableFormat.GetProgressMarkup(item.Progress));
+                table.UpdateCell(i, 4, CliTableFormat.FormatNumber(item.EffectedRows));
+                table.UpdateCell(i, 5, CliTableFormat.FormatExceptionCount(item.ExceptionsCount));
+                table.UpdateCell(i, 6, CliTableFormat.FormatTimeSpan(item.RunTime));
+                table.UpdateCell(i, 7, $"[grey]CliTableFormat.FormatTimeSpan(item.EstimatedEndTime)[/]");
             }
         }
     }
