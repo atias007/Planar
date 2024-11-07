@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Asn1.X509;
 using Planar.API.Common.Entities;
 using Planar.Common;
 using Planar.Common.Helpers;
@@ -183,6 +185,36 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         var result = (await Scheduler.GetJobGroupNames())
             .Where(g => !string.Equals(g, Consts.PlanarSystemGroup, StringComparison.OrdinalIgnoreCase));
         return result;
+    }
+
+    public async Task<string> GetJobFilename(string id)
+    {
+        var key = await JobKeyHelper.GetJobKey(id);
+        var jobId = await JobKeyHelper.GetJobId(key);
+        var properties = await DataLayer.GetJobProperty(jobId);
+        if (string.IsNullOrWhiteSpace(properties))
+        {
+            throw NotFound(id);
+        }
+
+        var propDic = YmlUtil.Deserialize<dynamic>(properties) as Dictionary<object, object> ?? [];
+        if (!propDic.TryGetValue("path", out var pathObj)) { throw NotFound(id); }
+        var path = Convert.ToString(pathObj);
+        if (string.IsNullOrWhiteSpace(path)) { throw NotFound(id); }
+        var fullpath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, path);
+        var files = Directory.EnumerateFiles(fullpath, "*.yml", SearchOption.TopDirectoryOnly);
+        var count = files.Count();
+        if (count == 0) { throw NotFound(id); }
+        if (count > 1) { throw new RestValidationException("id", "more than one valid yml jobfile found"); }
+
+        var jobsFolder = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
+        var jobfile = Path.GetRelativePath(jobsFolder, files.First());
+        return jobfile;
+
+        static Exception NotFound(string id)
+        {
+            return new RestNotFoundException($"no valid yml jobfile found for '{id}' job");
+        }
     }
 
     public async Task<PagingResponse<JobBasicDetails>> GetAll(GetAllJobsRequest request)

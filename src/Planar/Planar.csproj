@@ -12,7 +12,9 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
-
+	<PropertyGroup>
+		<ServerGarbageCollection>true</ServerGarbageCollection>
+	</PropertyGroup>
 	<ItemGroup>
 	  <Compile Remove="Data\MonitorHooks\Http\**" />
 	  <Compile Remove="Protos\**" />

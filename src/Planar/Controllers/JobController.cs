@@ -58,11 +58,24 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 
     [HttpGet]
     [ViewerAuthorize]
+    [BadRequestResponse]
     [SwaggerOperation(OperationId = "get_job", Description = "Get all jobs", Summary = "Get All Jobs")]
     [OkJsonResponse(typeof(PagingResponse<JobBasicDetails>))]
     public async Task<ActionResult<PagingResponse<JobBasicDetails>>> GetAll([FromQuery] GetAllJobsRequest request)
     {
         var result = await BusinesLayer.GetAll(request);
+        return Ok(result);
+    }
+
+    [HttpGet("jobfilename/{id}")]
+    [ViewerAuthorize]
+    [BadRequestResponse]
+    [NotFoundResponse]
+    [SwaggerOperation(OperationId = "get_job_file_id", Description = "Get JobFile.yml filename", Summary = "Get JobFile.yml Filename")]
+    [OkTextResponse]
+    public async Task<ActionResult<string>> GetJobFilename([FromRoute][Required] string id)
+    {
+        var result = await BusinesLayer.GetJobFilename(id);
         return Ok(result);
     }
 
