@@ -114,6 +114,12 @@ public static class CliTableFormat
         return jobId;
     }
 
+    public static string FormatTriggerId(string id, bool active)
+    {
+        if (active) { return $"  {id.EscapeMarkup()}"; }
+        return $"[{CliFormat.ErrorColor}]{bullet}[/] {id}";
+    }
+
     public static string FormatJobKey(string? group, string? name)
     {
         var noGroup = string.IsNullOrWhiteSpace(group);
@@ -321,7 +327,7 @@ public static class CliTableFormat
             StatusMembers.Running => $"[{CliFormat.WarningColor}]{statusEnum}[/]",
             StatusMembers.Success => $"[{CliFormat.OkColor}]{statusEnum}[/]",
             StatusMembers.Fail => $"[{CliFormat.ErrorColor}]{statusEnum}[/]",
-            StatusMembers.Veto => $"[aqua]{statusEnum}[/]",
+            ////StatusMembers.Veto => $"[aqua]{statusEnum}[/]",
             _ => $"[silver]{statusEnum}[/]",
         };
     }

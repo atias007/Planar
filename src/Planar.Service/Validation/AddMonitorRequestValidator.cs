@@ -12,7 +12,7 @@ namespace Planar.Service.Validation
 {
     public class AddMonitorRequestValidator : AbstractValidator<AddMonitorRequest>
     {
-        public AddMonitorRequestValidator(GroupData dal, JobKeyHelper jobKeyHelper)
+        public AddMonitorRequestValidator(IGroupData dal, JobKeyHelper jobKeyHelper)
         {
             RuleFor(r => r.Title).NotEmpty().Length(5, 50);
             RuleFor(r => r.EventArgument).MaximumLength(50);

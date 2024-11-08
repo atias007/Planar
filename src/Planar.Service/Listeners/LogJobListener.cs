@@ -30,19 +30,20 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
 
     public async Task JobExecutionVetoed(IJobExecutionContext context, CancellationToken cancellationToken = default)
     {
-        try
-        {
-            if (IsSystemJob(context.JobDetail)) { return; }
-            await ExecuteDal<HistoryData>(d => d.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto));
-        }
-        catch (Exception ex)
-        {
-            LogCritical(nameof(JobExecutionVetoed), ex);
-        }
-        finally
-        {
-            SafeScan(MonitorEvents.ExecutionVetoed, context, null);
-        }
+        await Task.CompletedTask;
+        ////try
+        ////{
+        ////    if (IsSystemJob(context.JobDetail)) { return; }
+        ////    await ExecuteDal<IHistoryData>(d => d.SetJobInstanceLogStatus(context.FireInstanceId, StatusMembers.Veto));
+        ////}
+        ////catch (Exception ex)
+        ////{
+        ////    LogCritical(nameof(JobExecutionVetoed), ex);
+        ////}
+        ////finally
+        ////{
+        ////    SafeScan(MonitorEvents.ExecutionVetoed, context, null);
+        ////}
     }
 
     public async Task JobToBeExecuted(IJobExecutionContext context, CancellationToken cancellationToken = default)
@@ -84,7 +85,7 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
             if (log.TriggerGroup.Length > 50) { log.TriggerGroup = log.TriggerGroup[0..50]; }
             if (log.ServerName.Length > 50) { log.ServerName = log.ServerName[0..50]; }
 
-            await ExecuteDal<HistoryData>(d => d.CreateJobInstanceLog(log));
+            await ExecuteDal<IHistoryData>(d => d.CreateJobInstanceLog(log));
             await statisticsTask;
         }
         catch (Exception ex)
@@ -134,7 +135,7 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
 
             if (log.StatusTitle.Length > 10) { log.StatusTitle = log.StatusTitle[0..10]; }
 
-            await ExecuteDal<HistoryData>(d => d.UpdateHistoryJobRunLog(log));
+            await ExecuteDal<IHistoryData>(d => d.UpdateHistoryJobRunLog(log));
             await SafeFillAnomaly(log);
         }
         catch (Exception ex)
@@ -207,7 +208,7 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
             RecordDate = DateTimeOffset.Now.DateTime
         };
 
-        await ExecuteDal<MetricsData>(d => d.AddCocurentQueueItem(item));
+        await ExecuteDal<IMetricsData>(d => d.AddCocurentQueueItem(item));
     }
 
     private async Task FillAnomaly(DbJobInstanceLog item)
@@ -217,8 +218,7 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
 
         if (item.Anomaly != null)
         {
-            var parameters = new { item.InstanceId, item.Anomaly };
-            await ExecuteDal<HistoryData>(d => d.SetAnomaly(parameters));
+            await ExecuteDal<IHistoryData>(d => d.SetAnomaly(item));
         }
     }
 
@@ -238,8 +238,8 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
 
     private async Task<JobStatistics> GetJobStatisticsRaw()
     {
-        var durationStatistics = await ExecuteDal<MetricsData, IEnumerable<JobDurationStatistic>>(d => d.GetJobDurationStatistics());
-        var effectedStatistics = await ExecuteDal<MetricsData, IEnumerable<JobEffectedRowsStatistic>>(d => d.GetJobEffectedRowsStatistics());
+        var durationStatistics = await ExecuteDal<IMetricsData, IEnumerable<JobDurationStatistic>>(d => d.GetJobDurationStatistics());
+        var effectedStatistics = await ExecuteDal<IMetricsData, IEnumerable<JobEffectedRowsStatistic>>(d => d.GetJobEffectedRowsStatistics());
         return new JobStatistics
         {
             JobDurationStatistics = durationStatistics,
@@ -249,8 +249,8 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
 
     private async Task<JobStatistics> GetJobStatistics()
     {
-        var durationKey = nameof(MetricsData.GetJobDurationStatistics);
-        var effectedKey = nameof(MetricsData.GetJobEffectedRowsStatistics);
+        var durationKey = nameof(IMetricsData.GetJobDurationStatistics);
+        var effectedKey = nameof(IMetricsData.GetJobEffectedRowsStatistics);
 
         using var scope = ServiceScopeFactory.CreateScope();
         var cache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
@@ -258,14 +258,14 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
         var exists = cache.TryGetValue<IEnumerable<JobDurationStatistic>>(durationKey, out var durationStatistics);
         if (!exists || durationStatistics == null)
         {
-            durationStatistics = await ExecuteDal<MetricsData, IEnumerable<JobDurationStatistic>>(d => d.GetJobDurationStatistics());
+            durationStatistics = await ExecuteDal<IMetricsData, IEnumerable<JobDurationStatistic>>(d => d.GetJobDurationStatistics());
             cache.Set(durationKey, durationStatistics, StatisticsUtil.DefaultCacheSpan);
         }
 
         exists = cache.TryGetValue<IEnumerable<JobEffectedRowsStatistic>>(effectedKey, out var effectedStatistics);
         if (!exists || effectedStatistics == null)
         {
-            effectedStatistics = await ExecuteDal<MetricsData, IEnumerable<JobEffectedRowsStatistic>>(d => d.GetJobEffectedRowsStatistics());
+            effectedStatistics = await ExecuteDal<IMetricsData, IEnumerable<JobEffectedRowsStatistic>>(d => d.GetJobEffectedRowsStatistics());
             cache.Set(effectedKey, effectedStatistics, StatisticsUtil.DefaultCacheSpan);
         }
 

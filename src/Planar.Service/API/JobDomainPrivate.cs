@@ -62,7 +62,7 @@ public partial class JobDomain
 
     private async Task DeleteJobStatistics(string jobId)
     {
-        var dal = Resolve<MetricsData>();
+        var dal = Resolve<IMetricsData>();
         var s1 = new JobDurationStatistic { JobId = jobId };
         await dal.DeleteJobStatistic(s1);
         var s2 = new JobEffectedRowsStatistic { JobId = jobId };
@@ -71,7 +71,7 @@ public partial class JobDomain
 
     private async Task DeleteMonitorOfJob(JobKey jobKey)
     {
-        var dal = Resolve<MonitorData>();
+        var dal = Resolve<IMonitorData>();
         await dal.DeleteMonitorByJobId(jobKey.Group, jobKey.Name);
         if (!await JobGroupExists(jobKey.Group))
         {
@@ -99,7 +99,10 @@ public partial class JobDomain
             var fileInfo = new FileInfo(filename);
             var fullFolder = fileInfo.Directory;
             if (fullFolder == null) { return null; }
-            var relativeFolder = fullFolder.FullName[(jobsFolder.Length + 1)..];
+            var relativeFolder =
+                fullFolder.FullName.Length == jobsFolder.Length ?
+                string.Empty :
+                fullFolder.FullName[(jobsFolder.Length + 1)..];
             var result = new AvailableJob
             {
                 Name = key.ToString(),
@@ -174,6 +177,7 @@ public partial class JobDomain
         foreach (var t in triggers)
         {
             if (t.Key.Group == Consts.RecoveringJobsGroup) { continue; }
+            if (t.Key.Group == Consts.ManualTriggerId) { continue; }
             var active = await IsTriggerActive(t);
             if (active)
             {

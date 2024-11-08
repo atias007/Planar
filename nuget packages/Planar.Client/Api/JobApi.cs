@@ -574,7 +574,7 @@ namespace Planar.Client
             }
             catch
             {
-                return false;
+                return true;
             }
         }
 
@@ -608,10 +608,10 @@ namespace Planar.Client
                 {
                     return (null, null);
                 }
-                catch (PlanarRequestTimeoutException)
-                {
-                    return (null, null);
-                }
+                ////catch (PlanarRequestTimeoutException)
+                ////{
+                ////    return (null, null);
+                ////}
                 catch (Exception)
                 {
                     await Task.Delay(500 + ((counter - 1) ^ 2) * 500, cancellationToken);

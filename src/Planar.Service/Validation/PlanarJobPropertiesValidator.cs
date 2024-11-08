@@ -14,7 +14,6 @@ public class PlanarJobPropertiesValidator : AbstractValidator<PlanarJobPropertie
     {
         _cluster = cluster;
         Include(new BaseProcessJobPropertiesValidator());
-        RuleFor(e => e.Path).NotEmpty().MaximumLength(500);
         RuleFor(e => e.Path).MustAsync(PathExists)
             .When(e => !string.IsNullOrEmpty(e.Path));
 

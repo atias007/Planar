@@ -25,6 +25,11 @@ namespace Planar
         public const string JobFileName = "JobFile.yml";
         public const string JobFileExtPattern = "*.yml";
 
+        public static string GetDataFolder(bool fullPath = false)
+        {
+            return fullPath ? Path.Combine(BasePath, Data) : Data;
+        }
+
         public static string GetAbsoluteSpecialFilePath(PlanarSpecialFolder planarFolder, params string[] paths)
         {
             var specialPath = planarFolder switch
@@ -50,7 +55,7 @@ namespace Planar
             return result;
         }
 
-        public static string GetSpecialFilePath(PlanarSpecialFolder planarFolder, params string?[] paths)
+        public static string GetSpecialFilePath(PlanarSpecialFolder planarFolder, params string[] paths)
         {
             var specialPath = planarFolder switch
             {
@@ -67,7 +72,7 @@ namespace Planar
                 return folder;
             }
 
-            var parts = paths.ToList();
+            var parts = paths.Where(p => !string.IsNullOrEmpty(p)).ToList();
             parts.Insert(0, folder);
             var notNullParts = parts.Where(p => p != null).Select(p => p ?? string.Empty).ToArray();
             var result = Path.Combine(notNullParts);

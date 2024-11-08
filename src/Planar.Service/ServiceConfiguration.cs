@@ -1,12 +1,9 @@
 ﻿using CommonJob;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.Common;
-using Planar.Common.Monitor;
 using Planar.Service.API;
 using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
-using Planar.Service.Data;
 using Planar.Service.General;
 using Planar.Service.Monitor;
 using Planar.Service.Services;
@@ -71,9 +68,7 @@ namespace Planar.Service
             services.AddHostedService(p => p.GetRequiredService<AuditService>());
             services.AddHostedService(p => p.GetRequiredService<MonitorService>());
             services.AddHostedService(p => p.GetRequiredService<MqttBrokerService>());
-
             services.AddHostedService<PlanarRestartService>();
-
             if (AppSettings.Authentication.HasAuthontication)
             {
                 services.AddHostedService(p => p.GetRequiredService<SecurityService>());
@@ -89,7 +84,7 @@ namespace Planar.Service
 
             // AutoMapper
             var assemply = Assembly.Load($"{nameof(Planar)}.{nameof(Service)}");
-            services.AddAutoMapperProfiles(new[] { assemply });
+            services.AddAutoMapperProfiles([assemply]);
 
             return services;
         }
@@ -97,38 +92,23 @@ namespace Planar.Service
         internal static IServiceCollection AddPlanarDataLayerWithContext(this IServiceCollection services)
         {
             services.AddPlanarDbContext();
-
-            services.AddTransientWithLazy<UserData>();
-            services.AddTransientWithLazy<GroupData>();
-            services.AddTransientWithLazy<AutoMapperData>();
-            services.AddTransientWithLazy<MonitorData>();
-            services.AddTransientWithLazy<ConfigData>();
-            services.AddTransientWithLazy<ClusterData>();
-            services.AddTransientWithLazy<HistoryData>();
-            services.AddTransientWithLazy<TraceData>();
-            services.AddTransientWithLazy<ServiceData>();
-            services.AddTransientWithLazy<MetricsData>();
-            services.AddTransientWithLazy<ReportData>();
-            services.AddTransientWithLazy<JobData>();
-            services.AddTransient<IJobPropertyDataLayer, JobData>();
-            services.AddTransient<IGroupDataLayer, GroupData>();
-            services.AddTransient<IMonitorDurationDataLayer, MonitorData>();
-
+            services.AddPlanarDataLayers();
             return services;
         }
 
-        internal static IServiceCollection AddTransientWithLazy<T>(this IServiceCollection services)
-            where T : BaseDataLayer
+        internal static IServiceCollection AddTransientWithLazy<TService, TImplementation>(this IServiceCollection services)
+            where TService : class
+            where TImplementation : class, TService
         {
-            services.AddTransient<T>();
-            services.AddTransient(p => new Lazy<T>(() => p.GetRequiredService<T>()));
+            services.AddTransient<TService, TImplementation>();
+            services.AddTransient(p => new Lazy<TService>(() => p.GetRequiredService<TService>()));
             return services;
         }
 
         internal static IServiceCollection AddPlanarMonitorServices(this IServiceCollection services)
         {
             services.AddPlanarDbContext();
-            services.AddTransient<MonitorData>();
+            services.AddPlanarMonitorDataLayers();
 
             // Scheduler
             services.AddSingleton(p => p.GetRequiredService<ISchedulerFactory>().GetScheduler().Result);
@@ -138,18 +118,6 @@ namespace Planar.Service
             // Utils
             services.AddScoped<ClusterUtil>();
             services.AddScoped<MonitorUtil>();
-            return services;
-        }
-
-        internal static IServiceCollection AddPlanarDbContext(this IServiceCollection services)
-        {
-            services.AddDbContext<PlanarContext>(o => o.UseSqlServer(
-                    AppSettings.Database.ConnectionString,
-                    options => options.EnableRetryOnFailure(12, TimeSpan.FromSeconds(5), null)),
-                contextLifetime: ServiceLifetime.Transient,
-                optionsLifetime: ServiceLifetime.Singleton
-            );
-
             return services;
         }
     }

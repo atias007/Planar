@@ -69,7 +69,7 @@ public sealed class PersistDataJob(IServiceScopeFactory scopeFactory, ILogger<Pe
                 Duration = context.Duration,
             };
 
-            var dal = scope.ServiceProvider.GetService<HistoryData>();
+            var dal = scope.ServiceProvider.GetRequiredService<IHistoryData>();
             await Policy.Handle<Exception>()
                     .WaitAndRetryAsync(3, i => TimeSpan.FromSeconds(1 * i))
                     .ExecuteAsync(() => dal?.PersistJobInstanceData(log));

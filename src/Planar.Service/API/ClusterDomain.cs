@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API;
 
-public class ClusterDomain(IServiceProvider serviceProvider) : BaseLazyBL<ClusterDomain, ClusterData>(serviceProvider)
+public class ClusterDomain(IServiceProvider serviceProvider) : BaseLazyBL<ClusterDomain, IClusterData>(serviceProvider)
 {
     public async Task<List<ClusterNode>> GetNodes()
     {

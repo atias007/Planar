@@ -266,7 +266,6 @@ public abstract class SqlJob : BaseCommonJob<SqlJobProperties>
     {
         try
         {
-            ValidateMandatoryString(Properties.Path, nameof(Properties.Path));
             Properties.DefaultConnectionString = ValidateConnectionName(Properties.DefaultConnectionName);
             Properties.Steps?.ForEach(ValidateSqlStep);
         }

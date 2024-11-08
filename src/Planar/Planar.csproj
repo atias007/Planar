@@ -12,7 +12,9 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
-
+	<PropertyGroup>
+		<ServerGarbageCollection>true</ServerGarbageCollection>
+	</PropertyGroup>
 	<ItemGroup>
 	  <Compile Remove="Data\MonitorHooks\Http\**" />
 	  <Compile Remove="Protos\**" />
@@ -86,7 +88,8 @@
 		<PackageReference Include="prometheus-net.AspNetCore.Grpc" Version="8.2.1" />
 		<PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
 		<PackageReference Include="Serilog.Enrichers.GlobalLogContext" Version="3.0.0" />
-		<PackageReference Include="Serilog.Sinks.MSSqlServer" Version="7.0.2" />
+		<PackageReference Include="Serilog.Sinks.MSSqlServer" Version="8.0.0" />
+		<PackageReference Include="Serilog.Sinks.SQLite.Microsoft" Version="1.0.0" />
 		<PackageReference Include="SonarAnalyzer.CSharp" Version="9.32.0.97167">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -94,7 +97,8 @@
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.9.0" />
 		<PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="8.0.2" />
-		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.1.2" />
+		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.2.0" />
+		<PackageReference Include="System.Text.Json" Version="8.0.5" />
 	</ItemGroup>
 	<PropertyGroup>
 		<SatelliteResourceLanguages>en</SatelliteResourceLanguages>
@@ -110,6 +114,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\DatabaseMigrations.Factory\DatabaseMigrations.Factory.csproj" />
+		<ProjectReference Include="..\DatabaseMigrations.Scripts\DatabaseMigrations.Sqlite\DatabaseMigrations.Sqlite.csproj" />
 		<ProjectReference Include="..\Planar.API.Common\Planar.API.Common.csproj" />
 		<ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
 		<ProjectReference Include="..\Planar.Service\Planar.Service.csproj" />

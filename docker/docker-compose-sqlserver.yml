@@ -8,6 +8,8 @@ services:
       - '2306:2306'
     environment:
       - TZ=Israel
+      - PLANAR_DB_PROVIDER=SqlServer
+      - PLANAR_DB_CONNECTION_STRING='Password=PlanarSqlPassword12345@;Persist Security Info=True;User ID=sa;Initial Catalog=Planar;Data Source=planar-db,1433;Encrypt=False'
     volumes:  
       - ./Planar/Data:/app/Data
     depends_on:
@@ -35,4 +37,4 @@ volumes:
 networks:
   planar_network:
 
-# docker-compose -p planar up -d --remove-orphans
+# docker-compose -f docker-compose-sqlserver.yml -p planar up -d --remove-orphans

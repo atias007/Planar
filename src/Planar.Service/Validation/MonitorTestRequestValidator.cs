@@ -8,7 +8,7 @@ namespace Planar.Service.Validation
 {
     public class MonitorTestRequestValidator : AbstractValidator<MonitorTestRequest>
     {
-        public MonitorTestRequestValidator(GroupData groupData)
+        public MonitorTestRequestValidator(IGroupData groupData)
         {
             RuleFor(r => r.EffectedRows).GreaterThanOrEqualTo(0);
 

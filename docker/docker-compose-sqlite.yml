@@ -1,0 +1,17 @@
+version: '3.4'
+
+services:
+  planar:
+    image: atias007/planar:latest
+    container_name: planar-service
+    ports:
+      - '2306:2306'
+    environment:
+      - TZ=Israel
+      - PLANAR_DB_PROVIDER=Sqlite
+    volumes:  
+      - ./Planar/Data:/app/Data
+    depends_on:
+      - db
+
+# docker-compose -f docker-compose-sqlite up -d

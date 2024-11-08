@@ -286,7 +286,11 @@ internal static class CliTableExtensions
         table.Table.AddColumns("Job Id", "Job Key", "Job Type", "Description");
         if (response == null || response.Data == null) { return table; }
         var hasInactive = response.Data.Exists(d => d.Active != JobActiveMembers.Active);
-        response.Data.ForEach(r => table.Table.AddRow(hasInactive ? CliTableFormat.FormatJobId(r.Id, r.Active) : r.Id, CliTableFormat.FormatJobKey(r.Group, r.Name), r.JobType.EscapeMarkup(), LimitValue(r.Description)));
+        response.Data.ForEach(r => table.Table.AddRow(
+            hasInactive ? CliTableFormat.FormatJobId(r.Id, r.Active) : r.Id,
+            CliTableFormat.FormatJobKey(r.Group, r.Name),
+            r.JobType.EscapeMarkup(),
+            LimitValue(r.Description)));
         return table;
     }
 
@@ -511,15 +515,17 @@ internal static class CliTableExtensions
         table.Table.AddColumns("Trigger Id", "Trigger Name", "State", "Next Fire Time", "Interval/Cron");
         if (response == null) { return table; }
 
+        var allActive = response.SimpleTriggers.TrueForAll(t => t.Active) && response.CronTriggers.TrueForAll(t => t.Active);
+
         response.SimpleTriggers.ForEach(r => table.Table.AddRow(
-            $"{r.Id}",
+            allActive ? r.Id : CliTableFormat.FormatTriggerId(r.Id, r.Active),
             r.TriggerName.EscapeMarkup(),
             r.State ?? string.Empty,
             CliTableFormat.FormatDateTime(r.NextFireTime),
             CliTableFormat.FormatTimeSpan(r.RepeatInterval)));
 
         response.CronTriggers.ForEach(r => table.Table.AddRow(
-            $"{r.Id}",
+            allActive ? r.Id : CliTableFormat.FormatTriggerId(r.Id, r.Active),
             r.TriggerName.EscapeMarkup(),
             r.State ?? string.Empty,
             CliTableFormat.FormatDateTime(r.NextFireTime),

@@ -43,6 +43,14 @@ public static class ValidationUtil
         return regex.IsMatch(value);
     }
 
+    public static bool IsJobId(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) { return false; }
+        const string pattern = "^[a-z0-9]{11}$";
+        var regex = new Regex(pattern, RegexOptions.IgnoreCase, TimeSpan.FromSeconds(1));
+        return regex.IsMatch(value);
+    }
+
     public static bool IsJobIdExists(string value, JobKeyHelper jobKeyHelper)
     {
         if (value == null) { return true; }

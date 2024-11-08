@@ -142,7 +142,7 @@ public partial class JobDomain
         var property = new JobProperty { JobId = metadata.JobId, Properties = metadata.OldJobProperties };
         await Scheduler.ScheduleJob(metadata.OldJobDetails, metadata.OldTriggers, true);
         await Scheduler.PauseJob(metadata.JobKey);
-        await Resolve<JobData>().UpdateJobProperty(property);
+        await Resolve<IJobData>().UpdateJobProperty(property);
     }
 
     private async Task<PlanarIdResponse> Update(SetJobDynamicRequest request, UpdateJobOptions options)

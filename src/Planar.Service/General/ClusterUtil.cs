@@ -45,7 +45,7 @@ namespace Planar.Service.General
         public async Task<IEnumerable<ClusterNode>> GetAllNodes()
         {
             using var scope = serviceScope.CreateScope();
-            var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
+            var dal = scope.ServiceProvider.GetRequiredService<IClusterData>();
             var tempNode = GetCurrentClusterNode();
             var result = await dal.GetClusterNodes();
             var currentNode = result.Find(n => string.Equals(n.Server, tempNode.Server, StringComparison.CurrentCultureIgnoreCase) && n.Port == tempNode.Port);
@@ -128,7 +128,7 @@ namespace Planar.Service.General
                     if (!node.LiveNode)
                     {
                         using var scope = serviceScope.CreateScope();
-                        var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
+                        var dal = scope.ServiceProvider.GetRequiredService<IClusterData>();
                         await dal.RemoveClusterNode(node);
                     }
                 }
@@ -162,7 +162,7 @@ namespace Planar.Service.General
                     {
                         _logger.LogError("remove node {Server}:{Port} from cluster due to health check failure", node.Server, node.ClusterPort);
                         using var scope = serviceScope.CreateScope();
-                        var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
+                        var dal = scope.ServiceProvider.GetRequiredService<IClusterData>();
                         await dal.RemoveClusterNode(node);
                     }
                 }
@@ -219,7 +219,7 @@ namespace Planar.Service.General
         {
             var currentNode = GetCurrentClusterNode();
             using var scope = serviceScope.CreateScope();
-            var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
+            var dal = scope.ServiceProvider.GetRequiredService<IClusterData>();
             var item = await dal.GetClusterNode(currentNode);
             if (item == null)
             {
@@ -561,7 +561,7 @@ namespace Planar.Service.General
 
             node.HealthCheckDate = DateTime.Now;
             using var scope = serviceScope.CreateScope();
-            var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
+            var dal = scope.ServiceProvider.GetRequiredService<IClusterData>();
             await dal.SaveChangesAsync();
         }
 
@@ -767,7 +767,7 @@ namespace Planar.Service.General
                 };
 
                 using var scope = serviceScope.CreateScope();
-                var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
+                var dal = scope.ServiceProvider.GetRequiredService<IClusterData>();
                 await dal.AddClusterNode(currentNode);
             }
         }
@@ -788,7 +788,7 @@ namespace Planar.Service.General
             node.HealthCheckDate = DateTime.Now;
 
             using var scope = serviceScope.CreateScope();
-            var dal = scope.ServiceProvider.GetRequiredService<ClusterData>();
+            var dal = scope.ServiceProvider.GetRequiredService<IClusterData>();
             await dal.SaveChangesAsync();
         }
     }

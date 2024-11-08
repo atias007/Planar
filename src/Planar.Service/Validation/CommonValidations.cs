@@ -48,12 +48,6 @@ namespace Planar.Service.Validation
                     return false;
                 }
 
-                if (string.IsNullOrWhiteSpace(properties.Path))
-                {
-                    context.AddFailure("path", "path is null or empty");
-                    return false;
-                }
-
                 ServiceUtil.ValidateJobFileExists(properties.Path, filename);
                 await clusterUtil.ValidateJobFileExists(properties.Path, filename);
                 return true;

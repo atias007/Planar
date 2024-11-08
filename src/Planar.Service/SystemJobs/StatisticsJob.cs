@@ -41,7 +41,7 @@ public sealed class StatisticsJob(IServiceScopeFactory serviceScope, ILogger<Sta
         using var scope = _serviceScope.CreateScope();
         try
         {
-            var data = scope.ServiceProvider.GetRequiredService<MetricsData>();
+            var data = scope.ServiceProvider.GetRequiredService<IMetricsData>();
             var rows = await data.SetMaxConcurrentExecution();
             _logger.LogDebug("statistics job execute {Method} with {Total} effected row(s)", nameof(data.SetMaxConcurrentExecution), rows);
         }
@@ -62,9 +62,9 @@ public sealed class StatisticsJob(IServiceScopeFactory serviceScope, ILogger<Sta
 
         try
         {
-            var data = scope.ServiceProvider.GetRequiredService<MetricsData>();
+            var data = scope.ServiceProvider.GetRequiredService<IMetricsData>();
             var rows = await data.FillJobCounters();
-            _logger.LogDebug("statistics job execute {Method} with {Total} effected row(s)", nameof(MetricsData.FillJobCounters), rows);
+            _logger.LogDebug("statistics job execute {Method} with {Total} effected row(s)", nameof(IMetricsData.FillJobCounters), rows);
         }
         catch (Exception ex)
         {
@@ -73,7 +73,7 @@ public sealed class StatisticsJob(IServiceScopeFactory serviceScope, ILogger<Sta
 
         try
         {
-            var data = scope.ServiceProvider.GetRequiredService<MetricsData>();
+            var data = scope.ServiceProvider.GetRequiredService<IMetricsData>();
             var rows = await data.BuildJobStatistics();
             _logger.LogDebug("statistics job execute {Method} with {Total} effected row(s)", nameof(data.BuildJobStatistics), rows);
         }
@@ -104,10 +104,10 @@ public sealed class StatisticsJob(IServiceScopeFactory serviceScope, ILogger<Sta
         try
         {
             using var scope = _serviceScope.CreateScope();
-            var data = scope.ServiceProvider.GetRequiredService<MetricsData>();
+            var data = scope.ServiceProvider.GetRequiredService<IMetricsData>();
             statistics = await data.GetJobDurationStatistics();
             var cache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
-            cache.Set(nameof(MetricsData.GetJobDurationStatistics), statistics, StatisticsUtil.DefaultCacheSpan);
+            cache.Set(nameof(IMetricsData.GetJobDurationStatistics), statistics, StatisticsUtil.DefaultCacheSpan);
         }
         catch (Exception ex)
         {
@@ -124,10 +124,10 @@ public sealed class StatisticsJob(IServiceScopeFactory serviceScope, ILogger<Sta
         try
         {
             using var scope = _serviceScope.CreateScope();
-            var data = scope.ServiceProvider.GetRequiredService<MetricsData>();
+            var data = scope.ServiceProvider.GetRequiredService<IMetricsData>();
             statistics = await data.GetJobEffectedRowsStatistics();
             var cache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
-            cache.Set(nameof(MetricsData.GetJobEffectedRowsStatistics), statistics, StatisticsUtil.DefaultCacheSpan);
+            cache.Set(nameof(IMetricsData.GetJobEffectedRowsStatistics), statistics, StatisticsUtil.DefaultCacheSpan);
         }
         catch (Exception ex)
         {
@@ -139,7 +139,7 @@ public sealed class StatisticsJob(IServiceScopeFactory serviceScope, ILogger<Sta
 
     private async Task<int> FillAnomaly(IServiceProvider serviceProvider)
     {
-        var data = serviceProvider.GetRequiredService<MetricsData>();
+        var data = serviceProvider.GetRequiredService<IMetricsData>();
         var logsQuery = data.GetNullAnomaly();
         var config = new MapperConfiguration(cfg => cfg.AddProfile<MetricsProfile>());
         var mapper = config.CreateMapper();

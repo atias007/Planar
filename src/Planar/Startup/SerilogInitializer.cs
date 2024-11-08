@@ -6,7 +6,6 @@ using Planar.Common;
 using Planar.Startup.Logging;
 using Serilog;
 using Serilog.Debugging;
-using Serilog.Sinks.MSSqlServer;
 using System;
 using System.Diagnostics;
 using System.Dynamic;
@@ -23,7 +22,10 @@ namespace Planar.Startup
             SelfLog.Enable(msg =>
             {
                 Console.WriteLine(msg);
-                Debugger.Break();
+                if (AppSettings.Database.ProviderName != DbProviders.Sqlite)
+                {
+                    Debugger.Break();
+                }
             });
         }
 
@@ -42,24 +44,9 @@ namespace Planar.Startup
                         .AddEnvironmentVariables()
                         .Build();
 
-            var sqlSink = new MSSqlServerSinkOptions
-            {
-                TableName = "Trace",
-                AutoCreateSqlTable = false,
-                SchemaName = "dbo",
-            };
-
-            var sqlColumns = new ColumnOptions();
-            sqlColumns.Store.Remove(StandardColumn.MessageTemplate);
-            sqlColumns.Store.Remove(StandardColumn.Properties);
-            sqlColumns.Store.Add(StandardColumn.LogEvent);
-            sqlColumns.LogEvent.ExcludeStandardColumns = true;
-
             config.ReadFrom.Configuration(configuration);
-            config.WriteTo.MSSqlServer(
-                connectionString: AppSettings.Database.ConnectionString,
-                sinkOptions: sqlSink,
-                columnOptions: sqlColumns);
+
+            DbFactory.AddSerilogDbSink(config);
 
             config.Enrich.WithPlanarEnricher();
             config.Enrich.FromGlobalLogContext();

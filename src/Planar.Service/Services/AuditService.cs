@@ -89,7 +89,7 @@ namespace Planar.Service.Services
             var jobId = message.JobKey == null ? string.Empty : await _jobKeyHelper.GetJobId(message.JobKey);
 
             using var scope = serviceScopeFactory.CreateScope();
-            var data = scope.ServiceProvider.GetRequiredService<JobData>();
+            var data = scope.ServiceProvider.GetRequiredService<IJobData>();
             var audit = new JobAudit
             {
                 DateCreated = DateTime.Now,
