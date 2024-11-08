@@ -15,7 +15,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Data.Sqlite" Version="1.0.1" />
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
 	</ItemGroup>
 
 	<ItemGroup>

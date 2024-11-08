@@ -12,7 +12,7 @@
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageReference Include="RestSharp" Version="112.0.0" />
+		<PackageReference Include="RestSharp" Version="112.1.0" />
 	</ItemGroup>
 	<ItemGroup>
 	  <ProjectReference Include="..\..\nuget packages\Planar.Job\Planar.Job.csproj" />
