@@ -67,6 +67,7 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
         return Ok(result);
     }
 
+    [ApiExplorerSettings(IgnoreApi = true)]
     [HttpGet("jobfilename/{id}")]
     [ViewerAuthorize]
     [BadRequestResponse]

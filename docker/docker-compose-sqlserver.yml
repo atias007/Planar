@@ -37,4 +37,4 @@ volumes:
 networks:
   planar_network:
 
-# docker-compose -p planar up -d --remove-orphans
+# docker-compose -f docker-compose-sqlserver.yml -p planar up -d --remove-orphans

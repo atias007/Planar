@@ -13,27 +13,5 @@ services:
       - ./Planar/Data:/app/Data
     depends_on:
       - db
-    networks:
-      - planar_network
-  db:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: planar-db
-    ports:
-      - "6020:1433"
-    environment:
-      - TZ=Israel
-      - ACCEPT_EULA=Y
-      - MSSQL_PID=Express
-      - SA_PASSWORD=PlanarSqlPassword12345@
-    volumes:
-      - dbvolume:/var/opt/mssql
-    networks:
-      - planar_network
 
-volumes:
-  dbvolume:
-
-networks:
-  planar_network:
-
-# docker-compose -p planar up -d --remove-orphans
+# docker-compose -f docker-compose-sqlite up -d

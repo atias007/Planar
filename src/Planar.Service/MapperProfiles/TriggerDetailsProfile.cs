@@ -40,7 +40,8 @@ internal class TriggerDetailsProfile : Profile
             .ForMember(t => t.NextFireTime, map => map.MapFrom(s => GetDateTime(s.GetNextFireTimeUtc())))
             .ForMember(t => t.PreviousFireTime, map => map.MapFrom(s => GetDateTime(s.GetPreviousFireTimeUtc())))
             .ForMember(t => t.DataMap, map => map.MapFrom(s => Global.ConvertDataMapToDictionary(s.JobDataMap)))
-            .ForMember(t => t.State, map => map.MapFrom(s => GetTriggerState(s.Key, scheduler)));
+            .ForMember(t => t.State, map => map.MapFrom(s => GetTriggerState(s.Key, scheduler)))
+            .ForMember(t => t.Active, map => map.MapFrom(s => GetTriggerActive(s.Key, scheduler)));
 
         CreateMap<ISimpleTrigger, SimpleTriggerDetails>()
             .ForMember(t => t.MisfireBehaviour, map => map.MapFrom(s => GetMisfireInstructionNameForSimpleTrigger(s.MisfireInstruction)))
@@ -61,6 +62,13 @@ internal class TriggerDetailsProfile : Profile
     private static DateTime? GetDateTime(DateTimeOffset? dateTimeOffset)
     {
         return dateTimeOffset?.LocalDateTime;
+    }
+
+    private static bool GetTriggerActive(TriggerKey key, IScheduler scheduler)
+    {
+        var state = scheduler.GetTriggerState(key).Result;
+        var result = TriggerHelper.IsActiveState(state);
+        return result;
     }
 
     private static string? GetTriggerState(TriggerKey key, IScheduler scheduler)

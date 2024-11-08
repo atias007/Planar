@@ -177,6 +177,7 @@ public partial class JobDomain
         foreach (var t in triggers)
         {
             if (t.Key.Group == Consts.RecoveringJobsGroup) { continue; }
+            if (t.Key.Group == Consts.ManualTriggerId) { continue; }
             var active = await IsTriggerActive(t);
             if (active)
             {

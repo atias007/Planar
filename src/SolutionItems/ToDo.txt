@@ -359,3 +359,4 @@ V1.7.8
 - remove veto monitor event
 - BUG: test cli command exist with -1 status
 - cli job update: enable with job id
+- auto create JobFiles folder under Data folder with all types of jobfiles.yml
