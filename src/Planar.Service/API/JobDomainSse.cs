@@ -36,14 +36,17 @@ internal class JobDomainSse
         httpContext.Response.Headers.Append("Content-Type", "text/event-stream");
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(timeout);
+        cts.Token.Register(() => _autoResetEvent.Set());
 
         while (!cts.IsCancellationRequested)
         {
             var signal = _autoResetEvent.WaitOne(TimeSpan.FromMinutes(1));
             if (!signal) { continue; }
             if (_log == null) { continue; }
+            var text = _log.ToString();
+            if (string.IsNullOrWhiteSpace(text)) { continue; }
 
-            await httpContext.Response.WriteAsync($"{_log}\n", cancellationToken: cancellationToken);
+            await httpContext.Response.WriteAsync($"{text}\n", cancellationToken: cancellationToken);
             await httpContext.Response.Body.FlushAsync(cancellationToken);
 
             _log = null;
