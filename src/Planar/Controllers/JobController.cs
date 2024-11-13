@@ -368,6 +368,20 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
         return Ok(result);
     }
 
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [HttpGet("running-log/{instanceId}/sse")]
+    [ViewerAuthorize]
+    [SwaggerOperation(OperationId = "get_job_running_log_instanceid_sse", Description = "Get running job log", Summary = "Get running job log")]
+    [BadRequestResponse]
+    [NotFoundResponse]
+    public async Task<ActionResult<RunningJobData>> GetRunningLog([FromRoute][Required] string instanceId)
+    {
+        instanceId = WebUtility.UrlDecode(instanceId);
+        MqttBrokerService.
+
+        return Ok();
+    }
+
     [HttpGet("jobfile/{name}")]
     [EditorAuthorize]
     [SwaggerOperation(OperationId = "get_job_jobfile_name", Description = "Get JobFile.yml template", Summary = "Get JobFile.yml Template")]
