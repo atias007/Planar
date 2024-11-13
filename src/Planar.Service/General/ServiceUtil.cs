@@ -109,7 +109,11 @@ public static class ServiceUtil
 
     public static string GetJobFolder(string? folder)
     {
-        var path = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, folder);
+        var path =
+            string.IsNullOrWhiteSpace(folder) ?
+            FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs) :
+            FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, folder);
+
         return path;
     }
 

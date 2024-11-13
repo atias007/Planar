@@ -617,8 +617,6 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         return CliActionResponse.Empty;
     }
 
-    private record JobProperties(string Path);
-
     [Action("update")]
     [NullRequest]
     public static async Task<CliActionResponse> UpdateJob(CliUpdateJobRequest request, CancellationToken cancellationToken = default)
