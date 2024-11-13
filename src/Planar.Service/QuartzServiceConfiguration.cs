@@ -81,15 +81,7 @@ public static class QuartzServiceConfiguration
                     });
                 }
 
-                switch (AppSettings.Database.Provider)
-                {
-                    case "SqlServer":
-                        x.UseSqlServer(AppSettings.Database.ConnectionString ?? string.Empty);
-                        break;
-
-                    default:
-                        throw new NotImplementedException($"Database provider {AppSettings.Database.Provider} is not supported");
-                }
+                DbFactory.QuartzUsePersistentStore(x);
 
                 // this requires Quartz.Serialization.Json NuGet package
                 x.UseNewtonsoftJsonSerializer();

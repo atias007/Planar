@@ -1,7 +1,10 @@
-﻿using System.IO;
+﻿using Planar.Service.General;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Twilio.Base;
 
 namespace Planar.Startup
 {
@@ -11,6 +14,8 @@ namespace Planar.Startup
         {
             var assembly = Assembly.GetExecutingAssembly();
             var names = assembly.GetManifestResourceNames();
+
+            _ = CreateJobFiles();
 
             var resources =
                 names
@@ -45,6 +50,48 @@ namespace Planar.Startup
                     await File.WriteAllTextAsync(source.FileInfo.FullName, content);
                 }
             });
+        }
+
+        private static async Task CreateJobFiles()
+        {
+            static void EnsurePath(string path)
+            {
+                if (!Directory.Exists(path)) { Directory.CreateDirectory(path); }
+            }
+
+            string jobFileFolder;
+            try
+            {
+                var root = FolderConsts.GetDataFolder(fullPath: true);
+                jobFileFolder = Path.Combine(root, "JobFiles");
+                EnsurePath(jobFileFolder);
+            }
+            catch
+            {
+                // *** DO NOTHING *** //
+                return;
+            }
+
+            var types = ServiceUtil.JobTypes;
+            foreach (var t in types)
+            {
+                try
+                {
+                    var path = Path.Combine(jobFileFolder, t);
+                    EnsurePath(path);
+
+                    var assembly = Assembly.Load(t);
+                    var resource = $"{t}.JobFile.yml";
+                    using var stream = assembly.GetManifestResourceStream(resource);
+                    using var reader = new StreamReader(stream);
+                    var content = await reader.ReadToEndAsync();
+                    await File.WriteAllTextAsync(Path.Combine(path, "JobFile.yml"), content);
+                }
+                catch
+                {
+                    // *** DO NOTHING *** //
+                }
+            }
         }
 
         private static FileInfo ConvertResourceToPath(string resource)

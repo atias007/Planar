@@ -31,6 +31,8 @@ namespace Planar.Client.Entities
 
         public string? State { get; set; }
 
+        public bool Active { get; set; }
+
         public Dictionary<string, string?> DataMap { get; set; } = new Dictionary<string, string?>();
     }
 }

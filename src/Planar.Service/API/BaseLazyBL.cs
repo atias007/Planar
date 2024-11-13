@@ -9,17 +9,11 @@ using System.Security.Claims;
 
 namespace Planar.Service.API;
 
-public abstract class BaseLazyBL<TBusinesLayer, TDataLayer> : BaseBL<TBusinesLayer>
-    where TDataLayer : BaseDataLayer
+public abstract class BaseLazyBL<TBusinesLayer, TDataLayer>(IServiceProvider serviceProvider) : BaseBL<TBusinesLayer>(serviceProvider)
+    where TDataLayer : IBaseDataLayer
 {
-    private readonly Lazy<TDataLayer> _dataLayer;
-    private readonly IHttpContextAccessor _contextAccessor;
-
-    protected BaseLazyBL(IServiceProvider serviceProvider) : base(serviceProvider)
-    {
-        _dataLayer = serviceProvider.GetRequiredService<Lazy<TDataLayer>>();
-        _contextAccessor = serviceProvider.GetRequiredService<IHttpContextAccessor>();
-    }
+    private readonly Lazy<TDataLayer> _dataLayer = serviceProvider.GetRequiredService<Lazy<TDataLayer>>();
+    private readonly IHttpContextAccessor _contextAccessor = serviceProvider.GetRequiredService<IHttpContextAccessor>();
 
     protected int? UserId
     {

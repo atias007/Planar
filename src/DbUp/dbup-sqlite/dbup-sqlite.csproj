@@ -15,7 +15,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="dbup-core" Version="5.0.37"/>
-		<PackageReference Include="Microsoft.Data.Sqlite" Version="1.0.1" />
+		<PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.10" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\dbup-core\dbup-core.csproj" />
 	</ItemGroup>
 </Project>

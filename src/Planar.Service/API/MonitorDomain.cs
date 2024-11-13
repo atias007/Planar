@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API;
 
-public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<MonitorDomain, MonitorData>(serviceProvider)
+public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<MonitorDomain, IMonitorData>(serviceProvider)
 {
     private static readonly int[] _counterEvents = [
         (int)MonitorEvents.ClusterHealthCheckFail,
@@ -33,7 +33,8 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         (int)MonitorEvents.ExecutionFailxTimesInyHours,
         (int)MonitorEvents.ExecutionLastRetryFail,
         (int)MonitorEvents.ExecutionSuccessWithNoEffectedRows,
-        (int)MonitorEvents.ExecutionVetoed];
+        ////(int)MonitorEvents.ExecutionVetoed
+        ];
 
     public static List<MonitorEventModel> GetEvents()
     {
@@ -70,7 +71,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         var validator = new MonitorActionValidator();
         validator.ValidateMonitorArguments(request);
 
-        var mapperData = Resolve<AutoMapperData>();
+        var mapperData = Resolve<IAutoMapperData>();
         var monitor = Mapper.Map<MonitorAction>(request);
         monitor.GroupId = await mapperData.GetGroupId(request.GroupName);
 
@@ -336,7 +337,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         var dbMonitor = await DataLayer.GetMonitorAction(request.Id);
         var monitor = ValidateExistingEntity(dbMonitor, "monitor");
         ForbbidenPartialUpdateProperties(request, "EventId", "GroupId");
-        var mapperData = Resolve<AutoMapperData>();
+        var mapperData = Resolve<IAutoMapperData>();
         var updateMonitor = Mapper.Map<UpdateMonitorRequest>(monitor);
         updateMonitor.GroupName = await mapperData.GetGroupName(monitor.GroupId) ?? string.Empty;
         var validator = Resolve<IValidator<UpdateMonitorRequest>>();
@@ -363,7 +364,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
     public async Task Try(MonitorTestRequest request)
     {
         var monitorUtil = Resolve<MonitorUtil>();
-        var groupDal = Resolve<GroupData>();
+        var groupDal = Resolve<IGroupData>();
         var groupId = await groupDal.GetGroupId(request.GroupName ?? string.Empty);
         var group = await groupDal.GetGroupWithUsers(groupId);
         var monitorEvent = Enum.Parse<MonitorEvents>(request.EventName.ToString());
@@ -441,7 +442,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
 
         var validator = new MonitorActionValidator();
         validator.ValidateMonitorArguments(request);
-        var mapperData = Resolve<AutoMapperData>();
+        var mapperData = Resolve<IAutoMapperData>();
         var monitor = Mapper.Map<MonitorAction>(request);
         monitor.GroupId = await mapperData.GetGroupId(request.GroupName);
         if (string.IsNullOrWhiteSpace(monitor.JobGroup)) { monitor.JobGroup = null; }
@@ -465,7 +466,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
     public async Task SetMonitorActionsCache(bool clusterReload)
     {
         using var scope = ServiceProvider.CreateScope();
-        var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
+        var dal = scope.ServiceProvider.GetRequiredService<IMonitorData>();
         var data = await dal.GetMonitorActions();
         MonitorServiceCache.SetCache(data);
 
@@ -525,7 +526,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
     private void FillDistributionGroupName(IEnumerable<MonitorItem>? items)
     {
         if (items == null) { return; }
-        var mappaerData = Resolve<AutoMapperData>();
+        var mappaerData = Resolve<IAutoMapperData>();
         var dic = items.Select(i => i.GroupId).Distinct().ToDictionary(i => i, i => mappaerData.GetGroupName(i).Result ?? string.Empty);
         foreach (var item in items)
         {
@@ -536,7 +537,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
     private void FillDistributionGroupName(MonitorItem? item)
     {
         if (item == null) { return; }
-        var mappaerData = Resolve<AutoMapperData>();
+        var mappaerData = Resolve<IAutoMapperData>();
         item.DistributionGroupName = mappaerData.GetGroupName(item.GroupId).Result ?? string.Empty;
     }
 

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API;
 
-public class TraceDomain(IServiceProvider serviceProvider) : BaseLazyBL<TraceDomain, TraceData>(serviceProvider)
+public class TraceDomain(IServiceProvider serviceProvider) : BaseLazyBL<TraceDomain, ITraceData>(serviceProvider)
 {
     public IQueryable<Model.Trace> GetTraceData()
     {

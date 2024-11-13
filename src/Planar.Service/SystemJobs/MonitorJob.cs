@@ -53,14 +53,14 @@ internal class MonitorJob(IServiceScopeFactory scopeFactory, ILogger<MonitorJob>
     private async Task ResetMonitorCounter()
     {
         using var scope = _scopeFactory.CreateScope();
-        var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
+        var dal = scope.ServiceProvider.GetRequiredService<IMonitorData>();
         await dal.ResetMonitorCounter(_periodMinutes);
     }
 
     private async Task DeleteOldMonitorMutes()
     {
         using var scope = _scopeFactory.CreateScope();
-        var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
+        var dal = scope.ServiceProvider.GetRequiredService<IMonitorData>();
         await dal.DeleteOldMonitorMutes();
     }
 }

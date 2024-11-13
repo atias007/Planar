@@ -67,7 +67,7 @@ public class ReportDomain(IServiceProvider serviceProvider) : BaseBL<ReportDomai
 
         request.Group ??= existsGroup;
 
-        var groupDal = Resolve<GroupData>();
+        var groupDal = Resolve<IGroupData>();
         var groupName =
             string.IsNullOrWhiteSpace(request.Group) ?
             string.Empty :
@@ -251,7 +251,7 @@ public class ReportDomain(IServiceProvider serviceProvider) : BaseBL<ReportDomai
     private async Task ValidateGroupAndEmails(string groupName)
     {
         // validate group exists
-        var groupDal = Resolve<GroupData>();
+        var groupDal = Resolve<IGroupData>();
         var id = await groupDal.GetGroupId(groupName);
         var group =
             await groupDal.GetGroupWithUsers(id)

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.API;
 
-public class MetricsDomain(IServiceProvider serviceProvider) : BaseJobBL<MetricsDomain, MetricsData>(serviceProvider)
+public class MetricsDomain(IServiceProvider serviceProvider) : BaseJobBL<MetricsDomain, IMetricsData>(serviceProvider)
 {
     public async Task RebuildJobStatistics()
     {
@@ -27,9 +27,9 @@ public class MetricsDomain(IServiceProvider serviceProvider) : BaseJobBL<Metrics
         using var scope1 = _serviceProvider.CreateScope();
         using var scope2 = _serviceProvider.CreateScope();
         using var scope3 = _serviceProvider.CreateScope();
-        var query1 = scope1.ServiceProvider.GetRequiredService<MetricsData>().GetJobDurationStatistics(id!);
-        var query2 = scope2.ServiceProvider.GetRequiredService<MetricsData>().GetJobEffectedRowsStatistics(id!);
-        var s3 = scope2.ServiceProvider.GetRequiredService<MetricsData>().GetJobCounters(id!);
+        var query1 = scope1.ServiceProvider.GetRequiredService<IMetricsData>().GetJobDurationStatistics(id!);
+        var query2 = scope2.ServiceProvider.GetRequiredService<IMetricsData>().GetJobEffectedRowsStatistics(id!);
+        var s3 = scope2.ServiceProvider.GetRequiredService<IMetricsData>().GetJobCounters(id!);
 
         var s1 = Mapper.ProjectTo<JobDurationStatisticDto>(query1).FirstOrDefaultAsync();
         var s2 = Mapper.ProjectTo<JobEffectedRowsStatisticDto>(query2).FirstOrDefaultAsync();

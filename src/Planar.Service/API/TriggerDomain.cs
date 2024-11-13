@@ -16,7 +16,7 @@ using static Planar.Service.API.JobDomain;
 
 namespace Planar.Service.API;
 
-public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<TriggerDomain, JobData>(serviceProvider)
+public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<TriggerDomain, IJobData>(serviceProvider)
 {
     #region Data
 

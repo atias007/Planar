@@ -5,11 +5,43 @@ using Planar.Service.Reports;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Planar.Service.Data;
 
-public class JobData(PlanarContext context) : BaseDataLayer(context), IJobPropertyDataLayer
+public interface IJobData : IJobPropertyDataLayer, IBaseDataLayer
+{
+    Task AddJobAudit(JobAudit jobAudit);
+
+    Task AddJobProperty(JobProperty jobProperty);
+
+    Task DeleteJobAudit(string jobId);
+
+    Task DeleteJobProperty(string jobId);
+
+    IQueryable<JobAudit> GetAudits();
+
+    IQueryable<JobAudit> GetAuditsForReport(DateScope dateScope);
+
+    IQueryable<JobAudit> GetJobAudit(int id);
+
+    IQueryable<JobAudit> GetJobAudits(string id, int firstId);
+
+    Task<int?> GetJobFirstAudit(string id);
+
+    Task<IEnumerable<string>> GetJobPropertiesIds();
+
+    Task UpdateJobProperty(JobProperty jobProperty);
+}
+
+public class JobDataSqlite(PlanarContext context) : JobData(context), IJobData
+{
+}
+
+public class JobDataSqlServer(PlanarContext context) : JobData(context), IJobData
+{
+}
+
+public class JobData(PlanarContext context) : BaseDataLayer(context)
 {
     public async Task<string?> GetJobProperty(string jobId)
     {

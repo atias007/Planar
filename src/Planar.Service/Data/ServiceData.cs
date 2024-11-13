@@ -6,6 +6,23 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Data;
 
+public interface IServiceData : IBaseDataLayer
+{
+    Task AddSecurityAudit(SecurityAudit audit);
+
+    IQueryable<SecurityAudit> GetSecurityAudits(SecurityAuditsFilter request);
+
+    Task HealthCheck();
+}
+
+public class ServiceDataSqlite(PlanarContext context) : ServiceData(context), IServiceData
+{
+}
+
+public class ServiceDataSqlServer(PlanarContext context) : ServiceData(context), IServiceData
+{
+}
+
 public class ServiceData(PlanarContext context) : BaseDataLayer(context)
 {
     public async Task HealthCheck()

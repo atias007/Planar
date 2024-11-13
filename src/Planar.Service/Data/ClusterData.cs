@@ -6,6 +6,27 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Data;
 
+public interface IClusterData : IBaseDataLayer
+{
+    Task AddClusterNode(ClusterNode item);
+
+    Task<ClusterNode?> GetClusterNode(ClusterNode item);
+
+    Task<List<ClusterNode>> GetClusterNodes();
+
+    Task RemoveClusterNode(ClusterNode item);
+
+    Task UpdateClusterNode(ClusterNode item);
+}
+
+public class ClusterDataSqlServer(PlanarContext context) : ClusterData(context), IClusterData
+{
+}
+
+public class ClusterDataSqlite(PlanarContext context) : ClusterData(context), IClusterData
+{
+}
+
 public class ClusterData(PlanarContext context) : BaseDataLayer(context)
 {
     public async Task<ClusterNode?> GetClusterNode(ClusterNode item)

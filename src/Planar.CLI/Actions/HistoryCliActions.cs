@@ -6,11 +6,9 @@ using Planar.CLI.Proxy;
 using RestSharp;
 using Spectre.Console;
 using System;
-using System.Reflection.Metadata.Ecma335;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace Planar.CLI.Actions;
 

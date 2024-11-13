@@ -20,7 +20,7 @@ using System.Threading.Tasks;
 namespace Planar.Service.API;
 
 public abstract class BaseBL<TBusinesLayer, TDataLayer>(IServiceProvider serviceProvider) : BaseBL<TBusinesLayer>(serviceProvider)
-    where TDataLayer : BaseDataLayer
+    where TDataLayer : IBaseDataLayer
 {
     private readonly TDataLayer _dataLayer = serviceProvider.GetRequiredService<TDataLayer>();
     private readonly IHttpContextAccessor _contextAccessor = serviceProvider.GetRequiredService<IHttpContextAccessor>();

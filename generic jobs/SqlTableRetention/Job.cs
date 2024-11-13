@@ -89,7 +89,7 @@ internal partial class Job : BaseCheckJob
         using var connection = new SqlConnection(table.ConnectionString);
         using var cmd = new SqlCommand(query, connection)
         {
-            CommandTimeout = (int)timeout.TotalMilliseconds
+            CommandTimeout = (int)timeout.TotalSeconds
         };
 
         await connection.OpenAsync();

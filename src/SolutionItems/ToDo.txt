@@ -351,3 +351,12 @@ V1.7.7
 - add free search on cli jobs menu / monitor event menu
 - BUG: recovery running try to add same retry trigger with same key
 
+V1.7.8
+--------
+- ** Add support to sqlite **
+- abillity to add job from Jobs root folder (without sub directory)
+- BUG: in generic jobs, sql check/retention -> timeout need to be in seconds - but was in milliseconds
+- remove veto monitor event
+- BUG: test cli command exist with -1 status
+- cli job update: enable with job id
+- auto create JobFiles folder under Data folder with all types of jobfiles.yml

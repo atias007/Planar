@@ -94,7 +94,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
         try
         {
             using var scope = serviceScopeFactory.CreateScope();
-            var data = scope.ServiceProvider.GetRequiredService<MetricsData>();
+            var data = scope.ServiceProvider.GetRequiredService<IMetricsData>();
             var rows = await data.ClearStatisticsTables(AppSettings.Retention.StatisticsRetentionDays);
             logger.LogDebug("clear statistics tables rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.StatisticsRetentionDays, rows);
         }
@@ -109,7 +109,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
         try
         {
             using var scope = serviceScopeFactory.CreateScope();
-            var data = scope.ServiceProvider.GetRequiredService<HistoryData>();
+            var data = scope.ServiceProvider.GetRequiredService<IHistoryData>();
             var rows = await data.ClearJobLogTable(AppSettings.Retention.JobLogRetentionDays);
             logger.LogDebug("clear job log table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.JobLogRetentionDays, rows);
         }
@@ -126,7 +126,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
             using var scope = serviceScopeFactory.CreateScope();
             var scheduler = scope.ServiceProvider.GetRequiredService<IScheduler>();
             var jobs = await scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
-            var data = scope.ServiceProvider.GetRequiredService<HistoryData>();
+            var data = scope.ServiceProvider.GetRequiredService<IHistoryData>();
 
             foreach (var item in jobs)
             {
@@ -151,7 +151,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
         try
         {
             using var scope = serviceScopeFactory.CreateScope();
-            var data = scope.ServiceProvider.GetRequiredService<TraceData>();
+            var data = scope.ServiceProvider.GetRequiredService<ITraceData>();
             var rows = await data.ClearTraceTable(AppSettings.Retention.TraceRetentionDays);
             logger.LogDebug("clear trace table rows (older then {Days} days) with {Total} effected row(s)", AppSettings.Retention.TraceRetentionDays, rows);
         }
@@ -182,7 +182,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
         try
         {
             using var scope = serviceScopeFactory.CreateScope();
-            var data = scope.ServiceProvider.GetRequiredService<JobData>();
+            var data = scope.ServiceProvider.GetRequiredService<IJobData>();
             var ids = await data.GetJobPropertiesIds();
             var rows = 0;
             foreach (var id in ids)
@@ -208,7 +208,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
         try
         {
             using var scope = serviceScopeFactory.CreateScope();
-            var data = scope.ServiceProvider.GetRequiredService<MonitorData>();
+            var data = scope.ServiceProvider.GetRequiredService<IMonitorData>();
             var ids = await data.GetMonitorCounterJobIds();
             var rows = 0;
             foreach (var id in ids)
@@ -234,7 +234,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
         try
         {
             using var scope = serviceScopeFactory.CreateScope();
-            var data = scope.ServiceProvider.GetRequiredService<MonitorData>();
+            var data = scope.ServiceProvider.GetRequiredService<IMonitorData>();
             var ids = await data.GetMonitorCounterIds();
             var existsIds = await data.GetMonitorActionIds();
             var rows = 0;
@@ -261,7 +261,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
         try
         {
             using var scope = serviceScopeFactory.CreateScope();
-            var data = scope.ServiceProvider.GetRequiredService<MetricsData>();
+            var data = scope.ServiceProvider.GetRequiredService<IMetricsData>();
             var ids1 = await data.GetJobDurationStatisticsIds();
 
             var rows = 0;

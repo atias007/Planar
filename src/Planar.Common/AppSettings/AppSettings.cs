@@ -58,8 +58,9 @@ public static class AppSettings
         InitializeHooks(configuration);
 
         // Database
-        Database.Provider = GetSettings(configuration, EC.DatabaseProviderVariableKey, "database", "provider", "Npgsql");
+        Database.Provider = GetSettings(configuration, EC.DatabaseProviderVariableKey, "database", "provider", "Sqlite");
         Database.RunMigration = GetSettings(configuration, EC.RunDatabaseMigrationVariableKey, "database", "run migration", true);
+        DbFactory.SetDatabaseProvider();
 
         // General
         General.InstanceId = GetSettings(configuration, EC.InstanceIdVariableKey, "general", "instance id", "AUTO");
@@ -283,16 +284,12 @@ public static class AppSettings
     {
         Database.ConnectionString = GetSettings(configuration, EC.ConnectionStringVariableKey, "database", "connection string", string.Empty);
 
-        if (string.IsNullOrEmpty(Database.ConnectionString))
-        {
-            throw new AppSettingsException($"ERROR: 'database connection' string could not be initialized\r\nMissing key 'connection string' or value is empty in AppSettings.yml file and there is no environment variable '{EC.ConnectionStringVariableKey}'");
-        }
+        if (string.IsNullOrEmpty(Database.ConnectionString)) { return; }
 
         try
         {
             var builder = new SqlConnectionStringBuilder(Database.ConnectionString);
-            if (!builder.MultipleActiveResultSets) { return; }
-
+            if (builder.MultipleActiveResultSets) { return; }
             builder.MultipleActiveResultSets = false;
             Database.ConnectionString = builder.ConnectionString;
         }
@@ -304,6 +301,8 @@ public static class AppSettings
 
     public static void TestDatabasePermission()
     {
+        if (!Database.ProviderHasPermissions) { return; }
+
         try
         {
             using var conn = new SqlConnection(Database.ConnectionString);
@@ -347,11 +346,10 @@ public static class AppSettings
             var counter = 1;
             Policy.Handle<SqlException>()
                 .WaitAndRetryAsync(12, i => TimeSpan.FromSeconds(5))
-                .ExecuteAsync(() =>
+                .ExecuteAsync(async () =>
                 {
                     Console.WriteLine($"    - Attemp no {counter++} to connect to database");
-                    using var conn = new SqlConnection(connectionString);
-                    return conn.OpenAsync();
+                    await DbFactory.OpenDbConnection();
                 });
 
             Console.WriteLine($"    - Connection database success");

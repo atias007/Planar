@@ -95,7 +95,7 @@ public class MonitorUtil(IServiceScopeFactory serviceScopeFactory, MonitorScanPr
     internal async Task Validate()
     {
         using var scope = _serviceScopeFactory.CreateScope();
-        var dal = scope.ServiceProvider.GetRequiredService<MonitorData>();
+        var dal = scope.ServiceProvider.GetRequiredService<IMonitorData>();
         var count = await dal.GetMonitorCount();
         if (count == 0)
         {

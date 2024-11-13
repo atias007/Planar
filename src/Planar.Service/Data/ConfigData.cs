@@ -7,6 +7,29 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.Data;
 
+public interface IConfigData : IBaseDataLayer
+{
+    Task AddGlobalConfig(GlobalConfig config);
+
+    Task<IEnumerable<GlobalConfig>> GetAllGlobalConfig(CancellationToken stoppingToken = default);
+
+    Task<GlobalConfig?> GetGlobalConfig(string key);
+
+    Task<bool> IsGlobalConfigExists(string key);
+
+    Task<int> RemoveGlobalConfig(string key);
+
+    Task UpdateGlobalConfig(GlobalConfig config);
+}
+
+public class ConfigDataSqlite(PlanarContext context) : ConfigData(context), IConfigData
+{
+}
+
+public class ConfigDataSqlServer(PlanarContext context) : ConfigData(context), IConfigData
+{
+}
+
 public class ConfigData(PlanarContext context) : BaseDataLayer(context)
 {
     public async Task<GlobalConfig?> GetGlobalConfig(string key)

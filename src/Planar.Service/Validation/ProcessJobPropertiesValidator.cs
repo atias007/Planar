@@ -14,7 +14,6 @@ public class ProcessJobPropertiesValidator : AbstractValidator<ProcessJobPropert
     {
         _cluster = cluster;
         Include(new BaseProcessJobPropertiesValidator());
-        RuleFor(e => e.Path).NotEmpty().MaximumLength(500);
         RuleFor(e => e.Path).MustAsync(PathExists).When(e => !string.IsNullOrEmpty(e.Path))
             .WithMessage("fail to validate path property");
         RuleFor(e => e.Filename).NotEmpty().MaximumLength(500);
