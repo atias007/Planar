@@ -49,5 +49,6 @@ public class TriggerDetails : PausedTriggerDetails
     public bool Active { get; set; }
 
     [YamlMember(Order = 100)]
+    [DisplayFormat(DisplayName = "Data")]
     public Dictionary<string, string?> DataMap { get; set; } = [];
 }

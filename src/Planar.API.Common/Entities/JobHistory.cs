@@ -32,15 +32,15 @@ public class JobHistory
 
     public DateTime? EndDate { get; set; }
 
-    [DisplayFormat("duration")]
+    [DisplayFormat(SpecialFormat = SpecialFormat.Duration)]
     public int? Duration { get; set; }
 
-    [DisplayFormat("N0")]
+    [DisplayFormat(Format = "N0")]
     public int? EffectedRows { get; set; }
 
     public string? Data { get; set; }
 
-    [DisplayFormat("log")]
+    [DisplayFormat(SpecialFormat = SpecialFormat.Log)]
     public string? Log { get; set; }
 
     public string? Exception { get; set; }

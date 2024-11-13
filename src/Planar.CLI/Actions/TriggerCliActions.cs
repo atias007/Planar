@@ -75,7 +75,7 @@ public class TriggerCliActions : BaseCliAction<TriggerCliActions>
 
         if (result.Data.CronTriggers.Count != 0)
         {
-            return new CliActionResponse(result, dumpObject: result.Data.CronTriggers);
+            return new CliActionResponse(result, dumpObject: result.Data.CronTriggers[0]);
         }
 
         return new CliActionResponse(result);
