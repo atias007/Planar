@@ -9,19 +9,83 @@ using Planar.Job;
 using Planar.Service.API.Helpers;
 using Quartz;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using IJobExecutionContext = Quartz.IJobExecutionContext;
 
 namespace CommonJob;
 
-public class JobMessageBroker
+internal class LimitQueue<T>(int limit) : ConcurrentQueue<T>
 {
-    private static readonly object Locker = new();
+    private readonly int _limit = limit;
+    private readonly object _locker = new();
+
+    public new void Enqueue(T item)
+    {
+        base.Enqueue(item);
+        lock (_locker)
+        {
+            while (Count > _limit && TryDequeue(out _))
+            {
+                // === DO NOTHING ===
+            }
+        }
+    }
+}
+
+public class LogQueueFactory
+{
+    private LogQueueFactory()
+    {
+    }
+
+    private static LogQueueFactory _logQueueFactory = new();
+
+    public static LogQueueFactory Instance => _logQueueFactory;
+
+    private const int limit = 1000;
+    private readonly object Locker = new();
+    private readonly Dictionary<string, LimitQueue<LogEntity>> Queues = [];
+
+    private LimitQueue<LogEntity> GetQueue(string key)
+    {
+        lock (Locker)
+        {
+            if (Queues.TryGetValue(key, out var queue))
+            {
+                return queue;
+            }
+
+            queue = new LimitQueue<LogEntity>(limit);
+            Queues.Add(key, queue);
+            return queue;
+        }
+    }
+
+    public void Enqueue(string fireInstanceId, LogEntity log)
+    {
+        var queue = GetQueue(fireInstanceId);
+        queue.Enqueue(log);
+    }
+
+    public LogEntity? Dequeue(string fireInstanceId)
+    {
+        var queue = GetQueue(fireInstanceId);
+        if (queue.TryDequeue(out var result)) { return result; }
+        return null;
+    }
+}
+
+public class JobLogBroker
+{
+    private readonly object Locker = new();
     private readonly IJobExecutionContext _context;
     private readonly IMonitorUtil _monitorUtil;
 
-    public JobMessageBroker(IJobExecutionContext context, IDictionary<string, string?> settings, IMonitorUtil monitorUtil)
+    public static event EventHandler<LogEntityEventArgs>? InterceptingLogMessage;
+
+    public JobLogBroker(IJobExecutionContext context, IDictionary<string, string?> settings, IMonitorUtil monitorUtil)
     {
         _monitorUtil = monitorUtil;
         _context = context;
@@ -40,6 +104,23 @@ public class JobMessageBroker
         {
             return JobExecutionMetadata.GetInstance(_context);
         }
+    }
+
+    private void OnInterceptingLogMessage(LogEntity log)
+    {
+        if (InterceptingLogMessage == null) { return; }
+        var e = new LogEntityEventArgs(log, _context.FireInstanceId);
+        LogQueueFactory.Instance.Enqueue(_context.FireInstanceId, log);
+        InterceptingLogMessage(null, e);
+    }
+
+    private void OnInterceptingLogMessage(string message)
+    {
+        if (InterceptingLogMessage == null) { return; }
+        var log = new LogEntity(LogLevel.None, message);
+        var e = new LogEntityEventArgs(log, _context.FireInstanceId);
+        LogQueueFactory.Instance.Enqueue(_context.FireInstanceId, log);
+        InterceptingLogMessage(null, e);
     }
 
     public void AddAggregateException(ExceptionDto ex)
@@ -67,8 +148,14 @@ public class JobMessageBroker
     {
         lock (Locker)
         {
-            Metadata.Log.AppendLine(text);
+            OnInterceptingLogMessage(text);
+            InnerAppendLogRaw(text);
         }
+    }
+
+    private void InnerAppendLogRaw(string text)
+    {
+        Metadata.Log.AppendLine(text);
     }
 
     public void IncreaseEffectedRows(int delta = 1)
@@ -296,7 +383,8 @@ public class JobMessageBroker
         {
             if ((int)logEntity.Level >= (int)LogLevel)
             {
-                Metadata.Log.AppendLine(logEntity.ToString());
+                InnerAppendLogRaw(logEntity.ToString());
+                OnInterceptingLogMessage(logEntity);
                 if (logEntity.Level == LogLevel.Warning)
                 {
                     Metadata.HasWarnings = true;
@@ -317,7 +405,7 @@ public class JobMessageBroker
         lock (Locker)
         {
             LogLevel = level;
-            Metadata.Log.AppendLine($"[Log Level: {LogLevel}]");
+            InnerAppendLogRaw($"[Log Level: {LogLevel}]");
         }
     }
 }

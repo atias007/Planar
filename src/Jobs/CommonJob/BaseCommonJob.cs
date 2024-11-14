@@ -14,23 +14,15 @@ using IJobExecutionContext = Quartz.IJobExecutionContext;
 
 namespace CommonJob;
 
-public abstract class BaseCommonJob
+public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logger)
 {
-    private JobMessageBroker _messageBroker = null!;
+    private JobLogBroker _messageBroker = null!;
     private CancellationTokenSource? _tokenSource;
-    private readonly JobMonitorUtil _jobMonitorUtil;
-    private readonly ILogger _logger;
 
     protected IDictionary<string, string?> Settings { get; private set; } = new Dictionary<string, string?>();
 
-    protected BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logger)
-    {
-        _jobMonitorUtil = jobMonitorUtil;
-        _logger = logger;
-    }
-
-    protected JobMessageBroker MessageBroker => _messageBroker;
-    protected IMonitorUtil MonitorUtil => _jobMonitorUtil.MonitorUtil;
+    protected JobLogBroker MessageBroker => _messageBroker;
+    protected IMonitorUtil MonitorUtil => jobMonitorUtil.MonitorUtil;
 
     protected static void DoNothingMethod()
     {
@@ -67,7 +59,7 @@ public abstract class BaseCommonJob
 
     protected void StartMonitorDuration(IJobExecutionContext context)
     {
-        var minutes = _jobMonitorUtil.MonitorDurationCache.GetMonitorMinutes(context);
+        var minutes = jobMonitorUtil.MonitorDurationCache.GetMonitorMinutes(context);
         if (!minutes.Any()) { return; }
 
         _tokenSource = new();
@@ -99,7 +91,7 @@ public abstract class BaseCommonJob
         catch (Exception ex)
         {
             var source = nameof(SafeScan);
-            _logger.LogCritical(ex, "Error handle {Source}: {Message}", source, ex.Message);
+            logger.LogCritical(ex, "Error handle {Source}: {Message}", source, ex.Message);
         }
     }
 
@@ -115,7 +107,7 @@ public abstract class BaseCommonJob
         Settings = settings;
     }
 
-    internal void SetMessageBroker(JobMessageBroker messageBroker)
+    internal void SetMessageBroker(JobLogBroker messageBroker)
     {
         _messageBroker = messageBroker;
     }
@@ -128,20 +120,13 @@ public abstract class BaseCommonJob
     }
 }
 
-public abstract class BaseCommonJob<TProperties> : BaseCommonJob, IJob
+public abstract class BaseCommonJob<TProperties>(
+    ILogger logger,
+    IJobPropertyDataLayer dataLayer,
+    JobMonitorUtil jobMonitorUtil) : BaseCommonJob(jobMonitorUtil, logger), IJob
     where TProperties : class, new()
 {
-    protected readonly ILogger _logger;
-    private readonly IJobPropertyDataLayer _dataLayer;
-
-    protected BaseCommonJob(
-        ILogger logger,
-        IJobPropertyDataLayer dataLayer,
-        JobMonitorUtil jobMonitorUtil) : base(jobMonitorUtil, logger)
-    {
-        _logger = logger;
-        _dataLayer = dataLayer;
-    }
+    protected readonly ILogger _logger = logger;
 
     public TProperties Properties { get; private set; } = new();
 
@@ -184,7 +169,7 @@ public abstract class BaseCommonJob<TProperties> : BaseCommonJob, IJob
         }
 
         FillSettings(LoadJobSettings(path));
-        SetMessageBroker(new JobMessageBroker(context, Settings, MonitorUtil));
+        SetMessageBroker(new JobLogBroker(context, Settings, MonitorUtil));
 
         context.CancellationToken.Register(() =>
         {
@@ -226,7 +211,7 @@ public abstract class BaseCommonJob<TProperties> : BaseCommonJob, IJob
             throw new PlanarException($"fail to get job id while execute job {title}");
         }
 
-        var properties = await _dataLayer.GetJobProperty(jobId);
+        var properties = await dataLayer.GetJobProperty(jobId);
         if (string.IsNullOrEmpty(properties))
         {
             var title = JobHelper.GetKeyTitle(context.JobDetail);

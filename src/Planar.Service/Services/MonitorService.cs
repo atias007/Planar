@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using CommonJob;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -30,7 +31,6 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
     private readonly Channel<MonitorScanMessage> _channel = serviceProvider.GetRequiredService<Channel<MonitorScanMessage>>();
     private readonly ILogger<MonitorService> _logger = serviceProvider.GetRequiredService<ILogger<MonitorService>>();
     private const string nullText = "[null]";
-    //// private static int _instanceCount;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -134,6 +134,8 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
         {
             return;
         }
+
+        PlanarBrokerService.OnInterceptingMessage(@event, context, exception);
 
         IEnumerable<MonitorAction> items;
 

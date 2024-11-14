@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
@@ -374,12 +375,12 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [SwaggerOperation(OperationId = "get_job_running_log_instanceid_sse", Description = "Get running job log", Summary = "Get running job log")]
     [BadRequestResponse]
     [NotFoundResponse]
-    public async Task<ActionResult<RunningJobData>> GetRunningLog([FromRoute][Required] string instanceId)
+    public async Task GetRunningLog([FromRoute][Required] string instanceId, CancellationToken cancellationToken)
     {
         instanceId = WebUtility.UrlDecode(instanceId);
-        MqttBrokerService.
-
-        return Ok();
+        var serviceProvider = HttpContext.RequestServices;
+        var sse = serviceProvider.GetRequiredService<JobDomainSse>();
+        await sse.GetRunningLog(instanceId, cancellationToken);
     }
 
     [HttpGet("jobfile/{name}")]

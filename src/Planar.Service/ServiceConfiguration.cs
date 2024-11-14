@@ -28,6 +28,7 @@ namespace Planar.Service
             services.AddScoped<GroupDomain>();
             services.AddScoped<HistoryDomain>();
             services.AddScoped<JobDomain>();
+            services.AddScoped<JobDomainSse>();
             services.AddScoped<ConfigDomain>();
             services.AddScoped<ServiceDomain>();
             services.AddScoped<MonitorDomain>();
