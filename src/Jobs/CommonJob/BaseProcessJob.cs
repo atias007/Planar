@@ -9,7 +9,9 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Security;
 using System.Text;
+using System.Threading;
 using System.Timers;
+using Timer = System.Timers.Timer;
 
 namespace CommonJob;
 
@@ -157,6 +159,7 @@ where TProperties : class, new()
 
         MessageBroker.AppendLog(LogLevel.Information, $"Username: {username}");
         MessageBroker.AppendLog(LogLevel.Information, Seperator);
+        Thread.Sleep(500);
     }
 
     private static string GetUsername(string? domain, string username)

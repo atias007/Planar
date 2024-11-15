@@ -14,13 +14,13 @@ using IJobExecutionContext = Quartz.IJobExecutionContext;
 
 namespace CommonJob;
 
-public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logger)
+public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logger) : IDisposable
 {
     private JobLogBroker _messageBroker = null!;
     private CancellationTokenSource? _tokenSource;
+    private bool _disposed;
 
     protected IDictionary<string, string?> Settings { get; private set; } = new Dictionary<string, string?>();
-
     protected JobLogBroker MessageBroker => _messageBroker;
     protected IMonitorUtil MonitorUtil => jobMonitorUtil.MonitorUtil;
 
@@ -117,6 +117,25 @@ public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logge
         if (timeSpan.TotalSeconds < 1) { return $"{timeSpan.TotalMilliseconds:N0}ms"; }
         if (timeSpan.TotalDays >= 1) { return $"{timeSpan:\\(d\\)\\ hh\\:mm\\:ss}"; }
         return $"{timeSpan:hh\\:mm\\:ss}";
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                _tokenSource?.Dispose();
+                _messageBroker?.Dispose();
+            }
+            _disposed = true;
+        }
+    }
+
+    public void Dispose()
+    {
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }
 

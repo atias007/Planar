@@ -9,75 +9,18 @@ using Planar.Job;
 using Planar.Service.API.Helpers;
 using Quartz;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using IJobExecutionContext = Quartz.IJobExecutionContext;
 
 namespace CommonJob;
 
-internal class LimitQueue<T>(int limit) : ConcurrentQueue<T>
-{
-    private readonly int _limit = limit;
-    private readonly object _locker = new();
-
-    public new void Enqueue(T item)
-    {
-        base.Enqueue(item);
-        lock (_locker)
-        {
-            while (Count > _limit && TryDequeue(out _))
-            {
-                // === DO NOTHING ===
-            }
-        }
-    }
-}
-
-public class LogQueueFactory
-{
-    private LogQueueFactory()
-    {
-    }
-
-    private static LogQueueFactory _logQueueFactory = new();
-
-    public static LogQueueFactory Instance => _logQueueFactory;
-
-    private const int limit = 1000;
-    private readonly object Locker = new();
-    private readonly Dictionary<string, LimitQueue<LogEntity>> Queues = [];
-
-    private LimitQueue<LogEntity> GetQueue(string key)
-    {
-        lock (Locker)
-        {
-            if (Queues.TryGetValue(key, out var queue))
-            {
-                return queue;
-            }
-
-            queue = new LimitQueue<LogEntity>(limit);
-            Queues.Add(key, queue);
-            return queue;
-        }
-    }
-
-    public void Enqueue(string fireInstanceId, LogEntity log)
-    {
-        var queue = GetQueue(fireInstanceId);
-        queue.Enqueue(log);
-    }
-
-    public LogEntity? Dequeue(string fireInstanceId)
-    {
-        var queue = GetQueue(fireInstanceId);
-        if (queue.TryDequeue(out var result)) { return result; }
-        return null;
-    }
-}
-
-public class JobLogBroker
+// pub sub class for all jobs log messages
+// each job instance has its own instance of this class
+// this class is responsible for logging all messages and exceptions to job metadata
+// this class is also responsible for raise event for each log message
+// this class is also responsible for save history of all log messages
+public sealed class JobLogBroker : IDisposable
 {
     private readonly object Locker = new();
     private readonly IJobExecutionContext _context;
@@ -108,18 +51,20 @@ public class JobLogBroker
 
     private void OnInterceptingLogMessage(LogEntity log)
     {
+        LogQueueFactory.Instance.Enqueue(_context.FireInstanceId, log);
+
         if (InterceptingLogMessage == null) { return; }
         var e = new LogEntityEventArgs(log, _context.FireInstanceId);
-        LogQueueFactory.Instance.Enqueue(_context.FireInstanceId, log);
         InterceptingLogMessage(null, e);
     }
 
     private void OnInterceptingLogMessage(string message)
     {
-        if (InterceptingLogMessage == null) { return; }
         var log = new LogEntity(LogLevel.None, message);
-        var e = new LogEntityEventArgs(log, _context.FireInstanceId);
         LogQueueFactory.Instance.Enqueue(_context.FireInstanceId, log);
+
+        if (InterceptingLogMessage == null) { return; }
+        var e = new LogEntityEventArgs(log, _context.FireInstanceId);
         InterceptingLogMessage(null, e);
     }
 
@@ -155,7 +100,7 @@ public class JobLogBroker
 
     private void InnerAppendLogRaw(string text)
     {
-        Metadata.Log.AppendLine(text);
+        Metadata.AppendLog(text);
     }
 
     public void IncreaseEffectedRows(int delta = 1)
@@ -407,5 +352,10 @@ public class JobLogBroker
             LogLevel = level;
             InnerAppendLogRaw($"[Log Level: {LogLevel}]");
         }
+    }
+
+    public void Dispose()
+    {
+        LogQueueFactory.Instance.Clear(_context.FireInstanceId);
     }
 }

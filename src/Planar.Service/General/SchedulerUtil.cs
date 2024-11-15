@@ -133,7 +133,7 @@ namespace Planar.Service.General
 
             if (context.Result is JobExecutionMetadata metadata)
             {
-                log = metadata.GetLog();
+                log = metadata.GetLogText();
                 exceptions = metadata.GetExceptionsText();
                 count = metadata.Exceptions.Count;
             }
@@ -195,7 +195,7 @@ namespace Planar.Service.General
                         continue;
                     }
 
-                    var log = metadata.GetLog();
+                    var log = metadata.GetLogText();
                     var exceptions = metadata.GetExceptionsText();
 
                     if (string.IsNullOrWhiteSpace(log) && string.IsNullOrWhiteSpace(exceptions)) { break; }

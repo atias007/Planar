@@ -124,7 +124,7 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
                 Exception = GetExceptionText(executionException),
                 ExceptionCount = metadata?.Exceptions.Count ?? 0,
                 EffectedRows = metadata?.EffectedRows,
-                Log = metadata?.Log.ToString(),
+                Log = metadata?.GetLogText(),
                 Status = (int)status,
                 StatusTitle = status.ToString(),
                 IsCanceled = context.CancellationToken.IsCancellationRequested,

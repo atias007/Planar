@@ -10,16 +10,12 @@ using System.Text;
 
 namespace Planar;
 
-public abstract class SqlJob : BaseCommonJob<SqlJobProperties>
+public abstract class SqlJob(
+    ILogger logger,
+    IJobPropertyDataLayer dataLayer,
+    JobMonitorUtil jobMonitorUtil) : BaseCommonJob<SqlJobProperties>(logger, dataLayer, jobMonitorUtil)
 {
     private readonly List<SqlJobException> _exceptions = [];
-
-    protected SqlJob(
-        ILogger logger,
-        IJobPropertyDataLayer dataLayer,
-        JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
-    {
-    }
 
     public override async Task Execute(IJobExecutionContext context)
     {

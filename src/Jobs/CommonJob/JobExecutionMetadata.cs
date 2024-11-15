@@ -8,9 +8,25 @@ namespace CommonJob;
 
 public class JobExecutionMetadata
 {
-    public StringBuilder Log { get; set; } = new StringBuilder();
+    private readonly List<string> _log = [];
 
-    public List<ExceptionDto> Exceptions { get; set; } = new List<ExceptionDto>();
+    public void AppendLog(string log)
+    {
+        _log.Add(log);
+    }
+
+    public string GetLogText()
+    {
+        var sb = new StringBuilder(_log.Count);
+        foreach (var text in _log)
+        {
+            sb.AppendLine(text);
+        }
+
+        return sb.ToString();
+    }
+
+    public List<ExceptionDto> Exceptions { get; } = [];
 
     public int? EffectedRows { get; set; }
 
@@ -19,11 +35,6 @@ public class JobExecutionMetadata
     public bool HasWarnings { get; set; }
 
     private static readonly object Locker = new();
-
-    public string GetLog()
-    {
-        return Log.ToString();
-    }
 
     public string GetExceptionsText()
     {
