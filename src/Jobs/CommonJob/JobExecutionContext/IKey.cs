@@ -1,7 +1,9 @@
-﻿namespace Planar.Job;
-
-public interface IKey
+﻿// *** DO NOT EDIT NAMESPACE IDENTETION ***
+namespace Planar.Job
 {
-    string Group { get; }
-    string Name { get; }
+    public interface IKey
+    {
+        string Group { get; }
+        string Name { get; }
+    }
 }

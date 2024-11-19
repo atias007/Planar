@@ -248,14 +248,18 @@ namespace Planar.Job
         {
             int? selectedIndex;
 
-            if (!Debugger.Profiles.Any())
+            var typeName = typeof(TJob).Name;
+            var hasProfiles = Debugger.Profiles.Any();
+            if (hasProfiles)
             {
-                Debugger.AddDefaultProfile();
+                Console.Write("type the profile code ");
+                Console.Write("to start executing the ");
+            }
+            else
+            {
+                Console.Write("type [Enter] to start executing the ");
             }
 
-            var typeName = typeof(TJob).Name;
-            Console.Write("type the profile code ");
-            Console.Write("to start executing the ");
             Console.ForegroundColor = ConsoleColor.Magenta;
             Console.Write($"{typeName} ");
             Console.ResetColor();
@@ -268,10 +272,15 @@ namespace Planar.Job
                 PrintMenuItem(p.Key, index.ToString());
                 index++;
             }
-            Console.WriteLine("------------------");
-            PrintMenuItem("<Default>", "Enter");
-            Console.WriteLine();
-            selectedIndex = GetMenuItem(quiet: false);
+
+            if (hasProfiles)
+            {
+                Console.WriteLine("------------------");
+                PrintMenuItem("<Default>", "Enter");
+                Console.WriteLine();
+            }
+
+            selectedIndex = GetMenuItem(quiet: !hasProfiles);
 
             MockJobExecutionContext context;
             IExecuteJobProperties properties;

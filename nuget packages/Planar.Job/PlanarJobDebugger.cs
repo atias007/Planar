@@ -11,12 +11,6 @@ namespace Planar.Job
 
         internal PlanarJobDebugger()
         {
-            AddDefaultProfile();
-        }
-
-        internal void AddDefaultProfile()
-        {
-            _profiles.Add("Default Profile", new ExecuteJobPropertiesBuilder().SetDevelopmentEnvironment().Build());
         }
 
         public void AddProfile(string name, Action<IExecuteJobPropertiesBuilder> builderAction)
