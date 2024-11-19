@@ -686,7 +686,6 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
 
         try
         {
-            AuditJobsSafe($"pause job group '{request.Name}'");
             foreach (var key in keys)
             {
                 AuditJobSafe(key, $"job paused while pause job group '{request.Name}'");
@@ -711,7 +710,6 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
 
         try
         {
-            AuditJobsSafe($"resume job group '{request.Name}'");
             foreach (var key in keys)
             {
                 AuditJobSafe(key, $"job resume while resume job group '{request.Name}'");

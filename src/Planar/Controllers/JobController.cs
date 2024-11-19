@@ -4,7 +4,6 @@ using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
-using Planar.Service.Model;
 using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
 using System;

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.Job;
+using System.ComponentModel;
 using System.ServiceProcess;
 
 namespace WindowsServiceCheck;
@@ -104,12 +105,29 @@ internal partial class Job : BaseCheckJob
 
     private async Task InvokeServicesInner(Service service)
     {
-        await Task.Run(() => InvokeServiceInner(service));
+        await Task.Run(() => InvokeServiceInner1(service));
     }
 
 #pragma warning disable CA1416 // Validate platform compatibility
 
-    private void InvokeServiceInner(Service service)
+    private void InvokeServiceInner1(Service service)
+    {
+        try
+        {
+            InvokeServiceInner2(service);
+        }
+        catch (InvalidOperationException ex)
+        {
+            if (ex.InnerException is Win32Exception win32Exception)
+            {
+                throw new CheckException(win32Exception.Message);
+            }
+
+            throw;
+        }
+    }
+
+    private void InvokeServiceInner2(Service service)
     {
         if (string.IsNullOrWhiteSpace(service.Host))
         {

@@ -1,4 +1,5 @@
-﻿using Planar;
+﻿using Microsoft.Extensions.Logging;
+using Planar;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -9,10 +10,24 @@ namespace CommonJob;
 public class JobExecutionMetadata
 {
     private readonly List<string> _log = [];
+    private int _logSize;
+    private bool _freezLog;
 
     public void AppendLog(string log)
     {
+        if (log == null) { return; }
+        if (_freezLog) { return; }
         _log.Add(log);
+        _logSize += log.Length;
+
+        if (_logSize > 20_000_000)
+        {
+            HasWarnings = true;
+            _freezLog = true;
+
+            var logEntity = new LogEntity { Level = LogLevel.Warning, Message = "log size exceeded 20mb. additional logs will not be recorded" };
+            _log.Add(logEntity.ToString());
+        }
     }
 
     public string GetLogText()

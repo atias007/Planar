@@ -1,29 +1,28 @@
 ﻿using System;
 
-namespace Planar.Job
+namespace Planar.Job;
+
+public interface IJobExecutionContext
 {
-    public interface IJobExecutionContext
-    {
-        string FireInstanceId { get; }
+    string FireInstanceId { get; }
 
-        DateTimeOffset FireTime { get; }
+    DateTimeOffset FireTime { get; }
 
-        DateTimeOffset? NextFireTime { get; }
+    DateTimeOffset? NextFireTime { get; }
 
-        DateTimeOffset? ScheduledFireTime { get; }
+    DateTimeOffset? ScheduledFireTime { get; }
 
-        DateTimeOffset? PreviousFireTime { get; }
+    DateTimeOffset? PreviousFireTime { get; }
 
-        bool Recovering { get; }
+    bool Recovering { get; }
 
-        int RefireCount { get; }
+    int RefireCount { get; }
 
-        IJobDetail JobDetails { get; }
+    IJobDetail JobDetails { get; }
 
-        ITriggerDetail TriggerDetails { get; }
+    ITriggerDetail TriggerDetails { get; }
 
-        IDataMap MergedJobDataMap { get; }
+    IDataMap MergedJobDataMap { get; }
 
-        string Environment { get; }
-    }
+    string Environment { get; }
 }

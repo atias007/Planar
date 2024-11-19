@@ -18,6 +18,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Planar.CLI.Actions;
 
@@ -369,21 +370,58 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
     [Action("running-log")]
     [NullRequest]
-    public static async Task<CliActionResponse> GetRunningData(CliFireInstanceIdRequest request, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> GetRunningData(CliRunningLogRequest request, CancellationToken cancellationToken = default)
     {
-        request ??= new CliFireInstanceIdRequest();
+        request ??= new CliRunningLogRequest();
         if (string.IsNullOrWhiteSpace(request.FireInstanceId))
         {
             request.FireInstanceId = await ChooseRunningJobInstance();
         }
 
-        var restRequest = new RestRequest("job/running-data/{instanceId}", Method.Get)
-            .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
+        if (request.Live)
+        {
+            var builder = new UriBuilder(RestProxy.BaseUri)
+            {
+                Path = $"job/running-log/{request.FireInstanceId}/sse",
+            };
 
-        var result = await RestProxy.Invoke<RunningJobData>(restRequest, cancellationToken);
-        if (string.IsNullOrEmpty(result.Data?.Log)) { return new CliActionResponse(result); }
+            using var client = new HttpClient();
+            var uri = builder.Uri;
 
-        return new CliActionResponse(result, result.Data?.Log);
+            client.Timeout = TimeSpan.FromMilliseconds(Timeout.Infinite);
+            var httpRequest = new HttpRequestMessage(HttpMethod.Get, uri);
+            using var response = await client.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                var restResponse = await CliActionResponse.Convert(response);
+                return new CliActionResponse(restResponse);
+            }
+
+            Console.Clear();
+            using var body = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var reader = new StreamReader(body);
+            while (!reader.EndOfStream)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var value = await reader.ReadLineAsync(cancellationToken);
+                if (string.IsNullOrWhiteSpace(value)) { continue; }
+                var log = CliFormat.GetLogMarkup(value) ?? string.Empty;
+                AnsiConsole.Markup(log);
+            }
+
+            return CliActionResponse.Empty;
+        }
+        else
+        {
+            var restRequest = new RestRequest("job/running-data/{instanceId}", Method.Get)
+                .AddParameter("instanceId", request.FireInstanceId, ParameterType.UrlSegment);
+
+            var result = await RestProxy.Invoke<RunningJobData>(restRequest, cancellationToken);
+            if (string.IsNullOrEmpty(result.Data?.Log)) { return new CliActionResponse(result); }
+
+            var log = CliFormat.GetLogMarkup(result.Data?.Log) ?? string.Empty;
+            return new CliActionResponse(result, log, true);
+        }
     }
 
     [Action("running-ex")]
@@ -703,7 +741,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
                 while (!reader.EndOfStream)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    var value = await reader.ReadLineAsync();
+                    var value = await reader.ReadLineAsync(cancellationToken);
                     if (string.IsNullOrWhiteSpace(value)) { continue; }
                     if (data.Parse(value))
                     {

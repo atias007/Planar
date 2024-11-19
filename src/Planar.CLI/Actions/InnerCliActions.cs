@@ -1,5 +1,6 @@
 ﻿using Planar.CLI.Attributes;
 using Planar.CLI.CliGeneral;
+using Planar.CLI.Entities;
 using Planar.CLI.General;
 using Planar.CLI.Proxy;
 using System;
@@ -17,6 +18,32 @@ namespace Planar.CLI.Actions
         {
             if (cancellationToken.IsCancellationRequested) { throw new TaskCanceledException("task was canceled"); }
             Console.Clear();
+            return await Task.FromResult(CliActionResponse.Empty);
+        }
+
+        [Action("sleep")]
+        public static async Task<CliActionResponse> Sleep(CliSleepRequest request, CancellationToken cancellationToken = default)
+        {
+            if (cancellationToken.IsCancellationRequested) { throw new TaskCanceledException("task was canceled"); }
+            if (request.Seconds <= 0) { throw new ArgumentException("seconds must be greater than 0"); }
+            if (request.Seconds > 1_200) { throw new ArgumentException("seconds must be less than or equals 1200 seconds"); }
+
+            await Console.Out.WriteLineAsync($"sleeping {request.Seconds:N0} seconds...   ");
+
+            for (var i = 0; i < request.Seconds; i++)
+            {
+                if (cancellationToken.IsCancellationRequested) { throw new TaskCanceledException("task was canceled"); }
+                await Task.Delay(1000, cancellationToken);
+                Console.CursorLeft = 0;
+                Console.CursorTop -= 1;
+                await Console.Out.WriteLineAsync($"sleeping {request.Seconds - 1 - i:N0} seconds...   ");
+            }
+
+            Console.CursorLeft = 0;
+            Console.CursorTop -= 1;
+            Console.WriteLine(string.Empty.PadLeft(25, ' '));
+            Console.CursorLeft = 0;
+            Console.CursorTop -= 1;
             return await Task.FromResult(CliActionResponse.Empty);
         }
 

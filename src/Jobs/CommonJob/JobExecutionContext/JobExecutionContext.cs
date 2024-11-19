@@ -1,34 +1,33 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Planar.Job
+namespace Planar.Job;
+
+internal class JobExecutionContext : IJobExecutionContext
 {
-    internal class JobExecutionContext : IJobExecutionContext
-    {
-        public Dictionary<string, string?> JobSettings { get; set; } = new Dictionary<string, string?>(); // *** DONT USE C# 12 STYLE ** //
+    public Dictionary<string, string?> JobSettings { get; set; } = new Dictionary<string, string?>(); // *** DONT USE C# 12 STYLE ** //
 
-        public IDataMap MergedJobDataMap { get; set; } = new DataMap();
+    public IDataMap MergedJobDataMap { get; set; } = new DataMap();
 
-        public string FireInstanceId { get; set; } = string.Empty;
+    public string FireInstanceId { get; set; } = string.Empty;
 
-        public DateTimeOffset FireTime { get; set; }
+    public DateTimeOffset FireTime { get; set; }
 
-        public DateTimeOffset? NextFireTime { get; set; }
+    public DateTimeOffset? NextFireTime { get; set; }
 
-        public DateTimeOffset? ScheduledFireTime { get; set; }
+    public DateTimeOffset? ScheduledFireTime { get; set; }
 
-        public DateTimeOffset? PreviousFireTime { get; set; }
+    public DateTimeOffset? PreviousFireTime { get; set; }
 
-        public bool Recovering { get; set; }
+    public bool Recovering { get; set; }
 
-        public int RefireCount { get; set; }
+    public int RefireCount { get; set; }
 
-        public int JobPort { get; set; }
+    public int JobPort { get; set; }
 
-        public IJobDetail JobDetails { get; set; } = new JobDetail();
+    public IJobDetail JobDetails { get; set; } = new JobDetail();
 
-        public ITriggerDetail TriggerDetails { get; set; } = new TriggerDetail();
+    public ITriggerDetail TriggerDetails { get; set; } = new TriggerDetail();
 
-        public string Environment { get; set; } = string.Empty;
-    }
+    public string Environment { get; set; } = string.Empty;
 }

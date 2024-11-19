@@ -8,7 +8,6 @@ using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
 using Planar.Service.Model.DataObjects;
-using Polly;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -16,287 +15,286 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Planar.Service.General
+namespace Planar.Service.General;
+
+public class SchedulerUtil
 {
-    public class SchedulerUtil
+    private readonly IScheduler _scheduler;
+    private readonly IServiceProvider _serviceProvider;
+
+    public SchedulerUtil(IServiceProvider provider)
     {
-        private readonly IScheduler _scheduler;
-        private readonly IServiceProvider _serviceProvider;
+        _serviceProvider = provider;
+        _scheduler = _serviceProvider.GetRequiredService<IScheduler>();
+    }
 
-        public SchedulerUtil(IServiceProvider provider)
+    public IScheduler Scheduler => _scheduler;
+
+    internal string SchedulerInstanceId
+    {
+        get
         {
-            _serviceProvider = provider;
-            _scheduler = _serviceProvider.GetRequiredService<IScheduler>();
+            return _scheduler.SchedulerInstanceId;
         }
+    }
 
-        public IScheduler Scheduler => _scheduler;
+    public async Task Start(CancellationToken cancellationToken = default)
+    {
+        await _scheduler.Start(cancellationToken);
+    }
 
-        internal string SchedulerInstanceId
+    public async Task Shutdown(CancellationToken cancellationToken = default)
+    {
+        await _scheduler.Shutdown(true, cancellationToken);
+    }
+
+    public async Task Stop(CancellationToken cancellationToken = default)
+    {
+        await _scheduler.Standby(cancellationToken);
+    }
+
+    public async Task<ITrigger?> GetCircuitBreakerTrigger(JobKey jobKey)
+    {
+        var trigger = await _scheduler.GetTrigger(new TriggerKey($"Resume.{jobKey}", Consts.CircuitBreakerTriggerGroup));
+        return trigger;
+    }
+
+    public void HealthCheck(ILogger? logger = null)
+    {
+        if (!IsSchedulerRunning)
         {
-            get
-            {
-                return _scheduler.SchedulerInstanceId;
-            }
+            logger?.LogError("HealthCheck fail. IsShutdown={IsShutdown}, InStandbyMode={InStandbyMode}, IsStarted={IsStarted}",
+                _scheduler.IsShutdown, _scheduler.InStandbyMode, _scheduler.IsStarted);
+            throw new PlanarException("scheduler is not running");
         }
+    }
 
-        public async Task Start(CancellationToken cancellationToken = default)
+    public bool IsSchedulerRunning
+    {
+        get
         {
-            await _scheduler.Start(cancellationToken);
+            return !_scheduler.IsShutdown && !_scheduler.InStandbyMode && _scheduler.IsStarted;
         }
+    }
 
-        public async Task Shutdown(CancellationToken cancellationToken = default)
-        {
-            await _scheduler.Shutdown(true, cancellationToken);
-        }
+    public async Task<bool> IsJobRunning(JobKey jobKey, CancellationToken cancellationToken = default)
+    {
+        var allRunning = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
+        var result = allRunning.AsQueryable().Any(c => KeyHelper.Equals(c.JobDetail.Key, jobKey));
+        return result;
+    }
 
-        public async Task Stop(CancellationToken cancellationToken = default)
-        {
-            await _scheduler.Standby(cancellationToken);
-        }
+    public async Task<bool> IsTriggerRunning(TriggerKey triggerKey, CancellationToken cancellationToken = default)
+    {
+        var allRunning = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
+        var result = allRunning.AsQueryable().Any(c => c.Trigger.Key.Equals(triggerKey));
+        return result;
+    }
 
-        public async Task<ITrigger?> GetCircuitBreakerTrigger(JobKey jobKey)
-        {
-            var trigger = await _scheduler.GetTrigger(new TriggerKey($"Resume.{jobKey}", Consts.CircuitBreakerTriggerGroup));
-            return trigger;
-        }
+    public async Task<RunningJobDetails?> GetRunningJob(string instanceId, CancellationToken cancellationToken = default)
+    {
+        var jobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
+        var context = jobs.FirstOrDefault(j => j.FireInstanceId == instanceId);
+        if (context == null) { return null; }
+        var details = new RunningJobDetails();
+        MapJobRowDetails(context.JobDetail, details);
+        MapJobExecutionContext(context, details);
+        return details;
+    }
 
-        public void HealthCheck(ILogger? logger = null)
-        {
-            if (!IsSchedulerRunning)
-            {
-                logger?.LogError("HealthCheck fail. IsShutdown={IsShutdown}, InStandbyMode={InStandbyMode}, IsStarted={IsStarted}",
-                    _scheduler.IsShutdown, _scheduler.InStandbyMode, _scheduler.IsStarted);
-                throw new PlanarException("scheduler is not running");
-            }
-        }
+    public async Task<List<RunningJobDetails>> GetRunningJobs(CancellationToken cancellationToken = default)
+    {
+        var result = new List<RunningJobDetails>();
+        var jobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
 
-        public bool IsSchedulerRunning
+        foreach (var context in jobs)
         {
-            get
-            {
-                return !_scheduler.IsShutdown && !_scheduler.InStandbyMode && _scheduler.IsStarted;
-            }
-        }
-
-        public async Task<bool> IsJobRunning(JobKey jobKey, CancellationToken cancellationToken = default)
-        {
-            var allRunning = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
-            var result = allRunning.AsQueryable().Any(c => KeyHelper.Equals(c.JobDetail.Key, jobKey));
-            return result;
-        }
-
-        public async Task<bool> IsTriggerRunning(TriggerKey triggerKey, CancellationToken cancellationToken = default)
-        {
-            var allRunning = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
-            var result = allRunning.AsQueryable().Any(c => c.Trigger.Key.Equals(triggerKey));
-            return result;
-        }
-
-        public async Task<RunningJobDetails?> GetRunningJob(string instanceId, CancellationToken cancellationToken = default)
-        {
-            var jobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
-            var context = jobs.FirstOrDefault(j => j.FireInstanceId == instanceId);
-            if (context == null) { return null; }
             var details = new RunningJobDetails();
             MapJobRowDetails(context.JobDetail, details);
             MapJobExecutionContext(context, details);
-            return details;
+            result.Add(details);
         }
 
-        public async Task<List<RunningJobDetails>> GetRunningJobs(CancellationToken cancellationToken = default)
+        var response = result.OrderBy(r => r.Name).ToList();
+        return response;
+    }
+
+    public async Task<RunningJobData?> GetRunningData(string instanceId, CancellationToken cancellationToken = default)
+    {
+        var context = (await _scheduler.GetCurrentlyExecutingJobs(cancellationToken))
+            .FirstOrDefault(j => j.FireInstanceId == instanceId);
+
+        if (context == null) { return null; }
+
+        var log = string.Empty;
+        var exceptions = string.Empty;
+        var count = 0;
+
+        if (context.Result is JobExecutionMetadata metadata)
         {
-            var result = new List<RunningJobDetails>();
-            var jobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
-
-            foreach (var context in jobs)
-            {
-                var details = new RunningJobDetails();
-                MapJobRowDetails(context.JobDetail, details);
-                MapJobExecutionContext(context, details);
-                result.Add(details);
-            }
-
-            var response = result.OrderBy(r => r.Name).ToList();
-            return response;
+            log = metadata.GetLogText();
+            exceptions = metadata.GetExceptionsText();
+            count = metadata.Exceptions.Count;
         }
 
-        public async Task<RunningJobData?> GetRunningData(string instanceId, CancellationToken cancellationToken = default)
+        var response = new RunningJobData
         {
-            var context = (await _scheduler.GetCurrentlyExecutingJobs(cancellationToken))
-                .FirstOrDefault(j => j.FireInstanceId == instanceId);
+            Log = log,
+            Exceptions = exceptions,
+            ExceptionsCount = count
+        };
 
-            if (context == null) { return null; }
+        return response;
+    }
 
-            var log = string.Empty;
-            var exceptions = string.Empty;
-            var count = 0;
-
-            if (context.Result is JobExecutionMetadata metadata)
-            {
-                log = metadata.GetLogText();
-                exceptions = metadata.GetExceptionsText();
-                count = metadata.Exceptions.Count;
-            }
-
-            var response = new RunningJobData
-            {
-                Log = log,
-                Exceptions = exceptions,
-                ExceptionsCount = count
-            };
-
-            return response;
-        }
-
-        public async Task<bool> IsRunningInstanceExistOnLocal(string instanceId, CancellationToken cancellationToken = default)
+    public async Task<bool> IsRunningInstanceExistOnLocal(string instanceId, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrEmpty(instanceId))
         {
-            if (string.IsNullOrEmpty(instanceId))
-            {
-                return false;
-            }
-
-            foreach (var context in await _scheduler.GetCurrentlyExecutingJobs(cancellationToken))
-            {
-                if (instanceId == context.FireInstanceId)
-                {
-                    return true;
-                }
-            }
-
             return false;
         }
 
-        public async Task<bool> StopRunningJob(string instanceId, CancellationToken cancellationToken = default)
+        foreach (var context in await _scheduler.GetCurrentlyExecutingJobs(cancellationToken))
         {
-            try
+            if (instanceId == context.FireInstanceId)
             {
-                var helper = _serviceProvider.GetRequiredService<JobKeyHelper>();
-                var jobKey = await helper.GetJobKey(instanceId);
-                var resultJob = await _scheduler.Interrupt(jobKey, cancellationToken);
-                return resultJob;
-            }
-            catch (RestNotFoundException)
-            {
-                var result = await _scheduler.Interrupt(instanceId, cancellationToken);
-                return result;
+                return true;
             }
         }
 
-        public async Task<List<PersistanceRunningJobsInfo>> GetPersistanceRunningJobsInfo(CancellationToken cancellationToken = default)
+        return false;
+    }
+
+    public async Task<bool> StopRunningJob(string instanceId, CancellationToken cancellationToken = default)
+    {
+        try
         {
-            var result = new List<PersistanceRunningJobsInfo>();
-            var runningJobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
-            foreach (var context in runningJobs)
+            var helper = _serviceProvider.GetRequiredService<JobKeyHelper>();
+            var jobKey = await helper.GetJobKey(instanceId);
+            var resultJob = await _scheduler.Interrupt(jobKey, cancellationToken);
+            return resultJob;
+        }
+        catch (RestNotFoundException)
+        {
+            var result = await _scheduler.Interrupt(instanceId, cancellationToken);
+            return result;
+        }
+    }
+
+    public async Task<List<PersistanceRunningJobsInfo>> GetPersistanceRunningJobsInfo(CancellationToken cancellationToken = default)
+    {
+        var result = new List<PersistanceRunningJobsInfo>();
+        var runningJobs = await _scheduler.GetCurrentlyExecutingJobs(cancellationToken);
+        foreach (var context in runningJobs)
+        {
+            if (context.JobRunTime.TotalSeconds > AppSettings.General.PersistRunningJobsSpan.TotalSeconds)
             {
-                if (context.JobRunTime.TotalSeconds > AppSettings.General.PersistRunningJobsSpan.TotalSeconds)
+                if (context.Result is not JobExecutionMetadata metadata)
                 {
-                    if (context.Result is not JobExecutionMetadata metadata)
-                    {
-                        continue;
-                    }
-
-                    var log = metadata.GetLogText();
-                    var exceptions = metadata.GetExceptionsText();
-
-                    if (string.IsNullOrWhiteSpace(log) && string.IsNullOrWhiteSpace(exceptions)) { break; }
-
-                    var item = new PersistanceRunningJobsInfo
-                    {
-                        Group = context.JobDetail.Key.Group,
-                        Name = context.JobDetail.Key.Name,
-                        InstanceId = context.FireInstanceId,
-                        Log = log,
-                        Exceptions = exceptions,
-                        Duration = Convert.ToInt32(context.JobRunTime.TotalMilliseconds)
-                    };
-
-                    result.Add(item);
+                    continue;
                 }
+
+                var log = metadata.GetLogText();
+                var exceptions = metadata.GetExceptionsText();
+
+                if (string.IsNullOrWhiteSpace(log) && string.IsNullOrWhiteSpace(exceptions)) { break; }
+
+                var item = new PersistanceRunningJobsInfo
+                {
+                    Group = context.JobDetail.Key.Group,
+                    Name = context.JobDetail.Key.Name,
+                    InstanceId = context.FireInstanceId,
+                    Log = log,
+                    Exceptions = exceptions,
+                    Duration = Convert.ToInt32(context.JobRunTime.TotalMilliseconds)
+                };
+
+                result.Add(item);
             }
-
-            return result;
         }
 
-        public static JobBasicDetails MapJobRowDetails(IJobDetail source)
+        return result;
+    }
+
+    public static JobBasicDetails MapJobRowDetails(IJobDetail source)
+    {
+        var result = new JobBasicDetails();
+        MapJobRowDetails(source, result);
+        return result;
+    }
+
+    public static void MapJobRowDetails(IJobDetail source, JobBasicDetails target)
+    {
+        target.Id = JobKeyHelper.GetJobId(source) ?? string.Empty;
+        target.Name = source.Key.Name;
+        target.Group = source.Key.Group;
+        target.Description = source.Description;
+        target.JobType = GetJobTypeName(source);
+    }
+
+    public static string GetJobTypeName(IJobDetail source)
+    {
+        const string system = "SystemJob";
+        if (JobKeyHelper.IsSystemJobKey(source.Key))
         {
-            var result = new JobBasicDetails();
-            MapJobRowDetails(source, result);
-            return result;
+            return system;
         }
 
-        public static void MapJobRowDetails(IJobDetail source, JobBasicDetails target)
+        return GetJobTypeName(source.JobType);
+    }
+
+    public static string GetJobTypeName(Type type)
+    {
+        const string defaultTypeName = "Unknown";
+        var jobType = GetJobType(type);
+        if (jobType == null) { return defaultTypeName; }
+
+        return jobType.Name;
+    }
+
+    private static Type? GetJobType(Type type)
+    {
+        if (type == null) { return null; }
+
+        var list = new List<Type>();
+        Type? localType = type;
+        while (localType != null)
         {
-            target.Id = JobKeyHelper.GetJobId(source) ?? string.Empty;
-            target.Name = source.Key.Name;
-            target.Group = source.Key.Group;
-            target.Description = source.Description;
-            target.JobType = GetJobTypeName(source);
+            list.Add(localType);
+            localType = localType.BaseType;
         }
 
-        public static string GetJobTypeName(IJobDetail source)
-        {
-            const string system = "SystemJob";
-            if (JobKeyHelper.IsSystemJobKey(source.Key))
-            {
-                return system;
-            }
+        var index = list.FindIndex(l => l.Name.StartsWith("Base"));
+        if (index <= 0) { index = 0; }
+        else { index--; }
 
-            return GetJobTypeName(source.JobType);
+        return list[index];
+    }
+
+    private static void MapJobExecutionContext(IJobExecutionContext source, RunningJobDetails target)
+    {
+        target.FireInstanceId = source.FireInstanceId;
+        target.NextFireTime = source.NextFireTimeUtc.HasValue ? source.NextFireTimeUtc.Value.DateTime : null;
+        target.PreviousFireTime = source.PreviousFireTimeUtc.HasValue ? source.PreviousFireTimeUtc.Value.DateTime : null;
+        target.ScheduledFireTime = source.ScheduledFireTimeUtc.HasValue ? source.ScheduledFireTimeUtc.Value.DateTime : null;
+        target.FireTime = source.FireTimeUtc.DateTime;
+        target.RunTime = source.JobRunTime;
+        target.RefireCount = source.RefireCount;
+        target.TriggerGroup = source.Trigger.Key.Group;
+        target.TriggerName = source.Trigger.Key.Name;
+        target.DataMap = Global.ConvertDataMapToDictionary(source.MergedJobDataMap);
+        target.TriggerId = TriggerHelper.GetTriggerId(source.Trigger) ?? Consts.Undefined;
+
+        if (target.TriggerGroup == Consts.RecoveringJobsGroup)
+        {
+            target.TriggerId = Consts.RecoveringJobsGroup;
         }
 
-        public static string GetJobTypeName(Type type)
+        if (source.Result is JobExecutionMetadata metadata)
         {
-            const string defaultTypeName = "Unknown";
-            var jobType = GetJobType(type);
-            if (jobType == null) { return defaultTypeName; }
-
-            return jobType.Name;
-        }
-
-        private static Type? GetJobType(Type type)
-        {
-            if (type == null) { return null; }
-
-            var list = new List<Type>();
-            Type? localType = type;
-            while (localType != null)
-            {
-                list.Add(localType);
-                localType = localType.BaseType;
-            }
-
-            var index = list.FindIndex(l => l.Name.StartsWith("Base"));
-            if (index <= 0) { index = 0; }
-            else { index--; }
-
-            return list[index];
-        }
-
-        private static void MapJobExecutionContext(IJobExecutionContext source, RunningJobDetails target)
-        {
-            target.FireInstanceId = source.FireInstanceId;
-            target.NextFireTime = source.NextFireTimeUtc.HasValue ? source.NextFireTimeUtc.Value.DateTime : null;
-            target.PreviousFireTime = source.PreviousFireTimeUtc.HasValue ? source.PreviousFireTimeUtc.Value.DateTime : null;
-            target.ScheduledFireTime = source.ScheduledFireTimeUtc.HasValue ? source.ScheduledFireTimeUtc.Value.DateTime : null;
-            target.FireTime = source.FireTimeUtc.DateTime;
-            target.RunTime = source.JobRunTime;
-            target.RefireCount = source.RefireCount;
-            target.TriggerGroup = source.Trigger.Key.Group;
-            target.TriggerName = source.Trigger.Key.Name;
-            target.DataMap = Global.ConvertDataMapToDictionary(source.MergedJobDataMap);
-            target.TriggerId = TriggerHelper.GetTriggerId(source.Trigger) ?? Consts.Undefined;
-
-            if (target.TriggerGroup == Consts.RecoveringJobsGroup)
-            {
-                target.TriggerId = Consts.RecoveringJobsGroup;
-            }
-
-            if (source.Result is JobExecutionMetadata metadata)
-            {
-                target.EffectedRows = metadata.EffectedRows;
-                target.Progress = metadata.Progress;
-                target.ExceptionsCount = metadata.Exceptions.Count;
-            }
+            target.EffectedRows = metadata.EffectedRows;
+            target.Progress = metadata.Progress;
+            target.ExceptionsCount = metadata.Exceptions.Count;
         }
     }
 }

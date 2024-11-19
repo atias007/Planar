@@ -16,5 +16,7 @@ public class DisplayFormatAttribute : Attribute
 
     public string? DisplayName { get; set; }
 
+    public int MaximumChars { get; set; }
+
     public SpecialFormat SpecialFormat { get; set; }
 }

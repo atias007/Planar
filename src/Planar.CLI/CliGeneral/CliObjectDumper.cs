@@ -133,12 +133,18 @@ internal static class CliObjectDumper
         var specialFormat = attr == null ? SpecialFormat.None : attr.SpecialFormat;
         if (vt == typeof(string))
         {
-            if (specialFormat == SpecialFormat.Log)
+            var text = value.ToString();
+            if (attr?.MaximumChars > 0 && text?.Length > attr?.MaximumChars)
             {
-                return CliFormat.GetLogMarkup(value.ToString()) ?? string.Empty;
+                text = string.Concat(text.AsSpan(0, attr.MaximumChars), $"\r\n... (text is more then {attr?.MaximumChars} charecters)");
             }
 
-            return $"{value.ToString().EscapeMarkup()}";
+            if (specialFormat == SpecialFormat.Log)
+            {
+                return CliFormat.GetLogMarkup(text) ?? string.Empty;
+            }
+
+            return $"{text.EscapeMarkup()}";
         }
 
         // check for DisplayFormatAttribute

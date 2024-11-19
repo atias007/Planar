@@ -4,7 +4,7 @@ general:
   instance id: Default
   max concurrency: 10
   job auto stop span: 02:00:00
-  persist running jobs span: 00:00:30
+  persist running jobs span: 00:15:00
   scheduler startup delay: 00:00:05
   http port: 2306                                     
   use https: false	                                 # set this value to true in production environment

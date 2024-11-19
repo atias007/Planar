@@ -360,3 +360,9 @@ V1.7.8
 - BUG: test cli command exist with -1 status
 - cli job update: enable with job id
 - auto create JobFiles folder under Data folder with all types of jobfiles.yml
+- create live runnig-log cli & browser
+- CLI history get limit the data/exception/log display chars
+- BUG: pause-group/ resume-group show audit for all jobs (now the audit is only for jobs in group)
+- CLI - add sleep cli command
+- limit the running job log to 20mb of data
+- BUG: system jobs not updated its interval when is chaged in settings yml file or in code change
