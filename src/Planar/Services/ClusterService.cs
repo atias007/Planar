@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Service.API;
+using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Quartz;
 using System;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace Planar;
 
-internal class ClusterService(IServiceScopeFactory serviceScopeFactory) : PlanarCluster.PlanarClusterBase
+internal partial class ClusterService(IServiceScopeFactory serviceScopeFactory) : PlanarCluster.PlanarClusterBase
 {
     private readonly IServiceScopeFactory _serviceScopeFactory = serviceScopeFactory;
 
@@ -169,6 +170,27 @@ internal class ClusterService(IServiceScopeFactory serviceScopeFactory) : Planar
 
         result.RunningJobs.AddRange(items);
         return result;
+    }
+
+    // OK
+    public async override Task GetRunningLog(GetRunningJobRequest request, IServerStreamWriter<GetRunningJobsLogReply> responseStream, ServerCallContext context)
+    {
+        try
+        {
+            await using var scope = _serviceScopeFactory.CreateAsyncScope();
+            var jobDomainSse = scope.ServiceProvider.GetRequiredService<JobDomainSse>();
+
+            var ssecontext = new CommonSseContext(responseStream);
+            await jobDomainSse.GetRunningLog(request.InstanceId, ssecontext, context.CancellationToken);
+        }
+        catch (RestValidationException validationEx)
+        {
+            context.Status = new Status(StatusCode.InvalidArgument, validationEx.Message);
+        }
+        catch (RestNotFoundException)
+        {
+            context.Status = new Status(StatusCode.NotFound, "fire instance id not found");
+        }
     }
 
     public override async Task<IsJobAssestsExistReply> IsJobFolderExist(IsJobAssestsExistRequest request, ServerCallContext context)

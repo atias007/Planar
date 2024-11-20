@@ -189,6 +189,7 @@ public class MainService : BackgroundService
         var util = scope.ServiceProvider.GetRequiredService<ClusterUtil>();
         await util.StartupHealthCheck();
 
+        // === Single Node ===
         if (!AppSettings.Cluster.Clustering)
         {
             try
@@ -206,6 +207,7 @@ public class MainService : BackgroundService
             }
         }
 
+        // === Cluster (Multi-Nodes) ===
         try
         {
             _logger.LogInformation("Initialize: {Operation}", nameof(JoinToCluster));

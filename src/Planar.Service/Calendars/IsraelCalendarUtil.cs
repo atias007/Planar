@@ -1156,13 +1156,6 @@ namespace Planar.Service.Calendars
         {
             _ci.DateTimeFormat.Calendar = new HebrewCalendar();
 
-            const string from1 = " ";
-            const string from2 = "׳";
-            const string from3 = "סיון";
-
-            const string to1 = "_";
-            const string to3 = "סיוון";
-
             const string slash = "\"";
             const string ch1 = "'";
             const string dd = "dd";
@@ -1170,13 +1163,28 @@ namespace Planar.Service.Calendars
             const string yyyy = "yyyy";
 
             var dayString = date.ToString(dd, _ci).Replace(ch1, string.Empty).Replace(slash, string.Empty);
-            var monthString = date.ToString(mmm, _ci)
-                .Replace(from1, to1)
-                .Replace(from2, string.Empty)
-                .Replace(from3, to3);
+            var monthString = date.ToString(mmm, _ci);
 
             Day = (HebrewDay)Enum.Parse(typeof(HebrewDay), dayString);
-            Month = (HebrewMonth)Enum.Parse(typeof(HebrewMonth), monthString);
+            Month = monthString switch
+            {
+                "טבת" => HebrewMonth.טבת,
+                "שבט" => HebrewMonth.שבט,
+                "אדר א׳" => HebrewMonth.אדר_א,
+                "אדר ב׳" => HebrewMonth.אדר_ב,
+                "ניסן" => HebrewMonth.ניסן,
+                "אדר" => HebrewMonth.אדר,
+                "אייר" => HebrewMonth.אייר,
+                "סיוון" or "סיון" => HebrewMonth.סיוון,
+                "תמוז" => HebrewMonth.תמוז,
+                "אב" => HebrewMonth.אב,
+                "אלול" => HebrewMonth.אלול,
+                "תשרי" => HebrewMonth.תשרי,
+                "חשון" or "חשוון" => HebrewMonth.חשוון,
+                "כסלו" => HebrewMonth.כסלו,
+                _ => throw new ArgumentOutOfRangeException($"month '{monthString}' is not supported")
+            };
+
             _year = DateTime.Now.ToString(yyyy, _ci);
         }
 

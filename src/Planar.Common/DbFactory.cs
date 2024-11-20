@@ -24,10 +24,11 @@ internal static class DbFactory
             case DbProviders.SqlServer:
                 if (string.IsNullOrWhiteSpace(AppSettings.Database.ConnectionString))
                 {
-                    throw new AppSettingsException($"ERROR: 'database connection' string could not be initialized\r\nMissing key 'connection string' or value is empty in AppSettings.yml file and there is no environment variable '{EC.ConnectionStringVariableKey}'");
+                    throw new AppSettingsException($"ERROR: 'database connection' string could not be initialized\r\nmissing key 'connection string' or value is empty in AppSettings.yml file and there is no environment variable '{EC.ConnectionStringVariableKey}'");
                 }
 
                 AppSettings.Database.ProviderHasPermissions = true;
+                AppSettings.Database.ProviderAllowClustering = true;
                 break;
 
             case DbProviders.Sqlite:
@@ -40,6 +41,7 @@ internal static class DbFactory
                 }
 
                 AppSettings.Database.ProviderHasPermissions = false;
+                AppSettings.Database.ProviderAllowClustering = false;
                 break;
         }
     }

@@ -2,7 +2,7 @@
 
 PLAN FOR V 1.7.7
 ----------------
-
+- show help to inner actions
 - validate on startup that instance id not exists in nodes table
 - Security report
 - check option to odata search (https://devblogs.microsoft.com/odata/compute-and-search-in-asp-net-core-odata-8/)

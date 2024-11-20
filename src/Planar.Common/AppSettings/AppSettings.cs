@@ -87,9 +87,14 @@ public static class AppSettings
         Retention.JobLogRetentionDays = GetSettings(configuration, EC.JobLogRetentionDaysVariableKey, "retention", "job log retention days", 365);
         Retention.StatisticsRetentionDays = GetSettings(configuration, EC.MetricssRetentionDaysVariableKey, "retention", "statistics retention days", 365);
 
+        // === Validation ===
         ValidateRequired(Database.Provider, "provider");
         ValidateRequired(General.ConcurrencyRateLimiting, "concurrency rate limiting");
         ValidateMinimumValue(General.ConcurrencyRateLimiting, minimum: 1, "concurrency rate limiting");
+        if (Cluster.Clustering && !Database.ProviderAllowClustering)
+        {
+            throw new AppSettingsException($"'Clustering' is possible when database provider is {Database.Provider}");
+        }
     }
 
     private static void InitializeEnvironment(IConfiguration configuration)

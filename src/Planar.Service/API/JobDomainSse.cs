@@ -1,7 +1,6 @@
 ﻿using CommonJob;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Primitives;
 using Planar.Common;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
@@ -19,14 +18,30 @@ public class JobDomainSse(IServiceProvider serviceProvider) : BaseBL<JobDomainSs
     private bool _finish;
     private readonly AutoResetEvent _autoResetEvent = new(false);
     private static readonly HashSet<string> _runningInstanceIds = [];
+    private static readonly TimeSpan _sseTimeout = TimeSpan.FromMinutes(5);
 
     public async Task GetRunningLog(string instanceId, CancellationToken cancellationToken)
     {
+        var httpContext = _serviceProvider.GetRequiredService<IHttpContextAccessor>();
+        if (httpContext.HttpContext == null) { return; }
+
+        var context = new CommonSseContext(httpContext.HttpContext);
+        await GetRunningLog(instanceId, context, cancellationToken);
+    }
+
+    public async Task GetRunningLog(string instanceId, CommonSseContext context, CancellationToken cancellationToken)
+    {
         if (!string.IsNullOrWhiteSpace(_fireInstanceId)) { return; }
 
-        var context = _serviceProvider.GetRequiredService<IHttpContextAccessor>();
-        if (context.HttpContext == null) { return; }
-        await ValidateRunning(instanceId);
+        try
+        {
+            await ValidateRunning(instanceId);
+        }
+        catch (RestNotFoundException)
+        {
+            await GetRunningLogFromClusterNode(instanceId, context, cancellationToken);
+            return;
+        }
 
         lock (_runningInstanceIds)
         {
@@ -42,13 +57,30 @@ public class JobDomainSse(IServiceProvider serviceProvider) : BaseBL<JobDomainSs
         PlanarBrokerService.InterceptingMessage += PlanarBrokerService_InterceptingMessage;
         try
         {
-            await GetRunningLogInner(instanceId, context.HttpContext, cancellationToken);
+            await GetRunningLogInner(instanceId, context, cancellationToken);
         }
         finally
         {
             JobLogBroker.InterceptingLogMessage -= LogJobBroker_InterceptingLogMessage;
             PlanarBrokerService.InterceptingMessage -= PlanarBrokerService_InterceptingMessage;
             _runningInstanceIds.Remove(instanceId);
+        }
+    }
+
+    private async Task GetRunningLogFromClusterNode(string instanceId, CommonSseContext context, CancellationToken cancellationToken)
+    {
+        if (!AppSettings.Cluster.Clustering) { return; }
+
+        var reader = await ClusterUtil.GetRunningLog(instanceId);
+        if (reader == null) { return; }
+
+        context.Initialize();
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(_sseTimeout);
+
+        while (await reader.MoveNext(cancellationToken))
+        {
+            await context.WriteResponse(reader.Current, cts.Token);
         }
     }
 
@@ -61,29 +93,29 @@ public class JobDomainSse(IServiceProvider serviceProvider) : BaseBL<JobDomainSs
         _autoResetEvent.Set();
     }
 
-    private async Task GetRunningLogInner(string instanceId, HttpContext httpContext, CancellationToken cancellationToken)
+    private async Task GetRunningLogInner(string instanceId, CommonSseContext context, CancellationToken cancellationToken)
     {
-        var timeout = TimeSpan.FromMinutes(5);
         _fireInstanceId = instanceId;
-        httpContext.Response.Headers.Append("Content-Type", "text/event-stream");
+
+        context.Initialize();
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        cts.CancelAfter(timeout);
+        cts.CancelAfter(_sseTimeout);
         cts.Token.Register(() => _autoResetEvent.Set());
 
         // write (up to 50) past logs from queue
-        await PrintLogQueue(httpContext, cts);
+        await PrintLogQueue(context, cts);
 
         // write live logs
         while (!cts.IsCancellationRequested)
         {
-            var signal = _autoResetEvent.WaitOne(timeout);
+            var signal = _autoResetEvent.WaitOne(_sseTimeout);
             if (_finish) { break; }
             if (!signal) { break; } // timeout
-            await PrintLogQueue(httpContext, cts);
+            await PrintLogQueue(context, cts);
         }
     }
 
-    private async Task PrintLogQueue(HttpContext httpContext, CancellationTokenSource cts)
+    private async Task PrintLogQueue(CommonSseContext context, CancellationTokenSource cts)
     {
         // write (up to 50) past logs from queue
         while (!cts.IsCancellationRequested)
@@ -91,18 +123,8 @@ public class JobDomainSse(IServiceProvider serviceProvider) : BaseBL<JobDomainSs
             if (_finish) { break; }
             var log = LogQueueFactory.Instance.Dequeue(_fireInstanceId);
             if (log == null) { break; }
-            await WriteSseResponse(httpContext, log, cts.Token);
+            await context.WriteResponse(log, cts.Token);
         }
-    }
-
-    // write log to http response
-    private static async Task WriteSseResponse(HttpContext httpContext, LogEntity log, CancellationToken cancellationToken)
-    {
-        var text = log.ToString();
-        if (string.IsNullOrWhiteSpace(text)) { return; }
-
-        await httpContext.Response.WriteAsync($"{text}\n", cancellationToken: cancellationToken);
-        await httpContext.Response.Body.FlushAsync(cancellationToken);
     }
 
     private void LogJobBroker_InterceptingLogMessage(object? sender, LogEntityEventArgs e)
