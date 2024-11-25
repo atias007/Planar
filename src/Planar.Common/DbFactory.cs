@@ -34,7 +34,7 @@ internal static class DbFactory
             case DbProviders.Sqlite:
                 if (string.IsNullOrWhiteSpace(AppSettings.Database.ConnectionString))
                 {
-                    var dataFolder = FolderConsts.GetDataFolder(fullPath: false);
+                    var dataFolder = FolderConsts.GetDataFolder(fullPath: true);
                     var filename = Path.Combine(dataFolder, "database.db");
                     var builder = new SqliteConnectionStringBuilder { DataSource = filename };
                     AppSettings.Database.ConnectionString = builder.ConnectionString;
@@ -43,6 +43,30 @@ internal static class DbFactory
                 AppSettings.Database.ProviderHasPermissions = false;
                 AppSettings.Database.ProviderAllowClustering = false;
                 break;
+        }
+    }
+
+    public static void HandleConnectionString()
+    {
+        try
+        {
+            switch (AppSettings.Database.ProviderName)
+            {
+                case DbProviders.Sqlite:
+                    _ = new SqliteConnectionStringBuilder(AppSettings.Database.ConnectionString);
+                    break;
+
+                case DbProviders.SqlServer:
+                    var builder = new SqlConnectionStringBuilder(AppSettings.Database.ConnectionString);
+                    if (builder.MultipleActiveResultSets) { return; }
+                    builder.MultipleActiveResultSets = false;
+                    AppSettings.Database.ConnectionString = builder.ConnectionString;
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new AppSettingsException($"ERROR: 'database connection' is not valid\r\nerror message: {ex.Message}\r\nconnection string: {AppSettings.Database.ConnectionString}");
         }
     }
 

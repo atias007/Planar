@@ -290,18 +290,7 @@ public static class AppSettings
         Database.ConnectionString = GetSettings(configuration, EC.ConnectionStringVariableKey, "database", "connection string", string.Empty);
 
         if (string.IsNullOrEmpty(Database.ConnectionString)) { return; }
-
-        try
-        {
-            var builder = new SqlConnectionStringBuilder(Database.ConnectionString);
-            if (builder.MultipleActiveResultSets) { return; }
-            builder.MultipleActiveResultSets = false;
-            Database.ConnectionString = builder.ConnectionString;
-        }
-        catch (Exception ex)
-        {
-            throw new AppSettingsException($"ERROR: 'database connection' is not valid\r\nerror message: {ex.Message}\r\nconnection string: {Database.ConnectionString}");
-        }
+        DbFactory.HandleConnectionString();
     }
 
     public static void TestDatabasePermission()
