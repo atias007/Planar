@@ -564,6 +564,13 @@ internal static class Program
             {
                 AnsiConsole.MarkupLine(CliFormat.GetWarningMarkup(finaleException.Message));
             }
+            else if (finaleException is CliValidationException valEx && !string.IsNullOrWhiteSpace(valEx.Suggenstion))
+            {
+                MarkupCliLine(CliFormat.GetErrorMarkup(valEx.Message));
+                AnsiConsole.WriteLine();
+                var suggest = CliFormat.GetSuggestionMarkup(valEx.Suggenstion);
+                MarkupCliLine(suggest);
+            }
             else
             {
                 MarkupCliLine(CliFormat.GetErrorMarkup(finaleException.Message));

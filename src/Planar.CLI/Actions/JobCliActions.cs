@@ -1038,7 +1038,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
                 return result;
 
             default:
-                throw new CliValidationException($"option {options} is invalid. use one or more from the following options: no-data, job-data, triggers-data, all");
+                throw new CliValidationException($"option {options} is invalid", "use one or more from the following options: no-data, job-data, triggers-data, all");
         }
 
         return result;

@@ -181,8 +181,8 @@ namespace Planar.CLI
 
                 if (modules.Count() > 1)
                 {
-                    var commands = string.Join("\r\n * ", modules);
-                    throw new CliValidationException($"module '{list[0]}' is not supported\r\nthe following modules has command '{list[0].Trim()}':\r\n * {commands}");
+                    var commands = string.Join($"\r\n {CliTableFormat.bullet} ", modules);
+                    throw new CliValidationException($"module '{list[0]}' is not supported", $"the following modules has command '{list[0].Trim()}':\r\n {CliTableFormat.bullet} {commands}");
                 }
 
                 list.Insert(0, modules.First());
@@ -190,10 +190,10 @@ namespace Planar.CLI
 
             if (list.Count == 1)
             {
-                var message = $"missing command for module '{list[0]}'\r\ncommand line format is {{0}}'<module> <command> [<options>]'";
+                var message = $"command line format is {{0}}'<module> <command> [<options>]'";
                 var cliCommand = BaseCliAction.InteractiveMode ? string.Empty : $"{CliHelpGenerator.CliCommand} ";
                 var final = string.Format(message, cliCommand);
-                throw new CliValidationException(final);
+                throw new CliValidationException($"missing command for module '{list[0]}'", final);
             }
 
             // command not found
