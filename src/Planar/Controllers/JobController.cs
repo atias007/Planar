@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
 using Planar.Authorization;
 using Planar.Service.API;
-using Planar.Service.Model;
 using Planar.Validation.Attributes;
 using Swashbuckle.AspNetCore.Annotations;
 using System;
@@ -366,6 +366,20 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
         instanceId = WebUtility.UrlDecode(instanceId);
         var result = await BusinesLayer.GetRunningData(instanceId);
         return Ok(result);
+    }
+
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [HttpGet("running-log/{instanceId}/sse")]
+    [ViewerAuthorize]
+    [SwaggerOperation(OperationId = "get_job_running_log_instanceid_sse", Description = "Get running job log", Summary = "Get running job log")]
+    [BadRequestResponse]
+    [NotFoundResponse]
+    public async Task GetRunningLog([FromRoute][Required] string instanceId, CancellationToken cancellationToken)
+    {
+        instanceId = WebUtility.UrlDecode(instanceId);
+        var serviceProvider = HttpContext.RequestServices;
+        var sse = serviceProvider.GetRequiredService<JobDomainSse>();
+        await sse.GetRunningLog(instanceId, cancellationToken);
     }
 
     [HttpGet("jobfile/{name}")]

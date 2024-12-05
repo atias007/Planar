@@ -16,7 +16,7 @@ public class MqttBrokerService(ILogger<MqttBrokerService> logger) : IHostedServi
     private MqttServer _mqttServer = null!;
     private static readonly JsonEventFormatter _formatter = new();
 
-    public static event EventHandler<CloudEventArgs>? InterceptingPublishAsync;
+    internal static event EventHandler<CloudEventArgs>? InterceptingPublishAsync;
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {

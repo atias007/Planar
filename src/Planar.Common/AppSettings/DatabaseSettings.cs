@@ -9,10 +9,10 @@ public enum DbProviders
 
 public class DatabaseSettings
 {
-    public string? ConnectionString { get; set; }
-    public string Provider { get; set; } = string.Empty;
-    public DbProviders ProviderName { get; set; }
-    public bool RunMigration { get; set; }
-
-    public bool ProviderHasPermissions { get; set; }
+    public string? ConnectionString { get; internal set; }
+    public string Provider { get; internal set; } = string.Empty;
+    public DbProviders ProviderName { get; internal set; }
+    public bool RunMigration { get; internal set; }
+    public bool ProviderHasPermissions { get; internal set; }
+    public bool ProviderAllowClustering { get; internal set; }
 }

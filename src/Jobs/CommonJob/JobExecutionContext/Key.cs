@@ -1,4 +1,5 @@
-﻿namespace Planar.Job
+﻿// *** DO NOT EDIT NAMESPACE IDENTETION ***
+namespace Planar.Job
 {
     internal class Key : IKey
     {

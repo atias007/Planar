@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 
+// *** DO NOT EDIT NAMESPACE IDENTETION ***
 namespace Planar.Job
 {
     public interface IDataMap : IReadOnlyDictionary<string, string?>

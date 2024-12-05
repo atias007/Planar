@@ -10,6 +10,7 @@ using Planar.Service.Data;
 using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using Polly;
+using Polly.Retry;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -20,6 +21,14 @@ namespace Planar.Service.General
 {
     public class ClusterUtil(IServiceScopeFactory serviceScope, ILogger<ClusterUtil> logger, SchedulerUtil schedulerUtil)
     {
+        private static AsyncRetryPolicy _asyncRetry =
+            Policy.Handle<RpcException>().
+            WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100));
+
+        private static RetryPolicy _retry =
+            Policy.Handle<RpcException>().
+            WaitAndRetry(3, i => TimeSpan.FromMilliseconds(100));
+
         private readonly ILogger<ClusterUtil> _logger = logger;
         private readonly SchedulerUtil _schedulerUtil = schedulerUtil;
 
@@ -71,9 +80,7 @@ namespace Planar.Service.General
 
                 try
                 {
-                    var result = await Policy.Handle<RpcException>()
-                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => CallIsJobFolderExistsService(node, folder));
+                    var result = await _asyncRetry.ExecuteAsync(() => CallIsJobFolderExistsService(node, folder));
 
                     if (!result.Exists)
                     {
@@ -96,9 +103,7 @@ namespace Planar.Service.General
 
                 try
                 {
-                    var result = await Policy.Handle<RpcException>()
-                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => CallIsJobFileExistsService(node, folder ?? string.Empty, filename));
+                    var result = await _asyncRetry.ExecuteAsync(() => CallIsJobFileExistsService(node, folder ?? string.Empty, filename));
 
                     if (!result.Exists)
                     {
@@ -119,9 +124,7 @@ namespace Planar.Service.General
             {
                 try
                 {
-                    await Policy.Handle<RpcException>()
-                      .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                      .ExecuteAsync(() => CallHealthCheckService(node));
+                    await _asyncRetry.ExecuteAsync(() => CallHealthCheckService(node));
                 }
                 catch (RpcException)
                 {
@@ -150,9 +153,7 @@ namespace Planar.Service.General
 
                 try
                 {
-                    await Policy.Handle<RpcException>()
-                      .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                      .ExecuteAsync(() => CallHealthCheckService(node));
+                    await _asyncRetry.ExecuteAsync(() => CallHealthCheckService(node));
                 }
                 catch (RpcException ex)
                 {
@@ -201,9 +202,7 @@ namespace Planar.Service.General
 
                 try
                 {
-                    await Policy.Handle<RpcException>()
-                      .WaitAndRetryAsync(6, i => TimeSpan.FromMilliseconds(100))
-                      .ExecuteAsync(() => CallHealthCheckService(node));
+                    await _asyncRetry.ExecuteAsync(() => CallHealthCheckService(node));
                 }
                 catch (RpcException ex)
                 {
@@ -249,9 +248,7 @@ namespace Planar.Service.General
 
                 try
                 {
-                    await Policy.Handle<RpcException>()
-                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                    .ExecuteAsync(() => CallLoadMonitorHooksService(node));
+                    await _asyncRetry.ExecuteAsync(() => CallLoadMonitorHooksService(node));
                 }
                 catch (RpcException ex)
                 {
@@ -269,9 +266,7 @@ namespace Planar.Service.General
 
                 try
                 {
-                    await Policy.Handle<RpcException>()
-                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => ReloadMonitorActionsAsync(node));
+                    await _asyncRetry.ExecuteAsync(() => ReloadMonitorActionsAsync(node));
                 }
                 catch (RpcException ex)
                 {
@@ -289,9 +284,7 @@ namespace Planar.Service.General
 
                 try
                 {
-                    await Policy.Handle<RpcException>()
-                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                    .ExecuteAsync(() => CallStopSchedulerService(node));
+                    await _asyncRetry.ExecuteAsync(() => CallStopSchedulerService(node));
                 }
                 catch (RpcException ex)
                 {
@@ -309,9 +302,7 @@ namespace Planar.Service.General
 
                 try
                 {
-                    await Policy.Handle<RpcException>()
-                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                    .ExecuteAsync(() => CallStartSchedulerService(node));
+                    await _asyncRetry.ExecuteAsync(() => CallStartSchedulerService(node));
                 }
                 catch (RpcException ex)
                 {
@@ -329,9 +320,7 @@ namespace Planar.Service.General
 
                 try
                 {
-                    await Policy.Handle<RpcException>()
-                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                    .ExecuteAsync(() => CallConfigFlush(node));
+                    await _asyncRetry.ExecuteAsync(() => CallConfigFlush(node));
                 }
                 catch (RpcException ex)
                 {
@@ -351,9 +340,7 @@ namespace Planar.Service.General
 
                 try
                 {
-                    var result = await Policy.Handle<RpcException>()
-                    .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                    .ExecuteAsync(() => CallIsJobRunningService(rcpJobKey, node));
+                    var result = await _asyncRetry.ExecuteAsync(() => CallIsJobRunningService(rcpJobKey, node));
 
                     if (result) { return result; }
                 }
@@ -377,9 +364,7 @@ namespace Planar.Service.General
 
                 try
                 {
-                    var result = await Policy.Handle<RpcException>()
-                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => CallIsTriggerRunningService(rcpJobKey, node));
+                    var result = await _asyncRetry.ExecuteAsync(() => CallIsTriggerRunningService(rcpJobKey, node));
 
                     if (result) { return result; }
                 }
@@ -401,9 +386,7 @@ namespace Planar.Service.General
 
                 try
                 {
-                    var job = await Policy.Handle<RpcException>()
-                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => CallGetRunningJob(node, instanceId));
+                    var job = await _asyncRetry.ExecuteAsync(() => CallGetRunningJob(node, instanceId));
 
                     if (job != null)
                     {
@@ -428,9 +411,7 @@ namespace Planar.Service.General
 
                 try
                 {
-                    var job = await Policy.Handle<RpcException>()
-                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => CallGetRunningData(node, instanceId));
+                    var job = await _asyncRetry.ExecuteAsync(() => CallGetRunningData(node, instanceId));
 
                     if (job != null)
                     {
@@ -439,7 +420,29 @@ namespace Planar.Service.General
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "fail to get running job {InstanceId} data at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "fail to get running fire instance id {InstanceId} data at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
+                }
+            }
+
+            return null;
+        }
+
+        public async Task<IAsyncStreamReader<GetRunningJobsLogReply>?> GetRunningLog(string instanceId)
+        {
+            var nodes = await GetAllNodes();
+
+            foreach (var node in nodes)
+            {
+                if (node.IsCurrentNode) { continue; }
+
+                try
+                {
+                    var reader = _retry.Execute(() => CallGetRunningLogs(node, instanceId));
+                    return reader;
+                }
+                catch (RpcException ex)
+                {
+                    _logger.LogError(ex, "fail to get running logs for fire instance id {InstanceId} data at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
                 }
             }
 
@@ -455,15 +458,13 @@ namespace Planar.Service.General
 
                 try
                 {
-                    var exists = await Policy.Handle<RpcException>()
-                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => CallIsRunningInstanceExist(node, instanceId));
+                    var exists = await _asyncRetry.ExecuteAsync(() => CallIsRunningInstanceExist(node, instanceId));
 
                     if (exists) { return true; }
                 }
                 catch (RpcException ex)
                 {
-                    _logger.LogError(ex, "fail to check is job {InstanceId} running at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
+                    _logger.LogError(ex, "fail to check if job is {InstanceId} running at remote cluster node {Server}:{Port}", instanceId, node.Server, node.ClusterPort);
                 }
             }
 
@@ -479,9 +480,7 @@ namespace Planar.Service.General
 
                 try
                 {
-                    var isCanceled = await Policy.Handle<RpcException>()
-                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => CallCancelRunningJob(node, instanceId));
+                    var isCanceled = await _asyncRetry.ExecuteAsync(() => CallCancelRunningJob(node, instanceId));
 
                     if (isCanceled) { return true; }
                 }
@@ -504,9 +503,7 @@ namespace Planar.Service.General
 
                 try
                 {
-                    var jobs = await Policy.Handle<RpcException>()
-                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => CallGetRunningJobs(node));
+                    var jobs = await _asyncRetry.ExecuteAsync(() => CallGetRunningJobs(node));
 
                     result.AddRange(jobs);
                 }
@@ -529,9 +526,7 @@ namespace Planar.Service.General
 
                 try
                 {
-                    var items = await Policy.Handle<RpcException>()
-                        .WaitAndRetryAsync(3, i => TimeSpan.FromMilliseconds(100))
-                        .ExecuteAsync(() => CallGetPersistanceRunningJobInfo(node));
+                    var items = await _asyncRetry.ExecuteAsync(() => CallGetPersistanceRunningJobInfo(node));
 
                     var mapItems = items.RunningJobs.Select(i => PersistanceRunningJobsInfo.Parse(i));
                     result.AddRange(mapItems);
@@ -623,6 +618,15 @@ namespace Planar.Service.General
             var client = GetClient(node);
             var result = await client.IsTriggerRunningAsync(jobKey, deadline: GrpcDeadLine);
             return result.IsRunning;
+        }
+
+        private static IAsyncStreamReader<GetRunningJobsLogReply> CallGetRunningLogs(ClusterNode node, string instanceId)
+        {
+            var client = GetClient(node);
+            var request = new GetRunningJobRequest { InstanceId = instanceId };
+
+            var stream = client.GetRunningLog(request, deadline: GrpcDeadLine);
+            return stream.ResponseStream;
         }
 
         private static async Task<List<RunningJobDetails>> CallGetRunningJobs(ClusterNode node)

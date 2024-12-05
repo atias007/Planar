@@ -287,7 +287,9 @@ internal partial class Job : BaseCheckJob
     {
         if (queue.Unacked.HasValue)
         {
-            if (queue.Unacked.GetValueOrDefault() < detail.MessagesUnacknowledged)
+            if (
+                detail.Messages > detail.MessagesUnacknowledged && // there is enough messages in queue so unacked cen be in maximum level
+                queue.Unacked.GetValueOrDefault() < detail.MessagesUnacknowledged)
             {
                 Logger.LogInformation("queue '{Name}' unacked is ok. {Unacked:N0} unacked", detail.Name, detail.MessagesUnacknowledged);
             }

@@ -3,6 +3,7 @@ using Planar.Service.General;
 using Quartz;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -56,7 +57,7 @@ public abstract class SystemJob
         if (job != null) { return jobKey; }
         job = CreateJob<T>(jobKey, description);
         var triggers = new List<ITrigger>();
-        await scheduler.ScheduleJob(job, triggers, true, stoppingToken);
+        await scheduler.ScheduleJob(job, triggers, replace: true, stoppingToken);
 
         return jobKey;
     }
@@ -65,7 +66,7 @@ public abstract class SystemJob
                     where T : IJob
     {
         var jobKey = CreateJobKey<T>();
-        var job = await scheduler.GetJobDetail(jobKey, stoppingToken);
+        var job = await GetJobDetails(scheduler, jobKey, span, stoppingToken);
         if (job != null) { return jobKey; }
         job = CreateJob<T>(jobKey, description);
 
@@ -90,9 +91,28 @@ public abstract class SystemJob
             .WithPriority(int.MinValue)
             .Build();
 
-        await scheduler.ScheduleJob(job, new[] { trigger }, true, stoppingToken);
+        await scheduler.ScheduleJob(job, [trigger], true, stoppingToken);
 
         return jobKey;
+    }
+
+    private static async Task<IJobDetail?> GetJobDetails(IScheduler scheduler, JobKey jobKey, TimeSpan triggerInterval, CancellationToken stoppingToken = default)
+    {
+        var job = await scheduler.GetJobDetail(jobKey, stoppingToken);
+        if (job == null) { return null; }
+
+        var triggers = await scheduler.GetTriggersOfJob(jobKey, stoppingToken);
+        if (triggers.FirstOrDefault() is not ISimpleTrigger simpleTrigger) // job without trigger
+        {
+            await scheduler.DeleteJob(jobKey, stoppingToken);
+            return null;
+        }
+
+        var exists = Convert.ToInt32(Math.Floor(simpleTrigger.RepeatInterval.TotalSeconds));
+        var current = Convert.ToInt32(Math.Floor(triggerInterval.TotalSeconds));
+        if (exists == current) { return job; }
+        await scheduler.DeleteJob(jobKey, stoppingToken);
+        return null;
     }
 
     private static void BuildSimpleSchedule(SimpleScheduleBuilder builder, TimeSpan span)

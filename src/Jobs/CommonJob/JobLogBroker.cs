@@ -15,13 +15,20 @@ using IJobExecutionContext = Quartz.IJobExecutionContext;
 
 namespace CommonJob;
 
-public class JobMessageBroker
+// pub sub class for all jobs log messages
+// each job instance has its own instance of this class
+// this class is responsible for logging all messages and exceptions to job metadata
+// this class is also responsible for raise event for each log message
+// this class is also responsible for save history of all log messages
+public sealed class JobLogBroker : IDisposable
 {
-    private static readonly object Locker = new();
+    private readonly object Locker = new();
     private readonly IJobExecutionContext _context;
     private readonly IMonitorUtil _monitorUtil;
 
-    public JobMessageBroker(IJobExecutionContext context, IDictionary<string, string?> settings, IMonitorUtil monitorUtil)
+    public static event EventHandler<LogEntityEventArgs>? InterceptingLogMessage;
+
+    public JobLogBroker(IJobExecutionContext context, IDictionary<string, string?> settings, IMonitorUtil monitorUtil)
     {
         _monitorUtil = monitorUtil;
         _context = context;
@@ -40,6 +47,25 @@ public class JobMessageBroker
         {
             return JobExecutionMetadata.GetInstance(_context);
         }
+    }
+
+    private void OnInterceptingLogMessage(LogEntity log)
+    {
+        LogQueueFactory.Instance.Enqueue(_context.FireInstanceId, log);
+
+        if (InterceptingLogMessage == null) { return; }
+        var e = new LogEntityEventArgs(log, _context.FireInstanceId);
+        InterceptingLogMessage(null, e);
+    }
+
+    private void OnInterceptingLogMessage(string message)
+    {
+        var log = new LogEntity(LogLevel.None, message);
+        LogQueueFactory.Instance.Enqueue(_context.FireInstanceId, log);
+
+        if (InterceptingLogMessage == null) { return; }
+        var e = new LogEntityEventArgs(log, _context.FireInstanceId);
+        InterceptingLogMessage(null, e);
     }
 
     public void AddAggregateException(ExceptionDto ex)
@@ -67,8 +93,14 @@ public class JobMessageBroker
     {
         lock (Locker)
         {
-            Metadata.Log.AppendLine(text);
+            OnInterceptingLogMessage(text);
+            InnerAppendLogRaw(text);
         }
+    }
+
+    private void InnerAppendLogRaw(string text)
+    {
+        Metadata.AppendLog(text);
     }
 
     public void IncreaseEffectedRows(int delta = 1)
@@ -296,7 +328,8 @@ public class JobMessageBroker
         {
             if ((int)logEntity.Level >= (int)LogLevel)
             {
-                Metadata.Log.AppendLine(logEntity.ToString());
+                InnerAppendLogRaw(logEntity.ToString());
+                OnInterceptingLogMessage(logEntity);
                 if (logEntity.Level == LogLevel.Warning)
                 {
                     Metadata.HasWarnings = true;
@@ -317,7 +350,12 @@ public class JobMessageBroker
         lock (Locker)
         {
             LogLevel = level;
-            Metadata.Log.AppendLine($"[Log Level: {LogLevel}]");
+            InnerAppendLogRaw($"[Log Level: {LogLevel}]");
         }
+    }
+
+    public void Dispose()
+    {
+        LogQueueFactory.Instance.Clear(_context.FireInstanceId);
     }
 }

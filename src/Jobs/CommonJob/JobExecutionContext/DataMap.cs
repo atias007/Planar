@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
+// *** DO NOT EDIT NAMESPACE IDENTETION ***
 namespace Planar.Job
 {
     internal class DataMap : Dictionary<string, string?>, IDataMap

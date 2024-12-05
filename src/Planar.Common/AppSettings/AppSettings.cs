@@ -87,9 +87,14 @@ public static class AppSettings
         Retention.JobLogRetentionDays = GetSettings(configuration, EC.JobLogRetentionDaysVariableKey, "retention", "job log retention days", 365);
         Retention.StatisticsRetentionDays = GetSettings(configuration, EC.MetricssRetentionDaysVariableKey, "retention", "statistics retention days", 365);
 
+        // === Validation ===
         ValidateRequired(Database.Provider, "provider");
         ValidateRequired(General.ConcurrencyRateLimiting, "concurrency rate limiting");
         ValidateMinimumValue(General.ConcurrencyRateLimiting, minimum: 1, "concurrency rate limiting");
+        if (Cluster.Clustering && !Database.ProviderAllowClustering)
+        {
+            throw new AppSettingsException($"'Clustering' is possible when database provider is {Database.Provider}");
+        }
     }
 
     private static void InitializeEnvironment(IConfiguration configuration)
@@ -285,87 +290,17 @@ public static class AppSettings
         Database.ConnectionString = GetSettings(configuration, EC.ConnectionStringVariableKey, "database", "connection string", string.Empty);
 
         if (string.IsNullOrEmpty(Database.ConnectionString)) { return; }
-
-        try
-        {
-            var builder = new SqlConnectionStringBuilder(Database.ConnectionString);
-            if (builder.MultipleActiveResultSets) { return; }
-            builder.MultipleActiveResultSets = false;
-            Database.ConnectionString = builder.ConnectionString;
-        }
-        catch (Exception ex)
-        {
-            throw new AppSettingsException($"ERROR: 'database connection' is not valid\r\nerror message: {ex.Message}\r\nconnection string: {Database.ConnectionString}");
-        }
+        DbFactory.HandleConnectionString();
     }
 
     public static void TestDatabasePermission()
     {
-        if (!Database.ProviderHasPermissions) { return; }
-
-        try
-        {
-            using var conn = new SqlConnection(Database.ConnectionString);
-
-            var cmd = new CommandDefinition(
-                commandText: "admin.TestPermission",
-                commandType: CommandType.StoredProcedure);
-
-            conn.ExecuteAsync(cmd).Wait();
-            Console.WriteLine($"    - Test database permission success");
-        }
-        catch (Exception ex)
-        {
-            var sb = new StringBuilder();
-            var seperator = string.Empty.PadLeft(80, '-');
-            sb.AppendLine("fail to test database permissions");
-            sb.AppendLine(seperator);
-            sb.AppendLine(Database.ConnectionString);
-            sb.AppendLine(seperator);
-            sb.AppendLine("exception message:");
-            sb.AppendLine(ex.Message);
-            throw new AppSettingsException(sb.ToString());
-        }
+        DbFactory.TestDatabasePermission().Wait();
     }
 
     public static void TestConnectionString()
     {
-        var connectionString = Database.ConnectionString;
-        if (string.IsNullOrEmpty(connectionString))
-        {
-            throw new AppSettingsException("connection string is null or empty");
-        }
-
-        if (!connectionString.Contains("Connection Timeout", StringComparison.CurrentCultureIgnoreCase))
-        {
-            connectionString = $"{connectionString};Connection Timeout=3";
-        }
-
-        try
-        {
-            var counter = 1;
-            Policy.Handle<SqlException>()
-                .WaitAndRetryAsync(12, i => TimeSpan.FromSeconds(5))
-                .ExecuteAsync(async () =>
-                {
-                    Console.WriteLine($"    - Attemp no {counter++} to connect to database");
-                    await DbFactory.OpenDbConnection();
-                });
-
-            Console.WriteLine($"    - Connection database success");
-        }
-        catch (Exception ex)
-        {
-            var sb = new StringBuilder();
-            var seperator = string.Empty.PadLeft(80, '-');
-            sb.AppendLine("fail to open connection to database using connection string");
-            sb.AppendLine(seperator);
-            sb.AppendLine(connectionString);
-            sb.AppendLine(seperator);
-            sb.AppendLine("exception message:");
-            sb.AppendLine(ex.Message);
-            throw new AppSettingsException(sb.ToString());
-        }
+        DbFactory.TestConnectionString().Wait();
     }
 
     private static void InitializePorts(IConfiguration configuration)

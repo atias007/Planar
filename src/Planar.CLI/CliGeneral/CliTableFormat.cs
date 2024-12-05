@@ -11,7 +11,7 @@ namespace Planar.CLI;
 
 public static class CliTableFormat
 {
-    private const char bullet = '•';
+    public const char bullet = '•';
 
     public static string FormatClusterHealthCheck(TimeSpan? span, TimeSpan? deviation)
     {

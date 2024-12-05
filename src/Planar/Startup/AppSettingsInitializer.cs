@@ -62,7 +62,9 @@ namespace Planar.Startup
                 Console.WriteLine(ex.Message);
                 Console.WriteLine(string.Empty.PadLeft(80, '-'));
                 Console.WriteLine(ex.ToString());
-                Thread.Sleep(60000);
+                Console.ResetColor();
+                Console.WriteLine("wait 30 seconds before terminate process");
+                Thread.Sleep(30_000);
                 Console.ReadLine();
                 Environment.Exit(-1);
             }

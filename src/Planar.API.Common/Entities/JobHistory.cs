@@ -38,11 +38,13 @@ public class JobHistory
     [DisplayFormat(Format = "N0")]
     public int? EffectedRows { get; set; }
 
+    [DisplayFormat(MaximumChars = 4_000)]
     public string? Data { get; set; }
 
-    [DisplayFormat(SpecialFormat = SpecialFormat.Log)]
+    [DisplayFormat(SpecialFormat = SpecialFormat.Log, MaximumChars = 10_000)]
     public string? Log { get; set; }
 
+    [DisplayFormat(MaximumChars = 10_000)]
     public string? Exception { get; set; }
 
     public int ExceptionCount { get; set; }

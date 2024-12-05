@@ -21,7 +21,12 @@ public static class EmailHtmlGenerator
         html = Replace(html, "Run Time", FormatTimeSpan(details.JobRunTime));
         html = Replace(html, "Trigger Name", details.TriggerName);
 
-        if (!string.IsNullOrWhiteSpace(details.Exception))
+        if (string.IsNullOrWhiteSpace(details.Exception))
+        {
+            html = Replace(html, "Error Message", "no error message.");
+            html = Replace(html, "Exception Details", "no error details.");
+        }
+        else
         {
             html = html.Replace("style=\"visibility:collapse;", "style=\"visibility:visible;");
             html = Replace(html, "Error Message", details.MostInnerExceptionMessage);

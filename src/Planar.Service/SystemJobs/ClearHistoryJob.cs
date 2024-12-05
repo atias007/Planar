@@ -26,7 +26,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
     {
         const string description = "System job for clearing history records from database";
         var span = TimeSpan.FromHours(24);
-        var start = DateTime.Now.Date.AddDays(1).AddMinutes(10);
+        var start = DateTime.Now.Date.AddDays(1).AddMinutes(30);
         await Schedule<ClearHistoryJob>(scheduler, description, span, start, stoppingToken);
     }
 
@@ -84,7 +84,7 @@ public sealed class ClearHistoryJob(IServiceScopeFactory serviceScopeFactory, IL
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "fait to check if statistics job run today. skip clear history");
+            logger.LogError(ex, "fail to check if statistics job run today. skip clear history");
             return false;
         }
     }

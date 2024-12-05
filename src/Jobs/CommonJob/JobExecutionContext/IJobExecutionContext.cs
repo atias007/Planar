@@ -1,5 +1,7 @@
 ﻿using System;
 
+// *** DO NOT EDIT NAMESPACE IDENTETION ***
+
 namespace Planar.Job
 {
     public interface IJobExecutionContext
