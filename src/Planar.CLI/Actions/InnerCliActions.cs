@@ -9,9 +9,11 @@ using System.Threading.Tasks;
 
 namespace Planar.CLI.Actions
 {
-    [Module("inner", "inner actions")]
+    [Module(Command, "inner actions")]
     public class InnerCliActions : BaseCliAction<InnerCliActions>
     {
+        public const string Command = "inner";
+
         [Action("cls")]
         [Action("clear")]
         public static async Task<CliActionResponse> Clear(CancellationToken cancellationToken = default)
@@ -65,6 +67,15 @@ namespace Planar.CLI.Actions
         {
             cancellationToken.ThrowIfCancellationRequested();
             CliHelpGenerator.ShowModules();
+            CliHelpGenerator.ShowInnerCommands();
+            return await Task.FromResult(CliActionResponse.Empty);
+        }
+
+        [Action("exit")]
+        [Action("quit")]
+        public static async Task<CliActionResponse> Exit(CancellationToken cancellationToken = default)
+        {
+            Environment.Exit(0);
             return await Task.FromResult(CliActionResponse.Empty);
         }
 

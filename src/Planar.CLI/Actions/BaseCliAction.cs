@@ -339,6 +339,18 @@ namespace Planar.CLI.Actions
         }
 
         private static IEnumerable<CliModule>? _modules;
+        private static CliModule? _innerModule;
+
+        public static CliModule GetInnerModule()
+        {
+            if (_innerModule != null)
+            {
+                return _innerModule;
+            }
+
+            _innerModule = GetModule<InnerCliActions>();
+            return _innerModule;
+        }
 
         public static IEnumerable<CliModule> GetModules()
         {

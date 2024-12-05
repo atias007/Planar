@@ -157,7 +157,7 @@ namespace Planar.CLI
             // find match
             var action = FindMatch(list, actionsMetadata);
             args = [.. list];
-            if (action != null) { return action; }
+            if (action != null && action.Module != InnerCliActions.Command) { return action; }
 
             // find match with swap command and module
             Swap(ref list);
@@ -170,8 +170,16 @@ namespace Planar.CLI
             if (list[0].Equals("ls", StringComparison.CurrentCultureIgnoreCase)) { list.Insert(0, "job"); }
             if (list[0].Equals("list", StringComparison.CurrentCultureIgnoreCase)) { list.Insert(0, "job"); }
 
+            // inner
+            var inner = string.Equals(list[0], InnerCliActions.Command, StringComparison.CurrentCultureIgnoreCase);
+            if (inner)
+            {
+                throw new CliValidationException($"module '{list[0]}' is not supported");
+            }
+
             // module not found
-            if (!actionsMetadata.Any(a => a.Module.Equals(list[0], StringComparison.CurrentCultureIgnoreCase)))
+            var any = actionsMetadata.Any(a => a.Module.Equals(list[0], StringComparison.CurrentCultureIgnoreCase));
+            if (!any)
             {
                 var modules = GetModuleByCommand(list[0], actionsMetadata);
                 if (!modules.Any())

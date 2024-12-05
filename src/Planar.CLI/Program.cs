@@ -757,24 +757,20 @@ internal static class Program
         if (showModules)
         {
             Console.Clear();
+            CliHelpGenerator.ShowLogo();
+            Console.WriteLine();
             CliHelpGenerator.ShowModules();
         }
 
         _timer = new Timer(OnTimerAction, null, _timerSpan, _timerSpan);
 
-        const string exit = "exit";
-        while (string.Compare(command, exit, true) != 0)
+        while (true)
         {
             var color = ConnectUtil.Current.GetCliMarkupColor();
             var username = string.IsNullOrWhiteSpace(LoginProxy.Username) ? null : $"@{LoginProxy.Username}";
             AnsiConsole.Markup($"[{color}]{RestProxy.Host.EscapeMarkup()}:{RestProxy.Port}{username}[/]> ");
             command = Console.ReadLine();
             ResetTimer();
-
-            if (string.Compare(command, exit, true) == 0)
-            {
-                break;
-            }
 
             var args = CommandSplitter.SplitCommandLine(command).ToArray();
             HandleCliCommand(args, cliActions);

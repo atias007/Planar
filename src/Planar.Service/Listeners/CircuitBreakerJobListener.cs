@@ -6,6 +6,7 @@ using Planar.Common;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
+using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Listeners.Base;
 using Planar.Service.Monitor;
@@ -128,43 +129,13 @@ internal class CircuitBreakerJobListener(IServiceScopeFactory serviceScopeFactor
     private async Task QueueResumeJob(IJobExecutionContext context, JobCircuitBreakerMetadata cb)
     {
         if (cb.PauseSpan == null) { return; }
-
-        var jobKey = new JobKey(typeof(CircuitBreakerJob).Name, Consts.PlanarSystemGroup);
-        var job = await context.Scheduler.GetJobDetail(jobKey);
-        if (job == null)
+        try
         {
-            _logger.LogCritical("Job with name 'CircuitBreakerJob' was not found while try to queue circuit breaker resume");
-            return;
+            await AutoResumeJobUtil.QueueResumeJob(context.Scheduler, context.JobDetail, cb.PauseSpan.Value);
         }
-
-        var triggers = await context.Scheduler.GetTriggersOfJob(context.JobDetail.Key);
-        var triggersStates = triggers.Select(async t => new { t.Key, State = await context.Scheduler.GetTriggerState(t.Key) });
-        var activeTriggers = triggersStates.Where(t => TriggerHelper.IsActiveState(t.Result.State)).Select(t => t.Result.Key);
-        if (!activeTriggers.Any()) { return; }
-        var triggerGroup = activeTriggers.First().Group;
-        var triggerNames = activeTriggers.Select(t => t.Name);
-
-        var triggerKey = new TriggerKey($"Resume.{context.JobDetail.Key}", Consts.CircuitBreakerTriggerGroup);
-        var triggerId = ServiceUtil.GenerateId();
-        var key = context.JobDetail.Key;
-        var dueDate = DateTime.Now.Add(cb.PauseSpan.Value);
-        var newTrigger = TriggerBuilder.Create()
-             .WithIdentity(triggerKey)
-             .UsingJobData(Consts.TriggerId, triggerId)
-             .UsingJobData("JobKey.Name", key.Name)
-             .UsingJobData("JobKey.Group", key.Group)
-             .UsingJobData("Trigger.Group", triggerGroup)
-             .UsingJobData("Trigger.Names", string.Join(',', triggerNames))
-             .UsingJobData("Created", DateTime.Now.ToString())
-             .StartAt(dueDate)
-             .WithSimpleSchedule(b =>
-             {
-                 b.WithRepeatCount(0)
-                 .WithMisfireHandlingInstructionFireNow();
-             })
-             .ForJob(job);
-
-        // Schedule Job
-        await context.Scheduler.ScheduleJob(newTrigger.Build());
+        catch (JobNotFoundException ex)
+        {
+            _logger.LogCritical(ex, "Job with key '{Key}' was not found while try to queue circuit breaker resume", ex.Key);
+        }
     }
 }

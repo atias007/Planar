@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Web;
+using System.Windows.Input;
 
 namespace Planar.CLI.CliGeneral
 {
@@ -16,14 +17,11 @@ namespace Planar.CLI.CliGeneral
         private const string header1 = "<COMMAND>";
         private const string header2 = "<ARGUMENTS>";
 
-        public static void ShowModules()
+        public static void ShowLogo()
         {
-            const string header11 = "Module";
-            const string header22 = "Description";
-
             AnsiConsole.Write(new FigletText("Planar")
-                    .LeftJustified()
-                    .Color(Color.SteelBlue));
+                .LeftJustified()
+                .Color(Color.SteelBlue));
 
             var panel = new Panel($" [steelblue]planar cli v{CliTableFormat.FormatVersion(Program.Version)}[/]")
             {
@@ -32,7 +30,13 @@ namespace Planar.CLI.CliGeneral
             panel.BorderColor(Color.SteelBlue);
 
             AnsiConsole.Write(panel);
-            AnsiConsole.WriteLine();
+        }
+
+        public static void ShowModules()
+        {
+            const string header11 = "Module";
+            const string header22 = "Description";
+
             var cliCommand = BaseCliAction.InteractiveMode ? string.Empty : $"{CliCommand} ";
             AnsiConsole.MarkupLine($" [invert]usage:[/] {cliCommand}[lightskyblue1]{header0}[/] [cornsilk1]{header1}[/] [[{header2}]]");
             AnsiConsole.MarkupLine($" [invert]usage:[/] {cliCommand}[lightskyblue1]{header0}[/] [cornsilk1]--help'[/] to see all avalible commands and arguments");
@@ -62,15 +66,25 @@ namespace Planar.CLI.CliGeneral
             AnsiConsole.Write(grid);
         }
 
+        public static void ShowInnerCommands()
+        {
+            var inner = BaseCliAction.GetInnerModule();
+            ShowHelp(string.Empty, inner.Actions);
+        }
+
         public static void ShowHelp(string module, IEnumerable<CliActionMetadata> allActions)
         {
             var cliCommand = BaseCliAction.InteractiveMode ? string.Empty : $"{CliCommand} ";
+            var space = string.IsNullOrEmpty(cliCommand) ? string.Empty : " ";
 
             AnsiConsole.WriteLine();
-            AnsiConsole.MarkupLine($" [invert]usage:[/] {cliCommand}[lightskyblue1]{module}[/] [cornsilk1]{header1}[/] [[{header2}]]");
+            AnsiConsole.MarkupLine($" [invert]usage:[/] {cliCommand}[lightskyblue1]{module}[/]{space}[cornsilk1]{header1}[/] [[{header2}]]");
             AnsiConsole.WriteLine();
 
-            var actions = GetActionsByModule(module, allActions);
+            var actions =
+                string.IsNullOrEmpty(module) ?
+                allActions.OrderBy(a => a.CommandDisplayName) :
+                GetActionsByModule(module, allActions);
 
             var grid = new Grid();
             grid.AddColumn();
