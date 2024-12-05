@@ -28,6 +28,8 @@ internal partial class Job : BaseCheckJob
                         retryCount: 3,
                         sleepDurationProvider: _ => TimeSpan.FromSeconds(3));
 
+    private int fails;
+
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
         Initialize(ServiceProvider);
@@ -42,7 +44,7 @@ internal partial class Job : BaseCheckJob
         }
 
         folders = GetFoldersWithHost(folders, hosts);
-
+        EffectedRows = 0;
         await SafeInvokeOperation(folders, InvokeFolderInnerAsync);
 
         Finalayze();
@@ -95,15 +97,18 @@ internal partial class Job : BaseCheckJob
 
     private static IEnumerable<FileInfo> GetFiles(string path, Folder folder)
     {
-        var fi = new DirectoryInfo(path);
+        var option = new EnumerationOptions
+        {
+            IgnoreInaccessible = true,
+            RecurseSubdirectories = folder.IncludeSubdirectories
+        };
 
-        var option = folder.IncludeSubdirectories ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
         foreach (var pattern in folder.FilesPattern!)
         {
-            var files = fi.GetFiles(pattern, option);
+            var files = Directory.EnumerateFiles(path, pattern, option);
             foreach (var file in files)
             {
-                yield return file;
+                yield return new FileInfo(file);
             }
         }
     }
@@ -178,40 +183,42 @@ internal partial class Job : BaseCheckJob
 
         if (folder.DeleteEmptyDirectories)
         {
-            DeleteEmptySubdirectories(path);
+            DeleteEmptySubdirectories(path, folder.MaxFiles);
         }
     }
 
     private void DeleteFiles(Dictionary<FileInfo, string> filesToDelete, string path, int maxFails)
     {
-        var fails = 0;
         var success = 0;
 
-        foreach (var (file, reason) in filesToDelete)
+        Parallel.ForEach(filesToDelete, kv =>
         {
+            var file = kv.Key;
             try
             {
                 _policy.Execute(() =>
                 {
                     file.Delete();
-                    Logger.LogInformation("file '{FileName}' deleted from folder '{Path}', reason: {Reason}", file.FullName, path, reason);
+                    Logger.LogInformation("file '{FileName}' deleted from folder '{Path}', reason: {Reason}", file.FullName, path, kv.Value);
+                    EffectedRows++;
                 });
-                success++;
+                Interlocked.Increment(ref success);
             }
             catch (Exception ex)
             {
-                fails++;
+                var value = Interlocked.Increment(ref fails);
 #pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
                 Logger.LogWarning("error deleting file '{FileName}' from folder '{Path}', reason: {Reason}", file.FullName, path, ex.Message);
 #pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
 
-                if (fails >= maxFails)
+                if (value >= maxFails)
                 {
                     throw new CheckException($"error deleting files from folder '{path}'", ex);
                 }
             }
-        }
+        });
 
+#pragma warning disable S2583 // Conditionally executed code should be reachable
         if (success == 0)
         {
             Logger.LogInformation("[x] no files deleted from folder '{Path}'", path);
@@ -220,49 +227,53 @@ internal partial class Job : BaseCheckJob
         {
             Logger.LogInformation("[x] total {Count} file(s) deleted from folder '{Path}'. {Fails} fails", success, path, fails == 0 ? "no" : fails);
         }
+#pragma warning restore S2583 // Conditionally executed code should be reachable
     }
 
-    private void DeleteFolder(string folder, string parent)
+    private void DeleteFolder(string path, string subdirectory)
+    {
+        _policy.Execute(() =>
+        {
+            Directory.Delete(subdirectory);
+            Logger.LogInformation("empty directory '{Directory}' deleted from folder '{Path}'", subdirectory, path);
+        });
+    }
+
+    private void DeleteEmptySubdirectoriesInner(string path, string subdirectory, int maxFails)
     {
         try
         {
-            _policy.Execute(() =>
+            if (!Directory.Exists(subdirectory)) { return; }
+
+            DeleteEmptySubdirectories(subdirectory, maxFails);
+
+            if (!Directory.EnumerateFileSystemEntries(subdirectory).Any())
             {
-                Directory.Delete(folder);
-                Logger.LogInformation("empty directory '{Directory}' deleted from folder '{Path}'", folder, parent);
-            });
+                DeleteFolder(path, subdirectory);
+            }
         }
         catch (Exception ex)
         {
+            var value = Interlocked.Increment(ref fails);
 #pragma warning disable S6667 // Logging in a catch clause should pass the caught exception as a parameter.
-            Logger.LogWarning("error deleting folder '{Directory}' from folder '{Path}', reason: {Reason}", folder, folder, ex.Message);
+            Logger.LogWarning("error deleting folder '{Directory}' from folder '{Path}', reason: {Reason}", subdirectory, path, ex.Message);
 #pragma warning restore S6667 // Logging in a catch clause should pass the caught exception as a parameter.
+            if (value >= maxFails)
+            {
+                throw new CheckException($"error deleting empty folder '{subdirectory}'", ex);
+            }
         }
     }
 
-    private void DeleteEmptySubdirectories(string path)
+    private void DeleteEmptySubdirectories(string path, int maxFails)
     {
-        if (Directory.Exists(path))
+        if (!Directory.Exists(path)) { return; }
+
+        var subdirs = Directory.EnumerateDirectories(path);
+        Parallel.ForEach(subdirs, subdirectory =>
         {
-            // Enumerate all subdirectories
-            foreach (string subdirectory in Directory.EnumerateDirectories(path))
-            {
-                // Check if the subdirectory is empty
-                if (!Directory.EnumerateFileSystemEntries(subdirectory).Any())
-                {
-                    DeleteFolder(subdirectory, path);
-                }
-                else
-                {
-                    // Recursively call for subdirectories (optional)
-                    DeleteEmptySubdirectories(subdirectory);
-                }
-            }
-        }
-        else
-        {
-            Console.WriteLine($"Directory not found: {path}");
-        }
+            DeleteEmptySubdirectoriesInner(path, subdirectory, maxFails);
+        });
     }
 
     private static void ValidateFolder(Folder folder)

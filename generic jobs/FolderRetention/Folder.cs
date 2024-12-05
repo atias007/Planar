@@ -16,7 +16,7 @@ internal class Folder : BaseOperation, INamedCheckElement, IVetoEntity
         FileSize = section.GetValue<string?>("file size");
         CreatedAge = section.GetValue<string?>("created age");
         ModifiedAge = section.GetValue<string?>("modified age");
-        MaxFiles = section.GetValue<int>("max files");
+        MaxFiles = section.GetValue<int>("max fails");
 
         FileSizeNumber = CommonUtil.GetSize(FileSize, "file size");
         CreatedAgeDate = CommonUtil.GetDateFromSpan(CreatedAge, "created age");

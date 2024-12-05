@@ -160,16 +160,15 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         ValidateSystemTrigger(trigger);
         await Scheduler.PauseTrigger(trigger.Key);
         var details = GetTriggerDetails(trigger);
-        var triggerIdentifier = GetTriggerId(trigger);
         var success = await Scheduler.UnscheduleJob(trigger.Key);
         if (!success)
         {
             throw new PlanarException($"fail to remove trigger {triggerId}");
         }
 
-        // Audit
+        // audit
         object? obj = details.SimpleTriggers.Count != 0 ? details.SimpleTriggers[0] : details.CronTriggers.FirstOrDefault();
-        AuditJobSafe(trigger.JobKey, $"trigger {triggerIdentifier} removed", obj);
+        AuditJobSafe(trigger.JobKey, $"trigger '{trigger.Key.Name}' removed", obj);
     }
 
     public async Task<TriggerRowDetails> Get(string triggerId)
@@ -229,8 +228,7 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         await Scheduler.PauseTrigger(trigger.Key);
 
         // audit
-        var id = GetTriggerId(trigger);
-        AuditJobSafe(trigger.JobKey, $"trigger {id} paused", new { TriggerKey = trigger.Key });
+        AuditJobSafe(trigger.JobKey, $"trigger '{trigger.Key.Name}' paused");
     }
 
     public async Task Resume(JobOrTriggerKey request)
@@ -239,8 +237,7 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         await Scheduler.ResumeTrigger(trigger.Key);
 
         // audit
-        var id = GetTriggerId(trigger);
-        AuditJobSafe(trigger.JobKey, $"trigger {id} resume", new { TriggerKey = trigger.Key });
+        AuditJobSafe(trigger.JobKey, $"trigger '{trigger.Key.Name}' resume");
     }
 
     public async Task UpdateCron(UpdateCronRequest request)
@@ -263,9 +260,9 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
             throw;
         }
 
-        // Audit
-        var obj = new { From = sourceCron, To = request.CronExpression, TriggerKey = cronTrigger.Key };
-        AuditJobSafe(trigger.JobKey, $"update trigger {request.Id} cron expression", obj);
+        // audit
+        var obj = new { From = sourceCron, To = request.CronExpression };
+        AuditJobSafe(trigger.JobKey, $"update trigger '{trigger.Key.Name}' cron expression", obj);
     }
 
     public async Task UpdateInterval(UpdateIntervalRequest request)
@@ -289,9 +286,9 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
             throw;
         }
 
-        // Audit
-        var obj = new { From = FormatTimeSpan(sourceInterval), To = FormatTimeSpan(request.Interval), TriggerKey = simpleTrigger.Key };
-        AuditJobSafe(trigger.JobKey, $"update trigger {request.Id} interval", obj);
+        // audit
+        var obj = new { From = FormatTimeSpan(sourceInterval), To = FormatTimeSpan(request.Interval) };
+        AuditJobSafe(trigger.JobKey, $"update trigger '{trigger.Key.Name}' interval", obj);
     }
 
     public async Task UpdateTimeout(UpdateTimeoutRequest request)
@@ -315,9 +312,9 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         await Scheduler.ScheduleJob(jobDetails, triggers, true);
         await Scheduler.PauseJob(trigger.JobKey);
 
-        // Audit
-        var obj = new { From = FormatTimeSpan(timeout), To = FormatTimeSpan(request.Timeout), TriggerKey = trigger.Key };
-        AuditJobSafe(trigger.JobKey, $"update trigger {request.Id} timeout", obj);
+        // audit
+        var obj = new { From = FormatTimeSpan(timeout), To = FormatTimeSpan(request.Timeout) };
+        AuditJobSafe(trigger.JobKey, $"update trigger '{trigger.Key.Name}' timeout", obj);
     }
 
     private static string FormatTimeSpan(TimeSpan? value)
@@ -327,6 +324,16 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
     }
 
     private static string? GetTriggerId(ITrigger? trigger)
+    {
+        if (trigger == null)
+        {
+            throw new PlanarJobException("trigger is null at TriggerHelper.GetTriggerId(ITrigger)");
+        }
+
+        return TriggerHelper.GetTriggerId(trigger);
+    }
+
+    private static string? GetTriggerKey(ITrigger? trigger)
     {
         if (trigger == null)
         {
