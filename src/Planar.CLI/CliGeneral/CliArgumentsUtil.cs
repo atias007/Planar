@@ -498,7 +498,7 @@ namespace Planar.CLI
                 }
 
                 // TimeSpan data type
-                if (value != null && prop.PropertyType == typeof(TimeSpan))
+                if (value != null && (prop.PropertyType == typeof(TimeSpan) || prop.PropertyType == typeof(TimeSpan?)))
                 {
                     objValue = TimeSpan.Parse(Convert.ToString(value), CultureInfo.CurrentCulture);
                     prop.SetValue(instance, objValue);

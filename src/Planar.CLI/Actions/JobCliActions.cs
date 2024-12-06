@@ -530,10 +530,11 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     }
 
     [Action("pause")]
-    public static async Task<CliActionResponse> PauseJob(CliJobKey jobKey, CancellationToken cancellationToken = default)
+    public static async Task<CliActionResponse> PauseJob(CliPauseRequest jobKey, CancellationToken cancellationToken = default)
     {
+        var autoResumeDate = jobKey.For == null ? (DateTime?)null : DateTime.Now.Add(jobKey.For.Value);
         var restRequest = new RestRequest("job/pause", Method.Post)
-            .AddBody(jobKey);
+            .AddBody(new { jobKey.Id, autoResumeDate });
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         return new CliActionResponse(result);

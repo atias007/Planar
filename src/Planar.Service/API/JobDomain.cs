@@ -12,6 +12,7 @@ using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.Reports;
+using Planar.Service.Validation;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -665,13 +666,32 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         AuditJobSafe(jobKey, "job manually invoked", request);
     }
 
-    public async Task Pause(JobOrTriggerKey request)
+    public async Task Pause(PauseJobRequest request)
     {
         var jobKey = await JobKeyHelper.GetJobKey(request);
         ValidateSystemJob(jobKey);
         await Scheduler.PauseJob(jobKey);
 
-        AuditJobSafe(jobKey, "job paused");
+        if (request.AutoResumeDate == null)
+        {
+            AuditJobSafe(jobKey, "job paused");
+            return;
+        }
+
+        var job = await Scheduler.GetJobDetail(jobKey);
+        if (job == null)
+        {
+            AuditJobSafe(jobKey, "job paused");
+            return;
+        }
+
+        await AutoResumeJobUtil.QueueResumeJob(Scheduler, job, request.AutoResumeDate.Value, allTriggers: true);
+        var info = new
+        {
+            autoResumeDate = request.AutoResumeDate.Value.ToShortDateString(),
+            autoResumeTime = request.AutoResumeDate.Value.ToShortTimeString()
+        };
+        AuditJobSafe(jobKey, "job paused with auto resume", info);
     }
 
     public async Task PauseGroup(PauseResumeGroupRequest request)
