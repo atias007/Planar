@@ -242,7 +242,7 @@ public partial class JobDomain
         {
             target.CircuitBreaker.WillBeResetAt = trigger.GetNextFireTimeUtc()?.LocalDateTime;
             if (
-                trigger.JobDataMap.TryGetString("Created", out var createdText) &&
+                trigger.JobDataMap.TryGetString(AutoResumeJobUtil.Created, out var createdText) &&
                 DateTime.TryParse(createdText, CultureInfo.CurrentCulture, out var created))
             {
                 target.CircuitBreaker.ActivatedAt = created;

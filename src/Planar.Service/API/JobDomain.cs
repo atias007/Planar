@@ -670,28 +670,40 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
     {
         var jobKey = await JobKeyHelper.GetJobKey(request);
         ValidateSystemJob(jobKey);
+
+        var cancelAutoResume = await AutoResumeJobUtil.CancelQueuedResumeJob(Scheduler, jobKey);
         await Scheduler.PauseJob(jobKey);
 
         if (request.AutoResumeDate == null)
         {
-            AuditJobSafe(jobKey, "job paused");
+            Audit(cancelAutoResume, false, null);
             return;
         }
 
         var job = await Scheduler.GetJobDetail(jobKey);
         if (job == null)
         {
-            AuditJobSafe(jobKey, "job paused");
+            Audit(cancelAutoResume, false, null);
             return;
         }
 
         await AutoResumeJobUtil.QueueResumeJob(Scheduler, job, request.AutoResumeDate.Value, allTriggers: true);
-        var info = new
+        Audit(cancelAutoResume, true, request.AutoResumeDate.Value);
+
+        void Audit(bool cancelAutoResume, bool scheduleAutoResume, DateTime? autoResumeDate)
         {
-            autoResumeDate = request.AutoResumeDate.Value.ToShortDateString(),
-            autoResumeTime = request.AutoResumeDate.Value.ToShortTimeString()
-        };
-        AuditJobSafe(jobKey, "job paused with auto resume", info);
+            if (cancelAutoResume) { AuditJobSafe(jobKey, "cancel existing auto resume"); }
+            AuditJobSafe(jobKey, "job paused");
+            if (scheduleAutoResume && autoResumeDate != null)
+            {
+                var info = new
+                {
+                    autoResumeDate = autoResumeDate.Value.ToShortDateString(),
+                    autoResumeTime = autoResumeDate.Value.ToShortTimeString()
+                };
+                AuditJobSafe(jobKey, "schedule auto resume", info);
+            }
+        }
     }
 
     public async Task PauseGroup(PauseResumeGroupRequest request)
@@ -703,17 +715,18 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
             throw new RestNotFoundException($"group '{request.Name}' was not found");
         }
         await Scheduler.PauseJobs(GroupMatcher<JobKey>.GroupEquals(request.Name));
-
-        try
+        foreach (var key in keys)
         {
-            foreach (var key in keys)
+            try
             {
                 AuditJobSafe(key, $"job paused while pause job group '{request.Name}'");
+                var cancelAutoResume = await AutoResumeJobUtil.CancelQueuedResumeJob(Scheduler, key);
+                if (cancelAutoResume) { AuditJobSafe(key, "cancel existing auto resume"); }
             }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "fail to audit jobs while pause job group '{Name}'", request.Name);
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "fail to audit/cancel auto resume for job '{Key}', while pause job group '{Name}'", key, request.Name);
+            }
         }
     }
 
@@ -728,16 +741,18 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
 
         await Scheduler.ResumeJobs(GroupMatcher<JobKey>.GroupEquals(request.Name));
 
-        try
+        foreach (var key in keys)
         {
-            foreach (var key in keys)
+            try
             {
                 AuditJobSafe(key, $"job resume while resume job group '{request.Name}'");
+                var cancelAutoResume = await AutoResumeJobUtil.CancelQueuedResumeJob(Scheduler, key);
+                if (cancelAutoResume) { AuditJobSafe(key, "cancel existing auto resume"); }
             }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "fail to audit jobs while resume group '{Name}'", request.Name);
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "fail to audit/cancel auto resume for job '{Key}', while resume job group '{Name}'", key, request.Name);
+            }
         }
     }
 
@@ -851,6 +866,8 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         ValidateSystemJob(jobKey);
         await Scheduler.ResumeJob(jobKey);
         AuditJobSafe(jobKey, "job resumed");
+        var cancelAutoResume = await AutoResumeJobUtil.CancelQueuedResumeJob(Scheduler, jobKey);
+        if (cancelAutoResume) { AuditJobSafe(jobKey, "cancel existing auto resume"); }
     }
 
     public async Task SetAuthor(SetJobAuthorRequest request)

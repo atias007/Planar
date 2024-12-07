@@ -17,7 +17,7 @@ internal class CircuitBreakerJob(ILogger<CircuitBreakerJob> logger, IScheduler s
 {
     public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
     {
-        const string description = "system job for resume job to run after circuit breaker";
+        const string description = "system job for resume job running after circuit breaker";
         await Schedule<CircuitBreakerJob>(scheduler, description, stoppingToken: stoppingToken);
     }
 
@@ -25,13 +25,15 @@ internal class CircuitBreakerJob(ILogger<CircuitBreakerJob> logger, IScheduler s
     {
         try
         {
-            await DoWork(context);
-            AuditJobSafe(context.JobDetail.Key, "system resume job after circuit breaker activation");
-            SafeScan(MonitorEvents.CircuitBreakerReset, context);
+            var jobKey = await DoWork(context);
+            if (jobKey == null) { return; }
+
+            AuditJobSafe(jobKey, "auto resume job after circuit breaker activation");
+            await SafeScan(MonitorEvents.CircuitBreakerReset, context.Scheduler, jobKey);
         }
         catch (Exception ex)
         {
-            logger.LogCritical(ex, "fail to resume from circuit breaker");
+            logger.LogCritical(ex, "fail to resume from circuit breaker activation");
         }
     }
 
@@ -54,22 +56,22 @@ internal class CircuitBreakerJob(ILogger<CircuitBreakerJob> logger, IScheduler s
         }
     }
 
-    private async Task<bool> DoWork(IJobExecutionContext context)
+    private async Task<JobKey?> DoWork(IJobExecutionContext context)
     {
         // Get destination job key
-        var jobKeyName = context.Trigger.JobDataMap.GetString("JobKey.Name");
-        var jobKeyGroup = context.Trigger.JobDataMap.GetString("JobKey.Group");
-        if (string.IsNullOrWhiteSpace(jobKeyName)) { return false; }
-        if (string.IsNullOrWhiteSpace(jobKeyGroup)) { return false; }
+        var jobKeyName = context.Trigger.JobDataMap.GetString(AutoResumeJobUtil.JobKeyName);
+        var jobKeyGroup = context.Trigger.JobDataMap.GetString(AutoResumeJobUtil.JobKeyGroup);
+        if (string.IsNullOrWhiteSpace(jobKeyName)) { return null; }
+        if (string.IsNullOrWhiteSpace(jobKeyGroup)) { return null; }
         var jobKey = new JobKey(jobKeyName, jobKeyGroup);
 
         // Get destination trigger names
-        var triggerGroup = context.Trigger.JobDataMap.GetString("Trigger.Group");
-        var triggerNamesText = context.Trigger.JobDataMap.GetString("Trigger.Names");
-        if (string.IsNullOrWhiteSpace(triggerGroup)) { return false; }
-        if (string.IsNullOrWhiteSpace(triggerNamesText)) { return false; }
+        var triggerGroup = context.Trigger.JobDataMap.GetString(AutoResumeJobUtil.TriggerGroup);
+        var triggerNamesText = context.Trigger.JobDataMap.GetString(AutoResumeJobUtil.TriggerNames);
+        if (string.IsNullOrWhiteSpace(triggerGroup)) { return null; }
+        if (string.IsNullOrWhiteSpace(triggerNamesText)) { return null; }
         var triggerNames = triggerNamesText.Split(',');
-        if (triggerNames.Length == 0) { return false; }
+        if (triggerNames.Length == 0) { return null; }
 
         // Get current job triggers
         var triggers = await scheduler.GetTriggersOfJob(jobKey, context.CancellationToken);
@@ -89,21 +91,23 @@ internal class CircuitBreakerJob(ILogger<CircuitBreakerJob> logger, IScheduler s
             result = true;
         }
 
-        return result;
+        return result ? jobKey : null;
     }
 
-    private void SafeScan(MonitorEvents @event, IJobExecutionContext context)
+    private async Task SafeScan(MonitorEvents @event, IScheduler scheduler, JobKey jobKey)
     {
         try
         {
+            var jobDetails = await scheduler.GetJobDetail(jobKey);
+            if (jobDetails == null) { return; }
             var info = new MonitorSystemInfo
             (
                 "Circuit breaker was reset for job {{JobGroup}}.{{JobName}} with description {{Description}}"
             );
 
-            info.MessagesParameters.Add("JobGroup", context.JobDetail.Key.Group);
-            info.MessagesParameters.Add("JobName", context.JobDetail.Key.Name);
-            info.MessagesParameters.Add("Description", context.JobDetail.Description);
+            info.MessagesParameters.Add("JobGroup", jobDetails.Key.Group);
+            info.MessagesParameters.Add("JobName", jobDetails.Key.Name);
+            info.MessagesParameters.Add("Description", jobDetails.Description);
             info.AddMachineName();
 
             monitorUtil.Scan(@event, info);
