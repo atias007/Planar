@@ -55,7 +55,8 @@ public class SchedulerUtil
 
     public async Task<ITrigger?> GetCircuitBreakerTrigger(JobKey jobKey)
     {
-        var trigger = await _scheduler.GetTrigger(new TriggerKey($"Resume.{jobKey}", Consts.CircuitBreakerTriggerGroup));
+        var triggerKey = AutoResumeJobUtil.GetResumeTriggerKey(jobKey);
+        var trigger = await _scheduler.GetTrigger(triggerKey);
         return trigger;
     }
 

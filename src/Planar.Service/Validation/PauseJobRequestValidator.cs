@@ -4,7 +4,7 @@ using System;
 
 namespace Planar.Service.Validation;
 
-public class PauseJobRequestValidator : AbstractValidator<PauseJobRequest>
+public class PauseJobRequestValidator : AbstractValidator<PauseResumeJobRequest>
 {
     public PauseJobRequestValidator()
     {

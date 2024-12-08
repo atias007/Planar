@@ -12,12 +12,15 @@ using System.Threading.Tasks;
 
 namespace Planar.Service.SystemJobs;
 
-internal class CircuitBreakerJob(ILogger<CircuitBreakerJob> logger, IScheduler scheduler, AuditProducer auditProducer, MonitorUtil monitorUtil)
-    : SystemJob, IJob
+internal class CircuitBreakerJob(
+    ILogger<CircuitBreakerJob> logger,
+    IScheduler scheduler,
+    AuditProducer auditProducer,
+    MonitorUtil monitorUtil) : SystemJob, IJob
 {
     public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
     {
-        const string description = "system job for resume job running after circuit breaker";
+        const string description = "system job for resume job running after circuit breaker/auto resume";
         await Schedule<CircuitBreakerJob>(scheduler, description, stoppingToken: stoppingToken);
     }
 
@@ -25,15 +28,11 @@ internal class CircuitBreakerJob(ILogger<CircuitBreakerJob> logger, IScheduler s
     {
         try
         {
-            var jobKey = await DoWork(context);
-            if (jobKey == null) { return; }
-
-            AuditJobSafe(jobKey, "auto resume job after circuit breaker activation");
-            await SafeScan(MonitorEvents.CircuitBreakerReset, context.Scheduler, jobKey);
+            await DoWork(context);
         }
         catch (Exception ex)
         {
-            logger.LogCritical(ex, "fail to resume from circuit breaker activation");
+            logger.LogCritical(ex, "fail to resume from circuit breaker/auto resume");
         }
     }
 
@@ -56,28 +55,40 @@ internal class CircuitBreakerJob(ILogger<CircuitBreakerJob> logger, IScheduler s
         }
     }
 
-    private async Task<JobKey?> DoWork(IJobExecutionContext context)
+    private async Task DoWork(IJobExecutionContext context)
     {
+        // Get resume type
+        var resumeTypeText = context.Trigger.JobDataMap.GetString(AutoResumeJobUtil.ResumeType);
+        if (!Enum.TryParse<AutoResumeTypes>(resumeTypeText, out var resumeType)) { resumeType = AutoResumeTypes.AutoResume; }
+
         // Get destination job key
         var jobKeyName = context.Trigger.JobDataMap.GetString(AutoResumeJobUtil.JobKeyName);
         var jobKeyGroup = context.Trigger.JobDataMap.GetString(AutoResumeJobUtil.JobKeyGroup);
-        if (string.IsNullOrWhiteSpace(jobKeyName)) { return null; }
-        if (string.IsNullOrWhiteSpace(jobKeyGroup)) { return null; }
+        if (string.IsNullOrWhiteSpace(jobKeyName)) { return; }
+        if (string.IsNullOrWhiteSpace(jobKeyGroup)) { return; }
         var jobKey = new JobKey(jobKeyName, jobKeyGroup);
 
-        // Get destination trigger names
+        // Resume job (in case of auto resume)
+        if (resumeType == AutoResumeTypes.AutoResume)
+        {
+            await scheduler.ResumeJob(jobKey, context.CancellationToken);
+            AuditJobSafe(jobKey, "auto resume job");
+            return;
+        }
+
+        // Resume job (in case of circuit breaker)
+        // 1. Get destination trigger names
         var triggerGroup = context.Trigger.JobDataMap.GetString(AutoResumeJobUtil.TriggerGroup);
         var triggerNamesText = context.Trigger.JobDataMap.GetString(AutoResumeJobUtil.TriggerNames);
-        if (string.IsNullOrWhiteSpace(triggerGroup)) { return null; }
-        if (string.IsNullOrWhiteSpace(triggerNamesText)) { return null; }
+        if (string.IsNullOrWhiteSpace(triggerGroup)) { return; }
+        if (string.IsNullOrWhiteSpace(triggerNamesText)) { return; }
         var triggerNames = triggerNamesText.Split(',');
-        if (triggerNames.Length == 0) { return null; }
+        if (triggerNames.Length == 0) { return; }
 
-        // Get current job triggers
+        // 2. Get current job triggers
         var triggers = await scheduler.GetTriggersOfJob(jobKey, context.CancellationToken);
-        var result = false;
 
-        // Resume all triggers
+        // 3. Resume triggers
         foreach (var name in triggerNames)
         {
             var trigger = triggers.FirstOrDefault(t => t.Key.Name == name && t.Key.Group == triggerGroup);
@@ -88,10 +99,10 @@ internal class CircuitBreakerJob(ILogger<CircuitBreakerJob> logger, IScheduler s
             if (TriggerHelper.IsActiveState(state)) { continue; }
 
             await scheduler.ResumeTrigger(triggerKey, context.CancellationToken);
-            result = true;
         }
 
-        return result ? jobKey : null;
+        AuditJobSafe(jobKey, "auto resume job after circuit breaker reset");
+        await SafeScan(MonitorEvents.CircuitBreakerReset, context.Scheduler, jobKey);
     }
 
     private async Task SafeScan(MonitorEvents @event, IScheduler scheduler, JobKey jobKey)

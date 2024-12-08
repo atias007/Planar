@@ -6,6 +6,7 @@ using Planar.Service.Model;
 using Planar.Service.Model.DataObjects;
 using Quartz;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading;
@@ -41,9 +42,9 @@ public interface IHistoryData : IBaseDataLayer
 
     Task<int?> GetHistoryStatusById(long id);
 
-    Task<PagingResponse<HistorySummary>> GetHistorySummary(object parameters);
+    Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(object parameters);
 
-    Task<PagingResponse<JobLastRun>> GetLastHistoryCallForJob(object parameters);
+    Task<(IEnumerable<JobLastRun>, int)> GetLastHistoryCallForJob(object parameters);
 
     Task<LastInstanceId?> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime, CancellationToken cancellationToken);
 
@@ -78,7 +79,7 @@ public class HistoryDataSqlite(PlanarContext context) : HistoryData(context), IH
         return result;
     }
 
-    public async Task<PagingResponse<HistorySummary>> GetHistorySummary(object parameters)
+    public async Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(object parameters)
     {
         var cmd = new CommandDefinition(
             commandText: SqliteResource.GetScript("GetHistorySummary", parameters),
@@ -88,10 +89,10 @@ public class HistoryDataSqlite(PlanarContext context) : HistoryData(context), IH
         var multi = await DbConnection.QueryMultipleAsync(cmd);
         var data = await multi.ReadAsync<HistorySummary>();
         var count = await multi.ReadSingleAsync<int>();
-        return new PagingResponse<HistorySummary>(data.ToList(), count);
+        return (data.ToList(), count);
     }
 
-    public async Task<PagingResponse<JobLastRun>> GetLastHistoryCallForJob(object parameters)
+    public async Task<(IEnumerable<JobLastRun>, int)> GetLastHistoryCallForJob(object parameters)
     {
         var cmd = new CommandDefinition(
             commandText: SqliteResource.GetScript("GetLastHistoryCallForJob", parameters),
@@ -101,7 +102,7 @@ public class HistoryDataSqlite(PlanarContext context) : HistoryData(context), IH
         var multi = await DbConnection.QueryMultipleAsync(cmd);
         var data = await multi.ReadAsync<JobLastRun>();
         var count = await multi.ReadSingleAsync<int>();
-        return new PagingResponse<JobLastRun>(data.ToList(), count);
+        return (data.ToList(), count);
     }
 }
 
@@ -129,7 +130,7 @@ public class HistoryDataSqlServer(PlanarContext context) : HistoryData(context),
         return await DbConnection.ExecuteAsync(cmd);
     }
 
-    public async Task<PagingResponse<HistorySummary>> GetHistorySummary(object parameters)
+    public async Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(object parameters)
     {
         var cmd = new CommandDefinition(
             commandText: "dbo.GetHistorySummary",
@@ -139,10 +140,10 @@ public class HistoryDataSqlServer(PlanarContext context) : HistoryData(context),
         var multi = await DbConnection.QueryMultipleAsync(cmd);
         var data = await multi.ReadAsync<HistorySummary>();
         var count = await multi.ReadSingleAsync<int>();
-        return new PagingResponse<HistorySummary>(data.ToList(), count);
+        return (data.ToList(), count);
     }
 
-    public async Task<PagingResponse<JobLastRun>> GetLastHistoryCallForJob(object parameters)
+    public async Task<(IEnumerable<JobLastRun>, int)> GetLastHistoryCallForJob(object parameters)
     {
         var cmd = new CommandDefinition(
             commandText: "dbo.GetLastHistoryCallForJob",
@@ -152,7 +153,7 @@ public class HistoryDataSqlServer(PlanarContext context) : HistoryData(context),
         var multi = await DbConnection.QueryMultipleAsync(cmd);
         var data = await multi.ReadAsync<JobLastRun>();
         var count = await multi.ReadSingleAsync<int>();
-        return new PagingResponse<JobLastRun>(data.ToList(), count);
+        return (data.ToList(), count);
     }
 }
 
@@ -257,6 +258,23 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
             .Where(l => l.InstanceId == instanceid)
             .FirstOrDefaultAsync();
 
+        return result;
+    }
+
+    public async Task<HistoryStatusDto?> GetHistoryCounter(CounterRequest counterRequest)
+    {
+        var query = from log in _context.JobInstanceLogs
+                    where (counterRequest.FromDate == null || log.StartDate > counterRequest.FromDate) &&
+                          (counterRequest.ToDate == null || log.StartDate <= counterRequest.ToDate)
+                    group log by 1 into g
+                    select new HistoryStatusDto
+                    {
+                        Running = g.Count(x => x.Status == -1),
+                        Success = g.Count(x => x.Status == 0),
+                        Fail = g.Count(x => x.Status == 1)
+                    };
+
+        var result = await query.FirstOrDefaultAsync();
         return result;
     }
 
@@ -382,22 +400,5 @@ public class HistoryData(PlanarContext context) : BaseDataLayer(context)
                 .SetProperty(l => l.IsCanceled, log.IsCanceled)
                 .SetProperty(l => l.HasWarnings, log.HasWarnings)
             );
-    }
-
-    public async Task<HistoryStatusDto?> GetHistoryCounter(CounterRequest counterRequest)
-    {
-        var query = from log in _context.JobInstanceLogs
-                    where (counterRequest.FromDate == null || log.StartDate > counterRequest.FromDate) &&
-                          (counterRequest.ToDate == null || log.StartDate <= counterRequest.ToDate)
-                    group log by 1 into g
-                    select new HistoryStatusDto
-                    {
-                        Running = g.Count(x => x.Status == -1),
-                        Success = g.Count(x => x.Status == 0),
-                        Fail = g.Count(x => x.Status == 1)
-                    };
-
-        var result = await query.FirstOrDefaultAsync();
-        return result;
     }
 }

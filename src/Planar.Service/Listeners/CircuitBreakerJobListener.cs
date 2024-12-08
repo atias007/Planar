@@ -3,18 +3,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Planar.API.Common.Entities;
 using Planar.Common;
-using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
 using Planar.Service.Exceptions;
 using Planar.Service.General;
 using Planar.Service.Listeners.Base;
 using Planar.Service.Monitor;
-using Planar.Service.SystemJobs;
-using Polly;
 using Quartz;
 using System;
-using System.Linq;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -65,7 +62,12 @@ internal class CircuitBreakerJobListener(IServiceScopeFactory serviceScopeFactor
                 {
                     await QueueResumeJob(context, cb);
                     await PauseJob(context);
-                    AuditJobSafe(context.JobDetail.Key, "system paused job due to circuit breaker", new { cb.FailureThreshold, cb.PauseSpan });
+                    var info = new Dictionary<string, object?>
+                    {
+                        { "failure threshold", cb.FailureThreshold },
+                        { "pause span", cb.PauseSpan },
+                    };
+                    AuditJobSafe(context.JobDetail.Key, "system paused job due to circuit breaker", info);
                     RaiseAlert(context);
                     cb.Reset();
                 }
@@ -131,7 +133,7 @@ internal class CircuitBreakerJobListener(IServiceScopeFactory serviceScopeFactor
         if (cb.PauseSpan == null) { return; }
         try
         {
-            await AutoResumeJobUtil.QueueResumeJob(context.Scheduler, context.JobDetail, cb.PauseSpan.Value);
+            await AutoResumeJobUtil.QueueResumeJob(context.Scheduler, context.JobDetail, cb.PauseSpan.Value, AutoResumeTypes.CircuitBreaker);
         }
         catch (JobNotFoundException ex)
         {

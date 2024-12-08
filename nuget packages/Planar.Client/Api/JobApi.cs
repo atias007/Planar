@@ -252,11 +252,11 @@ namespace Planar.Client
             return result;
         }
 
-        public async Task PauseAsync(string id, CancellationToken cancellationToken = default)
+        public async Task PauseAsync(string id, DateTime? autoResumeDate = null, CancellationToken cancellationToken = default)
         {
             ValidateMandatory(id, nameof(id));
             var restRequest = new RestRequest("job/pause", Method.Post)
-                .AddBody(new { id });
+                .AddBody(new { id, autoResumeDate });
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
@@ -331,6 +331,27 @@ namespace Planar.Client
             ValidateMandatory(name, nameof(name));
             var restRequest = new RestRequest("job/resume-group", Method.Post)
                .AddBody(new { name });
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
+        public async Task SetAutoResumeAsync(string id, DateTime autoResumeDate, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(id, nameof(id));
+            ValidateMandatory(autoResumeDate, nameof(autoResumeDate));
+
+            var restRequest = new RestRequest("job/auto-resume", Method.Post)
+                .AddParameter("id", id, ParameterType.UrlSegment)
+                .AddBody(new { id, autoResumeDate });
+
+            await _proxy.InvokeAsync(restRequest, cancellationToken);
+        }
+
+        public async Task DeleteAutoResumeAsync(string id, CancellationToken cancellationToken = default)
+        {
+            ValidateMandatory(id, nameof(id));
+            var restRequest = new RestRequest("job/{id}/auto-resume", Method.Delete)
+                .AddParameter("id", id, ParameterType.UrlSegment);
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }

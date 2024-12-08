@@ -169,39 +169,7 @@ public partial class JobDomain
 
     private async Task<JobActiveMembers> GetJobActiveMode(JobKey jobKey)
     {
-        var triggers = await Scheduler.GetTriggersOfJob(jobKey);
-        if (triggers == null || triggers.Count == 0) { return JobActiveMembers.Inactive; }
-
-        var hasActive = false;
-        var hasInactive = false;
-        foreach (var t in triggers)
-        {
-            if (t.Key.Group == Consts.RecoveringJobsGroup) { continue; }
-            if (t.Key.Group == Consts.ManualTriggerId) { continue; }
-            var active = await IsTriggerActive(t);
-            if (active)
-            {
-                hasActive = true;
-            }
-            else
-            {
-                hasInactive = true;
-            }
-
-            if (hasActive && hasInactive) { break; }
-        }
-
-        if (hasActive && hasInactive) { return JobActiveMembers.PartiallyActive; }
-        if (hasActive) { return JobActiveMembers.Active; }
-        if (hasInactive) { return JobActiveMembers.Inactive; }
-
-        return JobActiveMembers.Active;
-    }
-
-    public async Task<bool> IsTriggerActive(ITrigger trigger)
-    {
-        var state = await Scheduler.GetTriggerState(trigger.Key);
-        return TriggerHelper.IsActiveState(state);
+        return await JobHelper.GetJobActiveMode(Scheduler, jobKey);
     }
 
     private async Task<bool> JobGroupExists(string jobGroup)
@@ -215,6 +183,7 @@ public partial class JobDomain
         var target = new JobBasicDetails();
         SchedulerUtil.MapJobRowDetails(source, target);
         target.Active = await GetJobActiveMode(source.Key);
+        target.AutoResume = await AutoResumeJobUtil.GetAutoResumeDate(Scheduler, source.Key);
         return target;
     }
 
@@ -223,6 +192,7 @@ public partial class JobDomain
         var target = new JobDetails();
         SchedulerUtil.MapJobRowDetails(source, target);
         target.Active = await GetJobActiveMode(source.Key);
+        target.AutoResume = await AutoResumeJobUtil.GetAutoResumeDate(Scheduler, source.Key);
 
         dataMap ??= source.JobDataMap;
         target.Concurrent = !source.ConcurrentExecutionDisallowed;
@@ -250,5 +220,12 @@ public partial class JobDomain
         }
 
         return target;
+    }
+
+    private async Task<bool> CancelQueuedResumeJob(JobKey jobKey)
+    {
+        var cancelAutoResume = await AutoResumeJobUtil.CancelQueuedResumeJob(Scheduler, jobKey);
+        if (cancelAutoResume) { AuditJobSafe(jobKey, "cancel existing auto resume"); }
+        return cancelAutoResume;
     }
 }

@@ -23,6 +23,8 @@ public class JobBasicDetails
 
     public JobActiveMembers Active { get; set; }
 
+    public DateTime? AutoResume { get; set; }
+
     public bool EqualsId(string id)
     {
         if (Id == null || id == null)

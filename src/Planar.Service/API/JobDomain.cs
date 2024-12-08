@@ -12,7 +12,6 @@ using Planar.Service.General;
 using Planar.Service.Model;
 using Planar.Service.Monitor;
 using Planar.Service.Reports;
-using Planar.Service.Validation;
 using Quartz;
 using Quartz.Impl.Matchers;
 using System;
@@ -30,6 +29,28 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
     private static TimeSpan _longPullingSpan = TimeSpan.FromMinutes(5);
 
     #region Data
+
+    public async Task ClearData(string id)
+    {
+        var info = await GetJobDetailsForDataCommands(id);
+        if (info.JobDetails == null) { return; }
+
+        var validKeys = info.JobDetails.JobDataMap.Keys.Where(Consts.IsDataKeyValid);
+        var keyCount = validKeys.Count();
+        foreach (var key in validKeys)
+        {
+            info.JobDetails.JobDataMap.Remove(key);
+        }
+
+        var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
+
+        // Reschedule job
+        MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
+        await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
+        await Scheduler.PauseJob(info.JobKey);
+
+        AuditJobSafe(info.JobKey, $"clear job data. {keyCount} key(s)");
+    }
 
     public async Task PutData(JobOrTriggerDataRequest request, PutMode mode)
     {
@@ -72,28 +93,6 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
 
         // Pause job
         await Scheduler.PauseJob(info.JobKey);
-    }
-
-    public async Task ClearData(string id)
-    {
-        var info = await GetJobDetailsForDataCommands(id);
-        if (info.JobDetails == null) { return; }
-
-        var validKeys = info.JobDetails.JobDataMap.Keys.Where(Consts.IsDataKeyValid);
-        var keyCount = validKeys.Count();
-        foreach (var key in validKeys)
-        {
-            info.JobDetails.JobDataMap.Remove(key);
-        }
-
-        var triggers = await Scheduler.GetTriggersOfJob(info.JobKey);
-
-        // Reschedule job
-        MonitorUtil.Lock(info.JobKey, lockSeconds: 3, MonitorEvents.JobAdded, MonitorEvents.JobPaused);
-        await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
-        await Scheduler.PauseJob(info.JobKey);
-
-        AuditJobSafe(info.JobKey, $"clear job data. {keyCount} key(s)");
     }
 
     public async Task RemoveData(string id, string key)
@@ -142,6 +141,41 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         Update
     }
 
+    public static string GetJobFileTemplate(string typeName)
+    {
+        var notFoundException = new Lazy<RestNotFoundException>(() => new RestNotFoundException($"type '{typeName}' could not be found"));
+
+        Assembly assembly;
+
+        try
+        {
+            assembly = Assembly.Load(typeName);
+        }
+        catch
+        {
+            throw notFoundException.Value;
+        }
+
+        var resources = assembly.GetManifestResourceNames();
+        var resourceName =
+            Array.Find(resources, r => r.Equals($"{typeName}.JobFile.yml", StringComparison.CurrentCultureIgnoreCase)) ??
+            throw notFoundException.Value;
+
+        using Stream? stream =
+            assembly.GetManifestResourceStream(resourceName) ??
+            throw new RestNotFoundException("jobfile.yml resource could not be found");
+
+        using StreamReader reader = new(stream);
+        var result = reader.ReadToEnd();
+
+        if (string.IsNullOrEmpty(result))
+        {
+            throw new RestNotFoundException("jobfile.yml resource could not be found");
+        }
+
+        return result;
+    }
+
     public static IEnumerable<string> GetJobTypes()
     {
         return ServiceUtil.JobTypes;
@@ -177,48 +211,6 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         result.CronTriggers = triggers.CronTriggers;
 
         return result;
-    }
-
-    public async Task<IEnumerable<string>> GetJobGroupNames()
-    {
-        var result = (await Scheduler.GetJobGroupNames())
-            .Where(g => !string.Equals(g, Consts.PlanarSystemGroup, StringComparison.OrdinalIgnoreCase));
-        return result;
-    }
-
-    public async Task<string> GetJobFilename(string id)
-    {
-        var key = await JobKeyHelper.GetJobKey(id);
-        var jobId = await JobKeyHelper.GetJobId(key);
-        if (string.IsNullOrWhiteSpace(jobId)) { throw NotFound(id); }
-        var properties = await DataLayer.GetJobProperty(jobId);
-        if (string.IsNullOrWhiteSpace(properties))
-        {
-            throw NotFound(id);
-        }
-
-        var propDic = YmlUtil.Deserialize<dynamic>(properties) as Dictionary<object, object> ?? [];
-        if (!propDic.TryGetValue("path", out var pathObj)) { throw NotFound(id); }
-        var path = Convert.ToString(pathObj);
-        if (string.IsNullOrWhiteSpace(path)) { throw NotFound(id); }
-        var fullpath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, path);
-        var files = Directory.EnumerateFiles(fullpath, "*.yml", SearchOption.TopDirectoryOnly);
-        var count = files.Count();
-        if (count == 0) { throw NotFound(id, path); }
-        if (count > 1) { throw new RestValidationException("id", $"more than one ({count}) valid yml jobfile found in '{path}' folder"); }
-
-        var jobsFolder = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
-        var jobfile = Path.GetRelativePath(jobsFolder, files.First());
-        return jobfile;
-
-        static Exception NotFound(string id, string? path = null)
-        {
-            var message = string.IsNullOrWhiteSpace(path) ?
-                $"no valid yml jobfile found for '{id}' job" :
-                $"no valid yml jobfile found for '{id}' job in '{path}' folder";
-
-            return new RestNotFoundException(message);
-        }
     }
 
     public async Task<PagingResponse<JobBasicDetails>> GetAll(GetAllJobsRequest request)
@@ -350,38 +342,45 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         return result;
     }
 
-    public static string GetJobFileTemplate(string typeName)
+    public async Task<string> GetJobFilename(string id)
     {
-        var notFoundException = new Lazy<RestNotFoundException>(() => new RestNotFoundException($"type '{typeName}' could not be found"));
-
-        Assembly assembly;
-
-        try
+        var key = await JobKeyHelper.GetJobKey(id);
+        var jobId = await JobKeyHelper.GetJobId(key);
+        if (string.IsNullOrWhiteSpace(jobId)) { throw NotFound(id); }
+        var properties = await DataLayer.GetJobProperty(jobId);
+        if (string.IsNullOrWhiteSpace(properties))
         {
-            assembly = Assembly.Load(typeName);
-        }
-        catch
-        {
-            throw notFoundException.Value;
+            throw NotFound(id);
         }
 
-        var resources = assembly.GetManifestResourceNames();
-        var resourceName =
-            Array.Find(resources, r => r.Equals($"{typeName}.JobFile.yml", StringComparison.CurrentCultureIgnoreCase)) ??
-            throw notFoundException.Value;
+        var propDic = YmlUtil.Deserialize<dynamic>(properties) as Dictionary<object, object> ?? [];
+        if (!propDic.TryGetValue("path", out var pathObj)) { throw NotFound(id); }
+        var path = Convert.ToString(pathObj);
+        if (string.IsNullOrWhiteSpace(path)) { throw NotFound(id); }
+        var fullpath = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs, path);
+        var files = Directory.EnumerateFiles(fullpath, "*.yml", SearchOption.TopDirectoryOnly);
+        var count = files.Count();
+        if (count == 0) { throw NotFound(id, path); }
+        if (count > 1) { throw new RestValidationException("id", $"more than one ({count}) valid yml jobfile found in '{path}' folder"); }
 
-        using Stream? stream =
-            assembly.GetManifestResourceStream(resourceName) ??
-            throw new RestNotFoundException("jobfile.yml resource could not be found");
+        var jobsFolder = FolderConsts.GetSpecialFilePath(PlanarSpecialFolder.Jobs);
+        var jobfile = Path.GetRelativePath(jobsFolder, files.First());
+        return jobfile;
 
-        using StreamReader reader = new(stream);
-        var result = reader.ReadToEnd();
-
-        if (string.IsNullOrEmpty(result))
+        static Exception NotFound(string id, string? path = null)
         {
-            throw new RestNotFoundException("jobfile.yml resource could not be found");
-        }
+            var message = string.IsNullOrWhiteSpace(path) ?
+                $"no valid yml jobfile found for '{id}' job" :
+                $"no valid yml jobfile found for '{id}' job in '{path}' folder";
 
+            return new RestNotFoundException(message);
+        }
+    }
+
+    public async Task<IEnumerable<string>> GetJobGroupNames()
+    {
+        var result = (await Scheduler.GetJobGroupNames())
+            .Where(g => !string.Equals(g, Consts.PlanarSystemGroup, StringComparison.OrdinalIgnoreCase));
         return result;
     }
 
@@ -666,41 +665,41 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         AuditJobSafe(jobKey, "job manually invoked", request);
     }
 
-    public async Task Pause(PauseJobRequest request)
+    public async Task Pause(PauseResumeJobRequest request)
     {
         var jobKey = await JobKeyHelper.GetJobKey(request);
         ValidateSystemJob(jobKey);
 
-        var cancelAutoResume = await AutoResumeJobUtil.CancelQueuedResumeJob(Scheduler, jobKey);
+        await CancelQueuedResumeJob(jobKey);
         await Scheduler.PauseJob(jobKey);
 
         if (request.AutoResumeDate == null)
         {
-            Audit(cancelAutoResume, false, null);
+            Audit(false, null);
             return;
         }
 
         var job = await Scheduler.GetJobDetail(jobKey);
         if (job == null)
         {
-            Audit(cancelAutoResume, false, null);
+            Audit(false, null);
             return;
         }
 
-        await AutoResumeJobUtil.QueueResumeJob(Scheduler, job, request.AutoResumeDate.Value, allTriggers: true);
-        Audit(cancelAutoResume, true, request.AutoResumeDate.Value);
+        await AutoResumeJobUtil.QueueResumeJob(Scheduler, job, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
+        Audit(true, request.AutoResumeDate.Value);
 
-        void Audit(bool cancelAutoResume, bool scheduleAutoResume, DateTime? autoResumeDate)
+        void Audit(bool scheduleAutoResume, DateTime? autoResumeDate)
         {
-            if (cancelAutoResume) { AuditJobSafe(jobKey, "cancel existing auto resume"); }
             AuditJobSafe(jobKey, "job paused");
             if (scheduleAutoResume && autoResumeDate != null)
             {
-                var info = new
+                var info = new Dictionary<string, string>
                 {
-                    autoResumeDate = autoResumeDate.Value.ToShortDateString(),
-                    autoResumeTime = autoResumeDate.Value.ToShortTimeString()
+                    { "auto resume date", autoResumeDate.Value.ToShortDateString() },
+                    { "auto resume time",  autoResumeDate.Value.ToString("HH:mm:ss")}
                 };
+
                 AuditJobSafe(jobKey, "schedule auto resume", info);
             }
         }
@@ -720,38 +719,11 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
             try
             {
                 AuditJobSafe(key, $"job paused while pause job group '{request.Name}'");
-                var cancelAutoResume = await AutoResumeJobUtil.CancelQueuedResumeJob(Scheduler, key);
-                if (cancelAutoResume) { AuditJobSafe(key, "cancel existing auto resume"); }
+                await CancelQueuedResumeJob(key);
             }
             catch (Exception ex)
             {
                 Logger.LogError(ex, "fail to audit/cancel auto resume for job '{Key}', while pause job group '{Name}'", key, request.Name);
-            }
-        }
-    }
-
-    public async Task ResumeGroup(PauseResumeGroupRequest request)
-    {
-        ValidateSystemGroup(request.Name);
-        var keys = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(request.Name));
-        if (keys.Count == 0)
-        {
-            throw new RestNotFoundException($"group '{request.Name}' was not found");
-        }
-
-        await Scheduler.ResumeJobs(GroupMatcher<JobKey>.GroupEquals(request.Name));
-
-        foreach (var key in keys)
-        {
-            try
-            {
-                AuditJobSafe(key, $"job resume while resume job group '{request.Name}'");
-                var cancelAutoResume = await AutoResumeJobUtil.CancelQueuedResumeJob(Scheduler, key);
-                if (cancelAutoResume) { AuditJobSafe(key, "cancel existing auto resume"); }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "fail to audit/cancel auto resume for job '{Key}', while resume job group '{Name}'", key, request.Name);
             }
         }
     }
@@ -866,8 +838,32 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         ValidateSystemJob(jobKey);
         await Scheduler.ResumeJob(jobKey);
         AuditJobSafe(jobKey, "job resumed");
-        var cancelAutoResume = await AutoResumeJobUtil.CancelQueuedResumeJob(Scheduler, jobKey);
-        if (cancelAutoResume) { AuditJobSafe(jobKey, "cancel existing auto resume"); }
+        await CancelQueuedResumeJob(jobKey);
+    }
+
+    public async Task ResumeGroup(PauseResumeGroupRequest request)
+    {
+        ValidateSystemGroup(request.Name);
+        var keys = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.GroupEquals(request.Name));
+        if (keys.Count == 0)
+        {
+            throw new RestNotFoundException($"group '{request.Name}' was not found");
+        }
+
+        await Scheduler.ResumeJobs(GroupMatcher<JobKey>.GroupEquals(request.Name));
+
+        foreach (var key in keys)
+        {
+            try
+            {
+                AuditJobSafe(key, $"job resume while resume job group '{request.Name}'");
+                await CancelQueuedResumeJob(key);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "fail to audit/cancel auto resume for job '{Key}', while resume job group '{Name}'", key, request.Name);
+            }
+        }
     }
 
     public async Task SetAuthor(SetJobAuthorRequest request)
@@ -902,5 +898,36 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
 
         // Pause job
         await Scheduler.PauseJob(jobKey);
+    }
+
+    public async Task SetAutoResume(PauseResumeJobRequest request)
+    {
+        if (request.AutoResumeDate == null)
+        {
+            throw new RestValidationException(nameof(PauseResumeJobRequest.AutoResumeDate), "auto resume date is null");
+        }
+
+        var jobKey = await JobKeyHelper.GetJobKey(request);
+        ValidateSystemJob(jobKey);
+
+        var isActive = await GetJobActiveMode(jobKey);
+        if (isActive == JobActiveMembers.Active)
+        {
+            throw new RestValidationException("id", "all job triggers are active. there is no trigger to auto resume");
+        }
+
+        await CancelQueuedResumeJob(jobKey);
+        await AutoResumeJobUtil.QueueResumeJob(Scheduler, jobKey, request.AutoResumeDate.Value, AutoResumeTypes.AutoResume);
+    }
+
+    public async Task CancelAutoResume(string id)
+    {
+        var jobKey = await JobKeyHelper.GetJobKey(id);
+        ValidateSystemJob(jobKey);
+        var deleted = await CancelQueuedResumeJob(jobKey);
+        if (!deleted)
+        {
+            throw new RestNotFoundException("no auto resume exists for job");
+        }
     }
 }

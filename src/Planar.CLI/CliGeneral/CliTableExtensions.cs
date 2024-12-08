@@ -557,6 +557,13 @@ internal static class CliTableExtensions
         table.Table.AddRow(nameof(response.CircuitBreaker).SplitWords(), GetCircuitBreakerStatusLabel(response));
         table.Table.AddRow(nameof(response.Active), CliTableFormat.FormatActive(response.Active));
 
+        if (response.AutoResume.HasValue)
+        {
+            var text = CliTableFormat.FormatDateTime(response.AutoResume.Value);
+            var colorText = $"[{CliFormat.OkColor}]{text}[/]";
+            table.Table.AddRow(nameof(response.AutoResume), colorText);
+        }
+
         var dataMap = SerializeJobDetailsData(response);
 
         table.Table.AddRow("Data", dataMap.EscapeMarkup() ?? string.Empty);

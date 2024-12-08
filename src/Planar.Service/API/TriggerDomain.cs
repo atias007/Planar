@@ -5,6 +5,7 @@ using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
+using Planar.Service.General;
 using Planar.Service.MapperProfiles;
 using Quartz;
 using Quartz.Impl.Matchers;
@@ -19,6 +20,25 @@ namespace Planar.Service.API;
 public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<TriggerDomain, IJobData>(serviceProvider)
 {
     #region Data
+
+    public async Task ClearData(string id)
+    {
+        var info = await GetTriggerDetailsForDataCommands(id);
+        if (info.Trigger == null || info.JobDetails == null) { return; }
+
+        var validKeys = info.Trigger.JobDataMap.Keys.Where(Consts.IsDataKeyValid);
+        var keyCount = validKeys.Count();
+        foreach (var key in validKeys)
+        {
+            info.JobDetails.JobDataMap.Remove(key);
+        }
+
+        var triggers = await BuildTriggers(info.Trigger);
+        await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
+        await Scheduler.PauseJob(info.JobKey);
+
+        AuditTriggerSafe(info.TriggerKey, $"clear trigger data. {keyCount} key(s)");
+    }
 
     public async Task PutData(JobOrTriggerDataRequest request, PutMode mode, bool skipSystemCheck = false)
     {
@@ -71,25 +91,6 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         await Scheduler.PauseJob(info.JobKey);
 
         AuditTriggerSafe(info.TriggerKey, GetTriggerAuditDescription("remove", key), new { value = auditValue?.Trim() }, addTriggerInfo: true);
-    }
-
-    public async Task ClearData(string id)
-    {
-        var info = await GetTriggerDetailsForDataCommands(id);
-        if (info.Trigger == null || info.JobDetails == null) { return; }
-
-        var validKeys = info.Trigger.JobDataMap.Keys.Where(Consts.IsDataKeyValid);
-        var keyCount = validKeys.Count();
-        foreach (var key in validKeys)
-        {
-            info.JobDetails.JobDataMap.Remove(key);
-        }
-
-        var triggers = await BuildTriggers(info.Trigger);
-        await Scheduler.ScheduleJob(info.JobDetails, triggers, true);
-        await Scheduler.PauseJob(info.JobKey);
-
-        AuditTriggerSafe(info.TriggerKey, $"clear trigger data. {keyCount} key(s)");
     }
 
     private static string GetTriggerAuditDescription(string operation, string key)
@@ -154,6 +155,26 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
 
     #endregion Data
 
+    public static string GetCronDescription(string expression)
+    {
+        try
+        {
+            return TriggerDetailsProfile.GetCronDescription(expression);
+        }
+        catch (FormatException ex)
+        {
+            const string errorString = "Error: ";
+            const string doubleSpace = "  ";
+            const string singleSpace = " ";
+            var error = ex.Message?
+                .Replace(errorString, string.Empty)
+                .Replace(doubleSpace, singleSpace)
+                .ToLowerInvariant();
+
+            throw new RestValidationException(nameof(expression), error ?? "general error");
+        }
+    }
+
     public async Task Delete(string triggerId)
     {
         var trigger = await GetTriggerById(triggerId);
@@ -183,26 +204,6 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         var jobKey = await JobKeyHelper.GetJobKey(id);
         var result = await GetTriggersDetails(jobKey);
         return result;
-    }
-
-    public static string GetCronDescription(string expression)
-    {
-        try
-        {
-            return TriggerDetailsProfile.GetCronDescription(expression);
-        }
-        catch (FormatException ex)
-        {
-            const string errorString = "Error: ";
-            const string doubleSpace = "  ";
-            const string singleSpace = " ";
-            var error = ex.Message?
-                .Replace(errorString, string.Empty)
-                .Replace(doubleSpace, singleSpace)
-                .ToLowerInvariant();
-
-            throw new RestValidationException(nameof(expression), error ?? "general error");
-        }
     }
 
     public async Task<IEnumerable<PausedTriggerDetails>> GetPausedTriggers()
@@ -238,6 +239,15 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
 
         // audit
         AuditJobSafe(trigger.JobKey, $"trigger '{trigger.Key.Name}' resume");
+
+        // cancel auto resume when trigger is resumed and job is fully active
+        var resume = await AutoResumeJobUtil.GetAutoResumeDate(Scheduler, trigger.JobKey);
+        if (resume == null) { return; }
+        var mode = await JobHelper.GetJobActiveMode(Scheduler, trigger.JobKey);
+        if (mode == JobActiveMembers.Active)
+        {
+            await CancelQueuedResumeJob(trigger.JobKey);
+        }
     }
 
     public async Task UpdateCron(UpdateCronRequest request)
@@ -261,7 +271,7 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         }
 
         // audit
-        var obj = new { From = sourceCron, To = request.CronExpression };
+        var obj = new { from = sourceCron, to = request.CronExpression };
         AuditJobSafe(trigger.JobKey, $"update trigger '{trigger.Key.Name}' cron expression", obj);
     }
 
@@ -287,7 +297,7 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         }
 
         // audit
-        var obj = new { From = FormatTimeSpan(sourceInterval), To = FormatTimeSpan(request.Interval) };
+        var obj = new { from = FormatTimeSpan(sourceInterval), to = FormatTimeSpan(request.Interval) };
         AuditJobSafe(trigger.JobKey, $"update trigger '{trigger.Key.Name}' interval", obj);
     }
 
@@ -300,7 +310,6 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         // Validations
         if (jobDetails == null) { return; }
         ValidateSystemTrigger(trigger);
-        ValidateSystemJob(trigger.JobKey);
         await ValidateJobPaused(trigger.JobKey);
         await ValidateJobNotRunning(trigger.JobKey);
 
@@ -313,7 +322,7 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         await Scheduler.PauseJob(trigger.JobKey);
 
         // audit
-        var obj = new { From = FormatTimeSpan(timeout), To = FormatTimeSpan(request.Timeout) };
+        var obj = new { from = FormatTimeSpan(timeout), to = FormatTimeSpan(request.Timeout) };
         AuditJobSafe(trigger.JobKey, $"update trigger '{trigger.Key.Name}' timeout", obj);
     }
 
@@ -324,16 +333,6 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
     }
 
     private static string? GetTriggerId(ITrigger? trigger)
-    {
-        if (trigger == null)
-        {
-            throw new PlanarJobException("trigger is null at TriggerHelper.GetTriggerId(ITrigger)");
-        }
-
-        return TriggerHelper.GetTriggerId(trigger);
-    }
-
-    private static string? GetTriggerKey(ITrigger? trigger)
     {
         if (trigger == null)
         {
@@ -377,6 +376,15 @@ public class TriggerDomain(IServiceProvider serviceProvider) : BaseJobBL<Trigger
         {
             throw new RestValidationException("triggerId", "forbidden: this is system trigger and it should not be modified or deleted");
         }
+
+        ValidateSystemJob(trigger.JobKey);
+    }
+
+    private async Task<bool> CancelQueuedResumeJob(JobKey jobKey)
+    {
+        var cancelAutoResume = await AutoResumeJobUtil.CancelQueuedResumeJob(Scheduler, jobKey);
+        if (cancelAutoResume) { AuditJobSafe(jobKey, "cancel existing auto resume"); }
+        return cancelAutoResume;
     }
 
     private async Task<ITrigger> GetTriggerById(string? triggerId)

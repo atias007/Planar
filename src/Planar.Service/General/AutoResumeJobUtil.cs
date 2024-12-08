@@ -17,26 +17,46 @@ internal enum AutoResumeTypes
 
 internal static class AutoResumeJobUtil
 {
-    public const string JobKeyName = "JobKey.Name";
+    public const string Created = "Created";
     public const string JobKeyGroup = "JobKey.Group";
+    public const string JobKeyName = "JobKey.Name";
+    public const string ResumeType = "ResumeType";
     public const string TriggerGroup = "Trigger.Group";
     public const string TriggerNames = "Trigger.Names";
-    public const string Created = "Created";
-    public const string ResumeType = "ResumeType";
 
     public static async Task<bool> CancelQueuedResumeJob(IScheduler scheduler, JobKey jobKey)
     {
-        var triggerKey = new TriggerKey($"Resume.{jobKey}", Consts.CircuitBreakerTriggerGroup);
+        var triggerKey = GetResumeTriggerKey(jobKey);
         var trigger = await scheduler.GetTrigger(triggerKey);
         if (trigger == null) { return false; }
-        var result = await scheduler.UnscheduleJob(trigger.Key);
-        return result;
+        await scheduler.UnscheduleJob(trigger.Key);
+        return true;
     }
 
-    public static async Task QueueResumeJob(IScheduler scheduler, IJobDetail jobDetail, DateTime resumeDate, bool allTriggers = false)
+    public static TriggerKey GetResumeTriggerKey(JobKey jobKey)
+    {
+        return new TriggerKey($"Resume.{jobKey}", Consts.CircuitBreakerTriggerGroup);
+    }
+
+    public static async Task<DateTime?> GetAutoResumeDate(IScheduler scheduler, JobKey jobKey)
+    {
+        var triggerKey = GetResumeTriggerKey(jobKey);
+        var trigger = await scheduler.GetTrigger(triggerKey);
+        if (trigger == null) { return null; }
+        return trigger.GetNextFireTimeUtc()?.DateTime;
+    }
+
+    public static async Task QueueResumeJob(IScheduler scheduler, IJobDetail jobDetails, DateTime resumeDate, AutoResumeTypes resumeType)
     {
         var span = resumeDate - DateTime.Now;
-        await QueueResumeJob(scheduler, jobDetail, span, allTriggers);
+        await QueueResumeJob(scheduler, jobDetails, span, resumeType);
+    }
+
+    public static async Task QueueResumeJob(IScheduler scheduler, JobKey jobKey, DateTime resumeDate, AutoResumeTypes resumeType)
+    {
+        var span = resumeDate - DateTime.Now;
+        var jobDetails = await scheduler.GetJobDetail(jobKey) ?? throw new JobNotFoundException(jobKey);
+        await QueueResumeJob(scheduler, jobDetails, span, resumeType);
     }
 
     public static async Task QueueResumeJob(IScheduler scheduler, IJobDetail jobDetail, TimeSpan span, AutoResumeTypes resumeType)
@@ -44,9 +64,9 @@ internal static class AutoResumeJobUtil
         // validation
         if (span == TimeSpan.Zero) { return; }
 
-        // get job
-        var jobKey = new JobKey(typeof(CircuitBreakerJob).Name, Consts.PlanarSystemGroup);
-        var job = await scheduler.GetJobDetail(jobKey) ?? throw new JobNotFoundException(jobKey);
+        // get circuit breaker job
+        var cbJobKey = new JobKey(typeof(CircuitBreakerJob).Name, Consts.PlanarSystemGroup);
+        var cbJob = await scheduler.GetJobDetail(cbJobKey) ?? throw new JobNotFoundException(cbJobKey);
 
         // get triggers
         var allTriggers = resumeType == AutoResumeTypes.AutoResume;
@@ -55,10 +75,10 @@ internal static class AutoResumeJobUtil
 
         // set variables
         var triggerGroup = activeTriggers.First().Group;
-        var triggerNames = activeTriggers.Select(t => t.Name);
+        var triggerNames = allTriggers ? [] : activeTriggers.Select(t => t.Name);
 
         // create the resume trigger
-        var triggerKey = new TriggerKey($"Resume.{jobDetail.Key}", Consts.CircuitBreakerTriggerGroup);
+        var triggerKey = GetResumeTriggerKey(jobDetail.Key);
         var triggerId = ServiceUtil.GenerateId();
         var key = jobDetail.Key;
         var dueDate = DateTime.Now.Add(span);
@@ -77,7 +97,7 @@ internal static class AutoResumeJobUtil
                  b.WithRepeatCount(0)
                  .WithMisfireHandlingInstructionFireNow();
              })
-             .ForJob(job);
+             .ForJob(cbJob);
 
         // Schedule Trigger
         await scheduler.ScheduleJob(newTrigger.Build());

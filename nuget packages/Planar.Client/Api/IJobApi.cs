@@ -176,8 +176,10 @@ namespace Planar.Client
         /// Pause Job
         /// </summary>
         /// <param name="id">Job id or job key (Group.Name)</param>
+        /// <param name="autoResumeDate"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        Task PauseAsync(string id, CancellationToken cancellationToken = default);
+        Task PauseAsync(string id, DateTime? autoResumeDate = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Pause Group Of Job
@@ -194,6 +196,23 @@ namespace Planar.Client
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         Task ResumeGroupAsync(string name, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Set Auto Resume To Job
+        /// </summary>
+        /// <param name="id">Job id or job key (Group.Name)</param>
+        /// <param name="autoResumeDate"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task SetAutoResumeAsync(string id, DateTime autoResumeDate, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Delete Auto Resume From Job
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        Task DeleteAutoResumeAsync(string id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Queue Invokation Of Job Queue invokation of job

@@ -40,13 +40,15 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
     public async Task<PagingResponse<HistorySummary>> GetHistorySummary(GetSummaryRequest request)
     {
         request.SetPagingDefaults();
-        var result = await DataLayer.GetHistorySummary(request);
+        var data = await DataLayer.GetHistorySummary(request);
+        var items = data.Item1?.ToList() ?? [];
+        var result = new PagingResponse<HistorySummary>(request, items, data.Item2);
 
         // fill author
-        if (result.Data == null || result.Data.Count == 0) { return result; }
+        if (items.Count == 0) { return result; }
 
         var jobs = await Scheduler.GetJobKeys(GroupMatcher<JobKey>.AnyGroup());
-        foreach (var item in result.Data)
+        foreach (var item in items)
         {
             if (!string.IsNullOrWhiteSpace(item.Author)) { continue; }
             var key = jobs.FirstOrDefault(j => j.Name == item.JobName && j.Group == item.JobGroup);
@@ -125,8 +127,8 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
             request.PageSize
         };
         var data = await DataLayer.GetLastHistoryCallForJob(parameters1);
-        var result = new PagingResponse<JobLastRun>(data);
-        result.SetPagingData(request, data.TotalRows);
+        var items = data.Item1?.ToList() ?? [];
+        var result = new PagingResponse<JobLastRun>(request, items, data.Item2);
         return result;
     }
 

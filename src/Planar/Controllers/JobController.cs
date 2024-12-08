@@ -234,7 +234,7 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [AcceptedContentResponse]
     [BadRequestResponse]
     [NotFoundResponse]
-    public async Task<IActionResult> Pause([FromBody] PauseJobRequest request)
+    public async Task<IActionResult> Pause([FromBody] PauseResumeJobRequest request)
     {
         await BusinesLayer.Pause(request);
         return Accepted();
@@ -263,6 +263,32 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     public async Task<IActionResult> Resume([FromBody] JobOrTriggerKey request)
     {
         await BusinesLayer.Resume(request);
+        return Accepted();
+    }
+
+    [HttpPost("auto-resume")]
+    [EditorAuthorize]
+    [SwaggerOperation(OperationId = "post_job_auto_resume", Description = "Set job auto resume", Summary = "Set Job Auto Resume")]
+    [JsonConsumes]
+    [AcceptedContentResponse]
+    [BadRequestResponse]
+    [NotFoundResponse]
+    public async Task<IActionResult> SetAutoResume([FromBody] PauseResumeJobRequest request)
+    {
+        await BusinesLayer.SetAutoResume(request);
+        return Accepted();
+    }
+
+    [HttpDelete("{id}/auto-resume")]
+    [EditorAuthorize]
+    [SwaggerOperation(OperationId = "delete_job_auto_resume", Description = "Delete job auto resume", Summary = "Delete Job Auto Resume")]
+    [JsonConsumes]
+    [AcceptedContentResponse]
+    [BadRequestResponse]
+    [NotFoundResponse]
+    public async Task<IActionResult> CancelAutoResume([FromRoute][Required] string id)
+    {
+        await BusinesLayer.CancelAutoResume(id);
         return Accepted();
     }
 

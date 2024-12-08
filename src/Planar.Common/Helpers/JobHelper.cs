@@ -3,6 +3,7 @@ using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
 using Quartz;
+using System.Threading.Tasks;
 
 namespace Planar.Service.API.Helpers;
 
@@ -75,5 +76,42 @@ public static class JobHelper
     {
         var title = KeyHelper.GetKeyTitle(jobDetail.Key);
         return title;
+    }
+
+    public static async Task<JobActiveMembers> GetJobActiveMode(IScheduler scheduler, JobKey jobKey)
+    {
+        var triggers = await scheduler.GetTriggersOfJob(jobKey);
+        if (triggers == null || triggers.Count == 0) { return JobActiveMembers.Inactive; }
+
+        var hasActive = false;
+        var hasInactive = false;
+        foreach (var t in triggers)
+        {
+            if (t.Key.Group == Consts.RecoveringJobsGroup) { continue; }
+            if (t.Key.Group == Consts.ManualTriggerId) { continue; }
+            var active = await IsTriggerActive(scheduler, t);
+            if (active)
+            {
+                hasActive = true;
+            }
+            else
+            {
+                hasInactive = true;
+            }
+
+            if (hasActive && hasInactive) { break; }
+        }
+
+        if (hasActive && hasInactive) { return JobActiveMembers.PartiallyActive; }
+        if (hasActive) { return JobActiveMembers.Active; }
+        if (hasInactive) { return JobActiveMembers.Inactive; }
+
+        return JobActiveMembers.Active;
+    }
+
+    private static async Task<bool> IsTriggerActive(IScheduler scheduler, ITrigger trigger)
+    {
+        var state = await scheduler.GetTriggerState(trigger.Key);
+        return TriggerHelper.IsActiveState(state);
     }
 }

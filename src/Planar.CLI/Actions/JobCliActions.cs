@@ -18,7 +18,6 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace Planar.CLI.Actions;
 
@@ -601,6 +600,27 @@ public class JobCliActions : BaseCliAction<JobCliActions>
 
         var restRequest = new RestRequest("job/resume-group", Method.Post)
             .AddBody(request);
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
+    }
+
+    [Action("auto-resume")]
+    public static async Task<CliActionResponse> SetAutoResume(CliAutoResumeRequest request, CancellationToken cancellationToken = default)
+    {
+        var autoResumeDate = request.At == null ? (DateTime?)null : DateTime.Now.Add(request.At.Value);
+        var restRequest = new RestRequest("job/auto-resume", Method.Post)
+                .AddBody(new { request.Id, autoResumeDate });
+
+        var result = await RestProxy.Invoke(restRequest, cancellationToken);
+        return new CliActionResponse(result);
+    }
+
+    [Action("cancel-auto-resume")]
+    public static async Task<CliActionResponse> DeleteAutoResume(CliJobKey request, CancellationToken cancellationToken = default)
+    {
+        var restRequest = new RestRequest("job/{id}/auto-resume", Method.Delete)
+            .AddParameter("id", request.Id, ParameterType.UrlSegment);
 
         var result = await RestProxy.Invoke(restRequest, cancellationToken);
         return new CliActionResponse(result);
