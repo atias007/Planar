@@ -372,3 +372,4 @@ V1.7.8
 - BUG: system jobs not updated its interval when is chaged in settings yml file or in code change
 - BUG: fix paging in CLI/API at summary + last commands
 - CLI: show help to inner actions
+- Add option to Auto Resume jobs
