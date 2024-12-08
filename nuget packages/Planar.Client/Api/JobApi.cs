@@ -341,7 +341,6 @@ namespace Planar.Client
             ValidateMandatory(autoResumeDate, nameof(autoResumeDate));
 
             var restRequest = new RestRequest("job/auto-resume", Method.Post)
-                .AddParameter("id", id, ParameterType.UrlSegment)
                 .AddBody(new { id, autoResumeDate });
 
             await _proxy.InvokeAsync(restRequest, cancellationToken);
