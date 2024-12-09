@@ -87,5 +87,10 @@ namespace Planar.Common
             var result = r.Replace(value, spacer);
             return result;
         }
+
+        public static bool Is<T>(this Type type) where T : struct
+        {
+            return type == typeof(T) || type == typeof(Nullable<T>);
+        }
     }
 }

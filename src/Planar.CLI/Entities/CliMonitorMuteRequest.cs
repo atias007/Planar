@@ -5,7 +5,7 @@ namespace Planar.CLI.Entities
 {
     public class CliMonitorMuteRequest : CliMonitorUnmuteRequest
     {
-        [ActionProperty("ts", "timespan")]
+        [ActionProperty("ts", "timespan", Name = CliActionMetadata.TimeSpan)]
         [Required("timespan argument is required")]
         public TimeSpan TimeSpan { get; set; }
     }

@@ -5,6 +5,7 @@ namespace Planar.CLI.Entities;
 
 public class CliAutoResumeRequest : CliJobKey
 {
-    [ActionProperty("a", "at")]
-    public TimeSpan? At { get; set; }
+    [ActionProperty(DefaultOrder = 1, Name = CliActionMetadata.TimeSpan)]
+    [Required("In argument is required")]
+    public TimeSpan? In { get; set; }
 }

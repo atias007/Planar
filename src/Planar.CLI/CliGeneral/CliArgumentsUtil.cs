@@ -498,9 +498,9 @@ namespace Planar.CLI
                 }
 
                 // TimeSpan data type
-                if (value != null && (prop.PropertyType == typeof(TimeSpan) || prop.PropertyType == typeof(TimeSpan?)))
+                if (value != null && prop.PropertyType.Is<TimeSpan>())
                 {
-                    objValue = TimeSpan.Parse(Convert.ToString(value), CultureInfo.CurrentCulture);
+                    objValue = ParseTimeSpan(value);
                     prop.SetValue(instance, objValue);
                     return;
                 }
@@ -535,6 +535,22 @@ namespace Planar.CLI
 
                 throw new CliException(message);
             }
+        }
+
+        private static TimeSpan ParseTimeSpan(string value)
+        {
+            if (TimeSpan.TryParse(value, CultureInfo.CurrentCulture, out var result))
+            {
+                return result;
+            }
+
+            if (DateTime.TryParse(value, CultureInfo.CurrentCulture, DateTimeStyles.AssumeLocal, out var dateTime))
+            {
+                if (dateTime < DateTime.Now) { return TimeSpan.Zero; }
+                return dateTime - DateTime.Now;
+            }
+
+            throw new InvalidCastException(value);
         }
 
         private static void Swap(ref List<string> args)
