@@ -550,7 +550,51 @@ namespace Planar.CLI
                 return dateTime - DateTime.Now;
             }
 
+            var ts = ParseTimeSpanPharse(value);
+            if (ts != null && ts != TimeSpan.Zero) { return ts.Value; }
+
             throw new InvalidCastException(value);
+        }
+
+        private static TimeSpan? ParseTimeSpanPharse(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) { return null; }
+            value = value.Trim().ToLower();
+
+            var sec = GetCleanValues(value, "sec", "second", "seconds");
+            if (sec != null) { return TimeSpan.FromSeconds(sec.Value); }
+
+            var min = GetCleanValues(value, "min", "minute", "minutes");
+            if (min != null) { return TimeSpan.FromMinutes(min.Value); }
+
+            var hour = GetCleanValues(value, "hour", "hours");
+            if (hour != null) { return TimeSpan.FromHours(hour.Value); }
+
+            var day = GetCleanValues(value, "day", "days");
+            if (day != null) { return TimeSpan.FromHours(day.Value); }
+
+            return null;
+
+            static long? GetCleanValues(string value, params string[] pharses)
+            {
+                foreach (var p in pharses)
+                {
+                    var result = GetCleanValue(value, p);
+                    if (result.HasValue) { return result; }
+                }
+
+                return null;
+            }
+
+            static long? GetCleanValue(string value, string pharse)
+            {
+                var relevant = value.EndsWith(pharse);
+                if (!relevant) { return null; }
+
+                var cleanValue = value.Replace(pharse, string.Empty);
+                if (!long.TryParse(cleanValue, out var longValue)) { return null; }
+                return longValue;
+            }
         }
 
         private static void Swap(ref List<string> args)

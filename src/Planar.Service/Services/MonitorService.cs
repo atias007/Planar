@@ -362,6 +362,10 @@ internal class MonitorService(IServiceProvider serviceProvider, IServiceScopeFac
             case MonitorEvents.ExecutionDurationGreaterThanxMinutes:
                 var duration = context.JobRunTime.TotalMinutes;
                 return duration >= args.Args[0];
+
+            case MonitorEvents.ExecutionEndWithMoreThanxExceptions:
+                var exs = ServiceUtil.GetExceptionCount(context);
+                return exs != null && exs > args.Args[0];
         }
     }
 

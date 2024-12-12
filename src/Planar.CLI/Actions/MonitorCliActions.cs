@@ -515,6 +515,10 @@ public class MonitorCliActions : BaseCliAction<MonitorCliActions>
             case MonitorEvents.ExecutionDurationGreaterThanxMinutes: // 206
                 x = CollectNumericCliValue(" [x] number of minutes", true, 1, 1440);
                 return x?.ToString();
+
+            case MonitorEvents.ExecutionEndWithMoreThanxExceptions: // 207
+                x = CollectNumericCliValue(" [x] number of exceptions", true, 1, 9999);
+                return x?.ToString();
         }
     }
 

@@ -4,7 +4,6 @@ namespace Planar.Common
 {
     public enum MonitorEvents
     {
-        //// [Description("Execution Vetoed")] ExecutionVetoed = 100,
         [Description("Execution Retry")] ExecutionRetry = 101,
 
         [Description("Execution Last Retry Fail")] ExecutionLastRetryFail = 102,
@@ -26,6 +25,7 @@ namespace Planar.Common
         [Description("Execution End With Effected Rows Greater Than {x} In {y} Hours")] ExecutionEndWithEffectedRowsGreaterThanxInyHours = 204,
         [Description("Execution End With Effected Rows Less Than {x} In {y} Hours")] ExecutionEndWithEffectedRowsLessThanxInyHours = 205,
         [Description("Execution Duration Greater Than {x} Minutes")] ExecutionDurationGreaterThanxMinutes = 206,
+        [Description("Execution End With More Than {x} Exceptions")] ExecutionEndWithMoreThanxExceptions = 207,
 
         //// -------------------------------------------------------
         [Description("Job Added")] JobAdded = 300,

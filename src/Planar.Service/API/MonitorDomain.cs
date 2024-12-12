@@ -33,7 +33,8 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
         (int)MonitorEvents.ExecutionFailxTimesInyHours,
         (int)MonitorEvents.ExecutionLastRetryFail,
         (int)MonitorEvents.ExecutionSuccessWithNoEffectedRows,
-        ////(int)MonitorEvents.ExecutionVetoed
+        (int)MonitorEvents.ExecutionDurationGreaterThanxMinutes,
+        (int)MonitorEvents.ExecutionEndWithMoreThanxExceptions,
         ];
 
     public static List<MonitorEventModel> GetEvents()

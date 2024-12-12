@@ -295,6 +295,7 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
         SafeScan(MonitorEvents.ExecutionEndWithEffectedRowsLessThanx, context, exception);
         SafeScan(MonitorEvents.ExecutionEndWithEffectedRowsGreaterThanxInyHours, context, exception);
         SafeScan(MonitorEvents.ExecutionEndWithEffectedRowsLessThanxInyHours, context, exception);
+        SafeScan(MonitorEvents.ExecutionEndWithMoreThanxExceptions, context, exception);
 
         var success = exception == null;
         if (success)

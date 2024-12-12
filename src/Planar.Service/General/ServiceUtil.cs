@@ -194,6 +194,14 @@ public static class ServiceUtil
         }
     }
 
+    public static int? GetExceptionCount(IJobExecutionContext? context)
+    {
+        if (context == null) { return null; }
+        var metadata = context.Result as JobExecutionMetadata;
+        var result = metadata?.Exceptions?.Count;
+        return result;
+    }
+
     public static int? GetEffectedRows(IJobExecutionContext? context)
     {
         if (context == null) { return null; }
