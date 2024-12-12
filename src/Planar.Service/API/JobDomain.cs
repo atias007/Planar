@@ -264,12 +264,12 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         // paging & order by
         var result = jobList
             .Select(j => j)
-            .SetPaging(request)
             .OrderBy(j => j.Group)
             .ThenBy(j => j.Name)
+            .SetPaging(request)
             .ToList();
 
-        return new PagingResponse<JobBasicDetails>(request, result, jobs.Count);
+        return new PagingResponse<JobBasicDetails>(request, result, jobList.Count);
     }
 
     public async Task<PagingResponse<JobAuditDto>> GetAudits(PagingRequest request)

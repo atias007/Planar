@@ -179,7 +179,4 @@ internal partial class Job : BaseCheckJob
             yield return key;
         }
     }
-
-    [GeneratedRegex("{{[0-9]+}}|{{\\w+}}")]
-    private static partial Regex Placeholder();
 }

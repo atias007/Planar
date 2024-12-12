@@ -215,7 +215,7 @@ public class MainService : BackgroundService
             var nodes = await util.GetAllNodes();
             ClusterUtil.ValidateClusterConflict(nodes);
 
-            var liveNodes = nodes.Where(n => n.LiveNode).ToList();
+            var liveNodes = nodes.Where(n => n.LiveNode && !n.IsCurrentNode).ToList();
             var deadNodes = nodes.Where(n => !n.LiveNode).ToList();
             LogDeadNodes(deadNodes);
 

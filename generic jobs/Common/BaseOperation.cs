@@ -13,8 +13,4 @@ public abstract class BaseOperation : BaseDefault
     }
 
     public OperationStatus OperationStatus { get; set; }
-
-    public bool Veto { get; set; }
-
-    public string? VetoReason { get; set; }
 }
