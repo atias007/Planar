@@ -41,7 +41,19 @@ WHERE
 	AND (@JobType IS NULL OR JobType = @JobType)
 ORDER BY StartDate DESC
  
-SELECT  *
+SELECT  
+		[Id]
+      ,[JobId]
+      ,[JobName]
+	  ,[JobType]
+      ,[JobGroup]
+      ,[TriggerId]
+      ,[Status]
+	  ,[StatusTitle]
+      ,[StartDate]
+      ,[Duration]
+      ,[EffectedRows]
+	  ,[HasWarnings]
 FROM #LastHistoryCallForJob
 ORDER BY StartDate DESC
 OFFSET ((@PageNumber -1) * @PageSize) ROWS FETCH NEXT @PageSize ROWS ONLY
@@ -49,4 +61,5 @@ OFFSET ((@PageNumber -1) * @PageSize) ROWS FETCH NEXT @PageSize ROWS ONLY
 -- Total Rows
 SELECT COUNT(*)
 FROM #LastHistoryCallForJob
- 
+
+DROP TABLE IF EXISTS  #LastHistoryCallForJob

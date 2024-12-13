@@ -60,6 +60,8 @@ WHERE
 	AND (@JobGroup IS NULL OR JobGroup = @JobGroup)
 	AND (@JobType IS NULL OR JobType = @JobType)
 ORDER BY StartDate DESC
-  LIMIT {{limit}} OFFSET {{offset}};
+LIMIT {{limit}} OFFSET {{offset}};
 
 SELECT COUNT(*) FROM temp.LastHistoryCallForJob;
+
+DROP TABLE IF EXISTS  temp.LastHistoryCallForJob;
