@@ -340,13 +340,12 @@ V1.7.6
 
 V1.7.7
 --------
-- CLI search
 - circuit breaker
 - BUG: fix auto save job/trigger data when job has exception
 - BUG: show audit for general group actions - only from the time after job created
-- Add service & cli & client library called Wait with Server Send Events (wait running for end)
-- Add Host Group to generic jobs
-- Add veto & custom configure to generic jobs
+- Add service & cli & client library called 'Wait' with Server Send Events (wait running for end)
+- Add "Host Group" to generic jobs
+- Add "veto" & "custom configure" to generic jobs
 - health check minor changes + cli color
 - add free search on cli jobs menu / monitor event menu
 - BUG: recovery running try to add same retry trigger with same key
@@ -365,7 +364,7 @@ V1.7.8
 - BUG: pause-group/ resume-group show audit for all jobs (now the audit is only for jobs in group)
 - CLI - add sleep cli command
 - limit the running job log to 20mb of data
-- BUG: system jobs not updated its interval when is chaged in settings yml file or in code change
+- BUG: system jobs not updated its interval when is changed in settings yml file or in code change
 - BUG: fix paging in CLI/API at summary + last commands
 - CLI: show help to inner actions
 - Add option to Auto Resume jobs
