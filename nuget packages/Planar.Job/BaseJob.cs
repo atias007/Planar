@@ -45,6 +45,7 @@ namespace Planar.Job
         }
 
         protected int ExceptionCount => _baseJobFactory.ExceptionCount;
+
         protected TimeSpan JobRunTime => _baseJobFactory.JobRunTime;
 
         protected ILogger Logger
@@ -127,8 +128,52 @@ namespace Planar.Job
 
                 SafeHandle(() => _timer?.Dispose());
                 SafeHandle(() => MqttClient.Connected -= MqttClient_Connected);
-                await SafeHandleAsync(() => MqttClient.StopAsync());
+                await SafeHandleAsync(MqttClient.StopAsync);
             }
+        }
+
+        internal async Task PrintDebugSummary()
+        {
+            if (PlanarJob.Mode == RunningMode.Debug)
+            {
+                await Console.Out.WriteLineAsync("---------------------------------------");
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                await Console.Out.WriteLineAsync(" Summary");
+                await Console.Out.WriteLineAsync(" =======");
+                await Console.Out.WriteLineAsync($" - Effected Rows: {EffectedRows}");
+                await Console.Out.WriteLineAsync($" - Exception Count: {ExceptionCount}");
+                await Console.Out.WriteLineAsync($" - Fire Time: {_baseJobFactory.Context.FireTime.DateTime}");
+                await Console.Out.WriteLineAsync($" - Job Run Time: {FormatTimeSpan(JobRunTime)}");
+                Console.ResetColor();
+            }
+        }
+
+        internal async Task PrintMergedData()
+        {
+            if (PlanarJob.Mode == RunningMode.Debug)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkGray;
+                await Console.Out.WriteLineAsync(">> Merged Data");
+                await Console.Out.WriteLineAsync("---------------------------------------");
+
+                foreach (var item in _baseJobFactory.Context.MergedJobDataMap)
+                {
+                    await Console.Out.WriteLineAsync($" {item.Key}: {item.Value}");
+                }
+
+                Console.ResetColor();
+                await Console.Out.WriteLineAsync("---------------------------------------");
+            }
+        }
+
+        public static string FormatTimeSpan(TimeSpan timeSpan)
+        {
+            if (timeSpan.TotalDays >= 1)
+            {
+                return $"{timeSpan:\\(d\\)\\ hh\\:mm\\:ss}";
+            }
+
+            return $"{timeSpan:hh\\:mm\\:ss}";
         }
 
         private async Task OpenMqttConnection()

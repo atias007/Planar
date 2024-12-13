@@ -80,12 +80,12 @@ namespace Planar.Job
 
             if (Mode == RunningMode.Debug)
             {
-                Console.WriteLine("---------------------------------------");
-                Console.Write("Environment: ");
+                await Console.Out.WriteLineAsync("---------------------------------------");
+                await Console.Out.WriteAsync(">> Environment: ");
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine(Environment);
+                await Console.Out.WriteLineAsync(Environment);
                 Console.ResetColor();
-                Console.WriteLine("---------------------------------------");
+                await Console.Out.WriteLineAsync("---------------------------------------");
             }
 
             var instance = Activator.CreateInstance<TJob>();
@@ -93,10 +93,10 @@ namespace Planar.Job
 
             if (Mode == RunningMode.Debug)
             {
-                Console.WriteLine();
-                Console.WriteLine("---------------------------------------");
-                Console.WriteLine("[x] Press [Enter] to close window");
-                Console.WriteLine("---------------------------------------");
+                await instance.PrintDebugSummary();
+                await Console.Out.WriteLineAsync("---------------------------------------");
+                await Console.Out.WriteLineAsync(">> Press any key to exit");
+                await Console.Out.WriteLineAsync("---------------------------------------");
                 Console.ReadKey(true);
             }
         }
@@ -219,7 +219,9 @@ namespace Planar.Job
 
         private static void TimerElapsed(object sender, ElapsedEventArgs e)
         {
+            Console.BackgroundColor = ConsoleColor.Red;
             Console.WriteLine("User input timeout. Terminate application");
+            Console.ResetColor();
             System.Environment.Exit(-1);
         }
 
