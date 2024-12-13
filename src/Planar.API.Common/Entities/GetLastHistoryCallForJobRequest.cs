@@ -8,6 +8,6 @@
 
         public string? JobType { get; set; }
 
-        public long? LastDays { get; set; }
+        public int? LastDays { get; set; }
     }
 }

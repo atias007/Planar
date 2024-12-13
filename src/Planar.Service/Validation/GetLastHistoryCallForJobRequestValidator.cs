@@ -10,7 +10,7 @@ public class GetLastHistoryCallForJobRequestValidator : AbstractValidator<GetLas
     public GetLastHistoryCallForJobRequestValidator()
     {
         Include(new PagingRequestValidator());
-        RuleFor(e => e.LastDays).InclusiveBetween(0, 356);
+        RuleFor(e => e.LastDays).InclusiveBetween(0, 365);
 
         RuleFor(r => r.JobId).Null()
             .When((req, r) => !string.IsNullOrEmpty(req.JobGroup))

@@ -1,4 +1,5 @@
-﻿using Planar.API.Common.Entities;
+﻿using Dapper;
+using Planar.API.Common.Entities;
 using Planar.Service.API.Helpers;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
@@ -117,15 +118,13 @@ public class HistoryDomain(IServiceProvider serviceProvider) : BaseLazyBL<Histor
     {
         request.SetPagingDefaults();
         request.LastDays ??= 30;
-        var parameters1 = new
-        {
-            request.LastDays,
-            request.JobId,
-            request.JobGroup,
-            request.JobType,
-            request.PageNumber,
-            request.PageSize
-        };
+        var parameters1 = new DynamicParameters();
+        parameters1.Add(nameof(GetLastHistoryCallForJobRequest.JobId), request.JobId);
+        parameters1.Add(nameof(GetLastHistoryCallForJobRequest.LastDays), request.LastDays);
+        parameters1.Add(nameof(GetLastHistoryCallForJobRequest.JobGroup), request.JobGroup);
+        parameters1.Add(nameof(GetLastHistoryCallForJobRequest.JobType), request.JobType);
+        parameters1.Add(nameof(GetLastHistoryCallForJobRequest.PageNumber), request.PageNumber);
+        parameters1.Add(nameof(GetLastHistoryCallForJobRequest.PageSize), request.PageSize);
         var data = await DataLayer.GetLastHistoryCallForJob(parameters1);
         var items = data.Item1?.ToList() ?? [];
         var result = new PagingResponse<JobLastRun>(request, items, data.Item2);

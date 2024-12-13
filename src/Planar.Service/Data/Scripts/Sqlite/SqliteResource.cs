@@ -1,6 +1,8 @@
-﻿using Planar.API.Common.Entities;
+﻿using Dapper;
+using Planar.API.Common.Entities;
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 
 namespace Planar.Service.Data.Scripts.Sqlite;
@@ -22,6 +24,22 @@ internal static class SqliteResource
         {
             resourceContent = resourceContent.Replace("{{limit}}", pagingRequest.PageSize.ToString());
             resourceContent = resourceContent.Replace("{{offset}}", ((pagingRequest.PageNumber - 1) * pagingRequest.PageSize).ToString());
+        }
+
+        if (parameters is DynamicParameters dynamicParameters)
+        {
+            var pageSize = dynamicParameters.ParameterNames.FirstOrDefault(p => p.Equals("PageSize", StringComparison.OrdinalIgnoreCase));
+            var pageNumber = dynamicParameters.ParameterNames.FirstOrDefault(p => p.Equals("PageNumber", StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrWhiteSpace(pageSize) && !string.IsNullOrWhiteSpace(pageNumber))
+            {
+                var size = dynamicParameters.Get<int>(pageSize);
+                var number = dynamicParameters.Get<int>(pageNumber);
+
+                    resourceContent = resourceContent
+                        .Replace("{{limit}}", size.ToString())
+                        .Replace("{{offset}}", ((number - 1) * size).ToString());
+            }
         }
 
         return resourceContent;

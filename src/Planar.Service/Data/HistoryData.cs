@@ -44,7 +44,7 @@ public interface IHistoryData : IBaseDataLayer
 
     Task<(IEnumerable<HistorySummary>, int)> GetHistorySummary(object parameters);
 
-    Task<(IEnumerable<JobLastRun>, int)> GetLastHistoryCallForJob(object parameters);
+    Task<(IEnumerable<JobLastRun>, int)> GetLastHistoryCallForJob(DynamicParameters parameters);
 
     Task<LastInstanceId?> GetLastInstanceId(JobKey jobKey, DateTime invokeDateTime, CancellationToken cancellationToken);
 
@@ -92,8 +92,11 @@ public class HistoryDataSqlite(PlanarContext context) : HistoryData(context), IH
         return (data.ToList(), count);
     }
 
-    public async Task<(IEnumerable<JobLastRun>, int)> GetLastHistoryCallForJob(object parameters)
+    public async Task<(IEnumerable<JobLastRun>, int)> GetLastHistoryCallForJob(DynamicParameters parameters)
     {
+        var referenceDate = DateTime.Now.AddDays(-parameters.Get<int>("LastDays"));
+        parameters.Add("ReferenceDate", referenceDate);
+
         var cmd = new CommandDefinition(
             commandText: SqliteResource.GetScript("GetLastHistoryCallForJob", parameters),
             commandType: CommandType.Text,
@@ -143,7 +146,7 @@ public class HistoryDataSqlServer(PlanarContext context) : HistoryData(context),
         return (data.ToList(), count);
     }
 
-    public async Task<(IEnumerable<JobLastRun>, int)> GetLastHistoryCallForJob(object parameters)
+    public async Task<(IEnumerable<JobLastRun>, int)> GetLastHistoryCallForJob(DynamicParameters parameters)
     {
         var cmd = new CommandDefinition(
             commandText: "dbo.GetLastHistoryCallForJob",
