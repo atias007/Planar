@@ -120,7 +120,7 @@ internal partial class Job : BaseCheckJob
         {
             if (ex.InnerException is Win32Exception win32Exception)
             {
-                throw new CheckException(win32Exception.Message);
+                throw new CheckException($"service {service.Name} on host {service.Host} fail. message: {win32Exception.Message}");
             }
 
             throw;

@@ -145,7 +145,7 @@ internal partial class Job : BaseCheckJob
                 throw GetCheckException(query, "value", value);
             }
 
-            Logger.LogInformation("internal value condition '{Value} {Condition}' for check '{Name}' success", value, query.InternalValueCondition.Text, query.Name);
+            Logger.LogInformation("value condition '{Value} {Condition}' for check '{Name}' success", value, query.InternalValueCondition.Text, query.Name);
         }
 
         if (query.InternalRecordsCondition != null)
@@ -158,7 +158,7 @@ internal partial class Job : BaseCheckJob
                 throw GetCheckException(query, "records", value);
             }
 
-            Logger.LogInformation("internal records condition '{Value} {Condition}' for check '{Name}' success", value, query.InternalRecordsCondition.Text, query.Name);
+            Logger.LogInformation("records condition '{Value} {Condition}' for check '{Name}' success", value, query.InternalRecordsCondition.Text, query.Name);
         }
 
         Logger.LogInformation("query check success for name '{Name}'", query.Name);
