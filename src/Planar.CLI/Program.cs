@@ -811,7 +811,7 @@ internal static class Program
         //// var md = CliHelpGenerator.GetHelpMD(cliActions);
 #endif
 
-        ServiceCliActions.InitializeLogin().Wait();
+        _ = ServiceCliActions.InitializeLogin();
 
         if (args.Length == 0)
         {
