@@ -89,11 +89,11 @@ namespace Planar.Job
             }
 
             var instance = Activator.CreateInstance<TJob>();
-            await instance.Execute(json);
+            var success = await instance.Execute(json);
 
             if (Mode == RunningMode.Debug)
             {
-                await instance.PrintDebugSummary();
+                await instance.PrintDebugSummary(success);
                 await Console.Out.WriteLineAsync("---------------------------------------");
                 await Console.Out.WriteLineAsync(">> Press any key to exit");
                 await Console.Out.WriteLineAsync("---------------------------------------");

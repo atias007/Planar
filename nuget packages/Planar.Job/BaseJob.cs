@@ -84,7 +84,7 @@ namespace Planar.Job
 
         public abstract void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context);
 
-        internal async Task Execute(string json)
+        internal async Task<bool> Execute(string json)
         {
             Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
             Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
@@ -113,10 +113,12 @@ namespace Planar.Job
                 var task = ExecuteJob(_context);
                 await Task.WhenAll(task);
                 _timer?.Stop();
+                return true;
             }
             catch (Exception ex)
             {
                 HandleException(ex);
+                return false;
             }
             finally
             {
@@ -132,14 +134,16 @@ namespace Planar.Job
             }
         }
 
-        internal async Task PrintDebugSummary()
+        internal async Task PrintDebugSummary(bool success)
         {
             if (PlanarJob.Mode == RunningMode.Debug)
             {
+                var status = success ? "Success" : "Fail";
                 await Console.Out.WriteLineAsync("---------------------------------------");
                 Console.ForegroundColor = ConsoleColor.DarkGray;
                 await Console.Out.WriteLineAsync(" Summary");
                 await Console.Out.WriteLineAsync(" =======");
+                await Console.Out.WriteLineAsync($" - Status: {status}");
                 await Console.Out.WriteLineAsync($" - Effected Rows: {EffectedRows}");
                 await Console.Out.WriteLineAsync($" - Exception Count: {ExceptionCount}");
                 await Console.Out.WriteLineAsync($" - Fire Time: {_baseJobFactory.Context.FireTime.DateTime}");
