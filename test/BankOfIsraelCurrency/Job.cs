@@ -14,7 +14,7 @@ namespace BankOfIsraelCurrency
 
         public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
         {
-            Version = new Version("3.0.0");
+            Version = new Version("3.1.0");
 
             //// Do Nothig ////
         }

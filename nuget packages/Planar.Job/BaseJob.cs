@@ -24,7 +24,7 @@ namespace Planar.Job
         private IServiceProvider _provider = null!;
         private Timer? _timer;
         private Version? _version;
-        private readonly AutoResetEvent _executeResetEvent = new AutoResetEvent(false);
+        private AutoResetEvent? _executeResetEvent;
 
         protected IConfiguration Configuration
         {
@@ -184,7 +184,7 @@ namespace Planar.Job
         {
             if (PlanarJob.Mode == RunningMode.Release)
             {
-                var connectTimeout = TimeSpan.FromSeconds(2);
+                var connectTimeout = TimeSpan.FromSeconds(4);
                 MqttClient.Connected += MqttClient_Connected;
 
                 for (int i = 0; i < 5; i++)
@@ -198,32 +198,22 @@ namespace Planar.Job
 
         private async Task<bool> SafeStartMqttClient(TimeSpan connectTimeout)
         {
-            bool isConnect;
-
             try
             {
+                _executeResetEvent = new AutoResetEvent(false);
                 await MqttClient.StartAsync(_context.FireInstanceId, _context.JobPort);
-                isConnect = _executeResetEvent.WaitOne(connectTimeout);
+                _executeResetEvent.WaitOne(connectTimeout);
+                await MqttClient.PingAsync();
 
-                if (isConnect)
+                for (int i = 0; i < 3; i++)
                 {
-                    await MqttClient.PingAsync();
                     await MqttClient.PublishAsync(MessageBrokerChannels.HealthCheck);
+                    await Task.Delay(50);
                 }
-                else
-                {
-                    await Console.Out.WriteLineAsync("xxx");
-                    await MqttClient.StopAsync();
-                    await Task.Delay(500);
-                    ////_executeResetEvent = new AutoResetEvent(false);
-                }
-
-                return isConnect;
+                return true;
             }
             catch
             {
-                await Console.Out.WriteLineAsync("xxx");
-
                 await MqttClient.StopAsync();
                 await Task.Delay(500);
                 return false;
@@ -232,7 +222,7 @@ namespace Planar.Job
 
         private void MqttClient_Connected(object sender, EventArgs e)
         {
-            _executeResetEvent.Set();
+            _executeResetEvent?.Set();
         }
 
         private void SafeHandle(Action action)

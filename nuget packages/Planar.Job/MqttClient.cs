@@ -19,7 +19,7 @@ namespace Planar
         private static IManagedMqttClient _mqttClient = null!;
         private static readonly JsonEventFormatter _formatter = new JsonEventFormatter();
         private static string _id = "none";
-        private const string _host = "localhost";
+        private const string _host = "127.0.0.1";
         private const string _source = "http://planar.me";
         private const int _port = 206;
         private const int _timeout = 12;
