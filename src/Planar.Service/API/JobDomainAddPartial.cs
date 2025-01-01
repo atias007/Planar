@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Pipelines.Sockets.Unofficial.Arenas;
@@ -13,6 +14,7 @@ using Planar.Service.Validation;
 using Quartz;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Dynamic;
 using System.IO;
 using System.Linq;
@@ -36,6 +38,12 @@ public partial class JobDomain
             .Replace("@MaxNameLength@", MaxNameLength.ToString()), RegexOptions.Compiled, TimeSpan.FromSeconds(5));
 
     private static readonly DateTimeOffset DelayStartTriggerDateTime = new(DateTime.Now.AddSeconds(3));
+
+    public async Task FailOverPublish(CloudEventArgs request)
+    {
+        // TODO: add security token
+        MqttBrokerService.OnInterceptingPublishAsync(request);
+    }
 
     public async Task<PlanarIdResponse> Add(SetJobPathRequest request)
     {

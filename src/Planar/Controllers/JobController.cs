@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using CloudNative.CloudEvents;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Planar.API.Common.Entities;
 using Planar.Attributes;
@@ -19,6 +21,15 @@ namespace Planar.Controllers;
 [Route("job")]
 public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
 {
+    [HttpPost("failover-publish")]
+    [AllowAnonymous]
+    [ApiExplorerSettings(IgnoreApi = true)]
+    public async Task<IActionResult> FailOverPublish([Required] CloudEventArgs request)
+    {
+        await BusinesLayer.FailOverPublish(request);
+        return NoContent();
+    }
+
     [HttpPost]
     [EditorAuthorize]
     [SwaggerOperation(OperationId = "post_job", Description = "Add job by yml file", Summary = "Add Job By Yml File")]

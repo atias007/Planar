@@ -14,17 +14,66 @@ namespace Planar
 {
     internal static class MqttClient
     {
-        public static event EventHandler? Connected;
+        public const string Source = "http://planar.me";
+
+        private const int _autoReconnectDelay = 1;
+
+        private const string _host = "127.0.0.1";
+
+        private const int _keepAlivePeriod = 1;
+
+        private const int _port = 206;
+
+        private const int _timeout = 12;
+
+        private static readonly JsonEventFormatter _formatter = new JsonEventFormatter();
+
+        private static string _id = "none";
 
         private static IManagedMqttClient _mqttClient = null!;
-        private static readonly JsonEventFormatter _formatter = new JsonEventFormatter();
-        private static string _id = "none";
-        private const string _host = "127.0.0.1";
-        private const string _source = "http://planar.me";
-        private const int _port = 206;
-        private const int _timeout = 12;
-        private const int _keepAlivePeriod = 1;
-        private const int _autoReconnectDelay = 1;
+
+        public static event EventHandler? Connected;
+
+        public static bool IsConnected => _mqttClient.IsConnected;
+
+        public static CloudEvent CreateCloudEvent(MessageBrokerChannels channel)
+        {
+            return CreateCloudEvent(channel, string.Empty);
+        }
+
+        public static CloudEvent CreateCloudEvent(MessageBrokerChannels channel, object message)
+        {
+            var cloudEvent = new CloudEvent
+            {
+                Id = Convert.ToString((int)channel),
+                Type = channel.ToString(),
+                Time = DateTimeOffset.UtcNow,
+                DataContentType = MediaTypeNames.Application.Json,
+                Data = message,
+                Source = new Uri(Source)
+            };
+
+            return cloudEvent;
+        }
+
+        public static async Task PingAsync()
+        {
+            if (_mqttClient == null) { return; }
+
+            await _mqttClient.PingAsync();
+        }
+
+        public static async Task PublishAsync(MessageBrokerChannels channel)
+        {
+            var cloudEvent = CreateCloudEvent(channel, string.Empty);
+            await PublishInnerAsync(cloudEvent);
+        }
+
+        public static async Task PublishAsync(MessageBrokerChannels channel, object message)
+        {
+            var cloudEvent = CreateCloudEvent(channel, message);
+            await PublishInnerAsync(cloudEvent);
+        }
 
         public static async Task StartAsync(string id, int port)
         {
@@ -63,38 +112,12 @@ namespace Planar
             _mqttClient?.Dispose();
         }
 
-        public static async Task PublishAsync(MessageBrokerChannels channel)
+        private static async Task ConnectedAsync(MqttClientConnectedEventArgs arg)
         {
-            await PublishAsync(channel, string.Empty);
+            _ = OnConnected();
+            var log = new LogEntity { Level = LogLevel.Debug, Message = "successfully connected to broker" };
+            await Console.Out.WriteLineAsync(log.ToString());
         }
-
-        public static async Task PublishAsync<T>(MessageBrokerChannels channel, T message)
-        {
-            if (_mqttClient == null) { return; }
-
-            var cloudEvent = new CloudEvent
-            {
-                Id = Convert.ToString((int)channel),
-                Type = channel.ToString(),
-                Time = DateTimeOffset.UtcNow,
-                DataContentType = MediaTypeNames.Application.Json,
-                Data = message,
-                Source = new Uri(_source)
-            };
-
-            var mqttMessage = cloudEvent.ToMqttApplicationMessage(ContentMode.Structured, _formatter, _id);
-            mqttMessage.QualityOfServiceLevel = MqttQualityOfServiceLevel.ExactlyOnce;
-            await _mqttClient.EnqueueAsync(mqttMessage);
-        }
-
-        public static async Task PingAsync()
-        {
-            if (_mqttClient == null) { return; }
-
-            await _mqttClient.PingAsync();
-        }
-
-        public static bool IsConnected => _mqttClient.IsConnected;
 
         private static async Task ConnectingFailedAsync(ConnectingFailedEventArgs arg)
         {
@@ -111,16 +134,17 @@ namespace Planar
             await Console.Out.WriteLineAsync(log.ToString());
         }
 
-        private static async Task ConnectedAsync(MqttClientConnectedEventArgs arg)
-        {
-            _ = OnConnected();
-            var log = new LogEntity { Level = LogLevel.Debug, Message = "successfully connected to broker" };
-            await Console.Out.WriteLineAsync(log.ToString());
-        }
-
         private static Task OnConnected()
         {
             return Task.Run(() => Connected?.Invoke(null, EventArgs.Empty));
+        }
+
+        private static async Task PublishInnerAsync(CloudEvent cloudEvent)
+        {
+            if (_mqttClient == null) { return; }
+            var mqttMessage = cloudEvent.ToMqttApplicationMessage(ContentMode.Structured, _formatter, _id);
+            mqttMessage.QualityOfServiceLevel = MqttQualityOfServiceLevel.ExactlyOnce;
+            await _mqttClient.EnqueueAsync(mqttMessage);
         }
     }
 }

@@ -13,10 +13,27 @@ namespace Planar;
 public class MqttBrokerService(ILogger<MqttBrokerService> logger) : IHostedService
 {
     private const int _port = 206;
-    private MqttServer _mqttServer = null!;
     private static readonly JsonEventFormatter _formatter = new();
+    private MqttServer _mqttServer = null!;
 
     internal static event EventHandler<CloudEventArgs>? InterceptingPublishAsync;
+
+    public static void OnInterceptingPublishAsync(CloudEventArgs cloudEventArgs)
+    {
+        if (InterceptingPublishAsync != null)
+        {
+            InterceptingPublishAsync(null, cloudEventArgs);
+        }
+    }
+
+    private static void OnInterceptingPublishAsync(CloudEvent cloudEvent, InterceptingPublishEventArgs arg)
+    {
+        if (InterceptingPublishAsync != null)
+        {
+            var cloudEventArgs = new CloudEventArgs(cloudEvent, arg.ClientId);
+            InterceptingPublishAsync(null, cloudEventArgs);
+        }
+    }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -44,18 +61,6 @@ public class MqttBrokerService(ILogger<MqttBrokerService> logger) : IHostedServi
         {
             logger.LogCritical(ex, "Initialize: Fail To {Operation}", "Start MQTT Broker Service");
         }
-    }
-
-    private async Task StoppedAsync(EventArgs arg)
-    {
-        logger.LogWarning("stopped MQTT Broker Service");
-        await Task.CompletedTask;
-    }
-
-    private async Task StartedAsync(EventArgs arg)
-    {
-        logger.LogInformation("Initialize: {Operation}", "MQTT Broker Service started");
-        await Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -92,13 +97,12 @@ public class MqttBrokerService(ILogger<MqttBrokerService> logger) : IHostedServi
         }
     }
 
-    private static void OnInterceptingPublishAsync(CloudEvent cloudEvent, InterceptingPublishEventArgs arg)
+    private async Task ClientConnected(ClientConnectedEventArgs arg)
     {
-        if (InterceptingPublishAsync != null)
-        {
-            var cloudEventArgs = new CloudEventArgs(cloudEvent, arg.ClientId);
-            InterceptingPublishAsync(null, cloudEventArgs);
-        }
+        SafeHandle(() =>
+        logger.LogDebug("New MQTT connection: ClientId = {ClientId}, Endpoint = {Cndpoint}", arg.ClientId, arg.Endpoint));
+
+        await Task.CompletedTask;
     }
 
     private async Task InterceptingPublish(InterceptingPublishEventArgs arg)
@@ -116,11 +120,15 @@ public class MqttBrokerService(ILogger<MqttBrokerService> logger) : IHostedServi
         await Task.CompletedTask;
     }
 
-    private async Task ClientConnected(ClientConnectedEventArgs arg)
+    private async Task StartedAsync(EventArgs arg)
     {
-        SafeHandle(() =>
-        logger.LogDebug("New MQTT connection: ClientId = {ClientId}, Endpoint = {Cndpoint}", arg.ClientId, arg.Endpoint));
+        logger.LogInformation("Initialize: {Operation}", "MQTT Broker Service started");
+        await Task.CompletedTask;
+    }
 
+    private async Task StoppedAsync(EventArgs arg)
+    {
+        logger.LogWarning("stopped MQTT Broker Service");
         await Task.CompletedTask;
     }
 }

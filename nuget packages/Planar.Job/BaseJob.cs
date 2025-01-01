@@ -184,7 +184,7 @@ namespace Planar.Job
         {
             if (PlanarJob.Mode == RunningMode.Release)
             {
-                var connectTimeout = TimeSpan.FromSeconds(4);
+                var connectTimeout = TimeSpan.FromSeconds(6);
                 MqttClient.Connected += MqttClient_Connected;
 
                 for (int i = 0; i < 5; i++)
