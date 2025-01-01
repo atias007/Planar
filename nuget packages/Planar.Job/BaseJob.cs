@@ -187,12 +187,35 @@ namespace Planar.Job
                 var connectTimeout = TimeSpan.FromSeconds(6);
                 MqttClient.Connected += MqttClient_Connected;
 
-                for (int i = 0; i < 5; i++)
+                for (int i = 0; i < 3; i++)
                 {
                     if (await SafeStartMqttClient(connectTimeout)) { return; }
                 }
 
+                // mqtt failover by http to planar service
+                for (int i = 0; i < 3; i++)
+                {
+                    if (await SafeStartFailOverProxy()) { return; }
+                }
+
                 throw new PlanarJobException("Fail to initialize message broker. Communication to planar fail");
+            }
+        }
+
+        private async Task<bool> SafeStartFailOverProxy()
+        {
+            try
+            {
+                // TODO: change the port to variable
+                MqttClient.StartFailOver(_context.FireInstanceId, 2306);
+                await MqttClient.PingAsync();
+                await MqttClient.PublishAsync(MessageBrokerChannels.HealthCheck);
+                return true;
+            }
+            catch
+            {
+                await MqttClient.StopAsync();
+                return false;
             }
         }
 

@@ -1,5 +1,8 @@
-﻿using RestSharp;
+﻿using CloudNative.CloudEvents;
+using CloudNative.CloudEvents.NewtonsoftJson;
+using RestSharp;
 using System;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Planar.Job
@@ -7,8 +10,8 @@ namespace Planar.Job
     internal sealed class FailOverProxy : IDisposable
     {
         private readonly IRestClient _client;
-        private readonly RestRequest _restRequest;
         private readonly string _fireInstanceId;
+        private static readonly JsonEventFormatter _formatter = new JsonEventFormatter();
 
         public FailOverProxy(int port, string fireInstanceId)
         {
@@ -16,49 +19,49 @@ namespace Planar.Job
 
             var options = new RestClientOptions
             {
-                Timeout = TimeSpan.FromSeconds(10),
+                Timeout = TimeSpan.FromSeconds(5),
                 BaseUrl = new Uri($"http://127.0.0.1:{port}"),
                 UserAgent = $"{nameof(Planar)}.{nameof(Job)}.{nameof(FailOverProxy)}"
             };
 
             _client = new RestClient(options);
-            _restRequest = new RestRequest
+        }
+
+        private static RestRequest CreateRequest(string body)
+        {
+            var restRequest = new RestRequest
             {
-                Resource = "job/failover-publish"
+                Resource = "job/failover-publish",
+                Method = Method.Post
             };
+
+            restRequest.AddJsonBody(body);
+            return restRequest;
         }
 
-        public async Task PublishAsync(MessageBrokerChannels channel)
+        public void Dispose()
         {
-            var cloudEvent = MqttClient.CreateCloudEvent(channel);
-            var body = new { ClientId = _fireInstanceId, CloudEvent = cloudEvent };
-            _restRequest.AddBody(body);
-            await _client.ExecuteAsync(_restRequest);
+            _client.Dispose();
         }
 
-        public async Task PublishAsync(MessageBrokerChannels channel, object message)
+        public async Task PingAsync(CloudEvent cloudEvent)
         {
-            var cloudEvent = MqttClient.CreateCloudEvent(channel, message);
-            var body = new { ClientId = _fireInstanceId, CloudEvent = cloudEvent };
-            _restRequest.AddBody(body);
-            await _client.ExecuteAsync(_restRequest);
-        }
-
-        public async Task PingAsync()
-        {
-            var cloudEvent = MqttClient.CreateCloudEvent(MessageBrokerChannels.HealthCheck);
-            var body = new { ClientId = _fireInstanceId, CloudEvent = cloudEvent };
-            _restRequest.AddBody(body);
-            var response = await _client.ExecuteAsync(_restRequest);
+            var bytes = _formatter.EncodeStructuredModeMessage(cloudEvent, out _);
+            var json = Encoding.UTF8.GetString(bytes.ToArray());
+            var restRequest = CreateRequest(json);
+            var response = await _client.ExecuteAsync(restRequest);
             if (!response.IsSuccessStatusCode)
             {
                 throw new PlanarJobException($"Fail to ping failover proxy. Server status: {response.StatusCode}");
             }
         }
 
-        public void Dispose()
+        public async Task PublishAsync(CloudEvent cloudEvent)
         {
-            _client.Dispose();
+            var bytes = _formatter.EncodeStructuredModeMessage(cloudEvent, out _);
+            var json = Encoding.UTF8.GetString(bytes.ToArray());
+            var restRequest = CreateRequest(json);
+            await _client.ExecuteAsync(restRequest);
         }
     }
 }

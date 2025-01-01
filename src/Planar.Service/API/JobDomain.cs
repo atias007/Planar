@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using CloudNative.CloudEvents;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -139,6 +140,12 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
     {
         Add,
         Update
+    }
+
+    public static void FailOverPublish(CloudEvent request)
+    {
+        // TODO: add security token
+        MqttBrokerService.OnInterceptingPublishAsync(request);
     }
 
     public static string GetJobFileTemplate(string typeName)

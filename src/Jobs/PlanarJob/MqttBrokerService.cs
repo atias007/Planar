@@ -18,11 +18,12 @@ public class MqttBrokerService(ILogger<MqttBrokerService> logger) : IHostedServi
 
     internal static event EventHandler<CloudEventArgs>? InterceptingPublishAsync;
 
-    public static void OnInterceptingPublishAsync(CloudEventArgs cloudEventArgs)
+    public static void OnInterceptingPublishAsync(CloudEvent cloudEvent)
     {
         if (InterceptingPublishAsync != null)
         {
-            InterceptingPublishAsync(null, cloudEventArgs);
+            var args = new CloudEventArgs(cloudEvent, cloudEvent.Subject ?? string.Empty);
+            InterceptingPublishAsync(null, args);
         }
     }
 

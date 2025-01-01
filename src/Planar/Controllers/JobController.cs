@@ -24,9 +24,9 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [HttpPost("failover-publish")]
     [AllowAnonymous]
     [ApiExplorerSettings(IgnoreApi = true)]
-    public async Task<IActionResult> FailOverPublish([Required] CloudEventArgs request)
+    public IActionResult FailOverPublish([Required] CloudEvent request)
     {
-        await BusinesLayer.FailOverPublish(request);
+        JobDomain.FailOverPublish(request);
         return NoContent();
     }
 
