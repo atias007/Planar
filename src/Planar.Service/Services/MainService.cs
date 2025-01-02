@@ -187,7 +187,6 @@ public class MainService : BackgroundService
     {
         using var scope = _serviceProvider.CreateScope();
         var util = scope.ServiceProvider.GetRequiredService<ClusterUtil>();
-        await util.StartupHealthCheck();
 
         // === Single Node ===
         if (!AppSettings.Cluster.Clustering)
@@ -216,7 +215,7 @@ public class MainService : BackgroundService
             ClusterUtil.ValidateClusterConflict(nodes);
 
             var liveNodes = nodes.Where(n => n.LiveNode && !n.IsCurrentNode).ToList();
-            var deadNodes = nodes.Where(n => !n.LiveNode).ToList();
+            var deadNodes = nodes.Where(n => !n.LiveNode && !n.IsCurrentNode).ToList();
             LogDeadNodes(deadNodes);
 
             if (await util.HealthCheck(liveNodes))

@@ -31,6 +31,7 @@ internal static class RestProxy
                 {
                     BaseUrl = BaseUri,
                     Timeout = TimeSpan.FromMilliseconds(60_000),
+                    UserAgent = $"Planar.CLI.V{Program.Version}"
                 };
 
                 var serOprions = new JsonSerializerSettings();
@@ -39,8 +40,12 @@ internal static class RestProxy
 
                 _client = new RestClient(
                     options: options,
-                    configureSerialization: s => s.UseNewtonsoftJson(serOprions)
-                    );
+                    configureSerialization: s => s.UseNewtonsoftJson(serOprions),
+                    configureDefaultHeaders: c =>
+                    {
+                        c.Add("Planar-CLI-UserName", Environment.UserName);
+                        c.Add("Planar-CLI-UserDomainName", Environment.UserDomainName);
+                    });
 
                 if (!string.IsNullOrEmpty(LoginProxy.Token))
                 {

@@ -117,27 +117,6 @@ namespace Planar.Service.General
             }
         }
 
-        public async Task StartupHealthCheck()
-        {
-            var nodes = await GetAllNodes();
-            foreach (var node in nodes)
-            {
-                try
-                {
-                    await _asyncRetry.ExecuteAsync(() => CallHealthCheckService(node));
-                }
-                catch (RpcException)
-                {
-                    if (!node.LiveNode)
-                    {
-                        using var scope = serviceScope.CreateScope();
-                        var dal = scope.ServiceProvider.GetRequiredService<IClusterData>();
-                        await dal.RemoveClusterNode(node);
-                    }
-                }
-            }
-        }
-
         public async Task HealthCheckWithUpdate()
         {
             var nodes = await GetAllNodes();

@@ -371,3 +371,5 @@ V1.7.8
 - Add 'ExecutionEndWithMoreThanxExceptions' event
 - CLI: action with timespan will also accept date time format or text like 1min, 3hours, 2days, 1week, 1month, 1year
 - CLI: show summary on debug running
+- Add Failover to mqtt communication between job and planar
+- Add user-agent, username, domain headers to CLI communication

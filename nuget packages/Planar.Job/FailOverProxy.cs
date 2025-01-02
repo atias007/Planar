@@ -49,7 +49,7 @@ namespace Planar.Job
             var bytes = _formatter.EncodeStructuredModeMessage(cloudEvent, out _);
             var json = Encoding.UTF8.GetString(bytes.ToArray());
             var restRequest = CreateRequest(json);
-            var response = await _client.ExecuteAsync(restRequest);
+            var response = await ExecuteRestWithRetryAsync(restRequest);
             if (!response.IsSuccessStatusCode)
             {
                 throw new PlanarJobException($"Fail to ping failover proxy. Server status: {response.StatusCode}");
@@ -61,7 +61,40 @@ namespace Planar.Job
             var bytes = _formatter.EncodeStructuredModeMessage(cloudEvent, out _);
             var json = Encoding.UTF8.GetString(bytes.ToArray());
             var restRequest = CreateRequest(json);
-            await _client.ExecuteAsync(restRequest);
+            await ExecuteRestWithRetryAsync(restRequest);
+        }
+
+        private async Task<RestResponse> ExecuteRestWithRetryAsync(RestRequest request)
+        {
+            const int retryCount = 3;
+            var counter = 0;
+            RestResponse? response = null;
+            Exception? exception = null;
+            while (counter < retryCount)
+            {
+                try
+                {
+                    response = await _client.ExecuteAsync(request);
+                    if (response.IsSuccessStatusCode) { return response; }
+                    if ((int)response.StatusCode >= 400 && (int)response.StatusCode < 500) { return response; }
+                }
+                catch (Exception ex)
+                {
+                    // ** do nothing **
+                    exception = ex;
+                }
+
+                await Task.Delay(1000);
+                counter++;
+            }
+
+            if (exception != null) { throw exception; }
+
+            return response ?? new RestResponse(request)
+            {
+                IsSuccessStatusCode = false,
+                StatusCode = System.Net.HttpStatusCode.Conflict
+            };
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using static Quartz.MisfireInstruction;
 
 namespace Planar.Service.SystemJobs;
 
@@ -66,7 +67,7 @@ public abstract class SystemJob
                     where T : IJob
     {
         var jobKey = CreateJobKey<T>();
-        var job = await GetJobDetails(scheduler, jobKey, span, stoppingToken);
+        var job = await GetJobDetails(scheduler, jobKey, span, startDate, stoppingToken);
         if (job != null) { return jobKey; }
         job = CreateJob<T>(jobKey, description);
 
@@ -96,7 +97,7 @@ public abstract class SystemJob
         return jobKey;
     }
 
-    private static async Task<IJobDetail?> GetJobDetails(IScheduler scheduler, JobKey jobKey, TimeSpan triggerInterval, CancellationToken stoppingToken = default)
+    private static async Task<IJobDetail?> GetJobDetails(IScheduler scheduler, JobKey jobKey, TimeSpan triggerInterval, DateTime? startDate, CancellationToken stoppingToken = default)
     {
         var job = await scheduler.GetJobDetail(jobKey, stoppingToken);
         if (job == null) { return null; }
@@ -108,18 +109,32 @@ public abstract class SystemJob
             return null;
         }
 
-        var exists = Convert.ToInt32(Math.Floor(simpleTrigger.RepeatInterval.TotalSeconds));
-        var current = Convert.ToInt32(Math.Floor(triggerInterval.TotalSeconds));
-        if (exists == current) { return job; }
+        var existsInterval = Convert.ToInt32(Math.Floor(simpleTrigger.RepeatInterval.TotalSeconds));
+        var currentInterval = Convert.ToInt32(Math.Floor(triggerInterval.TotalSeconds));
+        if (startDate == null && existsInterval == currentInterval) { return job; }
+
+        var existsStartDate = NormalizeDateTime(simpleTrigger.StartTimeUtc.DateTime);
+        var currentStartDate = NormalizeDateTime(startDate.GetValueOrDefault().ToUniversalTime());
+
+        var diff = Math.Abs((existsStartDate - currentStartDate).TotalSeconds);
+        if (existsInterval == currentInterval && diff <= 60) { return job; }
         await scheduler.DeleteJob(jobKey, stoppingToken);
         return null;
+    }
+
+    private static DateTime NormalizeDateTime(DateTime date)
+    {
+        return DateTime.Now.Date
+            .AddHours(date.Hour)
+            .AddMinutes(date.Minute)
+            .AddSeconds(date.Second);
     }
 
     private static void BuildSimpleSchedule(SimpleScheduleBuilder builder, TimeSpan span)
     {
         builder
-            .WithInterval(span)
-            .RepeatForever();
+        .WithInterval(span)
+        .RepeatForever();
 
         if (span.TotalMinutes > 15)
         {

@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Service.General;
-using Polly;
 using Quartz;
 using System;
 using System.Threading;
@@ -54,10 +53,14 @@ public sealed class ClusterHealthCheckJob : SystemJob, IJob
     public static async Task Schedule(IScheduler scheduler, CancellationToken stoppingToken = default)
     {
         const string description = "System job for check health of cluster nodes";
-        var span = AppSettings.Cluster.CheckinInterval;
+        var span = AppSettings.Cluster.HealthCheckInterval;
         var jobKey = await Schedule<ClusterHealthCheckJob>(scheduler, description, span, stoppingToken: stoppingToken);
 
-        if (!AppSettings.Cluster.Clustering)
+        if (AppSettings.Cluster.Clustering)
+        {
+            await scheduler.ResumeJob(jobKey, stoppingToken);
+        }
+        else
         {
             await scheduler.PauseJob(jobKey, stoppingToken);
         }
