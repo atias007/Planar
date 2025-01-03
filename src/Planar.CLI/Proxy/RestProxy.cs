@@ -31,7 +31,7 @@ internal static class RestProxy
                 {
                     BaseUrl = BaseUri,
                     Timeout = TimeSpan.FromMilliseconds(60_000),
-                    UserAgent = $"Planar.CLI.V{Program.Version}"
+                    UserAgent = $"{Consts.CliUserAgent}{Program.Version}"
                 };
 
                 var serOprions = new JsonSerializerSettings();

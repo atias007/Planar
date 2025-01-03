@@ -22,7 +22,7 @@ public class JobDomainSse(IServiceProvider serviceProvider) : BaseBL<JobDomainSs
 
     public async Task GetRunningLog(string instanceId, CancellationToken cancellationToken)
     {
-        var httpContext = _serviceProvider.GetRequiredService<IHttpContextAccessor>();
+        var httpContext = ServiceProvider.GetRequiredService<IHttpContextAccessor>();
         if (httpContext.HttpContext == null) { return; }
 
         var context = new CommonSseContext(httpContext.HttpContext);

@@ -356,7 +356,7 @@ public class MonitorDomain(IServiceProvider serviceProvider) : BaseLazyBL<Monito
             await ClusterUtil.LoadMonitorHooks();
         }
 
-        var monitor = _serviceProvider.GetRequiredService<MonitorUtil>();
+        var monitor = ServiceProvider.GetRequiredService<MonitorUtil>();
         await monitor.Validate();
 
         return $"{ServiceUtil.MonitorHooks.Count} monitor hooks loaded";

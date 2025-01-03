@@ -26,7 +26,7 @@ public class JobController(JobDomain bl) : BaseController<JobDomain>(bl)
     [ApiExplorerSettings(IgnoreApi = true)]
     public IActionResult FailOverPublish([Required] CloudEvent request)
     {
-        JobDomain.FailOverPublish(request);
+        BusinesLayer.FailOverPublish(request);
         return NoContent();
     }
 

@@ -142,10 +142,16 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
         Update
     }
 
-    public static void FailOverPublish(CloudEvent request)
+    public void FailOverPublish(CloudEvent request)
     {
-        // TODO: add security token
-        MqttBrokerService.OnInterceptingPublishAsync(request);
+        var context = ServiceProvider.GetRequiredService<IHttpContextAccessor>();
+        var userAgent = context.HttpContext?.Request.Headers.UserAgent.ToString();
+        if (userAgent != null && userAgent.StartsWith(Consts.CliUserAgent))
+        {
+            MqttBrokerService.OnInterceptingPublishAsync(request);
+        }
+
+        throw new RestForbiddenException();
     }
 
     public static string GetJobFileTemplate(string typeName)
@@ -309,9 +315,9 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
 
     public async Task<JobDescription> GetDescription(string id)
     {
-        var monitorDomain = _serviceProvider.GetRequiredService<MonitorDomain>();
-        var historyDomain = _serviceProvider.GetRequiredService<HistoryDomain>();
-        var statisticsDomain = _serviceProvider.GetRequiredService<MetricsDomain>();
+        var monitorDomain = ServiceProvider.GetRequiredService<MonitorDomain>();
+        var historyDomain = ServiceProvider.GetRequiredService<HistoryDomain>();
+        var statisticsDomain = ServiceProvider.GetRequiredService<MetricsDomain>();
 
         var historyRequest = new GetHistoryRequest { JobId = id, PageSize = 10 };
         var details = await Get(id);
@@ -541,7 +547,7 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
        int? exceptionsCount,
        CancellationToken cancellationToken)
     {
-        var access = _serviceProvider.GetRequiredService<IHttpContextAccessor>();
+        var access = ServiceProvider.GetRequiredService<IHttpContextAccessor>();
         var hash = Convert.ToString(access.HttpContext?.Request.Query["hash"]);
         if (string.IsNullOrWhiteSpace(hash))
         {

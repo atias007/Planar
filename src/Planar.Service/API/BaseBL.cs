@@ -66,7 +66,7 @@ public abstract class BaseBL<TBusinesLayer, TDataLayer>(IServiceProvider service
 
 public abstract class BaseBL<TBusinesLayer>(IServiceProvider serviceProvider)
 {
-    protected readonly IServiceProvider _serviceProvider = serviceProvider ?? throw new PlanarJobException(nameof(serviceProvider));
+    private readonly IServiceProvider _serviceProvider = serviceProvider ?? throw new PlanarJobException(nameof(serviceProvider));
     private readonly ILogger<TBusinesLayer> _logger = serviceProvider.GetRequiredService<ILogger<TBusinesLayer>>();
     private readonly SchedulerUtil _schedulerUtil = serviceProvider.GetRequiredService<SchedulerUtil>();
 

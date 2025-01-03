@@ -100,7 +100,7 @@ public sealed class StatisticsJob(IServiceScopeFactory serviceScope, ILogger<Sta
 
     private async Task<IEnumerable<JobDurationStatistic>> SafeSetDurationStatisticsCache()
     {
-        IEnumerable<JobDurationStatistic> statistics = new List<JobDurationStatistic>();
+        IEnumerable<JobDurationStatistic> statistics = [];
         try
         {
             using var scope = _serviceScope.CreateScope();
@@ -119,7 +119,7 @@ public sealed class StatisticsJob(IServiceScopeFactory serviceScope, ILogger<Sta
 
     private async Task<IEnumerable<JobEffectedRowsStatistic>> SafeSetEffectedRowsStatisticsCache()
     {
-        IEnumerable<JobEffectedRowsStatistic> statistics = new List<JobEffectedRowsStatistic>();
+        IEnumerable<JobEffectedRowsStatistic> statistics = [];
 
         try
         {

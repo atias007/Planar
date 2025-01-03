@@ -817,7 +817,7 @@ public partial class JobDomain
         try
         {
             ServiceUtil.ValidateJobFileExists(request.JobFilePath);
-            var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+            var util = ServiceProvider.GetRequiredService<ClusterUtil>();
             await util.ValidateJobFileExists(null, request.JobFilePath);
         }
         catch (PlanarException ex)
@@ -847,7 +847,7 @@ public partial class JobDomain
         var properties = YmlUtil.Deserialize<TProperties>(yml) ??
             throw new RestValidationException("properties", "properties is null or empty");
 
-        var validator = _serviceProvider.GetService<IValidator<TProperties>>();
+        var validator = ServiceProvider.GetService<IValidator<TProperties>>();
 
         if (validator == null)
         {
