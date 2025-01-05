@@ -608,7 +608,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
     [Action("auto-resume")]
     public static async Task<CliActionResponse> SetAutoResume(CliAutoResumeRequest request, CancellationToken cancellationToken = default)
     {
-        CollectCliAutoResumeRequest(request, cancellationToken);
+        CollectCliAutoResumeRequest(request);
 
         var autoResumeDate = request.In == null ? (DateTime?)null : DateTime.Now.Add(request.In.Value);
         var restRequest = new RestRequest("job/auto-resume", Method.Post)
@@ -1294,7 +1294,7 @@ public class JobCliActions : BaseCliAction<JobCliActions>
         }
     }
 
-    private static void CollectCliAutoResumeRequest(CliAutoResumeRequest request, CancellationToken cancellationToken)
+    private static void CollectCliAutoResumeRequest(CliAutoResumeRequest request)
     {
         if (request.In.GetValueOrDefault() == TimeSpan.Zero)
         {

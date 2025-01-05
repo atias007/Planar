@@ -127,14 +127,14 @@ public static class PostgresqlExtensions
 
     private static void PostgresqlDatabase(this SupportedDatabasesForEnsureDatabase supported, string connectionString, IUpgradeLog logger, X509Certificate2 certificate)
     {
-        if (supported == null) throw new ArgumentNullException("supported");
+        ArgumentNullException.ThrowIfNull(supported);
 
         if (string.IsNullOrEmpty(connectionString) || connectionString.Trim() == string.Empty)
         {
-            throw new ArgumentNullException("connectionString");
+            throw new ArgumentNullException(nameof(connectionString));
         }
 
-        if (logger == null) throw new ArgumentNullException("logger");
+        ArgumentNullException.ThrowIfNull(logger);
 
         var masterConnectionStringBuilder = new NpgsqlConnectionStringBuilder(connectionString);
 
@@ -170,7 +170,6 @@ public static class PostgresqlExtensions
                     databaseName
                 );
 
-
             // check to see if the database already exists..
             using (var command = new NpgsqlCommand(sqlCommandText, connection)
             {
@@ -199,7 +198,6 @@ public static class PostgresqlExtensions
             })
             {
                 command.ExecuteNonQuery();
-
             }
 
             logger.WriteInformation(@"Created database {0}", databaseName);

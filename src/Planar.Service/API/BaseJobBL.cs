@@ -74,12 +74,29 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
             var context = Resolve<IHttpContextAccessor>();
             var claims = context?.HttpContext?.User?.Claims;
             audit.Claims = claims;
+            audit.CliUserName = ExtractRequestHeader(context?.HttpContext, Consts.CliUserName);
+            audit.CliUserDomainName = ExtractRequestHeader(context?.HttpContext, Consts.CliUserDomainName);
             var producer = Resolve<AuditProducer>();
             producer.Publish(audit);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "fail to publish job/trigger audit message. the message: {@Message}", audit);
+        }
+    }
+
+    private string? ExtractRequestHeader(HttpContext? context, string key)
+    {
+        try
+        {
+            if (context == null) { return null; }
+            if (!context.Request.Headers.TryGetValue(key, out var result)) { return null; }
+            return result.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Fail to extract key {Key} from http request header", key);
+            return null;
         }
     }
 

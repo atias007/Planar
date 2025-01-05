@@ -69,7 +69,9 @@ namespace Planar
 
         public const string CliMessageHeaderName = "planar-cli-message";
         public const string CliSuggestionHeaderName = "planar-cli-suggestion";
-        public const string CliUserAgent = $"Planar.CLI.V";
+        public const string CliUserAgent = "Planar.CLI.V";
+        public const string CliUserName = "Planar-CLI-UserName";
+        public const string CliUserDomainName = "Planar-CLI-UserDomainName";
 
         public static readonly Regex EmailRegex = new(
             @"\A(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9]{2,8}(?:[a-z0-9-]*[a-z0-9])?)\Z",

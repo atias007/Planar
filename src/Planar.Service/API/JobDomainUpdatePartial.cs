@@ -211,7 +211,7 @@ public partial class JobDomain
         info.MessagesParameters.Add("JobName", metadata.JobKey.Name);
         info.MessagesParameters.Add("JobId", metadata.JobId);
         info.AddMachineName();
-        MonitorUtil.SafeSystemScan(_serviceProvider, Logger, MonitorEvents.ClusterNodeJoin, info);
+        MonitorUtil.SafeSystemScan(ServiceProvider, Logger, MonitorEvents.ClusterNodeJoin, info);
 
         // Return Id
         return new PlanarIdResponse { Id = metadata.JobId };

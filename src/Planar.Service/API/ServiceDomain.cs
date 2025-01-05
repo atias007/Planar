@@ -78,7 +78,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
 
         if (AppSettings.Cluster.Clustering)
         {
-            var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+            var util = ServiceProvider.GetRequiredService<ClusterUtil>();
             hc = await util.HealthCheck();
 
             if (hc)
@@ -117,7 +117,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         await SchedulerUtil.Stop();
         if (AppSettings.Cluster.Clustering)
         {
-            var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+            var util = ServiceProvider.GetRequiredService<ClusterUtil>();
             await util.StopScheduler();
         }
     }
@@ -127,7 +127,7 @@ public class ServiceDomain(IServiceProvider serviceProvider) : BaseLazyBL<Servic
         await SchedulerUtil.Start();
         if (AppSettings.Cluster.Clustering)
         {
-            var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+            var util = ServiceProvider.GetRequiredService<ClusterUtil>();
             await util.StartScheduler();
         }
     }

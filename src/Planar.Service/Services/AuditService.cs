@@ -60,6 +60,8 @@ namespace Planar.Service.Services
             var givenNameClaim = message.Claims?.FirstOrDefault(c => c.Type == ClaimTypes.GivenName)?.Value;
             var title = $"{givenNameClaim} {surnameClaim}".Trim();
 
+            usernameClaim ??= message.CliIdentity;
+
             string? triggerId;
             ITrigger? trigger;
 

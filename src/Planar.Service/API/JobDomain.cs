@@ -146,9 +146,11 @@ public partial class JobDomain(IServiceProvider serviceProvider) : BaseJobBL<Job
     {
         var context = ServiceProvider.GetRequiredService<IHttpContextAccessor>();
         var userAgent = context.HttpContext?.Request.Headers.UserAgent.ToString();
-        if (userAgent != null && userAgent.StartsWith(Consts.CliUserAgent))
+        var failoverAgent = $"{nameof(Planar)}.{nameof(Job)}.FailOverProxy";
+        if (string.Equals(failoverAgent, userAgent, StringComparison.OrdinalIgnoreCase))
         {
             MqttBrokerService.OnInterceptingPublishAsync(request);
+            return;
         }
 
         throw new RestForbiddenException();

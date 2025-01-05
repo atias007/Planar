@@ -48,7 +48,7 @@ public class ClusterDomain(IServiceProvider serviceProvider) : BaseLazyBL<Cluste
 
         if (AppSettings.Cluster.Clustering)
         {
-            var util = _serviceProvider.GetRequiredService<ClusterUtil>();
+            var util = ServiceProvider.GetRequiredService<ClusterUtil>();
             var hc = await util.HealthCheck();
 
             if (hc)

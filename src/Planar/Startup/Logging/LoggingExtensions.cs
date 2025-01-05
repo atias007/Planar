@@ -8,22 +8,12 @@ namespace Planar.Startup.Logging
     {
         public static LoggerConfiguration WithPlanarEnricher(this LoggerEnrichmentConfiguration enrich)
         {
-            if (enrich == null)
-            {
-                throw new ArgumentNullException(nameof(enrich));
-            }
-
-            return enrich.With<PlanarEnricher>();
+            return enrich == null ? throw new ArgumentNullException(nameof(enrich)) : enrich.With<PlanarEnricher>();
         }
 
         public static LoggerConfiguration WithPlanarFilter(this LoggerFilterConfiguration config)
         {
-            if (config == null)
-            {
-                throw new ArgumentNullException(nameof(config));
-            }
-
-            return config.With(new PlanarFilter());
+            return config == null ? throw new ArgumentNullException(nameof(config)) : config.With(new PlanarFilter());
         }
     }
 }

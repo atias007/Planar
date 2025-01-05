@@ -43,8 +43,8 @@ internal static class RestProxy
                     configureSerialization: s => s.UseNewtonsoftJson(serOprions),
                     configureDefaultHeaders: c =>
                     {
-                        c.Add("Planar-CLI-UserName", Environment.UserName);
-                        c.Add("Planar-CLI-UserDomainName", Environment.UserDomainName);
+                        c.Add(Consts.CliUserName, Environment.UserName);
+                        c.Add(Consts.CliUserDomainName, Environment.UserDomainName);
                     });
 
                 if (!string.IsNullOrEmpty(LoginProxy.Token))
