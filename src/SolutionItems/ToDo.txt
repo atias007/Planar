@@ -1,6 +1,6 @@
 ﻿--------------------------------------------------------
 
-PLAN FOR V 1.7.7
+PLAN FOR V 1.7.9
 ----------------
 
 - validate on startup that instance id not exists in nodes table
@@ -374,3 +374,7 @@ V1.7.8
 - Add Failover to mqtt communication between job and planar
 - Add user-agent, username, domain headers to CLI communication
 - In anonymous mode, add SSO username & domain from cli to audit record
+
+V 1.7.9
+-------
+- - ** Add WorkflowJob **
