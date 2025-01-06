@@ -89,20 +89,23 @@ namespace Planar.Job
             Action<IConfigurationBuilder, IJobExecutionContext> configureAction = Configure;
             Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction = RegisterServices;
 
-            InitializeBaseJobFactory(json);
-            InitializeConfiguration(_context, configureAction);
-            InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction);
-
-            Logger = ServiceProvider.GetRequiredService<ILogger>();
-
-            await OpenMqttConnection();
-
-            var mapper = new JobMapper(_logger);
-            mapper.MapJobInstanceProperties(_context, this);
-            LogVersion();
+            Exception? initializeException = null;
+            try { InitializeBaseJobFactory(json); } catch (Exception ex) { initializeException = ex; }
+            try { InitializeConfiguration(_context, configureAction); } catch (Exception ex) { initializeException ??= ex; }
+            try { InitializeDepedencyInjection(_context, _baseJobFactory, registerServicesAction); } catch (Exception ex) { initializeException ??= ex; }
 
             try
             {
+                await OpenMqttConnection();
+
+                Logger = ServiceProvider.GetRequiredService<ILogger>();
+
+                var mapper = new JobMapper(_logger);
+                mapper.MapJobInstanceProperties(_context, this);
+                LogVersion();
+
+                if (initializeException != null) { throw initializeException; }
+
                 var timeout = _context.TriggerDetails.Timeout;
                 if (timeout == null || timeout.Value.TotalSeconds < 1) { timeout = TimeSpan.FromHours(2); }
                 var timeoutms = timeout.Value.Add(TimeSpan.FromMinutes(3)).TotalMilliseconds;
@@ -526,7 +529,7 @@ namespace Planar.Job
             }
             catch (Exception ex)
             {
-                throw new PlanarJobException("Fail to deserialize job execution context at BaseJob.InitializeBaseJobFactory(string)", ex);
+                throw new PlanarJobException("Fail to initialize job", ex);
             }
         }
 
@@ -535,9 +538,20 @@ namespace Planar.Job
             _inConfiguration = true;
             var builder = new ConfigurationBuilder();
             builder.AddInMemoryCollection(context.JobSettings);
-            configureAction.Invoke(builder, context);
-            Configuration = builder.Build();
-            _inConfiguration = false;
+
+            try
+            {
+                configureAction.Invoke(builder, context);
+            }
+            catch (Exception ex)
+            {
+                throw new PlanarJobException($"Fail to initialize job at {nameof(Configure)}(...) method implementation", ex);
+            }
+            finally
+            {
+                _inConfiguration = false;
+                Configuration = builder.Build();
+            }
         }
 
         private void InitializeDepedencyInjection(JobExecutionContext context, BaseJobFactory baseJobFactory, Action<IConfiguration, IServiceCollection, IJobExecutionContext> registerServicesAction)
@@ -548,8 +562,19 @@ namespace Planar.Job
             services.AddSingleton<IBaseJob>(baseJobFactory);
             services.AddSingleton<ILogger, PlanarLogger>();
             services.AddSingleton(typeof(ILogger<>), typeof(PlanarLogger<>));
-            registerServicesAction.Invoke(Configuration, services, context);
-            _provider = services.BuildServiceProvider();
+
+            try
+            {
+                registerServicesAction.Invoke(Configuration, services, context);
+            }
+            catch (Exception ex)
+            {
+                throw new PlanarJobException($"Fail to initialize job at {nameof(RegisterServices)}(...) method implementation", ex);
+            }
+            finally
+            {
+                _provider = services.BuildServiceProvider();
+            }
         }
 
         private void LogVersion()

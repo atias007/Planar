@@ -5,34 +5,61 @@ using Microsoft.Extensions.Logging;
 using MQTTnet;
 using MQTTnet.Server;
 using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar;
 
-public class MqttBrokerService(ILogger<MqttBrokerService> logger) : IHostedService
+public sealed class MqttBrokerService(ILogger<MqttBrokerService> logger) : IHostedService
 {
+    private sealed record PublishWrapper(Action<CloudEventArgs> Handler, DateTimeOffset CreatedAt);
+
     private const int _port = 206;
     private static readonly JsonEventFormatter _formatter = new();
     private MqttServer _mqttServer = null!;
 
-    internal static event EventHandler<CloudEventArgs>? InterceptingPublishAsync;
+    private static readonly ConcurrentDictionary<string, PublishWrapper> _events = [];
+
+    public static void RegisterInterceptingPublish(Action<CloudEventArgs> handler, string fireInstanceId)
+    {
+        var wrapper = new PublishWrapper(handler, DateTimeOffset.UtcNow);
+        _events.TryAdd(fireInstanceId, wrapper);
+    }
+
+    public static void UnRegisterInterceptingPublish(string fireInstanceId)
+    {
+        try
+        {
+            _events.TryRemove(fireInstanceId, out _);
+        }
+        catch
+        {
+            // *** DO NOTHING ***
+        }
+    }
 
     public static void OnInterceptingPublishAsync(CloudEvent cloudEvent)
     {
-        if (InterceptingPublishAsync != null)
-        {
-            var args = new CloudEventArgs(cloudEvent, cloudEvent.Subject ?? string.Empty);
-            InterceptingPublishAsync(null, args);
-        }
+        var args = new CloudEventArgs(cloudEvent, cloudEvent.Subject ?? string.Empty);
+        Publish(args);
     }
 
     private static void OnInterceptingPublishAsync(CloudEvent cloudEvent, InterceptingPublishEventArgs arg)
     {
-        if (InterceptingPublishAsync != null)
+        var args = new CloudEventArgs(cloudEvent, arg.ClientId);
+        Publish(args);
+    }
+
+    private static void Publish(CloudEventArgs args)
+    {
+        if (_events.TryGetValue(args.ClientId, out var handler))
         {
-            var cloudEventArgs = new CloudEventArgs(cloudEvent, arg.ClientId);
-            InterceptingPublishAsync(null, cloudEventArgs);
+            handler.Handler.Invoke(args);
+        }
+        else
+        {
+            throw new PlanarJobException($"Fail to find service instance id {args.ClientId} on registered mqtt broker service");
         }
     }
 
@@ -111,14 +138,12 @@ public class MqttBrokerService(ILogger<MqttBrokerService> logger) : IHostedServi
         try
         {
             var cloudEvent = arg.ApplicationMessage.ToCloudEvent(_formatter);
-            OnInterceptingPublishAsync(cloudEvent, arg);
+            await Task.Run(() => OnInterceptingPublishAsync(cloudEvent, arg));
         }
         catch (Exception ex)
         {
             logger.LogCritical(ex, "fail to handle MQTT published message");
         }
-
-        await Task.CompletedTask;
     }
 
     private async Task StartedAsync(EventArgs arg)

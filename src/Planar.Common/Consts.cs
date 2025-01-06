@@ -8,10 +8,11 @@ namespace Planar
         public const string CryptographyKeyVariableKey = "PLANAR_CRYPTOGRAPHY_KEY";
         public const string PlanarJobArgumentContextFolder = "context";
 
-        public static readonly string[] PreserveGroupNames = [RetryTriggerGroup, PlanarSystemGroup];
+        // ********** DONT FIX, COMMON FILE TO STANDART 2.0 PROJECT ********** //
+        public static readonly string[] PreserveGroupNames = new string[] { RetryTriggerGroup, PlanarSystemGroup };
 
-        public static readonly string[] AllDataKeys =
-        [
+        // ********** DONT FIX, COMMON FILE TO STANDART 2.0 PROJECT ********** //
+        public static readonly string[] AllDataKeys = new string[] {
             RetryCounter,
             RetrySpan,
             MaxRetries,
@@ -26,7 +27,7 @@ namespace Planar
             Author,
             CircuitBreaker,
             LogRetentionDays
-        ];
+        };
 
         public const int CliDefaultPageSize = 25;
 
@@ -73,7 +74,8 @@ namespace Planar
         public const string CliUserName = "Planar-CLI-UserName";
         public const string CliUserDomainName = "Planar-CLI-UserDomainName";
 
-        public static readonly Regex EmailRegex = new(
+        // ********** DONT FIX, COMMON FILE TO STANDART 2.0 PROJECT ********** //
+        public static readonly Regex EmailRegex = new Regex(
             @"\A(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9]{2,8}(?:[a-z0-9-]*[a-z0-9])?)\Z",
             RegexOptions.IgnoreCase,
             TimeSpan.FromSeconds(3));

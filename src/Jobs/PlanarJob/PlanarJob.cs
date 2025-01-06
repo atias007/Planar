@@ -32,7 +32,6 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
         IJobPropertyDataLayer dataLayer,
         JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
     {
-        MqttBrokerService.InterceptingPublishAsync += InterceptingPublishAsync;
         _isDevelopment = string.Equals(AppSettings.General.Environment, "development", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -40,6 +39,8 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
     {
         try
         {
+            MqttBrokerService.RegisterInterceptingPublish(InterceptingPublishAsync, context.FireInstanceId);
+
             await Initialize(context);
             ValidateProcessJob();
             ValidateExeFile();
@@ -68,7 +69,7 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
         {
             FinalizeJob(context);
             FinalizeProcess();
-            UnregisterMqttBrokerService();
+            UnregisterMqttBrokerService(context.FireInstanceId);
             SafeDeleteContextFile();
         }
     }
@@ -265,9 +266,9 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
         throw new PlanarJobException("no health check signal from job. See job log for more information");
     }
 
-    private void UnregisterMqttBrokerService()
+    private static void UnregisterMqttBrokerService(string fireInstanceId)
     {
-        try { MqttBrokerService.InterceptingPublishAsync -= InterceptingPublishAsync; } catch { DoNothingMethod(); }
+        MqttBrokerService.UnRegisterInterceptingPublish(fireInstanceId);
     }
 
     protected override ProcessStartInfo GetProcessStartInfo()
@@ -337,14 +338,11 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
         }
     }
 
-    private void InterceptingPublishAsync(object? sender, CloudEventArgs e)
+    private void InterceptingPublishAsync(CloudEventArgs e)
     {
         try
         {
-            if (e.ClientId == FireInstanceId)
-            {
-                InterceptingPublishAsyncInner(e);
-            }
+            InterceptingPublishAsyncInner(e);
         }
         catch (PlanarJobException ex)
         {

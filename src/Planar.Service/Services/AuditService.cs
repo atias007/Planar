@@ -61,6 +61,7 @@ namespace Planar.Service.Services
             var title = $"{givenNameClaim} {surnameClaim}".Trim();
 
             usernameClaim ??= message.CliIdentity;
+            if (string.IsNullOrWhiteSpace(title)) { title = message.CliIdentity; }
 
             string? triggerId;
             ITrigger? trigger;
@@ -99,7 +100,7 @@ namespace Planar.Service.Services
                 AdditionalInfo = message.AdditionalInfo == null ? null : YmlUtil.Serialize(message.AdditionalInfo),
                 JobId = jobId ?? string.Empty,
                 Username = usernameClaim ?? RoleHelper.DefaultRole,
-                UserTitle = string.IsNullOrEmpty(title) ? RoleHelper.DefaultRole : title,
+                UserTitle = string.IsNullOrWhiteSpace(title) ? RoleHelper.DefaultRole : title,
                 JobKey = message.JobKey == null ? string.Empty : $"{message.JobKey.Group}.{message.JobKey.Name}"
             };
 

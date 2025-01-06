@@ -9,6 +9,7 @@ namespace HelloWorld
     {
         public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
         {
+            Version = new Version(5, 0);
         }
 
         public override async Task ExecuteJob(IJobExecutionContext context)

@@ -373,3 +373,4 @@ V1.7.8
 - CLI: show summary on debug running
 - Add Failover to mqtt communication between job and planar
 - Add user-agent, username, domain headers to CLI communication
+- In anonymous mode, add SSO username & domain from cli to audit record
