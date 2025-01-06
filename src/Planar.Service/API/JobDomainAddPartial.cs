@@ -884,6 +884,10 @@ public partial class JobDomain
                 await ValidateJobProperties<SqlTableReportJobProperties>(yml);
                 break;
 
+            case nameof(WorkflowJobProperties):
+                await ValidateJobProperties<WorkflowJobProperties>(yml);
+                break;
+
             default:
                 break;
         }

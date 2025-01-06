@@ -1,0 +1,64 @@
+﻿job type: WorkflowJob                 # Fixed! don't change it
+name: some job name                   # Name of job [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+group: null or group name             # Group of job [only alphanumeric, dashes & underscore, 1 to 50 characters]
+description: some job description     # Description of job [only alphanumeric, dashes & underscore, up to 200 characters]
+author: israel israeli (sales)        # The author/responsible person of the job [up to 100 characters]
+durable: true                         # Boolean [true/false]. The nondurable job will be deleted from the system if there are no future triggers are defined
+concurrent: false                     # Boolean [true/false]. Concurrent job can run multi instance in same time
+log retention days: null              # How many days the running logs will retain. [1 to 1000, null for system default]
+
+properties:                           # Job Properties
+  - key: group-a.name-a               # The job key <group>.<name> [7 to 101 characters]
+    depends on key: null              # The job key that this job depends on [7 to 101 characters]. null for workflow start job. only one start job is allowed
+    depends on event: null            # The event that this job depends on. allowed values: success, fail, finish. null for workflow start job
+    timeout: 00:30:00                 # Timeout span for step. The default is 30 minutes
+    data:                             # Key/Value pairs used by job code (merged with job data)
+      key1: value1                    # -------------------------------------------------------
+      key2: value2                    # key --> [1 to 100 characters]
+      key3: value3  
+   
+  - key: group-b.name-b
+    depends on key: group-a.name-a
+    depends on event: success
+    timeout: 00:30:00
+    data:
+      key4: value4
+      key5: value5
+      key6: value6
+      
+circuit breaker:
+  enabled: false                      # Boolean [true/false]. Enable/Disable the circuit breaker
+  failure threshold: 5                # The number of failures that will trip the circuit breaker [2 to 100]
+  success threshold: 1                # The number of successes that will reset the circuit breaker [1 to 100]
+  pause span: 01:00:00                # The time span which the circuit breaker will pause the job execution. set null value for permanent pause. minimum value is 5 minutes
+
+simple triggers:                      # List of simple triggers
+  - name: every-minute-trigger        # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+    start: 2021-09-19 00:00:00        # Start date
+    end: 2021-09-19 23:59:00          # End date
+    interval: 00:01:00                # Interval in [days.]hours:minutes:seconds format
+    repeat count: 100                 # Repeat count
+    misfire behaviour: FireNow        # [ FireNow | IgnoreMisfires | NextWithExistingCount | NextWithRemainingCount | NowWithExistingCount | NowWithRemainingCount ]
+    priority: 1                       # Priority [value between 0 to 100]
+    calendar: null                    # Calendar name
+    timeout: 00:30:00                 # Execution timeout. if the timeout span passed then the cancel command is executed  [value between 00:01:00 to 1.00:00:00]
+    retry span: 01:00:00              # The time span between retries [value between 00:00:01 to 1.00:00:00]
+    max retries: 3                    # The maximum amount of retries. Default is 3 [1 to 100]
+    trigger data:                     # Key/Value pairs used by job code (merged with job data)
+      key4: value4                    # -------------------------------------------------------
+      key5: value5                    # key --> [1 to 100 characters]
+      key6: value6                    # value --> [up to 1000 characters]
+
+cron triggers:                               # List of cron triggers
+  - name: some-cron-trigger                  # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
+    cron expression: 0 15 10 ? * MON-FRI     # Cron expression [mandatory]
+    misfire behaviour: DoNothing             # [ DoNothing | FireAndProceed | IgnoreMisfires ]
+    priority: 1                              # Priority [value between 0 to 100]
+    calendar: null                           # Calendar name
+    timeout: 00:30:00                        # Execution timeout. if the timeout span passed then the cancel command is executed  [value between 00:01:00 to 1.00:00:00]
+    retry span: 01:00:00                     # The time span between retries [value between 00:00:01 to 1.00:00:00]
+    max retries: 3                           # The maximum amount of retries. Default is 3 [1 to 100]
+    trigger data:                            # Key/Value pairs used by job code (merged with job data)
+      key7: value7                           # -------------------------------------------------------
+      key8: value8                           # key --> [1 to 100 characters]
+      key9: value9                           # value --> [up to 1000 characters]

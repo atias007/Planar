@@ -125,6 +125,7 @@
 		<ProjectReference Include="..\Jobs\RestJob\RestJob.csproj" />
 		<ProjectReference Include="..\Jobs\SqlJob\SqlJob.csproj" />
 		<ProjectReference Include="..\Jobs\SqlTableReportJob\SqlTableReportJob.csproj" />
+		<ProjectReference Include="..\Jobs\WorkflowJob\WorkflowJob.csproj" />
 		<ProjectReference Include="..\Nager.Date\Nager.Date.csproj" />
 		<ProjectReference Include="..\Planar.Common\Planar.Common.csproj" />
 	</ItemGroup>

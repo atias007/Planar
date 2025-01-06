@@ -26,6 +26,7 @@ public static class ServiceUtil
         nameof(SqlJob),
         nameof(RestJob),
         nameof(SqlTableReportJob),
+        nameof(WorkflowJob),
     ];
 
     internal static string GenerateId()
