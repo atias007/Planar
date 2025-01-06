@@ -1,7 +1,4 @@
-﻿using System;
-using static System.Net.Mime.MediaTypeNames;
-
-namespace Planar.Common
+﻿namespace Planar.Common
 {
     public static class EnvironmentVariableConsts
     {

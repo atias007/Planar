@@ -40,6 +40,7 @@ namespace Planar
         public const string RetryCounter = "__Job_Retry_Counter";
         public const string RetrySpan = "__Job_Retry_Span";
         public const string MaxRetries = "__Job_Retry_Max";
+        public const string WorkflowInstanceId = "__Workflow_Instance_Id";
         public const int DefaultMaxRetries = 3;
 
         public const string QueueInvokeTriggerGroup = "__QueueInvoke";

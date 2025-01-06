@@ -11,6 +11,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\..\Planar.Common\Consts.cs" Link="Consts.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="JobFile.yml">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </EmbeddedResource>
