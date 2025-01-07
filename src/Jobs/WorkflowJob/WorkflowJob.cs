@@ -40,10 +40,10 @@ public abstract class WorkflowJob(
     {
         var steps = Properties.Steps;
         var startStep = steps.First(s => s.DependsOnKey == null);
-        await ExecuteStep(context, [startStep]);
+        await ExecuteSteps(context, [startStep]);
     }
 
-    private async Task ExecuteStep(IJobExecutionContext context, IEnumerable<WorkflowJobStep> steps)
+    private async Task ExecuteSteps(IJobExecutionContext context, IEnumerable<WorkflowJobStep> steps)
     {
         if (!steps.Any()) { return; }
 
@@ -52,7 +52,7 @@ public abstract class WorkflowJob(
         {
             var jobKey = ParseJobKey(step.Key);
             var data = GetJobDataMap(context, step);
-            _resetEvents.TryAdd(jobKey.ToString(), ResetEventWrapper.Create(jobKey));
+            _resetEvents.TryAdd(jobKey.ToString(), ResetEventWrapper.Create(jobKey, step));
             jobs.Add((jobKey, data));
         }
 
@@ -65,7 +65,8 @@ public abstract class WorkflowJob(
         Parallel.ForEach(_resetEvents, re =>
         {
             var wrapper = re.Value;
-            wrapper.ResetEvent.WaitOne();
+            var timeout = wrapper.Timeout ?? AppSettings.General.JobAutoStopSpan;
+            wrapper.ResetEvent.WaitOne(timeout);
             var steps = Properties.Steps.Where(s =>
                 s.DependsOnKey == wrapper.JobKey.ToString() &&
                 s.DependsOnEvent == wrapper.Event);
@@ -76,7 +77,7 @@ public abstract class WorkflowJob(
             }
         });
 
-        await ExecuteStep(context, nextSteps);
+        await ExecuteSteps(context, nextSteps);
     }
 
     private static JobDataMap GetJobDataMap(IJobExecutionContext context, WorkflowJobStep step)
