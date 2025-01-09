@@ -229,19 +229,17 @@ public abstract class BaseCommonJob<TProperties>(
 
         try
         {
-            context.MergedJobDataMap.TryGetString(Consts.WorkflowInstanceId, out var workflowInstanceId);
+            var workflowInstanceId = JobHelper.GetWorkflowInstanceId(context.MergedJobDataMap);
             if (string.IsNullOrWhiteSpace(workflowInstanceId)) { return; }
             var exception = metadata.UnhandleException;
             if (exception == null)
             {
-                WorkflowManager.SignalEvent(context.FireInstanceId, context.JobDetail.Key, WorkflowJobStepEvent.Success);
+                WorkflowManager.SignalEvent(workflowInstanceId, context.JobDetail.Key, WorkflowJobStepEvent.Success);
             }
             else
             {
-                WorkflowManager.SignalEvent(context.FireInstanceId, context.JobDetail.Key, WorkflowJobStepEvent.Fail);
+                WorkflowManager.SignalEvent(workflowInstanceId, context.JobDetail.Key, WorkflowJobStepEvent.Fail);
             }
-
-            WorkflowManager.SignalEvent(context.FireInstanceId, context.JobDetail.Key, WorkflowJobStepEvent.Finish);
         }
         catch (Exception ex)
         {

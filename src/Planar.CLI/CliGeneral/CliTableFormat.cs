@@ -351,7 +351,7 @@ public static class CliTableFormat
             return string.Empty;
         }
 
-        if (triggerId == Consts.ManualTriggerId)
+        if (triggerId == Consts.ManualTriggerId || triggerId == Consts.WorkflowTriggerId)
         {
             return $"[invert]{triggerId.EscapeMarkup()}[/]";
         }

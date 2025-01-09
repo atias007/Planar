@@ -24,4 +24,9 @@ public static class WorkflowManager
             workflow.SignalEvent(jobKey, @event);
         }
     }
+
+    public static void UnregisterWorkflow(string key)
+    {
+        _workflows.TryRemove(key, out _);
+    }
 }

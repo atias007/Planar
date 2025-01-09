@@ -9,6 +9,34 @@ namespace Planar.Service.API.Helpers;
 
 public static class JobHelper
 {
+    public static bool IsWorkflowJob(JobDataMap dataMap)
+    {
+        if (dataMap == null) { return false; }
+        return dataMap.ContainsKey(Consts.WorkflowInstanceIdDataKey);
+    }
+
+    public static string? GetWorkflowTriggerId(JobDataMap dataMap)
+    {
+        if (dataMap == null) { return null; }
+        if (dataMap.TryGetValue(Consts.WorkflowTriggerIdDataKey, out var id))
+        {
+            return PlanarConvert.ToString(id);
+        }
+
+        return null;
+    }
+
+    public static string? GetWorkflowInstanceId(JobDataMap dataMap)
+    {
+        if (dataMap == null) { return null; }
+        if (dataMap.TryGetValue(Consts.WorkflowInstanceIdDataKey, out var id))
+        {
+            return PlanarConvert.ToString(id);
+        }
+
+        return null;
+    }
+
     public static string? GetJobAuthor(IJobDetail job)
     {
         if (job == null)

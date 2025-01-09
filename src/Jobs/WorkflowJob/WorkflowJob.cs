@@ -1,4 +1,5 @@
 ﻿using CommonJob;
+using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Quartz;
@@ -9,7 +10,8 @@ namespace Planar;
 public abstract class WorkflowJob(
     ILogger logger,
     IJobPropertyDataLayer dataLayer,
-    JobMonitorUtil jobMonitorUtil) :
+    JobMonitorUtil jobMonitorUtil,
+    IValidator<WorkflowJobProperties> validator) :
     BaseCommonJob<WorkflowJobProperties>(logger, dataLayer, jobMonitorUtil),
     IWorkflowInstance
 {
@@ -20,8 +22,9 @@ public abstract class WorkflowJob(
         try
         {
             await Initialize(context);
-            //ValidateWorkflowJob();
+            await ValidateWorkflowJob(context.CancellationToken);
             StartMonitorDuration(context);
+            WorkflowManager.RegisterWorkflow(context.FireInstanceId, this);
             var task = ExecuteWorkflow(context);
             await WaitForJobTask(context, task);
             StopMonitorDuration();
@@ -32,7 +35,20 @@ public abstract class WorkflowJob(
         }
         finally
         {
+            WorkflowManager.UnregisterWorkflow(context.FireInstanceId);
             FinalizeJob(context);
+        }
+    }
+
+    private async Task ValidateWorkflowJob(CancellationToken cancellationToken)
+    {
+        var result = await validator.ValidateAsync(Properties, cancellationToken);
+        if (!result.IsValid)
+        {
+            var message = "validate workflow job fail with the following errors:\r\n";
+            message += string.Join("\r\n", result.Errors.Select(e => $" -{e.ErrorMessage}"));
+
+            throw new InvalidDataException(message);
         }
     }
 
@@ -47,29 +63,30 @@ public abstract class WorkflowJob(
     {
         if (!steps.Any()) { return; }
 
-        var jobs = new List<(JobKey, JobDataMap)>();
         foreach (var step in steps)
         {
             var jobKey = ParseJobKey(step.Key);
             var data = GetJobDataMap(context, step);
-            _resetEvents.TryAdd(jobKey.ToString(), ResetEventWrapper.Create(jobKey, step));
-            jobs.Add((jobKey, data));
-        }
-
-        foreach (var tuple in jobs)
-        {
-            await context.Scheduler.TriggerJob(tuple.Item1, tuple.Item2);
+            var wrapper = ResetEventWrapper.Create(jobKey, data, step);
+            _resetEvents.TryAdd(jobKey.ToString(), wrapper);
         }
 
         var nextSteps = new ConcurrentBag<WorkflowJobStep>();
-        Parallel.ForEach(_resetEvents, re =>
+        await Parallel.ForEachAsync(_resetEvents, async (re, cancellationToken) =>
         {
             var wrapper = re.Value;
             var timeout = wrapper.Timeout ?? AppSettings.General.JobAutoStopSpan;
+
+            if (wrapper.Done) { return; }
+
+            await context.Scheduler.TriggerJob(wrapper.JobKey, wrapper.DataMap, cancellationToken);
             wrapper.ResetEvent.WaitOne(timeout);
+            wrapper.SetDone();
+            _resetEvents.TryRemove(re.Key, out _);
+
             var steps = Properties.Steps.Where(s =>
                 s.DependsOnKey == wrapper.JobKey.ToString() &&
-                s.DependsOnEvent == wrapper.Event);
+                (s.DependsOnEvent == wrapper.Event || s.DependsOnEvent == WorkflowJobStepEvent.Finish));
 
             foreach (var step in steps)
             {
@@ -85,10 +102,20 @@ public abstract class WorkflowJob(
         var data = context.MergedJobDataMap;
         foreach (var item in step.Data)
         {
-            data.Add(item.Key, item.Value ?? string.Empty);
+            var value = item.Value ?? string.Empty;
+            if (data.ContainsKey(item.Key))
+            {
+                data[item.Key] = value;
+            }
+            else
+            {
+                data.Add(item.Key, value);
+            }
         }
 
-        data.Add(Consts.WorkflowInstanceId, context.FireInstanceId);
+        data.Add(Consts.WorkflowInstanceIdDataKey, context.FireInstanceId);
+        data.Add(Consts.WorkflowTriggerIdDataKey, context.Trigger.Key.Name);
+
         return data;
     }
 

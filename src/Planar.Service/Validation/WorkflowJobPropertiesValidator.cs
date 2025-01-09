@@ -2,7 +2,9 @@
 using FluentValidation;
 using Planar.Service.API;
 using Planar.Service.API.Helpers;
+using Planar.Service.Exceptions;
 using Quartz;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -23,6 +25,8 @@ public class WorkflowJobPropertiesValidator : AbstractValidator<WorkflowJobPrope
             .Must(HasSingleStartStep)
             .WithMessage("workflow has multiple start steps. only one step with 'depends on key: null' must be define");
 
+        RuleFor(e => e).Must(IsDepentOnKeyExistsInWorkflow);
+
         RuleForEach(e => e.Steps).SetValidator(new WorkflowJobStepValidator(scheduler));
     }
 
@@ -34,6 +38,20 @@ public class WorkflowJobPropertiesValidator : AbstractValidator<WorkflowJobPrope
     private static bool HasSingleStartStep(IEnumerable<WorkflowJobStep> steps)
     {
         return steps.Count(s => s.DependsOnKey == null) == 1;
+    }
+
+    public static bool IsDepentOnKeyExistsInWorkflow(WorkflowJobProperties properties1, WorkflowJobProperties properties2, ValidationContext<WorkflowJobProperties> context)
+    {
+        var dependKeys = properties1.Steps.Select(s => s.DependsOnKey!).Where(k => k != null).ToList();
+        var keys = properties1.Steps.Select(s => s.Key).ToList();
+        var missingKeys = dependKeys.Where(k => !keys.Contains(k)).ToList();
+        if (missingKeys.Count > 0)
+        {
+            context.AddFailure($"missing 'depends on key' in workflow: {string.Join(", ", missingKeys)}");
+            return false;
+        }
+
+        return true;
     }
 }
 
@@ -60,28 +78,36 @@ public class WorkflowJobStepValidator : AbstractValidator<WorkflowJobStep>
             .When(e => e.DependsOnKey == null)
             .WithMessage("'depends on event' must be null when 'depends on key' is null");
 
-        RuleFor(e => e.Timeout).NotZero();
-        RuleFor(e => e.Data).MustAsync(ValidateDataAsync);
+        RuleFor(e => e.Timeout).NotZero().LessThanOrEqualTo(TimeSpan.FromDays(1));
+        RuleFor(e => e.Data).Must(ValidateDataAsync);
     }
 
     public static async Task<bool> IsJobExistsAsync(IScheduler scheduler, string? jobKey, CancellationToken cancellationToken)
     {
         if (jobKey == null) { return true; }
         var helper = new JobKeyHelper(scheduler);
-        var key = await helper.GetJobKey(jobKey);
-        var exists = await scheduler.GetJobDetail(key, cancellationToken);
-        return exists != null;
+        try
+        {
+            await helper.GetJobKey(jobKey);
+            return true;
+        }
+        catch (RestNotFoundException)
+        {
+            return false;
+        }
     }
 
-    public static async Task<bool> ValidateDataAsync(WorkflowJobStep step, Dictionary<string, string> data, ValidationContext<WorkflowJobStep> context, CancellationToken cancellationToken = default)
+    public static bool ValidateDataAsync(WorkflowJobStep step, Dictionary<string, string?> data, ValidationContext<WorkflowJobStep> context)
     {
         try
         {
             JobDomain.ValidateDataMap(data, string.Empty);
+            return true;
         }
-        catch (System.Exception ex)
+        catch (RestValidationException ex)
         {
-            throw;
+            ex.Errors.SelectMany(e => e.Detail).ToList().ForEach(context.AddFailure);
+            return false;
         }
     }
 }

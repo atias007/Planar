@@ -38,7 +38,7 @@ PLAN FOR V 1.7.9
 - run database migration on each startup
 - cli health check should check cluster mode
 - allow to stop planar scheduler without stop the windows service (service stop, service start, service shutdown)
-- add cluster support in cli in all "running" commands (and stop)
+>>- add cluster support in cli in all "running" commands (and stop)
 - filter /swagger from trace
 - enrich serilog with machine name
 - filter /Cluster.PlanarCluster/HealthCheck from trace
@@ -59,7 +59,7 @@ PLAN FOR V 1.7.9
 - enforce required parameters on cli
 - call cluster functions only if running is cluster mode
 - misfire behaviour should be enum in yml file
-- job runningdata w10n-TsahiAti637964208165023851637964208471912498 should return 404
+- job running data w10n-TsahiAti637964208165023851637964208471912498 should return 404
 - trigger get -> show misfirebehaviour as numeric
 - job settings <id> return empty
 - job add with only folder name
@@ -68,7 +68,7 @@ PLAN FOR V 1.7.9
 - cli: job invoke !! invoke the last running job
 - cli: job test !! test the last running job
 - cli: job command to see the next running
-- odata
+>>- odata
 - cli: job invoke show list of abc jobs
 - cli: job invoke !! invoke the last running job
 - cli: job test !! test the last running job
