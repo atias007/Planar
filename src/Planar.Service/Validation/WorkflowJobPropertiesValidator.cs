@@ -3,8 +3,10 @@ using FluentValidation;
 using Planar.Service.API;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
+using Polly;
 using Quartz;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -14,6 +16,8 @@ namespace Planar.Service.Validation;
 
 public class WorkflowJobPropertiesValidator : AbstractValidator<WorkflowJobProperties>
 {
+    private int _recursiveLevel = 1;
+
     public WorkflowJobPropertiesValidator(IScheduler scheduler)
     {
         RuleFor(e => e.Steps).NotEmpty();
@@ -26,6 +30,7 @@ public class WorkflowJobPropertiesValidator : AbstractValidator<WorkflowJobPrope
             .WithMessage("workflow has multiple start steps. only one step with 'depends on key: null' must be define");
 
         RuleFor(e => e).Must(IsDepentOnKeyExistsInWorkflow);
+        RuleFor(e => e).Must(GetRecursiveLevel);
 
         RuleForEach(e => e.Steps).SetValidator(new WorkflowJobStepValidator(scheduler));
     }
@@ -40,7 +45,7 @@ public class WorkflowJobPropertiesValidator : AbstractValidator<WorkflowJobPrope
         return steps.Count(s => s.DependsOnKey == null) == 1;
     }
 
-    public static bool IsDepentOnKeyExistsInWorkflow(WorkflowJobProperties properties1, WorkflowJobProperties properties2, ValidationContext<WorkflowJobProperties> context)
+    private static bool IsDepentOnKeyExistsInWorkflow(WorkflowJobProperties properties1, WorkflowJobProperties properties2, ValidationContext<WorkflowJobProperties> context)
     {
         var dependKeys = properties1.Steps.Select(s => s.DependsOnKey!).Where(k => k != null).ToList();
         var keys = properties1.Steps.Select(s => s.Key).ToList();
@@ -52,6 +57,38 @@ public class WorkflowJobPropertiesValidator : AbstractValidator<WorkflowJobPrope
         }
 
         return true;
+    }
+
+    private bool GetRecursiveLevel(WorkflowJobProperties properties1, WorkflowJobProperties properties2, ValidationContext<WorkflowJobProperties> context)
+    {
+        _recursiveLevel = 1;
+        var startStep = properties1.Steps.FirstOrDefault(s => s.DependsOnKey == null);
+        if (startStep == null) { return true; }
+        DemoExecuteSteps(properties1, [startStep]);
+        if (_recursiveLevel <= 100) { return true; }
+
+        context.AddFailure("workflow has more than 100 recursive levels");
+        return false;
+    }
+
+    private void DemoExecuteSteps(WorkflowJobProperties properties, IEnumerable<WorkflowJobStep> steps)
+    {
+        if (!steps.Any())
+        {
+            _recursiveLevel--;
+            return;
+        }
+
+        var nextSteps = new List<WorkflowJobStep>();
+        foreach (var step in steps)
+        {
+            // collect next steps
+            var temp = properties.Steps.Where(s => s.DependsOnKey == step.Key).ToList();
+            nextSteps.AddRange(temp);
+        }
+
+        _recursiveLevel++;
+        DemoExecuteSteps(properties, nextSteps);
     }
 }
 

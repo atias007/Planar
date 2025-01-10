@@ -16,6 +16,9 @@ public abstract class WorkflowJob(
     IWorkflowInstance
 {
     private readonly ConcurrentDictionary<string, ResetEventWrapper> _resetEvents = [];
+    private int _totalSteps;
+    private int _completedSteps;
+    private int _recursiveLevel = 1;
 
     public override async Task Execute(IJobExecutionContext context)
     {
@@ -55,13 +58,19 @@ public abstract class WorkflowJob(
     private async Task ExecuteWorkflow(IJobExecutionContext context)
     {
         var steps = Properties.Steps;
+        _totalSteps = steps.Count;
         var startStep = steps.First(s => s.DependsOnKey == null);
+        MessageBroker.AppendLog(LogLevel.Information, $"start workflow with {steps.Count} steps");
         await ExecuteSteps(context, [startStep]);
     }
 
     private async Task ExecuteSteps(IJobExecutionContext context, IEnumerable<WorkflowJobStep> steps)
     {
-        if (!steps.Any()) { return; }
+        if (!steps.Any())
+        {
+            _recursiveLevel--;
+            return;
+        }
 
         foreach (var step in steps)
         {
@@ -74,16 +83,25 @@ public abstract class WorkflowJob(
         var nextSteps = new ConcurrentBag<WorkflowJobStep>();
         await Parallel.ForEachAsync(_resetEvents, async (re, cancellationToken) =>
         {
+            // prepare
             var wrapper = re.Value;
             var timeout = wrapper.Timeout ?? AppSettings.General.JobAutoStopSpan;
-
             if (wrapper.Done) { return; }
+            var ident = string.Empty.PadLeft(_recursiveLevel * 2, ' ');
+            MessageBroker.AppendLog(LogLevel.Information, $"{ident}└─ start job '{wrapper.JobKey}'");
 
+            // execute step
             await context.Scheduler.TriggerJob(wrapper.JobKey, wrapper.DataMap, cancellationToken);
             wrapper.ResetEvent.WaitOne(timeout);
+
+            // update status
             wrapper.SetDone();
             _resetEvents.TryRemove(re.Key, out _);
+            var completed = Interlocked.Increment(ref _completedSteps);
+            MessageBroker.IncreaseEffectedRows(1);
+            MessageBroker.UpdateProgress(completed, _totalSteps);
 
+            // collect next steps
             var steps = Properties.Steps.Where(s =>
                 s.DependsOnKey == wrapper.JobKey.ToString() &&
                 (s.DependsOnEvent == wrapper.Event || s.DependsOnEvent == WorkflowJobStepEvent.Finish));
@@ -94,6 +112,8 @@ public abstract class WorkflowJob(
             }
         });
 
+        // execute next steps
+        _recursiveLevel++;
         await ExecuteSteps(context, nextSteps);
     }
 
@@ -113,8 +133,9 @@ public abstract class WorkflowJob(
             }
         }
 
-        data.Add(Consts.WorkflowInstanceIdDataKey, context.FireInstanceId);
-        data.Add(Consts.WorkflowTriggerIdDataKey, context.Trigger.Key.Name);
+        data.TryAdd(Consts.WorkflowInstanceIdDataKey, context.FireInstanceId);
+        data.TryAdd(Consts.WorkflowJobKeyDataKey, context.JobDetail.Key.ToString());
+        data.TryAdd(Consts.WorkflowTriggerIdDataKey, context.Trigger.Key.Name);
 
         return data;
     }

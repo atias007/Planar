@@ -196,6 +196,26 @@ public abstract class BaseCommonJob<TProperties>(
         {
             MessageBroker.AppendLog(LogLevel.Warning, "Service get a request for cancel job");
         });
+
+        SaveLogWorkflow(context);
+    }
+
+    private void SaveLogWorkflow(IJobExecutionContext context)
+    {
+        try
+        {
+            var instanceId = JobHelper.GetWorkflowInstanceId(context.MergedJobDataMap);
+            if (string.IsNullOrWhiteSpace(instanceId)) { return; }
+
+            var triggerId = JobHelper.GetWorkflowTriggerId(context.MergedJobDataMap);
+            var jobKey = JobHelper.GetWorkflowJobKey(context.MergedJobDataMap);
+            MessageBroker.AppendLog(LogLevel.Information, $"--> job was triggered by workflow. key: '{jobKey}', trigger '{triggerId}, fire instance id: '{instanceId}'");
+        }
+        catch (Exception ex)
+        {
+            var source = nameof(SaveLogWorkflow);
+            _logger.LogError(ex, "fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+        }
     }
 
     protected IDictionary<string, string?> LoadJobSettings(string? path)
@@ -243,7 +263,7 @@ public abstract class BaseCommonJob<TProperties>(
         }
         catch (Exception ex)
         {
-            var source = nameof(FinalizeJob);
+            var source = nameof(SafeHandleWorkflow);
             _logger.LogError(ex, "fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
         }
     }

@@ -351,9 +351,13 @@ public static class CliTableFormat
             return string.Empty;
         }
 
-        if (triggerId == Consts.ManualTriggerId || triggerId == Consts.WorkflowTriggerId)
+        if (triggerId == Consts.ManualTriggerId)
         {
             return $"[invert]{triggerId.EscapeMarkup()}[/]";
+        }
+        else if (triggerId == Consts.WorkflowTriggerId)
+        {
+            return $"[black on lightskyblue3_1]{triggerId.EscapeMarkup()}[/]";
         }
         else
         {

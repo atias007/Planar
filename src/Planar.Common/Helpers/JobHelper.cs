@@ -26,6 +26,17 @@ public static class JobHelper
         return null;
     }
 
+    public static string? GetWorkflowJobKey(JobDataMap dataMap)
+    {
+        if (dataMap == null) { return null; }
+        if (dataMap.TryGetValue(Consts.WorkflowJobKeyDataKey, out var id))
+        {
+            return PlanarConvert.ToString(id);
+        }
+
+        return null;
+    }
+
     public static string? GetWorkflowInstanceId(JobDataMap dataMap)
     {
         if (dataMap == null) { return null; }

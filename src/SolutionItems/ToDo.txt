@@ -3,6 +3,13 @@
 PLAN FOR V 1.7.9
 ----------------
 
+*** cancel running wf job
+*** validate before delete job that is not part of workflow
+*** 
+│                 │ [09:27:04 INF] --> job was triggered by workflow. key: 'Workflows.TestWF', trigger 'MT_5586430315793893275, fire instance id:                     │
+│                 │ 'Default638720908225836741'
+
+
 - validate on startup that instance id not exists in nodes table
 - Security report
 - check option to odata search (https://devblogs.microsoft.com/odata/compute-and-search-in-asp-net-core-odata-8/)

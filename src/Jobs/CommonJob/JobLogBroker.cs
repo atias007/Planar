@@ -206,6 +206,12 @@ public sealed class JobLogBroker : IDisposable
         }
     }
 
+    public void UpdateProgress(long current, long total)
+    {
+        var value = CalcProgress(current, total);
+        UpdateProgress(value);
+    }
+
     public void UpdateProgress(byte value)
     {
         lock (Locker)
@@ -224,6 +230,15 @@ public sealed class JobLogBroker : IDisposable
         {
             throw new JobMonitorException("Fail to scan ExecutionProgressChanged monitor event", ex);
         }
+    }
+
+    private static byte CalcProgress(long current, long total)
+    {
+        var percentage = 1.0 * current / total * 100;
+        if (percentage > byte.MaxValue) { percentage = byte.MaxValue; }
+        if (percentage < byte.MinValue) { percentage = byte.MinValue; }
+        var result = Convert.ToByte(percentage);
+        return result;
     }
 
     private static DataMap ConvertDataMap(JobDataMap? map)
