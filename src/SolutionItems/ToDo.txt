@@ -2,12 +2,13 @@
 
 PLAN FOR V 1.7.9
 ----------------
+*** BUG: when you pause job with calendar. after restart the job resume. it should stay paused
 
-*** cancel running wf job
+*** .SafeAppendLog -- lower start letter
+*** limit the total steps
+*** limit the number of steps in each step
 *** validate before delete job that is not part of workflow
-*** 
-│                 │ [09:27:04 INF] --> job was triggered by workflow. key: 'Workflows.TestWF', trigger 'MT_5586430315793893275, fire instance id:                     │
-│                 │ 'Default638720908225836741'
+*** support cluster on wf
 
 
 - validate on startup that instance id not exists in nodes table

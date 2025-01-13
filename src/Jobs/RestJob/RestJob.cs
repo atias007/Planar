@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Common.Helpers;
-using Quartz;
 using RestSharp;
 using RestSharp.Authenticators;
 using System.Diagnostics;
@@ -15,14 +14,14 @@ public class RestJob(
     IJobPropertyDataLayer dataLayer,
     JobMonitorUtil jobMonitorUtil) : BaseCommonJob<RestJobProperties>(logger, dataLayer, jobMonitorUtil)
 {
-    public override async Task Execute(IJobExecutionContext context)
+    public override async Task Execute(Quartz.IJobExecutionContext context)
     {
         try
         {
             await Initialize(context);
             ValidateRestJob();
             StartMonitorDuration(context);
-            var task = Task.Run(() => ExecuteRest(context));
+            var task = ExecuteRest(context);
             await WaitForJobTask(context, task);
             StopMonitorDuration();
         }
@@ -36,11 +35,11 @@ public class RestJob(
         }
     }
 
-    private async Task ExecuteRest(IJobExecutionContext context)
+    private async Task ExecuteRest(Quartz.IJobExecutionContext context)
     {
-        var timeout = TriggerHelper.GetTimeout(context.Trigger) ?? AppSettings.General.JobAutoStopSpan;
+        await Task.Yield();
 
-        var options = InitializeOptions(timeout);
+        var options = InitializeOptions(context);
         SetProxy(options);
         SetAuthentication(options);
         var client = new RestClient(options);
@@ -52,7 +51,7 @@ public class RestJob(
         // Execute Rest
         var stopwatch = new Stopwatch();
         stopwatch.Start();
-        var response = await client.ExecuteAsync(request, context.CancellationToken);
+        var response = await client.ExecuteAsync(request, ExecutionCancellationToken);
         stopwatch.Stop();
 
         LogExecution(stopwatch, response);
@@ -78,8 +77,8 @@ public class RestJob(
     {
         if (!response.IsSuccessful)
         {
-            MessageBroker.SafeAppendLog(LogLevel.Error, $"Response fail");
-            MessageBroker.SafeAppendLog(LogLevel.Error, $"Error Message: {response.ErrorMessage}");
+            MessageBroker.SafeAppendLog(LogLevel.Error, $"response fail");
+            MessageBroker.SafeAppendLog(LogLevel.Error, $"error Message: {response.ErrorMessage}");
 
             if (response.ErrorException == null)
             {
@@ -94,18 +93,18 @@ public class RestJob(
 
     private void LogExecution(Stopwatch stopwatch, RestResponse response)
     {
-        MessageBroker.SafeAppendLog(LogLevel.Information, $"Status Code: {response.StatusCode}");
-        MessageBroker.SafeAppendLog(LogLevel.Information, $"Status Description: {response.StatusDescription}");
-        MessageBroker.SafeAppendLog(LogLevel.Information, $"Response Uri: {response.ResponseUri}");
-        MessageBroker.SafeAppendLog(LogLevel.Information, $"Duration: {FormatTimeSpan(stopwatch.Elapsed)}");
+        MessageBroker.SafeAppendLog(LogLevel.Information, $"status code: {response.StatusCode}");
+        MessageBroker.SafeAppendLog(LogLevel.Information, $"status description: {response.StatusDescription}");
+        MessageBroker.SafeAppendLog(LogLevel.Information, $"response uri: {response.ResponseUri}");
+        MessageBroker.SafeAppendLog(LogLevel.Information, $"duration: {FormatTimeSpan(stopwatch.Elapsed)}");
 
         if (Properties.LogResponseContent)
         {
-            MessageBroker.SafeAppendLog(LogLevel.Information, $"Response Content: {response.Content}");
+            MessageBroker.SafeAppendLog(LogLevel.Information, $"response content: {response.Content}");
         }
     }
 
-    private void SetBody(IJobExecutionContext context, RestRequest request)
+    private void SetBody(Quartz.IJobExecutionContext context, RestRequest request)
     {
         if (!string.IsNullOrEmpty(Properties.BodyFile))
         {
@@ -119,7 +118,7 @@ public class RestJob(
                 if (body.Contains(key))
                 {
                     body = body.Replace(key, value);
-                    MessageBroker.AppendLog(LogLevel.Information, $"  - Placeholder '{key}' was replaced by value '{value}'");
+                    MessageBroker.AppendLog(LogLevel.Information, $"  - placeholder '{key}' was replaced by value '{value}'");
                 }
             }
 
@@ -186,8 +185,11 @@ public class RestJob(
         }
     }
 
-    private RestClientOptions InitializeOptions(TimeSpan timeout)
+    private RestClientOptions InitializeOptions(Quartz.IJobExecutionContext context)
     {
+        var timeout = TriggerHelper.GetTimeout(context.Trigger) ?? AppSettings.General.JobAutoStopSpan;
+        timeout = timeout.Add(TimeSpan.FromSeconds(10));
+
         return new RestClientOptions
         {
             Timeout = timeout,

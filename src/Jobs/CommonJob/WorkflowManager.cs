@@ -5,28 +5,28 @@ namespace CommonJob;
 
 public interface IWorkflowInstance
 {
-    void SignalEvent(JobKey jobKey, WorkflowJobStepEvent @event);
+    void SignalEvent(JobKey stepJobKey, string workflowFireInstanceId, WorkflowJobStepEvent @event);
 }
 
 public static class WorkflowManager
 {
     private static readonly ConcurrentDictionary<string, IWorkflowInstance> _workflows = [];
 
-    public static void RegisterWorkflow(string key, IWorkflowInstance workflow)
+    public static void RegisterWorkflow(string instanceId, IWorkflowInstance workflow)
     {
-        _workflows.TryAdd(key, workflow);
+        _workflows.TryAdd(instanceId, workflow);
     }
 
-    public static void SignalEvent(string instanceId, JobKey jobKey, WorkflowJobStepEvent @event)
+    public static void SignalEvent(JobKey stepJobKey, string workflowFireInstanceId, WorkflowJobStepEvent @event)
     {
-        if (_workflows.TryGetValue(instanceId, out var workflow))
+        if (_workflows.TryGetValue(workflowFireInstanceId, out var workflow))
         {
-            workflow.SignalEvent(jobKey, @event);
+            workflow.SignalEvent(stepJobKey, workflowFireInstanceId, @event);
         }
     }
 
-    public static void UnregisterWorkflow(string key)
+    public static void UnregisterWorkflow(string instanceId)
     {
-        _workflows.TryRemove(key, out _);
+        _workflows.TryRemove(instanceId, out _);
     }
 }

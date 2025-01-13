@@ -20,7 +20,6 @@ where TProperties : class, new()
 {
     protected Process? _process;
     protected bool _processKilled;
-    protected readonly string Seperator = string.Empty.PadLeft(40, '-');
     private readonly StringBuilder _output = new();
     private readonly Timer _processMetricsTimer = new(1000);
     private readonly object Locker = new();
@@ -203,7 +202,7 @@ where TProperties : class, new()
         _process.WaitForExit(Convert.ToInt32(timeout.TotalMilliseconds));
         if (!_process.HasExited)
         {
-            MessageBroker.AppendLog(LogLevel.Error, $"Process timeout expire. Timeout was {timeout:hh\\:mm\\:ss}");
+            MessageBroker.AppendLog(LogLevel.Error, $"process timeout expire. Timeout was {timeout:hh\\:mm\\:ss}");
             return false;
         }
 
@@ -234,7 +233,7 @@ where TProperties : class, new()
         {
             var source = nameof(ValidateProcessJob);
             _logger.LogError(ex, "fail at {Source}. Message: {Message}", source, ex.Message);
-            MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
+            MessageBroker.AppendLog(LogLevel.Error, $"fail at {source}. {ex.Message}");
             throw new CommonJobException($"fail at {source}", ex);
         }
     }
@@ -248,14 +247,14 @@ where TProperties : class, new()
 
         try
         {
-            MessageBroker.AppendLog(LogLevel.Warning, $"Process was stopped. Reason: {reason}");
+            MessageBroker.AppendLog(LogLevel.Warning, $"process was stopped. Reason: {reason}");
             _processKilled = true;
             _process.Kill(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "fail to kill process job {Filename}", _process.StartInfo.FileName);
-            MessageBroker.AppendLog(LogLevel.Error, $"Fail to kill process job {_process.StartInfo.FileName}. {ex.Message}");
+            MessageBroker.AppendLog(LogLevel.Error, $"fail to kill process job {_process.StartInfo.FileName}. {ex.Message}");
         }
     }
 

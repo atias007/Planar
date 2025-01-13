@@ -45,19 +45,20 @@ public abstract class SqlTableReportJob(
 
     private async Task Generate(IJobExecutionContext context)
     {
+        await Task.Yield();
         DbConnection? connection = null;
 
         try
         {
             connection = new SqlConnection(Properties.ConnectionString);
-            MessageBroker.AppendLog(LogLevel.Information, $"Open sql connection with connection name: {Properties.ConnectionName}");
-            await connection.OpenAsync(context.CancellationToken);
+            MessageBroker.AppendLog(LogLevel.Information, $"open sql connection with connection name: {Properties.ConnectionName}");
+            await connection.OpenAsync(ExecutionCancellationToken);
 
             var attendees = await GetUsers(Properties.Group);
             var table = await ExecuteSql(context, Properties, connection);
             var html = GenerateHtml(Properties, table);
             html = HtmlUtil.MinifyHtml(html);
-            await SendReport(html, attendees);
+            await SendReport(html, attendees, ExecutionCancellationToken);
         }
         finally
         {
@@ -85,7 +86,7 @@ public abstract class SqlTableReportJob(
 
             var timer = new Stopwatch();
             timer.Start();
-            using var reader = await cmd.ExecuteReaderAsync(context.CancellationToken);
+            using var reader = await cmd.ExecuteReaderAsync(ExecutionCancellationToken);
             timer.Stop();
 
             var elapsedTitle =
@@ -154,7 +155,7 @@ public abstract class SqlTableReportJob(
         return result;
     }
 
-    private async Task SendReport(string html, IEnumerable<Attendee> attendees)
+    private async Task SendReport(string html, IEnumerable<Attendee> attendees, CancellationToken cancellationToken)
     {
         try
         {
@@ -180,7 +181,7 @@ public abstract class SqlTableReportJob(
             }.ToMessageBody();
             message.Body = body;
 
-            var result = await SmtpUtil.SendMessage(message);
+            var result = await SmtpUtil.SendMessage(message, cancellationToken);
             _logger.LogDebug("SMTP send result: {Message}", result);
         }
         catch (Exception ex)
@@ -280,8 +281,7 @@ public abstract class SqlTableReportJob(
         catch (Exception ex)
         {
             var source = nameof(ValidateSqlJob);
-            _logger.LogError(ex, "fail at {Source}", source);
-            MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
+            MessageBroker.AppendLog(LogLevel.Error, $"fail at {source}. {ex.Message}");
             throw;
         }
     }

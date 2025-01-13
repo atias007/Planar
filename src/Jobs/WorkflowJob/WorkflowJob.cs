@@ -2,6 +2,7 @@
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
+using Planar.Common.Helpers;
 using Quartz;
 using System.Collections.Concurrent;
 
@@ -16,21 +17,22 @@ public abstract class WorkflowJob(
     IWorkflowInstance
 {
     private readonly ConcurrentDictionary<string, ResetEventWrapper> _resetEvents = [];
-    private int _totalSteps;
     private int _completedSteps;
     private int _recursiveLevel = 1;
+    private int _totalSteps;
 
     public override async Task Execute(IJobExecutionContext context)
     {
         try
         {
             await Initialize(context);
-            await ValidateWorkflowJob(context.CancellationToken);
+            await ValidateWorkflowJob(ExecutionCancellationToken);
             StartMonitorDuration(context);
             WorkflowManager.RegisterWorkflow(context.FireInstanceId, this);
             var task = ExecuteWorkflow(context);
             await WaitForJobTask(context, task);
             StopMonitorDuration();
+            HandleSuccess();
         }
         catch (Exception ex)
         {
@@ -40,81 +42,18 @@ public abstract class WorkflowJob(
         {
             WorkflowManager.UnregisterWorkflow(context.FireInstanceId);
             FinalizeJob(context);
+            _resetEvents.Clear();
         }
     }
 
-    private async Task ValidateWorkflowJob(CancellationToken cancellationToken)
+    public void SignalEvent(JobKey stepJobKey, string workflowFireInstanceId, WorkflowJobStepEvent @event)
     {
-        var result = await validator.ValidateAsync(Properties, cancellationToken);
-        if (!result.IsValid)
+        var key = ResetEventWrapper.GetKey(stepJobKey, workflowFireInstanceId);
+        if (_resetEvents.TryGetValue(key, out var resetWrapper))
         {
-            var message = "validate workflow job fail with the following errors:\r\n";
-            message += string.Join("\r\n", result.Errors.Select(e => $" -{e.ErrorMessage}"));
-
-            throw new InvalidDataException(message);
+            resetWrapper.Event = @event;
+            resetWrapper.ResetEvent.Set();
         }
-    }
-
-    private async Task ExecuteWorkflow(IJobExecutionContext context)
-    {
-        var steps = Properties.Steps;
-        _totalSteps = steps.Count;
-        var startStep = steps.First(s => s.DependsOnKey == null);
-        MessageBroker.AppendLog(LogLevel.Information, $"start workflow with {steps.Count} steps");
-        await ExecuteSteps(context, [startStep]);
-    }
-
-    private async Task ExecuteSteps(IJobExecutionContext context, IEnumerable<WorkflowJobStep> steps)
-    {
-        if (!steps.Any())
-        {
-            _recursiveLevel--;
-            return;
-        }
-
-        foreach (var step in steps)
-        {
-            var jobKey = ParseJobKey(step.Key);
-            var data = GetJobDataMap(context, step);
-            var wrapper = ResetEventWrapper.Create(jobKey, data, step);
-            _resetEvents.TryAdd(jobKey.ToString(), wrapper);
-        }
-
-        var nextSteps = new ConcurrentBag<WorkflowJobStep>();
-        await Parallel.ForEachAsync(_resetEvents, async (re, cancellationToken) =>
-        {
-            // prepare
-            var wrapper = re.Value;
-            var timeout = wrapper.Timeout ?? AppSettings.General.JobAutoStopSpan;
-            if (wrapper.Done) { return; }
-            var ident = string.Empty.PadLeft(_recursiveLevel * 2, ' ');
-            MessageBroker.AppendLog(LogLevel.Information, $"{ident}└─ start job '{wrapper.JobKey}'");
-
-            // execute step
-            await context.Scheduler.TriggerJob(wrapper.JobKey, wrapper.DataMap, cancellationToken);
-            wrapper.ResetEvent.WaitOne(timeout);
-
-            // update status
-            wrapper.SetDone();
-            _resetEvents.TryRemove(re.Key, out _);
-            var completed = Interlocked.Increment(ref _completedSteps);
-            MessageBroker.IncreaseEffectedRows(1);
-            MessageBroker.UpdateProgress(completed, _totalSteps);
-
-            // collect next steps
-            var steps = Properties.Steps.Where(s =>
-                s.DependsOnKey == wrapper.JobKey.ToString() &&
-                (s.DependsOnEvent == wrapper.Event || s.DependsOnEvent == WorkflowJobStepEvent.Finish));
-
-            foreach (var step in steps)
-            {
-                nextSteps.Add(step);
-            }
-        });
-
-        // execute next steps
-        _recursiveLevel++;
-        await ExecuteSteps(context, nextSteps);
     }
 
     private static JobDataMap GetJobDataMap(IJobExecutionContext context, WorkflowJobStep step)
@@ -133,9 +72,19 @@ public abstract class WorkflowJob(
             }
         }
 
+        var triggerId = TriggerHelper.GetTriggerId(context.Trigger);
+        if (string.IsNullOrWhiteSpace(triggerId))
+        {
+            triggerId = Consts.ManualTriggerId;
+        }
+        else
+        {
+            triggerId = context.Trigger.Key.Name;
+        }
+
         data.TryAdd(Consts.WorkflowInstanceIdDataKey, context.FireInstanceId);
         data.TryAdd(Consts.WorkflowJobKeyDataKey, context.JobDetail.Key.ToString());
-        data.TryAdd(Consts.WorkflowTriggerIdDataKey, context.Trigger.Key.Name);
+        data.TryAdd(Consts.WorkflowTriggerIdDataKey, triggerId);
 
         return data;
     }
@@ -157,13 +106,107 @@ public abstract class WorkflowJob(
         }
     }
 
-    public void SignalEvent(JobKey jobKey, WorkflowJobStepEvent @event)
+    private async Task ExecuteSteps(IJobExecutionContext context, IEnumerable<WorkflowJobStep> steps, CancellationToken cancellationToken)
     {
-        var key = jobKey.ToString();
-        if (_resetEvents.TryGetValue(key, out var resetWrapper))
+        if (cancellationToken.IsCancellationRequested) { return; }
+
+        if (!steps.Any())
         {
-            resetWrapper.Event = @event;
-            resetWrapper.ResetEvent.Set();
+            _recursiveLevel--;
+            return;
+        }
+
+        // build steps wrapper
+        foreach (var step in steps)
+        {
+            var jobKey = ParseJobKey(step.Key);
+            var data = GetJobDataMap(context, step);
+            var wrapper = ResetEventWrapper.Create(jobKey, context.FireInstanceId, data, step);
+            _resetEvents.TryAdd(wrapper.Key, wrapper);
+        }
+
+        // run steps
+        var nextSteps = new ConcurrentBag<WorkflowJobStep>();
+        await Parallel.ForEachAsync(_resetEvents.Values, cancellationToken, async (wrapper, cancellationToken) =>
+        {
+            // prepare
+            var timeout = wrapper.Timeout ?? AppSettings.General.JobAutoStopSpan;
+            if (wrapper.Done) { return; }
+            var ident = string.Empty.PadLeft(_recursiveLevel * 2, ' ');
+            MessageBroker.AppendLog(LogLevel.Information, $"{ident}└─ start job '{wrapper.JobKey}'");
+
+            // execute step
+            await context.Scheduler.TriggerJob(wrapper.JobKey, wrapper.DataMap, cancellationToken);
+            var result = wrapper.ResetEvent.WaitOne(timeout);
+
+            // handle step timeout
+            if (!result)
+            {
+                // TODO: stop parallel loop and throw exception
+            }
+
+            // check for cancellation token
+            if (cancellationToken.IsCancellationRequested) { return; }
+
+            // update status
+            wrapper.SetDone();
+            _resetEvents.TryRemove(wrapper.Key, out _);
+            var completed = Interlocked.Increment(ref _completedSteps);
+            MessageBroker.IncreaseEffectedRows(1);
+            MessageBroker.UpdateProgress(completed, _totalSteps);
+
+            // check for cancellation token
+            if (cancellationToken.IsCancellationRequested) { return; }
+
+            // collect next steps
+            var steps = Properties.Steps.Where(s =>
+                s.DependsOnKey == wrapper.JobKey.ToString() &&
+                (s.DependsOnEvent == wrapper.Event || s.DependsOnEvent == WorkflowJobStepEvent.Finish));
+
+            foreach (var step in steps)
+            {
+                nextSteps.Add(step);
+            }
+        });
+
+        // execute next steps
+        if (cancellationToken.IsCancellationRequested) { return; }
+        _recursiveLevel++;
+        await ExecuteSteps(context, nextSteps, cancellationToken);
+    }
+
+    private async Task ExecuteWorkflow(IJobExecutionContext context)
+    {
+        await Task.Yield();
+
+        // register cancellation token event
+        ExecutionCancellationToken.Register(() =>
+        {
+            _resetEvents.Values.ToList().ForEach(w => w.ResetEvent.Set());
+        });
+
+        // find startup step
+        var steps = Properties.Steps;
+        _totalSteps = steps.Count;
+        var startStep = steps.First(s => s.DependsOnKey == null);
+        MessageBroker.AppendLog(LogLevel.Information, $"start workflow with {steps.Count} steps");
+
+        // start workflow
+        await ExecuteSteps(context, [startStep], ExecutionCancellationToken);
+
+        // handle cancel steps
+        ExecutionCancellationToken.ThrowIfCancellationRequested();
+    }
+
+    private async Task ValidateWorkflowJob(CancellationToken cancellationToken)
+    {
+        var result = await validator.ValidateAsync(Properties, cancellationToken);
+        if (!result.IsValid)
+        {
+            var message = "validate workflow job fail with the following errors:\r\n";
+            message += string.Join("\r\n", result.Errors.Select(e => $" -{e.ErrorMessage}"));
+
+            throw new InvalidDataException(message);
         }
     }
 }
