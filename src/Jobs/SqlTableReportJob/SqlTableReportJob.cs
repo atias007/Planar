@@ -103,9 +103,9 @@ public abstract class SqlTableReportJob(
         }
         catch (Exception ex)
         {
-            var sqlEx = new SqlTableReportJobException("Fail to execute script", ex);
+            var sqlEx = new SqlTableReportJobException("fail to execute script", ex);
             _logger.LogError(ex, "fail to execute script");
-            MessageBroker.AppendLog(LogLevel.Error, $"Fail to execute script. {ex.Message}");
+            MessageBroker.AppendLog(LogLevel.Error, $"fail to execute script. {ex.Message}");
             throw sqlEx;
         }
     }
@@ -216,7 +216,7 @@ public abstract class SqlTableReportJob(
         var result = properties.Script;
         if (string.IsNullOrEmpty(result))
         {
-            MessageBroker.AppendLog(LogLevel.Warning, $"Script filename '{properties.Filename}' has no content");
+            MessageBroker.AppendLog(LogLevel.Warning, $"script filename '{properties.Filename}' has no content");
             return string.Empty;
         }
 
@@ -227,13 +227,13 @@ public abstract class SqlTableReportJob(
             if (properties.Script.Contains(key))
             {
                 result = result.Replace(key, value);
-                MessageBroker.AppendLog(LogLevel.Information, $"  - Placeholder '{key}' was replaced by value '{value}'");
+                MessageBroker.AppendLog(LogLevel.Information, $"  - placeholder '{key}' was replaced by value '{value}'");
             }
         }
 
         if (string.IsNullOrWhiteSpace(result))
         {
-            MessageBroker.AppendLog(LogLevel.Warning, $"Script filename '{properties.Filename}' has no content after placeholder replace");
+            MessageBroker.AppendLog(LogLevel.Warning, $"script filename '{properties.Filename}' has no content after placeholder replace");
         }
 
         return result;

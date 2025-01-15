@@ -96,7 +96,7 @@ public abstract class SqlJob(
             if (transaction != null)
             {
                 await transaction.CommitAsync(ExecutionCancellationToken);
-                MessageBroker.AppendLog(LogLevel.Information, "Commit transaction");
+                MessageBroker.AppendLog(LogLevel.Information, "commit transaction");
             }
         }
         catch
@@ -104,7 +104,7 @@ public abstract class SqlJob(
             if (transaction != null)
             {
                 await transaction.RollbackAsync();
-                MessageBroker.AppendLog(LogLevel.Warning, "Rollback transaction due to error in one of the steps");
+                MessageBroker.AppendLog(LogLevel.Warning, "rollback transaction due to error in one of the steps");
             }
             throw;
         }
@@ -124,7 +124,7 @@ public abstract class SqlJob(
 
         try
         {
-            MessageBroker.AppendLog(LogLevel.Information, $"Start execute step name '{step.Name}'...");
+            MessageBroker.AppendLog(LogLevel.Information, $"start execute step name '{step.Name}'...");
 
             DbCommand cmd = connection.CreateCommand();
             var script = GetScript(context, step);
@@ -174,14 +174,14 @@ public abstract class SqlJob(
         {
             if (string.IsNullOrWhiteSpace(step.ConnectionString))
             {
-                if (defaultConnection == null) { throw new SqlJobException($"No connection string defined for step name '{step.Name}' and no default connection"); }
+                if (defaultConnection == null) { throw new SqlJobException($"no connection string defined for step name '{step.Name}' and no default connection"); }
                 connection = defaultConnection;
             }
             else
             {
                 finalizeConnection = true;
                 connection = new SqlConnection(step.ConnectionString);
-                MessageBroker.AppendLog(LogLevel.Information, $"Open sql connection with connection name: {step.ConnectionName}");
+                MessageBroker.AppendLog(LogLevel.Information, $"open sql connection with connection name: {step.ConnectionName}");
                 await connection.OpenAsync(cancellationToken);
             }
 
@@ -199,7 +199,7 @@ public abstract class SqlJob(
         var result = step.Script;
         if (string.IsNullOrEmpty(result))
         {
-            MessageBroker.AppendLog(LogLevel.Warning, $"Script filename '{step.Filename}' in step '{step.Name}' has no content");
+            MessageBroker.AppendLog(LogLevel.Warning, $"script filename '{step.Filename}' in step '{step.Name}' has no content");
             return string.Empty;
         }
 
@@ -210,13 +210,13 @@ public abstract class SqlJob(
             if (step.Script.Contains(key))
             {
                 result = result.Replace(key, value);
-                MessageBroker.AppendLog(LogLevel.Information, $"  - Placeholder '{key}' was replaced by value '{value}'");
+                MessageBroker.AppendLog(LogLevel.Information, $"  - placeholder '{key}' was replaced by value '{value}'");
             }
         }
 
         if (string.IsNullOrWhiteSpace(result))
         {
-            MessageBroker.AppendLog(LogLevel.Warning, $"Script filename '{step.Filename}' in step '{step.Name}' has no content after placeholder replace");
+            MessageBroker.AppendLog(LogLevel.Warning, $"script filename '{step.Filename}' in step '{step.Name}' has no content after placeholder replace");
         }
 
         return result;
@@ -224,9 +224,9 @@ public abstract class SqlJob(
 
     private void HandleStepException(SqlStep step, Exception ex)
     {
-        var sqlEx = new SqlJobException($"Fail to execute step name '{step.Name}'", ex);
+        var sqlEx = new SqlJobException($"fail to execute step name '{step.Name}'", ex);
         _logger.LogError(ex, "fail to execute step name {Name}", step.Name);
-        MessageBroker.AppendLog(LogLevel.Error, $"Fail to execute step name '{step.Name}'. {ex.Message}");
+        MessageBroker.AppendLog(LogLevel.Error, $"fail to execute step name '{step.Name}'. {ex.Message}");
         if (Properties.ContinueOnError)
         {
             _exceptions.Add(sqlEx);
@@ -267,7 +267,7 @@ public abstract class SqlJob(
         {
             var source = nameof(ValidateSqlJob);
             _logger.LogError(ex, "fail at {Source}", source);
-            MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
+            MessageBroker.AppendLog(LogLevel.Error, $"fail at {source}. {ex.Message}");
             throw new SqlJobException($"fail at {source}", ex);
         }
     }
@@ -294,7 +294,7 @@ public abstract class SqlJob(
         {
             var source = nameof(ValidateSqlStep);
             _logger.LogError(ex, "fail at {Source}", source);
-            MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
+            MessageBroker.AppendLog(LogLevel.Error, $"fail at {source}. {ex.Message}");
             throw new SqlJobException($"fail at {source}", ex);
         }
     }

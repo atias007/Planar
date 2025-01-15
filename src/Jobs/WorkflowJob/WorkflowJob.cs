@@ -40,20 +40,46 @@ public abstract class WorkflowJob(
         }
         finally
         {
-            WorkflowManager.UnregisterWorkflow(context.FireInstanceId);
+            SafeInvoke(LogWorkflowSummary);
+            SafeInvoke(() => WorkflowManager.UnregisterWorkflow(context.FireInstanceId));
             FinalizeJob(context);
-            _resetEvents.Clear();
+            SafeInvoke(_resetEvents.Clear);
         }
     }
 
-    public void SignalEvent(JobKey stepJobKey, string workflowFireInstanceId, WorkflowJobStepEvent @event)
+    public void SignalEvent(JobKey stepJobKey, string fireInstanceId, string workflowFireInstanceId, WorkflowJobStepEvent @event)
     {
         var key = ResetEventWrapper.GetKey(stepJobKey, workflowFireInstanceId);
         if (_resetEvents.TryGetValue(key, out var resetWrapper))
         {
             resetWrapper.Event = @event;
+            resetWrapper.FireInstanceId = fireInstanceId;
             resetWrapper.ResetEvent.Set();
         }
+    }
+
+    private void LogWorkflowSummary()
+    {
+        void AppendLog(string message)
+        {
+            MessageBroker.AppendLog(LogLevel.Information, message);
+        }
+
+        var data = _resetEvents.Values;
+        if (data.Count == 0) { return; }
+
+        AppendLog(string.Empty);
+        AppendLog(Seperator);
+        AppendLog(" workflow steps summary");
+        AppendLog(Seperator);
+        AppendLog("[job key] --> [fire instance id] --> [status]");
+        AppendLog(string.Empty);
+        foreach (var wrapper in data)
+        {
+            AppendLog($"{wrapper.JobKey} --> {wrapper.FireInstanceId} --> {wrapper.DisplayStatus}");
+        }
+
+        AppendLog(Seperator);
     }
 
     private static JobDataMap GetJobDataMap(IJobExecutionContext context, WorkflowJobStep step)
@@ -131,11 +157,12 @@ public abstract class WorkflowJob(
         {
             // prepare
             var timeout = wrapper.Timeout ?? AppSettings.General.JobAutoStopSpan;
-            if (wrapper.Done) { return; }
+            if (wrapper.Status != StepStatus.Waiting) { return; }
             var ident = string.Empty.PadLeft(_recursiveLevel * 2, ' ');
             MessageBroker.AppendLog(LogLevel.Information, $"{ident}└─ start job '{wrapper.JobKey}'");
 
             // execute step
+            wrapper.SetStatus(StepStatus.Start);
             await context.Scheduler.TriggerJob(wrapper.JobKey, wrapper.DataMap, cancellationToken);
             var result = wrapper.ResetEvent.WaitOne(timeout);
 
@@ -146,11 +173,14 @@ public abstract class WorkflowJob(
             }
 
             // check for cancellation token
-            if (cancellationToken.IsCancellationRequested) { return; }
+            if (cancellationToken.IsCancellationRequested)
+            {
+                wrapper.SetStatus(StepStatus.Interrupted);
+                return;
+            }
 
             // update status
-            wrapper.SetDone();
-            _resetEvents.TryRemove(wrapper.Key, out _);
+            wrapper.SetStatus(StepStatus.Finish);
             var completed = Interlocked.Increment(ref _completedSteps);
             MessageBroker.IncreaseEffectedRows(1);
             MessageBroker.UpdateProgress(completed, _totalSteps);

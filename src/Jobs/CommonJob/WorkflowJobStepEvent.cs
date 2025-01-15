@@ -2,6 +2,7 @@
 
 public enum WorkflowJobStepEvent
 {
+    Unknown,
     Success,
     Fail,
     Finish

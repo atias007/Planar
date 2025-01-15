@@ -3,6 +3,14 @@ using Quartz;
 
 namespace Planar;
 
+public enum StepStatus
+{
+    Waiting,
+    Start,
+    Interrupted,
+    Finish
+}
+
 internal sealed class ResetEventWrapper
 {
     private ResetEventWrapper(JobKey jobKey, string workflowFireInstanceId, JobDataMap dataMap, WorkflowJobStep step)
@@ -21,10 +29,12 @@ internal sealed class ResetEventWrapper
     public JobDataMap DataMap { get; private set; }
     public string WorkflowFireInstanceId { get; private set; }
     public string Key { get; private set; }
-    public bool Done { get; private set; }
-    public WorkflowJobStepEvent? Event { get; set; }
+    public StepStatus Status { get; private set; }
+    public WorkflowJobStepEvent Event { get; set; } = WorkflowJobStepEvent.Unknown;
+    public string? FireInstanceId { get; set; }
+    public string DisplayStatus => Status == StepStatus.Finish ? Event.ToString() : Status.ToString();
 
-    public void SetDone() => Done = true;
+    public void SetStatus(StepStatus status) => Status = status;
 
     public static ResetEventWrapper Create(JobKey jobKey, string workflowFireInstanceId, JobDataMap dataMap, WorkflowJobStep step) =>
         new(jobKey, workflowFireInstanceId, dataMap, step);

@@ -5,7 +5,7 @@ namespace CommonJob;
 
 public interface IWorkflowInstance
 {
-    void SignalEvent(JobKey stepJobKey, string workflowFireInstanceId, WorkflowJobStepEvent @event);
+    void SignalEvent(JobKey stepJobKey, string fireInstanceId, string workflowFireInstanceId, WorkflowJobStepEvent @event);
 }
 
 public static class WorkflowManager
@@ -17,11 +17,11 @@ public static class WorkflowManager
         _workflows.TryAdd(instanceId, workflow);
     }
 
-    public static void SignalEvent(JobKey stepJobKey, string workflowFireInstanceId, WorkflowJobStepEvent @event)
+    public static void SignalEvent(JobKey stepJobKey, string fireInstanceId, string workflowFireInstanceId, WorkflowJobStepEvent @event)
     {
         if (_workflows.TryGetValue(workflowFireInstanceId, out var workflow))
         {
-            workflow.SignalEvent(stepJobKey, workflowFireInstanceId, @event);
+            workflow.SignalEvent(stepJobKey, fireInstanceId, workflowFireInstanceId, @event);
         }
     }
 

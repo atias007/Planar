@@ -57,7 +57,7 @@ public abstract class ProcessJob : BaseProcessJob<ProcessJobProperties>
     protected void LogProcessOutput()
     {
         MessageBroker.AppendLog(LogLevel.Information, Seperator);
-        MessageBroker.AppendLog(LogLevel.Information, " Process output:");
+        MessageBroker.AppendLog(LogLevel.Information, " process output:");
         MessageBroker.AppendLog(LogLevel.Information, Seperator);
         if (Properties.LogOutput)
         {

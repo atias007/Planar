@@ -146,17 +146,17 @@ where TProperties : class, new()
         if (!_process.HasExited) { return; }
 
         MessageBroker.AppendLog(LogLevel.Information, Seperator);
-        MessageBroker.AppendLog(LogLevel.Information, " Process information:");
+        MessageBroker.AppendLog(LogLevel.Information, " process information:");
         MessageBroker.AppendLog(LogLevel.Information, Seperator);
-        MessageBroker.AppendLog(LogLevel.Information, $"Exit Code: {_process.ExitCode}");
-        MessageBroker.AppendLog(LogLevel.Information, $"Peak Working Set Memory: {FormatBytes(_peakWorkingSet64)}");
-        MessageBroker.AppendLog(LogLevel.Information, $"Peak Virtual Memory: {FormatBytes(_peakVirtualMemorySize64)}");
+        MessageBroker.AppendLog(LogLevel.Information, $"exit Code: {_process.ExitCode}");
+        MessageBroker.AppendLog(LogLevel.Information, $"peak Working Set Memory: {FormatBytes(_peakWorkingSet64)}");
+        MessageBroker.AppendLog(LogLevel.Information, $"peak Virtual Memory: {FormatBytes(_peakVirtualMemorySize64)}");
 
         var username = string.IsNullOrWhiteSpace(FileProperties.UserName) ?
             GetUsername(Environment.UserDomainName, Environment.UserName) :
             GetUsername(FileProperties.Domain, FileProperties.UserName);
 
-        MessageBroker.AppendLog(LogLevel.Information, $"Username: {username}");
+        MessageBroker.AppendLog(LogLevel.Information, $"username: {username}");
         MessageBroker.AppendLog(LogLevel.Information, Seperator);
         Thread.Sleep(500);
     }

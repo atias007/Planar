@@ -43,6 +43,30 @@ public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logge
         _messageBroker = messageBroker;
     }
 
+    protected static void SafeInvoke(Action action)
+    {
+        try
+        {
+            action.Invoke();
+        }
+        catch
+        {
+            DoNothingMethod();
+        }
+    }
+
+    protected async static Task SafeInvoke(Func<Task> func)
+    {
+        try
+        {
+            await func.Invoke();
+        }
+        catch
+        {
+            DoNothingMethod();
+        }
+    }
+
     protected static void DoNothingMethod()
     {
         //// *** Do Nothing Method *** ////
@@ -237,7 +261,7 @@ public abstract class BaseCommonJob<TProperties>(
             MessageBroker.AppendLog(LogLevel.Information, $"job was triggered by workflow");
             MessageBroker.AppendLog(LogLevel.Information, Seperator);
             MessageBroker.AppendLog(LogLevel.Information, $" key: {jobKey}");
-            MessageBroker.AppendLog(LogLevel.Information, $" trigger {triggerId}");
+            MessageBroker.AppendLog(LogLevel.Information, $" trigger: {triggerId}");
             MessageBroker.AppendLog(LogLevel.Information, $" fire instance id: {instanceId}");
             MessageBroker.AppendLog(LogLevel.Information, Seperator);
         }
@@ -284,11 +308,11 @@ public abstract class BaseCommonJob<TProperties>(
             var exception = metadata.UnhandleException;
             if (exception == null)
             {
-                WorkflowManager.SignalEvent(context.JobDetail.Key, workflowInstanceId, WorkflowJobStepEvent.Success);
+                WorkflowManager.SignalEvent(context.JobDetail.Key, context.FireInstanceId, workflowInstanceId, WorkflowJobStepEvent.Success);
             }
             else
             {
-                WorkflowManager.SignalEvent(context.JobDetail.Key, workflowInstanceId, WorkflowJobStepEvent.Fail);
+                WorkflowManager.SignalEvent(context.JobDetail.Key, context.FireInstanceId, workflowInstanceId, WorkflowJobStepEvent.Fail);
             }
         }
         catch (Exception ex)
