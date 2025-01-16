@@ -2,6 +2,7 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
+using Planar.Service.General;
 using Quartz;
 using System.Data;
 using System.Data.Common;
@@ -13,7 +14,8 @@ namespace Planar;
 public abstract class SqlJob(
     ILogger logger,
     IJobPropertyDataLayer dataLayer,
-    JobMonitorUtil jobMonitorUtil) : BaseCommonJob<SqlJobProperties>(logger, dataLayer, jobMonitorUtil)
+    JobMonitorUtil jobMonitorUtil,
+    IClusterUtil clusterUtil) : BaseCommonJob<SqlJobProperties>(logger, dataLayer, jobMonitorUtil, clusterUtil)
 {
     private readonly List<SqlJobException> _exceptions = [];
 
@@ -34,7 +36,7 @@ public abstract class SqlJob(
         }
         finally
         {
-            FinalizeJob(context);
+            await FinalizeJob(context);
         }
     }
 
@@ -110,9 +112,9 @@ public abstract class SqlJob(
         }
         finally
         {
-            try { if (transaction != null) { await transaction.DisposeAsync(); } } catch { DoNothingMethod(); }
-            try { if (defaultConnection != null) { await defaultConnection.CloseAsync(); } } catch { DoNothingMethod(); }
-            try { if (defaultConnection != null) { await defaultConnection.DisposeAsync(); } } catch { DoNothingMethod(); }
+            await SafeInvoke(async () => { if (transaction != null) { await transaction.DisposeAsync(); } });
+            await SafeInvoke(async () => { if (defaultConnection != null) { await defaultConnection.CloseAsync(); } });
+            await SafeInvoke(async () => { if (defaultConnection != null) { await defaultConnection.DisposeAsync(); } });
         }
     }
 
@@ -160,8 +162,8 @@ public abstract class SqlJob(
         {
             if (finalizeConnection)
             {
-                try { if (connection != null) { await connection.CloseAsync(); } } catch { DoNothingMethod(); }
-                try { if (connection != null) { await connection.DisposeAsync(); } } catch { DoNothingMethod(); }
+                await SafeInvoke(async () => { if (connection != null) { await connection.CloseAsync(); } });
+                await SafeInvoke(async () => { if (connection != null) { await connection.DisposeAsync(); } });
             }
         }
     }
@@ -189,7 +191,7 @@ public abstract class SqlJob(
         }
         catch (Exception)
         {
-            try { if (connection != null) { await connection.DisposeAsync(); } } catch { DoNothingMethod(); }
+            await SafeInvoke(async () => { if (connection != null) { await connection.DisposeAsync(); } });
             throw;
         }
     }

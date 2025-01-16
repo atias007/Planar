@@ -3,10 +3,8 @@ using FluentValidation;
 using Planar.Service.API;
 using Planar.Service.API.Helpers;
 using Planar.Service.Exceptions;
-using Polly;
 using Quartz;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -22,6 +20,10 @@ public class WorkflowJobPropertiesValidator : AbstractValidator<WorkflowJobPrope
     {
         RuleFor(e => e.Steps).NotEmpty();
         RuleFor(e => e.Steps)
+            .Must(e => e.Count <= 100)
+            .WithMessage("no more than total 100 steps are allowed");
+
+        RuleFor(e => e.Steps)
             .Must(HasStartStep)
             .WithMessage("workflow has no start step. a step with 'depends on key: null' must be define");
 
@@ -32,7 +34,9 @@ public class WorkflowJobPropertiesValidator : AbstractValidator<WorkflowJobPrope
         RuleFor(e => e).Must(IsDepentOnKeyExistsInWorkflow);
         RuleFor(e => e).Must(GetRecursiveLevel);
 
-        RuleForEach(e => e.Steps).SetValidator(new WorkflowJobStepValidator(scheduler));
+        RuleForEach(e => e.Steps)
+            .SetValidator(new WorkflowJobStepValidator(scheduler))
+            .WithMessage("fail to validate workflow steps");
     }
 
     private static bool HasStartStep(IEnumerable<WorkflowJobStep> steps)

@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Planar.Common;
 using Planar.Service.Model;
 using Planar.Service.Reports;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,6 +15,10 @@ public interface IJobData : IJobPropertyDataLayer, IBaseDataLayer
     Task AddJobAudit(JobAudit jobAudit);
 
     Task AddJobProperty(JobProperty jobProperty);
+
+    Task<IEnumerable<string>> GetUnknownJobProperties();
+
+    Task UpdatePropertiesJobType(string id, string type);
 
     Task DeleteJobAudit(string jobId);
 
@@ -31,6 +37,8 @@ public interface IJobData : IJobPropertyDataLayer, IBaseDataLayer
     Task<IEnumerable<string>> GetJobPropertiesIds();
 
     Task UpdateJobProperty(JobProperty jobProperty);
+
+    Task<IEnumerable<JobProperty>> GetAllProperties(string typeName);
 }
 
 public class JobDataSqlite(PlanarContext context) : JobData(context), IJobData
@@ -43,6 +51,15 @@ public class JobDataSqlServer(PlanarContext context) : JobData(context), IJobDat
 
 public class JobData(PlanarContext context) : BaseDataLayer(context)
 {
+    public async Task<IEnumerable<JobProperty>> GetAllProperties(string typeName)
+    {
+        var properties = await _context.JobProperties
+            .Where(j => j.JobType == typeName)
+            .ToListAsync();
+
+        return properties;
+    }
+
     public async Task<string?> GetJobProperty(string jobId)
     {
         var properties = await _context.JobProperties
@@ -51,6 +68,23 @@ public class JobData(PlanarContext context) : BaseDataLayer(context)
             .FirstOrDefaultAsync();
 
         return properties;
+    }
+
+    public async Task<IEnumerable<string>> GetUnknownJobProperties()
+    {
+        var ids = await _context.JobProperties
+           .Where(j => j.JobType == "Unknown" || j.JobType == string.Empty)
+           .Select(j => j.JobId)
+           .ToListAsync();
+
+        return ids;
+    }
+
+    public async Task UpdatePropertiesJobType(string id, string jobType)
+    {
+        await _context.JobProperties
+            .Where(j => j.JobId == id)
+            .ExecuteUpdateAsync(u => u.SetProperty(p => p.JobType, jobType));
     }
 
     public async Task<IEnumerable<string>> GetJobPropertiesIds()

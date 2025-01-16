@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Common.Helpers;
+using Planar.Service.General;
 using ProcessJob;
 using Quartz;
 using System.Diagnostics;
@@ -15,7 +16,8 @@ public abstract class ProcessJob : BaseProcessJob<ProcessJobProperties>
     protected ProcessJob(
         ILogger logger,
         IJobPropertyDataLayer dataLayer,
-        JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
+        JobMonitorUtil jobMonitorUtil,
+        IClusterUtil clusterUtil) : base(logger, dataLayer, jobMonitorUtil, clusterUtil)
     {
     }
 
@@ -49,7 +51,7 @@ public abstract class ProcessJob : BaseProcessJob<ProcessJobProperties>
         }
         finally
         {
-            FinalizeJob(context);
+            await FinalizeJob(context);
             FinalizeProcess();
         }
     }

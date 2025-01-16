@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using CommonJob;
 using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;

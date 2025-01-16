@@ -760,7 +760,9 @@ public partial class JobDomain
 
         // Save Job Properties
         var jobPropertiesYml = GetJopPropertiesYml(request);
-        await DataLayer.AddJobProperty(new JobProperty { JobId = id, Properties = jobPropertiesYml });
+        var jobType = SchedulerUtil.GetJobTypeName(job);
+        var property = new JobProperty { JobId = id, Properties = jobPropertiesYml, JobType = jobType };
+        await DataLayer.AddJobProperty(property);
 
         try
         {
@@ -884,11 +886,12 @@ public partial class JobDomain
                 await ValidateJobProperties<SqlTableReportJobProperties>(yml);
                 break;
 
-            case nameof(WorkflowJobProperties):
+            case nameof(WorkflowJob):
                 await ValidateJobProperties<WorkflowJobProperties>(yml);
                 break;
 
             default:
+                Logger.LogError("Missing validation for job type {JobType} at ValidatePropertiesInner", request.JobType);
                 break;
         }
     }

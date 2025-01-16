@@ -2,6 +2,7 @@
 using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
+using Planar.Service.General;
 using Quartz;
 
 namespace Planar;
@@ -11,6 +12,7 @@ public class WorkflowJobConcurrent(
     ILogger<WorkflowJobConcurrent> logger,
     IJobPropertyDataLayer dataLayer,
     JobMonitorUtil jobMonitorUtil,
-    IValidator<WorkflowJobProperties> validator) : WorkflowJob(logger, dataLayer, jobMonitorUtil, validator)
+    IClusterUtil clusterUtil,
+    IValidator<WorkflowJobProperties> validator) : WorkflowJob(logger, dataLayer, jobMonitorUtil, clusterUtil, validator)
 {
 }

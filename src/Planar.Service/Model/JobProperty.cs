@@ -14,4 +14,8 @@ public partial class JobProperty
     public string JobId { get; set; } = null!;
 
     public string? Properties { get; set; }
+
+    [StringLength(100)]
+    [Unicode(false)]
+    public string JobType { get; set; } = null!;
 }

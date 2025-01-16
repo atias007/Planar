@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Common.Helpers;
+using Planar.Service.General;
 using RestSharp;
 using RestSharp.Authenticators;
 using System.Diagnostics;
@@ -12,7 +13,8 @@ namespace Planar;
 public class RestJob(
     ILogger logger,
     IJobPropertyDataLayer dataLayer,
-    JobMonitorUtil jobMonitorUtil) : BaseCommonJob<RestJobProperties>(logger, dataLayer, jobMonitorUtil)
+    JobMonitorUtil jobMonitorUtil
+    , IClusterUtil clusterUtil) : BaseCommonJob<RestJobProperties>(logger, dataLayer, jobMonitorUtil, clusterUtil)
 {
     public override async Task Execute(Quartz.IJobExecutionContext context)
     {
@@ -31,7 +33,7 @@ public class RestJob(
         }
         finally
         {
-            FinalizeJob(context);
+            await FinalizeJob(context);
         }
     }
 

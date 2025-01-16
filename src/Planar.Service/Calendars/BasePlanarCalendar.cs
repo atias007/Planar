@@ -1,11 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
-using Quartz.Impl.Calendar;
+using Quartz;
 using System;
 using System.Collections.Concurrent;
 
 namespace Planar.Service.Calendars;
 
-public abstract class BasePlanarCalendar : BaseCalendar, ICalendarWithLogger
+public abstract class BasePlanarCalendar : ICalendarWithLogger
 {
     private sealed record LogEntry(LogLevel LogLevel, Exception? Exception, string? Message, params object?[] Args);
 

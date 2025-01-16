@@ -3,6 +3,7 @@ using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
 using Planar.Common.Helpers;
+using Planar.Service.General;
 using Quartz;
 using System.Collections.Concurrent;
 
@@ -12,8 +13,9 @@ public abstract class WorkflowJob(
     ILogger logger,
     IJobPropertyDataLayer dataLayer,
     JobMonitorUtil jobMonitorUtil,
+    IClusterUtil clusterUtil,
     IValidator<WorkflowJobProperties> validator) :
-    BaseCommonJob<WorkflowJobProperties>(logger, dataLayer, jobMonitorUtil),
+    BaseCommonJob<WorkflowJobProperties>(logger, dataLayer, jobMonitorUtil, clusterUtil),
     IWorkflowInstance
 {
     private readonly ConcurrentDictionary<string, ResetEventWrapper> _resetEvents = [];
@@ -42,12 +44,12 @@ public abstract class WorkflowJob(
         {
             SafeInvoke(LogWorkflowSummary);
             SafeInvoke(() => WorkflowManager.UnregisterWorkflow(context.FireInstanceId));
-            FinalizeJob(context);
+            await FinalizeJob(context);
             SafeInvoke(_resetEvents.Clear);
         }
     }
 
-    public void SignalEvent(JobKey stepJobKey, string fireInstanceId, string workflowFireInstanceId, WorkflowJobStepEvent @event)
+    public bool SignalEvent(JobKey stepJobKey, string fireInstanceId, string workflowFireInstanceId, WorkflowJobStepEvent @event)
     {
         var key = ResetEventWrapper.GetKey(stepJobKey, workflowFireInstanceId);
         if (_resetEvents.TryGetValue(key, out var resetWrapper))
@@ -55,7 +57,10 @@ public abstract class WorkflowJob(
             resetWrapper.Event = @event;
             resetWrapper.FireInstanceId = fireInstanceId;
             resetWrapper.ResetEvent.Set();
+            return true;
         }
+
+        return false;
     }
 
     private void LogWorkflowSummary()
@@ -68,7 +73,7 @@ public abstract class WorkflowJob(
         var data = _resetEvents.Values;
         if (data.Count == 0) { return; }
 
-        AppendLog(string.Empty);
+        AppendLog("  ");
         AppendLog(Seperator);
         AppendLog(" workflow steps summary");
         AppendLog(Seperator);

@@ -1,8 +1,7 @@
 ﻿using System;
 
-namespace Planar.Service.Calendars
+namespace Planar.Service.Calendars;
+
+public sealed class PlanarCalendarException(string message) : Exception(message)
 {
-    public sealed class PlanarCalendarException(string message) : Exception(message)
-    {
-    }
 }

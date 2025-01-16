@@ -7,11 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Scripts\Planar_0001 - startup.sql" />
+    <None Remove="Scripts\Planar_0001 - startup - Copy.sql" />
+    <None Remove="Scripts\Planar_0002 - fix job properties.sql" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Scripts\Planar_0001 - startup.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0001 - startup - Copy.sql" />
+    <EmbeddedResource Include="Scripts\Planar_0002 - fix job properties.sql" />
   </ItemGroup>
 
   <ItemGroup>

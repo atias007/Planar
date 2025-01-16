@@ -2,6 +2,7 @@
 using Planar;
 using Planar.Common;
 using Planar.Common.Exceptions;
+using Planar.Service.General;
 using Quartz;
 using System;
 using System.Diagnostics;
@@ -16,7 +17,7 @@ using Timer = System.Timers.Timer;
 namespace CommonJob;
 
 public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
-where TProperties : class, new()
+    where TProperties : class, new()
 {
     protected Process? _process;
     protected bool _processKilled;
@@ -32,7 +33,8 @@ where TProperties : class, new()
     protected BaseProcessJob(
         ILogger logger,
         IJobPropertyDataLayer dataLayer,
-        JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
+        JobMonitorUtil jobMonitorUtil,
+        IClusterUtil clusterUtil) : base(logger, dataLayer, jobMonitorUtil, clusterUtil)
     {
         if (Properties is not IFileJobProperties)
         {
@@ -84,13 +86,13 @@ where TProperties : class, new()
 
     protected void FinalizeProcess()
     {
-        try { _process?.CancelErrorRead(); } catch { DoNothingMethod(); }
-        try { _process?.CancelOutputRead(); } catch { DoNothingMethod(); }
-        try { _process?.Close(); } catch { DoNothingMethod(); }
-        try { _process?.Dispose(); } catch { DoNothingMethod(); }
-        try { if (_process != null) { _process.EnableRaisingEvents = false; } } catch { DoNothingMethod(); }
-        UnsubscribeOutput();
-        try { if (_processMetricsTimer != null) { _processMetricsTimer.Elapsed -= MetricsTimerElapsed; } } catch { DoNothingMethod(); }
+        SafeInvoke(() => _process?.CancelErrorRead());
+        SafeInvoke(() => _process?.CancelOutputRead());
+        SafeInvoke(() => _process?.Close());
+        SafeInvoke(() => _process?.Dispose());
+        SafeInvoke(() => { if (_process != null) { _process.EnableRaisingEvents = false; } });
+        SafeUnsubscribeOutput();
+        SafeInvoke(() => { if (_processMetricsTimer != null) { _processMetricsTimer.Elapsed -= MetricsTimerElapsed; } });
     }
 
     protected virtual ProcessStartInfo GetProcessStartInfo()
@@ -209,12 +211,12 @@ where TProperties : class, new()
         return true;
     }
 
-    protected void UnsubscribeOutput()
+    protected void SafeUnsubscribeOutput()
     {
         if (_process == null) { return; }
         if (!_listenOutput) { return; }
-        try { _process.ErrorDataReceived -= ProcessOutputDataReceived; } catch { DoNothingMethod(); }
-        try { _process.OutputDataReceived -= ProcessOutputDataReceived; } catch { DoNothingMethod(); }
+        SafeInvoke(() => _process.ErrorDataReceived -= ProcessOutputDataReceived);
+        SafeInvoke(() => _process.OutputDataReceived -= ProcessOutputDataReceived);
         _listenOutput = false;
     }
 
@@ -274,25 +276,20 @@ where TProperties : class, new()
         if (process == null) { return; }
         if (process.HasExited) { return; }
 
-        try
+        SafeInvoke(() =>
         {
             lock (Locker)
             {
                 _peakWorkingSet64 = process.PeakWorkingSet64;
             }
-        }
-        catch
-        {
-            DoNothingMethod();
-        }
+        });
 
-        try
+        SafeInvoke(() =>
         {
-            _peakVirtualMemorySize64 = process.PeakVirtualMemorySize64;
-        }
-        catch
-        {
-            DoNothingMethod();
-        }
+            lock (Locker)
+            {
+                _peakVirtualMemorySize64 = process.PeakVirtualMemorySize64;
+            }
+        });
     }
 }

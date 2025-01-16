@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using MimeKit;
 using Planar.Common;
+using Planar.Service.General;
 using Quartz;
 using SqlTableReportJob;
 using System.Data;
@@ -18,7 +19,8 @@ public abstract class SqlTableReportJob(
     ILogger logger,
     IJobPropertyDataLayer dataLayer,
     IGroupDataLayer groupData,
-    JobMonitorUtil jobMonitorUtil) : BaseCommonJob<SqlTableReportJobProperties>(logger, dataLayer, jobMonitorUtil)
+    JobMonitorUtil jobMonitorUtil,
+    IClusterUtil clusterUtil) : BaseCommonJob<SqlTableReportJobProperties>(logger, dataLayer, jobMonitorUtil, clusterUtil)
 {
     private readonly IGroupDataLayer _groupData = groupData;
 
@@ -39,7 +41,7 @@ public abstract class SqlTableReportJob(
         }
         finally
         {
-            FinalizeJob(context);
+            await FinalizeJob(context);
         }
     }
 
@@ -62,8 +64,8 @@ public abstract class SqlTableReportJob(
         }
         finally
         {
-            try { if (connection != null) { await connection.CloseAsync(); } } catch { DoNothingMethod(); }
-            try { if (connection != null) { await connection.DisposeAsync(); } } catch { DoNothingMethod(); }
+            await SafeInvoke(async () => { if (connection != null) { await connection.CloseAsync(); } });
+            await SafeInvoke(async () => { if (connection != null) { await connection.DisposeAsync(); } });
         }
     }
 

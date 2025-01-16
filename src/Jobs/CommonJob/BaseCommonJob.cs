@@ -3,6 +3,7 @@ using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
+using Planar.Service.General;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -16,16 +17,15 @@ namespace CommonJob;
 
 public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logger) : IDisposable
 {
-    private bool _disposed;
-    private JobLogBroker _messageBroker = null!;
-    private CancellationTokenSource? _durationTokenSource;
-    protected CancellationTokenSource? _executionTokenSource;
     protected readonly string Seperator = string.Empty.PadLeft(40, '-');
-
+    protected CancellationTokenSource? _executionTokenSource;
+    private bool _disposed;
+    private CancellationTokenSource? _durationTokenSource;
+    private JobLogBroker _messageBroker = null!;
+    protected JobFinishStatus FinishStatus { get; set; } = JobFinishStatus.Unknown;
     protected JobLogBroker MessageBroker => _messageBroker;
     protected IMonitorUtil MonitorUtil => jobMonitorUtil.MonitorUtil;
     protected IDictionary<string, string?> Settings { get; private set; } = new Dictionary<string, string?>();
-    protected JobFinishStatus FinishStatus { get; set; } = JobFinishStatus.Unknown;
 
     public void Dispose()
     {
@@ -67,14 +67,18 @@ public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logge
         }
     }
 
-    protected static void DoNothingMethod()
+    protected virtual void Dispose(bool disposing)
     {
-        //// *** Do Nothing Method *** ////
-    }
-
-    protected void HandleSuccess()
-    {
-        FinishStatus = JobFinishStatus.Failure;
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                _durationTokenSource?.Dispose();
+                _executionTokenSource?.Dispose();
+                _messageBroker?.Dispose();
+            }
+            _disposed = true;
+        }
     }
 
     protected void HandleException(IJobExecutionContext context, Exception ex)
@@ -92,18 +96,9 @@ public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logge
         }
     }
 
-    protected virtual void Dispose(bool disposing)
+    protected void HandleSuccess()
     {
-        if (!_disposed)
-        {
-            if (disposing)
-            {
-                _durationTokenSource?.Dispose();
-                _executionTokenSource?.Dispose();
-                _messageBroker?.Dispose();
-            }
-            _disposed = true;
-        }
+        FinishStatus = JobFinishStatus.Failure;
     }
 
     protected void SafeScan(MonitorEvents @event, IJobExecutionContext context)
@@ -175,6 +170,11 @@ public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logge
         }
     }
 
+    private static void DoNothingMethod()
+    {
+        //// *** Do Nothing Method *** ////
+    }
+
     private static string FormatTimeSpan(TimeSpan timeSpan)
     {
         if (timeSpan.TotalSeconds < 1) { return $"{timeSpan.TotalMilliseconds:N0}ms"; }
@@ -186,17 +186,18 @@ public abstract class BaseCommonJob(JobMonitorUtil jobMonitorUtil, ILogger logge
 public abstract class BaseCommonJob<TProperties>(
     ILogger logger,
     IJobPropertyDataLayer dataLayer,
-    JobMonitorUtil jobMonitorUtil) : BaseCommonJob(jobMonitorUtil, logger), IJob
-    where TProperties : class, new()
+    JobMonitorUtil jobMonitorUtil,
+    IClusterUtil clusterUtil) : BaseCommonJob(jobMonitorUtil, logger), IJob
+where TProperties : class, new()
 {
     protected readonly ILogger _logger = logger;
-    protected CancellationToken ExecutionCancellationToken => _executionTokenSource?.Token ?? default;
     public string FireInstanceId { get; private set; } = string.Empty;
     public TProperties Properties { get; private set; } = new();
+    protected CancellationToken ExecutionCancellationToken => _executionTokenSource?.Token ?? default;
 
     public abstract Task Execute(IJobExecutionContext context);
 
-    protected void FinalizeJob(IJobExecutionContext context)
+    protected async Task FinalizeJob(IJobExecutionContext context)
     {
         try
         {
@@ -220,7 +221,7 @@ public abstract class BaseCommonJob<TProperties>(
             _logger.LogError(ex, "fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
         }
 
-        SafeHandleWorkflow(context, metadata);
+        await SafeHandleWorkflow(context, metadata);
     }
 
     protected async Task Initialize(IJobExecutionContext context)
@@ -248,30 +249,6 @@ public abstract class BaseCommonJob<TProperties>(
         SafeLogWorkflow(context);
     }
 
-    private void SafeLogWorkflow(IJobExecutionContext context)
-    {
-        try
-        {
-            var instanceId = JobHelper.GetWorkflowInstanceId(context.MergedJobDataMap);
-            if (string.IsNullOrWhiteSpace(instanceId)) { return; }
-
-            var triggerId = JobHelper.GetWorkflowTriggerId(context.MergedJobDataMap);
-            var jobKey = JobHelper.GetWorkflowJobKey(context.MergedJobDataMap);
-            MessageBroker.AppendLog(LogLevel.Information, Seperator);
-            MessageBroker.AppendLog(LogLevel.Information, $"job was triggered by workflow");
-            MessageBroker.AppendLog(LogLevel.Information, Seperator);
-            MessageBroker.AppendLog(LogLevel.Information, $" key: {jobKey}");
-            MessageBroker.AppendLog(LogLevel.Information, $" trigger: {triggerId}");
-            MessageBroker.AppendLog(LogLevel.Information, $" fire instance id: {instanceId}");
-            MessageBroker.AppendLog(LogLevel.Information, Seperator);
-        }
-        catch (Exception ex)
-        {
-            var source = nameof(SafeLogWorkflow);
-            _logger.LogError(ex, "fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
-        }
-    }
-
     protected IDictionary<string, string?> LoadJobSettings(string? path)
     {
         try
@@ -297,7 +274,7 @@ public abstract class BaseCommonJob<TProperties>(
         }
     }
 
-    private void SafeHandleWorkflow(IJobExecutionContext context, JobExecutionMetadata? metadata)
+    protected private async Task SafeHandleWorkflow(IJobExecutionContext context, JobExecutionMetadata? metadata)
     {
         if (metadata == null) { return; }
 
@@ -308,16 +285,51 @@ public abstract class BaseCommonJob<TProperties>(
             var exception = metadata.UnhandleException;
             if (exception == null)
             {
-                WorkflowManager.SignalEvent(context.JobDetail.Key, context.FireInstanceId, workflowInstanceId, WorkflowJobStepEvent.Success);
+                await SignalWorkflowEvent(context, workflowInstanceId, WorkflowJobStepEvent.Success);
             }
             else
             {
-                WorkflowManager.SignalEvent(context.JobDetail.Key, context.FireInstanceId, workflowInstanceId, WorkflowJobStepEvent.Fail);
+                await SignalWorkflowEvent(context, workflowInstanceId, WorkflowJobStepEvent.Fail);
             }
         }
         catch (Exception ex)
         {
             var source = nameof(SafeHandleWorkflow);
+            _logger.LogError(ex, "fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+        }
+    }
+
+    private async Task SignalWorkflowEvent(IJobExecutionContext context, string workflowInstanceId, WorkflowJobStepEvent @event)
+    {
+        var success = WorkflowManager.SignalEvent(context.JobDetail.Key, context.FireInstanceId, workflowInstanceId, @event);
+        if (success) { return; }
+
+        if (AppSettings.Cluster.Clustering)
+        {
+            await clusterUtil.WorkflowSignalEvent(context.JobDetail.Key, context.FireInstanceId, workflowInstanceId, (int)@event);
+        }
+    }
+
+    private void SafeLogWorkflow(IJobExecutionContext context)
+    {
+        try
+        {
+            var instanceId = JobHelper.GetWorkflowInstanceId(context.MergedJobDataMap);
+            if (string.IsNullOrWhiteSpace(instanceId)) { return; }
+
+            var triggerId = JobHelper.GetWorkflowTriggerId(context.MergedJobDataMap);
+            var jobKey = JobHelper.GetWorkflowJobKey(context.MergedJobDataMap);
+            MessageBroker.AppendLog(LogLevel.Information, Seperator);
+            MessageBroker.AppendLog(LogLevel.Information, $"job was triggered by workflow");
+            MessageBroker.AppendLog(LogLevel.Information, Seperator);
+            MessageBroker.AppendLog(LogLevel.Information, $" key: {jobKey}");
+            MessageBroker.AppendLog(LogLevel.Information, $" trigger: {triggerId}");
+            MessageBroker.AppendLog(LogLevel.Information, $" fire instance id: {instanceId}");
+            MessageBroker.AppendLog(LogLevel.Information, Seperator);
+        }
+        catch (Exception ex)
+        {
+            var source = nameof(SafeLogWorkflow);
             _logger.LogError(ex, "fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
         }
     }
