@@ -18,6 +18,7 @@
         public const string AuthenticationModeVariableKey = "PLANAR_AUTHENTICATION_MODE";
         public const string AuthenticationSecretVariableKey = "PLANAR_AUTHENTICATION_SECRET";
         public const string AuthenticationTokenExpireVariableKey = "PLANAR_AUTHENTICATION_TOKEN_EXPIRE";
+        public const string AuthenticationApiSecurityHeadersVariableKey = "PLANAR_AUTHENTICATION_API_SECURITY_HEADERS";
         public const string SchedulerStartupDelayVariableKey = "PLANAR_SCHEDULER_DELAY";
         public const string RunDatabaseMigrationVariableKey = "PLANAR_RUN_DB_MIGRATION";
         public const string ConcurrencyRateLimitingVariableKey = "PLANAR_CONCURRENCY_RATE_LIMITING";

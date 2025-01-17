@@ -41,6 +41,7 @@ authentication:
   mode: all anonymous                  # options: all anonymous | view anonymous | authenticate */ /* set this value to ViewAnonymous or Authenticate in production environment
   secret: ecawiasqrpqrgyhwnolrudpbsrwaynbqdayndnmcehjnwqyouikpodzaqxivwkconwqbhrmxfgccbxbyljguwlxhdlcvxlutbnwjlgpfhjgqbegtbxbvwnacyqnltrby     # 65 to 256 charecters secret to encrypt and decrypt jwt tokens
   token expire: 00:20:00               # the expiration time of token generated at login service. default is 20 minutes. minimum value 1 minute
+  api security headers: false          # adding security headers to the api endpoints. set this value to true in production environment
 
 monitor:
   max alerts per monitor: 10           # the maximum alert per monitor item and per job per period. default is 10. minimum value 1

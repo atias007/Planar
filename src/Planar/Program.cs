@@ -23,7 +23,7 @@ namespace Planar
             WebApplicationInitializer.Configure(app);
             ContentInitializer.MapContent(app);
             SerilogInitializer.ConfigureSelfLog();
-            app.Run();
+            await app.RunAsync();
         }
     }
 }

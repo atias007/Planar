@@ -15,6 +15,8 @@ namespace Planar.Common
 
         public TimeSpan TokenExpire { get; set; }
 
+        public bool ApiSecurityHeaders { get; set; }
+
         [YamlIgnore]
         public SymmetricSecurityKey Key { get; set; } = null!;
 

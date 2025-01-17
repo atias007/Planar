@@ -73,6 +73,11 @@ namespace Planar.Startup
         {
             //// app.UseHttpLogging();
 
+            if (AppSettings.Authentication.ApiSecurityHeaders)
+            {
+                app.UseSecurityHeaders();
+            }
+
             if (AppSettings.General.DeveloperExceptionPage && !app.Environment.IsProduction())
             {
                 app.UseDeveloperExceptionPage();
