@@ -2,7 +2,6 @@
 using CloudNative.CloudEvents.NewtonsoftJson;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using MQTTnet;
 using MQTTnet.Server;
 using System;
 using System.Collections.Concurrent;
@@ -77,7 +76,7 @@ public sealed class MqttBrokerService(ILogger<MqttBrokerService> logger) : IHost
                     .WithTcpKeepAliveRetryCount(3)
                     .Build();
 
-            _mqttServer = new MqttFactory().CreateMqttServer(options);
+            _mqttServer = new MqttServerFactory().CreateMqttServer(options);
             _mqttServer.ClientConnectedAsync += ClientConnected;
             _mqttServer.InterceptingPublishAsync += InterceptingPublish;
             _mqttServer.StartedAsync += StartedAsync;
@@ -128,7 +127,7 @@ public sealed class MqttBrokerService(ILogger<MqttBrokerService> logger) : IHost
     private async Task ClientConnected(ClientConnectedEventArgs arg)
     {
         SafeHandle(() =>
-        logger.LogDebug("New MQTT connection: ClientId = {ClientId}, Endpoint = {Cndpoint}", arg.ClientId, arg.Endpoint));
+        logger.LogDebug("New MQTT connection: ClientId = {ClientId}, Endpoint = {RemoteEndPoint}", arg.ClientId, arg.RemoteEndPoint.ToString()));
 
         await Task.CompletedTask;
     }

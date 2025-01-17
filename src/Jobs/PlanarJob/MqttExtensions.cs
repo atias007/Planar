@@ -2,6 +2,7 @@
 using CloudNative.CloudEvents.Core;
 using MQTTnet;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -33,7 +34,7 @@ namespace Planar
             CheckNotNull(formatter, nameof(formatter));
             CheckNotNull(message, nameof(message));
 
-            return formatter.DecodeStructuredModeMessage(message.PayloadSegment, contentType: null, extensionAttributes);
+            return formatter.DecodeStructuredModeMessage(message.Payload.ToArray(), contentType: null, extensionAttributes);
         }
 
         /// <summary>

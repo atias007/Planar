@@ -65,26 +65,39 @@ public abstract class WorkflowJob(
 
     private void LogWorkflowSummary()
     {
-        void AppendLog(string message)
+        void AppendInfoLog(string message)
         {
             MessageBroker.AppendLog(LogLevel.Information, message);
+        }
+
+        void AppendWarnLog(string message)
+        {
+            MessageBroker.AppendLog(LogLevel.Warning, message);
         }
 
         var data = _resetEvents.Values;
         if (data.Count == 0) { return; }
 
-        AppendLog("  ");
-        AppendLog(Seperator);
-        AppendLog(" workflow steps summary");
-        AppendLog(Seperator);
-        AppendLog("[job key] --> [fire instance id] --> [status]");
-        AppendLog(string.Empty);
+        AppendInfoLog("  ");
+        AppendInfoLog(Seperator);
+        AppendInfoLog(" workflow steps summary");
+        AppendInfoLog(Seperator);
+        AppendInfoLog("[job key] --> [fire instance id] --> [status]");
+        AppendInfoLog(string.Empty);
         foreach (var wrapper in data)
         {
-            AppendLog($"{wrapper.JobKey} --> {wrapper.FireInstanceId} --> {wrapper.DisplayStatus}");
+            var text = $"{wrapper.JobKey} --> {wrapper.FireInstanceId} --> {wrapper.DisplayStatus}";
+            if (wrapper.Event == WorkflowJobStepEvent.Fail)
+            {
+                AppendWarnLog(text);
+            }
+            else
+            {
+                AppendInfoLog(text);
+            }
         }
 
-        AppendLog(Seperator);
+        AppendInfoLog(Seperator);
     }
 
     private static JobDataMap GetJobDataMap(IJobExecutionContext context, WorkflowJobStep step)
@@ -158,7 +171,8 @@ public abstract class WorkflowJob(
 
         // run steps
         var nextSteps = new ConcurrentBag<WorkflowJobStep>();
-        await Parallel.ForEachAsync(_resetEvents.Values, cancellationToken, async (wrapper, cancellationToken) =>
+        using var likedToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        await Parallel.ForEachAsync(_resetEvents.Values, likedToken.Token, async (wrapper, cancellationToken) =>
         {
             // prepare
             var timeout = wrapper.Timeout ?? AppSettings.General.JobAutoStopSpan;
@@ -174,7 +188,8 @@ public abstract class WorkflowJob(
             // handle step timeout
             if (!result)
             {
-                // TODO: stop parallel loop and throw exception
+                await likedToken.CancelAsync();
+                return;
             }
 
             // check for cancellation token
@@ -205,7 +220,15 @@ public abstract class WorkflowJob(
         });
 
         // execute next steps
-        if (cancellationToken.IsCancellationRequested) { return; }
+        if (cancellationToken.IsCancellationRequested)
+        {
+            foreach (var item in _resetEvents)
+            {
+                if (item.Value.Status == StepStatus.Start) { item.Value.SetStatus(StepStatus.Interrupted); }
+            }
+
+            return;
+        }
         _recursiveLevel++;
         await ExecuteSteps(context, nextSteps, cancellationToken);
     }
