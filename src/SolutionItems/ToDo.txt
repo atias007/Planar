@@ -21,7 +21,6 @@ PLAN FOR V 1.7.9
 - add SSIS job
 - add SSRS job
 
-- api security headers
 - cli trigger describe
 - cli: job apply (do add or update)
 - search in history by free text from log
@@ -378,3 +377,4 @@ V 1.7.9
 -------
 >> ** Add WorkflowJob **
 - BUG: when you pause job with calendar. after restart the job resume. it should stay paused
+- api security headers
