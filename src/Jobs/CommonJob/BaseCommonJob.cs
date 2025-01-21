@@ -190,6 +190,8 @@ public abstract class BaseCommonJob<TProperties>(
     IClusterUtil clusterUtil) : BaseCommonJob(jobMonitorUtil, logger), IJob
 where TProperties : class, new()
 {
+    private const string errorMessage = "fail at {Source} with job {Group}.{Name}";
+
     protected readonly ILogger _logger = logger;
     public string FireInstanceId { get; private set; } = string.Empty;
     public TProperties Properties { get; private set; } = new();
@@ -206,7 +208,7 @@ where TProperties : class, new()
         catch (Exception ex)
         {
             var source = nameof(FinalizeJob);
-            _logger.LogError(ex, "fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+            _logger.LogError(ex, errorMessage, source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
         }
 
         JobExecutionMetadata? metadata = null;
@@ -218,7 +220,7 @@ where TProperties : class, new()
         catch (Exception ex)
         {
             var source = nameof(FinalizeJob);
-            _logger.LogError(ex, "fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+            _logger.LogError(ex, errorMessage, source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
         }
 
         await SafeHandleWorkflow(context, metadata);
@@ -295,7 +297,7 @@ where TProperties : class, new()
         catch (Exception ex)
         {
             var source = nameof(SafeHandleWorkflow);
-            _logger.LogError(ex, "fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+            _logger.LogError(ex, errorMessage, source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
         }
     }
 
@@ -330,7 +332,7 @@ where TProperties : class, new()
         catch (Exception ex)
         {
             var source = nameof(SafeLogWorkflow);
-            _logger.LogError(ex, "fail at {Source} with job {Group}.{Name}", source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
+            _logger.LogError(ex, errorMessage, source, context.JobDetail.Key.Group, context.JobDetail.Key.Name);
         }
     }
 
