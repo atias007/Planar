@@ -172,7 +172,7 @@ internal partial class Job : BaseCheckJob
             return;
         }
 
-        throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{endpoint.Url}' status code {response.StatusCode} ({(int)response.StatusCode}) is not in success status codes list");
+        throw new CheckException($"health check fail for endpoint name '{endpoint.Name}' with url '{uri}' status code {response.StatusCode} ({(int)response.StatusCode}) is not in success status codes list");
     }
 
     private static void ValidateEndpoint(Endpoint endpoint)

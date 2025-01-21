@@ -90,11 +90,13 @@ internal class RabbitMqProxy
         const string baseResource = "api/health/checks";
         var request = new RestRequest($"{baseResource}/{resource}", Method.Get);
         var response = await _restClient.ExecuteAsync(request);
+        var uri = _restClient.BuildUri(request);
+
         if (!response.IsSuccessful)
         {
-            throw new CheckException($"{name} check on url {baseResource} failed. status code {response.StatusCode}", response.ErrorException);
+            throw new CheckException($"{name} check on url '{uri}' failed. status code {response.StatusCode}", response.ErrorException);
         }
 
-        logger.LogInformation("health-check ({Name}) on host {Host} succeeded", name, _restClient.BuildUri(request));
+        logger.LogInformation("health-check ({Name}) on host {Host} succeeded", name, uri);
     }
 }
