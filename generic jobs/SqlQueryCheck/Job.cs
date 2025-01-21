@@ -97,7 +97,7 @@ internal partial class Job : BaseCheckJob
         }
     }
 
-    private static string Replace(string message, IDataReader reader)
+    private static string Replace(string message, SqlDataReader reader)
     {
         var regex = Placeholder();
         var matches = regex.Matches(message);
