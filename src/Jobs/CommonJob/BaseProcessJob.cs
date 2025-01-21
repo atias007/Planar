@@ -2,6 +2,7 @@
 using Planar;
 using Planar.Common;
 using Planar.Common.Exceptions;
+using Planar.Service.General;
 using Quartz;
 using System;
 using System.Diagnostics;
@@ -16,11 +17,10 @@ using Timer = System.Timers.Timer;
 namespace CommonJob;
 
 public abstract class BaseProcessJob<TProperties> : BaseCommonJob<TProperties>
-where TProperties : class, new()
+    where TProperties : class, new()
 {
     protected Process? _process;
     protected bool _processKilled;
-    protected readonly string Seperator = string.Empty.PadLeft(40, '-');
     private readonly StringBuilder _output = new();
     private readonly Timer _processMetricsTimer = new(1000);
     private readonly object Locker = new();
@@ -33,7 +33,8 @@ where TProperties : class, new()
     protected BaseProcessJob(
         ILogger logger,
         IJobPropertyDataLayer dataLayer,
-        JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
+        JobMonitorUtil jobMonitorUtil,
+        IClusterUtil clusterUtil) : base(logger, dataLayer, jobMonitorUtil, clusterUtil)
     {
         if (Properties is not IFileJobProperties)
         {
@@ -85,13 +86,13 @@ where TProperties : class, new()
 
     protected void FinalizeProcess()
     {
-        try { _process?.CancelErrorRead(); } catch { DoNothingMethod(); }
-        try { _process?.CancelOutputRead(); } catch { DoNothingMethod(); }
-        try { _process?.Close(); } catch { DoNothingMethod(); }
-        try { _process?.Dispose(); } catch { DoNothingMethod(); }
-        try { if (_process != null) { _process.EnableRaisingEvents = false; } } catch { DoNothingMethod(); }
-        UnsubscribeOutput();
-        try { if (_processMetricsTimer != null) { _processMetricsTimer.Elapsed -= MetricsTimerElapsed; } } catch { DoNothingMethod(); }
+        SafeInvoke(() => _process?.CancelErrorRead());
+        SafeInvoke(() => _process?.CancelOutputRead());
+        SafeInvoke(() => _process?.Close());
+        SafeInvoke(() => _process?.Dispose());
+        SafeInvoke(() => { if (_process != null) { _process.EnableRaisingEvents = false; } });
+        SafeUnsubscribeOutput();
+        SafeInvoke(() => { if (_processMetricsTimer != null) { _processMetricsTimer.Elapsed -= MetricsTimerElapsed; } });
     }
 
     protected virtual ProcessStartInfo GetProcessStartInfo()
@@ -147,17 +148,17 @@ where TProperties : class, new()
         if (!_process.HasExited) { return; }
 
         MessageBroker.AppendLog(LogLevel.Information, Seperator);
-        MessageBroker.AppendLog(LogLevel.Information, " Process information:");
+        MessageBroker.AppendLog(LogLevel.Information, " process information:");
         MessageBroker.AppendLog(LogLevel.Information, Seperator);
-        MessageBroker.AppendLog(LogLevel.Information, $"Exit Code: {_process.ExitCode}");
-        MessageBroker.AppendLog(LogLevel.Information, $"Peak Working Set Memory: {FormatBytes(_peakWorkingSet64)}");
-        MessageBroker.AppendLog(LogLevel.Information, $"Peak Virtual Memory: {FormatBytes(_peakVirtualMemorySize64)}");
+        MessageBroker.AppendLog(LogLevel.Information, $"exit Code: {_process.ExitCode}");
+        MessageBroker.AppendLog(LogLevel.Information, $"peak Working Set Memory: {FormatBytes(_peakWorkingSet64)}");
+        MessageBroker.AppendLog(LogLevel.Information, $"peak Virtual Memory: {FormatBytes(_peakVirtualMemorySize64)}");
 
         var username = string.IsNullOrWhiteSpace(FileProperties.UserName) ?
             GetUsername(Environment.UserDomainName, Environment.UserName) :
             GetUsername(FileProperties.Domain, FileProperties.UserName);
 
-        MessageBroker.AppendLog(LogLevel.Information, $"Username: {username}");
+        MessageBroker.AppendLog(LogLevel.Information, $"username: {username}");
         MessageBroker.AppendLog(LogLevel.Information, Seperator);
         Thread.Sleep(500);
     }
@@ -203,19 +204,19 @@ where TProperties : class, new()
         _process.WaitForExit(Convert.ToInt32(timeout.TotalMilliseconds));
         if (!_process.HasExited)
         {
-            MessageBroker.AppendLog(LogLevel.Error, $"Process timeout expire. Timeout was {timeout:hh\\:mm\\:ss}");
+            MessageBroker.AppendLog(LogLevel.Error, $"process timeout expire. Timeout was {timeout:hh\\:mm\\:ss}");
             return false;
         }
 
         return true;
     }
 
-    protected void UnsubscribeOutput()
+    protected void SafeUnsubscribeOutput()
     {
         if (_process == null) { return; }
         if (!_listenOutput) { return; }
-        try { _process.ErrorDataReceived -= ProcessOutputDataReceived; } catch { DoNothingMethod(); }
-        try { _process.OutputDataReceived -= ProcessOutputDataReceived; } catch { DoNothingMethod(); }
+        SafeInvoke(() => _process.ErrorDataReceived -= ProcessOutputDataReceived);
+        SafeInvoke(() => _process.OutputDataReceived -= ProcessOutputDataReceived);
         _listenOutput = false;
     }
 
@@ -234,7 +235,7 @@ where TProperties : class, new()
         {
             var source = nameof(ValidateProcessJob);
             _logger.LogError(ex, "fail at {Source}. Message: {Message}", source, ex.Message);
-            MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
+            MessageBroker.AppendLog(LogLevel.Error, $"fail at {source}. {ex.Message}");
             throw new CommonJobException($"fail at {source}", ex);
         }
     }
@@ -248,14 +249,14 @@ where TProperties : class, new()
 
         try
         {
-            MessageBroker.AppendLog(LogLevel.Warning, $"Process was stopped. Reason: {reason}");
+            MessageBroker.AppendLog(LogLevel.Warning, $"process was stopped. Reason: {reason}");
             _processKilled = true;
             _process.Kill(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "fail to kill process job {Filename}", _process.StartInfo.FileName);
-            MessageBroker.AppendLog(LogLevel.Error, $"Fail to kill process job {_process.StartInfo.FileName}. {ex.Message}");
+            MessageBroker.AppendLog(LogLevel.Error, $"fail to kill process job {_process.StartInfo.FileName}. {ex.Message}");
         }
     }
 
@@ -275,25 +276,20 @@ where TProperties : class, new()
         if (process == null) { return; }
         if (process.HasExited) { return; }
 
-        try
+        SafeInvoke(() =>
         {
             lock (Locker)
             {
                 _peakWorkingSet64 = process.PeakWorkingSet64;
             }
-        }
-        catch
-        {
-            DoNothingMethod();
-        }
+        });
 
-        try
+        SafeInvoke(() =>
         {
-            _peakVirtualMemorySize64 = process.PeakVirtualMemorySize64;
-        }
-        catch
-        {
-            DoNothingMethod();
-        }
+            lock (Locker)
+            {
+                _peakVirtualMemorySize64 = process.PeakVirtualMemorySize64;
+            }
+        });
     }
 }

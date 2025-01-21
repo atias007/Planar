@@ -9,8 +9,8 @@ log retention days: null              # How many days the running logs will reta
 
 job data:                             # Key/Value pairs used by job code
   key1: value1                        # --------------------------------
-  key2: value2                        # [1 to 100 characters]
-  key3: value3                        # [up to 1000 characters]
+  key2: value2                        # key --> [1 to 100 characters]
+  key3: value3                        # value --> [up to 1000 characters]
 
 properties:                           # Job Properties
   filename: HelloWorld.exe            # Name of assembly file [mandatory, up to 500 characters]
@@ -38,8 +38,8 @@ simple triggers:                      # List of simple triggers
     max retries: 3                    # The maximum amount of retries. Default is 3 [1 to 100]
     trigger data:                     # Key/Value pairs used by job code (merged with job data)
       key4: value4                    # -------------------------------------------------------
-      key5: value5                    # [1 to 100 characters]
-      key6: value6                    # [up to 1000 characters]
+      key5: value5                    # key --> [1 to 100 characters]
+      key6: value6                    # value --> [up to 1000 characters]
 
 cron triggers:                               # List of cron triggers
   - name: some-cron-trigger                  # Name of trigger [mandatory, only alphanumeric, dashes & underscore, 5 to 50 characters]
@@ -52,5 +52,5 @@ cron triggers:                               # List of cron triggers
     max retries: 3                           # The maximum amount of retries. Default is 3 [1 to 100]
     trigger data:                            # Key/Value pairs used by job code (merged with job data)
       key7: value7                           # -------------------------------------------------------
-      key8: value8                           # [1 to 100 characters]
-      key9: value9                           # [up to 1000 characters]
+      key8: value8                           # key --> [1 to 100 characters]
+      key9: value9                           # value --> [up to 1000 characters]

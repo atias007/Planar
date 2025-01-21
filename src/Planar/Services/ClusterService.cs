@@ -1,3 +1,4 @@
+using CommonJob;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,6 +25,16 @@ internal partial class ClusterService(IServiceScopeFactory serviceScopeFactory) 
         var configDomain = scope.ServiceProvider.GetService<ConfigDomain>();
         await configDomain.FlushInner();
         return await Task.FromResult(new Empty());
+    }
+
+    // NEED CHECK
+    public override async Task<WorkflowSignalEventResponse> WorkflowSignalEvent(WorkflowSignalEventRequest request, ServerCallContext context)
+    {
+        var jobKey = new JobKey(request.JobName, request.JobGroup);
+        var @event = (WorkflowJobStepEvent)request.WorkflowJobStepEvent;
+        var result = WorkflowManager.SignalEvent(jobKey, request.FireInstanceId, request.WorkflowFireInstanceId, @event);
+        var response = new WorkflowSignalEventResponse { Result = result };
+        return await Task.FromResult(response);
     }
 
     // OK
@@ -193,6 +204,7 @@ internal partial class ClusterService(IServiceScopeFactory serviceScopeFactory) 
         }
     }
 
+    // OK
     public override async Task<IsJobAssestsExistReply> IsJobFolderExist(IsJobAssestsExistRequest request, ServerCallContext context)
     {
         var result = new IsJobAssestsExistReply
@@ -204,6 +216,7 @@ internal partial class ClusterService(IServiceScopeFactory serviceScopeFactory) 
         return await Task.FromResult(result);
     }
 
+    // OK
     public override async Task<IsJobAssestsExistReply> IsJobFileExist(IsJobAssestsExistRequest request, ServerCallContext context)
     {
         var result = new IsJobAssestsExistReply

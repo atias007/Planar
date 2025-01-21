@@ -48,17 +48,14 @@ public static class QuartzServiceConfiguration
             q.AddTriggerListener<RetryTriggerListener>();
             q.AddSchedulerListener<SchedulerListener>();
 
-            q.AddCalendar<IsraelCalendar>(IsraelCalendar.Name, replace: true, updateTriggers: true, a => { });
-            q.AddCalendar<DefaultCalendar>(DefaultCalendar.Name, replace: true, updateTriggers: true, a => { });
+            q.AddCalendar(IsraelCalendar.Name, new IsraelCalendar(), replace: true, updateTriggers: false);
+            q.AddCalendar(DefaultCalendar.Name, new DefaultCalendar(), replace: true, updateTriggers: false);
             foreach (var item in CalendarInfo.Items)
             {
                 if (string.Equals(item.Key, IsraelCalendar.Name, StringComparison.OrdinalIgnoreCase)) { continue; }
                 if (string.Equals(item.Key, DefaultCalendar.Name, StringComparison.OrdinalIgnoreCase)) { continue; }
-                q.AddCalendar<GlobalCalendar>(item.Key, replace: true, updateTriggers: true, calendar =>
-                {
-                    calendar.Name = item.Key;
-                    calendar.Key = item.Value;
-                });
+                var cal = new GlobalCalendar { Name = item.Key, Key = item.Value };
+                q.AddCalendar(item.Key, cal, replace: true, updateTriggers: false);
             }
 
             q.UsePersistentStore(x =>

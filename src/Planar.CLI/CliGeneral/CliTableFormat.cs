@@ -355,6 +355,10 @@ public static class CliTableFormat
         {
             return $"[invert]{triggerId.EscapeMarkup()}[/]";
         }
+        else if (triggerId == Consts.WorkflowTriggerId)
+        {
+            return $"[black on lightskyblue3_1]{triggerId.EscapeMarkup()}[/]";
+        }
         else
         {
             return triggerId.EscapeMarkup();

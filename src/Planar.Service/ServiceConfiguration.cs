@@ -40,10 +40,11 @@ namespace Planar.Service
             services.AddScoped<MetricsDomain>();
 
             // Utils
-            services.AddScoped<ClusterUtil>();
-            services.AddScoped<MonitorUtil>();
-            services.AddScoped<IMonitorUtil>(p => p.GetRequiredService<MonitorUtil>());
-            services.AddScoped<JobMonitorUtil>();
+            services.AddSingleton<ClusterUtil>();
+            services.AddSingleton<IClusterUtil>(p => p.GetRequiredService<ClusterUtil>());
+            services.AddSingleton<MonitorUtil>();
+            services.AddSingleton<IMonitorUtil>(p => p.GetRequiredService<MonitorUtil>());
+            services.AddSingleton<JobMonitorUtil>();
 
             // AutoMapper
             services.AddAutoMapper(Assembly.Load($"{nameof(Planar)}.{nameof(Service)}"));
@@ -106,20 +107,20 @@ namespace Planar.Service
             return services;
         }
 
-        internal static IServiceCollection AddPlanarMonitorServices(this IServiceCollection services)
-        {
-            services.AddPlanarDbContext();
-            services.AddPlanarMonitorDataLayers();
+        ////internal static IServiceCollection AddPlanarMonitorServices(this IServiceCollection services)
+        ////{
+        ////    services.AddPlanarDbContext();
+        ////    services.AddPlanarMonitorDataLayers();
 
-            // Scheduler
-            services.AddSingleton(p => p.GetRequiredService<ISchedulerFactory>().GetScheduler().Result);
-            services.AddSingleton<SchedulerUtil>();
-            services.AddSingleton<JobKeyHelper>();
+        ////    // Scheduler
+        ////    services.AddSingleton(p => p.GetRequiredService<ISchedulerFactory>().GetScheduler().Result);
+        ////    services.AddSingleton<SchedulerUtil>();
+        ////    services.AddSingleton<JobKeyHelper>();
 
-            // Utils
-            services.AddScoped<ClusterUtil>();
-            services.AddScoped<MonitorUtil>();
-            return services;
-        }
+        ////    // Utils
+        ////    services.AddScoped<ClusterUtil>();
+        ////    services.AddScoped<MonitorUtil>();
+        ////    return services;
+        ////}
     }
 }

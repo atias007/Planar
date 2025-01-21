@@ -1,11 +1,14 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Planar.Common;
+using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
 using Planar.Service.API.Helpers;
 using Planar.Service.Audit;
 using Planar.Service.Data;
 using Planar.Service.Exceptions;
+using Polly;
 using Quartz;
 using System;
 using System.Collections.Generic;
@@ -14,6 +17,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Transactions;
+using static Quartz.Logging.OperationName;
 
 namespace Planar.Service.API;
 
@@ -105,6 +109,33 @@ public class BaseJobBL<TDomain, TData>(IServiceProvider serviceProvider) : BaseL
         if (JobKeyHelper.IsSystemJobKey(jobKey))
         {
             throw new RestValidationException("key", "forbidden: this is system job and it should not be modified");
+        }
+    }
+
+    protected async Task ValidateWorkflowStepJob(JobKey jobKey)
+    {
+        var dal = Resolve<IJobData>();
+        var type = typeof(WorkflowJob);
+        ArgumentNullException.ThrowIfNull(type);
+        var typeName = General.SchedulerUtil.GetJobTypeName(type);
+        var properties = await dal.GetAllProperties(typeName);
+        foreach (var prop in properties)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(prop.Properties)) { continue; }
+
+                var entity = YmlUtil.Deserialize<WorkflowJobProperties>(prop.Properties);
+                if (entity.Steps.Any(s => s.Key == jobKey.ToString()))
+                {
+                    var workflowKey = await JobKeyHelper.GetJobKeyById(prop.JobId);
+                    throw new RestValidationException("key", $"job '{jobKey}' is part of workflow job '{workflowKey}' and can not be deleted");
+                }
+            }
+            catch (Exception ex) when (ex is not RestValidationException)
+            {
+                Logger.LogError("Fail to ValidateWorkflowStepJob");
+            }
         }
     }
 

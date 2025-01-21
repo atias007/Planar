@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
 using MimeKit;
 using Planar.Common;
+using Planar.Service.General;
 using Quartz;
 using SqlTableReportJob;
 using System.Data;
@@ -18,7 +19,8 @@ public abstract class SqlTableReportJob(
     ILogger logger,
     IJobPropertyDataLayer dataLayer,
     IGroupDataLayer groupData,
-    JobMonitorUtil jobMonitorUtil) : BaseCommonJob<SqlTableReportJobProperties>(logger, dataLayer, jobMonitorUtil)
+    JobMonitorUtil jobMonitorUtil,
+    IClusterUtil clusterUtil) : BaseCommonJob<SqlTableReportJobProperties>(logger, dataLayer, jobMonitorUtil, clusterUtil)
 {
     private readonly IGroupDataLayer _groupData = groupData;
 
@@ -39,30 +41,31 @@ public abstract class SqlTableReportJob(
         }
         finally
         {
-            FinalizeJob(context);
+            await FinalizeJob(context);
         }
     }
 
     private async Task Generate(IJobExecutionContext context)
     {
+        await Task.Yield();
         DbConnection? connection = null;
 
         try
         {
             connection = new SqlConnection(Properties.ConnectionString);
-            MessageBroker.AppendLog(LogLevel.Information, $"Open sql connection with connection name: {Properties.ConnectionName}");
-            await connection.OpenAsync(context.CancellationToken);
+            MessageBroker.AppendLog(LogLevel.Information, $"open sql connection with connection name: {Properties.ConnectionName}");
+            await connection.OpenAsync(ExecutionCancellationToken);
 
             var attendees = await GetUsers(Properties.Group);
             var table = await ExecuteSql(context, Properties, connection);
             var html = GenerateHtml(Properties, table);
             html = HtmlUtil.MinifyHtml(html);
-            await SendReport(html, attendees);
+            await SendReport(html, attendees, ExecutionCancellationToken);
         }
         finally
         {
-            try { if (connection != null) { await connection.CloseAsync(); } } catch { DoNothingMethod(); }
-            try { if (connection != null) { await connection.DisposeAsync(); } } catch { DoNothingMethod(); }
+            await SafeInvoke(async () => { if (connection != null) { await connection.CloseAsync(); } });
+            await SafeInvoke(async () => { if (connection != null) { await connection.DisposeAsync(); } });
         }
     }
 
@@ -85,7 +88,7 @@ public abstract class SqlTableReportJob(
 
             var timer = new Stopwatch();
             timer.Start();
-            using var reader = await cmd.ExecuteReaderAsync(context.CancellationToken);
+            using var reader = await cmd.ExecuteReaderAsync(ExecutionCancellationToken);
             timer.Stop();
 
             var elapsedTitle =
@@ -102,9 +105,9 @@ public abstract class SqlTableReportJob(
         }
         catch (Exception ex)
         {
-            var sqlEx = new SqlTableReportJobException("Fail to execute script", ex);
+            var sqlEx = new SqlTableReportJobException("fail to execute script", ex);
             _logger.LogError(ex, "fail to execute script");
-            MessageBroker.AppendLog(LogLevel.Error, $"Fail to execute script. {ex.Message}");
+            MessageBroker.AppendLog(LogLevel.Error, $"fail to execute script. {ex.Message}");
             throw sqlEx;
         }
     }
@@ -154,7 +157,7 @@ public abstract class SqlTableReportJob(
         return result;
     }
 
-    private async Task SendReport(string html, IEnumerable<Attendee> attendees)
+    private async Task SendReport(string html, IEnumerable<Attendee> attendees, CancellationToken cancellationToken)
     {
         try
         {
@@ -180,7 +183,7 @@ public abstract class SqlTableReportJob(
             }.ToMessageBody();
             message.Body = body;
 
-            var result = await SmtpUtil.SendMessage(message);
+            var result = await SmtpUtil.SendMessage(message, cancellationToken);
             _logger.LogDebug("SMTP send result: {Message}", result);
         }
         catch (Exception ex)
@@ -215,7 +218,7 @@ public abstract class SqlTableReportJob(
         var result = properties.Script;
         if (string.IsNullOrEmpty(result))
         {
-            MessageBroker.AppendLog(LogLevel.Warning, $"Script filename '{properties.Filename}' has no content");
+            MessageBroker.AppendLog(LogLevel.Warning, $"script filename '{properties.Filename}' has no content");
             return string.Empty;
         }
 
@@ -226,13 +229,13 @@ public abstract class SqlTableReportJob(
             if (properties.Script.Contains(key))
             {
                 result = result.Replace(key, value);
-                MessageBroker.AppendLog(LogLevel.Information, $"  - Placeholder '{key}' was replaced by value '{value}'");
+                MessageBroker.AppendLog(LogLevel.Information, $"  - placeholder '{key}' was replaced by value '{value}'");
             }
         }
 
         if (string.IsNullOrWhiteSpace(result))
         {
-            MessageBroker.AppendLog(LogLevel.Warning, $"Script filename '{properties.Filename}' has no content after placeholder replace");
+            MessageBroker.AppendLog(LogLevel.Warning, $"script filename '{properties.Filename}' has no content after placeholder replace");
         }
 
         return result;
@@ -280,8 +283,7 @@ public abstract class SqlTableReportJob(
         catch (Exception ex)
         {
             var source = nameof(ValidateSqlJob);
-            _logger.LogError(ex, "fail at {Source}", source);
-            MessageBroker.AppendLog(LogLevel.Error, $"Fail at {source}. {ex.Message}");
+            MessageBroker.AppendLog(LogLevel.Error, $"fail at {source}. {ex.Message}");
             throw;
         }
     }

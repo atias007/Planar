@@ -1,11 +1,12 @@
 ﻿using System;
 
-namespace Planar.API.Common.Entities
-{
-    public class AuthenticationSettingsInfo
-    {
-        public string? Mode { get; set; }
+namespace Planar.API.Common.Entities;
 
-        public TimeSpan TokenExpire { get; set; }
-    }
+public class AuthenticationSettingsInfo
+{
+    public string? Mode { get; set; }
+
+    public TimeSpan TokenExpire { get; set; }
+
+    public bool ApiSecurityHeaders { get; set; }
 }

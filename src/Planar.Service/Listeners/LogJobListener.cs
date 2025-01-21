@@ -46,6 +46,17 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
         ////}
     }
 
+    private static string GetTriggerId(IJobExecutionContext context)
+    {
+        var result = TriggerHelper.GetTriggerId(context.Trigger);
+        if (!string.IsNullOrWhiteSpace(result)) { return result; }
+
+        var isWorkflow = JobHelper.IsWorkflowJob(context.MergedJobDataMap);
+        if (isWorkflow) { return Consts.WorkflowTriggerId; }
+
+        return Consts.ManualTriggerId;
+    }
+
     public async Task JobToBeExecuted(IJobExecutionContext context, CancellationToken cancellationToken = default)
     {
         try
@@ -65,7 +76,7 @@ public class LogJobListener(IServiceScopeFactory serviceScopeFactory, ILogger<Lo
                 JobName = context.JobDetail.Key.Name,
                 JobGroup = context.JobDetail.Key.Group,
                 JobType = SchedulerUtil.GetJobTypeName(context.JobDetail.JobType),
-                TriggerId = TriggerHelper.GetTriggerId(context.Trigger) ?? Consts.ManualTriggerId,
+                TriggerId = GetTriggerId(context),
                 TriggerName = context.Trigger.Key.Name,
                 TriggerGroup = context.Trigger.Key.Group,
                 Retry = context.Trigger.Key.Group == Consts.RetryTriggerGroup,

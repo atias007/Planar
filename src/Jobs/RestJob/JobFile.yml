@@ -9,8 +9,8 @@ log retention days: null              # How many days the running logs will reta
 
 job data:                             # Key/Value pairs used by job code
   key1: value1                        # --------------------------------
-  key2: value2                        # [1 to 100 characters]
-  key3: value3                        # [up to 1000 characters]
+  key2: value2                        # key --> [1 to 100 characters]
+  key3: value3                        # value --> [up to 1000 characters]
 
 properties:                           # Job Properties
   url: http://google.com              # The url address to make rest call [mandatory, up to 1000 characters]

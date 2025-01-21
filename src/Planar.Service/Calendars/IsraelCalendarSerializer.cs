@@ -2,21 +2,20 @@
 using Newtonsoft.Json.Linq;
 using Quartz;
 
-namespace Planar.Service.Calendars
+namespace Planar.Service.Calendars;
+
+public class IsraelCalendarSerializer : CalendarSerializer<IsraelCalendar>
 {
-    public class IsraelCalendarSerializer : CalendarSerializer<IsraelCalendar>
+    protected override IsraelCalendar Create(JObject source)
     {
-        protected override IsraelCalendar Create(JObject source)
-        {
-            return new IsraelCalendar();
-        }
+        return new IsraelCalendar();
+    }
 
-        protected override void DeserializeFields(IsraelCalendar calendar, JObject source)
-        {
-        }
+    protected override void DeserializeFields(IsraelCalendar calendar, JObject source)
+    {
+    }
 
-        protected override void SerializeFields(JsonWriter writer, IsraelCalendar calendar)
-        {
-        }
+    protected override void SerializeFields(JsonWriter writer, IsraelCalendar calendar)
+    {
     }
 }

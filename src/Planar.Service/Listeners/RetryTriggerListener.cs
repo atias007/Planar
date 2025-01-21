@@ -67,7 +67,7 @@ public class RetryTriggerListener(IServiceScopeFactory serviceScopeFactory, ILog
             var key = JobHelper.GetKeyTitle(context.JobDetail);
             if (numTries >= maxRetries)
             {
-                _logger.LogError("job with key {Key} fail and retry for {NumberTries} times but failed each time", key, numTries);
+                _logger.LogDebug("job with key {Key} fail and retry for {NumberTries} times but failed each time", key, numTries);
                 SafeScan(MonitorEvents.ExecutionLastRetryFail, context);
                 return;
             }
@@ -78,11 +78,11 @@ public class RetryTriggerListener(IServiceScopeFactory serviceScopeFactory, ILog
             // Log as warning the retry details
             if (numTries > 0)
             {
-                _logger.LogWarning("retry no. {NumTries} of job with key {Key} was fail. Retry again at {Start}", numTries, key, start);
+                _logger.LogDebug("retry no. {NumTries} of job with key {Key} was fail. Retry again at {Start}", numTries, key, start);
             }
             else
             {
-                _logger.LogWarning("job with key {Key} was fail. Retry again at {Start}", key, start);
+                _logger.LogDebug("job with key {Key} was fail. Retry again at {Start}", key, start);
             }
 
             numTries++;

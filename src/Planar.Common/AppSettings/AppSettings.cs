@@ -342,6 +342,7 @@ public static class AppSettings
         var mode = GetSettings(configuration, EC.AuthenticationModeVariableKey, "authentication", "mode", AuthMode.AllAnonymous.ToString());
         Authentication.Secret = GetSettings(configuration, EC.AuthenticationSecretVariableKey, "authentication", "secret", DefaultAuthenticationSecret);
         Authentication.TokenExpire = GetSettings(configuration, EC.AuthenticationTokenExpireVariableKey, "authentication", "token expire", TimeSpan.FromMinutes(20));
+        Authentication.ApiSecurityHeaders = GetSettings(configuration, EC.AuthenticationApiSecurityHeadersVariableKey, "authentication", "api security headers", false);
 
         mode = mode.Replace(" ", string.Empty);
         if (Enum.TryParse<AuthMode>(mode, true, out var tempMode))

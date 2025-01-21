@@ -1,6 +1,7 @@
 ﻿using CommonJob;
 using Microsoft.Extensions.Logging;
 using Planar.Common;
+using Planar.Service.General;
 using Quartz;
 
 namespace Planar;
@@ -9,7 +10,8 @@ namespace Planar;
 public class ProcessJobConcurrent(
     ILogger<ProcessJobConcurrent> logger,
     IJobPropertyDataLayer dataLayer,
-    JobMonitorUtil jobMonitorUtil
-        ) : ProcessJob(logger, dataLayer, jobMonitorUtil)
+    JobMonitorUtil jobMonitorUtil,
+    IClusterUtil clusterUtil
+        ) : ProcessJob(logger, dataLayer, jobMonitorUtil, clusterUtil)
 {
 }

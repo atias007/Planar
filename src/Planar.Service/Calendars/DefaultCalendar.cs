@@ -1,33 +1,58 @@
 ﻿using Microsoft.Extensions.Logging;
+using Quartz;
 using System;
 
-namespace Planar.Service.Calendars
+namespace Planar.Service.Calendars;
+
+[Serializable]
+public sealed class DefaultCalendar : BasePlanarCalendar, ICalendar
 {
-    [Serializable]
-    public sealed class DefaultCalendar : BasePlanarCalendar
+    public const string Name = "default";
+
+    public DefaultCalendar()
     {
-        public const string Name = "default";
+        var calendar = Calendars.WorkingHours.GetCalendar(Name) ?? throw new PlanarCalendarException($"Invalid calendar name '{Name}'");
+        WorkingHours = calendar;
+    }
 
-        public DefaultCalendar()
+    public string? Description { get; set; }
+
+    public ICalendar? CalendarBase { get; set; }
+
+    public ICalendar Clone()
+    {
+        return new DefaultCalendar();
+    }
+
+    public DateTimeOffset GetNextIncludedTimeUtc(DateTimeOffset timeUtc)
+    {
+        var counter = 0;
+        var max = 60 * 24 * 365 * 2; // min * hours * days * years
+        do
         {
-            var calendar = Calendars.WorkingHours.GetCalendar(Name) ?? throw new PlanarCalendarException($"Invalid calendar name '{Name}'");
-            WorkingHours = calendar;
+            counter++;
+            var include = IsTimeIncluded(timeUtc);
+            if (include) { return timeUtc; }
+            timeUtc = timeUtc.AddMinutes(1);
         }
+        while (counter < max);
 
-        public override bool IsTimeIncluded(DateTimeOffset timeStampUtc)
+        return DateTimeOffset.MaxValue;
+    }
+
+    public bool IsTimeIncluded(DateTimeOffset timeUtc)
+    {
+        var localDate = timeUtc.ToLocalTime().DateTime;
+
+        try
         {
-            var localDate = timeStampUtc.ToLocalTime().DateTime;
-
-            try
-            {
-                var dow = Convert(localDate.DayOfWeek);
-                return IsWorkingDateTime(dow, localDate);
-            }
-            catch (Exception ex)
-            {
-                Log(LogLevel.Critical, ex, "Fail to invoke IsTimeIncluded with locate date/time={TimeStamp}", localDate);
-                return false;
-            }
+            var dow = Convert(localDate.DayOfWeek);
+            return IsWorkingDateTime(dow, localDate);
+        }
+        catch (Exception ex)
+        {
+            Log(LogLevel.Critical, ex, "Fail to invoke IsTimeIncluded with locate date/time={TimeStamp}", localDate);
+            return false;
         }
     }
 }

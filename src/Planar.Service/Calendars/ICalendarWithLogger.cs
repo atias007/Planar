@@ -1,9 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace Planar.Service.Calendars
+namespace Planar.Service.Calendars;
+
+public interface ICalendarWithLogger
 {
-    public interface ICalendarWithLogger
-    {
-        ILogger? Logger { get; set; }
-    }
+    ILogger? Logger { get; set; }
 }

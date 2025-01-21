@@ -10,7 +10,7 @@ namespace Planar;
 
 internal static class SmtpUtil
 {
-    public static async Task<string> SendMessage(MimeMessage message)
+    public static async Task<string> SendMessage(MimeMessage message, CancellationToken cancellationToken = default)
     {
         var smtp = AppSettings.Smtp;
 
@@ -20,7 +20,8 @@ internal static class SmtpUtil
         }
 
         using var client = new SmtpClient();
-        using var tokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        tokenSource.CancelAfter(TimeSpan.FromSeconds(30));
 
         await client.ConnectAsync(
             host: smtp.Host,

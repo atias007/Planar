@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using Planar.Common;
 using Planar.Common.Exceptions;
 using Planar.Common.Helpers;
+using Planar.Service.General;
 using PlanarJobInner;
 using Quartz;
 using System;
@@ -30,7 +31,8 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
     protected PlanarJob(
         ILogger logger,
         IJobPropertyDataLayer dataLayer,
-        JobMonitorUtil jobMonitorUtil) : base(logger, dataLayer, jobMonitorUtil)
+        JobMonitorUtil jobMonitorUtil,
+        IClusterUtil clusterUtil) : base(logger, dataLayer, jobMonitorUtil, clusterUtil)
     {
         _isDevelopment = string.Equals(AppSettings.General.Environment, "development", StringComparison.OrdinalIgnoreCase);
     }
@@ -67,7 +69,7 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
         }
         finally
         {
-            FinalizeJob(context);
+            await FinalizeJob(context);
             FinalizeProcess();
             UnregisterMqttBrokerService(context.FireInstanceId);
             SafeDeleteContextFile();
@@ -467,7 +469,7 @@ public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
 
             case MessageBrokerChannels.HealthCheck:
                 _isHealthCheck = true;
-                UnsubscribeOutput();
+                SafeUnsubscribeOutput();
                 break;
 
             default:

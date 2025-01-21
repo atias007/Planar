@@ -399,25 +399,25 @@ public partial class JobDomain
         });
     }
 
-    private static void ValidateDataMap(Dictionary<string, string?>? data, string title)
+    public static void ValidateDataMap(Dictionary<string, string?>? data, string title)
     {
         if (data == null) { return; }
 
         var dataCount = CountUserJobDataItems(data);
         if (dataCount > Consts.MaximumJobDataItems)
         {
-            throw new RestValidationException("key", $"{title} data has more then {Consts.MaximumJobDataItems} items ({data.Count})");
+            throw new RestValidationException("key", $"{title} data has more then {Consts.MaximumJobDataItems} items ({data.Count})".Trim());
         }
 
         if (data.Any(item => string.IsNullOrWhiteSpace(item.Key)))
         {
-            throw new RestValidationException("key", "job data key must have value");
+            throw new RestValidationException("key", $"{title} data key must have value".Trim());
         }
 
         foreach (var item in data)
         {
-            ValidateRange(item.Key, 1, 100, "key", "job data");
-            ValidateMaxLength(item.Value, 1000, "value", "job data");
+            ValidateRange(item.Key, 1, 100, "key", $"{title} data".Trim());
+            ValidateMaxLength(item.Value, 1000, "value", $"{title} data".Trim());
         }
 
         var invalidKeys = data
@@ -760,7 +760,9 @@ public partial class JobDomain
 
         // Save Job Properties
         var jobPropertiesYml = GetJopPropertiesYml(request);
-        await DataLayer.AddJobProperty(new JobProperty { JobId = id, Properties = jobPropertiesYml });
+        var jobType = SchedulerUtil.GetJobTypeName(job);
+        var property = new JobProperty { JobId = id, Properties = jobPropertiesYml, JobType = jobType };
+        await DataLayer.AddJobProperty(property);
 
         try
         {
@@ -884,7 +886,12 @@ public partial class JobDomain
                 await ValidateJobProperties<SqlTableReportJobProperties>(yml);
                 break;
 
+            case nameof(WorkflowJob):
+                await ValidateJobProperties<WorkflowJobProperties>(yml);
+                break;
+
             default:
+                Logger.LogError("Missing validation for job type {JobType} at ValidatePropertiesInner", request.JobType);
                 break;
         }
     }
