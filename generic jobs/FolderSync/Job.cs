@@ -129,12 +129,12 @@ internal partial class Job : BaseCheckJob
         ValidatePathExists(sourcePath);
         ValidatePathExists(targetPath);
 
-        var excludeFiles = folder.ExcludeSourceFiles?.Select(r => GetRegex(r)) ?? [];
-        var excludeDirectories = folder.ExcludeSourceDirectories?.Select(r => GetRegex(r)) ?? [];
-        var includeFiles = folder.IncludeSourceFiles?.Select(r => GetRegex(r)) ?? [];
-        var includeDirectories = folder.IncludeSourceDirectories?.Select(r => GetRegex(r)) ?? [];
-        var excludeDeleteDestinationFiles = folder.ExcludeDeleteTargetFiles?.Select(r => GetRegex(r)) ?? [];
-        var excludeDeleteDestinationDirectories = folder.ExcludeDeleteTargetDirectories?.Select(r => GetRegex(r)) ?? [];
+        var excludeFiles = folder.ExcludeSourceFiles?.Select(r => GetRegex(r));
+        var excludeDirectories = folder.ExcludeSourceDirectories?.Select(r => GetRegex(r));
+        var includeFiles = folder.IncludeSourceFiles?.Select(r => GetRegex(r));
+        var includeDirectories = folder.IncludeSourceDirectories?.Select(r => GetRegex(r));
+        var excludeDeleteDestinationFiles = folder.ExcludeDeleteTargetFiles?.Select(r => GetRegex(r));
+        var excludeDeleteDestinationDirectories = folder.ExcludeDeleteTargetDirectories?.Select(r => GetRegex(r));
 
         var parameters = new InputParams
         {
@@ -143,19 +143,32 @@ internal partial class Job : BaseCheckJob
             StopAtFirstError = folder.StopAtFirstError,
             SourceDirectory = sourcePath,
             DestinationDirectory = targetPath,
-            ExcludeFiles = excludeFiles.ToArray(),
-            DeleteExcludeDirs = excludeDeleteDestinationDirectories.ToArray(),
-            DeleteExcludeFiles = excludeDeleteDestinationFiles.ToArray(),
-            ExcludeDirs = excludeDirectories.ToArray(),
-            IncludeDirs = includeDirectories.ToArray(),
-            IncludeFiles = includeFiles.ToArray(),
+            ExcludeFiles = excludeFiles?.ToArray(),
+            DeleteExcludeDirs = excludeDeleteDestinationDirectories?.ToArray(),
+            DeleteExcludeFiles = excludeDeleteDestinationFiles?.ToArray(),
+            ExcludeDirs = excludeDirectories?.ToArray(),
+            IncludeDirs = includeDirectories?.ToArray(),
+            IncludeFiles = includeFiles?.ToArray(),
             DeleteFromDest = folder.DeleteFromTarget,
             ExcludeHidden = folder.ExcludeHidden
         };
 
         var sync = new BlinkSyncLib.Sync(parameters);
-        var result = sync.Start();
-        PrintSummary(result);
+        try
+        {
+            sync.Operation += SyncOperation;
+            var result = sync.Start();
+            PrintSummary(result);
+        }
+        finally
+        {
+            sync.Operation -= SyncOperation;
+        }
+    }
+
+    private void SyncOperation(object? sender, OperationEventArgs e)
+    {
+        EffectedRows = EffectedRows + 1;
     }
 
     private void PrintSummary(SyncResults result)

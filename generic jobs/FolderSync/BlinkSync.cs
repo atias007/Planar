@@ -1,20 +1,29 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace BlinkSyncLib;
+
+public enum OperationType
+{
+    CreateDirectory,
+    CopyFile,
+    DeleteFile,
+    DeleteDirectory
+}
+
+public class OperationEventArgs : EventArgs
+{
+    public required OperationType OperationType { get; set; }
+    public required string Name { get; set; }
+}
 
 /// <summary>
 /// Folders and files synchronization
 /// </summary>
 public class Sync
 {
-    #region CONSTRUCTORS
+    public event EventHandler<OperationEventArgs>? Operation;
 
     public Sync(InputParams parameters)
     {
@@ -24,7 +33,10 @@ public class Sync
         DestinationDirectory = new DirectoryInfo(parameters.DestinationDirectory);
     }
 
-    #endregion CONSTRUCTORS
+    private void OnOperation(OperationType operationType, string name)
+    {
+        Operation?.Invoke(this, new OperationEventArgs { OperationType = operationType, Name = name });
+    }
 
     #region PROPERTIES
 
@@ -54,11 +66,10 @@ public class Sync
     {
         SyncResults results = new SyncResults();
 
-        if (Validate(this.SourceDirectory.FullName, this.DestinationDirectory.FullName, this.Configuration, ref results))
-        {
-            // recursively process directories
-            ProcessDirectory(this.SourceDirectory.FullName, this.DestinationDirectory.FullName, this.Configuration, ref results);
-        }
+        Validate(this.SourceDirectory.FullName, this.DestinationDirectory.FullName, this.Configuration);
+
+        // recursively process directories
+        ProcessDirectory(this.SourceDirectory.FullName, this.DestinationDirectory.FullName, this.Configuration, ref results);
 
         return results;
     }
@@ -191,40 +202,36 @@ public class Sync
     /// <param name="destDir"></param>
     /// <param name="parameters"></param>
     /// <param name="srcDir"></param>
-    private bool Validate(string srcDir, string destDir, InputParams parameters, ref SyncResults results)
+    private static void Validate(string srcDir, string destDir, InputParams parameters)
     {
-        if (((parameters.IncludeFiles != null) && (parameters.ExcludeFiles != null)) ||
-            ((parameters.IncludeDirs != null) && (parameters.ExcludeDirs != null)))
+        if (parameters.IncludeFiles != null && parameters.ExcludeFiles != null)
         {
-            return false;
+            throw new InvalidDataException($"operation must have only one of the following: include files, exclude files. current operation contains both");
         }
 
-        string fullSrcDir = Path.GetFullPath(srcDir);
-        string fullDestDir = Path.GetFullPath(destDir);
+        if (parameters.IncludeDirs != null && parameters.ExcludeDirs != null)
+        {
+            throw new InvalidDataException($"operation must have only one of the following: include dirs, exclude dirs. current operation contains both");
+        }
+
+        string fullSrcDir = Path.GetFullPath(srcDir) + Path.PathSeparator;
+        string fullDestDir = Path.GetFullPath(destDir) + Path.PathSeparator;
         if (destDir.StartsWith(fullSrcDir) || srcDir.StartsWith(fullDestDir))
         {
-            Trace(LogLevel.Error, "source directory {0} and destination directory {1} cannot contain each other", fullSrcDir, fullDestDir);
-            results.TotalErrors++;
-            return false;
+            throw new InvalidDataException($"source directory {fullSrcDir} and destination directory {fullDestDir} cannot contain each other");
         }
 
         if (((parameters.DeleteExcludeFiles != null) || (parameters.DeleteExcludeDirs != null)) &&
             (!parameters.DeleteFromDest))
         {
-            Trace(LogLevel.Error, "exclude-from-deletion options (-ndf and -ndd) require deletion (-d) enabled.");
-            results.TotalErrors++;
-            return false;
+            throw new InvalidDataException("exclude from deletion options require deletion enabled");
         }
 
         // ensure source directory exists
         if (!Directory.Exists(srcDir))
         {
-            this.Trace(LogLevel.Error, "source directory {0} not found", srcDir);
-            results.TotalErrors++;
-            return false;
+            throw new InvalidDataException($"source directory {srcDir} not found");
         }
-
-        return true;
     }
 
     /// <summary>
@@ -248,6 +255,7 @@ public class Sync
 
                 // create the destination directory
                 diDest.Create();
+                OnOperation(OperationType.CreateDirectory, diDest.FullName);
                 results.DirectoriesCreated++;
             }
             catch (Exception ex)
@@ -283,7 +291,7 @@ public class Sync
             bool isUpToDate = false;
 
             // look up in hash table to see if file exists in destination
-            FileInfo destFile = hashDest[srcFile.Name];
+            hashDest.TryGetValue(srcFile.Name, out FileInfo? destFile);
 
             // if file exists and length, write time and attributes match, it's up to date
             if ((destFile != null) && (srcFile.Length == destFile.Length) &&
@@ -315,6 +323,7 @@ public class Sync
                     // set attributes appropriately
                     File.SetAttributes(destPath, srcFile.Attributes);
                     results.FilesCopied++;
+                    OnOperation(OperationType.CopyFile, srcFile.FullName);
                 }
                 catch (Exception ex)
                 {
@@ -330,7 +339,7 @@ public class Sync
         {
             foreach (FileInfo destFile in fiDest)
             {
-                FileInfo srcFile = hashSrc[destFile.Name];
+                hashSrc.TryGetValue(destFile.Name, out FileInfo? srcFile);
                 if (srcFile == null)
                 {
                     // if this file is specified in exclude-from-deletion list, don't delete it
@@ -345,6 +354,7 @@ public class Sync
                         // delete the file
                         destFile.Delete();
                         results.FilesDeleted++;
+                        OnOperation(OperationType.DeleteFile, destFile.FullName);
                     }
                     catch (Exception ex)
                     {
@@ -396,6 +406,7 @@ public class Sync
                         // delete directory
                         DeleteDirectory(diDestSubdir);
                         results.DirectoriesDeleted++;
+                        OnOperation(OperationType.DeleteDirectory, diDestSubdir.FullName);
                     }
                     catch (Exception ex)
                     {
@@ -500,32 +511,32 @@ public class InputParams
     /// <summary>
     /// List of filespecs to exclude
     /// </summary>
-    public Regex[] ExcludeFiles { get; set; } = [];
+    public Regex[]? ExcludeFiles { get; set; }
 
     /// <summary>
     /// List of directory specs to exclude
     /// </summary>
-    public Regex[] ExcludeDirs { get; set; } = [];
+    public Regex[]? ExcludeDirs { get; set; }
 
     /// <summary>
     /// List of filespecs to include
     /// </summary>
-    public Regex[] IncludeFiles { get; set; } = [];
+    public Regex[]? IncludeFiles { get; set; }
 
     /// <summary>
     /// List of directory specs to include
     /// </summary>
-    public Regex[] IncludeDirs { get; set; } = [];
+    public Regex[]? IncludeDirs { get; set; }
 
     /// <summary>
     /// List of filespecs NOT to delete from dest
     /// </summary>
-    public Regex[] DeleteExcludeFiles { get; set; } = [];
+    public Regex[]? DeleteExcludeFiles { get; set; }
 
     /// <summary>
     /// List of directory specs NOT to delete from dest
     /// </summary>
-    public Regex[] DeleteExcludeDirs { get; set; } = [];
+    public Regex[]? DeleteExcludeDirs { get; set; }
 
     public bool AreSourceFilesFiltered
     {

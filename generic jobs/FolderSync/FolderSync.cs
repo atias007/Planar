@@ -17,12 +17,20 @@ internal class FolderSync : BaseOperation, INamedCheckElement, IVetoEntity
         StopAtFirstError = section.GetValue<bool>("stop at first error");
         LogIoInformation = section.GetValue<bool>("log io information");
         DeleteFromTarget = section.GetValue<bool>("delete from target");
-        ExcludeSourceFiles = section.GetValue<IEnumerable<string>?>("exclude source files");
-        ExcludeSourceDirectories = section.GetValue<IEnumerable<string>?>("exclude source directories");
-        IncludeSourceFiles = section.GetValue<IEnumerable<string>?>("include source files");
-        IncludeSourceDirectories = section.GetValue<IEnumerable<string>?>("include source directories");
-        ExcludeDeleteTargetFiles = section.GetValue<IEnumerable<string>?>("exclude delete target files");
-        ExcludeDeleteTargetDirectories = section.GetValue<IEnumerable<string>?>("exclude delete target directories");
+
+        ExcludeSourceFiles = section.GetSection("exclude source files").Get<string[]?>();
+        ExcludeSourceDirectories = section.GetSection("exclude source directories").Get<string[]?>();
+        IncludeSourceFiles = section.GetSection("include source files").Get<string[]?>();
+        IncludeSourceDirectories = section.GetSection("include source directories").Get<string[]?>();
+        ExcludeDeleteTargetFiles = section.GetSection("exclude delete target files").Get<string[]?>();
+        ExcludeDeleteTargetDirectories = section.GetSection("exclude delete target directories").Get<string[]?>();
+
+        if (ExcludeSourceFiles != null && !ExcludeSourceFiles.Any()) { ExcludeSourceFiles = null; }
+        if (ExcludeSourceDirectories != null && !ExcludeSourceDirectories.Any()) { ExcludeSourceDirectories = null; }
+        if (IncludeSourceFiles != null && !IncludeSourceFiles.Any()) { IncludeSourceFiles = null; }
+        if (IncludeSourceDirectories != null && !IncludeSourceDirectories.Any()) { IncludeSourceDirectories = null; }
+        if (ExcludeDeleteTargetFiles != null && !ExcludeDeleteTargetFiles.Any()) { ExcludeDeleteTargetFiles = null; }
+        if (ExcludeDeleteTargetDirectories != null && !ExcludeDeleteTargetDirectories.Any()) { ExcludeDeleteTargetDirectories = null; }
     }
 
     public FolderSync(FolderSync folder) : base(folder)
