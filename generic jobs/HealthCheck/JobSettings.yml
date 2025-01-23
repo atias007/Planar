@@ -8,6 +8,7 @@ defaults:                                       # default values for all endpoin
   retry count: 3                                # the number of retry attemp in case of failure
   retry interval: 00:00:05                      # the interval between retry attemps
   timeout: 00:00:02                             # the timeout for each request
+  allowed fail span: null                       # the time span which violation of the folder will be considered ok
 
 #hosts:                                         # the hosts to be used in the endpoints with relative url. usualy this section defined in specific environment job settings
 #  - group name: default

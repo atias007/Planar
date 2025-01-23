@@ -1,0 +1,4 @@
+hosts:
+ - group name: default
+   hosts:
+     - \\localhost\r$

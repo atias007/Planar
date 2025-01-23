@@ -108,7 +108,7 @@ public abstract class BaseCheckJob : BaseJob
         where T : INamedCheckElement
     {
         var duplicates1 = items
-            .Where(x => !string.IsNullOrEmpty(x.Name))
+            .Where(x => !string.IsNullOrWhiteSpace(x.Name))
             .GroupBy(x => x.Name)
             .Where(g => g.Count() > 1)
             .Select(y => y.Key)
@@ -117,6 +117,16 @@ public abstract class BaseCheckJob : BaseJob
         if (duplicates1.Count != 0)
         {
             throw new InvalidDataException($"duplicated found at '{sectionName}' section. duplicate names found: {string.Join(", ", duplicates1)}");
+        }
+    }
+
+    protected static void ValidateNullOrWhiteSpace(IEnumerable<string>? items, string sectionName)
+    {
+        var has = items?.Any(x => string.IsNullOrWhiteSpace(x)) ?? false;
+
+        if (has)
+        {
+            throw new InvalidDataException($"null or empty items found at '{sectionName}' section");
         }
     }
 

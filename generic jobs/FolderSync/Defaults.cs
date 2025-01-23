@@ -1,7 +1,7 @@
 ﻿using Common;
 using Microsoft.Extensions.Configuration;
 
-namespace RedisOperations;
+namespace FolderSync;
 
 internal class Defaults : BaseDefault
 {
@@ -12,7 +12,7 @@ internal class Defaults : BaseDefault
     private Defaults()
     {
         RetryCount = 3;
-        RetryInterval = TimeSpan.FromSeconds(5);
+        RetryInterval = TimeSpan.FromSeconds(30);
         AllowedFailSpan = null;
     }
 

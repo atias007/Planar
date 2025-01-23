@@ -38,6 +38,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WindowsServiceRestart", "Wi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InfluxDBCheck", "InfluxDBCheck\InfluxDBCheck.csproj", "{874ED92D-A762-4A03-833B-B7587C523DBF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FolderSync", "FolderSync\FolderSync.csproj", "{B5B13557-EBFF-4296-B387-50A61F34C816}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -92,6 +94,10 @@ Global
 		{874ED92D-A762-4A03-833B-B7587C523DBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{874ED92D-A762-4A03-833B-B7587C523DBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{874ED92D-A762-4A03-833B-B7587C523DBF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B5B13557-EBFF-4296-B387-50A61F34C816}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5B13557-EBFF-4296-B387-50A61F34C816}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5B13557-EBFF-4296-B387-50A61F34C816}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5B13557-EBFF-4296-B387-50A61F34C816}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -109,6 +115,7 @@ Global
 		{41D94405-D8CA-4716-ABFA-B85B10F95FF4} = {5C3DA4F3-BAFB-4BAA-A2A3-CD790FC45261}
 		{AA091937-044C-4C7B-BF3A-E2ADF5D7E0D8} = {ED00B110-F470-4421-A991-7441DB42DD00}
 		{874ED92D-A762-4A03-833B-B7587C523DBF} = {5C3DA4F3-BAFB-4BAA-A2A3-CD790FC45261}
+		{B5B13557-EBFF-4296-B387-50A61F34C816} = {ED00B110-F470-4421-A991-7441DB42DD00}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {50C161EB-78A8-4B28-BAA4-8C426C2165BE}

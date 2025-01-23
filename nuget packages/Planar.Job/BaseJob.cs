@@ -173,7 +173,7 @@ namespace Planar.Job
             }
         }
 
-        public static string FormatTimeSpan(TimeSpan timeSpan)
+        private static string FormatTimeSpan(TimeSpan timeSpan)
         {
             if (timeSpan.TotalDays >= 1)
             {

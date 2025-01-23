@@ -1,0 +1,45 @@
+general:
+  max degree of parallelism: 10                 # the maximum number of parallel threads to be used in the job. the default is 10. value between 2 and 100
+  sequential processing: false                  # a flag to indicate if the folders should be processed sequentially or in parallel. the default is false
+  stop running on fail: false                   # a flag to indicate if the job should stop running on fail in sequential processing. the default is false
+
+defaults:                                       # default values for all endpoints. each endpoint can override these values
+  retry count: 3                                # the number of retry attemp in case of failure
+  retry interval: 00:00:30                      # the interval between retry attemps
+  allowed fail span: null                       # the time span which violation of the folder will be considered ok
+
+#hosts:                                         # the hosts to be used in folders with relative path. usualy this section defined in specific environment job settings
+#  - group name: default
+#    hosts:
+#      - \\localhost\d$
+#      - \\127.0.0.1\c$
+ 
+folders:
+  - name: Customer Y vault                      # the display name of the folder. required
+    host group name: default                    # when using relative folder path, 'host group name' must be supplied to a valid 'group name' in hosts section
+    source path: \vaults\CustomerX              # the path of the source folder. relative or absolute path. required
+    target path: \local\folder                  # the path of the target folder. relative or absolute path. required
+    exclude hidden: false                       # should exclude hidden files/directories in source: default is false
+    delete from target: false                   # should delete files/directories from target that do not exist in source: default is false
+    fail job with errors: true                  # should fail the job if an error occurs in this sync process: default is true
+    stop at first error: false                  # should stop the sync process at the first error: default is false
+    log io information: true                    # should log the io information (each copy, create directory, delete file, etc.) of the sync folders: default is true
+    exclude source files:                       # regex pattern of the files to be excluded. this value is optional
+      - \.tmp$                                  # (all files with tmp extention)
+      - ^[Bb].*\.log$                           # (all files with log extention and start with b or B)
+    exclude source directories:                 # regex pattern of the directories to be excluded. this value is optional
+      - ^obj$                                   # (directory with obj name)
+      - ^bin$                                   # (directory with bin name)
+    include source files:                       # regex pattern of the files to be include. this value is optional
+      - \.tmp$                                  # (all files with tmp extention)
+      - ^[Bb].*\.log$                           # (all files with log extention and start with b or B)
+    include source directories:                 # regex pattern of the directories to be include. this value is optional
+      - ^publish$                               # (directory with publish name)
+      - ^3rd_party$                             # (directory with 3rd_party name)
+    exclude delete target files:                # regex pattern of the files to be excluded from delete in target. this value is optional
+      - \.tmp$                                  # (all files with tmp extention)
+      - ^[Bb].*\.log$                           # (all files with log extention and start with b or B)
+    exclude delete target directories:          # regex pattern of the directories to be excluded from delete in target. this value is optional
+      - ^obj$                                   # (directory with obj name)
+      - ^bin$                                   # (directory with bin name)
+    active: true                                # the default is true
