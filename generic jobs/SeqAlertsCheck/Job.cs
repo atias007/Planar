@@ -4,10 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar.Job;
-using Redis;
 using System.Text;
 
-namespace RedisCheck;
+namespace SeqAlertsCheck;
 
 internal partial class Job : BaseCheckJob
 {
@@ -15,9 +14,9 @@ internal partial class Job : BaseCheckJob
 
     static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-    static partial void CustomConfigure(RedisServer redisServer, IConfiguration configuration);
+    static partial void CustomConfigure(SeqServer seqServer, IConfiguration configuration);
 
-    static partial void VetoKey(RedisKey key);
+    static partial void VetoKey(string key);
 
     static partial void Finalayze(IEnumerable<RedisKey> keys);
 

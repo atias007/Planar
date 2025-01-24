@@ -28,6 +28,9 @@ keys:
   - key: foo                                    # the key to be used in redis
     memory usage: 10mb                          # the maximum memory usage for the key
     length: 5                                   # the maximum length of the key
-    allowed fail span: 00:05:00                 # the time span which violation of the key will be considered ok
     exists: true                                # the job will fail if the key does not exist
+    bind to triggers:                           # this folder will be checked only when running with the following triggers. the default is null (run on any trigger execution)
+      - every-1-hour                            
+      - end-of-day
+    allowed fail span: 00:05:00                 # the time span which violation of the key will be considered ok
     active: true                                # the default is true

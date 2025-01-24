@@ -57,7 +57,7 @@ internal partial class Job : BaseCheckJob
         ValidateRequired(queries, "queries");
         ValidateDuplicateNames(queries, "queries");
         EffectedRows = 0;
-        await SafeInvokeCheck(queries, InvokeQueryCheckInner);
+        await SafeInvokeCheck(queries, InvokeQueryCheckInner, context.TriggerDetails);
 
         Finalayze(queries);
         Finalayze();
@@ -66,7 +66,6 @@ internal partial class Job : BaseCheckJob
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
         services.RegisterSpanCheck();
-        services.RegisterIntervalCheck();
     }
 
     private async Task InvokeQueryCheckInner(CheckQuery checkQuery)

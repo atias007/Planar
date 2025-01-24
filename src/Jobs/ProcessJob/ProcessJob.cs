@@ -11,16 +11,12 @@ using System.Text.RegularExpressions;
 
 namespace Planar;
 
-public abstract class ProcessJob : BaseProcessJob<ProcessJobProperties>
+public abstract class ProcessJob(
+    ILogger logger,
+    IJobPropertyDataLayer dataLayer,
+    JobMonitorUtil jobMonitorUtil,
+    IClusterUtil clusterUtil) : BaseProcessJob<ProcessJobProperties>(logger, dataLayer, jobMonitorUtil, clusterUtil)
 {
-    protected ProcessJob(
-        ILogger logger,
-        IJobPropertyDataLayer dataLayer,
-        JobMonitorUtil jobMonitorUtil,
-        IClusterUtil clusterUtil) : base(logger, dataLayer, jobMonitorUtil, clusterUtil)
-    {
-    }
-
     public override async Task Execute(IJobExecutionContext context)
     {
         try

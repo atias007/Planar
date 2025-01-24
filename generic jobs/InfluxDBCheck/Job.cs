@@ -61,7 +61,7 @@ internal partial class Job : BaseCheckJob
         if (!CheckRequired(queries, "queries")) { return; }
 
         var proxy = new InfluxProxy(server);
-        await SafeInvokeCheck(queries, q => InvokeQueryCheckInner(q, proxy));
+        await SafeInvokeCheck(queries, q => InvokeQueryCheckInner(q, proxy), context.TriggerDetails);
 
         Finalayze(queries);
         Finalayze();
@@ -70,7 +70,6 @@ internal partial class Job : BaseCheckJob
     public override void RegisterServices(IConfiguration configuration, IServiceCollection services, IJobExecutionContext context)
     {
         services.RegisterSpanCheck();
-        services.RegisterIntervalCheck();
     }
 
     private static Server GetServer(IConfiguration configuration)

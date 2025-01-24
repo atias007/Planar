@@ -15,27 +15,23 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Planar;
 
-public abstract class PlanarJob : BaseProcessJob<PlanarJobProperties>
+public abstract class PlanarJob(
+    ILogger logger,
+    IJobPropertyDataLayer dataLayer,
+    JobMonitorUtil jobMonitorUtil,
+    IClusterUtil clusterUtil) : BaseProcessJob<PlanarJobProperties>(logger, dataLayer, jobMonitorUtil, clusterUtil)
 {
-    private readonly object ConsoleLocker = new();
-    private readonly bool _isDevelopment;
+    private readonly Lock ConsoleLocker = new();
+    private readonly bool _isDevelopment = string.Equals(AppSettings.General.Environment, "development", StringComparison.OrdinalIgnoreCase);
     private bool _isHealthCheck;
     private string? _contextFilename;
 
     private PlanarJobExecutionException? _executionException;
-
-    protected PlanarJob(
-        ILogger logger,
-        IJobPropertyDataLayer dataLayer,
-        JobMonitorUtil jobMonitorUtil,
-        IClusterUtil clusterUtil) : base(logger, dataLayer, jobMonitorUtil, clusterUtil)
-    {
-        _isDevelopment = string.Equals(AppSettings.General.Environment, "development", StringComparison.OrdinalIgnoreCase);
-    }
 
     public override async Task Execute(IJobExecutionContext context)
     {

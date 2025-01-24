@@ -13,6 +13,7 @@ public abstract class BaseDefault : BaseActiveElement
         RetryCount = baseDefault.RetryCount;
         RetryInterval = baseDefault.RetryInterval;
         AllowedFailSpan = baseDefault.AllowedFailSpan;
+        BindToTriggers = baseDefault.BindToTriggers;
     }
 
     protected BaseDefault(IConfigurationSection section, BaseDefault baseDefault) : base(section)
@@ -20,11 +21,13 @@ public abstract class BaseDefault : BaseActiveElement
         RetryCount = section.GetValue<int?>("retry count") ?? baseDefault.RetryCount;
         RetryInterval = section.GetValue<TimeSpan?>("retry interval") ?? baseDefault.RetryInterval;
         AllowedFailSpan = section.GetValue<TimeSpan?>("allowed fail span") ?? baseDefault.AllowedFailSpan;
+        BindToTriggers = section.GetSection("bind to triggers").Get<string[]?>();
     }
 
     public int? RetryCount { get; set; }
     public TimeSpan? RetryInterval { get; set; }
     public TimeSpan? AllowedFailSpan { get; set; }
+    public IEnumerable<string>? BindToTriggers { get; set; }
 
     //// --------------------------------------------------------------- ////
 

@@ -1,0 +1,10 @@
+defaults:                                       # default values for all keys. each key can override these values
+  retry count: 3                                # the number of retry attemp in case of failure
+  retry interval: 00:00:03                      # the interval between retry attemps
+  allowed fail span: null                       # the time span which violation of the folder will be considered ok
+
+# server:                                       # the seq server parameters to be use. usualy this section defined in specific environment job settings
+# url: 
+#   - http://localhost:5341/
+# api key: 
+#   - 00000000-0000-0000-0000-000000000000

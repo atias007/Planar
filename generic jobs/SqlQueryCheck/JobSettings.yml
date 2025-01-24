@@ -17,8 +17,10 @@ queries:
     query: SELECT top 1 Title FROM [AIG].[Infrastructure].[CurrencyCode] where id > 5000                   # the query to be executed. required
     message: "foo1 query failed with title {{Title}}" # the message to be logged in case of failure. you can use {{i}} to show value from field number i of the query or you can use {{field_name}} to show value from field name of query
     timeout: 00:00:10                           # the query execution timeout. the default is 30 seconds
-    interval: 00:10:00                          # the interval between query executions. the default is null (run on any trigger execution)
-    allowed fail span: 00:05:00                # the time span which violation of the query will be considered ok
+    bind to triggers:                           # this folder will be checked only when running with the following triggers. the default is null (run on any trigger execution)
+      - every-1-hour                            
+      - end-of-day
+    allowed fail span: 00:05:00                 # the time span which violation of the query will be considered ok
     active: true                                # the default is true
 
   - name: foo2                                  # the name of the query. required
@@ -26,6 +28,4 @@ queries:
     query: SELECT top 1 rate FROM [Infrastructure].[ExchangeRating] where rate > 5                   # the query to be executed. required
     message: null
     timeout: 00:00:10                           # the query execution timeout. the default is 30 seconds
-    interval: 00:10:00                          # the interval between query executions. the default is null (run on any trigger execution)
-    allowed fail span: 00:05:00                 # the time span which violation of the query will be considered ok
     active: true                                # the default is true

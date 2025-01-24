@@ -44,7 +44,7 @@ internal partial class Job : BaseCheckJob
 
         endpoints = GetEndpointsWithHost(endpoints, hosts);
         EffectedRows = 0;
-        await SafeInvokeCheck(endpoints, InvokeEndpointInner);
+        await SafeInvokeCheck(endpoints, InvokeEndpointInner, context.TriggerDetails);
 
         Finilayze(endpoints);
         Finalayze();

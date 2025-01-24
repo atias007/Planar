@@ -9,10 +9,4 @@ public static class ServicesCollectionExtentions
         services.AddSingleton<CheckSpanTracker>();
         return services;
     }
-
-    public static IServiceCollection RegisterIntervalCheck(this IServiceCollection services)
-    {
-        services.AddSingleton<CheckIntervalTracker>();
-        return services;
-    }
 }

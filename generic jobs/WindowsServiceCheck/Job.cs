@@ -40,7 +40,7 @@ internal partial class Job : BaseCheckJob
 
         EffectedRows = 0;
 
-        await SafeInvokeCheck(services, InvokeServicesInner);
+        await SafeInvokeCheck(services, InvokeServicesInner, context.TriggerDetails);
 
         Finalayze(services);
         Finalayze();
