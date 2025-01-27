@@ -17,7 +17,7 @@ internal partial class Job : BaseCheckJob
 
     static partial void CustomConfigure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context);
 
-    static partial void VetoFolder(FolderSync folder);
+    static partial void VetoFolder(SyncFolder folder);
 
     static partial void VetoHost(Host host);
 
@@ -32,7 +32,7 @@ internal partial class Job : BaseCheckJob
 
         var defaults = GetDefaults(Configuration);
         var hosts = GetHosts(Configuration, h => VetoHost(h));
-        var folders = GetFolderSyncs(Configuration, defaults);
+        var folders = GetSyncFolders(Configuration, defaults);
 
         if (folders.Exists(e => e.IsRelativePath))
         {
@@ -41,7 +41,7 @@ internal partial class Job : BaseCheckJob
 
         folders = GetFoldersWithHost(folders, hosts);
         EffectedRows = 0;
-        await SafeInvokeOperation(folders, InvokeFolderSyncInnerAsync);
+        await SafeInvokeOperation(folders, InvokeSyncFolderInnerAsync);
 
         Finalayze();
     }
@@ -67,11 +67,11 @@ internal partial class Job : BaseCheckJob
         return result;
     }
 
-    private static List<FolderSync> GetFoldersWithHost(List<FolderSync> folders, IReadOnlyDictionary<string, HostsConfig> hosts)
+    private static List<SyncFolder> GetFoldersWithHost(List<SyncFolder> folders, IReadOnlyDictionary<string, HostsConfig> hosts)
     {
         var absolute = folders.Where(e => e.IsAbsolutePath);
         var relative = folders.Where(e => e.IsRelativePath);
-        var result = new List<FolderSync>(absolute);
+        var result = new List<SyncFolder>(absolute);
         if (relative.Any() && hosts.Count != 0)
         {
             foreach (var rel in relative)
@@ -79,7 +79,7 @@ internal partial class Job : BaseCheckJob
                 if (!hosts.TryGetValue(rel.HostGroupName ?? string.Empty, out var hostGroup)) { continue; }
                 foreach (var host in hostGroup.Hosts)
                 {
-                    var clone = new FolderSync(rel)
+                    var clone = new SyncFolder(rel)
                     {
                         Host = host
                     };
@@ -91,13 +91,13 @@ internal partial class Job : BaseCheckJob
         return result;
     }
 
-    private List<FolderSync> GetFolderSyncs(IConfiguration configuration, Defaults defaults)
+    private List<SyncFolder> GetSyncFolders(IConfiguration configuration, Defaults defaults)
     {
-        var result = new List<FolderSync>();
+        var result = new List<SyncFolder>();
         var folders = configuration.GetRequiredSection("folders");
         foreach (var item in folders.GetChildren())
         {
-            var folder = new FolderSync(item, defaults);
+            var folder = new SyncFolder(item, defaults);
 
             VetoFolder(folder);
             if (CheckVeto(folder, "folder")) { continue; }
@@ -112,12 +112,12 @@ internal partial class Job : BaseCheckJob
         return result;
     }
 
-    private async Task InvokeFolderSyncInnerAsync(FolderSync folder)
+    private async Task InvokeSyncFolderInnerAsync(SyncFolder folder)
     {
-        await Task.Run(() => InvokeFoldersSyncInner(folder));
+        await Task.Run(() => InvokeSyncFoldersInner(folder));
     }
 
-    private void InvokeFoldersSyncInner(FolderSync folder)
+    private void InvokeSyncFoldersInner(SyncFolder folder)
     {
         static Regex GetRegex(string pattern)
         {
@@ -197,7 +197,7 @@ internal partial class Job : BaseCheckJob
 #pragma warning restore CA2254 // Template should be a static expression
     }
 
-    private static void ValidateFolder(FolderSync folder)
+    private static void ValidateFolder(SyncFolder folder)
     {
         var section = $"folders ({folder.Name})";
 
@@ -216,5 +216,35 @@ internal partial class Job : BaseCheckJob
         ValidateNullOrWhiteSpace(folder.ExcludeSourceFiles, $"{section} --> include directories");
         ValidateNullOrWhiteSpace(folder.ExcludeSourceFiles, $"{section} --> exclude delete destination files");
         ValidateNullOrWhiteSpace(folder.ExcludeSourceFiles, $"{section} --> exclude delete destination directories");
+
+        var hasInclude = IsNotEmpty(folder.IncludeSourceFiles) || IsNotEmpty(folder.IncludeSourceDirectories);
+        var hasExclude = IsNotEmpty(folder.ExcludeSourceFiles) || IsNotEmpty(folder.ExcludeSourceDirectories);
+        if (hasInclude && hasExclude)
+        {
+            throw new InvalidDataException($"folder '{folder.Name}' has both include and exclude files/directories");
+        }
+
+        var fullsource = Path.GetFullPath(folder.SourcePath) + Path.PathSeparator;
+        var fullDestination = Path.GetFullPath(folder.TargetPath) + Path.PathSeparator;
+        if (fullDestination.StartsWith(fullsource) || fullsource.StartsWith(fullDestination))
+        {
+            throw new InvalidDataException($"source directory {fullsource} and destination directory {fullDestination} cannot contain each other");
+        }
+
+        if ((folder.ExcludeDeleteTargetFiles != null || folder.ExcludeDeleteTargetDirectories != null) && (!folder.DeleteFromTarget))
+        {
+            throw new InvalidDataException("exclude from deletion files/directories options require delete from target enabled");
+        }
+
+        // ensure source directory exists
+        if (!Directory.Exists(folder.SourcePath))
+        {
+            throw new InvalidDataException($"source directory {folder.SourcePath} not found");
+        }
+    }
+
+    private static bool IsNotEmpty(IEnumerable<string>? items)
+    {
+        return items != null && items.Any();
     }
 }

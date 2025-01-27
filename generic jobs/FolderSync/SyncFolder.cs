@@ -4,9 +4,9 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace FolderSync;
 
-internal class FolderSync : BaseOperation, INamedCheckElement, IVetoEntity
+internal class SyncFolder : BaseOperation, INamedCheckElement, IVetoEntity
 {
-    public FolderSync(IConfigurationSection section, BaseDefault @default) : base(section, @default)
+    public SyncFolder(IConfigurationSection section, BaseDefault @default) : base(section, @default)
     {
         Name = section.GetValue<string>("name") ?? string.Empty;
         HostGroupName = section.GetValue<string?>("host group name");
@@ -33,7 +33,7 @@ internal class FolderSync : BaseOperation, INamedCheckElement, IVetoEntity
         if (ExcludeDeleteTargetDirectories != null && !ExcludeDeleteTargetDirectories.Any()) { ExcludeDeleteTargetDirectories = null; }
     }
 
-    public FolderSync(FolderSync folder) : base(folder)
+    public SyncFolder(SyncFolder folder) : base(folder)
     {
         Name = folder.Name;
         HostGroupName = folder.HostGroupName;
