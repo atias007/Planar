@@ -4,7 +4,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Planar.Job;
+using Seq.Api.Model.Alerting;
+using System.Collections.Generic;
 using System.Text;
+using YamlDotNet.Core.Tokens;
 
 namespace SeqAlertsCheck;
 
@@ -16,22 +19,20 @@ internal partial class Job : BaseCheckJob
 
     static partial void CustomConfigure(SeqServer seqServer, IConfiguration configuration);
 
-    static partial void VetoKey(string key);
+    static partial void VetoAlert(SeqAlert alert);
 
-    static partial void Finalayze(IEnumerable<RedisKey> keys);
-
-    static partial void Finalayze(HealthCheck healthCheck);
+    static partial void Finalayze(IEnumerable<SeqAlert> alerts);
 
     public override void Configure(IConfigurationBuilder configurationBuilder, IJobExecutionContext context)
     {
         CustomConfigure(configurationBuilder, context);
 
-        var redisServer = new RedisServer();
-        CustomConfigure(redisServer, configurationBuilder.Build());
+        var seqServer = new SeqServer();
+        CustomConfigure(seqServer, configurationBuilder.Build());
 
-        if (!redisServer.IsEmpty)
+        if (!seqServer.IsEmpty)
         {
-            var json = JsonConvert.SerializeObject(new { server = redisServer });
+            var json = JsonConvert.SerializeObject(new { server = seqServer });
 
             // Create a JSON stream as a MemoryStream or directly from a file
             var stream = new MemoryStream(Encoding.UTF8.GetBytes(json));
@@ -46,21 +47,18 @@ internal partial class Job : BaseCheckJob
     public async override Task ExecuteJob(IJobExecutionContext context)
     {
         Initialize(ServiceProvider);
-        RedisFactory.Initialize(Configuration);
-        ValidateRedis();
+        var server = new SeqServer(Configuration);
+        ValidateServer(server);
 
         var defaults = GetDefaults(Configuration);
-        var keys = GetKeys(Configuration, defaults);
-        var healthCheck = GetHealthCheck(Configuration, defaults);
-        ValidateRequired(keys, "keys");
+        var states = await server.GetAlerts();
+        var alerts = GetAlerts(Configuration, defaults, states);
 
         EffectedRows = 0;
 
-        await SafeInvokeCheck(healthCheck, InvokeHealthCheckInner, context.TriggerDetails);
-        await SafeInvokeCheck(keys, InvokeKeyCheckInner, context.TriggerDetails);
+        await SafeInvokeCheck(alerts, InvokeAlertCheckInner, context.TriggerDetails);
 
-        Finalayze(healthCheck);
-        Finalayze(keys);
+        Finalayze(alerts);
         Finalayze();
     }
 
@@ -69,63 +67,79 @@ internal partial class Job : BaseCheckJob
         services.RegisterSpanCheck();
     }
 
-    protected static void ValidateRedis()
+    protected static void ValidateServer(SeqServer server)
     {
-        ValidateRequired(RedisFactory.Endpoints, "endpoints", "server");
-        ValidateGreaterThenOrEquals(RedisFactory.Database, 0, "database", "server");
-        ValidateLessThenOrEquals(RedisFactory.Database, 16, "database", "server");
+        ValidateRequired(server.Url, "server");
+        ValidateUri(server.Url, "url", "server");
     }
 
-    private static HealthCheck GetHealthCheck(IConfiguration configuration, Defaults defaults)
+    private List<SeqAlert> GetAlerts(IConfiguration configuration, Defaults defaults, IEnumerable<AlertStateEntity> states)
     {
-        HealthCheck result;
-        var hc = configuration.GetSection("health check");
-        if (hc == null)
+        var includes = configuration.GetSection("include alert ids").Get<List<string>>() ?? [];
+        var excludes = configuration.GetSection("exclude alert ids").Get<List<string>>() ?? [];
+
+        if (includes.Count > 0) { return GetIncludeAlerts(defaults, states, includes); }
+        if (excludes.Count > 0) { return GetExcludeAlerts(defaults, states, excludes); }
+
+        var result = new List<SeqAlert>();
+
+        foreach (var state in states)
         {
-            result = HealthCheck.Empty;
-        }
-        else
-        {
-            result = new HealthCheck(hc, defaults);
+            var alert = new SeqAlert(state, defaults);
+            VetoAlert(alert);
+            if (CheckVeto(alert, "alert")) { continue; }
+
+            ValidateAlert(alert);
+            result.Add(alert);
         }
 
-        ValidateHealthCheck(result);
         return result;
     }
 
-    private IEnumerable<RedisKey> GetKeys(IConfiguration configuration, Defaults defaults)
+    private List<SeqAlert> GetIncludeAlerts(Defaults defaults, IEnumerable<AlertStateEntity> states, IEnumerable<string> include)
     {
-        var keys = configuration.GetRequiredSection("keys");
-        foreach (var item in keys.GetChildren())
+        var result = new List<SeqAlert>();
+        foreach (var item in include)
         {
-            var key = new RedisKey(item, defaults);
+            var state = states.FirstOrDefault(a => string.Equals(a.AlertId, item, StringComparison.OrdinalIgnoreCase));
+            if (state == null)
+            {
+                throw new CheckException($"alert from include list, with id '{item}' not found in seq");
+            }
 
-            VetoKey(key);
-            if (CheckVeto(key, "key")) { continue; }
+            var alert = new SeqAlert(state, defaults);
+            VetoAlert(alert);
+            if (CheckVeto(alert, "alert")) { continue; }
 
-            ValidateRedisKey(key);
-            yield return key;
+            ValidateAlert(alert);
+            result.Add(alert);
         }
+
+        return result;
     }
 
-    private static void Validate(IRedisDefaults redisKey, string section)
+    private List<SeqAlert> GetExcludeAlerts(Defaults defaults, IEnumerable<AlertStateEntity> states, IEnumerable<string> excludes)
     {
-        ValidateGreaterThenOrEquals(redisKey.Database, 0, "database", section);
-        ValidateLessThenOrEquals(redisKey.Database, 16, "database", section);
-    }
+        var result = new List<SeqAlert>();
 
-    private static void ValidateKey(RedisKey redisKey)
-    {
-        ValidateRequired(redisKey.Key, "key", "keys");
-        ValidateMaxLength(redisKey.Key, 1024, "key", "keys");
-    }
-
-    private static void ValidateNoArguments(RedisKey redisKey)
-    {
-        if (!redisKey.IsValid)
+        foreach (var state in states)
         {
-            throw new InvalidDataException($"key '{redisKey.Key}' has no arguments to check");
+            var isExclude = excludes.Any(e => string.Equals(e, state.AlertId, StringComparison.OrdinalIgnoreCase));
+            if (isExclude)
+            {
+                Logger.LogInformation("alert '{AlertId}' is excluded", state.AlertId);
+                continue;
+            }
+
+            var alert = new SeqAlert(state, defaults);
+            VetoAlert(alert);
+            if (CheckVeto(alert, "alert")) { continue; }
+
+            ValidateAlert(alert);
+            result.Add(alert);
         }
+
+        return result;
     }
 
     private Defaults GetDefaults(IConfiguration configuration)
@@ -137,85 +151,11 @@ internal partial class Job : BaseCheckJob
         }
 
         var result = new Defaults(section);
-        Validate(result, "defaults");
         ValidateBase(result, "defaults");
         return result;
     }
 
-    private async Task InvokeHealthCheckInner(HealthCheck healthCheck)
-    {
-        string? GetLineValue(IEnumerable<string> lines, string name)
-        {
-            if (lines == null) { return null; }
-            var line = lines.FirstOrDefault(l => l.StartsWith($"{name}:"));
-            if (string.IsNullOrWhiteSpace(line)) { return null; }
-            return line[(name.Length + 1)..];
-        }
-
-        if (healthCheck.Ping.HasValue || healthCheck.Latency.HasValue)
-        {
-            TimeSpan span;
-            try
-            {
-                span = await RedisFactory.Ping();
-                Logger.LogInformation("ping/latency health check ok. latency {Latency:N2}ms", span.TotalMilliseconds);
-            }
-            catch (Exception ex)
-            {
-                throw new CheckException($"ping/latency health check fail. reason: {ex.Message}");
-            }
-
-            if (healthCheck.Latency.HasValue && span.TotalMilliseconds > healthCheck.Latency.Value)
-            {
-                throw new CheckException($"latency of {span.TotalMilliseconds:N2} ms is greater then {healthCheck.Latency.Value:N0} ms");
-            }
-        }
-
-        if (healthCheck.ConnectedClients.HasValue)
-        {
-            var info = await RedisFactory.Info("Clients");
-            var ccString = GetLineValue(info, "connected_clients");
-            var maxString = GetLineValue(info, "maxclients");
-
-            if (int.TryParse(ccString, out var cc) && int.TryParse(maxString, out var max))
-            {
-                Logger.LogInformation("connected clients is {Clients:N0}. maximum clients is {MaxClients:N0}", cc, max);
-
-                if (cc > healthCheck.ConnectedClients)
-                {
-                    throw new CheckException($"connected clients ({cc:N0}) is greater then {healthCheck.ConnectedClients:N0}");
-                }
-            }
-        }
-
-        if (healthCheck.UsedMemoryNumber > 0)
-        {
-            var info = await RedisFactory.Info("Memory");
-            var memString = GetLineValue(info, "used_memory");
-            var maxString = GetLineValue(info, "maxmemory");
-
-            if (int.TryParse(memString, out var memory) && int.TryParse(maxString, out var max))
-            {
-                if (max > 0)
-                {
-                    Logger.LogInformation("used memory is {Memory:N0} bytes. maximum memory is {MaxMemory:N0} bytes", memory, max);
-                }
-                else
-                {
-                    Logger.LogInformation("used memory is {Memory:N0} bytes", memory);
-                }
-            }
-
-            if (memory > healthCheck.UsedMemoryNumber)
-            {
-                throw new CheckException($"used memory ({memory:N0}) bytes is greater then {healthCheck.UsedMemoryNumber:N0} bytes");
-            }
-        }
-
-        IncreaseEffectedRows();
-    }
-
-    private async Task InvokeKeyCheckInner(RedisKey key)
+    private async Task InvokeAlertCheckInner(SeqAlert alert)
     {
         var exists = await RedisFactory.Exists(key);
         key.Result.Exists = exists;
@@ -260,13 +200,9 @@ internal partial class Job : BaseCheckJob
         ValidateGreaterThen(healthCheck.UsedMemoryNumber, 0, "used memory", "health check");
     }
 
-    private static void ValidateRedisKey(RedisKey redisKey)
+    private static void ValidateAlert(SeqAlert alert)
     {
-        ValidateBase(redisKey, $"key ({redisKey.Key})");
-        Validate(redisKey, $"key ({redisKey.Key})");
-        ValidateKey(redisKey);
-        ValidateGreaterThen(redisKey.MemoryUsageNumber, 0, "max memory usage", "keys");
-        ValidateGreaterThen(redisKey.Length, 0, "max length", "keys");
-        ValidateNoArguments(redisKey);
+        ValidateBase(alert, $"alert ({alert.Key})");
+        ValidateRequired(alert.Key, "key");
     }
 }

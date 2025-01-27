@@ -23,7 +23,7 @@ endpoints:
       - every-1-hour                            
       - end-of-day
     allowed fail span: 00:01:00                # the time span which violation of the endpoint will be considered ok
-    active: false                              # the default is true
+    active: true                              # the default is true
 
   - name: GitHub
     url: https://github.com
@@ -50,4 +50,4 @@ endpoints:
     timeout: 00:00:05
     retry count: 3
     retry interval: 00:00:01
-    active: true                               # the default is true
+    active: false                               # the default is true

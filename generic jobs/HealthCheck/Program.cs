@@ -9,4 +9,10 @@ PlanarJob.Debugger.AddProfile("With Fail Count", job =>
         .WithJobData("fail.count.http://localhost:5341/", "7");
 });
 
+PlanarJob.Debugger.AddProfile("With Trigger Name 'every-1-hour'", job =>
+{
+    job
+    .WithTriggerName("every-1-hour");
+});
+
 await PlanarJob.StartAsync<Job>();
