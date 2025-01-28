@@ -53,6 +53,7 @@ internal partial class Job : BaseCheckJob
         var defaults = GetDefaults(Configuration);
         var states = await server.GetAlerts();
         var alerts = GetAlerts(Configuration, defaults, states);
+        MapTitles(Configuration, alerts);
 
         EffectedRows = 0;
 
@@ -73,10 +74,27 @@ internal partial class Job : BaseCheckJob
         ValidateUri(server.Url, "url", "server");
     }
 
+    private static void MapTitles(IConfiguration configuration, List<SeqAlert> alerts)
+    {
+        var section = configuration.GetSection("alert titles");
+        var titles = section.Get<Dictionary<string, string>>() ?? [];
+        foreach (var item in titles)
+        {
+            var alert = alerts.FirstOrDefault(a => a.Key == item.Key);
+            if (alert == null) { continue; }
+            alert.Title = item.Value;
+        }
+    }
+
     private List<SeqAlert> GetAlerts(IConfiguration configuration, Defaults defaults, IEnumerable<AlertStateEntity> states)
     {
         var includes = configuration.GetSection("include alert ids").Get<List<string>>() ?? [];
         var excludes = configuration.GetSection("exclude alert ids").Get<List<string>>() ?? [];
+
+        if (includes.Count > 0 && excludes.Count > 0)
+        {
+            throw new InvalidOperationException("both include and exclude alert ids are not allowed");
+        }
 
         if (includes.Count > 0) { return GetIncludeAlerts(defaults, states, includes); }
         if (excludes.Count > 0) { return GetExcludeAlerts(defaults, states, excludes); }
@@ -162,7 +180,7 @@ internal partial class Job : BaseCheckJob
 
     private void InvokeAlertCheckInner(SeqAlert alert)
     {
-        const string shared = "[shared]";
+        const string shared = "(shared)";
 
         IncreaseEffectedRows();
 
@@ -171,7 +189,7 @@ internal partial class Job : BaseCheckJob
         var owner = string.IsNullOrWhiteSpace(state.OwnerId) ? shared : state.OwnerId;
         if (!state.IsFailing)
         {
-            Logger.LogInformation("alert {Title} (id: {AlertId}), owner: {Owner}, is in ok state", title, state.AlertId, owner);
+            Logger.LogInformation("alert: {Title}, id: {AlertId}, owner: {Owner}, is in ok state", title, state.AlertId, owner);
             return;
         }
 
@@ -179,7 +197,7 @@ internal partial class Job : BaseCheckJob
         {
             if (state.SuppressedUntil.Value >= DateTime.UtcNow)
             {
-                Logger.LogWarning("alert {Title} (id: {AlertId}), owner: {Owner}, is in fail state but suppressed until {SuppressedUntil:O}",
+                Logger.LogWarning("alert: {Title}, id: {AlertId}, owner: {Owner}, is in fail state but suppressed until {SuppressedUntil:O}",
                     title,
                     state.AlertId,
                     owner,
@@ -189,9 +207,9 @@ internal partial class Job : BaseCheckJob
             }
         }
 
-        Logger.LogError("alert {Title} (id: {AlertId}), owner: {Owner}, is in fail state", title, state.AlertId, owner);
+        Logger.LogError("alert {Title}, id: {AlertId}, owner: {Owner}, is in fail state", title, state.AlertId, owner);
 
-        throw new CheckException($"alert {title} (id: {state.AlertId}), owner: {owner}, is in fail state");
+        throw new CheckException($"alert: {title}, id: {state.AlertId}, owner: {owner}, is in fail state");
     }
 
     private static void ValidateAlert(SeqAlert alert)
