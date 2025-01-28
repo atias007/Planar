@@ -1,9 +1,5 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿using Planar.Job;
 using Seq.Api;
+using SeqAlertsCheck;
 
-Console.WriteLine("Hello, World!");
-var connection = new SeqConnection("http://localhost:5341");
-
-var g = await connection.AlertState.ListAsync();
-
-Console.WriteLine();
+await PlanarJob.StartAsync<Job>();

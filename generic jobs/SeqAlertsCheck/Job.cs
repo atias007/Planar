@@ -56,7 +56,7 @@ internal partial class Job : BaseCheckJob
 
         EffectedRows = 0;
 
-        await SafeInvokeCheck(alerts, InvokeAlertCheckInner, context.TriggerDetails);
+        await SafeInvokeCheck(alerts, InvokeAlertCheckInnerAsync, context.TriggerDetails);
 
         Finalayze(alerts);
         Finalayze();
@@ -155,49 +155,43 @@ internal partial class Job : BaseCheckJob
         return result;
     }
 
-    private async Task InvokeAlertCheckInner(SeqAlert alert)
+    private async Task InvokeAlertCheckInnerAsync(SeqAlert alert)
     {
-        var exists = await RedisFactory.Exists(key);
-        key.Result.Exists = exists;
-        if (key.Exists.GetValueOrDefault() && !exists)
-        {
-            throw new CheckException($"key '{key.Key}' is not exists");
-        }
-
-        long length = 0;
-        long size = 0;
-        if (key.Length > 0)
-        {
-            length = await RedisFactory.GetLength(key);
-            key.Result.Length = length;
-            Logger.LogInformation("key '{Key}' length is {Length:N0}", key.Key, length);
-        }
-
-        if (key.MemoryUsageNumber > 0)
-        {
-            size = await RedisFactory.GetMemoryUsage(key);
-            key.Result.MemoryUsage = size;
-            Logger.LogInformation("key '{Key}' size is {Size:N0} byte(s)", key.Key, size);
-        }
-
-        if (key.Length > 0 && length > key.Length)
-        {
-            throw new CheckException($"key '{key.Key}' length is greater then {key.Length:N0}");
-        }
-
-        if (key.MemoryUsageNumber > 0 && size > key.MemoryUsageNumber)
-        {
-            throw new CheckException($"key '{key.Key}' size is greater then {key.MemoryUsage:N0}");
-        }
-
-        Logger.LogInformation("redis check success for key '{Key}'", key.Key);
-        IncreaseEffectedRows();
+        await Task.Run(() => InvokeAlertCheckInner(alert));
     }
 
-    private static void ValidateHealthCheck(HealthCheck healthCheck)
+    private void InvokeAlertCheckInner(SeqAlert alert)
     {
-        ValidateGreaterThen(healthCheck.ConnectedClients, 0, "connected clients", "health check");
-        ValidateGreaterThen(healthCheck.UsedMemoryNumber, 0, "used memory", "health check");
+        const string shared = "[shared]";
+
+        IncreaseEffectedRows();
+
+        var state = alert.AlertState;
+        var title = alert.Title;
+        var owner = string.IsNullOrWhiteSpace(state.OwnerId) ? shared : state.OwnerId;
+        if (!state.IsFailing)
+        {
+            Logger.LogInformation("alert {Title} (id: {AlertId}), owner: {Owner}, is in ok state", title, state.AlertId, owner);
+            return;
+        }
+
+        if (state.SuppressedUntil.HasValue)
+        {
+            if (state.SuppressedUntil.Value >= DateTime.UtcNow)
+            {
+                Logger.LogWarning("alert {Title} (id: {AlertId}), owner: {Owner}, is in fail state but suppressed until {SuppressedUntil:O}",
+                    title,
+                    state.AlertId,
+                    owner,
+                    state.SuppressedUntil);
+
+                return;
+            }
+        }
+
+        Logger.LogError("alert {Title} (id: {AlertId}), owner: {Owner}, is in fail state", title, state.AlertId, owner);
+
+        throw new CheckException($"alert {title} (id: {state.AlertId}), owner: {owner}, is in fail state");
     }
 
     private static void ValidateAlert(SeqAlert alert)
