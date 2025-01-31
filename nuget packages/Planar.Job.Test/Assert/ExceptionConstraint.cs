@@ -41,7 +41,14 @@ namespace Planar.Job.Test.Assert
             throw new AssertPlanarException(message);
         }
 
+#if NETSTANDARD2_0
+
+        private static bool HasExceptionType<TException>(Exception ex)
+
+#else
         private static bool HasExceptionType<TException>(Exception? ex)
+
+#endif
             where TException : Exception
         {
             if (ex == null) { return false; }
@@ -50,7 +57,12 @@ namespace Planar.Job.Test.Assert
             return HasExceptionType<TException>(ex.InnerException);
         }
 
+#if NETSTANDARD2_0
+
+        private static bool HasExceptionType<TException>(AggregateException ex)
+#else
         private static bool HasExceptionType<TException>(AggregateException? ex)
+#endif
             where TException : Exception
         {
             if (ex == null) { return false; }

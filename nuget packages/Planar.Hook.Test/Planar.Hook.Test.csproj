@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+	  <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
 	  <Version>1.7.8.1</Version>
 	  <Description>Library for writing unit tests for Planar jobs monitor hooks</Description>
 	  <RepositoryType>git</RepositoryType>
@@ -13,9 +13,10 @@
 	  <RepositoryUrl>https://github.com/atias007/Planar</RepositoryUrl>
 	  <PackageTags>planar;job;schedule;task;automation</PackageTags>
 	  <PackageIcon>nuget_logo.png</PackageIcon>
-	  <Nullable>enable</Nullable>
-
   </PropertyGroup>
+	<PropertyGroup Condition=" '$(TargetFramework)' != 'netstandard2.0'">
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
 		<NoWarn>1701;1702;NU1803</NoWarn>
 	</PropertyGroup>

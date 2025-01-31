@@ -12,9 +12,19 @@ namespace Planar.Common
 
         IExecuteJobPropertiesBuilder WithExecutionDate(DateTimeOffset executionDate);
 
-        IExecuteJobPropertiesBuilder WithGlobalSettings(string key, object? value);
+#if NETSTANDARD2_0
 
+        IExecuteJobPropertiesBuilder WithGlobalSettings(string key, object value);
+
+        IExecuteJobPropertiesBuilder WithJobData(string key, object value);
+
+        IExecuteJobPropertiesBuilder WithTriggerData(string key, object value);
+
+#else
+        IExecuteJobPropertiesBuilder WithGlobalSettings(string key, object? value);
         IExecuteJobPropertiesBuilder WithJobData(string key, object? value);
+        IExecuteJobPropertiesBuilder WithTriggerData(string key, object? value);
+#endif
 
         IExecuteJobPropertiesBuilder WithJobGroup(string group);
 
@@ -23,8 +33,6 @@ namespace Planar.Common
         IExecuteJobPropertiesBuilder WithJobName(string name);
 
         IExecuteJobPropertiesBuilder WithRefireCount(uint refireCount);
-
-        IExecuteJobPropertiesBuilder WithTriggerData(string key, object? value);
 
         IExecuteJobPropertiesBuilder WithTriggerName(string name);
 

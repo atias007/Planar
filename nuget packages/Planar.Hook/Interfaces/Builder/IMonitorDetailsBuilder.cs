@@ -26,11 +26,17 @@ namespace Planar.Hook
 
         IMonitorDetailsBuilder WithJobRunTime(TimeSpan jobRunTime);
 
+#if NETSTANDARD2_0
+
+        IMonitorDetailsBuilder AddDataMap(string key, string value);
+
+#else
         IMonitorDetailsBuilder AddDataMap(string key, string? value);
+#endif
 
         IMonitorDetailsBuilder SetRecovering();
 
-        IMonitorDetailsBuilder? WithTriggerGroup(string triggerGroup);
+        IMonitorDetailsBuilder WithTriggerGroup(string triggerGroup);
 
         IMonitorDetailsBuilder WithTriggerId(string triggerId);
 

@@ -8,6 +8,16 @@ namespace Planar.Hook
 
         public string Message { get; set; } = string.Empty;
 
+#if NETSTANDARD2_0
+        public IReadOnlyDictionary<string, string> MessagesParameters { get; set; } = new Dictionary<string, string>();
+
+        internal void AddMessageParameter(string key, string value)
+        {
+            var messagesParameters = (Dictionary<string, string>)MessagesParameters;
+            messagesParameters.Add(key, value);
+        }
+
+#else
         public IReadOnlyDictionary<string, string?> MessagesParameters { get; set; } = new Dictionary<string, string?>();
 
         internal void AddMessageParameter(string key, string? value)
@@ -15,5 +25,6 @@ namespace Planar.Hook
             var messagesParameters = (Dictionary<string, string?>)MessagesParameters;
             messagesParameters.Add(key, value);
         }
+#endif
     }
 }

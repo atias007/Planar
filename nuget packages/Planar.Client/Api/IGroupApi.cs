@@ -17,7 +17,13 @@ namespace Planar.Client.Api
 
         Task DeleteAsync(string name, CancellationToken cancellationToken = default);
 
+#if NETSTANDARD2_0
+
+        Task UpdateAsync(string name, string propertyName, string propertyValue, CancellationToken cancellationToken = default);
+
+#else
         Task UpdateAsync(string name, string propertyName, string? propertyValue, CancellationToken cancellationToken = default);
+#endif
 
         Task JoinUserAsync(string name, string username, CancellationToken cancellationToken = default);
 

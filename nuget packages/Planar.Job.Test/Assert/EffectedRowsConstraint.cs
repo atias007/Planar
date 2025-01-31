@@ -114,7 +114,12 @@ namespace Planar.Job.Test
             throw new AssertPlanarException(message);
         }
 
+#if NETSTANDARD2_0
+
+        private static string GetEffectedRowsString(int? value)
+#else
         private static string? GetEffectedRowsString(int? value)
+#endif
         {
             if (value == null) { return "null"; }
             return value.ToString();

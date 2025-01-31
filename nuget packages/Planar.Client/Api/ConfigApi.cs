@@ -48,7 +48,12 @@ namespace Planar.Client.Api
             return result;
         }
 
+#if NETSTANDARD2_0
+
+        public async Task PutAsync(string key, string value, ConfigType configType = ConfigType.String, CancellationToken cancellationToken = default)
+#else
         public async Task PutAsync(string key, string? value, ConfigType configType = ConfigType.String, CancellationToken cancellationToken = default)
+#endif
         {
             ValidateMandatory(key, nameof(key));
 

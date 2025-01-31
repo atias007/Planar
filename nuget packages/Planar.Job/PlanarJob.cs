@@ -16,12 +16,17 @@ namespace Planar.Job
 {
     public static class PlanarJob
     {
-        public static PlanarJobDebugger Debugger { get; } = new PlanarJobDebugger();
+#if NETSTANDARD2_0
+        internal static string Environment { get; private set; }
+        private static string ContextBase64 { get; set; }
+#else
         internal static string Environment { get; private set; } = null!;
+        private static string? ContextBase64 { get; set; }
+#endif
+        public static PlanarJobDebugger Debugger { get; } = new PlanarJobDebugger();
         internal static RunningMode Mode { get; set; } = RunningMode.Debug;
         internal static Stopwatch Stopwatch { get; private set; } = new Stopwatch();
         private static List<Argument> Arguments { get; set; } = new List<Argument>();
-        private static string? ContextBase64 { get; set; }
 
         public static void Start<TJob>()
             where TJob : BaseJob, new()
@@ -139,7 +144,12 @@ namespace Planar.Job
             Environment = GetArgument("--environment")?.Value ?? "Development";
         }
 
+#if NETSTANDARD2_0
+
+        private static Argument GetArgument(string key)
+#else
         private static Argument? GetArgument(string key)
+#endif
         {
             return Arguments.Find(a => string.Equals(a.Key, key, StringComparison.OrdinalIgnoreCase));
         }
@@ -148,8 +158,11 @@ namespace Planar.Job
         {
             if (string.IsNullOrWhiteSpace(ContextBase64)) { throw new PlanarJobException("Job was executed with empty context"); }
             var json = DecodeBase64ToString(ContextBase64);
-
+#if NETSTANDARD2_0
+            if (json.StartsWith("[") && json.EndsWith("]"))
+#else
             if (json.StartsWith('[') && json.EndsWith(']'))
+#endif
             {
                 json = GetContextFromTemporaryFile(json);
             }
@@ -160,7 +173,11 @@ namespace Planar.Job
         private static string GetContextFromTemporaryFile(string value)
         {
             const string contextFolder = "context";
+#if NETSTANDARD2_0
+            var filename = value.Substring(1, value.Length - 2);
+#else
             var filename = value[1..^1];
+#endif
             filename = Path.Combine(contextFolder, $"{filename}.ctx");
             if (!File.Exists(filename)) { throw new PlanarJobException($"Temporary file '{filename}' not found"); }
             var content = File.ReadAllText(filename);
@@ -189,28 +206,30 @@ namespace Planar.Job
             while (!valid)
             {
                 if (!quiet) { Console.Write("Code: "); }
-                using var timer = new Timer(60_000);
-                timer.Elapsed += TimerElapsed;
-                timer.Start();
-                var selected = Console.ReadLine();
-                timer.Stop();
-                if (string.IsNullOrEmpty(selected))
+                using (var timer = new Timer(60_000))
                 {
-                    if (!quiet) { Console.WriteLine("<Default>"); }
-                    return null;
-                }
+                    timer.Elapsed += TimerElapsed;
+                    timer.Start();
+                    var selected = Console.ReadLine();
+                    timer.Stop();
+                    if (string.IsNullOrEmpty(selected))
+                    {
+                        if (!quiet) { Console.WriteLine("<Default>"); }
+                        return null;
+                    }
 
-                if (!int.TryParse(selected, out index))
-                {
-                    ShowErrorMenu($"Selected value '{selected}' is not valid numeric value");
-                }
-                else if (index > Debugger.Profiles.Count || index <= 0)
-                {
-                    ShowErrorMenu($"Selected value '{index}' is not exists");
-                }
-                else
-                {
-                    valid = true;
+                    if (!int.TryParse(selected, out index))
+                    {
+                        ShowErrorMenu($"Selected value '{selected}' is not valid numeric value");
+                    }
+                    else if (index > Debugger.Profiles.Count || index <= 0)
+                    {
+                        ShowErrorMenu($"Selected value '{index}' is not exists");
+                    }
+                    else
+                    {
+                        valid = true;
+                    }
                 }
             }
 

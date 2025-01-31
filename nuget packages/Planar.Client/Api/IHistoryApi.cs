@@ -15,7 +15,14 @@ namespace Planar.Client
         /// </summary>
         /// <param name="filter"></param>
         /// <returns></returns>
+
+#if NETSTANDARD2_0
+
+        Task<PagingResponse<HistoryBasicDetails>> ListAsync(ListHistoryFilter filter = null, CancellationToken cancellationToken = default);
+
+#else
         Task<PagingResponse<HistoryBasicDetails>> ListAsync(ListHistoryFilter? filter = null, CancellationToken cancellationToken = default);
+#endif
 
         /// <summary>
         ///
@@ -23,7 +30,13 @@ namespace Planar.Client
         /// <param name="filter"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
+#if NETSTANDARD2_0
+
+        Task<string> ODataAsync(ODataFilter filter = null, CancellationToken cancellationToken = default);
+
+#else
         Task<string> ODataAsync(ODataFilter? filter = null, CancellationToken cancellationToken = default);
+#endif
 
         /// <summary>
         ///
@@ -61,7 +74,13 @@ namespace Planar.Client
         /// <returns></returns>
         Task<string> GetExceptionAsync(long id, CancellationToken cancellationToken = default);
 
+#if NETSTANDARD2_0
+
+        Task<PagingResponse<LastRunDetails>> LastAsync(LastHistoryFilter filter = null, CancellationToken cancellationToken = default);
+
+#else
         Task<PagingResponse<LastRunDetails>> LastAsync(LastHistoryFilter? filter = null, CancellationToken cancellationToken = default);
+#endif
 
         /// <summary>
         ///

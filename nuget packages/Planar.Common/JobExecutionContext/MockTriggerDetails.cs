@@ -27,7 +27,11 @@ namespace Planar.Common
         public DateTimeOffset? EndTimeUtc => _now;
         public DateTimeOffset? FinalFireTimeUtc => _now;
         public DateTimeOffset StartTimeUtc => _now;
+#if NETSTANDARD2_0
+        public string CalendarName => null;
+#else
         public string? CalendarName => null;
+#endif
         public string Description => "This is UnitTest trigger description";
         public IKey JobKey => _jobKey;
         public IDataMap TriggerDataMap => _triggerDataMap;

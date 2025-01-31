@@ -40,16 +40,21 @@ namespace Planar.Hook
             Details = JsonSerializer.Serialize(monitor);
         }
 
+#if NETSTANDARD2_0
+        public string Version { get; set; }
+        public string Subject { get; set; }
+        public string Users { get; set; }
+        public string Group { get; set; }
+        public string Details { get; set; }
+        public string GlobalConfig { get; set; }
+#else
+
         public string Version { get; set; } = null!;
-
         public string Subject { get; set; } = null!;
-
         public string Users { get; set; } = null!;
-
         public string Group { get; set; } = null!;
-
         public string Details { get; set; } = null!;
-
         public string GlobalConfig { get; set; } = null!;
+#endif
     }
 }

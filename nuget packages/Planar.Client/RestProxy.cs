@@ -21,18 +21,33 @@ namespace Planar.Client
         public const int DefaultSecurePort = 2610;
 
         private readonly object _lock = new object();
-        private RestClient? _client;
 
         public string Host { get; private set; } = DefaultHost;
         public int Port { get; private set; } = DefaultPort;
         public bool SecureProtocol { get; private set; }
+
+#if NETSTANDARD2_0
+
+        public string Username { get; private set; }
+        public string Password { get; private set; }
+        public string Role { get; private set; }
+        public string FirstName { get; private set; }
+        public string LastName { get; private set; }
+        private string Token { get; set; }
+        private RestClient _client;
+
+#else
         public string? Username { get; private set; }
         public string? Password { get; private set; }
-        public TimeSpan Timeout { get; private set; } = TimeSpan.FromSeconds(10);
         public string? Role { get; private set; }
-        public string FirstName { get; private set; } = null!;
         public string? LastName { get; private set; }
+        public string FirstName { get; private set; } = null!;
         private string? Token { get; set; }
+        private RestClient? _client;
+
+#endif
+
+        public TimeSpan Timeout { get; private set; } = TimeSpan.FromSeconds(10);
 
         private Uri BaseUri => new UriBuilder(Schema, Host, Port).Uri;
 
@@ -100,7 +115,13 @@ namespace Planar.Client
             if (response.StatusCode == HttpStatusCode.RequestTimeout) { throw new PlanarRequestTimeoutException(response); }
             if (response.StatusCode == HttpStatusCode.ServiceUnavailable) { throw new PlanarServiceUnavailableException(response); }
             if (response.StatusCode == HttpStatusCode.Unauthorized) { throw new PlanarUnauthorizedException(response); }
+
+#if NETSTANDARD2_0
+            if ((int)response.StatusCode == 429) { throw new PlanarTooManyRequestsException(response); }
+
+#else
             if (response.StatusCode == HttpStatusCode.TooManyRequests) { throw new PlanarTooManyRequestsException(response); }
+#endif
 
             HandleNotFoundResponse(response);
 
@@ -141,7 +162,14 @@ namespace Planar.Client
             if (response.StatusCode != HttpStatusCode.BadRequest) { return; }
             if (!string.IsNullOrWhiteSpace(response.Content))
             {
+#if NETSTANDARD2_0
+                PlanarValidationErrors errorResponse = null;
+
+#else
                 PlanarValidationErrors? errorResponse = null;
+
+#endif
+
                 try
                 {
                     errorResponse = System.Text.Json.JsonSerializer.Deserialize<PlanarValidationErrors>(response.Content);
@@ -168,13 +196,6 @@ namespace Planar.Client
 
         private static void HandleODataErrorResponse(RestResponse response)
         {
-            static string ClearMessage(string message)
-            {
-                var index = message.IndexOf("on type '");
-                if (index < 0) { return message; }
-                return message[0..index].ToLower();
-            }
-
             if (response.StatusCode != HttpStatusCode.BadRequest) { return; }
             if (string.IsNullOrWhiteSpace(response.Content)) { return; }
             var token = JToken.Parse(response.Content);
@@ -193,6 +214,18 @@ namespace Planar.Client
             }
         }
 
+        private static string ClearMessage(string message)
+        {
+            var index = message.IndexOf("on type '");
+            if (index < 0) { return message; }
+
+#if NETSTANDARD2_0
+            return message.Substring(0, index).ToLower();
+#else
+            return message[0..index].ToLower();
+#endif
+        }
+
         public async Task<TResponse> InvokeAsync<TResponse>(RestRequest request, CancellationToken cancellationToken)
         {
             var response = await Proxy.ExecuteAsync<TResponse>(request, cancellationToken);
@@ -203,10 +236,20 @@ namespace Planar.Client
 
             ValidateResponse(response);
 
+#if NETSTANDARD2_0
+            return response.Data;
+#else
             return response.Data!;
+#endif
         }
 
+#if NETSTANDARD2_0
+
+        public async Task<string> InvokeAsync(RestRequest request, CancellationToken cancellationToken)
+#else
         public async Task<string?> InvokeAsync(RestRequest request, CancellationToken cancellationToken)
+#endif
+
         {
             var response = await Proxy.ExecuteAsync(request, cancellationToken);
             if (await RefreshToken(response, cancellationToken))

@@ -13,7 +13,13 @@ namespace Planar.Client.Exceptions
         //     the problem type (e.g., using HTML [W3C.REC-html5-20141028]). When this member
         //     is not present, its value is assumed to be "about:blank".
         [JsonPropertyName("type")]
+#if NETSTANDARD2_0
+        public string Type { get; set; }
+
+#else
         public string Type { get; set; } = null!;
+
+#endif
 
         //
         // Summary:
@@ -21,7 +27,13 @@ namespace Planar.Client.Exceptions
         //     occurrence to occurrence of the problem, except for purposes of localization(e.g.,
         //     using proactive content negotiation; see[RFC7231], Section 3.4).
         [JsonPropertyName("title")]
+#if NETSTANDARD2_0
+        public string Title { get; set; }
+
+#else
         public string Title { get; set; } = null!;
+
+#endif
 
         //
         // Summary:
@@ -37,14 +49,26 @@ namespace Planar.Client.Exceptions
         // Summary:
         //     A human-readable explanation specific to this occurrence of the problem.
         [JsonPropertyName("detail")]
+#if NETSTANDARD2_0
+        public string Detail { get; set; }
+
+#else
         public string Detail { get; set; } = null!;
+
+#endif
 
         //
         // Summary:
         //     A URI reference that identifies the specific occurrence of the problem.It may
         //     or may not yield further information if dereferenced.
         [JsonPropertyName("instance")]
+#if NETSTANDARD2_0
+        public string Instance { get; set; }
+
+#else
         public string Instance { get; set; } = null!;
+
+#endif
 
         [JsonPropertyName("errors")]
         public IEnumerable<PlanarError> Errors { get; set; } = new List<PlanarError>();

@@ -63,7 +63,12 @@ namespace Planar.Hook
             }
         }
 
+#if NETSTANDARD2_0
+
+        protected static bool IsValidUri(string url)
+#else
         protected static bool IsValidUri(string? url)
+#endif
         {
             if (string.IsNullOrEmpty(url)) { return false; }
             return Uri.TryCreate(url, UriKind.Absolute, out _);
@@ -120,11 +125,20 @@ namespace Planar.Hook
             var monitorDetails = SafeDeserialize<T>(messageBroker?.Details, options);
             monitorDetails.Users = SafeDeserialize<List<User>>(messageBroker?.Users);
             monitorDetails.Group = SafeDeserialize<Group>(messageBroker?.Group);
+#if NETSTANDARD2_0
+            monitorDetails.GlobalConfig = SafeDeserialize<Dictionary<string, string>>(messageBroker?.GlobalConfig);
+#else
             monitorDetails.GlobalConfig = SafeDeserialize<Dictionary<string, string?>>(messageBroker?.GlobalConfig);
+#endif
             return monitorDetails;
         }
 
+#if NETSTANDARD2_0
+
+        private static T SafeDeserialize<T>(string json, JsonSerializerOptions options = null)
+#else
         private static T SafeDeserialize<T>(string? json, JsonSerializerOptions? options = null)
+#endif
             where T : class, new()
         {
             try

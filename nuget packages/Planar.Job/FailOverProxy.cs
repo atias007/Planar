@@ -68,8 +68,14 @@ namespace Planar.Job
         {
             const int retryCount = 3;
             var counter = 0;
+#if NETSTANDARD2_0
+            RestResponse response = null;
+            Exception exception = null;
+#else
             RestResponse? response = null;
             Exception? exception = null;
+#endif
+
             while (counter < retryCount)
             {
                 try

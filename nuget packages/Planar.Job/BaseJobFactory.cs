@@ -128,23 +128,43 @@ namespace Planar.Job
 
         #region Data
 
+#if NETSTANDARD2_0
+
+        public void PutJobData(string key, object value)
+#else
         public void PutJobData(string key, object? value)
+#endif
         {
             PutJobDataAsync(key, value).Wait();
         }
 
+#if NETSTANDARD2_0
+
+        public async Task PutJobDataAsync(string key, object value)
+#else
         public async Task PutJobDataAsync(string key, object? value)
+#endif
         {
             var message = new { Key = key, Value = value };
             await MqttClient.PublishAsync(MessageBrokerChannels.PutJobData, message);
         }
 
+#if NETSTANDARD2_0
+
+        public void PutTriggerData(string key, object value)
+#else
         public void PutTriggerData(string key, object? value)
+#endif
         {
             PutTriggerDataAsync(key, value).Wait();
         }
 
+#if NETSTANDARD2_0
+
+        public async Task PutTriggerDataAsync(string key, object value)
+#else
         public async Task PutTriggerDataAsync(string key, object? value)
+#endif
         {
             var message = new { Key = key, Value = value };
             await MqttClient.PublishAsync(MessageBrokerChannels.PutTriggerData, message);

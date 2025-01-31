@@ -9,7 +9,11 @@ namespace Planar.Common
 {
     internal class JobMapper
     {
+#if NETSTANDARD2_0
+        private readonly ILogger _logger;
+#else
         private readonly ILogger? _logger;
+#endif
 
         public JobMapper(ILogger logger)
         {
@@ -40,7 +44,12 @@ namespace Planar.Common
             }
         }
 
+#if NETSTANDARD2_0
+
+        private void MapProperty(IKey jobKey, PropertyInfo prop, KeyValuePair<string, string> data, object instance)
+#else
         private void MapProperty(IKey jobKey, PropertyInfo? prop, KeyValuePair<string, string?> data, object instance)
+#endif
         {
             if (prop == null) { return; }
 
@@ -66,7 +75,13 @@ namespace Planar.Common
             }
         }
 
+#if NETSTANDARD2_0
+
+        private bool IsIgnoreProperty(PropertyInfo property, IKey jobKey, KeyValuePair<string, string> data)
+#else
         private bool IsIgnoreProperty(PropertyInfo property, IKey jobKey, KeyValuePair<string, string?> data)
+#endif
+
         {
             var attributes = property.GetCustomAttributes();
             var ignore = attributes.Any(a => a.GetType().FullName == typeof(IgnoreDataMapAttribute).FullName);

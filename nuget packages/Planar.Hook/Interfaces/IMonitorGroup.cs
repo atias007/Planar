@@ -2,11 +2,20 @@
 {
     public interface IMonitorGroup
     {
-        public string Name { get; }
-        public string? AdditionalField1 { get; }
-        public string? AdditionalField2 { get; }
-        public string? AdditionalField3 { get; }
-        public string? AdditionalField4 { get; }
-        public string? AdditionalField5 { get; }
+        string Name { get; }
+
+#if NETSTANDARD2_0
+        string AdditionalField1 { get; }
+        string AdditionalField2 { get; }
+        string AdditionalField3 { get; }
+        string AdditionalField4 { get; }
+        string AdditionalField5 { get; }
+#else
+        string? AdditionalField1 { get; }
+        string? AdditionalField2 { get; }
+        string? AdditionalField3 { get; }
+        string? AdditionalField4 { get; }
+        string? AdditionalField5 { get; }
+#endif
     }
 }

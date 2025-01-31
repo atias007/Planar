@@ -15,14 +15,21 @@ namespace Planar.Hook
         public IMonitorGroup Group { get; set; } = new Group();
 
         public IEnumerable<IMonitorUser> Users { get; set; } = new List<User>();
-
+#if NETSTANDARD2_0
+        public IReadOnlyDictionary<string, string> GlobalConfig { get; set; } = new Dictionary<string, string>();
+#else
         public IReadOnlyDictionary<string, string?> GlobalConfig { get; set; } = new Dictionary<string, string?>();
+#endif
 
+#if NETSTANDARD2_0
+        public string Exception { get; set; }
+        public string MostInnerException { get; set; }
+        public string MostInnerExceptionMessage { get; set; }
+#else
         public string? Exception { get; set; }
-
         public string? MostInnerException { get; set; }
-
         public string? MostInnerExceptionMessage { get; set; }
+#endif
 
         internal void AddUser(IMonitorUser user)
         {
@@ -33,10 +40,21 @@ namespace Planar.Hook
             }
         }
 
+#if NETSTANDARD2_0
+
+        internal void AddGlobalConfig(string key, string value)
+        {
+            var globalConfig = (Dictionary<string, string>)GlobalConfig;
+            globalConfig.Add(key, value);
+        }
+
+#else
+
         internal void AddGlobalConfig(string key, string? value)
         {
             var globalConfig = (Dictionary<string, string?>)GlobalConfig;
             globalConfig.Add(key, value);
         }
+#endif
     }
 }

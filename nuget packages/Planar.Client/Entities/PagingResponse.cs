@@ -4,7 +4,11 @@ namespace Planar.Client.Entities
 {
     public class PagingResponse<T> : IPagingResponse<T> where T : class
     {
+#if NETSTANDARD2_0
+        public IEnumerable<T> Data { get; set; }
+#else
         public IEnumerable<T>? Data { get; set; }
+#endif
 
         public int Count { get; set; }
 

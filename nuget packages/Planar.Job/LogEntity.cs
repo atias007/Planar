@@ -29,6 +29,36 @@ namespace Planar
 
         private static string GetLogLevelDisplayTest(LogLevel logLevel)
         {
+#if NETSTANDARD2_0
+
+            switch (logLevel)
+            {
+                case LogLevel.Trace:
+                    return "TRC";
+
+                case LogLevel.Debug:
+                    return "DBG";
+
+                case LogLevel.Information:
+                    return "INF";
+
+                case LogLevel.Warning:
+                    return "WRN";
+
+                case LogLevel.Error:
+                    return "ERR";
+
+                case LogLevel.Critical:
+                    return "CRT";
+
+                case LogLevel.None: // Explicitly handle LogLevel.None
+                default: // Optional default case, but good practice to include
+                    return "NON";
+            }
+        }
+
+#else
+
             return logLevel switch
             {
                 LogLevel.Trace => "TRC",
@@ -40,6 +70,7 @@ namespace Planar
                 _ => "NON", // case LogLevel.None
             };
         }
+#endif
 
         // ************************** BE AWARE TO SYNC WITH PLANAR SOLUTION **************************
     }

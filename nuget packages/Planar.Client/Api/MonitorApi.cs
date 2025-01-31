@@ -155,7 +155,12 @@ namespace Planar.Client.Api
             await _proxy.InvokeAsync(restRequest, cancellationToken);
         }
 
+#if NETSTANDARD2_0
+
+        public async Task UpdateAsync(int id, string propertyName, string propertyValue, CancellationToken cancellationToken = default)
+#else
         public async Task UpdateAsync(int id, string propertyName, string? propertyValue, CancellationToken cancellationToken = default)
+#endif
         {
             ValidateMandatory(id, nameof(id));
 

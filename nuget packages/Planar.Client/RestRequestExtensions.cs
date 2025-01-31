@@ -73,7 +73,12 @@ namespace RestSharp
             return request;
         }
 
+#if NETSTANDARD2_0
+
+        private static string GetStringValueForQueryStringParameter(object value)
+#else
         private static string? GetStringValueForQueryStringParameter(object value)
+#endif
         {
             const string DateFormat = "s";
 
