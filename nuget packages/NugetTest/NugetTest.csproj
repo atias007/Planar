@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.1" />
-    <PackageReference Include="Planar.Client" Version="1.7.8.1" />
+    <PackageReference Include="Planar.Client" Version="1.7.9" />
   </ItemGroup>
 
 </Project>
